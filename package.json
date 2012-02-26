@@ -1,7 +1,7 @@
 {
     "name": "nodegame-server"
   , "description": "nodeGame server for the browser and node.js"
-  , "version": "0.1.1"
+  , "version": "0.1.2"
   , "main" : "ServerNode.js"
   , "homepage": "http://nodegame.org"
   , "keywords": ["game", "multiplayers", "experiments", "socket.io", "node", "websockets"]
@@ -11,7 +11,7 @@
     ]
   , "repository": {
         "type": "git"
-      , "url": "https://github.com/nodegame/nodegame-server.git"
+      , "url": "https://github.com/nodeGame/nodegame-server.git"
     }
   , "dependencies": {
       "socket.io": "0.8.7"
