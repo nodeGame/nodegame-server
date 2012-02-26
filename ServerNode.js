@@ -45,9 +45,9 @@ ServerNode.prototype.createHTTPServer = function (options) {
 			filePath = './nodegame/nodegame-all-latest.js';
 		}
 		
-		else if (filePath === './fabric.js') {
-			filePath = './libs/fabric.js/all.min.js';
-		}
+    // else if (filePath === './fabric.js') {
+    //  filePath = './libs/fabric.js/all.min.js';
+    // }
 		
 		// Added path.normalize here. TODO: Check if it works on windows.
 		var extname = path.extname(path.normalize(filePath));

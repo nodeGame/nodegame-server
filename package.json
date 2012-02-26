@@ -1,8 +1,8 @@
 {
     "name": "nodegame-server"
   , "description": "nodeGame server for the browser and node.js"
-  , "version": "0.4.2"
-  , "main" : "./ServerNode.js"
+  , "version": "0.1.0"
+  , "main" : "ServerNode.js"
   , "homepage": "http://nodegame.org"
   , "keywords": ["game", "multiplayers", "experiments", "socket.io", "node", "websockets"]
   , "author": "Stefano Balietti <futur.dorko@gmail.com>"
@@ -19,4 +19,7 @@
   ,   "nodegame-client": ">= 0.1.0"
     }
   , "engines": { "node": ">= 0.4.0" }
+  , "licenses": [
+    { "type": "MIT" }
+  ]
 }
