@@ -42,7 +42,7 @@ ServerNode.prototype.createHTTPServer = function (options) {
 			filePath = './index.htm';
 		}
 		else if (filePath === './nodegame.js') {
-			filePath = './nodegame/nodegame-all-latest.js';
+			filePath = './nodegame/nodegame.js';
 		}
 		
     // else if (filePath === './fabric.js') {
