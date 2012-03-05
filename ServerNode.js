@@ -44,6 +44,12 @@ ServerNode.prototype.createHTTPServer = function (options) {
 		else if (filePath === './nodegame.js') {
 			filePath = './nodegame/nodegame.js';
 		}
+		else if (filePath === './player.css') {
+			filePath = 'static/css/player.css';
+		}
+		else if (filePath === './monitor.css') {
+			filePath = 'static/css/monitor.css';
+		}
 		
     // else if (filePath === './fabric.js') {
     //  filePath = './libs/fabric.js/all.min.js';
