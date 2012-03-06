@@ -7,7 +7,7 @@ body {
 	padding: 5px;
 }
 
-input, button, select {
+input, button, select, textarea {
 	padding: 5px;
 	margin: 2px;
 	border: 1px solid #CCC;
