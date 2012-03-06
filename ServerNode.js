@@ -45,10 +45,10 @@ ServerNode.prototype.createHTTPServer = function (options) {
 			filePath = './nodegame/nodegame.js';
 		}
 		else if (filePath === './player.css') {
-			filePath = 'static/css/player.css';
+			filePath = './node_modules/nodegame-server/static/css/player.css';
 		}
 		else if (filePath === './monitor.css') {
-			filePath = 'static/css/monitor.css';
+			filePath = './node_modules/nodegame-server/static/css/monitor.css';
 		}
 		
     // else if (filePath === './fabric.js') {
