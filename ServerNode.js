@@ -4,13 +4,14 @@ var util = require('util');
 var EventEmitter = require('events').EventEmitter;
 var nodemailer = require('nodemailer');
 
-var http = require('http');
 var fs = require('fs');
 var path = require('path');
 
 var ServerChannel = require('./ServerChannel');
 
 var JSUS = require('nodegame-client').JSUS;
+
+var app = require('express').createServer();
 
 function ServerNode (options, server, io) {
 	if (!options) {
@@ -32,75 +33,15 @@ function ServerNode (options, server, io) {
 
 ServerNode.prototype.createHTTPServer = function (options) {
 	
-	return http.createServer(function (request, response) {
+	return app.listen(options.port);
 
-	    // console.log('request starting...');
-		
-		var filePath = '.' + request.url;
-		
-		if (filePath === './' || filePath === './log') {
-			filePath = './index.htm';
-		}
-		else if (filePath === './nodegame.js') {
-			filePath = './nodegame/nodegame.js';
-		}
-		else if (filePath === './player.css') {
-			filePath = './node_modules/nodegame-server/static/css/player.css';
-		}
-		else if (filePath === './monitor.css') {
-			filePath = './node_modules/nodegame-server/static/css/monitor.css';
-		}
-		
-    // else if (filePath === './fabric.js') {
-    //  filePath = './libs/fabric.js/all.min.js';
-    // }
-		
-		// Added path.normalize here. TODO: Check if it works on windows.
-		var extname = path.extname(path.normalize(filePath));
-		
-		console.log(filePath);
-		
-		
-		var contentType = 'text/html';
-		switch (extname) {
-			case '.js':
-				contentType = 'text/javascript';
-				break;
-			case '.css':
-				contentType = 'text/css';
-				break;
-		}
-		
-		path.exists(filePath, function(exists) {
-		
-			if (exists) {
-				fs.readFile(filePath, function(error, content) {
-					if (error) {
-						response.writeHead(500);
-						response.end();
-					}
-					else {
-						response.writeHead(200, { 'Content-Type': contentType });
-						response.end(content, 'utf-8');
-					}
-				});
-			}
-			else {
-				console.log('Unexisting path requested.')
-				response.writeHead(404);
-				response.end();
-			}
-		});
-		
-	});
 };
 
 ServerNode.prototype.listen = function (http, io) {
 	
 	this.io = io || require('socket.io');
-	this.http = http || this.createHTTPServer();
-	
-	this.http.listen(this.port);
+	app.listen(this.port);
+
 	this.server = this.io.listen(this.http);
 	
 	this.configureHTTP(this.options.http);
@@ -135,8 +76,26 @@ ServerNode.prototype.configureIO = function (options) {
 	this._configure(this.server, options);
 };
 
+// Define Routes
+
 ServerNode.prototype.configureHTTP = function (options) {
-	this._configure(this.http, options);
+	
+	app.get('/', function(req, res){
+		res.send('Yay! Your nodeGame Server is running.');
+	});
+
+	app.get('/nodegame.js', function(req, res){
+		res.sendfile(__dirname + '/nodegame/nodegame.js');
+	});
+
+	app.get('/player.css', function(req, res){
+		res.sendfile(__dirname + '/static/css/player.css');
+	});
+
+	app.get('/monitor.css', function(req, res){
+		res.sendfile(__dirname + '/static/css/monitor.css');
+	});
+
 };
 
 ServerNode.prototype.addChannel = function (options) {
