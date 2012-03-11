@@ -18,8 +18,16 @@
   ,   "nodemailer": "0.1.18"
   ,   "nodegame-client": ">= 0.1.0"
     }
+  , "devDependencies": {
+      "mocha": ">= 0.3.0",
+      "should": ">= 0.5.1",
+      "request": "2.9.153"
+    }
   , "engines": { "node": ">= 0.4.0" }
   , "licenses": [
     { "type": "MIT" }
   ]
+  , "scripts": {
+      "test": "make test"
+  }
 }
