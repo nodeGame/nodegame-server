@@ -14,6 +14,10 @@ var JSUS = require('nodegame-client').JSUS;
 var app = require('express').createServer();
 
 function ServerNode (options, server, io) {
+
+	// Compile & minify javascript resources.
+	var smoosh = require('./smooshfile').smoosh_it();
+
 	if (!options) {
 		throw new Error('No configuration found to create a server. Aborting');
 	}
@@ -85,7 +89,7 @@ ServerNode.prototype.configureHTTP = function (options) {
 	});
 
 	app.get('/nodegame.js', function(req, res){
-		res.sendfile(__dirname + '/nodegame/nodegame.js');
+		res.sendfile(__dirname + '/static/js/nodegame.min.js');
 	});
 
 	app.get('/player.css', function(req, res){
