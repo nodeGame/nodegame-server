@@ -11,7 +11,8 @@ var ServerChannel = require('./ServerChannel');
 
 var JSUS = require('nodegame-client').JSUS;
 
-var app = require('express').createServer();
+var app = require('express').createServer(),
+		io = require('socket.io').listen(app);
 
 function ServerNode (options, server, io) {
 
@@ -89,7 +90,7 @@ ServerNode.prototype.configureHTTP = function (options) {
 	});
 
 	app.get('/nodegame.js', function(req, res){
-		res.sendfile(__dirname + '/static/js/nodegame.min.js');
+		res.sendfile(__dirname + '/static/js/nodegame.js');
 	});
 
 	app.get('/player.css', function(req, res){
@@ -98,6 +99,11 @@ ServerNode.prototype.configureHTTP = function (options) {
 
 	app.get('/monitor.css', function(req, res){
 		res.sendfile(__dirname + '/static/css/monitor.css');
+	});
+
+	app.get('/:game/:file', function(req, res){
+		var filePath =	__dirname.replace(/node\_modules.+/i, '') + 'games_client/' + req.params.game + '/' + req.params.file;
+		res.sendfile(filePath);
 	});
 
 };
