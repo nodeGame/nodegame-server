@@ -12,9 +12,9 @@ var ServerChannel = require('./ServerChannel');
 var JSUS = require('nodegame-client').JSUS;
 
 var app = require('express').createServer(),
-		io = require('socket.io').listen(app);
+	socket_io = require('socket.io');
 
-function ServerNode (options, server, io) {
+function ServerNode (options) {
 
 	// Compile & minify javascript resources.
 	var smoosh = require('./smooshfile').smoosh_it();
@@ -33,7 +33,7 @@ function ServerNode (options, server, io) {
 	this.maxChannels = options.maxChannels;
 	this.channels = [];
 	
-	this.listen(server, io);
+	this.listen();
 }
 
 ServerNode.prototype.createHTTPServer = function (options) {
@@ -44,10 +44,11 @@ ServerNode.prototype.createHTTPServer = function (options) {
 
 ServerNode.prototype.listen = function (http, io) {
 	
-	this.io = io || require('socket.io');
+	// this.io = io || require('socket.io');
 	app.listen(this.port);
 
-	this.server = this.io.listen(this.http);
+	// this.server = this.io.listen(this.http);
+	this.server = socket_io.listen(app);
 	
 	this.configureHTTP(this.options.http);
 	this.configureIO(this.options.io);
