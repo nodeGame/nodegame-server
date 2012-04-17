@@ -16,7 +16,7 @@ var config = {
     },
     
     JAVASCRIPT: {
-        DIST_DIR: m === null ? "static/js" : (m[0] + "/static/js"),
+        DIST_DIR: m === null ? "public/javascripts" : (m[0] + "/public/javascripts"),
         
         "nodegame": [
         

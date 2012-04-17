@@ -45,42 +45,42 @@ describe('nodegame-server: ', function(){
     });
 
     it('should return statusCode 200 for player.css', function(done){
-      request(root_url + 'player.css', function(err, res, body){
+      request(root_url + 'stylesheets/player.css', function(err, res, body){
         res.statusCode.should.equal(200);
         done();
       });
     });
 
     it('should return content-type text/css for player.css', function(done){
-      request(root_url + 'player.css', function(err, res, body){
+      request(root_url + 'stylesheets/player.css', function(err, res, body){
         res.headers['content-type'].should.equal('text/css; charset=UTF-8');
         done();
       });
     });
 
     it('should return statusCode 200 for monitor.css', function(done){
-      request(root_url + 'monitor.css', function(err, res, body){
+      request(root_url + 'stylesheets/monitor.css', function(err, res, body){
         res.statusCode.should.equal(200);
         done();
       });
     });
 
     it('should return content-type text/css for monitor.css', function(done){
-      request(root_url + 'monitor.css', function(err, res, body){
+      request(root_url + 'stylesheets/monitor.css', function(err, res, body){
         res.headers['content-type'].should.equal('text/css; charset=UTF-8');
         done();
       });
     });
 
     it('should return statusCode 200 for nodegame.js', function(done){
-      request(root_url + 'nodegame.js', function(err, res, body){
+      request(root_url + 'javascripts/nodegame.js', function(err, res, body){
         res.statusCode.should.equal(200);
         done();
       });
     });
 
     it('should return content-type text/javascript for nodegame.js', function(done){
-      request(root_url + 'nodegame.js', function(err, res, body){
+      request(root_url + 'javascripts/nodegame.js', function(err, res, body){
         res.headers['content-type'].should.equal('application/javascript');
         done();
       });
