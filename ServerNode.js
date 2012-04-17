@@ -16,7 +16,9 @@ var JSUS = require('nodegame-client').JSUS;
 var app = express.createServer();
 
 // add folder with publicly available files.
-app.use(express.static(__dirname + '/public'));
+app.configure(function(){
+    app.use(express.static(__dirname + '/public'));
+});
 
 function ServerNode (options) {
 
