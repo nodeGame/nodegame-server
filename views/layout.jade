@@ -1,0 +1,27 @@
+!!!
+html
+  head
+    title= title
+    link(rel='stylesheet', href='/stylesheets/jquery.mentionsInput.css')
+    link(rel='stylesheet', href='/stylesheets/foundation.css')
+    link(rel='stylesheet', href='/stylesheets/app.css')
+    script(type='text/javascript', src='/javascripts/jquery-1.7.2.min.js')
+    script(type='text/javascript', src='/javascripts/underscore-min.js')
+    script(type='text/javascript', src='/javascripts/lib/jquery.events.input.js')
+    script(type='text/javascript', src='/javascripts/lib/jquery.elastic.js')
+    script(type='text/javascript', src='/javascripts/jquery.mentionsInput.js')
+    script(type='text/javascript', src='/javascripts/ember-0.9.6.min.js')
+    script(type='text/javascript', src='/javascripts/modernizr.foundation.js')
+    script(type='text/javascript', src='/javascripts/app.js')
+
+    script(type='text/x-handlebars', data-template-name='list').
+      {{#with List.items}}
+        <ul>
+          {{#each items}}
+            <li>{{name}}</li>
+          {{/each}}
+        </ul>
+      {{/with}}
+
+  body
+    div(class='container')!= body

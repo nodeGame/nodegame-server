@@ -1,5 +1,8 @@
 module.exports = ServerNode;
 
+
+/////////// Load dependencies ///////////
+
 var util = require('util'),
     fs = require('fs'),
     path = require('path'),
@@ -13,12 +16,25 @@ var ServerChannel = require('./ServerChannel');
 
 var JSUS = require('nodegame-client').JSUS;
 
+
+////////// Configure Application ///////////
+
 var app = express.createServer();
 
-// add folder with publicly available files.
 app.configure(function(){
+    app.set('views', __dirname + '/views');
+    app.set('view engine', 'jade');
     app.use(express.static(__dirname + '/public'));
 });
+
+app.configure('development', function(){
+  app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
+});
+
+app.configure('production', function(){
+  app.use(express.errorHandler());
+});
+
 
 function ServerNode (options) {
 
@@ -31,7 +47,11 @@ function ServerNode (options) {
     this.options.dumpsys = ('undefined' !== typeof options.dumpsys) ? options.dumpsys : true;
     this.options.verbosity = ('undefined' !== typeof options.verbosity) ? options.verbosity : 1;
     
-    this.port = options.port || '80'; // port of the express server and sio
+    if(process.env.PORT){
+        this.port = process.env.PORT; // if app is running on heroku then the assigned port has to be used.
+    } else {
+        this.port = options.port || '80'; // port of the express server and sio
+    }
     
     this.maxChannels = options.maxChannels;
     this.channels = [];
@@ -90,10 +110,17 @@ ServerNode.prototype.configureIO = function (options) {
 ServerNode.prototype.configureHTTP = function (options) {
 
     app.get('/', function(req, res){
-        res.send('Yay! Your nodeGame Server is running.');
+        res.render('index', {
+            title: 'Yay! Your nodeGame server is running.'
+        });
     });
 
     app.get('/:game/:file', function(req, res){
+
+        // check if file exists the folder the scientist has created.
+        // check if file exists in the nodegame-server folder
+        // read the file and then render the view
+
         var filePath =  __dirname.replace(/node\_modules.+/i, '') + 'games_client/' + req.params.game + '/' + req.params.file;
         res.sendfile(filePath);
     });
