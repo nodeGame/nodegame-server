@@ -92,4 +92,4 @@ var run_it = function(){
 
     console.log('nodegame.js created');
 }
-exports.smoosh_it = run_it;
+run_it();

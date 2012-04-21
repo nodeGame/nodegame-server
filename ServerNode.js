@@ -22,9 +22,6 @@ app.configure(function(){
 
 function ServerNode (options) {
 
-    // Compile & minify javascript resources.
-    var smoosh = require('./smooshfile').smoosh_it();
-
     if (!options) {
         throw new Error('No configuration found to create a server. Aborting');
     }
