@@ -22,6 +22,7 @@
   ,   "nodegame-widgets": ">= 0.1.0"
   ,   "smoosh": "0.3.2"
   ,   "express": "2.5.8"
+  ,   "jade": "0.25.0"
     }
   , "devDependencies": {
       "mocha": ">= 0.3.0",
