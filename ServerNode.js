@@ -133,4 +133,6 @@ ServerNode.prototype.addChannel = function (options) {
 	else {
 		console.log('Channel could not be added: ' + options.name);
 	}
+	
+	return channel;
 };
