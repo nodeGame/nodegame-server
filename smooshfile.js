@@ -16,7 +16,7 @@ var config = {
     },
     
     JAVASCRIPT: {
-        DIST_DIR: m === null ? "public/javascripts" : (m[0] + "/public/javascripts"),
+        DIST_DIR: '/' + __dirname + '/public/javascripts',
         
         "nodegame": [
         
@@ -78,8 +78,6 @@ var config = {
     }
 };
 
-console.log(config.JAVASCRIPT.DIST_DIR);
-
 var run_it = function(){
     // Smooshing callback chain
     // More information on how it behaves can be found in the smoosh Readme https://github.com/fat/smoosh
@@ -92,4 +90,5 @@ var run_it = function(){
 
     console.log('nodegame.js created');
 }
+
 run_it();
