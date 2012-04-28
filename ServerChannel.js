@@ -51,8 +51,6 @@ function ServerChannel (options, server, io) {
 
 ServerChannel.prototype.createServers = function() {
 	
-	// INDAGANDO!!!
-	
 	var adminOptions = {
 						 	io: 		this.io,
 						 	server: 	this.server,
@@ -75,6 +73,13 @@ ServerChannel.prototype.createServers = function() {
 	
 	this.adminServer.setPartner(this.playerServer);
 	this.playerServer.setPartner(this.adminServer);
+};
+
+ServerChannel.prototype.listen = function() {
+	this.adminServer.listen();
+	this.playerServer.listen();
+	// TODO: return false when channel cannot be created
+	return true;
 };
 
 ServerChannel.prototype.listen = function() {

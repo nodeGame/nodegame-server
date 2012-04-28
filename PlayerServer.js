@@ -46,7 +46,8 @@ PlayerServer.prototype.attachCustomListeners = function() {
 		// Personal msg
 		// TODO: maybe checked before?
     	if (that.isValidRecipient(msg.to)){
-			that.gmm.send (msg);
+			//that.gmm.send(msg);
+			that.gmm.broadcast(msg);
 		}
 	});
 			
@@ -54,7 +55,8 @@ PlayerServer.prototype.attachCustomListeners = function() {
 		// Personal msg
 		// TODO: maybe checked before?
     	if (that.isValidRecipient(msg.to)){
-			that.gmm.send(msg);
+			//that.gmm.send(msg);
+			that.gmm.broadcast(msg);
 		}
 	});
     

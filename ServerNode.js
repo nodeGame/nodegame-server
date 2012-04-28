@@ -128,27 +128,31 @@ ServerNode.prototype.configureHTTP = function (options) {
 };
 
 ServerNode.prototype.addChannel = function (options) {
-    if (!options) {
-        console.log('Options are not correctly defined for the channel. Aborting');
-        return;
-    }
-    
-    var cname = options.name;
-    // Some options must not be overwritten
-    var options = JSUS.extend(this.options, options);
-    if (cname){
-        options.name = cname;
-    }
-    
-    // TODO merge global options with local options
-    var channel = new ServerChannel(options, this.server, this.io);
-    // TODO return false in case of error in creating the channel
-    var ok = channel.listen();
-    if (ok) {
-        this.channels.push(channel);
-        console.log('Channel added correctly: ' + options.name);
-    }
-    else {
-        console.log('Channel could not be added: ' + options.name);
-    }
+
+	if (!options) {
+		console.log('Options are not correctly defined for the channel. Aborting');
+		return;
+	}
+	
+	var cname = options.name;
+	// Some options must not be overwritten
+	var options = JSUS.extend(this.options, options);
+	if (cname){
+		options.name = cname;
+	}
+	
+	// TODO merge global options with local options
+	var channel = new ServerChannel(options, this.server, this.io);
+	// TODO return false in case of error in creating the channel
+	var ok = channel.listen();
+	
+	if (ok) {
+		this.channels.push(channel);
+		console.log('Channel added correctly: ' + options.name);
+	}
+	else {
+		console.log('Channel could not be added: ' + options.name);
+	}
+	
+	return channel;
 };
