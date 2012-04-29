@@ -5,7 +5,7 @@ var Ultimatum = require('ultimatum');
 
 var conf = {
   	name: "Ultimatum_Logic",
-	url: "http://localhost:8080/ultimatum/admin"
+	url: "/ultimatum/admin"
     // verbosity: 0
     // verbosity: 10
 };
