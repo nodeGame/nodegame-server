@@ -13,7 +13,9 @@ var options = {
     mail: false,
     io: { 
         set: {
-            transports: ['websocket'],
+            'transports': ['xhr-polling'],
+            'polling duration', 10,
+            // transports: ['websocket'],
             'log level': -1
         }
     },
