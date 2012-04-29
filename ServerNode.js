@@ -109,50 +109,164 @@ ServerNode.prototype.configureIO = function (options) {
 
 ServerNode.prototype.configureHTTP = function (options) {
 
+    var that = this;
+
     app.get('/', function(req, res){
         res.render('index', {
             title: 'Yay! Your nodeGame server is running.'
         });
     });
 
-    app.get('/:game/:file', function(req, res){
+    app.get('/:game/:file.:type', function(req, res){
+
+        // console.log(that.port);
 
         // check if file exists the folder the scientist has created.
         // check if file exists in the nodegame-server folder
         // read the file and then render the view
 
-        var filePath =  __dirname.replace(/node\_modules.+/i, '') + 'games_client/' + req.params.game + '/' + req.params.file;
-        res.sendfile(filePath);
+        if(req.params.type === ''){
+            console.log('this would be rendered');
+        }
+
+        // var externalFilePath = null;
+        // check if external file exists
+
+        console.log(req.params);
+
+        // for games included in nodegame-server
+        var includedFilePath = __dirname + '/games/' + req.params.game + '/' + req.params.file + '.' + req.params.type;
+        res.sendfile(includedFilePath);
+
+
+        // if file is called without a file ending then it get's rendered with a jade game_template.
+        // -> given that it's an html file, else a 404 Error.
+
+        // res.render('game_template', {
+        //     port: that.port,
+
+        // });
+
+    });
+
+    app.get('/:game/:file', function(req, res){
+        // if there's a file in the system with file.html it get's rendered with the game_template.
+
+        fetchFile(req.params.game + '/' + req.params.file + '.html', function(file_content){
+
+            var public_port = null;
+
+            if(process.env.PORT){
+                public_port = 80;
+            } else {
+                public_port = that.port;
+            }
+
+            res.render('game_template', {
+                layout: false,
+                port: public_port,
+                title: req.params.game,
+                content: file_content
+            });
+
+            // if(process.env.PORT){
+            //     this.port = process.env.PORT; // if app is running on heroku then the assigned port has to be used.
+            // } else {
+            //     this.port = options.port || '80'; // port of the express server and sio
+            // }
+
+            // console.log(file_content);
+            // res.json({content: file_content}, 200);
+        });
     });
 
 };
 
 ServerNode.prototype.addChannel = function (options) {
 
-	if (!options) {
-		console.log('Options are not correctly defined for the channel. Aborting');
-		return;
-	}
-	
-	var cname = options.name;
-	// Some options must not be overwritten
-	var options = JSUS.extend(this.options, options);
-	if (cname){
-		options.name = cname;
-	}
-	
-	// TODO merge global options with local options
-	var channel = new ServerChannel(options, this.server, this.io);
-	// TODO return false in case of error in creating the channel
-	var ok = channel.listen();
-	
-	if (ok) {
-		this.channels.push(channel);
-		console.log('Channel added correctly: ' + options.name);
-	}
-	else {
-		console.log('Channel could not be added: ' + options.name);
-	}
-	
-	return channel;
+    if (!options) {
+        console.log('Options are not correctly defined for the channel. Aborting');
+        return;
+    }
+    
+    var cname = options.name;
+    // Some options must not be overwritten
+    var options = JSUS.extend(this.options, options);
+    if (cname){
+        options.name = cname;
+    }
+    
+    // TODO merge global options with local options
+    var channel = new ServerChannel(options, this.server, this.io);
+    // TODO return false in case of error in creating the channel
+    var ok = channel.listen();
+    
+    if (ok) {
+        this.channels.push(channel);
+        console.log('Channel added correctly: ' + options.name);
+    }
+    else {
+        console.log('Channel could not be added: ' + options.name);
+    }
+    
+    return channel;
+};
+
+
+
+////////// Helpers ///////////
+
+var fetchFile = function(path_and_file, callback){
+    fetchExternalFile(path_and_file, function(result){
+        if(result !== null){
+            callback(result);
+        } else {
+            fetchIncludedFile(path_and_file, function(result){
+                if(result !== null){
+                    callback(result);
+                } else {
+                    callback(null);
+                }
+            });
+        }
+    });
+};
+
+var fetchExternalFile = function(path_and_file, callback){
+    // checks if file exists, reads it and returns the content as a string
+    // if file doensn't exist -> return null
+
+    callback(null);
+};
+
+var fetchIncludedFile = function(path_and_file, callback){
+
+    var fullPath = __dirname + '/games/' + path_and_file;
+    doesFileExists(fullPath, function(exists){
+        if(exists){
+            fs.readFile(fullPath, 'UTF-8', function(err, result){
+                if(err){
+                    throw err;
+                } else {
+                    callback(result);
+                }
+            });
+        } else {
+            callback(null);
+        }
+    });
+};
+
+var doesFileExists = function(path, callback){
+    fs.stat(path, function(err, stats){
+        console.log(err);
+        console.log(stats);
+
+        if(err){
+            callback(false);
+        } else {
+            callback(true);
+        }
+
+    });
 };
