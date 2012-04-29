@@ -122,22 +122,16 @@ ServerNode.prototype.configureHTTP = function (options) {
         // check if file exists the folder the scientist has created. EXTERNAL
         // check if file exists in the nodegame-server folder. INTERNAL
 
-        // fetchFile(req.params.game + '/' + req.params.file, function(file_contents){
+        var externalFilePath = __dirname.replace(/node\_modules.+/i, '') + 'games/' + req.params.game + '/' + req.params.file;
 
-        // });
-
-        var externalFilePath = __dirname.replace(/node\_modules/i, '') + '/games/' + req.params.game + '/' + req.params.file;
-
-        console.log(externalFilePath);
-
-        // doesFileExists()
-
-        // check if external file exists
-
-        // for games included in nodegame-server
-        var includedFilePath = __dirname + '/games/' + req.params.game + '/' + req.params.file;
-        res.sendfile(includedFilePath);
-
+        doesFileExists(externalFilePath, function(exists){
+            if(exists){
+                res.sendfile(externalFilePath);
+            } else {
+                var includedFilePath = __dirname + '/games/' + req.params.game + '/' + req.params.file;
+                res.sendfile(includedFilePath);
+            }
+        });
     });
 
 };
@@ -176,51 +170,8 @@ ServerNode.prototype.addChannel = function (options) {
 
 ////////// Helpers ///////////
 
-var fetchFile = function(path_and_file, callback){
-    fetchExternalFile(path_and_file, function(result){
-        if(result !== null){
-            callback(result);
-        } else {
-            fetchIncludedFile(path_and_file, function(result){
-                if(result !== null){
-                    callback(result);
-                } else {
-                    callback(null);
-                }
-            });
-        }
-    });
-};
-
-var fetchExternalFile = function(path_and_file, callback){
-    // checks if file exists, reads it and returns the content as a string
-    // if file doensn't exist -> return null
-
-    callback(null);
-};
-
-var fetchIncludedFile = function(path_and_file, callback){
-
-    var fullPath = __dirname + '/games/' + path_and_file;
-    doesFileExists(fullPath, function(exists){
-        if(exists){
-            fs.readFile(fullPath, 'UTF-8', function(err, result){
-                if(err){
-                    throw err;
-                } else {
-                    callback(result);
-                }
-            });
-        } else {
-            callback(null);
-        }
-    });
-};
-
 var doesFileExists = function(path, callback){
     fs.stat(path, function(err, stats){
-        console.log(err);
-        console.log(stats);
 
         if(err){
             callback(false);
