@@ -14,7 +14,7 @@ var options = {
     io: { 
         set: {
             'transports': ['xhr-polling'],
-            'polling duration', 10,
+            'polling duration': 10,
             // transports: ['websocket'],
             'log level': -1
         }
