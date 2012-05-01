@@ -134,6 +134,21 @@ ServerNode.prototype.configureHTTP = function (options) {
         });
     });
 
+    app.get('*', function(req, res){
+
+        var externalFilePath = __dirname.replace(/node\_modules.+/i, '') + 'games/' + req.url;
+
+        doesFileExists(externalFilePath, function(exists){
+            if(exists){
+                res.sendfile(externalFilePath);
+            } else {
+                var includedFilePath = __dirname + '/games/' + req.url;
+                res.sendfile(includedFilePath);
+            }
+        });
+
+    });
+
 };
 
 ServerNode.prototype.addChannel = function (options) {
