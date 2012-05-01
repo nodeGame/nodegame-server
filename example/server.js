@@ -9,11 +9,13 @@ var options = {
     port: 8080,
     verbosity: 10,
     dumpsys: false,
-    dumpmsg: true,
+    dumpmsg: false,
     mail: false,
     io: { 
         set: {
-            transports: ['websocket'],
+            'transports': ['xhr-polling'],
+            'polling duration': 10,
+            // transports: ['websocket'],
             'log level': -1
         }
     },

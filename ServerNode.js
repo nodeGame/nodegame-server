@@ -109,6 +109,8 @@ ServerNode.prototype.configureIO = function (options) {
 
 ServerNode.prototype.configureHTTP = function (options) {
 
+    var that = this;
+
     app.get('/', function(req, res){
         res.render('index', {
             title: 'Yay! Your nodeGame server is running.'
@@ -117,42 +119,65 @@ ServerNode.prototype.configureHTTP = function (options) {
 
     app.get('/:game/:file', function(req, res){
 
-        // check if file exists the folder the scientist has created.
-        // check if file exists in the nodegame-server folder
-        // read the file and then render the view
+        // check if file exists the folder the scientist has created. EXTERNAL
+        // check if file exists in the nodegame-server folder. INTERNAL
 
-        var filePath =  __dirname.replace(/node\_modules.+/i, '') + 'games_client/' + req.params.game + '/' + req.params.file;
-        res.sendfile(filePath);
+        var externalFilePath = __dirname.replace(/node\_modules.+/i, '') + 'games/' + req.params.game + '/' + req.params.file;
+
+        doesFileExists(externalFilePath, function(exists){
+            if(exists){
+                res.sendfile(externalFilePath);
+            } else {
+                var includedFilePath = __dirname + '/games/' + req.params.game + '/' + req.params.file;
+                res.sendfile(includedFilePath);
+            }
+        });
     });
 
 };
 
 ServerNode.prototype.addChannel = function (options) {
 
-	if (!options) {
-		console.log('Options are not correctly defined for the channel. Aborting');
-		return;
-	}
-	
-	var cname = options.name;
-	// Some options must not be overwritten
-	var options = JSUS.extend(this.options, options);
-	if (cname){
-		options.name = cname;
-	}
-	
-	// TODO merge global options with local options
-	var channel = new ServerChannel(options, this.server, this.io);
-	// TODO return false in case of error in creating the channel
-	var ok = channel.listen();
-	
-	if (ok) {
-		this.channels.push(channel);
-		console.log('Channel added correctly: ' + options.name);
-	}
-	else {
-		console.log('Channel could not be added: ' + options.name);
-	}
-	
-	return channel;
+    if (!options) {
+        console.log('Options are not correctly defined for the channel. Aborting');
+        return;
+    }
+    
+    var cname = options.name;
+    // Some options must not be overwritten
+    var options = JSUS.extend(this.options, options);
+    if (cname){
+        options.name = cname;
+    }
+    
+    // TODO merge global options with local options
+    var channel = new ServerChannel(options, this.server, this.io);
+    // TODO return false in case of error in creating the channel
+    var ok = channel.listen();
+    
+    if (ok) {
+        this.channels.push(channel);
+        console.log('Channel added correctly: ' + options.name);
+    }
+    else {
+        console.log('Channel could not be added: ' + options.name);
+    }
+    
+    return channel;
+};
+
+
+
+////////// Helpers ///////////
+
+var doesFileExists = function(path, callback){
+    fs.stat(path, function(err, stats){
+
+        if(err){
+            callback(false);
+        } else {
+            callback(true);
+        }
+
+    });
 };
