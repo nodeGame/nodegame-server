@@ -117,36 +117,26 @@ ServerNode.prototype.configureHTTP = function (options) {
         });
     });
 
-    app.get('/:game/:file', function(req, res){
+    app.get('/:game/*', function(req, res){
 
         // check if file exists the folder the scientist has created. EXTERNAL
         // check if file exists in the nodegame-server folder. INTERNAL
 
-        var externalFilePath = __dirname.replace(/node\_modules.+/i, '') + 'games/' + req.params.game + '/' + req.params.file;
+        if(req.params[0].match(/server\//)){
+            res.json({error: 'access denied'}, 403);
+            
+        } else {
+            var externalFilePath = __dirname.replace(/node\_modules.+/i, '') + 'games/' + req.params.game + '/' + req.params[0];
 
-        doesFileExists(externalFilePath, function(exists){
-            if(exists){
-                res.sendfile(externalFilePath);
-            } else {
-                var includedFilePath = __dirname + '/games/' + req.params.game + '/' + req.params.file;
-                res.sendfile(includedFilePath);
-            }
-        });
-    });
-
-    app.get('*', function(req, res){
-
-        var externalFilePath = __dirname.replace(/node\_modules.+/i, '') + 'games/' + req.url;
-
-        doesFileExists(externalFilePath, function(exists){
-            if(exists){
-                res.sendfile(externalFilePath);
-            } else {
-                var includedFilePath = __dirname + '/games/' + req.url;
-                res.sendfile(includedFilePath);
-            }
-        });
-
+            doesFileExists(externalFilePath, function(exists){
+                if(exists){
+                    res.sendfile(externalFilePath);
+                } else {
+                    var includedFilePath = __dirname + '/games/' + req.params.game + '/' + req.params[0];
+                    res.sendfile(includedFilePath);
+                }
+            });
+        }
     });
 
 };
