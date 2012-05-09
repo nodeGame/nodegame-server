@@ -7,7 +7,11 @@ var Ultimatum = require('ultimatum');
 var conf = {
   	name: "Ultimatum_Logic",
 	url: "http://localhost:5000/ultimatum/admin",
-    verbosity: 10
+    verbosity: 10,
+    io: {
+	    'transports': ['xhr-polling'],
+	    'polling duration': 10
+	}
 };
 
 nodegame.play(conf, new Ultimatum());
