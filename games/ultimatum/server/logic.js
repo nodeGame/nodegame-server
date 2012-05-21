@@ -116,7 +116,7 @@ function Ultimatum () {
 
 
 if ('object' === typeof module && 'function' === typeof require) {
-	var node = require('../../../node_modules/nodegame-server/node_modules/nodegame-client');
+	var node = require(__dirname + '/../../../node_modules/nodegame-client');
 	var JSUS = node.JSUS;
 	
 	module.exports.node = node;
