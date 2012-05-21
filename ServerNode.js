@@ -77,9 +77,9 @@ ServerNode.prototype.listen = function (http, io) {
     this.configureIO(this.options.io);
 
     // start up the game logic servers
-    setTimeout(function(){
-        var ultimatum = require('./games/ultimatum/server/logic');
-    }, 10000);
+//    setTimeout(function(){
+//        var ultimatum = require('./games/ultimatum/server/logic');
+//    }, 10000);
 };
 
 ServerNode.prototype._configure = function (obj, options) {
