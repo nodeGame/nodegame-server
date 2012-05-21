@@ -1,20 +1,20 @@
 div#nodegame {
   border: 0;
   padding: 0;
-  margin: 0;	
+  margin: 0;  
 }
 
 body {
-  height: 100%;
+  height: 98%;
   margin: 5px;
-  padding: 5px;
+  padding: 0 5px;
   font-family: Arial, Helvetica, sans-serif;
   font-size: 16px;
   color: black;
 }
 
 iframe#mainframe {
-  width: 100%;
+  width: 98%;
   height: 600px;
   border: 0;
   border-top: 5px solid #CCC;
@@ -36,14 +36,16 @@ div#waiting {
   text-align:center; 
   vertical-align:middle;
   font-weight: bold;
+  font-size: 30px;
   padding: 20px;
 }
 
 div#gn_header {
-  width: 90%;
-  padding: 10px;
+  width: 98%;
+  padding: 2px 10px;
   color: black;
   border: 0;
+  margin: 0;
 }
 
 canvas {
@@ -73,7 +75,6 @@ fieldset#visualtimer_fieldset {
   float: right;
   width: auto;
   min-width: 100px;
-
 }
 
 div#visualtimer_div {
@@ -86,7 +87,6 @@ div#visualtimer_div {
 fieldset#visualstate_fieldset {
   float: left;
   width: 300px;
-  height: 90px;
   padding: 1px 10px;
 }
 
