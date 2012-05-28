@@ -31,7 +31,8 @@ PlayerServer.prototype.attachCustomListeners = function() {
 	var set = GameMsg.actions.SET + '.';
 	var get = GameMsg.actions.GET + '.'; 
 	
-    this.on(say+'HI', function(msg) {
+    this.on(say + 'HI', function(msg) {
+    	//console.log(that.channel);
 		log.log('------------------------INPLAYER');
 		log.log(msg.data);
     	that.pl.add(msg.data);
@@ -41,8 +42,35 @@ PlayerServer.prototype.attachCustomListeners = function() {
     	// Send PL to monitors
         that.gmm.forwardPLIST(that);
 	});
+    
+    this.on(say + 'HI_AGAIN', function(msg) {
+    	
+		log.log('------------------------Returning PLAYER');
+		var player = that.disconnected.pop(msg.data.id); 
+		if (player) {
+			console.log(that.socket);
+			// Recreate a new socket with the old ID
+			//that.socket.channels[player.id] = that.socket.channels[msg.from];
+			//delete that.socket.channels[msg.from];
+			
+			that.pl.add(player);
+
+			
+			log.log(msg.data);
+	    	that.pl.add(msg.data);
+	        // TODO: check if we need to do it
+	    	that.gmm.sendPLIST(that); // Send the list of players to all the clients
+	    	
+	    	// Send PL to monitors
+	        that.gmm.forwardPLIST(that);
+		}
+		else {
+			// TODO: log the attempt of HI_AGAIN of a new player
+		}
+		
+	});
 	
-    this.on(say+'TXT', function(msg) {
+    this.on(say + 'TXT', function(msg) {
 		// Personal msg
 		// TODO: maybe checked before?
     	if (that.isValidRecipient(msg.to)){
@@ -51,7 +79,7 @@ PlayerServer.prototype.attachCustomListeners = function() {
 		}
 	});
 			
-    this.on(say+'DATA', function(msg) {
+    this.on(say + 'DATA', function(msg) {
 		// Personal msg
 		// TODO: maybe checked before?
     	if (that.isValidRecipient(msg.to)){
@@ -60,7 +88,7 @@ PlayerServer.prototype.attachCustomListeners = function() {
 		}
 	});
     
-    this.on(say+'STATE', function(msg) {
+    this.on(say + 'STATE', function(msg) {
 		
 		//that.log.log('onSTATE P ' + util.inspect(msg));
 		if (that.pl.exist(msg.from)){
@@ -86,7 +114,7 @@ PlayerServer.prototype.attachCustomListeners = function() {
     
     // Set
     
-    this.on(set+'DATA', function(msg) {
+    this.on(set + 'DATA', function(msg) {
     	
 		// Personal msg
 		// TODO: maybe checked before?
@@ -101,7 +129,7 @@ PlayerServer.prototype.attachCustomListeners = function() {
     
     // Get
     
-    this.on(get+'DATA', function (msg) {
+    this.on(get + 'DATA', function (msg) {
     	//console.log(this.pl);
 		console.log('HERE P!!!');
 		// Ask a random player to send the game;
@@ -113,7 +141,10 @@ PlayerServer.prototype.attachCustomListeners = function() {
     // TODO: Save removed player in another list, to check whether they reconnect
     this.on('closed', function(id) {
       	log.log(that.name + ' ----------------- Got Closed ' + id);
-    	that.pl.remove(id);
+    	
+      	// Should be already removed
+      	//that.pl.remove(id);
+      	
     	that.gmm.sendPLIST(that);
     	that.gmm.forwardPLIST(that);
     });

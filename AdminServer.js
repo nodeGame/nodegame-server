@@ -111,8 +111,8 @@ AdminServer.prototype.attachCustomListeners = function() {
 	
     // TODO: Save removed player in another list, to check whether they reconnect
     this.on('closed', function(id) {
-      	log.log(that.name + ' ----------------- Got Closed ' + id);
-    	that.pl.remove(id);
+//      	log.log(that.name + ' ----------------- Got Closed ' + id);
+//    	that.pl.remove(id);
     	// TODO: Check this. This influence the player list of observers!
     	//that.gmm.sendPLIST(that);
     	//that.gmm.forwardPLIST(that);

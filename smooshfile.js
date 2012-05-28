@@ -12,7 +12,7 @@ var config = {
     JSHINT_OPTS: {
         boss: true,
         forin: true,
-        browser: true
+        browser: true,
     },
     
     JAVASCRIPT: {

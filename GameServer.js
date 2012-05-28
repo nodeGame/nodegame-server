@@ -45,6 +45,9 @@ function GameServer(options) {
 	this.gmm = new GameMsgManager(this);
 
 	this.pl = new PlayerList();
+	
+	// List of players who have disconnected recently
+	this.disconnected = new PlayerList();
 
 	this.partner = null;
 }
@@ -112,8 +115,21 @@ GameServer.prototype.attachListeners = function() {
 				});
 
 				socket.on('disconnect', function() {
-					that.gmm.sendTXT("<" + socket.id + "> closed", 'ALL');
-					log.log("<" + socket.id + "> closed");
+					console.log('DISCONNECTED');
+					console.log(socket.id);
+					console.log(that.pl.fetch());
+					console.log(that.pl.length);
+					var player = that.pl.pop(socket.id);
+					console.log(player);
+					
+					that.disconnected.add(player);
+					console.log('eeh???');
+					
+					var txt = player + " disconnected";
+					that.gmm.sendTXT(txt, 'ALL');
+					log.log(txt);
+					
+					
 					// Notify all server
 					that.emit('closed', socket.id);
 				});
@@ -138,7 +154,7 @@ GameServer.prototype.welcomeClient = function(client) {
 
 	// Send HI msg to the newly connected client
 	this.gmm.sendHI(connStr, client);
-}
+};
 
 GameServer.prototype.checkSync = function() {
 	// TODO: complete function checkSync
