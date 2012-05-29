@@ -33,19 +33,30 @@ var config = {
             __dirname + "/node_modules/nodegame-client/node_modules/NDDB/nddb.js",
             
             // nodegame-client
-            __dirname + "/node_modules/nodegame-client/EventEmitter.js",
-            __dirname + "/node_modules/nodegame-client/Utils.js",
-            __dirname + "/node_modules/nodegame-client/GameState.js",
-            __dirname + "/node_modules/nodegame-client/PlayerList.js",
-            __dirname + "/node_modules/nodegame-client/GameMsg.js",
-            __dirname + "/node_modules/nodegame-client/GameLoop.js",
-            __dirname + "/node_modules/nodegame-client/GameMsgGenerator.js",
-            __dirname + "/node_modules/nodegame-client/GameSocketClient.js",
-            __dirname + "/node_modules/nodegame-client/GameDB.js",
-            __dirname + "/node_modules/nodegame-client/Game.js",
+            
+            // index
+            __dirname + "/node_modules/nodegame-client/index.js",
+            
+            // lib
+            
+            __dirname + "/node_modules/nodegame-client/lib/EventEmitter.js",
+            __dirname + "/node_modules/nodegame-client/lib/GameState.js",
+            __dirname + "/node_modules/nodegame-client/lib/PlayerList.js",
+            __dirname + "/node_modules/nodegame-client/lib/GameMsg.js",
+            __dirname + "/node_modules/nodegame-client/lib/GameLoop.js",
+            __dirname + "/node_modules/nodegame-client/lib/GameMsgGenerator.js",
+            __dirname + "/node_modules/nodegame-client/lib/GameSocketClient.js",
+            __dirname + "/node_modules/nodegame-client/lib/GameDB.js",
+            __dirname + "/node_modules/nodegame-client/lib/Game.js",
+            
+            // nodeGame
             __dirname + "/node_modules/nodegame-client/nodeGame.js",
+            
+            // addons
+            
             __dirname + "/node_modules/nodegame-client/addons/GameTimer.js",
             __dirname + "/node_modules/nodegame-client/addons/TriggerManager.js",
+            __dirname + "/node_modules/nodegame-client/addons/GameSession.js",
 
 	        // nodegame-window
             __dirname + "/node_modules/nodegame-window/GameWindow.js",
