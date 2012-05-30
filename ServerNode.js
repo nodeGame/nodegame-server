@@ -9,7 +9,6 @@ var util = require('util'),
     express = require('express'),
     socket_io = require('socket.io');
 
-var EventEmitter = require('events').EventEmitter;
 var nodemailer = require('nodemailer');
 
 var ServerChannel = require('./ServerChannel');

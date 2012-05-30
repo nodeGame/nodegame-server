@@ -46,12 +46,21 @@ PlayerServer.prototype.attachCustomListeners = function() {
     this.on(say + 'HI_AGAIN', function(msg) {
     	
 		log.log('------------------------Returning PLAYER');
+		console.log(that.disconnected.fetch());
 		var player = that.disconnected.pop(msg.data.id); 
+		console.log(player);
 		if (player) {
-			console.log(that.socket);
+			
+			//console.log(this);
+			
+			//console.log(that.channel);
+			
+			//console.log(that.socket);
 			// Recreate a new socket with the old ID
-			//that.socket.channels[player.id] = that.socket.channels[msg.from];
-			//delete that.socket.channels[msg.from];
+//			that.channel.sockets[player.id] = that.channel.sockets[msg.from]
+//			delete that.channel.sockets[msg.from];
+			
+//			console.log(that.channel.sockets);
 			
 			that.pl.add(player);
 
