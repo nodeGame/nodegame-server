@@ -81,7 +81,7 @@ GameMsgGenerator.prototype.getPLIST = function (plist, to, reliable) {
 
 GameMsgGenerator.prototype.createPLIST = function (action, plist, to, reliable) {
 	
-	//console.log('Creating plist msg ' + plist + ' ' + plist.size());
+	//console.log('Creating plist msg ' + plist + ' ' + plist.length);
 	
 	var rel = reliable || 1;
 	
@@ -92,7 +92,7 @@ GameMsgGenerator.prototype.createPLIST = function (action, plist, to, reliable) 
 						target: GameMsg.targets.PLIST,
 						from: this.sender,
 						to: to,
-						text: 'List of Players: ' + plist.size(),
+						text: 'List of Players: ' + plist.length,
 						data: plist.db,
 						priority: null,
 						reliable: rel
