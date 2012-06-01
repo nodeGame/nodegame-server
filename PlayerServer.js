@@ -34,7 +34,6 @@ PlayerServer.prototype.attachCustomListeners = function() {
     this.on(say + 'HI', function(msg) {
     	//console.log(that.channel);
 		log.log('------------------------INPLAYER');
-		log.log(msg.data);
     	that.pl.add(msg.data);
         // TODO: check if we need to do it
     	that.gmm.sendPLIST(that); // Send the list of players to all the clients
@@ -46,28 +45,14 @@ PlayerServer.prototype.attachCustomListeners = function() {
     this.on(say + 'HI_AGAIN', function(msg) {
     	
 		log.log('------------------------Returning PLAYER');
-		console.log(that.disconnected.fetch());
-		var player = that.disconnected.pop(msg.data.id); 
-		console.log(player);
+		var player = that.disconnected.pop(msg.data.id);
+				
 		if (player) {
 			
-			//console.log(this);
-			
-			//console.log(that.channel);
-			
-			//console.log(that.socket);
-			// Recreate a new socket with the old ID
-//			that.channel.sockets[player.id] = that.channel.sockets[msg.from]
-//			delete that.channel.sockets[msg.from];
-			
-//			console.log(that.channel.sockets);
-			
-			that.pl.add(player);
+			// Update the socket id with the old id
+			that.socket.id = player.id;
 
-			
-			log.log(msg.data);
-	    	that.pl.add(msg.data);
-	        // TODO: check if we need to do it
+			// TODO: check if we need to do it
 	    	that.gmm.sendPLIST(that); // Send the list of players to all the clients
 	    	
 	    	// Send PL to monitors
