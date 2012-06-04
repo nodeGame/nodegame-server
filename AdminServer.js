@@ -134,8 +134,8 @@ AdminServer.prototype.generateInfo = function(){
 	var info = {
 				name: this.name,
 				status: 'OK',
-				nplayers: this.partner.pl.size(),
-				nadmins: this.pl.size(),
+				nplayers: this.partner.pl.length,
+				nadmins: this.pl.length,
 	};
 						
 	return info;		
