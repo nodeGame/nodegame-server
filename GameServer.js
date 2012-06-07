@@ -115,10 +115,11 @@ GameServer.prototype.attachListeners = function() {
 				});
 
 				socket.on('disconnect', function() {
+					
 					console.log('DISCONNECTED');
 					var player = that.pl.pop(socket.id);
 					that.disconnected.add(player);
-
+					
 					var txt = player + " disconnected";
 					that.gmm.sendTXT(txt, 'ALL');
 					log.log(txt);

@@ -65,7 +65,6 @@ PlayerServer.prototype.attachCustomListeners = function() {
 	});
 	
     this.on(say + 'TXT', function(msg) {
-		// Personal msg
 		// TODO: maybe checked before?
     	if (that.isValidRecipient(msg.to)){
 			//that.gmm.send(msg);
@@ -74,11 +73,9 @@ PlayerServer.prototype.attachCustomListeners = function() {
 	});
 			
     this.on(say + 'DATA', function(msg) {
-		// Personal msg
 		// TODO: maybe checked before?
     	if (that.isValidRecipient(msg.to)){
-			//that.gmm.send(msg);
-			that.gmm.broadcast(msg);
+			that.gmm.send(msg);
 		}
 	});
     
@@ -125,7 +122,7 @@ PlayerServer.prototype.attachCustomListeners = function() {
     
     this.on(get + 'DATA', function (msg) {
     	//console.log(this.pl);
-		console.log('HERE P!!!');
+		//console.log('HERE P!!!');
 		// Ask a random player to send the game;
 		// var p = this.pl.getRandom();
 		// that.gmm.sendDATA('get', 'ABC', msg.from, msg.txt);
