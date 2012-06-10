@@ -57,6 +57,10 @@ AdminServer.prototype.attachCustomListeners = function() {
 	this.on(say+'DATA', function(msg) { 
 		if (that.isValidRecipient(msg.to)) {
 			that.gmm.forwardDATA (GameMsg.actions.SAY, msg.data, msg.to, msg.text);
+			
+			// Just Added to inform other monitor / observers. TODO: Check! 
+			that.gmm.broadcast (msg, msg.from);
+			
 			that.gmm.sendTXT(msg.from + ' sent DATA to ' + msg.to, 'ALL');
 		}
 	});

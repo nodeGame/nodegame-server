@@ -28,6 +28,7 @@ var config = {
             __dirname + "/node_modules/nodegame-client/node_modules/JSUS/lib/obj.js",
             __dirname + "/node_modules/nodegame-client/node_modules/JSUS/lib/random.js",
             __dirname + "/node_modules/nodegame-client/node_modules/JSUS/lib/time.js",
+            __dirname + "/node_modules/nodegame-client/node_modules/JSUS/lib/parse.js",
             
             // NDDB
             __dirname + "/node_modules/nodegame-client/node_modules/NDDB/nddb.js",
