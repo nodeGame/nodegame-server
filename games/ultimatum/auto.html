@@ -1,5 +1,5 @@
 <!doctype html>
-<title>Ultimatum Game</title>
+<title>Ultimatum Game: automatic player</title>
 
 <!-- Loading  nodeGame libraries and CSS -->
 <script src="/socket.io/socket.io.js"></script> 
@@ -8,7 +8,7 @@
 <!-- end -->
 
 <!-- Loading the Ultimatum game -->
-<script src="./Ultimatum.js" charset="utf-8"></script>
+<script src="./Ultimauto.js" charset="utf-8"></script>
 <!-- end -->
 
 <body>
@@ -21,13 +21,13 @@
 		var conf = {
 			name: "P_" + Math.floor(Math.random()*100),
 			url: "/ultimatum",
-			//verbosity: 10,
+			verbosity: 0,
       io: {        
            reconnect: false
       } 
 		};
 
-    node.play(conf, new Ultimatum());
+    node.play(conf, new Ultimauto());
     
 	}
 </script>
