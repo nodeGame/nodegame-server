@@ -1,25 +1,23 @@
 module.exports = PlayerServer;
 
-var util = require('util');
-var EventEmitter = require('events').EventEmitter;
+var util 			= require('util');
+var EventEmitter 	= require('events').EventEmitter;
 
-var ServerLog = require('./ServerLog');
-var GameServer = require('./GameServer');
-var GameMsgManager = require('./GameMsgManager');
+var ServerLog 		= require('./ServerLog');
+var GameServer 		= require('./GameServer');
+var GameMsgManager 	= require('./GameMsgManager');
 
 
-var Utils = require('nodegame-client').Utils;
-var GameState = require('nodegame-client').GameState;
-var GameMsg = require('nodegame-client').GameMsg;
-
-var PlayerList = require('nodegame-client').PlayerList;
-var Player = require('nodegame-client').Player;
+var GameState 	= require('nodegame-client').GameState;
+var GameMsg 	= require('nodegame-client').GameMsg;
+var PlayerList	= require('nodegame-client').PlayerList;
+var Player 		= require('nodegame-client').Player;
 
 PlayerServer.prototype.__proto__ = GameServer.prototype;
 PlayerServer.prototype.constructor = PlayerServer;
 
 function PlayerServer(options) {
-	GameServer.call(this,options);
+	GameServer.call(this, options);
 }
 
 //PlayerServer passes the id of the sender when forwarding msgs

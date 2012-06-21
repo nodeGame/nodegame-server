@@ -47,7 +47,7 @@ function ServerNode (options) {
     this.options.dumpsys = ('undefined' !== typeof options.dumpsys) ? options.dumpsys : true;
     this.options.verbosity = ('undefined' !== typeof options.verbosity) ? options.verbosity : 1;
     
-    if(process.env.PORT){
+    if (process.env.PORT){
         this.port = process.env.PORT; // if app is running on heroku then the assigned port has to be used.
     } else {
         this.port = options.port || '80'; // port of the express server and sio

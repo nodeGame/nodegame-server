@@ -4,6 +4,19 @@ function Ultimatum () {
 	this.description = 'No Description';
 	this.version = '0.2';
 	
+	node.waitroom.add(function() {
+		if (this.pl > this.minPlayers) {
+			return new Treatment({
+				players: node.pl,
+				game: this.loops,
+				globals: {
+					threshold: 7,
+				},
+			});
+		}
+	});
+	
+	
 	this.minPlayers = 2;
 	this.maxPlayers = 10;
 	

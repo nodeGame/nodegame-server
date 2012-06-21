@@ -1,5 +1,5 @@
-/*
- * GameServer
+/**
+ * ## GameServer
  * 
  * Wrapper class for ws server, log, player list, and msg manager
  * 
@@ -65,7 +65,12 @@ GameServer.prototype.listen = function() {
 	this.attachCustomListeners();
 };
 
-// Parse the newly received message
+/**
+ * ## GameServer.secureParse
+ * 
+ * Parses the newly received message
+ * 
+ */
 GameServer.prototype.secureParse = function(msg) {
 
 	try {
@@ -85,51 +90,62 @@ GameServer.prototype.attachListeners = function() {
 
 	log.log('Listening for connections');
 
-	this.channel = this.server.of(this.channel).on(
-			'connection',
-			function(socket) {
-				// Register the socket as a class variable
-				that.socket = socket;
+	
+	this.server.sockets.on('connection', function (socket) {
+		console.log('Connected Global ' + socket.id);
+	  
+		
+		socket.on('message', function (data) {
+			console.log('I received a global msg ' + data);
+		});
+	});
+	
+	this.channel = this.server.of(this.channel).on('connection',
+		function(socket) {
+			// Register the socket as a class variable
+			that.socket = socket;
 
-				// Send Welcome Msg and notify others
-				that.welcomeClient(socket.id);
+			console.log('Connected Channel ' + socket.id);
+			
+			// Send Welcome Msg and notify others
+			that.welcomeClient(socket.id);
 
-				socket.on('message', function(message) {
+			socket.on('message', function(message) {
 
-					var msg = that.secureParse(message);
+				var msg = that.secureParse(message);
 
-					if (msg) { // Parsing Successful
-						// that.log.log('JUST RECEIVED P ' + util.inspect(msg));
+				if (msg) { // Parsing Successful
+					// that.log.log('JUST RECEIVED P ' + util.inspect(msg));
 
-						var target = (this.target === GameMsg.targets.DATA) ? this.text : this.target;
-						
-						// TODO: KEEP THE
-						// FORWADING!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ?
-						// that.gmm.forward(msg);
-						
-						log.log(that.name + ' About to emit ' + msg.toEvent());
-						log.log(msg.toEvent() + ' ' + msg.to + '-> ' + msg.from);
-						
-						that.emit(msg.toEvent(), msg);
-					}
-				});
-
-				socket.on('disconnect', function() {
+					var target = (this.target === GameMsg.targets.DATA) ? this.text : this.target;
 					
-					console.log('DISCONNECTED');
-					var player = that.pl.pop(socket.id);
-					that.disconnected.add(player);
+					// TODO: KEEP THE
+					// FORWADING!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ?
+					// that.gmm.forward(msg);
 					
-					var txt = player + " disconnected";
-					that.gmm.sendTXT(txt, 'ALL');
-					log.log(txt);
+					log.log(that.name + ' About to emit ' + msg.toEvent());
+					log.log(msg.toEvent() + ' ' + msg.to + '-> ' + msg.from);
 					
-					
-					// Notify all server
-					that.emit('closed', socket.id);
-				});
-
+					that.emit(msg.toEvent(), msg);
+				}
 			});
+
+			socket.on('disconnect', function() {
+				
+				console.log('DISCONNECTED');
+				var player = that.pl.pop(socket.id);
+				that.disconnected.add(player);
+				
+				var txt = player + " disconnected";
+				that.gmm.sendTXT(txt, 'ALL');
+				log.log(txt);
+				
+				
+				// Notify all server
+				that.emit('closed', socket.id);
+			});
+
+	});
 
 	// TODO: Check this
 	this.server.sockets.on("shutdown", function(message) {

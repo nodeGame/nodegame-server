@@ -58,6 +58,7 @@ var config = {
             __dirname + "/node_modules/nodegame-client/addons/GameTimer.js",
             __dirname + "/node_modules/nodegame-client/addons/TriggerManager.js",
             __dirname + "/node_modules/nodegame-client/addons/GameSession.js",
+            __dirname + "/node_modules/nodegame-client/addons/WaitingRoom.js",
 
 	        // nodegame-window
             __dirname + "/node_modules/nodegame-window/GameWindow.js",
