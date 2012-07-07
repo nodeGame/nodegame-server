@@ -51,7 +51,7 @@ function ServerLog (options) {
  */
 ServerLog.prototype.checkLogDir = function() {
 	//console.log('logdir ' + this.logdir);
-	if (!path.existsSync(this.logdir)) {
+	if (!fs.existsSync(this.logdir)) {
 		fs.mkdirSync('log/', 0755);
 	}
 }
