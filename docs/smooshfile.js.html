@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>smooshfile.js</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <link rel="stylesheet" media="all" href="doc-style.css" />
+  <script src="doc-filelist.js"></script>
+  <script>
+    var relativeDir = '', thisFile = 'smooshfile.js';
+  </script>
+  <script src="doc-script.js"></script>
+</head>
+<body>
+  <div id="sidebar_wrapper">
+    <div id="sidebar_switch">
+      <span class="tree">Files</span>
+      <span class="headings">Headings</span>
+    </div>
+    <div id="tree"></div>
+    <div id="headings">
+    </div>
+  </div>
+  <div id="sidebar-toggle"></div>
+  <div id="container"><div class="background highlight"></div>
+<table cellpadding="0" cellspacing="0">
+  <tbody>
+      <tr>
+        <td class="docs">
+          <h1>smooshfile.js</h1>
+        </td>
+        <td class="code highlight"></td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-1" id="section-1">&#182;</a>
+</div>
+<p>Load the smoosh npm packet.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre><span class="kd">var</span> <span class="nx">smoosh</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;smoosh&#39;</span><span class="p">);</span>
+
+<span class="kd">var</span> <span class="nx">re</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">RegExp</span><span class="p">(</span><span class="s1">&#39;node_modules.+&#39;</span><span class="p">);</span>
+<span class="kd">var</span> <span class="nx">m</span> <span class="o">=</span> <span class="nx">re</span><span class="p">.</span><span class="nx">exec</span><span class="p">(</span><span class="nx">__dirname</span><span class="p">);</span></pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-2" id="section-2">&#182;</a>
+</div>
+<p>Configurations for file smooshing.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre><span class="kd">var</span> <span class="nx">config</span> <span class="o">=</span> <span class="p">{</span></pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-3" id="section-3">&#182;</a>
+</div>
+<p>VERSION : "0.0.1",</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>    </pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-4" id="section-4">&#182;</a>
+</div>
+<p>Use JSHINT to spot code irregularities.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>    <span class="nx">JSHINT_OPTS</span><span class="o">:</span> <span class="p">{</span>
+        <span class="nx">boss</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+        <span class="nx">forin</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+        <span class="nx">browser</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+    <span class="p">},</span>
+    
+    <span class="nx">JAVASCRIPT</span><span class="o">:</span> <span class="p">{</span>
+        <span class="nx">DIST_DIR</span><span class="o">:</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">__dirname</span> <span class="o">+</span> <span class="s1">&#39;/public/javascripts&#39;</span><span class="p">,</span>
+        
+        <span class="s2">&quot;nodegame&quot;</span><span class="o">:</span> <span class="p">[</span>
+        </pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-5" id="section-5">&#182;</a>
+</div>
+<p>JSUS</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>            <span class="nx">__dirname</span> <span class="o">+</span> <span class="s2">&quot;/node_modules/nodegame-client/node_modules/JSUS/jsus.js&quot;</span><span class="p">,</span>
+            <span class="nx">__dirname</span> <span class="o">+</span> <span class="s2">&quot;/node_modules/nodegame-client/node_modules/JSUS/lib/array.js&quot;</span><span class="p">,</span>
+            <span class="nx">__dirname</span> <span class="o">+</span> <span class="s2">&quot;/node_modules/nodegame-client/node_modules/JSUS/lib/dom.js&quot;</span><span class="p">,</span>
+            <span class="nx">__dirname</span> <span class="o">+</span> <span class="s2">&quot;/node_modules/nodegame-client/node_modules/JSUS/lib/eval.js&quot;</span><span class="p">,</span>
+            <span class="nx">__dirname</span> <span class="o">+</span> <span class="s2">&quot;/node_modules/nodegame-client/node_modules/JSUS/lib/obj.js&quot;</span><span class="p">,</span>
+            <span class="nx">__dirname</span> <span class="o">+</span> <span class="s2">&quot;/node_modules/nodegame-client/node_modules/JSUS/lib/random.js&quot;</span><span class="p">,</span>
+            <span class="nx">__dirname</span> <span class="o">+</span> <span class="s2">&quot;/node_modules/nodegame-client/node_modules/JSUS/lib/time.js&quot;</span><span class="p">,</span>
+            <span class="nx">__dirname</span> <span class="o">+</span> <span class="s2">&quot;/node_modules/nodegame-client/node_modules/JSUS/lib/parse.js&quot;</span><span class="p">,</span>
+            </pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-6" id="section-6">&#182;</a>
+</div>
+<p>NDDB</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>            <span class="nx">__dirname</span> <span class="o">+</span> <span class="s2">&quot;/node_modules/nodegame-client/node_modules/NDDB/nddb.js&quot;</span><span class="p">,</span>
+            </pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-7" id="section-7">&#182;</a>
+</div>
+<p>nodegame-client</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>            </pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-8" id="section-8">&#182;</a>
+</div>
+<p>index</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>            <span class="nx">__dirname</span> <span class="o">+</span> <span class="s2">&quot;/node_modules/nodegame-client/index.js&quot;</span><span class="p">,</span>
+            </pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-9" id="section-9">&#182;</a>
+</div>
+<p>lib</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>            
+            <span class="nx">__dirname</span> <span class="o">+</span> <span class="s2">&quot;/node_modules/nodegame-client/lib/EventEmitter.js&quot;</span><span class="p">,</span>
+            <span class="nx">__dirname</span> <span class="o">+</span> <span class="s2">&quot;/node_modules/nodegame-client/lib/GameState.js&quot;</span><span class="p">,</span>
+            <span class="nx">__dirname</span> <span class="o">+</span> <span class="s2">&quot;/node_modules/nodegame-client/lib/PlayerList.js&quot;</span><span class="p">,</span>
+            <span class="nx">__dirname</span> <span class="o">+</span> <span class="s2">&quot;/node_modules/nodegame-client/lib/GameMsg.js&quot;</span><span class="p">,</span>
+            <span class="nx">__dirname</span> <span class="o">+</span> <span class="s2">&quot;/node_modules/nodegame-client/lib/GameLoop.js&quot;</span><span class="p">,</span>
+            <span class="nx">__dirname</span> <span class="o">+</span> <span class="s2">&quot;/node_modules/nodegame-client/lib/GameMsgGenerator.js&quot;</span><span class="p">,</span>
+            <span class="nx">__dirname</span> <span class="o">+</span> <span class="s2">&quot;/node_modules/nodegame-client/lib/GameSocketClient.js&quot;</span><span class="p">,</span>
+            <span class="nx">__dirname</span> <span class="o">+</span> <span class="s2">&quot;/node_modules/nodegame-client/lib/GameDB.js&quot;</span><span class="p">,</span>
+            <span class="nx">__dirname</span> <span class="o">+</span> <span class="s2">&quot;/node_modules/nodegame-client/lib/Game.js&quot;</span><span class="p">,</span>
+            </pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-10" id="section-10">&#182;</a>
+</div>
+<p>nodeGame</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>            <span class="nx">__dirname</span> <span class="o">+</span> <span class="s2">&quot;/node_modules/nodegame-client/nodeGame.js&quot;</span><span class="p">,</span>
+            </pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-11" id="section-11">&#182;</a>
+</div>
+<p>addons</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>            
+            <span class="nx">__dirname</span> <span class="o">+</span> <span class="s2">&quot;/node_modules/nodegame-client/addons/GameTimer.js&quot;</span><span class="p">,</span>
+            <span class="nx">__dirname</span> <span class="o">+</span> <span class="s2">&quot;/node_modules/nodegame-client/addons/TriggerManager.js&quot;</span><span class="p">,</span>
+            <span class="nx">__dirname</span> <span class="o">+</span> <span class="s2">&quot;/node_modules/nodegame-client/addons/GameSession.js&quot;</span><span class="p">,</span>
+            <span class="nx">__dirname</span> <span class="o">+</span> <span class="s2">&quot;/node_modules/nodegame-client/addons/WaitingRoom.js&quot;</span><span class="p">,</span></pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-12" id="section-12">&#182;</a>
+</div>
+<p>nodegame-window</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>            <span class="nx">__dirname</span> <span class="o">+</span> <span class="s2">&quot;/node_modules/nodegame-window/GameWindow.js&quot;</span><span class="p">,</span>
+            <span class="nx">__dirname</span> <span class="o">+</span> <span class="s2">&quot;/node_modules/nodegame-window/Canvas.js&quot;</span><span class="p">,</span>
+            <span class="nx">__dirname</span> <span class="o">+</span> <span class="s2">&quot;/node_modules/nodegame-window/HTMLRenderer.js&quot;</span><span class="p">,</span>
+            <span class="nx">__dirname</span> <span class="o">+</span> <span class="s2">&quot;/node_modules/nodegame-window/List.js&quot;</span><span class="p">,</span>
+            <span class="nx">__dirname</span> <span class="o">+</span> <span class="s2">&quot;/node_modules/nodegame-window/Table.js&quot;</span><span class="p">,</span>
+            </pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-13" id="section-13">&#182;</a>
+</div>
+<p>nodegame-widgets</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>            <span class="nx">__dirname</span> <span class="o">+</span> <span class="s2">&quot;/node_modules/nodegame-widgets/ChernoffFaces.js&quot;</span><span class="p">,</span>
+            <span class="nx">__dirname</span> <span class="o">+</span> <span class="s2">&quot;/node_modules/nodegame-widgets/Controls.js&quot;</span><span class="p">,</span>
+            <span class="nx">__dirname</span> <span class="o">+</span> <span class="s2">&quot;/node_modules/nodegame-widgets/DataBar.js&quot;</span><span class="p">,</span>
+            <span class="nx">__dirname</span> <span class="o">+</span> <span class="s2">&quot;/node_modules/nodegame-widgets/DynamicTable.js&quot;</span><span class="p">,</span>
+            <span class="nx">__dirname</span> <span class="o">+</span> <span class="s2">&quot;/node_modules/nodegame-widgets/EventButton.js&quot;</span><span class="p">,</span>
+            <span class="nx">__dirname</span> <span class="o">+</span> <span class="s2">&quot;/node_modules/nodegame-widgets/GameBoard.js&quot;</span><span class="p">,</span>
+            <span class="nx">__dirname</span> <span class="o">+</span> <span class="s2">&quot;/node_modules/nodegame-widgets/GameSummary.js&quot;</span><span class="p">,</span>
+            <span class="nx">__dirname</span> <span class="o">+</span> <span class="s2">&quot;/node_modules/nodegame-widgets/GameTable.js&quot;</span><span class="p">,</span>
+            <span class="nx">__dirname</span> <span class="o">+</span> <span class="s2">&quot;/node_modules/nodegame-widgets/MsgBar.js&quot;</span><span class="p">,</span>
+            <span class="nx">__dirname</span> <span class="o">+</span> <span class="s2">&quot;/node_modules/nodegame-widgets/NDDBBrowser.js&quot;</span><span class="p">,</span>
+            <span class="nx">__dirname</span> <span class="o">+</span> <span class="s2">&quot;/node_modules/nodegame-widgets/NextPreviousState.js&quot;</span><span class="p">,</span>
+            <span class="nx">__dirname</span> <span class="o">+</span> <span class="s2">&quot;/node_modules/nodegame-widgets/ServerInfoDisplay.js&quot;</span><span class="p">,</span>
+            <span class="nx">__dirname</span> <span class="o">+</span> <span class="s2">&quot;/node_modules/nodegame-widgets/StateBar.js&quot;</span><span class="p">,</span>
+            <span class="nx">__dirname</span> <span class="o">+</span> <span class="s2">&quot;/node_modules/nodegame-widgets/StateDisplay.js&quot;</span><span class="p">,</span>
+            <span class="nx">__dirname</span> <span class="o">+</span> <span class="s2">&quot;/node_modules/nodegame-widgets/VisualState.js&quot;</span><span class="p">,</span>
+            <span class="nx">__dirname</span> <span class="o">+</span> <span class="s2">&quot;/node_modules/nodegame-widgets/VisualTimer.js&quot;</span><span class="p">,</span>
+            <span class="nx">__dirname</span> <span class="o">+</span> <span class="s2">&quot;/node_modules/nodegame-widgets/WaitScreen.js&quot;</span><span class="p">,</span>
+            <span class="nx">__dirname</span> <span class="o">+</span> <span class="s2">&quot;/node_modules/nodegame-widgets/Wall.js&quot;</span><span class="p">,</span>
+            
+        <span class="p">],</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+<span class="kd">var</span> <span class="nx">run_it</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(){</span></pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-14" id="section-14">&#182;</a>
+</div>
+<p>Smooshing callback chain
+More information on how it behaves can be found in the smoosh Readme <a href='https://github.com/fat/smoosh'>https://github.com/fat/smoosh</a></p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>    <span class="nx">smoosh</span>
+        <span class="p">.</span><span class="nx">config</span><span class="p">(</span><span class="nx">config</span><span class="p">)</span> <span class="c1">// hand over configurations made above</span></pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-15" id="section-15">&#182;</a>
+</div>
+<p>.clean() // removes all files out of the nodegame folder</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>        <span class="p">.</span><span class="nx">run</span><span class="p">()</span> <span class="c1">// runs jshint on full build</span>
+        <span class="p">.</span><span class="nx">build</span><span class="p">()</span> <span class="c1">// builds both uncompressed and compressed files</span>
+        <span class="p">.</span><span class="nx">analyze</span><span class="p">();</span> <span class="c1">// analyzes everything</span>
+
+    <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;nodegame.js created&#39;</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="nx">run_it</span><span class="p">();</span>
+</pre></div>
+        </td>
+      </tr>
+  </tbody>
+</table>
+  </div>
+</body>
+</html>
