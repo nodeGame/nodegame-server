@@ -7,4 +7,6 @@ npm-debug.log
 .DS_Store
 
 
-./docs/*
+docs/
+
+*.geany

@@ -1,24 +1,44 @@
+/**
+ * Copyright(c) 2012 Stefano Balietti
+ * MIT Licensed
+ * 
+ * Wrapper class for PlayerServer, AdminServer
+ * 
+ * 
+ */
+
+// ### Load dependencies and expose constructor
 
 module.exports = ServerChannel;
 
-var util = require('util');
-var EventEmitter = require('events').EventEmitter;
-var nodemailer = require('nodemailer');
+var util = require('util'),
+	EventEmitter = require('events').EventEmitter,
+	nodemailer = require('nodemailer');
 
-var AdminServer = require('./AdminServer');
-var PlayerServer = require('./PlayerServer');
-var GameServer = require('./GameServer');
-var ServerLog = require('./ServerLog');
-var GameMsgGenerator = require('./GameMsgGenerator');
+var AdminServer = require('./AdminServer'),
+	PlayerServer = require('./PlayerServer'),
+	GameServer = require('./GameServer'),
+	ServerLog = require('./ServerLog'),
+	GameMsgGenerator = require('./GameMsgGenerator');
 
-var Utils = require('nodegame-client').Utils;
-var GameState = require('nodegame-client').GameState;
-var GameMsg = require('nodegame-client').GameMsg;
 
-var JSUS = require('nodegame-client').JSUS;
-var PlayerList = require('nodegame-client').PlayerList;
-var Player = require('nodegame-client').Player;
+var GameState = require('nodegame-client').GameState,
+	GameMsg = require('nodegame-client').GameMsg,
+	JSUS = require('nodegame-client').JSUS,
+	PlayerList = require('nodegame-client').PlayerList,
+	Player = require('nodegame-client').Player;
 
+
+/**
+ * ServerChannel Constructor
+ * 
+ * Creates an instance of ServerChannel
+ * 
+ * @param {object} options Configuration object
+ * @param {object} server The HTTP server
+ * @param {object} io The Socket.io server
+ * 
+ */
 function ServerChannel (options, server, io) {
 	
 	this.options = options;
@@ -38,9 +58,6 @@ function ServerChannel (options, server, io) {
 	        });
 	}
 	
-	this.nPlayers = options.nPlayers;
-	
-	
 	this.adminChannel = options.admin;
 	this.playerChannel = options.player;
 	
@@ -49,42 +66,58 @@ function ServerChannel (options, server, io) {
 	this.createServers();
 }
 
+/**
+ * ServerChannel.createServers
+ * 
+ * Creates the AdminServer and the PlayerServer mixing up
+ * default options and user-defined options specified in
+ * the constructor 
+ * 
+ */
 ServerChannel.prototype.createServers = function() {
-	
+
+// AdminServer	
 	var adminOptions = {
-						 	io: 		this.io,
-						 	server: 	this.server,
-						 	channel: 	this.adminChannel,
-						 	parent:		this.name,
-						 	user_options: JSUS.extend({name: 'A'}, JSUS.clone(this.options))
-						};
+	 	io: 		this.io,
+	 	server: 	this.server,
+	 	channel: 	this.adminChannel,
+	 	parent:		this.name,
+	 	user_options: JSUS.extend({name: 'A'}, JSUS.clone(this.options))
+	};
 	
 	this.adminServer = new AdminServer(adminOptions);
-	
+
+// PlayerServer	
 	var playerOptions = {
-						   io: 		this.io,
-						   server: 	this.server,
-						   channel: this.playerChannel,
-						   parent: 	this.name,
-						   user_options: JSUS.extend({name: 'P'}, JSUS.clone(this.options))
-						};
+	   io: 		this.io,
+	   server: 	this.server,
+	   channel: this.playerChannel,
+	   parent: 	this.name,
+	   user_options: JSUS.extend({name: 'P'}, JSUS.clone(this.options))
+	};
 		
 	this.playerServer = new PlayerServer(playerOptions);
 	
+// The two servers are aware of each other	
 	this.adminServer.setPartner(this.playerServer);
 	this.playerServer.setPartner(this.adminServer);
 };
 
+/**
+ * ## ServerChannel.listen
+ * 
+ * Puts the AdminServer and PlayerServer on listen mode
+ * 
+ * @return {Boolean} TRUE, if execution is successful
+ * 
+ */
 ServerChannel.prototype.listen = function() {
-	this.adminServer.listen();
-	this.playerServer.listen();
-	// TODO: return false when channel cannot be created
-	return true;
-};
-
-ServerChannel.prototype.listen = function() {
-	this.adminServer.listen();
-	this.playerServer.listen();
-	// TODO: return false when channel cannot be created
-	return true;
+	try {
+		this.adminServer.listen();
+		this.playerServer.listen();
+		return true;
+	}
+	catch(e) {
+		return false;
+	}
 };

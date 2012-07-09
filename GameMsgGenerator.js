@@ -1,7 +1,16 @@
-var GameState = require('nodegame-client').GameState;
-var GameMsg = require('nodegame-client').GameMsg;
-
+/**
+ * Copyright(c) 2012 Stefano Balietti
+ * MIT Licensed
+ * 
+ * Game messages generator
+ * 
+ */
 module.exports = GameMsgGenerator; 
+
+var GameState = require('nodegame-client').GameState,
+	GameMsg = require('nodegame-client').GameMsg;
+
+
 
 function GameMsgGenerator (session,sender,state) {	
 	this.session = session;

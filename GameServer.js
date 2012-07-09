@@ -1,26 +1,40 @@
 /**
- * ## GameServer
+ * Copyright(c) 2012 Stefano Balietti
+ * MIT Licensed
  * 
- * Wrapper class for ws server, log, player list, and msg manager
+ * Parses incoming messagages and emits correspondings events. 
+ * 
+ * Keeps track of connected players, recently disconnected players.
+ * 
+ * Contains abstract methods that are instantiated by two classes
+ * that inherits this class: `AdminServer`, and `PlayerServer`.
  * 
  */
 
+// ### Load dependencies and expose constructor
+
 module.exports = GameServer;
 
-var util = require('util');
-var EventEmitter = require('events').EventEmitter;
+var util = require('util'),
+	EventEmitter = require('events').EventEmitter;
+
 util.inherits(GameServer, EventEmitter);
 
-var ServerLog = require('./ServerLog');
-var GameMsgManager = require('./GameMsgManager');
+var ServerLog = require('./ServerLog'),
+	GameMsgManager = require('./GameMsgManager');
 
-var Utils = require('nodegame-client').Utils;
-var GameState = require('nodegame-client').GameState;
-var GameMsg = require('nodegame-client').GameMsg;
+var GameState = require('nodegame-client').GameState,
+	GameMsg = require('nodegame-client').GameMsg,
+	PlayerList = require('nodegame-client').PlayerList,
+	Player = require('nodegame-client').Player;
 
-var PlayerList = require('nodegame-client').PlayerList;
-var Player = require('nodegame-client').Player;
+var log;
 
+/**
+ * ## GameServer Constructor
+ * 
+ * @param {object} options Configuration object
+ */
 function GameServer(options) {
 	EventEmitter.call(this);
 
@@ -33,13 +47,13 @@ function GameServer(options) {
 	this.parent = options.parent;
 	this.name = this.user_options.name;
 
-	this.log = new ServerLog({
+	log = this.log = new ServerLog({
 		name : '[' + this.parent + ' - ' + this.name + ']',
 		dumpmsg : ('undefined' === typeof this.user_options.dumpmsg) ? false : this.user_options.dumpmsg,
 		dumpsys : ('undefined' === typeof this.user_options.dumpsys) ? true : this.user_options.dumpsys,
 		verbosity : ('undefined' === typeof this.user_options.verbosity) ? 1 : this.user_options.verbosity
 	});
-
+	
 	this.server = options.server;
 
 	this.gmm = new GameMsgManager(this);
@@ -52,12 +66,22 @@ function GameServer(options) {
 	this.partner = null;
 }
 
+/**
+ * ## GameServer.setPartner
+ * 
+ * Sets a twin server, i.e. AdminServer for PlayerServer
+ * and viceversa. 
+ * 
+ * @param {object} node The partner server
+ */
 GameServer.prototype.setPartner = function(node) {
 	this.partner = node;
 };
 
 /**
- * Attach standard and custom listeners to the server.
+ * ## GameServer.listen
+ * 
+ * Attaches standard and custom listeners to the server.
  * 
  */
 GameServer.prototype.listen = function() {
@@ -68,25 +92,40 @@ GameServer.prototype.listen = function() {
 /**
  * ## GameServer.secureParse
  * 
- * Parses the newly received message
+ * Tries to cast a JSON object into a `GameMsg` object 
+ * and logs the outcome of the operation. 
  * 
+ * On success, returns the parsed game message, otherwise
+ * returns FALSE.
+ * 
+ * 
+ * @param {object} msg The object to cast to `GameMSg`
+ * @return {Boolean|GameMsg} The parsed game message or FALSE is an error occurred 
  */
 GameServer.prototype.secureParse = function(msg) {
 
 	try {
 		var gameMsg = GameMsg.clone(JSON.parse(msg));
-		this.log.msg('R, ' + gameMsg);
+		log.msg('R, ' + gameMsg);
 		return gameMsg;
 	} catch (e) {
-		this.log.log("Malformed msg received: " + e, 'ERR');
+		log.log("Malformed msg received: " + e, 'ERR');
 		return false;
 	}
 
 };
 
+/**
+ * ## GameServer.attachListeners
+ * 
+ * Creates a Socket.io room and starts listening for
+ * incoming messages. 
+ * 
+ * Valid messages are then converted to events and fired.
+ * 
+ */
 GameServer.prototype.attachListeners = function() {
 	var that = this;
-	var log = this.log;
 
 	log.log('Listening for connections');
 
@@ -147,7 +186,7 @@ GameServer.prototype.attachListeners = function() {
 
 	});
 
-	// TODO: Check this
+	// <!-- TODO: Check this --!>
 	this.server.sockets.on("shutdown", function(message) {
 		log.log("Server is shutting down.");
 		that.pl.clear(true);
@@ -156,37 +195,73 @@ GameServer.prototype.attachListeners = function() {
 	});
 };
 
-// Will be overwritten
+/**
+ * ## GameServer.attachCustomListeners
+ * 
+ * Abstract method that will be overwritten by
+ * inheriting classes. 
+ * 
+ */
 GameServer.prototype.attachCustomListeners = function() {};
 
+
+/**
+ * ## GameServer.welcomeClient
+ * 
+ * Send a HI msg to the client, and log its arrival
+ * 
+ * @param {string} client The id of the freshly connected client
+ */
 GameServer.prototype.welcomeClient = function(client) {
 	var connStr = "Welcome <" + client + ">";
-	this.log.log(connStr);
-
-	// Send HI msg to the newly connected client
+	log.log(connStr);
 	this.gmm.sendHI(connStr, client);
 };
 
-GameServer.prototype.checkSync = function() {
-	// TODO: complete function checkSync
-	return true;
-};
 
+/**
+ * ## GameServer.getConnections
+ * 
+ * Returns an array containing the ids of all the connected clients
+ * 
+ * @return {Array} clientids The array containing the ids of all the connected clients
+ */
 GameServer.prototype.getConnections = function() {
 
 	var clientids = [];
 	for ( var i in this.channel.sockets) {
 		if (this.channel.sockets.hasOwnProperty(i)) {
 			clientids.push(i);
-			this.log(i);
+			log(i);
 		}
 	}
 	return clientids;
 };
 
+/**
+ * ## GameServer.isValidRecipient
+ * 
+ * Checks whether a string is a valid recipient 
+ * for sending a game message
+ * 
+ * @param {string} to The recipient to check
+ * @return {Boolean} TRUE, if the string is a valid recipient
+ */
 GameServer.prototype.isValidRecipient = function (to) {
 	if (to !== null && to !== 'SERVER') {
 		return true;
 	}
 	return false;
+};
+
+/**
+ * ## GameServer.checkSync
+ * 
+ * @experimental
+ * 
+ * @return {Boolean}
+ */
+GameServer.prototype.checkSync = function() {
+	//<!-- TODO: complete function checkSync --!>
+	return true;
 };

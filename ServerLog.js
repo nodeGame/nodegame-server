@@ -1,15 +1,28 @@
-// Logs
+/**
+ * Copyright(c) 2012 Stefano Balietti
+ * MIT Licensed
+ *
+ * Handles the log stream to file and to stdout
+ * 
+ */
+ 
+var util = require('util'),
+	fs = require('fs'),
+	path = require('path');
 
-var util = require('util');
-var fs = require('fs');
-var path = require('path');
-
-var Utils = require('nodegame-client').Utils;
+var JSUS = require('nodegame-client').JSUS;
 
 ServerLog.verbosity_levels = require('nodegame-client').verbosity_levels;
 
 module.exports = ServerLog;
 
+/**
+ * ## ServerLog Constructor
+ * 
+ * Creates an instance of ServerLog
+ * 
+ * @param {object} options The configuration options for the SeverLog
+ */
 function ServerLog (options) {
 	
 	this.name = options.name || 'Noname';
@@ -46,20 +59,32 @@ function ServerLog (options) {
 };
 
 /**
- * Creates the log directory if not existing.
+ * ## ServerLog.checkLogDir
+ * 
+ * Creates the log directory if not existing
  * 
  */
 ServerLog.prototype.checkLogDir = function() {
-	//console.log('logdir ' + this.logdir);
 	if (!path.existsSync(this.logdir)) {
 		fs.mkdirSync('log/', 0755);
 	}
 }
 
+/**
+ * ## ServerLog.log
+ * 
+ * Logs a string to stdout and to file, depending on
+ * the current log-level and the  configuration options 
+ * for the current ServerLog instance
+ * 
+ * @param {string} text The string to log
+ * @param {string|Number} level The log level for this log 
+ * 
+ */
 ServerLog.prototype.log = function (text, level) {
-	var level = level || 0;
+	level = level || 0;
 	if ('string' === typeof level) {
-		var level = ServerLog.verbosity_levels[level];
+		level = ServerLog.verbosity_levels[level];
 	}
 	if (this.verbosity > level) {
 		this.console(text);
@@ -69,7 +94,14 @@ ServerLog.prototype.log = function (text, level) {
 	}
 };
 
-
+/**
+ * ## ServerLog.console
+ * 
+ * Fancifies the output to console
+ * 
+ * @param {object|string} data The text to log
+ * @param {string} type A flag that determines the color of the output
+ */
 ServerLog.prototype.console = function(data, type){
 	
 	var ATT = '0;32m'; // green text;
@@ -88,23 +120,41 @@ ServerLog.prototype.console = function(data, type){
 	util.log("\033[" + ATT + this.name + '\t' + data.toString() + "\033[0m");
 };
 
-
-ServerLog.prototype.msg = function(gameMsg, type) {	
-	if (this.logMsgStream) {
-		this.logMsgStream.write(this.name + ',\t' + gameMsg);
-	}
+/**
+ * ## ServerLog.msg
+ * 
+ * Dumps a game message to game messages file, as defined in the
+ * constructor
+ * 
+ * @param {GameMSg} gameMsg The game message to dump
+ * 
+ */
+ServerLog.prototype.msg = function(gameMsg) {	
+	if (!this.logMsgStream) return;
+	this.logMsgStream.write(this.name + ',\t' + gameMsg);
 };
 
-ServerLog.prototype.sys = function(text, type) {
-	if (this.logSysStream) {
-		var text = Utils.getDate() + ', ' + this.name + ' ' + text;
-		this.logSysStream.write(text + '\n');	
-	}
+/**
+ * ## ServerLog.sys
+ * 
+ * Dumps a string to the syslog file, as defined in the constructor
+ * 
+ * @param {string} text The text to dump
+ * 
+ */ 
+ServerLog.prototype.sys = function(text) {
+	if (!this.logSysStream) return;	
+	text = JSUS.getDate() + ', ' + this.name + ' ' + text;
+	this.logSysStream.write(text + '\n');	
+	
 };
 
+/**
+ * ## ServerLog.close
+ * 
+ * Closes open output streams
+ */
 ServerLog.prototype.close = function() {
-	this.logSysStream.close();
-	if (this.logMsgStream) {
-		this.logMsgStream.close();
-	}
+	if (this.logSysStream) this.logSysStream.close();
+	if (this.logMsgStream) this.logMsgStream.close();
 };
