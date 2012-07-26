@@ -7,7 +7,8 @@
  * Inherits from `GameServer` and attaches special listeners.
  * 
  * AdminServer hides the id of the sender when forwarding msgs
- * AdminServer transform all SET messages in SAY messages when forwarding them
+ * 
+ * SET messages are ignored
  * 
  */
  
@@ -59,7 +60,7 @@ AdminServer.prototype.attachCustomListeners = function() {
 	var get = GameMsg.actions.GET + '.'; 
 
 // Listener on newly connected players		
-	this.on(say+'HI', function(msg) {
+	this.on(say + 'HI', function(msg) {
 		
 		log.log('Incoming admin: ' + msg.from);
 		
@@ -74,7 +75,7 @@ AdminServer.prototype.attachCustomListeners = function() {
 	});
 
 // Listener on TXT messages	
-	this.on(say+'TXT', function(msg) {
+	this.on(say + 'TXT', function(msg) {
 		if (that.isValidRecipient(msg.to)) {
 			that.gmm.forwardTXT (msg.text, msg.to);
 			that.gmm.sendTXT(msg.from + ' sent MSG to ' + msg.to, 'ALL');
@@ -82,7 +83,7 @@ AdminServer.prototype.attachCustomListeners = function() {
 	});
 
 // Listener on say DATA messages	
-	this.on(say+'DATA', function(msg) { 
+	this.on(say + 'DATA', function(msg) { 
 		if (that.isValidRecipient(msg.to)) {
 			that.gmm.forwardDATA (GameMsg.actions.SAY, msg.data, msg.to, msg.text);
 			
@@ -94,7 +95,7 @@ AdminServer.prototype.attachCustomListeners = function() {
 	});
 
 // Listener on set DATA messages
-	this.on(set+'DATA', function (msg) {
+	this.on(set + 'DATA', function (msg) {
 	
 		// Experimental
 		if (msg.text === 'LOOP') {
@@ -105,7 +106,7 @@ AdminServer.prototype.attachCustomListeners = function() {
 	});
 
 // Listener on STATE messages   
-	this.on(say+'STATE', function(msg){
+	this.on(say + 'STATE', function(msg){
 		if (!that.checkSync) {
 			that.gmm.sendTXT('**Not possible to change state: some players are not ready**', msg.from);
 		}
@@ -119,13 +120,13 @@ AdminServer.prototype.attachCustomListeners = function() {
 	});
 	
 	// Transform in say
-	this.on(set+'STATE', function (msg){
+	this.on(set + 'STATE', function (msg){
 		//this.emit(say+'STATE', msg);
 	});
 
 
  // Listener on Get (Experimental)	
-	this.on(get+'DATA', function (msg) {
+	this.on(get + 'DATA', function (msg) {
 		//console.log('HERE A!!!');
 		
 		// Ask a random player to send the game;

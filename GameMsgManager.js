@@ -139,9 +139,9 @@ GameMsgManager.prototype.sendDATA = function (action, data, to, text) {
  */
 GameMsgManager.prototype.send = function (gameMsg) {
 	
-	var to = gameMsg.to;
-	var rel = gameMsg.reliable;
-	var msg = gameMsg.stringify();
+	var to = gameMsg.to,
+		rel = gameMsg.reliable,
+		msg = gameMsg.stringify();
 	
 	if (to === 'SERVER' || to === null) {
 		logger.log('Trying to send msg to nobody: ' + to, 'ERR');

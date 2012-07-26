@@ -29,7 +29,7 @@ PlayerServer.prototype.__proto__ = GameServer.prototype;
 PlayerServer.prototype.constructor = PlayerServer;
 
 /**
- * PlayerServer Constructor
+ * ## PlayerServer constructor
  *
  * Creates a new instance of PlayerServer
  * 
@@ -117,6 +117,13 @@ PlayerServer.prototype.attachCustomListeners = function() {
 			that.gmm.send(msg);
 		}
 		else {
+			
+			// Creates a copy of monitors' memory object here
+			// if a local memory object is present			
+			if (that.partner.memory) {
+				that.partner.memory.add(msg.text, msg.data, msg.from);
+			}
+			
 			that.gmm.forward (msg);
 		}
 	});	
@@ -127,7 +134,7 @@ PlayerServer.prototype.attachCustomListeners = function() {
 		
 		if (that.pl.exist(msg.from)){
 			// <!-- Do we need this? --!>
-			that.pl.updatePlayerState(msg.from,msg.data);
+			that.pl.updatePlayerState(msg.from, msg.data);
 
 			// TODO: if it is not send, the observer does not get informed
 			// about change of state.

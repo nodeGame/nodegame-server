@@ -20,9 +20,8 @@ var util = require('util'),
     fs = require('fs'),
     path = require('path'),
     express = require('express'),
-    socket_io = require('socket.io');
-
-var nodemailer = require('nodemailer');
+    socket_io = require('socket.io'),
+	nodemailer = require('nodemailer');
 
 var ServerChannel = require('./ServerChannel');
 
@@ -139,7 +138,6 @@ ServerNode.prototype.configureHTTP = function (options) {
             });
         }
     });
-
 };
 
 /**
@@ -163,7 +161,7 @@ ServerNode.prototype.configureIO = function (options) {
  * If the configuration object is missing, channel creation is aborted
  * 
  * @param {object} options The object containing the custom settings
- * @returns {ServerChannel} channel The nodeGame channel 
+ * @return {ServerChannel} channel The nodeGame channel 
  */
 ServerNode.prototype.addChannel = function (options) {
 
@@ -206,7 +204,7 @@ ServerNode.prototype.addChannel = function (options) {
  * If the configuration object is missing, waiting room creation is aborted
  * 
  * @param {object} options The object containing the custom settings
- * @returns {WaitingRoom} channel The nodeGame channel 
+ * @return {WaitingRoom} channel The nodeGame channel 
  */
 ServerNode.prototype.addWaitingRoom = function (options) {
 

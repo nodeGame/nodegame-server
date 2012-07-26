@@ -23,10 +23,11 @@ util.inherits(GameServer, EventEmitter);
 var ServerLog = require('./ServerLog'),
 	GameMsgManager = require('./GameMsgManager');
 
-var GameState = require('nodegame-client').GameState,
-	GameMsg = require('nodegame-client').GameMsg,
-	PlayerList = require('nodegame-client').PlayerList,
-	Player = require('nodegame-client').Player;
+var GameState 	= require('nodegame-client').GameState,
+	GameMsg 	= require('nodegame-client').GameMsg,
+	PlayerList 	= require('nodegame-client').PlayerList,
+	Player 		= require('nodegame-client').Player;
+	GameDB 		= require('nodegame-client').GameDB;
 
 var log;
 
@@ -37,6 +38,8 @@ var log;
  */
 function GameServer(options) {
 	EventEmitter.call(this);
+	
+	this.serverid = Math.random()*1000000000;
 
 	this.options = options;
 	this.user_options = options.user_options;
@@ -64,6 +67,10 @@ function GameServer(options) {
 	this.disconnected = new PlayerList();
 
 	this.partner = null;
+	
+	if (options.memory) {
+		this.memory = new GamedB();
+	}
 }
 
 /**
@@ -100,7 +107,7 @@ GameServer.prototype.listen = function() {
  * 
  * 
  * @param {object} msg The object to cast to `GameMSg`
- * @return {Boolean|GameMsg} The parsed game message or FALSE is an error occurred 
+ * @return {boolean|GameMsg} The parsed game message or FALSE is an error occurred 
  */
 GameServer.prototype.secureParse = function(msg) {
 
