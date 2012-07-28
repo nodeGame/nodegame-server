@@ -1,11 +1,17 @@
 /**
+ * # GameMsgManager
+ * 
  * Copyright(c) 2012 Stefano Balietti
  * MIT Licensed
  * 
- * Game message manager: creates and sends typed game message to specific
- * recipients or to set of.
+ * Game message manager: creates and sends typed game message to single
+ * or grouped recipients
+ * 
+ * ---
  * 
  */
+
+// Global scope
 
 module.exports = GameMsgManager;
 
@@ -40,8 +46,10 @@ function GameMsgManager(node) {
 	this.gmg = new GameMsgGenerator(this.session,this.name,this.currentState);	// TODO: Check what is best to init
 }
 
+// ## METHODS
+
 /**
- * ## GameMsgManager.sendHI
+ * ### GameMsgManager.sendHI
  * 
  * Creates and send an HI message to the given recipient
  * 
@@ -58,7 +66,7 @@ GameMsgManager.prototype.sendHI = function (text, to) {
 };
 
 /**
- * ## GameMsgManager.sendTXT
+ * ### GameMsgManager.sendTXT
  * 
  * Creates and send a TXT message to the given recipient
  * 
@@ -72,7 +80,7 @@ GameMsgManager.prototype.sendTXT = function (text,to) {
 };
 
 /**
- * ## GameMsgManager.sendPLIST
+ * ### GameMsgManager.sendPLIST
  * 
  * Retrieves the player list from the specified GameServer object and
  * sends it either to the specified recipient or to all connected clients
@@ -88,7 +96,7 @@ GameMsgManager.prototype.sendPLIST = function (node, to) {
 };
 
 /**
- * ## GameMsgManager.sendSTATE
+ * ### GameMsgManager.sendSTATE
  * 
  * Creates a STATE message consistent with input parameters and sends it
  * either to the specified recipient or to 'ALL'
@@ -105,7 +113,7 @@ GameMsgManager.prototype.sendSTATE = function (action, state, to) {
 };
 
 /**
- * ## GameMsgManager.sendDATA
+ * ### GameMsgManager.sendDATA
  * 
  * Creates a DATA message consistent with input parameters and sends it
  * either to the specified recipient or to 'ALL'
@@ -131,7 +139,7 @@ GameMsgManager.prototype.sendDATA = function (action, data, to, text) {
 // --!>
 
 /**
- * ## GameMsgManager.send
+ * ### GameMsgManager.send
  * 
  * Low level primitive to send a game message
  * 
@@ -187,7 +195,7 @@ GameMsgManager.prototype.send = function (gameMsg) {
 };
 
 /**
- * ## GameMsgManager.broadcast
+ * ### GameMsgManager.broadcast
  * 
  * Broadcasts a game message to all the clients connected
  * 
@@ -218,7 +226,7 @@ GameMsgManager.prototype.broadcast = function (gameMsg) {
 
 
 /**
- * ## GameMsgManager.forwardHI
+ * ### GameMsgManager.forwardHI
  * 
  * Creates and sends an HI message to the given recipient in the partner node
  * 
@@ -236,7 +244,7 @@ GameMsgManager.prototype.forwardHI = function (text, to) {
 };
 
 /**
- * ## GameMsgManager.forwardTXT
+ * ### GameMsgManager.forwardTXT
  * 
  * 
  * @param {string} text A text associated to the HI message
@@ -248,7 +256,7 @@ GameMsgManager.prototype.forwardTXT = function (text, to) {
 };
 
 /**
- * ## GameMsgManager.forwardPLIST
+ * ### GameMsgManager.forwardPLIST
  * 
  * Retrieves the player list from the specified GameServer object and
  * sends it either to the specified recipient or to all connected clients
@@ -263,7 +271,7 @@ GameMsgManager.prototype.forwardPLIST = function (node, to) {
 };
 
 /**
- * ## GameMsgManager.forwardSTATE
+ * ### GameMsgManager.forwardSTATE
  * 
  * Creates a STATE message consistent with input parameters and forwards it
  * either to the specified recipient or to 'ALL'
@@ -279,7 +287,7 @@ GameMsgManager.prototype.forwardSTATE = function (action, state, to) {
 };
 
 /**
- * ## GameMsgManager.forwardDATA
+ * ### GameMsgManager.forwardDATA
  * 
  * Creates a DATA message consistent with input parameters and sends it
  * either to the specified recipient or to 'ALL'
@@ -296,7 +304,7 @@ GameMsgManager.prototype.forwardDATA = function (action, data, to, text) {
 };
 
 /**
- * ## GameMsgManager.forward
+ * ### GameMsgManager.forward
  * 
  * Low level primitive to forward messages
  * 

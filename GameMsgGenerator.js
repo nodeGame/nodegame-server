@@ -1,10 +1,17 @@
 /**
+ * # GameMsgGenerator
+ * 
  * Copyright(c) 2012 Stefano Balietti
  * MIT Licensed
  * 
  * Game messages generator
  * 
+ * ---
+ * 
  */
+
+// ## Global scope
+
 module.exports = GameMsgGenerator; 
 
 var GameState = require('nodegame-client').GameState,

@@ -1,4 +1,6 @@
 /**
+ * # PlayerServer
+ * 
  * Copyright(c) 2012 Stefano Balietti
  * MIT Licensed
  * 
@@ -8,7 +10,11 @@
  * 
  * PlayerServer passes the id of the sender when forwarding msgs
  * 
+ * ---
+ * 
  */
+
+// # Global scope
 
 module.exports = PlayerServer;
 
@@ -39,21 +45,26 @@ function PlayerServer(options) {
 	GameServer.call(this, options);
 }
 
+// ## PlayerServer methods
+
 /**
- * ## PlayerServer.attachCustomListeners
+ * ### PlayerServer.attachCustomListeners
  * 
  * Implements the abstract method from `GameServer` with listeners
  * specific to the players endpoint
  * 
  */
 PlayerServer.prototype.attachCustomListeners = function() {
-	var that = this;
-	var log = this.log;
-	var say = GameMsg.actions.SAY + '.';
-	var set = GameMsg.actions.SET + '.';
-	var get = GameMsg.actions.GET + '.'; 
+	var that = this,
+		log = this.log,
+		say = GameMsg.actions.SAY + '.',
+		set = GameMsg.actions.SET + '.',
+		get = GameMsg.actions.GET + '.';
 
-// Listener on newly connected players	
+// ## LISTENERS	
+	
+// ### say.HI 
+// Listens on newly connected players	
     this.on(say + 'HI', function(msg) {
     	
 		log.log('Incoming player: ' + msg.from);
@@ -66,8 +77,9 @@ PlayerServer.prototype.attachCustomListeners = function() {
     	// Send the current player list to monitors
         that.gmm.forwardPLIST(that);
 	});
-    
-// Listener on reconnecting players    
+
+// ### say.HI_AGAIN    
+// Listens on reconnecting players    
     this.on(say + 'HI_AGAIN', function(msg) {
     	
 		log.log('Returning PLAYER: ' + msg.from);
@@ -91,7 +103,8 @@ PlayerServer.prototype.attachCustomListeners = function() {
 		
 	});
 
-// Listener on TXT messages	
+// ### say.TXT    
+// Listens on say.TXT messages	
     this.on(say + 'TXT', function(msg) {
 		// <!-- TODO: maybe checked before? --!>
     	if (that.isValidRecipient(msg.to)){
@@ -100,15 +113,17 @@ PlayerServer.prototype.attachCustomListeners = function() {
 		}
 	});
 
-// Listener on say DATA messages			
+// ### say.DATA    
+// Listens on say.DATA messages			
     this.on(say + 'DATA', function(msg) {
 		// <!-- TODO: maybe checked before? --!>
     	if (that.isValidRecipient(msg.to)){
 			that.gmm.send(msg);
 		}
 	});
-	
-// Listener on set DATA messages
+
+// ### set.DATA    
+// Listens on set.DATA messages
     this.on(set + 'DATA', function(msg) {
     	
 		// Personal msg
@@ -128,8 +143,8 @@ PlayerServer.prototype.attachCustomListeners = function() {
 		}
 	});	
 	
- 
-// Listener on STATE messages   
+// ### say.STATE 
+// Listens on say.STATE messages   
     this.on(say + 'STATE', function(msg) {
 		
 		if (that.pl.exist(msg.from)){
@@ -155,8 +170,8 @@ PlayerServer.prototype.attachCustomListeners = function() {
     
 
     
-    
-// Listener on Get (Experimental)
+// ### get.DATA    
+// Listener on get (Experimental)
     this.on(get + 'DATA', function (msg) {
     	//console.log(this.pl);
 		//console.log('HERE P!!!');
@@ -164,8 +179,9 @@ PlayerServer.prototype.attachCustomListeners = function() {
 		// var p = this.pl.getRandom();
 		// that.gmm.sendDATA('get', 'ABC', msg.from, msg.txt);
 	});
-    
-// Listener on player disconnects   
+
+// ### closed    
+// Listens on players disconnecting   
     this.on('closed', function(id) {
       	log.log(that.name + ' ----------------- Got Closed ' + id);
     	
@@ -175,8 +191,9 @@ PlayerServer.prototype.attachCustomListeners = function() {
     	that.gmm.sendPLIST(that);
     	that.gmm.forwardPLIST(that);
     });
-	
-// Listener on server shutdown <!-- TODO: Check this --!>
+
+// ### shutdown    
+// Listens on server shutdown
 	this.server.sockets.on("shutdown", function(message) {
 		log.log("Server is shutting down.");
 		that.pl.clear(true);

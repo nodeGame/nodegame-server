@@ -1,4 +1,6 @@
 /**
+ * # GameServer
+ * 
  * Copyright(c) 2012 Stefano Balietti
  * MIT Licensed
  * 
@@ -9,9 +11,11 @@
  * Contains abstract methods that are instantiated by two classes
  * that inherits this class: `AdminServer`, and `PlayerServer`.
  * 
+ * ---
+ * 
  */
 
-// ### Load dependencies and expose constructor
+// ## Global scope
 
 module.exports = GameServer;
 
@@ -33,6 +37,8 @@ var log;
 
 /**
  * ## GameServer Constructor
+ * 
+ * Creates a new instance of GameServer
  * 
  * @param {object} options Configuration object
  */
@@ -73,8 +79,10 @@ function GameServer(options) {
 	}
 }
 
+// ## METHODS
+
 /**
- * ## GameServer.setPartner
+ * ### GameServer.setPartner
  * 
  * Sets a twin server, i.e. AdminServer for PlayerServer
  * and viceversa. 
@@ -86,7 +94,7 @@ GameServer.prototype.setPartner = function(node) {
 };
 
 /**
- * ## GameServer.listen
+ * ### GameServer.listen
  * 
  * Attaches standard and custom listeners to the server.
  * 
@@ -97,7 +105,7 @@ GameServer.prototype.listen = function() {
 };
 
 /**
- * ## GameServer.secureParse
+ * ### GameServer.secureParse
  * 
  * Tries to cast a JSON object into a `GameMsg` object 
  * and logs the outcome of the operation. 
@@ -123,7 +131,7 @@ GameServer.prototype.secureParse = function(msg) {
 };
 
 /**
- * ## GameServer.attachListeners
+ * ### GameServer.attachListeners
  * 
  * Creates a Socket.io room and starts listening for
  * incoming messages. 
@@ -203,7 +211,7 @@ GameServer.prototype.attachListeners = function() {
 };
 
 /**
- * ## GameServer.attachCustomListeners
+ * ### GameServer.attachCustomListeners
  * 
  * Abstract method that will be overwritten by
  * inheriting classes. 
@@ -213,7 +221,7 @@ GameServer.prototype.attachCustomListeners = function() {};
 
 
 /**
- * ## GameServer.welcomeClient
+ * ### GameServer.welcomeClient
  * 
  * Send a HI msg to the client, and log its arrival
  * 
@@ -227,7 +235,7 @@ GameServer.prototype.welcomeClient = function(client) {
 
 
 /**
- * ## GameServer.getConnections
+ * ### GameServer.getConnections
  * 
  * Returns an array containing the ids of all the connected clients
  * 
@@ -246,7 +254,7 @@ GameServer.prototype.getConnections = function() {
 };
 
 /**
- * ## GameServer.isValidRecipient
+ * ### GameServer.isValidRecipient
  * 
  * Checks whether a string is a valid recipient 
  * for sending a game message
@@ -262,7 +270,7 @@ GameServer.prototype.isValidRecipient = function (to) {
 };
 
 /**
- * ## GameServer.checkSync
+ * ### GameServer.checkSync
  * 
  * @experimental
  * 

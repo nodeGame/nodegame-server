@@ -1,4 +1,6 @@
 /**
+ * # AdminServer
+ * 
  * Copyright(c) 2012 Stefano Balietti
  * MIT Licensed
  * 
@@ -10,8 +12,12 @@
  * 
  * SET messages are ignored
  * 
+ * ---
+ * 
  */
- 
+
+// ## Global scope
+
 module.exports = AdminServer;
 
 var util = require('util'),
@@ -32,6 +38,7 @@ var PlayerList = require('nodegame-client').PlayerList,
 AdminServer.prototype.__proto__ = GameServer.prototype;
 AdminServer.prototype.constructor = AdminServer;
 
+
 /**
  * ## AdminServer Constructor
  * 
@@ -44,6 +51,27 @@ function AdminServer(options) {
 	// extra variables
 	this.loop = null;
 }
+
+//## METHODS
+
+/**
+ * ## AdminServer.generateInfo
+ * 
+ * Creates an object containing general information (e.g. number of 
+ * players, and admin connected), about the state of the GameServer
+ * 
+ * @return {object} info The info about the state of the GameServer
+ */
+AdminServer.prototype.generateInfo = function(){
+	var info = {
+				name: this.name,
+				status: 'OK',
+				nplayers: this.partner.pl.length,
+				nadmins: this.pl.length,
+	};
+						
+	return info;		
+};
 
 /**
  * ## PlayerServer.attachCustomListeners
@@ -59,7 +87,10 @@ AdminServer.prototype.attachCustomListeners = function() {
 	var set = GameMsg.actions.SET + '.';
 	var get = GameMsg.actions.GET + '.'; 
 
-// Listener on newly connected players		
+// LISTENERS	
+	
+// ## say.HI	
+// Listens on newly connected players		
 	this.on(say + 'HI', function(msg) {
 		
 		log.log('Incoming admin: ' + msg.from);
@@ -74,7 +105,8 @@ AdminServer.prototype.attachCustomListeners = function() {
 		that.gmm.sendPLIST(that.partner, msg.from);
 	});
 
-// Listener on TXT messages	
+// ### say.TXT    
+// Listens on say.TXT messages	
 	this.on(say + 'TXT', function(msg) {
 		if (that.isValidRecipient(msg.to)) {
 			that.gmm.forwardTXT (msg.text, msg.to);
@@ -82,7 +114,8 @@ AdminServer.prototype.attachCustomListeners = function() {
 		}
 	});
 
-// Listener on say DATA messages	
+// ### say.DATA    
+// Listens on say.DATA messages	
 	this.on(say + 'DATA', function(msg) { 
 		if (that.isValidRecipient(msg.to)) {
 			that.gmm.forwardDATA (GameMsg.actions.SAY, msg.data, msg.to, msg.text);
@@ -94,7 +127,8 @@ AdminServer.prototype.attachCustomListeners = function() {
 		}
 	});
 
-// Listener on set DATA messages
+// ### set.DATA    
+// Listens on set.DATA messages
 	this.on(set + 'DATA', function (msg) {
 	
 		// Experimental
@@ -105,7 +139,8 @@ AdminServer.prototype.attachCustomListeners = function() {
 		
 	});
 
-// Listener on STATE messages   
+// ### say.STATE 
+// Listens on say.STATE messages 
 	this.on(say + 'STATE', function(msg){
 		if (!that.checkSync) {
 			that.gmm.sendTXT('**Not possible to change state: some players are not ready**', msg.from);
@@ -124,8 +159,8 @@ AdminServer.prototype.attachCustomListeners = function() {
 		//this.emit(say+'STATE', msg);
 	});
 
-
- // Listener on Get (Experimental)	
+// ### get.DATA    
+// Listener on get (Experimental)	
 	this.on(get + 'DATA', function (msg) {
 		//console.log('HERE A!!!');
 		
@@ -147,8 +182,8 @@ AdminServer.prototype.attachCustomListeners = function() {
 	
 	
 
-	
-	// <!-- TODO: Check if the methods for closed and shutdown (copied from PlayerServer) apply here --!>    
+// ### closed    
+// Listens on players disconnecting 	
     this.on('closed', function(id) {
 //      	log.log(that.name + ' ----------------- Got Closed ' + id);
 //    	that.pl.remove(id);
@@ -157,7 +192,8 @@ AdminServer.prototype.attachCustomListeners = function() {
     	//that.gmm.forwardPLIST(that);
     });
 	
-	// <!-- TODO: Check this. This influence the player list of observers! --!>
+// ### shutdown    
+// Listens on server shutdown
 	this.server.sockets.on("shutdown", function(message) {
 		log.log("Server is shutting down.");
 		that.pl.clear(true);
@@ -166,23 +202,4 @@ AdminServer.prototype.attachCustomListeners = function() {
 		log.close();
 	});
 	
-};
-
-/**
- * ## AdminServer.generateInfo
- * 
- * Creates an object containing general information (e.g. number of 
- * players, and admin connected), about the state of the GameServer
- * 
- * @return {object} info The info about the state of the GameServer
- */
-AdminServer.prototype.generateInfo = function(){
-	var info = {
-				name: this.name,
-				status: 'OK',
-				nplayers: this.partner.pl.length,
-				nadmins: this.pl.length,
-	};
-						
-	return info;		
 };

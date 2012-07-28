@@ -1,11 +1,17 @@
 /**
+ * # ServerLog
+ * 
  * Copyright(c) 2012 Stefano Balietti
  * MIT Licensed
  *
  * Handles the log stream to file and to stdout
  * 
+ * ---
+ * 
  */
  
+// ## Global scope
+
 var util = require('util'),
 	fs = require('fs'),
 	path = require('path');
@@ -58,8 +64,11 @@ function ServerLog (options) {
 	}	
 };
 
+
+//## ServerLog methods
+
 /**
- * ## ServerLog.checkLogDir
+ * ### ServerLog.checkLogDir
  * 
  * Creates the log directory if not existing
  * 
@@ -68,10 +77,10 @@ ServerLog.prototype.checkLogDir = function() {
 	if (!path.existsSync(this.logdir)) {
 		fs.mkdirSync('log/', 0755);
 	}
-}
+};
 
 /**
- * ## ServerLog.log
+ * ### ServerLog.log
  * 
  * Logs a string to stdout and to file, depending on
  * the current log-level and the  configuration options 
@@ -95,7 +104,7 @@ ServerLog.prototype.log = function (text, level) {
 };
 
 /**
- * ## ServerLog.console
+ * ### ServerLog.console
  * 
  * Fancifies the output to console
  * 
@@ -121,7 +130,7 @@ ServerLog.prototype.console = function(data, type){
 };
 
 /**
- * ## ServerLog.msg
+ * ### ServerLog.msg
  * 
  * Dumps a game message to game messages file, as defined in the
  * constructor
@@ -135,7 +144,7 @@ ServerLog.prototype.msg = function(gameMsg) {
 };
 
 /**
- * ## ServerLog.sys
+ * ### ServerLog.sys
  * 
  * Dumps a string to the syslog file, as defined in the constructor
  * 
@@ -150,7 +159,7 @@ ServerLog.prototype.sys = function(text) {
 };
 
 /**
- * ## ServerLog.close
+ * ### ServerLog.close
  * 
  * Closes open output streams
  */

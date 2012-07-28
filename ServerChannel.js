@@ -1,13 +1,16 @@
 /**
+ * # ServerChannel
+ * 
  * Copyright(c) 2012 Stefano Balietti
  * MIT Licensed
  * 
  * Wrapper class for PlayerServer, AdminServer
  * 
+ * ---
  * 
  */
 
-// ### Load dependencies and expose constructor
+// ## Global scope
 
 module.exports = ServerChannel;
 
@@ -30,7 +33,7 @@ var GameState = require('nodegame-client').GameState,
 
 
 /**
- * ServerChannel Constructor
+ * ## ServerChannel Constructor
  * 
  * Creates an instance of ServerChannel
  * 
@@ -66,11 +69,14 @@ function ServerChannel (options, server, io) {
 	this.createServers();
 }
 
+// ServerChannel methods
+
 /**
- * ServerChannel.createServers
+ * ### ServerChannel.createServers
  * 
- * Creates the AdminServer and the PlayerServer mixing up
- * default options and user-defined options specified in
+ * Creates the AdminServer and the PlayerServer
+ * 
+ * Mixes in default options and user-defined options specified in
  * the constructor 
  * 
  */
@@ -104,7 +110,7 @@ ServerChannel.prototype.createServers = function() {
 };
 
 /**
- * ## ServerChannel.listen
+ * ### ServerChannel.listen
  * 
  * Puts the AdminServer and PlayerServer on listen mode
  * 

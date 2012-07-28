@@ -1,17 +1,16 @@
 /**
+ * #  nodeGame ServerNode
+ * 
  * Copyright(c) 2012 Stefano Balietti
  * MIT Licensed
  * 
- * 
- * 
- * ###  nodeGame server node
  * Creates an HTTP server, and loads a Socket.io instance 
- * according to the input configuration.
+ * 
+ * ---
  * 
  */
 
-// ### Load dependencies and expose constructor
-
+// ## Global scope
 
 module.exports = ServerNode;
 
@@ -28,7 +27,7 @@ var ServerChannel = require('./ServerChannel');
 var JSUS = require('nodegame-client').JSUS;
 
 
-// ### Configure Application 
+// ## Configure Application 
 
 var app = express.createServer();
 
@@ -45,7 +44,6 @@ app.configure('development', function(){
 app.configure('production', function(){
   app.use(express.errorHandler());
 });
-
 
 /**
  * ## ServerNode Constructor
@@ -78,9 +76,10 @@ function ServerNode (options) {
     this.listen();
 }
 
+//## ServerNode methods
 
 /**
- * ## ServerNode.listen
+ * ### ServerNode.listen
  * 
  * Puts Socket.io listening on the HTTP server
  * 
@@ -99,7 +98,7 @@ ServerNode.prototype.listen = function () {
 };
 
 /**
- * ## ServerNode.configureHTTP
+ * ### ServerNode.configureHTTP
  * 
  * Defines standard routes for the HTTP server
  * 
@@ -141,7 +140,7 @@ ServerNode.prototype.configureHTTP = function (options) {
 };
 
 /**
- * ## ServerNode.configureIO
+ * ### ServerNode.configureIO
  * 
  * Configures the internal socket io server with the default
  * settings, and then adds user defined options
@@ -155,7 +154,7 @@ ServerNode.prototype.configureIO = function (options) {
 };
 
 /**
- * ## ServerNode.addChannel
+ * ### ServerNode.addChannel
  * 
  * Creates a nodeGame channel with the specified configuration.
  * If the configuration object is missing, channel creation is aborted
@@ -194,7 +193,7 @@ ServerNode.prototype.addChannel = function (options) {
 };
 
 /**
- * ## ServerNode.addWaitingRoom
+ * ### ServerNode.addWaitingRoom
  * 
  * @experimental
  * 
@@ -241,7 +240,6 @@ ServerNode.prototype.addWaitingRoom = function (options) {
 };
 
 // ## ServerNode helper functions
-
 
 /**
  * ### doesFileExists
