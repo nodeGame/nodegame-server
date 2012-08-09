@@ -86,7 +86,6 @@ var cleanBuildDir = function(dir, ext) {
 	    
 	    console.log('Build directory cleaned');
 	});
-
 }
 
 program
