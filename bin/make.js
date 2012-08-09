@@ -56,12 +56,49 @@ var copyFile = function(srcFile, destFile, cb) {
     	if (cb) return cb(null);
     });
     return fdr.pipe(fdw);
-  };
+};
 
+var deleteIfExist = function(file) {
+	file = file || filename;
+	if (path.existsSync(file)) {
+		var stats = fs.lstatSync(file);
+		if (stats.isDirectory()) {
+			fs.rmdir(file, function (err) {
+				if (err) throw err;  
+			});
+		}
+		else {
+			fs.unlink(file, function (err) {
+				if (err) throw err;  
+			});
+		}
+		
+	}
+};
 
+var cleanBuildDir = function(dir, ext) {
+	ext = ext || '.js';
+	dir = dir || buildDir;
+	if (dir[dir.length] !== '/') dir = dir + '/';
+	fs.readdir(dir, function(err, files) {
+	    files.filter(function(file) { return path.extname(file) ===  ext; })
+	         .forEach(function(file) { deleteIfExist(dir + file); });
+	    
+	    console.log('Build directory cleaned');
+	});
+
+}
 
 program
   .version(version);
+
+program  
+	.command('clean')
+	.description('Removes all files from build folder')
+	.action(function(){
+		cleanBuildDir();
+});
+
 
 program  
 	.command('build-client [options]')
@@ -77,44 +114,50 @@ program
 	.option('-s, --shelf', 'with Shelf.js')
 	.option('-e, --es5', 'with support for old browsers')
 	.option('-a, --all', 'full build of nodeGame-client')
+	.option('-C, --clean', 'clean build directory')
 	.option('-A, --analyse', 'analyse build')
 	.option('-o, --output <file>', 'output file (without .js)')
 	.action(function(env, options) {
 		if (options.output && path.extname(options.output) === '.js') {
 			options.output = path.basename(options.output, '.js');
 		}
+		options.clean = true;
 		build_client(options);
-		copyFile(buildDir_client + options.output, buildDir + files[i]);
+		copyFromDirectory(buildDir_client, buildDir);
 });
 		
 program  
 	.command('multibuild')
-	.description('Creates pre-defined nodeGame builds')
+	.description('Builds a set of javascript libraries for nodeGame')
 	.action(function(){
 		console.log('Multi-build for nodegame-server v.' + version);
 
 		// nodegame-client
 		build_client({
+			clean: true,
 			all: true,
-			output: "nodegame-client-full",
+			output: "nodegame-full",
 		});
 		build_client({
 			bare: true,
-			output: "nodegame-client-bare",
+			output: "nodegame-bare",
 		});
 		build_client({
-			output: "nodegame-client",
+			output: "nodegame",
 		});
 		
 		copyFromDirectory(buildDir_client);
 		
 		// JSUS
-		build_JSUS({});
+		build_JSUS({
+			clean: true,
+		});
 
 		copyFromDirectory(buildDir_JSUS);
 		
 		// NDDB
 		build_NDDB({
+			clean: true,
 			all: true,
 			output: "nddb-full",
 		});
@@ -132,6 +175,7 @@ program
 		
 		// Shelf.js
 		build_shelf({
+			clean: true,
 			all: true,
 			output: "shelf-full",
 		});
@@ -165,7 +209,7 @@ program
 		console.log('Building documentation for nodegame-server v.' + version);
 		// http://nodejs.org/api.html#_child_processes
 		var root =  __dirname + '/../';
-		var command = root + 'node_modules/.bin/docker -i ' + root + ' index.js init.node.js nodeGame.js lib/ addons/ -o ' + root + 'docs/';
+		var command = root + 'node_modules/.bin/docker -i ' + root + ' index.js lib/ -o ' + root + 'docs/';
 		var child = exec(command, function (error, stdout, stderr) {
 			util.print(stdout);
 			util.print(stderr);
