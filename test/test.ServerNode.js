@@ -1,7 +1,7 @@
 var util = require('util'),
     should = require('should'),
     request = require('request'),
-    ServerNode = require('./../ServerNode');
+    ServerNode = require('./../index.js').ServerNode;
 
 // Define nodeGame Server options.
 var server_options = {
