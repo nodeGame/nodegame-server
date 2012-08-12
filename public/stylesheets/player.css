@@ -82,6 +82,24 @@ div#visualtimer_div {
   text-align: center;
 }
 
+/* Money Talks */
+
+fieldset#moneytalks_fieldset {
+  float: right;
+  width: auto;
+  min-width: 100px;
+}
+
+fieldset#moneytalks_fieldset span#moneytalks_money {
+  font-size: 40px;
+  text-align: center;
+}
+
+fieldset#moneytalks_fieldset span#moneytalks_currency {
+  font-size: 12px;
+  text-align: center;
+}
+
 /* Visual State */
 
 fieldset#visualstate_fieldset {
