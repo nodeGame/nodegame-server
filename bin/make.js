@@ -19,17 +19,19 @@ var program = require('commander'),
     pkg = require('../package.json'),
     version = pkg.version;
 
-var build_client = require('./../node_modules/nodegame-client/bin/build.js').build;
-var build_JSUS = require('./../node_modules/nodegame-client/node_modules/JSUS/bin/build.js').build;
-var build_NDDB = require('./../node_modules/nodegame-client/node_modules/NDDB/bin/build.js').build;
-var build_shelf = require('./../node_modules/nodegame-client/node_modules/shelf.js/bin/build.js').build;
+var rootDir = path.resolve(__dirname, '..') + '/';
 
-var buildDir =  __dirname + '/../public/javascripts/';
+var build_client = require(rootDir + 'node_modules/nodegame-client/bin/build.js').build;
+var build_JSUS = require(rootDir + 'node_modules/nodegame-client/node_modules/JSUS/bin/build.js').build;
+var build_NDDB = require(rootDir + 'node_modules/nodegame-client/node_modules/NDDB/bin/build.js').build;
+var build_shelf = require(rootDir + 'node_modules/nodegame-client/node_modules/shelf.js/bin/build.js').build;
 
-var buildDir_client = './../node_modules/nodegame-client/build/';
-var buildDir_JSUS = './../node_modules/nodegame-client/node_modules/JSUS/build/';
-var buildDir_NDDB = './../node_modules/nodegame-client/node_modules/NDDB/build/';
-var buildDir_shelf = './../node_modules/nodegame-client/node_modules/shelf.js/build/';
+var buildDir =  rootDir  + 'public/javascripts/';
+
+var buildDir_client = rootDir + 'node_modules/nodegame-client/build/';
+var buildDir_JSUS = rootDir + 'node_modules/nodegame-client/node_modules/JSUS/build/';
+var buildDir_NDDB = rootDir + 'node_modules/nodegame-client/node_modules/NDDB/build/';
+var buildDir_shelf = rootDir + 'node_modules/nodegame-client/node_modules/shelf.js/build/';
 
 var copyFromDirectory = function(dirIn, dirOut, ext) {
 	ext = ext || '.js';
