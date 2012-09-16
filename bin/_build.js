@@ -12,8 +12,9 @@
 module.exports.build = build;
 
 var smoosh = require('smoosh'),
-    path = require('path'),
-    pkg = require('../package.json'),
+    path = require('path');
+
+var pkg = require('../package.json'),
     version = pkg.version;
 
 
@@ -33,9 +34,7 @@ function build(options) {
 
 	// Defining variables
 
-	var re = new RegExp('node_modules.+');
-
-	var rootDir = __dirname + '/../';
+	var rootDir = path.resolve(__dirname, '..') + '/';
 	var distDir =  rootDir + 'build/';
 
 	// nodegame-client
