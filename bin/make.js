@@ -75,7 +75,7 @@ program
 		}
 		options.clean = true;
 		build_client(options);
-		J.copyFromDir(buildDir_client, buildDir);
+		J.copyFromDir(buildDir_client, buildDir, '.js');
 });
 		
 program  
@@ -98,14 +98,14 @@ program
 			output: "nodegame",
 		});
 		
-		J.copyFromDir(buildDir_client, buildDir);
+		J.copyFromDir(buildDir_client, buildDir, '.js');
 		
 		// JSUS
 		build_JSUS({
 			clean: true,
 		});
 
-		J.copyFromDir(buildDir_JSUS, buildDir);
+		J.copyFromDir(buildDir_JSUS, buildDir, '.js');
 		
 		// NDDB
 		build_NDDB({
@@ -123,7 +123,7 @@ program
 		});
 		
 
-		J.copyFromDir(buildDir_NDDB, buildDir);
+		J.copyFromDir(buildDir_NDDB, buildDir, '.js');
 		
 		// Shelf.js
 		build_shelf({
@@ -149,7 +149,7 @@ program
 		});
 		
 
-		J.copyFromDir(buildDir_shelf, buildDir);
+		J.copyFromDir(buildDir_shelf, buildDir, '.js');
 		
 		console.log('All javascript files built and copied in public/javascript/');
 });
