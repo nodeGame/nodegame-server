@@ -122,7 +122,6 @@ program
 			output: "nddb",
 		});
 		
-
 		J.copyFromDir(buildDir_NDDB, buildDir, '.js');
 		
 		// Shelf.js
