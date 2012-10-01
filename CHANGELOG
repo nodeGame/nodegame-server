@@ -1,0 +1,11 @@
+# nodegame-client change log
+
+## 0.2.7
+
+  - node.redirect (for AdminServer only)
+  - better make file
+  - cleanup
+
+## 0.2.0
+
+  - Major refactoring
