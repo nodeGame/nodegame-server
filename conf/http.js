@@ -86,10 +86,12 @@ function configure (app, servernode) {
     	
     	if (!gameInfo) {
     		res.send('Resource ' + req.params.game + ' is not available.');
+    		return;
     	}
     	
     	if (req.params[0].match(/server\//)){
     		res.json({error: 'access denied'}, 403);
+    		return;
     	} 
     	
     	var path = gameInfo.dir + '/' + req.params[0]; 
