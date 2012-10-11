@@ -16,79 +16,30 @@ var program = require('commander'),
     util = require('util'),
     exec = require('child_process').exec,
     path = require('path'),
-    pkg = require('../package.json'),
+    J = require('JSUS').JSUS;
+    
+var pkg = require('../package.json'),
     version = pkg.version;
 
-var rootDir = path.resolve(__dirname, '..') + '/';
+var ngcDir = J.resolveModuleDir('nodegame-client');
+var JSUSDir = J.resolveModuleDir('JSUS');
+var NDDBDir = J.resolveModuleDir('NDDB');
+var shelfDir = J.resolveModuleDir('shelf.js');
 
-var build_client = require(rootDir + 'node_modules/nodegame-client/bin/build.js').build;
-var build_JSUS = require(rootDir + 'node_modules/nodegame-client/node_modules/JSUS/bin/build.js').build;
-var build_NDDB = require(rootDir + 'node_modules/nodegame-client/node_modules/NDDB/bin/build.js').build;
-var build_shelf = require(rootDir + 'node_modules/nodegame-client/node_modules/shelf.js/bin/build.js').build;
+var build_client = require(ngcDir + 'bin/build.js').build;
+var build_JSUS = require(JSUSDir + 'bin/build.js').build;
+var build_NDDB = require(NDDBDir + 'bin/build.js').build;
+var build_shelf = require(shelfDir + 'bin/build.js').build;
 
-var buildDir =  rootDir  + 'public/javascripts/';
+var rootDir = path.resolve(__dirname, '..');
+var buildDir = rootDir + '/public/javascripts/';
 
-var buildDir_client = rootDir + 'node_modules/nodegame-client/build/';
-var buildDir_JSUS = rootDir + 'node_modules/nodegame-client/node_modules/JSUS/build/';
-var buildDir_NDDB = rootDir + 'node_modules/nodegame-client/node_modules/NDDB/build/';
-var buildDir_shelf = rootDir + 'node_modules/nodegame-client/node_modules/shelf.js/build/';
+var buildDir_client = ngcDir + 'build/';
+var buildDir_JSUS = JSUSDir + 'build/';
+var buildDir_NDDB = NDDBDir + 'build/';
+var buildDir_shelf = shelfDir + 'build/';
 
-var copyFromDirectory = function(dirIn, dirOut, ext) {
-	ext = ext || '.js';
-	dirOut = dirOut || buildDir;
-	fs.readdir(dirIn, function(err, files){
-		if (err) {
-			console.log(err);
-			throw new Error;
-		}
-		for (var i in files) {
-			if (path.extname(files[i]) === ext) {
-				copyFile(dirIn + files[i], dirOut + files[i]);
-			}
-		}
-	});
-};
 
-//https://github.com/jprichardson/node-fs-extra/blob/master/lib/copy.js
-var copyFile = function(srcFile, destFile, cb) {
-    var fdr, fdw;
-    fdr = fs.createReadStream(srcFile);
-    fdw = fs.createWriteStream(destFile);
-    fdr.on('end', function() {
-    	if (cb) return cb(null);
-    });
-    return fdr.pipe(fdw);
-};
-
-var deleteIfExist = function(file) {
-	file = file || filename;
-	if (path.existsSync(file)) {
-		var stats = fs.lstatSync(file);
-		if (stats.isDirectory()) {
-			fs.rmdir(file, function (err) {
-				if (err) throw err;  
-			});
-		}
-		else {
-			fs.unlink(file, function (err) {
-				if (err) throw err;  
-			});
-		}
-		
-	}
-};
-
-var cleanBuildDir = function(dir, ext) {
-	ext = ext || '.js';
-	dir = dir || buildDir;
-	if (dir[dir.length] !== '/') dir = dir + '/';
-	fs.readdir(dir, function(err, files) {
-	    files.filter(function(file) { return path.extname(file) ===  ext; })
-	         .forEach(function(file) { deleteIfExist(dir + file); });
-	    
-	    console.log('Build directory cleaned');
-	});
-}
 
 program
   .version(version);
@@ -97,7 +48,7 @@ program
 	.command('clean')
 	.description('Removes all files from build folder')
 	.action(function(){
-		cleanBuildDir();
+		J.cleandDir(buildDir);
 });
 
 
@@ -124,7 +75,7 @@ program
 		}
 		options.clean = true;
 		build_client(options);
-		copyFromDirectory(buildDir_client, buildDir);
+		J.copyFromDir(buildDir_client, buildDir, '.js');
 });
 		
 program  
@@ -147,14 +98,14 @@ program
 			output: "nodegame",
 		});
 		
-		copyFromDirectory(buildDir_client);
+		J.copyFromDir(buildDir_client, buildDir, '.js');
 		
 		// JSUS
 		build_JSUS({
 			clean: true,
 		});
 
-		copyFromDirectory(buildDir_JSUS);
+		J.copyFromDir(buildDir_JSUS, buildDir, '.js');
 		
 		// NDDB
 		build_NDDB({
@@ -171,8 +122,7 @@ program
 			output: "nddb",
 		});
 		
-
-		copyFromDirectory(buildDir_NDDB);
+		J.copyFromDir(buildDir_NDDB, buildDir, '.js');
 		
 		// Shelf.js
 		build_shelf({
@@ -198,9 +148,9 @@ program
 		});
 		
 
-		copyFromDirectory(buildDir_shelf);
+		J.copyFromDir(buildDir_shelf, buildDir, '.js');
 		
-		console.log('All javascript files built and copied in /public/javascript/');
+		console.log('All javascript files built and copied in public/javascript/');
 });
 
 program
@@ -209,8 +159,8 @@ program
 	.action(function(){
 		console.log('Building documentation for nodegame-server v.' + version);
 		// http://nodejs.org/api.html#_child_processes
-		var root =  __dirname + '/../';
-		var command = root + 'node_modules/.bin/docker -i ' + root + ' index.js lib/ -o ' + root + 'docs/';
+		var dockerDir = J.resolveModuleDir('docker');
+		var command = dockerDir + 'docker -i ' + rootDir + ' index.js lib/ -o ' + rootDir + 'docs/';
 		var child = exec(command, function (error, stdout, stderr) {
 			util.print(stdout);
 			util.print(stderr);
