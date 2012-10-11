@@ -79,7 +79,11 @@ function configure (app, servernode) {
     	res.send('Unknown query received.');
     });
     
-// TODO: remove this, and add games dynamically
+    app.get('/error/:type', function(req, res) {
+    	var type = req.params.type 
+    	res.render('error/' + type);
+    });
+    
     app.get('/:game/*', function(req, res){    
 	
     	var gameInfo = servernode.info.games[req.params.game];
