@@ -1,6 +1,6 @@
 # nodegame-server
 
-For documentation please check the root [nodeGame](https://github.com/shakty/nodeGame) repo.
+For documentation please check the root [nodeGame](https://github.com/nodeGame/nodegame) repo.
 
 ## License
 
