@@ -9,15 +9,15 @@ function configure (servernode) {
 	servernode.name = "nodeGame server";
 	servernode.verbosity = 10;
 	
-	
-	servernode.log.msg = false;
-	servernode.log.sys = false;
-	
-	servernode.mail = false;
+//	servernode.log.msg = false;
+//	servernode.log.sys = false;
+//	servernode.log.folder = rootDir + '/log/';
+//	
+//	servernode.mail = false; // experimental
 	
 
 	servernode.defaultGamesDir = rootDir + '/games/';
-	servernode.gamesDirs = [this.defaultGamesDir];
+	servernode.gamesDirs = [servernode.defaultGamesDir];
     
 	if (process && process.env.PORT){
 		servernode.port = process.env.PORT; // if app is running on heroku then the assigned port has to be used.
