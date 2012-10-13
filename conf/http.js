@@ -20,8 +20,9 @@ var util = require('util'),
     fs = require('fs'),
     path = require('path'),
     express = require('express'),
-    J = require('JSUS').JSUS,
+    J = require('nodegame-client').JSUS,
 	nodemailer = require('nodemailer');
+
 
 /**
  * ### ServerNode._configureHTTP
