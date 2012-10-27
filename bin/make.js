@@ -27,6 +27,7 @@ var NDDBDir = J.resolveModuleDir('NDDB');
 var shelfDir = J.resolveModuleDir('shelf.js');
 
 var build_client = require(ngcDir + 'bin/build.js').build;
+var build_client_support = require(ngcDir + 'bin/build.js').build_support;
 var build_JSUS = require(JSUSDir + 'bin/build.js').build;
 var build_NDDB = require(NDDBDir + 'bin/build.js').build;
 var build_shelf = require(shelfDir + 'bin/build.js').build;
@@ -50,7 +51,6 @@ program
 	.action(function(){
 		J.cleandDir(buildDir);
 });
-
 
 program  
 	.command('build-client [options]')
@@ -97,11 +97,15 @@ program
 		build_client({
 			output: "nodegame",
 		});
+		build_client_support({
+			all: true,
+		});
 		
 		J.copyFromDir(buildDir_client, buildDir, '.js');
 		
 		// JSUS
 		build_JSUS({
+			lib: ['obj','array','eval','parse','random','time','dom'],
 			clean: true,
 		});
 
