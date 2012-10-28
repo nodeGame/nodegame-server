@@ -34,7 +34,13 @@ function configure (servernode) {
 		port: servernode.port,
 		log: servernode.log,
 		verbosity: servernode.verbosity,
+		notifyPlayers: {
+			onConnect: false,
+			onStateUpdate: false,
+		}
 	};
+	
+	
 	
 	return true;
 }
