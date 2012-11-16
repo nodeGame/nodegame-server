@@ -37,7 +37,8 @@ function configure (servernode) {
 		notifyPlayers: {
 			onConnect: false,
 			onStateUpdate: false,
-		}
+		},
+		forwardAllMessages: true,
 	};
 	
 	
