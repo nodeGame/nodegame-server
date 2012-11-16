@@ -78,9 +78,33 @@ div#gameboard {
 
 fieldset#wall_fieldset, fieldset#gb_fieldset {
   width: 500px;
-  height: 250px;
+  height: 300px;
   padding: 5px;
   margin: 5px;
+}
+
+fieldset#chat_fieldset {
+	width: 500px;
+  height: 400px;
+  padding: 5px;
+  margin: 5px;
+}
+
+#chat_chat {
+	overflow-y: scroll;
+	height: 200px;
+	width: 450px;
+	border: 1px solid #CCC;
+	padding: 5px;
+}
+
+#chat_textarea {
+  height: 100px;
+  width: 400px;
+}
+
+.chat_me {
+  font-weight: bold;
 }
 
 table#gametable {
