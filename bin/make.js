@@ -25,12 +25,16 @@ var ngcDir = J.resolveModuleDir('nodegame-client');
 var JSUSDir = J.resolveModuleDir('JSUS');
 var NDDBDir = J.resolveModuleDir('NDDB');
 var shelfDir = J.resolveModuleDir('shelf.js');
+var ngwindowDir = J.resolveModuleDir('nodegame-window');
+var ngwidgetsDir = J.resolveModuleDir('nodegame-widgets');
 
 var build_client = require(ngcDir + 'bin/build.js').build;
 var build_client_support = require(ngcDir + 'bin/build.js').build_support;
 var build_JSUS = require(JSUSDir + 'bin/build.js').build;
 var build_NDDB = require(NDDBDir + 'bin/build.js').build;
 var build_shelf = require(shelfDir + 'bin/build.js').build;
+var build_ngwindow = require(ngwindowDir + 'bin/build.js').build;
+var build_ngwidgets = require(ngwidgetsDir + 'bin/build.js').build;
 
 var rootDir = path.resolve(__dirname, '..');
 var buildDir = rootDir + '/public/javascripts/';
@@ -39,6 +43,8 @@ var buildDir_client = ngcDir + 'build/';
 var buildDir_JSUS = JSUSDir + 'build/';
 var buildDir_NDDB = NDDBDir + 'build/';
 var buildDir_shelf = shelfDir + 'build/';
+var buildDir_ngWindow = ngwindowDir + 'build/';
+var buildDir_ngWidgets = ngwidgetsDir + 'build/';
 
 
 
@@ -151,8 +157,23 @@ program
 			output: "shelf-fs",
 		});
 		
-
 		J.copyFromDir(buildDir_shelf, buildDir, '.js');
+		
+		// ng-widgets
+		build_ngwidgets({
+			all: true,
+			clean: true,
+		});
+
+		J.copyFromDir(buildDir_ngWidgets, buildDir, '.js');
+		
+		// ng-window
+		build_ngwindow({
+			all: true,
+			clean: true,
+		});
+
+		J.copyFromDir(buildDir_ngWindow, buildDir, '.js');
 		
 		console.log('All javascript files built and copied in public/javascript/');
 });
@@ -165,6 +186,9 @@ program
 		J.copyFromDir(buildDir_JSUS, buildDir, '.js');
 		J.copyFromDir(buildDir_NDDB, buildDir, '.js');
 		J.copyFromDir(buildDir_shelf, buildDir, '.js');
+		J.copyFromDir(buildDir_ngWindow, buildDir, '.js');
+		J.copyFromDir(buildDir_ngWidgets, buildDir, '.js');
+		
 		console.log('All javascript files copied to public/javascript/');
 });
 

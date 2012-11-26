@@ -36,6 +36,11 @@ var Player = node.Player,
 	GameMsgGenerator = node.GameMsgGenerator;
 
 var DOM = J.get('DOM');
+
+if (!DOM) {
+	throw new Error('DOM object not found. Aborting');
+}
+
 GameWindow.prototype = DOM;
 GameWindow.prototype.constructor = GameWindow;
 
@@ -565,25 +570,22 @@ GameWindow.prototype.addStandardRecipients = function (toSelector) {
 * 
 */
 GameWindow.prototype.populateRecipientSelector = function (toSelector, playerList) {
-	
 	if ('object' !==  typeof playerList || 'object' !== typeof toSelector) return;
-	
+
 	this.removeChildrenFromNode(toSelector);
 	this.addStandardRecipients(toSelector);
 	
-	var opt;
-	var pl = new PlayerList({}, playerList);
-	try {
-		pl.forEach( function(p) {
-			opt = document.createElement('option');
-			opt.value = p.id;
-			opt.appendChild(document.createTextNode(p.name || p.id));
-			toSelector.appendChild(opt);
-		});
-	}
-	catch (e) {
-		node.log('Bad Formatted Player List. Discarded. ' + p, 'ERR');
-	}
+	var players, opt;
+	
+	// check if it is a DB or a PlayerList object
+	players = playerList.db || playerList; 
+	
+	J.each(players, function(p) {
+		opt = document.createElement('option');
+		opt.value = p.id;
+		opt.appendChild(document.createTextNode(p.name || p.id));
+		toSelector.appendChild(opt);
+	});
 };
 
 /**

@@ -13,7 +13,7 @@ Widget.prototype.dependencies = {};
 Widget.prototype.defaults = {};
 
 Widget.prototype.defaults.fieldset = {
-	legend: 'Widget',
+	legend: 'Widget'
 };
 
 
@@ -327,7 +327,7 @@ node.widgets = new Widgets();
 		node.on('LOADED', function(text) {
 			if (that.waitingDiv) {
 				
-				if (that.waitingDiv.style.display === ''){
+				if (that.waitingDiv.style.display === '') {
 					that.waitingDiv.style.display = 'none';
 				}
 			// TODO: Document.js add method to remove element
@@ -364,7 +364,7 @@ node.widgets = new Widgets();
 	
 	D3.dependencies = {
 		d3: {},	
-		JSUS: {},
+		JSUS: {}
 	};
 	
 	function D3 (options) {
@@ -399,7 +399,7 @@ node.widgets = new Widgets();
 // ## Dependencies	
 	D3ts.dependencies = {
 		D3: {},	
-		JSUS: {},
+		JSUS: {}
 	};
 	
 	D3ts.prototype.__proto__ = D3.prototype;
@@ -747,7 +747,7 @@ node.widgets = new Widgets();
 	ServerInfoDisplay.defaults.id = 'serverinfodisplay';
 	ServerInfoDisplay.defaults.fieldset = {
 			legend: 'Server Info',
-			id: 'serverinfo_fieldset',
+			id: 'serverinfo_fieldset'
 	};		
 	
 // ## Meta-data
@@ -827,9 +827,7 @@ node.widgets = new Widgets();
 	
 // ## Defaults
 	
-	var defaults = {
-			id: 'controls',
-	}
+	var defaults = { id: 'controls' };
 	
 	Controls.defaults = defaults;
 	
@@ -1149,7 +1147,7 @@ node.widgets = new Widgets();
 	VisualState.defaults.id = 'visualstate';
 	VisualState.defaults.fieldset = { 
 		legend: 'State',
-		id: 'visualstate_fieldset',
+		id: 'visualstate_fieldset'
 	};	
 	
 // ## Meta-data
@@ -1266,8 +1264,8 @@ node.widgets = new Widgets();
 		var idPlayer = PREF + 'player';
 		var idState = PREF + 'state'; 
 			
-		var checkPlayerName = setInterval(function(idState,idPlayer){
-			if (node.player !== null){
+		var checkPlayerName = setInterval(function(idState,idPlayer) {
+			if (node.player && node.player.id) {
 				clearInterval(checkPlayerName);
 				that.updateAll();
 			}
@@ -1280,10 +1278,14 @@ node.widgets = new Widgets();
 	};
 	
 	StateDisplay.prototype.updateAll = function() {
+		var state = node.game ? new GameState(node.game.state) : new GameState(),
+			id = node.player ? node.player.id : '-';
+			name = node.player && node.player.name ? node.player.name : '-';
+			
 		this.table.clear(true);
-		this.table.addRow(['Name: ', node.player.name]);
-		this.table.addRow(['State: ', new GameState(node.state).toString()]);
-		this.table.addRow(['Id: ', node.player.id]);
+		this.table.addRow(['Name: ', name]);
+		this.table.addRow(['State: ', state.toString()]);
+		this.table.addRow(['Id: ', id]);
 		this.table.parse();
 		
 	};
@@ -1297,7 +1299,7 @@ node.widgets = new Widgets();
 		var OUT = node.OUT;
 		
 		node.on('STATECHANGE', function() {
-			that.updateAll(node.state);
+			that.updateAll();
 		}); 
 	}; 
 	
@@ -2947,9 +2949,7 @@ node.widgets = new Widgets();
 	
 	GameSummary.defaults = {};
 	GameSummary.defaults.id = 'gamesummary';
-	GameSummary.defaults.fieldset = {
-		legend: 'Game Summary',
-	};
+	GameSummary.defaults.fieldset = { legend: 'Game Summary' };
 	
 // ## Meta-data
 	
@@ -3007,7 +3007,7 @@ node.widgets = new Widgets();
 // ## Dependencies
 	
 	MoneyTalks.dependencies = {
-		JSUS: {},
+		JSUS: {}
 	};
 	
 	
@@ -3258,7 +3258,7 @@ node.widgets = new Widgets();
 			MANY_TO_MANY: 'MANY_TO_MANY',
 			MANY_TO_ONE: 'MANY_TO_ONE',
 			ONE_TO_ONE: 'ONE_TO_ONE',
-			RECEIVER_ONLY: 'RECEIVER_ONLY',
+			RECEIVER_ONLY: 'RECEIVER_ONLY'
 	};
 	
 	Chat.name = 'Chat';
@@ -3355,12 +3355,12 @@ node.widgets = new Widgets();
 	      var to = that.recipient.value;
 	      var args = {
 		        '%s': {
-		          'class': 'chat_me',
+		          'class': 'chat_me'
 		        },
 		        '%msg': {
-		          'class': 'chat_msg',
+		          'class': 'chat_msg'
 		        },
-		        '!txt': msg,
+		        '!txt': msg
 	      };
 	      that.writeTA('%sMe%s: %msg!txt%msg', args);
 	      node.say(msg.trim(), that.chat_event, to);
@@ -3387,13 +3387,13 @@ node.widgets = new Widgets();
 	    	var from = that.displayName(msg.from);
 	    	var args = {
 		        '%s': {
-		          'class': 'chat_others',
+		          'class': 'chat_others'
 		        },
 		        '%msg': {
-		          'class': 'chat_msg',
+		          'class': 'chat_msg'
 		        },
 		        '!txt': msg.data,
-	            '!from': from,
+	            '!from': from
 	      };
 	    	
 	      that.writeTA('%s!from%s: %msg!txt%msg', args);
@@ -3413,7 +3413,7 @@ node.widgets = new Widgets();
 	VisualTimer.defaults.id = 'visualtimer';
 	VisualTimer.defaults.fieldset = {
 			legend: 'Time left',
-			id: 'visualtimer_fieldset',
+			id: 'visualtimer_fieldset'
 	};		
 	
 // ## Meta-data
