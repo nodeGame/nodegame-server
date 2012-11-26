@@ -44,6 +44,6 @@
   ]
   , "scripts": {
       "test": "make test",
-      "postinstall": "node bin/make.js multibuild"
+      "prepublish": "node bin/make.js refresh"
   }
 }

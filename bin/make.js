@@ -158,6 +158,17 @@ program
 });
 
 program
+	.command('refresh')
+	.description('Moves all the .js files from the build directories of the submodules into public/javascript')
+	.action(function(){
+		J.copyFromDir(buildDir_client, buildDir, '.js');
+		J.copyFromDir(buildDir_JSUS, buildDir, '.js');
+		J.copyFromDir(buildDir_NDDB, buildDir, '.js');
+		J.copyFromDir(buildDir_shelf, buildDir, '.js');
+		console.log('All javascript files copied to public/javascript/');
+});
+
+program
 	.command('doc')
 	.description('Builds documentation files')
 	.action(function(){
