@@ -161,10 +161,6 @@ program
 	.command('refresh')
 	.description('Moves all the .js files from the build directories of the submodules into public/javascript')
 	.action(function(){
-		console.log(buildDir_client);
-		console.log(buildDir_JSUS);
-		console.log(buildDir_shelf);
-		console.log(buildDir_NDDB);
 		J.copyFromDir(buildDir_client, buildDir, '.js');
 		J.copyFromDir(buildDir_JSUS, buildDir, '.js');
 		J.copyFromDir(buildDir_NDDB, buildDir, '.js');

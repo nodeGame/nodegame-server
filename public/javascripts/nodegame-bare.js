@@ -34,6 +34,56 @@ node.verbosity_levels = {
 		DEBUG: 100
 };
 
+
+node.warn = function (txt, prefix) {
+	node.log(txt, node.verbosity_levels.WARN, prefix);
+}
+
+node.err = function (txt, prefix) {
+	node.log(txt, node.verbosity_levels.ERR, prefix);
+}
+
+node.info = function (txt, prefix) {
+	node.log(txt, node.verbosity_levels.INFO, prefix);
+}
+
+
+/**
+ *  ## node.support
+ *  
+ *  A collection of features that are supported by the current browser
+ *  
+ */
+node.support = {};
+
+(function(){
+	
+	try {
+		Object.defineProperty({}, "a", {enumerable: false, value: 1})
+		node.support.defineProperty = true;
+	}
+	catch(e) {
+		node.support.defineProperty = false;	
+	}
+	
+	try {
+		eval('({ get x(){ return 1 } }).x === 1')
+		node.support.setter = true;
+	}
+	catch(err) {
+		node.support.setter = false;
+	}
+	  
+	try {
+		var value;
+		eval('({ set x(v){ value = v; } }).x = 1');
+		node.support.getter = true;
+	}
+	catch(err) {
+		node.support.getter = false;
+	}	  
+})();
+
 /**
  * ## node.log
  * 
@@ -65,7 +115,7 @@ node.log = function (txt, level, prefix) {
 
 // <!-- It will be overwritten later -->
 node.game 		= {};
-node.gsc 		= {};
+node.socket 	= {};
 node.session 	= {};
 node.player 	= {};
 node.memory 	= {};
@@ -79,6 +129,11 @@ if ('undefined' !== typeof store) node.store = store;
 if ('object' === typeof module && 'function' === typeof require) {
     require('./init.node.js');
     require('./nodeGame.js');
+
+    // ### Loading Event listeners
+    require('./listeners/incoming.js');
+    require('./listeners/internal.js');
+    require('./listeners/outgoing.js');
 }
 // end node -->
 	
@@ -97,7 +152,7 @@ if ('object' === typeof module && 'function' === typeof require) {
  *  
  */
 (function (exports, node) {
-		
+	
 // ## Global scope	
 	
 var NDDB = node.NDDB;
@@ -114,20 +169,21 @@ function EventEmitter() {
 // ## Public properties	
 	
 /**
- * ### EventEmitter._listeners
+ * ### EventEmitter.global
+ * 
  * 
  * Global listeners always active during the game
  * 
  */	
-    this._listeners = {};
+    this.global = this._listeners = {};
     
  /**
-  * ### EventEmitter._localListeners
+  * ### EventEmitter.local
   * 
   * Local listeners erased after every state update
   * 
   */   
-    this._localListeners = {};
+    this.local = this._localListeners = {};
 
 /**
  * ### EventEmitter.history
@@ -140,7 +196,7 @@ function EventEmitter() {
  */      
     this.history = new NDDB({
     	update: {
-    		indexes: true,
+    		indexes: true
     }});
     
     this.history.h('state', function(e) {
@@ -149,15 +205,6 @@ function EventEmitter() {
     											  : node.game.state;
     	return node.GameState.toHash(state, 'S.s.r');
     });
- 
-/**
- * ### EventEmitter.store
- * 
- * If TRUE all emitted events are saved in the history database
- * 
- * 	@see EventEmitter.history
- */       
-    this.store = true; // by default
 }
 
 // ## EventEmitter methods
@@ -167,7 +214,7 @@ EventEmitter.prototype = {
     constructor: EventEmitter,
 	
 /**
- * ### EventEmitter.addListener
+ * ### EventEmitter.add
  * 
  * Registers a global listener for an event
  * 
@@ -177,19 +224,19 @@ EventEmitter.prototype = {
  * @param {string} type The event name
  * @param {function} listener The function to fire
  * 
- * @see EventEmitter.addLocalListener
+ * @see EventEmitter.addLocal
  */
-    addListener: function (type, listener) {
+    add: function (type, listener) {
     	if (!type || !listener) return;
-    	if ('undefined' === typeof this._listeners[type]){
-    		this._listeners[type] = [];
+    	if ('undefined' === typeof this.global[type]){
+    		this.global[type] = [];
     	}
         node.log('Added Listener: ' + type + ' ' + listener, 'DEBUG');
-        this._listeners[type].push(listener);
+        this.global[type].push(listener);
     },
     
 /**
- * ### EventEmitter.addLocalListener
+ * ### EventEmitter.addLocal
  * 
  * Registers a local listener for an event
  * 
@@ -200,16 +247,16 @@ EventEmitter.prototype = {
  * @param {string} type The event name
  * @param {function} listener The function to fire
  * 
- * @see EventEmitter.addListener
+ * @see EventEmitter.add
  * 
  */
-    addLocalListener: function (type, listener) {
+    addLocal: function (type, listener) {
     	if (!type || !listener) return;
-    	if ('undefined' === typeof this._localListeners[type]){
-            this._localListeners[type] = [];
+    	if ('undefined' === typeof this.local[type]){
+            this.local[type] = [];
         }
     	node.log('Added Local Listener: ' + type + ' ' + listener, 'DEBUG');
-        this._localListeners[type].push(listener);
+        this.local[type].push(listener);
     },
 
 /**
@@ -241,35 +288,45 @@ EventEmitter.prototype = {
         if (!event.type) {  //falsy
             throw new Error("Event object missing 'type' property.");
         }
-    	// <!-- Debug
-        // console.log('Fired ' + event.type); -->
+    	
         
         // Log the event into node.history object, if present
-        if (this.store) {
-        	var o = {
-	        		event: event.type,
-	        		//target: node.game,
-	        		state: node.state,
-	        		p1: p1,
-	        		p2: p2,
-	        		p3: p3,
-	        	};
+        if (!node.conf || !node.conf.events) {
+        	node.log('node.conf.events object not found. Is everthing all right?', 'WARN');
+        }
+        else {
         	
-        	this.history.insert(o);
+        	if (node.conf.events.history) {
+	        	var o = {
+		        		event: event.type,
+		        		//target: node.game,
+		        		state: node.game.state,
+		        		p1: p1,
+		        		p2: p2,
+		        		p3: p3
+		        	};
+	        	
+	        	this.history.insert(o);
+        	}
+        	
+        	// <!-- Debug
+            if (node.conf.events.dumpEvents) {
+            	node.log('Fired ' + event.type);
+            }
         }
         
         
         // Fires global listeners
-        if (this._listeners[event.type] instanceof Array) {
-            var listeners = this._listeners[event.type];
+        if (this.global[event.type] instanceof Array) {
+            var listeners = this.global[event.type];
             for (var i=0, len=listeners.length; i < len; i++){
             	listeners[i].call(this.game, p1, p2, p3);
             }
         }
         
         // Fires local listeners
-        if (this._localListeners[event.type] instanceof Array) {
-            var listeners = this._localListeners[event.type];
+        if (this.local[event.type] instanceof Array) {
+            var listeners = this.local[event.type];
             for (var i=0, len=listeners.length; i < len; i++) {
             	listeners[i].call(this.game, p1, p2, p3);
             }
@@ -278,7 +335,7 @@ EventEmitter.prototype = {
     },
 
 /**
- * ### EventEmitter.removeListener
+ * ### EventEmitter.remove
  * 
  * Deregister an event, or an event listener
  * 
@@ -287,7 +344,7 @@ EventEmitter.prototype = {
  * 
  * @return Boolean TRUE, if the removal is successful
  */
-	removeListener: function(type, listener) {
+	remove: function(type, listener) {
 	
 		function removeFromList(type, listener, list) {
 	    	//<!-- console.log('Trying to remove ' + type + ' ' + listener); -->
@@ -315,8 +372,8 @@ EventEmitter.prototype = {
 	        return false;
 		}
 		
-		var r1 = removeFromList(type, listener, this._listeners);
-		var r2 = removeFromList(type, listener, this._localListeners);
+		var r1 = removeFromList(type, listener, this.global);
+		var r2 = removeFromList(type, listener, this.local);
 	
 		return r1 || r2;
 	},
@@ -329,7 +386,7 @@ EventEmitter.prototype = {
  * @TODO: This method wraps up clearLocalListeners. To re-design.
  */ 
 	clearState: function(state) {
-		this.clearLocalListeners();
+		this.clearLocal();
 		return true;
 	},
     
@@ -339,33 +396,33 @@ EventEmitter.prototype = {
  * Removes all entries from the local listeners register
  * 
  */
-	clearLocalListeners: function() {
+	clearLocal: function() {
 		node.log('Cleaning Local Listeners', 'DEBUG');
-		for (var key in this._localListeners) {
-			if (this._localListeners.hasOwnProperty(key)) {
-				this.removeListener(key, this._localListeners[key]);
+		for (var key in this.local) {
+			if (this.local.hasOwnProperty(key)) {
+				this.remove(key, this.local[key]);
 			}
 		}
 		
-		this._localListeners = {};
+		this.local = {};
 	},
     
 /**
- * ### EventEmitter.printAllListeners
+ * ### EventEmitter.printAll
  * 
  * Prints to console all the registered functions 
  */
-	printAllListeners: function() {
+	printAll: function() {
 		node.log('nodeGame:\tPRINTING ALL LISTENERS', 'DEBUG');
 	    
-		for (var i in this._listeners){
-	    	if (this._listeners.hasOwnProperty(i)){
+		for (var i in this.global){
+	    	if (this.global.hasOwnProperty(i)){
 	    		console.log(i + ' ' + i.length);
 	    	}
 	    }
 		
-		for (var i in this._localListeners){
-	    	if (this._listeners.hasOwnProperty(i)){
+		for (var i in this.local){
+	    	if (this.local.hasOwnProperty(i)){
 	    		console.log(i + ' ' + i.length);
 	    	}
 	    }
@@ -393,7 +450,7 @@ function Listener (o) {
 	
 	// the state in which the listener is
 	// allowed to be executed
-	this.state = o.state || node.state || undefined; 	
+	this.state = o.state || node.game.state; 	
 	
 	// for how many extra steps is the event 
 	// still valid. -1 = always valid
@@ -979,7 +1036,7 @@ PlayerList.prototype.exist = function (id) {
  * Checks whether all players in the database are DONE
  * for the specified `GameState`.
  * 
- * @param {GameState} state Optional. The GameState to check. Defaults state = node.state
+ * @param {GameState} state Optional. The GameState to check. Defaults state = node.game.state
  * @param {Boolean} extended Optional. If TRUE, also newly connected players are checked. Defaults, FALSE
  * @return {Boolean} TRUE, if all the players are DONE with the specified `GameState`
  * 
@@ -989,7 +1046,7 @@ PlayerList.prototype.exist = function (id) {
 PlayerList.prototype.isStateDone = function (state, extended) {
 	
 	// <!-- console.log('1--- ' + state); -->
-	state = state || node.state;
+	state = state || node.game.state;
 	// <!-- console.log('2--- ' + state); -->
 	extended = extended || false;
 	
@@ -1051,7 +1108,7 @@ PlayerList.prototype.actives = function () {
  * If all the players are DONE with the specfied state,
  * emits a `STATEDONE` event
  * 
- * @param {GameState} state Optional. The GameState to check. Defaults state = node.state
+ * @param {GameState} state Optional. The GameState to check. Defaults state = node.game.state
  * @param {Boolean} extended Optional. If TRUE, also newly connected players are checked. Defaults, FALSE
  * 
  * 		@see `PlayerList.actives`
@@ -1196,10 +1253,15 @@ function Player (pl) {
  * 
  */	
 	var sid = pl.sid;
-	Object.defineProperty(this, 'sid', {
-		value: sid,
-    	enumerable: true,
-	});
+	if (node.support.defineProperty) {
+		Object.defineProperty(this, 'sid', {
+			value: sid,
+	    	enumerable: true
+		});
+	}
+	else {
+		this.sid = sid;
+	}
 	
 /**
  * ### Player.id
@@ -1211,10 +1273,15 @@ function Player (pl) {
  * 
  */	
 	var id = pl.id || sid;
-	Object.defineProperty(this, 'id', {
-		value: id,
-    	enumerable: true,
-	});
+	if (node.support.defineProperty) {
+		Object.defineProperty(this, 'id', {
+			value: id,
+	    	enumerable: true
+		});
+	}
+	else {
+		this.id = id;
+	}
 	
 /**
  * ### Player.count
@@ -1224,10 +1291,15 @@ function Player (pl) {
  * 	@see PlayerList
  */		
 	var count = pl.count;
-	Object.defineProperty(this, 'count', {
-    	value: count,
-    	enumerable: true,
-	});
+	if (node.support.defineProperty) {
+		Object.defineProperty(this, 'count', {
+	    	value: count,
+	    	enumerable: true
+		});
+	}
+	else {
+		this.count = count;
+	}
 	
 // ## Player public properties
 
@@ -1285,7 +1357,7 @@ function Player (pl) {
  * @return {string} The string representation of a player
  */
 Player.prototype.toString = function() {
-	return this.name + ' (' + this.id + ') ' + new GameState(this.state);
+	return (this.name || '' ) + ' (' + this.id + ') ' + new GameState(this.state);
 };
 		
 // ## Closure	
@@ -1339,19 +1411,32 @@ GameMsg.actions.SAY			= 'say'; 	// Announce properties of the sender
  * It answers the question: "What is the content of the message?" 
  */
 GameMsg.targets = {};
-GameMsg.targets.HI			= 'HI';		// Introduction
-GameMsg.targets.HI_AGAIN	= 'HI_AGAIN'; // CLient reconnects
-GameMsg.targets.STATE		= 'STATE';	// STATE
+
+GameMsg.targets.HI			= 'HI';			// Client connects
+GameMsg.targets.HI_AGAIN	= 'HI_AGAIN'; 	// Client reconnects
+
+GameMsg.targets.PCONNECT	= 'PCONNECT'; 		// A new player just connected
+GameMsg.targets.PDISCONNECT = 'PDISCONNECT';	// A player just disconnected
+
+GameMsg.targets.MCONNECT	= 'MCONNECT'; 		// A new monitor just connected
+GameMsg.targets.MDISCONNECT = 'MDISCONNECT';	// A monitor just disconnected
+
 GameMsg.targets.PLIST 		= 'PLIST';	// PLIST
+GameMsg.targets.MLIST 		= 'MLIST';	// PLIST
+
+GameMsg.targets.STATE		= 'STATE';	// STATE
+
 GameMsg.targets.TXT 		= 'TXT';	// Text msg
 GameMsg.targets.DATA		= 'DATA';	// Contains a data-structure in the data field
 
 GameMsg.targets.REDIRECT	= 'REDIRECT'; // redirect a client to a new address
 
+// Still to implement
+GameMsg.targets.BYE			= 'BYE';	// Force disconnects
 GameMsg.targets.ACK			= 'ACK';	// A reliable msg was received correctly
-
 GameMsg.targets.WARN 		= 'WARN';	// To do.
 GameMsg.targets.ERR			= 'ERR';	// To do.
+
 
 GameMsg.IN					= 'in.';	// Prefix for incoming msgs
 GameMsg.OUT					= 'out.';	// Prefix for outgoing msgs
@@ -1390,10 +1475,15 @@ function GameMsg (gm) {
  * @api private
  */	
 	var id = gm.id || Math.floor(Math.random()*1000000);
-	Object.defineProperty(this, 'id', {
-		value: id,
-		enumerable: true,
-	});
+	if (node.support.defineProperty) {
+		Object.defineProperty(this, 'id', {
+			value: id,
+			enumerable: true
+		});
+	}
+	else {
+		this.id = id;
+	}
 
 /**
  * ### GameMsg.session
@@ -1403,10 +1493,15 @@ function GameMsg (gm) {
  * @api private
  */	
 	var session = gm.session;
-	Object.defineProperty(this, 'session', {
-		value: session,
-		enumerable: true,
-	});
+	if (node.support.defineProperty) {
+		Object.defineProperty(this, 'session', {
+			value: session,
+			enumerable: true
+		});
+	}
+	else {
+		this.session = session;
+	}
 
 // ## Public properties	
 
@@ -1710,17 +1805,34 @@ function GameLoop (loop) {
  * ### GameLoop.length
  * 
  * The total number of states + steps in the game-loop
+ * 
+ * @see GameLoop.size()
+ * 
+ * @deprecated
  */
-	Object.defineProperty(this, 'length', {
-    	set: function(){},
-    	get: function(){
-    		return this.steps2Go(new GameState());
-    	},
-    	configurable: true
-	});	
+	if (node.support.getter) {
+		Object.defineProperty(this, 'length', {
+	    	set: function(){},
+	    	get: this.size,
+	    	configurable: true
+		});
+	}
+	else {
+		this.length = null;
+	}	
 }
 
 // ## GameLoop methods
+
+/**
+ * ### GameLoop.size
+ * 
+ * Returns the total number of states + steps in the game-loop
+ * 
+ */
+GameLoop.prototype.size = function() {
+	return this.steps2Go(new GameState());
+};
 
 /**
  * ### GameLoop.exist
@@ -1759,12 +1871,12 @@ GameLoop.prototype.exist = function (gameState) {
  * An optional input parameter can control the state from which 
  * to compute the next state
  * 
- * @param {GameState} gameState Optional. The reference game-state. Defaults, node.state
+ * @param {GameState} gameState Optional. The reference game-state. Defaults, node.game.state
  * @return {GameState|boolean} The next game-state, or FALSE if it does not exist
  * 
  */
 GameLoop.prototype.next = function (gameState) {
-	gameState = (gameState) ? new GameState(gameState) : node.state;
+	gameState = (gameState) ? new GameState(gameState) : node.game.state;
 	
 	// Game has not started yet, do it!
 	if (gameState.state === 0) {
@@ -1821,11 +1933,11 @@ GameLoop.prototype.next = function (gameState) {
  * An optional input parameter can control the state from which 
  * to compute the previous state
  * 
- * @param {GameState} gameState Optional. The reference game-state. Defaults, node.state
+ * @param {GameState} gameState Optional. The reference game-state. Defaults, node.game.state
  * @return {GameState|boolean} The previous game-state, or FALSE if it does not exist
  */
 GameLoop.prototype.previous = function (gameState) {
-	gameState = (gameState) ? new GameState(gameState) : node.state;
+	gameState = (gameState) ? new GameState(gameState) : node.game.state;
 	
 	if (!this.exist(gameState)) {
 		node.log('No previous state of non-existing state: ' + gameState, 'WARN');
@@ -1870,11 +1982,11 @@ GameLoop.prototype.previous = function (gameState) {
  * 
  * Returns the name associated with a game-state
  * 
- * @param {GameState} gameState Optional. The reference game-state. Defaults, node.state
+ * @param {GameState} gameState Optional. The reference game-state. Defaults, node.game.state
  * @return {string|boolean} The name of the game-state, or FALSE if state does not exists
  */
 GameLoop.prototype.getName = function (gameState) {
-	gameState = (gameState) ? new GameState(gameState) : node.state;
+	gameState = (gameState) ? new GameState(gameState) : node.game.state;
 	if (!this.exist(gameState)) return false;
 	return this.loop[gameState.state]['state'][gameState.step]['name'];
 };
@@ -1888,7 +2000,7 @@ GameLoop.prototype.getName = function (gameState) {
  * @return {object|boolean} The function of the game-state, or FALSE if state does not exists
  */
 GameLoop.prototype.getFunction = function (gameState) {
-	gameState = (gameState) ? new GameState(gameState) : node.state;
+	gameState = (gameState) ? new GameState(gameState) : node.game.state;
 	if (!this.exist(gameState)) return false;
 	return this.loop[gameState.state]['state'][gameState.step]['state'];
 };
@@ -1902,7 +2014,7 @@ GameLoop.prototype.getFunction = function (gameState) {
  * @return {object|boolean} The state object, or FALSE if state does not exists
  */
 GameLoop.prototype.getAllParams = function (gameState) {
-	gameState = (gameState) ? new GameState(gameState) : node.state;
+	gameState = (gameState) ? new GameState(gameState) : node.game.state;
 	if (!this.exist(gameState)) return false;
 	return this.loop[gameState.state]['state'][gameState.step];
 };
@@ -1940,11 +2052,11 @@ GameLoop.prototype.jumpTo = function (gameState, N) {
  * An optional input parameter can control the starting state
  * for the computation
  * 
- * @param {GameState} gameState Optional. The reference game-state. Defaults, node.state
+ * @param {GameState} gameState Optional. The reference game-state. Defaults, node.game.state
  * @return {number} The total number of steps left
  */
 GameLoop.prototype.steps2Go = function (gameState) {
-	gameState = (gameState) ? new GameState(gameState) : node.state;
+	gameState = (gameState) ? new GameState(gameState) : node.game.state;
 	var count = 0;
 	while (gameState) { 
 		count++;
@@ -1992,7 +2104,7 @@ GameLoop.prototype.indexOf = function (state) {
  * in the game-loop.
  * 
  * @param {GameState} state1 The reference game-state
- * @param {GameState} state2 Optional. The second state for comparison. Defaults node.state
+ * @param {GameState} state2 Optional. The second state for comparison. Defaults node.game.state
  * 
  * @return {number} The state index in the loop, or -1 if it does not exist
  * 
@@ -2003,8 +2115,8 @@ GameLoop.prototype.diff = function (state1, state2) {
 	state1 = new GameState(state1) ;
 	
 	if (!state2) {
-		if (!node.state) return false;
-		state2 = node.state
+		if (!node.game.state) return false;
+		state2 = node.game.state
 	}
 	else {
 		state2 = new GameState(state2) ;
@@ -2081,7 +2193,7 @@ GameMsgGenerator.create = function (msg) {
 
   var base = {
 		session: node.gsc.session, 
-		state: node.state,
+		state: node.game.state,
 		action: GameMsg.actions.SAY,
 		target: GameMsg.targets.DATA,
 		from: node.player.sid,
@@ -2089,7 +2201,7 @@ GameMsgGenerator.create = function (msg) {
 		text: null,
 		data: null,
 		priority: null,
-		reliable: 1,
+		reliable: 1
   };
 
   msg = JSUS.merge(base, msg);
@@ -2106,7 +2218,7 @@ GameMsgGenerator.create = function (msg) {
  * 
  * @param {Player} player The player to communicate
  * @param {string} to The recipient of the message
- * @param {boolean} reliable Optional. Experimental. Requires an acknoledgment
+ * @param {boolean} reliable Optional. Experimental. Requires an acknowledgment
  * 
  * @return {GameMsg|boolean} The game message, or FALSE if error in the input parameters is detected
  */
@@ -2117,7 +2229,7 @@ GameMsgGenerator.createHI = function (player, to, reliable) {
   
 	return new GameMsg( {
             			session: node.gsc.session,
-            			state: node.state,
+            			state: node.game.state,
             			action: GameMsg.actions.SAY,
             			target: GameMsg.targets.HI,
             			from: node.player.sid,
@@ -2125,7 +2237,7 @@ GameMsgGenerator.createHI = function (player, to, reliable) {
             			text: new Player(player) + ' ready.',
             			data: player,
             			priority: null,
-            			reliable: reliable,
+            			reliable: reliable
 	});
 };
 
@@ -2136,11 +2248,11 @@ GameMsgGenerator.createHI = function (player, to, reliable) {
  * 
  * Creates a say.STATE message
  * 
- * Notice: state is different from node.state
+ * Notice: state is different from node.game.state
  * 
  * @param {GameState} state The game-state to communicate
  * @param {string} to The recipient of the message
- * @param {boolean} reliable Optional. Experimental. Requires an acknoledgment
+ * @param {boolean} reliable Optional. Experimental. Requires an acknowledgment
  * 
  * @return {GameMsg|boolean} The game message, or FALSE if error in the input parameters is detected
  * 
@@ -2157,7 +2269,7 @@ GameMsgGenerator.saySTATE = function (state, to, reliable) {
  * 
  * @param {GameState} state The game-state to communicate
  * @param {string} to The recipient of the message
- * @param {boolean} reliable Optional. Experimental. Requires an acknoledgment
+ * @param {boolean} reliable Optional. Experimental. Requires an acknowledgment
  * 
  * @return {GameMsg|boolean} The game message, or FALSE if error in the input parameters is detected
  * 
@@ -2174,7 +2286,7 @@ GameMsgGenerator.setSTATE = function (state, to, reliable) {
  * 
  * @param {GameState} state The game-state to communicate
  * @param {string} to The recipient of the message
- * @param {boolean} reliable Optional. Experimental. Requires an acknoledgment
+ * @param {boolean} reliable Optional. Experimental. Requires an acknowledgment
  * 
  * @return {GameMsg|boolean} The game message, or FALSE if error in the input parameters is detected
  * 
@@ -2192,7 +2304,7 @@ GameMsgGenerator.getSTATE = function (state, to, reliable) {
  * @param {string} action A nodeGame action (e.g. 'get' or 'set')
  * @param {GameState} state The game-state to communicate
  * @param {string} to Optional. The recipient of the message. Defaults, SERVER
- * @param {boolean} reliable Optional. Experimental. Requires an acknoledgment
+ * @param {boolean} reliable Optional. Experimental. Requires an acknowledgment
  * 
  * @return {GameMsg|boolean} The game message, or FALSE if error in the input parameters is detected
  * 
@@ -2205,7 +2317,7 @@ GameMsgGenerator.createSTATE = function (action, state, to, reliable) {
 	reliable = reliable || 1;
 	return new GameMsg({
 						session: node.gsc.session,
-						state: node.state,
+						state: node.game.state,
 						action: action,
 						target: GameMsg.targets.STATE,
 						from: node.player.sid,
@@ -2226,7 +2338,7 @@ GameMsgGenerator.createSTATE = function (action, state, to, reliable) {
  * 
  * @param {PlayerList} plist The player-list to communicate
  * @param {string} to The recipient of the message
- * @param {boolean} reliable Optional. Experimental. Requires an acknoledgment
+ * @param {boolean} reliable Optional. Experimental. Requires an acknowledgment
  * 
  * @return {GameMsg|boolean} The game message, or FALSE if error in the input parameters is detected
  * 
@@ -2243,7 +2355,7 @@ GameMsgGenerator.sayPLIST = function (plist, to, reliable) {
  * 
  * @param {PlayerList} plist The player-list to communicate
  * @param {string} to The recipient of the message
- * @param {boolean} reliable Optional. Experimental. Requires an acknoledgment
+ * @param {boolean} reliable Optional. Experimental. Requires an acknowledgment
  * 
  * @return {GameMsg|boolean} The game message, or FALSE if error in the input parameters is detected
  * 
@@ -2260,7 +2372,7 @@ GameMsgGenerator.setPLIST = function (plist, to, reliable) {
  * 
  * @param {PlayerList} plist The player-list to communicate
  * @param {string} to The recipient of the message
- * @param {boolean} reliable Optional. Experimental. Requires an acknoledgment
+ * @param {boolean} reliable Optional. Experimental. Requires an acknowledgment
  * 
  * @return {GameMsg|boolean} The game message, or FALSE if error in the input parameters is detected
  * 
@@ -2278,7 +2390,7 @@ GameMsgGenerator.getPLIST = function (plist, to, reliable) {
  * @param {string} action A nodeGame action (e.g. 'get' or 'set')
  * @param {PlayerList} plist The player-list to communicate
  * @param {string} to Optional. The recipient of the message. Defaults, SERVER
- * @param {boolean} reliable Optional. Experimental. Requires an acknoledgment
+ * @param {boolean} reliable Optional. Experimental. Requires an acknowledgment
  * 
  * @return {GameMsg|boolean} The game message, or FALSE if error in the input parameters is detected
  * 
@@ -2294,7 +2406,7 @@ GameMsgGenerator.createPLIST = function (action, plist, to, reliable) {
 	
 	return new GameMsg({
 						session: node.gsc.session, 
-						state: node.state,
+						state: node.game.state,
 						action: action,
 						target: GameMsg.targets.PLIST,
 						from: node.player.sid,
@@ -2302,7 +2414,7 @@ GameMsgGenerator.createPLIST = function (action, plist, to, reliable) {
 						text: 'List of Players: ' + plist.length,
 						data: plist.pl,
 						priority: null,
-						reliable: reliable,
+						reliable: reliable
 	});
 };
 
@@ -2317,7 +2429,7 @@ GameMsgGenerator.createPLIST = function (action, plist, to, reliable) {
  * 
  * @param {string} text The text to communicate
  * @param {string} to The recipient of the message
- * @param {boolean} reliable Optional. Experimental. Requires an acknoledgment
+ * @param {boolean} reliable Optional. Experimental. Requires an acknowledgment
  * 
  * @return {GameMsg|boolean} The game message, or FALSE if error in the input parameters is detected
  */
@@ -2327,7 +2439,7 @@ GameMsgGenerator.createTXT = function (text, to, reliable) {
 	
 	return new GameMsg({
 						session: node.gsc.session,
-						state: node.state,
+						state: node.game.state,
 						action: GameMsg.actions.SAY,
 						target: GameMsg.targets.TXT,
 						from: node.player.sid,
@@ -2335,7 +2447,7 @@ GameMsgGenerator.createTXT = function (text, to, reliable) {
 						text: text,
 						data: null,
 						priority: null,
-						reliable: reliable,
+						reliable: reliable
 	});
 };
 
@@ -2349,7 +2461,7 @@ GameMsgGenerator.createTXT = function (text, to, reliable) {
  * 
  * @param {object} data An object to exchange
  * @param {string} to The recipient of the message
- * @param {boolean} reliable Optional. Experimental. Requires an acknoledgment
+ * @param {boolean} reliable Optional. Experimental. Requires an acknowledgment
  * 
  * @return {GameMsg|boolean} The game message, or FALSE if error in the input parameters is detected
  */
@@ -2364,7 +2476,7 @@ GameMsgGenerator.sayDATA = function (data, to, text, reliable) {
  * 
  * @param {object} data An object to exchange
  * @param {string} to The recipient of the message
- * @param {boolean} reliable Optional. Experimental. Requires an acknoledgment
+ * @param {boolean} reliable Optional. Experimental. Requires an acknowledgment
  * 
  * @return {GameMsg|boolean} The game message, or FALSE if error in the input parameters is detected
  */
@@ -2379,7 +2491,7 @@ GameMsgGenerator.setDATA = function (data, to, text, reliable) {
  * 
  * @param {object} data An object to exchange
  * @param {string} to The recipient of the message
- * @param {boolean} reliable Optional. Experimental. Requires an acknoledgment
+ * @param {boolean} reliable Optional. Experimental. Requires an acknowledgment
  * 
  * @return {GameMsg|boolean} The game message, or FALSE if error in the input parameters is detected
  */
@@ -2395,7 +2507,7 @@ GameMsgGenerator.getDATA = function (data, to, text, reliable) {
  * @param {string} action A nodeGame action (e.g. 'get' or 'set')
  * @param {object} data An object to exchange
  * @param {string} to The recipient of the message
- * @param {boolean} reliable Optional. Experimental. Requires an acknoledgment
+ * @param {boolean} reliable Optional. Experimental. Requires an acknowledgment
  * 
  * @return {GameMsg|boolean} The game message, or FALSE if error in the input parameters is detected
  */
@@ -2406,7 +2518,7 @@ GameMsgGenerator.createDATA = function (action, data, to, text, reliable) {
 	
 	return new GameMsg({
 						session: node.gsc.session, 
-						state: node.state,
+						state: node.game.state,
 						action: action,
 						target: GameMsg.targets.DATA,
 						from: node.player.sid,
@@ -2414,7 +2526,7 @@ GameMsgGenerator.createDATA = function (action, data, to, text, reliable) {
 						text: text,
 						data: data,
 						priority: null,
-						reliable: reliable,
+						reliable: reliable
 	});
 };
 
@@ -2432,7 +2544,7 @@ GameMsgGenerator.createACK = function (gm, to, reliable) {
 	
 	var newgm = new GameMsg({
 							session: node.gsc.session, 
-							state: node.state,
+							state: node.game.state,
 							action: GameMsg.actions.SAY,
 							target: GameMsg.targets.ACK,
 							from: node.player.sid,
@@ -2440,7 +2552,7 @@ GameMsgGenerator.createACK = function (gm, to, reliable) {
 							text: 'Msg ' + gm.id + ' correctly received',
 							data: gm.id,
 							priority: null,
-							reliable: reliable,
+							reliable: reliable
 	});
 	
 	if (gm.forward) {
@@ -2503,10 +2615,15 @@ function GameSocketClient (options) {
  * @api private
  */ 
 	buffer = [];
-	Object.defineProperty(this, 'buffer', {
-		value: buffer,
-		enumerable: true,
-	});
+	if (node.support.defineProperty) {
+		Object.defineProperty(this, 'buffer', {
+			value: buffer,
+			enumerable: true
+		});
+	}
+	else {
+		this.buffer = buffer;
+	}
 	
 /**
  * ### GameSocketClient.session
@@ -2517,11 +2634,15 @@ function GameSocketClient (options) {
  * 
  */
 	session = null;
-	Object.defineProperty(this, 'session', {
-		value: session,
-		enumerable: true,
-	});
-	
+	if (node.support.defineProperty) {
+		Object.defineProperty(this, 'session', {
+			value: session,
+			enumerable: true
+		});
+	}
+	else {
+		this.session = session;
+	}
 // ## Public properties
 	
 /**
@@ -2597,7 +2718,7 @@ GameSocketClient.prototype.getSession = function (msg) {
 GameSocketClient.prototype.startSession = function (msg) {
 	var player = {
 			id:		msg.data,	
-			sid: 	msg.data,
+			sid: 	msg.data
 	};
 	this.createPlayer(player);
 	session = msg.session;
@@ -2644,7 +2765,7 @@ GameSocketClient.prototype.restoreSession = function (sessionObj, sid) {
 	
 	node.log('Recovering ' + session.history.length + ' events', 'DEBUG', log_prefix);
 	
-	node.events.history.import(session.history);
+	node.events.history.importDB(session.history);
 	var hash = new GameState(session.state).toHash('S.s.r'); 
 	if (!node.events.history.state) {
 		node.log('No old events to re-emit were found during session recovery', 'DEBUG', log_prefix);
@@ -2667,7 +2788,7 @@ GameSocketClient.prototype.restoreSession = function (sessionObj, sid) {
 	               'out.set.STATE',
 	               'in.say.PLIST',
 	               'STATEDONE', // maybe not here
-	               'out.say.HI',
+	               'out.say.HI'
 		               
 	];
 	
@@ -2691,7 +2812,7 @@ GameSocketClient.prototype.restoreSession = function (sessionObj, sid) {
 		});
 	};
 	
-	if (node.game.ready) {
+	if (node.game.isReady()) {
 		remit.call(node.game);
 	}
 	else {
@@ -2735,20 +2856,27 @@ GameSocketClient.prototype.createPlayer = function (player) {
 //				if (player.hasOwnProperty(key)) {
 //					continue;
 //				}
-				
-				Object.defineProperty(player, key, {
-			    	value: pconf[key],
-			    	enumerable: true,
-				});
+				if (node.support.defineProperty) {
+					Object.defineProperty(player, key, {
+				    	value: pconf[key],
+				    	enumerable: true
+					});
+				}
+				else {
+					player[key] = pconf[key];
+				}
 			}
 		}
 	}
-	
-	Object.defineProperty(node, 'player', {
-    	value: player,
-    	enumerable: true,
-	});
-
+	if (node.support.defineProperty) {
+		Object.defineProperty(node, 'player', {
+	    	value: player,
+	    	enumerable: true
+		});
+	}
+	else {
+		node.player = player;
+	}
 	return player;
 };
 
@@ -2801,6 +2929,7 @@ GameSocketClient.prototype.secureParse = function (msg) {
 	var gameMsg;
 	try {
 		gameMsg = GameMsg.clone(JSON.parse(msg));
+		node.info(gameMsg, 'R: ');
 	}
 	catch(e) {
 		return logSecureParseError('Malformed msg received',  e);
@@ -2824,8 +2953,10 @@ GameSocketClient.prototype.clearBuffer = function () {
 	var nelem = buffer.length;
 	for (var i=0; i < nelem; i++) {
 		var msg = this.buffer.shift();
-		node.emit(msg.toInEvent(), msg);
-		node.log('Debuffered ' + msg, 'DEBUG');
+		if (msg) {
+			node.emit(msg.toInEvent(), msg);
+			node.log('Debuffered ' + msg, 'DEBUG');
+		}
 	}
 };
 
@@ -2870,7 +3001,7 @@ GameSocketClient.prototype.attachFirstListeners = function (socket) {
 						var msg = node.msg.create({
 							action: GameMsg.actions.SAY,
 							target: 'HI_AGAIN',
-							data: node.player,
+							data: node.player
 						});
 //							console.log('HI_AGAIN MSG!!');
 //							console.log(msg);
@@ -2926,7 +3057,7 @@ GameSocketClient.prototype.attachMsgListeners = function (socket, session) {
 		
 		if (msg) { // Parsing successful
 			// Wait to fire the msgs if the game state is loading
-			if (node.game && node.game.ready) {	
+			if (node.game && node.game.isReady()) {	
 				node.emit(msg.toInEvent(), msg);
 			}
 			else {
@@ -3148,7 +3279,7 @@ GameDB.prototype.add = function (key, value, player, state) {
 						player: player, 
 						key: key,
 						value: value,
-						state: state,
+						state: state
 	}));
 
 	return true;
@@ -3362,6 +3493,7 @@ var GameState = node.GameState,
 	GameMsg = node.GameMsg,
 	GameDB = node.GameDB,
 	PlayerList = node.PlayerList,
+	Player = node.Player,
 	GameLoop = node.GameLoop,
 	JSUS = node.JSUS;
 
@@ -3371,7 +3503,8 @@ exports.Game = Game;
 var name,
 	description,
 	gameLoop,
-	pl;
+	pl,
+	ml;
 	
 
 /**
@@ -3394,10 +3527,16 @@ function Game (settings) {
  * @api private
  */
 	name = settings.name || 'A nodeGame game';
-	Object.defineProperty(this, 'name', {
-		value: name,
-		enumerable: true,
-	});
+	
+	if (node.support.defineProperty) {
+		Object.defineProperty(this, 'name', {
+			value: name,
+			enumerable: true
+		});
+	}
+	else {
+		this.name = name;
+	}
 
 /**
  * ### Game.description
@@ -3407,10 +3546,15 @@ function Game (settings) {
  * @api private
  */
 	description = settings.description || 'No Description';
-	Object.defineProperty(this, 'description', {
-		value: description,
-		enumerable: true,
-	});
+	if (node.support.defineProperty) {
+		Object.defineProperty(this, 'description', {
+			value: description,
+			enumerable: true
+		});
+	}
+	else {
+		this.description = description;
+	}
 
 /**
  * ### Game.gameLoop
@@ -3420,12 +3564,18 @@ function Game (settings) {
  * @see GameLoop
  * @api private
  */
-	gameLoop = new GameLoop(settings.loops);
-	Object.defineProperty(this, 'gameLoop', {
-		value: gameLoop,
-		enumerable: true,
-	});
-
+	// <!-- support for deprecated options loops -->
+	gameLoop = new GameLoop(settings.loop || settings.loops);
+	if (node.support.defineProperty) {
+		Object.defineProperty(this, 'gameLoop', {
+			value: gameLoop,
+			enumerable: true
+		});
+	}
+	else {
+		this.gameLoop = gameLoop;
+	}
+	
 /**
  * ### Game.pl
  * 
@@ -3436,38 +3586,67 @@ function Game (settings) {
  * @api private
  */
 	pl = new PlayerList();
-	Object.defineProperty(this, 'pl', {
-		value: pl,
-		enumerable: true,
-		configurable: true,
-		writable: true,
-	});
+	if (node.support.defineProperty) {
+		Object.defineProperty(this, 'pl', {
+			value: pl,
+			enumerable: true,
+			configurable: true,
+			writable: true
+		});
+	}
+	else {
+		this.pl = pl;
+	}
 
+/**
+ * ### Game.pl
+ * 
+ * The list of monitor clients connected to the game
+ * 
+ * The list may be empty, depending on the server settings
+ * 
+ * @api private
+ */
+	ml = new PlayerList();
+	if (node.support.defineProperty) {
+		Object.defineProperty(this, 'ml', {
+			value: pl,
+			enumerable: true,
+			configurable: true,
+			writable: true
+		});
+	}
+	else {
+		this.ml = ml;
+	}
+	
 /**
  * ### Game.ready
  * 
  * If TRUE, the nodeGame engine is fully loaded
  * 
- * During stepping between functions in the game-loop
- * the flag is temporarily turned to FALSE, and all events 
- * are queued and fired only after nodeGame is ready to 
- * handle them again.
+ * Shortcut to game.isReady
+ * 
+ * If the browser does not support the method object setters,
+ * this property is disabled, and Game.isReady() should be used
+ * instead.
+ * 
+ * @see Game.isReady();
  * 
  * @api private
+ * @deprecated
+ * 
  */
-	Object.defineProperty(this, 'ready', {
-		set: function(){},
-		get: function(){
-			if (this.state.is < GameState.iss.LOADED) return false;
-			
-			// Check if there is a gameWindow obj and whether it is loading
-			if (node.window) {	
-				return (node.window.state >= GameState.iss.LOADED) ? true : false;
-			}
-			return true;
-		},
-		enumerable: true,
-	});
+	if (node.support.getter) {
+		Object.defineProperty(this, 'ready', {
+			set: function(){},
+			get: this.isReady,
+			enumerable: true
+		});
+	}
+	else {
+		this.ready = null;
+	}
 
 
 
@@ -3489,15 +3668,18 @@ function Game (settings) {
 /**
  * ### Game.auto_step
  * 
- * If TRUE, automatically advances to the next state
+ * If TRUE, automatically advances to the next state if all the players 
+ * have completed the same state
  * 
- * After a successful DONE event is fired, the client will automatically 
+ * After a successful STATEDONE event is fired, the client will automatically 
  * goes to the next function in the game-loop without waiting for a STATE
  * message from the server. 
  * 
  * Depending on the configuration settings, it can still perform additional
  * checkings (e.g.wheter the mininum number of players is connected) 
  * before stepping to the next state.
+ * 
+ * Defaults: true
  * 
  */
 	this.auto_step = ('undefined' !== typeof settings.auto_step) ? settings.auto_step 
@@ -3509,17 +3691,35 @@ function Game (settings) {
  * If TRUE, fires a WAITING... event immediately after a successful DONE event
  * 
  * Under default settings, the WAITING... event temporarily prevents the user
- * to access the screen and displays a message to the player
+ * to access the screen and displays a message to the player.
+ * 
+ * Defaults: FALSE
+ * 
  */
 	this.auto_wait = ('undefined' !== typeof settings.auto_wait) ? settings.auto_wait 
 																 : false; 
-	
+
+/**
+ * ### Game.solo_mode
+ * 
+ * If TRUE, automatically advances to the next state upon completion of a state
+ * 
+ * After a successful DONE event is fired, the client will automatically 
+ * goes to the next function in the game-loop without waiting for a STATE
+ * message from the server, or checking the STATE of the other players. 
+ * 
+ * Defaults: FALSE
+ * 
+ */
+	this.solo_mode = ('undefined' !== typeof settings.solo_mode) ? settings.solo_mode 
+															 : false;	
+	// TODO: check this
 	this.minPlayers = settings.minPlayers || 1;
 	this.maxPlayers = settings.maxPlayers || 1000;
 	
-	// TODO: Check this
-	this.init = settings.init || this.init;
-
+	if (settings.init) {
+		this.init = settings.init;
+	}
 
 /**
  * ### Game.memory
@@ -3535,339 +3735,22 @@ function Game (settings) {
 	
 	this.player = null;	
 	this.state = new GameState();
-	
-	
-	var that = this,
-		say = GameMsg.actions.SAY + '.',
-		set = GameMsg.actions.SET + '.',
-		get = GameMsg.actions.GET + '.',
-		IN  = GameMsg.IN,
-		OUT = GameMsg.OUT;
 
-// ## Game incoming listeners
-// Incoming listeners are fired in response to incoming messages
-	var incomingListeners = function() {
-	
-/**
- * ### in.get.DATA
- * 
- * Experimental feature. Undocumented (for now)
- */ 
-	node.on( IN + get + 'DATA', function (msg) {
-		if (msg.text === 'LOOP'){
-			node.gsc.sendDATA(GameMsg.actions.SAY, this.gameLoop, msg.from, 'GAME');
-		}
-		// <!-- We could double emit
-		// node.emit(msg.text, msg.data); -->
-	});
-
-/**
- * ### in.set.STATE
- * 
- * Adds an entry to the memory object 
- * 
- */
-	node.on( IN + set + 'STATE', function (msg) {
-		that.memory.add(msg.text, msg.data, msg.from);
-	});
-
-/**
- * ### in.set.DATA
- * 
- * Adds an entry to the memory object 
- * 
- */
-	node.on( IN + set + 'DATA', function (msg) {
-		that.memory.add(msg.text, msg.data, msg.from);
-	});
-
-/**
- * ### in.say.STATE
- * 
- * Updates the game state or updates a player's state in
- * the player-list object
- *
- * If the message is from the server, it updates the game state,
- * else the state in the player-list object from the player who
- * sent the message is updated 
- * 
- *  @emit UPDATED_PLIST
- *  @see Game.pl 
- */
-	node.on( IN + say + 'STATE', function (msg) {
-//		console.log('updateState: ' + msg.from + ' -- ' + new GameState(msg.data), 'DEBUG');
-//		console.log(that.pl.length)
-		
-		//console.log(node.gsc.serverid + 'AAAAAA');
-		if (node.gsc.serverid && msg.from === node.gsc.serverid) {
-//			console.log(node.gsc.serverid + ' ---><--- ' + msg.from);
-//			console.log('NOT EXISTS');
-		}
-		
-		if (that.pl.exist(msg.from)) {
-			//console.log('EXIST')
-			
-			that.pl.updatePlayerState(msg.from, msg.data);
-			node.emit('UPDATED_PLIST');
-			that.pl.checkState();
-		}
-		// <!-- Assume this is the server for now
-		// TODO: assign a string-id to the server -->
-		else {
-			//console.log('NOT EXISTS')
-			that.updateState(msg.data);
-		}
-	});
-
-/**
- * ### in.say.PLIST
- * 
- * Creates a new player-list object from the data contained in the message
- * 
- * @emit UPDATED_PLIST
- * @see Game.pl 
- */
-	node.on( IN + say + 'PLIST', function (msg) {
-		if (!msg.data) return;
-		that.pl = new PlayerList({}, msg.data);
-		node.emit('UPDATED_PLIST');
-		that.pl.checkState();
-	});
-	
-/**
- * ### in.say.REDIRECT
- * 
- * Redirects to a new page
- * 
- * @emit REDIRECTING...
- * @see node.redirect
- */
-	node.on( IN + say + 'REDIRECT', function (msg) {
-		if (!msg.data) return;
-		if ('undefined' === typeof window || !window.location) {
-			node.log('window.location not found. Cannot redirect', 'err');
-			return false;
-		}
-		node.emit('REDIRECTING...', msg.data);
-		window.location = msg.data; 
-	});	
-	
-}(); // <!-- ends incoming listener -->
-
-// ## Game outgoing listeners
-// Incoming listeners are fired in response to outgoing messages
-var outgoingListeners = function() {
-	
-/** 
- * ### out.say.HI
- * 
- * Updates the game-state of the game upon connection to a server
- * 
- */
-	node.on( OUT + say + 'HI', function() {
-		// Enter the first state
-		if (that.auto_step) {
-			that.updateState(that.next());
-		}
-		else {
-			// The game is ready to step when necessary;
-			that.state.is = GameState.iss.LOADED;
-			node.gsc.sendSTATE(GameMsg.actions.SAY, that.state);
-		}
-	});
-
-/**
- * ### out.say.STATE
- * 
- * Sends out a STATE message to the specified recipient
- * 
- * TODO: check with the server 
- * The message is for informative purpose
- * 
- */
-	node.on( OUT + say + 'STATE', function (state, to) {
-		node.gsc.sendSTATE(GameMsg.actions.SAY, state, to);
-	});	
-
-/**
- * ### out.say.TXT
- * 
- * Sends out a TXT message to the specified recipient
- */
-	node.on( OUT + say + 'TXT', function (text, to) {
-		node.gsc.sendTXT(text,to);
-	});
-
-/**
- * ### out.say.DATA
- * 
- * Sends out a DATA message to the specified recipient
- */
-	node.on( OUT + say + 'DATA', function (data, to, key) {
-		node.gsc.sendDATA(GameMsg.actions.SAY, data, to, key);
-	});
-
-/**
- * ### out.set.STATE
- * 
- * Sends out a STATE message to the specified recipient
- * 
- * TODO: check with the server 
- * The receiver will update its representation of the state
- * of the sender
- */
-	node.on( OUT + set + 'STATE', function (state, to) {
-		node.gsc.sendSTATE(GameMsg.actions.SET, state, to);
-	});
-
-/**
- * ### out.set.DATA
- * 
- * Sends out a DATA message to the specified recipient
- * 
- * The sent data will be stored in the memory of the recipient
- * 
- * 	@see Game.memory
- */
-	node.on( OUT + set + 'DATA', function (data, to, key) {
-		node.gsc.sendDATA(GameMsg.actions.SET, data, to, key);
-	});
-
-/**
- * ### out.get.DATA
- * 
- * Issues a DATA request
- * 
- * Experimental. Undocumented (for now)
- */
-	node.on( OUT + get + 'DATA', function (data, to, key) {
-		node.gsc.sendDATA(GameMsg.actions.GET, data, to, data);
-	});
-	
-}(); // <!-- ends outgoing listener -->
-	
-// ## Game internal listeners
-// Internal listeners are not directly associated to messages,
-// but they are usually responding to internal nodeGame events, 
-// such as progressing in the loading chain, or finishing a game state 
-var internalListeners = function() {
-	
-/**
- * ### STATEDONE
- * 
- * Fired when all the 
- */ 
-	node.on('STATEDONE', function() {
-		// <!-- If we go auto -->
-		if (that.auto_step && !that.observer) {
-			node.log('We play AUTO', 'DEBUG');
-			var morePlayers = ('undefined' !== that.minPlayers) ? that.minPlayers - that.pl.length : 0 ;
-			node.log('Additional player required: ' + morePlayers > 0 ? MorePlayers : 0, 'DEBUG');
-			
-			if (morePlayers > 0) {
-				node.emit('OUT.say.TXT', morePlayers + ' player/s still needed to play the game');
-				node.log(morePlayers + ' player/s still needed to play the game');
-			}
-			// TODO: differentiate between before the game starts and during the game
-			else {
-				node.emit('OUT.say.TXT', this.minPlayers + ' players ready. Game can proceed');
-				node.log(pl.length + ' players ready. Game can proceed');
-				that.updateState(that.next());
-			}
-		}
-		else {
-			node.log('Waiting for monitor to step', 'DEBUG');
-		}
-	});
-
-/**
- * ### DONE
- * 
- * Updates and publishes that the client has successfully terminated a state 
- * 
- * If a DONE handler is defined in the game-loop, it will executes it before
- * continuing with further operations. In case it returns FALSE, the update
- * process is stopped. 
- * 
- * @emit BEFORE_DONE
- * @emit WAITING...
- */
-	node.on('DONE', function(p1, p2, p3) {
-		
-		// Execute done handler before updatating state
-		var ok = true;
-		var done = that.gameLoop.getAllParams(that.state).done;
-		
-		if (done) ok = done.call(that, p1, p2, p3);
-		if (!ok) return;
-		that.state.is = GameState.iss.DONE;
-		
-		// Call all the functions that want to do 
-		// something before changing state
-		node.emit('BEFORE_DONE');
-		
-		if (that.auto_wait) {
-			if (node.window) {	
-				node.emit('WAITING...');
-			}
-		}
-		that.publishState();	
-	});
-
-/**
- * ### PAUSE
- * 
- * Sets the game to PAUSE and publishes the state
- * 
- */
-	node.on('PAUSE', function(msg) {
-		that.state.paused = true;
-		that.publishState();
-	});
-
-/**
- * ### WINDOW_LOADED
- * 
- * Checks if the game is ready, and if so fires the LOADED event
- * 
- * @emit BEFORE_LOADING
- * @emit LOADED
- */
-	node.on('WINDOW_LOADED', function() {
-		if (that.ready) node.emit('LOADED');
-	});
-
-/**
- * ### GAME_LOADED
- * 
- * Checks if the window was loaded, and if so fires the LOADED event
- * 
- * @emit BEFORE_LOADING
- * @emit LOADED
- */
-	node.on('GAME_LOADED', function() {
-		if (that.ready) node.emit('LOADED');
-	});
-
-/**
- * ### LOADED
- * 
- * 
- */
-	node.on('LOADED', function() {
-		node.emit('BEFORE_LOADING');
-		that.state.is =  GameState.iss.PLAYING;
-		//TODO: the number of messages to emit to inform other players
-		// about its own state should be controlled. Observer is 0 
-		//that.publishState();
-		node.gsc.clearBuffer();
-		
-	});
-	
-}(); // <!-- ends internal listener -->
 } // <!-- ends constructor -->
 
 // ## Game methods
+
+/** 
+ * ### Game.init
+ * 
+ * Initialization function
+ * 
+ * This function is called as soon as the game is instantiated,
+ * i.e. at state 0.0.0. All event listeners declared here will
+ * stay valid throughout the game.
+ * 
+ */
+Game.prototype.init = function () {};
 
 /**
  * ### Game.pause
@@ -3996,7 +3879,7 @@ Game.prototype.updateState = function (state) {
 	if (this.step(state) !== false) {
 		this.paused = false;
 		this.state.is =  GameState.iss.LOADED;
-		if (this.ready) {
+		if (this.isReady()) {
 			node.emit('LOADED');
 		}
 	}		
@@ -4035,17 +3918,9 @@ Game.prototype.step = function (gameState) {
 		
 		
 		if (func) {
-
-			// For NDDB EventEmitter
-			//console.log('HOW MANY LISTENERS???');
-			//console.log(node._ee._listeners.count());
-			
 			// Local Listeners from previous state are erased 
 			// before proceeding to next one
-			node._ee.clearState(this.state);
-			
-			// For NDDB EventEmitter
-			//console.log(node._ee._listeners.count());
+			node.events.clearState(this.state);
 			
 			gameState.is = GameState.iss.LOADING;
 			this.state = gameState;
@@ -4058,6 +3933,33 @@ Game.prototype.step = function (gameState) {
 		}
 	}
 	return false;
+};
+
+/**
+ * ### Game.isReady
+ * 
+ * Returns TRUE if the nodeGame engine is fully loaded
+ * 
+ * During stepping between functions in the game-loop
+ * the flag is temporarily turned to FALSE, and all events 
+ * are queued and fired only after nodeGame is ready to 
+ * handle them again.
+ * 
+ * If the browser does not support the method object setters,
+ * this property is disabled, and Game.isReady() should be used
+ * instead.
+ * 
+ * @see Game.ready;
+ * 
+ */
+Game.prototype.isReady = function() {
+	if (this.state.is < GameState.iss.LOADED) return false;
+	
+	// Check if there is a gameWindow obj and whether it is loading
+	if (node.window) {	
+		return (node.window.state >= GameState.iss.LOADED) ? true : false;
+	}
+	return true;
 };
 
 // ## Closure
@@ -4080,13 +3982,13 @@ Game.prototype.step = function (gameState) {
 	// Declaring variables
 	// //////////////////////////////////////////
 		
-	var EventEmitter = node.EventEmitter;
-	var GameSocketClient = node.GameSocketClient;
-	var GameState = node.GameState;
-	var GameMsg = node.GameMsg;
-	var Game = node.Game;
-	var Player = node.Player;
-	var GameSession = node.GameSession;
+	var EventEmitter = node.EventEmitter,
+		GameSocketClient = node.GameSocketClient,
+		GameState = node.GameState,
+		GameMsg = node.GameMsg,
+		Game = node.Game,
+		Player = node.Player,
+		GameSession = node.GameSession;
 	
 	
 	// Adding constants directly to node
@@ -4101,25 +4003,14 @@ Game.prototype.step = function (gameState) {
 	// Creating EventEmitter
 	// /////////////////////////////////////////
 	
-	var ee = node.events = node._ee = new EventEmitter();
+	node.events = new EventEmitter();
 
 
 	// Creating objects
 	// /////////////////////////////////////////
 	
-	node.msg		= node.GameMsgGenerator;	
+	node.msg	= node.GameMsgGenerator;	
 	node.socket = node.gsc = new GameSocketClient();
-
-	node.game 		= null;
-	node.player 	= null;
-	
-	Object.defineProperty(node, 'state', {
-    	get: function() {
-    		return (node.game) ? node.game.state : false;
-    	},
-    	configurable: false,
-    	enumerable: true,
-	});
 	
 	node.env = function (env, func, ctx, params) {
 		if (!env || !func || !node.env[env]) return;
@@ -4182,6 +4073,16 @@ Game.prototype.step = function (gameState) {
 			}
 		}
 		
+		if (!conf.events) { conf.events = {}; };
+		
+		if ('undefined' === conf.events.history) {
+			conf.events.history = false;
+		}
+		
+		if ('undefined' === conf.events.dumpEvents) {
+			conf.events.dumpEvents = false;
+		}
+		
 		this.conf = conf;
 		return conf;
 	};
@@ -4189,12 +4090,12 @@ Game.prototype.step = function (gameState) {
 	
 	node.on = function (event, listener) {
 		// It is in the init function;
-		if (!node.state || (GameState.compare(node.state, new GameState(), true) === 0 )) {
-			ee.addListener(event, listener);
+		if (!node.game || !node.game.state || (GameState.compare(node.game.state, new GameState(), true) === 0 )) {
+			node.events.add(event, listener);
 			// node.log('global');
 		}
 		else {
-			ee.addLocalListener(event, listener);
+			node.events.addLocal(event, listener);
 			// node.log('local');
 		}
 	};
@@ -4202,16 +4103,16 @@ Game.prototype.step = function (gameState) {
 	node.once = function (event, listener) {
 		node.on(event, listener);
 		node.on(event, function(event, listener) {
-			ee.removeListener(event, listener);
+			node.events.remove(event, listener);
 		});
 	};
 	
 	node.removeListener = function (event, func) {
-		return ee.removeListener(event, func);
+		return node.events.remove(event, func);
 	};
 	
 	// TODO: create conf objects
-	node.play = function (conf, game) {	
+	node.connect = node.play = function (conf, game) {	
 		node._analyzeConf(conf);
 		
 		// node.socket.connect(conf);
@@ -4270,56 +4171,94 @@ Game.prototype.step = function (gameState) {
 // };
 	
 	node.emit = function (event, p1, p2, p3) {	
-		ee.emit(event, p1, p2, p3);
+		node.events.emit(event, p1, p2, p3);
 	};	
 	
 	node.say = function (data, what, whom) {
-		ee.emit('out.say.DATA', data, whom, what);
+		node.events.emit('out.say.DATA', data, whom, what);
 	};
 	
-	/**
-	 * Set the pair (key,value) into the server
-	 * 
-	 * @value can be an object literal.
-	 * 
-	 * 
-	 */
+/**
+ * ### node.set
+ * 
+ * Store a key, value pair in the server memory
+ * 
+ * @param {string} key An alphanumeric (must not be unique)
+ * @param {mixed} The value to store (can be of any type)
+ * 
+ */
 	node.set = function (key, value) {
 		// TODO: parameter to say who will get the msg
-		ee.emit('out.set.DATA', value, null, key);
+		node.events.emit('out.set.DATA', value, null, key);
 	};
 	
 	
 	node.get = function (key, func) {
-		ee.emit('out.get.DATA', key);
+		node.events.emit('out.get.DATA', key);
 		
 		var listener = function(msg) {
 			if (msg.text === key) {
 				func.call(node.game, msg.data);
-				ee.removeListener('in.say.DATA',listener);
+				node.events.remove('in.say.DATA', listener);
 			}
-			// ee.printAllListeners();
+			// node.events.printAll();
 		};
 		
 		node.on('in.say.DATA', listener);
 	};
-	
+
+/**
+ * ### node.replay
+ * 
+ * Moves the game state to 1.1.1
+ * 
+ * @param {boolean} rest TRUE, to erase the game memory before update the game state
+ */	
 	node.replay = function (reset) {
 		if (reset) node.game.memory.clear(true);
 		node.goto(new GameState({state: 1, step: 1, round: 1}));
 	}
-	
+
+/**
+ * ### node.goto
+ * 
+ * Moves the game to the specified game state
+ * 
+ * @param {string|GameState} The state to go to
+ * 
+ */	
 	node.goto = function (state) {
 		node.game.updateState(state);
 	};
 	
+/**
+ * ### node.redirect
+ * 
+ * Redirects a player to the specified url
+ * 
+ * Works only if it is a monitor client to send
+ * the message, i.e. players cannot redirect each 
+ * other.
+ * 
+ * Examples
+ *  
+ * 	// Redirect to http://mydomain/mygame/missing_auth
+ * 	node.redirect('missing_auth', 'xxx'); 
+ * 
+ *  // Redirect to external urls
+ *  node.redirect('http://www.google.com');
+ * 
+ * @param {string} url the url of the redirection
+ * @param {string} who A player id or 'ALL'
+ * @return {boolean} TRUE, if the redirect message is sent
+ */	
 	node.redirect = function (url, who) {
 		if (!url || !who) return false;
 		
 		var msg = node.msg.create({
 			target: node.targets.REDIRECT,
 			data: url,
-			to: who,
+			to: who
 		});
 		node.socket.send(msg);
 		return true;
@@ -4358,12 +4297,14 @@ Game.prototype.step = function (gameState) {
 	node.onDATA = function(text, func) {
 		node.on('in.say.DATA', function(msg) {
 			if (text && msg.text === text) {
-				func.call(node.game,msg);
+				func.call(node.game, msg);
 			}
 		});
 		
 		node.on('in.set.DATA', function(msg) {
-			func.call(node.game,msg);
+			if (text && msg.text === text) {
+				func.call(node.game, msg);
+			}
 		});
 	};
 	
@@ -4415,3 +4356,460 @@ Game.prototype.step = function (gameState) {
 	node.log(node.version + ' loaded', 'ALWAYS');
 	
 })('undefined' != typeof node ? node : module.parent.exports);
+
+// ## Game incoming listeners
+// Incoming listeners are fired in response to incoming messages
+(function (node) {
+
+	if (!node) {
+		console.log('nodeGame not found. Cannot add incoming listeners');
+		return false;
+	}
+	
+	var GameMsg = node.GameMsg,
+		GameState = node.GameState,
+		PlayerList = node.PlayerList,
+		Player = node.Player;
+	
+	var say = GameMsg.actions.SAY + '.',
+		set = GameMsg.actions.SET + '.',
+		get = GameMsg.actions.GET + '.',
+		IN  = GameMsg.IN;
+
+	
+/**
+ * ### in.say.PCONNECT
+ * 
+ * Adds a new player to the player list from the data contained in the message
+ * 
+ * @emit UPDATED_PLIST
+ * @see Game.pl 
+ */
+	node.on( IN + say + 'PCONNECT', function (msg) {
+		if (!msg.data) return;
+		node.game.pl.add(new Player(msg.data));
+		node.emit('UPDATED_PLIST');
+		node.game.pl.checkState();
+	});	
+	
+/**
+ * ### in.say.PDISCONNECT
+ * 
+ * Removes a player from the player list based on the data contained in the message
+ * 
+ * @emit UPDATED_PLIST
+ * @see Game.pl 
+ */
+	node.on( IN + say + 'PDISCONNECT', function (msg) {
+		if (!msg.data) return;
+		node.game.pl.remove(msg.data.id);
+		node.emit('UPDATED_PLIST');
+		node.game.pl.checkState();
+	});	
+
+/**
+ * ### in.say.MCONNECT
+ * 
+ * Adds a new monitor to the monitor list from the data contained in the message
+ * 
+ * @emit UPDATED_PLIST
+ * @see Game.ml 
+ */
+	node.on( IN + say + 'MCONNECT', function (msg) {
+		if (!msg.data) return;
+		node.game.ml.add(new Player(msg.data));
+		node.emit('UPDATED_MLIST');
+	});	
+		
+/**
+ * ### in.say.MDISCONNECT
+ * 
+ * Removes a monitor from the player list based on the data contained in the message
+ * 
+ * @emit UPDATED_MLIST
+ * @see Game.ml 
+ */
+	node.on( IN + say + 'MDISCONNECT', function (msg) {
+		if (!msg.data) return;
+		node.game.ml.remove(msg.data.id);
+		node.emit('UPDATED_MLIST');
+	});		
+			
+
+/**
+ * ### in.say.PLIST
+ * 
+ * Creates a new player-list object from the data contained in the message
+ * 
+ * @emit UPDATED_MLIST
+ * @see Game.pl 
+ */
+node.on( IN + say + 'PLIST', function (msg) {
+	if (!msg.data) return;
+	node.game.pl = new PlayerList({}, msg.data);
+	node.emit('UPDATED_PLIST');
+});	
+	
+/**
+ * ### in.say.MLIST
+ * 
+ * Creates a new monitor-list object from the data contained in the message
+ * 
+ * @emit UPDATED_MLIST
+ * @see Game.pl 
+ */
+node.on( IN + say + 'MLIST', function (msg) {
+	if (!msg.data) return;
+	node.game.ml = new PlayerList({}, msg.data);
+	node.emit('UPDATED_MLIST');
+});	
+	
+/**
+ * ### in.get.DATA
+ * 
+ * Experimental feature. Undocumented (for now)
+ */ 
+node.on( IN + get + 'DATA', function (msg) {
+	if (msg.text === 'LOOP'){
+		node.socket.sendDATA(GameMsg.actions.SAY, node.game.gameLoop, msg.from, 'GAME');
+	}
+	// <!-- We could double emit
+	// node.emit(msg.text, msg.data); -->
+});
+
+/**
+ * ### in.set.STATE
+ * 
+ * Adds an entry to the memory object 
+ * 
+ */
+node.on( IN + set + 'STATE', function (msg) {
+	node.game.memory.add(msg.text, msg.data, msg.from);
+});
+
+/**
+ * ### in.set.DATA
+ * 
+ * Adds an entry to the memory object 
+ * 
+ */
+node.on( IN + set + 'DATA', function (msg) {
+	node.game.memory.add(msg.text, msg.data, msg.from);
+});
+
+/**
+ * ### in.say.STATE
+ * 
+ * Updates the game state or updates a player's state in
+ * the player-list object
+ *
+ * If the message is from the server, it updates the game state,
+ * else the state in the player-list object from the player who
+ * sent the message is updated 
+ * 
+ *  @emit UPDATED_PLIST
+ *  @see Game.pl 
+ */
+	node.on( IN + say + 'STATE', function (msg) {
+//		console.log('updateState: ' + msg.from + ' -- ' + new GameState(msg.data), 'DEBUG');
+//		console.log(node.game.pl.count())
+		
+		//console.log(node.socket.serverid + 'AAAAAA');
+		if (node.socket.serverid && msg.from === node.socket.serverid) {
+//			console.log(node.socket.serverid + ' ---><--- ' + msg.from);
+//			console.log('NOT EXISTS');
+		}
+		
+		if (node.game.pl.exist(msg.from)) {
+			//console.log('EXIST')
+			
+			node.game.pl.updatePlayerState(msg.from, msg.data);
+			node.emit('UPDATED_PLIST');
+			node.game.pl.checkState();
+		}
+		// <!-- Assume this is the server for now
+		// TODO: assign a string-id to the server -->
+		else {
+			//console.log('NOT EXISTS')
+			node.game.updateState(msg.data);
+		}
+	});
+	
+/**
+ * ### in.say.REDIRECT
+ * 
+ * Redirects to a new page
+ * 
+ * @emit REDIRECTING...
+ * @see node.redirect
+ */
+node.on( IN + say + 'REDIRECT', function (msg) {
+	if (!msg.data) return;
+	if ('undefined' === typeof window || !window.location) {
+		node.log('window.location not found. Cannot redirect', 'err');
+		return false;
+	}
+	node.emit('REDIRECTING...', msg.data);
+	window.location = msg.data; 
+});	
+	
+	node.log('incoming listeners added');
+	
+})('undefined' !== typeof node ? node : module.parent.exports); 
+// <!-- ends incoming listener -->
+// ## Game outgoing listeners
+
+(function (node) {
+
+	if (!node) {
+		console.log('nodeGame not found. Cannot add outgoing listeners');
+		return false;
+	}
+	
+	var GameMsg = node.GameMsg,
+		GameState = node.GameState;
+	
+	var say = GameMsg.actions.SAY + '.',
+		set = GameMsg.actions.SET + '.',
+		get = GameMsg.actions.GET + '.',
+		OUT  = GameMsg.OUT;
+	
+/** 
+ * ### out.say.HI
+ * 
+ * Updates the game-state of the game upon connection to a server
+ * 
+ */
+node.on( OUT + say + 'HI', function() {
+	// Enter the first state
+	if (node.game.auto_step) {
+		node.game.updateState(node.game.next());
+	}
+	else {
+		// The game is ready to step when necessary;
+		node.game.state.is = GameState.iss.LOADED;
+		node.socket.sendSTATE(GameMsg.actions.SAY, node.game.state);
+	}
+});
+
+/**
+ * ### out.say.STATE
+ * 
+ * Sends out a STATE message to the specified recipient
+ * 
+ * TODO: check with the server 
+ * The message is for informative purpose
+ * 
+ */
+node.on( OUT + say + 'STATE', function (state, to) {
+	node.socket.sendSTATE(GameMsg.actions.SAY, state, to);
+});	
+
+/**
+ * ### out.say.TXT
+ * 
+ * Sends out a TXT message to the specified recipient
+ */
+node.on( OUT + say + 'TXT', function (text, to) {
+	node.socket.sendTXT(text,to);
+});
+
+/**
+ * ### out.say.DATA
+ * 
+ * Sends out a DATA message to the specified recipient
+ */
+node.on( OUT + say + 'DATA', function (data, to, key) {
+	node.socket.sendDATA(GameMsg.actions.SAY, data, to, key);
+});
+
+/**
+ * ### out.set.STATE
+ * 
+ * Sends out a STATE message to the specified recipient
+ * 
+ * TODO: check with the server 
+ * The receiver will update its representation of the state
+ * of the sender
+ */
+node.on( OUT + set + 'STATE', function (state, to) {
+	node.socket.sendSTATE(GameMsg.actions.SET, state, to);
+});
+
+/**
+ * ### out.set.DATA
+ * 
+ * Sends out a DATA message to the specified recipient
+ * 
+ * The sent data will be stored in the memory of the recipient
+ * 
+ * 	@see Game.memory
+ */
+node.on( OUT + set + 'DATA', function (data, to, key) {
+	node.socket.sendDATA(GameMsg.actions.SET, data, to, key);
+});
+
+/**
+ * ### out.get.DATA
+ * 
+ * Issues a DATA request
+ * 
+ * Experimental. Undocumented (for now)
+ */
+node.on( OUT + get + 'DATA', function (data, to, key) {
+	node.socket.sendDATA(GameMsg.actions.GET, data, to, data);
+});
+	
+node.log('outgoing listeners added');
+
+})('undefined' !== typeof node ? node : module.parent.exports); 
+// <!-- ends outgoing listener -->
+// ## Game internal listeners
+
+// Internal listeners are not directly associated to messages,
+// but they are usually responding to internal nodeGame events, 
+// such as progressing in the loading chain, or finishing a game state 
+
+(function (node) {
+
+	if (!node) {
+		console.log('nodeGame not found. Cannot add internal listeners');
+		return false;
+	}
+	
+	var GameMsg = node.GameMsg,
+		GameState = node.GameState;
+	
+	var say = GameMsg.actions.SAY + '.',
+		set = GameMsg.actions.SET + '.',
+		get = GameMsg.actions.GET + '.',
+		IN  = GameMsg.IN,
+		OUT = GameMsg.OUT;
+	
+/**
+ * ### STATEDONE
+ * 
+ * Fired when all the players in the player list have their
+ * state set to DONE
+ */ 
+node.on('STATEDONE', function() {
+	
+	// In single player mode we ignore when all the players have completed the state
+	if (node.game.solo_mode) {
+		return;
+	}
+	
+	// <!-- If we go auto -->
+	if (node.game.auto_step && !node.game.observer) {
+		node.log('We play AUTO', 'DEBUG');
+		var morePlayers = ('undefined' !== node.game.minPlayers) ? node.game.minPlayers - node.game.pl.count() : 0 ;
+		node.log('Additional player required: ' + morePlayers > 0 ? MorePlayers : 0, 'DEBUG');
+		
+		if (morePlayers > 0) {
+			node.emit('OUT.say.TXT', morePlayers + ' player/s still needed to play the game');
+			node.log(morePlayers + ' player/s still needed to play the game');
+		}
+		// TODO: differentiate between before the game starts and during the game
+		else {
+			node.emit('OUT.say.TXT', node.game.minPlayers + ' players ready. Game can proceed');
+			node.log(node.game.pl.count() + ' players ready. Game can proceed');
+			node.game.updateState(node.game.next());
+		}
+	}
+	else {
+		node.log('Waiting for monitor to step', 'DEBUG');
+	}
+});
+
+/**
+ * ### DONE
+ * 
+ * Updates and publishes that the client has successfully terminated a state 
+ * 
+ * If a DONE handler is defined in the game-loop, it will executes it before
+ * continuing with further operations. In case it returns FALSE, the update
+ * process is stopped. 
+ * 
+ * @emit BEFORE_DONE
+ * @emit WAITING...
+ */
+node.on('DONE', function(p1, p2, p3) {
+	
+	// Execute done handler before updatating state
+	var ok = true;
+	var done = node.game.gameLoop.getAllParams(node.game.state).done;
+	
+	if (done) ok = done.call(node.game, p1, p2, p3);
+	if (!ok) return;
+	node.game.state.is = GameState.iss.DONE;
+	
+	// Call all the functions that want to do 
+	// something before changing state
+	node.emit('BEFORE_DONE');
+	
+	if (node.game.auto_wait) {
+		if (node.window) {	
+			node.emit('WAITING...');
+		}
+	}
+	node.game.publishState();
+	
+	if (node.game.solo_mode) {
+		node.game.updateState(node.game.next());
+	}
+});
+
+/**
+ * ### PAUSE
+ * 
+ * Sets the game to PAUSE and publishes the state
+ * 
+ */
+node.on('PAUSE', function(msg) {
+	node.game.state.paused = true;
+	node.game.publishState();
+});
+
+/**
+ * ### WINDOW_LOADED
+ * 
+ * Checks if the game is ready, and if so fires the LOADED event
+ * 
+ * @emit BEFORE_LOADING
+ * @emit LOADED
+ */
+node.on('WINDOW_LOADED', function() {
+	if (node.game.ready) node.emit('LOADED');
+});
+
+/**
+ * ### GAME_LOADED
+ * 
+ * Checks if the window was loaded, and if so fires the LOADED event
+ * 
+ * @emit BEFORE_LOADING
+ * @emit LOADED
+ */
+node.on('GAME_LOADED', function() {
+	if (node.game.ready) node.emit('LOADED');
+});
+
+/**
+ * ### LOADED
+ * 
+ * 
+ */
+node.on('LOADED', function() {
+	node.emit('BEFORE_LOADING');
+	node.game.state.is =  GameState.iss.PLAYING;
+	//TODO: the number of messages to emit to inform other players
+	// about its own state should be controlled. Observer is 0 
+	//node.game.publishState();
+	node.socket.clearBuffer();
+	
+});
+
+node.log('internal listeners added');
+	
+})('undefined' !== typeof node ? node : module.parent.exports); 
+// <!-- ends outgoing listener -->
