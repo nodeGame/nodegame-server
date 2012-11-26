@@ -1020,6 +1020,498 @@ var prepareString = "a"[0] != "a",
     };
 });
 
+/*
+    http://www.JSON.org/json2.js
+    2011-02-23
+
+    Public Domain.
+
+    NO WARRANTY EXPRESSED OR IMPLIED. USE AT YOUR OWN RISK.
+
+    See http://www.JSON.org/js.html
+
+
+    This code should be minified before deployment.
+    See http://javascript.crockford.com/jsmin.html
+
+    USE YOUR OWN COPY. IT IS EXTREMELY UNWISE TO LOAD CODE FROM SERVERS YOU DO
+    NOT CONTROL.
+
+
+    This file creates a global JSON object containing two methods: stringify
+    and parse.
+
+        JSON.stringify(value, replacer, space)
+            value       any JavaScript value, usually an object or array.
+
+            replacer    an optional parameter that determines how object
+                        values are stringified for objects. It can be a
+                        function or an array of strings.
+
+            space       an optional parameter that specifies the indentation
+                        of nested structures. If it is omitted, the text will
+                        be packed without extra whitespace. If it is a number,
+                        it will specify the number of spaces to indent at each
+                        level. If it is a string (such as '\t' or '&nbsp;'),
+                        it contains the characters used to indent at each level.
+
+            This method produces a JSON text from a JavaScript value.
+
+            When an object value is found, if the object contains a toJSON
+            method, its toJSON method will be called and the result will be
+            stringified. A toJSON method does not serialize: it returns the
+            value represented by the name/value pair that should be serialized,
+            or undefined if nothing should be serialized. The toJSON method
+            will be passed the key associated with the value, and this will be
+            bound to the value
+
+            For example, this would serialize Dates as ISO strings.
+
+                Date.prototype.toJSON = function (key) {
+                    function f(n) {
+                        // Format integers to have at least two digits.
+                        return n < 10 ? '0' + n : n;
+                    }
+
+                    return this.getUTCFullYear()   + '-' +
+                         f(this.getUTCMonth() + 1) + '-' +
+                         f(this.getUTCDate())      + 'T' +
+                         f(this.getUTCHours())     + ':' +
+                         f(this.getUTCMinutes())   + ':' +
+                         f(this.getUTCSeconds())   + 'Z';
+                };
+
+            You can provide an optional replacer method. It will be passed the
+            key and value of each member, with this bound to the containing
+            object. The value that is returned from your method will be
+            serialized. If your method returns undefined, then the member will
+            be excluded from the serialization.
+
+            If the replacer parameter is an array of strings, then it will be
+            used to select the members to be serialized. It filters the results
+            such that only members with keys listed in the replacer array are
+            stringified.
+
+            Values that do not have JSON representations, such as undefined or
+            functions, will not be serialized. Such values in objects will be
+            dropped; in arrays they will be replaced with null. You can use
+            a replacer function to replace those with JSON values.
+            JSON.stringify(undefined) returns undefined.
+
+            The optional space parameter produces a stringification of the
+            value that is filled with line breaks and indentation to make it
+            easier to read.
+
+            If the space parameter is a non-empty string, then that string will
+            be used for indentation. If the space parameter is a number, then
+            the indentation will be that many spaces.
+
+            Example:
+
+            text = JSON.stringify(['e', {pluribus: 'unum'}]);
+            // text is '["e",{"pluribus":"unum"}]'
+
+
+            text = JSON.stringify(['e', {pluribus: 'unum'}], null, '\t');
+            // text is '[\n\t"e",\n\t{\n\t\t"pluribus": "unum"\n\t}\n]'
+
+            text = JSON.stringify([new Date()], function (key, value) {
+                return this[key] instanceof Date ?
+                    'Date(' + this[key] + ')' : value;
+            });
+            // text is '["Date(---current time---)"]'
+
+
+        JSON.parse(text, reviver)
+            This method parses a JSON text to produce an object or array.
+            It can throw a SyntaxError exception.
+
+            The optional reviver parameter is a function that can filter and
+            transform the results. It receives each of the keys and values,
+            and its return value is used instead of the original value.
+            If it returns what it received, then the structure is not modified.
+            If it returns undefined then the member is deleted.
+
+            Example:
+
+            // Parse the text. Values that look like ISO date strings will
+            // be converted to Date objects.
+
+            myData = JSON.parse(text, function (key, value) {
+                var a;
+                if (typeof value === 'string') {
+                    a =
+/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2}(?:\.\d*)?)Z$/.exec(value);
+                    if (a) {
+                        return new Date(Date.UTC(+a[1], +a[2] - 1, +a[3], +a[4],
+                            +a[5], +a[6]));
+                    }
+                }
+                return value;
+            });
+
+            myData = JSON.parse('["Date(09/09/2001)"]', function (key, value) {
+                var d;
+                if (typeof value === 'string' &&
+                        value.slice(0, 5) === 'Date(' &&
+                        value.slice(-1) === ')') {
+                    d = new Date(value.slice(5, -1));
+                    if (d) {
+                        return d;
+                    }
+                }
+                return value;
+            });
+
+
+    This is a reference implementation. You are free to copy, modify, or
+    redistribute.
+*/
+
+/*jslint evil: true, strict: false, regexp: false */
+
+/*members "", "\b", "\t", "\n", "\f", "\r", "\"", JSON, "\\", apply,
+    call, charCodeAt, getUTCDate, getUTCFullYear, getUTCHours,
+    getUTCMinutes, getUTCMonth, getUTCSeconds, hasOwnProperty, join,
+    lastIndex, length, parse, prototype, push, replace, slice, stringify,
+    test, toJSON, toString, valueOf
+*/
+
+
+// Create a JSON object only if one does not already exist. We create the
+// methods in a closure to avoid creating global variables.
+
+var JSON;
+if (!JSON) {
+    JSON = {};
+}
+
+(function () {
+    "use strict";
+
+    var global = Function('return this')()
+      , JSON = global.JSON
+      ;
+
+    if (!JSON) {
+      JSON = {};
+    }
+
+    function f(n) {
+        // Format integers to have at least two digits.
+        return n < 10 ? '0' + n : n;
+    }
+
+    if (typeof Date.prototype.toJSON !== 'function') {
+
+        Date.prototype.toJSON = function (key) {
+
+            return isFinite(this.valueOf()) ?
+                this.getUTCFullYear()     + '-' +
+                f(this.getUTCMonth() + 1) + '-' +
+                f(this.getUTCDate())      + 'T' +
+                f(this.getUTCHours())     + ':' +
+                f(this.getUTCMinutes())   + ':' +
+                f(this.getUTCSeconds())   + 'Z' : null;
+        };
+
+        String.prototype.toJSON      =
+            Number.prototype.toJSON  =
+            Boolean.prototype.toJSON = function (key) {
+                return this.valueOf();
+            };
+    }
+
+    var cx = /[\u0000\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g,
+        escapable = /[\\\"\x00-\x1f\x7f-\x9f\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g,
+        gap,
+        indent,
+        meta = {    // table of character substitutions
+            '\b': '\\b',
+            '\t': '\\t',
+            '\n': '\\n',
+            '\f': '\\f',
+            '\r': '\\r',
+            '"' : '\\"',
+            '\\': '\\\\'
+        },
+        rep;
+
+
+    function quote(string) {
+
+// If the string contains no control characters, no quote characters, and no
+// backslash characters, then we can safely slap some quotes around it.
+// Otherwise we must also replace the offending characters with safe escape
+// sequences.
+
+        escapable.lastIndex = 0;
+        return escapable.test(string) ? '"' + string.replace(escapable, function (a) {
+            var c = meta[a];
+            return typeof c === 'string' ? c :
+                '\\u' + ('0000' + a.charCodeAt(0).toString(16)).slice(-4);
+        }) + '"' : '"' + string + '"';
+    }
+
+
+    function str(key, holder) {
+
+// Produce a string from holder[key].
+
+        var i,          // The loop counter.
+            k,          // The member key.
+            v,          // The member value.
+            length,
+            mind = gap,
+            partial,
+            value = holder[key];
+
+// If the value has a toJSON method, call it to obtain a replacement value.
+
+        if (value && typeof value === 'object' &&
+                typeof value.toJSON === 'function') {
+            value = value.toJSON(key);
+        }
+
+// If we were called with a replacer function, then call the replacer to
+// obtain a replacement value.
+
+        if (typeof rep === 'function') {
+            value = rep.call(holder, key, value);
+        }
+
+// What happens next depends on the value's type.
+
+        switch (typeof value) {
+        case 'string':
+            return quote(value);
+
+        case 'number':
+
+// JSON numbers must be finite. Encode non-finite numbers as null.
+
+            return isFinite(value) ? String(value) : 'null';
+
+        case 'boolean':
+        case 'null':
+
+// If the value is a boolean or null, convert it to a string. Note:
+// typeof null does not produce 'null'. The case is included here in
+// the remote chance that this gets fixed someday.
+
+            return String(value);
+
+// If the type is 'object', we might be dealing with an object or an array or
+// null.
+
+        case 'object':
+
+// Due to a specification blunder in ECMAScript, typeof null is 'object',
+// so watch out for that case.
+
+            if (!value) {
+                return 'null';
+            }
+
+// Make an array to hold the partial results of stringifying this object value.
+
+            gap += indent;
+            partial = [];
+
+// Is the value an array?
+
+            if (Object.prototype.toString.apply(value) === '[object Array]') {
+
+// The value is an array. Stringify every element. Use null as a placeholder
+// for non-JSON values.
+
+                length = value.length;
+                for (i = 0; i < length; i += 1) {
+                    partial[i] = str(i, value) || 'null';
+                }
+
+// Join all of the elements together, separated with commas, and wrap them in
+// brackets.
+
+                v = partial.length === 0 ? '[]' : gap ?
+                    '[\n' + gap + partial.join(',\n' + gap) + '\n' + mind + ']' :
+                    '[' + partial.join(',') + ']';
+                gap = mind;
+                return v;
+            }
+
+// If the replacer is an array, use it to select the members to be stringified.
+
+            if (rep && typeof rep === 'object') {
+                length = rep.length;
+                for (i = 0; i < length; i += 1) {
+                    if (typeof rep[i] === 'string') {
+                        k = rep[i];
+                        v = str(k, value);
+                        if (v) {
+                            partial.push(quote(k) + (gap ? ': ' : ':') + v);
+                        }
+                    }
+                }
+            } else {
+
+// Otherwise, iterate through all of the keys in the object.
+
+                for (k in value) {
+                    if (Object.prototype.hasOwnProperty.call(value, k)) {
+                        v = str(k, value);
+                        if (v) {
+                            partial.push(quote(k) + (gap ? ': ' : ':') + v);
+                        }
+                    }
+                }
+            }
+
+// Join all of the member texts together, separated with commas,
+// and wrap them in braces.
+
+            v = partial.length === 0 ? '{}' : gap ?
+                '{\n' + gap + partial.join(',\n' + gap) + '\n' + mind + '}' :
+                '{' + partial.join(',') + '}';
+            gap = mind;
+            return v;
+        }
+    }
+
+// If the JSON object does not yet have a stringify method, give it one.
+
+    if (typeof JSON.stringify !== 'function') {
+        JSON.stringify = function (value, replacer, space) {
+
+// The stringify method takes a value and an optional replacer, and an optional
+// space parameter, and returns a JSON text. The replacer can be a function
+// that can replace values, or an array of strings that will select the keys.
+// A default replacer method can be provided. Use of the space parameter can
+// produce text that is more easily readable.
+
+            var i;
+            gap = '';
+            indent = '';
+
+// If the space parameter is a number, make an indent string containing that
+// many spaces.
+
+            if (typeof space === 'number') {
+                for (i = 0; i < space; i += 1) {
+                    indent += ' ';
+                }
+
+// If the space parameter is a string, it will be used as the indent string.
+
+            } else if (typeof space === 'string') {
+                indent = space;
+            }
+
+// If there is a replacer, it must be a function or an array.
+// Otherwise, throw an error.
+
+            rep = replacer;
+            if (replacer && typeof replacer !== 'function' &&
+                    (typeof replacer !== 'object' ||
+                    typeof replacer.length !== 'number')) {
+                throw new Error('JSON.stringify');
+            }
+
+// Make a fake root object containing our value under the key of ''.
+// Return the result of stringifying the value.
+
+            return str('', {'': value});
+        };
+    }
+
+
+// If the JSON object does not yet have a parse method, give it one.
+
+    if (typeof JSON.parse !== 'function') {
+        JSON.parse = function (text, reviver) {
+
+// The parse method takes a text and an optional reviver function, and returns
+// a JavaScript value if the text is a valid JSON text.
+
+            var j;
+
+            function walk(holder, key) {
+
+// The walk method is used to recursively walk the resulting structure so
+// that modifications can be made.
+
+                var k, v, value = holder[key];
+                if (value && typeof value === 'object') {
+                    for (k in value) {
+                        if (Object.prototype.hasOwnProperty.call(value, k)) {
+                            v = walk(value, k);
+                            if (v !== undefined) {
+                                value[k] = v;
+                            } else {
+                                delete value[k];
+                            }
+                        }
+                    }
+                }
+                return reviver.call(holder, key, value);
+            }
+
+
+// Parsing happens in four stages. In the first stage, we replace certain
+// Unicode characters with escape sequences. JavaScript handles many characters
+// incorrectly, either silently deleting them, or treating them as line endings.
+
+            text = String(text);
+            cx.lastIndex = 0;
+            if (cx.test(text)) {
+                text = text.replace(cx, function (a) {
+                    return '\\u' +
+                        ('0000' + a.charCodeAt(0).toString(16)).slice(-4);
+                });
+            }
+
+// In the second stage, we run the text against regular expressions that look
+// for non-JSON patterns. We are especially concerned with '()' and 'new'
+// because they can cause invocation, and '=' because it can cause mutation.
+// But just to be safe, we want to reject all unexpected forms.
+
+// We split the second stage into 4 regexp operations in order to work around
+// crippling inefficiencies in IE's and Safari's regexp engines. First we
+// replace the JSON backslash pairs with '@' (a non-JSON character). Second, we
+// replace all simple value tokens with ']' characters. Third, we delete all
+// open brackets that follow a colon or comma or that begin the text. Finally,
+// we look to see that the remaining characters are only whitespace or ']' or
+// ',' or ':' or '{' or '}'. If that is so, then the text is safe for eval.
+
+            if (/^[\],:{}\s]*$/
+                    .test(text.replace(/\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4})/g, '@')
+                        .replace(/"[^"\\\n\r]*"|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?/g, ']')
+                        .replace(/(?:^|:|,)(?:\s*\[)+/g, ''))) {
+
+// In the third stage we use the eval function to compile the text into a
+// JavaScript structure. The '{' operator is subject to a syntactic ambiguity
+// in JavaScript: it can begin a block or an object literal. We wrap the text
+// in parens to eliminate the ambiguity.
+
+                j = eval('(' + text + ')');
+
+// In the optional fourth stage, we recursively walk the new structure, passing
+// each name/value pair to a reviver function for possible transformation.
+
+                return typeof reviver === 'function' ?
+                    walk({'': j}, '') : j;
+            }
+
+// If the text is not JSON parseable, then a SyntaxError is thrown.
+
+            throw new SyntaxError('JSON.parse');
+        };
+    }
+
+    global.JSON = JSON;
+    module.exports = JSON;
+}());
+
 // cycle.js
 // 2011-08-24
 
@@ -1216,23 +1708,31 @@ store.name = "__shelf__";
 store.verbosity = 0;
 store.types = {};
 
+
 var mainStorageType = null;
 
-Object.defineProperty(store, 'type', {
-	set: function(type){
-		if ('undefined' === typeof store.types[type]) {
-			store.log('Cannot set store.type to an invalid type: ' + type);
-			return false;
-		}
-		mainStorageType = type;
-		return type;
-	},
-	get: function(){
-		return mainStorageType;
-	},
-	configurable: false,
-	enumerable: true,
-});
+//if Object.defineProperty works...
+try {	
+	
+	Object.defineProperty(store, 'type', {
+		set: function(type){
+			if ('undefined' === typeof store.types[type]) {
+				store.log('Cannot set store.type to an invalid type: ' + type);
+				return false;
+			}
+			mainStorageType = type;
+			return type;
+		},
+		get: function(){
+			return mainStorageType;
+		},
+		configurable: false,
+		enumerable: true
+	});
+}
+catch(e) {
+	store.type = mainStorageType; // default: memory
+}
 
 store.addType = function (type, storage) {
 	store.types[type] = storage;
@@ -1258,15 +1758,24 @@ store.log = function(text) {
 	
 };
 
-Object.defineProperty(store, 'persistent', {
-	set: function(){},
-	get: function(){
-		if (!store.types.length) return false;
-		if (store.types.length === 1 && store.type === "volatile") return false;
-		return true;
-	},
-	configurable: false,
-});
+store.isPersistent = function() {
+	if (!store.types.length) return false;
+	if (store.types.length === 1 && store.type === "volatile") return false;
+	return true;
+};
+
+//if Object.defineProperty works...
+try {	
+	Object.defineProperty(store, 'persistent', {
+		set: function(){},
+		get: store.isPersistent,
+		configurable: false
+	});
+}
+catch(e) {
+	// safe case
+	store.persistent = false;
+}
 
 store.decycle = function(o) {
 	if (JSON && JSON.decycle && 'function' === typeof JSON.decycle) {
@@ -1351,7 +1860,6 @@ store.parse = function(o) {
 }());
 
 }('undefined' !== typeof module && 'undefined' !== typeof module.exports ? module.exports: this));
-
 /**
  * ## Cookie storage for Shelf.js
  * 
@@ -1377,7 +1885,7 @@ var cookie = (function() {
 		expiresAt: null,
 		path: '/',
 		domain:  null,
-		secure: false,
+		secure: false
 	};
 	
 	/**
@@ -1400,7 +1908,7 @@ var cookie = (function() {
 				expiresAt: defaultOptions.expiresAt,
 				path: defaultOptions.path,
 				domain: defaultOptions.domain,
-				secure: defaultOptions.secure,
+				secure: defaultOptions.secure
 			};
 
 			if (typeof options.expiresAt === 'object' && options.expiresAt instanceof Date) {
@@ -1668,245 +2176,6 @@ if (cookie.test()) {
 
 }(this));
 /**
- * ## Amplify storage for Shelf.js
- * 
- */
-
-(function(exports) {
-
-var store = exports.store;	
-
-if (!store) {
-	console.log('amplify.shelf.js: shelf.js core not found. Amplify storage not available.');
-	return;
-}
-
-if ('undefined' === typeof window) {
-	console.log('amplify.shelf.js: am I running in a browser? Amplify storage not available.');
-	return;
-}
-
-//var rprefix = /^__shelf__/;
-var regex = new RegExp("^" + store.name); 
-function createFromStorageInterface(storageType, storage) {
-	store.addType(storageType, function(key, value, options) {
-		var storedValue, parsed, i, remove,
-			ret = value,
-			now = (new Date()).getTime();
-
-		if (!key) {
-			ret = {};
-			remove = [];
-			i = 0;
-			try {
-				// accessing the length property works around a localStorage bug
-				// in Firefox 4.0 where the keys don't update cross-page
-				// we assign to key just to avoid Closure Compiler from removing
-				// the access as "useless code"
-				// https://bugzilla.mozilla.org/show_bug.cgi?id=662511
-				key = storage.length;
-
-				while (key = storage.key(i++)) {
-					if (regex.test(key)) {
-						parsed = store.parse(storage.getItem(key));
-						if (parsed.expires && parsed.expires <= now) {
-							remove.push(key);
-						} else {
-							ret[key.replace(rprefix, "")] = parsed.data;
-						}
-					}
-				}
-				while (key = remove.pop()) {
-					storage.removeItem(key);
-				}
-			} catch (error) {}
-			return ret;
-		}
-
-		// protect against name collisions with direct storage
-		key = store.name + key;
-
-
-		if (value === undefined) {
-			storedValue = storage.getItem(key);
-			parsed = storedValue ? store.parse(storedValue) : { expires: -1 };
-			if (parsed.expires && parsed.expires <= now) {
-				storage.removeItem(key);
-			} else {
-				return parsed.data;
-			}
-		} else {
-			if (value === null) {
-				storage.removeItem(key);
-			} else {
-				parsed = store.stringify({
-					data: value,
-					expires: options.expires ? now + options.expires : null,
-				});
-				try {
-					storage.setItem(key, parsed);
-				// quota exceeded
-				} catch(error) {
-					// expire old data and try again
-					store[storageType]();
-					try {
-						storage.setItem(key, parsed);
-					} catch(error) {
-						throw store.error();
-					}
-				}
-			}
-		}
-
-		return ret;
-	});
-}
-
-// ## localStorage + sessionStorage
-// IE 8+, Firefox 3.5+, Safari 4+, Chrome 4+, Opera 10.5+, iPhone 2+, Android 2+
-for (var webStorageType in { localStorage: 1, sessionStorage: 1, }) {
-	// try/catch for file protocol in Firefox
-	try {
-		if (window[webStorageType].getItem) {
-			createFromStorageInterface(webStorageType, window[webStorageType]);
-		}
-	} catch(e) {}
-}
-
-// ## globalStorage
-// non-standard: Firefox 2+
-// https://developer.mozilla.org/en/dom/storage#globalStorage
-if (!store.types.localStorage && window.globalStorage) {
-	// try/catch for file protocol in Firefox
-	try {
-		createFromStorageInterface("globalStorage",
-			window.globalStorage[window.location.hostname]);
-		// Firefox 2.0 and 3.0 have sessionStorage and globalStorage
-		// make sure we default to globalStorage
-		// but don't default to globalStorage in 3.5+ which also has localStorage
-		if (store.type === "sessionStorage") {
-			store.type = "globalStorage";
-		}
-	} catch(e) {}
-}
-
-// ## userData
-// non-standard: IE 5+
-// http://msdn.microsoft.com/en-us/library/ms531424(v=vs.85).aspx
-(function() {
-	// IE 9 has quirks in userData that are a huge pain
-	// rather than finding a way to detect these quirks
-	// we just don't register userData if we have localStorage
-	if (store.types.localStorage) {
-		return;
-	}
-
-	// append to html instead of body so we can do this from the head
-	var div = document.createElement("div"),
-		attrKey = "shelf";
-	div.style.display = "none";
-	document.getElementsByTagName("head")[0].appendChild(div);
-
-	// we can't feature detect userData support
-	// so just try and see if it fails
-	// surprisingly, even just adding the behavior isn't enough for a failure
-	// so we need to load the data as well
-	try {
-		div.addBehavior("#default#userdata");
-		div.load(attrKey);
-	} catch(e) {
-		div.parentNode.removeChild(div);
-		return;
-	}
-
-	store.addType("userData", function(key, value, options) {
-		div.load(attrKey);
-		var attr, parsed, prevValue, i, remove,
-			ret = value,
-			now = (new Date()).getTime();
-
-		if (!key) {
-			ret = {};
-			remove = [];
-			i = 0;
-			while (attr = div.XMLDocument.documentElement.attributes[i++]) {
-				parsed = store.parse(attr.value);
-				if (parsed.expires && parsed.expires <= now) {
-					remove.push(attr.name);
-				} else {
-					ret[attr.name] = parsed.data;
-				}
-			}
-			while (key = remove.pop()) {
-				div.removeAttribute(key);
-			}
-			div.save(attrKey);
-			return ret;
-		}
-
-		// convert invalid characters to dashes
-		// http://www.w3.org/TR/REC-xml/#NT-Name
-		// simplified to assume the starting character is valid
-		// also removed colon as it is invalid in HTML attribute names
-		key = key.replace(/[^-._0-9A-Za-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u37f-\u1fff\u200c-\u200d\u203f\u2040\u2070-\u218f]/g, "-");
-		// adjust invalid starting character to deal with our simplified sanitization
-		key = key.replace(/^-/, "_-");
-
-		if (value === undefined) {
-			attr = div.getAttribute(key);
-			parsed = attr ? store.parse(attr) : { expires: -1 };
-			if (parsed.expires && parsed.expires <= now) {
-				div.removeAttribute(key);
-			} else {
-				return parsed.data;
-			}
-		} else {
-			if (value === null) {
-				div.removeAttribute(key);
-			} else {
-				// we need to get the previous value in case we need to rollback
-				prevValue = div.getAttribute(key);
-				parsed = store.stringify({
-					data: value,
-					expires: (options.expires ? (now + options.expires) : null)
-				});
-				div.setAttribute(key, parsed);
-			}
-		}
-
-		try {
-			div.save(attrKey);
-		// quota exceeded
-		} catch (error) {
-			// roll the value back to the previous value
-			if (prevValue === null) {
-				div.removeAttribute(key);
-			} else {
-				div.setAttribute(key, prevValue);
-			}
-
-			// expire old data and try again
-			store.userData();
-			try {
-				div.setAttribute(key, parsed);
-				div.save(attrKey);
-			} catch (error) {
-				// roll the value back to the previous value
-				if (prevValue === null) {
-					div.removeAttribute(key);
-				} else {
-					div.setAttribute(key, prevValue);
-				}
-				throw store.error();
-			}
-		}
-		return ret;
-	});
-}());
-
-
-}(this));
-/**
  * ## File System storage for Shelf.js
  * 
  * ### Available only in Node.JS
@@ -2086,63 +2355,252 @@ store.addType("fs", function(key, value, options) {
 
 }(('undefined' !== typeof module && 'function' === typeof require) ? module.exports || module.parent.exports : {}));
 /**
+ * ## Amplify storage for Shelf.js
+ * 
+ */
+
+(function(exports) {
+
+var store = exports.store;	
+
+if (!store) {
+	console.log('amplify.shelf.js: shelf.js core not found. Amplify storage not available.');
+	return;
+}
+
+if ('undefined' === typeof window) {
+	console.log('amplify.shelf.js: am I running in a browser? Amplify storage not available.');
+	return;
+}
+
+//var rprefix = /^__shelf__/;
+var regex = new RegExp("^" + store.name); 
+function createFromStorageInterface(storageType, storage) {
+	store.addType(storageType, function(key, value, options) {
+		var storedValue, parsed, i, remove,
+			ret = value,
+			now = (new Date()).getTime();
+
+		if (!key) {
+			ret = {};
+			remove = [];
+			i = 0;
+			try {
+				// accessing the length property works around a localStorage bug
+				// in Firefox 4.0 where the keys don't update cross-page
+				// we assign to key just to avoid Closure Compiler from removing
+				// the access as "useless code"
+				// https://bugzilla.mozilla.org/show_bug.cgi?id=662511
+				key = storage.length;
+
+				while (key = storage.key(i++)) {
+					if (regex.test(key)) {
+						parsed = store.parse(storage.getItem(key));
+						if (parsed.expires && parsed.expires <= now) {
+							remove.push(key);
+						} else {
+							ret[key.replace(rprefix, "")] = parsed.data;
+						}
+					}
+				}
+				while (key = remove.pop()) {
+					storage.removeItem(key);
+				}
+			} catch (error) {}
+			return ret;
+		}
+
+		// protect against name collisions with direct storage
+		key = store.name + key;
+
+
+		if (value === undefined) {
+			storedValue = storage.getItem(key);
+			parsed = storedValue ? store.parse(storedValue) : { expires: -1 };
+			if (parsed.expires && parsed.expires <= now) {
+				storage.removeItem(key);
+			} else {
+				return parsed.data;
+			}
+		} else {
+			if (value === null) {
+				storage.removeItem(key);
+			} else {
+				parsed = store.stringify({
+					data: value,
+					expires: options.expires ? now + options.expires : null
+				});
+				try {
+					storage.setItem(key, parsed);
+				// quota exceeded
+				} catch(error) {
+					// expire old data and try again
+					store[storageType]();
+					try {
+						storage.setItem(key, parsed);
+					} catch(error) {
+						throw store.error();
+					}
+				}
+			}
+		}
+
+		return ret;
+	});
+}
+
+// ## localStorage + sessionStorage
+// IE 8+, Firefox 3.5+, Safari 4+, Chrome 4+, Opera 10.5+, iPhone 2+, Android 2+
+for (var webStorageType in { localStorage: 1, sessionStorage: 1 }) {
+	// try/catch for file protocol in Firefox
+	try {
+		if (window[webStorageType].getItem) {
+			createFromStorageInterface(webStorageType, window[webStorageType]);
+		}
+	} catch(e) {}
+}
+
+// ## globalStorage
+// non-standard: Firefox 2+
+// https://developer.mozilla.org/en/dom/storage#globalStorage
+if (!store.types.localStorage && window.globalStorage) {
+	// try/catch for file protocol in Firefox
+	try {
+		createFromStorageInterface("globalStorage",
+			window.globalStorage[window.location.hostname]);
+		// Firefox 2.0 and 3.0 have sessionStorage and globalStorage
+		// make sure we default to globalStorage
+		// but don't default to globalStorage in 3.5+ which also has localStorage
+		if (store.type === "sessionStorage") {
+			store.type = "globalStorage";
+		}
+	} catch(e) {}
+}
+
+// ## userData
+// non-standard: IE 5+
+// http://msdn.microsoft.com/en-us/library/ms531424(v=vs.85).aspx
+(function() {
+	// IE 9 has quirks in userData that are a huge pain
+	// rather than finding a way to detect these quirks
+	// we just don't register userData if we have localStorage
+	if (store.types.localStorage) {
+		return;
+	}
+
+	// append to html instead of body so we can do this from the head
+	var div = document.createElement("div"),
+		attrKey = "shelf";
+	div.style.display = "none";
+	document.getElementsByTagName("head")[0].appendChild(div);
+
+	// we can't feature detect userData support
+	// so just try and see if it fails
+	// surprisingly, even just adding the behavior isn't enough for a failure
+	// so we need to load the data as well
+	try {
+		div.addBehavior("#default#userdata");
+		div.load(attrKey);
+	} catch(e) {
+		div.parentNode.removeChild(div);
+		return;
+	}
+
+	store.addType("userData", function(key, value, options) {
+		div.load(attrKey);
+		var attr, parsed, prevValue, i, remove,
+			ret = value,
+			now = (new Date()).getTime();
+
+		if (!key) {
+			ret = {};
+			remove = [];
+			i = 0;
+			while (attr = div.XMLDocument.documentElement.attributes[i++]) {
+				parsed = store.parse(attr.value);
+				if (parsed.expires && parsed.expires <= now) {
+					remove.push(attr.name);
+				} else {
+					ret[attr.name] = parsed.data;
+				}
+			}
+			while (key = remove.pop()) {
+				div.removeAttribute(key);
+			}
+			div.save(attrKey);
+			return ret;
+		}
+
+		// convert invalid characters to dashes
+		// http://www.w3.org/TR/REC-xml/#NT-Name
+		// simplified to assume the starting character is valid
+		// also removed colon as it is invalid in HTML attribute names
+		key = key.replace(/[^-._0-9A-Za-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u37f-\u1fff\u200c-\u200d\u203f\u2040\u2070-\u218f]/g, "-");
+		// adjust invalid starting character to deal with our simplified sanitization
+		key = key.replace(/^-/, "_-");
+
+		if (value === undefined) {
+			attr = div.getAttribute(key);
+			parsed = attr ? store.parse(attr) : { expires: -1 };
+			if (parsed.expires && parsed.expires <= now) {
+				div.removeAttribute(key);
+			} else {
+				return parsed.data;
+			}
+		} else {
+			if (value === null) {
+				div.removeAttribute(key);
+			} else {
+				// we need to get the previous value in case we need to rollback
+				prevValue = div.getAttribute(key);
+				parsed = store.stringify({
+					data: value,
+					expires: (options.expires ? (now + options.expires) : null)
+				});
+				div.setAttribute(key, parsed);
+			}
+		}
+
+		try {
+			div.save(attrKey);
+		// quota exceeded
+		} catch (error) {
+			// roll the value back to the previous value
+			if (prevValue === null) {
+				div.removeAttribute(key);
+			} else {
+				div.setAttribute(key, prevValue);
+			}
+
+			// expire old data and try again
+			store.userData();
+			try {
+				div.setAttribute(key, parsed);
+				div.save(attrKey);
+			} catch (error) {
+				// roll the value back to the previous value
+				if (prevValue === null) {
+					div.removeAttribute(key);
+				} else {
+					div.setAttribute(key, prevValue);
+				}
+				throw store.error();
+			}
+		}
+		return ret;
+	});
+}());
+
+
+}(this));
+/**
  * # JSUS: JavaScript UtilS. 
  * Copyright(c) 2012 Stefano Balietti
  * MIT Licensed
  * 
  * Collection of general purpose javascript functions. JSUS helps!
  * 
- * 
- * JSUS is designed to be modular and easy to extend. 
- * 
- * Just use: 
- * 
- *         JSUS.extend(myClass);
- * 
- * to extend the functionalities of JSUS. All the methods of myClass 
- * are immediately added to JSUS, and a reference to myClass is stored
- * in JSUS._classes.
- * 
- * MyClass can be either of type Object or Function.
- * 
- * JSUS can also extend other objects. Just pass a second parameter:
- * 
- * 
- *         JSUS.extend(myClass, mySecondClass);
- * 
- * and mySecondClass will receive all the methods of myClass. In this case,
- * no reference of myClass is stored.
- * 
- * To get a copy of one of the registered JSUS libraries
- * 
- *  	var myClass = JSUS.require('myClass');
- * 
- * JSUS come shipped in with a default set of libraries
- * 
- * 1. OBJ
- * 2. ARRAY
- * 3. TIME
- * 4. EVAL
- * 5. DOM
- * 6. RANDOM
- * 7. PARSE
- * 
- * Documentation
- * 
- * Automatic documentation for all libraries can be generated with the command
- * 
- * ```javascript
- * node bin/make.js doc
- * ```
- *  
- * Build
- * 
- * Create your customized build of JSUS.js using the make file in the bin directory
- * 
- * ```javascript
- * node make.js build // Full build, about 20Kb minified
- * node make.js build -l obj,array -o jsus-oa.js // about 12Kb minified
- * ```
+ * See README.md for extra help.
  */
 
 (function (exports) {
@@ -2195,7 +2653,7 @@ JSUS.extend = function (additional, target) {
     // of the additional object into the hidden
     // JSUS._classes object;
     if ('undefined' === typeof target) {
-        var target = target || this;
+        target = target || this;
         if ('function' === typeof additional) {
             var name = additional.toString();
             name = name.substr('function '.length);
@@ -2254,6 +2712,7 @@ JSUS.require = JSUS.get = function (className) {
         return false;
     }
     return JSUS.clone(JSUS._classes[className]);
+    //return new JSUS._classes[className]();
 };
 
 /**
@@ -2272,6 +2731,7 @@ JSUS.isNodeJS = function () {
 // ## Node.JS includes
 // if node
 if (JSUS.isNodeJS()) {
+    require('./lib/compatibility');
     require('./lib/obj');
     require('./lib/array');
     require('./lib/time');
@@ -2286,6 +2746,70 @@ if (JSUS.isNodeJS()) {
 })('undefined' !== typeof module && 'undefined' !== typeof module.exports ? module.exports: window);
 
 
+/**
+ * # SUPPORT
+ *  
+ * Copyright(c) 2012 Stefano Balietti
+ * MIT Licensed
+ * 
+ * Tests browsers ECMAScript 5 compatibility
+ * 
+ * For more information see http://kangax.github.com/es5-compat-table/
+ * 
+ */
+
+(function (JSUS) {
+    
+function COMPATIBILITY() {};
+
+/**
+ * ## COMPATIBILITY.compatibility
+ * 
+ * Returns a report of the ECS5 features available
+ * 
+ * Useful when an application routinely performs an operation 
+ * depending on a potentially unsupported ECS5 feature. 
+ * 
+ * Transforms multiple try-catch statements in a if-else
+ * 
+ * @return {object} support The compatibility object
+ */
+COMPATIBILITY.compatibility = function() {
+
+	var support = {};
+	
+	try {
+		Object.defineProperty({}, "a", {enumerable: false, value: 1})
+		support.defineProperty = true;
+	}
+	catch(e) {
+		support.defineProperty = false;	
+	}
+	
+	try {
+		eval('({ get x(){ return 1 } }).x === 1')
+		support.setter = true;
+	}
+	catch(err) {
+		support.setter = false;
+	}
+	  
+	try {
+		var value;
+		eval('({ set x(v){ value = v; } }).x = 1');
+		support.getter = true;
+	}
+	catch(err) {
+		support.getter = false;
+	}	  
+
+	return support;
+};
+
+
+JSUS.extend(COMPATIBILITY);
+    
+})('undefined' !== typeof JSUS ? JSUS : module.parent.exports.JSUS);
 /**
  * # ARRAY
  *  
@@ -2368,12 +2892,12 @@ ARRAY.isArray = function (o) {
  *  
  * Returns FALSE, in case parameters are incorrectly specified
  * 
- * @param {Number} start The first element of the sequence
- * @param {Number} end The last element of the sequence
- * @param {Number} increment Optional. The increment between two subsequents element of the sequence
+ * @param {number} start The first element of the sequence
+ * @param {number} end The last element of the sequence
+ * @param {number} increment Optional. The increment between two subsequents element of the sequence
  * @param {Function} func Optional. A callback function that can modify each number of the sequence before returning it
  *  
- * @return {Array} out The final sequence 
+ * @return {array} out The final sequence 
  */
 ARRAY.seq = function (start, end, increment, func) {
 	if ('number' !== typeof start) return false;
@@ -2417,7 +2941,7 @@ ARRAY.seq = function (start, end, increment, func) {
  * 
  * If an error occurs returns FALSE.
  * 
- * @param {Array} array The array to loop in
+ * @param {array} array The array to loop in
  * @param {Function} func The callback for each element in the array
  * @param {object} context Optional. The context of execution of the callback. Defaults ARRAY.each
  * 
@@ -2445,7 +2969,7 @@ ARRAY.each = function (array, func, context) {
  * Any number of additional parameters can be passed after the 
  * callback function
  * 
- * @return {Array} out The result of the mapping execution
+ * @return {array} out The result of the mapping execution
  * @see ARRAY.each
  * 
  */
@@ -2482,7 +3006,7 @@ ARRAY.map = function () {
  * If no element is removed returns FALSE.
  * 
  * @param {mixed} needle The element to search in the array
- * @param {Array} haystack The array to search in
+ * @param {array} haystack The array to search in
  * 
  * @return {mixed} The element that was removed, FALSE if none was removed
  * @see JSUS.equals
@@ -2519,7 +3043,7 @@ ARRAY.removeElement = function (needle, haystack) {
  * Alias ARRAY.in_array (deprecated)
  * 
  * @param {mixed} needle The element to search in the array
- * @param {Array} haystack The array to search in
+ * @param {array} haystack The array to search in
  * @return {Boolean} TRUE, if the element is contained in the array
  * 
  * 	@see JSUS.equals
@@ -2550,9 +3074,9 @@ ARRAY.inArray = ARRAY.in_array = function (needle, haystack) {
  *  @see ARRAY.generateCombinations
  *  @see ARRAY.matchN
  *  
- * @param {Array} array The array to split in subgroups
- * @param {Number} N The number of subgroups
- * @return {Array} Array containing N groups
+ * @param {array} array The array to split in subgroups
+ * @param {number} N The number of subgroups
+ * @return {array} Array containing N groups
  */ 
 ARRAY.getNGroups = function (array, N) {
     return ARRAY.getGroupsSizeN(array, Math.floor(array.length / N));
@@ -2564,9 +3088,9 @@ ARRAY.getNGroups = function (array, N) {
  * Returns an array of array containing N elements each
  * The last group could have less elements
  * 
- * @param {Array} array The array to split in subgroups
- * @param {Number} N The number of elements in each subgroup
- * @return {Array} Array containing groups of size N
+ * @param {array} array The array to split in subgroups
+ * @param {number} N The number of elements in each subgroup
+ * @return {array} Array containing groups of size N
  * 
  *  	@see ARRAY.getNGroups
  *  	@see ARRAY.generateCombinations
@@ -2674,9 +3198,9 @@ ARRAY._latinSquare = function (S, N, self) {
  * 
  * If N is defined, it returns "Latin Rectangle" (SxN) 
  * 
- * @param {Number} S The number of rows
- * @param {Number} Optional. N The number of columns. Defaults N = S
- * @return {Array} The resulting latin square (or rectangle)
+ * @param {number} S The number of rows
+ * @param {number} Optional. N The number of columns. Defaults N = S
+ * @return {array} The resulting latin square (or rectangle)
  * 
  */
 ARRAY.latinSquare = function (S, N) {
@@ -2695,9 +3219,9 @@ ARRAY.latinSquare = function (S, N) {
  * 
  * If N < S, it returns a "Latin Rectangle" (SxN)
  * 
- * @param {Number} S The number of rows
- * @param {Number} Optional. N The number of columns. Defaults N = S-1
- * @return {Array} The resulting latin square (or rectangle)
+ * @param {number} S The number of rows
+ * @param {number} Optional. N The number of columns. Defaults N = S-1
+ * @return {array} The resulting latin square (or rectangle)
  */
 ARRAY.latinSquareNoSelf = function (S, N) {
 	if (!N) N = S-1;
@@ -2714,9 +3238,9 @@ ARRAY.latinSquareNoSelf = function (S, N) {
  *  Generates all distinct combinations of exactly r elements each 
  *  and returns them into an array
  *  
- *  @param {Array} array The array from which the combinations are extracted
- *  @param {Number} r The number of elements in each combination
- *  @return {Array} The total sets of combinations
+ *  @param {array} array The array from which the combinations are extracted
+ *  @param {number} r The number of elements in each combination
+ *  @return {array} The total sets of combinations
  *  
  *  	@see ARRAY.getGroupSizeN
  *  	@see ARRAY.getNGroups
@@ -2756,10 +3280,10 @@ ARRAY.generateCombinations = function (array, r) {
  * already used. Another recombination would be able to match all the 
  * elements instead.
  * 
- * @param {Array} array The array in which operate the matching
- * @param {Number} N The number of matches per element
+ * @param {array} array The array in which operate the matching
+ * @param {number} N The number of matches per element
  * @param {Boolean} strict Optional. If TRUE, matched elements cannot be repeated. Defaults, FALSE 
- * @return {Array} result The results of the matching
+ * @return {array} result The results of the matching
  * 
  *  	@see ARRAY.getGroupSizeN
  *  	@see ARRAY.getNGroups
@@ -2800,9 +3324,9 @@ ARRAY.matchN = function (array, N, strict) {
  * 
  * The original array is not modified.
  * 
- * @param {Array} array the array to repeat 
+ * @param {array} array the array to repeat 
  * @param {number} times The number of times the array must be appended to itself
- * @return {Array} A copy of the original array appended to itself
+ * @return {array} A copy of the original array appended to itself
  * 
  */
 ARRAY.rep = function (array, times) {
@@ -2820,6 +3344,56 @@ ARRAY.rep = function (array, times) {
     return result;
 };
 
+/**
+ * ## ARRAY.stretch
+ * 
+ * Repeats each element of the array N times
+ * 
+ * N can be specified as an integer or as an array. In the former case all 
+ * the elements are repeat the same number of times. In the latter, the each
+ * element can be repeated a custom number of times. If the length of the `times`
+ * array differs from that of the array to stretch a recycle rule is applied.
+ * 
+ * The original array is not modified.
+ * 
+ * E.g.:
+ * 
+ * ```js
+ * 	var foo = [1,2,3];
+ * 
+ * 	ARRAY.stretch(foo, 2); // [1, 1, 2, 2, 3, 3]
+ * 
+ * 	ARRAY.stretch(foo, [1,2,3]); // [1, 2, 2, 3, 3, 3];
+ *
+ * 	ARRAY.stretch(foo, [2,1]); // [1, 1, 2, 3, 3];
+ * ```
+ * 
+ * @param {array} array the array to strech
+ * @param {number|array} times The number of times each element must be repeated
+ * @return {array} A stretched copy of the original array
+ * 
+ */
+ARRAY.stretch = function (array, times) {
+	if (!array) return;
+	if (!times) return array.slice(0);
+	if ('number' === typeof times) {
+		if (times < 1) {
+			JSUS.log('times must be greater or equal 1', 'ERR');
+			return;
+		}
+		times = ARRAY.rep([times], array.length);
+	}
+	
+    var result = [];
+    for (var i = 0; i < array.length; i++) {
+    	var repeat = times[(i % times.length)];
+        for (var j = 0; j < repeat ; j++) {
+        	result.push(array[i]);
+        }
+    }
+    return result;
+};
+
 
 /**
  * ## ARRAY.arrayIntersect
@@ -2828,9 +3402,9 @@ ARRAY.rep = function (array, times) {
  * 
  * Arrays can contain both primitive types and objects.
  * 
- * @param {Array} a1 The first array
- * @param {Array a2 The second array
- * @return {Array} All the values of the first array that are found also in the second one
+ * @param {array} a1 The first array
+ * @param {array} a2 The second array
+ * @return {array} All the values of the first array that are found also in the second one
  */
 ARRAY.arrayIntersect = function (a1, a2) {
     return a1.filter( function(i) {
@@ -2845,9 +3419,9 @@ ARRAY.arrayIntersect = function (a1, a2) {
  * 
  * Arrays can contain both primitive types and objects.
  * 
- * @param {Array} a1 The first array
- * @param {Array a2 The second array
- * @return {Array} All the values of the first array that are not found in the second one
+ * @param {array} a1 The first array
+ * @param {array} a2 The second array
+ * @return {array} All the values of the first array that are not found in the second one
  */
 ARRAY.arrayDiff = function (a1, a2) {
     return a1.filter( function(i) {
@@ -2862,8 +3436,8 @@ ARRAY.arrayDiff = function (a1, a2) {
  * 
  * The original array is not modified, and a copy is returned.
  * 
- * @param {Array} shuffle The array to shuffle
- * @return {Array} copy The shuffled array
+ * @param {array} shuffle The array to shuffle
+ * @return {array} copy The shuffled array
  * 
  * 		@see http://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle
  */
@@ -2886,9 +3460,9 @@ ARRAY.shuffle = function (array) {
  * 
  * Select N random elements from the array and returns them
  * 
- * @param {Array} array The array from which extracts random elements
- * @paran {Number} N The number of random elements to extract
- * @return {Array} An new array with N elements randomly chose from the original array  
+ * @param {array} array The array from which extracts random elements
+ * @paran {number} N The number of random elements to extract
+ * @return {array} An new array with N elements randomly chose from the original array  
  */
 ARRAY.getNRandom = function (array, N) {
     return ARRAY.shuffle(array).slice(0,N);
@@ -2903,8 +3477,8 @@ ARRAY.getNRandom = function (array, N) {
  * 
  * Comparison is done with `JSUS.equals`.
  * 
- * @param {Array} array The array from which eliminates duplicates
- * @return {Array} out A copy of the array without duplicates
+ * @param {array} array The array from which eliminates duplicates
+ * @return {array} out A copy of the array without duplicates
  * 
  * 	@see JSUS.equals
  */
@@ -2920,6 +3494,39 @@ ARRAY.distinct = function (array) {
 	return out;
 	
 };
+
+/**
+ * ## ARRAY.transpose
+ * 
+ * Transposes a given 2D array.
+ * 
+ * The original array is not modified, and a new copy is
+ * returned.
+ *
+ * @param {array} array The array to transpose
+ * @return {array} The Transposed Array
+ * 
+ */
+ARRAY.transpose = function (array) {
+	if (!array) return;  
+	
+	// Calculate width and height
+    var w, h, i, j, t = []; 
+	w = array.length || 0;
+	h = (ARRAY.isArray(array[0])) ? array[0].length : 0;
+	if (w === 0 || h === 0) return t;
+	
+	for ( i = 0; i < h; i++) {
+		t[i] = [];
+	    for ( j = 0; j < w; j++) {	   
+	    	t[i][j] = array[j][i];
+	    }
+	} 
+	return t;
+};
+
+
+
 
 JSUS.extend(ARRAY);
     
@@ -2938,6 +3545,13 @@ JSUS.extend(ARRAY);
 
     
 function OBJ(){};
+
+var compatibility = null;
+
+if ('undefined' !== typeof JSUS.compatibility) {
+	compatibility = JSUS.compatibility();
+}
+
 
 /**
  * ## OBJ.equals
@@ -3223,10 +3837,24 @@ OBJ.clone = function (obj) {
 	if ('boolean' === typeof obj) return obj;
 	if (obj === NaN) return obj;
 	if (obj === Infinity) return obj;
-	 
-	var clone = {};
+	
+	var clone;
+	if ('function' === typeof obj) {
+//		clone = obj;
+		// <!-- Check when and if we need this -->
+		clone = function() { return obj.apply(clone, arguments); };
+	}
+	else {
+		clone = (Object.prototype.toString.call(obj) === '[object Array]') ? [] : {};
+	}
+	
 	for (var i in obj) {
 		var value;
+		// TODO: index i is being updated, so apply is called on the 
+		// last element, instead of the correct one.
+//		if ('function' === typeof obj[i]) {
+//			value = function() { return obj[i].apply(clone, arguments); };
+//		}
 		// It is not NULL and it is an object
 		if (obj[i] && 'object' === typeof obj[i]) {
 			// is an array
@@ -3246,12 +3874,27 @@ OBJ.clone = function (obj) {
 	    	clone[i] = value;
 	    }
 	    else {
-	    	Object.defineProperty(clone, i, {
-	    		value: value,
-         		writable: true,
-         		configurable: true,
-         	});
-
+	    	// we know if object.defineProperty is available
+	    	if (compatibility && compatibility.defineProperty) {
+		    	Object.defineProperty(clone, i, {
+		    		value: value,
+	         		writable: true,
+	         		configurable: true
+	         	});
+	    	}
+	    	else {
+	    		// or we try...
+	    		try {
+	    			Object.defineProperty(clone, i, {
+			    		value: value,
+		         		writable: true,
+		         		configurable: true
+		         	});
+	    		}
+		    	catch(e) {
+		    		clone[i] = value;
+		    	}
+	    	}
 	    }
     }
     return clone;
@@ -3305,6 +3948,8 @@ OBJ.join = function (obj1, obj2) {
  * 
  * In case keys overlap the values from obj2 are taken. 
  * 
+ * Only own properties are copied.
+ * 
  * Returns a new object, the original ones are not modified.
  * 
  * E.g.
@@ -3338,7 +3983,12 @@ OBJ.merge = function (obj1, obj2) {
             	// a non-object, we need to cast the 
             	// type of obj1
             	if ('object' !== typeof clone[i]) {
-            		clone[i] = {};
+            		if (Object.prototype.toString.call(obj2[i]) === '[object Array]') {
+            			clone[i] = [];
+            		}
+            		else {
+            			clone[i] = {};
+            		}
             	}
                 clone[i] = OBJ.merge(clone[i], obj2[i]);
             } else {
@@ -3348,6 +3998,66 @@ OBJ.merge = function (obj1, obj2) {
     }
     
     return clone;
+};
+
+/**
+ * ## OBJ.mixin
+ * 
+ * Adds all the properties of obj2 into obj1
+ * 
+ * Original object is modified
+ * 
+ * @param {object} obj1 The object to which the new properties will be added
+ * @param {object} obj2 The mixin-in object
+ */
+OBJ.mixin = function (obj1, obj2) {
+	if (!obj1 && !obj2) return;
+	if (!obj1) return obj2;
+	if (!obj2) return obj1;
+	
+	for (var i in obj2) {
+		obj1[i] = obj2[i];
+	}
+};
+
+/**
+ * ## OBJ.mixin
+ * 
+ * Copies only non-overlapping properties from obj2 to obj1
+ * 
+ * Original object is modified
+ * 
+ * @param {object} obj1 The object to which the new properties will be added
+ * @param {object} obj2 The mixin-in object
+ */
+OBJ.mixout = function (obj1, obj2) {
+	if (!obj1 && !obj2) return;
+	if (!obj1) return obj2;
+	if (!obj2) return obj1;
+	
+	for (var i in obj2) {
+		if (!obj1[i]) obj1[i] = obj2[i];
+	}
+};
+
+/**
+ * ## OBJ.mixcommon
+ * 
+ * Copies only overlapping properties from obj2 to obj1
+ * 
+ * Original object is modified
+ * 
+ * @param {object} obj1 The object to which the new properties will be added
+ * @param {object} obj2 The mixin-in object
+ */
+OBJ.mixcommon = function (obj1, obj2) {
+	if (!obj1 && !obj2) return;
+	if (!obj1) return obj2;
+	if (!obj2) return obj1;
+	
+	for (var i in obj2) {
+		if (obj1[i]) obj1[i] = obj2[i];
+	}
 };
 
 /**
@@ -3427,7 +4137,7 @@ OBJ.subobj = function (o, select) {
  * Use '.' (dot) to point to a nested property.
  * 
  * @param {object} o The object to dissect
- * @param {string|array} select The selection of properties to remove
+ * @param {string|array} remove The selection of properties to remove
  * @return {object} out The subobject with the properties from the parent one 
  * 
  * 	@see OBJ.getNestedValue
@@ -3676,9 +4386,6 @@ JSUS.extend(OBJ);
  */
 
 (function (exports, JSUS, store) {
-    
-// ## Global scope
-
 	
 var nddb_operation = null;
 var nddb_conditions = [];
@@ -3690,7 +4397,7 @@ var addCondition = function(type, condition) {
 	}
 	nddb_conditions.push({
 		type: type,
-		condition: condition,
+		condition: condition
 	});
 	return true;
 }
@@ -3719,6 +4426,8 @@ NDDB.prototype.or = NDDB.prototype.OR = function (d, op, value) {
 NDDB.prototype.not = NDDB.prototype.NOT = function (d, op, value) {
 	return addOperation('NOT', d, op, value);
 };
+
+NDDB.compatibility = JSUS.compatibility();
 	
 // Expose constructors
 exports.NDDB = NDDB;
@@ -3801,13 +4510,12 @@ function NDDB (options, db, parent) {
     
     // ### length
     // The number of items in the database
-    Object.defineProperty(this, 'length', {
-    	set: function(){},
-    	get: function(){
-    		return this.db.length;
-    	},
-    	configurable: true
-	});
+    if (NDDB.compatibility.getter) {
+    	this.__defineGetter__('length', function() { return this.db.length; });
+    }
+	else {
+    	this.length = null;
+    }
    
     
     // ### __C
@@ -3947,11 +4655,16 @@ NDDB.prototype._masquerade = function (o, db) {
     if ('undefined' !== typeof o.nddbid) return o;
     db = db || this.db;
     
-    Object.defineProperty(o, 'nddbid', {
-    	value: db.length,
-    	configurable: true,
-    	writable: true,
-	});
+    if (NDDB.compatibility.defineProperty) {
+	    Object.defineProperty(o, 'nddbid', {
+	    	value: db.length,
+	    	configurable: true,
+	    	writable: true
+		});
+    }
+    else {
+    	o.nddbid = db.length;
+    }
     
     return o;
 };
@@ -3986,7 +4699,8 @@ NDDB.prototype._masqueradeDB = function (db) {
  * @param {object} options Optional. Configuration object
  */
 NDDB.prototype._autoUpdate = function (options) {
-	var update = JSUS.merge(options || {}, this.__update);
+	var update = (options) ? JSUS.merge(options, this.__update)
+						   : this.__update;
 	
     if (update.pointer) {
         this.nddb_pointer = this.db.length-1;
@@ -4126,16 +4840,29 @@ NDDB.prototype.toString = function () {
  * 
  * Cyclic objects are decycled.
  * 
+ * @param {boolean} TRUE, if compressed
  * @return {string} out A machine-readable representation of the database
  * 
  */
-NDDB.prototype.stringify = function () {
+NDDB.prototype.stringify = function (compressed) {
 	if (!this.length) return '[]';
+	compressed = ('undefined' === typeof compressed) ? true : compressed;
 	
-	var objToStr = function(o) {
-		// Skip empty objects
-		if (JSUS.isEmpty(o)) return '{}';
-		return JSON.stringify(o);
+	var objToStr;
+	
+	if (compressed) {
+		objToStr = function(o) {
+			// Skip empty objects
+			if (JSUS.isEmpty(o)) return '{}';
+			return JSON.stringify(o);
+		}	
+	}
+	else {
+		objToStr = function(o) {
+			// Skip empty objects
+			if (JSUS.isEmpty(o)) return '{}';
+			return JSON.stringify(o, null, 4);
+		}
 	}
 	
     var out = '[';
@@ -5628,55 +6355,104 @@ NDDB.prototype.resolveTag = function (tag) {
 
 // ## Persistance    
 
-var isNodeJS = function() {
-	return ('object' === typeof module && 'function' === typeof require);
-};
-
 var storageAvailable = function() {
 	return ('function' === typeof store);
 }
 
 // if node
-if (isNodeJS()) {   
+if (JSUS.isNodeJS()) {   
 	require('./external/cycle.js');		
 	var fs = require('fs');
 };
 
 //end node  
-    
-NDDB.prototype.save = function (file, callback) {
+
+/**
+ * ### NDDB.save
+ * 
+ * Saves the database to a persistent medium in JSON format
+ * 
+ * If NDDB is executed in the browser, it tries to use the `store` method - 
+ * usually associated to shelf.js - to write to the browser database. 
+ * If no `store` object is found, an error is issued and the database
+ * is not saved.
+ * 
+ * If NDDB is executed in the Node.JS environment it saves to the file system
+ * using the standard `fs.writeFile` method.
+ * 
+ * Cyclic objects are decycled, and do not cause errors. Upon loading, the cycles
+ * are restored.
+ * 
+ * @param {string} file The file system path, or the identifier for the browser database
+ * @param {function} callback Optional. A callback to execute after the database was saved
+ * @param {compress} boolean Optional. If TRUE, output will be compressed. Defaults, FALSE
+ * 
+ * @see NDDB.load
+ * @see NDDB.stringify
+ * @see https://github.com/douglascrockford/JSON-js/blob/master/cycle.js
+ * @return {boolean} TRUE, if operation is successful
+ * 
+ */
+NDDB.prototype.save = function (file, callback, compress) {
 	if (!file) {
-		NDDB.log('You must specify a valid file name.', 'ERR');
+		NDDB.log('You must specify a valid file / id.', 'ERR');
 		return false;
 	}
 	
+	compress = compress || false;
+	
 	// Try to save in the browser, e.g. with Shelf.js
-	if (!isNodeJS()){
+	if (!JSUS.isNodeJS()){
 		if (!storageAvailable()) {
 			NDDB.log('No support for persistent storage found.', 'ERR');
 			return false;
 		}
 		
-		store(file, this.stringify());
+		store(file, this.stringify(compress));
+		if (callback) callback();
 		return true;
 	}
 	
 	// Save in Node.js
-	fs.writeFile(file, this.stringify(), 'utf-8', function(e) {
+	fs.writeFile(file, this.stringify(compress), 'utf-8', function(e) {
 		if (e) throw e
 		if (callback) callback();
 		return true;
 	});
 };
 
+/**
+ * ### NDDB.load
+ * 
+ * Loads a JSON object into the database from a persistent medium
+ * 
+ * If NDDB is executed in the browser, it tries to use the `store` method - 
+ * usually associated to shelf.js - to load from the browser database. 
+ * If no `store` object is found, an error is issued and the database
+ * is not loaded.
+ * 
+ * If NDDB is executed in the Node.JS environment it loads from the file system
+ * using the standard `fs.readFileSync` or `fs.readFile` method.
+ * 
+ * Cyclic objects previously decycled will be retrocycled. 
+ * 
+ * @param {string} file The file system path, or the identifier for the browser database
+ * @param {function} callback Optional. A callback to execute after the database was saved
+ * 
+ * @see NDDB.save
+ * @see NDDB.stringify
+ * @see https://github.com/douglascrockford/JSON-js/blob/master/cycle.js
+ * @return {boolean} TRUE, if operation is successful
+ * 
+ */
 NDDB.prototype.load = function (file, callback) {
 	if (!file) {
-		NDDB.log('You must specify a valid file.', 'ERR');
+		NDDB.log('You must specify a valid file / id.', 'ERR');
 		return false;
 	}
 	
 	// Try to save in the browser, e.g. with Shelf.js
-	if (!isNodeJS()){
+	if (!JSUS.isNodeJS()){
 		if (!storageAvailable()) {
 			NDDB.log('No support for persistent storage found.', 'ERR');
 			return false;
@@ -5720,9 +6496,8 @@ NDDB.prototype.load = function (file, callback) {
 
 
 // ## Closure    
-    
 })(
     'undefined' !== typeof module && 'undefined' !== typeof module.exports ? module.exports: window
   , 'undefined' !== typeof JSUS ? JSUS : module.parent.exports.JSUS || require('JSUS').JSUS
-  , ('object' === typeof module && 'function' === typeof require) ? module.parent.exports.store || require('shelf.js/build/shelf-fs.js').store : this.store  		  
+  , ('object' === typeof module && 'function' === typeof require) ? module.parent.exports.store || require('shelf.js/build/shelf-fs.js').store : this.store
 );

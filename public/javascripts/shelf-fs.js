@@ -32,23 +32,31 @@ store.name = "__shelf__";
 store.verbosity = 0;
 store.types = {};
 
-var mainStorageType = null;
 
-Object.defineProperty(store, 'type', {
-	set: function(type){
-		if ('undefined' === typeof store.types[type]) {
-			store.log('Cannot set store.type to an invalid type: ' + type);
-			return false;
-		}
-		mainStorageType = type;
-		return type;
-	},
-	get: function(){
-		return mainStorageType;
-	},
-	configurable: false,
-	enumerable: true,
-});
+var mainStorageType = "volatile";
+
+//if Object.defineProperty works...
+try {	
+	
+	Object.defineProperty(store, 'type', {
+		set: function(type){
+			if ('undefined' === typeof store.types[type]) {
+				store.log('Cannot set store.type to an invalid type: ' + type);
+				return false;
+			}
+			mainStorageType = type;
+			return type;
+		},
+		get: function(){
+			return mainStorageType;
+		},
+		configurable: false,
+		enumerable: true
+	});
+}
+catch(e) {
+	store.type = mainStorageType; // default: memory
+}
 
 store.addType = function (type, storage) {
 	store.types[type] = storage;
@@ -74,15 +82,24 @@ store.log = function(text) {
 	
 };
 
-Object.defineProperty(store, 'persistent', {
-	set: function(){},
-	get: function(){
-		if (!store.types.length) return false;
-		if (store.types.length === 1 && store.type === "volatile") return false;
-		return true;
-	},
-	configurable: false,
-});
+store.isPersistent = function() {
+	if (!store.types) return false;
+	if (store.type === "volatile") return false;
+	return true;
+};
+
+//if Object.defineProperty works...
+try {	
+	Object.defineProperty(store, 'persistent', {
+		set: function(){},
+		get: store.isPersistent,
+		configurable: false
+	});
+}
+catch(e) {
+	// safe case
+	store.persistent = false;
+}
 
 store.decycle = function(o) {
 	if (JSON && JSON.decycle && 'function' === typeof JSON.decycle) {
@@ -167,7 +184,6 @@ store.parse = function(o) {
 }());
 
 }('undefined' !== typeof module && 'undefined' !== typeof module.exports ? module.exports: this));
-
 /**
  * ## File System storage for Shelf.js
  * 
