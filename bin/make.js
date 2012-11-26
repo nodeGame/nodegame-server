@@ -154,7 +154,18 @@ program
 
 		J.copyFromDir(buildDir_shelf, buildDir, '.js');
 		
-		console.log('All javascript files built and copied in public/javascript/');
+		console.log('All javascript files built and copied to public/javascript/');
+});
+
+program
+	.command('refresh')
+	.description('Moves all the .js files from the build directories of the submodules into public/javascript')
+	.action(function(){
+		J.copyFromDir(buildDir_client, buildDir, '.js');
+		J.copyFromDir(buildDir_JSUS, buildDir, '.js');
+		J.copyFromDir(buildDir_NDDB, buildDir, '.js');
+		J.copyFromDir(buildDir_shelf, buildDir, '.js');
+		console.log('All javascript files copied to public/javascript/');
 });
 
 program
