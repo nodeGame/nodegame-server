@@ -103,9 +103,9 @@ program
 		build_client({
 			output: "nodegame",
 		});
-		build_client_support({
-			all: true,
-		});
+//		build_client_support({
+//			all: true,
+//		});
 		
 		J.copyFromDir(buildDir_client, buildDir, '.js');
 		
