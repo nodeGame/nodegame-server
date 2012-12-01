@@ -113,6 +113,27 @@ div#VisualState_div {
   font-size: 16px;
 }
 
+/* Chat */
+
+
+#chat_chat {
+  overflow-y: scroll;
+  height: 200px;
+  width: 450px;
+  border: 1px solid #CCC;
+  padding: 5px;
+}
+
+#chat_textarea {
+  height: 100px;
+  width: 400px;
+}
+
+.chat_me {
+  font-weight: bold;
+}
+
+
 /* State Display */
 
 fieldset#statedisplay_fieldset {
