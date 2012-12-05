@@ -1907,7 +1907,10 @@ function NDDB (options, db, parent) {
     
     // ### hooks
     // The list of hooks and associated callbacks
-    this.hooks = {};
+    this.hooks = {
+		insert: [],
+    	remove: []	
+    };
     
     // ### nddb_pointer
     // Pointer for iterating along all the elements
@@ -1930,6 +1933,10 @@ function NDDB (options, db, parent) {
     // ### __H
     // List of hashing functions
     this.__H = {};
+    
+    // ### __I
+    // List of hashing functions
+    this.__I = {};
     
     // ### __update
     // Auto update options container
@@ -1982,6 +1989,10 @@ NDDB.prototype.init = function(options) {
 		this.__H = options.H;
 	}
 	
+	if (options.I) {
+		this.__I = options.I;
+	}
+	
 	if (options.tags) {
 		this.tags = options.tags;
 	}
@@ -2007,7 +2018,6 @@ NDDB.prototype.init = function(options) {
         	this.__update.sort = options.update.sort;
         }
     }
-    
 };
 
 // ## CORE
@@ -2166,15 +2176,15 @@ NDDB.prototype.insert = function (o) {
  * @param {object} o The item or array of items to insert
  */
 NDDB.prototype._insert = function (o) {
-    if ('undefined' === typeof o || o === null) return;
     o = this._masquerade(o);
-    
     this.db.push(o);
+    this.emit('insert', o);
     
-    // We save time calling _hashIt only
+	// We save time calling _hashIt only
     // on the latest inserted element
     if (this.__update.indexes) {
     	this._hashIt(o);
+    	this._indexIt(o);
     }
 	// See above
     this._autoUpdate({indexes: false});
@@ -2216,6 +2226,7 @@ NDDB.prototype.cloneSettings = function () {
     var options = this.__options || {};
     
     options.H = 		this.__H;
+    options.I = 		this.__I;
     options.C = 		this.__C;
     options.tags = 		this.tags;
     options.update = 	this.__update;
@@ -2359,13 +2370,37 @@ NDDB.prototype.isReservedWord = function (key) {
 	return (this[key]) ? true : false; 
 };
 
+
+/**
+ * ### NDDB._isValidIndex
+ *
+ * Returns TRUE if the index is not a reserved word, otherwise
+ * displays an error and returns FALSE. 
+ * 
+ * @param {string} key The name of the property
+ * @return {boolean} TRUE, if the index has a valid name
+ */
+NDDB.prototype._isValidIndex = function (idx) {
+	if ('undefined' === typeof idx) {
+		NDDB.log('A valid index name must be provided', 'ERR');
+		return false;
+	}
+	if (this.isReservedWord(idx)) {
+		var str = 'A reserved word have been selected as an index. ';
+		str += 'Please select another one: ' + idx;
+		NDDB.log(str, 'ERR');
+		return false;
+	}
+	return true;
+};
+
 /**
  * ### NDDB.hash | NDDB.h
  *
- * Registers a new hashing function for index d
+ * Registers a new hashing function
  * 
- * Hashing functions automatically creates indexes 
- * to retrieve objects faster
+ * Hashing functions creates nested NDDB database 
+ * where objects are automatically added 
  * 
  * If no function is specified Object.toString is used.
  * 
@@ -2378,26 +2413,39 @@ NDDB.prototype.isReservedWord = function (key) {
  * 
  */
 NDDB.prototype.hash = NDDB.prototype.h = function (idx, func) {
-	if ('undefined' === typeof idx) {
-		NDDB.log('A valid index name must be provided', 'ERR');
-		return false;
-	}
-	
-	func = func || Object.toString;
-	
-	if (this.isReservedWord(idx)) {
-		var str = 'A reserved word have been selected as an index. ';
-		str += 'Please select another one: ' + idx;
-		NDDB.log(str, 'ERR');
-		return false;
-	}
-	
-	this.__H[idx] = func;
-	
+	if (!this._isValidIndex(idx)) return false;
+	this.__H[idx] = func || Object.toString;
 	this[idx] = {};
-	
 	return true;
 };
+
+
+/**
+ * ### NDDB.index | NDDB.i
+ *
+ * Registers a new indexing function
+ * 
+ * Hashing functions automatically creates indexes 
+ * to have direct access to objects
+ * 
+ * If no function is specified Object.toString is used.
+ * 
+ * @param {string} idx The name of index
+ * @param {function} func The hashing function
+ * @return {boolean} TRUE, if registration was successful
+ * 
+ * @see NDDB.isReservedWord
+ * @see NDDB.rebuildIndexes
+ * 
+ */
+NDDB.prototype.index = NDDB.prototype.i = function (idx, func) {
+	if (!this._isValidIndex(idx)) return false;
+	this.__I[idx] = func || Object.toString;
+	this[idx] = {};
+	return true;
+};
+
+
 
 /**
  * ### NDDB.rebuildIndexes
@@ -2409,23 +2457,47 @@ NDDB.prototype.hash = NDDB.prototype.h = function (idx, func) {
  * @see NDDB.hash
  */
 NDDB.prototype.rebuildIndexes = function() {
-	if (JSUS.isEmpty(this.__H)) {
-		return;
-	} 	
-	// Reset current indexes
-	for (var key in this.__H) {
-		if (this.__H.hasOwnProperty(key)) {
-			this[key] = {};
+	var h = false, i = false;
+	
+	if (!JSUS.isEmpty(this.__H)) {
+		h = true;
+		// Reset current hash-indexes
+		for (var key in this.__H) {
+			if (this.__H.hasOwnProperty(key)) {
+				this[key] = {};
+			}
 		}
 	}
 	
-	this.each(this._hashIt)
+	if (!JSUS.isEmpty(this.__I)) {
+		i = true;
+		// Reset current hash-indexes
+		for (var key in this.__I) {
+			if (this.__I.hasOwnProperty(key)) {
+				this[key] = {};
+			}
+		}
+	}
+	
+	if (h && !i) {
+		this.each(this._hashIt);
+	}
+	else if (!h && i) {
+		this.each(this._indexIt);
+	}
+	else if (h && i) {
+		this.each(function(o){
+			this.hashIt(o);
+			this.indexIt(o);
+		});
+	}
+	
 };
 
 /**
  * ### NDDB._hashIt
  *
- * Hashes an element and adds it to one of the indexes
+ * Hashes an element
  * 
  * @param {object} o The element to hash
  * @return {boolean} TRUE, if insertion to an index was successful
@@ -2462,6 +2534,118 @@ NDDB.prototype._hashIt = function(o) {
 	}
 };
 
+/**
+ * ### NDDB._hashIt
+ *
+ * Indexes an element
+ * 
+ * @param {object} o The element to index
+ * @return {boolean} TRUE, if insertion to an index was successful
+ * 
+ */
+NDDB.prototype._indexIt = function(o) {
+  	if (!o) return false;
+	if (JSUS.isEmpty(this.__I)) {
+		return false;
+	}
+	
+	var func = null,
+		id = null,
+		index = null;
+	
+	for (var key in this.__I) {
+		if (this.__I.hasOwnProperty(key)) {
+			func = this.__I[key];	    			
+			index = func(o);
+
+			if ('undefined' === typeof index) {
+				continue;
+			}
+			if (!this[key]) this[key] = {};
+			this[key][index] = o;
+		}
+	}
+};
+
+// ## Event emitter / listener
+
+/**
+ * ### NDDB.on
+ * 
+ * Registers an event listeners
+ * 
+ * Available events: 
+ * 
+ * 	`insert`: each time an item is inserted 
+ * 	`remove`: each time a collection of items is removed
+ * 
+ * Examples.
+ * 
+ * ```javascript
+ * var db = new NDDB();
+ * 
+ * var trashBin = new NDDB();
+ * 
+ * db.on('insert', function(item){
+ * 		item.id = getMyNextId();	
+ * });
+ * 
+ * db.on('remove', function(array) {
+ * 		trashBin.importDB(array);
+ * });
+ * ```
+ * 
+ */
+NDDB.prototype.on = function(event, func) {
+	if (!event || !func || !this.hooks[event]) return;
+    this.hooks[event].push(func);
+    return true;
+};
+
+/**
+ * ### NDDB.off
+ * 
+ * Deregister an event, or an event listener
+ * 
+ * @param {string} event The event name
+ * @param {function} func Optional. The specific function to deregister 
+ * 
+ * @return Boolean TRUE, if the removal is successful
+ */
+NDDB.prototype.off = function(event, func) {
+	if (!event || !this.hooks[event] || !this.hooks[event].length) return;
+	 
+    if (!func) {
+    	this.hooks[event] = [];
+    	return true;
+    }
+     
+    for (var i=0; i < this.hooks[event].length; i++) {
+    	if (this.hooks[event][i] == func) {
+    		this.hooks[event].splice(i, 1);
+	        return true;
+	    }
+	}
+     
+    return false;
+}
+
+/**
+ * ### NDDB.emit
+ * 
+ * Fires all the listeners associated with an event
+ * 
+ * @param event {string} The event name 
+ * @param {object} o Optional. A parameter to be passed to the listener
+ * 
+ */
+NDDB.prototype.emit = function(event, o) {
+	if (!event || !this.hooks[event] || !this.hooks[event].length) return;
+	
+	for (var i=0; i < this.hooks[event].length; i++) {
+		this.hooks[event][i].call(this, o);
+	}
+};
 
 // ## Sort and Select
 
@@ -2738,11 +2922,12 @@ NDDB.prototype.reverse = function () {
  * 
  * Changes the order of elements in the current database
  * 
+ * @return {NDDB} A a reference to the current instance with shuffled entries
  */
 NDDB.prototype.shuffle = function () {
     // TODO: check do we need to reassign __nddbid__ ?
     this.db = JSUS.shuffle(this.db);
-    return true;
+    return this;
 };
     
 // ## Custom callbacks
@@ -2883,6 +3068,7 @@ NDDB.prototype.remove = function () {
         }
 	}
  
+	this.emit('remove', this.db);
 	this.db = [];
 	this._autoUpdate();
 	return this;
@@ -3717,10 +3903,8 @@ NDDB.prototype.last = function (key) {
  * @TODO: tag should be updated with shuffling and sorting
  * operations.
  * 
- * @status: experimental
- * 
  * @param {string} tag An alphanumeric id
- * @param {string} idx Optional. The index in the database. Defaults nddb_pointer
+ * @param {string} idx Optional. The index in the database, or the. Defaults nddb_pointer
  * @return {boolean} TRUE, if registration is successful
  * 
  * 	@see NDDB.resolveTag
@@ -3730,12 +3914,25 @@ NDDB.prototype.tag = function (tag, idx) {
         NDDB.log('Cannot register empty tag.', 'ERR');
         return false;
     }
-    idx = idx || this.nddb_pointer;
-    if (idx > this.length || idx < 0) {
-        NDDB.log('Invalid index provided for tag registration', 'ERR');
-        return false;
+    
+    var ref = null, typeofIdx = typeof idx;
+    
+    if (typeofIdx === 'undefined') {
+    	ref = this.db[this.nddb_pointer];
     }
-    this.tags[tag] = this.db[idx];
+    else if (typeofIdx === 'number') {
+    	
+    	if (idx > this.length || idx < 0) {
+            NDDB.log('Invalid index provided for tag registration', 'ERR');
+            return false;
+        }
+    	ref = this.db[idx];
+    }
+    else {
+    	ref = idx;
+    }
+    
+    this.tags[tag] = ref;
     return true;
 };
 

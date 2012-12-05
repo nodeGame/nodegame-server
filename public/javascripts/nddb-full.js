@@ -1020,498 +1020,6 @@ var prepareString = "a"[0] != "a",
     };
 });
 
-/*
-    http://www.JSON.org/json2.js
-    2011-02-23
-
-    Public Domain.
-
-    NO WARRANTY EXPRESSED OR IMPLIED. USE AT YOUR OWN RISK.
-
-    See http://www.JSON.org/js.html
-
-
-    This code should be minified before deployment.
-    See http://javascript.crockford.com/jsmin.html
-
-    USE YOUR OWN COPY. IT IS EXTREMELY UNWISE TO LOAD CODE FROM SERVERS YOU DO
-    NOT CONTROL.
-
-
-    This file creates a global JSON object containing two methods: stringify
-    and parse.
-
-        JSON.stringify(value, replacer, space)
-            value       any JavaScript value, usually an object or array.
-
-            replacer    an optional parameter that determines how object
-                        values are stringified for objects. It can be a
-                        function or an array of strings.
-
-            space       an optional parameter that specifies the indentation
-                        of nested structures. If it is omitted, the text will
-                        be packed without extra whitespace. If it is a number,
-                        it will specify the number of spaces to indent at each
-                        level. If it is a string (such as '\t' or '&nbsp;'),
-                        it contains the characters used to indent at each level.
-
-            This method produces a JSON text from a JavaScript value.
-
-            When an object value is found, if the object contains a toJSON
-            method, its toJSON method will be called and the result will be
-            stringified. A toJSON method does not serialize: it returns the
-            value represented by the name/value pair that should be serialized,
-            or undefined if nothing should be serialized. The toJSON method
-            will be passed the key associated with the value, and this will be
-            bound to the value
-
-            For example, this would serialize Dates as ISO strings.
-
-                Date.prototype.toJSON = function (key) {
-                    function f(n) {
-                        // Format integers to have at least two digits.
-                        return n < 10 ? '0' + n : n;
-                    }
-
-                    return this.getUTCFullYear()   + '-' +
-                         f(this.getUTCMonth() + 1) + '-' +
-                         f(this.getUTCDate())      + 'T' +
-                         f(this.getUTCHours())     + ':' +
-                         f(this.getUTCMinutes())   + ':' +
-                         f(this.getUTCSeconds())   + 'Z';
-                };
-
-            You can provide an optional replacer method. It will be passed the
-            key and value of each member, with this bound to the containing
-            object. The value that is returned from your method will be
-            serialized. If your method returns undefined, then the member will
-            be excluded from the serialization.
-
-            If the replacer parameter is an array of strings, then it will be
-            used to select the members to be serialized. It filters the results
-            such that only members with keys listed in the replacer array are
-            stringified.
-
-            Values that do not have JSON representations, such as undefined or
-            functions, will not be serialized. Such values in objects will be
-            dropped; in arrays they will be replaced with null. You can use
-            a replacer function to replace those with JSON values.
-            JSON.stringify(undefined) returns undefined.
-
-            The optional space parameter produces a stringification of the
-            value that is filled with line breaks and indentation to make it
-            easier to read.
-
-            If the space parameter is a non-empty string, then that string will
-            be used for indentation. If the space parameter is a number, then
-            the indentation will be that many spaces.
-
-            Example:
-
-            text = JSON.stringify(['e', {pluribus: 'unum'}]);
-            // text is '["e",{"pluribus":"unum"}]'
-
-
-            text = JSON.stringify(['e', {pluribus: 'unum'}], null, '\t');
-            // text is '[\n\t"e",\n\t{\n\t\t"pluribus": "unum"\n\t}\n]'
-
-            text = JSON.stringify([new Date()], function (key, value) {
-                return this[key] instanceof Date ?
-                    'Date(' + this[key] + ')' : value;
-            });
-            // text is '["Date(---current time---)"]'
-
-
-        JSON.parse(text, reviver)
-            This method parses a JSON text to produce an object or array.
-            It can throw a SyntaxError exception.
-
-            The optional reviver parameter is a function that can filter and
-            transform the results. It receives each of the keys and values,
-            and its return value is used instead of the original value.
-            If it returns what it received, then the structure is not modified.
-            If it returns undefined then the member is deleted.
-
-            Example:
-
-            // Parse the text. Values that look like ISO date strings will
-            // be converted to Date objects.
-
-            myData = JSON.parse(text, function (key, value) {
-                var a;
-                if (typeof value === 'string') {
-                    a =
-/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2}(?:\.\d*)?)Z$/.exec(value);
-                    if (a) {
-                        return new Date(Date.UTC(+a[1], +a[2] - 1, +a[3], +a[4],
-                            +a[5], +a[6]));
-                    }
-                }
-                return value;
-            });
-
-            myData = JSON.parse('["Date(09/09/2001)"]', function (key, value) {
-                var d;
-                if (typeof value === 'string' &&
-                        value.slice(0, 5) === 'Date(' &&
-                        value.slice(-1) === ')') {
-                    d = new Date(value.slice(5, -1));
-                    if (d) {
-                        return d;
-                    }
-                }
-                return value;
-            });
-
-
-    This is a reference implementation. You are free to copy, modify, or
-    redistribute.
-*/
-
-/*jslint evil: true, strict: false, regexp: false */
-
-/*members "", "\b", "\t", "\n", "\f", "\r", "\"", JSON, "\\", apply,
-    call, charCodeAt, getUTCDate, getUTCFullYear, getUTCHours,
-    getUTCMinutes, getUTCMonth, getUTCSeconds, hasOwnProperty, join,
-    lastIndex, length, parse, prototype, push, replace, slice, stringify,
-    test, toJSON, toString, valueOf
-*/
-
-
-// Create a JSON object only if one does not already exist. We create the
-// methods in a closure to avoid creating global variables.
-
-var JSON;
-if (!JSON) {
-    JSON = {};
-}
-
-(function () {
-    "use strict";
-
-    var global = Function('return this')()
-      , JSON = global.JSON
-      ;
-
-    if (!JSON) {
-      JSON = {};
-    }
-
-    function f(n) {
-        // Format integers to have at least two digits.
-        return n < 10 ? '0' + n : n;
-    }
-
-    if (typeof Date.prototype.toJSON !== 'function') {
-
-        Date.prototype.toJSON = function (key) {
-
-            return isFinite(this.valueOf()) ?
-                this.getUTCFullYear()     + '-' +
-                f(this.getUTCMonth() + 1) + '-' +
-                f(this.getUTCDate())      + 'T' +
-                f(this.getUTCHours())     + ':' +
-                f(this.getUTCMinutes())   + ':' +
-                f(this.getUTCSeconds())   + 'Z' : null;
-        };
-
-        String.prototype.toJSON      =
-            Number.prototype.toJSON  =
-            Boolean.prototype.toJSON = function (key) {
-                return this.valueOf();
-            };
-    }
-
-    var cx = /[\u0000\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g,
-        escapable = /[\\\"\x00-\x1f\x7f-\x9f\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g,
-        gap,
-        indent,
-        meta = {    // table of character substitutions
-            '\b': '\\b',
-            '\t': '\\t',
-            '\n': '\\n',
-            '\f': '\\f',
-            '\r': '\\r',
-            '"' : '\\"',
-            '\\': '\\\\'
-        },
-        rep;
-
-
-    function quote(string) {
-
-// If the string contains no control characters, no quote characters, and no
-// backslash characters, then we can safely slap some quotes around it.
-// Otherwise we must also replace the offending characters with safe escape
-// sequences.
-
-        escapable.lastIndex = 0;
-        return escapable.test(string) ? '"' + string.replace(escapable, function (a) {
-            var c = meta[a];
-            return typeof c === 'string' ? c :
-                '\\u' + ('0000' + a.charCodeAt(0).toString(16)).slice(-4);
-        }) + '"' : '"' + string + '"';
-    }
-
-
-    function str(key, holder) {
-
-// Produce a string from holder[key].
-
-        var i,          // The loop counter.
-            k,          // The member key.
-            v,          // The member value.
-            length,
-            mind = gap,
-            partial,
-            value = holder[key];
-
-// If the value has a toJSON method, call it to obtain a replacement value.
-
-        if (value && typeof value === 'object' &&
-                typeof value.toJSON === 'function') {
-            value = value.toJSON(key);
-        }
-
-// If we were called with a replacer function, then call the replacer to
-// obtain a replacement value.
-
-        if (typeof rep === 'function') {
-            value = rep.call(holder, key, value);
-        }
-
-// What happens next depends on the value's type.
-
-        switch (typeof value) {
-        case 'string':
-            return quote(value);
-
-        case 'number':
-
-// JSON numbers must be finite. Encode non-finite numbers as null.
-
-            return isFinite(value) ? String(value) : 'null';
-
-        case 'boolean':
-        case 'null':
-
-// If the value is a boolean or null, convert it to a string. Note:
-// typeof null does not produce 'null'. The case is included here in
-// the remote chance that this gets fixed someday.
-
-            return String(value);
-
-// If the type is 'object', we might be dealing with an object or an array or
-// null.
-
-        case 'object':
-
-// Due to a specification blunder in ECMAScript, typeof null is 'object',
-// so watch out for that case.
-
-            if (!value) {
-                return 'null';
-            }
-
-// Make an array to hold the partial results of stringifying this object value.
-
-            gap += indent;
-            partial = [];
-
-// Is the value an array?
-
-            if (Object.prototype.toString.apply(value) === '[object Array]') {
-
-// The value is an array. Stringify every element. Use null as a placeholder
-// for non-JSON values.
-
-                length = value.length;
-                for (i = 0; i < length; i += 1) {
-                    partial[i] = str(i, value) || 'null';
-                }
-
-// Join all of the elements together, separated with commas, and wrap them in
-// brackets.
-
-                v = partial.length === 0 ? '[]' : gap ?
-                    '[\n' + gap + partial.join(',\n' + gap) + '\n' + mind + ']' :
-                    '[' + partial.join(',') + ']';
-                gap = mind;
-                return v;
-            }
-
-// If the replacer is an array, use it to select the members to be stringified.
-
-            if (rep && typeof rep === 'object') {
-                length = rep.length;
-                for (i = 0; i < length; i += 1) {
-                    if (typeof rep[i] === 'string') {
-                        k = rep[i];
-                        v = str(k, value);
-                        if (v) {
-                            partial.push(quote(k) + (gap ? ': ' : ':') + v);
-                        }
-                    }
-                }
-            } else {
-
-// Otherwise, iterate through all of the keys in the object.
-
-                for (k in value) {
-                    if (Object.prototype.hasOwnProperty.call(value, k)) {
-                        v = str(k, value);
-                        if (v) {
-                            partial.push(quote(k) + (gap ? ': ' : ':') + v);
-                        }
-                    }
-                }
-            }
-
-// Join all of the member texts together, separated with commas,
-// and wrap them in braces.
-
-            v = partial.length === 0 ? '{}' : gap ?
-                '{\n' + gap + partial.join(',\n' + gap) + '\n' + mind + '}' :
-                '{' + partial.join(',') + '}';
-            gap = mind;
-            return v;
-        }
-    }
-
-// If the JSON object does not yet have a stringify method, give it one.
-
-    if (typeof JSON.stringify !== 'function') {
-        JSON.stringify = function (value, replacer, space) {
-
-// The stringify method takes a value and an optional replacer, and an optional
-// space parameter, and returns a JSON text. The replacer can be a function
-// that can replace values, or an array of strings that will select the keys.
-// A default replacer method can be provided. Use of the space parameter can
-// produce text that is more easily readable.
-
-            var i;
-            gap = '';
-            indent = '';
-
-// If the space parameter is a number, make an indent string containing that
-// many spaces.
-
-            if (typeof space === 'number') {
-                for (i = 0; i < space; i += 1) {
-                    indent += ' ';
-                }
-
-// If the space parameter is a string, it will be used as the indent string.
-
-            } else if (typeof space === 'string') {
-                indent = space;
-            }
-
-// If there is a replacer, it must be a function or an array.
-// Otherwise, throw an error.
-
-            rep = replacer;
-            if (replacer && typeof replacer !== 'function' &&
-                    (typeof replacer !== 'object' ||
-                    typeof replacer.length !== 'number')) {
-                throw new Error('JSON.stringify');
-            }
-
-// Make a fake root object containing our value under the key of ''.
-// Return the result of stringifying the value.
-
-            return str('', {'': value});
-        };
-    }
-
-
-// If the JSON object does not yet have a parse method, give it one.
-
-    if (typeof JSON.parse !== 'function') {
-        JSON.parse = function (text, reviver) {
-
-// The parse method takes a text and an optional reviver function, and returns
-// a JavaScript value if the text is a valid JSON text.
-
-            var j;
-
-            function walk(holder, key) {
-
-// The walk method is used to recursively walk the resulting structure so
-// that modifications can be made.
-
-                var k, v, value = holder[key];
-                if (value && typeof value === 'object') {
-                    for (k in value) {
-                        if (Object.prototype.hasOwnProperty.call(value, k)) {
-                            v = walk(value, k);
-                            if (v !== undefined) {
-                                value[k] = v;
-                            } else {
-                                delete value[k];
-                            }
-                        }
-                    }
-                }
-                return reviver.call(holder, key, value);
-            }
-
-
-// Parsing happens in four stages. In the first stage, we replace certain
-// Unicode characters with escape sequences. JavaScript handles many characters
-// incorrectly, either silently deleting them, or treating them as line endings.
-
-            text = String(text);
-            cx.lastIndex = 0;
-            if (cx.test(text)) {
-                text = text.replace(cx, function (a) {
-                    return '\\u' +
-                        ('0000' + a.charCodeAt(0).toString(16)).slice(-4);
-                });
-            }
-
-// In the second stage, we run the text against regular expressions that look
-// for non-JSON patterns. We are especially concerned with '()' and 'new'
-// because they can cause invocation, and '=' because it can cause mutation.
-// But just to be safe, we want to reject all unexpected forms.
-
-// We split the second stage into 4 regexp operations in order to work around
-// crippling inefficiencies in IE's and Safari's regexp engines. First we
-// replace the JSON backslash pairs with '@' (a non-JSON character). Second, we
-// replace all simple value tokens with ']' characters. Third, we delete all
-// open brackets that follow a colon or comma or that begin the text. Finally,
-// we look to see that the remaining characters are only whitespace or ']' or
-// ',' or ':' or '{' or '}'. If that is so, then the text is safe for eval.
-
-            if (/^[\],:{}\s]*$/
-                    .test(text.replace(/\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4})/g, '@')
-                        .replace(/"[^"\\\n\r]*"|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?/g, ']')
-                        .replace(/(?:^|:|,)(?:\s*\[)+/g, ''))) {
-
-// In the third stage we use the eval function to compile the text into a
-// JavaScript structure. The '{' operator is subject to a syntactic ambiguity
-// in JavaScript: it can begin a block or an object literal. We wrap the text
-// in parens to eliminate the ambiguity.
-
-                j = eval('(' + text + ')');
-
-// In the optional fourth stage, we recursively walk the new structure, passing
-// each name/value pair to a reviver function for possible transformation.
-
-                return typeof reviver === 'function' ?
-                    walk({'': j}, '') : j;
-            }
-
-// If the text is not JSON parseable, then a SyntaxError is thrown.
-
-            throw new SyntaxError('JSON.parse');
-        };
-    }
-
-    global.JSON = JSON;
-    module.exports = JSON;
-}());
-
 // cycle.js
 // 2011-08-24
 
@@ -1709,7 +1217,7 @@ store.verbosity = 0;
 store.types = {};
 
 
-var mainStorageType = null;
+var mainStorageType = "volatile";
 
 //if Object.defineProperty works...
 try {	
@@ -1759,8 +1267,8 @@ store.log = function(text) {
 };
 
 store.isPersistent = function() {
-	if (!store.types.length) return false;
-	if (store.types.length === 1 && store.type === "volatile") return false;
+	if (!store.types) return false;
+	if (store.type === "volatile") return false;
 	return true;
 };
 
@@ -2176,185 +1684,6 @@ if (cookie.test()) {
 
 }(this));
 /**
- * ## File System storage for Shelf.js
- * 
- * ### Available only in Node.JS
- */
-
-(function(exports) {
-	
-var store = exports.store;
-
-if (!store) {
-	console.log('fs.shelf.js: shelf.js core not found. File system storage not available.');
-	return;
-}
-
-store.filename = './shelf.out';
-
-var fs = require('fs'),
-	path = require('path'),
-	util = require('util');
-
-// https://github.com/jprichardson/node-fs-extra/blob/master/lib/copy.js
-var copyFile = function(srcFile, destFile, cb) {
-    var fdr, fdw;
-    fdr = fs.createReadStream(srcFile);
-    fdw = fs.createWriteStream(destFile);
-    fdr.on('end', function() {
-      return cb(null);
-    });
-    return fdr.pipe(fdw);
-  };
-
-
-var timeout = {};
-
-var overwrite = function (fileName, items) {
-	var file = fileName || store.filename;
-	if (!file) {
-		store.log('You must specify a valid file.', 'ERR');
-		return false;
-	}
-	
-	var tmp_copy = path.dirname(file) + '.' + path.basename(file);
-	
-//	console.log('files')
-//	console.log(file);
-//	console.log(fileName);
-//	console.log(tmp_copy)
-	
-	copyFile(file, tmp_copy, function(){
-		var s = store.stringify(items);
-		// removing leading { and trailing }
-		s = s.substr(1, s = s.substr(0, s.legth-1));
-//		console.log('SAVING')
-//		console.log(s)
-		fs.writeFile(file, s, 'utf-8', function(e) {
-			if (e) throw e;
-			fs.unlink(tmp_copy, function (err) {
-				if (err) throw err;  
-			});
-			return true;
-		});
-
-	});
-	
-};
-
-if ('undefined' !== typeof fs.appendFileSync) {
-	// node 0.8
-	var save = function (fileName, key, value) {
-		var file = fileName || store.filename;
-		if (!file) {
-			store.log('You must specify a valid file.', 'ERR');
-			return false;
-		}
-		if (!key) return;
-		
-		var item = store.stringify(key) + ": " + store.stringify(value) + ",\n";
-		
-		return fs.appendFileSync(file, item, 'utf-8');
-	};	
-}
-else {
-	// node < 0.8
-	var save = function (fileName, key, value) {
-		var file = fileName || store.filename;
-		if (!file) {
-			store.log('You must specify a valid file.', 'ERR');
-			return false;
-		}
-		if (!key) return;
-		
-		var item = store.stringify(key) + ": " + store.stringify(value) + ",\n";
-		
-
-
-		fs.open(file, 'a', 666, function( e, id ) {
-			fs.write( id, item, null, 'utf8', function(){
-				fs.close(id, function(){});
-			});
-		});
-		
-		return true;
-	};
-}
-
-var load = function (fileName, key) {
-	var file = fileName || store.filename;
-	if (!file) {
-		store.log('You must specify a valid file.', 'ERR');
-		return false;
-	}
-
-	var s = fs.readFileSync(file, 'utf-8');
-	
-//	console.log('BEFORE removing end')
-//	console.log(s)
-	
-	
-	s = s.substr(0, s.length-2); // removing last ',' and /n
-	
-//	console.log('BEFORE PARSING')
-//	console.log(s)
-	
-	var items = store.parse('{' + s + '}');
-	
-//	console.log('PARSED')
-//	console.log(items)
-	
-	return (key) ? items[key] : items; 
-
-};
-
-var deleteVariable = function (fileName, key) {
-	var file = fileName || store.filename;
-	var items = load(file);
-//	console.log('dele')
-//	console.log(items)
-//	console.log(key)
-	delete items[key];
-	overwrite(file, items);
-	return null;
-};
-
-store.addType("fs", function(key, value, options) {
-	
-	var filename = options.file || store.filename;
-	
-	if (!key) { 
-		return load(filename);
-	}
-
-	if (value === undefined) {
-		return load(filename, key);
-	}
-
-	if (timeout[key]) {
-		clearTimeout(timeout[key]);
-		deleteVariable(filename, key);
-	}
-
-	if (value === null) {
-		deleteVariable(filename, key);
-		return null;
-	}
-	
-	// save item
-	save(filename, key, value);
-	
-	if (options.expires) {
-		timeout[key] = setTimeout(function() {
-			deleteVariable(filename, key);
-		}, options.expires);
-	}
-
-	return value;
-});
-
-}(('undefined' !== typeof module && 'function' === typeof require) ? module.exports || module.parent.exports : {}));
-/**
  * ## Amplify storage for Shelf.js
  * 
  */
@@ -2593,6 +1922,185 @@ if (!store.types.localStorage && window.globalStorage) {
 
 
 }(this));
+/**
+ * ## File System storage for Shelf.js
+ * 
+ * ### Available only in Node.JS
+ */
+
+(function(exports) {
+	
+var store = exports.store;
+
+if (!store) {
+	console.log('fs.shelf.js: shelf.js core not found. File system storage not available.');
+	return;
+}
+
+store.filename = './shelf.out';
+
+var fs = require('fs'),
+	path = require('path'),
+	util = require('util');
+
+// https://github.com/jprichardson/node-fs-extra/blob/master/lib/copy.js
+var copyFile = function(srcFile, destFile, cb) {
+    var fdr, fdw;
+    fdr = fs.createReadStream(srcFile);
+    fdw = fs.createWriteStream(destFile);
+    fdr.on('end', function() {
+      return cb(null);
+    });
+    return fdr.pipe(fdw);
+  };
+
+
+var timeout = {};
+
+var overwrite = function (fileName, items) {
+	var file = fileName || store.filename;
+	if (!file) {
+		store.log('You must specify a valid file.', 'ERR');
+		return false;
+	}
+	
+	var tmp_copy = path.dirname(file) + '.' + path.basename(file);
+	
+//	console.log('files')
+//	console.log(file);
+//	console.log(fileName);
+//	console.log(tmp_copy)
+	
+	copyFile(file, tmp_copy, function(){
+		var s = store.stringify(items);
+		// removing leading { and trailing }
+		s = s.substr(1, s = s.substr(0, s.legth-1));
+//		console.log('SAVING')
+//		console.log(s)
+		fs.writeFile(file, s, 'utf-8', function(e) {
+			if (e) throw e;
+			fs.unlink(tmp_copy, function (err) {
+				if (err) throw err;  
+			});
+			return true;
+		});
+
+	});
+	
+};
+
+if ('undefined' !== typeof fs.appendFileSync) {
+	// node 0.8
+	var save = function (fileName, key, value) {
+		var file = fileName || store.filename;
+		if (!file) {
+			store.log('You must specify a valid file.', 'ERR');
+			return false;
+		}
+		if (!key) return;
+		
+		var item = store.stringify(key) + ": " + store.stringify(value) + ",\n";
+		
+		return fs.appendFileSync(file, item, 'utf-8');
+	};	
+}
+else {
+	// node < 0.8
+	var save = function (fileName, key, value) {
+		var file = fileName || store.filename;
+		if (!file) {
+			store.log('You must specify a valid file.', 'ERR');
+			return false;
+		}
+		if (!key) return;
+		
+		var item = store.stringify(key) + ": " + store.stringify(value) + ",\n";
+		
+
+
+		fs.open(file, 'a', 666, function( e, id ) {
+			fs.write( id, item, null, 'utf8', function(){
+				fs.close(id, function(){});
+			});
+		});
+		
+		return true;
+	};
+}
+
+var load = function (fileName, key) {
+	var file = fileName || store.filename;
+	if (!file) {
+		store.log('You must specify a valid file.', 'ERR');
+		return false;
+	}
+
+	var s = fs.readFileSync(file, 'utf-8');
+	
+//	console.log('BEFORE removing end')
+//	console.log(s)
+	
+	
+	s = s.substr(0, s.length-2); // removing last ',' and /n
+	
+//	console.log('BEFORE PARSING')
+//	console.log(s)
+	
+	var items = store.parse('{' + s + '}');
+	
+//	console.log('PARSED')
+//	console.log(items)
+	
+	return (key) ? items[key] : items; 
+
+};
+
+var deleteVariable = function (fileName, key) {
+	var file = fileName || store.filename;
+	var items = load(file);
+//	console.log('dele')
+//	console.log(items)
+//	console.log(key)
+	delete items[key];
+	overwrite(file, items);
+	return null;
+};
+
+store.addType("fs", function(key, value, options) {
+	
+	var filename = options.file || store.filename;
+	
+	if (!key) { 
+		return load(filename);
+	}
+
+	if (value === undefined) {
+		return load(filename, key);
+	}
+
+	if (timeout[key]) {
+		clearTimeout(timeout[key]);
+		deleteVariable(filename, key);
+	}
+
+	if (value === null) {
+		deleteVariable(filename, key);
+		return null;
+	}
+	
+	// save item
+	save(filename, key, value);
+	
+	if (options.expires) {
+		timeout[key] = setTimeout(function() {
+			deleteVariable(filename, key);
+		}, options.expires);
+	}
+
+	return value;
+});
+
+}(('undefined' !== typeof module && 'function' === typeof require) ? module.exports || module.parent.exports : {}));
 /**
  * # JSUS: JavaScript UtilS. 
  * Copyright(c) 2012 Stefano Balietti
@@ -4502,7 +4010,10 @@ function NDDB (options, db, parent) {
     
     // ### hooks
     // The list of hooks and associated callbacks
-    this.hooks = {};
+    this.hooks = {
+		insert: [],
+    	remove: []	
+    };
     
     // ### nddb_pointer
     // Pointer for iterating along all the elements
@@ -4525,6 +4036,10 @@ function NDDB (options, db, parent) {
     // ### __H
     // List of hashing functions
     this.__H = {};
+    
+    // ### __I
+    // List of hashing functions
+    this.__I = {};
     
     // ### __update
     // Auto update options container
@@ -4577,6 +4092,10 @@ NDDB.prototype.init = function(options) {
 		this.__H = options.H;
 	}
 	
+	if (options.I) {
+		this.__I = options.I;
+	}
+	
 	if (options.tags) {
 		this.tags = options.tags;
 	}
@@ -4602,7 +4121,6 @@ NDDB.prototype.init = function(options) {
         	this.__update.sort = options.update.sort;
         }
     }
-    
 };
 
 // ## CORE
@@ -4761,15 +4279,15 @@ NDDB.prototype.insert = function (o) {
  * @param {object} o The item or array of items to insert
  */
 NDDB.prototype._insert = function (o) {
-    if ('undefined' === typeof o || o === null) return;
     o = this._masquerade(o);
-    
     this.db.push(o);
+    this.emit('insert', o);
     
-    // We save time calling _hashIt only
+	// We save time calling _hashIt only
     // on the latest inserted element
     if (this.__update.indexes) {
     	this._hashIt(o);
+    	this._indexIt(o);
     }
 	// See above
     this._autoUpdate({indexes: false});
@@ -4811,6 +4329,7 @@ NDDB.prototype.cloneSettings = function () {
     var options = this.__options || {};
     
     options.H = 		this.__H;
+    options.I = 		this.__I;
     options.C = 		this.__C;
     options.tags = 		this.tags;
     options.update = 	this.__update;
@@ -4954,13 +4473,37 @@ NDDB.prototype.isReservedWord = function (key) {
 	return (this[key]) ? true : false; 
 };
 
+
+/**
+ * ### NDDB._isValidIndex
+ *
+ * Returns TRUE if the index is not a reserved word, otherwise
+ * displays an error and returns FALSE. 
+ * 
+ * @param {string} key The name of the property
+ * @return {boolean} TRUE, if the index has a valid name
+ */
+NDDB.prototype._isValidIndex = function (idx) {
+	if ('undefined' === typeof idx) {
+		NDDB.log('A valid index name must be provided', 'ERR');
+		return false;
+	}
+	if (this.isReservedWord(idx)) {
+		var str = 'A reserved word have been selected as an index. ';
+		str += 'Please select another one: ' + idx;
+		NDDB.log(str, 'ERR');
+		return false;
+	}
+	return true;
+};
+
 /**
  * ### NDDB.hash | NDDB.h
  *
- * Registers a new hashing function for index d
+ * Registers a new hashing function
  * 
- * Hashing functions automatically creates indexes 
- * to retrieve objects faster
+ * Hashing functions creates nested NDDB database 
+ * where objects are automatically added 
  * 
  * If no function is specified Object.toString is used.
  * 
@@ -4973,26 +4516,39 @@ NDDB.prototype.isReservedWord = function (key) {
  * 
  */
 NDDB.prototype.hash = NDDB.prototype.h = function (idx, func) {
-	if ('undefined' === typeof idx) {
-		NDDB.log('A valid index name must be provided', 'ERR');
-		return false;
-	}
-	
-	func = func || Object.toString;
-	
-	if (this.isReservedWord(idx)) {
-		var str = 'A reserved word have been selected as an index. ';
-		str += 'Please select another one: ' + idx;
-		NDDB.log(str, 'ERR');
-		return false;
-	}
-	
-	this.__H[idx] = func;
-	
+	if (!this._isValidIndex(idx)) return false;
+	this.__H[idx] = func || Object.toString;
 	this[idx] = {};
-	
 	return true;
 };
+
+
+/**
+ * ### NDDB.index | NDDB.i
+ *
+ * Registers a new indexing function
+ * 
+ * Hashing functions automatically creates indexes 
+ * to have direct access to objects
+ * 
+ * If no function is specified Object.toString is used.
+ * 
+ * @param {string} idx The name of index
+ * @param {function} func The hashing function
+ * @return {boolean} TRUE, if registration was successful
+ * 
+ * @see NDDB.isReservedWord
+ * @see NDDB.rebuildIndexes
+ * 
+ */
+NDDB.prototype.index = NDDB.prototype.i = function (idx, func) {
+	if (!this._isValidIndex(idx)) return false;
+	this.__I[idx] = func || Object.toString;
+	this[idx] = {};
+	return true;
+};
+
+
 
 /**
  * ### NDDB.rebuildIndexes
@@ -5004,23 +4560,47 @@ NDDB.prototype.hash = NDDB.prototype.h = function (idx, func) {
  * @see NDDB.hash
  */
 NDDB.prototype.rebuildIndexes = function() {
-	if (JSUS.isEmpty(this.__H)) {
-		return;
-	} 	
-	// Reset current indexes
-	for (var key in this.__H) {
-		if (this.__H.hasOwnProperty(key)) {
-			this[key] = {};
+	var h = false, i = false;
+	
+	if (!JSUS.isEmpty(this.__H)) {
+		h = true;
+		// Reset current hash-indexes
+		for (var key in this.__H) {
+			if (this.__H.hasOwnProperty(key)) {
+				this[key] = {};
+			}
 		}
 	}
 	
-	this.each(this._hashIt)
+	if (!JSUS.isEmpty(this.__I)) {
+		i = true;
+		// Reset current hash-indexes
+		for (var key in this.__I) {
+			if (this.__I.hasOwnProperty(key)) {
+				this[key] = {};
+			}
+		}
+	}
+	
+	if (h && !i) {
+		this.each(this._hashIt);
+	}
+	else if (!h && i) {
+		this.each(this._indexIt);
+	}
+	else if (h && i) {
+		this.each(function(o){
+			this.hashIt(o);
+			this.indexIt(o);
+		});
+	}
+	
 };
 
 /**
  * ### NDDB._hashIt
  *
- * Hashes an element and adds it to one of the indexes
+ * Hashes an element
  * 
  * @param {object} o The element to hash
  * @return {boolean} TRUE, if insertion to an index was successful
@@ -5057,6 +4637,118 @@ NDDB.prototype._hashIt = function(o) {
 	}
 };
 
+/**
+ * ### NDDB._hashIt
+ *
+ * Indexes an element
+ * 
+ * @param {object} o The element to index
+ * @return {boolean} TRUE, if insertion to an index was successful
+ * 
+ */
+NDDB.prototype._indexIt = function(o) {
+  	if (!o) return false;
+	if (JSUS.isEmpty(this.__I)) {
+		return false;
+	}
+	
+	var func = null,
+		id = null,
+		index = null;
+	
+	for (var key in this.__I) {
+		if (this.__I.hasOwnProperty(key)) {
+			func = this.__I[key];	    			
+			index = func(o);
+
+			if ('undefined' === typeof index) {
+				continue;
+			}
+			if (!this[key]) this[key] = {};
+			this[key][index] = o;
+		}
+	}
+};
+
+// ## Event emitter / listener
+
+/**
+ * ### NDDB.on
+ * 
+ * Registers an event listeners
+ * 
+ * Available events: 
+ * 
+ * 	`insert`: each time an item is inserted 
+ * 	`remove`: each time a collection of items is removed
+ * 
+ * Examples.
+ * 
+ * ```javascript
+ * var db = new NDDB();
+ * 
+ * var trashBin = new NDDB();
+ * 
+ * db.on('insert', function(item){
+ * 		item.id = getMyNextId();	
+ * });
+ * 
+ * db.on('remove', function(array) {
+ * 		trashBin.importDB(array);
+ * });
+ * ```
+ * 
+ */
+NDDB.prototype.on = function(event, func) {
+	if (!event || !func || !this.hooks[event]) return;
+    this.hooks[event].push(func);
+    return true;
+};
+
+/**
+ * ### NDDB.off
+ * 
+ * Deregister an event, or an event listener
+ * 
+ * @param {string} event The event name
+ * @param {function} func Optional. The specific function to deregister 
+ * 
+ * @return Boolean TRUE, if the removal is successful
+ */
+NDDB.prototype.off = function(event, func) {
+	if (!event || !this.hooks[event] || !this.hooks[event].length) return;
+	 
+    if (!func) {
+    	this.hooks[event] = [];
+    	return true;
+    }
+     
+    for (var i=0; i < this.hooks[event].length; i++) {
+    	if (this.hooks[event][i] == func) {
+    		this.hooks[event].splice(i, 1);
+	        return true;
+	    }
+	}
+     
+    return false;
+}
+
+/**
+ * ### NDDB.emit
+ * 
+ * Fires all the listeners associated with an event
+ * 
+ * @param event {string} The event name 
+ * @param {object} o Optional. A parameter to be passed to the listener
+ * 
+ */
+NDDB.prototype.emit = function(event, o) {
+	if (!event || !this.hooks[event] || !this.hooks[event].length) return;
+	
+	for (var i=0; i < this.hooks[event].length; i++) {
+		this.hooks[event][i].call(this, o);
+	}
+};
 
 // ## Sort and Select
 
@@ -5333,11 +5025,12 @@ NDDB.prototype.reverse = function () {
  * 
  * Changes the order of elements in the current database
  * 
+ * @return {NDDB} A a reference to the current instance with shuffled entries
  */
 NDDB.prototype.shuffle = function () {
     // TODO: check do we need to reassign __nddbid__ ?
     this.db = JSUS.shuffle(this.db);
-    return true;
+    return this;
 };
     
 // ## Custom callbacks
@@ -5478,6 +5171,7 @@ NDDB.prototype.remove = function () {
         }
 	}
  
+	this.emit('remove', this.db);
 	this.db = [];
 	this._autoUpdate();
 	return this;
@@ -6312,10 +6006,8 @@ NDDB.prototype.last = function (key) {
  * @TODO: tag should be updated with shuffling and sorting
  * operations.
  * 
- * @status: experimental
- * 
  * @param {string} tag An alphanumeric id
- * @param {string} idx Optional. The index in the database. Defaults nddb_pointer
+ * @param {string} idx Optional. The index in the database, or the. Defaults nddb_pointer
  * @return {boolean} TRUE, if registration is successful
  * 
  * 	@see NDDB.resolveTag
@@ -6325,12 +6017,25 @@ NDDB.prototype.tag = function (tag, idx) {
         NDDB.log('Cannot register empty tag.', 'ERR');
         return false;
     }
-    idx = idx || this.nddb_pointer;
-    if (idx > this.length || idx < 0) {
-        NDDB.log('Invalid index provided for tag registration', 'ERR');
-        return false;
+    
+    var ref = null, typeofIdx = typeof idx;
+    
+    if (typeofIdx === 'undefined') {
+    	ref = this.db[this.nddb_pointer];
     }
-    this.tags[tag] = this.db[idx];
+    else if (typeofIdx === 'number') {
+    	
+    	if (idx > this.length || idx < 0) {
+            NDDB.log('Invalid index provided for tag registration', 'ERR');
+            return false;
+        }
+    	ref = this.db[idx];
+    }
+    else {
+    	ref = idx;
+    }
+    
+    this.tags[tag] = ref;
     return true;
 };
 

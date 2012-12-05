@@ -4063,7 +4063,10 @@ function NDDB (options, db, parent) {
     
     // ### hooks
     // The list of hooks and associated callbacks
-    this.hooks = {};
+    this.hooks = {
+		insert: [],
+    	remove: []	
+    };
     
     // ### nddb_pointer
     // Pointer for iterating along all the elements
@@ -4086,6 +4089,10 @@ function NDDB (options, db, parent) {
     // ### __H
     // List of hashing functions
     this.__H = {};
+    
+    // ### __I
+    // List of hashing functions
+    this.__I = {};
     
     // ### __update
     // Auto update options container
@@ -4138,6 +4145,10 @@ NDDB.prototype.init = function(options) {
 		this.__H = options.H;
 	}
 	
+	if (options.I) {
+		this.__I = options.I;
+	}
+	
 	if (options.tags) {
 		this.tags = options.tags;
 	}
@@ -4163,7 +4174,6 @@ NDDB.prototype.init = function(options) {
         	this.__update.sort = options.update.sort;
         }
     }
-    
 };
 
 // ## CORE
@@ -4322,15 +4332,15 @@ NDDB.prototype.insert = function (o) {
  * @param {object} o The item or array of items to insert
  */
 NDDB.prototype._insert = function (o) {
-    if ('undefined' === typeof o || o === null) return;
     o = this._masquerade(o);
-    
     this.db.push(o);
+    this.emit('insert', o);
     
-    // We save time calling _hashIt only
+	// We save time calling _hashIt only
     // on the latest inserted element
     if (this.__update.indexes) {
     	this._hashIt(o);
+    	this._indexIt(o);
     }
 	// See above
     this._autoUpdate({indexes: false});
@@ -4372,6 +4382,7 @@ NDDB.prototype.cloneSettings = function () {
     var options = this.__options || {};
     
     options.H = 		this.__H;
+    options.I = 		this.__I;
     options.C = 		this.__C;
     options.tags = 		this.tags;
     options.update = 	this.__update;
@@ -4515,13 +4526,37 @@ NDDB.prototype.isReservedWord = function (key) {
 	return (this[key]) ? true : false; 
 };
 
+
+/**
+ * ### NDDB._isValidIndex
+ *
+ * Returns TRUE if the index is not a reserved word, otherwise
+ * displays an error and returns FALSE. 
+ * 
+ * @param {string} key The name of the property
+ * @return {boolean} TRUE, if the index has a valid name
+ */
+NDDB.prototype._isValidIndex = function (idx) {
+	if ('undefined' === typeof idx) {
+		NDDB.log('A valid index name must be provided', 'ERR');
+		return false;
+	}
+	if (this.isReservedWord(idx)) {
+		var str = 'A reserved word have been selected as an index. ';
+		str += 'Please select another one: ' + idx;
+		NDDB.log(str, 'ERR');
+		return false;
+	}
+	return true;
+};
+
 /**
  * ### NDDB.hash | NDDB.h
  *
- * Registers a new hashing function for index d
+ * Registers a new hashing function
  * 
- * Hashing functions automatically creates indexes 
- * to retrieve objects faster
+ * Hashing functions creates nested NDDB database 
+ * where objects are automatically added 
  * 
  * If no function is specified Object.toString is used.
  * 
@@ -4534,26 +4569,39 @@ NDDB.prototype.isReservedWord = function (key) {
  * 
  */
 NDDB.prototype.hash = NDDB.prototype.h = function (idx, func) {
-	if ('undefined' === typeof idx) {
-		NDDB.log('A valid index name must be provided', 'ERR');
-		return false;
-	}
-	
-	func = func || Object.toString;
-	
-	if (this.isReservedWord(idx)) {
-		var str = 'A reserved word have been selected as an index. ';
-		str += 'Please select another one: ' + idx;
-		NDDB.log(str, 'ERR');
-		return false;
-	}
-	
-	this.__H[idx] = func;
-	
+	if (!this._isValidIndex(idx)) return false;
+	this.__H[idx] = func || Object.toString;
 	this[idx] = {};
-	
 	return true;
 };
+
+
+/**
+ * ### NDDB.index | NDDB.i
+ *
+ * Registers a new indexing function
+ * 
+ * Hashing functions automatically creates indexes 
+ * to have direct access to objects
+ * 
+ * If no function is specified Object.toString is used.
+ * 
+ * @param {string} idx The name of index
+ * @param {function} func The hashing function
+ * @return {boolean} TRUE, if registration was successful
+ * 
+ * @see NDDB.isReservedWord
+ * @see NDDB.rebuildIndexes
+ * 
+ */
+NDDB.prototype.index = NDDB.prototype.i = function (idx, func) {
+	if (!this._isValidIndex(idx)) return false;
+	this.__I[idx] = func || Object.toString;
+	this[idx] = {};
+	return true;
+};
+
+
 
 /**
  * ### NDDB.rebuildIndexes
@@ -4565,23 +4613,47 @@ NDDB.prototype.hash = NDDB.prototype.h = function (idx, func) {
  * @see NDDB.hash
  */
 NDDB.prototype.rebuildIndexes = function() {
-	if (JSUS.isEmpty(this.__H)) {
-		return;
-	} 	
-	// Reset current indexes
-	for (var key in this.__H) {
-		if (this.__H.hasOwnProperty(key)) {
-			this[key] = {};
+	var h = false, i = false;
+	
+	if (!JSUS.isEmpty(this.__H)) {
+		h = true;
+		// Reset current hash-indexes
+		for (var key in this.__H) {
+			if (this.__H.hasOwnProperty(key)) {
+				this[key] = {};
+			}
 		}
 	}
 	
-	this.each(this._hashIt)
+	if (!JSUS.isEmpty(this.__I)) {
+		i = true;
+		// Reset current hash-indexes
+		for (var key in this.__I) {
+			if (this.__I.hasOwnProperty(key)) {
+				this[key] = {};
+			}
+		}
+	}
+	
+	if (h && !i) {
+		this.each(this._hashIt);
+	}
+	else if (!h && i) {
+		this.each(this._indexIt);
+	}
+	else if (h && i) {
+		this.each(function(o){
+			this.hashIt(o);
+			this.indexIt(o);
+		});
+	}
+	
 };
 
 /**
  * ### NDDB._hashIt
  *
- * Hashes an element and adds it to one of the indexes
+ * Hashes an element
  * 
  * @param {object} o The element to hash
  * @return {boolean} TRUE, if insertion to an index was successful
@@ -4618,6 +4690,118 @@ NDDB.prototype._hashIt = function(o) {
 	}
 };
 
+/**
+ * ### NDDB._hashIt
+ *
+ * Indexes an element
+ * 
+ * @param {object} o The element to index
+ * @return {boolean} TRUE, if insertion to an index was successful
+ * 
+ */
+NDDB.prototype._indexIt = function(o) {
+  	if (!o) return false;
+	if (JSUS.isEmpty(this.__I)) {
+		return false;
+	}
+	
+	var func = null,
+		id = null,
+		index = null;
+	
+	for (var key in this.__I) {
+		if (this.__I.hasOwnProperty(key)) {
+			func = this.__I[key];	    			
+			index = func(o);
+
+			if ('undefined' === typeof index) {
+				continue;
+			}
+			if (!this[key]) this[key] = {};
+			this[key][index] = o;
+		}
+	}
+};
+
+// ## Event emitter / listener
+
+/**
+ * ### NDDB.on
+ * 
+ * Registers an event listeners
+ * 
+ * Available events: 
+ * 
+ * 	`insert`: each time an item is inserted 
+ * 	`remove`: each time a collection of items is removed
+ * 
+ * Examples.
+ * 
+ * ```javascript
+ * var db = new NDDB();
+ * 
+ * var trashBin = new NDDB();
+ * 
+ * db.on('insert', function(item){
+ * 		item.id = getMyNextId();	
+ * });
+ * 
+ * db.on('remove', function(array) {
+ * 		trashBin.importDB(array);
+ * });
+ * ```
+ * 
+ */
+NDDB.prototype.on = function(event, func) {
+	if (!event || !func || !this.hooks[event]) return;
+    this.hooks[event].push(func);
+    return true;
+};
+
+/**
+ * ### NDDB.off
+ * 
+ * Deregister an event, or an event listener
+ * 
+ * @param {string} event The event name
+ * @param {function} func Optional. The specific function to deregister 
+ * 
+ * @return Boolean TRUE, if the removal is successful
+ */
+NDDB.prototype.off = function(event, func) {
+	if (!event || !this.hooks[event] || !this.hooks[event].length) return;
+	 
+    if (!func) {
+    	this.hooks[event] = [];
+    	return true;
+    }
+     
+    for (var i=0; i < this.hooks[event].length; i++) {
+    	if (this.hooks[event][i] == func) {
+    		this.hooks[event].splice(i, 1);
+	        return true;
+	    }
+	}
+     
+    return false;
+}
+
+/**
+ * ### NDDB.emit
+ * 
+ * Fires all the listeners associated with an event
+ * 
+ * @param event {string} The event name 
+ * @param {object} o Optional. A parameter to be passed to the listener
+ * 
+ */
+NDDB.prototype.emit = function(event, o) {
+	if (!event || !this.hooks[event] || !this.hooks[event].length) return;
+	
+	for (var i=0; i < this.hooks[event].length; i++) {
+		this.hooks[event][i].call(this, o);
+	}
+};
 
 // ## Sort and Select
 
@@ -4894,11 +5078,12 @@ NDDB.prototype.reverse = function () {
  * 
  * Changes the order of elements in the current database
  * 
+ * @return {NDDB} A a reference to the current instance with shuffled entries
  */
 NDDB.prototype.shuffle = function () {
     // TODO: check do we need to reassign __nddbid__ ?
     this.db = JSUS.shuffle(this.db);
-    return true;
+    return this;
 };
     
 // ## Custom callbacks
@@ -5039,6 +5224,7 @@ NDDB.prototype.remove = function () {
         }
 	}
  
+	this.emit('remove', this.db);
 	this.db = [];
 	this._autoUpdate();
 	return this;
@@ -5873,10 +6059,8 @@ NDDB.prototype.last = function (key) {
  * @TODO: tag should be updated with shuffling and sorting
  * operations.
  * 
- * @status: experimental
- * 
  * @param {string} tag An alphanumeric id
- * @param {string} idx Optional. The index in the database. Defaults nddb_pointer
+ * @param {string} idx Optional. The index in the database, or the. Defaults nddb_pointer
  * @return {boolean} TRUE, if registration is successful
  * 
  * 	@see NDDB.resolveTag
@@ -5886,12 +6070,25 @@ NDDB.prototype.tag = function (tag, idx) {
         NDDB.log('Cannot register empty tag.', 'ERR');
         return false;
     }
-    idx = idx || this.nddb_pointer;
-    if (idx > this.length || idx < 0) {
-        NDDB.log('Invalid index provided for tag registration', 'ERR');
-        return false;
+    
+    var ref = null, typeofIdx = typeof idx;
+    
+    if (typeofIdx === 'undefined') {
+    	ref = this.db[this.nddb_pointer];
     }
-    this.tags[tag] = this.db[idx];
+    else if (typeofIdx === 'number') {
+    	
+    	if (idx > this.length || idx < 0) {
+            NDDB.log('Invalid index provided for tag registration', 'ERR');
+            return false;
+        }
+    	ref = this.db[idx];
+    }
+    else {
+    	ref = idx;
+    }
+    
+    this.tags[tag] = ref;
     return true;
 };
 
@@ -6065,10 +6262,10 @@ NDDB.prototype.load = function (file, callback) {
 /**
  * # nodeGame
  * 
+ * Social Experiments in the Browser
+ * 
  * Copyright(c) 2012 Stefano Balietti
  * MIT Licensed 
- * 
- * ### nodeGame: Web Experiments in the Browser
  * 
  * nodeGame is a free, open source, event-driven javascript framework for on line, 
  * multiplayer games in the browser.
@@ -6078,10 +6275,13 @@ NDDB.prototype.load = function (file, callback) {
 
 (function (node) {
 
-node.version = '0.7.5';
+// ### version	
+node.version = '0.5.0';
+
+// ## Logging system
 
 /**
- *  ## node.verbosity
+ *  ### node.verbosity
  *  
  *  The minimum level for a log entry to be displayed as output.
  *   
@@ -6089,6 +6289,13 @@ node.version = '0.7.5';
  *  
  */
 node.verbosity = 0;
+
+
+/**
+ * ### node.verbosity_levels
+ * 
+ * ALWAYS, ERR, WARN, INFO, DEBUG
+ */  
 node.verbosity_levels = {
 		// <!-- It is not really always... -->
 		ALWAYS: -(Number.MIN_VALUE+1), 
@@ -6099,61 +6306,10 @@ node.verbosity_levels = {
 };
 
 
-node.warn = function (txt, prefix) {
-	node.log(txt, node.verbosity_levels.WARN, prefix);
-}
-
-node.err = function (txt, prefix) {
-	node.log(txt, node.verbosity_levels.ERR, prefix);
-}
-
-node.info = function (txt, prefix) {
-	node.log(txt, node.verbosity_levels.INFO, prefix);
-}
-
-
 /**
- *  ## node.support
- *  
- *  A collection of features that are supported by the current browser
- *  
- */
-node.support = {};
-
-(function(){
-	
-	try {
-		Object.defineProperty({}, "a", {enumerable: false, value: 1})
-		node.support.defineProperty = true;
-	}
-	catch(e) {
-		node.support.defineProperty = false;	
-	}
-	
-	try {
-		eval('({ get x(){ return 1 } }).x === 1')
-		node.support.setter = true;
-	}
-	catch(err) {
-		node.support.setter = false;
-	}
-	  
-	try {
-		var value;
-		eval('({ set x(v){ value = v; } }).x = 1');
-		node.support.getter = true;
-	}
-	catch(err) {
-		node.support.getter = false;
-	}	  
-})();
-
-/**
- * ## node.log
+ * ### node.log
  * 
  * Default nodeGame standard out, override to redirect
- * 
- * Default behavior is to output a text in the form: `nodeGame: some text`.
  * 
  * Logs entries are displayed only if their verbosity level is 
  * greater than `node.verbosity`
@@ -6177,31 +6333,125 @@ node.log = function (txt, level, prefix) {
 	}
 };
 
-// <!-- It will be overwritten later -->
-node.game 		= {};
-node.socket 	= {};
+/**
+ * ### node.info
+ * 
+ * Logs an INFO message
+ */
+node.info = function (txt, prefix) {
+	node.log(txt, node.verbosity_levels.INFO, prefix);
+}
+
+/**
+ * ### node.warn
+ * 
+ * Logs a WARNING message
+ */
+node.warn = function (txt, prefix) {
+	node.log(txt, node.verbosity_levels.WARN, prefix);
+}
+
+/**
+ * ### node.err
+ * 
+ * Logs an ERROR message
+ */
+node.err = function (txt, prefix) {
+	node.log(txt, node.verbosity_levels.ERR, prefix);
+}
+
+// ## Objects
+
+/**
+ * ### node.events
+ * 
+ * Instance of the EventEmitter class
+ * 
+ * Takes care of emitting the events and calling the
+ * proper listener functions 
+ * 
+ * @see node.EventEmitter
+ */	
+node.events = {};
+	
+/**
+ * ### node.msg
+ * 
+ * Static factory of game messages
+ * 
+ * @see node.GameMsgGenerator
+ */	
+node.msg = {};
+	
+
+/**
+ * ### node.socket
+ * 
+ * Instantiates the connection to a nodeGame server
+ * 
+ * @see node.GameSocketClient
+ */	
+node.socket = node.gsc = {};
+
+/**
+ * ### node.session
+ * 
+ * Contains a reference to all session variables
+ * 
+ * Session variables can be saved and restored at a later stage
+ */
 node.session 	= {};
+
+/**
+ * ### node.player
+ * Instance of node.Player
+ * 
+ * Contains information about the player
+ * 
+ * @see node.PlayerList.Player
+ */
 node.player 	= {};
+
+/**
+ * ### node.memory
+ * 
+ * Instance of node.GameDB database
+ * 
+ * @see node.GameDB
+ */
 node.memory 	= {};
 
-// <!-- Load the auxiliary library if available in the browser -->
-if ('undefined' !== typeof JSUS) node.JSUS = JSUS;
-if ('undefined' !== typeof NDDB) node.NDDB = NDDB;
-if ('undefined' !== typeof store) node.store = store;
+/**
+ * ### node.support 
+ * 
+ * A collection of features that are supported by the current browser
+ */
+node.support	= {};
 
-// <!-- if node
+
+// ## Dependencies 
+// Load dependencies
+
 if ('object' === typeof module && 'function' === typeof require) {
-    require('./init.node.js');
+	// <!-- Node.js -->
+	require('./init.node.js');
     require('./nodeGame.js');
-
-    // ### Loading Event listeners
     require('./listeners/incoming.js');
     require('./listeners/internal.js');
     require('./listeners/outgoing.js');
 }
-// end node -->
+else {
+	// <!-- Browser -->
+	if ('undefined' !== typeof JSUS) node.JSUS = JSUS;
+	if ('undefined' !== typeof NDDB) node.NDDB = NDDB;
+	if ('undefined' !== typeof store) node.store = store;
+	
+	node.support = JSUS.compatibility();
+}
+
 	
 })('object' === typeof module ? module.exports : (window.node = {}));	
+
 /**
  * # EventEmitter
  * 
@@ -6401,7 +6651,7 @@ EventEmitter.prototype = {
 /**
  * ### EventEmitter.remove
  * 
- * Deregister an event, or an event listener
+ * Deregisters one or multiple event listeners
  * 
  * @param {string} type The event name
  * @param {function} listener Optional. The specific function to deregister 
@@ -10034,48 +10284,53 @@ Game.prototype.isReady = function() {
 /**
  * # nodeGame
  * 
- * Copyright(c) 2012 Stefano Balietti MIT Licensed
+ * Social Experiments in the Browser
  * 
- * ### nodeGame: Web Experiments in the Browser
+ * Copyright(c) 2012 Stefano Balietti MIT Licensed
  * 
  * *nodeGame* is a free, open source, event-driven javascript framework for on
  * line, multiplayer games in the browser.
+ * 
+ * ---
+ * 
  */
 (function (node) {
-	
-	// Declaring variables
-	// //////////////////////////////////////////
 		
-	var EventEmitter = node.EventEmitter,
-		GameSocketClient = node.GameSocketClient,
-		GameState = node.GameState,
-		GameMsg = node.GameMsg,
-		Game = node.Game,
-		Player = node.Player,
-		GameSession = node.GameSession;
-	
-	
-	// Adding constants directly to node
-	// ////////////////////////////////////////
-	
+	var EventEmitter 		= node.EventEmitter,
+		GameSocketClient 	= node.GameSocketClient,
+		GameState 			= node.GameState,
+		GameMsg 			= node.GameMsg,
+		Game 				= node.Game,
+		Player 				= node.Player,
+		GameSession 		= node.GameSession,
+		J					= node.JSUS;
+
 	node.actions 	= GameMsg.actions;
 	node.IN 		= GameMsg.IN;
 	node.OUT 		= GameMsg.OUT;
 	node.targets 	= GameMsg.targets;		
 	node.states 	= GameState.iss;
 	
-	// Creating EventEmitter
-	// /////////////////////////////////////////
-	
+// <!-- object commented in index.js -->
 	node.events = new EventEmitter();
-
-
-	// Creating objects
-	// /////////////////////////////////////////
-	
-	node.msg	= node.GameMsgGenerator;	
+	node.msg	= node.GameMsgGenerator;
 	node.socket = node.gsc = new GameSocketClient();
 	
+	
+// ## Methods
+	
+	
+/**
+ * ### nove.env
+ * 
+ * Executes a block of code conditionally to nodeGame environment variables  
+ * 
+ * @param env {string} The name of the environment
+ * @param func {function} The callback function to execute
+ * @param ctx {object} Optional. The context of execution
+ * @param params {array} Optional. An array of additional parameters for the callback
+ * 
+ */	
 	node.env = function (env, func, ctx, params) {
 		if (!env || !func || !node.env[env]) return;
 		ctx = ctx || node;
@@ -10083,15 +10338,21 @@ Game.prototype.isReady = function() {
 		func.apply(ctx, params);
 	};
 	
-	// Adding methods
-	// /////////////////////////////////////////
 	
-	/**
-	 * Parses the a node configuration object and add default and missing
-	 * values. Stores the final configuration in node.conf.
-	 * 
-	 */
-	node._analyzeConf = function (conf) {
+/**
+ * ### node.setup 
+ * 
+ * Setups the nodeGame object
+ * 
+ * Parses a configuration object, adds default and missing
+ * values, and stores the results in `node.conf`.
+ * 
+ * See the examples folder for all available configuration options.
+ * 
+ * @param {object} conf A configutation object
+ * 
+ */
+	node.setup = node._analyzeConf = function (conf) {
 		if (!conf) {
 			node.log('Invalid configuration object found.', 'ERR');
 			return false;
@@ -10150,126 +10411,30 @@ Game.prototype.isReady = function() {
 		this.conf = conf;
 		return conf;
 	};
-	
-	
-	node.on = function (event, listener) {
-		// It is in the init function;
-		if (!node.game || !node.game.state || (GameState.compare(node.game.state, new GameState(), true) === 0 )) {
-			node.events.add(event, listener);
-			// node.log('global');
-		}
-		else {
-			node.events.addLocal(event, listener);
-			// node.log('local');
-		}
-	};
-	
-	node.once = function (event, listener) {
-		node.on(event, listener);
-		node.on(event, function(event, listener) {
-			node.events.remove(event, listener);
-		});
-	};
-	
-	node.removeListener = function (event, func) {
-		return node.events.remove(event, func);
-	};
-	
-	// TODO: create conf objects
+
+/**
+ * ### node.play
+ * 
+ * Establishes a connection with a socket.io server, and starts the game
+ * 
+ * @param {object} conf A configuration object
+ * @param {object} game The game object
+ */	
 	node.connect = node.play = function (conf, game) {	
-		node._analyzeConf(conf);
+		node.setup(conf);
 		
 		// node.socket.connect(conf);
 		
 		node.game = new Game(game);
 		node.emit('NODEGAME_GAME_CREATED');
 		
-		
 		// INIT the game
 		node.game.init.call(node.game);
-		node.socket.connect(conf); // was node.socket.setGame(node.game);
+		node.socket.connect(conf);
 		
 		node.log('game loaded...');
 		node.log('ready.');
 	};	
-	
-// node.observe = function (conf, game) {
-// node._analyzeConf(conf);
-//		
-// var game = game || {loops: {1: {state: function(){}}}};
-// node.socket = that.gsc = new GameSocketClient(conf);
-//		
-// node.game = that.game = new Game(game, that.gsc);
-// node.socket.setGame(that.game);
-//		
-// node.on('NODEGAME_READY', function(){
-//			
-// // Retrieve the game and set is as observer
-// node.get('LOOP', function(game) {
-//				
-// // alert(game);
-// // console.log('ONLY ONE');
-// // console.log(game);
-// // var game = game.observer = true;
-// // node.game = that.game = game;
-// //
-// // that.game.init();
-// //
-// // that.gsc.setGame(that.game);
-// //
-// // node.log('nodeGame: game loaded...');
-// // node.log('nodeGame: ready.');
-// });
-// });
-		
-		
-// node.onDATA('GAME', function(data){
-// alert(data);
-// console.log(data);
-// });
-		
-// node.on('DATA', function(msg){
-// console.log('--------->Eh!')
-// console.log(msg);
-// });
-// };
-	
-	node.emit = function (event, p1, p2, p3) {	
-		node.events.emit(event, p1, p2, p3);
-	};	
-	
-	node.say = function (data, what, whom) {
-		node.events.emit('out.say.DATA', data, whom, what);
-	};
-	
-/**
- * ### node.set
- * 
- * Store a key, value pair in the server memory
- * 
- * @param {string} key An alphanumeric (must not be unique)
- * @param {mixed} The value to store (can be of any type)
- * 
- */
-	node.set = function (key, value) {
-		// TODO: parameter to say who will get the msg
-		node.events.emit('out.set.DATA', value, null, key);
-	};
-	
-	
-	node.get = function (key, func) {
-		node.events.emit('out.get.DATA', key);
-		
-		var listener = function(msg) {
-			if (msg.text === key) {
-				func.call(node.game, msg.data);
-				node.events.remove('in.say.DATA', listener);
-			}
-			// node.events.printAll();
-		};
-		
-		node.on('in.say.DATA', listener);
-	};
 
 /**
  * ### node.replay
@@ -10281,19 +10446,180 @@ Game.prototype.isReady = function() {
 	node.replay = function (reset) {
 		if (reset) node.game.memory.clear(true);
 		node.goto(new GameState({state: 1, step: 1, round: 1}));
-	}
+	}	
+	
+/**
+ * ### node.on
+ * 
+ * Registers an event listener
+ * 
+ * Listeners registered before a game is started, e.g. in
+ * the init function of the game object, will stay valid 
+ * throughout the game. Listeners registered after the game 
+ * is started will be removed after the game has advanced
+ * to its next stage. 
+ * 
+ * @param {string} event The name of the event
+ * @param {function} listener The callback function
+ */	
+	node.on = function (event, listener) {
+		
+		if (!event) { 
+			node.err('undefined event'); 
+			return;
+		}
+		if ('function' !== typeof listener) { 
+			node.err('callback must be of time function'); 
+			return;
+		}
+		
+		// It is in the init function;
+		if (!node.game || !node.game.state || (GameState.compare(node.game.state, new GameState(), true) === 0 )) {
+			node.events.add(event, listener);
+		}
+		else {
+			node.events.addLocal(event, listener);
+		}
+	};
 
 /**
- * ### node.goto
+ * ### node.once
  * 
- * Moves the game to the specified game state
+ * Registers an event listener that will be removed 
+ * after its first invocation
  * 
- * @param {string|GameState} The state to go to
+ * @param {string} event The name of the event
+ * @param {function} listener The callback function
  * 
- */	
-	node.goto = function (state) {
-		node.game.updateState(state);
+ * @see node.on
+ * @see node.off
+ */		
+	node.once = function (event, listener) {
+		if (!event || !listener) return;
+		node.on(event, listener);
+		node.on(event, function(event, listener) {
+			node.events.remove(event, listener);
+		});
 	};
+	
+/**
+ * ### node.off
+ * 
+ * Deregisters one or multiple event listeners
+ * 
+ * @param {string} event The name of the event
+ * @param {function} listener The callback function
+ * 
+ * @see node.on
+ * @see node.EventEmitter.remove
+ */			
+	node.off = node.removeListener = function (event, func) {
+		return node.events.remove(event, func);
+	};
+
+/**
+ * ### node.alias
+ * 
+ * Creates event listeners aliases
+ * 
+ * This method creates a new property to the `node.on` object named
+ * after the alias. The alias can be used as a shortcut to register
+ * to new listeners on the given events.
+ * 
+ * 
+ * ```javascript
+ * 	node.alias('myAlias', ['in.say.DATA', 'myEvent']);
+ * 
+ * 	node.on.myAlias(function(){ console.log('myEvent or in.say.DATA'); };
+ * ```	
+ * 
+ * @param {string} alias The name of alias
+ * @param {string|array} The events under which the listeners will be registered to
+ */	
+	node.alias = function(alias, events) {
+		if (!alias || !events) { 
+			node.err('undefined alias or events'); 
+			return; 
+		}
+		if (!J.isArray(events)) events = [events];
+		
+		J.each(events, function(){
+			node.on[alias] = function(func) {
+				node.on(event, function(msg){
+					func.call(node.game, msg);
+				});
+			};
+		});
+	};	
+	
+/**
+ * ### node.emit
+ * 
+ * Emits an event locally
+ *
+ * @param {string} event The name of the event to emit
+ * @param {object} p1 Optional. A parameter to be passed to the listener
+ * @param {object} p2 Optional. A parameter to be passed to the listener
+ * @param {object} p3 Optional. A parameter to be passed to the listener
+ */	
+	node.emit = function (event, p1, p2, p3) {	
+		node.events.emit(event, p1, p2, p3);
+	};	
+	
+/**
+ * ### node.say
+ * 
+ * Sends a DATA message to a specified recipient
+ * 
+ * @param {mixed} data The content of the DATA message
+ * @param {string} what The label associated to the message
+ * @param {string} whom Optional. The recipient of the message
+ *  
+ */	
+	node.say = function (data, what, whom) {
+		node.events.emit('out.say.DATA', data, whom, what);
+	};
+	
+/**
+ * ### node.set
+ * 
+ * Stores a key-value pair in the server memory
+ * 
+ * 
+ * 
+ * @param {string} key An alphanumeric (must not be unique)
+ * @param {mixed} The value to store (can be of any type)
+ * 
+ */
+	node.set = function (key, value) {
+		// TODO: parameter to say who will get the msg
+		node.events.emit('out.set.DATA', value, null, key);
+	};
+	
+
+/**
+ * ### node.get
+ * 
+ * Sends a GET message to a recipient and listen to the reply 
+ * 
+ * @param {string} key The label of the GET message
+ * @param {function} func The callback function to handle the return message
+ */	
+	node.get = function (key, func) {
+		if (!key || !func) return;
+		
+		node.events.emit('out.get.DATA', key);
+		
+		var listener = function(msg) {
+			if (msg.text === key) {
+				func.call(node.game, msg.data);
+				node.events.remove('in.say.DATA', listener);
+			}
+		};
+		
+		node.on('in.say.DATA', listener);
+	};
+
 	
 /**
  * ### node.redirect
@@ -10328,51 +10654,73 @@ Game.prototype.isReady = function() {
 		return true;
 	};
 	
-	// *Aliases*
-	//
-	// Conventions:
-	//
-	// - Direction:
-	// 'in' for all
-	//
-	// - Target:
-	// DATA and TXT are 'say' as default
-	// STATE and PLIST are 'set' as default
+
+
+// ## Aliases
+
+/**
+ *  ### node.DONE
+ * 
+ * Emits locally a DONE event
+ * 
+ * The DONE event signals that the player has terminated a game stage, 
+ * and that it is ready to advance to the next one.
+ * 
+ * @param {mixed} param Optional. An additional parameter passed along
+ */
+	node.DONE = function (param) {
+		node.emit("DONE", param);
+	};
+
+/**
+ *  ### node.TXT
+ * 
+ *  Emits locally a TXT event
+ *  
+ *  The TXT event signals that a text message needs to be delivered
+ *  to a recipient.
+ *  
+ *  @param {string} text The text of the message
+ *  @param {string} to The id of the recipient
+ */	
+	node.TXT = function (text, to) {
+		node.emit('out.say.TXT', text, to);
+	};			
 	
+// ### node.on.txt	
+	node.alias('txt', 'in.say.TXT');
 	
-	// Sending
-		
+// ### node.on.data	
+	node.alias('data', ['in.say.DATA', 'in.set.DATA']);
 	
-// this.setSTATE = function(action,state,to){
-// var stateEvent = GameMsg.OUT + action + '.STATE';
-// fire(stateEvent,action,state,to);
-// };
+// ### node.on.state	
+	node.alias('state', 'in.set.STATE');
 	
-	// Receiving
-	
-	// Say
-	
+// ### node.on.plist	
+	node.alias('plist', ['in.set.PLIST', 'in.say.PLIST']);
+ 		
 	node.onTXT = function(func) {
-		node.on("in.say.TXT", function(msg) {
+		if (!func) return;
+		node.on("", function(msg) {
 			func.call(node.game,msg);
 		});
 	};
 	
 	node.onDATA = function(text, func) {
+		if (!text || !func) return;
+		
 		node.on('in.say.DATA', function(msg) {
-			if (text && msg.text === text) {
+			if (msg.text === text) {
 				func.call(node.game, msg);
 			}
 		});
 		
 		node.on('in.set.DATA', function(msg) {
-			if (text && msg.text === text) {
+			if (msg.text === text) {
 				func.call(node.game, msg);
 			}
 		});
 	};
-	
-	// Set
 	
 	node.onSTATE = function(func) {
 		node.on("in.set.STATE", function(msg) {
@@ -10390,31 +10738,41 @@ Game.prototype.isReady = function() {
 		});
 	};
 	
-	node.DONE = function (text) {
-		node.emit("DONE",text);
-	};
-	
-	node.TXT = function (text, to) {
-		node.emit('out.say.TXT', text, to);
-	};	
-	
+
+// ## Extra
 	
 	node.random = {};
 	
-	// Generates event at RANDOM timing in milliseconds
-	// if timing is missing, default is 6000
-	node.random.emit = function (event, timing){
-		var timing = timing || 6000;
+/**
+ * ### node.random.emit
+ * 
+ * Emits an event after a random time interval between 0 and maxWait 
+ * 
+ * @param {string} event The name of the event
+ * @param {number} maxWait Optional. The maximum time (in milliseconds)
+ * 	to wait before emitting the event. to Defaults, 6000
+ */	
+	node.random.emit = function (event, maxWait){
+		maxWait = maxWait || 6000;
 		setTimeout(function(event) {
 			node.emit(event);
-		}, Math.random()*timing, event);
+		}, Math.random() * maxWait, event);
 	};
 	
-	node.random.exec = function (func, timing) {
-		var timing = timing || 6000;
+/**
+ * ### node.random.exec 
+ * 
+ * Executes a callback function after a random time interval between 0 and maxWait 
+ * 
+ * @param {function} The callback function to execute
+ * @param {number} maxWait Optional. The maximum time (in milliseconds) 
+ * 	to wait before executing the callback. to Defaults, 6000
+ */	
+	node.random.exec = function (func, maxWait) {
+		maxWait = maxWait || 6000;
 		setTimeout(function(func) {
 			func.call();
-		}, Math.random()*timing, func);
+		}, Math.random() * maxWait, func);
 	};
 		
 	node.log(node.version + ' loaded', 'ALWAYS');
@@ -14109,545 +14467,638 @@ node.widgets = new Widgets();
 	('undefined' !== typeof window) ? window.node : module.parent.exports.node
 );
 (function (node) {
-
-	node.widgets.register('WaitScreen', WaitScreen);
-	
-// ## Defaults
-	
-	WaitScreen.defaults = {};
-	WaitScreen.defaults.id = 'waiting';
-	WaitScreen.defaults.fieldset = false;
-	
-// ## Meta-data
-	
-	WaitScreen.name = 'WaitingScreen';
-	WaitScreen.version = '0.3.2';
-	WaitScreen.description = 'Show a standard waiting screen';
-	
-	function WaitScreen (options) {
-		this.id = options.id;
-		
-		this.text = 'Waiting for other players to be done...';
-		this.waitingDiv = null;
-	}
-	
-	WaitScreen.prototype.append = function (root) {
-		return root;
-	};
-	
-	WaitScreen.prototype.getRoot = function () {
-		return this.waitingDiv;
-	};
-	
-	WaitScreen.prototype.listeners = function () {
-		var that = this;
-		node.on('WAITING...', function (text) {
-			if (!that.waitingDiv) {
-				that.waitingDiv = node.window.addDiv(document.body, that.id);
-			}
-			
-			if (that.waitingDiv.style.display === 'none'){
-				that.waitingDiv.style.display = '';
-			}			
-		
-			that.waitingDiv.innerHTML = text || that.text;
-			node.game.pause();
-		});
-		
-		// It is supposed to fade away when a new state starts
-		node.on('LOADED', function(text) {
-			if (that.waitingDiv) {
-				
-				if (that.waitingDiv.style.display === '') {
-					that.waitingDiv.style.display = 'none';
-				}
-			// TODO: Document.js add method to remove element
-			}
-		});
-		
-	}; 
-})(node);
-(function (node) {
-	
-	
-	node.widgets.register('D3', D3);
-	node.widgets.register('D3ts', D3ts);
-	
-	D3.prototype.__proto__ = node.Widget.prototype;
-	D3.prototype.constructor = D3;
-
-// ## Defaults
-	
-	D3.defaults = {};
-	D3.defaults.id = 'D3';
-	D3.defaults.fieldset = {
-		legend: 'D3 plot'
-	};
-
-	
-// ## Meta-data
-	
-	D3.name = 'D3';
-	D3.version = '0.1';
-	D3.description = 'Real time plots for nodeGame with d3.js';
-	
-// ## Dependencies
-	
-	D3.dependencies = {
-		d3: {},	
-		JSUS: {}
-	};
-	
-	function D3 (options) {
-		this.id = options.id || D3.id;
-		this.event = options.event || 'D3';
-		this.svg = null;
-		
-		var that = this;
-		node.on(this.event, function (value) {
-			that.tick.call(that, value); 
-		});
-	}
-	
-	D3.prototype.append = function (root) {
-		this.root = root;
-		this.svg = d3.select(root).append("svg");
-		return root;
-	};
-	
-	D3.prototype.tick = function () {};
-	
-// # D3ts
-	
-	
-// ## Meta-data
-	
-	D3ts.id = 'D3ts';
-	D3ts.name = 'D3ts';
-	D3ts.version = '0.1';
-	D3ts.description = 'Time series plot for nodeGame with d3.js';
-	
-// ## Dependencies	
-	D3ts.dependencies = {
-		D3: {},	
-		JSUS: {}
-	};
-	
-	D3ts.prototype.__proto__ = D3.prototype;
-	D3ts.prototype.constructor = D3ts;
-	
-	D3ts.defaults = {};
-	
-	D3ts.defaults.width = 400;
-	D3ts.defaults.height = 200;
-	
-	D3ts.defaults.margin = {
-    	top: 10, 
-    	right: 10, 
-    	bottom: 20, 
-    	left: 40 
-	};
-	
-	D3ts.defaults.domain = {
-		x: [0, 10],
-		y: [0, 1]
-	};
-	
-    D3ts.defaults.range = {
-    	x: [0, D3ts.defaults.width],
-    	y: [D3ts.defaults.height, 0]
-    };
-	
-	function D3ts (options) {
-		D3.call(this, options);
-		
-		
-		var o = this.options = JSUS.merge(D3ts.defaults, options);
-		
-		var n = this.n = o.n;
-		
-	    this.data = [0];
-	    
-	    this.margin = o.margin;
-	    
-		var width = this.width = o.width - this.margin.left - this.margin.right;
-		var height = this.height = o.height - this.margin.top - this.margin.bottom;
-
-		// identity function
-		var x = this.x = d3.scale.linear()
-		    .domain(o.domain.x)
-		    .range(o.range.x);
-
-		var y = this.y = d3.scale.linear()
-		    .domain(o.domain.y)
-		    .range(o.range.y);
-
-		// line generator
-		this.line = d3.svg.line()
-		    .x(function(d, i) { return x(i); })
-		    .y(function(d, i) { return y(d); });
-	}
-	
-	D3ts.prototype.init = function (options) {
-		//D3.init.call(this, options);
-		
-		console.log('init!');
-		var x = this.x,
-			y = this.y,
-			height = this.height,
-			width = this.width,
-			margin = this.margin;
-		
-		
-		// Create the SVG and place it in the middle
-		this.svg.attr("width", width + margin.left + margin.right)
-		    .attr("height", height + margin.top + margin.bottom)
-		  .append("g")
-		    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-
-		// Line does not go out the axis
-		this.svg.append("defs").append("clipPath")
-		    .attr("id", "clip")
-		  .append("rect")
-		    .attr("width", width)
-		    .attr("height", height);
-
-		// X axis
-		this.svg.append("g")
-		    .attr("class", "x axis")
-		    .attr("transform", "translate(0," + height + ")")
-		    .call(d3.svg.axis().scale(x).orient("bottom"));
-
-		// Y axis
-		this.svg.append("g")
-		    .attr("class", "y axis")
-		    .call(d3.svg.axis().scale(y).orient("left"));
-
-		this.path = this.svg.append("g")
-		    .attr("clip-path", "url(#clip)")
-		  .append("path")
-		    .data([this.data])
-		    .attr("class", "line")
-		    .attr("d", this.line);		
-	};
-	
-	D3ts.prototype.tick = function (value) {
-		this.alreadyInit = this.alreadyInit || false;
-		if (!this.alreadyInit) {
-			this.init();
-			this.alreadyInit = true;
-		}
-		
-		var x = this.x;
-		
-		console.log('tick!');
-	
-		// push a new data point onto the back
-		this.data.push(value);
-
-		// redraw the line, and slide it to the left
-		this.path
-	    	.attr("d", this.line)
-	    	.attr("transform", null);
-
-		// pop the old data point off the front
-		if (this.data.length > this.n) {
-		
-	  		this.path
-	  			.transition()
-	  			.duration(500)
-	  			.ease("linear")
-	  			.attr("transform", "translate(" + x(-1) + ")");
-	  		
-	  		this.data.shift();
-	  	  
-		}
-	};
-	
-})(node);
-(function (node) {
-	
-	node.widgets.register('NDDBBrowser', NDDBBrowser);
 	
 	var JSUS = node.JSUS,
-		NDDB = node.NDDB,
-		TriggerManager = node.TriggerManager;
-
-// ## Defaults
+		Table = node.window.Table;
 	
-	NDDBBrowser.defaults = {};
-	NDDBBrowser.defaults.id = 'nddbbrowser';
-	NDDBBrowser.defaults.fieldset = false;
+	node.widgets.register('ChernoffFaces', ChernoffFaces);
 	
-// ## Meta-data
+	// ## Defaults
 	
-	NDDBBrowser.name = 'NDDBBrowser';
-	NDDBBrowser.version = '0.1.2';
-	NDDBBrowser.description = 'Provides a very simple interface to control a NDDB istance.';
+	ChernoffFaces.defaults = {};
+	ChernoffFaces.defaults.id = 'ChernoffFaces';
+	ChernoffFaces.defaults.canvas = {};
+	ChernoffFaces.defaults.canvas.width = 100;
+	ChernoffFaces.defaults.canvas.heigth = 100;
 	
-// ## Dependencies
+	// ## Meta-data
 	
-	NDDBBrowser.dependencies = {
+	ChernoffFaces.name = 'Chernoff Faces';
+	ChernoffFaces.version = '0.3';
+	ChernoffFaces.description = 'Display parametric data in the form of a Chernoff Face.';
+	
+	// ## Dependencies 
+	ChernoffFaces.dependencies = {
 		JSUS: {},
-		NDDB: {},
-		TriggerManager: {}
+		Table: {},
+		Canvas: {},
+		'Controls.Slider': {}
 	};
 	
-	function NDDBBrowser (options) {
+	ChernoffFaces.FaceVector = FaceVector;
+	ChernoffFaces.FacePainter = FacePainter;
+	
+	function ChernoffFaces (options) {
 		this.options = options;
-		this.nddb = null;
-		
-		this.commandsDiv = document.createElement('div');
 		this.id = options.id;
-		if ('undefined' !== typeof this.id) {
-			this.commandsDiv.id = this.id;
-		}
+		this.table = new Table({id: 'cf_table'});
+		this.root = options.root || document.createElement('div');
+		this.root.id = this.id;
 		
-		this.info = null;
+		this.sc = node.widgets.get('Controls.Slider');	// Slider Controls
+		this.fp = null;	// Face Painter
+		this.canvas = null;
+
+		this.change = 'CF_CHANGE';
+		var that = this;
+		this.changeFunc = function () {
+			that.draw(that.sc.getAllValues());
+		};
+		
+		this.features = null;
+		this.controls = null;
+		
 		this.init(this.options);
 	}
 	
-	NDDBBrowser.prototype.init = function (options) {
-		
-		function addButtons() {
-			var id = this.id;
-			node.window.addEventButton(id + '_GO_TO_FIRST', '<<', this.commandsDiv, 'go_to_first');
-			node.window.addEventButton(id + '_GO_TO_PREVIOUS', '<', this.commandsDiv, 'go_to_previous');
-			node.window.addEventButton(id + '_GO_TO_NEXT', '>', this.commandsDiv, 'go_to_next');
-			node.window.addEventButton(id + '_GO_TO_LAST', '>>', this.commandsDiv, 'go_to_last');
-			node.window.addBreak(this.commandsDiv);
-		}
-		function addInfoBar() {
-			var span = this.commandsDiv.appendChild(document.createElement('span'));
-			return span;
-		}
-		
-		
-		addButtons.call(this);
-		this.info = addInfoBar.call(this);
-		
-		this.tm = new TriggerManager();
-		this.tm.init(options.triggers);
-		this.nddb = options.nddb || new NDDB({auto_update_pointer: true});
-	};
-	
-	NDDBBrowser.prototype.append = function (root) {
-		this.root = root;
-		root.appendChild(this.commandsDiv);
-		return root;
-	};
-	
-	NDDBBrowser.prototype.getRoot = function (root) {
-		return this.commandsDiv;
-	};
-	
-	NDDBBrowser.prototype.add = function (o) {
-		return this.nddb.insert(o);
-	};
-	
-	NDDBBrowser.prototype.sort = function (key) {
-		return this.nddb.sort(key);
-	};
-	
-	NDDBBrowser.prototype.addTrigger = function (trigger) {
-		return this.tm.addTrigger(trigger);
-	};
-	
-	NDDBBrowser.prototype.removeTrigger = function (trigger) {
-		return this.tm.removeTrigger(trigger);
-	};
-	
-	NDDBBrowser.prototype.resetTriggers = function () {
-		return this.tm.resetTriggers();
-	};
-	
-	NDDBBrowser.prototype.listeners = function() {
+	ChernoffFaces.prototype.init = function (options) {
 		var that = this;
-		var id = this.id;
+		this.id = options.id || this.id;
+		var PREF = this.id + '_';
 		
-		function notification (el, text) {
-			if (el) {
-				node.emit(id + '_GOT', el);
-				this.writeInfo((this.nddb.nddb_pointer + 1) + '/' + this.nddb.length);
+		this.features = options.features || this.features || FaceVector.random();
+		
+		this.controls = ('undefined' !== typeof options.controls) ?  options.controls : true;
+		
+		var idCanvas = (options.idCanvas) ? options.idCanvas : PREF + 'canvas';
+		var idButton = (options.idButton) ? options.idButton : PREF + 'button';
+		
+		this.canvas = node.window.getCanvas(idCanvas, options.canvas);
+		this.fp = new FacePainter(this.canvas);		
+		this.fp.draw(new FaceVector(this.features));
+		
+		var sc_options = {
+			id: 'cf_controls',
+			features: JSUS.mergeOnKey(FaceVector.defaults, this.features, 'value'),
+			change: this.change,
+			fieldset: {id: this.id + '_controls_fieldest', 
+						legend: this.controls.legend || 'Controls'
+			},
+			submit: 'Send'
+		};
+		
+		this.sc = node.widgets.get('Controls.Slider', sc_options);
+		
+		// Controls are always there, but may not be visible
+		if (this.controls) {
+			this.table.add(this.sc);
+		}
+		
+		// Dealing with the onchange event
+		if ('undefined' === typeof options.change) {	
+			node.on(this.change, this.changeFunc); 
+		} else {
+			if (options.change) {
+				node.on(options.change, this.changeFunc);
 			}
 			else {
-				this.writeInfo('No element found');
+				node.removeListener(this.change, this.changeFunc);
 			}
+			this.change = options.change;
 		}
 		
-		node.on(id + '_GO_TO_FIRST', function() {
-			var el = that.tm.pullTriggers(that.nddb.first());
-			notification.call(that, el);
-		});
 		
-		node.on(id + '_GO_TO_PREVIOUS', function() {
-			var el = that.tm.pullTriggers(that.nddb.previous());
-			notification.call(that, el);
-		});
-		
-		node.on(id + '_GO_TO_NEXT', function() {
-			var el = that.tm.pullTriggers(that.nddb.next());
-			notification.call(that, el);
-		});
-
-		node.on(id + '_GO_TO_LAST', function() {
-			var el = that.tm.pullTriggers(that.nddb.last());
-			notification.call(that, el);
+		this.table.add(this.canvas);
+		this.table.parse();
+		this.root.appendChild(this.table.table);
+	};
+	
+	ChernoffFaces.prototype.getCanvas = function() {
+		return this.canvas;
+	};
+	
+	ChernoffFaces.prototype.append = function (root) {
+		root.appendChild(this.root);
+		this.table.parse();
+		return this.root;
+	};
+	
+	ChernoffFaces.prototype.draw = function (features) {
+		if (!features) return;
+		var fv = new FaceVector(features);
+		this.fp.redraw(fv);
+		// Without merging wrong values are passed as attributes
+		this.sc.init({features: JSUS.mergeOnKey(FaceVector.defaults, features, 'value')});
+		this.sc.refresh();
+	};
+	
+	ChernoffFaces.prototype.getAllValues = function() {
+		//if (this.sc) return this.sc.getAllValues();
+		return this.fp.face;
+	};
+	
+	ChernoffFaces.prototype.randomize = function() {
+		var fv = FaceVector.random();
+		this.fp.redraw(fv);
+	
+		var sc_options = {
+				features: JSUS.mergeOnValue(FaceVector.defaults, fv),
+				change: this.change
+		};
+		this.sc.init(sc_options);
+		this.sc.refresh();
+	
+		return true;
+	};
+	
+	
+	// FacePainter
+	// The class that actually draws the faces on the Canvas
+	function FacePainter (canvas, settings) {
 			
-		});
-	};
-	
-	NDDBBrowser.prototype.writeInfo = function (text) {
-		if (this.infoTimeout) clearTimeout(this.infoTimeout);
-		this.info.innerHTML = text;
-		var that = this;
-		this.infoTimeout = setTimeout(function(){
-			that.info.innerHTML = '';
-		}, 2000);
-	};
-	
-	
-})(node);
-(function (node) {
-	
-	node.widgets.register('DataBar', DataBar);
-	
-// ## Defaults
-	DataBar.defaults = {};
-	DataBar.defaults.id = 'databar';
-	DataBar.defaults.fieldset = {	
-		legend: 'Send DATA to players'
-	};
-	
-// ## Meta-data
-	DataBar.name = 'Data Bar';
-	DataBar.version = '0.3';
-	DataBar.description = 'Adds a input field to send DATA messages to the players';
+		this.canvas = new node.window.Canvas(canvas);
 		
-	function DataBar (options) {
-		this.bar = null;
-		this.root = null;
-		this.recipient = null;
+		this.scaleX = canvas.width / ChernoffFaces.defaults.canvas.width;
+		this.scaleY = canvas.height / ChernoffFaces.defaults.canvas.heigth;
 	}
 	
-	
-	DataBar.prototype.append = function (root) {
+	//Draws a Chernoff face.
+	FacePainter.prototype.draw = function (face, x, y) {
+		if (!face) return;
+		this.face = face;
+		this.fit2Canvas(face);
+		this.canvas.scale(face.scaleX, face.scaleY);
 		
-		var sendButton, textInput, dataInput;
+		//console.log('Face Scale ' + face.scaleY + ' ' + face.scaleX );
 		
-		sendButton = W.addButton(root);
-		W.writeln('Text');
-		textInput = W.addTextInput(root, 'data-bar-text');
-		W.writeln('Data');
-		dataInput = W.addTextInput(root, 'data-bar-data');
+		x = x || this.canvas.centerX;
+		y = y || this.canvas.centerY;
 		
-		this.recipient = W.addRecipientSelector(root);
-		
-		var that = this;
-		
-		sendButton.onclick = function() {
+		this.drawHead(face, x, y);
 			
-			var to, data, text;
-			
-			to = that.recipient.value;
-			text = textInput.value;
-			data = dataInput.value;
-			
-			node.log('Parsed Data: ' + JSON.stringify(data));
-			
-			node.say(data, text, to);
-		};
-		
-		node.on('UPDATED_PLIST', function() {
-			node.window.populateRecipientSelector(that.recipient, node.game.pl);
-		});
-		
-		return root;
-		
-	};
+		this.drawEyes(face, x, y);
 	
-})(node);
-(function (node) {
+		this.drawPupils(face, x, y);
 	
-	node.widgets.register('ServerInfoDisplay', ServerInfoDisplay);	
-
-// ## Defaults
+		this.drawEyebrow(face, x, y);
 	
-	ServerInfoDisplay.defaults = {};
-	ServerInfoDisplay.defaults.id = 'serverinfodisplay';
-	ServerInfoDisplay.defaults.fieldset = {
-			legend: 'Server Info',
-			id: 'serverinfo_fieldset'
+		this.drawNose(face, x, y);
+		
+		this.drawMouth(face, x, y);
+		
 	};		
-	
-// ## Meta-data
-	
-	ServerInfoDisplay.name = 'Server Info Display';
-	ServerInfoDisplay.version = '0.3';
-	
-	function ServerInfoDisplay (options) {	
-		this.id = options.id;
 		
-		
-		this.root = null;
-		this.div = document.createElement('div');
-		this.table = null; //new node.window.Table();
-		this.button = null;
-		
-	}
-	
-	ServerInfoDisplay.prototype.init = function (options) {
-		var that = this;
-		if (!this.div) {
-			this.div = document.createElement('div');
-		}
-		this.div.innerHTML = 'Waiting for the reply from Server...';
-		if (!this.table) {
-			this.table = new node.window.Table(options);
-		}
-		this.table.clear(true);
-		this.button = document.createElement('button');
-		this.button.value = 'Refresh';
-		this.button.appendChild(document.createTextNode('Refresh'));
-		this.button.onclick = function(){
-			that.getInfo();
-		};
-		this.root.appendChild(this.button);
-		this.getInfo();
+	FacePainter.prototype.redraw = function (face, x, y) {
+		this.canvas.clear();
+		this.draw(face,x,y);
 	};
 	
-	ServerInfoDisplay.prototype.append = function (root) {
-		this.root = root;
-		root.appendChild(this.div);
-		return root;
+	FacePainter.prototype.scale = function (x, y) {
+		this.canvas.scale(this.scaleX, this.scaleY);
 	};
 	
-	ServerInfoDisplay.prototype.getInfo = function() {
-		var that = this;
-		node.get('INFO', function (info) {
-			node.window.removeChildrenFromNode(that.div);
-			that.div.appendChild(that.processInfo(info));
+	// TODO: Improve. It eats a bit of the margins
+	FacePainter.prototype.fit2Canvas = function(face) {
+		if (!this.canvas) {
+		console.log('No canvas found');
+			return;
+		}
+		
+		var ration;
+		if (this.canvas.width > this.canvas.height) {
+			ratio = this.canvas.width / face.head_radius * face.head_scale_x;
+		}
+		else {
+			ratio = this.canvas.height / face.head_radius * face.head_scale_y;
+		}
+		
+		face.scaleX = ratio / 2;
+		face.scaleY = ratio / 2;
+	};
+	
+	FacePainter.prototype.drawHead = function (face, x, y) {
+		
+		var radius = face.head_radius;
+		
+		this.canvas.drawOval({
+						x: x, 
+						y: y,
+						radius: radius,
+						scale_x: face.head_scale_x,
+						scale_y: face.head_scale_y,
+						color: face.color,
+						lineWidth: face.lineWidth
 		});
 	};
 	
-	ServerInfoDisplay.prototype.processInfo = function(info) {
-		this.table.clear(true);
-		for (var key in info) {
-			if (info.hasOwnProperty(key)){
-				this.table.addRow([key,info[key]]);
+	FacePainter.prototype.drawEyes = function (face, x, y) {
+		
+		var height = FacePainter.computeFaceOffset(face, face.eye_height, y);
+		var spacing = face.eye_spacing;
+			
+		var radius = face.eye_radius;
+		//console.log(face);
+		this.canvas.drawOval({
+						x: x - spacing,
+						y: height,
+						radius: radius,
+						scale_x: face.eye_scale_x,
+						scale_y: face.eye_scale_y,
+						color: face.color,
+						lineWidth: face.lineWidth
+						
+		});
+		//console.log(face);
+		this.canvas.drawOval({
+						x: x + spacing,
+						y: height,
+						radius: radius,
+						scale_x: face.eye_scale_x,
+						scale_y: face.eye_scale_y,
+						color: face.color,
+						lineWidth: face.lineWidth
+		});
+	};
+	
+	FacePainter.prototype.drawPupils = function (face, x, y) {
+			
+		var radius = face.pupil_radius;
+		var spacing = face.eye_spacing;
+		var height = FacePainter.computeFaceOffset(face, face.eye_height, y);
+		
+		this.canvas.drawOval({
+						x: x - spacing,
+						y: height,
+						radius: radius,
+						scale_x: face.pupil_scale_x,
+						scale_y: face.pupil_scale_y,
+						color: face.color,
+						lineWidth: face.lineWidth
+		});
+		
+		this.canvas.drawOval({
+						x: x + spacing,
+						y: height,
+						radius: radius,
+						scale_x: face.pupil_scale_x,
+						scale_y: face.pupil_scale_y,
+						color: face.color,
+						lineWidth: face.lineWidth
+		});
+	
+	};
+	
+	FacePainter.prototype.drawEyebrow = function (face, x, y) {
+		
+		var height = FacePainter.computeEyebrowOffset(face,y);
+		var spacing = face.eyebrow_spacing;
+		var length = face.eyebrow_length;
+		var angle = face.eyebrow_angle;
+		
+		this.canvas.drawLine({
+						x: x - spacing,
+						y: height,
+						length: length,
+						angle: angle,
+						color: face.color,
+						lineWidth: face.lineWidth
+					
+						
+		});
+		
+		this.canvas.drawLine({
+						x: x + spacing,
+						y: height,
+						length: 0-length,
+						angle: -angle,	
+						color: face.color,
+						lineWidth: face.lineWidth
+		});
+		
+	};
+	
+	FacePainter.prototype.drawNose = function (face, x, y) {
+		
+		var height = FacePainter.computeFaceOffset(face, face.nose_height, y);
+		var nastril_r_x = x + face.nose_width / 2;
+		var nastril_r_y = height + face.nose_length;
+		var nastril_l_x = nastril_r_x - face.nose_width;
+		var nastril_l_y = nastril_r_y; 
+		
+		this.canvas.ctx.lineWidth = face.lineWidth;
+		this.canvas.ctx.strokeStyle = face.color;
+		
+		this.canvas.ctx.save();
+		this.canvas.ctx.beginPath();
+		this.canvas.ctx.moveTo(x,height);
+		this.canvas.ctx.lineTo(nastril_r_x,nastril_r_y);
+		this.canvas.ctx.lineTo(nastril_l_x,nastril_l_y);
+		//this.canvas.ctx.closePath();
+		this.canvas.ctx.stroke();
+		this.canvas.ctx.restore();
+	
+	};
+			
+	FacePainter.prototype.drawMouth = function (face, x, y) {
+		
+		var height = FacePainter.computeFaceOffset(face, face.mouth_height, y);
+		var startX = x - face.mouth_width / 2;
+		var endX = x + face.mouth_width / 2;
+		
+		var top_y = height - face.mouth_top_y;
+		var bottom_y = height + face.mouth_bottom_y;
+		
+		// Upper Lip
+		this.canvas.ctx.moveTo(startX,height);
+		this.canvas.ctx.quadraticCurveTo(x, top_y, endX, height);
+		this.canvas.ctx.stroke();
+		
+		//Lower Lip
+		this.canvas.ctx.moveTo(startX,height);
+		this.canvas.ctx.quadraticCurveTo(x, bottom_y, endX, height);
+		this.canvas.ctx.stroke();
+	
+	};	
+	
+	
+	//TODO Scaling ?
+	FacePainter.computeFaceOffset = function (face, offset, y) {
+		y = y || 0;
+		//var pos = y - face.head_radius * face.scaleY + face.head_radius * face.scaleY * 2 * offset;
+		var pos = y - face.head_radius + face.head_radius * 2 * offset;
+		//console.log('POS: ' + pos);
+		return pos;
+	};
+	
+	FacePainter.computeEyebrowOffset = function (face, y) {
+		y = y || 0;
+		var eyemindistance = 2;
+		return FacePainter.computeFaceOffset(face, face.eye_height, y) - eyemindistance - face.eyebrow_eyedistance;
+	};
+	
+	
+	/*!
+	* 
+	* A description of a Chernoff Face.
+	*
+	* This class packages the 11-dimensional vector of numbers from 0 through 1 that completely
+	* describe a Chernoff face.  
+	*
+	*/
+
+	
+	FaceVector.defaults = {
+			// Head
+			head_radius: {
+				// id can be specified otherwise is taken head_radius
+				min: 10,
+				max: 100,
+				step: 0.01,
+				value: 30,
+				label: 'Face radius'
+			},
+			head_scale_x: {
+				min: 0.2,
+				max: 2,
+				step: 0.01,
+				value: 0.5,
+				label: 'Scale head horizontally'
+			},
+			head_scale_y: {
+				min: 0.2,
+				max: 2,
+				step: 0.01,
+				value: 1,
+				label: 'Scale head vertically'
+			},
+			// Eye
+			eye_height: {
+				min: 0.1,
+				max: 0.9,
+				step: 0.01,
+				value: 0.4,
+				label: 'Eye height'
+			},
+			eye_radius: {
+				min: 2,
+				max: 30,
+				step: 0.01,
+				value: 5,
+				label: 'Eye radius'
+			},
+			eye_spacing: {
+				min: 0,
+				max: 50,
+				step: 0.01,
+				value: 10,
+				label: 'Eye spacing'
+			},
+			eye_scale_x: {
+				min: 0.2,
+				max: 2,
+				step: 0.01,
+				value: 1,
+				label: 'Scale eyes horizontally'
+			},
+			eye_scale_y: {
+				min: 0.2,
+				max: 2,
+				step: 0.01,
+				value: 1,
+				label: 'Scale eyes vertically'
+			},
+			// Pupil
+			pupil_radius: {
+				min: 1,
+				max: 9,
+				step: 0.01,
+				value: 1,  //this.eye_radius;
+				label: 'Pupil radius'
+			},
+			pupil_scale_x: {
+				min: 0.2,
+				max: 2,
+				step: 0.01,
+				value: 1,
+				label: 'Scale pupils horizontally'
+			},
+			pupil_scale_y: {
+				min: 0.2,
+				max: 2,
+				step: 0.01,
+				value: 1,
+				label: 'Scale pupils vertically'
+			},
+			// Eyebrow
+			eyebrow_length: {
+				min: 1,
+				max: 30,
+				step: 0.01,
+				value: 10,
+				label: 'Eyebrow length'
+			},
+			eyebrow_eyedistance: {
+				min: 0.3,
+				max: 10,
+				step: 0.01,
+				value: 3, // From the top of the eye
+				label: 'Eyebrow from eye'
+			},
+			eyebrow_angle: {
+				min: -2,
+				max: 2,
+				step: 0.01,
+				value: -0.5,
+				label: 'Eyebrow angle'
+			},
+			eyebrow_spacing: {
+				min: 0,
+				max: 20,
+				step: 0.01,
+				value: 5,
+				label: 'Eyebrow spacing'
+			},
+			// Nose
+			nose_height: {
+				min: 0.4,
+				max: 1,
+				step: 0.01,
+				value: 0.4,
+				label: 'Nose height'
+			},
+			nose_length: {
+				min: 0.2,
+				max: 30,
+				step: 0.01,
+				value: 15,
+				label: 'Nose length'
+			},
+			nose_width: {
+				min: 0,
+				max: 30,
+				step: 0.01,
+				value: 10,
+				label: 'Nose width'
+			},
+			// Mouth
+			mouth_height: {
+				min: 0.2,
+				max: 2,
+				step: 0.01,
+				value: 0.75, 
+				label: 'Mouth height'
+			},
+			mouth_width: {
+				min: 2,
+				max: 100,
+				step: 0.01,
+				value: 20,
+				label: 'Mouth width'
+			},
+			mouth_top_y: {
+				min: -10,
+				max: 30,
+				step: 0.01,
+				value: -2,
+				label: 'Upper lip'
+			},
+			mouth_bottom_y: {
+				min: -10,
+				max: 30,
+				step: 0.01,
+				value: 20,
+				label: 'Lower lip'
+			}					
+	};
+	
+	//Constructs a random face vector.
+	FaceVector.random = function () {
+		var out = {};
+		for (var key in FaceVector.defaults) {
+			if (FaceVector.defaults.hasOwnProperty(key)) {
+				if (!JSUS.in_array(key,['color','lineWidth','scaleX','scaleY'])) {
+					out[key] = FaceVector.defaults[key].min + Math.random() * FaceVector.defaults[key].max;
+				}
 			}
 		}
-		return this.table.parse();
+	
+		out.scaleX = 1;
+		out.scaleY = 1;
+		
+		out.color = 'green';
+		out.lineWidth = 1; 
+		
+		return new FaceVector(out);
 	};
 	
-	ServerInfoDisplay.prototype.listeners = function () {
-		var that = this;
-		node.on('NODEGAME_READY', function(){
-			that.init();
-		});
-	}; 
+	function FaceVector (faceVector) {
+		faceVector = faceVector || {};
+
+		this.scaleX = faceVector.scaleX || 1;
+		this.scaleY = faceVector.scaleY || 1;
+
+
+		this.color = faceVector.color || 'green';
+		this.lineWidth = faceVector.lineWidth || 1;
+		
+		// Merge on key
+		for (var key in FaceVector.defaults) {
+			if (FaceVector.defaults.hasOwnProperty(key)){
+				if (faceVector.hasOwnProperty(key)){
+					this[key] = faceVector[key];
+				}
+				else {
+					this[key] = FaceVector.defaults[key].value;
+				}
+			}
+		}
+		
+	}
+
+	//Constructs a random face vector.
+	FaceVector.prototype.shuffle = function () {
+		for (var key in this) {
+			if (this.hasOwnProperty(key)) {
+				if (FaceVector.defaults.hasOwnProperty(key)) {
+					if (key !== 'color') {
+						this[key] = FaceVector.defaults[key].min + Math.random() * FaceVector.defaults[key].max;
+						
+					}
+				}
+			}
+		}
+	};
 	
+	//Computes the Euclidean distance between two FaceVectors.
+	FaceVector.prototype.distance = function (face) {
+		return FaceVector.distance(this,face);
+	};
+		
+		
+	FaceVector.distance = function (face1, face2) {
+		var sum = 0.0;
+		var diff;
+		
+		for (var key in face1) {
+			if (face1.hasOwnProperty(key)) {
+				diff = face1[key] - face2[key];
+				sum = sum + diff * diff;
+			}
+		}
+		
+		return Math.sqrt(sum);
+	};
+	
+	FaceVector.prototype.toString = function() {
+		var out = 'Face: ';
+		for (var key in this) {
+			if (this.hasOwnProperty(key)) {
+				out += key + ' ' + this[key];
+			}
+		}
+		return out;
+	};
+
 })(node);
 (function (node) {
 	
@@ -14966,436 +15417,475 @@ node.widgets = new Widgets();
 })(node);
 (function (node) {
 	
-	node.widgets.register('VisualState', VisualState);
-	
-	var GameState = node.GameState,
-		JSUS = node.JSUS,
-		Table = node.window.Table;
-	
-// ## Defaults
-	
-	VisualState.defaults = {};
-	VisualState.defaults.id = 'visualstate';
-	VisualState.defaults.fieldset = { 
-		legend: 'State',
-		id: 'visualstate_fieldset'
-	};	
-	
-// ## Meta-data
-	
-	VisualState.name = 'Visual State';
-	VisualState.version = '0.2.1';
-	VisualState.description = 'Visually display current, previous and next state of the game.';
-	
-// ## Dependencies
-	
-	VisualState.dependencies = {
-		JSUS: {},
-		Table: {}
-	};
-	
-	
-	function VisualState (options) {
-		this.id = options.id;
-		this.gameLoop = node.game.gameLoop;
-		
-		this.root = null;		// the parent element
-		this.table = new Table();
-	}
-	
-	VisualState.prototype.getRoot = function () {
-		return this.root;
-	};
-	
-	VisualState.prototype.append = function (root, ids) {
-		var that = this;
-		var PREF = this.id + '_';
-		root.appendChild(this.table.table);
-		this.writeState();
-		return root;
-	};
-		
-	VisualState.prototype.listeners = function () {
-		var that = this;
-		node.on('STATECHANGE', function() {
-			that.writeState();
-		}); 
-	};
-	
-	VisualState.prototype.writeState = function () {
-		var state = false;
-		var pr = false;
-		var nx = false;
-		
-		var miss = '-';
-		
-		if (node.game && node.game.state) {
-			state = this.gameLoop.getName(node.game.state) || miss;
-			pr = this.gameLoop.getName(node.game.previous()) || miss;
-			nx = this.gameLoop.getName(node.game.next()) || miss;
-		}
-		else {
-			state = 'Uninitialized';
-			pr = miss;
-			nx = miss;
-		}
-		this.table.clear(true);
-
-		this.table.addRow(['Previous: ', pr]);
-		this.table.addRow(['Current: ', state]);
-		this.table.addRow(['Next: ', nx]);
-	
-		var t = this.table.select('y', '=', 2);
-		t.addClass('strong');
-		t.select('x','=',0).addClass('underline');
-		this.table.parse();
-	};
-	
-})(node);
-(function (node) {
-
-	var Table = node.window.Table,
-		GameState = node.GameState;
-	
-	node.widgets.register('StateDisplay', StateDisplay);	
+	node.widgets.register('ServerInfoDisplay', ServerInfoDisplay);	
 
 // ## Defaults
 	
-	StateDisplay.defaults = {};
-	StateDisplay.defaults.id = 'statedisplay';
-	StateDisplay.defaults.fieldset = { legend: 'State Display' };		
+	ServerInfoDisplay.defaults = {};
+	ServerInfoDisplay.defaults.id = 'serverinfodisplay';
+	ServerInfoDisplay.defaults.fieldset = {
+			legend: 'Server Info',
+			id: 'serverinfo_fieldset'
+	};		
 	
 // ## Meta-data
 	
-	StateDisplay.name = 'State Display';
-	StateDisplay.version = '0.4.1';
-	StateDisplay.description = 'Display basic information about player\'s status.';
+	ServerInfoDisplay.name = 'Server Info Display';
+	ServerInfoDisplay.version = '0.3';
 	
-	function StateDisplay (options) {
-		
+	function ServerInfoDisplay (options) {	
 		this.id = options.id;
-				
+		
+		
 		this.root = null;
-		this.table = new Table();
+		this.div = document.createElement('div');
+		this.table = null; //new node.window.Table();
+		this.button = null;
+		
 	}
 	
-	// TODO: Write a proper INIT method
-	StateDisplay.prototype.init = function () {};
-	
-	StateDisplay.prototype.getRoot = function () {
-		return this.root;
-	};
-	
-	
-	StateDisplay.prototype.append = function (root) {
+	ServerInfoDisplay.prototype.init = function (options) {
 		var that = this;
-		var PREF = this.id + '_';
-		
-		var idFieldset = PREF + 'fieldset';
-		var idPlayer = PREF + 'player';
-		var idState = PREF + 'state'; 
-			
-		var checkPlayerName = setInterval(function(idState,idPlayer) {
-			if (node.player && node.player.id) {
-				clearInterval(checkPlayerName);
-				that.updateAll();
-			}
-		}, 100);
-	
-		root.appendChild(this.table.table);
-		this.root = root;
-		return root;
-		
-	};
-	
-	StateDisplay.prototype.updateAll = function() {
-		var state = node.game ? new GameState(node.game.state) : new GameState(),
-			id = node.player ? node.player.id : '-';
-			name = node.player && node.player.name ? node.player.name : '-';
-			
+		if (!this.div) {
+			this.div = document.createElement('div');
+		}
+		this.div.innerHTML = 'Waiting for the reply from Server...';
+		if (!this.table) {
+			this.table = new node.window.Table(options);
+		}
 		this.table.clear(true);
-		this.table.addRow(['Name: ', name]);
-		this.table.addRow(['State: ', state.toString()]);
-		this.table.addRow(['Id: ', id]);
-		this.table.parse();
-		
+		this.button = document.createElement('button');
+		this.button.value = 'Refresh';
+		this.button.appendChild(document.createTextNode('Refresh'));
+		this.button.onclick = function(){
+			that.getInfo();
+		};
+		this.root.appendChild(this.button);
+		this.getInfo();
 	};
 	
-	StateDisplay.prototype.listeners = function () {
+	ServerInfoDisplay.prototype.append = function (root) {
+		this.root = root;
+		root.appendChild(this.div);
+		return root;
+	};
+	
+	ServerInfoDisplay.prototype.getInfo = function() {
 		var that = this;
-		var say = node.actions.SAY + '.';
-		var set = node.actions.SET + '.';
-		var get = node.actions.GET + '.'; 
-		var IN =  node.IN;
-		var OUT = node.OUT;
-		
-		node.on('STATECHANGE', function() {
-			that.updateAll();
-		}); 
+		node.get('INFO', function (info) {
+			node.window.removeChildrenFromNode(that.div);
+			that.div.appendChild(that.processInfo(info));
+		});
+	};
+	
+	ServerInfoDisplay.prototype.processInfo = function(info) {
+		this.table.clear(true);
+		for (var key in info) {
+			if (info.hasOwnProperty(key)){
+				this.table.addRow([key,info[key]]);
+			}
+		}
+		return this.table.parse();
+	};
+	
+	ServerInfoDisplay.prototype.listeners = function () {
+		var that = this;
+		node.on('NODEGAME_READY', function(){
+			that.init();
+		});
 	}; 
 	
 })(node);
 (function (node) {
-
-	var GameState = node.GameState,
-		PlayerList = node.PlayerList,
-		Table = node.window.Table,
-		HTMLRenderer = node.window.HTMLRenderer;
 	
-	node.widgets.register('DynamicTable', DynamicTable);
+	// TODO: Introduce rules for update: other vs self
 	
+	node.widgets.register('StateBar', StateBar);	
 	
-	DynamicTable.prototype = new Table();
-	DynamicTable.prototype.constructor = Table;	
+// ## Defaults
 	
-	
-	DynamicTable.id = 'dynamictable';
-	DynamicTable.name = 'Dynamic Table';
-	DynamicTable.version = '0.3.1';
-	
-	DynamicTable.dependencies = {
-		Table: {},
-		JSUS: {},
-		HTMLRenderer: {}
-	};
-	
-	function DynamicTable (options, data) {
-		//JSUS.extend(node.window.Table,this);
-		Table.call(this, options, data);
-		this.options = options;
-		this.id = options.id;
-		this.name = options.name || 'Dynamic Table';
-		this.fieldset = { legend: this.name,
-							id: this.id + '_fieldset'
-		};
-		
-		this.root = null;
-		this.bindings = {};
-		this.init(this.options);
-	}
-	
-	DynamicTable.prototype.init = function (options) {
-		this.options = options;
-		this.name = options.name || this.name;
-		this.auto_update = ('undefined' !== typeof options.auto_update) ? options.auto_update : true;
-		this.replace = options.replace || false;
-		this.htmlRenderer = new HTMLRenderer({renderers: options.renderers});
-		this.c('state', GameState.compare);
-		this.setLeft([]);
-		this.parse(true);
-	};
-		
-	DynamicTable.prototype.bind = function (event, bindings) {
-		if (!event || !bindings) return;
-		var that = this;
-
-		node.on(event, function(msg) {
-			
-			if (bindings.x || bindings.y) {
-				// Cell
-				var func;
-				if (that.replace) {
-					func = function (x, y) {
-						var found = that.get(x,y);
-						if (found.length !== 0) {
-							for (var ci=0; ci < found.length; ci++) {
-								bindings.cell.call(that, msg, found[ci]);
-							}
-						}
-						else {
-							var cell = bindings.cell.call(that, msg, new Table.Cell({x: x, y: y}));
-							that.add(cell);
-						}
-					};
-				}
-				else {
-					func = function (x, y) {
-						var cell = bindings.cell.call(that, msg, new Table.Cell({x: x, y: y}));
-						that.add(cell, x, y);
-					};
-				}
-				
-				var x = bindings.x.call(that, msg);
-				var y = bindings.y.call(that, msg);
-				
-				if (x && y) {
-					
-					x = (x instanceof Array) ? x : [x];
-					y = (y instanceof Array) ? y : [y];
-					
-//					console.log('Bindings found:');
-//					console.log(x);
-//					console.log(y);
-					
-					for (var xi=0; xi < x.length; xi++) {
-						for (var yi=0; yi < y.length; yi++) {
-							// Replace or Add
-							func.call(that, x[xi], y[yi]);
-						}
-					}
-				}
-				// End Cell
-			}
-			
-			// Header
-			if (bindings.header) {
-				var h = bindings.header.call(that, msg);
-				h = (h instanceof Array) ? h : [h];
-				that.setHeader(h);
-			}
-			
-			// Left
-			if (bindings.left) {
-				var l = bindings.left.call(that, msg);
-				if (!JSUS.in_array(l, that.left)) {
-					that.header.push(l);
-				}
-			}
-			
-			// Auto Update?
-			if (that.auto_update) {
-				that.parse();
-			}
-		});
-		
-	};
-
-	DynamicTable.prototype.append = function (root) {
-		this.root = root;
-		root.appendChild(this.table);
-		return root;
-	};
-	
-	DynamicTable.prototype.listeners = function () {}; 
-
-})(node);
-(function (node) {
-	
-	node.widgets.register('GameBoard', GameBoard);
-	
-	var GameState = node.GameState,
-		PlayerList = node.PlayerList;
-
-// ## Defaults	
-	
-	GameBoard.defaults = {};
-	GameBoard.defaults.id = 'gboard';
-	GameBoard.defaults.fieldset = {
-			legend: 'Game Board'
-	};
+	StateBar.defaults = {};
+	StateBar.defaults.id = 'statebar';
+	StateBar.defaults.fieldset = { legend: 'Change Game State' };	
 	
 // ## Meta-data
 	
-	GameBoard.name = 'GameBoard';
-	GameBoard.version = '0.4.0';
-	GameBoard.description = 'Offer a visual representation of the state of all players in the game.';
+	StateBar.name = 'State Bar';
+	StateBar.version = '0.3.1';
+	StateBar.description = 'Provides a simple interface to change the state of the game.';
 	
-	function GameBoard (options) {
-		
-		this.id = options.id || GameBoard.defaults.id;
-		this.status_id = this.id + '_statusbar';
-		
-		this.board = null;
-		this.status = null;
-		this.root = null;
-	
+	function StateBar (options) {
+		this.id = options.id;
+		this.recipient = null;
 	}
 	
-	GameBoard.prototype.append = function (root) {
+	StateBar.prototype.getRoot = function () {
+		return this.root;
+	};
+	
+	StateBar.prototype.append = function (root) {
+		
+		var PREF = this.id + '_';
+		
+		var idButton = PREF + 'sendButton',
+			idStateSel = PREF + 'stateSel',
+			idRecipient = PREF + 'recipient'; 
+				
+		var sendButton = node.window.addButton(root, idButton);
+		var stateSel = node.window.addStateSelector(root, idStateSel);
+		this.recipient = node.window.addRecipientSelector(root, idRecipient);
+		
+		var that = this;
+		
+		node.on('UPDATED_PLIST', function() {
+			node.window.populateRecipientSelector(that.recipient, node.game.pl);
+		});
+		
+		sendButton.onclick = function() {
+	
+			// Should be within the range of valid values
+			// but we should add a check
+			var to = that.recipient.value;
+			
+			// STATE.STEP:ROUND
+			var parseState = /^(\d+)(?:\.(\d+))?(?::(\d+))?$/;
+			
+			var result = parseState.exec(stateSel.value);
+			var state, step, round, stateEvent, stateMsg;
+			if (result !== null) {
+				// Note: not result[0]!
+				state = result[1];
+				step = result[2] || 1;
+				round = result[3] || 1;
+				
+				node.log('Parsed State: ' + result.join("|"));
+				
+				state = new node.GameState({
+					state: state,
+					step: step,
+					round: round
+				});
+				
+				// Self Update
+				if (to === 'ALL') {
+					stateEvent = node.IN + node.actions.SAY + '.STATE';
+					stateMsg = node.msg.createSTATE(stateEvent, state);
+					node.emit(stateEvent, stateMsg);
+				}
+				
+				// Update Others
+				stateEvent = node.OUT + node.actions.SAY + '.STATE';
+				node.emit(stateEvent, state, to);
+			}
+			else {
+				node.err('Not valid state. Not sent.');
+				node.socket.sendTXT('E: not valid state. Not sent');
+			}
+		};
+		
 		this.root = root;
-		this.status = node.window.addDiv(root, this.status_id);
-		this.board = node.window.addDiv(root, this.id);
-		
-		this.updateBoard(node.game.pl);
-		
-		
 		return root;
 	};
 	
-	GameBoard.prototype.listeners = function() {
-		var that = this;		
-//		node.on('in.say.PCONNECT', function (msg) {
-//			that.addPlayerToBoard(msg.data);
-//		});
-//
-//		node.on('in.say.PDISCONNECT', function (msg) {
-//			that.removePlayerFromBoard(msg.data);
-//		});
-		
-		node.on('UPDATED_PLIST', function() {
-			that.updateBoard(node.game.pl);
-		});
-		
+})(node);
+(function (node) {
+	
+	node.widgets.register('Dispatcher', Dispatcher);
+	
+// ## Defaults
+	Dispatcher.defaults = {
+			
+			id: 'dispatcher',
+			
+			fieldset: {  legend: 'Dispatcher' },
+			
+			selectModes: {
+				'RANDOM': 'RANDOM',
+				'FIFO': 'FIFO',
+				'LIFO': 'LIFO'
+			}
 	};
 	
-	GameBoard.prototype.printLine = function (p) {
-
-		var line = '[' + (p.name || p.id) + "]> \t"; 
-		
-		line += '(' +  p.state.round + ') ' + p.state.state + '.' + p.state.step; 
-		line += ' ';
-		
-		switch (p.state.is) {
-
-			case GameState.iss.UNKNOWN:
-				line += '(unknown)';
-				break;
-				
-			case GameState.iss.LOADING:
-				line += '(loading)';
-				break;
-				
-			case GameState.iss.LOADED:
-				line += '(loaded)';
-				break;
-				
-			case GameState.iss.PLAYING:
-				line += '(playing)';
-				break;
-			case GameState.iss.DONE:
-				line += '(done)';
-				break;		
-			default:
-				line += '('+p.state.is+')';
-				break;		
-		}
-		
-		if (p.state.paused) {
-			line += ' (P)';
-		}
-		
-		return line;
-	};
-	
-	GameBoard.prototype.printSeparator = function (p) {
-		return W.getElement('hr', null, {style: 'color: #CCC;'});
+	  
+// ## Dependencies
+	Dispatcher.dependencies = {
+		JSUS: {},
+		Table: {},
+		W: {}
 	};
 	
 	
-	GameBoard.prototype.updateBoard = function (pl) {
+// ## Meta-data
+	Dispatcher.name = 'Dispatcher';
+	Dispatcher.version = '0.1';
+	Dispatcher.description = 'Redirects sets of players to an uri. Valid only for the admin channel.';
+		
+	function Dispatcher(options) {
+		
+		
+		this.uri = W.getTextInput('uri');
+		this.queryString;
+		
+		this.autoVsManual;
+		
+		this.pSelectMode = W.getSelect('dispatcher_selection');
+		W.populateSelect(this.pSelectMode, Dispatcher.defaults.selectModes);
+		
+		this.minPlayers = W.getTextInput('dispatcher_minplayers');
+		this.maxPlayers = W.getTextInput('dispatcher_maxplayers');
+		
+		this.queryTA = W.getTextArea('query', {disabled: "disabled" });
+		
+		this.dispatchButton = null;
+		this.previewButton = null;
+		
+		
+		this.previewUri = W.getTextInput('preview_uri');
+		
+		this.statusBar = W.getDiv('dispatcher_status');
+		
+		this.root = null;
+		
+		this.createQueryString = options.createQueryString || function(){}; 
+		
+		this.queryTA.value = this.createQueryString.toString()
+	}
+	
+	
+	Dispatcher.prototype.append = function (root) {
 		var that = this;
 		
-		this.status.innerHTML = 'Updating...';
 		
-		var player, separator;
+		root.appendChild(this.createURITable());
+		W.addBreak(root);
+		root.appendChild(this.createConditions());
+		//root.appendChild(this.createAutoVsManual());
+		this.dispatchButton = W.addEventButton('DISPATCH', 'Dispatch', root, 'dispatch');
+		this.dispatchButton.onclick = function(){
+			that.dispatch();
+		};
 		
-		if (pl.length) {
-			that.board.innerHTML = '';
-			pl.forEach( function(p) {
-				player = that.printLine(p);
-				
-				W.write(player, that.board);
-				
-				separator = that.printSeparator(p);
-				W.write(separator, that.board);
+		this.previewButton = W.addButton(root, 'dispatch_preview', 'Preview');
+		this.previewButton.onclick = function(){
+			that.preview();
+		};
+		
+		root.appendChild(this.statusBar);
+		
+		return root;
+		
+	};
+		
+	Dispatcher.prototype.createURITable = function() {
+		var root = new W.Table({id: 'pt_uritable'});
+		root.addRow(['Uri', this.uri]);
+		root.addRow(['Query', this.queryTA]);
+		root.addRow(['Preview', this.previewUri]);
+		return root.parse();
+	};
+
+	
+	Dispatcher.prototype.createConditions = function() {
+		var root = new W.Table({id: 'dispatcher_conditions'});
+		root.addRow(['MinPlayers', this.minPlayers]);
+		root.addRow(['MaxPlayers', this.maxPlayers]);
+		root.addRow(['Selection', this.pSelectMode]);
+		return root.parse();
+	};
+	
+	Dispatcher.prototype.dispatch = function() {
+		var that = this;
+		var pl = this.dispatchables(),
+			uriBase = this.getUri(),
+			uriQuery = null, uri = null;
+		
+		if (!uriBase) {
+			this.status('uri is empty!');
+			return false;
+		}
+		
+		if (pl) {
+			pl.each(function(p) {
+				uri = that.composeURI(uriBase, p); 
+				console.log(p.sid)
+				node.redirect(uri, p.sid);
 			});
 		}
 		
-		
-		this.status.innerHTML = 'Connected players: ' + node.game.pl.length;
 	};
 	
-})(node);
+	Dispatcher.prototype.preview = function() {
+		var pl = this.dispatchables(),
+			uriBase = this.getUri();
+		
+		if (pl) {
+			console.log(uriBase);
+			console.log(pl.getRandom());
+			this.previewUri.value = this.composeURI(uriBase, pl.getRandom());
+		} 
+			
+	};
+	
+	
+	Dispatcher.prototype.composeURI = function(uriBase, p) {
+		var uriQuery = this.createQueryString(p);
+		return uriQuery ? uriBase + '?' + uriQuery : uriBase;
+	};
+	
+	Dispatcher.prototype.getPlayerCount = function() {
+		if (!node.game || !node.game.pl) return -1;
+		return node.game.pl.count();
+	};
+	
+	Dispatcher.prototype.getUri = function() {
+		return this.uri.value;
+	};
+	
+	Dispatcher.prototype.getMinPlayers = function() {
+		var v = this.minPlayers.value;
+		return v || 0;
+	};
+	
+	Dispatcher.prototype.getMaxPlayers = function() {
+		var v = this.maxPlayers.value;
+		return v || 10000;
+	};
+	
+	Dispatcher.prototype.getPSelectMode = function() {
+		return this.pSelectMode.value;
+	};
+	
+	Dispatcher.prototype.status = function(txt) {
+		this.statusBar.innerHTML = txt;
+	};
+	
+	Dispatcher.prototype.dispatchables = function() {
+		// get players
+		var psmode = this.getPSelectMode(), 
+			npl = this.getPlayerCount();
+		
+		if (npl <= 0) {
+			this.status('no player connected!');
+			return false;
+		}
+		
+		if (npl < this.getMinPlayers()) {
+			this.status('not enough players!');
+			return false;
+		}
+		
+		if (npl > this.getMaxPlayers()) {
+			
+			switch(psmode) {
+			
+			case Dispatcher.defaults.selectModes.RANDOM:
+				node.game.pl.shuffle();
+				break;
+				
+			case Dispatcher.defaults.selectModes.FIFO:
+				node.game.pl.sort('count');
+				break;
+			
+			case Dispatcher.defaults.selectModes.LIFO:
+				node.game.pl.sort('count');
+				node.game.pl.reverse();
+				break;
+			default:
+				this.status('Unrecognize option ' + psmode);
+				return false;
+			};
+			
+			var o = node.game.pl.limit(this.getMaxPlayers());
+			console.log(o.length);
+			return o;
+		}
+		
+		return node.game.pl;
+	};
+	
+	
+//	function PlayerTable(options) {
+//		this.id = options.id || 'playertable';
+//		
+//		this.pl = options.pl || node.game.pl;
+//		
+////		this.pl.index('pid', function(p){
+////			return p.id;
+////		});
+//		
+////		node.on('', function(p){
+////			var p = p[0];
+////			W.getElementById(p.id).remove();
+////		});
+//		
+////		this.table.on('insert', function())
+//		
+//		this.parsePlayer = function(p) {
+//			return p.id;
+//		};
+//		
+//		this.root = options.root;
+//		
+//	};
+//		
+//	PlayerTable.prototype.createRow = function(line) {
+//		var options = {
+//				
+//		};
+//		W.sprintf(line, this.root);
+//	};
+//	
+//	PlayerTable.prototype.destroyRow = function(p) {
+//		dv.parentNode.removeChild(dv);
+//	};
+//	
+//	PlayerTable.prototype.listeners = function() {
+//		var that = this;
+//		
+//		node.on('in.say.PCONNECT', function(msg) {
+//			var line = that.parsePlayer(msg.data);
+//			that.createRow(line);
+//		});
+//		
+//		node.on('in.say.PDISCONNECT', function(msg) {
+//			var 
+//			that.destroyRow(msg.data);
+//		});
+//		
+//	};
+	
+//	Dispatcher.prototype.listeners = function() {
+//		var that = this;
+////		node.on('UPDATED_PLIST', function() {
+////			node.window.populateRecipientSelector(that.recipient, node.game.pl);
+////		});
+//	};
+//	
+//	Dispatcher.prototype.createManualSelectTable = function() {
+//		this.manualSelect = new Table();
+//	};
+//	
+//	Dispatcher.prototype.createAutoVsManual = function() {
+//		var root = W.getElement('span', 'autoVsManual');
+//		W.write('Auto', root);
+//		W.addRadioButton(root, 'auto', { name: 'autoVsmanual', value: 'auto' } );
+//		W.write(' Manual', root);
+//		W.addRadioButton(root, 'manual', { name: 'autoVsmanual', value: 'manual' } );
+//		return root;
+//	};
+//	
+//	Dispatcher.prototype.createAutoDispatch = function() {
+//		var root = new W.Table({id: 'auto'});
+//		root.addRow(['Enabled', W.getCheckBox('uri')]);
+////		W.write('Enabled', root);
+////		W.addRadioButton(root, 'auto', { name: 'autoVsmanual', value: 'auto' } );
+////		W.write(' Manual', root);
+////		W.addRadioButton(root, 'manual', { name: 'autoVsmanual', value: 'manual' } );
+//		return root.parse();
+//	};
+//	
+	
+})(node);	
 (function (node) {
 	
 	var Table = node.window.Table;
@@ -16041,6 +16531,89 @@ node.widgets = new Widgets();
 })(node);
 (function (node) {
 
+	var Table = node.window.Table,
+		GameState = node.GameState;
+	
+	node.widgets.register('StateDisplay', StateDisplay);	
+
+// ## Defaults
+	
+	StateDisplay.defaults = {};
+	StateDisplay.defaults.id = 'statedisplay';
+	StateDisplay.defaults.fieldset = { legend: 'State Display' };		
+	
+// ## Meta-data
+	
+	StateDisplay.name = 'State Display';
+	StateDisplay.version = '0.4.1';
+	StateDisplay.description = 'Display basic information about player\'s status.';
+	
+	function StateDisplay (options) {
+		
+		this.id = options.id;
+				
+		this.root = null;
+		this.table = new Table();
+	}
+	
+	// TODO: Write a proper INIT method
+	StateDisplay.prototype.init = function () {};
+	
+	StateDisplay.prototype.getRoot = function () {
+		return this.root;
+	};
+	
+	
+	StateDisplay.prototype.append = function (root) {
+		var that = this;
+		var PREF = this.id + '_';
+		
+		var idFieldset = PREF + 'fieldset';
+		var idPlayer = PREF + 'player';
+		var idState = PREF + 'state'; 
+			
+		var checkPlayerName = setInterval(function(idState,idPlayer) {
+			if (node.player && node.player.id) {
+				clearInterval(checkPlayerName);
+				that.updateAll();
+			}
+		}, 100);
+	
+		root.appendChild(this.table.table);
+		this.root = root;
+		return root;
+		
+	};
+	
+	StateDisplay.prototype.updateAll = function() {
+		var state = node.game ? new GameState(node.game.state) : new GameState(),
+			id = node.player ? node.player.id : '-';
+			name = node.player && node.player.name ? node.player.name : '-';
+			
+		this.table.clear(true);
+		this.table.addRow(['Name: ', name]);
+		this.table.addRow(['State: ', state.toString()]);
+		this.table.addRow(['Id: ', id]);
+		this.table.parse();
+		
+	};
+	
+	StateDisplay.prototype.listeners = function () {
+		var that = this;
+		var say = node.actions.SAY + '.';
+		var set = node.actions.SET + '.';
+		var get = node.actions.GET + '.'; 
+		var IN =  node.IN;
+		var OUT = node.OUT;
+		
+		node.on('STATECHANGE', function() {
+			that.updateAll();
+		}); 
+	}; 
+	
+})(node);
+(function (node) {
+
 	var JSUS = node.JSUS;
 
 	node.widgets.register('EventButton', EventButton);
@@ -16139,637 +16712,346 @@ node.widgets = new Widgets();
 })(node);
 (function (node) {
 	
-	var JSUS = node.JSUS,
-		Table = node.window.Table;
 	
-	node.widgets.register('ChernoffFaces', ChernoffFaces);
+	// TODO: Introduce rules for update: other vs self
 	
-	// ## Defaults
+	node.widgets.register('NextPreviousState', NextPreviousState);
 	
-	ChernoffFaces.defaults = {};
-	ChernoffFaces.defaults.id = 'ChernoffFaces';
-	ChernoffFaces.defaults.canvas = {};
-	ChernoffFaces.defaults.canvas.width = 100;
-	ChernoffFaces.defaults.canvas.heigth = 100;
+// ## Defaults
 	
-	// ## Meta-data
+	NextPreviousState.defaults = {};
+	NextPreviousState.defaults.id = 'nextprevious';
+	NextPreviousState.defaults.fieldset = { legend: 'Rew-Fwd' };		
 	
-	ChernoffFaces.name = 'Chernoff Faces';
-	ChernoffFaces.version = '0.3';
-	ChernoffFaces.description = 'Display parametric data in the form of a Chernoff Face.';
+// ## Meta-data
 	
-	// ## Dependencies 
-	ChernoffFaces.dependencies = {
-		JSUS: {},
-		Table: {},
-		Canvas: {},
-		'Controls.Slider': {}
-	};
-	
-	ChernoffFaces.FaceVector = FaceVector;
-	ChernoffFaces.FacePainter = FacePainter;
-	
-	function ChernoffFaces (options) {
-		this.options = options;
+	NextPreviousState.name = 'Next,Previous State';
+	NextPreviousState.version = '0.3.1';
+	NextPreviousState.description = 'Adds two buttons to push forward or rewind the state of the game by one step.';
+		
+	function NextPreviousState(options) {
 		this.id = options.id;
-		this.table = new Table({id: 'cf_table'});
-		this.root = options.root || document.createElement('div');
-		this.root.id = this.id;
-		
-		this.sc = node.widgets.get('Controls.Slider');	// Slider Controls
-		this.fp = null;	// Face Painter
-		this.canvas = null;
-
-		this.change = 'CF_CHANGE';
-		var that = this;
-		this.changeFunc = function () {
-			that.draw(that.sc.getAllValues());
-		};
-		
-		this.features = null;
-		this.controls = null;
-		
-		this.init(this.options);
 	}
 	
-	ChernoffFaces.prototype.init = function (options) {
-		var that = this;
-		this.id = options.id || this.id;
-		var PREF = this.id + '_';
-		
-		this.features = options.features || this.features || FaceVector.random();
-		
-		this.controls = ('undefined' !== typeof options.controls) ?  options.controls : true;
-		
-		var idCanvas = (options.idCanvas) ? options.idCanvas : PREF + 'canvas';
-		var idButton = (options.idButton) ? options.idButton : PREF + 'button';
-		
-		this.canvas = node.window.getCanvas(idCanvas, options.canvas);
-		this.fp = new FacePainter(this.canvas);		
-		this.fp.draw(new FaceVector(this.features));
-		
-		var sc_options = {
-			id: 'cf_controls',
-			features: JSUS.mergeOnKey(FaceVector.defaults, this.features, 'value'),
-			change: this.change,
-			fieldset: {id: this.id + '_controls_fieldest', 
-						legend: this.controls.legend || 'Controls'
-			},
-			submit: 'Send'
-		};
-		
-		this.sc = node.widgets.get('Controls.Slider', sc_options);
-		
-		// Controls are always there, but may not be visible
-		if (this.controls) {
-			this.table.add(this.sc);
-		}
-		
-		// Dealing with the onchange event
-		if ('undefined' === typeof options.change) {	
-			node.on(this.change, this.changeFunc); 
-		} else {
-			if (options.change) {
-				node.on(options.change, this.changeFunc);
-			}
-			else {
-				node.removeListener(this.change, this.changeFunc);
-			}
-			this.change = options.change;
-		}
-		
-		
-		this.table.add(this.canvas);
-		this.table.parse();
-		this.root.appendChild(this.table.table);
-	};
-	
-	ChernoffFaces.prototype.getCanvas = function() {
-		return this.canvas;
-	};
-	
-	ChernoffFaces.prototype.append = function (root) {
-		root.appendChild(this.root);
-		this.table.parse();
+	NextPreviousState.prototype.getRoot = function () {
 		return this.root;
 	};
 	
-	ChernoffFaces.prototype.draw = function (features) {
-		if (!features) return;
-		var fv = new FaceVector(features);
-		this.fp.redraw(fv);
-		// Without merging wrong values are passed as attributes
-		this.sc.init({features: JSUS.mergeOnKey(FaceVector.defaults, features, 'value')});
-		this.sc.refresh();
-	};
+	NextPreviousState.prototype.append = function (root) {
+		var idRew = this.id + '_button';
+		var idFwd = this.id + '_button';
+		
+		var rew = node.window.addButton(root, idRew, '<<');
+		var fwd = node.window.addButton(root, idFwd, '>>');
+		
+		
+		var that = this;
 	
-	ChernoffFaces.prototype.getAllValues = function() {
-		//if (this.sc) return this.sc.getAllValues();
-		return this.fp.face;
-	};
-	
-	ChernoffFaces.prototype.randomize = function() {
-		var fv = FaceVector.random();
-		this.fp.redraw(fv);
-	
-		var sc_options = {
-				features: JSUS.mergeOnValue(FaceVector.defaults, fv),
-				change: this.change
+		var updateState = function (state) {
+			if (state) {
+				var stateEvent = node.IN + node.actions.SAY + '.STATE';
+				var stateMsg = node.msg.createSTATE(stateEvent, state);
+				// Self Update
+				node.emit(stateEvent, stateMsg);
+				
+				// Update Others
+				stateEvent = node.OUT + node.actions.SAY + '.STATE';
+				node.emit(stateEvent, state, 'ALL');
+			}
+			else {
+				node.log('No next/previous state. Not sent', 'ERR');
+			}
 		};
-		this.sc.init(sc_options);
-		this.sc.refresh();
-	
-		return true;
+		
+		fwd.onclick = function() {
+			updateState(node.game.next());
+		};
+			
+		rew.onclick = function() {
+			updateState(node.game.previous());
+		};
+		
+		this.root = root;
+		return root;
 	};
 	
+})(node);
+(function (node) {
 	
-	// FacePainter
-	// The class that actually draws the faces on the Canvas
-	function FacePainter (canvas, settings) {
-			
-		this.canvas = new node.window.Canvas(canvas);
+	node.widgets.register('NDDBBrowser', NDDBBrowser);
+	
+	var JSUS = node.JSUS,
+		NDDB = node.NDDB,
+		TriggerManager = node.TriggerManager;
+
+// ## Defaults
+	
+	NDDBBrowser.defaults = {};
+	NDDBBrowser.defaults.id = 'nddbbrowser';
+	NDDBBrowser.defaults.fieldset = false;
+	
+// ## Meta-data
+	
+	NDDBBrowser.name = 'NDDBBrowser';
+	NDDBBrowser.version = '0.1.2';
+	NDDBBrowser.description = 'Provides a very simple interface to control a NDDB istance.';
+	
+// ## Dependencies
+	
+	NDDBBrowser.dependencies = {
+		JSUS: {},
+		NDDB: {},
+		TriggerManager: {}
+	};
+	
+	function NDDBBrowser (options) {
+		this.options = options;
+		this.nddb = null;
 		
-		this.scaleX = canvas.width / ChernoffFaces.defaults.canvas.width;
-		this.scaleY = canvas.height / ChernoffFaces.defaults.canvas.heigth;
+		this.commandsDiv = document.createElement('div');
+		this.id = options.id;
+		if ('undefined' !== typeof this.id) {
+			this.commandsDiv.id = this.id;
+		}
+		
+		this.info = null;
+		this.init(this.options);
 	}
 	
-	//Draws a Chernoff face.
-	FacePainter.prototype.draw = function (face, x, y) {
-		if (!face) return;
-		this.face = face;
-		this.fit2Canvas(face);
-		this.canvas.scale(face.scaleX, face.scaleY);
+	NDDBBrowser.prototype.init = function (options) {
 		
-		//console.log('Face Scale ' + face.scaleY + ' ' + face.scaleX );
-		
-		x = x || this.canvas.centerX;
-		y = y || this.canvas.centerY;
-		
-		this.drawHead(face, x, y);
-			
-		this.drawEyes(face, x, y);
-	
-		this.drawPupils(face, x, y);
-	
-		this.drawEyebrow(face, x, y);
-	
-		this.drawNose(face, x, y);
-		
-		this.drawMouth(face, x, y);
-		
-	};		
-		
-	FacePainter.prototype.redraw = function (face, x, y) {
-		this.canvas.clear();
-		this.draw(face,x,y);
-	};
-	
-	FacePainter.prototype.scale = function (x, y) {
-		this.canvas.scale(this.scaleX, this.scaleY);
-	};
-	
-	// TODO: Improve. It eats a bit of the margins
-	FacePainter.prototype.fit2Canvas = function(face) {
-		if (!this.canvas) {
-		console.log('No canvas found');
-			return;
+		function addButtons() {
+			var id = this.id;
+			node.window.addEventButton(id + '_GO_TO_FIRST', '<<', this.commandsDiv, 'go_to_first');
+			node.window.addEventButton(id + '_GO_TO_PREVIOUS', '<', this.commandsDiv, 'go_to_previous');
+			node.window.addEventButton(id + '_GO_TO_NEXT', '>', this.commandsDiv, 'go_to_next');
+			node.window.addEventButton(id + '_GO_TO_LAST', '>>', this.commandsDiv, 'go_to_last');
+			node.window.addBreak(this.commandsDiv);
+		}
+		function addInfoBar() {
+			var span = this.commandsDiv.appendChild(document.createElement('span'));
+			return span;
 		}
 		
-		var ration;
-		if (this.canvas.width > this.canvas.height) {
-			ratio = this.canvas.width / face.head_radius * face.head_scale_x;
-		}
-		else {
-			ratio = this.canvas.height / face.head_radius * face.head_scale_y;
-		}
 		
-		face.scaleX = ratio / 2;
-		face.scaleY = ratio / 2;
+		addButtons.call(this);
+		this.info = addInfoBar.call(this);
+		
+		this.tm = new TriggerManager();
+		this.tm.init(options.triggers);
+		this.nddb = options.nddb || new NDDB({auto_update_pointer: true});
 	};
 	
-	FacePainter.prototype.drawHead = function (face, x, y) {
-		
-		var radius = face.head_radius;
-		
-		this.canvas.drawOval({
-						x: x, 
-						y: y,
-						radius: radius,
-						scale_x: face.head_scale_x,
-						scale_y: face.head_scale_y,
-						color: face.color,
-						lineWidth: face.lineWidth
-		});
+	NDDBBrowser.prototype.append = function (root) {
+		this.root = root;
+		root.appendChild(this.commandsDiv);
+		return root;
 	};
 	
-	FacePainter.prototype.drawEyes = function (face, x, y) {
-		
-		var height = FacePainter.computeFaceOffset(face, face.eye_height, y);
-		var spacing = face.eye_spacing;
-			
-		var radius = face.eye_radius;
-		//console.log(face);
-		this.canvas.drawOval({
-						x: x - spacing,
-						y: height,
-						radius: radius,
-						scale_x: face.eye_scale_x,
-						scale_y: face.eye_scale_y,
-						color: face.color,
-						lineWidth: face.lineWidth
-						
-		});
-		//console.log(face);
-		this.canvas.drawOval({
-						x: x + spacing,
-						y: height,
-						radius: radius,
-						scale_x: face.eye_scale_x,
-						scale_y: face.eye_scale_y,
-						color: face.color,
-						lineWidth: face.lineWidth
-		});
+	NDDBBrowser.prototype.getRoot = function (root) {
+		return this.commandsDiv;
 	};
 	
-	FacePainter.prototype.drawPupils = function (face, x, y) {
-			
-		var radius = face.pupil_radius;
-		var spacing = face.eye_spacing;
-		var height = FacePainter.computeFaceOffset(face, face.eye_height, y);
-		
-		this.canvas.drawOval({
-						x: x - spacing,
-						y: height,
-						radius: radius,
-						scale_x: face.pupil_scale_x,
-						scale_y: face.pupil_scale_y,
-						color: face.color,
-						lineWidth: face.lineWidth
-		});
-		
-		this.canvas.drawOval({
-						x: x + spacing,
-						y: height,
-						radius: radius,
-						scale_x: face.pupil_scale_x,
-						scale_y: face.pupil_scale_y,
-						color: face.color,
-						lineWidth: face.lineWidth
-		});
-	
+	NDDBBrowser.prototype.add = function (o) {
+		return this.nddb.insert(o);
 	};
 	
-	FacePainter.prototype.drawEyebrow = function (face, x, y) {
-		
-		var height = FacePainter.computeEyebrowOffset(face,y);
-		var spacing = face.eyebrow_spacing;
-		var length = face.eyebrow_length;
-		var angle = face.eyebrow_angle;
-		
-		this.canvas.drawLine({
-						x: x - spacing,
-						y: height,
-						length: length,
-						angle: angle,
-						color: face.color,
-						lineWidth: face.lineWidth
-					
-						
-		});
-		
-		this.canvas.drawLine({
-						x: x + spacing,
-						y: height,
-						length: 0-length,
-						angle: -angle,	
-						color: face.color,
-						lineWidth: face.lineWidth
-		});
-		
+	NDDBBrowser.prototype.sort = function (key) {
+		return this.nddb.sort(key);
 	};
 	
-	FacePainter.prototype.drawNose = function (face, x, y) {
-		
-		var height = FacePainter.computeFaceOffset(face, face.nose_height, y);
-		var nastril_r_x = x + face.nose_width / 2;
-		var nastril_r_y = height + face.nose_length;
-		var nastril_l_x = nastril_r_x - face.nose_width;
-		var nastril_l_y = nastril_r_y; 
-		
-		this.canvas.ctx.lineWidth = face.lineWidth;
-		this.canvas.ctx.strokeStyle = face.color;
-		
-		this.canvas.ctx.save();
-		this.canvas.ctx.beginPath();
-		this.canvas.ctx.moveTo(x,height);
-		this.canvas.ctx.lineTo(nastril_r_x,nastril_r_y);
-		this.canvas.ctx.lineTo(nastril_l_x,nastril_l_y);
-		//this.canvas.ctx.closePath();
-		this.canvas.ctx.stroke();
-		this.canvas.ctx.restore();
-	
-	};
-			
-	FacePainter.prototype.drawMouth = function (face, x, y) {
-		
-		var height = FacePainter.computeFaceOffset(face, face.mouth_height, y);
-		var startX = x - face.mouth_width / 2;
-		var endX = x + face.mouth_width / 2;
-		
-		var top_y = height - face.mouth_top_y;
-		var bottom_y = height + face.mouth_bottom_y;
-		
-		// Upper Lip
-		this.canvas.ctx.moveTo(startX,height);
-		this.canvas.ctx.quadraticCurveTo(x, top_y, endX, height);
-		this.canvas.ctx.stroke();
-		
-		//Lower Lip
-		this.canvas.ctx.moveTo(startX,height);
-		this.canvas.ctx.quadraticCurveTo(x, bottom_y, endX, height);
-		this.canvas.ctx.stroke();
-	
-	};	
-	
-	
-	//TODO Scaling ?
-	FacePainter.computeFaceOffset = function (face, offset, y) {
-		y = y || 0;
-		//var pos = y - face.head_radius * face.scaleY + face.head_radius * face.scaleY * 2 * offset;
-		var pos = y - face.head_radius + face.head_radius * 2 * offset;
-		//console.log('POS: ' + pos);
-		return pos;
+	NDDBBrowser.prototype.addTrigger = function (trigger) {
+		return this.tm.addTrigger(trigger);
 	};
 	
-	FacePainter.computeEyebrowOffset = function (face, y) {
-		y = y || 0;
-		var eyemindistance = 2;
-		return FacePainter.computeFaceOffset(face, face.eye_height, y) - eyemindistance - face.eyebrow_eyedistance;
+	NDDBBrowser.prototype.removeTrigger = function (trigger) {
+		return this.tm.removeTrigger(trigger);
 	};
 	
-	
-	/*!
-	* 
-	* A description of a Chernoff Face.
-	*
-	* This class packages the 11-dimensional vector of numbers from 0 through 1 that completely
-	* describe a Chernoff face.  
-	*
-	*/
-
-	
-	FaceVector.defaults = {
-			// Head
-			head_radius: {
-				// id can be specified otherwise is taken head_radius
-				min: 10,
-				max: 100,
-				step: 0.01,
-				value: 30,
-				label: 'Face radius'
-			},
-			head_scale_x: {
-				min: 0.2,
-				max: 2,
-				step: 0.01,
-				value: 0.5,
-				label: 'Scale head horizontally'
-			},
-			head_scale_y: {
-				min: 0.2,
-				max: 2,
-				step: 0.01,
-				value: 1,
-				label: 'Scale head vertically'
-			},
-			// Eye
-			eye_height: {
-				min: 0.1,
-				max: 0.9,
-				step: 0.01,
-				value: 0.4,
-				label: 'Eye height'
-			},
-			eye_radius: {
-				min: 2,
-				max: 30,
-				step: 0.01,
-				value: 5,
-				label: 'Eye radius'
-			},
-			eye_spacing: {
-				min: 0,
-				max: 50,
-				step: 0.01,
-				value: 10,
-				label: 'Eye spacing'
-			},
-			eye_scale_x: {
-				min: 0.2,
-				max: 2,
-				step: 0.01,
-				value: 1,
-				label: 'Scale eyes horizontally'
-			},
-			eye_scale_y: {
-				min: 0.2,
-				max: 2,
-				step: 0.01,
-				value: 1,
-				label: 'Scale eyes vertically'
-			},
-			// Pupil
-			pupil_radius: {
-				min: 1,
-				max: 9,
-				step: 0.01,
-				value: 1,  //this.eye_radius;
-				label: 'Pupil radius'
-			},
-			pupil_scale_x: {
-				min: 0.2,
-				max: 2,
-				step: 0.01,
-				value: 1,
-				label: 'Scale pupils horizontally'
-			},
-			pupil_scale_y: {
-				min: 0.2,
-				max: 2,
-				step: 0.01,
-				value: 1,
-				label: 'Scale pupils vertically'
-			},
-			// Eyebrow
-			eyebrow_length: {
-				min: 1,
-				max: 30,
-				step: 0.01,
-				value: 10,
-				label: 'Eyebrow length'
-			},
-			eyebrow_eyedistance: {
-				min: 0.3,
-				max: 10,
-				step: 0.01,
-				value: 3, // From the top of the eye
-				label: 'Eyebrow from eye'
-			},
-			eyebrow_angle: {
-				min: -2,
-				max: 2,
-				step: 0.01,
-				value: -0.5,
-				label: 'Eyebrow angle'
-			},
-			eyebrow_spacing: {
-				min: 0,
-				max: 20,
-				step: 0.01,
-				value: 5,
-				label: 'Eyebrow spacing'
-			},
-			// Nose
-			nose_height: {
-				min: 0.4,
-				max: 1,
-				step: 0.01,
-				value: 0.4,
-				label: 'Nose height'
-			},
-			nose_length: {
-				min: 0.2,
-				max: 30,
-				step: 0.01,
-				value: 15,
-				label: 'Nose length'
-			},
-			nose_width: {
-				min: 0,
-				max: 30,
-				step: 0.01,
-				value: 10,
-				label: 'Nose width'
-			},
-			// Mouth
-			mouth_height: {
-				min: 0.2,
-				max: 2,
-				step: 0.01,
-				value: 0.75, 
-				label: 'Mouth height'
-			},
-			mouth_width: {
-				min: 2,
-				max: 100,
-				step: 0.01,
-				value: 20,
-				label: 'Mouth width'
-			},
-			mouth_top_y: {
-				min: -10,
-				max: 30,
-				step: 0.01,
-				value: -2,
-				label: 'Upper lip'
-			},
-			mouth_bottom_y: {
-				min: -10,
-				max: 30,
-				step: 0.01,
-				value: 20,
-				label: 'Lower lip'
-			}					
+	NDDBBrowser.prototype.resetTriggers = function () {
+		return this.tm.resetTriggers();
 	};
 	
-	//Constructs a random face vector.
-	FaceVector.random = function () {
-		var out = {};
-		for (var key in FaceVector.defaults) {
-			if (FaceVector.defaults.hasOwnProperty(key)) {
-				if (!JSUS.in_array(key,['color','lineWidth','scaleX','scaleY'])) {
-					out[key] = FaceVector.defaults[key].min + Math.random() * FaceVector.defaults[key].max;
-				}
+	NDDBBrowser.prototype.listeners = function() {
+		var that = this;
+		var id = this.id;
+		
+		function notification (el, text) {
+			if (el) {
+				node.emit(id + '_GOT', el);
+				this.writeInfo((this.nddb.nddb_pointer + 1) + '/' + this.nddb.length);
 			}
-		}
-	
-		out.scaleX = 1;
-		out.scaleY = 1;
-		
-		out.color = 'green';
-		out.lineWidth = 1; 
-		
-		return new FaceVector(out);
-	};
-	
-	function FaceVector (faceVector) {
-		faceVector = faceVector || {};
-
-		this.scaleX = faceVector.scaleX || 1;
-		this.scaleY = faceVector.scaleY || 1;
-
-
-		this.color = faceVector.color || 'green';
-		this.lineWidth = faceVector.lineWidth || 1;
-		
-		// Merge on key
-		for (var key in FaceVector.defaults) {
-			if (FaceVector.defaults.hasOwnProperty(key)){
-				if (faceVector.hasOwnProperty(key)){
-					this[key] = faceVector[key];
-				}
-				else {
-					this[key] = FaceVector.defaults[key].value;
-				}
+			else {
+				this.writeInfo('No element found');
 			}
 		}
 		
+		node.on(id + '_GO_TO_FIRST', function() {
+			var el = that.tm.pullTriggers(that.nddb.first());
+			notification.call(that, el);
+		});
+		
+		node.on(id + '_GO_TO_PREVIOUS', function() {
+			var el = that.tm.pullTriggers(that.nddb.previous());
+			notification.call(that, el);
+		});
+		
+		node.on(id + '_GO_TO_NEXT', function() {
+			var el = that.tm.pullTriggers(that.nddb.next());
+			notification.call(that, el);
+		});
+
+		node.on(id + '_GO_TO_LAST', function() {
+			var el = that.tm.pullTriggers(that.nddb.last());
+			notification.call(that, el);
+			
+		});
+	};
+	
+	NDDBBrowser.prototype.writeInfo = function (text) {
+		if (this.infoTimeout) clearTimeout(this.infoTimeout);
+		this.info.innerHTML = text;
+		var that = this;
+		this.infoTimeout = setTimeout(function(){
+			that.info.innerHTML = '';
+		}, 2000);
+	};
+	
+	
+})(node);
+(function (node) {
+	
+	node.widgets.register('Wall', Wall);
+	
+	var JSUS = node.JSUS;
+
+// ## Defaults
+	
+	Wall.defaults = {};
+	Wall.defaults.id = 'wall';
+	Wall.defaults.fieldset = { legend: 'Game Log' };		
+	
+// ## Meta-data
+	
+
+	Wall.name = 'Wall';
+	Wall.version = '0.3';
+	Wall.description = 'Intercepts all LOG events and prints them ';
+	Wall.description += 'into a DIV element with an ordinal number and a timestamp.';
+
+// ## Dependencies
+	
+	Wall.dependencies = {
+		JSUS: {}
+	};
+	
+	function Wall (options) {
+		this.id = options.id || Wall.id;
+		this.name = options.name || this.name;
+		this.buffer = [];
+		this.counter = 0;
+
+		this.wall = node.window.getElement('pre', this.id);
 	}
+	
+	Wall.prototype.init = function (options) {
+		options = options || {};
+		this.counter = options.counter || this.counter;
+	};
+	
+	Wall.prototype.append = function (root) {
+		return root.appendChild(this.wall);
+	};
+	
+	Wall.prototype.getRoot = function () {
+		return this.wall;
+	};
+	
+	Wall.prototype.listeners = function() {
+		var that = this;	
+		node.on('LOG', function (msg) {
+			that.debuffer();
+			that.write(msg);
+		});
+	}; 
+	
+	Wall.prototype.write = function (text) {
+		if (document.readyState !== 'complete') {
+			this.buffer.push(s);
+		} else {
+			var mark = this.counter++ + ') ' + JSUS.getTime() + ' ';
+			this.wall.innerHTML = mark + text + "\n" + this.wall.innerHTML;
+		}
+	};
 
-	//Constructs a random face vector.
-	FaceVector.prototype.shuffle = function () {
-		for (var key in this) {
-			if (this.hasOwnProperty(key)) {
-				if (FaceVector.defaults.hasOwnProperty(key)) {
-					if (key !== 'color') {
-						this[key] = FaceVector.defaults[key].min + Math.random() * FaceVector.defaults[key].max;
-						
-					}
+	Wall.prototype.debuffer = function () {
+		if (document.readyState === 'complete' && this.buffer.length > 0) {
+			for (var i=0; i < this.buffer.length; i++) {
+				this.write(this.buffer[i]);
+			}
+			this.buffer = [];
+		}
+	};
+	
+})(node);
+(function (node) {
+
+	node.widgets.register('WaitScreen', WaitScreen);
+	
+// ## Defaults
+	
+	WaitScreen.defaults = {};
+	WaitScreen.defaults.id = 'waiting';
+	WaitScreen.defaults.fieldset = false;
+	
+// ## Meta-data
+	
+	WaitScreen.name = 'WaitingScreen';
+	WaitScreen.version = '0.3.2';
+	WaitScreen.description = 'Show a standard waiting screen';
+	
+	function WaitScreen (options) {
+		this.id = options.id;
+		
+		this.text = 'Waiting for other players to be done...';
+		this.waitingDiv = null;
+	}
+	
+	WaitScreen.prototype.append = function (root) {
+		return root;
+	};
+	
+	WaitScreen.prototype.getRoot = function () {
+		return this.waitingDiv;
+	};
+	
+	WaitScreen.prototype.listeners = function () {
+		var that = this;
+		node.on('WAITING...', function (text) {
+			if (!that.waitingDiv) {
+				that.waitingDiv = node.window.addDiv(document.body, that.id);
+			}
+			
+			if (that.waitingDiv.style.display === 'none'){
+				that.waitingDiv.style.display = '';
+			}			
+		
+			that.waitingDiv.innerHTML = text || that.text;
+			node.game.pause();
+		});
+		
+		// It is supposed to fade away when a new state starts
+		node.on('LOADED', function(text) {
+			if (that.waitingDiv) {
+				
+				if (that.waitingDiv.style.display === '') {
+					that.waitingDiv.style.display = 'none';
 				}
+			// TODO: Document.js add method to remove element
 			}
-		}
-	};
-	
-	//Computes the Euclidean distance between two FaceVectors.
-	FaceVector.prototype.distance = function (face) {
-		return FaceVector.distance(this,face);
-	};
+		});
 		
-		
-	FaceVector.distance = function (face1, face2) {
-		var sum = 0.0;
-		var diff;
-		
-		for (var key in face1) {
-			if (face1.hasOwnProperty(key)) {
-				diff = face1[key] - face2[key];
-				sum = sum + diff * diff;
-			}
-		}
-		
-		return Math.sqrt(sum);
-	};
-	
-	FaceVector.prototype.toString = function() {
-		var out = 'Face: ';
-		for (var key in this) {
-			if (this.hasOwnProperty(key)) {
-				out += key + ' ' + this[key];
-			}
-		}
-		return out;
-	};
-
+	}; 
 })(node);
 (function (node) {
 
@@ -16819,239 +17101,288 @@ node.widgets = new Widgets();
 })(node);
 (function (node) {
 	
-	node.widgets.register('MoneyTalks', MoneyTalks);
+	node.widgets.register('VisualState', VisualState);
 	
-	var JSUS = node.JSUS;
+	var GameState = node.GameState,
+		JSUS = node.JSUS,
+		Table = node.window.Table;
 	
 // ## Defaults
 	
-	MoneyTalks.defaults = {};
-	MoneyTalks.defaults.id = 'moneytalks';
-	MoneyTalks.defaults.fieldset = {legend: 'Earnings'};
+	VisualState.defaults = {};
+	VisualState.defaults.id = 'visualstate';
+	VisualState.defaults.fieldset = { 
+		legend: 'State',
+		id: 'visualstate_fieldset'
+	};	
 	
 // ## Meta-data
 	
-	MoneyTalks.name = 'Money talks';
-	MoneyTalks.version = '0.1.0';
-	MoneyTalks.description = 'Display the earnings of a player.';
-
+	VisualState.name = 'Visual State';
+	VisualState.version = '0.2.1';
+	VisualState.description = 'Visually display current, previous and next state of the game.';
+	
 // ## Dependencies
 	
-	MoneyTalks.dependencies = {
-		JSUS: {}
+	VisualState.dependencies = {
+		JSUS: {},
+		Table: {}
 	};
 	
 	
-	function MoneyTalks (options) {
-		this.id = options.id || MoneyTalks.defaults.id;
-				
+	function VisualState (options) {
+		this.id = options.id;
+		this.gameLoop = node.game.gameLoop;
+		
 		this.root = null;		// the parent element
-		
-		this.spanCurrency = document.createElement('span');
-		this.spanMoney = document.createElement('span');
-		
-		this.currency = 'EUR';
-		this.money = 0;
-		this.precision = 2;
-		this.init(options);
+		this.table = new Table();
 	}
 	
-	
-	MoneyTalks.prototype.init = function (options) {
-		this.currency = options.currency || this.currency;
-		this.money = options.money || this.money;
-		this.precision = options.precision || this.precision;
-		
-		this.spanCurrency.id = options.idCurrency || this.spanCurrency.id || 'moneytalks_currency';
-		this.spanMoney.id = options.idMoney || this.spanMoney.id || 'moneytalks_money';
-		
-		this.spanCurrency.innerHTML = this.currency;
-		this.spanMoney.innerHTML = this.money;
-	};
-	
-	MoneyTalks.prototype.getRoot = function () {
+	VisualState.prototype.getRoot = function () {
 		return this.root;
 	};
 	
-	MoneyTalks.prototype.append = function (root, ids) {
+	VisualState.prototype.append = function (root, ids) {
+		var that = this;
 		var PREF = this.id + '_';
-		root.appendChild(this.spanMoney);
-		root.appendChild(this.spanCurrency);
+		root.appendChild(this.table.table);
+		this.writeState();
 		return root;
 	};
 		
-	MoneyTalks.prototype.listeners = function () {
+	VisualState.prototype.listeners = function () {
 		var that = this;
-		node.on('MONEYTALKS', function(amount) {
-			that.update(amount);
+		node.on('STATECHANGE', function() {
+			that.writeState();
 		}); 
 	};
 	
-	MoneyTalks.prototype.update = function (amount) {
-		if ('number' !== typeof amount) {
-			// Try to parse strings
-			amount = parseInt(amount);
-			if (isNaN(n) || !isFinite(n)) {
-				return;
-			}
+	VisualState.prototype.writeState = function () {
+		var state = false;
+		var pr = false;
+		var nx = false;
+		
+		var miss = '-';
+		
+		if (node.game && node.game.state) {
+			state = this.gameLoop.getName(node.game.state) || miss;
+			pr = this.gameLoop.getName(node.game.previous()) || miss;
+			nx = this.gameLoop.getName(node.game.next()) || miss;
 		}
-		this.money += amount;
-		this.spanMoney.innerHTML = this.money.toFixed(this.precision);
+		else {
+			state = 'Uninitialized';
+			pr = miss;
+			nx = miss;
+		}
+		this.table.clear(true);
+
+		this.table.addRow(['Previous: ', pr]);
+		this.table.addRow(['Current: ', state]);
+		this.table.addRow(['Next: ', nx]);
+	
+		var t = this.table.select('y', '=', 2);
+		t.addClass('strong');
+		t.select('x','=',0).addClass('underline');
+		this.table.parse();
 	};
 	
 })(node);
 (function (node) {
-
-	var GameMsg = node.GameMsg,
-		Table = node.window.Table;
 	
-	node.widgets.register('MsgBar', MsgBar);
+	
+	node.widgets.register('D3', D3);
+	node.widgets.register('D3ts', D3ts);
+	
+	D3.prototype.__proto__ = node.Widget.prototype;
+	D3.prototype.constructor = D3;
 
 // ## Defaults
 	
-	MsgBar.defaults = {};
-	MsgBar.defaults.id = 'msgbar';
-	MsgBar.defaults.fieldset = { legend: 'Send MSG' };	
+	D3.defaults = {};
+	D3.defaults.id = 'D3';
+	D3.defaults.fieldset = {
+		legend: 'D3 plot'
+	};
+
 	
 // ## Meta-data
 	
-	MsgBar.name = 'Msg Bar';
-	MsgBar.version = '0.4';
-	MsgBar.description = 'Send a nodeGame message to players';
+	D3.name = 'D3';
+	D3.version = '0.1';
+	D3.description = 'Real time plots for nodeGame with d3.js';
 	
-	function MsgBar (options) {
-		
-		this.id = options.id;
-		
-		this.recipient = null;
-		this.actionSel = null;
-		this.targetSel = null;
-		
-		this.table = new Table();
-			
-		this.init();
-	}
+// ## Dependencies
 	
-	// TODO: Write a proper INIT method
-	MsgBar.prototype.init = function () {
-		var that = this;
-		var gm = new GameMsg();
-		var y = 0;
-		for (var i in gm) {
-			if (gm.hasOwnProperty(i)) {
-				var id = this.id + '_' + i;
-				this.table.add(i, 0, y);
-				this.table.add(node.window.getTextInput(id), 1, y);
-				if (i === 'target') {
-					this.targetSel = node.window.getTargetSelector(this.id + '_targets');
-					this.table.add(this.targetSel, 2, y);
-					
-					this.targetSel.onchange = function () {
-						node.window.getElementById(that.id + '_target').value = that.targetSel.value; 
-					};
-				}
-				else if (i === 'action') {
-					this.actionSel = node.window.getActionSelector(this.id + '_actions');
-					this.table.add(this.actionSel, 2, y);
-					this.actionSel.onchange = function () {
-						node.window.getElementById(that.id + '_action').value = that.actionSel.value; 
-					};
-				}
-				else if (i === 'to') {
-					this.recipient = node.window.getRecipientSelector(this.id + 'recipients');
-					this.table.add(this.recipient, 2, y);
-					this.recipient.onchange = function () {
-						node.window.getElementById(that.id + '_to').value = that.recipient.value; 
-					};
-				}
-				y++;
-			}
-		}
-		this.table.parse();
+	D3.dependencies = {
+		d3: {},	
+		JSUS: {}
 	};
 	
-	MsgBar.prototype.append = function (root) {
-		
-		var sendButton = node.window.addButton(root);
-		var stubButton = node.window.addButton(root, 'stub', 'Add Stub');
+	function D3 (options) {
+		this.id = options.id || D3.id;
+		this.event = options.event || 'D3';
+		this.svg = null;
 		
 		var that = this;
-		sendButton.onclick = function() {
-			// Should be within the range of valid values
-			// but we should add a check
-			
-			var msg = that.parse();
-			node.gsc.send(msg);
-			//console.log(msg.stringify());
-		};
-		stubButton.onclick = function() {
-			that.addStub();
-		};
-		
-		root.appendChild(this.table.table);
-		
+		node.on(this.event, function (value) {
+			that.tick.call(that, value); 
+		});
+	}
+	
+	D3.prototype.append = function (root) {
 		this.root = root;
+		this.svg = d3.select(root).append("svg");
 		return root;
 	};
 	
-	MsgBar.prototype.getRoot = function () {
-		return this.root;
+	D3.prototype.tick = function () {};
+	
+// # D3ts
+	
+	
+// ## Meta-data
+	
+	D3ts.id = 'D3ts';
+	D3ts.name = 'D3ts';
+	D3ts.version = '0.1';
+	D3ts.description = 'Time series plot for nodeGame with d3.js';
+	
+// ## Dependencies	
+	D3ts.dependencies = {
+		D3: {},	
+		JSUS: {}
 	};
 	
-	MsgBar.prototype.listeners = function () {
-		var that = this;	
-		node.onPLIST( function(msg) {
-			node.window.populateRecipientSelector(that.recipient, msg.data);
+	D3ts.prototype.__proto__ = D3.prototype;
+	D3ts.prototype.constructor = D3ts;
+	
+	D3ts.defaults = {};
+	
+	D3ts.defaults.width = 400;
+	D3ts.defaults.height = 200;
+	
+	D3ts.defaults.margin = {
+    	top: 10, 
+    	right: 10, 
+    	bottom: 20, 
+    	left: 40 
+	};
+	
+	D3ts.defaults.domain = {
+		x: [0, 10],
+		y: [0, 1]
+	};
+	
+    D3ts.defaults.range = {
+    	x: [0, D3ts.defaults.width],
+    	y: [D3ts.defaults.height, 0]
+    };
+	
+	function D3ts (options) {
+		D3.call(this, options);
 		
-		}); 
-	};
-	
-	MsgBar.prototype.parse = function () {
-		var msg = {};
-		var that = this;
-		var key = null;
-		var value = null;
-		this.table.forEach( function(e) {
-			
-				if (e.x === 0) {
-					key = e.content;
-					msg[key] = ''; 
-				}
-				else if (e.x === 1) {
-					
-					value = e.content.value;
-					if (key === 'state' || key === 'data') {
-						try {
-							value = JSON.parse(e.content.value);
-						}
-						catch (ex) {
-							value = e.content.value;
-						}
-					}
-					
-					msg[key] = value;
-				}
-		});
-		var gameMsg = new GameMsg(msg);
-		node.info(gameMsg, 'MsgBar sent: ');
-		return gameMsg;
-	};
-	
-	MsgBar.prototype.addStub = function () {
-		node.window.getElementById(this.id + '_from').value = (node.player) ? node.player.id : 'undefined';
-		node.window.getElementById(this.id + '_to').value = this.recipient.value;
-		node.window.getElementById(this.id + '_forward').value = 0;
-		node.window.getElementById(this.id + '_reliable').value = 1;
-		node.window.getElementById(this.id + '_priority').value = 0;
 		
-		if (node.gsc && node.gsc.session) {
-			node.window.getElementById(this.id + '_session').value = node.gsc.session;
+		var o = this.options = JSUS.merge(D3ts.defaults, options);
+		
+		var n = this.n = o.n;
+		
+	    this.data = [0];
+	    
+	    this.margin = o.margin;
+	    
+		var width = this.width = o.width - this.margin.left - this.margin.right;
+		var height = this.height = o.height - this.margin.top - this.margin.bottom;
+
+		// identity function
+		var x = this.x = d3.scale.linear()
+		    .domain(o.domain.x)
+		    .range(o.range.x);
+
+		var y = this.y = d3.scale.linear()
+		    .domain(o.domain.y)
+		    .range(o.range.y);
+
+		// line generator
+		this.line = d3.svg.line()
+		    .x(function(d, i) { return x(i); })
+		    .y(function(d, i) { return y(d); });
+	}
+	
+	D3ts.prototype.init = function (options) {
+		//D3.init.call(this, options);
+		
+		console.log('init!');
+		var x = this.x,
+			y = this.y,
+			height = this.height,
+			width = this.width,
+			margin = this.margin;
+		
+		
+		// Create the SVG and place it in the middle
+		this.svg.attr("width", width + margin.left + margin.right)
+		    .attr("height", height + margin.top + margin.bottom)
+		  .append("g")
+		    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+
+		// Line does not go out the axis
+		this.svg.append("defs").append("clipPath")
+		    .attr("id", "clip")
+		  .append("rect")
+		    .attr("width", width)
+		    .attr("height", height);
+
+		// X axis
+		this.svg.append("g")
+		    .attr("class", "x axis")
+		    .attr("transform", "translate(0," + height + ")")
+		    .call(d3.svg.axis().scale(x).orient("bottom"));
+
+		// Y axis
+		this.svg.append("g")
+		    .attr("class", "y axis")
+		    .call(d3.svg.axis().scale(y).orient("left"));
+
+		this.path = this.svg.append("g")
+		    .attr("clip-path", "url(#clip)")
+		  .append("path")
+		    .data([this.data])
+		    .attr("class", "line")
+		    .attr("d", this.line);		
+	};
+	
+	D3ts.prototype.tick = function (value) {
+		this.alreadyInit = this.alreadyInit || false;
+		if (!this.alreadyInit) {
+			this.init();
+			this.alreadyInit = true;
 		}
 		
-		node.window.getElementById(this.id + '_state').value = JSON.stringify(node.state);
-		node.window.getElementById(this.id + '_action').value = this.actionSel.value;
-		node.window.getElementById(this.id + '_target').value = this.targetSel.value;
+		var x = this.x;
 		
+		console.log('tick!');
+	
+		// push a new data point onto the back
+		this.data.push(value);
+
+		// redraw the line, and slide it to the left
+		this.path
+	    	.attr("d", this.line)
+	    	.attr("transform", null);
+
+		// pop the old data point off the front
+		if (this.data.length > this.n) {
+		
+	  		this.path
+	  			.transition()
+	  			.duration(500)
+	  			.ease("linear")
+	  			.attr("transform", "translate(" + x(-1) + ")");
+	  		
+	  		this.data.shift();
+	  	  
+		}
 	};
 	
 })(node);
@@ -17397,142 +17728,556 @@ node.widgets = new Widgets();
 })(node);
 (function (node) {
 	
+	node.widgets.register('MoneyTalks', MoneyTalks);
 	
-	// TODO: Introduce rules for update: other vs self
-	
-	node.widgets.register('NextPreviousState', NextPreviousState);
+	var JSUS = node.JSUS;
 	
 // ## Defaults
 	
-	NextPreviousState.defaults = {};
-	NextPreviousState.defaults.id = 'nextprevious';
-	NextPreviousState.defaults.fieldset = { legend: 'Rew-Fwd' };		
+	MoneyTalks.defaults = {};
+	MoneyTalks.defaults.id = 'moneytalks';
+	MoneyTalks.defaults.fieldset = {legend: 'Earnings'};
 	
 // ## Meta-data
 	
-	NextPreviousState.name = 'Next,Previous State';
-	NextPreviousState.version = '0.3.1';
-	NextPreviousState.description = 'Adds two buttons to push forward or rewind the state of the game by one step.';
+	MoneyTalks.name = 'Money talks';
+	MoneyTalks.version = '0.1.0';
+	MoneyTalks.description = 'Display the earnings of a player.';
+
+// ## Dependencies
+	
+	MoneyTalks.dependencies = {
+		JSUS: {}
+	};
+	
+	
+	function MoneyTalks (options) {
+		this.id = options.id || MoneyTalks.defaults.id;
+				
+		this.root = null;		// the parent element
 		
-	function NextPreviousState(options) {
-		this.id = options.id;
+		this.spanCurrency = document.createElement('span');
+		this.spanMoney = document.createElement('span');
+		
+		this.currency = 'EUR';
+		this.money = 0;
+		this.precision = 2;
+		this.init(options);
 	}
 	
-	NextPreviousState.prototype.getRoot = function () {
+	
+	MoneyTalks.prototype.init = function (options) {
+		this.currency = options.currency || this.currency;
+		this.money = options.money || this.money;
+		this.precision = options.precision || this.precision;
+		
+		this.spanCurrency.id = options.idCurrency || this.spanCurrency.id || 'moneytalks_currency';
+		this.spanMoney.id = options.idMoney || this.spanMoney.id || 'moneytalks_money';
+		
+		this.spanCurrency.innerHTML = this.currency;
+		this.spanMoney.innerHTML = this.money;
+	};
+	
+	MoneyTalks.prototype.getRoot = function () {
 		return this.root;
 	};
 	
-	NextPreviousState.prototype.append = function (root) {
-		var idRew = this.id + '_button';
-		var idFwd = this.id + '_button';
+	MoneyTalks.prototype.append = function (root, ids) {
+		var PREF = this.id + '_';
+		root.appendChild(this.spanMoney);
+		root.appendChild(this.spanCurrency);
+		return root;
+	};
 		
-		var rew = node.window.addButton(root, idRew, '<<');
-		var fwd = node.window.addButton(root, idFwd, '>>');
+	MoneyTalks.prototype.listeners = function () {
+		var that = this;
+		node.on('MONEYTALKS', function(amount) {
+			that.update(amount);
+		}); 
+	};
+	
+	MoneyTalks.prototype.update = function (amount) {
+		if ('number' !== typeof amount) {
+			// Try to parse strings
+			amount = parseInt(amount);
+			if (isNaN(n) || !isFinite(n)) {
+				return;
+			}
+		}
+		this.money += amount;
+		this.spanMoney.innerHTML = this.money.toFixed(this.precision);
+	};
+	
+})(node);
+(function (node) {
+
+	var GameMsg = node.GameMsg,
+		Table = node.window.Table;
+	
+	node.widgets.register('MsgBar', MsgBar);
+
+// ## Defaults
+	
+	MsgBar.defaults = {};
+	MsgBar.defaults.id = 'msgbar';
+	MsgBar.defaults.fieldset = { legend: 'Send MSG' };	
+	
+// ## Meta-data
+	
+	MsgBar.name = 'Msg Bar';
+	MsgBar.version = '0.4';
+	MsgBar.description = 'Send a nodeGame message to players';
+	
+	function MsgBar (options) {
 		
+		this.id = options.id;
+		
+		this.recipient = null;
+		this.actionSel = null;
+		this.targetSel = null;
+		
+		this.table = new Table();
+			
+		this.init();
+	}
+	
+	// TODO: Write a proper INIT method
+	MsgBar.prototype.init = function () {
+		var that = this;
+		var gm = new GameMsg();
+		var y = 0;
+		for (var i in gm) {
+			if (gm.hasOwnProperty(i)) {
+				var id = this.id + '_' + i;
+				this.table.add(i, 0, y);
+				this.table.add(node.window.getTextInput(id), 1, y);
+				if (i === 'target') {
+					this.targetSel = node.window.getTargetSelector(this.id + '_targets');
+					this.table.add(this.targetSel, 2, y);
+					
+					this.targetSel.onchange = function () {
+						node.window.getElementById(that.id + '_target').value = that.targetSel.value; 
+					};
+				}
+				else if (i === 'action') {
+					this.actionSel = node.window.getActionSelector(this.id + '_actions');
+					this.table.add(this.actionSel, 2, y);
+					this.actionSel.onchange = function () {
+						node.window.getElementById(that.id + '_action').value = that.actionSel.value; 
+					};
+				}
+				else if (i === 'to') {
+					this.recipient = node.window.getRecipientSelector(this.id + 'recipients');
+					this.table.add(this.recipient, 2, y);
+					this.recipient.onchange = function () {
+						node.window.getElementById(that.id + '_to').value = that.recipient.value; 
+					};
+				}
+				y++;
+			}
+		}
+		this.table.parse();
+	};
+	
+	MsgBar.prototype.append = function (root) {
+		
+		var sendButton = node.window.addButton(root);
+		var stubButton = node.window.addButton(root, 'stub', 'Add Stub');
 		
 		var that = this;
-	
-		var updateState = function (state) {
-			if (state) {
-				var stateEvent = node.IN + node.actions.SAY + '.STATE';
-				var stateMsg = node.msg.createSTATE(stateEvent, state);
-				// Self Update
-				node.emit(stateEvent, stateMsg);
-				
-				// Update Others
-				stateEvent = node.OUT + node.actions.SAY + '.STATE';
-				node.emit(stateEvent, state, 'ALL');
-			}
-			else {
-				node.log('No next/previous state. Not sent', 'ERR');
-			}
+		sendButton.onclick = function() {
+			// Should be within the range of valid values
+			// but we should add a check
+			
+			var msg = that.parse();
+			node.gsc.send(msg);
+			//console.log(msg.stringify());
+		};
+		stubButton.onclick = function() {
+			that.addStub();
 		};
 		
-		fwd.onclick = function() {
-			updateState(node.game.next());
-		};
-			
-		rew.onclick = function() {
-			updateState(node.game.previous());
-		};
+		root.appendChild(this.table.table);
 		
 		this.root = root;
 		return root;
 	};
 	
+	MsgBar.prototype.getRoot = function () {
+		return this.root;
+	};
+	
+	MsgBar.prototype.listeners = function () {
+		var that = this;	
+		node.on('PLIST_UPDATED', function(msg) {
+			node.window.populateRecipientSelector(that.recipient, node.game.pl);
+		}); 
+	};
+	
+	MsgBar.prototype.parse = function () {
+		var msg = {};
+		var that = this;
+		var key = null;
+		var value = null;
+		this.table.forEach( function(e) {
+			
+				if (e.x === 0) {
+					key = e.content;
+					msg[key] = ''; 
+				}
+				else if (e.x === 1) {
+					
+					value = e.content.value;
+					if (key === 'state' || key === 'data') {
+						try {
+							value = JSON.parse(e.content.value);
+						}
+						catch (ex) {
+							value = e.content.value;
+						}
+					}
+					
+					msg[key] = value;
+				}
+		});
+		var gameMsg = new GameMsg(msg);
+		node.info(gameMsg, 'MsgBar sent: ');
+		return gameMsg;
+	};
+	
+	MsgBar.prototype.addStub = function () {
+		node.window.getElementById(this.id + '_from').value = (node.player) ? node.player.id : 'undefined';
+		node.window.getElementById(this.id + '_to').value = this.recipient.value;
+		node.window.getElementById(this.id + '_forward').value = 0;
+		node.window.getElementById(this.id + '_reliable').value = 1;
+		node.window.getElementById(this.id + '_priority').value = 0;
+		
+		if (node.gsc && node.gsc.session) {
+			node.window.getElementById(this.id + '_session').value = node.gsc.session;
+		}
+		
+		node.window.getElementById(this.id + '_state').value = JSON.stringify(node.state);
+		node.window.getElementById(this.id + '_action').value = this.actionSel.value;
+		node.window.getElementById(this.id + '_target').value = this.targetSel.value;
+		
+	};
+	
+})(node);
+(function (node) {
+
+	var GameState = node.GameState,
+		PlayerList = node.PlayerList,
+		Table = node.window.Table,
+		HTMLRenderer = node.window.HTMLRenderer;
+	
+	node.widgets.register('DynamicTable', DynamicTable);
+	
+	
+	DynamicTable.prototype = new Table();
+	DynamicTable.prototype.constructor = Table;	
+	
+	
+	DynamicTable.id = 'dynamictable';
+	DynamicTable.name = 'Dynamic Table';
+	DynamicTable.version = '0.3.1';
+	
+	DynamicTable.dependencies = {
+		Table: {},
+		JSUS: {},
+		HTMLRenderer: {}
+	};
+	
+	function DynamicTable (options, data) {
+		//JSUS.extend(node.window.Table,this);
+		Table.call(this, options, data);
+		this.options = options;
+		this.id = options.id;
+		this.name = options.name || 'Dynamic Table';
+		this.fieldset = { legend: this.name,
+							id: this.id + '_fieldset'
+		};
+		
+		this.root = null;
+		this.bindings = {};
+		this.init(this.options);
+	}
+	
+	DynamicTable.prototype.init = function (options) {
+		this.options = options;
+		this.name = options.name || this.name;
+		this.auto_update = ('undefined' !== typeof options.auto_update) ? options.auto_update : true;
+		this.replace = options.replace || false;
+		this.htmlRenderer = new HTMLRenderer({renderers: options.renderers});
+		this.c('state', GameState.compare);
+		this.setLeft([]);
+		this.parse(true);
+	};
+		
+	DynamicTable.prototype.bind = function (event, bindings) {
+		if (!event || !bindings) return;
+		var that = this;
+
+		node.on(event, function(msg) {
+			
+			if (bindings.x || bindings.y) {
+				// Cell
+				var func;
+				if (that.replace) {
+					func = function (x, y) {
+						var found = that.get(x,y);
+						if (found.length !== 0) {
+							for (var ci=0; ci < found.length; ci++) {
+								bindings.cell.call(that, msg, found[ci]);
+							}
+						}
+						else {
+							var cell = bindings.cell.call(that, msg, new Table.Cell({x: x, y: y}));
+							that.add(cell);
+						}
+					};
+				}
+				else {
+					func = function (x, y) {
+						var cell = bindings.cell.call(that, msg, new Table.Cell({x: x, y: y}));
+						that.add(cell, x, y);
+					};
+				}
+				
+				var x = bindings.x.call(that, msg);
+				var y = bindings.y.call(that, msg);
+				
+				if (x && y) {
+					
+					x = (x instanceof Array) ? x : [x];
+					y = (y instanceof Array) ? y : [y];
+					
+//					console.log('Bindings found:');
+//					console.log(x);
+//					console.log(y);
+					
+					for (var xi=0; xi < x.length; xi++) {
+						for (var yi=0; yi < y.length; yi++) {
+							// Replace or Add
+							func.call(that, x[xi], y[yi]);
+						}
+					}
+				}
+				// End Cell
+			}
+			
+			// Header
+			if (bindings.header) {
+				var h = bindings.header.call(that, msg);
+				h = (h instanceof Array) ? h : [h];
+				that.setHeader(h);
+			}
+			
+			// Left
+			if (bindings.left) {
+				var l = bindings.left.call(that, msg);
+				if (!JSUS.in_array(l, that.left)) {
+					that.header.push(l);
+				}
+			}
+			
+			// Auto Update?
+			if (that.auto_update) {
+				that.parse();
+			}
+		});
+		
+	};
+
+	DynamicTable.prototype.append = function (root) {
+		this.root = root;
+		root.appendChild(this.table);
+		return root;
+	};
+	
+	DynamicTable.prototype.listeners = function () {}; 
+
 })(node);
 (function (node) {
 	
-	node.widgets.register('Wall', Wall);
+	node.widgets.register('DataBar', DataBar);
 	
-	var JSUS = node.JSUS;
-
 // ## Defaults
+	DataBar.defaults = {};
+	DataBar.defaults.id = 'databar';
+	DataBar.defaults.fieldset = {	
+		legend: 'Send DATA msg to players (EVENT/DATA)'
+	};
 	
-	Wall.defaults = {};
-	Wall.defaults.id = 'wall';
-	Wall.defaults.fieldset = { legend: 'Game Log' };		
+// ## Meta-data
+	DataBar.name = 'Data Bar';
+	DataBar.version = '0.3';
+	DataBar.description = 'Adds a input field to send DATA messages to the players';
+		
+	function DataBar (options) {
+		this.bar = null;
+		this.root = null;
+		this.recipient = null;
+	}
+	
+	
+	DataBar.prototype.append = function (root) {
+		
+		var sendButton, textInput, dataInput;
+		
+		sendButton = W.addButton(root);
+		textInput = W.addTextInput(root, 'data-bar-text');
+		dataInput = W.addTextInput(root, 'data-bar-data');
+		
+		this.recipient = W.addRecipientSelector(root);
+		
+		var that = this;
+		
+		sendButton.onclick = function() {
+			
+			var to, data, text;
+			
+			to = that.recipient.value;
+			text = textInput.value;
+			data = dataInput.value;
+			
+			node.log('Parsed Data: ' + JSON.stringify(data));
+			
+			node.say(data, text, to);
+		};
+		
+		node.on('UPDATED_PLIST', function() {
+			node.window.populateRecipientSelector(that.recipient, node.game.pl);
+		});
+		
+		return root;
+		
+	};
+	
+})(node);
+(function (node) {
+	
+	node.widgets.register('GameBoard', GameBoard);
+	
+	var GameState = node.GameState,
+		PlayerList = node.PlayerList;
+
+// ## Defaults	
+	
+	GameBoard.defaults = {};
+	GameBoard.defaults.id = 'gboard';
+	GameBoard.defaults.fieldset = {
+			legend: 'Game Board'
+	};
 	
 // ## Meta-data
 	
-
-	Wall.name = 'Wall';
-	Wall.version = '0.3';
-	Wall.description = 'Intercepts all LOG events and prints them ';
-	Wall.description += 'into a DIV element with an ordinal number and a timestamp.';
-
-// ## Dependencies
+	GameBoard.name = 'GameBoard';
+	GameBoard.version = '0.4.1';
+	GameBoard.description = 'Offer a visual representation of the state of all players in the game.';
 	
-	Wall.dependencies = {
-		JSUS: {}
-	};
+	function GameBoard (options) {
+		
+		this.id = options.id || GameBoard.defaults.id;
+		this.status_id = this.id + '_statusbar';
+		
+		this.board = null;
+		this.status = null;
+		this.root = null;
 	
-	function Wall (options) {
-		this.id = options.id || Wall.id;
-		this.name = options.name || this.name;
-		this.buffer = [];
-		this.counter = 0;
-
-		this.wall = node.window.getElement('pre', this.id);
 	}
 	
-	Wall.prototype.init = function (options) {
-		options = options || {};
-		this.counter = options.counter || this.counter;
+	GameBoard.prototype.append = function (root) {
+		this.root = root;
+		this.status = node.window.addDiv(root, this.status_id);
+		this.board = node.window.addDiv(root, this.id);
+		
+		this.updateBoard(node.game.pl);
+		
+		
+		return root;
 	};
 	
-	Wall.prototype.append = function (root) {
-		return root.appendChild(this.wall);
-	};
-	
-	Wall.prototype.getRoot = function () {
-		return this.wall;
-	};
-	
-	Wall.prototype.listeners = function() {
-		var that = this;	
-		node.on('LOG', function (msg) {
-			that.debuffer();
-			that.write(msg);
+	GameBoard.prototype.listeners = function() {
+		var that = this;		
+//		node.on('in.say.PCONNECT', function (msg) {
+//			that.addPlayerToBoard(msg.data);
+//		});
+//
+//		node.on('in.say.PDISCONNECT', function (msg) {
+//			that.removePlayerFromBoard(msg.data);
+//		});
+		
+		node.on('UPDATED_PLIST', function() {
+			that.updateBoard(node.game.pl);
 		});
-	}; 
-	
-	Wall.prototype.write = function (text) {
-		if (document.readyState !== 'complete') {
-			this.buffer.push(s);
-		} else {
-			var mark = this.counter++ + ') ' + JSUS.getTime() + ' ';
-			this.wall.innerHTML = mark + text + "\n" + this.wall.innerHTML;
-		}
+		
 	};
+	
+	GameBoard.prototype.printLine = function (p) {
 
-	Wall.prototype.debuffer = function () {
-		if (document.readyState === 'complete' && this.buffer.length > 0) {
-			for (var i=0; i < this.buffer.length; i++) {
-				this.write(this.buffer[i]);
-			}
-			this.buffer = [];
+		var line = '[' + (p.name || p.id) + "]> \t"; 
+		
+		line += '(' +  p.state.round + ') ' + p.state.state + '.' + p.state.step; 
+		line += ' ';
+		
+		switch (p.state.is) {
+
+			case GameState.iss.UNKNOWN:
+				line += '(unknown)';
+				break;
+				
+			case GameState.iss.LOADING:
+				line += '(loading)';
+				break;
+				
+			case GameState.iss.LOADED:
+				line += '(loaded)';
+				break;
+				
+			case GameState.iss.PLAYING:
+				line += '(playing)';
+				break;
+			case GameState.iss.DONE:
+				line += '(done)';
+				break;		
+			default:
+				line += '('+p.state.is+')';
+				break;		
 		}
+		
+		if (p.state.paused) {
+			line += ' (P)';
+		}
+		
+		return line;
+	};
+	
+	GameBoard.prototype.printSeparator = function (p) {
+		return W.getElement('hr', null, {style: 'color: #CCC;'});
+	};
+	
+	
+	GameBoard.prototype.updateBoard = function (pl) {
+		var that = this;
+		
+		this.status.innerHTML = 'Updating...';
+		
+		var player, separator;
+		
+		if (pl.length) {
+			that.board.innerHTML = '';
+			pl.forEach( function(p) {
+				player = that.printLine(p);
+				
+				W.write(player, that.board);
+				
+				separator = that.printSeparator(p);
+				W.write(separator, that.board);
+			});
+		}
+		
+		
+		this.status.innerHTML = 'Connected players: ' + node.game.pl.count();
 	};
 	
 })(node);
@@ -17687,97 +18432,4 @@ node.widgets = new Widgets();
 	
 	
 
-})(node);
-
-(function (node) {
-	
-	// TODO: Introduce rules for update: other vs self
-	
-	node.widgets.register('StateBar', StateBar);	
-	
-// ## Defaults
-	
-	StateBar.defaults = {};
-	StateBar.defaults.id = 'statebar';
-	StateBar.defaults.fieldset = { legend: 'Change Game State' };	
-	
-// ## Meta-data
-	
-	StateBar.name = 'State Bar';
-	StateBar.version = '0.3.1';
-	StateBar.description = 'Provides a simple interface to change the state of the game.';
-	
-	function StateBar (options) {
-		this.id = options.id;
-		this.recipient = null;
-	}
-	
-	StateBar.prototype.getRoot = function () {
-		return this.root;
-	};
-	
-	StateBar.prototype.append = function (root) {
-		
-		var PREF = this.id + '_';
-		
-		var idButton = PREF + 'sendButton',
-			idStateSel = PREF + 'stateSel',
-			idRecipient = PREF + 'recipient'; 
-				
-		var sendButton = node.window.addButton(root, idButton);
-		var stateSel = node.window.addStateSelector(root, idStateSel);
-		this.recipient = node.window.addRecipientSelector(root, idRecipient);
-		
-		var that = this;
-		
-		node.on('UPDATED_PLIST', function() {
-			node.window.populateRecipientSelector(that.recipient, node.game.pl);
-		});
-		
-		sendButton.onclick = function() {
-	
-			// Should be within the range of valid values
-			// but we should add a check
-			var to = that.recipient.value;
-			
-			// STATE.STEP:ROUND
-			var parseState = /^(\d+)(?:\.(\d+))?(?::(\d+))?$/;
-			
-			var result = parseState.exec(stateSel.value);
-			var state, step, round, stateEvent, stateMsg;
-			if (result !== null) {
-				// Note: not result[0]!
-				state = result[1];
-				step = result[2] || 1;
-				round = result[3] || 1;
-				
-				node.log('Parsed State: ' + result.join("|"));
-				
-				state = new node.GameState({
-					state: state,
-					step: step,
-					round: round
-				});
-				
-				// Self Update
-				if (to === 'ALL') {
-					stateEvent = node.IN + node.actions.SAY + '.STATE';
-					stateMsg = node.msg.createSTATE(stateEvent, state);
-					node.emit(stateEvent, stateMsg);
-				}
-				
-				// Update Others
-				stateEvent = node.OUT + node.actions.SAY + '.STATE';
-				node.emit(stateEvent, state, to);
-			}
-			else {
-				node.err('Not valid state. Not sent.');
-				node.socket.sendTXT('E: not valid state. Not sent');
-			}
-		};
-		
-		this.root = root;
-		return root;
-	};
-	
 })(node);
