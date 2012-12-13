@@ -31,6 +31,10 @@ function configure (servernode) {
 	servernode.maxListeners = 0; // unlimited
 	
 	servernode.defaults.channel = {
+		sockets: {
+			sio: true,
+			direct: true
+		},
 		port: servernode.port,
 		log: servernode.log,
 		verbosity: servernode.verbosity,
