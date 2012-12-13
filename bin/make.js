@@ -175,7 +175,7 @@ program
 
 		J.copyFromDir(buildDir_ngWindow, buildDir, '.js');
 		
-		console.log('All javascript files built and copied in public/javascript/');
+		console.log('All javascript files built and copied to public/javascript/');
 });
 
 program
