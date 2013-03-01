@@ -5,6 +5,11 @@
  * 
  */
 
+if (!process.argv || !process.argv.length) {
+	console.log('No input argument. Aborting');
+	return;
+}
+
 /**
  * Module dependencies.
  */
@@ -16,7 +21,8 @@ var program = require('commander'),
     util = require('util'),
     exec = require('child_process').exec,
     path = require('path'),
-    J = require('JSUS').JSUS;
+    J = require('JSUS').JSUS,
+    wrench = require('wrench');
     
 var pkg = require('../package.json'),
     version = pkg.version;
@@ -38,6 +44,7 @@ var build_ngwidgets = require(ngwidgetsDir + 'bin/build.js').build;
 
 var rootDir = path.resolve(__dirname, '..');
 var buildDir = rootDir + '/public/javascripts/';
+var libDir = rootDir + '/lib/';
 
 var buildDir_client = ngcDir + 'build/';
 var buildDir_JSUS = JSUSDir + 'build/';
@@ -208,6 +215,43 @@ program
 			}
 		});
 });
+
+program  
+	.command('sync <path>')
+	.description('Sync the /lib folder with the specified target directory')
+	.action(function(path) {
+		copyLibDirTo(path);
+});
+
+
+function copyLibDirTo(targetDir) {
+	
+	if (!targetDir) {
+		console.log('You must specify a target directory for the \'copyto\' command');
+		return;
+	}
+	
+	targetDir = path.resolve(targetDir);
+
+	if (!fs.existsSync(targetDir)) {
+		console.log(targetDir + ' does not exists');
+		return false;
+	}
+	
+	var stats = fs.lstatSync(targetDir);
+	if (!stats.isDirectory()) {
+		console.log(targetDir + ' is not a directory');
+		return false;
+	}
+	
+	targetDir = targetDir + '/';
+	
+	console.log('Syncing /lib folder of nodegame-server v.' + version + ' with ' + targetDir);
+	
+	wrench.copyDirSyncRecursive(libDir, targetDir);	
+	console.log('Done');
+}
+
 
 //Parsing options
 program.parse(process.argv);

@@ -36,7 +36,8 @@
       "mocha": ">= 0.3.0",
       "should": ">= 0.5.1",
       "request": "2.9.153",
-      "socket.io-client": "0.9.6"
+      "socket.io-client": "0.9.6",
+      "wrench": "1.4.4"
     }
   , "engines": { "node": ">= 0.4.0" }
   , "licenses": [
