@@ -45,6 +45,7 @@ var build_ngwidgets = require(ngwidgetsDir + 'bin/build.js').build;
 var rootDir = path.resolve(__dirname, '..');
 var buildDir = rootDir + '/public/javascripts/';
 var libDir = rootDir + '/lib/';
+var confDir = rootDir + '/conf/';
 
 var buildDir_client = ngcDir + 'build/';
 var buildDir_JSUS = JSUSDir + 'build/';
@@ -217,17 +218,40 @@ program
 });
 
 program  
-	.command('sync <path>')
-	.description('Sync the /lib folder with the specified target directory')
-	.action(function(path) {
-		copyLibDirTo(path);
+	.command('sync <path> [options]')
+	.description('Sync the folder with the specified target directory (must exists)')
+	.option('-a, --all', 'sync /lib and /conf folders (default)')
+	.option('-l, --lib', 'sync the /lib folder')
+	.option('-c, --conf', 'sync the /conf folder')
+	.action(function(path, options) {
+		
+		if ('undefined' === typeof options) {
+			options = {};
+			options.all = true;
+		}
+		
+		if (options.all) {
+			copyDirTo(confDir, path + '/conf/');	
+			copyDirTo(libDir, path + '/lib/');	
+		}
+
+		else if (options.conf) {
+			copyDirTo(confDir, path);	
+		}
+		
+		else if (options.lib) {
+			copyDirTo(libDir, path);		
+		}
+		
+		console.log('Done.');
+		
 });
 
 
-function copyLibDirTo(targetDir) {
+function copyDirTo(inputDir, targetDir) {
 	
 	if (!targetDir) {
-		console.log('You must specify a target directory for the \'copyto\' command');
+		console.log('You must specify a target directory for the \'sync\' command');
 		return;
 	}
 	
@@ -246,10 +270,9 @@ function copyLibDirTo(targetDir) {
 	
 	targetDir = targetDir + '/';
 	
-	console.log('Syncing /lib folder of nodegame-server v.' + version + ' with ' + targetDir);
+	console.log('nodegame-server v.' + version + ': syncing ' + inputDir + ' with ' + targetDir);
 	
-	wrench.copyDirSyncRecursive(libDir, targetDir);	
-	console.log('Done');
+	wrench.copyDirSyncRecursive(inputDir, targetDir);	
 }
 
 

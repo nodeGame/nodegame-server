@@ -81,7 +81,7 @@ function configure (app, servernode) {
     });
     
     app.get('/error/:type', function(req, res) {
-    	var type = req.params.type 
+    	var type = req.params.type;
     	res.render('error/' + type);
     });
     
@@ -98,6 +98,11 @@ function configure (app, servernode) {
     		res.json({error: 'access denied'}, 403);
     		return;
     	} 
+    	
+    	if (req.params[0].lastIndexOf('\\') === (req.params[0].length-1)) {
+    		res.send('Malformed query received. Address cannot end with a backslash');
+    		return;
+    	}
     	
     	var path = gameInfo.dir + '/' + req.params[0]; 
     	res.sendfile(path);
