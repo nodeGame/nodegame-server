@@ -21,8 +21,7 @@ var program = require('commander'),
     util = require('util'),
     exec = require('child_process').exec,
     path = require('path'),
-    J = require('JSUS').JSUS,
-    wrench = require('wrench');
+    J = require('JSUS').JSUS;
     
 var pkg = require('../package.json'),
     version = pkg.version;
@@ -272,7 +271,7 @@ function copyDirTo(inputDir, targetDir) {
 	
 	console.log('nodegame-server v.' + version + ': syncing ' + inputDir + ' with ' + targetDir);
 	
-	wrench.copyDirSyncRecursive(inputDir, targetDir);	
+	J.copyDirSyncRecursive(inputDir, targetDir);	
 }
 
 
