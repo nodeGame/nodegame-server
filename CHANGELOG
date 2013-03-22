@@ -1,5 +1,9 @@
 # nodegame-client change log
 
+# above 0.6
+
+  - Configuration directories are not loaded again if erroneously added to the index
+
 ## 0.2.7
 
   - node.redirect (for AdminServer only)
