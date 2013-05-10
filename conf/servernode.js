@@ -40,7 +40,7 @@ function configure (servernode) {
 		verbosity: servernode.verbosity,
 		notifyPlayers: {
 			onConnect: false,
-			onStateUpdate: false,
+			onStageUpdate: false,
 		},
 		forwardAllMessages: true,
 	};
