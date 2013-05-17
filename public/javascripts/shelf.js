@@ -1,165 +1,3 @@
-// cycle.js
-// 2011-08-24
-
-/*jslint evil: true, regexp: true */
-
-/*members $ref, apply, call, decycle, hasOwnProperty, length, prototype, push,
-    retrocycle, stringify, test, toString
-*/
-
-if (typeof JSON.decycle !== 'function') {
-    JSON.decycle = function decycle(object) {
-        'use strict';
-
-// Make a deep copy of an object or array, assuring that there is at most
-// one instance of each object or array in the resulting structure. The
-// duplicate references (which might be forming cycles) are replaced with
-// an object of the form
-//      {$ref: PATH}
-// where the PATH is a JSONPath string that locates the first occurance.
-// So,
-//      var a = [];
-//      a[0] = a;
-//      return JSON.stringify(JSON.decycle(a));
-// produces the string '[{"$ref":"$"}]'.
-
-// JSONPath is used to locate the unique object. $ indicates the top level of
-// the object or array. [NUMBER] or [STRING] indicates a child member or
-// property.
-
-        var objects = [],   // Keep a reference to each unique object or array
-            paths = [];     // Keep the path to each unique object or array
-
-        return (function derez(value, path) {
-
-// The derez recurses through the object, producing the deep copy.
-
-            var i,          // The loop counter
-                name,       // Property name
-                nu;         // The new object or array
-
-            switch (typeof value) {
-            case 'object':
-
-// typeof null === 'object', so get out if this value is not really an object.
-
-                if (!value) {
-                    return null;
-                }
-
-// If the value is an object or array, look to see if we have already
-// encountered it. If so, return a $ref/path object. This is a hard way,
-// linear search that will get slower as the number of unique objects grows.
-
-                for (i = 0; i < objects.length; i += 1) {
-                    if (objects[i] === value) {
-                        return {$ref: paths[i]};
-                    }
-                }
-
-// Otherwise, accumulate the unique value and its path.
-
-                objects.push(value);
-                paths.push(path);
-
-// If it is an array, replicate the array.
-
-                if (Object.prototype.toString.apply(value) === '[object Array]') {
-                    nu = [];
-                    for (i = 0; i < value.length; i += 1) {
-                        nu[i] = derez(value[i], path + '[' + i + ']');
-                    }
-                } else {
-
-// If it is an object, replicate the object.
-
-                    nu = {};
-                    for (name in value) {
-                        if (Object.prototype.hasOwnProperty.call(value, name)) {
-                            nu[name] = derez(value[name],
-                                path + '[' + JSON.stringify(name) + ']');
-                        }
-                    }
-                }
-                return nu;
-            case 'number':
-            case 'string':
-            case 'boolean':
-                return value;
-            }
-        }(object, '$'));
-    };
-}
-
-
-if (typeof JSON.retrocycle !== 'function') {
-    JSON.retrocycle = function retrocycle($) {
-        'use strict';
-
-// Restore an object that was reduced by decycle. Members whose values are
-// objects of the form
-//      {$ref: PATH}
-// are replaced with references to the value found by the PATH. This will
-// restore cycles. The object will be mutated.
-
-// The eval function is used to locate the values described by a PATH. The
-// root object is kept in a $ variable. A regular expression is used to
-// assure that the PATH is extremely well formed. The regexp contains nested
-// * quantifiers. That has been known to have extremely bad performance
-// problems on some browsers for very long strings. A PATH is expected to be
-// reasonably short. A PATH is allowed to belong to a very restricted subset of
-// Goessner's JSONPath.
-
-// So,
-//      var s = '[{"$ref":"$"}]';
-//      return JSON.retrocycle(JSON.parse(s));
-// produces an array containing a single element which is the array itself.
-
-        var px =
-            /^\$(?:\[(?:\d+|\"(?:[^\\\"\u0000-\u001f]|\\([\\\"\/bfnrt]|u[0-9a-zA-Z]{4}))*\")\])*$/;
-
-        (function rez(value) {
-
-// The rez function walks recursively through the object looking for $ref
-// properties. When it finds one that has a value that is a path, then it
-// replaces the $ref object with a reference to the value that is found by
-// the path.
-
-            var i, item, name, path;
-
-            if (value && typeof value === 'object') {
-                if (Object.prototype.toString.apply(value) === '[object Array]') {
-                    for (i = 0; i < value.length; i += 1) {
-                        item = value[i];
-                        if (item && typeof item === 'object') {
-                            path = item.$ref;
-                            if (typeof path === 'string' && px.test(path)) {
-                                value[i] = eval(path);
-                            } else {
-                                rez(item);
-                            }
-                        }
-                    }
-                } else {
-                    for (name in value) {
-                        if (typeof value[name] === 'object') {
-                            item = value[name];
-                            if (item) {
-                                path = item.$ref;
-                                if (typeof path === 'string' && px.test(path)) {
-                                    value[name] = eval(path);
-                                } else {
-                                    rez(item);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }($));
-        return $;
-    };
-}
 /**
  * # Shelf.JS 
  * 
@@ -915,6 +753,39 @@ if (!store) {
 	return;
 }
 
+var lock = false;
+
+var queue = [];
+
+function clearQueue() {
+	if (isLocked()) {
+//		console.log('cannot clear queue if lock is active');
+		return false;
+	}
+//	console.log('clearing queue');
+	for (var i=0; i< queue.length; i++) {
+		queue[i].call(queue[i]);
+	}
+}
+
+function locked() {
+	lock = true;
+}
+
+function unlocked() {
+	lock = false;
+}
+
+function isLocked() {
+	return lock;
+}
+
+function addToQueue(cb) {
+	queue.push(cb);
+}
+
+var counter = 0;
+
 store.filename = './shelf.out';
 
 var fs = require('fs'),
@@ -922,50 +793,129 @@ var fs = require('fs'),
 	util = require('util');
 
 // https://github.com/jprichardson/node-fs-extra/blob/master/lib/copy.js
-var copyFile = function(srcFile, destFile, cb) {
-    var fdr, fdw;
-    fdr = fs.createReadStream(srcFile);
-    fdw = fs.createWriteStream(destFile);
-    fdr.on('end', function() {
-      return cb(null);
-    });
-    return fdr.pipe(fdw);
-  };
+//var copyFile = function(srcFile, destFile, cb) {
+//	
+//    var fdr, fdw;
+//    
+//    fdr = fs.createReadStream(srcFile, {
+//    	flags: 'r'
+//    });
+////    fs.flockSync(fdr, 'sh');
+//    
+//    fdw = fs.createWriteStream(destFile, {
+//    	flags: 'w'
+//    });
+//    
+////    fs.flockSync(fdw, 'ex');
+//    		
+//	fdr.on('end', function() {
+////      fs.flockSync(fdr, 'un');
+//    });
+//	
+//    fdw.on('close', function() {
+////        fs.flockSync(fdw, 'un');
+//    	if (cb) cb(null);
+//    });
+//    
+//    fdr.pipe(fdw);
+//};
+
+//var overwrite = function (fileName, items) {
+//console.log('OW: ' + counter++);
+//
+//var file = fileName || store.filename;
+//if (!file) {
+//	store.log('You must specify a valid file.', 'ERR');
+//	return false;
+//}
+//
+//var tmp_copy = path.dirname(file) + '/.' + path.basename(file);
+//
+////console.log('files')
+////console.log(file);
+////console.log(fileName);
+////console.log(tmp_copy)
+//
+//copyFile(file, tmp_copy, function(){
+//	var s = store.stringify(items);
+//	// removing leading { and trailing }
+//	s = s.substr(1, s = s.substr(0, s.legth-1));
+////	console.log('SAVING')
+////	console.log(s)
+//	fs.writeFile(file, s, 'utf-8', function(e) {
+//		console.log('UNLINK ' + counter)
+//		if (e) throw e;
+////		fs.unlinkSync(tmp_copy);
+//		fs.unlink(tmp_copy, function (err) {
+//			if (err) throw err;  
+//		});
+//		return true;
+//	});
+//
+//});
+//
+//};
+
+var BUF_LENGTH = 64 * 1024;
+var _buff = new Buffer(BUF_LENGTH);
+
+var copyFileSync = function(srcFile, destFile) {
+	  var bytesRead, fdr, fdw, pos;
+	  fdr = fs.openSync(srcFile, 'r');
+	  fdw = fs.openSync(destFile, 'w');
+	  bytesRead = 1;
+	  pos = 0;
+	  while (bytesRead > 0) {
+	    bytesRead = fs.readSync(fdr, _buff, 0, BUF_LENGTH, pos);
+	    fs.writeSync(fdw, _buff, 0, bytesRead);
+	    pos += bytesRead;
+	  }
+	  fs.closeSync(fdr);
+	  return fs.closeSync(fdw);
+};
 
 
 var timeout = {};
 
+
+
 var overwrite = function (fileName, items) {
+	
+	if (isLocked()) {
+		addToQueue(this);
+		return false;
+	}
+	
+	locked();
+	
+//	console.log('OW: ' + counter++);
+	
 	var file = fileName || store.filename;
 	if (!file) {
 		store.log('You must specify a valid file.', 'ERR');
 		return false;
 	}
 	
-	var tmp_copy = path.dirname(file) + '.' + path.basename(file);
+	var tmp_copy = path.dirname(file) + '/.' + path.basename(file);
+	copyFileSync(file, tmp_copy);
 	
-//	console.log('files')
-//	console.log(file);
-//	console.log(fileName);
-//	console.log(tmp_copy)
-	
-	copyFile(file, tmp_copy, function(){
-		var s = store.stringify(items);
-		// removing leading { and trailing }
-		s = s.substr(1, s = s.substr(0, s.legth-1));
-//		console.log('SAVING')
-//		console.log(s)
-		fs.writeFile(file, s, 'utf-8', function(e) {
-			if (e) throw e;
-			fs.unlink(tmp_copy, function (err) {
-				if (err) throw err;  
-			});
-			return true;
-		});
+	var s = store.stringify(items);
 
-	});
+	// removing leading { and trailing }
+	s = s.substr(1, s = s.substr(0, s.legth-1));
 	
+	fs.writeFileSync(file, s, 'utf-8');
+	fs.unlinkSync(tmp_copy);
+	
+//	console.log('UNLINK ' + counter);
+	
+	
+	unlocked();
+	
+	clearQueue();
+	return true;	
 };
+
 
 if ('undefined' !== typeof fs.appendFileSync) {
 	// node 0.8
@@ -996,12 +946,9 @@ else {
 		
 
 
-		fs.open(file, 'a', 666, function( e, id ) {
-			fs.write( id, item, null, 'utf8', function(){
-				fs.close(id, function(){});
-			});
-		});
-		
+		var fd = fs.openSync(file, 'a', '0666');
+		fs.writeSync(fd, item, null, 'utf8');
+		fs.closeSync(fd);
 		return true;
 	};
 }
@@ -1078,4 +1025,142 @@ store.addType("fs", function(key, value, options) {
 	return value;
 });
 
-}(('undefined' !== typeof module && 'function' === typeof require) ? module.exports || module.parent.exports : {}));
+}(('undefined' !== typeof module && 'function' === typeof require) ? module.exports || module.parent.exports : {}));indow[webStorageType].getItem) {
+			createFromStorageInterface(webStorageType, window[webStorageType]);
+		}
+	} catch(e) {}
+}
+
+// ## globalStorage
+// non-standard: Firefox 2+
+// https://developer.mozilla.org/en/dom/storage#globalStorage
+if (!store.types.localStorage && window.globalStorage) {
+	// try/catch for file protocol in Firefox
+	try {
+		createFromStorageInterface("globalStorage",
+			window.globalStorage[window.location.hostname]);
+		// Firefox 2.0 and 3.0 have sessionStorage and globalStorage
+		// make sure we default to globalStorage
+		// but don't default to globalStorage in 3.5+ which also has localStorage
+		if (store.type === "sessionStorage") {
+			store.type = "globalStorage";
+		}
+	} catch(e) {}
+}
+
+// ## userData
+// non-standard: IE 5+
+// http://msdn.microsoft.com/en-us/library/ms531424(v=vs.85).aspx
+(function() {
+	// IE 9 has quirks in userData that are a huge pain
+	// rather than finding a way to detect these quirks
+	// we just don't register userData if we have localStorage
+	if (store.types.localStorage) {
+		return;
+	}
+
+	// append to html instead of body so we can do this from the head
+	var div = document.createElement("div"),
+		attrKey = "shelf";
+	div.style.display = "none";
+	document.getElementsByTagName("head")[0].appendChild(div);
+
+	// we can't feature detect userData support
+	// so just try and see if it fails
+	// surprisingly, even just adding the behavior isn't enough for a failure
+	// so we need to load the data as well
+	try {
+		div.addBehavior("#default#userdata");
+		div.load(attrKey);
+	} catch(e) {
+		div.parentNode.removeChild(div);
+		return;
+	}
+
+	store.addType("userData", function(key, value, options) {
+		div.load(attrKey);
+		var attr, parsed, prevValue, i, remove,
+			ret = value,
+			now = (new Date()).getTime();
+
+		if (!key) {
+			ret = {};
+			remove = [];
+			i = 0;
+			while (attr = div.XMLDocument.documentElement.attributes[i++]) {
+				parsed = store.parse(attr.value);
+				if (parsed.expires && parsed.expires <= now) {
+					remove.push(attr.name);
+				} else {
+					ret[attr.name] = parsed.data;
+				}
+			}
+			while (key = remove.pop()) {
+				div.removeAttribute(key);
+			}
+			div.save(attrKey);
+			return ret;
+		}
+
+		// convert invalid characters to dashes
+		// http://www.w3.org/TR/REC-xml/#NT-Name
+		// simplified to assume the starting character is valid
+		// also removed colon as it is invalid in HTML attribute names
+		key = key.replace(/[^-._0-9A-Za-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u37f-\u1fff\u200c-\u200d\u203f\u2040\u2070-\u218f]/g, "-");
+		// adjust invalid starting character to deal with our simplified sanitization
+		key = key.replace(/^-/, "_-");
+
+		if (value === undefined) {
+			attr = div.getAttribute(key);
+			parsed = attr ? store.parse(attr) : { expires: -1 };
+			if (parsed.expires && parsed.expires <= now) {
+				div.removeAttribute(key);
+			} else {
+				return parsed.data;
+			}
+		} else {
+			if (value === null) {
+				div.removeAttribute(key);
+			} else {
+				// we need to get the previous value in case we need to rollback
+				prevValue = div.getAttribute(key);
+				parsed = store.stringify({
+					data: value,
+					expires: (options.expires ? (now + options.expires) : null)
+				});
+				div.setAttribute(key, parsed);
+			}
+		}
+
+		try {
+			div.save(attrKey);
+		// quota exceeded
+		} catch (error) {
+			// roll the value back to the previous value
+			if (prevValue === null) {
+				div.removeAttribute(key);
+			} else {
+				div.setAttribute(key, prevValue);
+			}
+
+			// expire old data and try again
+			store.userData();
+			try {
+				div.setAttribute(key, parsed);
+				div.save(attrKey);
+			} catch (error) {
+				// roll the value back to the previous value
+				if (prevValue === null) {
+					div.removeAttribute(key);
+				} else {
+					div.setAttribute(key, prevValue);
+				}
+				throw store.error();
+			}
+		}
+		return ret;
+	});
+}());
+
+
+}(this));

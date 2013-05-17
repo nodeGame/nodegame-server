@@ -930,9 +930,6 @@ ARRAY.transpose = function (array) {
 	return t;
 };
 
-
-
-
 JSUS.extend(ARRAY);
     
 })('undefined' !== typeof JSUS ? JSUS : module.parent.exports.JSUS);
@@ -979,26 +976,29 @@ if ('undefined' !== typeof JSUS.compatibility) {
  * 
  */
 OBJ.equals = function (o1, o2) {	
-	if ('undefined' === typeof o1 || 'undefined' === typeof o2) {
+	var type1 = typeof o1, type2 = typeof o2;
+	
+	if (type1 !== type2) return false;
+	
+	if ('undefined' === type1 || 'undefined' === type2) {
 		return (o1 === o2);
 	}
 	if (o1 === null || o2 === null) {
 		return (o1 === o2);
 	}
-	if (('number' === typeof o1 && isNaN(o1)) && ('number' === typeof o2 && isNaN(o2)) ) {
+	if (('number' === type1 && isNaN(o1)) && ('number' === type2 && isNaN(o2)) ) {
 		return (isNaN(o1) && isNaN(o2));
 	}
 	
     // Check whether arguments are not objects
 	var primitives = {number: '', string: '', boolean: ''}
-    if (typeof o1 in primitives) {
-        if (typeof o2 in primitives) {
-            return (o1 === o2);
-        }
-        return false;
-    } else if (typeof o2 in {number: '', string: '', boolean: ''}) {
-        return false;
-    }
+    if (type1 in primitives) {
+    	return o1 === o2;
+    } 
+	
+	if ('function' === type1) {
+		return o1.toString() === o2.toString();
+	}
 
     for (var p in o1) {
         if (o1.hasOwnProperty(p)) {
@@ -1103,15 +1103,16 @@ OBJ._obj2Array = function(obj, keyed, level, cur_level) {
     var result = [];
     for (var key in obj) {
         if (obj.hasOwnProperty(key)) {
+        	if (keyed) result.push(key);
             if ('object' === typeof obj[key]) {
                 result = result.concat(OBJ._obj2Array(obj[key], keyed, level, cur_level));
             } else {
-                if (keyed) result.push(key);
                 result.push(obj[key]);
             }
            
         }
-    }        
+    }      
+    
     return result;
 };
 
@@ -1128,7 +1129,7 @@ OBJ._obj2Array = function(obj, keyed, level, cur_level) {
  * gets totally unfolded into an array.
  * 
  * @param {object} obj The object to convert in array
- * @param {number} level Optional. The level of recursion. Defaults undefined
+ * @param {number} level Optional. The level of recursion. Defaults, undefined
  * @return {array} The converted object
  * 
  * 	@see OBJ._obj2Array
@@ -1148,7 +1149,7 @@ OBJ.obj2Array = function (obj, level) {
  * returns it.
  * 
  * @param {object} obj The object to convert in array
- * @param {number} level Optional. The level of recursion. Defaults undefined
+ * @param {number} level Optional. The level of recursion. Defaults, undefined
  * @return {array} The converted object
  * 
  * @see OBJ.obj2Array 
@@ -1426,7 +1427,7 @@ OBJ.mixin = function (obj1, obj2) {
 };
 
 /**
- * ## OBJ.mixin
+ * ## OBJ.mixout
  * 
  * Copies only non-overlapping properties from obj2 to obj1
  * 
@@ -1728,6 +1729,10 @@ OBJ.hasOwnNestedProperty = function (str, obj) {
  *    e: 4
  *  }];
  * ```
+ * 
+ * @param {object} o The object to split
+ * @param {sting} key The name of the property to split
+ * @return {object} A copy of the object with split values
  */
 OBJ.split = function (o, key) {        
     if (!o) return;
@@ -1758,32 +1763,319 @@ OBJ.split = function (o, key) {
     return splitValue(o[key]);
 };
 
+/**
+ * ## OBJ.melt
+ * 
+ * Creates a new object with the specified combination of
+ * properties - values
+ * 
+ * The values are assigned cyclically to the properties, so that
+ * they do not need to have the same length. E.g.
+ * 
+ * ```javascript
+ * 	J.createObj(['a','b','c'], [1,2]); // { a: 1, b: 2, c: 1 }
+ * ```
+ * @param {array} keys The names of the keys to add to the object
+ * @param {array} values The values to associate to the keys  
+ * @return {object} A new object with keys and values melted together
+ */
+OBJ.melt = function(keys, values) {
+	var o = {}, valen = values.length;
+	for (var i = 0; i < keys.length; i++) {
+		o[keys[i]] = values[i % valen];
+	}
+	return o;
+};
+
+/**
+ * ## OBJ.uniqueKey
+ * 
+ * Creates a random unique key name for a collection
+ * 
+ * User can specify a tentative unique key name, and if already
+ * existing an incremental index will be added as suffix to it. 
+ * 
+ * Notice: the method does not actually creates the key
+ * in the object, but it just returns the name.
+ * 
+ * 
+ * @param {object} obj The collection for which a unique key name will be created
+ * @param {string} name Optional. A tentative key name. Defaults, a 10-digit random number
+ * @param {number} stop Optional. The number of tries before giving up searching
+ * 	for a unique key name. Defaults, 1000000.
+ * 
+ * @return {string|undefined} The unique key name, or undefined if it was not found
+ */
+OBJ.uniqueKey = function(obj, name, stop) {
+	if (!obj) {
+		JSUS.log('Cannot find unique name in undefined object', 'ERR');
+		return;
+	}
+	name = name || '' + Math.floor(Math.random()*10000000000);
+	stop = stop || 1000000;
+	var duplicateCounter = 1;
+	while (obj[name]) {
+		name = name + '' + duplicateCounter;
+		duplicateCounter++;
+		if (duplicateCounter > stop) {
+			return;
+		}
+	}
+	return name;
+}
+
+/**
+ * ## OBJ.augment
+ * 
+ * Creates an object containing arrays of all the values of 
+ * 
+ * User can specifies the subset of keys from both objects 
+ * that will subject to augmentation. The values of the other keys 
+ * will not be changed
+ * 
+ * Notice: the method modifies the first input paramteer
+ * 
+ * E.g.
+ * 
+ * ```javascript
+ * var a = { a:1, b:2, c:3 };
+ * var b = { a:10, b:2, c:100, d:4 };
+ * OBJ.augment(a, b); // { a: [1, 10], b: [2, 2], c: [3, 100]}
+ * 
+ * OBJ.augment(a, b, ['b', 'c', 'd']); // { a: 1, b: [2, 2], c: [3, 100], d: [4]});
+ * 
+ * ```
+ * 
+ * @param {object} obj1 The object whose properties will be augmented
+ * @param {object} obj2 The augmenting object
+ * @param {array} key Optional. Array of key names common to both objects taken as
+ * 	the set of properties to augment
+ */
+OBJ.augment = function(obj1, obj2, keys) {  
+	var i, k, keys = keys || OBJ.keys(obj1);
+	
+	for (i = 0 ; i < keys.length; i++) {
+		k = keys[i];
+		if ('undefined' !== typeof obj1[k] && Object.prototype.toString.call(obj1[k]) !== '[object Array]') {
+			obj1[k] = [obj1[k]];
+		}
+		if ('undefined' !== obj2[k]) {
+			if (!obj1[k]) obj1[k] = []; 
+			obj1[k].push(obj2[k]);
+		}
+	}
+}
+
+
 JSUS.extend(OBJ);
+    
+})('undefined' !== typeof JSUS ? JSUS : module.parent.exports.JSUS);
+/**
+ * # PARSE
+ *  
+ * Copyright(c) 2012 Stefano Balietti
+ * MIT Licensed
+ * 
+ * Collection of static functions related to parsing strings
+ * 
+ */
+(function (JSUS) {
+    
+function PARSE(){};
+
+/**
+ * ## PARSE.stringify_prefix
+ * 
+ * Prefix used by PARSE.stringify and PARSE.parse
+ * to decode strings with special meaning
+ * 
+ * @see PARSE.stringify
+ * @see PARSE.parse
+ */
+PARSE.stringify_prefix = '!?_';
+
+/**
+ * ## PARSE.getQueryString
+ * 
+ * Parses the current querystring and returns it full or a specific variable.
+ * Return false if the requested variable is not found.
+ * 
+ * @param {string} variable Optional. If set, returns only the value associated
+ *   with this variable
+ *   
+ * @return {string|boolean} The querystring, or a part of it, or FALSE
+ */
+PARSE.getQueryString = function (variable) {
+    var query = window.location.search.substring(1);
+    if ('undefined' === typeof variable) return query;
+    
+    var vars = query.split("&");
+    for (var i = 0; i < vars.length; i++) {
+        var pair = vars[i].split("=");
+        if (pair[0] === variable) {
+            return unescape(pair[1]);
+        }
+    }
+    return false;
+};
+
+/**
+ * ## PARSE.tokenize
+ * 
+ * Splits a string in tokens that users can specified as input parameter.
+ * Additional options can be specified with the modifiers parameter
+ * 
+ * - limit: An integer that specifies the number of splits, 
+ * 		items after the split limit will not be included in the array
+ * 
+ * @param {string} str The string to split
+ * @param {array} separators Array containing the separators words
+ * @param {object} modifiers Optional. Configuration options for the tokenizing
+ * 
+ * @return {array} Tokens in which the string was split
+ * 
+ */
+PARSE.tokenize = function (str, separators, modifiers) {
+	if (!str) return;
+	if (!separators || !separators.length) return [str];
+	modifiers = modifiers || {};
+	
+	var pattern = '[';
+	
+	JSUS.each(separators, function(s) {
+		if (s === ' ') s = '\\s';
+		
+		pattern += s;
+	});
+	
+	pattern += ']+';
+	
+	var regex = new RegExp(pattern);
+	return str.split(regex, modifiers.limit);
+};
+
+/**
+ * ## PARSE.stringify
+ * 
+ * Stringifies objects, functions, primitive, undefined or null values
+ * 
+ * Makes uses `JSON.stringify` with a special reviver function, that 
+ * strinfifies also functions, undefined, and null values.
+ * 
+ * A special prefix is prepended to avoid name collisions.
+ * 
+ * @param {mixed} o The value to stringify
+ * @param {number} spaces Optional the number of indentation spaces. Defaults, 0
+ * 
+ * @return {string} The stringified result
+ * 
+ * @see JSON.stringify
+ * @see PARSE.stringify_prefix
+ */
+PARSE.stringify = function(o, spaces) {
+	return JSON.stringify(o, function(key, value){
+		var type = typeof value;
+		
+		if ('function' === type) {
+			return PARSE.stringify_prefix + value.toString()
+		}
+		
+		if ('undefined' === type) {
+			return PARSE.stringify_prefix + 'undefined';
+		}
+		
+		if (value === null) {
+			return PARSE.stringify_prefix + 'null';
+		}
+		
+		return value;
+		
+	}, spaces);
+};
+
+/**
+ * ## PARSE.parse
+ * 
+ * Decodes strings in objects and other values
+ * 
+ * Uses `JSON.parse` and then looks  for special strings 
+ * encoded by `PARSE.stringify`
+ * 
+ * @param {string} str The string to decode
+ * @return {mixed} The decoded value 
+ * 
+ * @see JSON.parse
+ * @see PARSE.stringify_prefix
+ */
+PARSE.parse = function(str) {
+	
+	var marker_func = PARSE.stringify_prefix + 'function',
+		marker_null = PARSE.stringify_prefix + 'null',
+		marker_und	= PARSE.stringify_prefix + 'undefined';
+	
+	var len_prefix 	= PARSE.stringify_prefix.length,
+		len_func 	= marker_func.length,
+		len_null 	= marker_null.length,
+		len_und 	= marker_und.length;	
+	
+	var o = JSON.parse(str);
+	return walker(o);
+	
+	function walker(o) {
+		var tmp;
+		
+		if ('object' !== typeof o) {
+			return reviver(o);
+		}
+		
+		for (var i in o) {
+			if (o.hasOwnProperty(i)) {
+				if ('object' === typeof o[i]) {
+					walker(o[i]);
+				}
+				else {
+					o[i] = reviver(o[i]);
+				}
+			}
+		}
+		
+		return o;
+	}
+	
+	function reviver(value) {
+		var type = typeof value;
+		
+		if (type === 'string') {
+			if (value.substring(0, len_prefix) !== PARSE.stringify_prefix) {
+				return value;
+			}
+			else if (value.substring(0, len_func) === marker_func) {
+				return eval('('+value.substring(len_prefix)+')');
+			}
+			else if (value.substring(0, len_null) === marker_null) {
+				return null;
+			}
+			else if (value.substring(0, len_und) === marker_und) {
+				return undefined;
+			}
+		}	
+		
+		return value;
+	};
+}
+
+
+JSUS.extend(PARSE);
     
 })('undefined' !== typeof JSUS ? JSUS : module.parent.exports.JSUS);
 /**
  * # NDDB: N-Dimensional Database
  * 
- * Copyright(c) 2012 Stefano Balietti
  * MIT Licensed
  * 
  * NDDB provides a simple, lightweight, NO-SQL object database 
- * for node.js and the browser. It depends on JSUS.
- * 
- * Allows to define any number of comparator and indexing functions, 
- * which are associated to any of the dimensions (i.e. properties) of 
- * the objects stored in the database. 
- * 
- * Whenever a comparison is needed, the corresponding comparator function 
- * is called, and the database is updated.
- * 
- * Whenever an object is inserted that matches one of the indexing functions
- * an hash is produced, and the element is added to one of the indexes.
- * 
- * Additional features are: methods chaining, tagging, and iteration 
- * through the entries.
- * 
- * 
+ * for node.js and the browser.
+ *
  * See README.md for help.
  * 
  * ---
@@ -2158,12 +2450,26 @@ NDDB.prototype.importDB = function (db) {
  * 
  * Insert an item into the database
  * 
+ * Item must be of type object or function. 
+ * 
+ * The following entries will be ignored:
+ * 
+ * 	- strings
+ * 	- numbers
+ * 	- undefined
+ * 	- null
+ * 
  * @param {object} o The item or array of items to insert
  * @see NDDB._insert
  */
 NDDB.prototype.insert = function (o) {
-	if ('undefined' === typeof o || o === null) return;
-    if (!this.db) this.db = [];
+	if (o === null) return;
+	var type = typeof(o);
+	if (type === 'undefined') return;
+	if (type === 'string') return;
+	if (type === 'number') return;
+	
+	if (!this.db) this.db = [];
  
     this._insert(o);
 };
@@ -2259,36 +2565,22 @@ NDDB.prototype.toString = function () {
  * @param {boolean} TRUE, if compressed
  * @return {string} out A machine-readable representation of the database
  * 
+ * @see JSUS.stringify
  */
 NDDB.prototype.stringify = function (compressed) {
 	if (!this.length) return '[]';
 	compressed = ('undefined' === typeof compressed) ? true : compressed;
 	
-	var objToStr;
-	
-	if (compressed) {
-		objToStr = function(o) {
-			// Skip empty objects
-			if (JSUS.isEmpty(o)) return '{}';
-			return JSON.stringify(o);
-		}	
-	}
-	else {
-		objToStr = function(o) {
-			// Skip empty objects
-			if (JSUS.isEmpty(o)) return '{}';
-			return JSON.stringify(o, null, 4);
-		}
-	}
+	var spaces = compressed ? 0 : 4;
 	
     var out = '[';
     this.each(function(e) {
     	// decycle, if possible
     	e = NDDB.decycle(e);
-    	out += objToStr(e) + ', ';
+    	out += JSUS.stringify(e) + ', ';
     });
     out = out.replace(/, $/,']');
-    
+
     return out;
 };    
 
@@ -2761,23 +3053,37 @@ NDDB.prototype.select = function (d, op, value) {
     var valid = this._analyzeQuery(d, op, value);        
     if (!valid) return false;
     
-    var d = valid.d;
-    var op = valid.op;
-    var value = valid.value;
+    var d = valid.d,
+    	op = valid.op,
+    	value = valid.value;
 
-    var comparator = this.comparator(d);
+    var comparator = this.comparator(d),
+    	compared = null;
     
     var exist = function (elem) {
         if ('undefined' !== typeof JSUS.getNestedValue(d,elem)) return elem;
     };
     
     var compare = function (elem) {
-        try {    
-            if (JSUS.eval(comparator(elem, value) + op + 0, elem)) {
-                return elem;
-            }
+       
+        compared = comparator(elem, value);
+
+        if (op === '==') {
+        	if (compared === 0) return elem;
         }
-        catch(e) {
+        else if (op === '>') {
+        	if (compared === 1 ) return elem;
+        }
+        else if (op === '>=') {
+        	if (compared === 1 || compared === 0) return elem;
+        }	
+        else if (op === '<') {
+        	if (compared === -1 ) return elem;
+        }
+        else if (op === '<=') {
+        	if (compared === -1 || compared === 0) return elem;
+        }	
+        else {
             NDDB.log('Malformed select query: ' + d + op + value);
             return false;
         };
@@ -2828,6 +3134,28 @@ NDDB.prototype.select = function (d, op, value) {
 //	}
 //}
 
+/**
+ * ### NDDB.exists
+ * 
+ * Returns TRUE if a copy of the object exists in 
+ * the database
+ * 
+ * @param {object} o The object to look for
+ * @return {boolean} TRUE, if a copy is found
+ * 
+ * @see JSUS.equals
+ */
+NDDB.prototype.exists = function (o) {
+	if (!o) return false;
+	
+	for (var i = 0 ; i < this.db.length ; i++) {
+		if (JSUS.equals(this.db[i], o)) {
+			return true;
+		}
+	}
+	
+    return false;
+};
 
 /**
  * ### NDDB.limit
@@ -3182,41 +3510,35 @@ NDDB.prototype.concat = function (key1, key2, pos, select) {
  *  * TODO: check do we need to reassign __nddbid__ ?
  */
 NDDB.prototype._join = function (key1, key2, comparator, pos, select) {
+	if (!key1 || !key2) return this.breed([]);
+	
     comparator = comparator || JSUS.equals;
     pos = ('undefined' !== typeof pos) ? pos : 'joined';
     if (select) {
-        var select = (select instanceof Array) ? select : [select];
+        select = (select instanceof Array) ? select : [select];
     }
-    var out = [];
-    var idxs = [];
+    var out = [], idxs = [], foreign_key, key;
+    
     for (var i=0; i < this.db.length; i++) {
-        try {
-            var foreign_key = JSUS.eval('this.'+key1, this.db[i]);
-            if ('undefined' !== typeof foreign_key) { 
-                for (var j=i+1; j < this.db.length; j++) {
-                    try {
-                        var key = JSUS.eval('this.'+key2, this.db[j]);
-                        if ('undefined' !== typeof key) { 
-                            if (comparator(foreign_key, key)) {
-                                // Inject the matched obj into the
-                                // reference one
-                                var o = JSUS.clone(this.db[i]);
-                                var o2 = (select) ? JSUS.subobj(this.db[j], select) : this.db[j];
-                                o[pos] = o2;
-                                out.push(o);
-                            }
-                        }
-                    }
-                    catch(e) {
-                        NDDB.log('Key not found in entry: ' + key2, 'WARN');
-                        //return false;
-                    }
+       
+       foreign_key = JSUS.getNestedValue(key1, this.db[i]);
+       if ('undefined' !== typeof foreign_key) { 
+    	   for (var j=i+1; j < this.db.length; j++) {
+           
+    		   key = JSUS.getNestedValue(key2, this.db[j]);
+               
+               if ('undefined' !== typeof key) { 
+            	   if (comparator(foreign_key, key)) {
+	                    // Inject the matched obj into the
+	                    // reference one
+	                    var o = JSUS.clone(this.db[i]);
+	                    var o2 = (select) ? JSUS.subobj(this.db[j], select) : this.db[j];
+	                    o[pos] = o2;
+	                    out.push(o);
+            	   }
+                    
                 }
             }
-        }
-        catch(e) {
-            NDDB.log('Key not found in entry: ' + key1, 'WARN');
-            //return false;
         }
     }
     
@@ -3248,105 +3570,11 @@ NDDB.prototype.split = function (key) {
 
 // ## Fetching
 
-
-/**
- * ### NDDB._fetch
- *
- * Performs the fetching of the entries according to the
- * specified parameters 
- * 
- * Examples
- * 
- * ```javascript
- * var db = new NDDB();
- * var items = [{a:1, b:2}, {a:3, b:4}, {a:5}];
- * db.importDB(items);
- * 
- * db._fetch(); 
- * // [ {a:1, b:2}, {a:3, b:4}, {a:5} ]
- * 
- * db._fetch('a'); 
- * // [1, 3, 5];
- * 
- * db._fetch('a', 'VALUES'); 
- * //  [ [ 1 ], [ 3 ], [ 5 ] ]
- * 
- * db._fetch('a', 'KEY_VALUES'); 
- * // [ [ 'a', 1 ], [ 'a', 3 ], [ 'a', 5 ] ]
- * 
- * db._fetch(null, 'VALUES'); 
- * // [ [ 1, 2 ], [ 3, 4 ], [ 5] ]
- * 
- * db._fetch(null, 'KEY_VALUES'); 
- * // [ [ 'a', 1, 'b', 2 ], [ 'a', 3, 'b', 4 ], [ 'a', 5 ] ]
- * ```
- * 
- * No further chaining is permitted after fetching.
- * 
- * @api private
- * @param {string} key Optional. If set, returns only the value from the specified property 
- * @param {string} array. Optional If set, objects are transformed in arrays and returned
- * @return {array} out The fetched values 
- * 
- * 	@see NDDB.fetch
- * 	@see NDDB.fetchArray
- * 	@see NDDB.fetchKeyArray
- * 
- */
-NDDB.prototype._fetch = function (key, array) {
-    
-    function getValues (o, key) {        
-        return JSUS.getNestedValue(key, o);
-    };
-    
-    function getValuesArray (o, key) {
-        var el = JSUS.getNestedValue(key, o);
-        if ('undefined' !== typeof el) {
-            return JSUS.obj2KeyedArray(el);
-        }
-    };
-    
-    function getKeyValuesArray (o, key) {
-        var el = JSUS.getNestedValue(key, o);
-        if ('undefined' !== typeof el) {
-            return key.split('.').concat(JSUS.obj2KeyedArray(el));
-        }
-    };
-            
-    switch (array) {
-        case 'VALUES':
-            var func = (key) ? getValuesArray : 
-                               JSUS.obj2Array;
-            
-            break;
-        case 'KEY_VALUES':
-            var func = (key) ? getKeyValuesArray :
-                               JSUS.obj2KeyedArray;
-            break;
-            
-        default: // results are not 
-            if (!key) return this.db;
-            var func = getValues;        
-    }
-    
-    var out = [];    
-    for (var i=0; i < this.db.length; i++) {
-        var el = func.call(this.db[i], this.db[i], key);
-        if ('undefined' !== typeof el) out.push(el);
-    }    
-    
-    return out;
-}
-
 /**
  * ### NDDB.fetch
  *
  * Fetches all the entries in the database and returns 
- * them in a array. 
- * 
- * If a second key parameter is passed, only the value of 
- * the property named after the key are returned, otherwise  
- * the whole entry is returned as it is.
+ * them in one array 
  * 
  * Examples
  * 
@@ -3355,58 +3583,272 @@ NDDB.prototype._fetch = function (key, array) {
  * db.insert([ { a:1, b:{c:2}, d:3 } ]);
  * 
  * db.fetch();    // [ {a: 1, b: {c: 2}, d: 3} ] 
- * db.fetch('b'); // [ {c: 2} ];
- * db.fetch('d'); // [ 3 ];
  * ```
  * 
  * No further chaining is permitted after fetching.
- * 
- * @param {string} key Optional. If set, returns only the value from the specified property 
+ *  
  * @return {array} out The fetched values 
  * 
- * 	@see NDDB._fetch
- * 	@see NDDB.fetchArray
- * 	@see NDDB.fetchKeyArray
+ * @see NDDB.fetchValues
+ * @see NDDB.fetchArray
+ * @see NDDB.fetchKeyArray
+ * @see NDDB.fetchSubObj
  * 
  */
-NDDB.prototype.fetch = function (key) {
-    return this._fetch(key, true);
+NDDB.prototype.fetch = function () {
+    return this.db;
 };
 
 /**
- * ### NDDB.fetchArray
+ * ### NDDB.fetchSubObj
  *
- * Fetches all the entries in the database, transforms them into 
- * one-dimensional array by exploding all nested values, and returns
- * them into an array.
+ * Fetches all the entries in the database and trims out unwanted properties
  * 
- * If a parameter is passed, only the value of the property
- * named after the key is returned, otherwise the whole entry 
- * is exploded, and its values returned in a array. 
  * 
  * Examples
  * 
  * ```javascript
  * var db = new NDDB();
  * db.insert([ { a:1, b:{c:2}, d:3 } ]);
+ * db.insert([ { a:4, b:{c:5}, d:6 } ]);
  * 
- * db.fetchArray();    // [ [ 1, 2, 3 ] ]
- * db.fetchArray('b'); // [ ['c', 2 ] ]
- * db.fetchArray('d'); // [ [ 3 ] ];
+ * db.fetchSubObj('a'); // [ { a: 1} , {a: 4}]
  * ```
  * 
  * No further chaining is permitted after fetching.
  * 
- * @param {string} key Optional. If set, returns only the value from the specified property 
+ * @param {string|array} key Optional. If set, returned objects will have only such properties  
+ * @return {array} out The fetched objects 
+ * 
+ * @see NDDB.fetch
+ * @see NDDB.fetchValues
+ * @see NDDB.fetchArray
+ * @see NDDB.fetchKeyArray
+ */
+NDDB.prototype.fetchSubObj= function (key) {
+	if (!key) return [];
+	var i, el, out = [];
+	for (i=0; i < this.db.length; i++) {
+	    el = JSUS.subobj(this.db[i], key);
+	    if (!JSUS.isEmpty(el)) out.push(el);
+    }
+    return out;
+};
+
+
+/**
+ * ### NDDB.fetchValues
+ *
+ * Fetches all the values of the entries in the database
+ * 
+ * The type of the input parameter determines the return value:
+ *  - if it is `string`, returned value is a one-dimensional array. 
+ * 	- if it is `array`, returned value is an object whose properties are arrays containing 
+ * all the values found in the database for those keys.
+ *   
+ * Nested properties can be specified too.  
+ *   
+ * Examples
+ * 
+ * ```javascript
+ * var db = new NDDB();
+ * db.insert([ { a:1, b:{c:2}, d:3 } ]);
+ * 
+ * db.fetchValues();    // [ [ 1, 2, 3 ] ]
+ * db.fetchValues('b'); // { b: [ {c: 2} ] }
+ * db.fetchValues('d'); // { d: [ 3 ] };
+ * 
+ * db.insert([ { a:4, b:{c:5}, d:6 } ]);
+ * 
+ * db.fetchValues([ 'a', 'd' ]); // { a: [ 1, 4] , d: [ 3, 6] };
+ * ```
+ * 
+ * No further chaining is permitted after fetching.
+ * 
+ * @param {string|array} key Optional. If set, returns only the value from the specified property 
  * @return {array} out The fetched values 
  * 
- * 	@see NDDB._fetch
- * 	@see NDDB.fetch
- * 	@see NDDB.fetchKeyArray
+ * @see NDDB.fetch
+ * @see NDDB.fetchArray
+ * @see NDDB.fetchKeyArray
+ * @see NDDB.fetchSubObj
  * 
  */
+NDDB.prototype.fetchValues = function(key) {
+	var el, i, out, typeofkey;
+	
+	typeofkey = typeof key, out = {};
+	
+	if (typeofkey === 'undefined') {	
+		for (i=0; i < this.db.length; i++) {
+			JSUS.augment(out, this.db[i], JSUS.keys(this.db[i]));
+		} 
+	}
+	
+	else if (typeofkey === 'string') {
+		out[key] = [];
+		for (i=0; i < this.db.length; i++) {
+			el = JSUS.getNestedValue(key, this.db[i]);
+	        if ('undefined' !== typeof el) {
+	        	out[key].push(el);
+	        }
+		}
+		
+		
+	}
+		
+	else if (JSUS.isArray(key)) {
+    	out = JSUS.melt(key,JSUS.rep([],key.length)); // object not array  
+        for (i=0; i < this.db.length; i++) {
+        	el = JSUS.subobj(this.db[i], key);
+        	if (!JSUS.isEmpty(el)) {
+            	JSUS.augment(out, el);
+            }
+        }   
+	}
+	
+    return out;
+};
+
+function getValuesArray(o, key) {
+	return JSUS.obj2Array(o, 1);
+};
+
+function getKeyValuesArray(o, key) {
+	return JSUS.obj2KeyedArray(o, 1);
+};
+
+
+function getValuesArray_KeyString(o, key) {
+    var el = JSUS.getNestedValue(key, o);
+    if ('undefined' !== typeof el) {
+        return JSUS.obj2Array(el,1);
+    }
+};
+
+function getValuesArray_KeyArray(o, key) {
+    var el = JSUS.subobj(o, key);
+    if (!JSUS.isEmpty(el)) {
+    	return JSUS.obj2Array(el,1);
+	}
+};
+
+
+function getKeyValuesArray_KeyString(o, key) {
+    var el = JSUS.getNestedValue(key, o);
+    if ('undefined' !== typeof el) {
+        return key.split('.').concat(JSUS.obj2KeyedArray(el));
+    }
+};
+
+function getKeyValuesArray_KeyArray(o, key) {
+	var el = JSUS.subobj(o, key);
+    if (!JSUS.isEmpty(el)) {
+        return JSUS.obj2KeyedArray(el);
+    	//return key.split('.').concat(JSUS.obj2KeyedArray(el));
+	}
+};
+
+/**
+ * ### NDDB._fetchArray
+ *
+ * Low level primitive for fetching the entities as arrays 
+ * 
+ * Examples
+ * 
+ * ```javascript
+ * var db = new NDDB();
+ * var items = [{a:1, b:2}, {a:3, b:4}, {a:5, c:6}];
+ * db.importDB(items);
+ * 
+ * db._fetch(null, 'VALUES'); 
+ * // [ [ 1, 2 ], [ 3, 4 ], [ 5, 6] ]
+ * 
+ * db._fetch(null, 'KEY_VALUES'); 
+ * // [ [ 'a', 1, 'b', 2 ], [ 'a', 3, 'b', 4 ], [ 'a', 5, 'c', 6 ] ]
+ * 
+ * db._fetch('a', 'VALUES'); 
+ * //  [ [ 1 ], [ 3 ], [ 5 ] ]
+ * 
+ * db._fetch('a', 'KEY_VALUES'); 
+ * // [ [ 'a', 1 ], [ 'a', 3 ], [ 'a', 5 ] ] 
+ * 
+ * db._fetch(['a','b'], 'VALUES'); 
+ * //  [ [ 1 , 2], [ 3, 4 ], [ 5 ] ]
+ * 
+ * db._fetch([ 'a', 'c'] 'KEY_VALUES'); 
+ * // [ [ 'a', 1 ], [ 'a', 3 ], [ 'a', 5, 'c', 6 ] ]
+ * ```
+ * 
+ * No further chaining is permitted after fetching.
+ * 
+ * @api private
+ * @param {string|array} key Optional. If set, returns key/values only from the specified property 
+ * @param {boolean} keyed. Optional. If set, also the keys are returned
+ * @return {array} out The fetched values 
+ * 
+ */
+NDDB.prototype._fetchArray = function (key, keyed) {
+	
+    var cb, out, el, i;
+    
+    if (keyed) {
+    	
+    	if (!key) cb = getKeyValuesArray;
+    	
+    	else if ('string' === typeof key) {
+    		cb = getKeyValuesArray_KeyString;
+    	}
+    	else {
+    		cb = getKeyValuesArray_KeyArray;
+    	}
+    }
+    else {
+    	if (!key) cb = getValuesArray;
+    	
+    	else if ('string' === typeof key) {
+    		cb = getValuesArray_KeyString;
+    	}
+    	else {
+    		cb = getValuesArray_KeyArray;
+    	}
+    }
+    
+    out = [];
+    for (i=0; i < this.db.length; i++) {
+        el = cb.call(this.db[i], this.db[i], key);
+        if ('undefined' !== typeof el) out.push(el);
+    }    
+    
+    return out;
+}
+
+/**
+ * ### NDDB.fetchArray
+ *
+ * Fetches the entities in the database as arrays instead of objects
+ * 
+ * Examples
+ * 
+ * ```javascript
+ * var db = new NDDB();
+ * db.insert([ { a:1, b:{c:2}, d:3 } ]);
+ * db.insert([ { a:4, b:{c:5}, d:6 } ]);
+ * 
+ * db.fetchArray();     // [ [ 1, 'c', 2, 3 ],  ]
+ * db.fetchArray('b');  // [ [ 'c', 2 ] ] 
+ * db.fetchArray('d');  // [ [ 3 ] ]
+ * ```
+ * 
+ * No further chaining is permitted after fetching.
+ * 
+ * @see NDDB._fetchArray
+ * @see NDDB.fetchValues
+ * @see NDDB.fetchKeyArray
+ * @see NDDB.fetchSubObj
+ */
 NDDB.prototype.fetchArray = function (key) {
-    return this._fetch(key, 'VALUES');
+    return this._fetchArray(key);
 };
 
 /**
@@ -3421,9 +3863,9 @@ NDDB.prototype.fetchArray = function (key) {
  * var db = new NDDB();
  * db.insert([ { a:1, b:{c:2}, d:3 } ]);
  * 
- * db.fetchArray();       // [ [ 'a', 1, 'c', 2, 'd', 3 ] ]
+ * db.fetchKeyArray();       // [ [ 'a', 1, 'c', 2, 'd', 3 ] ]
  * db.fetchKeyArray('b'); // [ [ 'b', 'c', 2 ] ] 
- * db.fetchArray('d');    // [ [ 'd', 3 ] ]
+ * db.fetchKeyArray('d');    // [ [ 'd', 3 ] ]
  * ```
  * 
  * No further chaining is permitted after fetching.
@@ -3431,33 +3873,13 @@ NDDB.prototype.fetchArray = function (key) {
  * @param {string} key Optional. If set, returns only the value from the specified property 
  * @return {array} out The fetched values 
  * 
- * 	@see NDDB._fetch
- * 	@see NDDB.fetch
- * 	@see NDDB.fetchArray
+ * @see NDDB._fetchArray
+ * @see NDDB.fetchArray
+ * @see NDDB.fetchValues
+ * @see NDDB.fetchSubObj
  */
 NDDB.prototype.fetchKeyArray = function (key) {
-    return this._fetch(key, 'KEY_VALUES');
-};
-
-/**
- * ### NDDB.fetchValues
- *
- * @deprecated
- * @see NDDB.fetchArray
- * 
- */
-NDDB.prototype.fetchValues = function (key) {
-    return this._fetch(key, 'VALUES');
-};
-
-/**
- * ### NDDB.fetchKeyValues
- *
- * @deprecated
- * @see NDDB.fetchKeyArray
- */
-NDDB.prototype.fetchKeyValues = function (key) {
-    return this._fetch(key, 'KEY_VALUES');
+    return this._fetchArray(key, true);
 };
             
 /**
@@ -3964,7 +4386,8 @@ var storageAvailable = function() {
 // if node
 if (JSUS.isNodeJS()) {   
 	require('./external/cycle.js');		
-	var fs = require('fs');
+	var fs = require('fs'),
+		csv = require('ya-csv');
 };
 
 //end node  
@@ -3988,11 +4411,12 @@ if (JSUS.isNodeJS()) {
  * @param {string} file The file system path, or the identifier for the browser database
  * @param {function} callback Optional. A callback to execute after the database was saved
  * @param {compress} boolean Optional. If TRUE, output will be compressed. Defaults, FALSE
+ * @return {boolean} TRUE, if operation is successful
  * 
  * @see NDDB.load
  * @see NDDB.stringify
  * @see https://github.com/douglascrockford/JSON-js/blob/master/cycle.js
- * @return {boolean} TRUE, if operation is successful
+
  * 
  */
 NDDB.prototype.save = function (file, callback, compress) {
@@ -4016,11 +4440,10 @@ NDDB.prototype.save = function (file, callback, compress) {
 	}
 	
 	// Save in Node.js
-	fs.writeFile(file, this.stringify(compress), 'utf-8', function(e) {
-		if (e) throw e
-		if (callback) callback();
-		return true;
-	});
+	fs.writeFileSync(file, this.stringify(compress), 'utf-8');
+	if (callback) callback();
+	return true;
+	
 };
 
 /**
@@ -4039,15 +4462,16 @@ NDDB.prototype.save = function (file, callback, compress) {
  * Cyclic objects previously decycled will be retrocycled. 
  * 
  * @param {string} file The file system path, or the identifier for the browser database
- * @param {function} callback Optional. A callback to execute after the database was saved
+ * @param {function} cb Optional. A callback to execute after the database was saved
+ * @return {boolean} TRUE, if operation is successful
  * 
  * @see NDDB.save
  * @see NDDB.stringify
+ * @see JSUS.parse
  * @see https://github.com/douglascrockford/JSON-js/blob/master/cycle.js
- * @return {boolean} TRUE, if operation is successful
  * 
  */
-NDDB.prototype.load = function (file, callback) {
+NDDB.prototype.load = function (file, cb, options) {
 	if (!file) {
 		NDDB.log('You must specify a valid file / id.', 'ERR');
 		return false;
@@ -4062,39 +4486,64 @@ NDDB.prototype.load = function (file, callback) {
 		
 		var items = store(file);
 		this.importDB(items);
-		if (callback) callback();
+		if (cb) cb();
 		return true;
 	}
 	
 	var loadString = function(s) {
-		var items = JSON.parse(s.toString());
-		//console.log(s);
+
+		var items = JSUS.parse(s);
+		
 		var i;
 		for (i=0; i< items.length; i++) {
 			// retrocycle if possible
 			items[i] = NDDB.retrocycle(items[i]);
 		}
-//					console.log(Object.prototype.toString.apply(items[0].aa))
-		
+
 		this.importDB(items);
-//				this.each(function(e) {
-//					e = NDDB.retrocycle(e);
-//				});
 	}
 	
-	if (!callback) { 
-		var s = fs.readFileSync(file, 'utf-8');
-		loadString.call(this, s);
-	}
-	else {
-		fs.readFile(file, 'utf-8', function(e, s) {
-			if (e) throw e
-			loadString.call(this, s);
-			callback();
-		});
-	}
+	var s = fs.readFileSync(file, 'utf-8');	
+	loadString.call(this, s);
+	return true;
 };
 	
+
+NDDB.prototype.load.csv = function (file, cb, options) {
+	if (!file) {
+		NDDB.log('You must specify a valid CSV file.', 'ERR');
+		return false;
+	}
+	
+	if (!JSUS.isNodeJS()){
+		NDDB.log('Loading a CSV file is available only in Node.js environment.', 'ERR');
+		return false;
+	}
+	
+	// Mix options
+	options = options || {};
+	 
+	if ('undefined' === typeof options.columnsFromHeader) {
+		options.columnsFromHeader = true;
+	}
+
+
+	var reader = csv.createCsvStreamReader(file, options);
+
+	if (options.columnNames) {
+		reader.setColumnNames(options.columnNames);
+	}
+	
+	reader.addListener('data', function(data) {
+	    this.insert(data);
+	});
+	
+	reader.addListener('end', function(data) {
+		if (cb) callback();
+	});
+	
+	return true;
+};
 
 
 // ## Closure    
