@@ -1020,6 +1020,168 @@ var prepareString = "a"[0] != "a",
     };
 });
 
+// cycle.js
+// 2011-08-24
+
+/*jslint evil: true, regexp: true */
+
+/*members $ref, apply, call, decycle, hasOwnProperty, length, prototype, push,
+    retrocycle, stringify, test, toString
+*/
+
+if (typeof JSON.decycle !== 'function') {
+    JSON.decycle = function decycle(object) {
+        'use strict';
+
+// Make a deep copy of an object or array, assuring that there is at most
+// one instance of each object or array in the resulting structure. The
+// duplicate references (which might be forming cycles) are replaced with
+// an object of the form
+//      {$ref: PATH}
+// where the PATH is a JSONPath string that locates the first occurance.
+// So,
+//      var a = [];
+//      a[0] = a;
+//      return JSON.stringify(JSON.decycle(a));
+// produces the string '[{"$ref":"$"}]'.
+
+// JSONPath is used to locate the unique object. $ indicates the top level of
+// the object or array. [NUMBER] or [STRING] indicates a child member or
+// property.
+
+        var objects = [],   // Keep a reference to each unique object or array
+            paths = [];     // Keep the path to each unique object or array
+
+        return (function derez(value, path) {
+
+// The derez recurses through the object, producing the deep copy.
+
+            var i,          // The loop counter
+                name,       // Property name
+                nu;         // The new object or array
+
+            switch (typeof value) {
+            case 'object':
+
+// typeof null === 'object', so get out if this value is not really an object.
+
+                if (!value) {
+                    return null;
+                }
+
+// If the value is an object or array, look to see if we have already
+// encountered it. If so, return a $ref/path object. This is a hard way,
+// linear search that will get slower as the number of unique objects grows.
+
+                for (i = 0; i < objects.length; i += 1) {
+                    if (objects[i] === value) {
+                        return {$ref: paths[i]};
+                    }
+                }
+
+// Otherwise, accumulate the unique value and its path.
+
+                objects.push(value);
+                paths.push(path);
+
+// If it is an array, replicate the array.
+
+                if (Object.prototype.toString.apply(value) === '[object Array]') {
+                    nu = [];
+                    for (i = 0; i < value.length; i += 1) {
+                        nu[i] = derez(value[i], path + '[' + i + ']');
+                    }
+                } else {
+
+// If it is an object, replicate the object.
+
+                    nu = {};
+                    for (name in value) {
+                        if (Object.prototype.hasOwnProperty.call(value, name)) {
+                            nu[name] = derez(value[name],
+                                path + '[' + JSON.stringify(name) + ']');
+                        }
+                    }
+                }
+                return nu;
+            case 'number':
+            case 'string':
+            case 'boolean':
+                return value;
+            }
+        }(object, '$'));
+    };
+}
+
+
+if (typeof JSON.retrocycle !== 'function') {
+    JSON.retrocycle = function retrocycle($) {
+        'use strict';
+
+// Restore an object that was reduced by decycle. Members whose values are
+// objects of the form
+//      {$ref: PATH}
+// are replaced with references to the value found by the PATH. This will
+// restore cycles. The object will be mutated.
+
+// The eval function is used to locate the values described by a PATH. The
+// root object is kept in a $ variable. A regular expression is used to
+// assure that the PATH is extremely well formed. The regexp contains nested
+// * quantifiers. That has been known to have extremely bad performance
+// problems on some browsers for very long strings. A PATH is expected to be
+// reasonably short. A PATH is allowed to belong to a very restricted subset of
+// Goessner's JSONPath.
+
+// So,
+//      var s = '[{"$ref":"$"}]';
+//      return JSON.retrocycle(JSON.parse(s));
+// produces an array containing a single element which is the array itself.
+
+        var px =
+            /^\$(?:\[(?:\d+|\"(?:[^\\\"\u0000-\u001f]|\\([\\\"\/bfnrt]|u[0-9a-zA-Z]{4}))*\")\])*$/;
+
+        (function rez(value) {
+
+// The rez function walks recursively through the object looking for $ref
+// properties. When it finds one that has a value that is a path, then it
+// replaces the $ref object with a reference to the value that is found by
+// the path.
+
+            var i, item, name, path;
+
+            if (value && typeof value === 'object') {
+                if (Object.prototype.toString.apply(value) === '[object Array]') {
+                    for (i = 0; i < value.length; i += 1) {
+                        item = value[i];
+                        if (item && typeof item === 'object') {
+                            path = item.$ref;
+                            if (typeof path === 'string' && px.test(path)) {
+                                value[i] = eval(path);
+                            } else {
+                                rez(item);
+                            }
+                        }
+                    }
+                } else {
+                    for (name in value) {
+                        if (typeof value[name] === 'object') {
+                            item = value[name];
+                            if (item) {
+                                path = item.$ref;
+                                if (typeof path === 'string' && px.test(path)) {
+                                    value[name] = eval(path);
+                                } else {
+                                    rez(item);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }($));
+        return $;
+    };
+}
 /**
  * # Shelf.JS 
  * 
@@ -1206,321 +1368,6 @@ store.parse = function(o) {
 }());
 
 }('undefined' !== typeof module && 'undefined' !== typeof module.exports ? module.exports: this));
-/**
- * ## Cookie storage for Shelf.js
- * 
- */
-
-(function(exports) {
-
-var store = exports.store;
-	
-if (!store) {
-	console.log('cookie.shelf.js: shelf.js core not found. Cookie storage not available.');
-	return;
-}
-
-if ('undefined' === typeof window) {
-	console.log('cookie.shelf.js: am I running in a browser? Cookie storage not available.');
-	return;
-}
-
-var cookie = (function() {
-	
-	var resolveOptions, assembleOptionsString, parseCookies, constructor, defaultOptions = {
-		expiresAt: null,
-		path: '/',
-		domain:  null,
-		secure: false
-	};
-	
-	/**
-	* resolveOptions - receive an options object and ensure all options are present and valid, replacing with defaults where necessary
-	*
-	* @access private
-	* @static
-	* @parameter Object options - optional options to start with
-	* @return Object complete and valid options object
-	*/
-	resolveOptions = function(options){
-		
-		var returnValue, expireDate;
-
-		if(typeof options !== 'object' || options === null){
-			returnValue = defaultOptions;
-		}
-		else {
-			returnValue = {
-				expiresAt: defaultOptions.expiresAt,
-				path: defaultOptions.path,
-				domain: defaultOptions.domain,
-				secure: defaultOptions.secure
-			};
-
-			if (typeof options.expiresAt === 'object' && options.expiresAt instanceof Date) {
-				returnValue.expiresAt = options.expiresAt;
-			}
-			else if (typeof options.hoursToLive === 'number' && options.hoursToLive !== 0){
-				expireDate = new Date();
-				expireDate.setTime(expireDate.getTime() + (options.hoursToLive * 60 * 60 * 1000));
-				returnValue.expiresAt = expireDate;
-			}
-
-			if (typeof options.path === 'string' && options.path !== '') {
-				returnValue.path = options.path;
-			}
-
-			if (typeof options.domain === 'string' && options.domain !== '') {
-				returnValue.domain = options.domain;
-			}
-
-			if (options.secure === true) {
-				returnValue.secure = options.secure;
-			}
-		}
-
-		return returnValue;
-	};
-	
-	/**
-	* assembleOptionsString - analyze options and assemble appropriate string for setting a cookie with those options
-	*
-	* @access private
-	* @static
-	* @parameter options OBJECT - optional options to start with
-	* @return STRING - complete and valid cookie setting options
-	*/
-	assembleOptionsString = function (options) {
-		options = resolveOptions(options);
-
-		return (
-			(typeof options.expiresAt === 'object' && options.expiresAt instanceof Date ? '; expires=' + options.expiresAt.toGMTString() : '') +
-			'; path=' + options.path +
-			(typeof options.domain === 'string' ? '; domain=' + options.domain : '') +
-			(options.secure === true ? '; secure' : '')
-		);
-	};
-	
-	/**
-	* parseCookies - retrieve document.cookie string and break it into a hash with values decoded and unserialized
-	*
-	* @access private
-	* @static
-	* @return OBJECT - hash of cookies from document.cookie
-	*/
-	parseCookies = function() {
-		var cookies = {}, i, pair, name, value, separated = document.cookie.split(';'), unparsedValue;
-		for(i = 0; i < separated.length; i = i + 1){
-			pair = separated[i].split('=');
-			name = pair[0].replace(/^\s*/, '').replace(/\s*$/, '');
-
-			try {
-				value = decodeURIComponent(pair[1]);
-			}
-			catch(e1) {
-				value = pair[1];
-			}
-
-//						if (JSON && 'object' === typeof JSON && 'function' === typeof JSON.parse) {
-//							try {
-//								unparsedValue = value;
-//								value = JSON.parse(value);
-//							}
-//							catch (e2) {
-//								value = unparsedValue;
-//							}
-//						}
-
-			cookies[name] = store.parse(value);
-		}
-		return cookies;
-	};
-
-	constructor = function(){};
-
-	
-	/**
-	 * get - get one, several, or all cookies
-	 *
-	 * @access public
-	 * @paramater Mixed cookieName - String:name of single cookie; Array:list of multiple cookie names; Void (no param):if you want all cookies
-	 * @return Mixed - Value of cookie as set; Null:if only one cookie is requested and is not found; Object:hash of multiple or all cookies (if multiple or all requested);
-	 */
-	constructor.prototype.get = function(cookieName) {
-		
-		var returnValue, item, cookies = parseCookies();
-
-		if(typeof cookieName === 'string') {
-			returnValue = (typeof cookies[cookieName] !== 'undefined') ? cookies[cookieName] : null;
-		}
-		else if (typeof cookieName === 'object' && cookieName !== null) {
-			returnValue = {};
-			for (item in cookieName) {
-				if (typeof cookies[cookieName[item]] !== 'undefined') {
-					returnValue[cookieName[item]] = cookies[cookieName[item]];
-				}
-				else {
-					returnValue[cookieName[item]] = null;
-				}
-			}
-		}
-		else {
-			returnValue = cookies;
-		}
-
-		return returnValue;
-	};
-	
-	/**
-	 * filter - get array of cookies whose names match the provided RegExp
-	 *
-	 * @access public
-	 * @paramater Object RegExp - The regular expression to match against cookie names
-	 * @return Mixed - Object:hash of cookies whose names match the RegExp
-	 */
-	constructor.prototype.filter = function (cookieNameRegExp) {
-		var cookieName, returnValue = {}, cookies = parseCookies();
-
-		if (typeof cookieNameRegExp === 'string') {
-			cookieNameRegExp = new RegExp(cookieNameRegExp);
-		}
-
-		for (cookieName in cookies) {
-			if (cookieName.match(cookieNameRegExp)) {
-				returnValue[cookieName] = cookies[cookieName];
-			}
-		}
-
-		return returnValue;
-	};
-	
-	/**
-	 * set - set or delete a cookie with desired options
-	 *
-	 * @access public
-	 * @paramater String cookieName - name of cookie to set
-	 * @paramater Mixed value - Any JS value. If not a string, will be JSON encoded; NULL to delete
-	 * @paramater Object options - optional list of cookie options to specify
-	 * @return void
-	 */
-	constructor.prototype.set = function(cookieName, value, options){
-		if (typeof options !== 'object' || options === null) {
-			options = {};
-		}
-
-		if (typeof value === 'undefined' || value === null) {
-			value = '';
-			options.hoursToLive = -8760;
-		}
-
-		else if (typeof value !== 'string'){
-//						if(typeof JSON === 'object' && JSON !== null && typeof store.stringify === 'function') {
-//							
-//							value = JSON.stringify(value);
-//						}
-//						else {
-//							throw new Error('cookies.set() received non-string value and could not serialize.');
-//						}
-			
-			value = store.stringify(value);
-		}
-
-
-		var optionsString = assembleOptionsString(options);
-
-		document.cookie = cookieName + '=' + encodeURIComponent(value) + optionsString;
-	};
-	
-	/**
-	 * del - delete a cookie (domain and path options must match those with which the cookie was set; this is really an alias for set() with parameters simplified for this use)
-	 *
-	 * @access public
-	 * @paramater MIxed cookieName - String name of cookie to delete, or Bool true to delete all
-	 * @paramater Object options - optional list of cookie options to specify (path, domain)
-	 * @return void
-	 */
-	constructor.prototype.del = function(cookieName, options) {
-		var allCookies = {}, name;
-
-		if(typeof options !== 'object' || options === null) {
-			options = {};
-		}
-
-		if(typeof cookieName === 'boolean' && cookieName === true) {
-			allCookies = this.get();
-		}
-		else if(typeof cookieName === 'string') {
-			allCookies[cookieName] = true;
-		}
-
-		for(name in allCookies) {
-			if(typeof name === 'string' && name !== '') {
-				this.set(name, null, options);
-			}
-		}
-	};
-	
-	/**
-	 * test - test whether the browser is accepting cookies
-	 *
-	 * @access public
-	 * @return Boolean
-	 */
-	constructor.prototype.test = function() {
-		var returnValue = false, testName = 'cT', testValue = 'data';
-
-		this.set(testName, testValue);
-
-		if(this.get(testName) === testValue) {
-			this.del(testName);
-			returnValue = true;
-		}
-
-		return returnValue;
-	};
-	
-	/**
-	 * setOptions - set default options for calls to cookie methods
-	 *
-	 * @access public
-	 * @param Object options - list of cookie options to specify
-	 * @return void
-	 */
-	constructor.prototype.setOptions = function(options) {
-		if(typeof options !== 'object') {
-			options = null;
-		}
-
-		defaultOptions = resolveOptions(options);
-	};
-
-	return new constructor();
-})();
-
-// if cookies are supported by the browser
-if (cookie.test()) {
-
-	store.addType("cookie", function (key, value, options) {
-		
-		if ('undefined' === typeof key) {
-			return cookie.get();
-		}
-
-		if ('undefined' === typeof value) {
-			return cookie.get(key);
-		}
-		
-		// Set to NULL means delete
-		if (value === null) {
-			cookie.del(key);
-			return null;
-		}
-
-		return cookie.set(key, value, options);		
-	});
-}
-
-}(this));
 /**
  * ## Amplify storage for Shelf.js
  * 
@@ -2048,6 +1895,321 @@ store.addType("fs", function(key, value, options) {
 });
 
 }(('undefined' !== typeof module && 'function' === typeof require) ? module.exports || module.parent.exports : {}));
+/**
+ * ## Cookie storage for Shelf.js
+ * 
+ */
+
+(function(exports) {
+
+var store = exports.store;
+	
+if (!store) {
+	console.log('cookie.shelf.js: shelf.js core not found. Cookie storage not available.');
+	return;
+}
+
+if ('undefined' === typeof window) {
+	console.log('cookie.shelf.js: am I running in a browser? Cookie storage not available.');
+	return;
+}
+
+var cookie = (function() {
+	
+	var resolveOptions, assembleOptionsString, parseCookies, constructor, defaultOptions = {
+		expiresAt: null,
+		path: '/',
+		domain:  null,
+		secure: false
+	};
+	
+	/**
+	* resolveOptions - receive an options object and ensure all options are present and valid, replacing with defaults where necessary
+	*
+	* @access private
+	* @static
+	* @parameter Object options - optional options to start with
+	* @return Object complete and valid options object
+	*/
+	resolveOptions = function(options){
+		
+		var returnValue, expireDate;
+
+		if(typeof options !== 'object' || options === null){
+			returnValue = defaultOptions;
+		}
+		else {
+			returnValue = {
+				expiresAt: defaultOptions.expiresAt,
+				path: defaultOptions.path,
+				domain: defaultOptions.domain,
+				secure: defaultOptions.secure
+			};
+
+			if (typeof options.expiresAt === 'object' && options.expiresAt instanceof Date) {
+				returnValue.expiresAt = options.expiresAt;
+			}
+			else if (typeof options.hoursToLive === 'number' && options.hoursToLive !== 0){
+				expireDate = new Date();
+				expireDate.setTime(expireDate.getTime() + (options.hoursToLive * 60 * 60 * 1000));
+				returnValue.expiresAt = expireDate;
+			}
+
+			if (typeof options.path === 'string' && options.path !== '') {
+				returnValue.path = options.path;
+			}
+
+			if (typeof options.domain === 'string' && options.domain !== '') {
+				returnValue.domain = options.domain;
+			}
+
+			if (options.secure === true) {
+				returnValue.secure = options.secure;
+			}
+		}
+
+		return returnValue;
+	};
+	
+	/**
+	* assembleOptionsString - analyze options and assemble appropriate string for setting a cookie with those options
+	*
+	* @access private
+	* @static
+	* @parameter options OBJECT - optional options to start with
+	* @return STRING - complete and valid cookie setting options
+	*/
+	assembleOptionsString = function (options) {
+		options = resolveOptions(options);
+
+		return (
+			(typeof options.expiresAt === 'object' && options.expiresAt instanceof Date ? '; expires=' + options.expiresAt.toGMTString() : '') +
+			'; path=' + options.path +
+			(typeof options.domain === 'string' ? '; domain=' + options.domain : '') +
+			(options.secure === true ? '; secure' : '')
+		);
+	};
+	
+	/**
+	* parseCookies - retrieve document.cookie string and break it into a hash with values decoded and unserialized
+	*
+	* @access private
+	* @static
+	* @return OBJECT - hash of cookies from document.cookie
+	*/
+	parseCookies = function() {
+		var cookies = {}, i, pair, name, value, separated = document.cookie.split(';'), unparsedValue;
+		for(i = 0; i < separated.length; i = i + 1){
+			pair = separated[i].split('=');
+			name = pair[0].replace(/^\s*/, '').replace(/\s*$/, '');
+
+			try {
+				value = decodeURIComponent(pair[1]);
+			}
+			catch(e1) {
+				value = pair[1];
+			}
+
+//						if (JSON && 'object' === typeof JSON && 'function' === typeof JSON.parse) {
+//							try {
+//								unparsedValue = value;
+//								value = JSON.parse(value);
+//							}
+//							catch (e2) {
+//								value = unparsedValue;
+//							}
+//						}
+
+			cookies[name] = store.parse(value);
+		}
+		return cookies;
+	};
+
+	constructor = function(){};
+
+	
+	/**
+	 * get - get one, several, or all cookies
+	 *
+	 * @access public
+	 * @paramater Mixed cookieName - String:name of single cookie; Array:list of multiple cookie names; Void (no param):if you want all cookies
+	 * @return Mixed - Value of cookie as set; Null:if only one cookie is requested and is not found; Object:hash of multiple or all cookies (if multiple or all requested);
+	 */
+	constructor.prototype.get = function(cookieName) {
+		
+		var returnValue, item, cookies = parseCookies();
+
+		if(typeof cookieName === 'string') {
+			returnValue = (typeof cookies[cookieName] !== 'undefined') ? cookies[cookieName] : null;
+		}
+		else if (typeof cookieName === 'object' && cookieName !== null) {
+			returnValue = {};
+			for (item in cookieName) {
+				if (typeof cookies[cookieName[item]] !== 'undefined') {
+					returnValue[cookieName[item]] = cookies[cookieName[item]];
+				}
+				else {
+					returnValue[cookieName[item]] = null;
+				}
+			}
+		}
+		else {
+			returnValue = cookies;
+		}
+
+		return returnValue;
+	};
+	
+	/**
+	 * filter - get array of cookies whose names match the provided RegExp
+	 *
+	 * @access public
+	 * @paramater Object RegExp - The regular expression to match against cookie names
+	 * @return Mixed - Object:hash of cookies whose names match the RegExp
+	 */
+	constructor.prototype.filter = function (cookieNameRegExp) {
+		var cookieName, returnValue = {}, cookies = parseCookies();
+
+		if (typeof cookieNameRegExp === 'string') {
+			cookieNameRegExp = new RegExp(cookieNameRegExp);
+		}
+
+		for (cookieName in cookies) {
+			if (cookieName.match(cookieNameRegExp)) {
+				returnValue[cookieName] = cookies[cookieName];
+			}
+		}
+
+		return returnValue;
+	};
+	
+	/**
+	 * set - set or delete a cookie with desired options
+	 *
+	 * @access public
+	 * @paramater String cookieName - name of cookie to set
+	 * @paramater Mixed value - Any JS value. If not a string, will be JSON encoded; NULL to delete
+	 * @paramater Object options - optional list of cookie options to specify
+	 * @return void
+	 */
+	constructor.prototype.set = function(cookieName, value, options){
+		if (typeof options !== 'object' || options === null) {
+			options = {};
+		}
+
+		if (typeof value === 'undefined' || value === null) {
+			value = '';
+			options.hoursToLive = -8760;
+		}
+
+		else if (typeof value !== 'string'){
+//						if(typeof JSON === 'object' && JSON !== null && typeof store.stringify === 'function') {
+//							
+//							value = JSON.stringify(value);
+//						}
+//						else {
+//							throw new Error('cookies.set() received non-string value and could not serialize.');
+//						}
+			
+			value = store.stringify(value);
+		}
+
+
+		var optionsString = assembleOptionsString(options);
+
+		document.cookie = cookieName + '=' + encodeURIComponent(value) + optionsString;
+	};
+	
+	/**
+	 * del - delete a cookie (domain and path options must match those with which the cookie was set; this is really an alias for set() with parameters simplified for this use)
+	 *
+	 * @access public
+	 * @paramater MIxed cookieName - String name of cookie to delete, or Bool true to delete all
+	 * @paramater Object options - optional list of cookie options to specify (path, domain)
+	 * @return void
+	 */
+	constructor.prototype.del = function(cookieName, options) {
+		var allCookies = {}, name;
+
+		if(typeof options !== 'object' || options === null) {
+			options = {};
+		}
+
+		if(typeof cookieName === 'boolean' && cookieName === true) {
+			allCookies = this.get();
+		}
+		else if(typeof cookieName === 'string') {
+			allCookies[cookieName] = true;
+		}
+
+		for(name in allCookies) {
+			if(typeof name === 'string' && name !== '') {
+				this.set(name, null, options);
+			}
+		}
+	};
+	
+	/**
+	 * test - test whether the browser is accepting cookies
+	 *
+	 * @access public
+	 * @return Boolean
+	 */
+	constructor.prototype.test = function() {
+		var returnValue = false, testName = 'cT', testValue = 'data';
+
+		this.set(testName, testValue);
+
+		if(this.get(testName) === testValue) {
+			this.del(testName);
+			returnValue = true;
+		}
+
+		return returnValue;
+	};
+	
+	/**
+	 * setOptions - set default options for calls to cookie methods
+	 *
+	 * @access public
+	 * @param Object options - list of cookie options to specify
+	 * @return void
+	 */
+	constructor.prototype.setOptions = function(options) {
+		if(typeof options !== 'object') {
+			options = null;
+		}
+
+		defaultOptions = resolveOptions(options);
+	};
+
+	return new constructor();
+})();
+
+// if cookies are supported by the browser
+if (cookie.test()) {
+
+	store.addType("cookie", function (key, value, options) {
+		
+		if ('undefined' === typeof key) {
+			return cookie.get();
+		}
+
+		if ('undefined' === typeof value) {
+			return cookie.get(key);
+		}
+		
+		// Set to NULL means delete
+		if (value === null) {
+			cookie.del(key);
+			return null;
+		}
+
+		return cookie.set(key, value, options);		
+	});
+}
+
+}(this));
 /**
  * # JSUS: JavaScript UtilS. 
  * Copyright(c) 2012 Stefano Balietti

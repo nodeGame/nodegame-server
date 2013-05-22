@@ -2720,7 +2720,7 @@ Stager.prototype.stageTestRun = function(stageId) {
  *
  * @param {object} step The step object
  *
- * @return {bool} true for valid step objects, false otherwise
+ * @return {boolean} true for valid step objects, false otherwise
  *
  * @see Stager.addStep
  *
@@ -2745,7 +2745,7 @@ Stager.prototype.checkStepValidity = function(step) {
  *
  * @param {object} stage The stage object
  *
- * @return {bool} true for valid stage objects, false otherwise
+ * @return {boolean} true for valid stage objects, false otherwise
  *
  * @see Stager.addStage
  *
