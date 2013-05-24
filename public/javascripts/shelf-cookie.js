@@ -71,8 +71,13 @@ store.addType = function (type, storage) {
 	}
 };
 
-store.error = function() {
-	return "shelf quota exceeded"; 
+// TODO: create unit test
+store.onquotaerror = undefined;
+store.error = function() {	
+	console.log("shelf quota exceeded"); 
+	if ('function' === typeof store.onquotaerror) {
+		store.onquotaerror(null);
+	}
 };
 
 store.log = function(text) {

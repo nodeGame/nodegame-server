@@ -1236,44 +1236,60 @@ PlayerList.prototype = new NDDB();
 PlayerList.prototype.constructor = PlayerList;
 
 
+///**
+// * ## PlayerList.array2Groups (static)
+// * 
+// * Transforms an array of array (of players) into an
+// * array of PlayerList instances and returns it.
+// * 
+// * The original array is modified.
+// * 
+// * @param {Array} array The array to transform
+// * @return {Array} array The array of `PlayerList` objects
+// * 
+// */
+//PlayerList.array2Groups = function (array) {
+//	if (!array) return;
+//	for (var i = 0; i < array.length; i++) {
+//		array[i] = new PlayerList({}, array[i]);
+//	};
+//	return array;
+//};
+
 /**
- * ## PlayerList.array2Groups (static)
+ * ### PlayerList.comparePlayers
  * 
- * Transforms an array of array (of players) into an
- * array of PlayerList instances and returns it.
+ * Comparator functions between two players
  * 
- * The original array is modified.
+ * @param {Player} p1 The first player
+ * @param {Player} p2 The second player
+ * @return {number} The result of the comparison
  * 
- * @param {Array} array The array to transform
- * @return {Array} array The array of `PlayerList` objects
- * 
+ * @see NDDB.globalCompare
  */
-PlayerList.array2Groups = function (array) {
-	if (!array) return;
-	for (var i = 0; i < array.length; i++) {
-		array[i] = new PlayerList({}, array[i]);
-	};
-	return array;
+PlayerList.comparePlayers = function (p1, p2) {
+	if (p1.id === p2.id) return 0;
+	if (p1.count < p2.count) return 1;
+	if (p1.count > p2.count) return -1;
+	return 0;
 };
 
 /**
  * ## PlayerList constructor
  *
- * Creates an instance of PlayerList.
+ * Creates an instance of PlayerList
  * 
- * The instance inherits from NDDB, an contains an internal 
- * database for storing the players 
+ * The class inherits his prototype from `node.NDDB`.
  * 
- * @param {object} options Optional. Configuration options for the instance
- * @param {object} db Optional. An initial set of players to import 
+ * It indexes players by their _id_.
+ * 
+ * @param {object} options Optional. Configuration object
+ * @param {array} db Optional. An initial set of players to import 
  * @param {PlayerList} parent Optional. A parent object for the instance
  * 
- * @api public
- * 
- * 		@see NDDB constructor
+ * @see NDDB.constructor
  */
-
-function PlayerList (options, db, parent) {
+function PlayerList (options, db) {
 	options = options || {};
 	if (!options.log) options.log = node.log;
 	if (!options.update) options.update = {};
@@ -1281,35 +1297,31 @@ function PlayerList (options, db, parent) {
 		options.update.indexes = true;
 	}
 	
-	NDDB.call(this, options, db, parent);
+	NDDB.call(this, options, db);
   
-	this.globalCompare = function (pl1, pl2) {
-	  
-		if (pl1.id === pl2.id) {
-			return 0;
-		}
-		else if (pl1.count < pl2.count) {
-			return 1;
-		}
-		else if (pl1.count > pl2.count) {
-			return -1;
-		}
-		else {
-			node.log('Two players with different id have the same count number', 'WARN');
-			return 0;
-		}
-	};
+	// Assigns a global comparator function
+	this.globalCompare = PlayerList.comparePlayers;
 	
-	// TODO : do the checking automatically
+
 	// We check if the index are not existing already because 
 	// it could be that the constructor is called by the breed function
-	// and in such case we would duplicate them
-	
+	// and in such case we would duplicate them	
 	if (!this.id) {
-		this.i('id', function(p) {
+		this.index('id', function(p) {
 			return p.id;
 		});
 	}
+
+// Not sure if we need it now	
+//	if (!this.stage) {
+//		this.hash('stage', function(p) {
+//			return p.stage.toHash();
+//		}
+//	}
+	
+	// The internal counter that will be used to assing the `count` 
+	// property to each inserted player
+	this.pcounter = this.db.length || 0;
 };
 
 // ## PlayerList methods
@@ -1319,262 +1331,189 @@ function PlayerList (options, db, parent) {
  * 
  * Adds a new player to the database
  * 
- * Before insertion, objects are checked to be valid `Player` objects.
+ * Before insertion, objects are checked to be valid `Player` objects,
+ * that is they must have a unique player id.
+ * 
+ * The `count` property is added to the player object, and 
+ * the internal `pcounter` variable is incremented.
  * 
  * @param {Player} player The player object to add to the database
- * @return {Boolean} TRUE, if the insertion was successful
- * 
+ * @return {player|boolean} The inserted player, or FALSE if an error occurs
  */
 PlayerList.prototype.add = function (player) {
-	// <!-- Check if the object contains the minimum requisite to act as Player -->
-	if (!player || !player.sid || !player.id) {
-		node.log('Only instance of Player objects can be added to a PlayerList', 'ERR');
+	if (!player || 'undefined' === typeof player.id) {
+		node.err('Player id not found, cannot add object to player list.');
 		return false;
 	}
 
-	// <!-- Check if the id is unique -->
 	if (this.exist(player.id)) {
-		node.log('Attempt to add a new player already in the player list: ' + player.id, 'ERR');
+		node.err('Attempt to add a new player already in the player list: ' + player.id);
 		return false;
 	}
 	
 	this.insert(player);
-	player.count = player.nddbid;
+	player.count = this.pcounter;
+	this.pcounter++;
 	
-	return true;
-};
-
-/**
- * ### PlayerList.remove
- * 
- * Removes a player from the database based on its id
- * 
- * If no id is passed, removes all currently selected 
- * players
- * 
- * Notice: this operation cannot be undone
- * 
- * @param {number} id The id of the player to remove
- * @return {Boolean} TRUE, if a player is found and removed successfully 
- * 
- * 		@see `PlayerList.pop`
- * 
- */
-PlayerList.prototype.remove = function (id) {
-	if (!id) {
-		// fallback on NDDB.remove
-		return NDDB.prototype.remove.call(this);
-	}
-		
-	var p = this.select('id', '=', id);
-	if (p.length) {
-		p.remove();
-		return true;
-	}
-
-	node.log('Attempt to remove a non-existing player from the the player list. id: ' + id, 'ERR');
-	return false;
+	return player;
 };
 
 /**
  * ### PlayerList.get 
  * 
- * Retrieves a player with a given id and returns it
- * 
- * Displays a warning if more than one player is found with the same id
+ * Retrieves a player with the given id
  * 
  * @param {number} id The id of the player to retrieve
- * @return {Player|Boolean} The player with the speficied id, or FALSE if no player was found
- * 
- * 		@see `PlayerList.pop`	
- * 
+ * @return {Player|boolean} The player with the speficied id, or FALSE if none was found
  */
 PlayerList.prototype.get = function (id) {	
-	if (!id) return false;
-	
-	var p = this.select('id', '=', id);
-	
-	if (p.count() > 0) {
-		if (p.count() > 1) {
-			node.log('More than one player found with id: ' + id, 'WARN');
-			return p.fetch();
-		}
-		return p.first();
+	if ('undefined' === typeof id) return false; 
+	var player = this.id.get(id);
+	if (!player) {
+		node.warn('Attempt to access a non-existing player from the the player list. id: ' + id);
+		return false;
 	}
-	
-	node.log('Attempt to access a non-existing player from the the player list. id: ' + id, 'ERR');
-	return false;
+	return player;
 };
 
 /**
- * ### PlayerList.pop 
+ * ### PlayerList.remove
  * 
- * Retrieves a player with a given id, removes it from the database,
- * and returns it
+ * Removes the player with the given id
  * 
- * Displays a warning if more than one player is found with the same id
+ * Notice: this operation cannot be undone
  * 
- * @param {number} id The id of the player to retrieve
- * @return {Player|Boolean} The player with the speficied id, or FALSE if no player was found  
- * 
- * 		@see `PlayerList.remove`
+ * @param {number} id The id of the player to remove
+ * @return {object|boolean} The removed player object, or FALSE if none was found  
  */
-PlayerList.prototype.pop = function (id) {	
-	if (!id) return false;
-	
-	var p = this.get(id);
-	
-	// <!-- can be either a Player object or an array of Players -->
-	if ('object' === typeof p) {
-		this.remove(id);
-		return p;
+PlayerList.prototype.remove = function (id) {
+	if ('undefined' === typeof id) return false; 
+	var player = this.id.pop(id);
+	if (!player) {
+		node.err('Attempt to remove a non-existing player from the the player list. id: ' + id);
+		return false;
 	}
-	
-	return false;
+	return player;
 };
 
+// ### PlayerList.pop
+// @deprecated 
+// TODO remove after transition is complete
+PlayerList.prototype.pop = PlayerList.prototype.remove;
+
 /**
- * ### PlayerLIst.getAllIDs
+ * ### PlayerList.exist
  * 
- * Fetches all the id of the players in the database and
- * returns them into an array
+ * Checks whether a player with the given id already exists
  * 
- * @return {Array} The array of id of players
- * 
+ * @param {number} id The id of the player
+ * @return {boolean} TRUE, if a player with the specified id is found
  */
-PlayerList.prototype.getAllIDs = function () {	
-	return this.map(function(o){return o.id;});
+PlayerList.prototype.exist = function (id) {
+	return this.id.get(id) ? true : false;
 };
 
 /**
  * ### PlayerList.updatePlayerStage
  * 
- * Updates the value of the `stage` object of a player in the database
+ * Updates the value of the `stage` object of a player
  * 
- * @param {number} id The id of the player to update
- * @param {GameStage} stage The new value of the stage property
- * @return {Boolean} TRUE, if update is successful
- * 
+ * @param {number} id The id of the player
+ * @param {GameStage} stage The new stage object
+ * @return {object|boolean} The updated player object, or FALSE is an error occurred
  */
 PlayerList.prototype.updatePlayerStage = function (id, stage) {
 	
 	if (!this.exist(id)) {
-		node.log('Attempt to access a non-existing player from the the player list ' + player.id, 'WARN');
+		node.warm('Attempt to access a non-existing player from the the player list ' + player.id);
 		return false;	
 	}
 	
 	if ('undefined' === typeof stage) {
-		node.log('Attempt to assign to a player an undefined stage', 'WARN');
+		node.warn('Attempt to assign to a player an undefined stage');
 		return false;
 	}
 	
-	this.select('id', '=', id).first().stage = stage;	
-
-	return true;
-};
-
-/**
- * ### PlayerList.exist
- * 
- * Checks whether at least one player with a given player exists
- * 
- * @param {number} id The id of the player
- * @return {Boolean} TRUE, if a player with the specified id was found
- */
-PlayerList.prototype.exist = function (id) {
-	return 'undefined' !== typeof this.id[id];
+	return this.id.update(id, {
+		stage: stage
+	});
 };
 
 /**
  * ### PlayerList.isStageDone
  * 
- * Checks whether all players in the database are DONE
- * for the specified `GameStage`.
+ * Checks whether all players have terminated the specified stage
  * 
- * @param {GameStage} stage Optional. The GameStage to check. Defaults stage = node.game.stage
- * @param {Boolean} extended Optional. If TRUE, also newly connected players are checked. Defaults, FALSE
- * @return {Boolean} TRUE, if all the players are DONE with the specified `GameStage`
+ * A stage is considered _DONE_ if all players that are on that stage
+ * have the property `stageLevel` equal to `Game.stageLevels.DONE`.
  * 
- * 		@see `PlayerList.actives`
- * 		@see `PlayerList.checkStage`
+ * Players at other stages are ignored.
+ * 
+ * If no player is found at the desired stage, it returns FALSE.
+ * 
+ * @param {GameStage} stage The GameStage of reference
+ * @param {boolean} extended Optional. If TRUE, all players are checked. Defaults, FALSE.
+ * @return {boolean} TRUE, if all checked players have terminated the stage
  */
-PlayerList.prototype.isStageDone = function (stage, extended) {
-	
-	// <!-- console.log('1--- ' + stage); -->
-	stage = stage || node.game.stage;
-	// <!-- console.log('2--- ' + stage); -->
-	extended = extended || false;
-	
-	var result = this.map(function(p){
-		var gs = new GameStage(p.stage);
-		// <!-- console.log('Going to compare ' + gs + ' and ' + stage); -->
-		
-		// Player is done for his stage
-		if (p.stage.is !== node.is.DONE) {
-			return 0;
-		}
-		// The stage of the player is actually the one we are interested in
+PlayerList.prototype.isStageDone = function (stage) {
+	if (!stage) return false;
+	var pfound = false;
+	for (var i = 0; i < this.db.length ;  i++) {
+		// Player is at another stage
 		if (GameStage.compare(stage, p.stage, false) !== 0) {
-			return 0;
+			continue;
 		}
-		
-		return 1;
-	});
-	
-	var i;
-	var sum = 0;
-	for (i=0; i<result.length;i++) {
-		sum = sum + Number(result[i]);
+		// Player is done for his stage
+		if (p.stageLevel !== node.Game.stageLevels.DONE) {
+			return false;
+		}
+		else {
+			pfound = true;
+		}
 	}
-	
-	var total = (extended) ? this.length : this.actives(); 
-// <!--
-//		console.log('ISDONE??')
-//		console.log(total + ' ' + sum);
-// -->	
-	return (sum === total) ? true : false;
+	return pfound;
 };
 
-/**
- * ### PlayerList.actives
- * 
- * Counts the number of player whose stage is different from 0:0:0
- * 
- * @return {number} result The number of player whose stage is different from 0:0:0
- * 
- */
-PlayerList.prototype.actives = function () {
-	var result = 0;
-	var gs;
-	this.each(function(p) {
-		gs = new GameStage(p.stage);	
-		// <!-- Player is on 0.0.0 stage -->
-		if (GameStage.compare(gs, new GameStage()) !== 0) {
-			result++;
-		}
-	});	
-	// <!-- node.log('ACTIVES: ' + result); -->
-	return result;
-};
+///**
+// * ### PlayerList.actives
+// * 
+// * Counts the number of player whose stage is different from 0:0:0
+// * 
+// * @return {number} result The number of player whose stage is different from 0:0:0
+// * 
+// */
+//PlayerList.prototype.actives = function () {
+//	var result = 0;
+//	var gs;
+//	this.each(function(p) {
+//		gs = new GameStage(p.stage);	
+//		// <!-- Player is on 0.0.0 stage -->
+//		if (GameStage.compare(gs, new GameStage()) !== 0) {
+//			result++;
+//		}
+//	});	
+//	// <!-- node.log('ACTIVES: ' + result); -->
+//	return result;
+//};
 
-/**
- * ### PlayerList.checkStage
- * 
- * If all the players are DONE with the specfied stage,
- * emits a `STAGEDONE` event
- * 
- * @param {GameStage} stage Optional. The GameStage to check. Defaults stage = node.game.stage
- * @param {Boolean} extended Optional. If TRUE, also newly connected players are checked. Defaults, FALSE
- * 
- * 		@see `PlayerList.actives`
- * 		@see `PlayerList.isStageDone`
- * 
- */
-PlayerList.prototype.checkStage = function (stage, extended) {
-	if (this.isStageDone(stage, extended)) {
-		node.emit('STAGEDONE');
-	}
-};
+///**
+// * ### PlayerList.checkStage
+// * 
+// * If all the players are DONE with the specfied stage,
+// * emits a `STAGEDONE` event
+// * 
+// * @param {GameStage} stage Optional. The GameStage to check. Defaults stage = node.game.stage
+// * @param {Boolean} extended Optional. If TRUE, also newly connected players are checked. Defaults, FALSE
+// * 
+// * 		@see `PlayerList.actives`
+// * 		@see `PlayerList.isStageDone`
+// * 
+// */
+//PlayerList.prototype.checkStage = function (stage, extended) {
+//	if (this.isStageDone(stage, extended)) {
+//		node.emit('STAGEDONE');
+//	}
+//};
 
 /**
  * ### PlayerList.toString
@@ -1586,13 +1525,10 @@ PlayerList.prototype.checkStage = function (stage, extended) {
  * @return {string} out The string representation of the stage of the PlayerList
  */
 PlayerList.prototype.toString = function (eol) {
-	
-	var out = '';
-	var EOL = eol || '\n';
-	
+	var out = '', EOL = eol || '\n', stage;
 	this.forEach(function(p) {
     	out += p.id + ': ' + p.name;
-    	var stage = new GameStage(p.stage);
+    	stage = new GameStage(p.stage);
     	out += ': ' + stage + EOL;
 	});
 	return out;
@@ -1641,17 +1577,13 @@ PlayerList.prototype.getGroupsSizeN = function (N) {
 PlayerList.prototype.getRandom = function (N) {	
 	if (!N) N = 1;
 	if (N < 1) {
-		node.log('N must be an integer >= 1', 'ERR');
+		node.err('N must be an integer >= 1');
 		return false;
 	}
 	this.shuffle();
-	
-	if (N == 1) {
-		return this.first();
-	}
-	
 	return this.limit(N).fetch();
 };
+
 
 /**
  * # Player Class
@@ -2151,8 +2083,6 @@ GameMsg.prototype.toEvent = function () {
 // ## Global scope
 exports.Stager = Stager;
 
-var J = node.JSUS;
-
 /**
  * ## Stager constructor
  *
@@ -2239,6 +2169,8 @@ Stager.prototype.clear = function() {
 	 * @see Stager.registerNext
 	 */
 	this.nextFunctions = {};
+
+    return this;
 };
 
 /**
@@ -2259,7 +2191,7 @@ Stager.prototype.registerGeneralNext = function(func) {
 	}
 
 	this.generalNextFunction = func;
-}
+};
 
 /**
  * ### Stager.registerNext
@@ -2288,7 +2220,7 @@ Stager.prototype.registerNext = function(id, func) {
 	}
 
 	this.nextFunctions[id] = func;
-}
+};
 
 /**
  * ### Stager.addStep
@@ -2339,7 +2271,7 @@ Stager.prototype.addStage = function(stage) {
 		if (!this.addStage({
 			id: stage.id,
 			steps: [ stage.id ]
-		    })) return false;
+		})) return false;
 
 		return true;
 	}
@@ -2354,11 +2286,24 @@ Stager.prototype.addStage = function(stage) {
 };
 
 /**
+ * ### Stager.init
+ *
+ * Resets sequence
+ *
+ * @return {Stager} this object
+ */
+Stager.prototype.init = function() {
+	this.sequence = [];
+
+	return this;
+};
+
+/**
  * ### Stager.gameover
  *
  * Adds gameover block to sequence
  *
- * @return {object} this GameStage object
+ * @return {Stager} this object
  */
 Stager.prototype.gameover = function() {
 	this.sequence.push({ type: 'gameover' });
@@ -2377,7 +2322,7 @@ Stager.prototype.gameover = function() {
  *
  * @param {string} id A valid stage name with optional alias
  *
- * @return {object} this GameStage object on success, null on error
+ * @return {Stager} this object on success, null on error
  *
  * @see Stager.addStage
  */
@@ -2405,7 +2350,7 @@ Stager.prototype.next = function(id) {
  * @param {string} id A valid stage name with optional alias
  * @param {number} nRepeats The number of repetitions
  *
- * @return {object} this GameStage object on success, null on error
+ * @return {Stager} this object on success, null on error
  *
  * @see Stager.addStage
  * @see Stager.next
@@ -2438,7 +2383,7 @@ Stager.prototype.repeat = function(id, nRepeats) {
  * @param {string} id A valid stage name with optional alias
  * @param {function} func Callback returning true for repetition
  *
- * @return {object} this GameStage object on success, null on error
+ * @return {Stager} this object on success, null on error
  *
  * @see Stager.addStage
  * @see Stager.next
@@ -2472,7 +2417,7 @@ Stager.prototype.loop = function(id, func) {
  * @param {string} id A valid stage name with optional alias
  * @param {function} func Callback returning true for repetition
  *
- * @return {object} this GameStage object on success, null on error
+ * @return {Stager} this object on success, null on error
  *
  * @see Stager.addStage
  * @see Stager.next
@@ -2518,32 +2463,34 @@ Stager.prototype.getSequence = function(format) {
 		result = [];
 
 		for (seqIdx in this.sequence) {
-			seqObj = this.sequence[seqIdx];
+			if (this.sequence.hasOwnProperty(seqIdx)) {
+				seqObj = this.sequence[seqIdx];
 
-			switch (seqObj.type) {
-			case 'gameover':
-				result.push('[game over]');
-				break;
+				switch (seqObj.type) {
+				case 'gameover':
+					result.push('[game over]');
+					break;
 
-			case 'plain':
-				result.push(seqObj.id);
-				break;
+				case 'plain':
+					result.push(seqObj.id);
+					break;
 
-			case 'repeat':
-				result.push(seqObj.id + ' [x' + seqObj.num + ']');
-				break;
+				case 'repeat':
+					result.push(seqObj.id + ' [x' + seqObj.num + ']');
+					break;
 
-			case 'loop':
-				result.push(seqObj.id + ' [loop]');
-				break;
+				case 'loop':
+					result.push(seqObj.id + ' [loop]');
+					break;
 
-			case 'doLoop':
-				result.push(seqObj.id + ' [doLoop]');
-				break;
+				case 'doLoop':
+					result.push(seqObj.id + ' [doLoop]');
+					break;
 
-			default:
-				node.warn('unknown sequence object type');
-				break;
+				default:
+					node.warn('unknown sequence object type');
+					break;
+				}
 			}
 		}
 		break;
@@ -2552,41 +2499,43 @@ Stager.prototype.getSequence = function(format) {
 		result = [];
 
 		for (seqIdx in this.sequence) {
-			seqObj = this.sequence[seqIdx];
-			stepPrefix = seqObj.id + '.';
+			if (this.sequence.hasOwnProperty(seqIdx)) {
+				seqObj = this.sequence[seqIdx];
+				stepPrefix = seqObj.id + '.';
 
-			switch (seqObj.type) {
-			case 'gameover':
-				result.push('[game over]');
-				break;
+				switch (seqObj.type) {
+				case 'gameover':
+					result.push('[game over]');
+					break;
 
-			case 'plain':
-				this.stages[seqObj.id].steps.map(function(stepID) {
-					result.push(stepPrefix + stepID);
-				});
-				break;
+				case 'plain':
+					this.stages[seqObj.id].steps.map(function(stepID) {
+						result.push(stepPrefix + stepID);
+					});
+					break;
 
-			case 'repeat':
-				this.stages[seqObj.id].steps.map(function(stepID) {
-					result.push(stepPrefix + stepID + ' [x' + seqObj.num + ']');
-				});
-				break;
+				case 'repeat':
+					this.stages[seqObj.id].steps.map(function(stepID) {
+						result.push(stepPrefix + stepID + ' [x' + seqObj.num + ']');
+					});
+					break;
 
-			case 'loop':
-				this.stages[seqObj.id].steps.map(function(stepID) {
-					result.push(stepPrefix + stepID + ' [loop]');
-				});
-				break;
+				case 'loop':
+					this.stages[seqObj.id].steps.map(function(stepID) {
+						result.push(stepPrefix + stepID + ' [loop]');
+					});
+					break;
 
-			case 'doLoop':
-				this.stages[seqObj.id].steps.map(function(stepID) {
-					result.push(stepPrefix + stepID + ' [doLoop]');
-				});
-				break;
+				case 'doLoop':
+					this.stages[seqObj.id].steps.map(function(stepID) {
+						result.push(stepPrefix + stepID + ' [doLoop]');
+					});
+					break;
 
-			default:
-				node.warn('unknown sequence object type');
-				break;
+				default:
+					node.warn('unknown sequence object type');
+					break;
+				}
 			}
 		}
 		break;
@@ -2626,39 +2575,40 @@ Stager.prototype.seqTestRun = function(expertMode, firstStage) {
 
 	if (!expertMode) {
 		for (stageNum in this.sequence) {
-			seqObj = this.sequence[stageNum];
-			console.log('** num: ' + stageNum + ', type: ' + seqObj.type);
-			switch (seqObj.type) {
-			case 'gameover':
-				console.log('* Game Over.');
-				return;
-				break;
+			if (this.sequence.hasOwnProperty(stageNum)) {
+				seqObj = this.sequence[stageNum];
+				console.log('** num: ' + stageNum + ', type: ' + seqObj.type);
+				switch (seqObj.type) {
+				case 'gameover':
+					console.log('* Game Over.');
+					return;
 
-			case 'plain':
-				this.stageTestRun(seqObj.id);
-				break;
-
-			case 'repeat':
-				for (var i = 0; i < seqObj.num; i++) {
+				case 'plain':
 					this.stageTestRun(seqObj.id);
+					break;
+
+				case 'repeat':
+					for (var i = 0; i < seqObj.num; i++) {
+						this.stageTestRun(seqObj.id);
+					}
+					break;
+
+				case 'loop':
+					while (seqObj.cb()) {
+						this.stageTestRun(seqObj.id);
+					}
+					break;
+
+				case 'doLoop':
+					do {
+						this.stageTestRun(seqObj.id);
+					} while (seqObj.cb());
+					break;
+
+				default:
+					node.warn('unknown sequence object type');
+					break;
 				}
-				break;
-
-			case 'loop':
-				while (seqObj.cb()) {
-					this.stageTestRun(seqObj.id);
-				}
-				break;
-
-			case 'doLoop':
-				do {
-					this.stageTestRun(seqObj.id);
-				} while (seqObj.cb());
-				break;
-
-			default:
-				node.warn('unknown sequence object type');
-				break;
 			}
 		}
 	}
@@ -2703,8 +2653,10 @@ Stager.prototype.stageTestRun = function(stageId) {
 	var stepId;
 
 	for (var i in steps) {
-		stepId = steps[i];
-		this.steps[stepId].cb();
+		if (steps.hasOwnProperty(i)) {
+			stepId = steps[i];
+			this.steps[stepId].cb();
+		}
 	}
 };
 
@@ -2720,7 +2672,7 @@ Stager.prototype.stageTestRun = function(stageId) {
  *
  * @param {object} step The step object
  *
- * @return {boolean} true for valid step objects, false otherwise
+ * @return {bool} true for valid step objects, false otherwise
  *
  * @see Stager.addStep
  *
@@ -2745,7 +2697,7 @@ Stager.prototype.checkStepValidity = function(step) {
  *
  * @param {object} stage The stage object
  *
- * @return {boolean} true for valid stage objects, false otherwise
+ * @return {bool} true for valid stage objects, false otherwise
  *
  * @see Stager.addStage
  *
@@ -2758,7 +2710,9 @@ Stager.prototype.checkStageValidity = function(stage) {
 
 	// Check whether the referenced steps exist:
 	for (var i in stage.steps) {
-		if (!this.steps[stage.steps[i]]) return false;
+        if (stage.steps.hasOwnProperty(i)) {
+            if (!this.steps[stage.steps[i]]) return false;
+        }
 	}
 
 	return true;
@@ -2798,7 +2752,8 @@ Stager.prototype.handleAlias = function(nameAndAlias) {
 
 	// Check uniqueness:
 	for (seqIdx in this.sequence) {
-		if (this.sequence[seqIdx].id === stageName) {
+		if (this.sequence.hasOwnProperty(seqIdx) &&
+				this.sequence[seqIdx].id === stageName) {
 			node.warn('handleAlias received non-unique stage name');
 			return null;
 		}
@@ -3237,6 +3192,16 @@ GameLoop.prototype.getStep = function(gameStage) {
 	}
 };
 
+/**
+ * ### GameLoop.getName
+ * 
+ * TODO: To remove once transition is complete
+ * @deprecated 
+ */
+GameLoop.prototype.getName = function(gameStage) {
+	var s = this.getStep(gameStage); 
+	return s ? s.name : s;
+};
 /**
  * ### GameLoop.normalizeGameStage
  *
@@ -4220,7 +4185,6 @@ var logSecureParseError = function (text, e) {
 // ## Global scope
 	
 var GameMsg = node.GameMsg,
-	GameState = node.GameState,
 	Player = node.Player,
 	GameMsgGenerator = node.GameMsgGenerator;
 
@@ -5396,6 +5360,701 @@ SessionManager.prototype.store = function() {
   , 'undefined' != typeof node ? node : module.parent.exports
 );
 /**
+ * # GroupManager
+ * 
+ * Copyright(c) 2012 Stefano Balietti
+ * MIT Licensed 
+ * 
+ * `nodeGame` group manager
+ * 
+ * ---
+ * 
+ */
+(function (exports, node) {
+	
+// ## Global scope
+	var J = node.JSUS;
+
+	exports.GroupManager = GroupManager;
+
+    function GroupManager() {
+        // TODO GroupManager
+    }
+
+    // Here follows previous implementation of GroupManager, called RMatcher - scarcely commented.
+    // RMatcher is not the same as a GroupManager, but does something very useful:
+    // It assigns elements to groups based on a set of preferences
+
+    // elements: what you want in the group
+    // pools: array of array. it is set of preferences (elements from the first array will be used first
+
+    // Groups.rowLimit determines how many unique elements per row
+
+
+
+    exports.RMatcher = RMatcher;
+
+    var J = require('nodegame-client').JSUS;
+
+    function RMatcher (options) {
+
+        this.groups = [];
+
+        this.maxIteration = 10;
+
+        this.doneCounter = 0;
+    }
+
+    RMatcher.prototype.init = function (elements, pools) {
+        for (var i = 0; i < elements.length; i++) {
+            var g = new Group();
+            g.init(elements[i], pools[i]);
+            this.addGroup(g);
+        }
+
+        this.options = {
+            elements: elements,
+            pools: pools
+        };
+    };
+
+    RMatcher.prototype.addGroup = function (group) {
+        if (!group) return;
+        this.groups.push(group);
+    };
+
+    RMatcher.prototype.match = function() {
+        // Do first match
+        for (var i = 0; i < this.groups.length ; i++) {
+            this.groups[i].match();
+            if (this.groups[i].matches.done) {
+                this.doneCounter++;
+//			console.log('is done immediately')
+//			console.log(i);
+//			console.log('is done immediately')
+            }
+        }
+
+        if (!this.allGroupsDone()) {
+            this.assignLeftOvers();
+        }
+
+        if (!this.allGroupsDone()) {
+            this.switchBetweenGroups();
+        }
+
+        return J.map(this.groups, function (g) { return g.matched; });
+    };
+
+    RMatcher.prototype.invertMatched = function() {
+
+        var tmp, elements = [], inverted = [];
+        J.each(this.groups, function(g) {
+            elements = elements.concat(g.elements);
+            tmp = g.invertMatched();
+            for (var i = 0; i < tmp.length; i++) {
+                inverted[i] = (inverted[i] || []).concat(tmp[i]);
+            }
+        });
+
+        return { elements: elements,
+            inverted: inverted
+        };
+    };
+
+
+    RMatcher.prototype.allGroupsDone = function() {
+        return this.doneCounter === this.groups.length;
+    };
+
+    RMatcher.prototype.tryOtherLeftOvers = function (g) {
+        var group, groupId;
+        var order = J.seq(0, (this.groups.length-1));
+        order = J.shuffle(order);
+        for (var i = 0 ; i < order.length ; i++) {
+            groupId = order[i];
+            if (groupId === g) continue;
+            group = this.groups[groupId];
+            leftOver = [];
+            if (group.leftOver.length) {
+                group.leftOver = this.groups[g].matchBatch(group.leftOver);
+
+                if (this.groups[g].matches.done) {
+                    this.doneCounter++;
+//				console.log('is done with leftOver')
+//				console.log(g);
+//				console.log('is done with leftOver')
+                    return true;
+                }
+            }
+
+        }
+    };
+
+    RMatcher.prototype.assignLeftOvers = function() {
+        var g;
+        for ( var i = 0; i < this.groups.length ; i++) {
+            g = this.groups[i];
+            // Group is full
+            if (!g.matches.done) {
+                this.tryOtherLeftOvers(i);
+            }
+
+        }
+    };
+
+    RMatcher.prototype.collectLeftOver = function() {
+        return J.map(this.groups, function(g) { return g.leftOver; });
+    };
+
+
+    RMatcher.prototype.switchFromGroup = function (fromGroup, toGroup, fromRow, leftOvers) {
+        for (var toRow = 0; toRow < fromGroup.elements.length; toRow++) {
+
+            for (var j = 0; j < leftOvers.length; j++) {
+                for (var n = 0; n < leftOvers[j].length; n++) {
+
+                    var x = leftOvers[j][n]; // leftover n from group j
+
+                    if (fromGroup.canSwitchIn(x, toRow)) {
+                        for (var h = 0 ; h < fromGroup.matched[toRow].length; h++) {
+                            var switched = fromGroup.matched[toRow][h];
+
+                            if (toGroup.canAdd(switched, fromRow)) {
+                                fromGroup.matched[toRow][h] = x;
+                                toGroup.addToRow(switched, fromRow);
+                                leftOvers[j].splice(n,1);
+
+                                if (toGroup.matches.done) {
+
+
+//								console.log('is done')
+//								console.log(toGroup);
+//								console.log('is done')
+
+                                    this.doneCounter++;
+                                }
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    };
+
+    /**
+     *
+     * @param {integer} g Group index
+     * @param {integer} row Row index
+     */
+    RMatcher.prototype.trySwitchingBetweenGroups = function (g, row) {
+        var lo = this.collectLeftOver();
+        var toGroup = this.groups[g];
+        var fromGroup;
+        // Tries with all, even with the same group, that is why is (g + 1)
+        for (var i = (g + 1) ; i < (this.groups.length + g + 1) ; i++) {
+            fromGroup = this.groups[i % this.groups.length];
+
+            if (this.switchFromGroup(fromGroup, toGroup, row, lo)) {
+                if (toGroup.matches.done) return;
+            }
+        }
+
+        return false;
+    };
+
+
+
+    RMatcher.prototype.switchBetweenGroups = function() {
+        var g, diff;
+        for ( var i = 0; i < this.groups.length ; i++) {
+            g = this.groups[i];
+            // Group has free elements
+            if (!g.matches.done) {
+                for ( var j = 0; j < g.elements.length; j++) {
+                    diff = g.rowLimit - g.matched[j].length;
+                    if (diff) {
+                        for (var h = 0 ; h < diff; h++) {
+                            this.trySwitchingBetweenGroups(i, j);
+                            if (this.allGroupsDone()) {
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    };
+
+
+////////////////// GROUP
+
+    function Group() {
+
+        this.elements = [];
+        this.matched = [];
+
+        this.leftOver = [];
+        this.pointer = 0;
+
+        this.matches = {};
+        this.matches.total = 0;
+        this.matches.requested = 0;
+        this.matches.done = false;
+
+        this.rowLimit = 3;
+
+        this.noSelf = true;
+
+        this.pool = [];
+
+        this.shuffle = true;
+        this.stretch = true;
+    }
+
+    Group.prototype.init = function (elements, pool) {
+        this.elements = elements;
+        this.pool = J.clone(pool);
+
+        for (var i = 0; i < this.pool.length; i++) {
+            if (this.stretch) {
+                this.pool[i] = J.stretch(this.pool[i], this.rowLimit);
+            }
+            if (this.shuffle) {
+                this.pool[i] = J.shuffle(this.pool[i]);
+            }
+        }
+
+        if (!elements.length) {
+            this.matches.done = true;
+        }
+        else {
+            for (i = 0 ; i < elements.length ; i++) {
+                this.matched[i] = [];
+            }
+        }
+
+        this.matches.requested = this.elements.length * this.rowLimit;
+    };
+
+
+    /**
+     * The same as canAdd, but does not consider row limit
+     */
+    Group.prototype.canSwitchIn = function (x, row) {
+        // Element already matched
+        if (J.in_array(x, this.matched[row])) return false;
+        // No self
+        if (this.noSelf && this.elements[row] === x) return false;
+
+        return true;
+    };
+
+
+    Group.prototype.canAdd = function (x, row) {
+        // Row limit reached
+        if (this.matched[row].length >= this.rowLimit) return false;
+
+        return this.canSwitchIn(x, row);
+    };
+
+    Group.prototype.shouldSwitch = function (x, fromRow) {
+        if (!this.leftOver.length) return false;
+        if (this.matched.length < 2) return false;
+//	var actualLeftOver = this.leftOver.length;
+        return true;
+
+    };
+
+// If there is a hole, not in the last position, the algorithm fails
+    Group.prototype.switchIt = function () {
+
+        for (var i = 0; i < this.elements.length ; i++) {
+            if (this.matched[i].length < this.rowLimit) {
+                this.completeRow(i);
+            }
+        }
+
+    };
+
+    Group.prototype.completeRow = function (row, leftOver) {
+        leftOver = leftOver || this.leftOver;
+        var clone = leftOver.slice(0);
+        for (var i = 0 ; i < clone.length; i++) {
+            for (var j = 0 ; j < this.elements.length; j++) {
+                if (this.switchItInRow(clone[i], j, row)){
+                    leftOver.splice(i,1);
+                    return true;
+                }
+                this.updatePointer();
+            }
+        }
+        return false;
+    };
+
+
+    Group.prototype.switchItInRow = function (x, toRow, fromRow) {
+        if (!this.canSwitchIn(x, toRow)) {
+            //console.log('cannot switch ' + x + ' ' + toRow)
+            return false;
+        }
+        //console.log('can switch: ' + x + ' ' + toRow + ' from ' + fromRow)
+        // Check if we can insert any of the element of the 'toRow'
+        // inside the 'toRow'
+        for (var i = 0 ; i < this.matched[toRow].length; i++) {
+            var switched = this.matched[toRow][i];
+            if (this.canAdd(switched, fromRow)) {
+                this.matched[toRow][i] = x;
+                this.addToRow(switched, fromRow);
+                return true;
+            }
+        }
+
+        return false;
+    };
+
+    Group.prototype.addToRow = function(x, row) {
+        this.matched[row].push(x);
+        this.matches.total++;
+        if (this.matches.total === this.matches.requested) {
+            this.matches.done = true;
+        }
+    };
+
+    Group.prototype.addIt = function(x) {
+        var counter = 0, added = false;
+        while (counter < this.elements.length && !added) {
+            if (this.canAdd(x, this.pointer)) {
+                this.addToRow(x, this.pointer);
+                added = true;
+            }
+            this.updatePointer();
+            counter++;
+        }
+        return added;
+    };
+
+
+    Group.prototype.matchBatch = function (pool) {
+        var leftOver = [];
+        for (var i = 0 ; i < pool.length ; i++) {
+            if (this.matches.done || !this.addIt(pool[i])) {
+                // if we could not add it as a match, it becomes leftover
+                leftOver.push(pool[i]);
+            }
+        }
+        return leftOver;
+    };
+
+    Group.prototype.match = function (pool) {
+        pool = pool || this.pool;
+//	console.log('matching pool');
+//	console.log(pool)
+        if (!J.isArray(pool)) {
+            pool = [pool];
+        }
+        // Loop through the pools: elements in lower
+        // indexes-pools have more chances to be used
+        var leftOver;
+        for (var i = 0 ; i < pool.length ; i++) {
+            leftOver = this.matchBatch(pool[i]);
+            if (leftOver.length) {
+                this.leftOver = this.leftOver.concat(leftOver);
+            }
+        }
+
+        if (this.shouldSwitch()) {
+            this.switchIt();
+        }
+    };
+
+    Group.prototype.updatePointer = function () {
+        this.pointer = (this.pointer + 1) % this.elements.length;
+    };
+
+    Group.prototype.summary = function() {
+        console.log('elements: ', this.elements);
+        console.log('pool: ', this.pool);
+        console.log('left over: ', this.leftOver);
+        console.log('hits: ' + this.matches.total + '/' + this.matches.requested);
+        console.log('matched: ', this.matched);
+    };
+
+    Group.prototype.invertMatched = function () {
+        return J.transpose(this.matched);
+    };
+
+    // Testing functions
+
+    var numbers = [1,2,3,4,5,6,7,8,9];
+
+    function getElements() {
+
+        var out = [],
+            n = J.shuffle(numbers);
+        out.push(n.splice(0, J.randomInt(0,n.length)))
+        out.push(n.splice(0, J.randomInt(0,n.length)))
+        out.push(n)
+
+        return J.shuffle(out);
+    }
+
+
+
+    function getPools() {
+        var n = J.shuffle(numbers);
+        out = [];
+
+        var A = n.splice(0, J.randomInt(0, (n.length / 2)));
+        var B = n.splice(0, J.randomInt(0, (n.length / 2)));
+        var C = n;
+
+        var A_pub = A.splice(0, J.randomInt(0, A.length));
+        A = J.shuffle([A_pub, A]);
+
+        var B_pub = B.splice(0, J.randomInt(0, B.length));
+        B = J.shuffle([B_pub, B]);
+
+        var C_pub = C.splice(0, J.randomInt(0, C.length));
+        C = J.shuffle([C_pub, C]);
+
+        return J.shuffle([A,B,C]);
+    }
+//console.log(getElements())
+//console.log(getPools())
+
+
+
+
+
+    function simulateMatch(N) {
+
+        for (var i = 0 ; i < N ; i++) {
+
+            var rm = new RMatcher(),
+                elements = getElements(),
+                pools = getPools();
+
+//		console.log('NN ' , numbers);
+//		console.log(elements);
+//		console.log(pools)
+            rm.init(elements, pools);
+
+            var matched = rm.match();
+
+            if (!rm.allGroupsDone()) {
+                console.log('ERROR')
+                console.log(rm.options.elements);
+                console.log(rm.options.pools);
+                console.log(matched);
+            }
+
+            for (var j = 0; j < rm.groups.length; j++) {
+                var g = rm.groups[j];
+                for (var h = 0; h < g.elements.length; h++) {
+                    if (g.matched[h].length !== g.rowLimit) {
+                        console.log('Wrong match: ' +  h);
+
+                        console.log(rm.options.elements);
+                        console.log(rm.options.pools);
+                        console.log(matched);
+                    }
+                }
+            }
+        }
+
+    }
+
+//simulateMatch(1000000000);
+
+//var myElements = [ [ 1, 5], [ 6, 9 ], [ 2, 3, 4, 7, 8 ] ];
+//var myPools = [ [ [ ], [ 1,  5, 6, 7] ], [ [4], [ 3, 9] ], [ [], [ 2, 8] ] ];
+
+//4.07A 25
+//4.77C 25
+//4.37B 25
+//5.13B 25 [08 R_16]
+//0.83A 25 [09 R_7]
+//3.93A 25 [09 R_23]
+//1.37A 25 [07 R_21]
+//3.30C 25
+//4.40B 25
+//
+//25
+//
+//389546331863136068
+//B
+//
+//// submissions in r 26
+//
+//3.73A 26 [05 R_25]
+//2.40C 26
+//undefinedC 26 [05 R_25]
+//4.37C 26 [06 R_19]
+//6.07A 26 [06 R_19]
+//undefinedB 26 [06 R_18]
+//4.33C 26 [05 R_25]
+//undefinedC 26 [08 R_19]
+//4.40B 26
+//
+//
+//26
+//
+//19868497151402574894
+//A
+//
+//27
+//
+//5688413461195617580
+//C
+//20961392604176231
+//B
+
+
+
+
+
+//20961392604176200	SUB	A	1351591619837
+//19868497151402600000	SUB	A	1351591620386
+//5688413461195620000	SUB	A	1351591652731
+//2019166870553500000	SUB	B	1351591653043
+//389546331863136000	SUB	B	1351591653803
+//1886985572967670000	SUB	C	1351591654603
+//762387587655923000	SUB	C	1351591654648
+//1757870795266120000	SUB	B	1351591655960
+//766044637969952000	SUB	A	1351591656253
+
+//var myElements = [ [ 3, 5 ], [ 8, 9, 1, 7, 6 ], [ 2, 4 ] ];
+//var myPools = [ [ [ 6 ], [ 9, 7 ] ], [ [], [ 8, 1, 5, 4 ] ], [ [], [ 2, 3 ] ] ];
+
+//var myElements = [ [ '13988427821680113598', '102698780807709949' ],
+//  [],
+//  [ '15501781841528279951' ] ]
+//
+//var myPools = [ [ [ '13988427821680113598', '102698780807709949' ] ],
+//  [ [] ],
+//   [ [ '15501781841528279951' ] ] ]
+//
+//
+//var myRM = new RMatcher();
+//myRM.init(myElements, myPools);
+//
+//var myMatch = myRM.match();
+//
+//
+//for (var j = 0; j < myRM.groups.length; j++) {
+//	var g = myRM.groups[j];
+//	for (var h = 0; h < g.elements.length; h++) {
+//		if (g.matched[h].length !== g.rowLimit) {
+//			console.log('Wrong match: ' + j + '-' + h);
+//
+//			console.log(myRM.options.elements);
+//			console.log(myRM.options.pools);
+////			console.log(matched);
+//		}
+//	}
+//}
+
+//if (!myRM.allGroupsDone()) {
+//	console.log('ERROR')
+//	console.log(myElements);
+//	console.log(myPools);
+//	console.log(myMatch);
+//
+//	console.log('---')
+//	J.each(myRM.groups, function(g) {
+//		console.log(g.pool);
+//	});
+//}
+
+//console.log(myElements);
+//console.log(myPools);
+//console.log('match')
+//console.log(myMatch);
+
+//console.log(myRM.invertMatched());
+//console.log(J.transpose(myMatch));
+//
+//console.log(myRM.doneCounter);
+
+//var poolA = [ [1, 2], [3, 4], ];
+//var elementsA = [7, 1, 2, 4];
+//
+//var poolB = [ [5], [6], ];
+//var elementsB = [3 , 8];
+//
+//var poolC = [ [7, 8, 9] ];
+//var elementsC = [9, 5, 6, ];
+//
+//var A, B, C;
+//
+//A = new Group();
+//A.init(elementsA, poolA);
+//
+//B = new Group();
+//B.init(elementsB, poolB);
+//
+//C = new Group();
+//C.init(elementsC, poolC);
+//
+//
+//rm.addGroup(A);
+//rm.addGroup(B);
+//rm.addGroup(C);
+//
+//rm.match();
+//
+
+//  [ [ [ 2, 1, 4 ], [ 2, 3, 4 ], [ 1, 4, 3 ], [ 1, 2, 3 ] ],
+//  [ [ 5, 6, 9 ], [ 5, 6, 7 ] ],
+//  [ [ 8, 6, 5 ], [ 9, 8, 7 ], [ 9, 7, 8 ] ] ]
+
+
+//console.log(rm.allGroupsDone())
+
+//console.log(g.elements);
+//console.log(g.matched);
+
+
+
+
+
+// ## Closure	
+})(
+	'undefined' != typeof node ? node : module.exports
+  , 'undefined' != typeof node ? node : module.parent.exports
+);
+/**
+ * # RoleMapper
+ * 
+ * Copyright(c) 2013 Stefano Balietti
+ * MIT Licensed 
+ * 
+ * `nodeGame` manager of player ids and aliases
+ * 
+ * ---
+ * 
+ */
+(function (exports, node) {
+	
+// ## Global scope
+	var J = node.JSUS;
+
+	exports.RoleMapper = RoleMapper;
+
+    function RoleMapper() {
+        // TODO RoleMapper
+    }
+
+
+// ## Closure
+})(
+	'undefined' != typeof node ? node : module.exports
+  , 'undefined' != typeof node ? node : module.parent.exports
+);
+/**
  * # nodeGame
  * 
  * Social Experiments in the Browser
@@ -5756,7 +6415,6 @@ SessionManager.prototype.store = function() {
 // ## Global scope
 	
 var GameMsg = node.GameMsg,
-	GameState = node.GameState,
 	Player = node.Player,
 	Game = node.Game,
 	GameMsgGenerator = node.GameMsgGenerator,
@@ -6199,7 +6857,6 @@ var GameMsg = node.GameMsg,
 // ## Global scope
 	
 var GameMsg = node.GameMsg,
-	GameState = node.GameState,
 	Player = node.Player,
 	GameMsgGenerator = node.GameMsgGenerator,
 	J = node.JSUS;
