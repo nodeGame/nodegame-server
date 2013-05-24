@@ -15197,7 +15197,6 @@ var J = node.JSUS;
 
 var Player = node.Player,
 	PlayerList = node.PlayerList,
-	GameState = node.GameState,
 	GameMsg = node.GameMsg,
 	GameMsgGenerator = node.GameMsgGenerator;
 
@@ -15228,9 +15227,9 @@ GameWindow.defaults.cacheDefaults = {
  * 
  * The constructor performs the following operations:
  * 
- * 		- creates a root div element (this.root)
- * 		- creates an iframe element inside the root element	(this.frame)
- * 		- defines standard event listeners for showing and hiding elements
+ *      - creates a root div element (this.root)
+ *      - creates an iframe element inside the root element (this.frame)
+ *      - defines standard event listeners for showing and hiding elements
  * 
  */
 function GameWindow() {
@@ -15253,17 +15252,17 @@ function GameWindow() {
 	this.conf = {};
 
 // ### GameWindow.state
-// 	
+//
 	this.state = node.is.LOADED;
 
 // ### GameWindow.areLoading
-// Counts the number of frames currently being loaded	
-	this.areLoading = 0; 
+// Counts the number of frames currently being loaded
+	this.areLoading = 0;
 
 // ### GameWindow.cache
 // Cache for loaded iframes
 //	
-// Maps URI to a cache object with the following properties:	
+// Maps URI to a cache object with the following properties:
 //  - `contents` (a string describing the innerHTML or null if not cached),
 //  - optionally 'cacheOnClose' (a bool telling whether to cache the frame when
 //    it is replaced by a new one).
@@ -15276,7 +15275,7 @@ function GameWindow() {
 	this.currentURIs = {};
 
 	
-// ### GameWindow.globalLibs	
+// ### GameWindow.globalLibs
 // Array of strings with the path of the libraries to be loaded in every frame
 	this.globalLibs = [];
 	
@@ -15288,7 +15287,7 @@ function GameWindow() {
 
 	this.init();
 	
-};
+}
 
 // ## GameWindow methods
 
@@ -15299,8 +15298,8 @@ function GameWindow() {
  * 
  * Defaults:
  * 
- * 		- promptOnleave TRUE
- * 		- captures ESC key
+ *      - promptOnleave TRUE
+ *      - captures ESC key
  * 
  * @param {object} options Configuration options
  * 
@@ -15347,7 +15346,7 @@ GameWindow.prototype.getElementById = function (id) {
 /**
  * ### GameWindow.getElementsByTagName
  * 
- * Returns a list of elements with the given tag name 
+ * Returns a list of elements with the given tag name
  *  
  * Looks first into the iframe and then into the rest of the page.
  * 
@@ -15397,17 +15396,17 @@ GameWindow.prototype.setup = function (type){
 		
 	case 'PLAYER':
 		
-		//var maincss		= this.addCSS(this.root, 'style.css');
-		this.header 	= this.generateHeader();
-	    var mainframe 	= this.addIFrame(this.root,'mainframe');
-	    
-		node.game.vs 	= node.widgets.append('VisualState', this.header);
+		//var maincss = this.addCSS(this.root, 'style.css');
+		this.header     = this.generateHeader();
+		var mainframe   = this.addIFrame(this.root,'mainframe');
+
+		node.game.vs    = node.widgets.append('VisualState', this.header);
 		node.game.timer = node.widgets.append('VisualTimer', this.header);
 		//node.game.doneb = node.widgets.append('DoneButton', this.header);
-		node.game.sd 	= node.widgets.append('StateDisplay', this.header);
+		node.game.sd    = node.widgets.append('StateDisplay', this.header);
 
 		node.widgets.append('WaitScreen');
-	    
+
 		// Add default CSS
 		if (node.conf.host) {
 			this.addCSS(document.body, node.conf.host + '/stylesheets/player.css');
@@ -15422,7 +15421,7 @@ GameWindow.prototype.setup = function (type){
 		}
 		
 		window.frames[this.mainframe].src = initPage;
-	    
+
 		break;
 	}
 	
@@ -15488,7 +15487,7 @@ function reloadScripts (frameNode) {
 		if (tag.innerHTML) scriptNode.innerHTML = tag.innerHTML;
 		for (attrIdx = 0; attrIdx < tag.attributes.length; ++attrIdx) {
 			attr = tag.attributes[attrIdx];
-			scriptNode.setAttribute(attr.name) = attr.value;
+			scriptNode.setAttribute(attr.name, attr.value);
 		}
 		headNode.appendChild(scriptNode);
 	}
@@ -15526,7 +15525,7 @@ function injectLibraries (frameNode, libs) {
 		scriptNode.src = lib;
 		headNode.appendChild(scriptNode);
 	}
-};
+}
 
 
 /**
@@ -15546,7 +15545,7 @@ function injectLibraries (frameNode, libs) {
 GameWindow.prototype.initLibs = function (globalLibs, frameLibs) {
 	this.globalLibs = globalLibs || [];
 	this.frameLibs = frameLibs || {};
-}
+};
 
 
 /**
@@ -15725,8 +15724,8 @@ GameWindow.prototype.load = GameWindow.prototype.loadFrame = function (uri, func
 	if ((lastURI in this.cache) && this.cache[lastURI].cacheOnClose) {
 		frameNode = document.getElementById(frame);
 		frameDocumentElement =
-		  (frameNode.contentDocument ? frameNode.contentDocument : frameNode.contentWindow.document)
-		  .documentElement;
+			(frameNode.contentDocument ? frameNode.contentDocument : frameNode.contentWindow.document)
+			.documentElement;
 
 		this.cache[lastURI].contents = frameDocumentElement.innerHTML;
 	}
@@ -15804,9 +15803,9 @@ GameWindow.prototype.load = GameWindow.prototype.loadFrame = function (uri, func
  * 
  * The methods performs the following operations:
  * 
- * 	- executes a given callback function, 
- * 	- decrements the counter of loading iframes
- * 	- set the window state as loaded (eventually)
+ *  - executes a given callback function, 
+ *  - decrements the counter of loading iframes
+ *  - set the window state as loaded (eventually)
  * 
  * @param {function} A callback function
  * @param {object} The iframe of reference
@@ -15867,8 +15866,8 @@ GameWindow.prototype._writeln = DOM.writeln;
  * @see GameWindow.writeln
  * 
  */
-GameWindow.prototype.write = function (text, root) {		
-	var root = root || this.getScreen();
+GameWindow.prototype.write = function (text, root) {
+	root = root || this.getScreen();
 	if (!root) {
 		node.log('Could not determine where writing', 'ERR');
 		return false;
@@ -15890,7 +15889,7 @@ GameWindow.prototype.write = function (text, root) {
  * 
  */
 GameWindow.prototype.writeln = function (text, root, br) {
-	var root = root || this.getScreen();
+	root = root || this.getScreen();
 	if (!root) {
 		node.log('Could not determine where writing', 'ERR');
 		return false;
@@ -15910,12 +15909,13 @@ GameWindow.prototype.writeln = function (text, root, br) {
  * 
  */
 GameWindow.prototype.toggleInputs = function (id, op) {
+	var container;
 	
 	if ('undefined' !== typeof id) {
-		var container = this.getElementById(id);
+		container = this.getElementById(id);
 	}
 	if ('undefined' === typeof container) {
-		var container = this.frame.body;
+		container = this.frame.body;
 	}
 	
 	var inputTags = ['button', 'select', 'textarea', 'input'];
@@ -15947,9 +15947,9 @@ GameWindow.prototype.toggleInputs = function (id, op) {
  * Creates a div element with the given id and 
  * tries to append it in the following order to:
  * 
- * 		- the specified root element
- * 		- the body element
- * 		- the last element of the document
+ *      - the specified root element
+ *      - the body element
+ *      - the last element of the document
  * 
  * If it fails, it creates a new body element, appends it
  * to the document, and then appends the div element to it.
@@ -15960,7 +15960,7 @@ GameWindow.prototype.toggleInputs = function (id, op) {
  * 
  */
 GameWindow.prototype._generateRoot = function (root, id) {
-	var root = root || document.body || document.lastElementChild;
+	root = root || document.body || document.lastElementChild;
 	if (!root) {
 		this.addElement('body', document);
 		root = document.body;
@@ -16020,7 +16020,7 @@ GameWindow.prototype.addEventButton = function (event, text, root, id, attribute
 	if (!root) {
 //			var root = root || this.frame.body;
 //			root = root.lastElementChild || root;
-		var root = this.getScreen();
+		root = this.getScreen();
 	}
 	var eb = this.getEventButton(event, text, id, attributes);
 	return root.appendChild(eb);
@@ -16085,7 +16085,7 @@ GameWindow.prototype.addStandardRecipients = function (toSelector) {
 	opt.appendChild(document.createTextNode('ALL'));
 	toSelector.appendChild(opt);
 	
-	var opt = document.createElement('option');
+	opt = document.createElement('option');
 	opt.value = 'SERVER';
 	opt.appendChild(document.createTextNode('SERVER'));
 	toSelector.appendChild(opt);
@@ -16283,7 +16283,7 @@ GameWindow.prototype.restoreEscape = function (windowObj) {
 GameWindow.prototype.promptOnleave = function (windowObj, text) {
 	windowObj = windowObj || window;
 	text = ('undefined' === typeof text) ? this.conf.textOnleave : text; 
-	windowObj.onbeforeunload = function(e) {	  
+	windowObj.onbeforeunload = function(e) {
 		  e = e || window.event;
 		  // For IE<8 and Firefox prior to version 4
 		  if (e) {
@@ -16318,10 +16318,10 @@ GameWindow.prototype.restoreOnleave = function (windowObj) {
  * 
  * In the following order the screen can be:
  * 
- * 		- the body element of the iframe 
- * 		- the document element of the iframe 
- * 		- the body element of the document 
- * 		- the last child element of the document
+ *      - the body element of the iframe 
+ *      - the document element of the iframe 
+ *      - the body element of the document 
+ *      - the last child element of the document
  * 
  */
 GameWindow.prototype.getScreen = function() {
@@ -16332,7 +16332,7 @@ GameWindow.prototype.getScreen = function() {
 	else {
 		el = document.body || document.lastElementChild;
 	}
-	return 	el;
+	return el;
 };
 
 /**
