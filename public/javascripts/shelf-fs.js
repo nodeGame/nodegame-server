@@ -199,6 +199,39 @@ if (!store) {
 	return;
 }
 
+var lock = false;
+
+var queue = [];
+
+function clearQueue() {
+	if (isLocked()) {
+//		console.log('cannot clear queue if lock is active');
+		return false;
+	}
+//	console.log('clearing queue');
+	for (var i=0; i< queue.length; i++) {
+		queue[i].call(queue[i]);
+	}
+}
+
+function locked() {
+	lock = true;
+}
+
+function unlocked() {
+	lock = false;
+}
+
+function isLocked() {
+	return lock;
+}
+
+function addToQueue(cb) {
+	queue.push(cb);
+}
+
+var counter = 0;
+
 store.filename = './shelf.out';
 
 var fs = require('fs'),
@@ -206,50 +239,129 @@ var fs = require('fs'),
 	util = require('util');
 
 // https://github.com/jprichardson/node-fs-extra/blob/master/lib/copy.js
-var copyFile = function(srcFile, destFile, cb) {
-    var fdr, fdw;
-    fdr = fs.createReadStream(srcFile);
-    fdw = fs.createWriteStream(destFile);
-    fdr.on('end', function() {
-      return cb(null);
-    });
-    return fdr.pipe(fdw);
-  };
+//var copyFile = function(srcFile, destFile, cb) {
+//	
+//    var fdr, fdw;
+//    
+//    fdr = fs.createReadStream(srcFile, {
+//    	flags: 'r'
+//    });
+////    fs.flockSync(fdr, 'sh');
+//    
+//    fdw = fs.createWriteStream(destFile, {
+//    	flags: 'w'
+//    });
+//    
+////    fs.flockSync(fdw, 'ex');
+//    		
+//	fdr.on('end', function() {
+////      fs.flockSync(fdr, 'un');
+//    });
+//	
+//    fdw.on('close', function() {
+////        fs.flockSync(fdw, 'un');
+//    	if (cb) cb(null);
+//    });
+//    
+//    fdr.pipe(fdw);
+//};
+
+//var overwrite = function (fileName, items) {
+//console.log('OW: ' + counter++);
+//
+//var file = fileName || store.filename;
+//if (!file) {
+//	store.log('You must specify a valid file.', 'ERR');
+//	return false;
+//}
+//
+//var tmp_copy = path.dirname(file) + '/.' + path.basename(file);
+//
+////console.log('files')
+////console.log(file);
+////console.log(fileName);
+////console.log(tmp_copy)
+//
+//copyFile(file, tmp_copy, function(){
+//	var s = store.stringify(items);
+//	// removing leading { and trailing }
+//	s = s.substr(1, s = s.substr(0, s.legth-1));
+////	console.log('SAVING')
+////	console.log(s)
+//	fs.writeFile(file, s, 'utf-8', function(e) {
+//		console.log('UNLINK ' + counter)
+//		if (e) throw e;
+////		fs.unlinkSync(tmp_copy);
+//		fs.unlink(tmp_copy, function (err) {
+//			if (err) throw err;  
+//		});
+//		return true;
+//	});
+//
+//});
+//
+//};
+
+var BUF_LENGTH = 64 * 1024;
+var _buff = new Buffer(BUF_LENGTH);
+
+var copyFileSync = function(srcFile, destFile) {
+	  var bytesRead, fdr, fdw, pos;
+	  fdr = fs.openSync(srcFile, 'r');
+	  fdw = fs.openSync(destFile, 'w');
+	  bytesRead = 1;
+	  pos = 0;
+	  while (bytesRead > 0) {
+	    bytesRead = fs.readSync(fdr, _buff, 0, BUF_LENGTH, pos);
+	    fs.writeSync(fdw, _buff, 0, bytesRead);
+	    pos += bytesRead;
+	  }
+	  fs.closeSync(fdr);
+	  return fs.closeSync(fdw);
+};
 
 
 var timeout = {};
 
+
+
 var overwrite = function (fileName, items) {
+	
+	if (isLocked()) {
+		addToQueue(this);
+		return false;
+	}
+	
+	locked();
+	
+//	console.log('OW: ' + counter++);
+	
 	var file = fileName || store.filename;
 	if (!file) {
 		store.log('You must specify a valid file.', 'ERR');
 		return false;
 	}
 	
-	var tmp_copy = path.dirname(file) + '.' + path.basename(file);
+	var tmp_copy = path.dirname(file) + '/.' + path.basename(file);
+	copyFileSync(file, tmp_copy);
 	
-//	console.log('files')
-//	console.log(file);
-//	console.log(fileName);
-//	console.log(tmp_copy)
-	
-	copyFile(file, tmp_copy, function(){
-		var s = store.stringify(items);
-		// removing leading { and trailing }
-		s = s.substr(1, s = s.substr(0, s.legth-1));
-//		console.log('SAVING')
-//		console.log(s)
-		fs.writeFile(file, s, 'utf-8', function(e) {
-			if (e) throw e;
-			fs.unlink(tmp_copy, function (err) {
-				if (err) throw err;  
-			});
-			return true;
-		});
+	var s = store.stringify(items);
 
-	});
+	// removing leading { and trailing }
+	s = s.substr(1, s = s.substr(0, s.legth-1));
 	
+	fs.writeFileSync(file, s, 'utf-8');
+	fs.unlinkSync(tmp_copy);
+	
+//	console.log('UNLINK ' + counter);
+	
+	
+	unlocked();
+	
+	clearQueue();
+	return true;	
 };
+
 
 if ('undefined' !== typeof fs.appendFileSync) {
 	// node 0.8
@@ -280,12 +392,9 @@ else {
 		
 
 
-		fs.open(file, 'a', 666, function( e, id ) {
-			fs.write( id, item, null, 'utf8', function(){
-				fs.close(id, function(){});
-			});
-		});
-		
+		var fd = fs.openSync(file, 'a', '0666');
+		fs.writeSync(fd, item, null, 'utf8');
+		fs.closeSync(fd);
 		return true;
 	};
 }
@@ -362,109 +471,7 @@ store.addType("fs", function(key, value, options) {
 	return value;
 });
 
-}(('undefined' !== typeof module && 'function' === typeof require) ? module.exports || module.parent.exports : {}));n + ': ' + text);
-	}
-	
-};
-
-store.isPersistent = function() {
-	if (!store.types) return false;
-	if (store.type === "volatile") return false;
-	return true;
-};
-
-//if Object.defineProperty works...
-try {	
-	Object.defineProperty(store, 'persistent', {
-		set: function(){},
-		get: store.isPersistent,
-		configurable: false
-	});
-}
-catch(e) {
-	// safe case
-	store.persistent = false;
-}
-
-store.decycle = function(o) {
-	if (JSON && JSON.decycle && 'function' === typeof JSON.decycle) {
-		o = JSON.decycle(o);
-	}
-	return o;
-};
-    
-store.retrocycle = function(o) {
-	if (JSON && JSON.retrocycle && 'function' === typeof JSON.retrocycle) {
-		o = JSON.retrocycle(o);
-	}
-	return o;
-};
-
-store.stringify = function(o) {
-	if (!JSON || !JSON.stringify || 'function' !== typeof JSON.stringify) {
-		throw new Error('JSON.stringify not found. Received non-string value and could not serialize.');
-	}
-	
-	o = store.decycle(o);
-	return JSON.stringify(o);
-};
-
-store.parse = function(o) {
-	if ('undefined' === typeof o) return undefined;
-	if (JSON && JSON.parse && 'function' === typeof JSON.parse) {
-		try {
-			o = JSON.parse(o);
-		}
-		catch (e) {
-			store.log('Error while parsing a value: ' + e, 'ERR');
-			store.log(o);
-		}
-	}
-	
-	o = store.retrocycle(o);
-	return o;
-};
-
-// ## In-memory storage
-// ### fallback for all browsers to enable the API even if we can't persist data
-(function() {
-	
-	var memory = {},
-		timeout = {};
-	
-	function copy(obj) {
-		return store.parse(store.stringify(obj));
-	}
-
-	store.addType("volatile", function(key, value, options) {
-		
-		if (!key) {
-			return copy(memory);
-		}
-
-		if (value === undefined) {
-			return copy(memory[key]);
-		}
-
-		if (timeout[key]) {
-			clearTimeout(timeout[key]);
-			delete timeout[key];
-		}
-
-		if (value === null) {
-			delete memory[key];
-			return null;
-		}
-
-		memory[key] = value;
-		if (options.expires) {
-			timeout[key] = setTimeout(function() {
-				delete memory[key];
-				delete timeout[key];
-			}, options.expires);
-		}
-
-		return value;
+}(('undefined' !== typeof module && 'function' === typeof require) ? module.exports || module.parent.exports : {}));turn value;
 	});
 }());
 
@@ -484,6 +491,39 @@ if (!store) {
 	return;
 }
 
+var lock = false;
+
+var queue = [];
+
+function clearQueue() {
+	if (isLocked()) {
+//		console.log('cannot clear queue if lock is active');
+		return false;
+	}
+//	console.log('clearing queue');
+	for (var i=0; i< queue.length; i++) {
+		queue[i].call(queue[i]);
+	}
+}
+
+function locked() {
+	lock = true;
+}
+
+function unlocked() {
+	lock = false;
+}
+
+function isLocked() {
+	return lock;
+}
+
+function addToQueue(cb) {
+	queue.push(cb);
+}
+
+var counter = 0;
+
 store.filename = './shelf.out';
 
 var fs = require('fs'),
@@ -491,50 +531,129 @@ var fs = require('fs'),
 	util = require('util');
 
 // https://github.com/jprichardson/node-fs-extra/blob/master/lib/copy.js
-var copyFile = function(srcFile, destFile, cb) {
-    var fdr, fdw;
-    fdr = fs.createReadStream(srcFile);
-    fdw = fs.createWriteStream(destFile);
-    fdr.on('end', function() {
-      return cb(null);
-    });
-    return fdr.pipe(fdw);
-  };
+//var copyFile = function(srcFile, destFile, cb) {
+//	
+//    var fdr, fdw;
+//    
+//    fdr = fs.createReadStream(srcFile, {
+//    	flags: 'r'
+//    });
+////    fs.flockSync(fdr, 'sh');
+//    
+//    fdw = fs.createWriteStream(destFile, {
+//    	flags: 'w'
+//    });
+//    
+////    fs.flockSync(fdw, 'ex');
+//    		
+//	fdr.on('end', function() {
+////      fs.flockSync(fdr, 'un');
+//    });
+//	
+//    fdw.on('close', function() {
+////        fs.flockSync(fdw, 'un');
+//    	if (cb) cb(null);
+//    });
+//    
+//    fdr.pipe(fdw);
+//};
+
+//var overwrite = function (fileName, items) {
+//console.log('OW: ' + counter++);
+//
+//var file = fileName || store.filename;
+//if (!file) {
+//	store.log('You must specify a valid file.', 'ERR');
+//	return false;
+//}
+//
+//var tmp_copy = path.dirname(file) + '/.' + path.basename(file);
+//
+////console.log('files')
+////console.log(file);
+////console.log(fileName);
+////console.log(tmp_copy)
+//
+//copyFile(file, tmp_copy, function(){
+//	var s = store.stringify(items);
+//	// removing leading { and trailing }
+//	s = s.substr(1, s = s.substr(0, s.legth-1));
+////	console.log('SAVING')
+////	console.log(s)
+//	fs.writeFile(file, s, 'utf-8', function(e) {
+//		console.log('UNLINK ' + counter)
+//		if (e) throw e;
+////		fs.unlinkSync(tmp_copy);
+//		fs.unlink(tmp_copy, function (err) {
+//			if (err) throw err;  
+//		});
+//		return true;
+//	});
+//
+//});
+//
+//};
+
+var BUF_LENGTH = 64 * 1024;
+var _buff = new Buffer(BUF_LENGTH);
+
+var copyFileSync = function(srcFile, destFile) {
+	  var bytesRead, fdr, fdw, pos;
+	  fdr = fs.openSync(srcFile, 'r');
+	  fdw = fs.openSync(destFile, 'w');
+	  bytesRead = 1;
+	  pos = 0;
+	  while (bytesRead > 0) {
+	    bytesRead = fs.readSync(fdr, _buff, 0, BUF_LENGTH, pos);
+	    fs.writeSync(fdw, _buff, 0, bytesRead);
+	    pos += bytesRead;
+	  }
+	  fs.closeSync(fdr);
+	  return fs.closeSync(fdw);
+};
 
 
 var timeout = {};
 
+
+
 var overwrite = function (fileName, items) {
+	
+	if (isLocked()) {
+		addToQueue(this);
+		return false;
+	}
+	
+	locked();
+	
+//	console.log('OW: ' + counter++);
+	
 	var file = fileName || store.filename;
 	if (!file) {
 		store.log('You must specify a valid file.', 'ERR');
 		return false;
 	}
 	
-	var tmp_copy = path.dirname(file) + '.' + path.basename(file);
+	var tmp_copy = path.dirname(file) + '/.' + path.basename(file);
+	copyFileSync(file, tmp_copy);
 	
-//	console.log('files')
-//	console.log(file);
-//	console.log(fileName);
-//	console.log(tmp_copy)
-	
-	copyFile(file, tmp_copy, function(){
-		var s = store.stringify(items);
-		// removing leading { and trailing }
-		s = s.substr(1, s = s.substr(0, s.legth-1));
-//		console.log('SAVING')
-//		console.log(s)
-		fs.writeFile(file, s, 'utf-8', function(e) {
-			if (e) throw e;
-			fs.unlink(tmp_copy, function (err) {
-				if (err) throw err;  
-			});
-			return true;
-		});
+	var s = store.stringify(items);
 
-	});
+	// removing leading { and trailing }
+	s = s.substr(1, s = s.substr(0, s.legth-1));
 	
+	fs.writeFileSync(file, s, 'utf-8');
+	fs.unlinkSync(tmp_copy);
+	
+//	console.log('UNLINK ' + counter);
+	
+	
+	unlocked();
+	
+	clearQueue();
+	return true;	
 };
+
 
 if ('undefined' !== typeof fs.appendFileSync) {
 	// node 0.8
@@ -565,12 +684,9 @@ else {
 		
 
 
-		fs.open(file, 'a', 666, function( e, id ) {
-			fs.write( id, item, null, 'utf8', function(){
-				fs.close(id, function(){});
-			});
-		});
-		
+		var fd = fs.openSync(file, 'a', '0666');
+		fs.writeSync(fd, item, null, 'utf8');
+		fs.closeSync(fd);
 		return true;
 	};
 }

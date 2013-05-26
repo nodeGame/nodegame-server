@@ -115,7 +115,7 @@ program
 //		});
 		
 		J.copyFromDir(buildDir_client, buildDir, '.js');
-		
+
 		// JSUS
 		build_JSUS({
 			lib: ['obj','array','eval','parse','random','time','dom'],

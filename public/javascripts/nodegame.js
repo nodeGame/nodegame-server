@@ -930,9 +930,6 @@ ARRAY.transpose = function (array) {
 	return t;
 };
 
-
-
-
 JSUS.extend(ARRAY);
     
 })('undefined' !== typeof JSUS ? JSUS : module.parent.exports.JSUS);
@@ -1834,26 +1831,29 @@ if ('undefined' !== typeof JSUS.compatibility) {
  * 
  */
 OBJ.equals = function (o1, o2) {	
-	if ('undefined' === typeof o1 || 'undefined' === typeof o2) {
+	var type1 = typeof o1, type2 = typeof o2;
+	
+	if (type1 !== type2) return false;
+	
+	if ('undefined' === type1 || 'undefined' === type2) {
 		return (o1 === o2);
 	}
 	if (o1 === null || o2 === null) {
 		return (o1 === o2);
 	}
-	if (('number' === typeof o1 && isNaN(o1)) && ('number' === typeof o2 && isNaN(o2)) ) {
+	if (('number' === type1 && isNaN(o1)) && ('number' === type2 && isNaN(o2)) ) {
 		return (isNaN(o1) && isNaN(o2));
 	}
 	
     // Check whether arguments are not objects
 	var primitives = {number: '', string: '', boolean: ''}
-    if (typeof o1 in primitives) {
-        if (typeof o2 in primitives) {
-            return (o1 === o2);
-        }
-        return false;
-    } else if (typeof o2 in {number: '', string: '', boolean: ''}) {
-        return false;
-    }
+    if (type1 in primitives) {
+    	return o1 === o2;
+    } 
+	
+	if ('function' === type1) {
+		return o1.toString() === o2.toString();
+	}
 
     for (var p in o1) {
         if (o1.hasOwnProperty(p)) {
@@ -2281,7 +2281,7 @@ OBJ.mixin = function (obj1, obj2) {
 };
 
 /**
- * ## OBJ.mixin
+ * ## OBJ.mixout
  * 
  * Copies only non-overlapping properties from obj2 to obj1
  * 
@@ -2583,6 +2583,10 @@ OBJ.hasOwnNestedProperty = function (str, obj) {
  *    e: 4
  *  }];
  * ```
+ * 
+ * @param {object} o The object to split
+ * @param {sting} key The name of the property to split
+ * @return {object} A copy of the object with split values
  */
 OBJ.split = function (o, key) {        
     if (!o) return;
@@ -2612,6 +2616,68 @@ OBJ.split = function (o, key) {
     
     return splitValue(o[key]);
 };
+
+/**
+ * ## OBJ.melt
+ * 
+ * Creates a new object with the specified combination of
+ * properties - values
+ * 
+ * The values are assigned cyclically to the properties, so that
+ * they do not need to have the same length. E.g.
+ * 
+ * ```javascript
+ * 	J.createObj(['a','b','c'], [1,2]); // { a: 1, b: 2, c: 1 }
+ * ```
+ * @param {array} keys The names of the keys to add to the object
+ * @param {array} values The values to associate to the keys  
+ * @return {object} A new object with keys and values melted together
+ */
+OBJ.melt = function(keys, values) {
+	var o = {}, valen = values.length;
+	for (var i = 0; i < keys.length; i++) {
+		o[keys[i]] = values[i % valen];
+	}
+	return o;
+};
+
+/**
+ * ## OBJ.uniqueKey
+ * 
+ * Creates a random unique key name for a collection
+ * 
+ * User can specify a tentative unique key name, and if already
+ * existing an incremental index will be added as suffix to it. 
+ * 
+ * Notice: the method does not actually creates the key
+ * in the object, but it just returns the name.
+ * 
+ * 
+ * @param {object} obj The collection for which a unique key name will be created
+ * @param {string} name Optional. A tentative key name. Defaults, a 10-digit random number
+ * @param {number} stop Optional. The number of tries before giving up searching
+ * 	for a unique key name. Defaults, 1000000.
+ * 
+ * @return {string|undefined} The unique key name, or undefined if it was not found
+ */
+OBJ.uniqueKey = function(obj, name, stop) {
+	if (!obj) {
+		JSUS.log('Cannot find unique name in undefined object', 'ERR');
+		return;
+	}
+	name = name || '' + Math.floor(Math.random()*10000000000);
+	stop = stop || 1000000;
+	var duplicateCounter = 1;
+	while (obj[name]) {
+		name = name + '' + duplicateCounter;
+		duplicateCounter++;
+		if (duplicateCounter > stop) {
+			return;
+		}
+	}
+	return name;
+}
+
 
 JSUS.extend(OBJ);
     
@@ -2774,6 +2840,17 @@ JSUS.extend(TIME);
 function PARSE(){};
 
 /**
+ * ## PARSE.stringify_prefix
+ * 
+ * Prefix used by PARSE.stringify and PARSE.parse
+ * to decode strings with special meaning
+ * 
+ * @see PARSE.stringify
+ * @see PARSE.parse
+ */
+PARSE.stringify_prefix = '!?_';
+
+/**
  * ## PARSE.getQueryString
  * 
  * Parses the current querystring and returns it full or a specific variable.
@@ -2833,81 +2910,136 @@ PARSE.tokenize = function (str, separators, modifiers) {
 	return str.split(regex, modifiers.limit);
 };
 
+/**
+ * ## PARSE.stringify
+ * 
+ * Stringifies objects, functions, primitive, undefined or null values
+ * 
+ * Makes uses `JSON.stringify` with a special reviver function, that 
+ * strinfifies also functions, undefined, and null values.
+ * 
+ * A special prefix is prepended to avoid name collisions.
+ * 
+ * @param {mixed} o The value to stringify
+ * @param {number} spaces Optional the number of indentation spaces. Defaults, 0
+ * 
+ * @return {string} The stringified result
+ * 
+ * @see JSON.stringify
+ * @see PARSE.stringify_prefix
+ */
+PARSE.stringify = function(o, spaces) {
+	return JSON.stringify(o, function(key, value){
+		var type = typeof value;
+		
+		if ('function' === type) {
+			return PARSE.stringify_prefix + value.toString()
+		}
+		
+		if ('undefined' === type) {
+			return PARSE.stringify_prefix + 'undefined';
+		}
+		
+		if (value === null) {
+			return PARSE.stringify_prefix + 'null';
+		}
+		
+		return value;
+		
+	}, spaces);
+};
+
+/**
+ * ## PARSE.parse
+ * 
+ * Decodes strings in objects and other values
+ * 
+ * Uses `JSON.parse` and then looks  for special strings 
+ * encoded by `PARSE.stringify`
+ * 
+ * @param {string} str The string to decode
+ * @return {mixed} The decoded value 
+ * 
+ * @see JSON.parse
+ * @see PARSE.stringify_prefix
+ */
+PARSE.parse = function(str) {
+	
+	var marker_func = PARSE.stringify_prefix + 'function',
+		marker_null = PARSE.stringify_prefix + 'null',
+		marker_und	= PARSE.stringify_prefix + 'undefined';
+	
+	var len_prefix 	= PARSE.stringify_prefix.length,
+		len_func 	= marker_func.length,
+		len_null 	= marker_null.length,
+		len_und 	= marker_und.length;	
+	
+	var o = JSON.parse(str);
+	return walker(o);
+	
+	function walker(o) {
+		var tmp;
+		
+		if ('object' !== typeof o) {
+			return reviver(o);
+		}
+		
+		for (var i in o) {
+			if (o.hasOwnProperty(i)) {
+				if ('object' === typeof o[i]) {
+					walker(o[i]);
+				}
+				else {
+					o[i] = reviver(o[i]);
+				}
+			}
+		}
+		
+		return o;
+	}
+	
+	function reviver(value) {
+		var type = typeof value;
+		
+		if (type === 'string') {
+			if (value.substring(0, len_prefix) !== PARSE.stringify_prefix) {
+				return value;
+			}
+			else if (value.substring(0, len_func) === marker_func) {
+				return eval('('+value.substring(len_prefix)+')');
+			}
+			else if (value.substring(0, len_null) === marker_null) {
+				return null;
+			}
+			else if (value.substring(0, len_und) === marker_und) {
+				return undefined;
+			}
+		}	
+		
+		return value;
+	};
+}
+
+
 JSUS.extend(PARSE);
     
 })('undefined' !== typeof JSUS ? JSUS : module.parent.exports.JSUS);
 /**
  * # NDDB: N-Dimensional Database
  * 
- * Copyright(c) 2012 Stefano Balietti
  * MIT Licensed
  * 
- * NDDB provides a simple, lightweight, NO-SQL object database 
- * for node.js and the browser. It depends on JSUS.
- * 
- * Allows to define any number of comparator and indexing functions, 
- * which are associated to any of the dimensions (i.e. properties) of 
- * the objects stored in the database. 
- * 
- * Whenever a comparison is needed, the corresponding comparator function 
- * is called, and the database is updated.
- * 
- * Whenever an object is inserted that matches one of the indexing functions
- * an hash is produced, and the element is added to one of the indexes.
- * 
- * Additional features are: methods chaining, tagging, and iteration 
- * through the entries.
- * 
- * 
+ * NDDB is a powerful and versatile object database for node.js and the browser.
+ *
  * See README.md for help.
  * 
  * ---
  * 
  */
 
-(function (exports, JSUS, store) {
-	
-var nddb_operation = null;
-var nddb_conditions = [];
+(function (exports, J, store) {
 
-var addCondition = function(type, condition) {
-	if (!type || !condition) {
-		NDDB.log('Attempt to add invalid condition', 'ERR');
-		return false;
-	}
-	nddb_conditions.push({
-		type: type,
-		condition: condition
-	});
-	return true;
-}
-
-var addOperation = function (type, d, op, value) {
-	if (!nddb_operation) {
-		NDDB.log('No operation found.', 'ERR');
-		return false;
-	}
-	
-    var valid = this._analyzeQuery(d, op, value);        
-    if (!valid) return false;
-	
-    
-	return addCondition(type, valid);
-}
-
-NDDB.prototype.and = NDDB.prototype.AND = function (d, op, value) {
-	return addOperation('AND', d, op, value);
-};
-
-NDDB.prototype.or = NDDB.prototype.OR = function (d, op, value) {
-	return addOperation('OR', d, op, value);
-};
-
-NDDB.prototype.not = NDDB.prototype.NOT = function (d, op, value) {
-	return addOperation('NOT', d, op, value);
-};
-
-NDDB.compatibility = JSUS.compatibility();
+NDDB.compatibility = J.compatibility();
 	
 // Expose constructors
 exports.NDDB = NDDB;
@@ -2917,9 +3049,6 @@ exports.NDDB = NDDB;
 NDDB.log = console.log;
 
 
-NDDB.__symbols = ['>','>=','>==','<', '<=', '<==', '!=', '!==', '=', '==', '===', '><', '<>', 'in', '!in'];
-NDDB.__operations = ['select', 'groupby', 'limit', 'first', 'fetch', 'last'];
-
 /**
  * ### NDDB.retrocycle
  * 
@@ -2928,7 +3057,7 @@ NDDB.__operations = ['select', 'groupby', 'limit', 'first', 'fetch', 'last'];
  * @param {object} e The object to decycle
  * @return {object} e The decycled object
  * 
- * 	@see https://github.com/douglascrockford/JSON-js/
+ * @see https://github.com/douglascrockford/JSON-js/
  */
 NDDB.decycle = function(e) {
 	if (JSON && JSON.decycle && 'function' === typeof JSON.decycle) {
@@ -2945,7 +3074,7 @@ NDDB.decycle = function(e) {
  * @param {object} e The object to retrocycle
  * @return {object} e The retrocycled object
  * 
- * 	@see https://github.com/douglascrockford/JSON-js/
+ * @see https://github.com/douglascrockford/JSON-js/
  */
 NDDB.retrocycle = function(e) {
 	if (JSON && JSON.retrocycle && 'function' === typeof JSON.retrocycle) {
@@ -2962,13 +3091,12 @@ NDDB.retrocycle = function(e) {
  * 
  * @param {object} options Optional. Configuration options
  * @param {db} db Optional. An initial set of items to import
- * @param {NDDB} parent Optional. A parent database to keep sync
  * 
  */
-function NDDB (options, db, parent) {                
+function NDDB (options, db) {                
     options = options || {};
     
-    if (!JSUS) throw new Error('JSUS not found.');
+    if (!J) throw new Error('JSUS not found.');
     
     // ## Public properties
     
@@ -2984,7 +3112,8 @@ function NDDB (options, db, parent) {
     // The list of hooks and associated callbacks
     this.hooks = {
 		insert: [],
-    	remove: []	
+    	remove: [],
+    	update: []
     };
     
     // ### nddb_pointer
@@ -3000,18 +3129,25 @@ function NDDB (options, db, parent) {
     	this.length = null;
     }
    
+    // ### query
+    // QueryBuilder obj
+    this.query = new QueryBuilder();
     
     // ### __C
     // List of comparator functions
     this.__C = {};
     
     // ### __H
-    // List of hashing functions
+    // List of hash functions
     this.__H = {};
     
     // ### __I
-    // List of hashing functions
+    // List of index functions
     this.__I = {};
+    
+    // ### __I
+    // List of view functions
+    this.__V = {};
     
     // ### __update
     // Auto update options container
@@ -3028,11 +3164,7 @@ function NDDB (options, db, parent) {
     // ### __update.sort
     // If TRUE, sort db on every insert and remove
     this.__update.sort 		= false;
-        
-    // ### __parent
-    // Reference to a parent NNDB database (if chaining)
-    this.__parent = parent || undefined;
-
+    
     this.init(options);
     this.importDB(db);   
 };
@@ -3068,6 +3200,10 @@ NDDB.prototype.init = function(options) {
 		this.__I = options.I;
 	}
 	
+	if (options.V) {
+		this.__V = options.V;
+	}
+	
 	if (options.tags) {
 		this.tags = options.tags;
 	}
@@ -3077,7 +3213,7 @@ NDDB.prototype.init = function(options) {
 	}
     
     if (options.hooks) {
-    	this.hooks = options.hook;
+    	this.hooks = options.hooks;
     }
     
     if (options.update) {
@@ -3093,6 +3229,12 @@ NDDB.prototype.init = function(options) {
         	this.__update.sort = options.update.sort;
         }
     }
+    
+    if ('object' === typeof options.operators) {
+    	for (var op in options.operators) {
+    		this.query.registerOperator(op, options.operators[op]);
+    	}
+    }
 };
 
 // ## CORE
@@ -3100,12 +3242,15 @@ NDDB.prototype.init = function(options) {
 /**
  * ### NDDB.globalCompare
  * 
- * Function used for comparing two items in the database
+ * Dummy compare function
  * 
- * By default, elements are sorted according to their 
- * internal id (FIFO). Override to change.
+ * Used to sort elements in the database
  * 
- * Returns
+ * By default, if both elements are not `undefined`, 
+ * the first object is considered to preceeds the 
+ * second.
+ * 
+ * Override to define a proper compare function, returning:
  * 
  *  - 0 if the objects are the same
  *  - a positive number if o2 precedes o1 
@@ -3120,62 +3265,7 @@ NDDB.prototype.globalCompare = function(o1, o2) {
     if ('undefined' === typeof o1 && 'undefined' === typeof o2) return 0;
     if ('undefined' === typeof o2) return -1;  
     if ('undefined' === typeof o1) return 1;
-    
-    if (o1.nddbid < o2.nddbid) return -1;
-    if (o1.nddbid > o2.nddbid) return 1;
-    return 0;
-};
-
-/**
- * ### NDDB._masquerade
- * 
- * Injects a hidden counter property into the prototype 
- * 
- * The object contains the index of the containing array.
- * 
- * @param {object} o The object to masquerade
- * @param {array} db Optional. The array
- * 
- * @api private
- */
-NDDB.prototype._masquerade = function (o, db) {
-    if ('undefined' === typeof o) return false;
-    
-    // TODO: check this
-    if ('undefined' !== typeof o.nddbid) return o;
-    db = db || this.db;
-    
-    if (NDDB.compatibility.defineProperty) {
-	    Object.defineProperty(o, 'nddbid', {
-	    	value: db.length,
-	    	configurable: true,
-	    	writable: true
-		});
-    }
-    else {
-    	o.nddbid = db.length;
-    }
-    
-    return o;
-};
-
-/**
- * ### NDDB._masqueradeDB
- *
- * Masquerades a whole array and returns it
- * 
- * @see NDDB._masquerade
- * @api private
- * @param {array} db Array of items to masquerade
- * 
- */
-NDDB.prototype._masqueradeDB = function (db) {
-    if (!db) return [];
-    var out = [];
-    for (var i = 0; i < db.length; i++) {
-        out[i] = this._masquerade(db[i], out);
-    }
-    return out;
+    return -1;
 };
 
 /**
@@ -3189,8 +3279,7 @@ NDDB.prototype._masqueradeDB = function (db) {
  * @param {object} options Optional. Configuration object
  */
 NDDB.prototype._autoUpdate = function (options) {
-	var update = (options) ? JSUS.merge(options, this.__update)
-						   : this.__update;
+	var update = options ? J.merge(this.__update, options) : this.__update;
 	
     if (update.pointer) {
         this.nddb_pointer = this.db.length-1;
@@ -3202,30 +3291,37 @@ NDDB.prototype._autoUpdate = function (options) {
     if (update.indexes) {
         this.rebuildIndexes();
     }
-    
-    // Update also parent element
-    if (this.__parent) {
-    	this.__parent._autoUpdate(update);
-    }
+};
+
+
+function nddb_insert(o, update) {
+	if (o === null) return;
+	var type = typeof(o);
+	if (type === 'undefined') return;
+	if (type === 'string') return;
+	if (type === 'number') return;
+	this.db.push(o);
+	if (update) {
+		this._indexIt(o, (this.db.length-1));
+		this._hashIt(o);
+		this._viewIt(o);
+	}
+    this.emit('insert', o);
 }
 
 /**
  * ### NDDB.importDB
  * 
- * Imports a whole array into the current database
+ * Imports an array of items at once
  * 
  * @param {array} db Array of items to import
  */
 NDDB.prototype.importDB = function (db) {
     if (!db) return;
-    if (!this.db) this.db = [];
     for (var i = 0; i < db.length; i++) {
-        this.insert(db[i]);
+        nddb_insert.call(this, db[i], this.__update.indexes);
     }
-    // <!-- Check this
-    //this.db = this.db.concat(this._masqueradeDB(db));
-    //this._autoUpdate();
-    // -->
+    this._autoUpdate({indexes: false});
 };
     
 /**
@@ -3233,35 +3329,20 @@ NDDB.prototype.importDB = function (db) {
  * 
  * Insert an item into the database
  * 
+ * Item must be of type object or function. 
+ * 
+ * The following entries will be ignored:
+ * 
+ * 	- strings
+ * 	- numbers
+ * 	- undefined
+ * 	- null
+ * 
  * @param {object} o The item or array of items to insert
  * @see NDDB._insert
  */
 NDDB.prototype.insert = function (o) {
-	if ('undefined' === typeof o || o === null) return;
-    if (!this.db) this.db = [];
- 
-    this._insert(o);
-};
-
-/**
- * ### NDDB._insert
- *
- * Inserts an object into the current database
- * 
- * @param {object} o The item or array of items to insert
- */
-NDDB.prototype._insert = function (o) {
-    o = this._masquerade(o);
-    this.db.push(o);
-    this.emit('insert', o);
-    
-	// We save time calling _hashIt only
-    // on the latest inserted element
-    if (this.__update.indexes) {
-    	this._hashIt(o);
-    	this._indexIt(o);
-    }
-	// See above
+	nddb_insert.call(this, o, this.__update.indexes);
     this._autoUpdate({indexes: false});
 };
 
@@ -3269,7 +3350,6 @@ NDDB.prototype._insert = function (o) {
  * ### NDDB.breed
  *
  * Creates a clone of the current NDDB object
- * with a reference to the parent database
  * 
  * Takes care of calling the actual constructor
  * of the class, so that inheriting objects will
@@ -3280,11 +3360,8 @@ NDDB.prototype._insert = function (o) {
  */
 NDDB.prototype.breed = function (db) {
     db = db || this.db;
-    var options = this.cloneSettings();
-    var parent = this.__parent || this;							
-    
     //In case the class was inherited
-    return new this.constructor(options, db, parent);
+    return new this.constructor(this.cloneSettings(), db);
 };
     
 /**
@@ -3303,10 +3380,12 @@ NDDB.prototype.cloneSettings = function () {
     options.H = 		this.__H;
     options.I = 		this.__I;
     options.C = 		this.__C;
+    options.V = 		this.__V;
     options.tags = 		this.tags;
     options.update = 	this.__update;
+    options.hooks = 	this.hooks;
     
-    return JSUS.clone(options);
+    return J.clone(options);
 };    
 
 /**
@@ -3334,42 +3413,28 @@ NDDB.prototype.toString = function () {
  * @param {boolean} TRUE, if compressed
  * @return {string} out A machine-readable representation of the database
  * 
+ * @see JSUS.stringify
  */
 NDDB.prototype.stringify = function (compressed) {
 	if (!this.length) return '[]';
 	compressed = ('undefined' === typeof compressed) ? true : compressed;
 	
-	var objToStr;
-	
-	if (compressed) {
-		objToStr = function(o) {
-			// Skip empty objects
-			if (JSUS.isEmpty(o)) return '{}';
-			return JSON.stringify(o);
-		}	
-	}
-	else {
-		objToStr = function(o) {
-			// Skip empty objects
-			if (JSUS.isEmpty(o)) return '{}';
-			return JSON.stringify(o, null, 4);
-		}
-	}
+	var spaces = compressed ? 0 : 4;
 	
     var out = '[';
     this.each(function(e) {
     	// decycle, if possible
     	e = NDDB.decycle(e);
-    	out += objToStr(e) + ', ';
+    	out += J.stringify(e) + ', ';
     });
     out = out.replace(/, $/,']');
-    
+
     return out;
 };    
 
 
 /**
- * ### NDDB.compare | NDDB.c 
+ * ### NDDB.comparator
  *
  * Registers a comparator function for dimension d
  * 
@@ -3382,7 +3447,7 @@ NDDB.prototype.stringify = function (compressed) {
  * @return {boolean} TRUE, if registration was successful
  * 
  */
-NDDB.prototype.compare = NDDB.prototype.c = function (d, comparator) {
+NDDB.prototype.comparator = function (d, comparator) {
     if (!d || !comparator) {
         NDDB.log('Cannot set empty property or empty comparator', 'ERR');
         return false;
@@ -3391,8 +3456,12 @@ NDDB.prototype.compare = NDDB.prototype.c = function (d, comparator) {
     return true;
 };
 
+// ### NDDB.c
+// @deprecated 
+NDDB.prototype.c = NDDB.prototype.comparator;
+
 /**
- * ### NDDB.comparator
+ * ### NDDB.getComparator
  *
  * Retrieves the comparator function for dimension d.
  *  
@@ -3404,7 +3473,7 @@ NDDB.prototype.compare = NDDB.prototype.c = function (d, comparator) {
  * 
  * @see NDDB.compare
  */
-NDDB.prototype.comparator = function (d) {
+NDDB.prototype.getComparator = function (d) {
     if ('undefined' !== typeof this.__C[d]) {
     	return this.__C[d]; 
     }
@@ -3417,8 +3486,8 @@ NDDB.prototype.comparator = function (d) {
         if ('undefined' === typeof o1 && 'undefined' === typeof o2) return 0;
         if ('undefined' === typeof o1) return 1;
         if ('undefined' === typeof o2) return -1;        
-        var v1 = JSUS.getNestedValue(d,o1);
-        var v2 = JSUS.getNestedValue(d,o2);
+        var v1 = J.getNestedValue(d,o1);
+        var v2 = J.getNestedValue(d,o2);
 // <!--
 //            NDDB.log(v1);
 //            NDDB.log(v2);
@@ -3445,7 +3514,6 @@ NDDB.prototype.isReservedWord = function (key) {
 	return (this[key]) ? true : false; 
 };
 
-
 /**
  * ### NDDB._isValidIndex
  *
@@ -3470,40 +3538,19 @@ NDDB.prototype._isValidIndex = function (idx) {
 };
 
 /**
- * ### NDDB.hash | NDDB.h
- *
- * Registers a new hashing function
- * 
- * Hashing functions creates nested NDDB database 
- * where objects are automatically added 
- * 
- * If no function is specified Object.toString is used.
- * 
- * @param {string} idx The name of index
- * @param {function} func The hashing function
- * @return {boolean} TRUE, if registration was successful
- * 
- * @see NDDB.isReservedWord
- * @see NDDB.rebuildIndexes
- * 
- */
-NDDB.prototype.hash = NDDB.prototype.h = function (idx, func) {
-	if (!this._isValidIndex(idx)) return false;
-	this.__H[idx] = func || Object.toString;
-	this[idx] = {};
-	return true;
-};
-
-
-/**
- * ### NDDB.index | NDDB.i
+ * ### NDDB.index
  *
  * Registers a new indexing function
  * 
- * Hashing functions automatically creates indexes 
- * to have direct access to objects
+ * Indexing functions give fast direct access to the 
+ * entries of the dataset.
  * 
- * If no function is specified Object.toString is used.
+ * A new object `NDDB[idx]` is created, whose properties 
+ * are the elements indexed by the function.
+ * 
+ * An indexing function must return a _string_ with a unique name of  
+ * the property under which the entry will registered, or _undefined_ if
+ * the entry does not need to be indexed.
  * 
  * @param {string} idx The name of index
  * @param {function} func The hashing function
@@ -3513,60 +3560,234 @@ NDDB.prototype.hash = NDDB.prototype.h = function (idx, func) {
  * @see NDDB.rebuildIndexes
  * 
  */
-NDDB.prototype.index = NDDB.prototype.i = function (idx, func) {
-	if (!this._isValidIndex(idx)) return false;
-	this.__I[idx] = func || Object.toString;
-	this[idx] = {};
+NDDB.prototype.index = function (idx, func) {
+	if (!func || !this._isValidIndex(idx)) return false;
+	this.__I[idx] = func, this[idx] = new NDDBIndex(idx, this);
 	return true;
 };
 
 
+// ### NDDB.i
+// @deprecated
+NDDB.prototype.i = NDDB.prototype.index;
+
+/**
+ * ### NDDB.view
+ *
+ * Registers a new view function
+ * 
+ * View functions create a _view_ on the database that
+ * excludes automatically some of the entries.
+ * 
+ * A nested NDDB dataset is created as `NDDB[idx]`, containing 
+ * all the items that the callback function returns. If the 
+ * callback returns _undefined_ the entry will be ignored.
+ * 
+ * @param {string} idx The name of index
+ * @param {function} func The hashing function
+ * @return {boolean} TRUE, if registration was successful
+ * 
+ * @see NDDB.hash
+ * @see NDDB.isReservedWord
+ * @see NDDB.rebuildIndexes
+ * 
+ */
+NDDB.prototype.view = function (idx, func) {
+	if (!func || !this._isValidIndex(idx)) return false;
+	this.__V[idx] = func, this[idx] = new this.constructor();
+	return true;
+};
+
+/**
+ * ### NDDB.hash
+ *
+ * Registers a new hashing function
+ * 
+ * Hash functions create an index containing multiple sub-_views_.
+ * 
+ * A new object `NDDB[idx]` is created, whose properties 
+ * are _views_ on the original dataset.
+ * 
+ * An hashing function must return a _string_ representing the 
+ * view under which the entry will be added, or _undefined_ if
+ * the entry does not belong to any view of the index.
+ * 
+ * @param {string} idx The name of index
+ * @param {function} func The hashing function
+ * @return {boolean} TRUE, if registration was successful
+ * 
+ * @see NDDB.view
+ * @see NDDB.isReservedWord
+ * @see NDDB.rebuildIndexes
+ * 
+ */
+NDDB.prototype.hash = function (idx, func) {
+	if (!func || !this._isValidIndex(idx)) return false;
+	this.__H[idx] = func, this[idx] = {};
+	return true;
+};
+
+//### NDDB.h
+//@deprecated
+NDDB.prototype.h = NDDB.prototype.hash; 
+
+
+/**
+ * ### NDDB.resetIndexes
+ *
+ * Resets all the database indexes, hashs, and views 
+ * 
+ * @see NDDB.rebuildIndexes
+ * @see NDDB.index
+ * @see NDDB.view
+ * @see NDDB.hash
+ * @see NDDB._indexIt
+ * @see NDDB._viewIt
+ * @see NDDB._hashIt
+ */
+NDDB.prototype.resetIndexes = function(options) {
+	var reset = options || J.merge({
+		h: true,
+		v: true,
+		i: true
+	}, options);
+	var key;
+	if (reset.h) {
+	  for (key in this.__H) {
+		  if (this.__H.hasOwnProperty(key)) {
+			  this[key] = {};
+		  }
+	  }
+	}
+	if (reset.v) {
+	  for (key in this.__V) {
+		  if (this.__V.hasOwnProperty(key)) {
+			  this[key] = new this.constructor();
+		  }
+	  }
+	}
+	if (reset.v) {
+	  for (key in this.__I) {
+		  if (this.__I.hasOwnProperty(key)) {
+			  this[key] = new NDDBIndex(key, this);
+		  }
+	  }
+	}
+
+};
 
 /**
  * ### NDDB.rebuildIndexes
  *
- * Resets and rebuilds all the database indexes 
+ * Rebuilds all the database indexes, hashs, and views 
  * 
- * Indexes are defined by the hashing functions
- * 
+ * @see NDDB.resetIndexes
+ * @see NDDB.index
+ * @see NDDB.view
  * @see NDDB.hash
+ * @see NDDB._indexIt
+ * @see NDDB._viewIt
+ * @see NDDB._hashIt
  */
 NDDB.prototype.rebuildIndexes = function() {
-	var h = false, i = false;
+	var h = !(J.isEmpty(this.__H)),
+		i = !(J.isEmpty(this.__I)),
+		v = !(J.isEmpty(this.__V));
 	
-	if (!JSUS.isEmpty(this.__H)) {
-		h = true;
-		// Reset current hash-indexes
-		for (var key in this.__H) {
-			if (this.__H.hasOwnProperty(key)) {
-				this[key] = {};
-			}
+	var cb, idx;
+	if (!h && !i && !v) return;
+	
+	// Reset current indexes
+	this.resetIndexes({h: h, v: v, i: i});
+	
+	if (h && !i && !v) {
+		cb = this._hashIt;
+	}
+	else if (!h && i && !v) {
+		cb = this._indexIt;
+	}
+	else if (!h && !i && v) {
+		cb = this._viewIt;
+	}
+	else if (h && i && !v) {
+		cb = function(o, idx) {
+			this._hashIt(o);
+			this._indexIt(o, idx);
+		};
+	}
+	else if (!h && i && v) {
+		cb = function(o, idx) {
+			this._indexIt(o, idx);
+			this._viewIt(o);
+		};
+	}
+	else if (h && !i && v) {
+		cb = function(o, idx) {
+			this._hashIt(o);
+			this._viewIt(o);
+		};
+	}
+	else {
+		cb = function(o, idx) {
+			this._indexIt(o, idx);
+			this._hashIt(o);
+			this._viewIt(o);
+		};
+	}
+	
+	for (idx = 0 ; idx < this.db.length ; idx++) {
+		// _hashIt and viewIt do not need idx, it is no harm anyway
+		cb.call(this, this.db[idx], idx);
+	}
+};
+
+/**
+ * ### NDDB._indexIt
+ *
+ * Indexes an element
+ * 
+ * @param {object} o The element to index
+ * @param {object} o The position of the element in the database array
+ */
+NDDB.prototype._indexIt = function(o, dbidx) {
+  	if (!o || J.isEmpty(this.__I)) return;
+	var func, id, index;
+	
+	for (var key in this.__I) {
+		if (this.__I.hasOwnProperty(key)) {
+			func = this.__I[key];	    			
+			index = func(o);
+
+			if ('undefined' === typeof index) continue;
+			
+			if (!this[key]) this[key] = new NDDBIndex(key, this);
+			this[key]._add(index, dbidx);
 		}
 	}
+};
+
+/**
+ * ### NDDB._viewIt
+ *
+ * Adds an element to a view
+ * 
+ * @param {object} o The element to index
+ */
+NDDB.prototype._viewIt = function(o) {
+  	if (!o || J.isEmpty(this.__V)) return;
 	
-	if (!JSUS.isEmpty(this.__I)) {
-		i = true;
-		// Reset current hash-indexes
-		for (var key in this.__I) {
-			if (this.__I.hasOwnProperty(key)) {
-				this[key] = {};
-			}
+	var func, id, index;
+	
+	for (var key in this.__V) {
+		if (this.__V.hasOwnProperty(key)) {
+			func = this.__V[key];
+			index = func(o);
+			if ('undefined' === typeof index) continue;
+			
+			if (!this[key]) this[key] = new this.constructor();
+			this[key].insert(o);
 		}
 	}
-	
-	if (h && !i) {
-		this.each(this._hashIt);
-	}
-	else if (!h && i) {
-		this.each(this._indexIt);
-	}
-	else if (h && i) {
-		this.each(function(o){
-			this.hashIt(o);
-			this.indexIt(o);
-		});
-	}
-	
 };
 
 /**
@@ -3579,65 +3800,22 @@ NDDB.prototype.rebuildIndexes = function() {
  * 
  */
 NDDB.prototype._hashIt = function(o) {
-  	if (!o) return false;
-	if (JSUS.isEmpty(this.__H)) {
-		return false;
-	}
-
-	var h = null,
-		id = null,
-		hash = null;
+  	if (!o || J.isEmpty(this.__H)) return false;
+	
+	var h, id, hash;
 	
 	for (var key in this.__H) {
 		if (this.__H.hasOwnProperty(key)) {
 			h = this.__H[key];	    			
 			hash = h(o);
 
-			if ('undefined' === typeof hash) {
-				continue;
-			}
-
-			if (!this[key]) {
-				this[key] = {};
-			}
+			if ('undefined' === typeof hash) continue;
+			if (!this[key]) this[key] = {};
 			
 			if (!this[key][hash]) {
-				this[key][hash] = new NDDB();
+				this[key][hash] = new this.constructor();
 			}
 			this[key][hash].insert(o);		
-		}
-	}
-};
-
-/**
- * ### NDDB._hashIt
- *
- * Indexes an element
- * 
- * @param {object} o The element to index
- * @return {boolean} TRUE, if insertion to an index was successful
- * 
- */
-NDDB.prototype._indexIt = function(o) {
-  	if (!o) return false;
-	if (JSUS.isEmpty(this.__I)) {
-		return false;
-	}
-	
-	var func = null,
-		id = null,
-		index = null;
-	
-	for (var key in this.__I) {
-		if (this.__I.hasOwnProperty(key)) {
-			func = this.__I[key];	    			
-			index = func(o);
-
-			if ('undefined' === typeof index) {
-				continue;
-			}
-			if (!this[key]) this[key] = {};
-			this[key][index] = o;
 		}
 	}
 };
@@ -3715,7 +3893,9 @@ NDDB.prototype.off = function(event, func) {
  * 
  */
 NDDB.prototype.emit = function(event, o) {
-	if (!event || !this.hooks[event] || !this.hooks[event].length) return;
+	if (!event || !this.hooks[event] || !this.hooks[event].length) {		
+		return;
+	}
 	
 	for (var i=0; i < this.hooks[event].length; i++) {
 		this.hooks[event][i].call(this, o);
@@ -3749,41 +3929,47 @@ NDDB.prototype._analyzeQuery = function (d, op, value) {
     
     // Verify input 
     if ('undefined' !== typeof op) {
-        if ('undefined' === typeof value) {
-            raiseError(d,op,value);
-        }
-        
-        if (!JSUS.in_array(op, ['>','>=','>==','<', '<=', '<==', '!=', '!==', '=', '==', '===', '><', '<>', 'in', '!in'])) {
-            NDDB.log('Query error. Invalid operator detected: ' + op, 'WARN');
-            return false;
-        }
         
         if (op === '=') {
             op = '==';
         }
-        
-        // Range-queries need an array as third parameter
-        if (JSUS.in_array(op,['><', '<>', 'in', '!in'])) {
+      
+        if (!(op in this.query.operators)) {
+            NDDB.log('Query error. Invalid operator detected: ' + op, 'WARN');
+            return false;
+        }
+
+        // Range-queries need an array as third parameter instance of Array
+        if (J.in_array(op,['><', '<>', 'in', '!in'])) {
+        	
             if (!(value instanceof Array)) {
                 NDDB.log('Range-queries need an array as third parameter', 'WARN');
                 raiseError(d,op,value);
             }
             if (op === '<>' || op === '><') {
                 
-                value[0] = JSUS.setNestedValue(d, value[0]);
-                value[1] = JSUS.setNestedValue(d, value[1]);
+                value[0] = J.setNestedValue(d, value[0]);
+                value[1] = J.setNestedValue(d, value[1]);
             }
         }
-        else {
-            // Encapsulating the value;
-            value = JSUS.setNestedValue(d,value);
+        
+        else if (J.in_array(op, ['>', '==', '>=', '<', '<='])){
+        	// Comparison queries need a third parameter
+        	if ('undefined' === typeof value) raiseError(d,op,value);
+
+        	// Comparison queries need to have the same data structure in the compared object
+            value = J.setNestedValue(d,value);
         }
+        
+        // other (e.g. user-defined) operators do not have constraints, 
+        // e.g. no need to transform the value
+        
     }
     else if ('undefined' !== typeof value) {
         raiseError(d,op,value);
     }
     else {
-        op = '';
+        op = 'E'; // exists
         value = '';
     }
     
@@ -3791,7 +3977,7 @@ NDDB.prototype._analyzeQuery = function (d, op, value) {
 };
 
 /**
- * ## NDDB.distinct
+ * ### NDDB.distinct
  * 
  * Eliminates duplicated entries
  *  
@@ -3799,18 +3985,18 @@ NDDB.prototype._analyzeQuery = function (d, op, value) {
  * 
  * @return {NDDB} A copy of the current selection without duplicated entries
  * 
- * 	@see NDDB.select() 
+ * @see NDDB.select() 
  *  @see NDDB.fetch()
  *  @see NDDB.fetchValues()
  */
 NDDB.prototype.distinct = function () {
-	return this.breed(JSUS.distinct(this.db));
+	return this.breed(J.distinct(this.db));
 };
 
 /**
- * ## NDDB.select
+ * ### NDDB.select
  * 
- * Select entries a subset of entries in the database 
+ * Initiates a new query selection procedure
  * 
  * Input parameters:
  * 
@@ -3818,91 +4004,150 @@ NDDB.prototype.distinct = function () {
  * - op: operator for selection. Allowed: >, <, >=, <=, = (same as ==), ==, ===, 
  * 		!=, !==, in (in array), !in, >< (not in interval), <> (in interval)
  *  - value: values of comparison. Operators: in, !in, ><, <> require an array.
- *  
- *  The selection is returned as a new NDDB object, on which further operations 
- *  can be chained. In order to get the actual entries returned, it is necessary
- *  to call one of the fetching methods.
+ *   
+ * No actual selection is performed until the `execute` method is called, so that 
+ * further selections can be chained with the `or`, and `and` methods.
+ * 
+ * To retrieve the items use one of the fetching methods.
  *  
  * @param {string} d The dimension of comparison
- * @param {string} op The operation to perform
- * @param {string} value The right-hand element of comparison
- * @return {NDDB} A new NDDB instance containing the selected items
+ * @param {string} op Optional. The operation to perform
+ * @param {mixed} value Optional. The right-hand element of comparison
+ * @return {NDDB} A new NDDB instance with the currently selected items in memory
  * 
- *  @see NDDB.fetch()
- *  @see NDDB.fetchValues()
+ * @see NDDB.and
+ * @see NDDB.or
+ * @see NDDB.execute()
+ * @see NDDB.fetch()
+ * 
  */
 NDDB.prototype.select = function (d, op, value) {
+    this.query.reset();
+    return arguments.length ? this.and(d, op, value) : this;
+};
 
-    var valid = this._analyzeQuery(d, op, value);        
-    if (!valid) return false;
-    
-    var d = valid.d;
-    var op = valid.op;
-    var value = valid.value;
+/**
+ * ### NDDB.and
+ * 
+ * Chains an AND query to the current selection
+ * 
+ * @param {string} d The dimension of comparison
+ * @param {string} op Optional. The operation to perform
+ * @param {mixed} value Optional. The right-hand element of comparison
+ * @return {NDDB} A new NDDB instance with the currently selected items in memory
+ * 
+ * @see NDDB.select
+ * @see NDDB.or
+ * @see NDDB.execute()
+ */
+NDDB.prototype.and = function (d, op, value) {
+// TODO: Support for nested query	
+//	if (!arguments.length) {
+//		addBreakInQuery();
+//	}
+//	else {
+		var condition = this._analyzeQuery(d, op, value);        
+	    if (!condition) return false;
+	    this.query.addCondition('AND', condition, this.getComparator(d));
+//	}			
+	return this;
+};
 
-    var comparator = this.comparator(d);
-    
-    var exist = function (elem) {
-        if ('undefined' !== typeof JSUS.getNestedValue(d,elem)) return elem;
-    };
-    
-    var compare = function (elem) {
-        try {    
-            if (JSUS.eval(comparator(elem, value) + op + 0, elem)) {
-                return elem;
-            }
-        }
-        catch(e) {
-            NDDB.log('Malformed select query: ' + d + op + value);
-            return false;
-        };
-    };
-    
-    var between = function (elem) {
-        if (comparator(elem, value[0]) > 0 && comparator(elem, value[1]) < 0) {
-            return elem;
-        }
-    };
-    
-    var notbetween = function (elem) {
-        if (comparator(elem, value[0]) < 0 && comparator(elem, value[1] > 0)) {
-            return elem;
-        }
-    };
-    
-    var inarray = function (elem) {
-        if (JSUS.in_array(JSUS.getNestedValue(d,elem), value)) {
-            return elem;
-        }
-    };
-    
-    var notinarray = function (elem) {
-        if (!JSUS.in_array(JSUS.getNestedValue(d,elem), value)) {
-            return elem;
-        }
-    };
-    
-    switch (op) {
-        case (''): var func = exist; break;
-        case ('<>'): var func = notbetween; break;
-        case ('><'): var func = between; break;
-        case ('in'): var func = inarray; break;
-        case ('!in'): var func = notinarray; break;
-        default: var func = compare;
-    }
-    
-    return this.filter(func);
+/**
+ * ### NDDB.or
+ * 
+ * Chains an OR query to the current selection
+ * 
+ * @param {string} d The dimension of comparison
+ * @param {string} op Optional. The operation to perform
+ * @param {mixed} value Optional. The right-hand element of comparison
+ * @return {NDDB} A new NDDB instance with the currently selected items in memory
+ * 
+ * @see NDDB.select
+ * @see NDDB.and
+ * @see NDDB.execute()
+ */
+NDDB.prototype.or = function (d, op, value) {
+// TODO: Support for nested query		
+//	if (!arguments.length) {
+//		addBreakInQuery();
+//	}
+//	else {
+		var condition = this._analyzeQuery(d, op, value);        
+	    if (!condition) return false;
+	    this.query.addCondition('OR', condition, this.getComparator(d));
+//	}			
+	return this;
 };
 
 
-//function queryBuilder(o) {
-//	for (var d in o) {
-//		if (o.hasOwnProperty(d)) {
-//			
-//		}
-//	}
-//}
+/**
+ * ### NDDB.selexec
+ * 
+ * Shorthand for select and execute methods
+ * 
+ * Adds a single select condition and executes it.
+ *  
+ * @param {string} d The dimension of comparison
+ * @param {string} op Optional. The operation to perform
+ * @param {mixed} value Optional. The right-hand element of comparison
+ * @return {NDDB} A new NDDB instance with the currently selected items in memory
+ * 
+ * @see NDDB.select
+ * @see NDDB.and
+ * @see NDDB.or
+ * @see NDDB.execute
+ * @see NDDB.fetch
+ * 
+ */
+NDDB.prototype.selexec = function (d, op, value) {
+    return this.select(d, op, value).execute();
+};
 
+/**
+ * ### NDDB.execute
+ * 
+ * Implements the criteria for selection previously specified by `select` queries
+ * 
+ * Does not reset the query object, and it is possible to reuse the current
+ * selection multiple times
+ * 
+ * @param {string} d The dimension of comparison
+ * @param {string} op Optional. The operation to perform
+ * @param {mixed} value Optional. The right-hand element of comparison
+ * @return {NDDB} A new NDDB instance with the previously selected items in the db 
+ * 
+ * @see NDDB.select
+ * @see NDDB.selexec
+ * @see NDDB.and
+ * @see NDDB.or
+ */
+NDDB.prototype.execute = function () {
+    return this.filter(this.query.get.call(this.query));
+};
+
+/**
+ * ### NDDB.exists
+ * 
+ * Returns TRUE if a copy of the object exists in 
+ * the database
+ * 
+ * @param {object} o The object to look for
+ * @return {boolean} TRUE, if a copy is found
+ * 
+ * @see JSUS.equals
+ */
+NDDB.prototype.exists = function (o) {
+	if (!o) return false;
+	
+	for (var i = 0 ; i < this.db.length ; i++) {
+		if (J.equals(this.db[i], o)) {
+			return true;
+		}
+	}
+	
+    return false;
+};
 
 /**
  * ### NDDB.limit
@@ -3916,8 +4161,8 @@ NDDB.prototype.select = function (d, op, value) {
  * @param {number} limit The number of entries to include
  * @return {NDDB} A "limited" copy of the current instance of NDDB
  * 
- *	@see NDDB.first
- * 	@see NDDB.last
+ * @see NDDB.first
+ * @see NDDB.last
  */
 NDDB.prototype.limit = function (limit) {
 	limit = limit || 0;
@@ -3933,7 +4178,7 @@ NDDB.prototype.limit = function (limit) {
  *
  * Reverses the order of all the entries in the database
  * 
- * 	@see NDDB.sort
+ * @see NDDB.sort
  */
 NDDB.prototype.reverse = function () {
     this.db.reverse();
@@ -3951,7 +4196,7 @@ NDDB.prototype.reverse = function () {
  *  - a custom comparator function 
  * 
  * A reference to the current NDDB object is returned, so that
- * further operations can be chained. 
+ * further methods can be chained. 
  * 
  * Notice: the order of entries is changed.
  * 
@@ -3974,7 +4219,7 @@ NDDB.prototype.reverse = function () {
       var that = this;
       var func = function (a,b) {
         for (var i=0; i < d.length; i++) {
-          var result = that.comparator(d[i]).call(that,a,b);
+          var result = that.getComparator(d[i]).call(that,a,b);
           if (result !== 0) return result;
         }
         return result;
@@ -3983,7 +4228,7 @@ NDDB.prototype.reverse = function () {
     
     // SINGLE dimension
     else {
-      var func = this.comparator(d);
+      var func = this.getComparator(d);
     }
     
     this.db.sort(func);
@@ -4000,8 +4245,7 @@ NDDB.prototype.reverse = function () {
  * @return {NDDB} A a reference to the current instance with shuffled entries
  */
 NDDB.prototype.shuffle = function () {
-    // TODO: check do we need to reassign __nddbid__ ?
-    this.db = JSUS.shuffle(this.db);
+    this.db = J.shuffle(this.db);
     return this;
 };
     
@@ -4039,8 +4283,8 @@ NDDB.prototype.filter = function (func) {
  */
 NDDB.prototype.each = NDDB.prototype.forEach = function () {
     if (arguments.length === 0) return;
-    var func = arguments[0];    
-    for (var i=0; i < this.db.length; i++) {
+    var func = arguments[0], i;    
+    for (i = 0 ; i < this.db.length ; i++) {
         arguments[0] = this.db[i];
         func.apply(this, arguments);
     }
@@ -4062,10 +4306,9 @@ NDDB.prototype.each = NDDB.prototype.forEach = function () {
  */
 NDDB.prototype.map = function () {
     if (arguments.length === 0) return;
-    var func = arguments[0];
-    var out = [];
-    var o = undefined;
-    for (var i=0; i < this.db.length; i++) {
+    var func = arguments[0], 
+    	out = [], o, i;
+    for (i = 0 ; i < this.db.length ; i++) {
         arguments[0] = this.db[i];
         o = func.apply(this, arguments);
         if ('undefined' !== typeof o) out.push(o);
@@ -4075,44 +4318,34 @@ NDDB.prototype.map = function () {
 
 // # Update
 
-///**
-// * ### NDDB.remove
-// *
-// * Removes all entries from the database
-// * 
-// * Elements in the parent database will be removed too.
-// * 
-// * @return {NDDB} A new instance of NDDB with no entries 
-// */
-//
-//NDDB.prototype.update = function (update) {
-//	if (!this.length) {
-//		NDDB.log('Cannot update empty database', 'WARN');
-//		return this;
-//	}
-//  
-//	if (!JSUS.isArray(update)) update = [update];
-//	
-//	    	  
-//	for (var i=0; i < this.db.length; i++) {
-//		this.db[i] = update[i % update.length];
-//		
-//		var idx = this.db[i].nddbid - i;
-//		if (this.__parent) {
-//		this.__parent.db.splice(idx,1);
-//    }
-//    // TODO: we could make it with only one for loop
-//    // we loop on parent db and check whether the id is in the array
-//    // at the same time we decrement the nddbid depending on i
-//    for (var i=0; i < this.__parent.length; i++) {
-//    	this.__parent.db[i].nddbid = i;
-//    }
-//	
-// 
-//	this.db = [];
-//	this._autoUpdate();
-//	return this;
-//};  
+/**
+ * ### NDDB.update
+ *
+ * Updates all selected entries
+ * 
+ * Mix ins the properties of the _update_ object in each 
+ * selected item.
+ * 
+ * Properties from the _update_ object that are not found in
+ * the selected items will be created.
+ * 
+ * @param {object} update An object containing the properties
+ *  that will be updated.
+ * @return {NDDB} A new instance of NDDB with updated entries
+ * 
+ * @see JSUS.mixin
+ */
+NDDB.prototype.update = function (update) {
+	if (!this.db.length || !update) return this;
+   	  
+	for (var i = 0; i < this.db.length; i++) {
+		J.mixin(this.db[i], update);
+		this.emit('update', this.db[i]);
+    }
+	
+	this._autoUpdate();
+	return this;
+};  
 
 //## Deletion
 
@@ -4122,27 +4355,11 @@ NDDB.prototype.map = function () {
  *
  * Removes all entries from the database
  * 
- * Elements in the parent database will be removed too.
- * 
  * @return {NDDB} A new instance of NDDB with no entries 
  */
 NDDB.prototype.remove = function () {
 	if (!this.length) return this;
-  
-	if (this.__parent) {    	  
-		for (var i=0; i < this.db.length; i++) {
-			// Important: index changes as we removes elements
-			var idx = this.db[i].nddbid - i;
-			this.__parent.db.splice(idx,1);
-        }
-        // TODO: we could make it with only one for loop
-        // we loop on parent db and check whether the id is in the array
-        // at the same time we decrement the nddbid depending on i
-        for (var i=0; i < this.__parent.length; i++) {
-        	this.__parent.db[i].nddbid = i;
-        }
-	}
- 
+	
 	this.emit('remove', this.db);
 	this.db = [];
 	this._autoUpdate();
@@ -4152,18 +4369,34 @@ NDDB.prototype.remove = function () {
 /**
  * ### NDDB.clear
  *
- * Removes all entries from the database. 
+ * Removes all volatile data
+ * 
+ * Removes all entries, indexes, hashes and tags, 
+ * and resets the current query selection  
+ * 
+ * Hooks, indexing, comparator, and hash functions are not deleted.
  * 
  * Requires an additional parameter to confirm the deletion.
- * 
- * Elements in parent database will not be removed
  * 
  * @return {boolean} TRUE, if the database was cleared
  */
 NDDB.prototype.clear = function (confirm) {
     if (confirm) {
         this.db = [];
-        this._autoUpdate();
+        this.tags = {};
+        this.query.reset();
+        this.nddb_pointer = 0;
+        
+        var i;
+        for (i in this.__H) {
+        	if (this[i]) delete this[i]
+        }
+        for (i in this.__C) {
+        	if (this[i]) delete this[i]
+        }
+        for (var i in this.__I) {
+        	if (this[i]) delete this[i]
+        }
     }
     else {
         NDDB.log('Do you really want to clear the current dataset? Please use clear(true)', 'WARN');
@@ -4186,10 +4419,8 @@ NDDB.prototype.clear = function (confirm) {
  * @param {string|array} select Optional. The properties to copy in the join. Defaults undefined 
  * @return {NDDB} A new database containing the joined entries
  * 
- * 	@see NDDB._join
- * 	@see NDDB.breed
- * 
- * 
+ * @see NDDB._join
+ * @see NDDB.breed
  */
 NDDB.prototype.join = function (key1, key2, pos, select) {
 // <!--	
@@ -4205,7 +4436,7 @@ NDDB.prototype.join = function (key1, key2, pos, select) {
 //            var comparator = JSUS.equals;
 //        }
 // -->	
-    return this._join(key1, key2, JSUS.equals, pos, select);
+    return this._join(key1, key2, J.equals, pos, select);
 };
 
 /**
@@ -4235,7 +4466,7 @@ NDDB.prototype.concat = function (key1, key2, pos, select) {
  * Performs a *left* join across all the entries of the database
  * 
  * The values of two keys (also nested properties are accepted) are compared
- * according to the specified comparator callback, or using JSUS.equals.
+ * according to the specified comparator callback, or using `JSUS.equals`.
  * 
  * If the comparator function returns TRUE, matched entries are appended 
  * as a new property of the matching one. 
@@ -4243,55 +4474,47 @@ NDDB.prototype.concat = function (key1, key2, pos, select) {
  * By default, the full object is copied in the join, but it is possible to 
  * specify the name of the properties to copy as an input parameter.
  * 
- * A new NDDB object breeded, so that further operations can be chained.
+ * A new NDDB object breeded, so that further methods can be chained.
  * 
  * @api private
  * @param {string} key1 First property to compare  
  * @param {string} key2 Second property to compare
- * @param {function} comparator Optional. A comparator function. Defaults JSUS.equals
+ * @param {function} comparator Optional. A comparator function. Defaults, `JSUS.equals`
  * @param {string} pos Optional. The property under which the join is performed. Defaults 'joined'
  * @param {string|array} select Optional. The properties to copy in the join. Defaults undefined 
  * @return {NDDB} A new database containing the joined entries
- * 	@see NDDB.breed
- * 
- *  * TODO: check do we need to reassign __nddbid__ ?
+ * @see NDDB.breed
  */
 NDDB.prototype._join = function (key1, key2, comparator, pos, select) {
-    comparator = comparator || JSUS.equals;
+	if (!key1 || !key2) return this.breed([]);
+	
+    comparator = comparator || J.equals;
     pos = ('undefined' !== typeof pos) ? pos : 'joined';
     if (select) {
-        var select = (select instanceof Array) ? select : [select];
+        select = (select instanceof Array) ? select : [select];
     }
-    var out = [];
-    var idxs = [];
+    var out = [], idxs = [], foreign_key, key;
+    
     for (var i=0; i < this.db.length; i++) {
-        try {
-            var foreign_key = JSUS.eval('this.'+key1, this.db[i]);
-            if ('undefined' !== typeof foreign_key) { 
-                for (var j=i+1; j < this.db.length; j++) {
-                    try {
-                        var key = JSUS.eval('this.'+key2, this.db[j]);
-                        if ('undefined' !== typeof key) { 
-                            if (comparator(foreign_key, key)) {
-                                // Inject the matched obj into the
-                                // reference one
-                                var o = JSUS.clone(this.db[i]);
-                                var o2 = (select) ? JSUS.subobj(this.db[j], select) : this.db[j];
-                                o[pos] = o2;
-                                out.push(o);
-                            }
-                        }
-                    }
-                    catch(e) {
-                        NDDB.log('Key not found in entry: ' + key2, 'WARN');
-                        //return false;
-                    }
+       
+       foreign_key = J.getNestedValue(key1, this.db[i]);
+       if ('undefined' !== typeof foreign_key) { 
+    	   for (var j=i+1; j < this.db.length; j++) {
+           
+    		   key = J.getNestedValue(key2, this.db[j]);
+               
+               if ('undefined' !== typeof key) { 
+            	   if (comparator(foreign_key, key)) {
+	                    // Inject the matched obj into the
+	                    // reference one
+	                    var o = J.clone(this.db[i]);
+	                    var o2 = (select) ? J.subobj(this.db[j], select) : this.db[j];
+	                    o[pos] = o2;
+	                    out.push(o);
+            	   }
+                    
                 }
             }
-        }
-        catch(e) {
-            NDDB.log('Key not found in entry: ' + key1, 'WARN');
-            //return false;
         }
     }
     
@@ -4307,121 +4530,26 @@ NDDB.prototype._join = function (key1, key2, comparator, pos, select) {
  * New entries are created and a new NDDB object is
  * breeded to allows method chaining.
  * 
- * @param {string} key The dimension along which splitting the entries
+ * @param {string} key The dimension along which items will be split
  * @return {NDDB} A new database containing the split entries
  * 
- * 	@see NDDB._split
- * 
+ * @see JSUS.split
  */
 NDDB.prototype.split = function (key) {    
-    var out = [];
-    for (var i=0; i < this.db.length;i++) {
-        out = out.concat(JSUS.split(this.db[i], key));
+    var out = [], i;
+    for (i = 0; i < this.db.length; i++) {
+        out = out.concat(J.split(this.db[i], key));
     }
     return this.breed(out);
 };
 
 // ## Fetching
 
-
-/**
- * ### NDDB._fetch
- *
- * Performs the fetching of the entries according to the
- * specified parameters 
- * 
- * Examples
- * 
- * ```javascript
- * var db = new NDDB();
- * var items = [{a:1, b:2}, {a:3, b:4}, {a:5}];
- * db.importDB(items);
- * 
- * db._fetch(); 
- * // [ {a:1, b:2}, {a:3, b:4}, {a:5} ]
- * 
- * db._fetch('a'); 
- * // [1, 3, 5];
- * 
- * db._fetch('a', 'VALUES'); 
- * //  [ [ 1 ], [ 3 ], [ 5 ] ]
- * 
- * db._fetch('a', 'KEY_VALUES'); 
- * // [ [ 'a', 1 ], [ 'a', 3 ], [ 'a', 5 ] ]
- * 
- * db._fetch(null, 'VALUES'); 
- * // [ [ 1, 2 ], [ 3, 4 ], [ 5] ]
- * 
- * db._fetch(null, 'KEY_VALUES'); 
- * // [ [ 'a', 1, 'b', 2 ], [ 'a', 3, 'b', 4 ], [ 'a', 5 ] ]
- * ```
- * 
- * No further chaining is permitted after fetching.
- * 
- * @api private
- * @param {string} key Optional. If set, returns only the value from the specified property 
- * @param {string} array. Optional If set, objects are transformed in arrays and returned
- * @return {array} out The fetched values 
- * 
- * 	@see NDDB.fetch
- * 	@see NDDB.fetchArray
- * 	@see NDDB.fetchKeyArray
- * 
- */
-NDDB.prototype._fetch = function (key, array) {
-    
-    function getValues (o, key) {        
-        return JSUS.getNestedValue(key, o);
-    };
-    
-    function getValuesArray (o, key) {
-        var el = JSUS.getNestedValue(key, o);
-        if ('undefined' !== typeof el) {
-            return JSUS.obj2KeyedArray(el);
-        }
-    };
-    
-    function getKeyValuesArray (o, key) {
-        var el = JSUS.getNestedValue(key, o);
-        if ('undefined' !== typeof el) {
-            return key.split('.').concat(JSUS.obj2KeyedArray(el));
-        }
-    };
-            
-    switch (array) {
-        case 'VALUES':
-            var func = (key) ? getValuesArray : 
-                               JSUS.obj2Array;
-            
-            break;
-        case 'KEY_VALUES':
-            var func = (key) ? getKeyValuesArray :
-                               JSUS.obj2KeyedArray;
-            break;
-            
-        default: // results are not 
-            if (!key) return this.db;
-            var func = getValues;        
-    }
-    
-    var out = [];    
-    for (var i=0; i < this.db.length; i++) {
-        var el = func.call(this.db[i], this.db[i], key);
-        if ('undefined' !== typeof el) out.push(el);
-    }    
-    
-    return out;
-}
-
 /**
  * ### NDDB.fetch
  *
  * Fetches all the entries in the database and returns 
- * them in a array. 
- * 
- * If a second key parameter is passed, only the value of 
- * the property named after the key are returned, otherwise  
- * the whole entry is returned as it is.
+ * them in one array 
  * 
  * Examples
  * 
@@ -4430,58 +4558,271 @@ NDDB.prototype._fetch = function (key, array) {
  * db.insert([ { a:1, b:{c:2}, d:3 } ]);
  * 
  * db.fetch();    // [ {a: 1, b: {c: 2}, d: 3} ] 
- * db.fetch('b'); // [ {c: 2} ];
- * db.fetch('d'); // [ 3 ];
  * ```
  * 
  * No further chaining is permitted after fetching.
- * 
- * @param {string} key Optional. If set, returns only the value from the specified property 
+ *  
  * @return {array} out The fetched values 
  * 
- * 	@see NDDB._fetch
- * 	@see NDDB.fetchArray
- * 	@see NDDB.fetchKeyArray
+ * @see NDDB.fetchValues
+ * @see NDDB.fetchArray
+ * @see NDDB.fetchKeyArray
+ * @see NDDB.fetchSubObj
  * 
  */
-NDDB.prototype.fetch = function (key) {
-    return this._fetch(key, true);
+NDDB.prototype.fetch = function () {
+    return this.db;
 };
 
 /**
- * ### NDDB.fetchArray
+ * ### NDDB.fetchSubObj
  *
- * Fetches all the entries in the database, transforms them into 
- * one-dimensional array by exploding all nested values, and returns
- * them into an array.
+ * Fetches all the entries in the database and trims out unwanted properties
  * 
- * If a parameter is passed, only the value of the property
- * named after the key is returned, otherwise the whole entry 
- * is exploded, and its values returned in a array. 
  * 
  * Examples
  * 
  * ```javascript
  * var db = new NDDB();
  * db.insert([ { a:1, b:{c:2}, d:3 } ]);
+ * db.insert([ { a:4, b:{c:5}, d:6 } ]);
  * 
- * db.fetchArray();    // [ [ 1, 2, 3 ] ]
- * db.fetchArray('b'); // [ ['c', 2 ] ]
- * db.fetchArray('d'); // [ [ 3 ] ];
+ * db.fetchSubObj('a'); // [ { a: 1} , {a: 4}]
  * ```
  * 
  * No further chaining is permitted after fetching.
  * 
- * @param {string} key Optional. If set, returns only the value from the specified property 
+ * @param {string|array} key Optional. If set, returned objects will have only such properties  
+ * @return {array} out The fetched objects 
+ * 
+ * @see NDDB.fetch
+ * @see NDDB.fetchValues
+ * @see NDDB.fetchArray
+ * @see NDDB.fetchKeyArray
+ */
+NDDB.prototype.fetchSubObj= function (key) {
+	if (!key) return [];
+	var i, el, out = [];
+	for (i=0; i < this.db.length; i++) {
+	    el = J.subobj(this.db[i], key);
+	    if (!J.isEmpty(el)) out.push(el);
+    }
+    return out;
+};
+
+
+/**
+ * ### NDDB.fetchValues
+ *
+ * Fetches all the values of the entries in the database
+ * 
+ * The type of the input parameter determines the return value:
+ *  - if it is `string`, returned value is a one-dimensional array. 
+ * 	- if it is `array`, returned value is an object whose properties are arrays containing 
+ * all the values found in the database for those keys.
+ *   
+ * Nested properties can be specified too.  
+ *   
+ * Examples
+ * 
+ * ```javascript
+ * var db = new NDDB();
+ * db.insert([ { a:1, b:{c:2}, d:3 } ]);
+ * 
+ * db.fetchValues();    // [ [ 1, 2, 3 ] ]
+ * db.fetchValues('b'); // { b: [ {c: 2} ] }
+ * db.fetchValues('d'); // { d: [ 3 ] };
+ * 
+ * db.insert([ { a:4, b:{c:5}, d:6 } ]);
+ * 
+ * db.fetchValues([ 'a', 'd' ]); // { a: [ 1, 4] , d: [ 3, 6] };
+ * ```
+ * 
+ * No further chaining is permitted after fetching.
+ * 
+ * @param {string|array} key Optional. If set, returns only the value from the specified property 
  * @return {array} out The fetched values 
  * 
- * 	@see NDDB._fetch
- * 	@see NDDB.fetch
- * 	@see NDDB.fetchKeyArray
+ * @see NDDB.fetch
+ * @see NDDB.fetchArray
+ * @see NDDB.fetchKeyArray
+ * @see NDDB.fetchSubObj
  * 
  */
+NDDB.prototype.fetchValues = function(key) {
+	var el, i, out, typeofkey;
+	
+	typeofkey = typeof key, out = {};
+	
+	if (typeofkey === 'undefined') {	
+		for (i=0; i < this.db.length; i++) {
+			J.augment(out, this.db[i], J.keys(this.db[i]));
+		} 
+	}
+	
+	else if (typeofkey === 'string') {
+		out[key] = [];
+		for (i=0; i < this.db.length; i++) {
+			el = J.getNestedValue(key, this.db[i]);
+	        if ('undefined' !== typeof el) {
+	        	out[key].push(el);
+	        }
+		}
+		
+		
+	}
+		
+	else if (J.isArray(key)) {
+    	out = J.melt(key, J.rep([], key.length)); // object not array  
+        for ( i = 0 ; i < this.db.length ; i++) {
+        	el = J.subobj(this.db[i], key);
+        	if (!J.isEmpty(el)) {
+            	J.augment(out, el);
+            }
+        }   
+	}
+	
+    return out;
+};
+
+function getValuesArray(o, key) {
+	return J.obj2Array(o, 1);
+};
+
+function getKeyValuesArray(o, key) {
+	return J.obj2KeyedArray(o, 1);
+};
+
+
+function getValuesArray_KeyString(o, key) {
+    var el = J.getNestedValue(key, o);
+    if ('undefined' !== typeof el) {
+        return J.obj2Array(el,1);
+    }
+};
+
+function getValuesArray_KeyArray(o, key) {
+    var el = J.subobj(o, key);
+    if (!J.isEmpty(el)) {
+    	return J.obj2Array(el,1);
+	}
+};
+
+
+function getKeyValuesArray_KeyString(o, key) {
+    var el = J.getNestedValue(key, o);
+    if ('undefined' !== typeof el) {
+        return key.split('.').concat(J.obj2KeyedArray(el));
+    }
+};
+
+function getKeyValuesArray_KeyArray(o, key) {
+	var el = J.subobj(o, key);
+    if (!J.isEmpty(el)) {
+        return J.obj2KeyedArray(el);
+	}
+};
+
+/**
+ * ### NDDB._fetchArray
+ *
+ * Low level primitive for fetching the entities as arrays 
+ * 
+ * Examples
+ * 
+ * ```javascript
+ * var db = new NDDB();
+ * var items = [{a:1, b:2}, {a:3, b:4}, {a:5, c:6}];
+ * db.importDB(items);
+ * 
+ * db._fetch(null, 'VALUES'); 
+ * // [ [ 1, 2 ], [ 3, 4 ], [ 5, 6] ]
+ * 
+ * db._fetch(null, 'KEY_VALUES'); 
+ * // [ [ 'a', 1, 'b', 2 ], [ 'a', 3, 'b', 4 ], [ 'a', 5, 'c', 6 ] ]
+ * 
+ * db._fetch('a', 'VALUES'); 
+ * //  [ [ 1 ], [ 3 ], [ 5 ] ]
+ * 
+ * db._fetch('a', 'KEY_VALUES'); 
+ * // [ [ 'a', 1 ], [ 'a', 3 ], [ 'a', 5 ] ] 
+ * 
+ * db._fetch(['a','b'], 'VALUES'); 
+ * //  [ [ 1 , 2], [ 3, 4 ], [ 5 ] ]
+ * 
+ * db._fetch([ 'a', 'c'] 'KEY_VALUES'); 
+ * // [ [ 'a', 1 ], [ 'a', 3 ], [ 'a', 5, 'c', 6 ] ]
+ * ```
+ * 
+ * No further chaining is permitted after fetching.
+ * 
+ * @api private
+ * @param {string|array} key Optional. If set, returns key/values only from the specified property 
+ * @param {boolean} keyed. Optional. If set, also the keys are returned
+ * @return {array} out The fetched values 
+ * 
+ */
+NDDB.prototype._fetchArray = function (key, keyed) {
+	
+    var cb, out, el, i;
+    
+    if (keyed) {
+    	
+    	if (!key) cb = getKeyValuesArray;
+    	
+    	else if ('string' === typeof key) {
+    		cb = getKeyValuesArray_KeyString;
+    	}
+    	else {
+    		cb = getKeyValuesArray_KeyArray;
+    	}
+    }
+    else {
+    	if (!key) cb = getValuesArray;
+    	
+    	else if ('string' === typeof key) {
+    		cb = getValuesArray_KeyString;
+    	}
+    	else {
+    		cb = getValuesArray_KeyArray;
+    	}
+    }
+    
+    out = [];
+    for (i=0; i < this.db.length; i++) {
+        el = cb.call(this.db[i], this.db[i], key);
+        if ('undefined' !== typeof el) out.push(el);
+    }    
+    
+    return out;
+}
+
+/**
+ * ### NDDB.fetchArray
+ *
+ * Fetches the entities in the database as arrays instead of objects
+ * 
+ * Examples
+ * 
+ * ```javascript
+ * var db = new NDDB();
+ * db.insert([ { a:1, b:{c:2}, d:3 } ]);
+ * db.insert([ { a:4, b:{c:5}, d:6 } ]);
+ * 
+ * db.fetchArray();     // [ [ 1, 'c', 2, 3 ],  ]
+ * db.fetchArray('b');  // [ [ 'c', 2 ] ] 
+ * db.fetchArray('d');  // [ [ 3 ] ]
+ * ```
+ * 
+ * No further chaining is permitted after fetching.
+ * 
+ * @see NDDB._fetchArray
+ * @see NDDB.fetchValues
+ * @see NDDB.fetchKeyArray
+ * @see NDDB.fetchSubObj
+ */
 NDDB.prototype.fetchArray = function (key) {
-    return this._fetch(key, 'VALUES');
+    return this._fetchArray(key);
 };
 
 /**
@@ -4496,9 +4837,9 @@ NDDB.prototype.fetchArray = function (key) {
  * var db = new NDDB();
  * db.insert([ { a:1, b:{c:2}, d:3 } ]);
  * 
- * db.fetchArray();       // [ [ 'a', 1, 'c', 2, 'd', 3 ] ]
+ * db.fetchKeyArray();       // [ [ 'a', 1, 'c', 2, 'd', 3 ] ]
  * db.fetchKeyArray('b'); // [ [ 'b', 'c', 2 ] ] 
- * db.fetchArray('d');    // [ [ 'd', 3 ] ]
+ * db.fetchKeyArray('d');    // [ [ 'd', 3 ] ]
  * ```
  * 
  * No further chaining is permitted after fetching.
@@ -4506,33 +4847,13 @@ NDDB.prototype.fetchArray = function (key) {
  * @param {string} key Optional. If set, returns only the value from the specified property 
  * @return {array} out The fetched values 
  * 
- * 	@see NDDB._fetch
- * 	@see NDDB.fetch
- * 	@see NDDB.fetchArray
+ * @see NDDB._fetchArray
+ * @see NDDB.fetchArray
+ * @see NDDB.fetchValues
+ * @see NDDB.fetchSubObj
  */
 NDDB.prototype.fetchKeyArray = function (key) {
-    return this._fetch(key, 'KEY_VALUES');
-};
-
-/**
- * ### NDDB.fetchValues
- *
- * @deprecated
- * @see NDDB.fetchArray
- * 
- */
-NDDB.prototype.fetchValues = function (key) {
-    return this._fetch(key, 'VALUES');
-};
-
-/**
- * ### NDDB.fetchKeyValues
- *
- * @deprecated
- * @see NDDB.fetchKeyArray
- */
-NDDB.prototype.fetchKeyValues = function (key) {
-    return this._fetch(key, 'KEY_VALUES');
+    return this._fetchArray(key, true);
 };
             
 /**
@@ -4574,13 +4895,13 @@ NDDB.prototype.groupBy = function (key) {
     var groups = [];
     var outs = [];
     for (var i=0; i < this.db.length; i++) {
-        var el = JSUS.getNestedValue(key, this.db[i]);
+        var el = J.getNestedValue(key, this.db[i]);
         if ('undefined' === typeof el) continue;
         // Creates a new group and add entries to it
-        if (!JSUS.in_array(el, groups)) {
+        if (!J.in_array(el, groups)) {
             groups.push(el);
             var out = this.filter(function (elem) {
-                if (JSUS.equals(JSUS.getNestedValue(key, elem), el)) {
+                if (J.equals(J.getNestedValue(key, elem), el)) {
                     return this;
                 }
             });
@@ -4607,13 +4928,13 @@ NDDB.prototype.groupBy = function (key) {
  * @param {string} key The dimension to count
  * @return {number} count The number of items along the specified dimension
  * 
- * 	@see NDDB.length
+ * @see NDDB.length
  */
 NDDB.prototype.count = function (key) {
     if ('undefined' === typeof key) return this.db.length;
     var count = 0;
     for (var i = 0; i < this.db.length; i++) {
-        if (JSUS.hasOwnNestedProperty(key, this.db[i])){
+        if (J.hasOwnNestedProperty(key, this.db[i])){
             count++;
         }
     }    
@@ -4637,7 +4958,7 @@ NDDB.prototype.sum = function (key) {
 	if ('undefined' === typeof key) return false;
     var sum = 0;
     for (var i=0; i < this.db.length; i++) {
-        var tmp = JSUS.getNestedValue(key, this.db[i]);
+        var tmp = J.getNestedValue(key, this.db[i]);
         if (!isNaN(tmp)) {
             sum += tmp;
         }
@@ -4663,7 +4984,7 @@ NDDB.prototype.mean = function (key) {
     var sum = 0;
     var count = 0;
     for (var i=0; i < this.db.length; i++) {
-        var tmp = JSUS.getNestedValue(key, this.db[i]);
+        var tmp = J.getNestedValue(key, this.db[i]);
         if (!isNaN(tmp)) { 
             sum += tmp;
             count++;
@@ -4684,7 +5005,7 @@ NDDB.prototype.mean = function (key) {
  * @param {string} key The dimension to average
  * @return {number|boolean} The mean of the values for the dimension, or FALSE if it does not exist
  * 
- * 	@see NDDB.mean
+ * @see NDDB.mean
  */
 NDDB.prototype.stddev = function (key) {
 	if ('undefined' === typeof key) return false;
@@ -4693,7 +5014,7 @@ NDDB.prototype.stddev = function (key) {
     
     var V = 0;
     this.each(function(e){
-        var tmp = JSUS.getNestedValue(key, e);
+        var tmp = J.getNestedValue(key, e);
         if (!isNaN(tmp)) { 
         	V += Math.pow(tmp - mean, 2)
         }
@@ -4714,13 +5035,13 @@ NDDB.prototype.stddev = function (key) {
  * @param {string} key The dimension of which to find the min
  * @return {number|boolean} The smallest value for the dimension, or FALSE if it does not exist
  * 
- * 	@see NDDB.max
+ * @see NDDB.max
  */
 NDDB.prototype.min = function (key) {
 	if ('undefined' === typeof key) return false;
     var min = false;
     for (var i=0; i < this.db.length; i++) {
-        var tmp = JSUS.getNestedValue(key, this.db[i]);
+        var tmp = J.getNestedValue(key, this.db[i]);
         if (!isNaN(tmp) && (tmp < min || min === false)) {
             min = tmp;
         }
@@ -4739,13 +5060,13 @@ NDDB.prototype.min = function (key) {
  * @param {string} key The dimension of which to find the max
  * @return {number|boolean} The biggest value for the dimension, or FALSE if it does not exist
  * 
- * 	@see NDDB.min
+ * @see NDDB.min
  */
 NDDB.prototype.max = function (key) {
 	if ('undefined' === typeof key) return false;
     var max = false;
     for (var i=0; i < this.db.length; i++) {
-        var tmp = JSUS.getNestedValue(key, this.db[i]);
+        var tmp = J.getNestedValue(key, this.db[i]);
         if (!isNaN(tmp) && (tmp > max || max === false)) {
             max = tmp;
         }
@@ -4773,8 +5094,8 @@ NDDB.prototype.max = function (key) {
 NDDB.prototype.skim = function (skim) {
     if (!skim) return this;
     return this.breed(this.map(function(e){
-    	var skimmed = JSUS.skim(e, skim); 
-    	if (!JSUS.isEmpty(skimmed)) {
+    	var skimmed = J.skim(e, skim); 
+    	if (!J.isEmpty(skimmed)) {
     		return skimmed;
     	}
     }));
@@ -4799,8 +5120,8 @@ NDDB.prototype.skim = function (skim) {
 NDDB.prototype.keep = function (keep) {
     if (!keep) return this.breed([]);
     return this.breed(this.map(function(e){
-    	var subobj = JSUS.subobj(e, keep);
-    	if (!JSUS.isEmpty(subobj)) {
+    	var subobj = J.subobj(e, keep);
+    	if (!J.isEmpty(subobj)) {
     		return subobj;
     	}
     }));
@@ -4832,7 +5153,7 @@ NDDB.prototype.diff = function (nddb) {
             nddb = nddb.db;
         }
     }
-    return this.breed(JSUS.arrayDiff(this.db, nddb));
+    return this.breed(J.arrayDiff(this.db, nddb));
 };
 
 /**
@@ -4858,32 +5179,45 @@ NDDB.prototype.intersect = function (nddb) {
             var nddb = nddb.db;
         }
     }
-    return this.breed(JSUS.arrayIntersect(this.db, nddb));
+    return this.breed(J.arrayIntersect(this.db, nddb));
 };
+
 
 // ## Iterator
 
-
 /**
  * ### NDDB.get
+ *   
+ * Returns the entry at the given numerical position
+ * 
+ * @param {number} pos The position of the entry
+ * @return {object|boolean} The requested item, or FALSE if 
+ * 	the index is invalid 
+ */
+NDDB.prototype.get = function (pos) {
+	if ('undefined' === typeof pos || pos < 0 || pos > (this.db.length-1)) {
+		return false;
+	}
+	return this.db[pos];
+};
+
+/**
+ * ### NDDB.current
  *
  * Returns the entry in the database, at which 
  * the iterator is currently pointing 
  * 
- * If a parameter is passed, then returns the entry
- * with the same internal id. The pointer is *not*
- * automatically updated. 
+ * The pointer is *not* updated. 
  * 
  * Returns false, if the pointer is at an invalid position.
  * 
  * @return {object|boolean} The current entry, or FALSE if none is found
  */
-NDDB.prototype.get = function (pos) {
-    var pos = pos || this.nddb_pointer;
-    if (pos < 0 || pos > (this.db.length-1)) {
+NDDB.prototype.current = function () {
+    if (this.nddb_pointer < 0 || this.nddb_pointer > (this.db.length-1)) {
     	return false;
     }
-    return this.db[pos];
+    return this.db[this.nddb_pointer];
 };
     
 /**
@@ -4899,7 +5233,8 @@ NDDB.prototype.get = function (pos) {
  * 
  */
 NDDB.prototype.next = function () {
-    var el = NDDB.prototype.get.call(this, ++this.nddb_pointer);
+	this.nddb_pointer++;
+    var el = NDDB.prototype.current.call(this);
     if (!el) this.nddb_pointer--;
     return el;
 };
@@ -4916,7 +5251,8 @@ NDDB.prototype.next = function () {
  * @return {object|boolean} The previous entry, or FALSE if none is found
  */
 NDDB.prototype.previous = function () {
-    var el = NDDB.prototype.get.call(this, --this.nddb_pointer);
+	this.nddb_pointer--;
+    var el = NDDB.prototype.current.call(this);
     if (!el) this.nddb_pointer++;
     return el;
 };
@@ -4933,12 +5269,12 @@ NDDB.prototype.previous = function () {
  * @param {string} key Optional. If set, moves to the pointer to the first entry along this dimension
  * @return {object} The first entry found
  * 
- * 	@see NDDB.last
+ * @see NDDB.last
  */
 NDDB.prototype.first = function (key) {
     var db = this.fetch(key);
     if (db.length) {
-        this.nddb_pointer = db[0].nddbid;
+        this.nddb_pointer = 0;
         return db[0];
     }
     return undefined;
@@ -4956,12 +5292,12 @@ NDDB.prototype.first = function (key) {
  * @param {string} key Optional. If set, moves to the pointer to the last entry along this dimension
  * @return {object} The last entry found
  * 
- * 	@see NDDB.first
+ * @see NDDB.first
  */
 NDDB.prototype.last = function (key) {
     var db = this.fetch(key);
     if (db.length) {
-        this.nddb_pointer = db[db.length-1].nddbid;
+        this.nddb_pointer = db.length-1;
         return db[db.length-1];
     }
     return undefined;
@@ -4973,16 +5309,21 @@ NDDB.prototype.last = function (key) {
 /**
  * ### NDDB.tag
  *
- * Registers a tag associated to an internal id.
+ * Registers a tag associated to an object
  * 
- * @TODO: tag should be updated with shuffling and sorting
- * operations.
+ * The second parameter can be the index of an object 
+ * in the database, the object itself, or undefined. In 
+ * the latter case, the current valye of `nddb_pointer` 
+ * is used to create the reference.
+ * 
+ * The tag is independent from sorting and deleting operations,
+ * but changes on update of the elements of the database.
  * 
  * @param {string} tag An alphanumeric id
- * @param {string} idx Optional. The index in the database, or the. Defaults nddb_pointer
+ * @param {mixed} idx Optional. The reference to the object. Defaults, `nddb_pointer`
  * @return {boolean} TRUE, if registration is successful
  * 
- * 	@see NDDB.resolveTag
+ * @see NDDB.resolveTag
  */
 NDDB.prototype.tag = function (tag, idx) {
     if ('undefined' === typeof tag) {
@@ -5008,7 +5349,7 @@ NDDB.prototype.tag = function (tag, idx) {
     }
     
     this.tags[tag] = ref;
-    return true;
+    return ref;
 };
 
 /**
@@ -5019,8 +5360,7 @@ NDDB.prototype.tag = function (tag, idx) {
  * @param {string} tag An alphanumeric id
  * @return {object} The object associated with the tag
  * 
- * 	@see NDDB.tag
- * @status: experimental
+ * @see NDDB.tag
  */
 NDDB.prototype.resolveTag = function (tag) {
     if ('undefined' === typeof tag) {
@@ -5035,14 +5375,6 @@ NDDB.prototype.resolveTag = function (tag) {
 var storageAvailable = function() {
 	return ('function' === typeof store);
 }
-
-// if node
-if (JSUS.isNodeJS()) {   
-	require('./external/cycle.js');		
-	var fs = require('fs');
-};
-
-//end node  
 
 /**
  * ### NDDB.save
@@ -5063,11 +5395,12 @@ if (JSUS.isNodeJS()) {
  * @param {string} file The file system path, or the identifier for the browser database
  * @param {function} callback Optional. A callback to execute after the database was saved
  * @param {compress} boolean Optional. If TRUE, output will be compressed. Defaults, FALSE
+ * @return {boolean} TRUE, if operation is successful
  * 
  * @see NDDB.load
  * @see NDDB.stringify
  * @see https://github.com/douglascrockford/JSON-js/blob/master/cycle.js
- * @return {boolean} TRUE, if operation is successful
+
  * 
  */
 NDDB.prototype.save = function (file, callback, compress) {
@@ -5079,7 +5412,7 @@ NDDB.prototype.save = function (file, callback, compress) {
 	compress = compress || false;
 	
 	// Try to save in the browser, e.g. with Shelf.js
-	if (!JSUS.isNodeJS()){
+	if (!J.isNodeJS()){
 		if (!storageAvailable()) {
 			NDDB.log('No support for persistent storage found.', 'ERR');
 			return false;
@@ -5091,11 +5424,10 @@ NDDB.prototype.save = function (file, callback, compress) {
 	}
 	
 	// Save in Node.js
-	fs.writeFile(file, this.stringify(compress), 'utf-8', function(e) {
-		if (e) throw e
-		if (callback) callback();
-		return true;
-	});
+	fs.writeFileSync(file, this.stringify(compress), 'utf-8');
+	if (callback) callback();
+	return true;
+	
 };
 
 /**
@@ -5114,22 +5446,23 @@ NDDB.prototype.save = function (file, callback, compress) {
  * Cyclic objects previously decycled will be retrocycled. 
  * 
  * @param {string} file The file system path, or the identifier for the browser database
- * @param {function} callback Optional. A callback to execute after the database was saved
+ * @param {function} cb Optional. A callback to execute after the database was saved
+ * @return {boolean} TRUE, if operation is successful
  * 
  * @see NDDB.save
  * @see NDDB.stringify
+ * @see JSUS.parse
  * @see https://github.com/douglascrockford/JSON-js/blob/master/cycle.js
- * @return {boolean} TRUE, if operation is successful
  * 
  */
-NDDB.prototype.load = function (file, callback) {
+NDDB.prototype.load = function (file, cb, options) {
 	if (!file) {
 		NDDB.log('You must specify a valid file / id.', 'ERR');
 		return false;
 	}
 	
 	// Try to save in the browser, e.g. with Shelf.js
-	if (!JSUS.isNodeJS()){
+	if (!J.isNodeJS()){
 		if (!storageAvailable()) {
 			NDDB.log('No support for persistent storage found.', 'ERR');
 			return false;
@@ -5137,40 +5470,539 @@ NDDB.prototype.load = function (file, callback) {
 		
 		var items = store(file);
 		this.importDB(items);
-		if (callback) callback();
+		if (cb) cb();
 		return true;
 	}
 	
 	var loadString = function(s) {
-		var items = JSON.parse(s.toString());
-		//console.log(s);
+
+		var items = J.parse(s);
+		
 		var i;
 		for (i=0; i< items.length; i++) {
 			// retrocycle if possible
 			items[i] = NDDB.retrocycle(items[i]);
 		}
-//					console.log(Object.prototype.toString.apply(items[0].aa))
-		
+
 		this.importDB(items);
-//				this.each(function(e) {
-//					e = NDDB.retrocycle(e);
-//				});
 	}
 	
-	if (!callback) { 
-		var s = fs.readFileSync(file, 'utf-8');
-		loadString.call(this, s);
-	}
-	else {
-		fs.readFile(file, 'utf-8', function(e, s) {
-			if (e) throw e
-			loadString.call(this, s);
-			callback();
+	var s = fs.readFileSync(file, 'utf-8');	
+	loadString.call(this, s);
+	return true;
+};
+
+
+//if node
+if (J.isNodeJS()) {   
+	require('./external/cycle.js');		
+	var fs = require('fs'),
+		csv = require('ya-csv');
+	
+	NDDB.prototype.load.csv = function (file, cb, options) {
+		if (!file) {
+			NDDB.log('You must specify a valid CSV file.', 'ERR');
+			return false;
+		}
+		
+		// Mix options
+		options = options || {};
+		 
+		if ('undefined' === typeof options.columnsFromHeader) {
+			options.columnsFromHeader = true;
+		}
+
+
+		var reader = csv.createCsvStreamReader(file, options);
+
+		if (options.columnNames) {
+			reader.setColumnNames(options.columnNames);
+		}
+		
+		reader.addListener('data', function(data) {
+		    this.insert(data);
 		});
+		
+		reader.addListener('end', function(data) {
+			if (cb) callback();
+		});
+		
+		return true;
+	};
+};
+//end node  
+
+/**
+ * # QueryBuilder
+ * 
+ * MIT Licensed
+ * 
+ * Helper class for NDDB query selector
+ * 
+ * ---
+ * 
+ */
+
+/**
+ * ## QueryBuilder Constructor
+ * 
+ * Manages the _select_ queries of NDDB
+ */	
+function QueryBuilder() {
+	this.operators = {};
+	this.registerDefaultOperators();
+	this.reset();
+}
+
+/**
+ * ### QueryBuilder.addCondition
+ * 
+ * Adds a new _select_ condition
+ * 
+ * @param {string} type. The type of the operation (e.g. 'OR', or 'AND')
+ * @param {object} condition. An object containing the parameters of the
+ *   _select_ query
+ * @param {function} comparator. The comparator function associated with
+ *   the dimension inside the condition object.  
+ */
+QueryBuilder.prototype.addCondition = function(type, condition, comparator) {
+	condition.type = type;
+	condition.comparator = comparator;
+	this.query[this.pointer].push(condition);
+};
+
+/**
+ * ### QueryBuilder.registerOperator
+ * 
+ * Registers a _select_ function under an alphanumeric id
+ * 
+ * When calling `NDDB.select('d','OP','value')` the second parameter (_OP_)
+ * will be matched with the callback function specified here.
+ * 
+ * Callback function must accept three input parameters:
+ * 
+ * 	- d: dimension of comparison
+ *  - value: second-term of comparison
+ *  - comparator: the comparator function as defined by `NDDB.c`
+ *  
+ * and return a function that execute the desired operation.  
+ * 
+ * Registering a new operator under an already existing id will 
+ * overwrite the old operator.
+ * 
+ * @param {string} op An alphanumeric id
+ * @param {function} cb The callback function
+ * 
+ * @see QueryBuilder.registerDefaultOperators
+ */
+QueryBuilder.prototype.registerOperator = function(op, cb) {
+	this.operators[op] = cb;
+};
+
+/**
+ * ### QueryBuilder.registerDefaultOperators
+ * 
+ * Register default operators for NDDB
+ * 
+ */
+QueryBuilder.prototype.registerDefaultOperators = function() {
+	
+	// Exists
+	this.operators['E'] = function (d, value, comparator) {
+		return function(elem) {
+			if ('undefined' !== typeof J.getNestedValue(d,elem)) return elem;
+		}
+	};
+
+	// (strict) Equals
+	this.operators['=='] = function (d, value, comparator) {
+		return function(elem) {
+			if (comparator(elem, value) === 0) return elem;
+		};
+	};
+	
+	// Greater than
+	this.operators['>'] = function (d, value, comparator) {
+		return function(elem) {
+			var compared = comparator(elem, value);
+			if (compared === 1 || compared === 0) return elem;
+		};
+	};
+	
+	// Smaller than
+	this.operators['<'] = function (d, value, comparator) {
+		return function(elem) {
+			if (comparator(elem, value) === -1) return elem;
+		};
+	};
+	
+	//  Smaller or equal than
+	this.operators['<='] = function (d, value, comparator) {
+		return function(elem) {
+			var compared = comparator(elem, value);
+			if (compared === -1 || compared === 0) return elem;
+		};
+	};
+   
+    // Between
+    this.operators['><'] = function (d, value, comparator) {
+    	return function(elem) {
+    		if (comparator(elem, value[0]) > 0 && comparator(elem, value[1]) < 0) {
+	            return elem;
+	        }
+    	};
+    };
+    // Not Between
+    this.operators['<>'] = function (d, value, comparator) {
+    	return function(elem) {
+	        if (comparator(elem, value[0]) < 0 && comparator(elem, value[1] > 0)) {
+	            return elem;
+	        }
+    	};
+    };
+    
+    // In Array
+    this.operators['in'] = function (d, value, comparator) {
+    	return function(elem) {
+	        if (J.in_array(J.getNestedValue(d,elem), value)) {
+	            return elem;
+	        }
+    	};
+    };
+    
+    // Not In Array
+    this.operators['!in'] = function (d, value, comparator) {
+    	return function(elem) {
+	        if (!J.in_array(J.getNestedValue(d,elem), value)) {
+	            return elem;
+	        }
+    	};
+    };
+};
+
+/**
+ * ### QueryBuilder.addBreak 
+ * 
+ * undocumented
+ */
+QueryBuilder.prototype.addBreak = function() {
+	this.pointer++;
+	this.query[this.pointer] = [];
+};
+
+/**
+ * ### QueryBuilder.reset
+ * 
+ * Resets the current query selection
+ * 
+ */
+QueryBuilder.prototype.reset = function() {
+	this.query = [];
+	this.pointer = 0;
+	this.query[this.pointer] = [];
+};
+
+/**
+ * ### QueryBuilder.get
+ * 
+ * Builds up the select function
+ * 
+ * Up to three conditions it builds up a custom function without  
+ * loop. For more than three conditions, a loop is created.
+ * 
+ * Expressions are evaluated from right to left, so that the last one
+ * always decides the overall logic value. E.g. :
+ * 
+ * 	true AND false OR true => false OR true => TRUE
+ * 	true AND true OR false => true OR false => TRUE
+ * 
+ * @return {function} The select function containing all the specified
+ *   conditions
+ */
+QueryBuilder.prototype.get = function() {
+	var line, lineLen, f1, f2, f3, type1, type2, i;
+	var query = this.query, pointer = this.pointer;
+	var operators = this.operators;
+	
+	function findCallback(obj, operators) {
+		var d = obj.d,
+			op = obj.op,
+			value = obj.value,
+			comparator = obj.comparator;
+		return operators[op](d, value, comparator);  
+	};	
+	
+	// Ready to support nested queries, not yet implemented
+	if (pointer === 0) {
+		line = query[pointer]
+		lineLen = line.length; 
+		
+		if (lineLen === 1) {
+			return findCallback(line[0], operators);
+		}
+		
+		else if (lineLen === 2) {
+			f1 = findCallback(line[0], operators);
+			f2 = findCallback(line[1], operators);
+			type1 = line[1].type;
+			
+			switch (type1) {
+				case 'OR': 
+					return function(elem) {
+						if ('undefined' !== typeof f1(elem)) return elem;
+						if ('undefined' !== typeof f2(elem)) return elem;
+					}	
+				case 'AND':
+					return function(elem) {
+						if ('undefined' !== typeof f1(elem) && 'undefined' !== typeof f2(elem)) return elem;
+					}
+				
+				case 'NOT':
+					return function(elem) {
+						if ('undefined' !== typeof f1(elem) && 'undefined' === typeof f2(elem)) return elem;
+					}
+			}
+		}
+		
+		else if (lineLen === 3) {
+			f1 = findCallback(line[0], operators);
+			f2 = findCallback(line[1], operators);
+			f3 = findCallback(line[2], operators);
+			type1 = line[1].type;
+			type2 = line[2].type;
+			type1 = type1 + '_' + type2;
+			switch (type1) {
+				case 'OR_OR': 
+					return function(elem) {
+						if ('undefined' !== typeof f1(elem)) return elem;
+						if ('undefined' !== typeof f2(elem)) return elem;
+						if ('undefined' !== typeof f3(elem)) return elem;
+					};	
+					
+				case 'OR_AND':
+					return function(elem) {
+					
+						if ('undefined' === typeof f3(elem)) return;
+						if ('undefined' !== typeof f2(elem)) return elem;
+						if ('undefined' !== typeof f1(elem)) return elem;
+					};
+				
+				case 'AND_OR':
+					return function(elem) {
+						if ('undefined' !== typeof f3(elem)) return elem;
+						if ('undefined' === typeof f2(elem)) return;
+						if ('undefined' !== typeof f1(elem)) return elem;
+					};
+					
+				case 'AND_AND':
+					return function(elem) {
+						if ('undefined' === typeof f3(elem)) return;
+						if ('undefined' === typeof f2(elem)) return;
+						if ('undefined' !== typeof f1(elem)) return elem;
+					};
+			}
+		}
+		
+		else {				
+			return function(elem) {
+				var i, f, type, resOK;
+				var prevType = 'OR', prevResOK = true;
+				for (i = lineLen-1 ; i > -1 ; i--) {
+					
+			
+					f = findCallback(line[i], operators);
+					type = line[i].type,
+					resOK = 'undefined' !== typeof f(elem);
+					
+					if (type === 'OR') {
+						// Current condition is TRUE OR
+						if (resOK) return elem;
+					}
+					
+					// Current condition is FALSE AND 
+					else if (type === 'AND') {
+						if (!resOK) {
+							return;
+						}
+						// Previous check was an AND or a FALSE OR
+						else if (prevType === 'OR' && !prevResOK) {
+							return;
+						}
+					}
+					prevType = type;
+					// A previous OR is TRUE also if follows a TRUE AND 
+					prevResOK = type === 'AND' ? resOK : resOK || prevResOK;
+					
+				}
+				return elem;
+			}
+			
+		}
+		
 	}
 };
-	
 
+/**
+ * # NDDBIndex
+ * 
+ * MIT Licensed
+ * 
+ * Helper class for NDDB indexing
+ * 
+ * ---
+ * 
+ */
+
+/**
+ * ## NDDBIndex Constructor
+ * 
+ * Creates direct access index objects for NDDB
+ * 
+ * @param {string} The name of the index
+ * @param {array} The reference to the original database
+ */	
+function NDDBIndex(idx, nddb) {
+	this.idx = idx;
+	this.nddb = nddb;
+	this.resolve = {};
+}
+
+/**
+ * ### NDDBIndex._add
+ *
+ * Adds an item to the index
+ * 
+ * @param {mixed} idx The id of the item
+ * @param {number} dbidx The numerical id of the item in the original array
+ */
+NDDBIndex.prototype._add = function (idx, dbidx) {
+    this.resolve[idx] = dbidx;
+};
+
+/**
+ * ### NDDBIndex._remove
+ *
+ * Adds an item to the index
+ * 
+ * @param {mixed} idx The id to remove from the index
+ */
+NDDBIndex.prototype._remove = function (idx) {
+    delete this.resolve[idx];
+};
+
+/**
+ * ### NDDBIndex.get
+ *
+ * Gets the entry from database with the given id
+ * 
+ * @param {mixed} idx The id of the item to get
+ * @return {object|boolean} The requested entry, or FALSE if none is found
+ * 
+ * @see NDDB.index
+ * @see NDDBIndex.pop
+ * @see NDDBIndex.update
+ */
+NDDBIndex.prototype.size = function () {
+    return J.size(this.resolve);
+};
+
+/**
+ * ### NDDBIndex.get
+ *
+ * Gets the entry from database with the given id
+ * 
+ * @param {mixed} idx The id of the item to get
+ * @return {object|boolean} The requested entry, or FALSE if the index is invalid
+ * 
+ * @see NDDB.index
+ * @see NDDBIndex.pop
+ * @see NDDBIndex.update
+ */
+NDDBIndex.prototype.get = function (idx) {
+	if (!this.resolve[idx]) return false
+    return this.nddb.db[this.resolve[idx]];
+};
+
+
+/**
+ * ### NDDBIndex.pop
+ *
+ * Removes and entry from the database with the given id and returns it
+ * 
+ * @param {mixed} idx The id of item to remove 
+ * @return {object|boolean} The removed item, or FALSE if the index is invalid
+ * 
+ * @see NDDB.index
+ * @see NDDBIndex.get
+ * @see NDDBIndex.update
+ */
+NDDBIndex.prototype.pop = function (idx) {
+	var o, dbidx;
+	dbidx = this.resolve[idx];
+	if ('undefined' === typeof dbidx) return false;
+	o = this.nddb.db[dbidx];
+	if ('undefined' === typeof o) return;
+	this.nddb.db.splice(dbidx,1);
+	delete this.resolve[idx];
+	this.nddb.emit('remove', o);
+	this.nddb._autoUpdate();
+	return o;
+};
+
+/**
+ * ### NDDBIndex.update
+ *
+ * Removes and entry from the database with the given id and returns it
+ * 
+ * @param {mixed} idx The id of item to update 
+ * @return {object|boolean} The updated item, or FALSE if the index is invalid
+ * 
+ * @see NDDB.index
+ * @see NDDBIndex.get
+ * @see NDDBIndex.pop
+ */
+NDDBIndex.prototype.update = function (idx, update) {
+	var o, dbidx;
+	dbidx = this.resolve[idx];
+	if ('undefined' === typeof dbidx) return false;
+	o = this.nddb.db[dbidx];
+	J.mixin(o, update);
+	this.nddb.emit('update', o);
+	this.nddb._autoUpdate();
+	return o;
+};
+
+/**
+ * ### NDDBIndex.getAllKeys
+ *
+ * Returns the list of all keys in the index
+ * 
+ * @return {array} The array of alphanumeric keys in the index
+ * 
+ * @see NDDBIndex.getAllKeyElements
+ */
+NDDBIndex.prototype.getAllKeys = function () {
+	return J.keys(this.resolve);
+};
+
+/**
+ * ### NDDBIndex.getAllKeyElements
+ *
+ * Returns all the elements indexed by their key in one object
+ * 
+ * @return {object} The object of key-elements
+ * 
+ * @see NDDBIndex.getAllKeys
+ */
+NDDBIndex.prototype.getAllKeyElements = function () {
+	var out = {}, idx;
+	for (idx in this.resolve) {
+		if (this.resolve.hasOwnProperty(idx)) {
+			out[idx] = this.nddb.db[this.resolve[idx]];
+		}
+	}
+	return out;
+};
 
 // ## Closure    
 })(
@@ -5178,6 +6010,7 @@ NDDB.prototype.load = function (file, callback) {
   , 'undefined' !== typeof JSUS ? JSUS : module.parent.exports.JSUS || require('JSUS').JSUS
   , ('object' === typeof module && 'function' === typeof require) ? module.parent.exports.store || require('shelf.js/build/shelf-fs.js').store : this.store
 );
+
 /**
  * # nodeGame
  * 
@@ -5195,91 +6028,16 @@ NDDB.prototype.load = function (file, callback) {
 (function (node) {
 
 // ### version	
-node.version = '0.5.0';
-
-// ## Logging system
-
-/**
- *  ### node.verbosity
- *  
- *  The minimum level for a log entry to be displayed as output.
- *   
- *  Defaults, only errors are displayed.
- *  
- */
-node.verbosity = 0;
+node.version = '0.6.3';
 
 
-/**
- * ### node.verbosity_levels
- * 
- * ALWAYS, ERR, WARN, INFO, DEBUG
- */  
-node.verbosity_levels = {
-		// <!-- It is not really always... -->
-		ALWAYS: -(Number.MIN_VALUE+1), 
-		ERR: -1,
-		WARN: 0,
-		INFO: 1,
-		DEBUG: 100
-};
-
-
+// ## Objects
 /**
  * ### node.log
  * 
- * Default nodeGame standard out, override to redirect
- * 
- * Logs entries are displayed only if their verbosity level is 
- * greater than `node.verbosity`
- * 
- * @param {string} txt The text to output
- * @param {string|number} level Optional. The verbosity level of this log. Defaults, level = 0
- * @param {string} prefix Optional. A text to display at the beginning of the log entry. Defaults prefix = 'nodeGame: ' 
- * 
- */
-node.log = function (txt, level, prefix) {
-	if ('undefined' === typeof txt) return false;
-	
-	level 	= level || 0;
-	prefix 	= ('undefined' === typeof prefix) 	? 'nodeGame: '
-												: prefix;
-	if ('string' === typeof level) {
-		level = node.verbosity_levels[level];
-	}
-	if (node.verbosity > level) {
-		console.log(prefix + txt);
-	}
-};
-
-/**
- * ### node.info
- * 
- * Logs an INFO message
- */
-node.info = function (txt, prefix) {
-	node.log(txt, node.verbosity_levels.INFO, prefix);
-}
-
-/**
- * ### node.warn
- * 
- * Logs a WARNING message
- */
-node.warn = function (txt, prefix) {
-	node.log(txt, node.verbosity_levels.WARN, prefix);
-}
-
-/**
- * ### node.err
- * 
- * Logs an ERROR message
- */
-node.err = function (txt, prefix) {
-	node.log(txt, node.verbosity_levels.ERR, prefix);
-}
-
-// ## Objects
+ * Standard out
+ */	
+node.log = function () {};
 
 /**
  * ### node.events
@@ -5329,16 +6087,68 @@ node.session 	= {};
  * 
  * @see node.PlayerList.Player
  */
-node.player 	= {};
+node.player = {};
 
 /**
- * ### node.memory
+ * ### node.game
+ * 
+ * Instance of node.Game
+ * 
+ * @see node.Game
+ */
+node.game = {};
+
+
+/**
+ * ### node.game.memory
  * 
  * Instance of node.GameDB database
  * 
  * @see node.GameDB
  */
-node.memory 	= {};
+node.game.memory = null;
+
+
+/**
+ * ### node.game.state
+ * 
+ * Keeps track of the state of the game
+ * 
+ * @see node.GameState
+ */
+node.game.state = null;
+
+
+/**
+ * ### node.store
+ * 
+ * Makes the nodeGame session persistent, saving it
+ * to the browser local database or to a cookie
+ * 
+ * @see shelf.js
+ */
+node.store		= function() {};
+
+
+/**
+ * ### node.setup
+ * 
+ * Configures a specific feature of nodeGame and and stores 
+ * the settings in `node.conf`.
+ * 
+ * @see Setup
+ */
+node.setup		= function() {};
+
+
+/**
+ * ### node.conf
+ * 
+ * A reference to the current nodegame configuration
+ * 
+ * @see Setup
+ */
+node.conf = {};
 
 /**
  * ### node.support 
@@ -5353,8 +6163,23 @@ node.support	= {};
 
 if ('object' === typeof module && 'function' === typeof require) {
 	// <!-- Node.js -->
+	
+	require('./lib/modules/log.js');
+	require('./lib/modules/variables.js');
+	
 	require('./init.node.js');
-    require('./nodeGame.js');
+    require('./lib/nodegame.js');
+
+    require('./lib/modules/fs.js');
+    require('./lib/modules/setup.js');
+	require('./lib/modules/alias.js');
+	require('./lib/modules/random.js');
+    
+    // ### Loading Sockets
+    require('./lib/sockets/SocketIo.js');
+    require('./lib/sockets/SocketDirect.js');
+    
+    // ### Loading Event listeners
     require('./listeners/incoming.js');
     require('./listeners/internal.js');
     require('./listeners/outgoing.js');
@@ -5367,9 +6192,350 @@ else {
 	
 	node.support = JSUS.compatibility();
 }
-
 	
 })('object' === typeof module ? module.exports : (window.node = {}));	
+
+/**
+ * # Log
+ * 
+ * Copyright(c) 2012 Stefano Balietti
+ * MIT Licensed 
+ * 
+ * `nodeGame` logging module
+ * 
+ * ---
+ * 
+ */
+
+(function (exports, node) {
+	
+
+
+// ## Logging system
+
+/**
+ * ### node.verbosity_levels
+ * 
+ * ALWAYS, ERR, WARN, INFO, DEBUG
+ */  
+	node.verbosity_levels = {
+			ALWAYS: -(Number.MIN_VALUE + 1), 
+			ERR: -1,
+			WARN: 0,
+			INFO: 1,
+			DEBUG: 100,
+			NEVER: Number.MIN_VALUE - 1
+	};	
+	
+/**
+ *  ### node.verbosity
+ *  
+ *  The minimum level for a log entry to be displayed as output
+ *   
+ *  Defaults, only errors are displayed.
+ *  
+ */
+	node.verbosity = node.verbosity_levels.WARN;
+
+
+ 
+/**
+ * ### node.remoteVerbosity
+ *
+ *  The minimum level for a log entry to be reported to the server
+ *   
+ *  Defaults, only errors are displayed.
+ */	
+	node.remoteVerbosity = node.verbosity_levels.WARN;
+		
+/**
+ * ### node.log
+ * 
+ * Default nodeGame standard out, override to redirect
+ * 
+ * Logs entries are displayed to the console if their level is 
+ * smaller than `node.verbosity`.
+ * 
+ * Logs entries are forwarded to the server if their level is
+ * smaller than `node.remoteVerbosity`.
+ * 
+ * @param {string} txt The text to output
+ * @param {string|number} level Optional. The verbosity level of this log. Defaults, level = 0
+ * @param {string} prefix Optional. A text to display at the beginning of the log entry. Defaults prefix = 'nodeGame: ' 
+ * 
+ */
+	node.log = function (txt, level, prefix) {
+		if ('undefined' === typeof txt) return false;
+		
+		level 	= level || 0;
+		prefix 	= ('undefined' === typeof prefix) 	? 'ng> '
+													: prefix;
+		
+		if ('string' === typeof level) {
+			level = node.verbosity_levels[level];
+		}
+		if (node.verbosity > level) {
+			console.log(prefix + txt);
+		}
+//		if (node.remoteVerbosity > level) {
+//			var remoteMsg = node.msg.create({
+//				target: node.target.LOG,
+//				text: level,
+//				data: txt,
+//				to: 'SERVER'
+//			});
+//			console.log(txt)
+//			node.socket.send(remoteMsg);
+//		}
+	};
+
+/**
+ * ### node.info
+ * 
+ * Logs an INFO message
+ */
+	node.info = function (txt, prefix) {
+		node.log(txt, node.verbosity_levels.INFO, prefix);
+	};
+
+/**
+ * ### node.warn
+ * 
+ * Logs a WARNING message
+ */
+	node.warn = function (txt, prefix) {
+		node.log(txt, node.verbosity_levels.WARN, prefix);
+	};
+
+/**
+ * ### node.err
+ * 
+ * Logs an ERROR message
+ */
+	node.err = function (txt, prefix) {
+		node.log(txt, node.verbosity_levels.ERR, prefix);
+	};
+
+})(
+	'undefined' != typeof node ? node : module.exports,
+	'undefined' != typeof node ? node : module.parent.exports
+);
+
+/**
+ * # Variables
+ * 
+ * Copyright(c) 2012 Stefano Balietti
+ * MIT Licensed 
+ * 
+ * `nodeGame` variables and constants module
+ * 
+ * ---
+ * 
+ */
+
+(function (exports, node) {
+	
+	// ## Constants
+
+/**
+ * ### node.actions
+ * 
+ * Collection of available nodeGame actions
+ * 
+ * The action adds an initial semantic meaning to the
+ * message. It specify the nature of requests
+ * "Why the message was sent?"
+ * 
+ * Semantics:
+ * 
+ * - SET: Store / changes the value of a property in the receiver of the msg
+ * - GET: Asks the value value of a property to the receiver of the msg
+ * - SAY: Announces a change of state or other global property in the sender of the msg
+ * 
+ */
+	node.action = {};
+
+	node.action.SET = 'set'; 	
+	node.action.GET = 'get'; 	
+	node.action.SAY = 'say'; 	
+
+/**
+ * ### node.target
+ * 
+ * Collection of available nodeGame targets
+ * 
+ * The target adds an additional level of semantic 
+ * for the message, and specifies the nature of the
+ * information carried in the message. 
+ * 
+ * It answers the question: "What is the content of the message?" 
+ */
+	node.target = {};
+
+
+// #### target.DATA
+// Generic identifier for any type of data 
+	node.target.DATA		= 'DATA';		
+	
+// #### target.HI
+// A client is connecting for the first time
+	node.target.HI = 'HI';		
+
+// #### target.HI_AGAIN
+// A client re-connects to the server within the same session	
+	node.target.HI_AGAIN = 'HI_AGAIN'; 	
+
+// #### target.PCONNECT
+// A new client just connected to the player endpoint	
+	node.target.PCONNECT = 'PCONNECT';
+	
+// #### target.PDISCONNECT
+// A client that just disconnected from the player endpoint 
+	node.target.PDISCONNECT = 'PDISCONNECT';
+
+// #### target.MCONNECT
+// A client that just connected to the admin (monitor) endpoint	
+	node.target.MCONNECT = 'MCONNECT'; 		
+
+// #### target.MDISCONNECT
+// A client just disconnected from the admin (monitor) endpoint 
+	node.target.MDISCONNECT = 'MDISCONNECT';
+
+// #### target.PLIST
+// The list of clients connected to the player endpoint was updated
+	node.target.PLIST = 'PLIST';
+	
+// #### target.MLIST	
+// The list of clients connected to the admin (monitor) endpoint was updated	
+	node.target.MLIST = 'MLIST';
+
+// #### target.STATE
+// A client notifies his own state
+	node.target.STATE = 'STATE';
+	
+// #### target.STAGE
+// A client notifies his own state
+	node.target.STAGE = 'STAGE';	
+	
+// #### target.REDIRECT
+// Redirects a client to a new uri
+	node.target.REDIRECT = 'REDIRECT'; 
+
+// #### target.SETUP
+// Asks a client update its configuration	
+	node.target.SETUP = 'SETUP'; 
+	
+// #### target.GAMECOMMAND
+// Ask a client to start/pause/stop/resume the game	
+	node.target.GAMECOMMAND = 'GAMECOMMAND'; 	
+	
+// #### target.JOIN
+// Asks a client to join another channel/subchannel/room
+	node.target.JOIN = 'JOIN';
+
+// #### target.LOG
+// A log entry
+	node.target.LOG = 'LOG';
+
+//#### not used targets (for future development)
+	
+	node.target.TXT 		= 'TXT';	// Text msg
+	
+	// Still to implement
+	node.target.BYE			= 'BYE';	// Force disconnects
+	node.target.ACK			= 'ACK';	// A reliable msg was received correctly
+
+	node.target.WARN 		= 'WARN';	// To do.
+	node.target.ERR			= 'ERR';	// To do.
+
+
+/**
+ * ### Game commands
+ * 
+ * - node.gamecommand.start
+ * - node.gamecommand.pause
+ * - node.gamecommand.resume
+ * - node.gamecommand.stop
+ */
+	node.gamecommand = {	
+			start: 'start',
+			pause: 'pause',
+			resume: 'resume',
+			stop: 'stop',
+			restart: 'restart',
+			goto_stage: 'goto_stage'
+	};
+		
+
+	
+
+/**
+ * ### Direction
+ * 
+ * Distiguishes between incoming and outgoing messages
+ * 
+ * - node.IN
+ * - node.OUT
+ */
+	node.IN		= 'in.';
+	node.OUT	= 'out.';	
+
+
+/**
+ * ### node.is
+ * 
+ * Levels associates to the states of the nodeGame engine
+ * 
+ */	
+	node.is = {};
+
+// #### is.UNKNOWN
+// A game has not been initialized
+	node.is.UNKNOWN = 0;
+
+// #### is.INITIALIZING
+// The engine is loading all the modules	
+	node.is.INITIALIZING = 1;
+
+// #### is.INITIALIZED
+// The engine is fully loaded, but there is still no game	
+	node.is.INITIALIZED = 5;	
+	
+// #### is.GAMELOADED
+// The engine is fully loaded, and a game has been loaded	
+	node.is.GAMELOADED = 10;	
+	
+// #### is.DEAD
+// An unrecoverable error has occurred	
+	node.is.DEAD = -1;		
+	
+// TODO: remove these	
+// #### is.LOADING
+// A game is loading	
+	node.is.LOADING = 10;		
+	
+// #### is.LOADED
+// A game has been loaded, but the GameWindow object could still require some time	
+	node.is.LOADED  = 25;		
+	
+// #### is.PLAYING
+// Everything is ready	
+	node.is.PLAYING = 50;		
+	
+// #### is.DONE
+// The player completed the game state	
+	node.is.DONE = 100;	
+	
+	
+
+
+	
+	
+
+})(
+	'undefined' != typeof node ? node : module.exports,
+	'undefined' != typeof node ? node : module.parent.exports
+);
 
 /**
  * # EventEmitter
@@ -5413,7 +6579,7 @@ function EventEmitter() {
  /**
   * ### EventEmitter.local
   * 
-  * Local listeners erased after every state update
+  * Local listeners erased after every stage update
   * 
   */   
     this.local = this._localListeners = {};
@@ -5424,20 +6590,11 @@ function EventEmitter() {
  * Database of emitted events
  * 
  * 	@see NDDB
+ * 	@see EventEmitter.EventHistory
  * 	@see EventEmitter.store
  * 
  */      
-    this.history = new NDDB({
-    	update: {
-    		indexes: true
-    }});
-    
-    this.history.h('state', function(e) {
-    	if (!e) return;
-    	var state = ('object' === typeof e.state) ? e.state
-    											  : node.game.state;
-    	return node.GameState.toHash(state, 'S.s.r');
-    });
+    this.history = new EventHistory();
 }
 
 // ## EventEmitter methods
@@ -5474,7 +6631,7 @@ EventEmitter.prototype = {
  * Registers a local listener for an event
  * 
  * Listeners registered with this method are valid *only* 
- * for the same game state (step) in which they have been
+ * for the same game stage (step) in which they have been
  * registered 
  * 
  * @param {string} type The event name
@@ -5509,6 +6666,8 @@ EventEmitter.prototype = {
  * @TODO accepts any number of parameters
  */
     emit: function(event, p1, p2, p3) { // Up to 3 parameters
+		var listeners;
+
     	if (!event) return;
     	
     	if ('string' === typeof event) {
@@ -5524,16 +6683,13 @@ EventEmitter.prototype = {
     	
         
         // Log the event into node.history object, if present
-        if (!node.conf || !node.conf.events) {
-        	node.log('node.conf.events object not found. Is everthing all right?', 'WARN');
-        }
-        else {
-        	
+        if (node.conf && node.conf.events) {
+        		
         	if (node.conf.events.history) {
 	        	var o = {
 		        		event: event.type,
 		        		//target: node.game,
-		        		state: node.game.state,
+		        		stage: node.game.stage,
 		        		p1: p1,
 		        		p2: p2,
 		        		p3: p3
@@ -5544,14 +6700,14 @@ EventEmitter.prototype = {
         	
         	// <!-- Debug
             if (node.conf.events.dumpEvents) {
-            	node.log('Fired ' + event.type);
+            	node.log('F: ' + event.type);
             }
         }
         
         
         // Fires global listeners
         if (this.global[event.type] instanceof Array) {
-            var listeners = this.global[event.type];
+            listeners = this.global[event.type];
             for (var i=0, len=listeners.length; i < len; i++){
             	listeners[i].call(this.game, p1, p2, p3);
             }
@@ -5559,7 +6715,7 @@ EventEmitter.prototype = {
         
         // Fires local listeners
         if (this.local[event.type] instanceof Array) {
-            var listeners = this.local[event.type];
+            listeners = this.local[event.type];
             for (var i=0, len=listeners.length; i < len; i++) {
             	listeners[i].call(this.game, p1, p2, p3);
             }
@@ -5612,13 +6768,13 @@ EventEmitter.prototype = {
 	},
     
 /**
- * ### EventEmitter.clearState
+ * ### EventEmitter.clearStage
  * 
  * Undocumented (for now)
  * 
  * @TODO: This method wraps up clearLocalListeners. To re-design.
  */ 
-	clearState: function(state) {
+	clearStage: function(stage) {
 		this.clearLocal();
 		return true;
 	},
@@ -5646,22 +6802,122 @@ EventEmitter.prototype = {
  * Prints to console all the registered functions 
  */
 	printAll: function() {
+		var i;
+
 		node.log('nodeGame:\tPRINTING ALL LISTENERS', 'DEBUG');
 	    
-		for (var i in this.global){
+		for (i in this.global){
 	    	if (this.global.hasOwnProperty(i)){
 	    		console.log(i + ' ' + i.length);
 	    	}
 	    }
 		
-		for (var i in this.local){
+		for (i in this.local){
 	    	if (this.local.hasOwnProperty(i)){
 	    		console.log(i + ' ' + i.length);
 	    	}
 	    }
 	    
-}
+	}
+	
 };
+
+
+/**
+ * # EventHistory
+ * 
+ */
+function EventHistory() {
+	
+	/**
+	 * ### EventHistory.history
+	 * 
+	 * Database of emitted events
+	 * 
+	 * 	@see NDDB
+	 * 	@see EventEmitter.store
+	 * 
+	 */      
+	this.history = new NDDB();
+	    
+    this.history.h('stage', function(e) {
+    	if (!e) return;
+    	var stage = ('object' === typeof e.stage) ? e.stage
+    											  : node.game.stage;
+    	return node.GameStage.toHash(stage, 'S.s.r');
+    });
+	    
+}
+
+EventHistory.prototype.remit = function(stage, discard, keep) {
+
+	if (!this.history.count()) {
+		node.log('no event history was found to remit', 'WARN');
+		return false;
+	}
+			
+	node.log('remitting ' + node.events.history.count() + ' events', 'DEBUG');
+			
+	var hash, db;
+	
+	if (stage) {
+		
+		this.history.rebuildIndexes();
+		
+		hash = new GameStage(session.stage).toHash('S.s.r'); 
+		
+		if (!this.history.stage) {
+			node.log('no old events to re-emit were found during session recovery', 'DEBUG');
+			return false; 
+		}
+		if (!this.history.stage[hash]){
+			node.log('the current stage ' + hash + ' has no events to re-emit', 'DEBUG');
+			return false; 
+		}
+		
+		db = this.history.stage[hash];
+	}
+	else {
+		db = this.history;
+	}
+	
+	// cleaning up the events to remit
+	
+	if (discard) {
+		db.select('event', 'in', discard).remove();
+	}
+	
+	if (keep) {
+		db = db.select('event', 'in', keep);
+	}
+		
+	if (!db.count()){
+		node.log('no valid events to re-emit after cleanup', 'DEBUG');
+		return false;
+	}
+	
+	var remit = function () {
+		node.log('re-emitting ' + db.count() + ' events', 'DEBUG');
+		// We have events that were fired at the stage when 
+		// disconnection happened. Let's fire them again 
+		db.each(function(e) {
+			node.emit(e.event, e.p1, e.p2, e.p3);
+		});
+	};
+	
+	if (node.game.isReady()) {
+		remit.call(node.game);
+	}
+	else {
+		node.on('LOADED', function(){
+			remit.call(node.game);
+		});
+	}
+	
+	return true;
+};
+
+
 
 /**
  * # Listener
@@ -5670,7 +6926,7 @@ EventEmitter.prototype = {
  */
 
 function Listener (o) {
-	var o = o || {};
+	o = o || {};
 	
 	// event name
 	this.event = o.event; 					
@@ -5681,9 +6937,9 @@ function Listener (o) {
 	// events with higher priority are executed first
 	this.priority = o.priority || 0; 	
 	
-	// the state in which the listener is
+	// the stage in which the listener is
 	// allowed to be executed
-	this.state = o.state || node.game.state; 	
+	this.stage = o.stage || node.game.stage; 	
 	
 	// for how many extra steps is the event 
 	// still valid. -1 = always valid
@@ -5692,27 +6948,26 @@ function Listener (o) {
 	// function will be called with
 	// target as 'this'		
 	this.target = o.target || undefined;	
-};
+}
 	 
 // ## Closure
 
 })(
-	'undefined' != typeof node ? node : module.exports
-  , 'undefined' != typeof node ? node : module.parent.exports
+	'undefined' != typeof node ? node : module.exports,
+	'undefined' != typeof node ? node : module.parent.exports
 );
+
 /**
- * # GameState
+ * # GameStage
  * 
  * Copyright(c) 2012 Stefano Balietti
  * MIT Licensed 
  * 
- * Representation of the state of a game: 
+ * Representation of the stage of a game: 
  * 
- * 	`state`: the higher-level building blocks of a game
- * 	`step`: the sub-unit of a state
- * 	`round`: the number of repetition for a state. Defaults round = 1
- * 	`is`: the *load-lavel* of the game as expressed in `GameState.iss`
- * 	`paused`: TRUE if the game is paused
+ * 	`stage`: the higher-level building blocks of a game
+ * 	`step`: the sub-unit of a stage
+ * 	`round`: the number of repetition for a stage. Defaults round = 1
  * 
  * 
  * @see GameLoop
@@ -5721,234 +6976,210 @@ function Listener (o) {
  * 
  */
 
-(function (exports, node) {
+(function(exports, node) {
 	
 // ## Global scope
 	
 var JSUS = node.JSUS;
 
 // Expose constructor
-exports.GameState = GameState;
+exports.GameStage = GameStage;
+
+
+
+
+GameStage.defaults = {};
 
 /**
- * ### GameState.iss
- *  
- * Numeric representation of the state of the nodeGame engine 
- * the game
- *  
+ * ### GameStage.defaults.hash
+ * 
+ * Default hash string for game-stages
+ * 
+ * 	@see GameStage.toHash
  */
-GameState.iss = {};
-GameState.iss.UNKNOWN = 0; 		// Game has not been initialized
-GameState.iss.LOADING = 10;		// The game is loading
-GameState.iss.LOADED  = 25;		// Game is loaded, but the GameWindow could still require some time
-GameState.iss.PLAYING = 50;		// Everything is ready
-GameState.iss.DONE = 100;		// The player completed the game state
-
-GameState.defaults = {};
+GameStage.defaults.hash = 'S.s.r';
 
 /**
- * ### GameState.defaults.hash
+ * ## GameStage constructor
  * 
- * Default hash string for game-states
+ * Creates an instance of a GameStage 
  * 
- * 	@see GameState.toHash
- */
-GameState.defaults.hash = 'S.s.r.i.p';
-
-/**
- * ## GameState constructor
+ * It accepts an object literal or an hash string as defined in `GameStage.defaults.hash`.
+ *
+ * The stage and step can be either an integer (1-based index) or a string
+ * (valid stage/step name).  The round must be an integer.
  * 
- * Creates an instance of a GameState 
- * 
- * It accepts an object literal or an hash string as defined in `GameState.defaults.hash`.
- * 
- * If no parameter is passed, all the properties of the GameState 
+ * If no parameter is passed, all the properties of the GameStage 
  * object are set to 0
  * 
- * @param {object|string} gs An object literal | hash string representing the game state
+ * @param {object|string} gs An object literal | hash string representing the game stage
  * 
- * 	@see GameState.defaults.hash 
+ * 	@see GameStage.defaults.hash 
  */
-function GameState (gs) {
+function GameStage(gs) {
 
 // ## Public properties	
 
 /**
- * ### GameState.state
+ * ### GameStage.stage
  * 
- * The N-th game-block (state) in the game-loop currently being executed
+ * The N-th game-block (stage) in the game-loop currently being executed
  * 
  * 	@see GameLoop
  * 
  */	
-	this.state = 	0;
+	this.stage = 0;
 
 /**
- * ### GameState.step
+ * ### GameStage.step
  * 
- * The N-th game-block (step) nested in the current state
+ * The N-th game-block (step) nested in the current stage
  * 
- * 	@see GameState.state
+ * 	@see GameStage.stage
  * 
  */	
-	this.step = 	0;
+	this.step =	1;
 
 /**
- * ### GameState.round
+ * ### GameStage.round
  * 
- * The number of times the current state was repeated 
- * 
- */		
-	this.round = 	0;
-	
-/**
- * ### GameState.is
- * 
- * 
- * 
- * 	@see GameState.iss
+ * The number of times the current stage was repeated 
  * 
  */		
-	this.is = 		GameState.iss.UNKNOWN;
-	
-/**
- * ### GameState.paused
- * 
- * TRUE if the game is paused
- * 
- */		
-	this.paused = 	false;
-	
-	if ('string' === typeof gs) {
-		var tokens = gs.split('.');		
-		this.state = 	('undefined' !== typeof tokens[0]) ? Number(tokens[0]) : undefined;
-		this.step = 	('undefined' !== typeof tokens[1]) ? Number(tokens[1]) : undefined;
-		this.round = 	('undefined' !== typeof tokens[2]) ? Number(tokens[2]) : undefined;
-		this.is = 		('undefined' !== typeof tokens[3]) ? Number(tokens[3]) : GameState.iss.UNKNOWN;
-		this.paused = 	(tokens[4] === '1') ? true : false;
+	this.round = 1;
+
+	if ('undefined' === typeof gs) {
+		this.stage = 0;
+		this.step  = 0;
+		this.round = 0;
+	}
+	else if ('string' === typeof gs) {
+		var tokens = gs.split('.');
+		var stageNum = parseInt(tokens[0], 10);
+		var stepNum  = parseInt(tokens[1], 10);
+		var roundNum = parseInt(tokens[2], 10);
+
+		if (tokens[0])
+			this.stage = !isNaN(stageNum) ? stageNum : tokens[0];
+
+		if ('undefined' !== typeof tokens[1])
+			this.step  = !isNaN(stepNum)  ? stepNum  : tokens[1];
+
+		if ('undefined' !== typeof tokens[2])
+			this.round = roundNum;
 	}
 	else if ('object' === typeof gs) {	
-		this.state = 	gs.state;
-		this.step = 	gs.step;
-		this.round = 	gs.round;
-		this.is = 		(gs.is) ? gs.is : GameState.iss.UNKNOWN;
-		this.paused = 	(gs.paused) ? gs.paused : false;
+		if ('undefined' !== typeof gs.stage)
+			this.stage = gs.stage;
+
+		if ('undefined' !== typeof gs.step)
+			this.step  = gs.step;
+
+		if ('undefined' !== typeof gs.round)
+			this.round = gs.round;
 	}
 	
 }
 
 /**
- * ## GameState.toString
+ * ## GameStage.toString
  * 
- * Converts the current instance of GameState to a string
+ * Converts the current instance of GameStage to a string
  * 
- * @return {string} out The string representation of the state of the GameState
+ * @return {string} out The string representation of the stage of the GameStage
  */
-GameState.prototype.toString = function () {
-	var out = this.toHash('(r) S.s');
-	if (this.paused) {
-		out += ' [P]';
-	}
+GameStage.prototype.toString = function() {
+	var out = this.toHash('S.s.r');
 	return out;
 };
 
 /**
- * ## GameState.toHash
+ * ## GameStage.toHash
  * 
- * Returns a simplified hash of the state of the GameState,
+ * Returns a simplified hash of the stage of the GameStage,
  * according to the input string
  * 
  * @param {string} str The hash code
- * @return {string} hash The hashed game states
+ * @return {string} hash The hashed game stages
  * 
- * @see GameState.toHash (static)
+ * @see GameStage.toHash (static)
  */
-GameState.prototype.toHash = function (str) {
-	return GameState.toHash(this, str);
+GameStage.prototype.toHash = function(str) {
+	return GameStage.toHash(this, str);
 };
 
 /**
- * ## GameState.toHash (static)
+ * ## GameStage.toHash (static)
  * 
- * Returns a simplified hash of the state of the GameState,
+ * Returns a simplified hash of the stage of the GameStage,
  * according to the input string. 
  * 
  * The following characters are valid to determine the hash string
  * 
- * 	- S: state
+ * 	- S: stage
  * 	- s: step
  * 	- r: round
- * 	- i: is
- * 	- P: paused
  * 
  * E.g. 
  * 
  * ```javascript
- * 		var gs = new GameState({
+ * 		var gs = new GameStage({
  * 							round: 1,
- * 							state: 2,
- * 							step: 1,
- * 							is: 50,
- * 							paused: false,
+ * 							stage: 2,
+ * 							step: 1
  * 		});
  * 
  * 		gs.toHash('(R) S.s'); // (1) 2.1
  * ```
  * 
- * @param {GameState} gs The game state to hash
+ * @param {GameStage} gs The game stage to hash
  * @param {string} str The hash code
- * @return {string} hash The hashed game states
+ * @return {string} hash The hashed game stages
  */
-GameState.toHash = function (gs, str) {
+GameStage.toHash = function(gs, str) {
 	if (!gs || 'object' !== typeof gs) return false;
 	if (!str || !str.length) return gs.toString();
 	
 	var hash = '',
-		symbols = 'Ssrip',
-		properties = ['state', 'step', 'round', 'is', 'paused'];
+		symbols = 'Ssr',
+		properties = ['stage', 'step', 'round'];
 	
 	for (var i = 0; i < str.length; i++) {
 		var idx = symbols.indexOf(str[i]); 
-		hash += (idx < 0) ? str[i] : Number(gs[properties[idx]]);
+		hash += (idx < 0) ? str[i] : gs[properties[idx]];
 	}
 	return hash;
 };
 
 /**
- * ## GameState.compare (static)
+ * ## GameStage.compare (static)
  * 
- * Compares two GameState objects|hash strings and returns
+ * Compares two GameStage objects|hash strings and returns
  * 
- *  - 0 if they represent the same game state
+ *  - 0 if they represent the same game stage
  *  - a positive number if gs1 is ahead of gs2 
  *  - a negative number if gs2 is ahead of gs1 
  * 
- * If the strict parameter is set, also the `is` property is compared,
- * otherwise only `round`, `state`, and `step`
- * 
- * The accepted hash string format is the following: 'S.s.r.i.p'.
- * Refer to `GameState.toHash` for the semantic of the characters.
+ * The accepted hash string format is the following: 'S.s.r'.
+ * Refer to `GameStage.toHash` for the semantic of the characters.
  * 
  * 
- * @param {GameState|string} gs1 The first GameState object|string to compare
- * @param {GameState|string} gs2 The second GameState object|string to compare
- * @param {Boolean} strict If TRUE, also the `is` attribute is checked
+ * @param {GameStage|string} gs1 The first GameStage object|string to compare
+ * @param {GameStage|string} gs2 The second GameStage object|string to compare
  * 
  * @return {Number} result The result of the comparison
  * 
- * @see GameState.toHash (static)
+ * @see GameStage.toHash (static)
  * 
  */
-GameState.compare = function (gs1, gs2, strict) {
+GameStage.compare = function(gs1, gs2) {
 	if (!gs1 && !gs2) return 0;
 	if (!gs2) return 1;
 	if (!gs1) return -1;
 
-	strict = strict || false;
-
 	// Convert the parameters to objects, if an hash string was passed
-	if ('string' === typeof gs1) gs1 = new GameState(gs1);
-	if ('string' === typeof gs2) gs2 = new GameState(gs2);
+	if ('string' === typeof gs1) gs1 = new GameStage(gs1);
+	if ('string' === typeof gs2) gs2 = new GameStage(gs2);
 	
 	
 	// <!--		
@@ -5956,17 +7187,13 @@ GameState.compare = function (gs1, gs2, strict) {
 	//		console.log(gs1,'DEBUG');
 	//		console.log(gs2,'DEBUG');
 	// -->
-	var result = gs1.state - gs2.state;
+	var result = gs1.stage - gs2.stage;
 	
 	if (result === 0 && 'undefined' !== typeof gs1.round) {
 		result = gs1.round - gs2.round;
 		
 		if (result === 0 && 'undefined' !== typeof gs1.step) {
 			result = gs1.step - gs2.step;
-			
-			if (strict && result === 0 && 'undefined' !== typeof gs1.is) {
-				result = gs1.is - gs2.is;
-			}
 		}
 	}
 	
@@ -5978,24 +7205,23 @@ GameState.compare = function (gs1, gs2, strict) {
 };
 
 /**
- * ## GameState.stringify (static)
+ * ## GameStage.stringify (static)
  * 
- * Converts an object GameState-like to its string representation
+ * Converts an object GameStage-like to its string representation
  * 
- * @param {GameState} gs The object to convert to string	
- * @return {string} out The string representation of a GameState object
+ * @param {GameStage} gs The object to convert to string	
+ * @return {string} out The string representation of a GameStage object
  */ 
-GameState.stringify = function (gs) {
+GameStage.stringify = function(gs) {
 	if (!gs) return;
-	var out = new GameState(gs).toHash('(r) S.s_i');
-	if (gs.paused) out += ' [P]';
+	var out = new GameStage(gs).toHash('(r) S.s_i');
 	return out;
 }; 
 
 // ## Closure
 })(
-	'undefined' != typeof node ? node : module.exports
-  , 'undefined' != typeof node ? node : module.parent.exports
+	'undefined' != typeof node ? node : module.exports,
+	'undefined' != typeof node ? node : module.parent.exports
 );
 
 /**
@@ -6020,75 +7246,103 @@ GameState.stringify = function (gs) {
 var	JSUS = node.JSUS,
 	NDDB = node.NDDB;
 
-var GameState = node.GameState;
+var GameStage = node.GameStage;
 
 // Exposing constructor
 exports.PlayerList = PlayerList;
 
 // Inheriting from NDDB	
-PlayerList.prototype = JSUS.clone(NDDB.prototype);
+PlayerList.prototype = new NDDB();
 PlayerList.prototype.constructor = PlayerList;
 
 
+///**
+// * ## PlayerList.array2Groups (static)
+// * 
+// * Transforms an array of array (of players) into an
+// * array of PlayerList instances and returns it.
+// * 
+// * The original array is modified.
+// * 
+// * @param {Array} array The array to transform
+// * @return {Array} array The array of `PlayerList` objects
+// * 
+// */
+//PlayerList.array2Groups = function (array) {
+//	if (!array) return;
+//	for (var i = 0; i < array.length; i++) {
+//		array[i] = new PlayerList({}, array[i]);
+//	};
+//	return array;
+//};
+
 /**
- * ## PlayerList.array2Groups (static)
+ * ### PlayerList.comparePlayers
  * 
- * Transforms an array of array (of players) into an
- * array of PlayerList instances and returns it.
+ * Comparator functions between two players
  * 
- * The original array is modified.
+ * @param {Player} p1 The first player
+ * @param {Player} p2 The second player
+ * @return {number} The result of the comparison
  * 
- * @param {Array} array The array to transform
- * @return {Array} array The array of `PlayerList` objects
- * 
+ * @see NDDB.globalCompare
  */
-PlayerList.array2Groups = function (array) {
-	if (!array) return;
-	for (var i = 0; i < array.length; i++) {
-		array[i] = new PlayerList({}, array[i]);
-	};
-	return array;
+PlayerList.comparePlayers = function (p1, p2) {
+	if (p1.id === p2.id) return 0;
+	if (p1.count < p2.count) return 1;
+	if (p1.count > p2.count) return -1;
+	return 0;
 };
 
 /**
  * ## PlayerList constructor
  *
- * Creates an instance of PlayerList.
+ * Creates an instance of PlayerList
  * 
- * The instance inherits from NDDB, an contains an internal 
- * database for storing the players 
+ * The class inherits his prototype from `node.NDDB`.
  * 
- * @param {object} options Optional. Configuration options for the instance
- * @param {object} db Optional. An initial set of players to import 
+ * It indexes players by their _id_.
+ * 
+ * @param {object} options Optional. Configuration object
+ * @param {array} db Optional. An initial set of players to import 
  * @param {PlayerList} parent Optional. A parent object for the instance
  * 
- * @api public
- * 
- * 		@see NDDB constructor
+ * @see NDDB.constructor
  */
-
-function PlayerList (options, db, parent) {
+function PlayerList (options, db) {
 	options = options || {};
 	if (!options.log) options.log = node.log;
-	NDDB.call(this, options, db, parent);
+	if (!options.update) options.update = {};
+	if ('undefined' === typeof options.update.indexes) {
+		options.update.indexes = true;
+	}
+	
+	NDDB.call(this, options, db);
   
-	this.globalCompare = function (pl1, pl2) {
-	  
-		if (pl1.id === pl2.id) {
-			return 0;
-		}
-		else if (pl1.count < pl2.count) {
-			return 1;
-		}
-		else if (pl1.count > pl2.count) {
-			return -1;
-		}
-		else {
-			node.log('Two players with different id have the same count number', 'WARN');
-			return 0;
-		}
-	};
-};
+	// Assigns a global comparator function
+	this.globalCompare = PlayerList.comparePlayers;
+	
+
+	// We check if the index are not existing already because 
+	// it could be that the constructor is called by the breed function
+	// and in such case we would duplicate them	
+	if (!this.id) {
+		this.index('id', function(p) {
+			return p.id;
+		});
+	}
+
+// Not sure if we need it now	
+//	if (!this.stage) {
+//		this.hash('stage', function(p) {
+//			return p.stage.toHash();
+//		}
+//	}
+	
+	// The internal counter that will be used to assing the `count` 
+	// property to each inserted player
+	this.pcounter = this.db.length || 0;
+}
 
 // ## PlayerList methods
 
@@ -6097,281 +7351,205 @@ function PlayerList (options, db, parent) {
  * 
  * Adds a new player to the database
  * 
- * Before insertion, objects are checked to be valid `Player` objects.
+ * Before insertion, objects are checked to be valid `Player` objects,
+ * that is they must have a unique player id.
+ * 
+ * The `count` property is added to the player object, and 
+ * the internal `pcounter` variable is incremented.
  * 
  * @param {Player} player The player object to add to the database
- * @return {Boolean} TRUE, if the insertion was successful
- * 
+ * @return {player|boolean} The inserted player, or FALSE if an error occurs
  */
 PlayerList.prototype.add = function (player) {
-	// <!-- Check if the object contains the minimum requisite to act as Player -->
-	if (!player || !player.sid || !player.id) {
-		node.log('Only instance of Player objects can be added to a PlayerList', 'ERR');
+	if (!player || 'undefined' === typeof player.id) {
+		node.err('Player id not found, cannot add object to player list.');
 		return false;
 	}
 
-	// <!-- Check if the id is unique -->
 	if (this.exist(player.id)) {
-		node.log('Attempt to add a new player already in the player list: ' + player.id, 'ERR');
+		node.err('Attempt to add a new player already in the player list: ' + player.id);
 		return false;
 	}
 	
 	this.insert(player);
-	player.count = player.nddbid;
+	player.count = this.pcounter;
+	this.pcounter++;
 	
-	return true;
-};
-
-/**
- * ### PlayerList.remove
- * 
- * Removes a player from the database based on its id
- * 
- * If no id is passed, removes all currently selected 
- * players
- * 
- * Notice: this operation cannot be undone
- * 
- * @param {number} id The id of the player to remove
- * @return {Boolean} TRUE, if a player is found and removed successfully 
- * 
- * 		@see `PlayerList.pop`
- * 
- */
-PlayerList.prototype.remove = function (id) {
-	if (!id) {
-		// fallback on NDDB.remove
-		return NDDB.prototype.remove.call(this);
-	}
-		
-	var p = this.select('id', '=', id);
-	if (p.length) {
-		p.remove();
-		return true;
-	}
-
-	node.log('Attempt to remove a non-existing player from the the player list. id: ' + id, 'ERR');
-	return false;
+	return player;
 };
 
 /**
  * ### PlayerList.get 
  * 
- * Retrieves a player with a given id and returns it
- * 
- * Displays a warning if more than one player is found with the same id
+ * Retrieves a player with the given id
  * 
  * @param {number} id The id of the player to retrieve
- * @return {Player|Boolean} The player with the speficied id, or FALSE if no player was found
- * 
- * 		@see `PlayerList.pop`	
- * 
+ * @return {Player|boolean} The player with the speficied id, or FALSE if none was found
  */
 PlayerList.prototype.get = function (id) {	
-	if (!id) return false;
-	
-	var p = this.select('id', '=', id);
-	
-	if (p.count() > 0) {
-		if (p.count() > 1) {
-			node.log('More than one player found with id: ' + id, 'WARN');
-			return p.fetch();
-		}
-		return p.first();
-	}
-	
-	node.log('Attempt to access a non-existing player from the the player list. id: ' + id, 'ERR');
-	return false;
-};
-
-/**
- * ### PlayerList.pop 
- * 
- * Retrieves a player with a given id, removes it from the database,
- * and returns it
- * 
- * Displays a warning if more than one player is found with the same id
- * 
- * @param {number} id The id of the player to retrieve
- * @return {Player|Boolean} The player with the speficied id, or FALSE if no player was found  
- * 
- * 		@see `PlayerList.remove`
- */
-PlayerList.prototype.pop = function (id) {	
-	if (!id) return false;
-	
-	var p = this.get(id);
-	
-	// <!-- can be either a Player object or an array of Players -->
-	if ('object' === typeof p) {
-		this.remove(id);
-		return p;
-	}
-	
-	return false;
-};
-
-/**
- * ### PlayerLIst.getAllIDs
- * 
- * Fetches all the id of the players in the database and
- * returns them into an array
- * 
- * @return {Array} The array of id of players
- * 
- */
-PlayerList.prototype.getAllIDs = function () {	
-	return this.map(function(o){return o.id;});
-};
-
-/**
- * ### PlayerList.updatePlayerState
- * 
- * Updates the value of the `state` object of a player in the database
- * 
- * @param {number} id The id of the player to update
- * @param {GameState} state The new value of the state property
- * @return {Boolean} TRUE, if update is successful
- * 
- */
-PlayerList.prototype.updatePlayerState = function (id, state) {
-	
-	if (!this.exist(id)) {
-		node.log('Attempt to access a non-existing player from the the player list ' + player.id, 'WARN');
-		return false;	
-	}
-	
-	if ('undefined' === typeof state) {
-		node.log('Attempt to assign to a player an undefined state', 'WARN');
+	if ('undefined' === typeof id) return false; 
+	var player = this.id.get(id);
+	if (!player) {
+		node.warn('Attempt to access a non-existing player from the the player list. id: ' + id);
 		return false;
 	}
-	
-	this.select('id', '=', id).first().state = state;	
-
-	return true;
+	return player;
 };
+
+/**
+ * ### PlayerList.remove
+ * 
+ * Removes the player with the given id
+ * 
+ * Notice: this operation cannot be undone
+ * 
+ * @param {number} id The id of the player to remove
+ * @return {object|boolean} The removed player object, or FALSE if none was found  
+ */
+PlayerList.prototype.remove = function (id) {
+	if ('undefined' === typeof id) return false; 
+	var player = this.id.pop(id);
+	if (!player) {
+		node.err('Attempt to remove a non-existing player from the the player list. id: ' + id);
+		return false;
+	}
+	return player;
+};
+
+// ### PlayerList.pop
+// @deprecated 
+// TODO remove after transition is complete
+PlayerList.prototype.pop = PlayerList.prototype.remove;
 
 /**
  * ### PlayerList.exist
  * 
- * Checks whether at least one player with a given player exists
+ * Checks whether a player with the given id already exists
  * 
  * @param {number} id The id of the player
- * @return {Boolean} TRUE, if a player with the specified id was found
+ * @return {boolean} TRUE, if a player with the specified id is found
  */
 PlayerList.prototype.exist = function (id) {
-	return (this.select('id', '=', id).count() > 0) ? true : false;
+	return this.id.get(id) ? true : false;
 };
 
 /**
- * ### PlayerList.isStateDone
+ * ### PlayerList.updatePlayerStage
  * 
- * Checks whether all players in the database are DONE
- * for the specified `GameState`.
+ * Updates the value of the `stage` object of a player
  * 
- * @param {GameState} state Optional. The GameState to check. Defaults state = node.game.state
- * @param {Boolean} extended Optional. If TRUE, also newly connected players are checked. Defaults, FALSE
- * @return {Boolean} TRUE, if all the players are DONE with the specified `GameState`
- * 
- * 		@see `PlayerList.actives`
- * 		@see `PlayerList.checkState`
+ * @param {number} id The id of the player
+ * @param {GameStage} stage The new stage object
+ * @return {object|boolean} The updated player object, or FALSE is an error occurred
  */
-PlayerList.prototype.isStateDone = function (state, extended) {
+PlayerList.prototype.updatePlayerStage = function (id, stage) {
 	
-	// <!-- console.log('1--- ' + state); -->
-	state = state || node.game.state;
-	// <!-- console.log('2--- ' + state); -->
-	extended = extended || false;
+	if (!this.exist(id)) {
+		node.warm('Attempt to access a non-existing player from the the player list ' + player.id);
+		return false;	
+	}
 	
-	var result = this.map(function(p){
-		var gs = new GameState(p.state);
-		// <!-- console.log('Going to compare ' + gs + ' and ' + state); -->
-		
-		// Player is done for his state
-		if (p.state.is !== GameState.iss.DONE) {
-			return 0;
-		}
-		// The state of the player is actually the one we are interested in
-		if (GameState.compare(state, p.state, false) !== 0) {
-			return 0;
-		}
-		
-		return 1;
+	if ('undefined' === typeof stage) {
+		node.warn('Attempt to assign to a player an undefined stage');
+		return false;
+	}
+	
+	return this.id.update(id, {
+		stage: stage
 	});
-	
-	var i;
-	var sum = 0;
-	for (i=0; i<result.length;i++) {
-		sum = sum + Number(result[i]);
-	}
-	
-	var total = (extended) ? this.length : this.actives(); 
-// <!--
-//		console.log('ISDONE??')
-//		console.log(total + ' ' + sum);
-// -->	
-	return (sum === total) ? true : false;
 };
 
 /**
- * ### PlayerList.actives
+ * ### PlayerList.isStageDone
  * 
- * Counts the number of player whose state is different from 0:0:0
+ * Checks whether all players have terminated the specified stage
  * 
- * @return {number} result The number of player whose state is different from 0:0:0
+ * A stage is considered _DONE_ if all players that are on that stage
+ * have the property `stageLevel` equal to `Game.stageLevels.DONE`.
  * 
+ * Players at other stages are ignored.
+ * 
+ * If no player is found at the desired stage, it returns FALSE.
+ * 
+ * @param {GameStage} stage The GameStage of reference
+ * @param {boolean} extended Optional. If TRUE, all players are checked. Defaults, FALSE.
+ * @return {boolean} TRUE, if all checked players have terminated the stage
  */
-PlayerList.prototype.actives = function () {
-	var result = 0;
-	var gs;
-	this.each(function(p) {
-		gs = new GameState(p.state);	
-		// <!-- Player is on 0.0.0 state -->
-		if (GameState.compare(gs, new GameState()) !== 0) {
-			result++;
+PlayerList.prototype.isStageDone = function (stage) {
+	if (!stage) return false;
+	var pfound = false;
+	for (var i = 0; i < this.db.length ;  i++) {
+		// Player is at another stage
+		if (GameStage.compare(stage, p.stage, false) !== 0) {
+			continue;
 		}
-	});	
-	// <!-- node.log('ACTIVES: ' + result); -->
-	return result;
+		// Player is done for his stage
+		if (p.stageLevel !== node.Game.stageLevels.DONE) {
+			return false;
+		}
+		else {
+			pfound = true;
+		}
+	}
+	return pfound;
 };
 
-/**
- * ### PlayerList.checkState
- * 
- * If all the players are DONE with the specfied state,
- * emits a `STATEDONE` event
- * 
- * @param {GameState} state Optional. The GameState to check. Defaults state = node.game.state
- * @param {Boolean} extended Optional. If TRUE, also newly connected players are checked. Defaults, FALSE
- * 
- * 		@see `PlayerList.actives`
- * 		@see `PlayerList.isStateDone`
- * 
- */
-PlayerList.prototype.checkState = function (state, extended) {
-	if (this.isStateDone(state, extended)) {
-		node.emit('STATEDONE');
-	}
-};
+///**
+// * ### PlayerList.actives
+// * 
+// * Counts the number of player whose stage is different from 0:0:0
+// * 
+// * @return {number} result The number of player whose stage is different from 0:0:0
+// * 
+// */
+//PlayerList.prototype.actives = function () {
+//	var result = 0;
+//	var gs;
+//	this.each(function(p) {
+//		gs = new GameStage(p.stage);	
+//		// <!-- Player is on 0.0.0 stage -->
+//		if (GameStage.compare(gs, new GameStage()) !== 0) {
+//			result++;
+//		}
+//	});	
+//	// <!-- node.log('ACTIVES: ' + result); -->
+//	return result;
+//};
+
+///**
+// * ### PlayerList.checkStage
+// * 
+// * If all the players are DONE with the specfied stage,
+// * emits a `STAGEDONE` event
+// * 
+// * @param {GameStage} stage Optional. The GameStage to check. Defaults stage = node.game.stage
+// * @param {Boolean} extended Optional. If TRUE, also newly connected players are checked. Defaults, FALSE
+// * 
+// * 		@see `PlayerList.actives`
+// * 		@see `PlayerList.isStageDone`
+// * 
+// */
+//PlayerList.prototype.checkStage = function (stage, extended) {
+//	if (this.isStageDone(stage, extended)) {
+//		node.emit('STAGEDONE');
+//	}
+//};
 
 /**
  * ### PlayerList.toString
  * 
- * Returns a string representation of the state of the 
+ * Returns a string representation of the stage of the 
  * PlayerList
  * 
  * @param {string} eol Optional. End of line separator between players
- * @return {string} out The string representation of the state of the PlayerList
+ * @return {string} out The string representation of the stage of the PlayerList
  */
 PlayerList.prototype.toString = function (eol) {
-	
-	var out = '';
-	var EOL = eol || '\n';
-	
+	var out = '', EOL = eol || '\n', stage;
 	this.forEach(function(p) {
     	out += p.id + ': ' + p.name;
-    	var state = new GameState(p.state);
-    	out += ': ' + state + EOL;
+    	stage = new GameStage(p.stage);
+    	out += ': ' + stage + EOL;
 	});
 	return out;
 };
@@ -6419,17 +7597,13 @@ PlayerList.prototype.getGroupsSizeN = function (N) {
 PlayerList.prototype.getRandom = function (N) {	
 	if (!N) N = 1;
 	if (N < 1) {
-		node.log('N must be an integer >= 1', 'ERR');
+		node.err('N must be an integer >= 1');
 		return false;
 	}
 	this.shuffle();
-	
-	if (N == 1) {
-		return this.first();
-	}
-	
 	return this.limit(N).fetch();
 };
+
 
 /**
  * # Player Class
@@ -6443,11 +7617,13 @@ PlayerList.prototype.getRandom = function (N) {
  * 	`sid`: The Socket.io session id associated to the player
  * 	`id`: The nodeGame session id associate to the player
  * 	`count`: The id of the player within a PlayerList object
+ * 	`admin`: Whether the player is an admin
+ * 	`disconnected`: Whether the player has disconnected
  * 
  * Others properties are public and can be changed during the game.
  * 
  *	`name`: An alphanumeric name associated to the player 
- *	`state`: The current state of the player as relative to a game
+ *	`stage`: The current stage of the player as relative to a game
  *	`ip`: The ip address of the player
  * 
  * All the additional properties in the configuration object passed 
@@ -6534,6 +7710,40 @@ function Player (pl) {
 		this.count = count;
 	}
 	
+/**
+ * ### Player.admin
+ * 
+ * The admin status of the client
+ * 
+ */	
+	var admin = !!pl.admin;
+	if (node.support.defineProperty) {
+		Object.defineProperty(this, 'admin', {
+			value: admin,
+	    	enumerable: true
+		});
+	}
+	else {
+		this.admin = admin;
+	}
+	
+/**
+ * ### Player.disconnected
+ * 
+ * The connection status of the client
+ * 
+ */	
+	var disconnected = !!pl.disconnected;
+	if (node.support.defineProperty) {
+		Object.defineProperty(this, 'disconnected', {
+			value: disconnected,
+	    	enumerable: true
+		});
+	}
+	else {
+		this.disconnected = disconnected;
+	}
+	
 // ## Player public properties
 
 /**
@@ -6555,14 +7765,14 @@ function Player (pl) {
 	this.name = pl.name;
 	
 /**
- * ### Player.state
+ * ### Player.stage
  * 
- * Reference to the game-state the player currently is
+ * Reference to the game-stage the player currently is
  * 
- * 	@see node.game.state
- * 	@see GameState
+ * 	@see node.game.stage
+ * 	@see GameStage
  */		
-	this.state = pl.state || new GameState();
+	this.stage = pl.stage || new GameStage();
 
 	
 // ## Extra properties
@@ -6590,14 +7800,15 @@ function Player (pl) {
  * @return {string} The string representation of a player
  */
 Player.prototype.toString = function() {
-	return (this.name || '' ) + ' (' + this.id + ') ' + new GameState(this.state);
+	return (this.name || '' ) + ' (' + this.id + ') ' + new GameStage(this.stage);
 };
 		
 // ## Closure	
 })(
-	'undefined' != typeof node ? node : module.exports
-  , 'undefined' != typeof node ? node : module.parent.exports
+	'undefined' != typeof node ? node : module.exports,
+	'undefined' != typeof node ? node : module.parent.exports
 );
+
 /**
  * # GameMsg
  * 
@@ -6611,68 +7822,10 @@ Player.prototype.toString = function() {
 (function (exports, node) {
 
 // ## Global scope	
-var GameState = node.GameState,
+var GameStage = node.GameStage,
 	JSUS = node.JSUS;
 
 exports.GameMsg = GameMsg;
-
-/**
- * ### GameMsg.actions
- * 
- * Collection of available nodeGame actions
- * 
- * The action adds an initial semantic meaning to the
- * message. It specify the nature of requests
- * "Why the message was sent?"
- * 
- */
-GameMsg.actions = {};
-
-GameMsg.actions.SET 		= 'set'; 	// Changes properties of the receiver
-GameMsg.actions.GET 		= 'get'; 	// Ask a properties of the receiver
-GameMsg.actions.SAY			= 'say'; 	// Announce properties of the sender
-
-/**
- * ### GameMsg.targets
- * 
- * Collection of available nodeGame targets
- * 
- * The target adds an additional level of semantic 
- * for the message, and specifies the nature of the
- * information carried in the message. 
- * 
- * It answers the question: "What is the content of the message?" 
- */
-GameMsg.targets = {};
-
-GameMsg.targets.HI			= 'HI';			// Client connects
-GameMsg.targets.HI_AGAIN	= 'HI_AGAIN'; 	// Client reconnects
-
-GameMsg.targets.PCONNECT	= 'PCONNECT'; 		// A new player just connected
-GameMsg.targets.PDISCONNECT = 'PDISCONNECT';	// A player just disconnected
-
-GameMsg.targets.MCONNECT	= 'MCONNECT'; 		// A new monitor just connected
-GameMsg.targets.MDISCONNECT = 'MDISCONNECT';	// A monitor just disconnected
-
-GameMsg.targets.PLIST 		= 'PLIST';	// PLIST
-GameMsg.targets.MLIST 		= 'MLIST';	// PLIST
-
-GameMsg.targets.STATE		= 'STATE';	// STATE
-
-GameMsg.targets.TXT 		= 'TXT';	// Text msg
-GameMsg.targets.DATA		= 'DATA';	// Contains a data-structure in the data field
-
-GameMsg.targets.REDIRECT	= 'REDIRECT'; // redirect a client to a new address
-
-// Still to implement
-GameMsg.targets.BYE			= 'BYE';	// Force disconnects
-GameMsg.targets.ACK			= 'ACK';	// A reliable msg was received correctly
-GameMsg.targets.WARN 		= 'WARN';	// To do.
-GameMsg.targets.ERR			= 'ERR';	// To do.
-
-
-GameMsg.IN					= 'in.';	// Prefix for incoming msgs
-GameMsg.OUT					= 'out.';	// Prefix for outgoing msgs
 
 
 /**
@@ -6739,20 +7892,20 @@ function GameMsg (gm) {
 // ## Public properties	
 
 /**
- * ### GameMsg.state
+ * ### GameMsg.stage
  * 
- * The game-state in which the message was generated
+ * The game-stage in which the message was generated
  * 
- * 	@see GameState
+ * 	@see GameStage
  */	
-	this.state = gm.state;
+	this.stage = gm.stage;
 
 /**
  * ### GameMsg.action
  * 
  * The action of the message
  * 
- * 	@see GameMsg.actions
+ * 	@see node.action
  */		
 	this.action = gm.action;
 	
@@ -6761,7 +7914,7 @@ function GameMsg (gm) {
  * 
  * The target of the message
  * 
- * 	@see GameMsg.targets
+ * 	@see node.target
  */	
 	this.target = gm.target;
 	
@@ -6830,7 +7983,7 @@ function GameMsg (gm) {
  * E.g. between nodeGame servers
  */	
 	this.forward = 0;
-};
+}
 
 /**
  * ### GameMsg.stringify
@@ -6860,7 +8013,7 @@ GameMsg.prototype.toString = function () {
 	var SPTend = "\n";
 	var DLM = "\"";
 	
-	var gs = new GameState(this.state);
+	var gs = new GameStage(this.stage);
 	
 	var line = this.created + SPT;
 		line += this.id + SPT;
@@ -6884,7 +8037,7 @@ GameMsg.prototype.toString = function () {
  * 
  * @return {string} A compact string representing the message 
  * 
- * @TODO: Create an hash method as for GameState
+ * @TODO: Create an hash method as for GameStage
  */
 GameMsg.prototype.toSMS = function () {
 	
@@ -6935,443 +8088,1214 @@ GameMsg.prototype.toEvent = function () {
 
 // ## Closure
 })(
-	'undefined' != typeof node ? node : module.exports
-  , 'undefined' != typeof node ? node : module.parent.exports
+	'undefined' != typeof node ? node : module.exports,
+	'undefined' != typeof node ? node : module.parent.exports
 );
+
 /**
- * # GameLoop
- * 
- * Copyright(c) 2012 Stefano Balietti
- * MIT Licensed 
- * 
- * `nodeGame` container of game-state functions, and parameters
- * 
+ * # Stager
+ *
+ * `nodeGame` container and builder of the game sequence
+ *
  * ---
- * 
  */
-(function (exports, node) {
-	
-// ## Global scope
-var GameState = node.GameState,
-	JSUS = node.JSUS;
+(function(exports, node) {
 
-exports.GameLoop = GameLoop;
+// ## Global scope
+exports.Stager = Stager;
 
 /**
- * ### limits
+ * ## Stager constructor
+ *
+ * Creates a new empty instance of Stager
+ */
+function Stager() {
+	this.clear();
+}
+
+// ## Stager methods
+
+/**
+ * ### Stager.clear
+ *
+ * Resets Stager object to initial state
+ *
+ * Called by the constructor.
+ */
+Stager.prototype.clear = function() {
+	/**
+	 * ### Stager.steps
+	 *
+	 * Step object container
+	 *
+	 * key: step ID,  value: step object
+	 *
+	 * @see Stager.addStep
+	 */
+	this.steps = {};
+
+	/**
+	 * ### Stager.stages
+	 *
+	 * Stage object container
+	 *
+	 * key: stage ID,  value: stage object
+	 *
+	 * Stage aliases are stored the same way, with a reference to the original
+	 * stage object as the value.
+	 *
+	 * @see Stager.addStage
+	 */
+	this.stages = {};
+
+
+	/**
+	 * ### Stager.sequence
+	 *
+	 * Sequence block container
+	 *
+	 * Stores the game plan in 'simple mode'.
+	 *
+	 * @see Stager.gameover
+	 * @see Stager.next
+	 * @see Stager.repeat
+	 * @see Stager.loop
+	 * @see Stager.doLoop
+	 */
+	this.sequence = [];
+
+
+	/**
+	 * ### Stager.generalNextFunction
+	 *
+	 * General next-stage decider function
+	 *
+	 * Returns the id of the next game step.
+	 * Available only when nodegame is executed in _flexible_ mode.
+	 *
+	 * @see Stager.registerGeneralNext
+	 */
+	this.generalNextFunction = null;
+
+	/**
+	 * ### Stager.nextFunctions
+	 *
+	 * Per-stage next-stage decider function
+	 *
+	 * key: stage ID,  value: callback function
+	 *
+	 * Stores functions to be called to yield the id of the next game stage
+	 * for a specific previous stage.
+	 *
+	 * @see Stager.registerNext
+	 */
+	this.nextFunctions = {};
+
+    return this;
+};
+
+/**
+ * ### Stager.registerGeneralNext
+ *
+ * Sets general callback for next stage decision
+ *
+ * Available only when nodegame is executed in _flexible_ mode.
+ * The callback given here is used to determine the next stage.
+ *
+ * @param {function} func The decider callback.  It should return the name of
+ *  the next stage, 'NODEGAME_GAMEOVER' to end the game or false for sequence end.
+ */
+Stager.prototype.registerGeneralNext = function(func) {
+	if ('function' !== typeof func) {
+		node.warn("registerGeneralNext didn't receive function parameter");
+		return;
+	}
+
+	this.generalNextFunction = func;
+};
+
+/**
+ * ### Stager.registerNext
+ *
+ * Registers a step-decider callback for a specific stage
+ *
+ * The function overrides the general callback for the specific stage, 
+ * and determines the next stage.
+ * Available only when nodegame is executed in _flexible_ mode.
+ *
+ * @param {string} id The name of the stage after which the decider function will be called
+ * @param {function} func The decider callback.  It should return the name of
+ *  the next stage, 'NODEGAME_GAMEOVER' to end the game or false for sequence end.
+ *  
+ * @see Stager.registerGeneralNext
+ */
+Stager.prototype.registerNext = function(id, func) {
+	if ('function' !== typeof func) {
+		node.warn("registerNext didn't receive function parameter");
+		return;
+	}
+
+	if (!this.stages[id]) {
+		node.warn('registerNext received nonexistent stage id');
+		return;
+	}
+
+	this.nextFunctions[id] = func;
+};
+
+/**
+ * ### Stager.addStep
+ *
+ * Adds a new step
+ *
+ * Registers a new game step object.  This must have at least the following fields:
+ *
+ *  - id (string): The step's name
+ *  - cb (function): The step's callback function
+ *
+ * @param {object} step A valid step object.  Shallowly copied.
+ */
+Stager.prototype.addStep = function(step) {
+	if (!this.checkStepValidity(step)) {
+		node.warn('addStep received invalid step');
+		return false;
+	}
+
+	this.steps[step.id] = step;
+	return true;
+};
+
+/**
+ * ### Stager.addStage
+ *
+ * Adds a new stage
+ *
+ * Registers a new game stage object. This must have at least the following fields:
+ *
+ *  - id (string): The stage's name
+ *  - steps (array of strings): The names of the steps that belong to this stage.
+ *     These must have been added with the `addStep` method before this call.
+ *
+ * Alternatively, a step object may be given.  Then that step and a stage
+ * containing only that step are added.
+ *
+ * @param {object} stage A valid stage or step object.  Shallowly copied.
+ *
+ * @return {boolean} true on success, false on error
  * 
- * Array containing the boundary limits of the game-loop
- * 
+ * @see Stager.addStep
+ */
+Stager.prototype.addStage = function(stage) {
+	// Handle wrapped steps:
+	if (this.checkStepValidity(stage)) {
+		if (!this.addStep(stage)) return false;
+		if (!this.addStage({
+			id: stage.id,
+			steps: [ stage.id ]
+		})) return false;
+
+		return true;
+	}
+
+	if (!this.checkStageValidity(stage)) {
+		node.warn('addStage received invalid stage');
+		return false;
+	}
+
+	this.stages[stage.id] = stage;
+	return true;
+};
+
+/**
+ * ### Stager.init
+ *
+ * Resets sequence
+ *
+ * @return {Stager} this object
+ */
+Stager.prototype.init = function() {
+	this.sequence = [];
+
+	return this;
+};
+
+/**
+ * ### Stager.gameover
+ *
+ * Adds gameover block to sequence
+ *
+ * @return {Stager} this object
+ */
+Stager.prototype.gameover = function() {
+	this.sequence.push({ type: 'gameover' });
+
+	return this;
+};
+
+/**
+ * ### Stager.next
+ *
+ * Adds stage block to sequence
+ *
+ * The `id` parameter must have the form 'stageID' or 'stageID AS alias'.
+ * stageID must be a valid stage and it (or alias if given) must be unique
+ * in the sequence.
+ *
+ * @param {string} id A valid stage name with optional alias
+ *
+ * @return {Stager} this object on success, null on error
+ *
+ * @see Stager.addStage
+ */
+Stager.prototype.next = function(id) {
+	var stageName = this.handleAlias(id);
+
+	if (stageName === null) {
+		node.warn('next received invalid stage name');
+		return null;
+	}
+
+	this.sequence.push({
+		type: 'plain',
+		id: stageName
+	});
+
+	return this;
+};
+
+/**
+ * ### Stager.repeat
+ *
+ * Adds repeated stage block to sequence
+ *
+ * @param {string} id A valid stage name with optional alias
+ * @param {number} nRepeats The number of repetitions
+ *
+ * @return {Stager} this object on success, null on error
+ *
+ * @see Stager.addStage
+ * @see Stager.next
+ */
+Stager.prototype.repeat = function(id, nRepeats) {
+	var stageName = this.handleAlias(id);
+
+	if (stageName === null) {
+		node.warn('repeat received invalid stage name');
+		return null;
+	}
+
+	this.sequence.push({
+		type: 'repeat',
+		id: stageName,
+		num: nRepeats
+	});
+
+	return this;
+};
+
+/**
+ * ### Stager.loop
+ *
+ * Adds looped stage block to sequence
+ *
+ * The given stage will be repeated as long as the `func` callback returns true.
+ * If it returns false on the first time, the stage is never executed.
+ *
+ * @param {string} id A valid stage name with optional alias
+ * @param {function} func Callback returning true for repetition
+ *
+ * @return {Stager} this object on success, null on error
+ *
+ * @see Stager.addStage
+ * @see Stager.next
+ * @see Stager.doLoop
+ */
+Stager.prototype.loop = function(id, func) {
+	var stageName = this.handleAlias(id);
+
+	if (stageName === null) {
+		node.warn('loop received invalid stage name');
+		return null;
+	}
+
+	this.sequence.push({
+		type: 'loop',
+		id: stageName,
+		cb: func
+	});
+
+	return this;
+};
+
+/**
+ * ### Stager.doLoop
+ *
+ * Adds alternatively looped stage block to sequence
+ *
+ * The given stage will be repeated once plus as many times as the `func`
+ * callback returns true.
+ *
+ * @param {string} id A valid stage name with optional alias
+ * @param {function} func Callback returning true for repetition
+ *
+ * @return {Stager} this object on success, null on error
+ *
+ * @see Stager.addStage
+ * @see Stager.next
+ * @see Stager.loop
+ */
+Stager.prototype.doLoop = function(id, func) {
+	var stageName = this.handleAlias(id);
+
+	if (stageName === null) {
+		node.warn('doLoop received invalid stage name');
+		return null;
+	}
+
+	this.sequence.push({
+		type: 'doLoop',
+		id: stageName,
+		cb: func
+	});
+
+	return this;
+};
+
+/**
+ * ### Stager.getSequence
+ *
+ * Returns the sequence of stages
+ *
+ * @param {string} format 'hstages' for an array of human-readable stage descriptions,
+ *  'hsteps' for an array of human-readable step descriptions,
+ *  'o' for the internal JavaScript object
+ *
+ * @return {array|object} The stage sequence in requested format. Null on error.
+ */
+Stager.prototype.getSequence = function(format) {
+	var result;
+	var seqIdx;
+	var seqObj;
+	var stepPrefix;
+	var gameOver = false;
+
+	switch (format) {
+	case 'hstages':
+		result = [];
+
+		for (seqIdx in this.sequence) {
+			if (this.sequence.hasOwnProperty(seqIdx)) {
+				seqObj = this.sequence[seqIdx];
+
+				switch (seqObj.type) {
+				case 'gameover':
+					result.push('[game over]');
+					break;
+
+				case 'plain':
+					result.push(seqObj.id);
+					break;
+
+				case 'repeat':
+					result.push(seqObj.id + ' [x' + seqObj.num + ']');
+					break;
+
+				case 'loop':
+					result.push(seqObj.id + ' [loop]');
+					break;
+
+				case 'doLoop':
+					result.push(seqObj.id + ' [doLoop]');
+					break;
+
+				default:
+					node.warn('unknown sequence object type');
+					break;
+				}
+			}
+		}
+		break;
+	
+	case 'hsteps':
+		result = [];
+
+		for (seqIdx in this.sequence) {
+			if (this.sequence.hasOwnProperty(seqIdx)) {
+				seqObj = this.sequence[seqIdx];
+				stepPrefix = seqObj.id + '.';
+
+				switch (seqObj.type) {
+				case 'gameover':
+					result.push('[game over]');
+					break;
+
+				case 'plain':
+					this.stages[seqObj.id].steps.map(function(stepID) {
+						result.push(stepPrefix + stepID);
+					});
+					break;
+
+				case 'repeat':
+					this.stages[seqObj.id].steps.map(function(stepID) {
+						result.push(stepPrefix + stepID + ' [x' + seqObj.num + ']');
+					});
+					break;
+
+				case 'loop':
+					this.stages[seqObj.id].steps.map(function(stepID) {
+						result.push(stepPrefix + stepID + ' [loop]');
+					});
+					break;
+
+				case 'doLoop':
+					this.stages[seqObj.id].steps.map(function(stepID) {
+						result.push(stepPrefix + stepID + ' [doLoop]');
+					});
+					break;
+
+				default:
+					node.warn('unknown sequence object type');
+					break;
+				}
+			}
+		}
+		break;
+
+	case 'o':
+		result = this.sequence;
+		break;
+
+	default:
+		node.warn('getSequence got invalid format characters');
+		return null;
+	}
+
+	return result;
+};
+
+/**
+ * ### Stager.getStepsFromStage
+ *
+ * Returns the steps of a stage
+ *
+ * @param {string} id A valid stage name
+ *
+ * @return {array} The steps in the stage
+ */
+Stager.prototype.getStepsFromStage = function(id) {
+	return this.stages[id].steps;
+};
+
+// DEBUG:  Run sequence.  Should be deleted later on.
+Stager.prototype.seqTestRun = function(expertMode, firstStage) {
+	var seqObj;
+	var curStage;
+	var stageNum;
+	
+	console.log('* Commencing sequence test run!');
+
+	if (!expertMode) {
+		for (stageNum in this.sequence) {
+			if (this.sequence.hasOwnProperty(stageNum)) {
+				seqObj = this.sequence[stageNum];
+				console.log('** num: ' + stageNum + ', type: ' + seqObj.type);
+				switch (seqObj.type) {
+				case 'gameover':
+					console.log('* Game Over.');
+					return;
+
+				case 'plain':
+					this.stageTestRun(seqObj.id);
+					break;
+
+				case 'repeat':
+					for (var i = 0; i < seqObj.num; i++) {
+						this.stageTestRun(seqObj.id);
+					}
+					break;
+
+				case 'loop':
+					while (seqObj.cb()) {
+						this.stageTestRun(seqObj.id);
+					}
+					break;
+
+				case 'doLoop':
+					do {
+						this.stageTestRun(seqObj.id);
+					} while (seqObj.cb());
+					break;
+
+				default:
+					node.warn('unknown sequence object type');
+					break;
+				}
+			}
+		}
+	}
+	else {
+		// Get first stage:
+		if (firstStage) {
+			curStage = firstStage;
+		}
+		else if (this.generalNextFunction) {
+			curStage = this.generalNextFunction();
+		}
+		else {
+			curStage = null;
+		}
+
+		while (curStage) {
+			this.stageTestRun(curStage);
+
+			// Get next stage:
+			if (this.nextFunctions[curStage]) {
+				curStage = this.nextFunctions[curStage]();
+			}
+			else if (this.generalNextFunction) {
+				curStage = this.generalNextFunction();
+			}
+			else {
+				curStage = null;
+			}
+
+			// Check stage validity:
+			if (curStage !== null && !this.stages[curStage]) {
+				node.warn('next-deciding callback yielded invalid stage');
+				curStage = null;
+			}
+		}
+	}
+};
+
+// DEBUG:  Run stage.  Should be deleted later on.
+Stager.prototype.stageTestRun = function(stageId) {
+	var steps = this.stages[stageId].steps;
+	var stepId;
+
+	for (var i in steps) {
+		if (steps.hasOwnProperty(i)) {
+			stepId = steps[i];
+			this.steps[stepId].cb();
+		}
+	}
+};
+
+
+// ## Stager private methods
+
+/**
+ * ### Stager.checkStepValidity
+ *
+ * Returns whether given step is valid
+ *
+ * Checks for existence and type correctness of the fields.
+ *
+ * @param {object} step The step object
+ *
+ * @return {bool} true for valid step objects, false otherwise
+ *
+ * @see Stager.addStep
+ *
  * @api private
  */
-var limits = [];
+Stager.prototype.checkStepValidity = function(step) {
+	if (!step) return false;
+	if ('string' !== typeof step.id) return false;
+	if ('function' !== typeof step.cb) return false;
+
+	return true;
+};
+
+/**
+ * ### Stager.checkStepValidity
+ *
+ * Returns whether given stage is valid
+ *
+ * Checks for existence and type correctness of the fields.
+ * Checks for referenced step existence.
+ * Steps objects are invalid.
+ *
+ * @param {object} stage The stage object
+ *
+ * @return {bool} true for valid stage objects, false otherwise
+ *
+ * @see Stager.addStage
+ *
+ * @api private
+ */
+Stager.prototype.checkStageValidity = function(stage) {
+	if (!stage) return false;
+	if ('string' !== typeof stage.id) return false;
+	if (!stage.steps && !stage.steps.length) return false;
+
+	// Check whether the referenced steps exist:
+	for (var i in stage.steps) {
+        if (stage.steps.hasOwnProperty(i)) {
+            if (!this.steps[stage.steps[i]]) return false;
+        }
+	}
+
+	return true;
+};
+
+/**
+ * ### Stager.handleAlias
+ *
+ * Handles stage id and alias strings
+ *
+ * Takes a string like 'stageID' or 'stageID AS alias' and registers the alias,
+ * if existent.
+ * Checks whether parameter is valid and unique.
+ *
+ * @param {string} nameAndAlias The stage-name string
+ *
+ * @return {string} null on error,
+ *  the alias part of the parameter if it exists,
+ *  the stageID part otherwise
+ *
+ * @see Stager.next
+ *
+ * @api private
+ */
+Stager.prototype.handleAlias = function(nameAndAlias) {
+	var tokens = nameAndAlias.split(' AS ');
+	var id = tokens[0].trim();
+	var alias = tokens[1] ? tokens[1].trim() : undefined;
+	var stageName = alias || id;
+	var seqIdx;
+
+	// Check ID validity:
+	if (!this.stages[id]) {
+		node.warn('handleAlias received nonexistent stage id');
+		return null;
+	}
+
+	// Check uniqueness:
+	for (seqIdx in this.sequence) {
+		if (this.sequence.hasOwnProperty(seqIdx) &&
+				this.sequence[seqIdx].id === stageName) {
+			node.warn('handleAlias received non-unique stage name');
+			return null;
+		}
+	}
+
+	// Add alias:
+	if (alias) {
+		this.stages[alias] = this.stages[id];
+		return alias;
+	}
+
+	return id;
+};
+
+// ## Closure
+})(
+	'undefined' != typeof node ? node : module.exports,
+	'undefined' != typeof node ? node : module.parent.exports
+);
+
+/**
+ * # GameLoop
+ *
+ * `nodeGame` container of game-state functions
+ *
+ * ---
+ */
+(function(exports, node) {
+
+// ## Global scope
+exports.GameLoop = GameLoop;
+
+var Stager = node.Stager;
+var GameStage = node.GameStage;
+
+// ## Constants
+GameLoop.GAMEOVER = 'NODEGAME_GAMEOVER';
+GameLoop.END_SEQ  = 'NODEGAME_END_SEQ';
+GameLoop.NO_SEQ   = 'NODEGAME_NO_SEQ';
 
 /**
  * ## GameLoop constructor
- * 
+ *
  * Creates a new instance of GameLoop
- * 
- * Takes as input parameter an object like
- * 
- *	{ 1:
- *		{
- *			state: myFunc,
- *			rounds: numRounds, // optional, defaults 1
- *		},
- *	 2:
- *		{
- *			state: myNestedState,
- *			rounds: numRounds, // optional, defaults 1
- *		},	
- * 		// any arbitray number of state-objects is allowed
- * 	}
- * 
- * From the above example, the value of the `state` property 
- * can be a function or a nested state object (with internal steps). 
- * For example
- * 
- * 	myFunc = function() {};
- * 
- * 	myNestedState = {
- * 			1: {
- * 				state: myFunc2,
- * 			}
- * 			2: {
- * 				state: myFunc3,
- * 			}
- * 	}
- * 
- * @param {object} loop Optional. An object containing the loop functions
- * 
+ *
+ * Takes a sequence object created with Stager.
+ *
+ * If the Stager parameter has an empty sequence, flexibile mode is assumed
+ * (used by e.g. GameLoop.next).
+ *
+ * @param {object} plot Optional. The Stager object.
+ *
+ * @see Stager
  */
-function GameLoop (loop) {
-	// ### Public variables
-	
-/**
- * ### GameLoop.loop
- * 
- * The transformed loop container
- */
-	this.loop = loop || {};
-
-	for (var key in this.loop) {
-		if (this.loop.hasOwnProperty(key)) {
-			
-			// Transform the loop obj if necessary.
-			// When a state executes only one step,
-			// it is allowed to pass directly the name of the function.
-			// So such function must be incapsulated in a obj here.
-			var loop = this.loop[key].state;
-			if ('function' === typeof loop) {
-				var o = JSUS.clone(this.loop[key]);
-				this.loop[key].state = {1: o};
-			}
-			
-			var steps = JSUS.size(this.loop[key].state)
-			
-			var round = this.loop[key].rounds || 1;
-			limits.push({rounds: round, steps: steps});
-		}
-	}
-	
-/**
- * ### GameLoop.length
- * 
- * The total number of states + steps in the game-loop
- * 
- * @see GameLoop.size()
- * 
- * @deprecated
- */
-	if (node.support.getter) {
-		Object.defineProperty(this, 'length', {
-	    	set: function(){},
-	    	get: this.size,
-	    	configurable: true
-		});
-	}
-	else {
-		this.length = null;
-	}	
+function GameLoop(plot) {
+	this.plot = plot || null;
 }
 
 // ## GameLoop methods
 
 /**
- * ### GameLoop.size
- * 
- * Returns the total number of states + steps in the game-loop
- * 
+ * ### GameLoop.init
+ *
+ * Initializes the GameLoop with a plot
+ *
+ * @param {object} plot The Stager object
+ *
+ * @see Stager
  */
-GameLoop.prototype.size = function() {
-	return this.steps2Go(new GameState());
-};
-
-/**
- * ### GameLoop.exist
- * 
- * Returns TRUE, if a gameState exists in the game-loop
- * 
- * @param {GameState} gameState The game-state to check
- */
-GameLoop.prototype.exist = function (gameState) {
-	if (!gameState) return false;
-	gameState = new GameState(gameState);
-	
-	if (typeof(this.loop[gameState.state]) === 'undefined') {
-		node.log('Unexisting state: ' + gameState.state, 'WARN');
-		return false;
-	}
-	
-	if (typeof(this.loop[gameState.state]['state'][gameState.step]) === 'undefined'){
-		node.log('Unexisting step: ' + gameState.step, 'WARN');
-		return false;
-	}
-	// States are 1 based, arrays are 0-based => -1
-	if (gameState.round > limits[gameState.state-1]['rounds']) {
-		node.log('Unexisting round: ' + gameState.round + 'Max round: ' + limits[gameState.state]['rounds'], 'WARN');
-		return false;
-	}
-		
-	return true;
+GameLoop.prototype.init = function(plot) {
+	this.plot = plot;
 };
 
 /**
  * ### GameLoop.next
- * 
- * Returns the next state in the loop
- * 
- * An optional input parameter can control the state from which 
- * to compute the next state
- * 
- * @param {GameState} gameState Optional. The reference game-state. Defaults, node.game.state
- * @return {GameState|boolean} The next game-state, or FALSE if it does not exist
- * 
+ *
+ * Returns the next stage in the loop
+ *
+ * If the step in `curStage` is an integer and out of bounds, that bound is assumed.
+ *
+ * @param {object} curStage Optional. The GameStage object from which to get
+ *  the next one. Defaults to returning the first stage.
+ *
+ * @return {object} The GameStage describing the next stage
+ *
+ * @see GameStage
  */
-GameLoop.prototype.next = function (gameState) {
-	gameState = (gameState) ? new GameState(gameState) : node.game.state;
+GameLoop.prototype.next = function(curStage) {
+	// GameLoop was not correctly initialized
+	if (!this.plot) return GameLoop.NO_SEQ;
 	
-	// Game has not started yet, do it!
-	if (gameState.state === 0) {
-		return new GameState({
-							 state: 1,
-							 step: 1,
-							 round: 1
-		});
+	// Find out flexibility mode:
+	var flexibleMode = this.plot.sequence.length === 0;
+
+	var seqIdx, seqObj = null, stageObj;
+	var stageNo, stepNo;
+	var normStage = null;
+	var nextStage = null;
+
+	curStage = new GameStage(curStage);
+
+	if (flexibleMode) {
+		if (curStage.stage === 0) {
+			// Get first stage:
+			if (this.plot.generalNextFunction) {
+				nextStage = this.plot.generalNextFunction();
+			}
+
+			if (nextStage) {
+				return new GameStage({
+					stage: nextStage,
+					step:  1,
+					round: 1
+				});
+			}
+
+			return GameLoop.END_SEQ;
+		}
+
+		// Get stage object:
+		stageObj = this.plot.stages[curStage.stage];
+
+		if ('undefined' === typeof stageObj) {
+			node.warn('next received nonexistent stage: ' + curStage.stage);
+			return null;
+		}
+
+		// Find step number:
+		if ('number' === typeof curStage.step) {
+			stepNo = curStage.step;
+		}
+		else {
+			stepNo = stageObj.steps.indexOf(curStage.step) + 1;
+		}
+		if (stepNo < 1) {
+			node.warn('next received nonexistent step: ' +
+					stageObj.id + '.' + curStage.step);
+			return null;
+		}
+
+		// Handle stepping:
+		if (stepNo + 1 <= stageObj.steps.length) {
+			return new GameStage({
+				stage: stageObj.id,
+				step:  stepNo + 1,
+				round: 1
+			});
+		}
+
+		// Get next stage:
+		if (this.plot.nextFunctions[stageObj.id]) {
+			nextStage = this.plot.nextFunctions[stageObj.id]();
+		}
+		else if (this.plot.generalNextFunction) {
+			nextStage = this.plot.generalNextFunction();
+		}
+
+		if (nextStage === GameLoop.GAMEOVER)  {
+			return GameLoop.GAMEOVER;
+		}
+		else if (nextStage) {
+			return new GameStage({
+				stage: nextStage,
+				step:  1,
+				round: 1
+			});
+		}
+
+		return GameLoop.END_SEQ;
 	}
-	
-	if (!this.exist(gameState)) {
-		node.log('No next state of non-existing state: ' + gameState, 'WARN');
-		return false;
+	else {
+		if (curStage.stage === 0) {
+			return new GameStage({
+				stage: 1,
+				step:  1,
+				round: 1
+			});
+		}
+
+		// Get normalized GameStage:
+		normStage = this.normalizeGameStage(curStage);
+		if (normStage === null) {
+			node.warn('next received invalid stage: ' + curStage);
+			return null;
+		}
+		stageNo  = normStage.stage;
+		stepNo   = normStage.step;
+		seqObj   = this.plot.sequence[stageNo - 1];
+		if (seqObj.type === 'gameover') return GameLoop.GAMEOVER;
+		stageObj = this.plot.stages[seqObj.id];
+
+		// Handle stepping:
+		if (stepNo + 1 <= stageObj.steps.length) {
+			return new GameStage({
+				stage: stageNo,
+				step:  stepNo + 1,
+				round: normStage.round
+			});
+		}
+
+		// Handle repeat block:
+		if (seqObj.type === 'repeat' && normStage.round + 1 <= seqObj.num) {
+			return new GameStage({
+				stage: stageNo,
+				step:  1,
+				round: normStage.round + 1
+			});
+		}
+
+		// Handle looping blocks:
+		if ((seqObj.type === 'doLoop' || seqObj.type === 'loop') && seqObj.cb()) {
+			return new GameStage({
+				stage: stageNo,
+				step:  1,
+				round: normStage.round + 1
+			});
+		}
+
+		// Go to next stage:
+		if (stageNo < this.plot.sequence.length) {
+			// Skip over loops if their callbacks return false:
+			while (this.plot.sequence[stageNo].type === 'loop' &&
+			       !this.plot.sequence[stageNo].cb()) {
+				stageNo++;
+				if (stageNo >= this.plot.sequence.length) return GameLoop.END_SEQ;
+			}
+
+			return new GameStage({
+				stage: stageNo + 1,
+				step:  1,
+				round: 1
+			});
+		}
+
+		// No more stages remaining:
+		return GameLoop.END_SEQ;
 	}
-	
-	var idxLimit = Number(gameState.state)-1; // 0 vs 1 based
-	
-	if (limits[idxLimit]['steps'] > gameState.step){
-		var newStep = Number(gameState.step)+1;
-		return new GameState({
-			state: gameState.state,
-			step: newStep,
-			round: gameState.round
-		});
-	}
-	
-	if (limits[idxLimit]['rounds'] > gameState.round){
-		var newRound = Number(gameState.round)+1;
-		return new GameState({
-			state: gameState.state,
-			step: 1,
-			round: newRound
-		});
-	}
-	
-	if (limits.length > gameState.state){		
-		var newState = Number(gameState.state)+1;
-		return new GameState({
-			state: newState,
-			step: 1,
-			round: 1
-		});
-	}
-	
-	// No next state: game over
-	return false; 
 };
 
 /**
  * ### GameLoop.previous
- * 
- * Returns the previous state in the loop
- * 
- * An optional input parameter can control the state from which 
- * to compute the previous state
- * 
- * @param {GameState} gameState Optional. The reference game-state. Defaults, node.game.state
- * @return {GameState|boolean} The previous game-state, or FALSE if it does not exist
+ *
+ * Returns the previous stage in the loop
+ *
+ * Works only in simple mode.
+ * Behaves on loops the same as `GameLoop.next`, with round=1 always.
+ *
+ * @param {object} curStage The GameStage object from which to get the previous one
+ *
+ * @return {object} The GameStage describing the previous stage
+ *
+ * @see GameStage
  */
-GameLoop.prototype.previous = function (gameState) {
-	gameState = (gameState) ? new GameState(gameState) : node.game.state;
+GameLoop.prototype.previous = function(curStage) {
+	// GameLoop was not correctly initialized
+	if (!this.plot) return GameLoop.NO_SEQ;
 	
-	if (!this.exist(gameState)) {
-		node.log('No previous state of non-existing state: ' + gameState, 'WARN');
+	var normStage;
+	var seqIdx, seqObj = null, stageObj = null;
+	var prevSeqObj;
+	var stageNo, stepNo, prevStepNo;
+
+	curStage = new GameStage(curStage);
+
+	// Get normalized GameStage:
+	normStage = this.normalizeGameStage(curStage);
+	if (normStage === null) {
+		node.warn('previous received invalid stage: ' + curStage);
+		return null;
 	}
-	
-	var idxLimit = Number(gameState.state)-1; // 0 vs 1 based
-	
-	if (gameState.step > 1){
-		var oldStep = Number(gameState.step)-1;
-		return new GameState({
-			state: gameState.state,
-			step: oldStep,
-			round: gameState.round
+	stageNo  = normStage.stage;
+	stepNo   = normStage.step;
+	seqObj   = this.plot.sequence[stageNo - 1];
+
+	// Handle stepping:
+	if (stepNo > 1) {
+		return new GameStage({
+			stage: stageNo,
+			step:  stepNo - 1,
+			round: curStage.round
 		});
 	}
-	else if (gameState.round > 1){
-		var oldRound = Number(gameState.round)-1;
-		var oldStep = limits[idxLimit]['steps'];
-		return new GameState({
-			state: gameState.state,
-			step: oldStep,
-			round: oldRound
+
+	if ('undefined' !== typeof seqObj.id) {
+		stageObj = this.plot.stages[seqObj.id];
+		// Handle rounds:
+		if (curStage.round > 1) {
+			return new GameStage({
+				stage: stageNo,
+				step:  stageObj.steps.length,
+				round: curStage.round - 1
+			});
+		}
+
+		// Handle looping blocks:
+		if ((seqObj.type === 'doLoop' || seqObj.type === 'loop') && seqObj.cb()) {
+			return new GameStage({
+				stage: stageNo,
+				step:  stageObj.steps.length,
+				round: 1
+			});
+		}
+	}
+
+	// Handle beginning:
+	if (stageNo <= 1) {
+		return new GameStage({
+			stage: 0,
+			step:  0,
+			round: 0
 		});
 	}
-	else if (gameState.state > 1){
-		var oldRound = limits[idxLimit-1]['rounds'];
-		var oldStep = limits[idxLimit-1]['steps'];
-		var oldState = idxLimit;
-		return new GameState({
-			state: oldState,
-			step: oldStep,
-			round: oldRound
+
+	// Go to previous stage:
+	// Skip over loops if their callbacks return false:
+	while (this.plot.sequence[stageNo - 2].type === 'loop' &&
+		   !this.plot.sequence[stageNo - 2].cb()) {
+		stageNo--;
+
+		if (stageNo <= 1) {
+			return new GameStage({
+				stage: 0,
+				step:  0,
+				round: 0
+			});
+		}
+	}
+
+	// Get previous sequence object:
+	prevSeqObj = this.plot.sequence[stageNo - 2];
+
+	// Get number of steps in previous stage:
+	prevStepNo = this.plot.stages[prevSeqObj.id].steps.length;
+
+	// Handle repeat block:
+	if (prevSeqObj.type === 'repeat') {
+		return new GameStage({
+			stage: stageNo - 1,
+			step:  prevStepNo,
+			round: prevSeqObj.num
 		});
 	}
+
+	// Handle normal blocks:
+	return new GameStage({
+		stage: stageNo - 1,
+		step:  prevStepNo,
+		round: 1
+	});
+};
+
+/**
+ * ### GameLoop.jump
+ *
+ * Returns a distant stage in the loop
+ *
+ * Works with negative delta only in simple mode.
+ * Uses `GameLoop.previous` and `GameLoop.next` for stepping.
+ * If a sequence end is reached, returns immediately.
+ *
+ * @param {object} curStage The GameStage object from which to get the offset one
+ * @param {number} delta The offset. Negative number for backward stepping.
+ *
+ * @return {object} The GameStage describing the distant stage
+ *
+ * @see GameStage
+ * @see GameLoop.previous
+ * @see GameLoop.next
+ */
+GameLoop.prototype.jump = function(curStage, delta) {
+	if (delta < 0) {
+		while (delta < 0) {
+			curStage = this.previous(curStage);
+			delta++;
+
+			if (!(curStage instanceof GameStage) || curStage.stage === 0) {
+				return curStage;
+			}
+		}
+	}
+	else {
+		while (delta > 0) {
+			curStage = this.next(curStage);
+			delta--;
+
+			if (!(curStage instanceof GameStage)) {
+				return curStage;
+			}
+		}
+	}
+
+	return curStage;
+};
+
+/**
+ * ### GameLoop.getStage
+ *
+ * Returns the stage object corresponding to a GameStage
+ *
+ * @param {object|string} gameStage The GameStage object, or its string representation
+ *
+ * @return {object|null} The corresponding stage object, or null value 
+ * 	if the step was not found
+ */
+GameLoop.prototype.getStage = function(gameStage) {
+	if (!this.plot) return null;
 	
-	// game init
-	return false; 
+	gameStage = new GameStage(gameStage);
+	if ('number' === typeof gameStage.stage) {
+		return this.plot.stages[this.plot.sequence[gameStage.stage - 1].id];
+	}
+	else {
+		return this.plot.stages[gameStage.stage];
+	}
+};
+
+/**
+ * ### GameLoop.getStep
+ *
+ * Returns the step object corresponding to a GameStage
+ *
+ * @param {object|string} gameStage The GameStage object, or its string representation
+ *
+ * @return {object|null} The corresponding step object, or null value 
+ * 	if the step was not found
+ */
+GameLoop.prototype.getStep = function(gameStage) {
+	if (!this.plot) return null;
+	
+	gameStage = new GameStage(gameStage);
+	if ('number' === typeof gameStage.step) {
+		return this.plot.steps[this.getStage(gameStage).steps[gameStage.step - 1]];
+	}
+	else {
+		return this.plot.steps[gameStage.step];
+	}
 };
 
 /**
  * ### GameLoop.getName
  * 
- * Returns the name associated with a game-state
- * 
- * @param {GameState} gameState Optional. The reference game-state. Defaults, node.game.state
- * @return {string|boolean} The name of the game-state, or FALSE if state does not exists
+ * TODO: To remove once transition is complete
+ * @deprecated 
  */
-GameLoop.prototype.getName = function (gameState) {
-	gameState = (gameState) ? new GameState(gameState) : node.game.state;
-	if (!this.exist(gameState)) return false;
-	return this.loop[gameState.state]['state'][gameState.step]['name'];
+GameLoop.prototype.getName = function(gameStage) {
+	var s = this.getStep(gameStage); 
+	return s ? s.name : s;
 };
-
 /**
- * ### GameLoop.getFunction
- * 
- * Returns the function associated with a game-state
- * 
- * @param {GameState} gameState The reference game-state
- * @return {object|boolean} The function of the game-state, or FALSE if state does not exists
+ * ### GameLoop.normalizeGameStage
+ *
+ * Converts the GameStage fields to numbers
+ *
+ * Works only in simple mode.
+ *
+ * @param {object} gameStage The GameStage object
+ *
+ * @return {object} The normalized GameStage object; null on error
+ *
+ * @api private
  */
-GameLoop.prototype.getFunction = function (gameState) {
-	gameState = (gameState) ? new GameState(gameState) : node.game.state;
-	if (!this.exist(gameState)) return false;
-	return this.loop[gameState.state]['state'][gameState.step]['state'];
-};
+GameLoop.prototype.normalizeGameStage = function(gameStage) {
+	var stageNo, stepNo, seqIdx, seqObj;
 
-/**
- * ### GameLoop.getAllParams
- * 
- * Returns all the parameters associated with a game-state
- * 
- * @param {GameState} gameState The reference game-state
- * @return {object|boolean} The state object, or FALSE if state does not exists
- */
-GameLoop.prototype.getAllParams = function (gameState) {
-	gameState = (gameState) ? new GameState(gameState) : node.game.state;
-	if (!this.exist(gameState)) return false;
-	return this.loop[gameState.state]['state'][gameState.step];
-};
-
-/**
- * ### GameLoop.jumpTo
- * 
- * Returns a state N steps away from the reference state
- * 
- * A negative value for N jumps backward in the game-loop, 
- * and a positive one jumps forward in the game-loop
- * 
- * @param {GameState} gameState The reference game-state
- * @param {number} N The number of steps to jump
- * @return {GameState|boolean} The "jumped-to" game-state, or FALSE if it does not exist
- */
-GameLoop.prototype.jumpTo = function (gameState, N) {
-	if (!this.exist(gameState)) return false;
-	if (!N) return gameState;
-	
-	var func = (N > 0) ? this.next : this.previous;
-	
-	for (var i=0; i < Math.abs(N); i++) {
-		gameState = func.call(this, gameState);
-		if (!gameState) return false;
-	}
-	return gameState;
-};
-
-/**
- * ### GameLoop.steps2Go
- * 
- * Computes the total number steps left to the end of the game.
- * 
- * An optional input parameter can control the starting state
- * for the computation
- * 
- * @param {GameState} gameState Optional. The reference game-state. Defaults, node.game.state
- * @return {number} The total number of steps left
- */
-GameLoop.prototype.steps2Go = function (gameState) {
-	gameState = (gameState) ? new GameState(gameState) : node.game.state;
-	var count = 0;
-	while (gameState) { 
-		count++;
-		gameState = this.next(gameState);
-	}
-	return count;
-};
-
-GameLoop.prototype.toArray = function() {
-	var state = new GameState();
-	var out = [];
-	while (state) { 
-		out.push(state.toString());
-		var state = this.next(state);
-	}
-	return out;
-};
-
-/**
- * 
- * ### GameLoop.indexOf
- * 
- * Returns the ordinal position of a state in the game-loop 
- * 
- * All steps and rounds in between are counted.
- * 
- * @param {GameState} gameState The reference game-state
- * @return {number} The state index in the loop, or -1 if it does not exist
- * 
- * 	@see GameLoop.diff
- */
-GameLoop.prototype.indexOf = function (state) {
-	if (!state) return -1;
-	return this.diff(state, new GameState());
-};
-
-/**
- * ### GameLoop.diff
- * 
- * Returns the distance in steps between two states in the game-loop 
- * 
- * All steps and rounds in between are counted.
- * 
- * It works under the assumption that state1 comes first than state2
- * in the game-loop.
- * 
- * @param {GameState} state1 The reference game-state
- * @param {GameState} state2 Optional. The second state for comparison. Defaults node.game.state
- * 
- * @return {number} The state index in the loop, or -1 if it does not exist
- * 
- * @TODO: compute also negative distances
- */
-GameLoop.prototype.diff = function (state1, state2) {
-	if (!state1) return false;
-	state1 = new GameState(state1) ;
-	
-	if (!state2) {
-		if (!node.game.state) return false;
-		state2 = node.game.state
+	// Find stage number:
+	if ('number' === typeof gameStage.stage) {
+		stageNo = gameStage.stage;
 	}
 	else {
-		state2 = new GameState(state2) ;
-	}
-	
-	
-	var idx = 0;
-	while (state2) {
-		if (GameState.compare(state1, state2) === 0){
-			return idx;
+		for (seqIdx = 0; seqIdx < this.plot.sequence.length; seqIdx++) {
+			if (this.plot.sequence[seqIdx].id === gameStage.stage) {
+				break;
+			}
 		}
-		state2 = this.next(state2);
-		idx++;
+		stageNo = seqIdx + 1;
 	}
-	return -1;
+	if (stageNo < 1 || stageNo > this.plot.sequence.length) {
+		node.warn('normalizeGameStage received nonexistent stage: ' + gameStage.stage);
+		return null;
+	}
+
+	// Get sequence object:
+	seqObj = this.plot.sequence[stageNo - 1];
+
+	if (seqObj.type === 'gameover') {
+		return new GameStage({
+			stage: stageNo,
+			step:  1,
+			round: gameStage.round
+		});
+	}
+
+	// Get stage object:
+	stageObj = this.plot.stages[seqObj.id];
+
+	// Find step number:
+	if ('number' === typeof gameStage.step) {
+		stepNo = gameStage.step;
+	}
+	else {
+		stepNo = stageObj.steps.indexOf(gameStage.step) + 1;
+	}
+	if (stepNo < 1) {
+		node.warn('normalizeGameStage received nonexistent step: ' +
+				stageObj.id + '.' + gameStage.step);
+		return null;
+	}
+
+	return new GameStage({
+		stage: stageNo,
+		step:  stepNo,
+		round: gameStage.round
+	});
 };
-	
+
 // ## Closure	
 })(
-	'undefined' != typeof node ? node : module.exports
-  , 'undefined' != typeof node ? node : module.parent.exports
+	'undefined' != typeof node ? node : module.exports,
+	'undefined' != typeof node ? node : module.parent.exports
 );
+
 /**
  * # GameMsgGenerator
  * 
@@ -7385,8 +9309,8 @@ GameLoop.prototype.diff = function (state1, state2) {
  * All message are reliable, but TXT messages.
  * 
  * 	@see GameMSg
- * 	@see GameMsg.targets
- * 	@see GameMsg.actions
+ * 	@see node.target
+ * 	@see node.action
  * 
  * ---
  *
@@ -7396,9 +9320,12 @@ GameLoop.prototype.diff = function (state1, state2) {
 // ## Global scope
 	
 var GameMsg = node.GameMsg,
-	GameState = node.GameState,
+	GameStage = node.GameStage,
 	Player = node.Player,
 	JSUS = node.JSUS;
+
+var target = node.target,
+	action = node.action;
 
 exports.GameMsgGenerator = GameMsgGenerator; 
 
@@ -7420,25 +9347,23 @@ function GameMsgGenerator () {}
  * Merges a set of default settings with the object passed
  * as input parameter
  * 
- * 	@see JSUS.merge
  */
 GameMsgGenerator.create = function (msg) {
 
-  var base = {
-		session: node.gsc.session, 
-		state: node.game.state,
-		action: GameMsg.actions.SAY,
-		target: GameMsg.targets.DATA,
+  var gameMsg = {
+		session: ('undefined' !== typeof msg.session) ? msg.session : node.socket.session, 
+		stage: msg.stage || node.game.stage,
+		action: msg.action || action.SAY,
+		target: msg.target || target.DATA,
 		from: node.player.sid,
-		to: 'SERVER',
-		text: null,
-		data: null,
-		priority: null,
-		reliable: 1
+		to: ('undefined' !== typeof msg.to) ? msg.to : 'SERVER',
+		text: msg.text || null,
+		data: msg.data || null,
+		priority: msg.priority || null,
+		reliable: msg.reliable || 1
   };
 
-  msg = JSUS.merge(base, msg);
-  return new GameMsg(msg);
+  return new GameMsg(gameMsg);
 
 };
 
@@ -7462,9 +9387,9 @@ GameMsgGenerator.createHI = function (player, to, reliable) {
   
 	return new GameMsg( {
             			session: node.gsc.session,
-            			state: node.game.state,
-            			action: GameMsg.actions.SAY,
-            			target: GameMsg.targets.HI,
+            			stage: node.game.stage,
+            			action: action.SAY,
+            			target: target.HI,
             			from: node.player.sid,
             			to: to,
             			text: new Player(player) + ' ready.',
@@ -7476,96 +9401,95 @@ GameMsgGenerator.createHI = function (player, to, reliable) {
 
 // ## STATE messages
 
-/**
- * ### GameMSgGenerator.saySTATE
- * 
- * Creates a say.STATE message
- * 
- * Notice: state is different from node.game.state
- * 
- * @param {GameState} state The game-state to communicate
- * @param {string} to The recipient of the message
- * @param {boolean} reliable Optional. Experimental. Requires an acknowledgment
- * 
- * @return {GameMsg|boolean} The game message, or FALSE if error in the input parameters is detected
- * 
- * 	@see GameState
- */
-GameMsgGenerator.saySTATE = function (state, to, reliable) {
-	return this.createSTATE(GameMsg.SAY, state, to, reliable);
-};
-
-/**
- * ### GameMSgGenerator.setSTATE
- * 
- * Creates a set.STATE message
- * 
- * @param {GameState} state The game-state to communicate
- * @param {string} to The recipient of the message
- * @param {boolean} reliable Optional. Experimental. Requires an acknowledgment
- * 
- * @return {GameMsg|boolean} The game message, or FALSE if error in the input parameters is detected
- * 
- * 	@see GameState
- */
-GameMsgGenerator.setSTATE = function (state, to, reliable) {
-	return this.createSTATE(GameMsg.SET, state, to, reliable);
-};
-
-/**
- * ### GameMSgGenerator.getSTATE
- * 
- * Experimental. Creates a get.STATE message
- * 
- * @param {GameState} state The game-state to communicate
- * @param {string} to The recipient of the message
- * @param {boolean} reliable Optional. Experimental. Requires an acknowledgment
- * 
- * @return {GameMsg|boolean} The game message, or FALSE if error in the input parameters is detected
- * 
- * 	@see GameState
- */
-GameMsgGenerator.getSTATE = function (state, to, reliable) {
-	return this.createSTATE(GameMsg.GET, state, to,reliable);
-};
-
-/**
- * ### GameMSgGenerator.createSTATE
- * 
- * Creates a STATE message
- * 
- * @param {string} action A nodeGame action (e.g. 'get' or 'set')
- * @param {GameState} state The game-state to communicate
- * @param {string} to Optional. The recipient of the message. Defaults, SERVER
- * @param {boolean} reliable Optional. Experimental. Requires an acknowledgment
- * 
- * @return {GameMsg|boolean} The game message, or FALSE if error in the input parameters is detected
- * 
- * 	@see GameState
- * 	@see GameMsg.actions
- */
-GameMsgGenerator.createSTATE = function (action, state, to, reliable) {
-	if (!action || !state) return false;
-	to = to || 'SERVER';
-	reliable = reliable || 1;
-	return new GameMsg({
-						session: node.gsc.session,
-						state: node.game.state,
-						action: action,
-						target: GameMsg.targets.STATE,
-						from: node.player.sid,
-						to: to,
-						text: 'New State: ' + GameState.stringify(state),
-						data: state,
-						priority: null,
-						reliable: reliable
-	});
-};
+///**
+// * ### GameMSgGenerator.saySTATE
+// * 
+// * Creates a say.STATE message
+// * 
+// * Notice: stage is different from node.game.stage
+// * 
+// * @param {GameStage} stage The game-stage to communicate
+// * @param {string} to The recipient of the message
+// * @param {boolean} reliable Optional. Experimental. Requires an acknowledgment
+// * 
+// * @return {GameMsg|boolean} The game message, or FALSE if error in the input parameters is detected
+// * 
+// * 	@see GameStage
+// */
+//GameMsgGenerator.saySTATE = function (stage, to, reliable) {
+//	return this.createSTATE(action.SAY, stage, to, reliable);
+//};
+//
+///**
+// * ### GameMSgGenerator.setSTATE
+// * 
+// * Creates a set.STATE message
+// * 
+// * @param {GameStage} stage The game-stage to communicate
+// * @param {string} to The recipient of the message
+// * @param {boolean} reliable Optional. Experimental. Requires an acknowledgment
+// * 
+// * @return {GameMsg|boolean} The game message, or FALSE if error in the input parameters is detected
+// * 
+// * 	@see GameStage
+// */
+//GameMsgGenerator.setSTATE = function (stage, to, reliable) {
+//	return this.createSTATE(action.SET, stage, to, reliable);
+//};
+//
+///**
+// * ### GameMSgGenerator.getSTATE
+// * 
+// * Experimental. Creates a get.STATE message
+// * 
+// * @param {GameStage} stage The game-stage to communicate
+// * @param {string} to The recipient of the message
+// * @param {boolean} reliable Optional. Experimental. Requires an acknowledgment
+// * 
+// * @return {GameMsg|boolean} The game message, or FALSE if error in the input parameters is detected
+// * 
+// * 	@see GameStage
+// */
+//GameMsgGenerator.getSTATE = function (stage, to, reliable) {
+//	return this.createSTATE(action.GET, stage, to,reliable);
+//};
+//
+///**
+// * ### GameMSgGenerator.createSTATE
+// * 
+// * Creates a STATE message
+// * 
+// * @param {string} action A nodeGame action (e.g. 'get' or 'set')
+// * @param {GameStage} stage The game-stage to communicate
+// * @param {string} to Optional. The recipient of the message. Defaults, SERVER
+// * @param {boolean} reliable Optional. Experimental. Requires an acknowledgment
+// * 
+// * @return {GameMsg|boolean} The game message, or FALSE if error in the input parameters is detected
+// * 
+// * 	@see GameStage
+// */
+//GameMsgGenerator.createSTATE = function (action, stage, to, reliable) {
+//	if (!action || !stage) return false;
+//	to = to || 'SERVER';
+//	reliable = reliable || 1;
+//	return new GameMsg({
+//						session: node.gsc.session,
+//						stage: node.game.stage,
+//						action: action,
+//						target: target.STATE,
+//						from: node.player.sid,
+//						to: to,
+//						text: 'New State: ' + GameStage.stringify(stage),
+//						data: stage,
+//						priority: null,
+//						reliable: reliable
+//	});
+//};
 
 //## PLIST messages
 
 /**
- * ### GameMSgGenerator.sayPLIST
+ * ### GameMsgGenerator.sayPLIST
  * 
  * Creates a say.PLIST message
  * 
@@ -7578,7 +9502,7 @@ GameMsgGenerator.createSTATE = function (action, state, to, reliable) {
  * 	@see PlayerList
  */
 GameMsgGenerator.sayPLIST = function (plist, to, reliable) {
-	return this.createPLIST(GameMsg.actions.SAY, plist, to, reliable);
+	return this.createPLIST(action.SAY, plist, to, reliable);
 };
 
 /**
@@ -7595,7 +9519,7 @@ GameMsgGenerator.sayPLIST = function (plist, to, reliable) {
  * 	@see PlayerList
  */
 GameMsgGenerator.setPLIST = function (plist, to, reliable) {
-	return this.createPLIST(GameMsg.actions.SET, plist, to, reliable);
+	return this.createPLIST(action.SET, plist, to, reliable);
 };
 
 /**
@@ -7612,7 +9536,7 @@ GameMsgGenerator.setPLIST = function (plist, to, reliable) {
  * 	@see PlayerList
  */
 GameMsgGenerator.getPLIST = function (plist, to, reliable) {
-	return this.createPLIST(GameMsg.actions.GET, plist, to, reliable);
+	return this.createPLIST(action.GET, plist, to, reliable);
 };
 
 /**
@@ -7627,7 +9551,6 @@ GameMsgGenerator.getPLIST = function (plist, to, reliable) {
  * 
  * @return {GameMsg|boolean} The game message, or FALSE if error in the input parameters is detected
  * 
- * 	@see GameMsg.actions
  *  @see PlayerList
  */
 GameMsgGenerator.createPLIST = function (action, plist, to, reliable) {
@@ -7639,9 +9562,9 @@ GameMsgGenerator.createPLIST = function (action, plist, to, reliable) {
 	
 	return new GameMsg({
 						session: node.gsc.session, 
-						state: node.game.state,
+						stage: node.game.stage,
 						action: action,
-						target: GameMsg.targets.PLIST,
+						target: target.PLIST,
 						from: node.player.sid,
 						to: to,
 						text: 'List of Players: ' + plist.length,
@@ -7672,9 +9595,9 @@ GameMsgGenerator.createTXT = function (text, to, reliable) {
 	
 	return new GameMsg({
 						session: node.gsc.session,
-						state: node.game.state,
-						action: GameMsg.actions.SAY,
-						target: GameMsg.targets.TXT,
+						stage: node.game.stage,
+						action: action.SAY,
+						target: target.TXT,
 						from: node.player.sid,
 						to: to,
 						text: text,
@@ -7699,7 +9622,7 @@ GameMsgGenerator.createTXT = function (text, to, reliable) {
  * @return {GameMsg|boolean} The game message, or FALSE if error in the input parameters is detected
  */
 GameMsgGenerator.sayDATA = function (data, to, text, reliable) {
-	return this.createDATA(GameMsg.actions.SAY, data, to, text, reliable);
+	return this.createDATA(action.SAY, data, to, text, reliable);
 };
 
 /**
@@ -7714,7 +9637,7 @@ GameMsgGenerator.sayDATA = function (data, to, text, reliable) {
  * @return {GameMsg|boolean} The game message, or FALSE if error in the input parameters is detected
  */
 GameMsgGenerator.setDATA = function (data, to, text, reliable) {
-	return this.createDATA(GameMsg.actions.SET, data, to, text, reliable);
+	return this.createDATA(action.SET, data, to, text, reliable);
 };
 
 /**
@@ -7729,7 +9652,7 @@ GameMsgGenerator.setDATA = function (data, to, text, reliable) {
  * @return {GameMsg|boolean} The game message, or FALSE if error in the input parameters is detected
  */
 GameMsgGenerator.getDATA = function (data, to, text, reliable) {
-	return this.createDATA(GameMsg.actions.GET, data, to, text, reliable);
+	return this.createDATA(action.GET, data, to, text, reliable);
 };
 
 /**
@@ -7751,9 +9674,9 @@ GameMsgGenerator.createDATA = function (action, data, to, text, reliable) {
 	
 	return new GameMsg({
 						session: node.gsc.session, 
-						state: node.game.state,
+						stage: node.game.stage,
 						action: action,
-						target: GameMsg.targets.DATA,
+						target: target.DATA,
 						from: node.player.sid,
 						to: to,
 						text: text,
@@ -7777,9 +9700,9 @@ GameMsgGenerator.createACK = function (gm, to, reliable) {
 	
 	var newgm = new GameMsg({
 							session: node.gsc.session, 
-							state: node.game.state,
-							action: GameMsg.actions.SAY,
-							target: GameMsg.targets.ACK,
+							stage: node.game.stage,
+							action: action.SAY,
+							target: target.ACK,
 							from: node.player.sid,
 							to: to,
 							text: 'Msg ' + gm.id + ' correctly received',
@@ -7798,50 +9721,125 @@ GameMsgGenerator.createACK = function (gm, to, reliable) {
 
 // ## Closure
 })(
-	'undefined' != typeof node ? node : module.exports
-  , 'undefined' != typeof node ? node : module.parent.exports
+	'undefined' != typeof node ? node : module.exports,
+	'undefined' != typeof node ? node : module.parent.exports
 );
+
 /**
- * # GameSocketClient
+ * # SocketFactory
  * 
  * Copyright(c) 2012 Stefano Balietti
  * MIT Licensed 
  * 
- * `nodeGame` component rensponsible for dispatching events and messages 
+ * `nodeGame` component responsible for registering and instantiating 
+ * new GameSocket clients
+ * 
+ * Contract: Socket prototypes must implement the following methods:
+ * 
+ * 	- connect: establish a communication channel with a ServerNode instance
+ * 	- send: pushes messages into the communication channel
  * 
  * ---
  * 
  */
 
-(function (exports, node, io) {
+
+(function( exports, node ) {
+
+
+    // Storage for socket types
+    var types = {};
+
+    function checkContract( proto ) {
+    	var test = proto;
+//    	if (!proto.prototype) {
+    		test = new proto();
+//    	}
+    	
+    	if (!test.send) {
+    		console.log('no send');
+    		return false;
+    	}
+    	if (!test.connect){
+    		console.log('no connect');
+    		return false;
+    	}
+    	
+    	return true;
+    }
+    
+    function getTypes() {
+    	return types;
+    }
+    
+    function get( type, options ) {
+    	var Socket = types[type];    	
+    	return (Socket) ? new Socket(options) : null;
+    }
+
+    function register( type, proto ) {
+    	if (!type || !proto) return;
+    	        
+        // only register classes that fulfill the contract
+        if ( checkContract(proto) ) {
+            types[type] = proto;
+        }
+        else {
+        	node.err('cannot register invalid Socket class: ' + type);
+        }
+    }
+    
+    // expose the socketFactory methods
+    exports.SocketFactory = {
+    	checkContract: checkContract,
+    	getTypes: getTypes,
+    	get: get,
+    	register: register
+    };
+    
+    
+// ## Closure	
+})(
+	'undefined' != typeof node ? node : module.exports,
+	'undefined' != typeof node ? node : module.parent.exports
+);
+
+/**
+ * # Socket
+ * 
+ * Copyright(c) 2012 Stefano Balietti
+ * MIT Licensed 
+ * 
+ * `nodeGame` component responsible for dispatching events and messages 
+ * 
+ * ---
+ * 
+ */
+
+(function (exports, node) {
+
+	
+exports.Socket = Socket;	
 	
 // ## Global scope
 	
 var GameMsg = node.GameMsg,
-	GameState = node.GameState,
+	GameStage = node.GameStage,
 	Player = node.Player,
-	GameMsgGenerator = node.GameMsgGenerator;
+	GameMsgGenerator = node.GameMsgGenerator,
+	SocketFactory = node.SocketFactory;
+
+var action = node.action;
 
 var buffer,
 	session;
-	
 
-exports.GameSocketClient = GameSocketClient;
-
-/**
- * ## GameSocketClient constructor
- * 
- * Creates a new instance of GameSocketClient
- * 
- * @param {object} options Optional. A configuration object
- */
-function GameSocketClient (options) {
-	options = options || {};
+function Socket(options) {
 	
 // ## Private properties
-	
+
 /**
- * ### GameSocketClient.buffer
+ * ### Socket.buffer
  * 
  * Buffer of queued messages 
  * 
@@ -7859,7 +9857,7 @@ function GameSocketClient (options) {
 	}
 	
 /**
- * ### GameSocketClient.session
+ * ### Socket.session
  * 
  * The session id shared with the server
  * 
@@ -7876,316 +9874,153 @@ function GameSocketClient (options) {
 	else {
 		this.session = session;
 	}
-// ## Public properties
 	
-/**
- * ### GameSocketClient.io
- * 
- * 
- */	
-	this.io 		= null;
-/**
- * ### GameSocketClient.url
- * 
- */		
-	this.url 		= null;
+	this.socket = null;
 	
-/**
- * ### GameSocketClient.servername
- * 
- */	
-	this.servername = null;
-
+	this.url = null;
 }
 
-// ## GameSocketClient methods
 
-/**
- * ### GameSocketClient.getSession
- * 
- * Searches the node.session object for a saved session matching the passed 
- * game-message
- * 
- * If found, the session object will have the following a structure
- * 
- *	var session = {
- * 		id: 	node.gsc.session,
- * 		player: node.player,
- * 		memory: node.game.memory,
- * 		state: 	node.game.state,
- * 		game: 	node.game.name,
- * 		history: undefined,
- * 	};	
- * 
- * 
- * @param {GameMsg} msg A game-msg
- * @return {object|boolean} A session object, or FALSE if not was not found
- * 
- * 	@see node.session
- */
-GameSocketClient.prototype.getSession = function (msg) {
-	if (!msg) return false;
+Socket.prototype.setup = function(options) {
+	options = options || {};
 	
-	var session = false;
-	if ('function' === typeof node.session)	{
-		session = node.session(msg.session);
+	if (options.type) {
+		this.setSocketType(options.type, options);
 	}
 	
-	// TODO: check if session is still valid
-	return (session) ? session : false;
 };
 
-/**
- * ### GameSocketClient.startSession
- * 
- * Initializes a nodeGame session
- * 
- * Creates a the player and saves it in node.player, and stores the session ids
- * in the session object (GameSocketClient.session)
- * 
- * @param {GameMsg} msg A game-msg
- * @return {boolean} TRUE, if session was correctly initialized
- * 
- * 	@see GameSocketClient.createPlayer
- */
-GameSocketClient.prototype.startSession = function (msg) {
-	var player = {
-			id:		msg.data,	
-			sid: 	msg.data
-	};
-	this.createPlayer(player);
-	session = msg.session;
-	return true;
-};
-
-/**
- * ### GameSocketClient.restoreSession
- * 
- * Restores a session object
- * 
- * @param {object} session A session object as loaded by GameSocketClient.getSession
- * 
- * 
- * 	@emit NODEGAME_RECOVERY
- * 	@emit LOADED
- * 
- * 	@see GameSocketClient.createPlayer
- * 	@see node.session
- */
-GameSocketClient.prototype.restoreSession = function (sessionObj, sid) {
-	if (!sessionObj) return;
-	
-	var log_prefix = 'nodeGame session recovery: ';
-	
-	node.log('Starting session recovery ' + sid, 'INFO', log_prefix);
-	node.emit('NODEGAME_RECOVERY', sid);
-	
-	sid = sid || sessionObj.player.sid;
-	
-	this.session = sessionObj.id;
-	
-	// Important! The new socket.io ID
-	session.player.sid = sid;
-
-	this.createPlayer(session.player);
-	node.game.memory = session.memory;
-	node.goto(session.state);
-	
-	if (!sessionObj.history) {
-		node.log('No event history was found to recover', 'WARN', log_prefix);
+Socket.prototype.setSocketType = function(type, options) {
+	var socket =  SocketFactory.get(type, options);
+	if (socket) {
+		this.socket = socket;
 		return true;
 	}
-	
-	node.log('Recovering ' + session.history.length + ' events', 'DEBUG', log_prefix);
-	
-	node.events.history.importDB(session.history);
-	var hash = new GameState(session.state).toHash('S.s.r'); 
-	if (!node.events.history.state) {
-		node.log('No old events to re-emit were found during session recovery', 'DEBUG', log_prefix);
-		return true; 
-	}
-	if (!node.events.history.state[hash]){
-		node.log('The current state ' + hash + ' has no events to re-emit', 'DEBUG', log_prefix);
-		return true; 
-	}
-	
-	var discard = ['LOG', 
-	               'STATECHANGE',
-	               'WINDOW_LOADED',
-	               'BEFORE_LOADING',
-	               'LOADED',
-	               'in.say.STATE',
-	               'UPDATED_PLIST',
-	               'NODEGAME_READY',
-	               'out.say.STATE',
-	               'out.set.STATE',
-	               'in.say.PLIST',
-	               'STATEDONE', // maybe not here
-	               'out.say.HI'
-		               
-	];
-	
-	var to_remit = node.events.history.state[hash];
-	to_remit.select('event', 'in', discard).remove();
-	
-	if (!to_remit.length){
-		node.log('The current state ' + hash + ' has no valid events to re-emit', 'DEBUG', log_prefix);
-		return true;
-	}
-	
-	var remit = function () {
-		node.log('Re-emitting ' + to_remit.length + ' events', 'DEBUG', log_prefix);
-		// We have events that were fired at the state when 
-		// disconnection happened. Let's fire them again 
-		to_remit.each(function(e) {
-			// Falsy, should already been discarded
-			if (!JSUS.in_array(e.event, discard)) {
-				node.emit(e.event, e.p1, e.p2, e.p3);
-			}
-		});
-	};
-	
-	if (node.game.isReady()) {
-		remit.call(node.game);
-	}
 	else {
-		node.on('LOADED', function(){
-			remit.call(node.game);
-		});
+		return false;
 	}
-	
-	return true;
 };
 
-/**
- * ### GameSocketClient.createPlayer
- * 
- * Mixes in default properties for the player object and
- * additional configuration variables from node.conf.player
- * 
- * Writes the node.player object
- * 
- * Properties: `id`, `sid`, `ip` can never be overwritten.
- * 
- * Properties added as local configuration cannot be further
- * modified during the game. 
- * 
- * Only the property `name`, can be changed.
- * 
- */
-GameSocketClient.prototype.createPlayer = function (player) {	
-	player = new Player(player);
+Socket.prototype.connect = function(url, options) {
 	
-	if (node.conf && node.conf.player) {			
-		var pconf = node.conf.player;
-		for (var key in pconf) {
-			if (pconf.hasOwnProperty(key)) {
-				if (JSUS.in_array(key, ['id', 'sid', 'ip'])) {
-					continue;
-				} 
-				
-				// Cannot be overwritten properties previously 
-				// set in other sessions (recovery)
-//				if (player.hasOwnProperty(key)) {
-//					continue;
-//				}
-				if (node.support.defineProperty) {
-					Object.defineProperty(player, key, {
-				    	value: pconf[key],
-				    	enumerable: true
-					});
-				}
-				else {
-					player[key] = pconf[key];
-				}
-			}
-		}
-	}
-	if (node.support.defineProperty) {
-		Object.defineProperty(node, 'player', {
-	    	value: player,
-	    	enumerable: true
-		});
-	}
-	else {
-		node.player = player;
-	}
-	return player;
-};
-
-/**
- * ### GameSocketClient.connect
- * 
- * Initializes the connection to a nodeGame server
- * 
- * 
- * 
- * @param {object} conf A configuration object
- */
-GameSocketClient.prototype.connect = function (conf) {
-	conf = conf || {};
-	if (!conf.url) {
-		node.log('cannot connect to empty url.', 'ERR');
+	if (!this.socket) {
+		node.err('cannot connet to ' + url + ' . No open socket.');
 		return false;
 	}
 	
-	this.url = conf.url;
+	this.url = url;
+	node.log('connecting to ' + url);
 	
-	node.log('connecting to ' + conf.url);
-	this.io = io.connect(conf.url, conf.io);
-    this.attachFirstListeners(this.io);
-    return this.io;
+	this.socket.connect(url, options);
 };
 
-// ## I/O Functions
+Socket.prototype.onDisconnect = function() {
+	// Save the current stage of the game
+	node.session.store();
+	node.log('closed');
+};
+
+Socket.prototype.onMessage = function(msg) {
+	
+	msg = this.secureParse(msg);
+	if (!msg) return;
+	
+	var sessionObj;
+	
+	// Parsing successful
+	if (msg.target === 'HI') {
+		
+		// replace itself: will change onMessage
+		this.attachMsgListeners();
+		
+		this.startSession(msg);
+		
+		sessionObj = node.store(msg.session);
+		
+		if (false) {
+		//if (sessionObj) {
+			node.session.restore(sessionObj);
+			
+			msg = node.msg.create({
+				action: action.SAY,
+				target: 'HI_AGAIN',
+				data: node.player
+			});
+			
+			this.send(msg);
+			
+		}
+		else {
+			node.store(msg.session, node.session.save());
+			
+			this.sendHI(node.player, 'ALL');
+		}
+		
+		
+
+   	 } 
+};
+
+Socket.prototype.attachMsgListeners = function() {
+	this.onMessage = this.onMessageFull;
+	node.emit('NODEGAME_READY');
+};
+
+Socket.prototype.onMessageFull = function(msg) {
+	msg = this.secureParse(msg);
+	
+	if (msg) { // Parsing successful
+		// TODO: improve
+		if (node.game.isReady && node.game.isReady()) {
+			node.emit(msg.toInEvent(), msg);
+		}
+		else {
+			console.log('BUFFERING');
+			node.log('buffering: ' + msg, 'DEBUG');
+			buffer.push(msg);
+		}
+	}
+};
 
 
-var logSecureParseError = function (text, e) {
-	text = text || 'Generic error while parsing a game message';
-	var error = (e) ? text + ": " + e : text;
-	node.log(error, 'ERR');
-	node.emit('LOG', 'E: ' + error);
-	return false;
-}
+Socket.prototype.registerServer = function(msg) {
+	// Setting global info
+	this.servername = msg.from;
+	// Keep serverid = msg.from for now
+	this.serverid = msg.from;
+};
 
-/**
- * ### GameSocketClient.secureParse
- * 
- * Parse the message received in the Socket
- * 
- * @param {object|GameMsg} msg The game-message to parse
- * @return {GameMsg|boolean} The parsed GameMsg object, or FALSE if an error occurred
- *  
- */
-GameSocketClient.prototype.secureParse = function (msg) {
+
+Socket.prototype.secureParse = secureParse = function (msg) {
 	
 	var gameMsg;
 	try {
 		gameMsg = GameMsg.clone(JSON.parse(msg));
-		node.info(gameMsg, 'R: ');
+		node.info('R: ' + gameMsg);
 	}
 	catch(e) {
-		return logSecureParseError('Malformed msg received',  e);
+		return logSecureParseError('malformed msg received',  e);
 	}
 	
 	if (this.session && gameMsg.session !== this.session) {
-		return logSecureParseError('Local session id does not match incoming message session id');
+		return logSecureParseError('local session id does not match incoming message session id');
 	}
 	
 	return gameMsg;
 };
 
+
 /**
- * ### GameSocketClient.clearBuffer
+ * ### Socket.clearBuffer
  * 
  * Emits and removes all the events in the message buffer
  * 
- * 	@see node.emit
+ * @see node.emit
  */
-GameSocketClient.prototype.clearBuffer = function () {
-	var nelem = buffer.length;
+Socket.prototype.clearBuffer = function () {
+	var nelem = buffer.length, msg;
 	for (var i=0; i < nelem; i++) {
-		var msg = this.buffer.shift();
+		msg = this.buffer.shift();
 		if (msg) {
 			node.emit(msg.toInEvent(), msg);
 			node.log('Debuffered ' + msg, 'DEBUG');
@@ -8193,128 +10028,72 @@ GameSocketClient.prototype.clearBuffer = function () {
 	}
 };
 
+
 /**
- * ### GameSocketClient.attachFirstListeners
- *
- * Initializes the socket to wait for a HI message from the server
+ * ### Socket.startSession
  * 
- * Nothing is done until the SERVER send an HI msg. All the others msgs will
- * be ignored otherwise.
+ * Initializes a nodeGame session
  * 
- * @param {object} socket The socket.io socket
+ * Creates a the player and saves it in node.player, and 
+ * stores the session ids in the session object 
+ * 
+ * @param {GameMsg} msg A game-msg
+ * @return {boolean} TRUE, if session was correctly initialized
+ * 
+ * 	@see node.createPlayer
  */
-GameSocketClient.prototype.attachFirstListeners = function (socket) {
-	
-	var that = this;
-	
-	socket.on('connect', function (msg) {
-		var connString = 'nodeGame: connection open';
-	    node.log(connString); 
-	    
-	    socket.on('message', function (msg) {	
-	    	
-	    	var msg = that.secureParse(msg);
-	    	
-	    	if (msg) { // Parsing successful
-				if (msg.target === 'HI') {
+Socket.prototype.startSession = function (msg) {
 
-					// Setting global info
-					that.servername = msg.from;
-					// Keep serverid = msg.from for now
-					that.serverid = msg.from;
-					
-					var sessionObj = that.getSession(msg);
-					
-					if (sessionObj) {
-						that.restoreSession(sessionObj, socket.id);
-						
-						// Get Ready to play
-						that.attachMsgListeners(socket, msg.session);
-						
-						var msg = node.msg.create({
-							action: GameMsg.actions.SAY,
-							target: 'HI_AGAIN',
-							data: node.player
-						});
-//							console.log('HI_AGAIN MSG!!');
-//							console.log(msg);
-						that.send(msg);
-						
-					}
-					else {
-						that.startSession(msg);
-						// Get Ready to play
-						that.attachMsgListeners(socket, msg.session);
-						
-						// Send own name to SERVER
-						that.sendHI(node.player, 'ALL');
-					}
-					
-
-					// Ready to play
-					node.emit('out.say.HI');
-			   	 } 
-	    	}
-	    });
-	    
-	});
+	// Store server info
+	this.registerServer(msg);
 	
-    socket.on('disconnect', function() {
-    	// Save the current state of the game
-    	node.session.store();
-    	node.log('closed');
-    });
+	var player = {
+			id:		msg.data,	
+			sid: 	msg.data
+	};
+	node.createPlayer(player);
+	this.session = msg.session;
+	return true;
 };
 
+//## SEND methods
+
+
 /**
- * ### GameSocketClient.attachMsgListeners
- * 
- * Attaches standard message listeners
- * 
- * This method is called after the client has received a valid HI message from
- * the server, and a session number has been issued
- * 
- * @param {object} socket The socket.io socket
- * @param {number} session The session id issued by the server
- * 
- * @emit NODEGAME_READY
- */
-GameSocketClient.prototype.attachMsgListeners = function (socket, session) {   
-	var that = this;
+* ### Socket.send
+* 
+* Pushes a message into the socket.
+* 
+* The msg is actually received by the client itself as well.
+* 
+* @param {GameMsg} The game message to send
+* 
+* 	@see GameMsg
+* 
+* @TODO: Check Do volatile msgs exist for clients?
+*/
+Socket.prototype.send = function(msg) {
+	if (!this.socket) {
+		node.err('socket cannot send message. No open socket.');
+		return false;
+	}
 	
-	node.log('Attaching FULL listeners');
-	socket.removeAllListeners('message');
-		
-	socket.on('message', function(msg) {
-		var msg = that.secureParse(msg);
-		
-		if (msg) { // Parsing successful
-			// Wait to fire the msgs if the game state is loading
-			if (node.game && node.game.isReady()) {	
-				node.emit(msg.toInEvent(), msg);
-			}
-			else {
-				node.log('Buffering: ' + msg, 'DEBUG');
-				buffer.push(msg);
-			}
-		}
-	});
-	
-	node.emit('NODEGAME_READY');
+	this.socket.send(msg);
+	node.info('S: ' + msg);
+	return true;
 };
 
-// ## SEND methods
 
 /**
- * ### GameSocketClient.sendHI
- * 
- * Creates a HI message and pushes it into the socket
- *   
- * @param {string} from Optional. The message sender. Defaults node.player
- * @param {string} to Optional. The recipient of the message. Defaults 'SERVER'
- * 
- */
-GameSocketClient.prototype.sendHI = function (from, to) {
+* ### Socket.sendHI
+* 
+* Creates a HI message and pushes it into the socket
+*   
+* @param {string} from Optional. The message sender. Defaults node.player
+* @param {string} to Optional. The recipient of the message. Defaults 'SERVER'
+* 
+*/
+Socket.prototype.sendHI = function (from, to) {
 	from = from || node.player;
 	to = to || 'SERVER';
 	var msg = node.msg.createHI(from, to);
@@ -8322,49 +10101,69 @@ GameSocketClient.prototype.sendHI = function (from, to) {
 };
 
 /**
- * ### GameSocketClient.sendSTATE
- * 
- * Creates a STATE message and pushes it into the socket
- * 
- * @param {string} action A nodeGame action (e.g. 'get' or 'set')
- * @param {GameState} state The GameState object to send
- * @param {string} to Optional. The recipient of the message.
- * 
- * 	@see GameMsg.actions
- */
-GameSocketClient.prototype.sendSTATE = function (action, state, to) {	
-	var msg = node.msg.createSTATE(action, state, to);
+ * @TODO: do we need this??
+* ### Socket.sendSTAGE
+* 
+* Creates a STAGE message and pushes it into the socket
+* 
+* @param {string} action A nodeGame action (e.g. 'get' or 'set')
+* @param {GameStage} stage The GameStage object to send
+* @param {string} to Optional. The recipient of the message.
+*  
+*/
+//Socket.prototype.sendSTATE = function (action, state, to) {	
+//	var msg = node.msg.createSTAGE(action, stage, to);
+//	this.send(msg);
+//};
+
+
+/**
+* ### Socket.sendSTAGE
+* 
+* Creates a STAGE message and pushes it into the socket
+* 
+* @param {string} action A nodeGame action (e.g. 'get' or 'set')
+* @param {GameStage} stage The GameStage object to send
+* @param {string} to Optional. The recipient of the message.
+*  
+*/
+Socket.prototype.sendSTAGE = function (action, stage, to) {	
+	var msg = node.msg.create({
+		action: node.action.SAY,
+		target: node.target.STAGE,
+		data: stage, 
+		to: to
+	});
+	
 	this.send(msg);
 };
 
 /**
- * ### GameSocketClient.sendTXT
- *
- * Creates a TXT message and pushes it into the socket
- * 
- * @param {string} text Text to send
- * @param {string} to Optional. The recipient of the message
- */
-GameSocketClient.prototype.sendTXT = function(text, to) {	
+* ### Socket.sendTXT
+*
+* Creates a TXT message and pushes it into the socket
+* 
+* @param {string} text Text to send
+* @param {string} to Optional. The recipient of the message
+*/
+Socket.prototype.sendTXT = function(text, to) {	
 	var msg = node.msg.createTXT(text,to);
 	this.send(msg);
 };
 
 /**
- * ### GameSocketClient.sendDATA
- * 
- * Creates a DATA message and pushes it into the socket
- * 
- * @param {string} action Optional. A nodeGame action (e.g. 'get' or 'set'). Defaults 'say'
- * @param {object} data An object to exchange
- * @param {string} to Optional. The recipient of the message. Defaults 'SERVER'
- * @param {string} text Optional. A descriptive text associated to the message.
- * 
- * 	@see GameMsg.actions
- * 
- * @TODO: invert parameter order: first data then action
- */
-GameSocketClient.prototype.sendDATA = function (action, data, to, text) {
+* ### Socket.sendDATA
+* 
+* Creates a DATA message and pushes it into the socket
+* 
+* @param {string} action Optional. A nodeGame action (e.g. 'get' or 'set'). Defaults 'say'
+* @param {object} data An object to exchange
+* @param {string} to Optional. The recipient of the message. Defaults 'SERVER'
+* @param {string} text Optional. A descriptive text associated to the message.
+* 
+* @TODO: invert parameter order: first data then action
+*/
+Socket.prototype.sendDATA = function (action, data, to, text) {
 	action = action || GameMsg.say;
 	to = to || 'SERVER';
 	text = text || 'DATA';
@@ -8372,36 +10171,96 @@ GameSocketClient.prototype.sendDATA = function (action, data, to, text) {
 	this.send(msg);
 };
 
-/**
- * ### GameSocketClient.send
- * 
- * Pushes a message into the socket.
- * 
- * The msg is actually received by the client itself as well.
- * 
- * @param {GameMsg} The game message to send
- * 
- * 	@see GameMsg
- * 
- * @TODO: Check Do volatile msgs exist for clients?
- */
-GameSocketClient.prototype.send = function (msg) {
 
-	// if (msg.reliable) {
-		this.io.send(msg.stringify());
-	// }
-	// else {
-	// this.io.volatile.send(msg.stringify());
-	// }
-	node.log('S: ' + msg);
-	node.emit('LOG', 'S: ' + msg.toSMS());
+// helping methods
+
+var logSecureParseError = function (text, e) {
+	text = text || 'Generic error while parsing a game message';
+	var error = (e) ? text + ": " + e : text;
+	node.log(error, 'ERR');
+	node.emit('LOG', 'E: ' + error);
+	return false;
 };
 
+
+
+
+
 })(
-	'undefined' != typeof node ? node : module.exports
-  , 'undefined' != typeof node ? node : module.parent.exports
-  , 'undefined' != typeof io ? io : module.parent.exports.io
+	'undefined' != typeof node ? node : module.exports,
+	'undefined' != typeof node ? node : module.parent.exports
 );
+
+/**
+ * # SocketIo
+ * 
+ * Copyright(c) 2012 Stefano Balietti
+ * MIT Licensed 
+ * 
+ * Implementation of a remote socket communicating over HTTP 
+ * through Socket.IO
+ * 
+ * ---
+ * 
+ */
+
+(function (exports, node, io) {
+	
+// ## Global scope
+	
+var GameMsg = node.GameMsg,
+	Player = node.Player,
+	GameMsgGenerator = node.GameMsgGenerator;
+
+exports.SocketIo = SocketIo;
+
+
+
+function SocketIo(options) {
+	this.socket = null;
+}
+
+SocketIo.prototype.connect = function(url, options) {
+	
+	if (!url) {
+		node.err('cannot connect to empty url.', 'ERR');
+		return false;
+	}
+	
+	var that = this;
+	
+	this.socket = io.connect(url, options); //conf.io
+	
+	this.socket.on('connect', function (msg) {
+			
+	    node.info('socket.io connection open'); 
+	    
+	    that.socket.on('message', function(msg) {
+	    	node.socket.onMessage(msg);
+	    });
+	    
+	});
+	
+    this.socket.on('disconnect', node.socket.onDisconnect);
+    return true;
+	
+};
+
+SocketIo.prototype.send = function (msg) {
+	console.log(msg);
+	this.socket.send(msg.stringify());
+};
+
+
+node.SocketFactory.register('SocketIo', SocketIo);
+
+
+})(
+	'undefined' != typeof node ? node : module.exports,
+	'undefined' != typeof node ? node : module.parent.exports,
+	'undefined' != typeof io ? io : module.parent.exports.io
+);
+
 /**
  * # GameDB
  * 
@@ -8415,13 +10274,13 @@ GameSocketClient.prototype.send = function (msg) {
  * It automatically creates three indexes.
  * 
  * 1. by player,
- * 2. by state,
+ * 2. by stage,
  * 3. by key.
  * 
- * Uses GameState.compare to compare the state property of each entry.
+ * Uses GameStage.compare to compare the stage property of each entry.
  * 
  * 	@see GameBit
- * 	@see GameState.compare
+ * 	@see GameStage.compare
  * 
  * ---
  * 
@@ -8432,10 +10291,10 @@ GameSocketClient.prototype.send = function (msg) {
 var JSUS = node.JSUS,
 	NDDB = node.NDDB;
 	
-var GameState = node.GameState;
+var GameStage = node.GameStage;
 
 // Inheriting from NDDB	
-GameDB.prototype = JSUS.clone(NDDB.prototype);
+GameDB.prototype = new NDDB();
 GameDB.prototype.constructor = GameDB;
 
 
@@ -8465,7 +10324,7 @@ function GameDB (options, db, parent) {
 	
 	NDDB.call(this, options, db, parent);
 	
-	this.c('state', GameBit.compareState);
+	this.c('stage', GameBit.compareState);
 	  
 	
 	if (!this.player) {
@@ -8473,9 +10332,9 @@ function GameDB (options, db, parent) {
 			return gb.player;
 		});
 	}
-	if (!this.state) {
-		this.h('state', function(gb) {
-			return GameState.toHash(gb.state, 'S.s.r');
+	if (!this.stage) {
+		this.h('stage', function(gb) {
+			return GameStage.toHash(gb.stage, 'S.s.r');
 		});
 	}  
 	if (!this.key) {
@@ -8496,23 +10355,23 @@ function GameDB (options, db, parent) {
  * @param {string} key An alphanumeric id for the entry
  * @param {mixed} value Optional. The value to store
  * @param {Player} player Optional. The player associated to the entry. Defaults, node.player
- * @param {GameState} player Optional. The state associated to the entry. Defaults, node.game.state
+ * @param {GameStage} player Optional. The stage associated to the entry. Defaults, node.game.stage
  * 
  * @return {boolean} TRUE, if insertion was successful
  * 
  * 	@see GameBit
  */
-GameDB.prototype.add = function (key, value, player, state) {
+GameDB.prototype.add = function (key, value, player, stage) {
 	if (!key) return false;
 	
-	state = state || node.game.state;
+	stage = stage || node.game.stage;
 	player = player || node.player;
 
 	this.insert(new GameBit({
 						player: player, 
 						key: key,
 						value: value,
-						state: state
+						stage: stage
 	}));
 
 	return true;
@@ -8527,7 +10386,7 @@ GameDB.prototype.add = function (key, value, player, state) {
  *  
  * A GameBit unit always contains the following properties
  * 
- * - state GameState
+ * - stage GameStage
  * - player Player
  * - key 
  * - value
@@ -8543,12 +10402,12 @@ GameDB.prototype.add = function (key, value, player, state) {
  */
 function GameBit (options) {
 	
-	this.state = options.state;
+	this.stage = options.stage;
 	this.player = options.player;
 	this.key = options.key;
 	this.value = options.value;
 	this.time = (Date) ? Date.now() : null;
-};
+}
 
 
 /**
@@ -8559,7 +10418,7 @@ function GameBit (options) {
  * @return {string} string representation of the instance of GameBit
  */
 GameBit.prototype.toString = function () {
-	return this.player + ', ' + GameState.stringify(this.state) + ', ' + this.key + ', ' + this.value;
+	return this.player + ', ' + GameStage.stringify(this.stage) + ', ' + this.key + ', ' + this.value;
 };
 
 /** 
@@ -8567,7 +10426,7 @@ GameBit.prototype.toString = function () {
  * 
  * Compares two GameBit objects
  * 
- * Returns TRUE if the attributes of `player`, `state`, and `key`
+ * Returns TRUE if the attributes of `player`, `stage`, and `key`
  * are identical. 
  *  
  * If the strict parameter is set, also the `value` property 
@@ -8623,19 +10482,19 @@ GameBit.comparePlayer = function (gb1, gb2) {
 /**
  * ### GameBit.compareState (static)
  * 
- * Sort two game-bits by their state property
+ * Sort two game-bits by their stage property
  * 
- * GameState.compare is used for comparison
+ * GameStage.compare is used for comparison
  * 
  * @param {GameBit} gb1 The first game-bit to compare
  * @param {GameBit} gb2 The second game-bit to compare
  * 
  * @return {number} The result of the comparison
  * 
- * 	@see GameState.compare
+ * 	@see GameStage.compare
  */
 GameBit.compareState = function (gb1, gb2) {
-	return GameState.compare(gb1.state, gb2.state);
+	return GameStage.compare(gb1.stage, gb2.stage);
 };
 
 /**
@@ -8697,9 +10556,10 @@ GameBit.compareValue = function (gb1, gb2) {
 // ## Closure
 	
 })(
-	'undefined' != typeof node ? node : module.exports
-  , 'undefined' != typeof node ? node : module.parent.exports
+	'undefined' != typeof node ? node : module.exports,
+	'undefined' != typeof node ? node : module.parent.exports
 );
+
 /**
  * # Game
  * 
@@ -8721,15 +10581,17 @@ GameBit.compareValue = function (gb1, gb2) {
 (function (exports, node) {
 	
 // ## Global scope
-	
-var GameState = node.GameState,
+
+var GameStage = node.GameStage,
 	GameMsg = node.GameMsg,
 	GameDB = node.GameDB,
+	GameLoop = node.GameLoop,
 	PlayerList = node.PlayerList,
 	Player = node.Player,
-	GameLoop = node.GameLoop,
-	JSUS = node.JSUS;
+	Stager = node.Stager,
+	J = node.JSUS;
 
+var action = node.action;
 
 exports.Game = Game;
 
@@ -8739,6 +10601,26 @@ var name,
 	pl,
 	ml;
 	
+Game.levels = {
+		UNINITIALIZED: 0, 	// game created, the init function has not been called
+		INITIALIZING: 1, 	// executing init
+		INITIALIZED: 5, 	// init executed
+		READY:	7,		// stages are set
+		ONGOING: 50,
+		GAMEOVER: 100,		// game complete
+		RUNTIME_ERROR: -1
+	};
+
+Game.stageLevels = {
+	LOADING: 1,
+	LOADED: 2,
+	PLAYING: 50,
+	PAUSING:  55,
+	PAUSED: 60,
+	RESUMING: 65,
+	RESUMED: 70,
+	DONE: 100
+};
 
 /**
  * ## Game constructor
@@ -8750,6 +10632,8 @@ var name,
 function Game (settings) {
 	settings = settings || {};
 
+	this.updateGameState(Game.levels.UNINITIALIZED);
+	
 // ## Private properties
 
 /**
@@ -8788,26 +10672,7 @@ function Game (settings) {
 	else {
 		this.description = description;
 	}
-
-/**
- * ### Game.gameLoop
- * 
- * An object containing the game logic 
- * 
- * @see GameLoop
- * @api private
- */
-	// <!-- support for deprecated options loops -->
-	gameLoop = new GameLoop(settings.loop || settings.loops);
-	if (node.support.defineProperty) {
-		Object.defineProperty(this, 'gameLoop', {
-			value: gameLoop,
-			enumerable: true
-		});
-	}
-	else {
-		this.gameLoop = gameLoop;
-	}
+	
 	
 /**
  * ### Game.pl
@@ -8843,7 +10708,7 @@ function Game (settings) {
 	ml = new PlayerList();
 	if (node.support.defineProperty) {
 		Object.defineProperty(this, 'ml', {
-			value: pl,
+			value: ml,
 			enumerable: true,
 			configurable: true,
 			writable: true
@@ -8888,7 +10753,7 @@ function Game (settings) {
 /**
  * ### Game.observer
  * 
- * If TRUE, silently observes the game. Defaults FALSE
+ * If TRUE, silently observes the game. Defaults, FALSE
  * 
  * An nodeGame observer will not send any automatic notification
  * to the server, but it will just *observe* the game played by
@@ -8904,7 +10769,7 @@ function Game (settings) {
  * If TRUE, automatically advances to the next state if all the players 
  * have completed the same state
  * 
- * After a successful STATEDONE event is fired, the client will automatically 
+ * After a successful STAGEDONE event is fired, the client will automatically 
  * goes to the next function in the game-loop without waiting for a STATE
  * message from the server. 
  * 
@@ -8950,10 +10815,8 @@ function Game (settings) {
 	this.minPlayers = settings.minPlayers || 1;
 	this.maxPlayers = settings.maxPlayers || 1000;
 	
-	if (settings.init) {
-		this.init = settings.init;
-	}
 
+	
 /**
  * ### Game.memory
  * 
@@ -8966,9 +10829,39 @@ function Game (settings) {
  */
 	this.memory = new GameDB();
 	
-	this.player = null;	
-	this.state = new GameState();
 
+	
+/**
+ * ### Game.stager
+ * 
+ * Stage manager 
+ * 
+ * retrocompatible with gameLoop
+ * 
+ * @see Stager
+ * @api private
+ */
+	this.gameLoop = this.stager = new GameLoop(settings.stages);
+	
+	
+	this.currentStep = new GameStage();
+	this.currentStepObj = null;
+	
+	// Update the init function if one is passed
+	if (settings.init) {
+		this.init = function() {
+			this.updateGameState(Game.levels.INITIALIZING);
+			settings.init.call(node.game);
+			this.updateGameState(Game.levels.INITIALIZED);
+		};
+	}
+	
+
+	this.player = null;	
+
+
+	this.paused = false;
+	
 } // <!-- ends constructor -->
 
 // ## Game methods
@@ -8979,11 +10872,51 @@ function Game (settings) {
  * Initialization function
  * 
  * This function is called as soon as the game is instantiated,
- * i.e. at state 0.0.0. All event listeners declared here will
- * stay valid throughout the game.
+ * i.e. at stage 0.0.0. 
+ * 
+ * Event listeners defined here stay valid throughout the whole
+ * game, unlike event listeners defined inside a function of the
+ * gameLoop, which are valid only within the specific function.
  * 
  */
-Game.prototype.init = function () {};
+Game.prototype.init = function () {
+	this.updateGameState(Game.levels.INITIALIZING);
+	this.updateGameState(Game.levels.INITIALIZED);
+};
+
+/** 
+ * ### Game.gameover
+ * 
+ * Cleaning up function
+ * 
+ * This function is called after the last stage of the gameLoop
+ * is terminated
+ * 
+ */
+Game.prototype.gameover = function () {};
+
+/**
+ * ### Game.start
+ * 
+ * Starts the game 
+ * 
+ * Calls the init function, and steps.
+ * 
+ * Important: it does not use `Game.publishUpdate` because that is
+ * just for change of state after the game has started
+ * 
+ * 
+ * @see node.play
+ * @see Game.publishStage
+ * 
+ */
+Game.prototype.start = function() {
+	// INIT the game
+	this.init();
+	this.step();
+	
+	node.log('game started');
+};
 
 /**
  * ### Game.pause
@@ -8993,7 +10926,7 @@ Game.prototype.init = function () {};
  * @TODO: check with Game.ready
  */
 Game.prototype.pause = function () {
-	this.state.paused = true;
+	this.paused = true;
 };
 
 /**
@@ -9004,174 +10937,134 @@ Game.prototype.pause = function () {
  * @TODO: check with Game.ready
  */
 Game.prototype.resume = function () {
-	this.state.paused = false;
+	this.paused = false;
 };
 
-/**
- * ### Game.next
- * 
- * Fetches a state from the game-loop N steps ahead
- * 
- * Optionally, a parameter can control the number of steps to take
- * in the game-loop before returning the state
- * 
- * @param {number} N Optional. The number of steps to take in the game-loop. Defaults 1
- * @return {boolean|GameState} The next state, or FALSE if it does not exist
- * 
- * 	@see GameState
- * 	@see Game.gameLoop
- */
-Game.prototype.next = function (N) {
-	if (!N) return this.gameLoop.next(this.state);
-	return this.gameLoop.jumpTo(this.state, Math.abs(N));
-};
 
-/**
- * ### Game.previous
- * 
- * Fetches a state from the game-loop N steps back
- * 
- * Optionally, a parameter can control the number of steps to take
- * backward in the game-loop before returning the state
- * 
- * @param {number} times Optional. The number of steps to take in the game-loop. Defaults 1
- * @return {boolean|GameState} The previous state, or FALSE if it does not exist
- * 
- * 	@see GameState
- * 	@see Game.gameLoop
- */
-Game.prototype.previous = function (N) {
-	if (!N) return this.gameLoop.previous(this.state);
-	return this.gameLoop.jumpTo(this.state, -Math.abs(N));
-};
 
-/**
- * ### Game.jumpTo
- * 
- * Moves the game forward or backward in the game-loop
- * 
- * Optionally, a parameter can control the number of steps to take
- * in the game-loop before executing the next function. A negative 
- * value jumps backward in the game-loop, and a positive one jumps
- * forward in the game-loop
- * 
- * @param {number} jump  The number of steps to take in the game-loop
- * @return {boolean} TRUE, if the game succesfully jumped to the desired state
- * 
- * 	@see GameState
- * 	@see Game.gameLoop
- */
-Game.prototype.jumpTo = function (jump) {
-	if (!jump) return false;
-	var gs = this.gameLoop.jumpTo(this.state, jump);
-	if (!gs) return false;
-	return this.updateState(gs);
-};
-
-/**
- * ### Game.publishState
- * 
- * Notifies internal listeners, the server and other connected clients 
- * of the current game-state
- * 
- * If the *observer* flag is set, external notification is inhibited, 
- * but the STATECHANGE event is emitted anyway 
- * 
- * @emit STATECHANGE
- * 
- * @see GameState
- * @see	Game.observer
- */
-Game.prototype.publishState = function() {
-	// <!-- Important: SAY -->
-	if (!this.observer) {
-		var stateEvent = GameMsg.OUT + GameMsg.actions.SAY + '.STATE'; 
-		node.emit(stateEvent, this.state, 'ALL');
-	}
-	
-	node.emit('STATECHANGE');
-	
-	node.log('New State = ' + new GameState(this.state), 'DEBUG');
-};
-
-/**
- * ### Game.updateState
- * 
- * Updates the game to the specified game-state
- * 
- * @param {GameState} state The state to load and run
- * 
- * @emit BEFORE_LOADING
- * @emit LOADED
- * @emit TXT
- */
-Game.prototype.updateState = function (state) {
-	
-	node.log('New state is going to be ' + new GameState(state), 'DEBUG');
-	
-	if (this.step(state) !== false) {
-		this.paused = false;
-		this.state.is =  GameState.iss.LOADED;
-		if (this.isReady()) {
-			node.emit('LOADED');
-		}
-	}		
-	else {
-		node.log('Error in stepping', 'ERR');
-		// TODO: implement sendERR
-		node.emit('TXT','State was not updated');
-	}
-};
 
 /**
  * ### Game.step
  * 
- * Retrieves from the game-loop and executes the function for the 
- * specified game-state
+ * Executes the next stage / step 
  * 
- * @param {GameState} gameState Optional. The GameState to run
  * @return {Boolean} FALSE, if the execution encountered an error
  * 
- * 	@see Game.gameLoop
- * 	@see GameState
+ * @see Game.stager
+ * @see Game.currentStage
+ * @see Game.execStage
+ * 
+ * TODO: harmonize return values
  */
-Game.prototype.step = function (gameState) {
+Game.prototype.step = function() {
+	var nextStep;
 	
-	gameState = gameState || this.next();
-	if (gameState) {
+	nextStep = this.stager.next(this.currentStep);
+	
+	if ('string' === typeof nextStep) {
 		
-		var func = this.gameLoop.getFunction(gameState);
-		
-		// Experimental: node.window should load the func as well
-//			if (node.window) {
-//				var frame = this.gameLoop.getAllParams(gameState).frame;
-//				node.window.loadFrame(frame);
-//			}
-		
-		
-		
-		if (func) {
-			// Local Listeners from previous state are erased 
-			// before proceeding to next one
-			node.events.clearState(this.state);
-			
-			gameState.is = GameState.iss.LOADING;
-			this.state = gameState;
-		
-			// This could speed up the loading in other client,
-			// but now causes problems of multiple update
-			this.publishState();
-					
-			return func.call(node.game);
+		if (nextStep === GameLoop.GAMEOVER) {
+			node.emit('GAMEOVER');
+			return this.gameover(); // can throw Errors
 		}
+		
+		// else do nothing
+		return null;
 	}
-	return false;
+	else {
+		// TODO maybe update also in case of string
+		this.currentStep = nextStep;
+		this.currentStepObj = this.stager.getStep(nextStep);
+		return this.execStage(this.currentStepObj);
+	}
+};
+
+/**
+ * ### Game.execStage
+ * 
+ * Executes the specified stage
+ * 
+ * @param stage {GameStage} GameStage object to execute
+ * 
+ */
+Game.prototype.execStage = function(stage) {
+	var cb, err, res;
+	
+	cb = stage.cb; 
+			
+	// Local Listeners from previous stage are erased 
+	// before proceeding to next one
+	node.events.clearStage(this.currentStep);
+			
+	this.updateStageLevel('LOADING');
+	
+			
+	try {
+		res = cb.call(node.game);
+		this.updateStageLevel('LOADED');
+		
+		// This does not make sense. Basically it waits for the nodegame window to be loaded too
+		if (this.isReady()) {
+			node.emit('LOADED');
+		}
+		if (res === false) {
+			// A non fatal error occurred
+			// log it
+		}
+		
+		return res;
+		
+	} 
+	catch (e) {
+		err = 'An error occurred while executing a custom callback'; //  
+			
+		node.err(err);
+		
+		if (node.debug) {
+			throw new node.NodeGameRuntimeError();
+		}
+				
+		return true;
+	}
+};
+
+Game.prototype.getGameState = function () {
+	return this.state;
+};
+
+Game.prototype.getStageLevel = function () {
+    return this.state;
+};
+
+// ERROR, WORKING, etc
+Game.prototype.updateGameState = function (state) {
+	this.state = state;
+	//this.publishUpdate();
+};
+
+// PLAYING, DONE, etc.
+Game.prototype.updateStageLevel= function (state) {
+	this.stageState = state;
+	//this.publishUpdate();
+};
+
+Game.prototype.publishUpdate = function() {
+	// <!-- Important: SAY -->
+	if (!this.observer) {
+		var stateEvent = node.OUT + action.SAY + '.STATE'; 
+		node.emit(stateEvent, this.state, 'ALL'); // SHOULD BE A GAME STATE EVENT
+	}
 };
 
 /**
  * ### Game.isReady
  * 
  * Returns TRUE if the nodeGame engine is fully loaded
+ * 
+ * As soon as the nodegame-client library is loaded 
+ * `node.game.state` is equal to 0.0.0. In this situation the
+ * game will be considered READY unless the nodegame-window 
+ * says otherwise
  * 
  * During stepping between functions in the game-loop
  * the flag is temporarily turned to FALSE, and all events 
@@ -9186,20 +11079,1038 @@ Game.prototype.step = function (gameState) {
  * 
  */
 Game.prototype.isReady = function() {
-	if (this.state.is < GameState.iss.LOADED) return false;
-	
+    console.log(this.getGameState());
+    console.log(this.getStageLevel());
+    return true;
+	if (this.getGameState() < Game.levels.READY) return false;
+	if (this.getStageLevel() === Game.stageLevels.LOADING) return false;
+
 	// Check if there is a gameWindow obj and whether it is loading
-	if (node.window) {	
-		return (node.window.state >= GameState.iss.LOADED) ? true : false;
-	}
-	return true;
+	return node.window ? node.window.state >= node.is.LOADED : true;
+};
+
+
+
+Game.prototype._isReadyToStep = function(stage, stager, pl) {
+    var cbStepper = this._getStepperCallback(stage, stager);
+    var myStageLevel = this.getStageLevel();
+    return cbStepper(myStageLevel, pl);
+};
+
+Game.prototype.isReadyToStep = function() {
+    return this._isReadyToStep(this.currentStep, this.stager, this.pl);
+};
+
+
+Game.prototype._getStepperCallback = function(stage, stager) {
+    // Take default mode
+    // Is there a local function?
+
+    // Always go to the next when done for now
+    return function() { return true; };
+};
+
+Game.prototype.getStepperCallback = function() {
+    return this._getStepperCallback(this.currentStep, this.stager);
+};
+
+// TODO : MAYBE TO REMOVE THEM
+
+/**
+* ### Game.next
+* 
+* Fetches a state from the game-loop N steps ahead
+* 
+* Optionally, a parameter can control the number of steps to take
+* in the game-loop before returning the state
+* 
+* @param {number} N Optional. The number of steps to take in the game-loop. Defaults 1
+* @return {boolean|GameStage} The next state, or FALSE if it does not exist
+* 
+* 	@see GameStage
+* 	@see Game.gameLoop
+*/
+Game.prototype.next = function (N) {
+	if (!N) return this.gameLoop.next(this.state);
+	return this.gameLoop.jump(this.state, Math.abs(N));
+};
+
+/**
+* ### Game.previous
+* 
+* Fetches a state from the game-loop N steps back
+* 
+* Optionally, a parameter can control the number of steps to take
+* backward in the game-loop before returning the state
+* 
+* @param {number} times Optional. The number of steps to take in the game-loop. Defaults 1
+* @return {boolean|GameStage} The previous state, or FALSE if it does not exist
+* 
+* 	@see GameStage
+* 	@see Game.gameLoop
+*/
+Game.prototype.previous = function (N) {
+	if (!N) return this.gameLoop.previous(this.state);
+	return this.gameLoop.jump(this.state, -Math.abs(N));
+};
+
+
+/**
+* ### Game.jumpTo
+* 
+* Moves the game forward or backward in the game-loop
+* 
+* Optionally, a parameter can control the number of steps to take
+* in the game-loop before executing the next function. A negative 
+* value jumps backward in the game-loop, and a positive one jumps
+* forward in the game-loop
+* 
+* @param {number} jump  The number of steps to take in the game-loop
+* @return {boolean} TRUE, if the game succesfully jumped to the desired state
+* 
+* 	@see GameStage
+* 	@see Game.gameLoop
+*/
+Game.prototype.jumpTo = function (jump) {
+	if (!jump) return false;
+	var gs = this.gameLoop.jump(this.state, jump);
+	if (!gs) return false;
+	return this.updateStage(gs);
 };
 
 // ## Closure
 })(
-	'undefined' != typeof node ? node : module.exports
-  , 'undefined' != typeof node ? node : module.parent.exports
+	'undefined' != typeof node ? node : module.exports,
+	'undefined' != typeof node ? node : module.parent.exports
 );
+
+/**
+ * # GameSession
+ * 
+ * Copyright(c) 2012 Stefano Balietti
+ * MIT Licensed 
+ * 
+ * `nodeGame` session manager
+ * 
+ * ---
+ * 
+ */
+
+(function (exports, node) {
+	
+// ## Global scope
+	
+var GameMsg = node.GameMsg,
+	Player = node.Player,
+	GameMsgGenerator = node.GameMsgGenerator,
+	J = node.JSUS;
+
+//Exposing constructor
+exports.GameSession = GameSession;
+exports.GameSession.SessionManager = SessionManager;
+
+GameSession.prototype = new SessionManager();
+GameSession.prototype.constructor = GameSession; 
+
+function GameSession() {
+	SessionManager.call(this);
+	
+	this.register('player', {
+		set: function(p) {
+			node.createPlayer(p);
+		},
+		get: function() {
+			return node.player;
+		}
+	});
+	
+	this.register('game.memory', {
+		set: function(value) {
+			node.game.memory.clear(true);
+			node.game.memory.importDB(value);
+		},
+		get: function() {
+			return (node.game.memory) ? node.game.memory.fetch() : null;	
+		}
+	});
+	
+	this.register('events.history', {
+		set: function(value) {
+			node.events.history.history.clear(true);
+			node.events.history.history.importDB(value);
+		},
+		get: function() {
+			return (node.events.history) ? node.events.history.history.fetch() : null;
+		}
+	});
+	
+	
+	this.register('game.currentStepObj', {
+		set: GameSession.restoreStage
+	});
+	
+	this.register('node.env');
+	
+}
+
+
+GameSession.prototype.restoreStage = function(stage) {
+		
+	try {
+		// GOTO STATE
+		node.game.execStage(node.gameLoop.getStep(stage));
+		
+		var discard = ['LOG', 
+		               'STATECHANGE',
+		               'WINDOW_LOADED',
+		               'BEFORE_LOADING',
+		               'LOADED',
+		               'in.say.STATE',
+		               'UPDATED_PLIST',
+		               'NODEGAME_READY',
+		               'out.say.STATE',
+		               'out.set.STATE',
+		               'in.say.PLIST',
+		               'STAGEDONE', // maybe not here
+		               'out.say.HI'	               
+		];
+		
+		// RE-EMIT EVENTS
+		node.events.history.remit(node.game.state, discard);
+		node.info('game stage restored');
+		return true;
+	}
+	catch(e) {
+		node.err('could not restore game stage. An error has occurred: ' + e);
+		return false;
+	}
+
+};
+
+
+/// Session Manager
+
+function SessionManager() {
+	this.session = {};
+}
+
+SessionManager.getVariable = function(p) {
+	J.getNestedValue(p, node);
+};
+
+SessionManager.setVariable = function(p, value) {
+	J.setNestedValue(p, value, node);
+};
+
+SessionManager.prototype.register = function(path, options) {
+	if (!path) {
+		node.err('cannot add an empty path to session');
+		return false;
+	}
+	
+	this.session[path] = {
+			
+		get: (options && options.get) ? options.get
+									  : function() {
+										  return J.getNestedValue(path, node);
+									  },
+									  
+		set: (options && options.set) ? options.set 
+									  : function(value) {
+										  J.setNestedValue(path, value, node);
+									  }
+		
+	};
+	
+	return true;
+};
+
+SessionManager.prototype.unregister = function(path) {
+	if (!path) {
+		node.err('cannot delete an empty path from session');
+		return false;
+	}
+	if (!this.session[path]) {
+		node.err(path + ' is not registered in the session');
+		return false;
+	}
+	
+	delete this.session[path];	
+	return true;
+};
+
+SessionManager.prototype.get = function(path) {
+	var session = {};
+	
+	if (path) {
+		 return (this.session[path]) ? this.session[path].get() : undefined;
+	}
+	else {
+		for (path in this.session) {
+			if (this.session.hasOwnProperty(path)) {
+				session[path] = this.session[path].get();
+			}
+		}
+
+		return session;
+	}
+};
+
+SessionManager.prototype.save = function() {
+	var session = {};
+	for (var path in this.session) {
+		if (this.session.hasOwnProperty(path)) {
+			session[path] = {
+					value: this.session[path].get(),
+					get: this.session[path].get,
+					set: this.session[path].set
+			};
+		}
+	}
+	return session;
+};
+
+SessionManager.prototype.load = function(session) {
+	for (var i in session) {
+		if (session.hasOwnProperty(i)) {
+			this.register(i, session[i]);
+		}
+	}
+};
+
+SessionManager.prototype.clear = function() {
+	this.session = {};
+};
+
+SessionManager.prototype.restore = function (sessionObj) {
+	if (!sessionObj) {
+		node.err('cannot restore empty session object');
+		return ;
+	}
+	
+	for (var i in sessionObj) {
+		if (sessionObj.hasOwnProperty(i)) {
+			sessionObj[i].set(sessionObj[i].value);
+		}
+	}
+	
+	return true;
+};
+
+SessionManager.prototype.store = function() {
+	//node.store(node.socket.id, this.get());
+};
+
+SessionManager.prototype.store = function() {
+	//node.store(node.socket.id, this.get());
+};
+
+// Helping functions
+
+//function isReference(value) {
+//	var type = typeof(value);
+//	if ('function' === type) return true;
+//	if ('object' === type) return true;
+//	return false;
+//}
+
+
+})(
+	'undefined' != typeof node ? node : module.exports,
+	'undefined' != typeof node ? node : module.parent.exports
+);
+
+/**
+ * # GroupManager
+ * 
+ * Copyright(c) 2012 Stefano Balietti
+ * MIT Licensed 
+ * 
+ * `nodeGame` group manager
+ * 
+ * ---
+ * 
+ */
+(function (exports, node) {
+	
+// ## Global scope
+	var J = node.JSUS;
+
+	exports.GroupManager = GroupManager;
+
+    function GroupManager() {
+        // TODO GroupManager
+    }
+
+    // Here follows previous implementation of GroupManager, called RMatcher - scarcely commented.
+    // RMatcher is not the same as a GroupManager, but does something very useful:
+    // It assigns elements to groups based on a set of preferences
+
+    // elements: what you want in the group
+    // pools: array of array. it is set of preferences (elements from the first array will be used first
+
+    // Groups.rowLimit determines how many unique elements per row
+
+
+
+    exports.RMatcher = RMatcher;
+
+    //J = require('nodegame-client').JSUS;
+
+    function RMatcher (options) {
+        this.groups = [];
+        this.maxIteration = 10;
+        this.doneCounter = 0;
+    }
+
+    RMatcher.prototype.init = function (elements, pools) {
+        var i, g;
+        for (i = 0; i < elements.length; i++) {
+            g = new Group();
+            g.init(elements[i], pools[i]);
+            this.addGroup(g);
+        }
+        this.options = {
+            elements: elements,
+            pools: pools
+        };
+    };
+
+    RMatcher.prototype.addGroup = function (group) {
+        if (!group) return;
+        this.groups.push(group);
+    };
+
+    RMatcher.prototype.match = function() {
+        var i;
+        // Do first match
+        for (i = 0 ; i < this.groups.length ; i++) {
+            this.groups[i].match();
+            if (this.groups[i].matches.done) {
+                this.doneCounter++;
+            }
+        }
+
+        if (!this.allGroupsDone()) {
+            this.assignLeftOvers();
+        }
+
+        if (!this.allGroupsDone()) {
+            this.switchBetweenGroups();
+        }
+
+        return J.map(this.groups, function (g) { return g.matched; });
+    };
+
+    RMatcher.prototype.invertMatched = function() {
+
+        var tmp, elements = [], inverted = [];
+        J.each(this.groups, function(g) {
+            elements = elements.concat(g.elements);
+            tmp = g.invertMatched();
+            for (var i = 0; i < tmp.length; i++) {
+                inverted[i] = (inverted[i] || []).concat(tmp[i]);
+            }
+        });
+
+        return { 
+            elements: elements,
+            inverted: inverted
+        };
+    };
+
+
+    RMatcher.prototype.allGroupsDone = function() {
+        return this.doneCounter === this.groups.length;
+    };
+
+    RMatcher.prototype.tryOtherLeftOvers = function (g) {
+        var group, groupId;
+        var order = J.seq(0, (this.groups.length-1));
+        order = J.shuffle(order);
+        for (var i = 0 ; i < order.length ; i++) {
+            groupId = order[i];
+            if (groupId === g) continue;
+            group = this.groups[groupId];
+            leftOver = [];
+            if (group.leftOver.length) {
+                group.leftOver = this.groups[g].matchBatch(group.leftOver);
+
+                if (this.groups[g].matches.done) {
+                    this.doneCounter++;
+                    return true;
+                }
+            }
+
+        }
+    };
+
+    RMatcher.prototype.assignLeftOvers = function() {
+        var g, i;
+        for (i = 0 ; i < this.groups.length ; i++) {
+            g = this.groups[i];
+            // Group is full
+            if (!g.matches.done) {
+                this.tryOtherLeftOvers(i);
+            }
+
+        }
+    };
+
+    RMatcher.prototype.collectLeftOver = function() {
+        return J.map(this.groups, function(g) { return g.leftOver; });
+    };
+
+
+    RMatcher.prototype.switchFromGroup = function (fromGroup, toGroup, fromRow, leftOvers) {
+        var toRow, j, n, x, h, switched;
+        for (toRow = 0; toRow < fromGroup.elements.length; toRow++) {
+
+            for (j = 0; j < leftOvers.length; j++) {
+                for (n = 0; n < leftOvers[j].length; n++) {
+
+                    x = leftOvers[j][n]; // leftover n from group j
+
+                    if (fromGroup.canSwitchIn(x, toRow)) {
+                        for (h = 0 ; h < fromGroup.matched[toRow].length; h++) {
+                            switched = fromGroup.matched[toRow][h];
+
+                            if (toGroup.canAdd(switched, fromRow)) {
+                                fromGroup.matched[toRow][h] = x;
+                                toGroup.addToRow(switched, fromRow);
+                                leftOvers[j].splice(n,1);
+
+                                if (toGroup.matches.done) {
+
+
+//								console.log('is done')
+//								console.log(toGroup);
+//								console.log('is done')
+
+                                    this.doneCounter++;
+                                }
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    };
+
+    /**
+     *
+     * @param {integer} g Group index
+     * @param {integer} row Row index
+     */
+    RMatcher.prototype.trySwitchingBetweenGroups = function (g, row) {
+        var lo = this.collectLeftOver();
+        var toGroup = this.groups[g];
+        var i, fromGroup;
+        // Tries with all, even with the same group, that is why is (g + 1)
+        for (i = (g + 1) ; i < (this.groups.length + g + 1) ; i++) {
+            fromGroup = this.groups[i % this.groups.length];
+
+            if (this.switchFromGroup(fromGroup, toGroup, row, lo)) {
+                if (toGroup.matches.done) return;
+            }
+        }
+
+        return false;
+    };
+
+
+
+    RMatcher.prototype.switchBetweenGroups = function() {
+        var i, g, j, h, diff;
+        for ( i = 0; i < this.groups.length ; i++) {
+            g = this.groups[i];
+            // Group has free elements
+            if (!g.matches.done) {
+                for ( j = 0; j < g.elements.length; j++) {
+                    diff = g.rowLimit - g.matched[j].length;
+                    if (diff) {
+                        for (h = 0 ; h < diff; h++) {
+                            this.trySwitchingBetweenGroups(i, j);
+                            if (this.allGroupsDone()) {
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    };
+
+
+////////////////// GROUP
+
+    function Group() {
+
+        this.elements = [];
+        this.matched = [];
+
+        this.leftOver = [];
+        this.pointer = 0;
+
+        this.matches = {};
+        this.matches.total = 0;
+        this.matches.requested = 0;
+        this.matches.done = false;
+
+        this.rowLimit = 3;
+
+        this.noSelf = true;
+
+        this.pool = [];
+
+        this.shuffle = true;
+        this.stretch = true;
+    }
+
+    Group.prototype.init = function (elements, pool) {
+        this.elements = elements;
+        this.pool = J.clone(pool);
+
+        for (var i = 0; i < this.pool.length; i++) {
+            if (this.stretch) {
+                this.pool[i] = J.stretch(this.pool[i], this.rowLimit);
+            }
+            if (this.shuffle) {
+                this.pool[i] = J.shuffle(this.pool[i]);
+            }
+        }
+
+        if (!elements.length) {
+            this.matches.done = true;
+        }
+        else {
+            for (i = 0 ; i < elements.length ; i++) {
+                this.matched[i] = [];
+            }
+        }
+
+        this.matches.requested = this.elements.length * this.rowLimit;
+    };
+
+
+    /**
+     * The same as canAdd, but does not consider row limit
+     */
+    Group.prototype.canSwitchIn = function (x, row) {
+        // Element already matched
+        if (J.in_array(x, this.matched[row])) return false;
+        // No self
+        if (this.noSelf && this.elements[row] === x) return false;
+
+        return true;
+    };
+
+
+    Group.prototype.canAdd = function (x, row) {
+        // Row limit reached
+        if (this.matched[row].length >= this.rowLimit) return false;
+
+        return this.canSwitchIn(x, row);
+    };
+
+    Group.prototype.shouldSwitch = function (x, fromRow) {
+        if (!this.leftOver.length) return false;
+        if (this.matched.length < 2) return false;
+//	var actualLeftOver = this.leftOver.length;
+        return true;
+
+    };
+
+// If there is a hole, not in the last position, the algorithm fails
+    Group.prototype.switchIt = function () {
+
+        for (var i = 0; i < this.elements.length ; i++) {
+            if (this.matched[i].length < this.rowLimit) {
+                this.completeRow(i);
+            }
+        }
+
+    };
+
+    Group.prototype.completeRow = function (row, leftOver) {
+        leftOver = leftOver || this.leftOver;
+        var clone = leftOver.slice(0);
+        for (var i = 0 ; i < clone.length; i++) {
+            for (var j = 0 ; j < this.elements.length; j++) {
+                if (this.switchItInRow(clone[i], j, row)){
+                    leftOver.splice(i,1);
+                    return true;
+                }
+                this.updatePointer();
+            }
+        }
+        return false;
+    };
+
+
+    Group.prototype.switchItInRow = function (x, toRow, fromRow) {
+        if (!this.canSwitchIn(x, toRow)) {
+            //console.log('cannot switch ' + x + ' ' + toRow)
+            return false;
+        }
+        //console.log('can switch: ' + x + ' ' + toRow + ' from ' + fromRow)
+        // Check if we can insert any of the element of the 'toRow'
+        // inside the 'toRow'
+        for (var i = 0 ; i < this.matched[toRow].length; i++) {
+            var switched = this.matched[toRow][i];
+            if (this.canAdd(switched, fromRow)) {
+                this.matched[toRow][i] = x;
+                this.addToRow(switched, fromRow);
+                return true;
+            }
+        }
+
+        return false;
+    };
+
+    Group.prototype.addToRow = function(x, row) {
+        this.matched[row].push(x);
+        this.matches.total++;
+        if (this.matches.total === this.matches.requested) {
+            this.matches.done = true;
+        }
+    };
+
+    Group.prototype.addIt = function(x) {
+        var counter = 0, added = false;
+        while (counter < this.elements.length && !added) {
+            if (this.canAdd(x, this.pointer)) {
+                this.addToRow(x, this.pointer);
+                added = true;
+            }
+            this.updatePointer();
+            counter++;
+        }
+        return added;
+    };
+
+
+    Group.prototype.matchBatch = function (pool) {
+        var leftOver = [];
+        for (var i = 0 ; i < pool.length ; i++) {
+            if (this.matches.done || !this.addIt(pool[i])) {
+                // if we could not add it as a match, it becomes leftover
+                leftOver.push(pool[i]);
+            }
+        }
+        return leftOver;
+    };
+
+    Group.prototype.match = function (pool) {
+        pool = pool || this.pool;
+//	console.log('matching pool');
+//	console.log(pool)
+        if (!J.isArray(pool)) {
+            pool = [pool];
+        }
+        // Loop through the pools: elements in lower
+        // indexes-pools have more chances to be used
+        var leftOver;
+        for (var i = 0 ; i < pool.length ; i++) {
+            leftOver = this.matchBatch(pool[i]);
+            if (leftOver.length) {
+                this.leftOver = this.leftOver.concat(leftOver);
+            }
+        }
+
+        if (this.shouldSwitch()) {
+            this.switchIt();
+        }
+    };
+
+    Group.prototype.updatePointer = function () {
+        this.pointer = (this.pointer + 1) % this.elements.length;
+    };
+
+    Group.prototype.summary = function() {
+        console.log('elements: ', this.elements);
+        console.log('pool: ', this.pool);
+        console.log('left over: ', this.leftOver);
+        console.log('hits: ' + this.matches.total + '/' + this.matches.requested);
+        console.log('matched: ', this.matched);
+    };
+
+    Group.prototype.invertMatched = function () {
+        return J.transpose(this.matched);
+    };
+
+    // Testing functions
+
+    var numbers = [1,2,3,4,5,6,7,8,9];
+
+    function getElements() {
+
+        var out = [],
+            n = J.shuffle(numbers);
+        out.push(n.splice(0, J.randomInt(0,n.length)));
+        out.push(n.splice(0, J.randomInt(0,n.length)));
+        out.push(n);
+
+        return J.shuffle(out);
+    }
+
+
+
+    function getPools() {
+        var n = J.shuffle(numbers);
+        out = [];
+
+        var A = n.splice(0, J.randomInt(0, (n.length / 2)));
+        var B = n.splice(0, J.randomInt(0, (n.length / 2)));
+        var C = n;
+
+        var A_pub = A.splice(0, J.randomInt(0, A.length));
+        A = J.shuffle([A_pub, A]);
+
+        var B_pub = B.splice(0, J.randomInt(0, B.length));
+        B = J.shuffle([B_pub, B]);
+
+        var C_pub = C.splice(0, J.randomInt(0, C.length));
+        C = J.shuffle([C_pub, C]);
+
+        return J.shuffle([A,B,C]);
+    }
+//console.log(getElements())
+//console.log(getPools())
+
+
+
+
+
+    function simulateMatch(N) {
+
+        for (var i = 0 ; i < N ; i++) {
+
+            var rm = new RMatcher(),
+                elements = getElements(),
+                pools = getPools();
+
+//		console.log('NN ' , numbers);
+//		console.log(elements);
+//		console.log(pools)
+            rm.init(elements, pools);
+
+            var matched = rm.match();
+
+            if (!rm.allGroupsDone()) {
+                console.log('ERROR');
+                console.log(rm.options.elements);
+                console.log(rm.options.pools);
+                console.log(matched);
+            }
+
+            for (var j = 0; j < rm.groups.length; j++) {
+                var g = rm.groups[j];
+                for (var h = 0; h < g.elements.length; h++) {
+                    if (g.matched[h].length !== g.rowLimit) {
+                        console.log('Wrong match: ' +  h);
+
+                        console.log(rm.options.elements);
+                        console.log(rm.options.pools);
+                        console.log(matched);
+                    }
+                }
+            }
+        }
+
+    }
+
+//simulateMatch(1000000000);
+
+//var myElements = [ [ 1, 5], [ 6, 9 ], [ 2, 3, 4, 7, 8 ] ];
+//var myPools = [ [ [ ], [ 1,  5, 6, 7] ], [ [4], [ 3, 9] ], [ [], [ 2, 8] ] ];
+
+//4.07A 25
+//4.77C 25
+//4.37B 25
+//5.13B 25 [08 R_16]
+//0.83A 25 [09 R_7]
+//3.93A 25 [09 R_23]
+//1.37A 25 [07 R_21]
+//3.30C 25
+//4.40B 25
+//
+//25
+//
+//389546331863136068
+//B
+//
+//// submissions in r 26
+//
+//3.73A 26 [05 R_25]
+//2.40C 26
+//undefinedC 26 [05 R_25]
+//4.37C 26 [06 R_19]
+//6.07A 26 [06 R_19]
+//undefinedB 26 [06 R_18]
+//4.33C 26 [05 R_25]
+//undefinedC 26 [08 R_19]
+//4.40B 26
+//
+//
+//26
+//
+//19868497151402574894
+//A
+//
+//27
+//
+//5688413461195617580
+//C
+//20961392604176231
+//B
+
+
+
+
+
+//20961392604176200	SUB	A	1351591619837
+//19868497151402600000	SUB	A	1351591620386
+//5688413461195620000	SUB	A	1351591652731
+//2019166870553500000	SUB	B	1351591653043
+//389546331863136000	SUB	B	1351591653803
+//1886985572967670000	SUB	C	1351591654603
+//762387587655923000	SUB	C	1351591654648
+//1757870795266120000	SUB	B	1351591655960
+//766044637969952000	SUB	A	1351591656253
+
+//var myElements = [ [ 3, 5 ], [ 8, 9, 1, 7, 6 ], [ 2, 4 ] ];
+//var myPools = [ [ [ 6 ], [ 9, 7 ] ], [ [], [ 8, 1, 5, 4 ] ], [ [], [ 2, 3 ] ] ];
+
+//var myElements = [ [ '13988427821680113598', '102698780807709949' ],
+//  [],
+//  [ '15501781841528279951' ] ]
+//
+//var myPools = [ [ [ '13988427821680113598', '102698780807709949' ] ],
+//  [ [] ],
+//   [ [ '15501781841528279951' ] ] ]
+//
+//
+//var myRM = new RMatcher();
+//myRM.init(myElements, myPools);
+//
+//var myMatch = myRM.match();
+//
+//
+//for (var j = 0; j < myRM.groups.length; j++) {
+//	var g = myRM.groups[j];
+//	for (var h = 0; h < g.elements.length; h++) {
+//		if (g.matched[h].length !== g.rowLimit) {
+//			console.log('Wrong match: ' + j + '-' + h);
+//
+//			console.log(myRM.options.elements);
+//			console.log(myRM.options.pools);
+////			console.log(matched);
+//		}
+//	}
+//}
+
+//if (!myRM.allGroupsDone()) {
+//	console.log('ERROR')
+//	console.log(myElements);
+//	console.log(myPools);
+//	console.log(myMatch);
+//
+//	console.log('---')
+//	J.each(myRM.groups, function(g) {
+//		console.log(g.pool);
+//	});
+//}
+
+//console.log(myElements);
+//console.log(myPools);
+//console.log('match')
+//console.log(myMatch);
+
+//console.log(myRM.invertMatched());
+//console.log(J.transpose(myMatch));
+//
+//console.log(myRM.doneCounter);
+
+//var poolA = [ [1, 2], [3, 4], ];
+//var elementsA = [7, 1, 2, 4];
+//
+//var poolB = [ [5], [6], ];
+//var elementsB = [3 , 8];
+//
+//var poolC = [ [7, 8, 9] ];
+//var elementsC = [9, 5, 6, ];
+//
+//var A, B, C;
+//
+//A = new Group();
+//A.init(elementsA, poolA);
+//
+//B = new Group();
+//B.init(elementsB, poolB);
+//
+//C = new Group();
+//C.init(elementsC, poolC);
+//
+//
+//rm.addGroup(A);
+//rm.addGroup(B);
+//rm.addGroup(C);
+//
+//rm.match();
+//
+
+//  [ [ [ 2, 1, 4 ], [ 2, 3, 4 ], [ 1, 4, 3 ], [ 1, 2, 3 ] ],
+//  [ [ 5, 6, 9 ], [ 5, 6, 7 ] ],
+//  [ [ 8, 6, 5 ], [ 9, 8, 7 ], [ 9, 7, 8 ] ] ]
+
+
+//console.log(rm.allGroupsDone())
+
+//console.log(g.elements);
+//console.log(g.matched);
+
+
+
+
+
+// ## Closure	
+})(
+	'undefined' != typeof node ? node : module.exports,
+	'undefined' != typeof node ? node : module.parent.exports
+);
+
+/**
+ * # RoleMapper
+ * 
+ * Copyright(c) 2013 Stefano Balietti
+ * MIT Licensed 
+ * 
+ * `nodeGame` manager of player ids and aliases
+ * 
+ * ---
+ * 
+ */
+(function (exports, node) {
+	
+// ## Global scope
+	var J = node.JSUS;
+
+	exports.RoleMapper = RoleMapper;
+
+    function RoleMapper() {
+        // TODO RoleMapper
+    }
+
+
+// ## Closure
+})(
+	'undefined' != typeof node ? node : module.exports,
+	'undefined' != typeof node ? node : module.parent.exports
+);
+
 /**
  * # nodeGame
  * 
@@ -9213,28 +12124,16 @@ Game.prototype.isReady = function() {
  * ---
  * 
  */
-(function (node) {
+(function (exports, node) {
 		
-	var EventEmitter 		= node.EventEmitter,
-		GameSocketClient 	= node.GameSocketClient,
-		GameState 			= node.GameState,
-		GameMsg 			= node.GameMsg,
-		Game 				= node.Game,
-		Player 				= node.Player,
-		GameSession 		= node.GameSession,
-		J					= node.JSUS;
-
-	node.actions 	= GameMsg.actions;
-	node.IN 		= GameMsg.IN;
-	node.OUT 		= GameMsg.OUT;
-	node.targets 	= GameMsg.targets;		
-	node.states 	= GameState.iss;
-	
-// <!-- object commented in index.js -->
-	node.events = new EventEmitter();
-	node.msg	= node.GameMsgGenerator;
-	node.socket = node.gsc = new GameSocketClient();
-	
+	var EventEmitter = node.EventEmitter,
+		Socket = node.Socket,
+		GameStage = node.GameStage,
+		GameMsg = node.GameMsg,
+		Game = node.Game,
+		Player = node.Player,
+		GameSession = node.GameSession,
+		J = node.JSUS;		
 	
 // ## Methods
 	
@@ -9257,219 +12156,111 @@ Game.prototype.isReady = function() {
 		func.apply(ctx, params);
 	};
 	
-	
+		
 /**
- * ### node.setup 
+ * ### node.createPlayer
  * 
- * Setups the nodeGame object
+ * Mixes in default properties for the player object and
+ * additional configuration variables from node.conf.player
  * 
- * Parses a configuration object, adds default and missing
- * values, and stores the results in `node.conf`.
+ * Writes the node.player object
  * 
- * See the examples folder for all available configuration options.
+ * Properties: `id`, `sid`, `ip` can never be overwritten.
  * 
- * @param {object} conf A configutation object
+ * Properties added as local configuration cannot be further
+ * modified during the game. 
+ * 
+ * Only the property `name`, can be changed.
  * 
  */
-	node.setup = node._analyzeConf = function (conf) {
-		if (!conf) {
-			node.log('Invalid configuration object found.', 'ERR');
-			return false;
-		}
+	node.createPlayer = function (player) {
 		
-		// URL
-		if (!conf.host) {
-			if ('undefined' !== typeof window) {
-				if ('undefined' !== typeof window.location) {
-					var host = window.location.href;
-				}
-			}
-			else {
-				var host = conf.url;
-			}
-			if (host) {
-				var tokens = host.split('/').slice(0,-2);
-				// url was not of the form '/channel'
-				if (tokens.length > 1) {
-					conf.host = tokens.join('/');
-				}
-			}
-		}
+		player = new Player(player);
 		
-		
-		// Add a trailing slash if missing
-		if (conf.host && conf.host.lastIndexOf('/') !== host.length) {
-			conf.host = conf.host + '/';
-		}
-		
-		// VERBOSITY
-		if ('undefined' !== typeof conf.verbosity) {
-			node.verbosity = conf.verbosity;
-		}
-		
-		
-		// Environments
-		if ('undefined' !== typeof conf.env) {
-			for (var i in conf.env) {
-				if (conf.env.hasOwnProperty(i)) {
-					node.env[i] = conf.env[i];
+		if (node.conf && node.conf.player) {			
+			var pconf = node.conf.player;
+			for (var key in pconf) {
+				if (pconf.hasOwnProperty(key)) {
+					if (J.inArray(key, ['id', 'sid', 'ip'])) {
+						continue;
+					} 
+					
+					// Cannot be overwritten properties previously 
+					// set in other sessions (recovery)
+//						if (player.hasOwnProperty(key)) {
+//							continue;
+//						}
+					if (node.support.defineProperty) {
+						Object.defineProperty(player, key, {
+					    	value: pconf[key],
+					    	enumerable: true
+						});
+					}
+					else {
+						player[key] = pconf[key];
+					}
 				}
 			}
 		}
 		
-		if (!conf.events) { conf.events = {}; };
 		
-		if ('undefined' === conf.events.history) {
-			conf.events.history = false;
+		if (node.support.defineProperty) {
+			Object.defineProperty(node, 'player', {
+		    	value: player,
+		    	enumerable: true
+			});
+		}
+		else {
+			node.player = player;
 		}
 		
-		if ('undefined' === conf.events.dumpEvents) {
-			conf.events.dumpEvents = false;
-		}
+		node.emit('PLAYER_CREATED', player);
 		
-		this.conf = conf;
-		return conf;
-	};
+		return player;
+	};	
+	
+/**
+ * ### node.connect
+ * 
+ * Establishes a connection with a nodeGame server
+ * 
+ * @param {object} conf A configuration object
+ * @param {object} game The game object
+ */		
+	node.connect = function (url) {	
+		if (node.socket.connect(url)) {
+			node.emit('NODEGAME_CONNECTED');
+		}
+	};	
 
+	
 /**
  * ### node.play
  * 
- * Establishes a connection with a socket.io server, and starts the game
+ * Starts a game
  * 
  * @param {object} conf A configuration object
  * @param {object} game The game object
  */	
-	node.connect = node.play = function (conf, game) {	
-		node.setup(conf);
+	node.play = function(game) {	
 		
-		// node.socket.connect(conf);
+		node.setup.game(game);
 		
-		node.game = new Game(game);
-		node.emit('NODEGAME_GAME_CREATED');
-		
-		// INIT the game
-		node.game.init.call(node.game);
-		node.socket.connect(conf);
-		
-		node.log('game loaded...');
-		node.log('ready.');
-	};	
-
+		node.game.start();
+	};
+	
 /**
  * ### node.replay
  * 
- * Moves the game state to 1.1.1
+ * Moves the game stage to 1.1.1
  * 
- * @param {boolean} rest TRUE, to erase the game memory before update the game state
+ * @param {boolean} rest TRUE, to erase the game memory before update the game stage
  */	
 	node.replay = function (reset) {
 		if (reset) node.game.memory.clear(true);
-		node.goto(new GameState({state: 1, step: 1, round: 1}));
-	}	
-	
-/**
- * ### node.on
- * 
- * Registers an event listener
- * 
- * Listeners registered before a game is started, e.g. in
- * the init function of the game object, will stay valid 
- * throughout the game. Listeners registered after the game 
- * is started will be removed after the game has advanced
- * to its next stage. 
- * 
- * @param {string} event The name of the event
- * @param {function} listener The callback function
- */	
-	node.on = function (event, listener) {
-		
-		if (!event) { 
-			node.err('undefined event'); 
-			return;
-		}
-		if ('function' !== typeof listener) { 
-			node.err('callback must be of time function'); 
-			return;
-		}
-		
-		// It is in the init function;
-		if (!node.game || !node.game.state || (GameState.compare(node.game.state, new GameState(), true) === 0 )) {
-			node.events.add(event, listener);
-		}
-		else {
-			node.events.addLocal(event, listener);
-		}
-	};
-
-/**
- * ### node.once
- * 
- * Registers an event listener that will be removed 
- * after its first invocation
- * 
- * @param {string} event The name of the event
- * @param {function} listener The callback function
- * 
- * @see node.on
- * @see node.off
- */		
-	node.once = function (event, listener) {
-		if (!event || !listener) return;
-		node.on(event, listener);
-		node.on(event, function(event, listener) {
-			node.events.remove(event, listener);
-		});
-	};
-	
-/**
- * ### node.off
- * 
- * Deregisters one or multiple event listeners
- * 
- * @param {string} event The name of the event
- * @param {function} listener The callback function
- * 
- * @see node.on
- * @see node.EventEmitter.remove
- */			
-	node.off = node.removeListener = function (event, func) {
-		return node.events.remove(event, func);
-	};
-
-/**
- * ### node.alias
- * 
- * Creates event listeners aliases
- * 
- * This method creates a new property to the `node.on` object named
- * after the alias. The alias can be used as a shortcut to register
- * to new listeners on the given events.
- * 
- * 
- * ```javascript
- * 	node.alias('myAlias', ['in.say.DATA', 'myEvent']);
- * 
- * 	node.on.myAlias(function(){ console.log('myEvent or in.say.DATA'); };
- * ```	
- * 
- * @param {string} alias The name of alias
- * @param {string|array} The events under which the listeners will be registered to
- */	
-	node.alias = function(alias, events) {
-		if (!alias || !events) { 
-			node.err('undefined alias or events'); 
-			return; 
-		}
-		if (!J.isArray(events)) events = [events];
-		
-		J.each(events, function(){
-			node.on[alias] = function(func) {
-				node.on(event, function(msg){
-					func.call(node.game, msg);
-				});
-			};
-		});
+		node.game.execStage(node.gameLoop.getStep("1.1.1"));
 	};	
+	
 	
 /**
  * ### node.emit
@@ -9539,6 +12330,76 @@ Game.prototype.isReady = function() {
 		node.on('in.say.DATA', listener);
 	};
 
+/**
+ * ### node.on
+ * 
+ * Registers an event listener
+ * 
+ * Listeners registered before a game is started, e.g. in
+ * the init function of the game object, will stay valid 
+ * throughout the game. Listeners registered after the game 
+ * is started will be removed after the game has advanced
+ * to its next stage. 
+ * 
+ * @param {string} event The name of the event
+ * @param {function} listener The callback function
+ */	
+	node.on = function (event, listener) {
+		
+		if (!event) { 
+			node.err('undefined event'); 
+			return;
+		}
+		if ('function' !== typeof listener) { 
+			node.err('callback must be of time function'); 
+			return;
+		}
+		
+		// It is in the init function;
+		if (!node.game || !node.game.currentStepObj || (GameStage.compare(node.game.currentStepObj, new GameStage(), true) === 0 )) {
+			node.events.add(event, listener);
+		}
+		else {
+			node.events.addLocal(event, listener);
+		}
+	};
+
+/**
+ * ### node.once
+ * 
+ * Registers an event listener that will be removed 
+ * after its first invocation
+ * 
+ * @param {string} event The name of the event
+ * @param {function} listener The callback function
+ * 
+ * @see node.on
+ * @see node.off
+ */		
+	node.once = function (event, listener) {
+		if (!event || !listener) return;
+		node.on(event, listener);
+		node.on(event, function(event, listener) {
+			node.events.remove(event, listener);
+		});
+	};
+	
+/**
+ * ### node.off
+ * 
+ * Deregisters one or multiple event listeners
+ * 
+ * @param {string} event The name of the event
+ * @param {function} listener The callback function
+ * 
+ * @see node.on
+ * @see node.EventEmitter.remove
+ */			
+	node.off = node.removeListener = function (event, func) {
+		return node.events.remove(event, func);
+	};
+
+	
 	
 /**
  * ### node.redirect
@@ -9565,7 +12426,7 @@ Game.prototype.isReady = function() {
 		if (!url || !who) return false;
 		
 		var msg = node.msg.create({
-			target: node.targets.REDIRECT,
+			target: node.target.REDIRECT,
 			data: url,
 			to: who
 		});
@@ -9573,10 +12434,375 @@ Game.prototype.isReady = function() {
 		return true;
 	};
 	
+	node.info(node.version + ' loaded');
+	
+	
+	// Creating the objects
+	// <!-- object commented in index.js -->
+	node.events = new EventEmitter();
+
+	node.msg	= node.GameMsgGenerator;	
+	
+	node.session = new GameSession();
+	
+	node.socket = node.gsc = new Socket();
+	
+	node.game = new Game();
+	
+	
+})(
+		this
+	, 	'undefined' != typeof node ? node : module.parent.exports
+);
+
+/**
+ * # Setup
+ * 
+ * Copyright(c) 2012 Stefano Balietti
+ * MIT Licensed 
+ * 
+ * `nodeGame` configuration module
+ * 
+ * ---
+ * 
+ */
+
+(function (exports, node) {
+	
+// ## Global scope
+	
+var GameMsg = node.GameMsg,
+	Player = node.Player,
+	Game = node.Game,
+	GameMsgGenerator = node.GameMsgGenerator,
+	J = node.JSUS;
+
+// TODO: check this
+var frozen = false;
+
+/**
+ * ### node.setup
+ * 
+ * Setups the nodeGame object
+ * 
+ * Configures a specific feature of nodeGame and and stores 
+ * the settings in `node.conf`.
+ * 
+ * See the examples folder for all available configuration options.
+ * 
+ * @param {string} property The feature to configure
+ * @param {mixed} options The value of the option to configure
+ * @return{boolean} TRUE, if configuration is successful
+ * 
+ * @see node.setup.register
+ * 
+ */	
+	node.setup = function(property, options) {
+		if (frozen) {
+			node.err('nodeGame configuration is frozen. No modification allowed.');
+			return false;
+		}
+		
+		if (property === 'register') {
+			node.warn('cannot setup property "register"');
+			return false;
+		}
+		
+		if (!node.setup[property]) {
+			node.warn('no such property to configure: ' + property);
+			return false;
+		}
+		
+		var result = node.setup[property].call(exports, options);
+		
+		if (property !== 'nodegame') {
+			node.conf[property] = result;
+		}
+		
+		return true;
+	};
+	
+/**
+ * ### node.setup.register
+ * 
+ * Registers a configuration function
+ * 
+ * @param {string} property The feature to configure
+ * @param {mixed} options The value of the option to configure
+ * @return{boolean} TRUE, if configuration is successful
+ * 
+ * @see node.setup
+ */	
+	node.setup.register = function(property, func) {
+		if (!property || !func) {
+			node.err('cannot register empty setup function');
+			return false;
+		}
+		
+		if (property === 'register') {
+			node.err('cannot overwrite register function');
+			return false;
+		}
+		
+		node.setup[property] = func;
+		return true;
+	};	
+
+// ## Configuration functions	
+
+// ### node.setup.nodegame
+// Runs all the registered configuration functions	
+// Matches the keys of the configuration objects with the name of the registered 
+// functions and executes them. If no match is found, the configuration function 
+// will set the default values
+	node.setup.register('nodegame', function(options) {
+		for (var i in node.setup) {
+			if (node.setup.hasOwnProperty(i)) {
+				if (i !== 'register' && i !== 'nodegame') {
+					node.conf[i] = node.setup[i].call(exports, options[i]);
+				}
+			}
+		}
+		
+		
+	});
+	
+// ### node.setup.socket	
+// Configures the socket connection to the nodegame-server
+// @see node.Socket
+// @see node.SocketFactory
+	node.setup.register('socket', function(conf) {
+		if (!conf) return;
+		node.socket.setup(conf);
+		return conf;
+	});
+
+// ### node.setup.host
+// Sets the uri of the host
+// If no value is passed, it will try to set the host from the window object
+// in the browser enviroment. 
+	node.setup.register('host', function(host) {		
+		// URL
+		if (!host) {
+			if ('undefined' !== typeof window) {
+				if ('undefined' !== typeof window.location) {
+					host = window.location.href;
+				}
+			}
+		}
+			
+		if (host) {
+			var tokens = host.split('/').slice(0,-2);
+			// url was not of the form '/channel'
+			if (tokens.length > 1) {
+				host = tokens.join('/');
+			}
+			
+			// Add a trailing slash if missing
+			if (host.lastIndexOf('/') !== host.length) {
+				host = host + '/';
+			}
+		}
+		
+		return host;
+	});
+	
+// ### node.setup.verbosity
+// Sets the verbosity level for nodegame	
+	node.setup.register('verbosity', function(level){
+		if ('undefined' !== typeof level) {
+			node.verbosity = level;
+		}
+		return level;
+	});
+	
+// ### node.setup.env	
+// Defines global variables to be stored in `node.env[myvar]`	
+	node.setup.register('env', function(conf){
+		if ('undefined' !== typeof conf) {
+			for (var i in conf) {
+				if (conf.hasOwnProperty(i)) {
+					node.env[i] = conf[i];
+				}
+			}
+		}
+		
+		return conf;
+	});
+
+// ### node.setup.events
+// Configure the EventEmitter object
+// @see node.EventEmitter
+	node.setup.register('events', function(conf){
+		conf = conf || {};
+		if ('undefined' === typeof conf.history) {
+			conf.history = false;
+		}
+		
+		if ('undefined' === typeof conf.dumpEvents) {
+			conf.dumpEvents = false;
+		}
+		
+		return conf;
+	});
+	
+// ### node.setup.window
+// Configure the node.window object, if existing
+// @see GameWindow
+	node.setup.register('window', function(conf){
+		if (!node.window) {
+			node.warn('node.window not found, cannot configure it.');
+			return;
+		}
+		conf = conf || {};
+		if ('undefined' === typeof conf.promptOnleave) {
+			conf.promptOnleave = false;
+		}
+		
+		if ('undefined' === typeof conf.noEscape) {
+			conf.noEscape = true;
+		}
+		
+		node.window.init(conf);
+		
+		return conf;
+	});
+	
+	
+// ### node.setup.game
+// Creates the `node.game` object
+// The input parameter can be either an object (function) or 
+// a stringified object (function)
+	node.setup.register('game', function(game) {
+		if (!game) return {};
+		
+		// Trying to parse the string, maybe it
+		// comes from a remote setup
+		if ('string' === typeof game) {
+			game = J.parse(game);
+			
+			if ('function' !== typeof game) {
+				node.err('Error while parsing the game object/string');
+				return false;
+			}
+		}
+		
+		if ('function' === typeof game) {
+			// creates the object
+			game = new game();
+		}
+		
+		node.game = new Game(game);
+		node.emit('NODEGAME_GAME_CREATED');
+		return node.game;
+	});
+		
+// ### node.setup.player
+// Creates the `node.player` object
+// @see node.Player
+// @see node.createPlayer
+	node.setup.register('player', node.createPlayer);
 
 
-// ## Aliases
+/**
+ * ### node.remoteSetup
+ * 
+ * Sends a setup configuration to a connected client
+ * 
+ * @param {string} property The feature to configure
+ * @param {mixed} options The value of the option to configure
+ * @param {string} to The id of the remote client to configure
+ * 
+ * @return{boolean} TRUE, if configuration is successful
+ *
+ * @see node.setup
+ */	
+	node.remoteSetup = function (property, options, to) {
+		if (!property) {
+			node.err('cannot send remote setup: empty property');
+			return false;
+		}
+		if (!to) {
+			node.err('cannot send remote setup: empty recipient');
+			return false;
+		}
+		var msg = node.msg.create({
+			target: node.target.SETUP,
+			to: to,
+			text: property,
+			data: options
+		});
+		
+		return node.socket.send(msg);
+	};
+		
 
+})(
+	'undefined' != typeof node ? node : module.exports,
+	'undefined' != typeof node ? node : module.parent.exports
+);
+
+/**
+ * # Alias
+ * 
+ * Copyright(c) 2012 Stefano Balietti
+ * MIT Licensed 
+ * 
+ * `nodeGame` aliasing module
+ * 
+ * ---
+ * 
+ */
+
+(function (exports, node) {
+	
+// ## Global scope
+	
+var GameMsg = node.GameMsg,
+	Player = node.Player,
+	GameMsgGenerator = node.GameMsgGenerator,
+	J = node.JSUS;
+
+
+//## Aliases	
+
+
+/**
+ * ### node.alias
+ * 
+ * Creates event listeners aliases
+ * 
+ * This method creates a new property to the `node.on` object named
+ * after the alias. The alias can be used as a shortcut to register
+ * to new listeners on the given events.
+ * 
+ * 
+ * ```javascript
+ * 	node.alias('myAlias', ['in.say.DATA', 'myEvent']);
+ * 
+ * 	node.on.myAlias(function(){ console.log('myEvent or in.say.DATA'); };
+ * ```	
+ * 
+ * @param {string} alias The name of alias
+ * @param {string|array} The events under which the listeners will be registered to
+ */	
+	node.alias = function(alias, events) {
+		if (!alias || !events) { 
+			node.err('undefined alias or events'); 
+			return; 
+		}
+		if (!J.isArray(events)) events = [events];
+		
+		J.each(events, function(){
+			node.on[alias] = function(func) {
+				node.on(event, function(msg){
+					func.call(node.game, msg);
+				});
+			};
+		});
+	};	
+				
+	
 /**
  *  ### node.DONE
  * 
@@ -9615,6 +12841,9 @@ Game.prototype.isReady = function() {
 // ### node.on.state	
 	node.alias('state', 'in.set.STATE');
 	
+// ### node.on.stage	
+	node.alias('stage', 'in.set.STAGE');	
+	
 // ### node.on.plist	
 	node.alias('plist', ['in.set.PLIST', 'in.say.PLIST']);
  		
@@ -9647,6 +12876,12 @@ Game.prototype.isReady = function() {
 		});
 	};
 	
+	node.onSTAGE = function(func) {
+		node.on("in.set.STAGE", function(msg) {
+			func.call(node.game, msg);
+		});
+	};
+	
 	node.onPLIST = function(func) {
 		node.on("in.set.PLIST", function(msg) {
 			func.call(node.game, msg);
@@ -9656,49 +12891,77 @@ Game.prototype.isReady = function() {
 			func.call(node.game, msg);
 		});
 	};
-	
+		
 
-// ## Extra
-	
-	node.random = {};
-	
+
+})(
+	'undefined' != typeof node ? node : module.exports,
+	'undefined' != typeof node ? node : module.parent.exports
+);
+
 /**
- * ### node.random.emit
+ * # Setup
  * 
- * Emits an event after a random time interval between 0 and maxWait 
+ * Copyright(c) 2012 Stefano Balietti
+ * MIT Licensed 
  * 
- * @param {string} event The name of the event
- * @param {number} maxWait Optional. The maximum time (in milliseconds)
- * 	to wait before emitting the event. to Defaults, 6000
- */	
+ * `nodeGame` random operation module
+ * 
+ * ---
+ * 
+ */
+
+(function (exports, node) {
+	
+// ## Global scope
+	
+var GameMsg = node.GameMsg,
+	Player = node.Player,
+	GameMsgGenerator = node.GameMsgGenerator,
+	J = node.JSUS;
+//## Extra
+
+node.random = {};
+
+/**
+* ### node.random.emit
+* 
+* Emits an event after a random time interval between 0 and maxWait 
+* 
+* @param {string} event The name of the event
+* @param {number} maxWait Optional. The maximum time (in milliseconds)
+* 	to wait before emitting the event. to Defaults, 6000
+*/	
 	node.random.emit = function (event, maxWait){
 		maxWait = maxWait || 6000;
 		setTimeout(function(event) {
 			node.emit(event);
 		}, Math.random() * maxWait, event);
 	};
-	
+
 /**
- * ### node.random.exec 
- * 
- * Executes a callback function after a random time interval between 0 and maxWait 
- * 
- * @param {function} The callback function to execute
- * @param {number} maxWait Optional. The maximum time (in milliseconds) 
- * 	to wait before executing the callback. to Defaults, 6000
- */	
+* ### node.random.exec 
+* 
+* Executes a callback function after a random time interval between 0 and maxWait 
+* 
+* @param {function} The callback function to execute
+* @param {number} maxWait Optional. The maximum time (in milliseconds) 
+* 	to wait before executing the callback. to Defaults, 6000
+*/	
 	node.random.exec = function (func, maxWait) {
 		maxWait = maxWait || 6000;
 		setTimeout(function(func) {
 			func.call();
 		}, Math.random() * maxWait, func);
-	};
-		
-	node.log(node.version + ' loaded', 'ALWAYS');
-	
-})('undefined' != typeof node ? node : module.parent.exports);
+	};	
 
-// ## Game incoming listeners
+
+})(
+	'undefined' != typeof node ? node : module.exports,
+	'undefined' != typeof node ? node : module.parent.exports
+);
+
+// # Incoming listeners
 // Incoming listeners are fired in response to incoming messages
 (function (node) {
 
@@ -9708,18 +12971,22 @@ Game.prototype.isReady = function() {
 	}
 	
 	var GameMsg = node.GameMsg,
-		GameState = node.GameState,
+		GameStage = node.GameStage,
 		PlayerList = node.PlayerList,
-		Player = node.Player;
+		Player = node.Player,
+		J = node.JSUS;
 	
-	var say = GameMsg.actions.SAY + '.',
-		set = GameMsg.actions.SET + '.',
-		get = GameMsg.actions.GET + '.',
-		IN  = GameMsg.IN;
+	var action = node.action,
+		target = node.target;
+	
+	var say = action.SAY + '.',
+		set = action.SET + '.',
+		get = action.GET + '.',
+		IN  = node.IN;
 
 	
 /**
- * ### in.say.PCONNECT
+ * ## in.say.PCONNECT
  * 
  * Adds a new player to the player list from the data contained in the message
  * 
@@ -9730,11 +12997,10 @@ Game.prototype.isReady = function() {
 		if (!msg.data) return;
 		node.game.pl.add(new Player(msg.data));
 		node.emit('UPDATED_PLIST');
-		node.game.pl.checkState();
 	});	
 	
 /**
- * ### in.say.PDISCONNECT
+ * ## in.say.PDISCONNECT
  * 
  * Removes a player from the player list based on the data contained in the message
  * 
@@ -9745,15 +13011,14 @@ Game.prototype.isReady = function() {
 		if (!msg.data) return;
 		node.game.pl.remove(msg.data.id);
 		node.emit('UPDATED_PLIST');
-		node.game.pl.checkState();
 	});	
 
 /**
- * ### in.say.MCONNECT
+ * ## in.say.MCONNECT
  * 
  * Adds a new monitor to the monitor list from the data contained in the message
  * 
- * @emit UPDATED_PLIST
+ * @emit UPDATED_MLIST
  * @see Game.ml 
  */
 	node.on( IN + say + 'MCONNECT', function (msg) {
@@ -9763,7 +13028,7 @@ Game.prototype.isReady = function() {
 	});	
 		
 /**
- * ### in.say.MDISCONNECT
+ * ## in.say.MDISCONNECT
  * 
  * Removes a monitor from the player list based on the data contained in the message
  * 
@@ -9778,11 +13043,11 @@ Game.prototype.isReady = function() {
 			
 
 /**
- * ### in.say.PLIST
+ * ## in.say.PLIST
  * 
  * Creates a new player-list object from the data contained in the message
  * 
- * @emit UPDATED_MLIST
+ * @emit UPDATED_PLIST
  * @see Game.pl 
  */
 node.on( IN + say + 'PLIST', function (msg) {
@@ -9792,7 +13057,7 @@ node.on( IN + say + 'PLIST', function (msg) {
 });	
 	
 /**
- * ### in.say.MLIST
+ * ## in.say.MLIST
  * 
  * Creates a new monitor-list object from the data contained in the message
  * 
@@ -9806,20 +13071,20 @@ node.on( IN + say + 'MLIST', function (msg) {
 });	
 	
 /**
- * ### in.get.DATA
+ * ## in.get.DATA
  * 
  * Experimental feature. Undocumented (for now)
  */ 
 node.on( IN + get + 'DATA', function (msg) {
 	if (msg.text === 'LOOP'){
-		node.socket.sendDATA(GameMsg.actions.SAY, node.game.gameLoop, msg.from, 'GAME');
+		node.socket.sendDATA(action.SAY, node.game.gameLoop, msg.from, 'GAME');
 	}
 	// <!-- We could double emit
 	// node.emit(msg.text, msg.data); -->
 });
 
 /**
- * ### in.set.STATE
+ * ## in.set.STATE
  * 
  * Adds an entry to the memory object 
  * 
@@ -9829,7 +13094,7 @@ node.on( IN + set + 'STATE', function (msg) {
 });
 
 /**
- * ### in.set.DATA
+ * ## in.set.DATA
  * 
  * Adds an entry to the memory object 
  * 
@@ -9839,49 +13104,42 @@ node.on( IN + set + 'DATA', function (msg) {
 });
 
 /**
- * ### in.say.STATE
+ * ## in.say.STAGE
  * 
- * Updates the game state or updates a player's state in
+ * Updates the game stage or updates a player's state in
  * the player-list object
  *
- * If the message is from the server, it updates the game state,
- * else the state in the player-list object from the player who
+ * If the message is from the server, it updates the game stage,
+ * else the stage in the player-list object from the player who
  * sent the message is updated 
  * 
  *  @emit UPDATED_PLIST
  *  @see Game.pl 
  */
-	node.on( IN + say + 'STATE', function (msg) {
-//		console.log('updateState: ' + msg.from + ' -- ' + new GameState(msg.data), 'DEBUG');
-//		console.log(node.game.pl.count())
-		
-		//console.log(node.socket.serverid + 'AAAAAA');
+	node.on( IN + say + 'STAGE', function (msg) {
+
 		if (node.socket.serverid && msg.from === node.socket.serverid) {
 //			console.log(node.socket.serverid + ' ---><--- ' + msg.from);
 //			console.log('NOT EXISTS');
 		}
 		
-		if (node.game.pl.exist(msg.from)) {
-			//console.log('EXIST')
-			
-			node.game.pl.updatePlayerState(msg.from, msg.data);
+		if (node.game.pl.exist(msg.from)) {			
+			node.game.pl.updatePlayerStage(msg.from, msg.data);
 			node.emit('UPDATED_PLIST');
-			node.game.pl.checkState();
+			node.game.pl.checkStage();
 		}
 		// <!-- Assume this is the server for now
 		// TODO: assign a string-id to the server -->
 		else {
-			//console.log('NOT EXISTS')
-			node.game.updateState(msg.data);
+			node.game.execStage(node.gameLoop.getStep(msg.data));
 		}
 	});
 	
 /**
- * ### in.say.REDIRECT
+ * ## in.say.REDIRECT
  * 
  * Redirects to a new page
  * 
- * @emit REDIRECTING...
  * @see node.redirect
  */
 node.on( IN + say + 'REDIRECT', function (msg) {
@@ -9890,15 +13148,59 @@ node.on( IN + say + 'REDIRECT', function (msg) {
 		node.log('window.location not found. Cannot redirect', 'err');
 		return false;
 	}
-	node.emit('REDIRECTING...', msg.data);
+
 	window.location = msg.data; 
 });	
+
+
+/**
+ * ## in.say.SETUP
+ * 
+ * Setups a features of nodegame
+ * 
+ * @see node.setup
+ */
+node.on( IN + say + 'SETUP', function (msg) {
+	if (!msg.text) return;
+	node.setup(msg.text, msg.data);
 	
+});	
+
+
+/**
+ * ## in.say.GAMECOMMAND
+ * 
+ * Setups a features of nodegame
+ * 
+ * @see node.setup
+ */
+node.on( IN + say + 'GAMECOMMAND', function (msg) {
+	if (!msg.text) return;
+	if (!node.gamecommand[msg.text]) return;
+	node.emit('NODEGAME_GAMECOMMAND_' + msg.text,msg.data);
+});	
+
+/**
+ * ## in.say.JOIN
+ * 
+ * Invites the client to leave the current channel and joining another one
+ * 
+ * It differs from `REDIRECT` messages because the client 
+ * does not leave the page, it just switches channel. 
+ * 
+ */
+node.on( IN + say + 'JOIN', function (msg) {
+	if (!msg.text) return;
+	//node.socket.disconnect();
+	node.connect(msg.text);
+});	
+
 	node.log('incoming listeners added');
 	
 })('undefined' !== typeof node ? node : module.parent.exports); 
 // <!-- ends incoming listener -->
-// ## Game outgoing listeners
+// # Outgoing listeners
+// Outgoing listeners are fired when messages are sent
 
 (function (node) {
 
@@ -9910,31 +13212,29 @@ node.on( IN + say + 'REDIRECT', function (msg) {
 	var GameMsg = node.GameMsg,
 		GameState = node.GameState;
 	
-	var say = GameMsg.actions.SAY + '.',
-		set = GameMsg.actions.SET + '.',
-		get = GameMsg.actions.GET + '.',
-		OUT  = GameMsg.OUT;
+	var action = node.action,
+		target = node.target;
 	
-/** 
- * ### out.say.HI
+	var say = action.SAY + '.',
+		set = action.SET + '.',
+		get = action.GET + '.',
+		OUT  = node.OUT;
+	
+/**
+ * ## out.say.STAGE
  * 
- * Updates the game-state of the game upon connection to a server
+ * Sends out a STAGE message to the specified recipient
+ * 
+ * TODO: check with the server 
+ * The message is for informative purpose
  * 
  */
-node.on( OUT + say + 'HI', function() {
-	// Enter the first state
-	if (node.game.auto_step) {
-		node.game.updateState(node.game.next());
-	}
-	else {
-		// The game is ready to step when necessary;
-		node.game.state.is = GameState.iss.LOADED;
-		node.socket.sendSTATE(GameMsg.actions.SAY, node.game.state);
-	}
-});
-
+node.on( OUT + say + 'STAGE', function (stage, to) {
+	node.socket.sendSTAGE(action.SAY, stage, to);
+});	
+	
 /**
- * ### out.say.STATE
+ * ## out.say.STATE
  * 
  * Sends out a STATE message to the specified recipient
  * 
@@ -9943,11 +13243,11 @@ node.on( OUT + say + 'HI', function() {
  * 
  */
 node.on( OUT + say + 'STATE', function (state, to) {
-	node.socket.sendSTATE(GameMsg.actions.SAY, state, to);
+	node.socket.sendSTATE(action.SAY, state, to);
 });	
 
 /**
- * ### out.say.TXT
+ * ## out.say.TXT
  * 
  * Sends out a TXT message to the specified recipient
  */
@@ -9956,16 +13256,16 @@ node.on( OUT + say + 'TXT', function (text, to) {
 });
 
 /**
- * ### out.say.DATA
+ * ## out.say.DATA
  * 
  * Sends out a DATA message to the specified recipient
  */
 node.on( OUT + say + 'DATA', function (data, to, key) {
-	node.socket.sendDATA(GameMsg.actions.SAY, data, to, key);
+	node.socket.sendDATA(action.SAY, data, to, key);
 });
 
 /**
- * ### out.set.STATE
+ * ## out.set.STATE
  * 
  * Sends out a STATE message to the specified recipient
  * 
@@ -9974,42 +13274,42 @@ node.on( OUT + say + 'DATA', function (data, to, key) {
  * of the sender
  */
 node.on( OUT + set + 'STATE', function (state, to) {
-	node.socket.sendSTATE(GameMsg.actions.SET, state, to);
+	node.socket.sendSTATE(action.SET, state, to);
 });
 
 /**
- * ### out.set.DATA
+ * ## out.set.DATA
  * 
  * Sends out a DATA message to the specified recipient
  * 
  * The sent data will be stored in the memory of the recipient
  * 
- * 	@see Game.memory
+ * @see node.GameDB
  */
 node.on( OUT + set + 'DATA', function (data, to, key) {
-	node.socket.sendDATA(GameMsg.actions.SET, data, to, key);
+	node.socket.sendDATA(action.SET, data, to, key);
 });
 
 /**
- * ### out.get.DATA
+ * ## out.get.DATA
  * 
  * Issues a DATA request
  * 
  * Experimental. Undocumented (for now)
  */
 node.on( OUT + get + 'DATA', function (data, to, key) {
-	node.socket.sendDATA(GameMsg.actions.GET, data, to, data);
+	node.socket.sendDATA(action.GET, data, to, data);
 });
 	
 node.log('outgoing listeners added');
 
 })('undefined' !== typeof node ? node : module.parent.exports); 
 // <!-- ends outgoing listener -->
-// ## Game internal listeners
+// # Internal listeners
 
 // Internal listeners are not directly associated to messages,
 // but they are usually responding to internal nodeGame events, 
-// such as progressing in the loading chain, or finishing a game state 
+// such as progressing in the loading chain, or finishing a game stage 
 
 (function (node) {
 
@@ -10018,24 +13318,27 @@ node.log('outgoing listeners added');
 		return false;
 	}
 	
-	var GameMsg = node.GameMsg,
-		GameState = node.GameState;
+	var action = node.action,
+		target = node.target;
 	
-	var say = GameMsg.actions.SAY + '.',
-		set = GameMsg.actions.SET + '.',
-		get = GameMsg.actions.GET + '.',
-		IN  = GameMsg.IN,
-		OUT = GameMsg.OUT;
+	var GameMsg = node.GameMsg,
+		GameStage = node.GameStage,
+		Game = node.Game;
+	
+	var say = action.SAY + '.',
+		set = action.SET + '.',
+		get = action.GET + '.',
+		IN  = node.IN,
+		OUT = node.OUT;
 	
 /**
- * ### STATEDONE
+ * ## STAGEDONE
  * 
- * Fired when all the players in the player list have their
- * state set to DONE
+ * Fired when all the players in the player list are DONE
  */ 
-node.on('STATEDONE', function() {
+node.on('STAGEDONE', function() {
 	
-	// In single player mode we ignore when all the players have completed the state
+	// In single player mode we ignore when all the players have completed the stage
 	if (node.game.solo_mode) {
 		return;
 	}
@@ -10043,18 +13346,18 @@ node.on('STATEDONE', function() {
 	// <!-- If we go auto -->
 	if (node.game.auto_step && !node.game.observer) {
 		node.log('We play AUTO', 'DEBUG');
-		var morePlayers = ('undefined' !== node.game.minPlayers) ? node.game.minPlayers - node.game.pl.count() : 0 ;
+		var morePlayers = ('undefined' !== typeof node.game.minPlayers) ? node.game.minPlayers - node.game.pl.count() : 0 ;
 		node.log('Additional player required: ' + morePlayers > 0 ? MorePlayers : 0, 'DEBUG');
 		
 		if (morePlayers > 0) {
-			node.emit('OUT.say.TXT', morePlayers + ' player/s still needed to play the game');
+			node.emit(OUT + say + target.TXT, morePlayers + ' player/s still needed to play the game');
 			node.log(morePlayers + ' player/s still needed to play the game');
 		}
 		// TODO: differentiate between before the game starts and during the game
 		else {
-			node.emit('OUT.say.TXT', node.game.minPlayers + ' players ready. Game can proceed');
+			node.emit(OUT + say + target.TXT, node.game.minPlayers + ' players ready. Game can proceed');
 			node.log(node.game.pl.count() + ' players ready. Game can proceed');
-			node.game.updateState(node.game.next());
+			node.game.step();
 		}
 	}
 	else {
@@ -10063,9 +13366,9 @@ node.on('STATEDONE', function() {
 });
 
 /**
- * ### DONE
+ * ## DONE
  * 
- * Updates and publishes that the client has successfully terminated a state 
+ * Updates and publishes that the client has successfully terminated a stage 
  * 
  * If a DONE handler is defined in the game-loop, it will executes it before
  * continuing with further operations. In case it returns FALSE, the update
@@ -10076,16 +13379,17 @@ node.on('STATEDONE', function() {
  */
 node.on('DONE', function(p1, p2, p3) {
 	
-	// Execute done handler before updatating state
+	// Execute done handler before updating stage
 	var ok = true;
-	var done = node.game.gameLoop.getAllParams(node.game.state).done;
+	
+	var done = node.game.currentStepObj.done;
 	
 	if (done) ok = done.call(node.game, p1, p2, p3);
 	if (!ok) return;
-	node.game.state.is = GameState.iss.DONE;
+	node.game.updateStageLevel(Game.stageLevels.DONE)
 	
 	// Call all the functions that want to do 
-	// something before changing state
+	// something before changing stage
 	node.emit('BEFORE_DONE');
 	
 	if (node.game.auto_wait) {
@@ -10093,29 +13397,18 @@ node.on('DONE', function(p1, p2, p3) {
 			node.emit('WAITING...');
 		}
 	}
-	node.game.publishState();
+	node.game.publishUpdate();
 	
 	if (node.game.solo_mode) {
-		node.game.updateState(node.game.next());
+		node.game.step();
 	}
 });
 
 /**
- * ### PAUSE
- * 
- * Sets the game to PAUSE and publishes the state
- * 
- */
-node.on('PAUSE', function(msg) {
-	node.game.state.paused = true;
-	node.game.publishState();
-});
-
-/**
- * ### WINDOW_LOADED
+ * ## WINDOW_LOADED
  * 
  * Checks if the game is ready, and if so fires the LOADED event
- * 
+ *
  * @emit BEFORE_LOADING
  * @emit LOADED
  */
@@ -10124,10 +13417,10 @@ node.on('WINDOW_LOADED', function() {
 });
 
 /**
- * ### GAME_LOADED
+ * ## GAME_LOADED
  * 
  * Checks if the window was loaded, and if so fires the LOADED event
- * 
+ *
  * @emit BEFORE_LOADING
  * @emit LOADED
  */
@@ -10136,19 +13429,41 @@ node.on('GAME_LOADED', function() {
 });
 
 /**
- * ### LOADED
+ * ## LOADED
  * 
  * 
  */
 node.on('LOADED', function() {
 	node.emit('BEFORE_LOADING');
-	node.game.state.is =  GameState.iss.PLAYING;
+	node.game.updateStageLevel('PLAYING');
 	//TODO: the number of messages to emit to inform other players
-	// about its own state should be controlled. Observer is 0 
-	//node.game.publishState();
+	// about its own stage should be controlled. Observer is 0 
+	//node.game.publishUpdate();
 	node.socket.clearBuffer();
 	
 });
+
+
+/**
+ * ## LOADED
+ * 
+ * 
+ */
+node.on('NODEGAME_GAMECOMMAND_' + node.gamecommand.start, function(options) {
+	
+	
+	node.emit('BEFORE_GAMECOMMAND', node.gamecommand.start, options);
+	
+	if (node.game.currentStepObj.stage !== 0) {
+		node.err('Game already started. Use restart if you want to start the game again');
+		return;
+	}
+	
+	node.game.start();
+	
+	
+});
+
 
 node.log('internal listeners added');
 	
@@ -10170,9 +13485,9 @@ node.log('internal listeners added');
 	
 // ## Global scope
 	
-exports.GameTimer = GameTimer;
-
-JSUS = node.JSUS;
+	exports.GameTimer = GameTimer;
+	
+	var JSUS = node.JSUS;
 
 /**
  * ### GameTimer status levels
@@ -10180,12 +13495,12 @@ JSUS = node.JSUS;
  * 
  * 	@see GameTimer.status
  */
-GameTimer.STOPPED = -5
-GameTimer.PAUSED = -3;
-GameTimer.UNINITIALIZED = -1;
-GameTimer.INITIALIZED = 0;
-GameTimer.LOADING = 3;
-GameTimer.RUNNING = 5;
+	GameTimer.STOPPED = -5
+	GameTimer.PAUSED = -3;
+	GameTimer.UNINITIALIZED = -1;
+	GameTimer.INITIALIZED = 0;
+	GameTimer.LOADING = 3;
+	GameTimer.RUNNING = 5;
 	
 /**
  * ## GameTimer constructor
@@ -10819,378 +14134,6 @@ TriggerManager.prototype.size = function () {
 	
 
 // ## Closure	
-})(
-	('undefined' !== typeof node) ? node : module.exports
-  , ('undefined' !== typeof node) ? node : module.parent.exports
-);
-/**
- * # GameSession
- * 
- * Copyright(c) 2012 Stefano Balietti
- * MIT Licensed 
- * 
- * Addon to save and load the nodeGame session in the browser
- * 
- *  @see node.store
- *  
- * ---
- * 
- */
-
-(function (node) {
-	
-	// ## Global scope
-	
-	var JSUS = node.JSUS,
-		NDDB = node.NDDB,
-		store = node.store;
-
-	var prefix = 'nodegame_';
-
-/**
- * ## node.session
- *
- * Loads a nodeGame session
- *
- * If no parameter is passed it will return the current session.
- * Else, it will try to load a session with the given id. 
- *
- * This method interact with the `node.store` object that provides
- * lower level capabilities to write to a persistent support (e.g. 
- * the browser localStorate).
- * 
- * @param {number} sid Optional. The session id to load
- * @return {object} The session object
- * 
- *  @see node.store
- * 
- */
-	node.session = function (sid) {
-				
-		// Returns the current session
-		if (!sid) {
-			var session = {
-					id: 	node.gsc.session,
-					player: node.player,
-					memory: node.game.memory,
-					state: 	node.game.state,
-					game: 	node.game.name,
-					history: undefined
-			};
-			
-			// If we saved the emitted events, add them to the
-			// session object
-			if (node.events.history || node.events.history.length) {
-				session.history = node.events.history.fetch();
-			}
-			
-			return session;
-		}
-		
-		if (!node.session.isEnabled()) {
-			return false;
-		}
-		
-		// Tries to return a stored session
-		return node.store(prefix + sid);
-	};
-
-/**
- * ## node.session.isEnabled
- * 
- * TRUE, if the session can be saved to a persistent support
- * 
- */	
-	node.session.isEnabled = function() {
-		return (node.store) ? node.store.isPersistent() : false;
-	};
-	
-
-/**
- * ## node.session.store
- * 
- * Stores the current session to a persistent medium
- * 
- * @return {boolean} TRUE, if session saving was successful
- */	
-	node.session.store = function() {
-		if (!node.session.isEnabled()) {
-			node.log('Could not save the session');
-			return false;
-		}
-		
-		var session = node.session();
-		var sid = session.id;
-		node.store(prefix + sid, session);
-		node.log('Session saved with id ' + sid);
-		return true;
-	}
-	
-// <!--	
-//	node.session.restore = function (sessionObj, sid) {
-//		
-//		if (!sessionObj) return false;
-//		if (!sessionObj.player) return false;
-//		if (!sessionObj.state) return false;
-//		
-//		sid = sid || sessionObj.player.sid;
-//		if (!sid) return false;
-//		
-//		var player = {
-//				id: 	sessionObj.player.id,
-//				sid: 	sid,
-//				name:	node.gsc.name,
-//		};
-//	
-//		that.createPlayer(player);
-//		
-//		node.gsc.session 	= sessionObj.id;
-//		node.game.memory 	= sessionObj.memory;
-//		
-//		node.goto(session.state);	
-//		
-//		return true;
-//		
-//	};
-// -->
-
-// ## Closure	
-})('undefined' != typeof node ? node : module.parent.exports);
-/**
- * ## WaitingRoom
- * 
- * Holds a list of players and starts one or more games based on a 
- * list of criteria. 
- *  
- */
-
-(function(exports, node){
-	
-	if (!node.TriggerManager) {
-		throw new Error('node.TriggerManager not found. Aborting');
-	}
-	
-	function Group(options) {
-		options = options || {}
-		
-		this.players = options.players;
-	}
-	
-//	if (!node.Group) {
-//		throw new Error('node.TriggerManager not found. Aborting');
-//	}
-	
-	var J = node.JSUS;
-	
-	
-	exports.WaitingRoom = WaitingRoom;
-	
-	WaitingRoom.prototype = new node.TriggerManager();
-	WaitingRoom.prototype.constructor = WaitingRoom;
-	
-	WaitingRoom.defaults = {};
-	
-
-	
-	function WaitingRoom (options) {
-		node.TriggerManager.call(this, options);
-		
-		
-		node.pool = new node.PlayerList();
-		node.game.room = {};
-		
-		var that = this;
-
-		var pullTriggers = function() {
-			console.log('CAPTURED')
-			var groups  = that.pullTriggers();
-
-			if (!groups) return;
-			if (!J.isArray(groups)) groups = [groups];
-			
-			var i, name, count = 0;
-			for (i = 0; i< groups.length; i++) {
-				name = groups[i].name || count++;
-				node.game.room[name] = new Game(groups[i]);
-				node.game.room[name].step();
-			}
-		};
-		
-		var onConnectFunc = function() {
-			//console.log('added')
-			node.onPLIST(function(){
-				pullTriggers();
-			});
-		};
-		
-		var onConnect;
-		Object.defineProperty(this, 'onConnect', {
-			set: function(value) {
-				if (value === false) {
-					node.removeListener('in.say.PLIST', pullTriggers);
-					node.removeListener('in.set.PLIST', pullTriggers);
-				}
-				else if (value === true) {
-					node.onPLIST(pullTriggers);
-				}
-				onConnect = value;
-				
-			},
-			get: function() {
-				return onConnect;
-			},
-			configurable: true
-		});
-		
-		var onTimeout, onTimeoutTime;
-		Object.defineProperty(this, 'onTimeout', {
-			set: function(value) {
-				if (!value) {
-					clearTimeout(onTimeout);
-					onTimeoutTime = value;
-					onTimeout = false;
-				}
-				else if ('numeric' === typeof value) {
-				
-					if (onTimeout) {
-						clearTimeout(onTimeout);
-					}
-					onTimeoutTime = value;
-					onTimeout = setTimeout(pullTriggers);
-				}
-			},
-			get: function() {
-				return onTimeoutTime;
-			},
-			configurable: true
-		});
-		
-		var onInterval, onIntervalTime;
-		Object.defineProperty(this, 'onInterval', {
-			set: function(value) {
-				if (!value) {
-					clearInterval(onInterval);
-					onIntervalTime = value;
-					onInterval = false;
-				}
-				else if ('numeric' === typeof value) {
-				
-					if (onInterval) {
-						clearInterval(onInterval);
-					}
-					onInterval = setInterval(pullTriggers);
-					onIntervalTime = value;
-				}
-			},
-			get: function() {
-				return onIntervalTime;
-			},
-			configurable: true
-		});
-		
-		
-		this.init(options);
-	}
-
-	
-	WaitingRoom.prototype.init = function (options) {
-		options = options || {};
-		
-		this.onConnect = options.onConnect || true;
-		this.onTimeout = options.onTimeout || false;
-		this.onInterval = options.onInterval || false;
-		
-		
-		this.addTrigger(function(){
-			return new Group({
-				players: node.pool,
-				game: options.loops
-			});
-		});
-		
-		if (options.minPlayers && options.maxPlayers) {
-			this.addTrigger(function(){
-				if (node.pool.length < options.minPlayers) {
-					return false;
-				}
-				if (node.pool.length > options.maxPlayers) {
-					// Take N = maxPlayers random player
-					var players = node.pool.shuffle().limit(options.maxPlayers);
-					return new Group({
-						players: players,
-						game: options.loops
-					});
-					
-				}
-				
-				return new Group({
-					players: node.pool,
-					game: options.loops
-				});
-			});
-		}
-		
-		if (options.minPlayers) {
-			this.addTrigger(function(){
-				if (node.pool.length < options.minPlayers) {
-					return false;
-				}
-				
-				return new Group({
-					players: node.pool,
-					game: options.loops
-				});
-			});
-		}
-		
-		if (options.maxPlayers) {
-			this.addTrigger(function(){
-				if (node.pool.length > options.maxPlayers) {
-					// Take N = maxPlayers random player
-					var players = node.pool.shuffle().limit(options.maxPlayers);
-					return new Group({
-						players: players,
-						game: options.loops
-					});
-					
-				}
-			});
-		}
-		
-		if (options.nPlayers) {
-			this.addTrigger(function(){
-				if (node.pool.length === options.nPlayers) {
-					// Take N = maxPlayers random player
-					return new Group({
-						players: node.pool,
-						game: options.loops
-					});
-					
-				}
-			});
-		}
-		
-	};
-	
-	
-	WaitingRoom.prototype.criteria = function (func, pos) {
-		this.addTrigger(func, pos);
-	};
-	
-	
-	/**
-	 * ## WaitingRoom.setInterval
-	 * 
-	 * Set the update interval
-	 * 
-	 */
-	WaitingRoom.prototype.setInterval = function(interval) {
-		if (!interval) clearInterval(this.interval);
-		if (this.interval) clearInterval(this.interval);
-		this.interval = setInterval(this.pullTriggers, interval);
-	};
-	
-	
 })(
 	('undefined' !== typeof node) ? node : module.exports
   , ('undefined' !== typeof node) ? node : module.parent.exports

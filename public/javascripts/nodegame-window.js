@@ -81,7 +81,7 @@ function GameWindow() {
 	
 	this.conf = {};
 	
-	this.state = GameState.iss.LOADED;
+	this.state = node.is.LOADED;
 	this.areLoading = 0; 
 	
 	// Init default behavior
@@ -246,7 +246,7 @@ GameWindow.prototype.load = GameWindow.prototype.loadFrame = function (uri, func
 	if (!uri) return;
 	frame =  frame || this.mainframe;
 	
-	this.state = GameState.iss.LOADING;
+	this.state = node.is.LOADING;
 	this.areLoading++; // keep track of nested call to loadFrame
 	
 	var that = this;	
@@ -297,7 +297,7 @@ GameWindow.prototype.updateStatus = function(func, frame) {
 	this.areLoading--;
 	//console.log('ARE LOADING: ' + this.areLoading);
 	if (this.areLoading === 0) {
-		this.state = GameState.iss.LOADED;
+		this.state = node.is.LOADED;
 		node.emit('WINDOW_LOADED');
 	}
 	else {
