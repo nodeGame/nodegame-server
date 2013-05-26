@@ -7582,26 +7582,50 @@ else {
     var J = node.JSUS;
 
     node.debug = false;
-    
-    var NodeGameRuntimeError = (function() {
-	var NodeGameRuntimeError, err;
-	NodeGameRuntimeError = (function() {
-	    function NodeGameRuntimeError() {
-		var err;
-		err = new Error();
-		err.name = "NodeGameRuntimeError";
-		if (err.stack) this.stack = err.stack;
-	    }
-	    return NodeGameRuntimeError;
-	})();
-	err = new Error();
-	err.name = "NodeGameRuntimeError";
-	NodeGameRuntimeError.prototype = err;
-	
-	return NodeGameRuntimeError;
-    }).call(this);
 
     exports.NodeGameRuntimeError = NodeGameRuntimeError;
+    exports.NodeGameStageCallbackError = NodeGameStageCallbackError;
+
+    /* 
+     * ### NodeGameRuntimeError
+     * 
+     * An error occurred during the execution of nodeGame
+     */
+    function NodeGameRuntimeError() {
+	Error.apply(this, arguments);
+	this.stack = (new Error()).stack;
+    }
+
+    NodeGameRuntimeError.prototype = new Error();
+    NodeGameRuntimeError.prototype.constructor = NodeGameRuntimeError;
+    NodeGameRuntimeError.prototype.name = 'NodeGameRuntimeError';
+
+
+    /* 
+     * ### NodeGameStageCallbackError
+     * 
+     * An error occurred during the execution of one of the stage callbacks
+     */
+    function NodeGameStageCallbackError() {
+	Error.apply(this, arguments);
+	this.stack = (new Error()).stack;
+    }
+
+    NodeGameStageCallbackError.prototype = new Error();
+    NodeGameStageCallbackError.prototype.constructor = NodeGameStageCallbackError;
+    NodeGameStageCallbackError.prototype.name = 'NodeGameStageCallbackError';
+
+    if (J.isNodeJS()) {
+	process.on('uncaughtException', function (err) {
+	    console.log('Caught exception: ' + err);
+	});
+    }
+    else {
+	window.onerror = function(msg, url, linenumber) {
+	    node.err(url + ' ' + linenumber + ': ' + msg);
+	    return !node.debug;
+	};
+    }
 
 // ## Closure	
 })(
@@ -8119,35 +8143,35 @@ function GameStage(gs) {
  */		
 	this.round = 1;
 
-	if ('undefined' === typeof gs) {
-		this.stage = 0;
-		this.step  = 0;
-		this.round = 0;
+	if (!gs || 'undefined' === typeof gs) {
+	    this.stage = 0;
+	    this.step  = 0;
+	    this.round = 0;
 	}
 	else if ('string' === typeof gs) {
-		var tokens = gs.split('.');
-		var stageNum = parseInt(tokens[0], 10);
-		var stepNum  = parseInt(tokens[1], 10);
-		var roundNum = parseInt(tokens[2], 10);
+	    var tokens = gs.split('.');
+	    var stageNum = parseInt(tokens[0], 10);
+	    var stepNum  = parseInt(tokens[1], 10);
+	    var roundNum = parseInt(tokens[2], 10);
+	    
+	    if (tokens[0])
+		this.stage = !isNaN(stageNum) ? stageNum : tokens[0];
+	    
+	    if ('undefined' !== typeof tokens[1])
+		this.step  = !isNaN(stepNum)  ? stepNum  : tokens[1];
 
-		if (tokens[0])
-			this.stage = !isNaN(stageNum) ? stageNum : tokens[0];
-
-		if ('undefined' !== typeof tokens[1])
-			this.step  = !isNaN(stepNum)  ? stepNum  : tokens[1];
-
-		if ('undefined' !== typeof tokens[2])
-			this.round = roundNum;
+	    if ('undefined' !== typeof tokens[2])
+		this.round = roundNum;
 	}
 	else if ('object' === typeof gs) {	
-		if ('undefined' !== typeof gs.stage)
-			this.stage = gs.stage;
-
-		if ('undefined' !== typeof gs.step)
+	    if ('undefined' !== typeof gs.stage)
+		this.stage = gs.stage;
+	    
+	    if ('undefined' !== typeof gs.step)
 			this.step  = gs.step;
-
-		if ('undefined' !== typeof gs.round)
-			this.round = gs.round;
+	    
+	    if ('undefined' !== typeof gs.round)
+		this.round = gs.round;
 	}
 	
 }
@@ -10251,15 +10275,16 @@ GameLoop.prototype.jump = function(curStage, delta) {
  * 	if the step was not found
  */
 GameLoop.prototype.getStage = function(gameStage) {
-	if (!this.plot) return null;
-	
-	gameStage = new GameStage(gameStage);
-	if ('number' === typeof gameStage.stage) {
-		return this.plot.stages[this.plot.sequence[gameStage.stage - 1].id];
-	}
-	else {
-		return this.plot.stages[gameStage.stage];
-	}
+    if (!this.plot) return null;
+    var stageObj;
+    gameStage = new GameStage(gameStage);
+    if ('number' === typeof gameStage.stage) {
+	stageObj = this.plot.sequence[gameStage.stage - 1];
+	return stageObj ? this.plot.stages[stageObj.id] : null;
+    }
+    else {
+	return this.plot.stages[gameStage.stage];
+    }
 };
 
 /**
@@ -10273,15 +10298,16 @@ GameLoop.prototype.getStage = function(gameStage) {
  * 	if the step was not found
  */
 GameLoop.prototype.getStep = function(gameStage) {
-	if (!this.plot) return null;
-	
-	gameStage = new GameStage(gameStage);
-	if ('number' === typeof gameStage.step) {
-		return this.plot.steps[this.getStage(gameStage).steps[gameStage.step - 1]];
-	}
-	else {
-		return this.plot.steps[gameStage.step];
-	}
+    if (!this.plot) return null;
+    var stageObj, 
+        gameStage = new GameStage(gameStage);
+    if ('number' === typeof gameStage.step) {
+	stageObj = this.getStage(gameStage);
+	return stageObj ? this.plot.steps[stageObj.steps[gameStage.step - 1]] : null;
+    }
+    else {
+	return this.plot.steps[gameStage.step];
+    }
 };
 
 /**
@@ -10294,6 +10320,15 @@ GameLoop.prototype.getName = function(gameStage) {
 	var s = this.getStep(gameStage); 
 	return s ? s.name : s;
 };
+
+/**
+ * ### GameLoop.getAllParams
+ * 
+ * TODO: To remove once transition is complete
+ * @deprecated 
+ */
+GameLoop.prototype.getAllParams = GameLoop.prototype.getStep;
+
 /**
  * ### GameLoop.normalizeGameStage
  *
@@ -11912,26 +11947,27 @@ function Game (settings) {
  * @see Stager
  * @api private
  */
-	this.gameLoop = this.stager = new GameLoop(settings.stages);
-	
-	
-	this.currentStep = new GameStage();
-	this.currentStepObj = null;
-	
-	// Update the init function if one is passed
-	if (settings.init) {
-		this.init = function() {
-			this.updateGameState(Game.levels.INITIALIZING);
-			settings.init.call(node.game);
-			this.updateGameState(Game.levels.INITIALIZED);
-		};
-	}
+    this.gameLoop = this.stager = new GameLoop(settings.stages);
 	
 
-	this.player = null;	
-
-
-	this.paused = false;
+    // TODO: check how to init
+    this.currentStep = new GameStage();
+    this.currentStepObj = new GameStage();
+    
+    // Update the init function if one is passed
+    if (settings.init) {
+	this.init = function() {
+		this.updateGameState(Game.levels.INITIALIZING);
+	    settings.init.call(node.game);
+	    this.updateGameState(Game.levels.INITIALIZED);
+	};
+    }
+    
+    
+    this.player = null;	
+    
+    
+    this.paused = false;
 	
 } // <!-- ends constructor -->
 
@@ -12012,7 +12048,21 @@ Game.prototype.resume = function () {
 };
 
 
-
+/**
+ * ### Game.shouldStep
+ * 
+ * Execute the next stage / step, if allowed
+ * 
+ * @return {Boolean} FALSE, if the execution encountered an error
+ * 
+ * @see Game.step
+ * 
+ * TODO: real check, always steps now
+ */
+Game.prototype.shouldStep = function() {
+    // Check the stager
+    return this.step();
+};
 
 /**
  * ### Game.step
@@ -12028,26 +12078,25 @@ Game.prototype.resume = function () {
  * TODO: harmonize return values
  */
 Game.prototype.step = function() {
-	var nextStep;
+    var nextStep;
+    nextStep = this.stager.next(this.currentStep);
+    console.log('NEXT', nextStep);
+    if ('string' === typeof nextStep) {
 	
-	nextStep = this.stager.next(this.currentStep);
+	if (nextStep === GameLoop.GAMEOVER) {
+	    node.emit('GAMEOVER');
+	    return this.gameover(); // can throw Errors
+	}
 	
-	if ('string' === typeof nextStep) {
-		
-		if (nextStep === GameLoop.GAMEOVER) {
-			node.emit('GAMEOVER');
-			return this.gameover(); // can throw Errors
-		}
-		
-		// else do nothing
-		return null;
-	}
-	else {
-		// TODO maybe update also in case of string
-		this.currentStep = nextStep;
-		this.currentStepObj = this.stager.getStep(nextStep);
-		return this.execStage(this.currentStepObj);
-	}
+	// else do nothing
+	return null;
+    }
+    else {
+	// TODO maybe update also in case of string
+	this.currentStep = nextStep;
+	this.currentStepObj = this.stager.getStep(nextStep);
+	return this.execStage(this.currentStepObj);
+    }
 };
 
 /**
@@ -12093,7 +12142,6 @@ Game.prototype.execStage = function(stage) {
 	node.err(err);
 	
 	if (node.debug) {
-	    console.log(e);
 	    ex = node.NodeGameRuntimeError;
 	    console.log(ex);
 	    console.log(ex.trace);
@@ -12105,11 +12153,15 @@ Game.prototype.execStage = function(stage) {
 };
 
 Game.prototype.getGameState = function () {
-	return this.state;
+    return this.state;
 };
 
 Game.prototype.getStageLevel = function () {
     return this.state;
+};
+
+Game.prototype.getStep = function () {
+    return this.currentStepObj;
 };
 
 // ERROR, WORKING, etc
@@ -13202,14 +13254,14 @@ SessionManager.prototype.store = function() {
  */
 (function (exports, node) {
 		
-	var EventEmitter = node.EventEmitter,
-		Socket = node.Socket,
-		GameStage = node.GameStage,
-		GameMsg = node.GameMsg,
-		Game = node.Game,
-		Player = node.Player,
-		GameSession = node.GameSession,
-		J = node.JSUS;		
+    var EventEmitter = node.EventEmitter,
+	Socket = node.Socket,
+	GameStage = node.GameStage,
+	GameMsg = node.GameMsg,
+	Game = node.Game,
+	Player = node.Player,
+	GameSession = node.GameSession,
+	J = node.JSUS;		
 	
 // ## Methods
 	
@@ -13318,12 +13370,10 @@ SessionManager.prototype.store = function() {
  * @param {object} conf A configuration object
  * @param {object} game The game object
  */	
-	node.play = function(game) {	
-		
-		node.setup.game(game);
-		
-		node.game.start();
-	};
+    node.play = function(game) {	
+	if (game) node.setup.game(game);	
+	node.game.start();
+    };
 	
 /**
  * ### node.replay
@@ -13509,6 +13559,31 @@ SessionManager.prototype.store = function() {
 		node.socket.send(msg);
 		return true;
 	};
+
+/**
+ * ### node.remoteCommand
+ * 
+ * Executes a game command on a client
+ * 
+ * Works only if it is a monitor client to send
+ * the message, i.e. players cannot send game commands 
+ * to each others
+ * 
+ * @param {string} command The command to execute
+ * @param {string} to The id of the player to command
+ * @return {boolean} TRUE, if the game command is sent
+ */	
+    node.remoteCommand = function (command, to, options) {
+	if (!command || !to) return false;
+		
+	var msg = node.msg.create({
+	    target: node.target.GAMECOMMAND,
+	    text: command,
+	    data: options,
+	    to: to
+	});
+	return node.socket.send(msg);
+    };
 	
 	node.info(node.version + ' loaded');
 	
@@ -14273,9 +14348,11 @@ node.on( IN + say + 'SETUP', function (msg) {
  * @see node.setup
  */
 node.on( IN + say + 'GAMECOMMAND', function (msg) {
-	if (!msg.text) return;
-	if (!node.gamecommand[msg.text]) return;
-	node.emit('NODEGAME_GAMECOMMAND_' + msg.text,msg.data);
+    if (!msg.text || !node.gamecommand[msg.text]) {
+	node.err('unknown game command received: ' + msg.text);
+	return;
+    }
+    node.emit('NODEGAME_GAMECOMMAND_' + msg.text, msg.data);
 });	
 
 /**
@@ -14288,9 +14365,9 @@ node.on( IN + say + 'GAMECOMMAND', function (msg) {
  * 
  */
 node.on( IN + say + 'JOIN', function (msg) {
-	if (!msg.text) return;
-	//node.socket.disconnect();
-	node.connect(msg.text);
+    if (!msg.text) return;
+    //node.socket.disconnect();
+    node.connect(msg.text);
 });	
 
 	node.log('incoming listeners added');
@@ -14340,8 +14417,8 @@ node.on( OUT + say + 'STAGE', function (stage, to) {
  * The message is for informative purpose
  * 
  */
-node.on( OUT + say + 'STATE', function (state, to) {
-	node.socket.sendSTATE(action.SAY, state, to);
+node.on( OUT + say + 'STAGE', function (stage, to) {
+	node.socket.sendSTAGE(action.SAY, stage, to);
 });	
 
 /**
@@ -14363,16 +14440,16 @@ node.on( OUT + say + 'DATA', function (data, to, key) {
 });
 
 /**
- * ## out.set.STATE
+ * ## out.set.STAGE
  * 
- * Sends out a STATE message to the specified recipient
+ * Sends out a STAGE message to the specified recipient
  * 
  * TODO: check with the server 
- * The receiver will update its representation of the state
+ * The receiver will update its representation of the stage
  * of the sender
  */
-node.on( OUT + set + 'STATE', function (state, to) {
-	node.socket.sendSTATE(action.SET, state, to);
+node.on( OUT + set + 'STAGE', function (stage, to) {
+	node.socket.sendSTAGE(action.SET, stage, to);
 });
 
 /**
@@ -14477,29 +14554,27 @@ node.on('STAGEDONE', function() {
  */
 node.on('DONE', function(p1, p2, p3) {
 	
-	// Execute done handler before updating stage
-	var ok = true;
+    // Execute done handler before updating stage
+    var ok = true,
+       done = node.game.currentStepObj.done;
+    
+    if (done) ok = done.call(node.game, p1, p2, p3);
+    if (!ok) return;
+    node.game.updateStageLevel(Game.stageLevels.DONE)
 	
-	var done = node.game.currentStepObj.done;
+    // Call all the functions that want to do 
+    // something before changing stage
+    node.emit('BEFORE_DONE');
 	
-	if (done) ok = done.call(node.game, p1, p2, p3);
-	if (!ok) return;
-	node.game.updateStageLevel(Game.stageLevels.DONE)
-	
-	// Call all the functions that want to do 
-	// something before changing stage
-	node.emit('BEFORE_DONE');
-	
-	if (node.game.auto_wait) {
-		if (node.window) {	
-			node.emit('WAITING...');
-		}
+    if (node.game.auto_wait) {
+	if (node.window) {	
+	    node.emit('WAITING...');
 	}
-	node.game.publishUpdate();
+    }
+    node.game.publishUpdate();
 	
-	if (node.game.solo_mode) {
-		node.game.step();
-	}
+    // Step forward, if allowed
+    node.game.shouldStep();
 });
 
 /**
@@ -14543,23 +14618,19 @@ node.on('LOADED', function() {
 
 
 /**
- * ## LOADED
- * 
+ * ## NODEGAME_GAMECOMMAND: start
  * 
  */
 node.on('NODEGAME_GAMECOMMAND_' + node.gamecommand.start, function(options) {
 	
+    node.emit('BEFORE_GAMECOMMAND', node.gamecommand.start, options);
 	
-	node.emit('BEFORE_GAMECOMMAND', node.gamecommand.start, options);
+    if (node.game.currentStepObj && node.game.currentStepObj.stage !== 0) {
+	node.err('Game already started. Use restart if you want to start the game again');
+	return;
+    }
 	
-	if (node.game.currentStepObj.stage !== 0) {
-		node.err('Game already started. Use restart if you want to start the game again');
-		return;
-	}
-	
-	node.game.start();
-	
-	
+    node.game.start();	
 });
 
 
@@ -20663,7 +20734,9 @@ node.widgets = new Widgets();
 	VisualTimer.prototype.listeners = function () {
 		var that = this;
 		node.on('LOADED', function() {
-			var timer = node.game.gameLoop.getAllParams(node.game.gameState).timer;
+		    var stepObj = node.game.getStep();
+		    if (!stepObj) return;
+		    var timer = stepObj.timer;
 			if (timer) {
 				timer = JSUS.clone(timer);
 				that.timerDiv.className = '';
