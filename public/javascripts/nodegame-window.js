@@ -31,7 +31,6 @@ var J = node.JSUS;
 
 var Player = node.Player,
 	PlayerList = node.PlayerList,
-	GameState = node.GameState,
 	GameMsg = node.GameMsg,
 	GameMsgGenerator = node.GameMsgGenerator;
 
@@ -50,6 +49,11 @@ GameWindow.defaults = {};
 // Default settings
 GameWindow.defaults.promptOnleave = true;
 GameWindow.defaults.noEscape = true;
+GameWindow.defaults.cacheDefaults = {
+	loadCache:       true,
+	storeCacheNow:   false,
+	storeCacheLater: false
+};
 
 
 /**
@@ -57,9 +61,9 @@ GameWindow.defaults.noEscape = true;
  * 
  * The constructor performs the following operations:
  * 
- * 		- creates a root div element (this.root)
- * 		- creates an iframe element inside the root element	(this.frame)
- * 		- defines standard event listeners for showing and hiding elements
+ *      - creates a root div element (this.root)
+ *      - creates an iframe element inside the root element (this.frame)
+ *      - defines standard event listeners for showing and hiding elements
  * 
  */
 function GameWindow() {
@@ -80,14 +84,49 @@ function GameWindow() {
 	this.root = null;
 	
 	this.conf = {};
+
+// ### GameWindow.state
+//
+	this.state = node.is.LOADED;
+
+// ### GameWindow.areLoading
+// Counts the number of frames currently being loaded
+	this.areLoading = 0;
+
+// ### GameWindow.cache
+// Cache for loaded iframes
+//	
+// Maps URI to a cache object with the following properties:
+//  - `contents` (a string describing the innerHTML or null if not cached),
+//  - optionally 'cacheOnClose' (a bool telling whether to cache the frame when
+//    it is replaced by a new one).
+	this.cache = {};
+
+// ### GameWindow.currentURIs
+// Currently loaded URIs in the internal frames
+//	
+// Maps frame names (e.g. 'mainframe') to the URIs they are showing.
+	this.currentURIs = {};
+
 	
+<<<<<<< HEAD
 	this.state = node.is.LOADED;
 	this.areLoading = 0; 
+=======
+// ### GameWindow.globalLibs
+// Array of strings with the path of the libraries to be loaded in every frame
+	this.globalLibs = [];
+>>>>>>> b4460a4db24a6b65657ed764a9d5dc4d4d2773cd
 	
-	// Init default behavior
+// ### GameWindow.frameLibs
+// Like `GameWindow.frameLibs`, but contains libraries to be loaded only
+// in specific frames
+	this.frameLibs = {};
+
+
 	this.init();
 	
-};
+}
 
 // ## GameWindow methods
 
@@ -98,8 +137,8 @@ function GameWindow() {
  * 
  * Defaults:
  * 
- * 		- promptOnleave TRUE
- * 		- captures ESC key
+ *      - promptOnleave TRUE
+ *      - captures ESC key
  * 
  * @param {object} options Configuration options
  * 
@@ -144,7 +183,10 @@ GameWindow.prototype.getElementById = function (id) {
 };
 
 /**
- * Returns a collection of elements with the tag name equal to @tag . 
+ * ### GameWindow.getElementsByTagName
+ * 
+ * Returns a list of elements with the given tag name
+ *  
  * Looks first into the iframe and then into the rest of the page.
  * 
  * @see GameWindow.getElementById
@@ -193,17 +235,17 @@ GameWindow.prototype.setup = function (type){
 		
 	case 'PLAYER':
 		
-		//var maincss		= this.addCSS(this.root, 'style.css');
-		this.header 	= this.generateHeader();
-	    var mainframe 	= this.addIFrame(this.root,'mainframe');
-	    
-		node.game.vs 	= node.widgets.append('VisualState', this.header);
+		//var maincss = this.addCSS(this.root, 'style.css');
+		this.header     = this.generateHeader();
+		var mainframe   = this.addIFrame(this.root,'mainframe');
+
+		node.game.vs    = node.widgets.append('VisualState', this.header);
 		node.game.timer = node.widgets.append('VisualTimer', this.header);
 		//node.game.doneb = node.widgets.append('DoneButton', this.header);
-		node.game.sd 	= node.widgets.append('StateDisplay', this.header);
+		node.game.sd    = node.widgets.append('StateDisplay', this.header);
 
 		node.widgets.append('WaitScreen');
-	    
+
 		// Add default CSS
 		if (node.conf.host) {
 			this.addCSS(document.body, node.conf.host + '/stylesheets/player.css');
@@ -218,7 +260,7 @@ GameWindow.prototype.setup = function (type){
 		}
 		
 		window.frames[this.mainframe].src = initPage;
-	    
+
 		break;
 	}
 	
@@ -226,34 +268,328 @@ GameWindow.prototype.setup = function (type){
 
 
 /**
- * ## GameWindow.load
+ * ### removeLibraries
+ *
+ * Removes injected scripts from iframe
+ *
+ * Takes out all the script tags with the className "injectedlib"
+ * that were inserted by injectLibraries.
+ * 
+ * @param {object} frameNode The node object of the iframe
+ *
+ * @see injectLibraries
+ * 
+ * @api private
+ */
+function removeLibraries (frameNode) {
+	var contentDocument = frameNode.contentDocument ? frameNode.contentDocument
+	                                                : frameNode.contentWindow.document;
+
+	var scriptNodes, scriptNodeIdx, scriptNode;
+
+	scriptNodes = contentDocument.getElementsByClassName('injectedlib');
+	for (scriptNodeIdx = 0; scriptNodeIdx < scriptNodes.length; ++scriptNodeIdx) {
+		scriptNode = scriptNodes[scriptNodeIdx];
+		scriptNode.parentNode.removeChild(scriptNode);
+	}
+}
+
+
+/**
+ * ### reloadScripts
+ *
+ * Reloads all script nodes in iframe
+ *
+ * Deletes and reinserts all the script tags, effectively reloading the scripts.
+ * The placement of the tags can change, but the order is kept.
+ * 
+ * @param {object} frameNode The node object of the iframe
+ * 
+ * @api private
+ */
+function reloadScripts (frameNode) {
+	var contentDocument = frameNode.contentDocument ? frameNode.contentDocument
+	                                                : frameNode.contentWindow.document;
+
+	var headNode = contentDocument.getElementsByTagName('head')[0];
+	var tag, scriptNodes, scriptNodeIdx, scriptNode;
+	var attrIdx, attr;
+
+	scriptNodes = contentDocument.getElementsByTagName('script');
+	for (scriptNodeIdx = 0; scriptNodeIdx < scriptNodes.length; ++scriptNodeIdx) {
+		// Remove tag:
+		tag = scriptNodes[scriptNodeIdx];
+		tag.parentNode.removeChild(tag);
+
+		// Reinsert tag for reloading:
+		scriptNode = document.createElement('script');
+		if (tag.innerHTML) scriptNode.innerHTML = tag.innerHTML;
+		for (attrIdx = 0; attrIdx < tag.attributes.length; ++attrIdx) {
+			attr = tag.attributes[attrIdx];
+			scriptNode.setAttribute(attr.name, attr.value);
+		}
+		headNode.appendChild(scriptNode);
+	}
+}
+
+
+/**
+ * ### injectLibraries
+ * 
+ * Injects scripts into the iframe
+ * 
+ * First removes all old injected script tags.
+ * Then injects `<script class="injectedlib" src="...">` lines into given
+ * iframe object, one for every given library.
+ * 
+ * @param {object} frameNode The node object of the iframe
+ * @param {array} libs An array of strings giving the "src" attribute for the `<script>`
+ *                     lines to insert
+ * 
+ * @api private
+ * 
+ */
+function injectLibraries (frameNode, libs) {
+	var contentDocument = frameNode.contentDocument ? frameNode.contentDocument
+	                                                : frameNode.contentWindow.document;
+
+	var headNode = contentDocument.getElementsByTagName('head')[0];
+	var scriptNode;
+	var libIdx, lib;
+
+	for (libIdx = 0; libIdx < libs.length; ++libIdx) {
+		lib = libs[libIdx];
+		scriptNode = document.createElement('script');
+		scriptNode.className = 'injectedlib';
+		scriptNode.src = lib;
+		headNode.appendChild(scriptNode);
+	}
+}
+
+
+/**
+ * ### GameWindow.initLibs
+ *
+ * Specifies the libraries to be loaded automatically in the iframes
+ * 
+ * This method must be called before any calls to GameWindow.load .
+ *
+ * @param {array} globalLibs Array of strings describing absolute library paths that
+ *    should be loaded in every iframe.
+ * @param {object} frameLibs Map from URIs to string arrays (as above) specifying
+ *    libraries that should only be loaded for iframes displaying the given URI.
+ *    This must not contain any elements that are also in globalLibs.
+ *
+ */
+GameWindow.prototype.initLibs = function (globalLibs, frameLibs) {
+	this.globalLibs = globalLibs || [];
+	this.frameLibs = frameLibs || {};
+};
+
+
+/**
+ * ### GameWindow.preCache
+ *
+ * Loads the HTML content of the given URIs into the cache
+ *
+ * @param {array} uris The URIs to cache
+ * @param {function} callback The function to call once the caching is done
+ *
+ */
+GameWindow.prototype.preCache = function(uris, callback) {
+	// Don't preload if no URIs are given:
+	if (!uris || !uris.length) {
+		if(callback) callback();
+		return;
+	}
+
+	var that = this;
+
+	// Keep count of loaded URIs:
+	var loadedCount = 0;
+
+	for (var uriIdx = 0; uriIdx < uris.length; ++uriIdx) {
+		var currentUri = uris[uriIdx];
+
+		// Create an invisible internal frame for the current URI:
+		var iframe = document.createElement('iframe');
+		iframe.style.visibility = 'hidden';
+		var iframeName = 'tmp_iframe_' + uriIdx;
+		iframe.id = iframeName;
+		iframe.name = iframeName;
+		document.body.appendChild(iframe);
+
+		// Register the onload handler:
+		iframe.onload = (function(uri, thisIframe) {
+			return function() {
+				var frameDocumentElement =
+					(thisIframe.contentDocument ? thisIframe.contentDocument : thisIframe.contentWindow.document)
+					.documentElement;
+
+				// Store the contents in the cache:
+				that.cache[uri] = { contents: frameDocumentElement.innerHTML,
+				                    cacheOnClose: false };
+
+				// Remove the internal frame:
+				document.body.removeChild(thisIframe);
+
+				// Increment loaded URIs counter:
+				++ loadedCount;
+				if (loadedCount >= uris.length) {
+					// All requested URIs have been loaded at this point.
+					if (callback) callback();
+				}
+			};
+		})(currentUri, iframe);
+
+		// Start loading the page:
+		window.frames[iframeName].location = currentUri;
+	}
+};
+
+
+/**
+ * ### handleFrameLoad
+ *
+ * Handles iframe contents loading
+ *
+ * A helper method of GameWindow.load .
+ * Puts cached contents into the iframe or caches new contents if requested.
+ * Handles reloading of script tags and injected libraries.
+ * Must be called with `this` set to GameWindow instance.
+ *
+ * @param {uri} uri URI to load
+ * @param {string} frame ID of GameWindow's frame
+ * @param {bool} loadCache whether to load from cache
+ * @param {bool} storeCache whether to store to cache
+ *
+ * @see GameWindow.load
+ *
+ * @api private
+ */
+function handleFrameLoad (uri, frame, loadCache, storeCache) {
+	var frameNode = document.getElementById(frame);
+	var frameDocumentElement =
+		(frameNode.contentDocument ? frameNode.contentDocument : frameNode.contentWindow.document)
+		.documentElement;
+
+	if (loadCache) {
+		// Load frame from cache:
+		frameDocumentElement.innerHTML = this.cache[uri].contents;
+	}
+
+	// (Re-)Inject libraries and reload scripts:
+	removeLibraries(frameNode);
+	if (loadCache) {
+		reloadScripts(frameNode);
+	}
+	injectLibraries(frameNode, this.globalLibs.concat(uri in this.frameLibs ? this.frameLibs[uri] : []));
+
+	if (storeCache) {
+		// Store frame in cache:
+		this.cache[uri].contents = frameDocumentElement.innerHTML;
+	}
+}
+
+
+/**
+ * ### GameWindow.load
  * 
  * Loads content from an uri (remote or local) into the iframe, 
  * and after it is loaded executes the callback function. 
  * 
- * The third parameter is the id of the frame in which to load the content. 
- * If it is not specified, the default iframe of the game is assumed.
+ * The third parameter is an options object with the following fields
+ * (any fields left out assume the default setting):
+ *
+ *  - frame (string): The name of the frame in which to load the uri (default: default iframe of the game)
+ *  - cache (object): Caching options.  Fields:
+ *      * loadMode (string): 'reload' (default; reload page without the cache),
+ *                           'cache' (get the page from cache if possible)
+ *      * storeMode (string): 'off' (default; don't cache page),
+ *                            'onLoad' (cache given page after it is loaded)
+ *                            'onClose' (cache given page after it is replaced by a new page)
  * 
  * Warning: Security policies may block this methods, if the 
  * content is coming from another domain.
  * 
  * @param {string} uri The uri to load
  * @param {function} func The callback function to call once the DOM is ready
- * @param {string} frame The name of the frame in which loading the uri
+ * @param {object} opts The options object
  * 
  */
-GameWindow.prototype.load = GameWindow.prototype.loadFrame = function (uri, func, frame) {
+GameWindow.prototype.load = GameWindow.prototype.loadFrame = function (uri, func, opts) {
 	if (!uri) return;
-	frame =  frame || this.mainframe;
+
+	// Default options:
+	var frame = this.mainframe;
+	var loadCache = GameWindow.defaults.cacheDefaults.loadCache;
+	var storeCacheNow = GameWindow.defaults.cacheDefaults.storeCacheNow;
+	var storeCacheLater = GameWindow.defaults.cacheDefaults.storeCacheLater;
+
+	// Get options:
+	if (opts) {
+		if (opts.frame) frame = opts.frame;
+
+		if (opts.cache) {
+			if (opts.cache.loadMode === 'reload') loadCache = false;
+			else if (opts.cache.loadMode === 'cache') loadCache = true;
+
+			if (opts.cache.storeMode === 'off') {
+				storeCacheNow = false;
+				storeCacheLater = false;
+			}
+			else if (opts.cache.storeMode === 'onLoad') {
+				storeCacheNow = true;
+				storeCacheLater = false;
+			}
+			else if (opts.cache.storeMode === 'onClose') {
+				storeCacheNow = false;
+				storeCacheLater = true;
+			}
+		}
+	}
+
+	// Get the internal frame object:
+	var iframe = document.getElementById(frame);
+	var frameNode;
+	var frameDocumentElement;
+	// Query readiness (so we know whether onload is going to be called):
+	var frameReady = iframe.contentWindow.document.readyState;
+	// ...reduce it to a boolean:
+	frameReady = (frameReady === 'interactive' || frameReady === 'complete');
+
+	// If the last frame requested to be cached on closing, do that:
+	var lastURI = this.currentURIs[frame];
+	if ((lastURI in this.cache) && this.cache[lastURI].cacheOnClose) {
+		frameNode = document.getElementById(frame);
+		frameDocumentElement =
+			(frameNode.contentDocument ? frameNode.contentDocument : frameNode.contentWindow.document)
+			.documentElement;
+
+		this.cache[lastURI].contents = frameDocumentElement.innerHTML;
+	}
+
+	// Create entry for this URI in cache object and store cacheOnClose flag:
+	if(!(uri in this.cache)) this.cache[uri] = { contents: null, cacheOnClose: false };
+	this.cache[uri].cacheOnClose = storeCacheLater;
+
+	// Disable loadCache if contents aren't cached:
+	if(this.cache[uri].contents === null) loadCache = false;
+
+	// Update frame's currently showing URI:
+	this.currentURIs[frame] = uri;
 	
 	this.state = node.is.LOADING;
+<<<<<<< HEAD
 	this.areLoading++; // keep track of nested call to loadFrame
+=======
+	this.areLoading++;  // keep track of nested call to loadFrame
+>>>>>>> b4460a4db24a6b65657ed764a9d5dc4d4d2773cd
 	
-	var that = this;	
+	var that = this;
 			
-	// First add the onload event listener
-	var iframe = document.getElementById(frame);
-	iframe.onload = function () {
+	// Add the onload event listener:
+	iframe.onload = function() {
 		if (that.conf.noEscape) {
 			
 			// TODO: inject the no escape code here
@@ -261,11 +597,30 @@ GameWindow.prototype.load = GameWindow.prototype.loadFrame = function (uri, func
 			//that.addJS(iframe.document, node.conf.host + 'javascripts/noescape.js');
 			//that.addJS(that.getElementById('mainframe'), node.conf.host + 'javascripts/noescape.js');
 		}
+
+		handleFrameLoad.call(that, uri, frame, loadCache, storeCacheNow);
+
 		that.updateStatus(func, frame);
 	};
 
-	// Then update the frame location
-	window.frames[frame].location = uri;
+	// Cache lookup:
+	if (loadCache) {
+		// Load iframe contents at this point only if the iframe is already "ready"
+		// (see definition of frameReady), otherwise the contents would be cleared
+		// once the iframe becomes ready.  In that case, iframe.onload handles the
+		// filling of the contents.
+		// TODO: Fix code duplication between here and onload function.
+		if (frameReady) {
+			handleFrameLoad.call(this, uri, frame, loadCache, storeCacheNow);
+			
+			// Update status (onload isn't called if frame was already ready):
+			this.updateStatus(func, frame);
+		}
+	}
+	else {
+		// Update the frame location:
+		window.frames[frame].location = uri;
+	}
 	
 	
 	// Adding a reference to nodeGame also in the iframe
@@ -284,7 +639,21 @@ GameWindow.prototype.load = GameWindow.prototype.loadFrame = function (uri, func
 					
 };
 
-
+/**
+ * ### GameWindow.updateStatus
+ * 
+ * Cleans up the window state after an iframe has been loaded
+ * 
+ * The methods performs the following operations:
+ * 
+ *  - executes a given callback function, 
+ *  - decrements the counter of loading iframes
+ *  - set the window state as loaded (eventually)
+ * 
+ * @param {function} A callback function
+ * @param {object} The iframe of reference
+ * 
+ */
 GameWindow.prototype.updateStatus = function(func, frame) {
 	// Update the reference to the frame obj
 	this.frame = window.frames[frame].document;
@@ -295,7 +664,7 @@ GameWindow.prototype.updateStatus = function(func, frame) {
 	}
 		
 	this.areLoading--;
-	//console.log('ARE LOADING: ' + this.areLoading);
+
 	if (this.areLoading === 0) {
 		this.state = node.is.LOADED;
 		node.emit('WINDOW_LOADED');
@@ -340,8 +709,8 @@ GameWindow.prototype._writeln = DOM.writeln;
  * @see GameWindow.writeln
  * 
  */
-GameWindow.prototype.write = function (text, root) {		
-	var root = root || this.getScreen();
+GameWindow.prototype.write = function (text, root) {
+	root = root || this.getScreen();
 	if (!root) {
 		node.log('Could not determine where writing', 'ERR');
 		return false;
@@ -363,7 +732,7 @@ GameWindow.prototype.write = function (text, root) {
  * 
  */
 GameWindow.prototype.writeln = function (text, root, br) {
-	var root = root || this.getScreen();
+	root = root || this.getScreen();
 	if (!root) {
 		node.log('Could not determine where writing', 'ERR');
 		return false;
@@ -383,12 +752,13 @@ GameWindow.prototype.writeln = function (text, root, br) {
  * 
  */
 GameWindow.prototype.toggleInputs = function (id, op) {
+	var container;
 	
 	if ('undefined' !== typeof id) {
-		var container = this.getElementById(id);
+		container = this.getElementById(id);
 	}
 	if ('undefined' === typeof container) {
-		var container = this.frame.body;
+		container = this.frame.body;
 	}
 	
 	var inputTags = ['button', 'select', 'textarea', 'input'];
@@ -420,9 +790,9 @@ GameWindow.prototype.toggleInputs = function (id, op) {
  * Creates a div element with the given id and 
  * tries to append it in the following order to:
  * 
- * 		- the specified root element
- * 		- the body element
- * 		- the last element of the document
+ *      - the specified root element
+ *      - the body element
+ *      - the last element of the document
  * 
  * If it fails, it creates a new body element, appends it
  * to the document, and then appends the div element to it.
@@ -433,7 +803,7 @@ GameWindow.prototype.toggleInputs = function (id, op) {
  * 
  */
 GameWindow.prototype._generateRoot = function (root, id) {
-	var root = root || document.body || document.lastElementChild;
+	root = root || document.body || document.lastElementChild;
 	if (!root) {
 		this.addElement('body', document);
 		root = document.body;
@@ -493,7 +863,7 @@ GameWindow.prototype.addEventButton = function (event, text, root, id, attribute
 	if (!root) {
 //			var root = root || this.frame.body;
 //			root = root.lastElementChild || root;
-		var root = this.getScreen();
+		root = this.getScreen();
 	}
 	var eb = this.getEventButton(event, text, id, attributes);
 	return root.appendChild(eb);
@@ -541,13 +911,16 @@ GameWindow.prototype.addRecipientSelector = function (root, id) {
 };
 
 /**
-* Adds an ALL and a SERVER option to a specified select element.
-* 
-* @TODO: adds options to control which players/servers to add.
-* 
-* @see GameWindow.populateRecipientSelector
-* 
-*/
+ * ## GameWindow.addStandardRecipients
+ * 
+ * Adds an ALL and a SERVER option to a specified select element.
+ * 
+ * @TODO: adds options to control which players/servers to add.
+ * 
+ * @param {object} toSelector An HTML `<select>` element 
+ * 
+ * @see GameWindow.populateRecipientSelector
+ */
 GameWindow.prototype.addStandardRecipients = function (toSelector) {
 		
 	var opt = document.createElement('option');
@@ -555,7 +928,7 @@ GameWindow.prototype.addStandardRecipients = function (toSelector) {
 	opt.appendChild(document.createTextNode('ALL'));
 	toSelector.appendChild(opt);
 	
-	var opt = document.createElement('option');
+	opt = document.createElement('option');
 	opt.value = 'SERVER';
 	opt.appendChild(document.createTextNode('SERVER'));
 	toSelector.appendChild(opt);
@@ -753,7 +1126,7 @@ GameWindow.prototype.restoreEscape = function (windowObj) {
 GameWindow.prototype.promptOnleave = function (windowObj, text) {
 	windowObj = windowObj || window;
 	text = ('undefined' === typeof text) ? this.conf.textOnleave : text; 
-	windowObj.onbeforeunload = function(e) {	  
+	windowObj.onbeforeunload = function(e) {
 		  e = e || window.event;
 		  // For IE<8 and Firefox prior to version 4
 		  if (e) {
@@ -788,10 +1161,10 @@ GameWindow.prototype.restoreOnleave = function (windowObj) {
  * 
  * In the following order the screen can be:
  * 
- * 		- the body element of the iframe 
- * 		- the document element of the iframe 
- * 		- the body element of the document 
- * 		- the last child element of the document
+ *      - the body element of the iframe 
+ *      - the document element of the iframe 
+ *      - the body element of the document 
+ *      - the last child element of the document
  * 
  */
 GameWindow.prototype.getScreen = function() {
@@ -802,7 +1175,7 @@ GameWindow.prototype.getScreen = function() {
 	else {
 		el = document.body || document.lastElementChild;
 	}
-	return 	el;
+	return el;
 };
 
 /**
@@ -826,6 +1199,7 @@ if ('undefined' !== typeof window) window.W = node.window;
 	('undefined' !== typeof window) ? window : module.parent.exports.window,
 	('undefined' !== typeof window) ? window.node : module.parent.exports.node
 );
+
 // ## Game incoming listeners
 // Incoming listeners are fired in response to incoming messages
 (function (node, window) {

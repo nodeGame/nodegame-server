@@ -71,8 +71,13 @@ store.addType = function (type, storage) {
 	}
 };
 
-store.error = function() {
-	return "shelf quota exceeded"; 
+// TODO: create unit test
+store.onquotaerror = undefined;
+store.error = function() {	
+	console.log("shelf quota exceeded"); 
+	if ('function' === typeof store.onquotaerror) {
+		store.onquotaerror(null);
+	}
 };
 
 store.log = function(text) {
@@ -200,9 +205,15 @@ if (!store) {
 }
 
 var lock = false;
+<<<<<<< HEAD
 
 var queue = [];
 
+=======
+
+var queue = [];
+
+>>>>>>> b4460a4db24a6b65657ed764a9d5dc4d4d2773cd
 function clearQueue() {
 	if (isLocked()) {
 //		console.log('cannot clear queue if lock is active');

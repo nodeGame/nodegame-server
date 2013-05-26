@@ -18,8 +18,6 @@
   ,   "commander": ">= 1.0.0"
   ,   "socket.io": "0.9.6"
   ,   "nodemailer": "0.1.18"
-  ,   "nodegame-client": ">= 0.4.8"
-  ,   "nodegame-window": ">= 0.3.3"
   ,   "nodegame-widgets": ">= 0.3.8"
   ,   "smoosh": "0.4.0"
   ,   "express": "2.5.8"
