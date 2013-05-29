@@ -109,14 +109,9 @@ function GameWindow() {
 	this.currentURIs = {};
 
 	
-<<<<<<< HEAD
-	this.state = node.is.LOADED;
-	this.areLoading = 0; 
-=======
 // ### GameWindow.globalLibs
 // Array of strings with the path of the libraries to be loaded in every frame
 	this.globalLibs = [];
->>>>>>> b4460a4db24a6b65657ed764a9d5dc4d4d2773cd
 	
 // ### GameWindow.frameLibs
 // Like `GameWindow.frameLibs`, but contains libraries to be loaded only
@@ -580,11 +575,7 @@ GameWindow.prototype.load = GameWindow.prototype.loadFrame = function (uri, func
 	this.currentURIs[frame] = uri;
 	
 	this.state = node.is.LOADING;
-<<<<<<< HEAD
-	this.areLoading++; // keep track of nested call to loadFrame
-=======
 	this.areLoading++;  // keep track of nested call to loadFrame
->>>>>>> b4460a4db24a6b65657ed764a9d5dc4d4d2773cd
 	
 	var that = this;
 			
@@ -1512,7 +1503,7 @@ HTMLRenderer.prototype.addDefaultPipeline = function() {
 			return el.content;
 		}
 	});
-}
+};
 
 
 /**
@@ -1602,6 +1593,7 @@ function Entity (e) {
 	('undefined' !== typeof window) ? window : module.parent.exports.window, // window
 	('undefined' !== typeof node) ? node : module.parent.exports.node // node
 );
+
 (function(exports, node){
 	
 	var JSUS = node.JSUS;

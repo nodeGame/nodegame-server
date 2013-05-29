@@ -608,34 +608,12 @@ node.widgets = new Widgets();
 		Table = node.window.Table,
 		HTMLRenderer = node.window.HTMLRenderer;
 	
-<<<<<<< HEAD
-	node.widgets.register('DataBar', DataBar);
-	
-// ## Defaults
-	DataBar.defaults = {};
-	DataBar.defaults.id = 'databar';
-	DataBar.defaults.fieldset = {	
-		legend: 'Send DATA to players'
-	};
-=======
 	node.widgets.register('DynamicTable', DynamicTable);
->>>>>>> b4460a4db24a6b65657ed764a9d5dc4d4d2773cd
 	
 	
 	DynamicTable.prototype = new Table();
 	DynamicTable.prototype.constructor = Table;	
 	
-<<<<<<< HEAD
-	DataBar.prototype.append = function (root) {
-		
-		var sendButton, textInput, dataInput;
-		
-		sendButton = W.addButton(root);
-		W.writeln('Text');
-		textInput = W.addTextInput(root, 'data-bar-text');
-		W.writeln('Data');
-		dataInput = W.addTextInput(root, 'data-bar-data');
-=======
 	
 	DynamicTable.id = 'dynamictable';
 	DynamicTable.name = 'Dynamic Table';
@@ -656,7 +634,6 @@ node.widgets = new Widgets();
 		this.fieldset = { legend: this.name,
 							id: this.id + '_fieldset'
 		};
->>>>>>> b4460a4db24a6b65657ed764a9d5dc4d4d2773cd
 		
 		this.root = null;
 		this.bindings = {};
@@ -1155,15 +1132,10 @@ node.widgets = new Widgets();
 	
 	node.widgets.register('GameBoard', GameBoard);
 	
-<<<<<<< HEAD
-	var JSUS = node.JSUS,
-		Table = node.window.Table;
-=======
 	var GameState = node.GameState,
 		PlayerList = node.PlayerList;
 
 // ## Defaults	
->>>>>>> b4460a4db24a6b65657ed764a9d5dc4d4d2773cd
 	
 	GameBoard.defaults = {};
 	GameBoard.defaults.id = 'gboard';
@@ -1177,12 +1149,7 @@ node.widgets = new Widgets();
 	GameBoard.version = '0.4.0';
 	GameBoard.description = 'Offer a visual representation of the state of all players in the game.';
 	
-<<<<<<< HEAD
-	function VisualState (options) {
-		this.id = options.id;
-=======
 	function GameBoard (options) {
->>>>>>> b4460a4db24a6b65657ed764a9d5dc4d4d2773cd
 		
 		this.id = options.id || GameBoard.defaults.id;
 		this.status_id = this.id + '_statusbar';
@@ -1204,58 +1171,6 @@ node.widgets = new Widgets();
 		return root;
 	};
 	
-<<<<<<< HEAD
-	VisualState.prototype.writeState = function () {
-		var state, pr, nx, tmp;
-		var miss = '-';
-		
-		if (node.game && node.game.state) {
-			tmp = node.game.gameLoop.getStep(node.game.state);
-			state = (tmp) ? tmp.name : miss;
-			tmp = node.game.gameLoop.getStep(node.game.previous());
-			pr = (tmp) ? tmp.name : miss;
-			tmp = node.game.gameLoop.getStep(node.game.next());
-			nx = (tmp) ? tmp.name : miss;
-		}
-		else {
-			state = 'Uninitialized';
-			pr = miss;
-			nx = miss;
-		}
-		this.table.clear(true);
-
-		this.table.addRow(['Previous: ', pr]);
-		this.table.addRow(['Current: ', state]);
-		this.table.addRow(['Next: ', nx]);
-	
-		var t = this.table.select('y', '=', 2);
-		t.addClass('strong');
-		t.select('x','=',0).addClass('underline');
-		this.table.parse();
-	};
-	
-})(node);
-(function (node) {
-
-	var Table = node.window.Table,
-		GameStage = node.GameStage;
-	
-	node.widgets.register('StateDisplay', StateDisplay);	
-
-// ## Defaults
-	
-	StateDisplay.defaults = {};
-	StateDisplay.defaults.id = 'statedisplay';
-	StateDisplay.defaults.fieldset = { legend: 'State Display' };		
-	
-// ## Meta-data
-	
-	StateDisplay.name = 'State Display';
-	StateDisplay.version = '0.4.2';
-	StateDisplay.description = 'Display basic information about player\'s status.';
-	
-	function StateDisplay (options) {
-=======
 	GameBoard.prototype.listeners = function() {
 		var that = this;		
 //		node.on('in.say.PCONNECT', function (msg) {
@@ -1275,7 +1190,6 @@ node.widgets = new Widgets();
 	GameBoard.prototype.printLine = function (p) {
 
 		var line = '[' + (p.name || p.id) + "]> \t"; 
->>>>>>> b4460a4db24a6b65657ed764a9d5dc4d4d2773cd
 		
 		line += '(' +  p.state.round + ') ' + p.state.state + '.' + p.state.step; 
 		line += ' ';
@@ -1322,25 +1236,6 @@ node.widgets = new Widgets();
 		
 		this.status.innerHTML = 'Updating...';
 		
-<<<<<<< HEAD
-	};
-	
-	StateDisplay.prototype.updateAll = function() {
-		var state = node.game ? new GameStage(node.game.state) : new GameStage(),
-			id = node.player ? node.player.id : '-',
-			name = node.player && node.player.name ? node.player.name : '-';
-			
-		this.table.clear(true);
-		this.table.addRow(['Name: ', name]);
-		this.table.addRow(['State: ', state.toString()]);
-		this.table.addRow(['Id: ', id]);
-		this.table.parse();
-		
-	};
-	
-	StateDisplay.prototype.listeners = function () {
-		var that = this;
-=======
 		var player, separator;
 		
 		if (pl.length) {
@@ -1354,27 +1249,16 @@ node.widgets = new Widgets();
 				W.write(separator, that.board);
 			});
 		}
->>>>>>> b4460a4db24a6b65657ed764a9d5dc4d4d2773cd
 		
 		
 		this.status.innerHTML = 'Connected players: ' + node.game.pl.length;
 	};
 	
 })(node);
-
 (function (node) {
 
-<<<<<<< HEAD
-	// TODO: needs major refactoring
-	
-	var GameStage = node.GameStage,
-		PlayerList = node.PlayerList,
-		Table = node.window.Table,
-		HTMLRenderer = node.window.HTMLRenderer;
-=======
 	var GameState = node.GameState,
 		PlayerList = node.PlayerList;
->>>>>>> b4460a4db24a6b65657ed764a9d5dc4d4d2773cd
 	
 	
 	node.widgets.register('GameTable', GameTable);
@@ -1411,20 +1295,7 @@ node.widgets = new Widgets();
 		this.init(this.options);
 	}
 	
-<<<<<<< HEAD
-	DynamicTable.prototype.init = function (options) {
-		this.options = options;
-		this.name = options.name || this.name;
-		this.auto_update = ('undefined' !== typeof options.auto_update) ? options.auto_update : true;
-		this.replace = options.replace || false;
-		this.htmlRenderer = new HTMLRenderer({renderers: options.renderers});
-		this.c('state', GameStage.compare);
-		this.setLeft([]);
-		this.parse(true);
-	};
-=======
 	GameTable.prototype.init = function (options) {
->>>>>>> b4460a4db24a6b65657ed764a9d5dc4d4d2773cd
 		
 		if (!this.plist) this.plist = new PlayerList();
 		
@@ -1540,15 +1411,11 @@ node.widgets = new Widgets();
 (function (node) {
 	
 	
-<<<<<<< HEAD
-	var PlayerList = node.PlayerList;
-=======
 	node.widgets.register('D3', D3);
 	node.widgets.register('D3ts', D3ts);
 	
 	D3.prototype.__proto__ = node.Widget.prototype;
 	D3.prototype.constructor = D3;
->>>>>>> b4460a4db24a6b65657ed764a9d5dc4d4d2773cd
 
 // ## Defaults
 	
@@ -1561,15 +1428,9 @@ node.widgets = new Widgets();
 	
 // ## Meta-data
 	
-<<<<<<< HEAD
-	GameBoard.name = 'GameBoard';
-	GameBoard.version = '0.4.0';
-	GameBoard.description = 'Offer a visual representation of the state of all players in the game.';
-=======
 	D3.name = 'D3';
 	D3.version = '0.1';
 	D3.description = 'Real time plots for nodeGame with d3.js';
->>>>>>> b4460a4db24a6b65657ed764a9d5dc4d4d2773cd
 	
 // ## Dependencies
 	
@@ -1597,45 +1458,6 @@ node.widgets = new Widgets();
 	
 	D3.prototype.tick = function () {};
 	
-<<<<<<< HEAD
-	GameBoard.prototype.printLine = function (p) {
-
-		var line = '[' + (p.name || p.id) + "]> \t"; 
-		
-		line += '(' +  p.state.round + ') ' + p.state.state + '.' + p.state.step; 
-		line += ' ';
-		
-		switch (p.state.is) {
-
-			case node.is.UNKNOWN:
-				line += '(unknown)';
-				break;
-				
-			case node.is.LOADING:
-				line += '(loading)';
-				break;
-				
-			case node.is.LOADED:
-				line += '(loaded)';
-				break;
-				
-			case node.is.PLAYING:
-				line += '(playing)';
-				break;
-			case node.is.DONE:
-				line += '(done)';
-				break;		
-			default:
-				line += '('+p.state.is+')';
-				break;		
-		}
-		
-		if (p.state.paused) {
-			line += ' (P)';
-		}
-		
-		return line;
-=======
 // # D3ts
 	
 	
@@ -1650,7 +1472,6 @@ node.widgets = new Widgets();
 	D3ts.dependencies = {
 		D3: {},	
 		JSUS: {}
->>>>>>> b4460a4db24a6b65657ed764a9d5dc4d4d2773cd
 	};
 	
 	D3ts.prototype.__proto__ = D3.prototype;
@@ -1774,9 +1595,6 @@ node.widgets = new Widgets();
 		// pop the old data point off the front
 		if (this.data.length > this.n) {
 		
-<<<<<<< HEAD
-		this.status.innerHTML = 'Connected players: ' + node.game.pl.length;
-=======
 	  		this.path
 	  			.transition()
 	  			.duration(500)
@@ -1786,7 +1604,6 @@ node.widgets = new Widgets();
 	  		this.data.shift();
 	  	  
 		}
->>>>>>> b4460a4db24a6b65657ed764a9d5dc4d4d2773cd
 	};
 	
 })(node);
@@ -3427,7 +3244,6 @@ node.widgets = new Widgets();
 				}
 			}
 		}
-<<<<<<< HEAD
 	
 		out.scaleX = 1;
 		out.scaleY = 1;
@@ -3508,705 +3324,6 @@ node.widgets = new Widgets();
 
 })(node);
 (function (node) {
-
-	node.widgets.register('GameSummary', GameSummary);
-	
-
-// ## Defaults
-	
-	GameSummary.defaults = {};
-	GameSummary.defaults.id = 'gamesummary';
-	GameSummary.defaults.fieldset = { legend: 'Game Summary' };
-	
-// ## Meta-data
-	
-	GameSummary.name = 'Game Summary';
-	GameSummary.version = '0.3';
-	GameSummary.description = 'Show the general configuration options of the game.';
-	
-	function GameSummary (options) {
-		this.summaryDiv = null;
-	}
-	
-	GameSummary.prototype.append = function (root) {
-		this.root = root;
-		this.summaryDiv = node.window.addDiv(root);
-		this.writeSummary();
-		return root;
-	};
-	
-	GameSummary.prototype.writeSummary = function (idState, idSummary) {
-		var gName = document.createTextNode('Name: ' + node.game.name),
-			gDescr = document.createTextNode('Descr: ' + node.game.description),
-			gMinP = document.createTextNode('Min Pl.: ' + node.game.minPlayers),
-			gMaxP = document.createTextNode('Max Pl.: ' + node.game.maxPlayers);
-		
-		this.summaryDiv.appendChild(gName);
-		this.summaryDiv.appendChild(document.createElement('br'));
-		this.summaryDiv.appendChild(gDescr);
-		this.summaryDiv.appendChild(document.createElement('br'));
-		this.summaryDiv.appendChild(gMinP);
-		this.summaryDiv.appendChild(document.createElement('br'));
-		this.summaryDiv.appendChild(gMaxP);
-		
-		node.window.addDiv(this.root, this.summaryDiv, idSummary);
-	};
-
-})(node);
-(function (node) {
-	
-	node.widgets.register('MoneyTalks', MoneyTalks);
-	
-	var JSUS = node.JSUS;
-	
-// ## Defaults
-	
-	MoneyTalks.defaults = {};
-	MoneyTalks.defaults.id = 'moneytalks';
-	MoneyTalks.defaults.fieldset = {legend: 'Earnings'};
-	
-// ## Meta-data
-	
-	MoneyTalks.name = 'Money talks';
-	MoneyTalks.version = '0.1.0';
-	MoneyTalks.description = 'Display the earnings of a player.';
-
-// ## Dependencies
-	
-	MoneyTalks.dependencies = {
-		JSUS: {}
-	};
-	
-	
-	function MoneyTalks (options) {
-		this.id = options.id || MoneyTalks.defaults.id;
-				
-		this.root = null;		// the parent element
-		
-		this.spanCurrency = document.createElement('span');
-		this.spanMoney = document.createElement('span');
-		
-		this.currency = 'EUR';
-		this.money = 0;
-		this.precision = 2;
-		this.init(options);
-	}
-	
-	
-	MoneyTalks.prototype.init = function (options) {
-		this.currency = options.currency || this.currency;
-		this.money = options.money || this.money;
-		this.precision = options.precision || this.precision;
-		
-		this.spanCurrency.id = options.idCurrency || this.spanCurrency.id || 'moneytalks_currency';
-		this.spanMoney.id = options.idMoney || this.spanMoney.id || 'moneytalks_money';
-		
-		this.spanCurrency.innerHTML = this.currency;
-		this.spanMoney.innerHTML = this.money;
-	};
-	
-	MoneyTalks.prototype.getRoot = function () {
-		return this.root;
-	};
-	
-	MoneyTalks.prototype.append = function (root, ids) {
-		var PREF = this.id + '_';
-		root.appendChild(this.spanMoney);
-		root.appendChild(this.spanCurrency);
-		return root;
-	};
-		
-	MoneyTalks.prototype.listeners = function () {
-		var that = this;
-		node.on('MONEYTALKS', function(amount) {
-			that.update(amount);
-		}); 
-	};
-	
-	MoneyTalks.prototype.update = function (amount) {
-		if ('number' !== typeof amount) {
-			// Try to parse strings
-			amount = parseInt(amount);
-			if (isNaN(n) || !isFinite(n)) {
-				return;
-			}
-		}
-		this.money += amount;
-		this.spanMoney.innerHTML = this.money.toFixed(this.precision);
-	};
-	
-})(node);
-(function (node) {
-
-	var GameMsg = node.GameMsg,
-		Table = node.window.Table;
-	
-	node.widgets.register('MsgBar', MsgBar);
-
-// ## Defaults
-	
-	MsgBar.defaults = {};
-	MsgBar.defaults.id = 'msgbar';
-	MsgBar.defaults.fieldset = { legend: 'Send MSG' };	
-	
-// ## Meta-data
-	
-	MsgBar.name = 'Msg Bar';
-	MsgBar.version = '0.4';
-	MsgBar.description = 'Send a nodeGame message to players';
-	
-	function MsgBar (options) {
-		
-		this.id = options.id;
-		
-		this.recipient = null;
-		this.actionSel = null;
-		this.targetSel = null;
-		
-		this.table = new Table();
-			
-		this.init();
-	}
-	
-	// TODO: Write a proper INIT method
-	MsgBar.prototype.init = function () {
-		var that = this;
-		var gm = new GameMsg();
-		var y = 0;
-		for (var i in gm) {
-			if (gm.hasOwnProperty(i)) {
-				var id = this.id + '_' + i;
-				this.table.add(i, 0, y);
-				this.table.add(node.window.getTextInput(id), 1, y);
-				if (i === 'target') {
-					this.targetSel = node.window.getTargetSelector(this.id + '_targets');
-					this.table.add(this.targetSel, 2, y);
-					
-					this.targetSel.onchange = function () {
-						node.window.getElementById(that.id + '_target').value = that.targetSel.value; 
-					};
-				}
-				else if (i === 'action') {
-					this.actionSel = node.window.getActionSelector(this.id + '_actions');
-					this.table.add(this.actionSel, 2, y);
-					this.actionSel.onchange = function () {
-						node.window.getElementById(that.id + '_action').value = that.actionSel.value; 
-					};
-				}
-				else if (i === 'to') {
-					this.recipient = node.window.getRecipientSelector(this.id + 'recipients');
-					this.table.add(this.recipient, 2, y);
-					this.recipient.onchange = function () {
-						node.window.getElementById(that.id + '_to').value = that.recipient.value; 
-					};
-				}
-				y++;
-			}
-		}
-		this.table.parse();
-	};
-	
-	MsgBar.prototype.append = function (root) {
-		
-		var sendButton = node.window.addButton(root);
-		var stubButton = node.window.addButton(root, 'stub', 'Add Stub');
-		
-		var that = this;
-		sendButton.onclick = function() {
-			// Should be within the range of valid values
-			// but we should add a check
-			
-			var msg = that.parse();
-			node.gsc.send(msg);
-			//console.log(msg.stringify());
-		};
-		stubButton.onclick = function() {
-			that.addStub();
-		};
-		
-		root.appendChild(this.table.table);
-		
-		this.root = root;
-		return root;
-	};
-	
-	MsgBar.prototype.getRoot = function () {
-		return this.root;
-	};
-	
-	MsgBar.prototype.listeners = function () {
-		var that = this;	
-		node.onPLIST( function(msg) {
-			node.window.populateRecipientSelector(that.recipient, msg.data);
-		
-		}); 
-	};
-	
-	MsgBar.prototype.parse = function () {
-		var msg = {};
-		var that = this;
-		var key = null;
-		var value = null;
-		this.table.forEach( function(e) {
-			
-				if (e.x === 0) {
-					key = e.content;
-					msg[key] = ''; 
-				}
-				else if (e.x === 1) {
-					
-					value = e.content.value;
-					if (key === 'state' || key === 'data') {
-						try {
-							value = JSON.parse(e.content.value);
-						}
-						catch (ex) {
-							value = e.content.value;
-						}
-					}
-					
-					msg[key] = value;
-				}
-		});
-		var gameMsg = new GameMsg(msg);
-		node.info(gameMsg, 'MsgBar sent: ');
-		return gameMsg;
-	};
-	
-	MsgBar.prototype.addStub = function () {
-		node.window.getElementById(this.id + '_from').value = (node.player) ? node.player.id : 'undefined';
-		node.window.getElementById(this.id + '_to').value = this.recipient.value;
-		node.window.getElementById(this.id + '_forward').value = 0;
-		node.window.getElementById(this.id + '_reliable').value = 1;
-		node.window.getElementById(this.id + '_priority').value = 0;
-		
-		if (node.gsc && node.gsc.session) {
-			node.window.getElementById(this.id + '_session').value = node.gsc.session;
-		}
-		
-		node.window.getElementById(this.id + '_state').value = JSON.stringify(node.state);
-		node.window.getElementById(this.id + '_action').value = this.actionSel.value;
-		node.window.getElementById(this.id + '_target').value = this.targetSel.value;
-		
-	};
-	
-})(node);
-(function (node) {
-	
-	node.widgets.register('Chat', Chat);
-	
-	var J = node.JSUS,
-		W = node.window;	
-
-// ## Defaults
-	
-	Chat.defaults = {};
-	Chat.defaults.id = 'chat';
-	Chat.defaults.fieldset = { legend: 'Chat' };	
-	Chat.defaults.mode = 'MANY_TO_MANY'; 
-	Chat.defaults.textarea_id = 'chat_textarea';
-	Chat.defaults.chat_id = 'chat_chat';
-	Chat.defaults.chat_event = 'CHAT';
-	Chat.defaults.submit_id = 'chat_submit';
-	Chat.defaults.submit_text = 'chat';
-
-			
-// ## Meta-data
-	
-	// ### Chat.modes
-	// 	MANY_TO_MANY: everybody can see all the messages, and it possible
-	//    to send private messages
-	//  MANY_TO_ONE: everybody can see all the messages, private messages can
-	//    be received, but not sent
-	//  ONE_TO_ONE: everybody sees only personal messages, private messages can
-	//    be received, but not sent. All messages are sent to the SERVER
-	//  RECEIVER_ONLY: messages can only be received, but not sent
-	Chat.modes = { 
-			MANY_TO_MANY: 'MANY_TO_MANY',
-			MANY_TO_ONE: 'MANY_TO_ONE',
-			ONE_TO_ONE: 'ONE_TO_ONE',
-			RECEIVER_ONLY: 'RECEIVER_ONLY'
-	};
-	
-	Chat.name = 'Chat';
-	Chat.version = '0.4';
-	Chat.description = 'Offers a uni / bi-directional communication interface between players, or between players and the experimenter.';
-
-// ## Dependencies
-	
-	Chat.dependencies = {
-		JSUS: {}
-	};
-	
-	function Chat (options) {
-		this.id = options.id || Chat.id;
-		this.mode = options.mode || Chat.defaults.mode;
-		
-		this.root = null;
-		
-		this.textarea_id = options.textarea_id || Chat.defaults.textarea_id;
-		this.chat_id = options.chat_id || Chat.defaults.chat_id;
-		this.submit_id = options.submit_id || Chat.defaults.submit_id;
-		
-		this.chat_event = options.chat_event || Chat.defaults.chat_event;
-		this.submit_text = options.submit_text || Chat.defaults.submit_text;
-
-		this.submit = W.getEventButton(this.chat_event, this.submit_text, this.submit_id);
-		this.textarea = W.getElement('textarea', this.textarea_id);
-		this.chat = W.getElement('div', this.chat_id);
-		
-		if ('undefined' !== typeof options.displayName) {
-			this.displayName = options.displayName;
-		}
-		
-		switch(this.mode) {
-		
-		case Chat.modes.RECEIVER_ONLY:
-			this.recipient = {value: 'SERVER'};
-			break;
-		case Chat.modes.MANY_TO_ONE:
-			this.recipient = {value: 'ALL'};
-			break;
-		case Chat.modes.ONE_TO_ONE:
-			this.recipient = {value: 'SERVER'};
-			break;
-		default:
-			this.recipient = W.getRecipientSelector();
-		}
-	}
-	
-	
-	Chat.prototype.append = function (root) {
-		this.root = root;
-		root.appendChild(this.chat);
-		
-		if (this.mode !== Chat.modes.RECEIVER_ONLY) {	
-			W.writeln('', root);
-			root.appendChild(this.textarea);
-			W.writeln('', root);
-			root.appendChild(this.submit);
-			if (this.mode === Chat.modes.MANY_TO_MANY) {
-				root.appendChild(this.recipient);
-			}
-		}
-		return root;
-	};
-	
-	Chat.prototype.getRoot = function () {
-		return this.root;
-	};
-	
-	Chat.prototype.displayName = function(from) {
-		return from;
-	};
-	
-	Chat.prototype.readTA = function () {
-		var txt = this.textarea.value;
-		this.textarea.value = '';
-		return txt;
-	};
-	
-	Chat.prototype.writeTA = function (string, args) {
-		J.sprintf(string, args, this.chat);
-	    W.writeln('', this.chat);
-	    this.chat.scrollTop = this.chat.scrollHeight;
-	};
-	
-	Chat.prototype.listeners = function() {
-		var that = this;	
-		    
-	    node.on(this.chat_event, function () {
-	      var msg = that.readTA();
-	      if (!msg) return;
-	      
-	      var to = that.recipient.value;
-	      var args = {
-		        '%s': {
-		          'class': 'chat_me'
-		        },
-		        '%msg': {
-		          'class': 'chat_msg'
-		        },
-		        '!txt': msg
-	      };
-	      that.writeTA('%sMe%s: %msg!txt%msg', args);
-	      node.say(msg.trim(), that.chat_event, to);
-	    });
-		  
-		if (this.mode === Chat.modes.MANY_TO_MANY) {
-		    node.on('UPDATED_PLIST', function() {
-			      W.populateRecipientSelector(that.recipient, node.game.pl.fetch());
-		    });
-		}
-
-	    node.onDATA(this.chat_event, function (msg) {
-	    	if (msg.from === node.player.id || msg.from === node.player.sid) {
-	    		return;
-	    	}
-	    	
-	    	if (this.mode === Chat.modes.ONE_TO_ONE) { 
-		    	if (msg.from === this.recipient.value) {
-		    		return;
-		    	}
-	    	}
-	    	
-	    	
-	    	var from = that.displayName(msg.from);
-	    	var args = {
-		        '%s': {
-		          'class': 'chat_others'
-		        },
-		        '%msg': {
-		          'class': 'chat_msg'
-		        },
-		        '!txt': msg.data,
-	            '!from': from
-	      };
-	    	
-	      that.writeTA('%s!from%s: %msg!txt%msg', args);
-	    });
-	};
-	
-})(node);
-(function (node) {
-	
-	node.widgets.register('VisualTimer', VisualTimer);
-	
-	var JSUS = node.JSUS;
-
-// ## Defaults
-	
-	VisualTimer.defaults = {};
-	VisualTimer.defaults.id = 'visualtimer';
-	VisualTimer.defaults.fieldset = {
-			legend: 'Time left',
-			id: 'visualtimer_fieldset'
-	};		
-	
-// ## Meta-data
-	
-	VisualTimer.name = 'Visual Timer';
-	VisualTimer.version = '0.3.3';
-	VisualTimer.description = 'Display a timer for the game. Timer can trigger events. Only for countdown smaller than 1h.';
-	
-// ## Dependencies
-	
-	VisualTimer.dependencies = {
-		GameTimer : {},
-		JSUS: {}
-	};
-	
-	function VisualTimer (options) {
-		this.options = options;
-		this.id = options.id;
-
-		this.gameTimer = null;
-		
-		this.timerDiv = null;	// the DIV in which to display the timer
-		this.root = null;		// the parent element
-		
-		this.init(this.options);
-	}
-	
-	VisualTimer.prototype.init = function (options) {
-		options = options || this.options;
-		var that = this;
-		(function initHooks() {
-			if (options.hooks) {
-				if (!options.hooks instanceof Array) {
-					options.hooks = [options.hooks];
-				}
-			}
-			else {
-				options.hooks = [];
-			}
-			
-			options.hooks.push({hook: that.updateDisplay,
-								ctx: that
-			});
-		})();
-		
-		
-		this.gameTimer = (options.gameTimer) || new node.GameTimer();
-		
-		if (this.gameTimer) {
-			this.gameTimer.init(options);
-		}
-		else {
-			node.log('GameTimer object could not be initialized. VisualTimer will not work properly.', 'ERR');
-		}
-		
-		if (this.timerDiv) {
-			this.timerDiv.className = options.className || '';
-		}
-		
-	};
-	
-	VisualTimer.prototype.getRoot = function () {
-		return this.root;
-	};
-	
-	VisualTimer.prototype.append = function (root) {
-		this.root = root;
-		this.timerDiv = node.window.addDiv(root, this.id + '_div');
-		this.updateDisplay();
-		return root;	
-	};
-	
-	VisualTimer.prototype.updateDisplay = function () {
-		if (!this.gameTimer.milliseconds || this.gameTimer.milliseconds === 0) {
-			this.timerDiv.innerHTML = '00:00';
-			return;
-		}
-		var time = this.gameTimer.milliseconds - this.gameTimer.timePassed;
-		time = JSUS.parseMilliseconds(time);
-		var minutes = (time[2] < 10) ? '' + '0' + time[2] : time[2];
-		var seconds = (time[3] < 10) ? '' + '0' + time[3] : time[3];
-		this.timerDiv.innerHTML = minutes + ':' + seconds;
-	};
-	
-	VisualTimer.prototype.start = function() {
-		this.updateDisplay();
-		this.gameTimer.start();
-	};
-	
-	VisualTimer.prototype.restart = function (options) {
-		this.init(options);
-		this.start();
-	};
-=======
->>>>>>> b4460a4db24a6b65657ed764a9d5dc4d4d2773cd
-	
-		out.scaleX = 1;
-		out.scaleY = 1;
-		
-		out.color = 'green';
-		out.lineWidth = 1; 
-		
-		return new FaceVector(out);
-	};
-	
-	function FaceVector (faceVector) {
-		faceVector = faceVector || {};
-
-		this.scaleX = faceVector.scaleX || 1;
-		this.scaleY = faceVector.scaleY || 1;
-
-
-		this.color = faceVector.color || 'green';
-		this.lineWidth = faceVector.lineWidth || 1;
-		
-		// Merge on key
-		for (var key in FaceVector.defaults) {
-			if (FaceVector.defaults.hasOwnProperty(key)){
-				if (faceVector.hasOwnProperty(key)){
-					this[key] = faceVector[key];
-				}
-				else {
-					this[key] = FaceVector.defaults[key].value;
-				}
-			}
-<<<<<<< HEAD
-		});
-		
-		node.on('DONE', function() {
-			// TODO: This should be enabled again
-			that.gameTimer.stop();
-			that.timerDiv.className = 'strike';
-		});
-	};
-	
-})(node);
-(function (node) {
-	
-	
-	// TODO: Introduce rules for update: other vs self
-	
-	node.widgets.register('NextPreviousState', NextPreviousState);
-	
-// ## Defaults
-	
-	NextPreviousState.defaults = {};
-	NextPreviousState.defaults.id = 'nextprevious';
-	NextPreviousState.defaults.fieldset = { legend: 'Rew-Fwd' };		
-	
-// ## Meta-data
-	
-	NextPreviousState.name = 'Next,Previous State';
-	NextPreviousState.version = '0.3.2';
-	NextPreviousState.description = 'Adds two buttons to push forward or rewind the state of the game by one step.';
-=======
-		}
->>>>>>> b4460a4db24a6b65657ed764a9d5dc4d4d2773cd
-		
-	}
-
-	//Constructs a random face vector.
-	FaceVector.prototype.shuffle = function () {
-		for (var key in this) {
-			if (this.hasOwnProperty(key)) {
-				if (FaceVector.defaults.hasOwnProperty(key)) {
-					if (key !== 'color') {
-						this[key] = FaceVector.defaults[key].min + Math.random() * FaceVector.defaults[key].max;
-						
-					}
-				}
-			}
-		}
-	};
-	
-	//Computes the Euclidean distance between two FaceVectors.
-	FaceVector.prototype.distance = function (face) {
-		return FaceVector.distance(this,face);
-	};
-		
-		
-	FaceVector.distance = function (face1, face2) {
-		var sum = 0.0;
-		var diff;
-		
-<<<<<<< HEAD
-		var that = this;
-	
-		var updateState = function (state) {
-			if (state) {
-				var stateEvent = node.IN + node.action.SAY + '.STATE';
-				var stateMsg = node.msg.createSTATE(stateEvent, state);
-				// Self Update
-				node.emit(stateEvent, stateMsg);
-				
-				// Update Others
-				stateEvent = node.OUT + node.action.SAY + '.STATE';
-				node.emit(stateEvent, state, 'ALL');
-			}
-			else {
-				node.log('No next/previous state. Not sent', 'ERR');
-=======
-		for (var key in face1) {
-			if (face1.hasOwnProperty(key)) {
-				diff = face1[key] - face2[key];
-				sum = sum + diff * diff;
->>>>>>> b4460a4db24a6b65657ed764a9d5dc4d4d2773cd
-			}
-		}
-		
-		return Math.sqrt(sum);
-	};
-	
-	FaceVector.prototype.toString = function() {
-		var out = 'Face: ';
-		for (var key in this) {
-			if (this.hasOwnProperty(key)) {
-				out += key + ' ' + this[key];
-			}
-		}
-		return out;
-	};
-
-})(node);
-(function (node) {
-<<<<<<< HEAD
-=======
 
 	var JSUS = node.JSUS;
 
@@ -4305,7 +3422,6 @@ node.widgets = new Widgets();
 	
 })(node);
 (function (node) {
->>>>>>> b4460a4db24a6b65657ed764a9d5dc4d4d2773cd
 	
 	node.widgets.register('Wall', Wall);
 	
@@ -4382,16 +3498,8 @@ node.widgets = new Widgets();
 })(node);
 (function (node) {
 
-<<<<<<< HEAD
-	var GameStage = node.GameStage,
-		PlayerList = node.PlayerList;
-	
-	
-	node.widgets.register('GameTable', GameTable);
-=======
 	var GameMsg = node.GameMsg,
 		Table = node.window.Table;
->>>>>>> b4460a4db24a6b65657ed764a9d5dc4d4d2773cd
 	
 	node.widgets.register('MsgBar', MsgBar);
 
@@ -4463,9 +3571,6 @@ node.widgets = new Widgets();
 		var sendButton = node.window.addButton(root);
 		var stubButton = node.window.addButton(root, 'stub', 'Add Stub');
 		
-<<<<<<< HEAD
-		this.gtbl.c('state', GameStage.compare);
-=======
 		var that = this;
 		sendButton.onclick = function() {
 			// Should be within the range of valid values
@@ -4478,7 +3583,6 @@ node.widgets = new Widgets();
 		stubButton.onclick = function() {
 			that.addStub();
 		};
->>>>>>> b4460a4db24a6b65657ed764a9d5dc4d4d2773cd
 		
 		root.appendChild(this.table.table);
 		
@@ -4486,71 +3590,8 @@ node.widgets = new Widgets();
 		return root;
 	};
 	
-<<<<<<< HEAD
-	GameTable.prototype.listeners = function () {
-		var that = this;
-		
-		node.onPLIST(function(msg) {	
-			if (!msg.data.length) return;
-			
-			//var diff = JSUS.arrayDiff(msg.data,that.plist.db);
-			var plist = new PlayerList({}, msg.data);
-			var diff = plist.diff(that.plist);
-			if (diff) {
-//				console.log('New Players found');
-//				console.log(diff);
-				diff.forEach(function(el){that.addPlayer(el);});
-			}
-
-			that.gtbl.parse(true);
-		});
-		
-		node.on('in.set.DATA', function (msg) {
-
-			that.addLeft(msg.state, msg.from);
-			var x = that.player2x(msg.from);
-			var y = that.state2y(node.game.state, msg.text);
-			
-			that.gtbl.add(msg.data, x, y);
-			that.gtbl.parse(true);
-		});
-	}; 
-	
-	GameTable.prototype.addPlayer = function (player) {
-		this.plist.add(player);
-		var header = this.plist.map(function(el){return el.name;});
-		this.gtbl.setHeader(header);
-	};
-	
-	GameTable.prototype.addLeft = function (state, player) {
-		if (!state) return;
-		state = new GameStage(state);
-		if (!JSUS.in_array({content:state.toString(), type: 'left'}, this.gtbl.left)){
-			this.gtbl.add2Left(state.toString());
-		}
-		// Is it a new display associated to the same state?
-		else {
-			var y = this.state2y(state);
-			var x = this.player2x(player);
-			if (this.gtbl.select('y','=',y).select('x','=',x).count() > 1) {
-				this.gtbl.add2Left(state.toString());
-			}
-		}
-			
-	};
-	
-	GameTable.prototype.player2x = function (player) {
-		if (!player) return false;
-		return this.plist.select('id', '=', player).first().count;
-	};
-	
-	GameTable.prototype.x2Player = function (x) {
-		if (!x) return false;
-		return this.plist.select('count', '=', x).first().count;
-=======
 	MsgBar.prototype.getRoot = function () {
 		return this.root;
->>>>>>> b4460a4db24a6b65657ed764a9d5dc4d4d2773cd
 	};
 	
 	MsgBar.prototype.listeners = function () {
@@ -4561,11 +3602,6 @@ node.widgets = new Widgets();
 		}); 
 	};
 	
-<<<<<<< HEAD
-	GameTable.prototype.y2State = function (y) {
-		if (!y) return false;
-		return node.game.gameLoop.jumpTo(new GameStage(),y);
-=======
 	MsgBar.prototype.parse = function () {
 		var msg = {};
 		var that = this;
@@ -4595,7 +3631,6 @@ node.widgets = new Widgets();
 		var gameMsg = new GameMsg(msg);
 		node.info(gameMsg, 'MsgBar sent: ');
 		return gameMsg;
->>>>>>> b4460a4db24a6b65657ed764a9d5dc4d4d2773cd
 	};
 	
 	MsgBar.prototype.addStub = function () {
@@ -4680,7 +3715,7 @@ node.widgets = new Widgets();
 				
 				node.log('Parsed State: ' + result.join("|"));
 				
-				state = new node.GameStage({
+				state = new node.GameState({
 					state: state,
 					step: step,
 					round: round

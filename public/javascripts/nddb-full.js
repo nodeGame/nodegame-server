@@ -1927,47 +1927,10 @@ if (!store) {
 	return;
 }
 
-<<<<<<< HEAD
-var lock = false;
-
-var queue = [];
-
-function clearQueue() {
-	if (isLocked()) {
-//		console.log('cannot clear queue if lock is active');
-		return false;
-	}
-//	console.log('clearing queue');
-	for (var i=0; i< queue.length; i++) {
-		queue[i].call(queue[i]);
-	}
-}
-
-function locked() {
-	lock = true;
-}
-
-function unlocked() {
-	lock = false;
-}
-
-function isLocked() {
-	return lock;
-}
-
-function addToQueue(cb) {
-	queue.push(cb);
-}
-
-var counter = 0;
-
-store.filename = './shelf.out';
-=======
 if ('undefined' === typeof window) {
 	console.log('cookie.shelf.js: am I running in a browser? Cookie storage not available.');
 	return;
 }
->>>>>>> b4460a4db24a6b65657ed764a9d5dc4d4d2773cd
 
 var cookie = (function() {
 	
@@ -1990,89 +1953,6 @@ var cookie = (function() {
 		
 		var returnValue, expireDate;
 
-<<<<<<< HEAD
-// https://github.com/jprichardson/node-fs-extra/blob/master/lib/copy.js
-//var copyFile = function(srcFile, destFile, cb) {
-//	
-//    var fdr, fdw;
-//    
-//    fdr = fs.createReadStream(srcFile, {
-//    	flags: 'r'
-//    });
-////    fs.flockSync(fdr, 'sh');
-//    
-//    fdw = fs.createWriteStream(destFile, {
-//    	flags: 'w'
-//    });
-//    
-////    fs.flockSync(fdw, 'ex');
-//    		
-//	fdr.on('end', function() {
-////      fs.flockSync(fdr, 'un');
-//    });
-//	
-//    fdw.on('close', function() {
-////        fs.flockSync(fdw, 'un');
-//    	if (cb) cb(null);
-//    });
-//    
-//    fdr.pipe(fdw);
-//};
-
-//var overwrite = function (fileName, items) {
-//console.log('OW: ' + counter++);
-//
-//var file = fileName || store.filename;
-//if (!file) {
-//	store.log('You must specify a valid file.', 'ERR');
-//	return false;
-//}
-//
-//var tmp_copy = path.dirname(file) + '/.' + path.basename(file);
-//
-////console.log('files')
-////console.log(file);
-////console.log(fileName);
-////console.log(tmp_copy)
-//
-//copyFile(file, tmp_copy, function(){
-//	var s = store.stringify(items);
-//	// removing leading { and trailing }
-//	s = s.substr(1, s = s.substr(0, s.legth-1));
-////	console.log('SAVING')
-////	console.log(s)
-//	fs.writeFile(file, s, 'utf-8', function(e) {
-//		console.log('UNLINK ' + counter)
-//		if (e) throw e;
-////		fs.unlinkSync(tmp_copy);
-//		fs.unlink(tmp_copy, function (err) {
-//			if (err) throw err;  
-//		});
-//		return true;
-//	});
-//
-//});
-//
-//};
-
-var BUF_LENGTH = 64 * 1024;
-var _buff = new Buffer(BUF_LENGTH);
-
-var copyFileSync = function(srcFile, destFile) {
-	  var bytesRead, fdr, fdw, pos;
-	  fdr = fs.openSync(srcFile, 'r');
-	  fdw = fs.openSync(destFile, 'w');
-	  bytesRead = 1;
-	  pos = 0;
-	  while (bytesRead > 0) {
-	    bytesRead = fs.readSync(fdr, _buff, 0, BUF_LENGTH, pos);
-	    fs.writeSync(fdw, _buff, 0, bytesRead);
-	    pos += bytesRead;
-	  }
-	  fs.closeSync(fdr);
-	  return fs.closeSync(fdw);
-};
-=======
 		if(typeof options !== 'object' || options === null){
 			returnValue = defaultOptions;
 		}
@@ -2083,7 +1963,6 @@ var copyFileSync = function(srcFile, destFile) {
 				domain: defaultOptions.domain,
 				secure: defaultOptions.secure
 			};
->>>>>>> b4460a4db24a6b65657ed764a9d5dc4d4d2773cd
 
 			if (typeof options.expiresAt === 'object' && options.expiresAt instanceof Date) {
 				returnValue.expiresAt = options.expiresAt;
@@ -2098,75 +1977,6 @@ var copyFileSync = function(srcFile, destFile) {
 				returnValue.path = options.path;
 			}
 
-<<<<<<< HEAD
-
-
-var overwrite = function (fileName, items) {
-	
-	if (isLocked()) {
-		addToQueue(this);
-		return false;
-	}
-	
-	locked();
-	
-//	console.log('OW: ' + counter++);
-	
-	var file = fileName || store.filename;
-	if (!file) {
-		store.log('You must specify a valid file.', 'ERR');
-		return false;
-	}
-	
-	var tmp_copy = path.dirname(file) + '/.' + path.basename(file);
-	copyFileSync(file, tmp_copy);
-	
-	var s = store.stringify(items);
-
-	// removing leading { and trailing }
-	s = s.substr(1, s = s.substr(0, s.legth-1));
-	
-	fs.writeFileSync(file, s, 'utf-8');
-	fs.unlinkSync(tmp_copy);
-	
-//	console.log('UNLINK ' + counter);
-	
-	
-	unlocked();
-	
-	clearQueue();
-	return true;	
-};
-
-
-if ('undefined' !== typeof fs.appendFileSync) {
-	// node 0.8
-	var save = function (fileName, key, value) {
-		var file = fileName || store.filename;
-		if (!file) {
-			store.log('You must specify a valid file.', 'ERR');
-			return false;
-		}
-		if (!key) return;
-		
-		var item = store.stringify(key) + ": " + store.stringify(value) + ",\n";
-		
-		return fs.appendFileSync(file, item, 'utf-8');
-	};	
-}
-else {
-	// node < 0.8
-	var save = function (fileName, key, value) {
-		var file = fileName || store.filename;
-		if (!file) {
-			store.log('You must specify a valid file.', 'ERR');
-			return false;
-		}
-		if (!key) return;
-		
-		var item = store.stringify(key) + ": " + store.stringify(value) + ",\n";
-		
-=======
 			if (typeof options.domain === 'string' && options.domain !== '') {
 				returnValue.domain = options.domain;
 			}
@@ -2217,7 +2027,6 @@ else {
 			catch(e1) {
 				value = pair[1];
 			}
->>>>>>> b4460a4db24a6b65657ed764a9d5dc4d4d2773cd
 
 //						if (JSON && 'object' === typeof JSON && 'function' === typeof JSON.parse) {
 //							try {
@@ -2229,16 +2038,9 @@ else {
 //							}
 //						}
 
-<<<<<<< HEAD
-		var fd = fs.openSync(file, 'a', '0666');
-		fs.writeSync(fd, item, null, 'utf8');
-		fs.closeSync(fd);
-		return true;
-=======
 			cookies[name] = store.parse(value);
 		}
 		return cookies;
->>>>>>> b4460a4db24a6b65657ed764a9d5dc4d4d2773cd
 	};
 
 	constructor = function(){};
@@ -5074,21 +4876,12 @@ NDDB.prototype.view = function (idx, func) {
  * ### NDDB.hash
  *
  * Registers a new hashing function
-<<<<<<< HEAD
  * 
  * Hash functions create an index containing multiple sub-_views_.
  * 
  * A new object `NDDB[idx]` is created, whose properties 
  * are _views_ on the original dataset.
  * 
-=======
- * 
- * Hash functions create an index containing multiple sub-_views_.
- * 
- * A new object `NDDB[idx]` is created, whose properties 
- * are _views_ on the original dataset.
- * 
->>>>>>> b4460a4db24a6b65657ed764a9d5dc4d4d2773cd
  * An hashing function must return a _string_ representing the 
  * view under which the entry will be added, or _undefined_ if
  * the entry does not belong to any view of the index.
@@ -5459,8 +5252,6 @@ NDDB.prototype._analyzeQuery = function (d, op, value) {
 
 /**
  * ### NDDB.distinct
-<<<<<<< HEAD
-=======
  * 
  * Eliminates duplicated entries
  *  
@@ -5566,135 +5357,6 @@ NDDB.prototype.or = function (d, op, value) {
 
 /**
  * ### NDDB.selexec
->>>>>>> b4460a4db24a6b65657ed764a9d5dc4d4d2773cd
- * 
- * Shorthand for select and execute methods
- * 
- * Adds a single select condition and executes it.
- *  
- * @param {string} d The dimension of comparison
- * @param {string} op Optional. The operation to perform
- * @param {mixed} value Optional. The right-hand element of comparison
- * @return {NDDB} A new NDDB instance with the currently selected items in memory
- * 
- * @see NDDB.select
- * @see NDDB.and
- * @see NDDB.or
- * @see NDDB.execute
- * @see NDDB.fetch
- * 
-<<<<<<< HEAD
- * @see NDDB.select() 
- *  @see NDDB.fetch()
- *  @see NDDB.fetchValues()
- */
-NDDB.prototype.distinct = function () {
-	return this.breed(J.distinct(this.db));
-};
-
-/**
- * ### NDDB.select
- * 
- * Initiates a new query selection procedure
-=======
- */
-NDDB.prototype.selexec = function (d, op, value) {
-    return this.select(d, op, value).execute();
-};
-
-/**
- * ### NDDB.execute
- * 
- * Implements the criteria for selection previously specified by `select` queries
->>>>>>> b4460a4db24a6b65657ed764a9d5dc4d4d2773cd
- * 
- * Does not reset the query object, and it is possible to reuse the current
- * selection multiple times
- * 
-<<<<<<< HEAD
- * - d: the string representation of the dimension used to filter. Mandatory.
- * - op: operator for selection. Allowed: >, <, >=, <=, = (same as ==), ==, ===, 
- * 		!=, !==, in (in array), !in, >< (not in interval), <> (in interval)
- *  - value: values of comparison. Operators: in, !in, ><, <> require an array.
- *   
- * No actual selection is performed until the `execute` method is called, so that 
- * further selections can be chained with the `or`, and `and` methods.
- * 
- * To retrieve the items use one of the fetching methods.
- *  
- * @param {string} d The dimension of comparison
- * @param {string} op Optional. The operation to perform
- * @param {mixed} value Optional. The right-hand element of comparison
- * @return {NDDB} A new NDDB instance with the currently selected items in memory
- * 
- * @see NDDB.and
- * @see NDDB.or
- * @see NDDB.execute()
- * @see NDDB.fetch()
- * 
- */
-NDDB.prototype.select = function (d, op, value) {
-    this.query.reset();
-    return arguments.length ? this.and(d, op, value) : this;
-};
-
-/**
- * ### NDDB.and
- * 
- * Chains an AND query to the current selection
- * 
- * @param {string} d The dimension of comparison
- * @param {string} op Optional. The operation to perform
- * @param {mixed} value Optional. The right-hand element of comparison
- * @return {NDDB} A new NDDB instance with the currently selected items in memory
- * 
- * @see NDDB.select
- * @see NDDB.or
- * @see NDDB.execute()
- */
-NDDB.prototype.and = function (d, op, value) {
-// TODO: Support for nested query	
-//	if (!arguments.length) {
-//		addBreakInQuery();
-//	}
-//	else {
-		var condition = this._analyzeQuery(d, op, value);        
-	    if (!condition) return false;
-	    this.query.addCondition('AND', condition, this.getComparator(d));
-//	}			
-	return this;
-};
-
-/**
- * ### NDDB.or
- * 
- * Chains an OR query to the current selection
- * 
- * @param {string} d The dimension of comparison
- * @param {string} op Optional. The operation to perform
- * @param {mixed} value Optional. The right-hand element of comparison
- * @return {NDDB} A new NDDB instance with the currently selected items in memory
- * 
- * @see NDDB.select
- * @see NDDB.and
- * @see NDDB.execute()
- */
-NDDB.prototype.or = function (d, op, value) {
-// TODO: Support for nested query		
-//	if (!arguments.length) {
-//		addBreakInQuery();
-//	}
-//	else {
-		var condition = this._analyzeQuery(d, op, value);        
-	    if (!condition) return false;
-	    this.query.addCondition('OR', condition, this.getComparator(d));
-//	}			
-	return this;
-};
-
-
-/**
- * ### NDDB.selexec
  * 
  * Shorthand for select and execute methods
  * 
@@ -5738,22 +5400,6 @@ NDDB.prototype.execute = function () {
     return this.filter(this.query.get.call(this.query));
 };
 
-=======
- * @param {string} d The dimension of comparison
- * @param {string} op Optional. The operation to perform
- * @param {mixed} value Optional. The right-hand element of comparison
- * @return {NDDB} A new NDDB instance with the previously selected items in the db 
- * 
- * @see NDDB.select
- * @see NDDB.selexec
- * @see NDDB.and
- * @see NDDB.or
- */
-NDDB.prototype.execute = function () {
-    return this.filter(this.query.get.call(this.query));
-};
-
->>>>>>> b4460a4db24a6b65657ed764a9d5dc4d4d2773cd
 /**
  * ### NDDB.exists
  * 
@@ -6315,7 +5961,6 @@ NDDB.prototype.fetchValues = function(key) {
 
 function getValuesArray(o, key) {
 	return J.obj2Array(o, 1);
-<<<<<<< HEAD
 };
 
 function getKeyValuesArray(o, key) {
@@ -6345,37 +5990,6 @@ function getKeyValuesArray_KeyString(o, key) {
     }
 };
 
-=======
-};
-
-function getKeyValuesArray(o, key) {
-	return J.obj2KeyedArray(o, 1);
-};
-
-
-function getValuesArray_KeyString(o, key) {
-    var el = J.getNestedValue(key, o);
-    if ('undefined' !== typeof el) {
-        return J.obj2Array(el,1);
-    }
-};
-
-function getValuesArray_KeyArray(o, key) {
-    var el = J.subobj(o, key);
-    if (!J.isEmpty(el)) {
-    	return J.obj2Array(el,1);
-	}
-};
-
-
-function getKeyValuesArray_KeyString(o, key) {
-    var el = J.getNestedValue(key, o);
-    if ('undefined' !== typeof el) {
-        return key.split('.').concat(J.obj2KeyedArray(el));
-    }
-};
-
->>>>>>> b4460a4db24a6b65657ed764a9d5dc4d4d2773cd
 function getKeyValuesArray_KeyArray(o, key) {
 	var el = J.subobj(o, key);
     if (!J.isEmpty(el)) {

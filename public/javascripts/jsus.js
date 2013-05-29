@@ -1042,8 +1042,6 @@ OBJ.uniqueKey = function(obj, name, stop) {
 	return name;
 }
 
-<<<<<<< HEAD
-=======
 /**
  * ## OBJ.augment
  * 
@@ -1086,7 +1084,6 @@ OBJ.augment = function(obj1, obj2, keys) {
 	}
 }
 
->>>>>>> b4460a4db24a6b65657ed764a9d5dc4d4d2773cd
 
 JSUS.extend(OBJ);
     
