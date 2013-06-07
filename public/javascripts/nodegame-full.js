@@ -3921,6 +3921,13 @@ function PARSE(){};
  */
 PARSE.stringify_prefix = '!?_';
 
+PARSE.marker_func = PARSE.stringify_prefix + 'function';
+PARSE.marker_null = PARSE.stringify_prefix + 'null';
+PARSE.marker_und = PARSE.stringify_prefix + 'undefined';
+PARSE.marker_nan = PARSE.stringify_prefix + 'NaN';
+PARSE.marker_inf = PARSE.stringify_prefix + 'Infinity';
+PARSE.marker_minus_inf = PARSE.stringify_prefix + '-Infinity';
+
 /**
  * ## PARSE.getQueryString
  * 
@@ -3963,22 +3970,22 @@ PARSE.getQueryString = function (variable) {
  * 
  */
 PARSE.tokenize = function (str, separators, modifiers) {
-	if (!str) return;
-	if (!separators || !separators.length) return [str];
-	modifiers = modifiers || {};
+    if (!str) return;
+    if (!separators || !separators.length) return [str];
+    modifiers = modifiers || {};
+    
+    var pattern = '[';
+    
+    JSUS.each(separators, function(s) {
+	if (s === ' ') s = '\\s';
 	
-	var pattern = '[';
-	
-	JSUS.each(separators, function(s) {
-		if (s === ' ') s = '\\s';
-		
-		pattern += s;
-	});
-	
-	pattern += ']+';
-	
-	var regex = new RegExp(pattern);
-	return str.split(regex, modifiers.limit);
+	pattern += s;
+    });
+    
+    pattern += ']+';
+    
+    var regex = new RegExp(pattern);
+    return str.split(regex, modifiers.limit);
 };
 
 /**
@@ -4000,24 +4007,49 @@ PARSE.tokenize = function (str, separators, modifiers) {
  * @see PARSE.stringify_prefix
  */
 PARSE.stringify = function(o, spaces) {
-	return JSON.stringify(o, function(key, value){
-		var type = typeof value;
-		
-		if ('function' === type) {
-			return PARSE.stringify_prefix + value.toString()
-		}
-		
-		if ('undefined' === type) {
-			return PARSE.stringify_prefix + 'undefined';
-		}
-		
-		if (value === null) {
-			return PARSE.stringify_prefix + 'null';
-		}
-		
-		return value;
-		
-	}, spaces);
+    return JSON.stringify(o, function(key, value){
+	var type = typeof value;
+	if ('function' === type) {
+	    return PARSE.stringify_prefix + value.toString()
+	}
+	
+	if ('undefined' === type) return PARSE.marker_und;
+	if (value === null) return PARSE.marker_null;
+        if ('number' === type && isNaN(value)) return PARSE.marker_nan;
+	if (value == Number.POSITIVE_INFINITY) return PARSE.marker_inf;
+	if (value == Number.NEGATIVE_INFINITY) return PARSE.marker_minus_inf;
+	
+	return value;
+	
+    }, spaces);
+};
+
+/**
+ * ## PARSE.stringifyAll
+ * 
+ * Copies all the properties of the prototype before stringifying
+ *
+ * Notice: The original object is modified!
+ * 
+ * @param {mixed} o The value to stringify
+ * @param {number} spaces Optional the number of indentation spaces. Defaults, 0
+ * 
+ * @return {string} The stringified result
+ * 
+ * @see PARSE.stringify
+ */
+PARSE.stringifyAll = function(o, spaces) {
+    for (var i in o) {
+	if (!o.hasOwnProperty(i)) {
+	    if ('object' === typeof o[i]) {
+		o[i] = PARSE.stringifyAll(o[i]);
+	    }
+	    else {
+		o[i] = o[i];
+	    }
+	}
+    }
+    return PARSE.stringify(o);
 };
 
 /**
@@ -4036,59 +4068,65 @@ PARSE.stringify = function(o, spaces) {
  */
 PARSE.parse = function(str) {
 	
-	var marker_func = PARSE.stringify_prefix + 'function',
-		marker_null = PARSE.stringify_prefix + 'null',
-		marker_und	= PARSE.stringify_prefix + 'undefined';
+    var len_prefix = PARSE.stringify_prefix.length,
+        len_func = PARSE.marker_func.length,
+        len_null = PARSE.marker_null.length,
+        len_und = PARSE.marker_und.length,
+        len_nan = PARSE.marker_nan.length,
+        len_inf = PARSE.marker_inf.length,
+        len_inf = PARSE.marker_minus_inf.length;
+       
 	
-	var len_prefix 	= PARSE.stringify_prefix.length,
-		len_func 	= marker_func.length,
-		len_null 	= marker_null.length,
-		len_und 	= marker_und.length;	
+    var o = JSON.parse(str);
+    return walker(o);
 	
-	var o = JSON.parse(str);
-	return walker(o);
-	
-	function walker(o) {
-		var tmp;
+    function walker(o) {
+	if ('object' !== typeof o) return reviver(o);
 		
-		if ('object' !== typeof o) {
-			return reviver(o);
+	for (var i in o) {
+	    if (o.hasOwnProperty(i)) {
+		if ('object' === typeof o[i]) {
+		    walker(o[i]);
 		}
-		
-		for (var i in o) {
-			if (o.hasOwnProperty(i)) {
-				if ('object' === typeof o[i]) {
-					walker(o[i]);
-				}
-				else {
-					o[i] = reviver(o[i]);
-				}
-			}
+		else {
+		    o[i] = reviver(o[i]);
 		}
-		
-		return o;
+	    }
 	}
 	
-	function reviver(value) {
-		var type = typeof value;
-		
-		if (type === 'string') {
-			if (value.substring(0, len_prefix) !== PARSE.stringify_prefix) {
-				return value;
-			}
-			else if (value.substring(0, len_func) === marker_func) {
-				return eval('('+value.substring(len_prefix)+')');
-			}
-			else if (value.substring(0, len_null) === marker_null) {
-				return null;
-			}
-			else if (value.substring(0, len_und) === marker_und) {
-				return undefined;
-			}
-		}	
-		
+	return o;
+    }
+	
+    function reviver(value) {
+	var type = typeof value;
+	
+	if (type === 'string') {
+	    if (value.substring(0, len_prefix) !== PARSE.stringify_prefix) {
 		return value;
-	};
+	    }
+	    else if (value.substring(0, len_func) === PARSE.marker_func) {
+		return eval('('+value.substring(len_prefix)+')');
+	    }
+	    else if (value.substring(0, len_null) === PARSE.marker_null) {
+		return null;
+	    }
+	    else if (value.substring(0, len_und) === PARSE.marker_und) {
+		return undefined;
+	    }
+
+	    else if (value.substring(0, len_nan) === PARSE.marker_nan) {
+		return NaN;
+	    }
+	    else if (value.substring(0, len_inf) === PARSE.marker_inf) {
+		return Infinity;
+	    }
+	    else if (value.substring(0, len_inf) === PARSE.marker_minus_inf) {
+		return -Infinity;
+	    }
+
+	}		
+	return value;
+    };
 }
 
 
@@ -5963,26 +6001,22 @@ NDDB.prototype.fetchKeyArray = function (key) {
 NDDB.prototype.groupBy = function (key) {
     if (!key) return this.db;
     
-    var groups = [];
-    var outs = [];
-    for (var i=0; i < this.db.length; i++) {
-        var el = J.getNestedValue(key, this.db[i]);
+    var groups = [], outs = [], i, el, out;
+    for (i = 0 ; i < this.db.length ; i++) {
+        el = J.getNestedValue(key, this.db[i]);
         if ('undefined' === typeof el) continue;
         // Creates a new group and add entries to it
         if (!J.in_array(el, groups)) {
             groups.push(el);
-            var out = this.filter(function (elem) {
+            out = this.filter(function (elem) {
                 if (J.equals(J.getNestedValue(key, elem), el)) {
                     return this;
                 }
-            });
-            
+            });   
             // Reset nddb_pointer in subgroups
             out.nddb_pointer = 0;
-            
             outs.push(out);
         }
-        
     }
     return outs;
 };    
@@ -6990,7 +7024,7 @@ NDDBIndex.prototype.size = function () {
  * @see NDDBIndex.update
  */
 NDDBIndex.prototype.get = function (idx) {
-	if (!this.resolve[idx]) return false
+	if ('undefined' === typeof this.resolve[idx]) return false;
     return this.nddb.db[this.resolve[idx]];
 };
 
@@ -7187,7 +7221,7 @@ node.game.memory = null;
  * 
  * @see node.GameState
  */
-node.game.state = null;
+node.game.stateLevel = null;
 
 
 /**
@@ -7198,7 +7232,7 @@ node.game.state = null;
  * 
  * @see shelf.js
  */
-node.store		= function() {};
+node.store = function() {};
 
 
 /**
@@ -7209,7 +7243,7 @@ node.store		= function() {};
  * 
  * @see Setup
  */
-node.setup		= function() {};
+node.setup = function() {};
 
 
 /**
@@ -7226,7 +7260,7 @@ node.conf = {};
  * 
  * A collection of features that are supported by the current browser
  */
-node.support	= {};
+node.support = {};
 
 
 // ## Dependencies 
@@ -7235,17 +7269,17 @@ node.support	= {};
 if ('object' === typeof module && 'function' === typeof require) {
 	// <!-- Node.js -->
 	
-	require('./lib/modules/log.js');
-	require('./lib/modules/variables.js');
-	
-	require('./init.node.js');
+    require('./lib/modules/log.js');
+    require('./lib/modules/variables.js');
+    
+    require('./init.node.js');
     require('./lib/nodegame.js');
-
+    
     require('./lib/modules/fs.js');
     require('./lib/modules/setup.js');
-	require('./lib/modules/alias.js');
-	require('./lib/modules/random.js');
-	require('./lib/modules/stepper.js');
+    require('./lib/modules/alias.js');
+    require('./lib/modules/random.js');
+    require('./lib/modules/stepper.js');
     
     // ### Loading Sockets
     require('./lib/sockets/SocketIo.js');
@@ -7257,12 +7291,12 @@ if ('object' === typeof module && 'function' === typeof require) {
     require('./listeners/outgoing.js');
 }
 else {
-	// <!-- Browser -->
-	if ('undefined' !== typeof JSUS) node.JSUS = JSUS;
-	if ('undefined' !== typeof NDDB) node.NDDB = NDDB;
-	if ('undefined' !== typeof store) node.store = store;
-	
-	node.support = JSUS.compatibility();
+    // <!-- Browser -->
+    if ('undefined' !== typeof JSUS) node.JSUS = JSUS;
+    if ('undefined' !== typeof NDDB) node.NDDB = NDDB;
+    if ('undefined' !== typeof store) node.store = store;
+    
+    node.support = JSUS.compatibility();
 }
 	
 })('object' === typeof module ? module.exports : (window.node = {}));	
@@ -7290,14 +7324,15 @@ else {
  * 
  * ALWAYS, ERR, WARN, INFO, DEBUG
  */  
-	node.verbosity_levels = {
-			ALWAYS: -(Number.MIN_VALUE + 1), 
-			ERR: -1,
-			WARN: 0,
-			INFO: 1,
-			DEBUG: 100,
-			NEVER: Number.MIN_VALUE - 1
-	};	
+    node.verbosity_levels = {
+	ALWAYS: -(Number.MIN_VALUE + 1), 
+	ERR: -1,
+	WARN: 0,
+	INFO: 1,
+	SILLY: 10,
+	DEBUG: 100,
+	NEVER: Number.MIN_VALUE - 1
+    };	
 	
 /**
  *  ### node.verbosity
@@ -7307,7 +7342,7 @@ else {
  *  Defaults, only errors are displayed.
  *  
  */
-	node.verbosity = node.verbosity_levels.WARN;
+    node.verbosity = node.verbosity_levels.WARN;
 
 
  
@@ -7318,7 +7353,7 @@ else {
  *   
  *  Defaults, only errors are displayed.
  */	
-	node.remoteVerbosity = node.verbosity_levels.WARN;
+    node.remoteVerbosity = node.verbosity_levels.WARN;
 		
 /**
  * ### node.log
@@ -7336,19 +7371,18 @@ else {
  * @param {string} prefix Optional. A text to display at the beginning of the log entry. Defaults prefix = 'nodeGame: ' 
  * 
  */
-	node.log = function (txt, level, prefix) {
-		if ('undefined' === typeof txt) return false;
-		
-		level 	= level || 0;
-		prefix 	= ('undefined' === typeof prefix) 	? 'ng> '
-													: prefix;
-		
-		if ('string' === typeof level) {
-			level = node.verbosity_levels[level];
-		}
-		if (node.verbosity > level) {
-			console.log(prefix + txt);
-		}
+    node.log = function (txt, level, prefix) {
+	if ('undefined' === typeof txt) return false;
+	
+	level 	= level || 0;
+	prefix 	= ('undefined' === typeof prefix) ? 'ng> ' : prefix;
+	
+	if ('string' === typeof level) {
+	    level = node.verbosity_levels[level];
+	}
+	if (node.verbosity > level) {
+	    console.log(prefix + txt);
+	}
 //		if (node.remoteVerbosity > level) {
 //			var remoteMsg = node.msg.create({
 //				target: node.target.LOG,
@@ -7366,27 +7400,40 @@ else {
  * 
  * Logs an INFO message
  */
-	node.info = function (txt, prefix) {
-		node.log(txt, node.verbosity_levels.INFO, prefix);
-	};
-
+    node.info = function (txt, prefix) {
+	prefix = (prefix ? 'ng|' + prefix : 'ng') + '> info - ';
+	node.log(txt, node.verbosity_levels.INFO, prefix);
+    };
+    
 /**
  * ### node.warn
  * 
  * Logs a WARNING message
  */
-	node.warn = function (txt, prefix) {
-		node.log(txt, node.verbosity_levels.WARN, prefix);
-	};
+    node.warn = function (txt, prefix) {
+	prefix = (prefix ? 'ng|' + prefix : 'ng') + '> warn - ';
+	node.log(txt, node.verbosity_levels.WARN, prefix);
+    };
 
 /**
  * ### node.err
  * 
  * Logs an ERROR message
  */
-	node.err = function (txt, prefix) {
-		node.log(txt, node.verbosity_levels.ERR, prefix);
-	};
+    node.err = function (txt, prefix) {
+	prefix = (prefix ? 'ng|' + prefix : 'ng') + '> error - ';
+	node.log(txt, node.verbosity_levels.ERR, prefix);
+    };
+
+/**
+ * ### node.debug
+ * 
+ * Logs a DEBUG message
+ */
+    node.silly = function (txt, prefix) {
+	prefix = (prefix ? 'ng|' + prefix : 'ng') + '> silly - ';
+	node.log(txt, node.verbosity_levels.SILLY, prefix);
+    };
 
 })(
 	'undefined' != typeof node ? node : module.exports,
@@ -7631,9 +7678,9 @@ else {
 
     node.debug = false;
 
-    exports.NodeGameRuntimeError = NodeGameRuntimeError;
-    exports.NodeGameStageCallbackError = NodeGameStageCallbackError;
-    exports.NodeGameMisconfiguredGameError = NodeGameMisconfiguredGameError;
+    node.NodeGameRuntimeError = NodeGameRuntimeError;
+    node.NodeGameStageCallbackError = NodeGameStageCallbackError;
+    node.NodeGameMisconfiguredGameError = NodeGameMisconfiguredGameError;
 
     /*
      * ### NodeGameRuntimeError
@@ -7680,12 +7727,12 @@ else {
     NodeGameMisconfiguredGameError.prototype.name = 'NodeGameMisconfiguredGameError';
 
     if (J.isNodeJS()) {
-        process.on('uncaughtException', function (err) {
-            console.log('Caught exception: ' + err);
-            if (node.debug) {
-                throw err;
-            }
-        });
+        //process.on('uncaughtException', function (err) {
+        //    node.err('Caught exception: ' + err);
+        //    if (node.debug) {
+        //        throw err;
+        //    }
+        //});
     }
     else {
         window.onerror = function(msg, url, linenumber) {
@@ -7720,32 +7767,27 @@ else {
 var NDDB = node.NDDB;
 
 exports.EventEmitter = EventEmitter;
+exports.EventEmitterManager = EventEmitterManager;
 
 /**
  * ## EventEmitter constructor
  *
- * Creates a new instance of EventEmitter
+ * creates a new instance of EventEmitter
  */
-function EventEmitter() {
+function EventEmitter(name) {
 
 // ## Public properties
 
+    this.name = 'undefined' !== typeof name ? name : 'EE';
+
 /**
- * ### EventEmitter.global
+ * ### EventEmitter.listeners
  *
  *
- * Global listeners always active during the game
+ * Event listeners collection
  *
  */
-    this.global = this._listeners = {};
-
- /**
-  * ### EventEmitter.local
-  *
-  * Local listeners erased after every stage update
-  *
-  */
-    this.local = this._localListeners = {};
+    this.events = {};
 
 /**
  * ### EventEmitter.history
@@ -7762,10 +7804,6 @@ function EventEmitter() {
 
 // ## EventEmitter methods
 
-EventEmitter.prototype = {
-
-    constructor: EventEmitter,
-
 /**
  * ### EventEmitter.add
  *
@@ -7779,38 +7817,51 @@ EventEmitter.prototype = {
  *
  * @see EventEmitter.addLocal
  */
-    add: function (type, listener) {
-        if (!type || !listener) return;
-        if ('undefined' === typeof this.global[type]){
-            this.global[type] = [];
-        }
-        node.log('Added Listener: ' + type + ' ' + listener, 'DEBUG');
-        this.global[type].push(listener);
-    },
+EventEmitter.prototype.on = function (type, listener) {
+    if ('undefined' === typeof type || !listener) {
+	node.err(this.name + ': trying to add invalid event-listener pair');
+	return;
+    }
+
+    if (!this.events[type]) {
+	// Optimize the case of one listener. Don't need the extra array object.
+	this.events[type] = listener;
+    } 
+    else if (typeof this.events[type] === 'object') {
+	// If we've already got an array, just append.
+	this.events[type].push(listener);
+    }
+    else {
+	// Adding the second element, need to change to array.
+	this.events[type] = [this.events[type], listener];
+    }
+    
+    node.silly(this.name + ': added Listener: ' + type + ' ' + listener);  
+};
 
 /**
- * ### EventEmitter.addLocal
- *
- * Registers a local listener for an event
- *
- * Listeners registered with this method are valid *only*
- * for the same game stage (step) in which they have been
- * registered
- *
- * @param {string} type The event name
- * @param {function} listener The function to fire
- *
- * @see EventEmitter.add
- *
- */
-    addLocal: function (type, listener) {
-        if (!type || !listener) return;
-        if ('undefined' === typeof this.local[type]){
-            this.local[type] = [];
-        }
-        node.log('Added Local Listener: ' + type + ' ' + listener, 'DEBUG');
-        this.local[type].push(listener);
-    },
+ * ### node.once
+ * 
+ * Registers an event listener that will be removed 
+ * after its first invocation
+ * 
+ * @param {string} event The name of the event
+ * @param {function} listener The callback function
+ * 
+ * @see EventEmitter.on
+ * @see EventEmitter.off
+ */	
+EventEmitter.prototype.once = function(type, listener) {
+    function g() {
+	this.remove(type, g);
+	listener.apply(node.game, arguments);
+    }
+    this.on(type, g); 
+};
+
+
+    
+
 
 /**
  * ### EventEmitter.emit
@@ -7828,63 +7879,69 @@ EventEmitter.prototype = {
  *
  * @TODO accepts any number of parameters
  */
-    emit: function(event, p1, p2, p3) { // Up to 3 parameters
-        var listeners;
+EventEmitter.prototype.emit = function(type) { // Up to 3 parameters
+	
+    var handler, len, args, i, listeners; 
 
-        if (!event) return;
+    handler = this.events[type];
+    
+    if (typeof handler === 'undefined') return false;
 
-        if ('string' === typeof event) {
-            event = { type: event };
-        }
-        if (!event.target){
-            event.target = this;
-        }
+    // <!-- Debug
+    if (node.conf.events.dumpEvents) {
+        node.log('F: ' + event.type);
+    }
+    
+    if (typeof handler === 'function') {	
+	
+	switch (arguments.length) {
+	    // fast cases
+	case 1:
+	    handler.call(node.game);
+	    break;
+	case 2:
+	    handler.call(node.game, arguments[1]);
+	    break;
+	case 3:
+	    handler.call(node.game, arguments[1], arguments[2]);
+	    break;
+	case 4:
+	    handler.call(node.game, arguments[1], arguments[2], arguments[3]);
+	    break;
+	    
+	default:
+	    // slower
+	    len = arguments.length;
+	    args = new Array(len - 1);
+	    for (i = 1; i < len; i++) {
+		args[i - 1] = arguments[i];
+	    }
+	    handler.apply(node.game, args);
+	}
+    } 
+    else if (typeof handler === 'object') {
+	len = arguments.length;
+	args = new Array(len - 1);
+	for (i = 1; i < len; i++) {
+	    args[i - 1] = arguments[i];
+	}
+	listeners = handler.slice();
+	len = listeners.length;
+	
+	for (i = 0; i < len; i++) {
+	    listeners[i].apply(node.game, args);
+	}
+    }
 
-        if (!event.type) {  //falsy
-            throw new Error("Event object missing 'type' property.");
-        }
-
-
-        // Log the event into node.history object, if present
-        if (node.conf && node.conf.events) {
-
-            if (node.conf.events.history) {
-                var o = {
-                    event: event.type,
-                    //target: node.game,
-                    stage: node.game.stage,
-                    p1: p1,
-                    p2: p2,
-                    p3: p3
-                };
-
-                this.history.insert(o);
-            }
-
-            // <!-- Debug
-            if (node.conf.events.dumpEvents) {
-                node.log('F: ' + event.type);
-            }
-        }
-
-
-        // Fires global listeners
-        if (this.global[event.type] instanceof Array) {
-            listeners = this.global[event.type];
-            for (var i=0, len=listeners.length; i < len; i++){
-                listeners[i].call(this.game, p1, p2, p3);
-            }
-        }
-
-        // Fires local listeners
-        if (this.local[event.type] instanceof Array) {
-            listeners = this.local[event.type];
-            for (var i=0, len=listeners.length; i < len; i++) {
-                listeners[i].call(this.game, p1, p2, p3);
-            }
-        }
-
-    },
+    
+    // Log the event into node.history object, if present
+    if (node.conf && node.conf.events && node.conf.events.history) {   
+        this.history.insert({
+            stage: node.game.getCurrentGameStage(),
+            args: arguments
+        });
+    }
+};
 
 /**
  * ### EventEmitter.remove
@@ -7896,95 +7953,261 @@ EventEmitter.prototype = {
  *
  * @return Boolean TRUE, if the removal is successful
  */
-    remove: function(type, listener) {
+EventEmitter.prototype.remove = function(type, listener) {
 
-        function removeFromList(type, listener, list) {
-            //<!-- console.log('Trying to remove ' + type + ' ' + listener); -->
+    var listeners, len, i, type;
 
-            if (list[type] instanceof Array) {
-                if (!listener) {
-                    delete list[type];
-                    //console.log('Removed listener ' + type);
-                    return true;
-                }
-
-                var listeners = list[type];
-                var len=listeners.length;
-                for (var i=0; i < len; i++) {
-                    //console.log(listeners[i]);
-
-                    if (listeners[i] == listener) {
-                        listeners.splice(i, 1);
-                        node.log('Removed listener ' + type + ' ' + listener, 'DEBUG');
-                        return true;
-                    }
-                }
-            }
-
-            return false;
-        }
-
-        var r1 = removeFromList(type, listener, this.global);
-        var r2 = removeFromList(type, listener, this.local);
-
-        return r1 || r2;
-    },
-
-/**
- * ### EventEmitter.clearStage
- *
- * Undocumented (for now)
- *
- * @TODO: This method wraps up clearLocalListeners. To re-design.
- */
-    clearStage: function(stage) {
-        this.clearLocal();
+    if (!this.events[type]) {
+	node.warn('attempt to remove unexisting event ' + type, this.name);
+	return false;
+    }
+    
+    if (!listener) {
+        delete this.events[type];
+        node.silly('Removed listener ' + type);
         return true;
-    },
+    }
+
+    if (listener && 'function' !== typeof listener) {
+	throw TypeError('listener must be a function', this.name);
+    }
+    
+
+    if ('function' === typeof this.events[type] ) {
+        if (listeners == listener) {
+            listeners.splice(i, 1);
+            node.silly('removed listener ' + type + ' ' + listener, this.name);
+            return true;
+        }
+    }
+
+    // array
+    listeners = this.events[type];
+    len = listeners.length;
+    for (i = 0; i < len; i++) {  
+        if (listeners[i] == listener) {
+            listeners.splice(i, 1);
+            node.silly('Removed listener ' + type + ' ' + listener, this.name);
+            return true;
+        }
+    }
+
+    return false;
+    
+};
 
 /**
- * ### EventEmitter.clearLocalListeners
+ * ### EventEmitter.printAll
  *
- * Removes all entries from the local listeners register
- *
+ * Removes all registered event listeners
  */
-    clearLocal: function() {
-        node.log('Cleaning Local Listeners', 'DEBUG');
-        for (var key in this.local) {
-            if (this.local.hasOwnProperty(key)) {
-                this.remove(key, this.local[key]);
-            }
-        }
-
-        this.local = {};
-    },
-
+    EventEmitter.prototype.clear =  function() {
+	this.events = {};
+    };
+    
 /**
  * ### EventEmitter.printAll
  *
  * Prints to console all the registered functions
  */
-    printAll: function() {
-        var i;
-
-        node.log('nodeGame:\tPRINTING ALL LISTENERS', 'DEBUG');
-
-        for (i in this.global){
-            if (this.global.hasOwnProperty(i)){
-                console.log(i + ' ' + i.length);
+    EventEmitter.prototype.printAll =  function() {
+	for (var i in this.events) {
+            if (this.events.hasOwnProperty(i)) {
+		console.log(i + ': ' + i.length ? i.length : 1 + ' listener/s');
             }
-        }
+	}
+    };
 
-        for (i in this.local){
-            if (this.local.hasOwnProperty(i)){
-                console.log(i + ' ' + i.length);
-            }
-        }
 
-    }
+/**
+ * # EventEmitterManager
+ *
+ */
+    function EventEmitterManager() {
+	this.ee = {};
+	this.createEE('ng');
+	this.createEE('game');
+	this.createEE('stage');
+	this.createEE('step');
+	
+	this.createEEGroup('game', 'step', 'stage', 'game');
+	this.createEEGroup('stage', 'stage', 'game');
+    };
 
-};
+    EventEmitterManager.prototype.createEEGroup = function(groupName) {
+	var len, that, args;
+	len = arguments.length, that = this;
+	
+	if (!len) {
+	    throw new Error('EEGroup needs a name and valid members');
+	}
+	if (len === 1) {
+	    throw new Error('EEGroup needs at least one member');
+	}
+	
+	// Checking if each ee exist
+	for (i = 1; i < len; i++) {
+	    if ('string' !== typeof arguments[i]) {
+		throw new TypeError('EventEmitter name must be a string');
+	    }
+	    if (!this.ee[arguments[i]]) {
+		throw new Error('non-existing EventEmitter in group ' + groupName + ': ' + arguments[i]);
+	    }
+	}
+	
+	// copying the args obj into an array;
+	args = new Array(len - 1);
+	for (i = 1; i < len; i++) {
+	    args[i - 1] = arguments[i];
+	}
 
+	switch (len) {
+	    // fast cases
+	case 2:
+	    this[groupName] = this.ee[args[0]];
+	    break;
+	case 3:
+	    this[groupName] = {
+		emit: function() {
+		    that.ee[args[0]].emit(arguments);
+		    that.ee[args[1]].emit(arguments);
+		},
+		on: this.ee[args[0]].on,
+		once: this.ee[args[1]].once,
+		clear: function() {
+		    that.ee[args[0]].clear();
+		    that.ee[args[1]].clear();
+		},
+		remove: function() {
+		    that.ee[args[0]].remove(arguments);
+		    that.ee[args[1]].remove(arguments);
+		},
+		printAll: function() {
+		    that.ee[args[0]].printAll();
+		    that.ee[args[1]].printAll();
+		}
+	    };
+	    break;
+	case 4:
+	    this[groupName] = {
+		emit: function() {
+		    that.ee[args[0]].emit(arguments);
+		    that.ee[args[1]].emit(arguments);
+		    that.ee[args[2]].emit(arguments);
+		},
+		on: this.ee[args[0]].on,
+		once: this.ee[args[1]].once,
+		clear: function() {
+		    that.ee[args[0]].clear();
+		    that.ee[args[1]].clear();
+		    that.ee[args[2]].clear();
+		},
+		remove: function() {
+		    that.ee[args[0]].remove(arguments);
+		    that.ee[args[1]].remove(arguments);
+		    that.ee[args[2]].remove(arguments);
+		},
+		printAll: function() {
+		    that.ee[args[0]].printAll();
+		    that.ee[args[1]].printAll();
+		    that.ee[args[2]].printAll();
+		}
+	    };
+	    break;
+	default:
+	    // slower
+	    len = args.len;
+	    this[groupName] = {
+		emit: function() {
+		    for (i = 0; i < len; i++) {
+			that.ee[args[i]].emit(arguments);
+		    }
+		},
+		on: this.ee[args[0]].on,
+		once: this.ee[args[1]].once,
+		clear: function() {
+		    for (i = 0; i < len; i++) {
+			that.ee[args[i]].clear();
+		    }
+		   
+		},
+		remove: function() {
+		     for (i = 0; i < len; i++) {
+			 that.ee[args[i]].remove(arguments);
+		     }
+		},
+		printAll: function() {
+		    for (i = 0; i < len; i++) {
+			that.ee[args[i]].printAll();
+		    }
+		}
+	    };
+	}
+	return this[groupName];
+    };
+
+
+    EventEmitterManager.prototype.createEE = function(name) {
+	this.ee[name] = new EventEmitter(name);
+	this[name] = this.ee[name];
+	return this.ee[name];
+    };
+
+    EventEmitterManager.prototype.destroyEE = function(name) {
+	var ee;
+	ee = this.ee[name];
+	if (!ee) {
+	    node.warn('cannot destroy undefined EventEmitter');
+	    return false;
+	}
+	delete this[name];
+	delete this.ee[name];
+    };
+
+        
+    EventEmitterManager.prototype.clear = function() {
+	for (i in this.ee) {
+	    if (this.ee.hasOwnProperty(i)) {
+		this.ee[i].clear();
+	    }
+	}
+    };	
+
+
+    EventEmitterManager.prototype.emit = function() {
+	var i, event;
+	event = arguments[0];
+	if ('undefined' === typeof event) {
+	    node.warn('cannot emit undefined event');
+	    return false;
+	}
+
+	for (i in this.ee) {
+	    if (this.ee.hasOwnProperty(i)) {
+		this.ee[i].emit(arguments);
+	    }
+	}
+    };
+	
+    EventEmitterManager.prototype.remove = function(event, listener) {
+	var i;
+	
+	if ('undefined' === typeof event) {
+	    node.err('cannot remove listener of undefined event');
+	    return false;
+	}
+
+	if (listener && 'function' === typeof listener) {
+	    node.err('listener must be of type function');
+	    return false;
+	}
+	
+	for (i in this.ee) {
+	    if (this.ee.hasOwnProperty(i)) {
+		this.ee[i].remove(event, listener);
+	    }
+	}
+    };
 
 /**
  * # EventHistory
@@ -8013,15 +8236,14 @@ function EventHistory() {
 }
 
 EventHistory.prototype.remit = function(stage, discard, keep) {
+    var hash, db, remit;
 
     if (!this.history.count()) {
         node.log('no event history was found to remit', 'WARN');
         return false;
     }
 
-    node.log('remitting ' + node.events.history.count() + ' events', 'DEBUG');
-
-    var hash, db;
+    node.silly('remitting ' + node.events.history.count() + ' events');
 
     if (stage) {
 
@@ -8030,11 +8252,11 @@ EventHistory.prototype.remit = function(stage, discard, keep) {
         hash = new GameStage(session.stage).toHash('S.s.r');
 
         if (!this.history.stage) {
-            node.log('no old events to re-emit were found during session recovery', 'DEBUG');
+            node.silly('no old events to re-emit were found during session recovery');
             return false;
         }
         if (!this.history.stage[hash]){
-            node.log('the current stage ' + hash + ' has no events to re-emit', 'DEBUG');
+            node.silly('the current stage ' + hash + ' has no events to re-emit');
             return false;
         }
 
@@ -8045,7 +8267,7 @@ EventHistory.prototype.remit = function(stage, discard, keep) {
     }
 
     // cleaning up the events to remit
-
+    // @TODO NDDB commands have changed, update 
     if (discard) {
         db.select('event', 'in', discard).remove();
     }
@@ -8055,12 +8277,12 @@ EventHistory.prototype.remit = function(stage, discard, keep) {
     }
 
     if (!db.count()){
-        node.log('no valid events to re-emit after cleanup', 'DEBUG');
+        node.silly('no valid events to re-emit after cleanup');
         return false;
     }
 
-    var remit = function () {
-        node.log('re-emitting ' + db.count() + ' events', 'DEBUG');
+    remit = function () {
+        node.silly('re-emitting ' + db.count() + ' events');
         // We have events that were fired at the stage when
         // disconnection happened. Let's fire them again
         db.each(function(e) {
@@ -8252,8 +8474,7 @@ function GameStage(gs) {
  * @return {string} out The string representation of the stage of the GameStage
  */
 GameStage.prototype.toString = function() {
-    var out = this.toHash('S.s.r');
-    return out;
+    return this.toHash('S.s.r');
 };
 
 /**
@@ -9405,6 +9626,33 @@ Stager.prototype.clear = function() {
      */
     this.setDefaultStepRule();
 
+
+    /**
+     * ### Stager.defaultGlobals
+     *
+     * Defaults of global variables
+     *
+     * This map holds the default values of global variables. These values are
+     * overridable by more specific version in step and stage objects.
+     *
+     * @see Stager.setDefaultGlobals
+     * @see GameLoop.getGlobal
+     */
+    this.defaultGlobals = {};
+
+    /**
+     * ### Stager.defaultProperties
+     *
+     * Defaults of properties
+     *
+     * This map holds the default values of properties. These values are
+     * overridable by more specific version in step and stage objects.
+     *
+     * @see Stager.setDefaultProperties
+     * @see GameLoop.getProperty
+     */
+    this.defaultProperties = {};
+
     return this;
 };
 
@@ -9502,6 +9750,78 @@ Stager.prototype.setDefaultStepRule = function(steprule) {
  */
 Stager.prototype.getDefaultStepRule = function() {
     return this.defaultStepRule;
+};
+
+/**
+ * ### Stager.setDefaultGlobals
+ *
+ * Sets the default globals
+ *
+ * @param {object} defaultGlobals The map of default global variables
+ *
+ * @return {boolean} TRUE on success, FALSE on error
+ *
+ * @see Stager.defaultGlobals
+ * @see GameLoop.getGlobal
+ */
+Stager.prototype.setDefaultGlobals = function(defaultGlobals) {
+    if (!defaultGlobals || 'object' !== typeof defaultGlobals) {
+        node.warn("setDefaultGlobals didn't receive object parameter");
+        return false;
+    }
+
+    this.defaultGlobals = defaultGlobals;
+    return true;
+};
+
+/**
+ * ### Stager.getDefaultGlobals
+ *
+ * Returns the default globals
+ *
+ * @return {object} The map of default global variables
+ *
+ * @see Stager.defaultGlobals
+ * @see GameLoop.getGlobal
+ */
+Stager.prototype.getDefaultGlobals = function() {
+    return this.defaultGlobals;
+};
+
+/**
+ * ### Stager.setDefaultProperties
+ *
+ * Sets the default properties
+ *
+ * @param {object} defaultProperties The map of default properties
+ *
+ * @return {boolean} TRUE on success, FALSE on error
+ *
+ * @see Stager.defaultProperties
+ * @see GameLoop.getProperty
+ */
+Stager.prototype.setDefaultProperties = function(defaultProperties) {
+    if (!defaultProperties || 'object' !== typeof defaultProperties) {
+        node.warn("setDefaultProperties didn't receive object parameter");
+        return false;
+    }
+
+    this.defaultProperties = defaultProperties;
+    return true;
+};
+
+/**
+ * ### Stager.getDefaultProperties
+ *
+ * Returns the default properties
+ *
+ * @return {object} The map of default properties
+ *
+ * @see Stager.defaultProperties
+ * @see GameLoop.getProperty
+ */
+Stager.prototype.getDefaultProperties = function() {
+    return this.defaultProperties;
 };
 
 /**
@@ -9964,6 +10284,20 @@ Stager.prototype.setState = function(stateObj) {
             throw new node.NodeGameMisconfiguredGameError();
         }
     }
+
+    // Set default globals:
+    if (stateObj.hasOwnProperty('defaultGlobals')) {
+        if (!this.setDefaultGlobals(stateObj.defaultGlobals)) {
+            throw new node.NodeGameMisconfiguredGameError();
+        }
+    }
+
+    // Set default properties:
+    if (stateObj.hasOwnProperty('defaultProperties')) {
+        if (!this.setDefaultProperties(stateObj.defaultProperties)) {
+            throw new node.NodeGameMisconfiguredGameError();
+        }
+    }
 };
 
 /**
@@ -9972,7 +10306,8 @@ Stager.prototype.setState = function(stateObj) {
  * Returns the internal state of the Stager
  *
  * Fields of returned object:
- * steps, stages, sequence, generalNextFunction, nextFunctions, defaultStepRule
+ * steps, stages, sequence, generalNextFunction, nextFunctions, defaultStepRule,
+ * defaultGlobals, defaultProperties
  *
  * @return {object} The Stager's state
  *
@@ -9985,7 +10320,9 @@ Stager.prototype.getState = function() {
         sequence:            this.sequence,
         generalNextFunction: this.generalNextFunction,
         nextFunctions:       this.nextFunctions,
-        defaultStepRule:     this.defaultStepRule
+        defaultStepRule:     this.defaultStepRule,
+        defaultGlobals:      this.defaultGlobals,
+        defaultProperties:   this.defaultProperties
     };
 };
 
@@ -10335,6 +10672,8 @@ GameLoop.prototype.next = function(curStage) {
             nextStage = this.plot.generalNextFunction();
         }
 
+        // If next-deciding function returns GameLoop.GAMEOVER,
+        // consider it game over.
         if (nextStage === GameLoop.GAMEOVER)  {
             return GameLoop.GAMEOVER;
         }
@@ -10582,7 +10921,8 @@ GameLoop.prototype.jump = function(curStage, delta) {
  *
  * Returns the number of steps until the beginning of the next stage
  *
- * @param {object|string} gameStage The GameStage object, or its string representation
+ * @param {GameStage|string} gameStage The GameStage object,
+ *  or its string representation
  *
  * @return {number|null} The number of steps to go, minimum 1. Null on error.
  */
@@ -10612,7 +10952,8 @@ GameLoop.prototype.stepsToNextStage = function(gameStage) {
  *
  * Returns the number of steps back until the end of the previous stage
  *
- * @param {object|string} gameStage The GameStage object, or its string representation
+ * @param {GameStage|string} gameStage The GameStage object,
+ *  or its string representation
  *
  * @return {number|null} The number of steps to go, minimum 1. Null on error.
  */
@@ -10641,7 +10982,8 @@ GameLoop.prototype.stepsToPreviousStage = function(gameStage) {
  *
  * Returns the stage object corresponding to a GameStage
  *
- * @param {object|string} gameStage The GameStage object, or its string representation
+ * @param {GameStage|string} gameStage The GameStage object,
+ *  or its string representation
  *
  * @return {object|null} The corresponding stage object, or null value
  *  if the step was not found
@@ -10664,7 +11006,8 @@ GameLoop.prototype.getStage = function(gameStage) {
  *
  * Returns the step object corresponding to a GameStage
  *
- * @param {object|string} gameStage The GameStage object, or its string representation
+ * @param {GameStage|string} gameStage The GameStage object,
+ *  or its string representation
  *
  * @return {object|null} The corresponding step object, or null value
  *  if the step was not found
@@ -10695,7 +11038,8 @@ GameLoop.prototype.getStep = function(gameStage) {
  *
  * 3. default step-rule of the Stager object
  *
- * @param {object|string} gameStage The GameStage object, or its string representation
+ * @param {GameStage|string} gameStage The GameStage object,
+ *  or its string representation
  *
  * @return {function|null} The step-rule function. Null on error.
  */
@@ -10711,6 +11055,111 @@ GameLoop.prototype.getStepRule = function(gameStage) {
     // TODO: Use first line once possible (serialization issue):
     //return this.plot.getDefaultStepRule();
     return this.plot.defaultStepRule;
+};
+
+/**
+ * ### GameLoop.getGlobal
+ *
+ * Looks up the value of a global variable
+ *
+ * Looks for definitions of a global variable in
+ *
+ * 1. the globals property of the step object of the given gameStage,
+ *
+ * 2. the globals property of the stage object of the given gameStage,
+ *
+ * 3. the defaults, defined in the Stager.
+ *
+ * @param {GameStage|string} gameStage The GameStage object,
+ *  or its string representation
+ * @param {string} globalVar The name of the global variable
+ *
+ * @return {mixed|null} The value of the global variable if found,
+ *   NULL otherwise.
+ */
+GameLoop.prototype.getGlobal = function(gameStage, globalVar) {
+    var stepObj, stageObj;
+    var stepGlobals, stageGlobals, defaultGlobals;
+
+    gameStage = new GameStage(gameStage);
+
+    // Look in current step:
+    stepObj = this.getStep(gameStage);
+    if (stepObj) {
+        stepGlobals = stepObj.globals;
+        if (stepGlobals && stepGlobals.hasOwnProperty(globalVar)) {
+            return stepGlobals[globalVar];
+        }
+    }
+
+    // Look in current stage:
+    stageObj = this.getStage(gameStage);
+    if (stageObj) {
+        stageGlobals = stageObj.globals;
+        if (stageGlobals && stageGlobals.hasOwnProperty(globalVar)) {
+            return stageGlobals[globalVar];
+        }
+    }
+
+    // Look in Stager's defaults:
+    if (this.plot) {
+        defaultGlobals = this.plot.getDefaultGlobals();
+        if (defaultGlobals && defaultGlobals.hasOwnProperty(globalVar)) {
+            return defaultGlobals[globalVar];
+        }
+    }
+
+    // Not found:
+    return null;
+};
+
+/**
+ * ### GameLoop.getProperty
+ *
+ * Looks up the value of a property
+ *
+ * Looks for definitions of a property in
+ *
+ * 1. the step object of the given gameStage,
+ *
+ * 2. the stage object of the given gameStage,
+ *
+ * 3. the defaults, defined in the Stager.
+ *
+ * @param {GameStage|string} gameStage The GameStage object,
+ *  or its string representation
+ * @param {string} property The name of the property
+ *
+ * @return {mixed|null} The value of the property if found, NULL otherwise.
+ */
+GameLoop.prototype.getProperty = function(gameStage, property) {
+    var stepObj, stageObj;
+    var defaultProps;
+
+    gameStage = new GameStage(gameStage);
+
+    // Look in current step:
+    stepObj = this.getStep(gameStage);
+    if (stepObj && stepObj.hasOwnProperty(property)) {
+        return stepObj[property];
+    }
+
+    // Look in current stage:
+    stageObj = this.getStage(gameStage);
+    if (stageObj && stageObj.hasOwnProperty(property)) {
+        return stageObj[property];
+    }
+
+    // Look in Stager's defaults:
+    if (this.plot) {
+        defaultProps = this.plot.getDefaultProperties();
+        if (defaultProps && defaultProps.hasOwnProperty(property)) {
+            return defaultProps[property];
+        }
+    }
+
+    // Not found:
+    return null;
 };
 
 /**
@@ -12071,405 +12520,311 @@ GameBit.compareValue = function (gb1, gb2) {
 
 /**
  * # Game
- * 
+ *
  * Copyright(c) 2012 Stefano Balietti
- * MIT Licensed 
+ * MIT Licensed
  *
  * Wrapper class for a `GameLoop` object and functions to control the game flow
- * 
+ *
  * Defines a number of event listeners, diveded in
- * 	
+ *
  * - incoming,
  * - outgoing,
- * - internal 
- *  
+ * - internal
+ *
  *  ---
- *  
+ *
  */
-	
-(function (exports, node) {
-	
+
+(function(exports, node) {
+
 // ## Global scope
 
 var GameStage = node.GameStage,
-	GameMsg = node.GameMsg,
-	GameDB = node.GameDB,
-	GameLoop = node.GameLoop,
-	PlayerList = node.PlayerList,
-	Player = node.Player,
-	Stager = node.Stager,
-	J = node.JSUS;
+    GameMsg = node.GameMsg,
+    GameDB = node.GameDB,
+    GameLoop = node.GameLoop,
+    PlayerList = node.PlayerList,
+    Player = node.Player,
+    Stager = node.Stager,
+    J = node.JSUS;
 
 var action = node.action;
 
 exports.Game = Game;
 
-var name,
-	description,
-	gameLoop,
-	pl,
-	ml;
-	
-Game.levels = {
-		UNINITIALIZED: 0, 	// game created, the init function has not been called
-		INITIALIZING: 1, 	// executing init
-		INITIALIZED: 5, 	// init executed
-		READY:	7,		// stages are set
-		ONGOING: 50,
-		GAMEOVER: 100,		// game complete
-		RUNTIME_ERROR: -1
-	};
+Game.stateLevels = {
+    UNINITIALIZED:  0,  // game created, the init function has not been called
+    INITIALIZING:   1,  // executing init
+    INITIALIZED:    5,  // init executed
+    READY:          7,  // stages are set
+    ONGOING:       50,
+    GAMEOVER:     100,  // game complete
+    RUNTIME_ERROR: -1
+};
 
 Game.stageLevels = {
-    UNINITIALIZED: 0,
-	LOADING: 1,
-	LOADED: 2,
-	PLAYING: 50,
-	PAUSING:  55,
-	PAUSED: 60,
-	RESUMING: 65,
-	RESUMED: 70,
-	DONE: 100
+    UNINITIALIZED:  0,
+    INITIALIZING:   1,  // executing init
+    INITIALIZED:    5,  // init executed
+    LOADING:       30,
+    LOADED:        40,
+    PLAYING:       50,
+    PAUSING:       55,
+    PAUSED:        60,
+    RESUMING:      65,
+    RESUMED:       70,
+    DONE:         100
 };
 
 /**
  * ## Game constructor
- * 
+ *
  * Creates a new instance of Game
- * 
+ *
  * @param {object} settings Optional. A configuration object
  */
-function Game (settings) {
-	settings = settings || {};
+function Game(settings) {
+    settings = settings || {};
 
-	this.updateGameState(Game.levels.UNINITIALIZED);
-	this.updateStageLevel(Game.stageLevels.UNINITIALIZED);
-	
-// ## Private properties
+    this.setStateLevel(Game.stateLevels.UNINITIALIZED);
+    this.setStageLevel(Game.stageLevels.UNINITIALIZED);
 
-/**
- * ### Game.name
- * 
- * The name of the game
- * 
- * @api private
- */
-	name = settings.name || 'A nodeGame game';
-	
-	if (node.support.defineProperty) {
-		Object.defineProperty(this, 'name', {
-			value: name,
-			enumerable: true
-		});
-	}
-	else {
-		this.name = name;
-	}
+    // ## Private properties
 
-/**
- * ### Game.description
- * 
- * A text describing the game
- * 
- * @api private
- */
-	description = settings.description || 'No Description';
-	if (node.support.defineProperty) {
-		Object.defineProperty(this, 'description', {
-			value: description,
-			enumerable: true
-		});
-	}
-	else {
-		this.description = description;
-	}
-	
-	
-/**
- * ### Game.pl
- * 
- * The list of players connected to the game
- * 
- * The list may be empty, depending on the server settings
- * 
- * @api private
- */
-	pl = new PlayerList();
-	if (node.support.defineProperty) {
-		Object.defineProperty(this, 'pl', {
-			value: pl,
-			enumerable: true,
-			configurable: true,
-			writable: true
-		});
-	}
-	else {
-		this.pl = pl;
-	}
+    /**
+     * ### Game.metadata
+     *
+     * The game's metadata
+     *
+     * Contains following properties:
+     * name, description, version, session
+     *
+     * @api private
+     */
+    this.metadata = {
+        name:        settings.name || 'A nodeGame game',
+        description: settings.description || 'No Description',
+        version:     settings.version || '0',
+        session:     settings.session || '0'
+    };
 
-/**
- * ### Game.pl
- * 
- * The list of monitor clients connected to the game
- * 
- * The list may be empty, depending on the server settings
- * 
- * @api private
- */
-	ml = new PlayerList();
-	if (node.support.defineProperty) {
-		Object.defineProperty(this, 'ml', {
-			value: ml,
-			enumerable: true,
-			configurable: true,
-			writable: true
-		});
-	}
-	else {
-		this.ml = ml;
-	}
-	
-/**
- * ### Game.ready
- * 
- * If TRUE, the nodeGame engine is fully loaded
- * 
- * Shortcut to game.isReady
- * 
- * If the browser does not support the method object setters,
- * this property is disabled, and Game.isReady() should be used
- * instead.
- * 
- * @see Game.isReady();
- * 
- * @api private
- * @deprecated
- * 
- */
-	if (node.support.getter) {
-		Object.defineProperty(this, 'ready', {
-			set: function(){},
-			get: this.isReady,
-			enumerable: true
-		});
-	}
-	else {
-		this.ready = null;
-	}
+    /**
+     * ### Game.pl
+     *
+     * The list of players connected to the game
+     *
+     * The list may be empty, depending on the server settings
+     *
+     * @api private
+     */
+    this.pl = new PlayerList();
+
+    /**
+     * ### Game.ml
+     *
+     * The list of monitor clients connected to the game
+     *
+     * The list may be empty, depending on the server settings
+     *
+     * @api private
+     */
+    this.ml = new PlayerList();
+
+    /**
+     * ### Game.ready
+     *
+     * If TRUE, the nodeGame engine is fully loaded
+     *
+     * Shortcut to game.isReady
+     *
+     * If the browser does not support the method object setters,
+     * this property is disabled, and Game.isReady() should be used
+     * instead.
+     *
+     * @see Game.isReady();
+     *
+     * @api private
+     * @deprecated
+     *
+     */
+    this.ready = null;
 
 
 
-// ## Public properties
+    // ## Public properties
 
-/**
- * ### Game.observer
- * 
- * If TRUE, silently observes the game. Defaults, FALSE
- * 
- * An nodeGame observer will not send any automatic notification
- * to the server, but it will just *observe* the game played by
- * other clients.
- * 
- */
-	this.observer = ('undefined' !== typeof settings.observer) ? settings.observer 
-		   													: false;
+    /**
+     * ### Game.observer
+     *
+     * If TRUE, silently observes the game. Defaults, FALSE
+     *
+     * An nodeGame observer will not send any automatic notification
+     * to the server, but it will just *observe* the game played by
+     * other clients.
+     *
+     */
+    this.observer = ('undefined' !== typeof settings.observer) ? settings.observer
+        : false;
 
-/**
- * ### Game.auto_step
- * 
- * If TRUE, automatically advances to the next state if all the players 
- * have completed the same state
- * 
- * After a successful STAGEDONE event is fired, the client will automatically 
- * goes to the next function in the game-loop without waiting for a STATE
- * message from the server. 
- * 
- * Depending on the configuration settings, it can still perform additional
- * checkings (e.g.wheter the mininum number of players is connected) 
- * before stepping to the next state.
- * 
- * Defaults: true
- * 
- */
-	this.auto_step = ('undefined' !== typeof settings.auto_step) ? settings.auto_step 
-															 : true;
+  
+    /**
+     * ### Game.auto_wait
+     *
+     * If TRUE, fires a WAITING... event immediately after a successful DONE event
+     *
+     * Under default settings, the WAITING... event temporarily prevents the user
+     * to access the screen and displays a message to the player.
+     *
+     * Defaults: FALSE
+     *
+     */
+    this.auto_wait = ('undefined' !== typeof settings.auto_wait) ? settings.auto_wait
+        : false;
 
-/**
- * ### Game.auto_wait
- * 
- * If TRUE, fires a WAITING... event immediately after a successful DONE event
- * 
- * Under default settings, the WAITING... event temporarily prevents the user
- * to access the screen and displays a message to the player.
- * 
- * Defaults: FALSE
- * 
- */
-	this.auto_wait = ('undefined' !== typeof settings.auto_wait) ? settings.auto_wait 
-																 : false; 
+  
 
-/**
- * ### Game.solo_mode
- * 
- * If TRUE, automatically advances to the next state upon completion of a state
- * 
- * After a successful DONE event is fired, the client will automatically 
- * goes to the next function in the game-loop without waiting for a STATE
- * message from the server, or checking the STATE of the other players. 
- * 
- * Defaults: FALSE
- * 
- */
-	this.solo_mode = ('undefined' !== typeof settings.solo_mode) ? settings.solo_mode 
-															 : false;	
-	// TODO: check this
-	this.minPlayers = settings.minPlayers || 1;
-	this.maxPlayers = settings.maxPlayers || 1000;
-	
 
-	
-/**
- * ### Game.memory
- * 
- * A storage database for the game
- * 
- * In the server logic the content of SET messages are
- * automatically inserted in this object
- * 
- * 	@see node.set
- */
-	this.memory = new GameDB();
-	
+    // TODO: check this
+    this.minPlayers = settings.minPlayers || 1;
+    this.maxPlayers = settings.maxPlayers || 1000;
 
-	
-/**
- * ### Game.stager
- * 
- * Stage manager 
- * 
- * retrocompatible with gameLoop
- * 
- * @see Stager
- * @api private
- */
-    this.gameLoop = this.stager = new GameLoop(settings.stages);
-	
+
+
+    /**
+     * ### Game.memory
+     *
+     * A storage database for the game
+     *
+     * In the server logic the content of SET messages are
+     * automatically inserted in this object
+     *
+     * @see node.set
+     */
+    this.memory = new GameDB();
+
+    /**
+     * ### Game.gameLoop
+     *
+     * The Game Loop
+     *
+     * @see GameLoop
+     * @api private
+     */
+    this.gameLoop = new GameLoop(settings.stages);
+
 
     // TODO: check how to init
-    this.currentStep = new GameStage();
-    this.currentStepObj = null;
-    
+    this.setCurrentGameStage(new GameStage());
+
     // Update the init function if one is passed
     if (settings.init) {
-	this.init = function() {
-		this.updateGameState(Game.levels.INITIALIZING);
-	    settings.init.call(node.game);
-	    this.updateGameState(Game.levels.INITIALIZED);
-	};
+        this.init = function() {
+            this.setStateLevel(Game.stateLevels.INITIALIZING);
+            settings.init.call(node.game);
+            this.setStateLevel(Game.stateLevels.INITIALIZED);
+        };
     }
-    
-    
-    this.player = null;	
-    
-    
+
+
     this.paused = false;
-	
+
 } // <!-- ends constructor -->
 
 // ## Game methods
 
-/** 
+/**
  * ### Game.init
- * 
+ *
  * Initialization function
- * 
+ *
  * This function is called as soon as the game is instantiated,
- * i.e. at stage 0.0.0. 
- * 
+ * i.e. at stage 0.0.0.
+ *
  * Event listeners defined here stay valid throughout the whole
  * game, unlike event listeners defined inside a function of the
  * gameLoop, which are valid only within the specific function.
- * 
+ *
  */
-Game.prototype.init = function () {
-	this.updateGameState(Game.levels.INITIALIZING);
-	this.updateGameState(Game.levels.INITIALIZED);
+Game.prototype.init = function() {
+    this.setStateLevel(Game.stateLevels.INITIALIZING);
+    this.setStateLevel(Game.stateLevels.INITIALIZED);
 };
 
-/** 
+/**
  * ### Game.gameover
- * 
+ *
  * Cleaning up function
- * 
+ *
  * This function is called after the last stage of the gameLoop
  * is terminated
- * 
+ *
  */
-Game.prototype.gameover = function () {};
+Game.prototype.gameover = function() {};
 
 /**
  * ### Game.start
- * 
- * Starts the game 
- * 
+ *
+ * Starts the game
+ *
  * Calls the init function, and steps.
- * 
+ *
  * Important: it does not use `Game.publishUpdate` because that is
  * just for change of state after the game has started
- * 
- * 
+ *
+ *
  * @see node.play
  * @see Game.publishStage
- * 
+ *
  */
 Game.prototype.start = function() {
-	// INIT the game
-	this.init();
-	this.step();
-	
-	node.log('game started');
+    // INIT the game
+    this.init();
+    this.step();
+
+    node.log('game started');
 };
 
 /**
  * ### Game.pause
- * 
+ *
  * Experimental. Sets the game to pause
- * 
+ *
  * @TODO: check with Game.ready
  */
-Game.prototype.pause = function () {
-	this.paused = true;
+Game.prototype.pause = function() {
+    this.paused = true;
 };
 
 /**
  * ### Game.resume
- * 
+ *
  * Experimental. Resumes the game from a pause
- * 
+ *
  * @TODO: check with Game.ready
  */
-Game.prototype.resume = function () {
-	this.paused = false;
+Game.prototype.resume = function() {
+    this.paused = false;
 };
 
 
 /**
  * ### Game.shouldStep
- * 
+ *
  * Execute the next stage / step, if allowed
- * 
- * @return {boolean|null} FALSE, if the execution encounters an error 
+ *
+ * @return {boolean|null} FALSE, if the execution encounters an error
  *   NULL, if stepping is disallowed
- * 
+ *
  * @see Game.step
  */
 Game.prototype.shouldStep = function() {
     // Check the stager
-    var stepRule = this.stager.getStepRule(this.getGameStage());
+    var stepRule = this.gameLoop.getStepRule(this.getCurrentGameStage());
 
     if ('function' !== typeof stepRule) return false;
 
-    if (stepRule(this.getGameStage(), this.getStageLevel(), this.pl, this)) {
+    if (stepRule(this.getCurrentGameStage(), this.getStageLevel(), this.pl, this)) {
         return this.step();
     }
     else {
@@ -12479,165 +12834,217 @@ Game.prototype.shouldStep = function() {
 
 /**
  * ### Game.step
- * 
- * Executes the next stage / step 
- * 
+ *
+ * Executes the next stage / step
+ *
  * @return {Boolean} FALSE, if the execution encountered an error
- * 
+ *
  * @see Game.stager
  * @see Game.currentStage
- * @see Game.execStage
- * 
+ * @see Game.execStep
+ *
  * TODO: harmonize return values
  */
 Game.prototype.step = function() {
-    var nextStep;
-    nextStep = this.stager.next(this.currentStep);
-    console.log('NEXT', nextStep);
+    var nextStep, curStep;
+    var nextStepObj, nextStageObj;
+    var ev;
+
+    curStep = this.getCurrentGameStage();
+    nextStep = this.gameLoop.next(curStep);
+
+    // Listeners from previous step are cleared in any case
+    node.events.ee.step.clear();
+
     if ('string' === typeof nextStep) {
-	
-	if (nextStep === GameLoop.GAMEOVER) {
-	    node.emit('GAMEOVER');
-	    return this.gameover(); // can throw Errors
-	}
-	
-	// else do nothing
-	return null;
+        if (nextStep === GameLoop.GAMEOVER) {
+            node.emit('GAMEOVER');
+            return this.gameover(); // can throw Errors
+        }
+
+        // else do nothing
+        return null;
     }
     else {
-	// TODO maybe update also in case of string
-	this.currentStep = nextStep;
-	this.currentStepObj = this.stager.getStep(nextStep);
-	return this.execStage(this.currentStepObj);
+        // TODO maybe update also in case of string
+        this.setCurrentGameStage(nextStep);
+
+        // If we enter a new stage (including repeating the same stage)
+        // we need to update a few things:
+        if (this.gameLoop.stepsToNextStage(curStep) === 1) {
+            nextStageObj = this.gameLoop.getStage(nextStep);
+            if (!nextStageObj) return false;
+
+            // clear the previous stage listeners
+            node.events.ee.stage.clear();
+
+            // Execute the init function of the stage, if any:
+            if (nextStageObj.hasOwnProperty('init')) {
+                this.setStageLevel(Game.stageLevels.INITIALIZING);
+                nextStageObj.init.call(node.game);
+            }
+
+            // Load the listeners for the stage, if any:
+            for (ev in nextStageObj.on) {
+                if (nextStageObj.on.hasOwnProperty(ev)) {
+                    node.events.ee.stage.on(ev, nextStageObjs.on[ev]);
+                }
+            }
+        }
+
+        nextStepObj = this.gameLoop.getStep(nextStep);
+        if (!nextStepObj) return false;
+
+        // Execute the init function of the step, if any:
+        if (nextStepObj.hasOwnProperty('init')) {
+            this.setStageLevel(Game.stageLevels.INITIALIZING);
+            nextStepObj.init.call(node.game);
+        }
+
+        this.setStageLevel(Game.stageLevels.INITIALIZED);
+
+        // Load the listeners for the step, if any:
+        for (ev in nextStepObj.on) {
+            if (nextStepObj.on.hasOwnProperty(ev)) {
+                node.events.ee.step.on(ev, nextStepObjs.on[ev]);
+            }
+        }
+
+        // TODO what else to load?
+
+        return this.execStep(this.getCurrentStep());
     }
 };
 
 /**
- * ### Game.execStage
- * 
- * Executes the specified stage
- * 
- * @param stage {GameStage} GameStage object to execute
- * 
+ * ### Game.execStep
+ *
+ * Executes the specified stage object
+ *
+ * @TODO: emit an event "executing stage", so that other methods get notified
+ *
+ * @param stage {object} Full stage object to execute
+ *
  */
-Game.prototype.execStage = function(stage) {
+Game.prototype.execStep = function(stage) {
     var cb, res;
-	
-    cb = stage.cb; 
-			
-    // Local Listeners from previous stage are erased 
-    // before proceeding to next one
-    node.events.clearStage(this.currentStep);
-			
-    this.updateStageLevel('LOADING');
-    
-    
+
+    cb = stage.cb;
+
+    this.setStageLevel(Game.stageLevels.LOADING);
+
     try {
-	res = cb.call(node.game);
-	this.updateStageLevel('LOADED');
-	
-	// This does not make sense. Basically it waits for the nodegame window to be loaded too
-	if (this.isReady()) {
-	    node.emit('LOADED');
-	}
-	if (res === false) {
-			// A non fatal error occurred
-	    // log it
-	}
-	
-	return res;
-	
-    } 
-    catch (e) {
-	var err, ex;
-	err = 'An error occurred while executing a custom callback'; //  
-	
-	node.err(err);
-	
-	if (node.debug) {
-	    ex = node.NodeGameRuntimeError;
-	    console.log(ex);
-	    console.log(ex.trace);
-	    throw ex;
-	}
-	
-	return true;
+        res = cb.call(node.game);
     }
+    catch (e) {
+        if (node.debug) throw e;
+        node.err('An error occurred while executing a custom callback');
+        throw new node.NodeGameRuntimeError(e);
+    }
+
+    this.setStageLevel(Game.stageLevels.LOADED);
+    // This does not make sense. Basically it waits for the nodegame window to be loaded too
+    if (this.isReady()) {
+        node.emit('LOADED');
+    }
+    if (res === false) {
+        // A non fatal error occurred
+        node.err('A non fatal error occurred while executing the callback of stage ' + this.getCurrentGameStage());
+    }
+
+    return res;
 };
 
-Game.prototype.getGameState = function () {
-    return this.state;
+Game.prototype.getStateLevel = function() {
+    return this.stateLevel;
 };
 
-Game.prototype.getStageLevel = function () {
-    return this.stageState;
+Game.prototype.getStageLevel = function() {
+    return this.stageLevel;
 };
 
-Game.prototype.getStep = function () {
-    return this.currentStepObj;
+Game.prototype.getCurrentStep = function() {
+    return this.gameLoop.getStep(this.getCurrentGameStage());
 };
 
-Game.prototype.getGameStage = function () {
-    return this.currentStep;
+Game.prototype.getCurrentGameStage = function() {
+    return this.currentGameStage;
 };
 
 // ERROR, WORKING, etc
-Game.prototype.updateGameState = function (state) {
-	this.state = state;
-	//this.publishUpdate();
+Game.prototype.setStateLevel = function(stateLevel) {
+    if ('number' !== typeof stateLevel) {
+        throw new node.NodeGameMisconfiguredGameError(
+                'setStateLevel called with invalid parameter: ' + stateLevel);
+    }
+
+    this.stateLevel = stateLevel;
+    //this.publishUpdate();
 };
 
 // PLAYING, DONE, etc.
-Game.prototype.updateStageLevel= function (state) {
-	this.stageState = state;
+// Publishes update only if value actually changed.
+Game.prototype.setStageLevel = function(stageLevel) {
+    if ('number' !== typeof stageLevel) {
+        throw new node.NodeGameMisconfiguredGameError(
+                'setStageLevel called with invalid parameter: ' + stageLevel);
+    }
 
     // Publish update:
-    node.socket.send(node.msg.create({
-        target: node.target.STAGE_LEVEL,
-        data: state,
-        to: 'ALL'
-    }));
+    if (!this.observer && this.stageLevel !== stageLevel) {
+        node.socket.send(node.msg.create({
+            target: node.target.STAGE_LEVEL,
+            data: stageLevel,
+            to: 'ALL'
+        }));
+    }
+
+    this.stageLevel = stageLevel;
+};
+
+Game.prototype.setCurrentGameStage = function(gameStage) {
+    this.currentGameStage = new GameStage(gameStage);
 };
 
 Game.prototype.publishUpdate = function() {
-	// <!-- Important: SAY -->
-	if (!this.observer) {
-		var stateEvent = node.OUT + action.SAY + '.STATE'; 
-		node.emit(stateEvent, this.state, 'ALL');
-	}
+    // <!-- Important: SAY -->
+    if (!this.observer) {
+        var stateEvent = node.OUT + action.SAY + '.STATE';
+        node.emit(stateEvent, this.getStateLevel(), 'ALL');
+    }
 };
 
 /**
  * ### Game.isReady
- * 
+ *
  * Returns TRUE if the nodeGame engine is fully loaded
- * 
- * As soon as the nodegame-client library is loaded 
+ *
+ * As soon as the nodegame-client library is loaded
  * `node.game.state` is equal to 0.0.0. In this situation the
- * game will be considered READY unless the nodegame-window 
+ * game will be considered READY unless the nodegame-window
  * says otherwise
- * 
+ *
  * During stepping between functions in the game-loop
- * the flag is temporarily turned to FALSE, and all events 
- * are queued and fired only after nodeGame is ready to 
+ * the flag is temporarily turned to FALSE, and all events
+ * are queued and fired only after nodeGame is ready to
  * handle them again.
- * 
+ *
  * If the browser does not support the method object setters,
  * this property is disabled, and Game.isReady() should be used
  * instead.
- * 
+ *
  * @see Game.ready;
- * 
+ *
  */
 Game.prototype.isReady = function() {
-    console.log(this.getGameState());
+    console.log(this.getStateLevel());
     console.log(this.getStageLevel());
     return true;
-	if (this.getGameState() < Game.levels.READY) return false;
-	if (this.getStageLevel() === Game.stageLevels.LOADING) return false;
+    if (this.getStateLevel() < Game.stateLevels.READY) return false;
+    if (this.getStageLevel() === Game.stageLevels.LOADING) return false;
 
-	// Check if there is a gameWindow obj and whether it is loading
-	return node.window ? node.window.state >= node.is.LOADED : true;
+    // Check if there is a gameWindow obj and whether it is loading
+    return node.window ? node.window.state >= node.is.LOADED : true;
 };
 
 
@@ -12649,7 +13056,7 @@ Game.prototype._isReadyToStep = function(stage, stager, pl) {
 };
 
 Game.prototype.isReadyToStep = function() {
-    return this._isReadyToStep(this.currentStep, this.stager, this.pl);
+    return this._isReadyToStep(this.getCurrentStage(), this.gameLoop, this.pl);
 };
 
 
@@ -12662,77 +13069,83 @@ Game.prototype._getStepperCallback = function(stage, stager) {
 };
 
 Game.prototype.getStepperCallback = function() {
-    return this._getStepperCallback(this.currentStep, this.stager);
+    return this._getStepperCallback(this.getCurrentStage(), this.gameLoop);
 };
 
 // TODO : MAYBE TO REMOVE THEM
 
 /**
 * ### Game.next
-* 
+*
 * Fetches a state from the game-loop N steps ahead
-* 
+*
 * Optionally, a parameter can control the number of steps to take
 * in the game-loop before returning the state
-* 
+*
 * @param {number} N Optional. The number of steps to take in the game-loop. Defaults 1
 * @return {boolean|GameStage} The next state, or FALSE if it does not exist
-* 
-* 	@see GameStage
-* 	@see Game.gameLoop
+*
+* @see GameStage
+* @see Game.gameLoop
 */
-Game.prototype.next = function (N) {
-	if (!N) return this.gameLoop.next(this.state);
-	return this.gameLoop.jump(this.state, Math.abs(N));
+/*
+Game.prototype.next = function(N) {
+    if (!N) return this.gameLoop.next(this.state);
+    return this.gameLoop.jump(this.state, Math.abs(N));
 };
+*/
 
 /**
 * ### Game.previous
-* 
+*
 * Fetches a state from the game-loop N steps back
-* 
+*
 * Optionally, a parameter can control the number of steps to take
 * backward in the game-loop before returning the state
-* 
+*
 * @param {number} times Optional. The number of steps to take in the game-loop. Defaults 1
 * @return {boolean|GameStage} The previous state, or FALSE if it does not exist
-* 
-* 	@see GameStage
-* 	@see Game.gameLoop
+*
+* @see GameStage
+* @see Game.gameLoop
 */
-Game.prototype.previous = function (N) {
-	if (!N) return this.gameLoop.previous(this.state);
-	return this.gameLoop.jump(this.state, -Math.abs(N));
+/*
+Game.prototype.previous = function(N) {
+    if (!N) return this.gameLoop.previous(this.state);
+    return this.gameLoop.jump(this.state, -Math.abs(N));
 };
+*/
 
 
 /**
 * ### Game.jumpTo
-* 
+*
 * Moves the game forward or backward in the game-loop
-* 
+*
 * Optionally, a parameter can control the number of steps to take
-* in the game-loop before executing the next function. A negative 
+* in the game-loop before executing the next function. A negative
 * value jumps backward in the game-loop, and a positive one jumps
 * forward in the game-loop
-* 
+*
 * @param {number} jump  The number of steps to take in the game-loop
 * @return {boolean} TRUE, if the game succesfully jumped to the desired state
-* 
-* 	@see GameStage
-* 	@see Game.gameLoop
+*
+* @see GameStage
+* @see Game.gameLoop
 */
-Game.prototype.jumpTo = function (jump) {
-	if (!jump) return false;
-	var gs = this.gameLoop.jump(this.state, jump);
-	if (!gs) return false;
-	return this.updateStage(gs);
+/*
+Game.prototype.jumpTo = function(jump) {
+    if (!jump) return false;
+    var gs = this.gameLoop.jump(this.state, jump);
+    if (!gs) return false;
+    return this.updateStage(gs);
 };
+*/
 
 // ## Closure
 })(
-	'undefined' != typeof node ? node : module.exports,
-	'undefined' != typeof node ? node : module.parent.exports
+    'undefined' != typeof node ? node : module.exports,
+    'undefined' != typeof node ? node : module.parent.exports
 );
 
 /**
@@ -12797,7 +13210,10 @@ function GameSession() {
 	
 	
 	this.register('game.currentStepObj', {
-		set: GameSession.restoreStage
+		set: GameSession.restoreStage,
+        get: function() {
+            return node.game.getCurrentStep();
+        }
 	});
 	
 	this.register('node.env');
@@ -12827,7 +13243,7 @@ GameSession.prototype.restoreStage = function(stage) {
 		];
 		
 		// RE-EMIT EVENTS
-		node.events.history.remit(node.game.state, discard);
+		node.events.history.remit(node.game.getStateLevel(), discard);
 		node.info('game stage restored');
 		return true;
 	}
@@ -13677,7 +14093,8 @@ SessionManager.prototype.store = function() {
  */
 (function (exports, node) {
 		
-    var EventEmitter = node.EventEmitter,
+    var EventEmitterManager = node.EventEmitterManager,
+        EventEmitter = node.EventEmitter,
 	Socket = node.Socket,
 	GameStage = node.GameStage,
 	GameMsg = node.GameMsg,
@@ -13690,7 +14107,7 @@ SessionManager.prototype.store = function() {
 	
 	
 /**
- * ### nove.env
+ * ### node.env
  * 
  * Executes a block of code conditionally to nodeGame environment variables  
  * 
@@ -13700,12 +14117,12 @@ SessionManager.prototype.store = function() {
  * @param params {array} Optional. An array of additional parameters for the callback
  * 
  */	
-	node.env = function (env, func, ctx, params) {
-		if (!env || !func || !node.env[env]) return;
-		ctx = ctx || node;
-		params = params || [];
-		func.apply(ctx, params);
-	};
+    node.env = function (env, func, ctx, params) {
+	if (!env || !func || !node.env[env]) return;
+	ctx = ctx || node;
+	params = params || [];
+	func.apply(ctx, params);
+    };
 	
 		
 /**
@@ -13724,51 +14141,51 @@ SessionManager.prototype.store = function() {
  * Only the property `name`, can be changed.
  * 
  */
-	node.createPlayer = function (player) {
-		
-		player = new Player(player);
-		
-		if (node.conf && node.conf.player) {			
-			var pconf = node.conf.player;
-			for (var key in pconf) {
-				if (pconf.hasOwnProperty(key)) {
-					if (J.inArray(key, ['id', 'sid', 'ip'])) {
-						continue;
-					} 
-					
-					// Cannot be overwritten properties previously 
-					// set in other sessions (recovery)
-//						if (player.hasOwnProperty(key)) {
-//							continue;
-//						}
-					if (node.support.defineProperty) {
-						Object.defineProperty(player, key, {
-					    	value: pconf[key],
-					    	enumerable: true
-						});
-					}
-					else {
-						player[key] = pconf[key];
-					}
-				}
-			}
-		}
-		
-		
-		if (node.support.defineProperty) {
-			Object.defineProperty(node, 'player', {
-		    	value: player,
-		    	enumerable: true
+    node.createPlayer = function (player) {
+	
+	player = new Player(player);
+	
+	if (node.conf && node.conf.player) {			
+	    var pconf = node.conf.player;
+	    for (var key in pconf) {
+		if (pconf.hasOwnProperty(key)) {
+		    if (J.inArray(key, ['id', 'sid', 'ip'])) {
+			continue;
+		    } 
+		    
+		    // Cannot be overwritten properties previously 
+		    // set in other sessions (recovery)
+		    //						if (player.hasOwnProperty(key)) {
+		    //							continue;
+		    //						}
+		    if (node.support.defineProperty) {
+			Object.defineProperty(player, key, {
+			    value: pconf[key],
+			    enumerable: true
 			});
+		    }
+		    else {
+			player[key] = pconf[key];
+		    }
 		}
-		else {
-			node.player = player;
-		}
-		
-		node.emit('PLAYER_CREATED', player);
-		
-		return player;
-	};	
+	    }
+	}
+	
+	
+	if (node.support.defineProperty) {
+	    Object.defineProperty(node, 'player', {
+		value: player,
+		enumerable: true
+	    });
+	}
+	else {
+	    node.player = player;
+	}
+	
+	node.emit('PLAYER_CREATED', player);
+	
+	return player;
+    };	
 	
 /**
  * ### node.connect
@@ -13778,11 +14195,11 @@ SessionManager.prototype.store = function() {
  * @param {object} conf A configuration object
  * @param {object} game The game object
  */		
-	node.connect = function (url) {	
-		if (node.socket.connect(url)) {
-			node.emit('NODEGAME_CONNECTED');
-		}
-	};	
+    node.connect = function (url) {	
+	if (node.socket.connect(url)) {
+	    node.emit('NODEGAME_CONNECTED');
+	}
+    };	
 
 	
 /**
@@ -13805,10 +14222,10 @@ SessionManager.prototype.store = function() {
  * 
  * @param {boolean} rest TRUE, to erase the game memory before update the game stage
  */	
-	node.replay = function (reset) {
-		if (reset) node.game.memory.clear(true);
-		node.game.execStage(node.gameLoop.getStep("1.1.1"));
-	};	
+    node.replay = function (reset) {
+	if (reset) node.game.memory.clear(true);
+	node.game.execStage(node.gameLoop.getStep("1.1.1"));
+    };	
 	
 	
 /**
@@ -13821,23 +14238,41 @@ SessionManager.prototype.store = function() {
  * @param {object} p2 Optional. A parameter to be passed to the listener
  * @param {object} p3 Optional. A parameter to be passed to the listener
  */	
-	node.emit = function (event, p1, p2, p3) {	
-		node.events.emit(event, p1, p2, p3);
-	};	
+    node.emit = function () {	
+	node.events.emit(arguments);
+    };	
 	
 /**
  * ### node.say
  * 
  * Sends a DATA message to a specified recipient
  * 
+ * @TODO: switch the order of the parameters data and text, maybe also to
+ * 
  * @param {mixed} data The content of the DATA message
- * @param {string} what The label associated to the message
- * @param {string} whom Optional. The recipient of the message
+ * @param {string} text The label associated to the message
+ * @param {string} to Optional. The recipient of the message. Defaults, 'SERVER'
  *  
  */	
-	node.say = function (data, what, whom) {
-		node.events.emit('out.say.DATA', data, whom, what);
-	};
+    node.say = function (data, text, to) {
+	var msg;
+
+	if ('undefined' === typeof data && 'undefined' === typeof text) {
+	    node.err('cannot say empty message');
+	    return false;
+	}
+
+	msg = node.msg.create({
+	    target: node.target.DATA,
+	    to: to || 'SERVER',
+	    text: text,
+	    data: data
+	});
+	// @TODO when refactoring is finished, emit this event.
+	// By default there nothing should happen, but people could listen to it
+	//node.emit('out.say.DATA', msg);
+	this.socket.send(msg);
+    };
 	
 /**
  * ### node.set
@@ -13850,10 +14285,27 @@ SessionManager.prototype.store = function() {
  * @param {mixed} The value to store (can be of any type)
  * 
  */
-	node.set = function (key, value) {
-		// TODO: parameter to say who will get the msg
-		node.events.emit('out.set.DATA', value, null, key);
-	};
+    node.set = function (key, value, to) {
+	var msg;
+
+	if ('undefined' === typeof key) {
+	    node.err('cannot set undefined key');
+	    return false;
+	}
+
+	msg = node.msg.create({
+	    action: node.action.SET,
+	    target: node.target.DATA,
+	    to: to || 'SERVER',
+	    reliable: 1,
+	    text: key,
+	    data: value
+	});
+	// @TODO when refactoring is finished, emit this event.
+	// By default there nothing should happen, but people could listen to it
+	//node.emit('out.set.DATA', msg);
+	this.socket.send(msg);
+    };
 	
 
 /**
@@ -13862,22 +14314,46 @@ SessionManager.prototype.store = function() {
  * Sends a GET message to a recipient and listen to the reply 
  * 
  * @param {string} key The label of the GET message
- * @param {function} func The callback function to handle the return message
+ * @param {function} cb The callback function to handle the return message
+ *
+ * Experimental. Undocumented (for now)
  */	
-	node.get = function (key, func) {
-		if (!key || !func) return;
-		
-		node.events.emit('out.get.DATA', key);
-		
-		var listener = function(msg) {
-			if (msg.text === key) {
-				func.call(node.game, msg.data);
-				node.events.remove('in.say.DATA', listener);
-			}
-		};
-		
-		node.on('in.say.DATA', listener);
+    node.get = function (key, cb, to) {
+	var msg, g, ee;
+
+	if ('undefined' === typeof key) {
+	    node.err('cannot get empty key');
+	    return false;
+	}
+
+	if ('function' !== typeof cb) {
+	    node.err('node.get requires a valid callback function');
+	    return false;
+	}
+	
+	msg = node.msg.create({
+	    action: node.action.GET,
+	    target: node.target.DATA,
+	    to: to || 'SERVER',
+	    reliable: 1,
+	    text: key
+	});
+	
+	// @TODO when refactoring is finished, emit this event.
+	// By default there nothing should happen, but people could listen to it
+	//node.events.emit('out.get.DATA', msg);
+	
+	ee = node.getCurrentEventEmitter();
+
+	function g(msg) {
+	    if (msg.text === key) {
+		cb.call(node.game, msg.data);
+		ee.remove('in.say.DATA', g);
+	    }
 	};
+	
+	ee.on('in.say.DATA', g);
+    };
 
 /**
  * ### node.on
@@ -13893,25 +14369,44 @@ SessionManager.prototype.store = function() {
  * @param {string} event The name of the event
  * @param {function} listener The callback function
  */	
-	node.on = function (event, listener) {
-		
-		if (!event) { 
-			node.err('undefined event'); 
-			return;
-		}
-		if ('function' !== typeof listener) { 
-			node.err('callback must be of time function'); 
-			return;
-		}
-		
-		// It is in the init function;
-		if (!node.game || !node.game.currentStepObj || (GameStage.compare(node.game.currentStepObj, new GameStage(), true) === 0 )) {
-			node.events.add(event, listener);
-		}
-		else {
-			node.events.addLocal(event, listener);
-		}
-	};
+    node.on = function (event, listener) {
+	var ee;
+	ee = node.getCurrentEventEmitter();
+	ee.on(event, listener);
+    };
+
+
+/**
+ * ### node.getCurrentEventEmitter
+ * 
+ * Returns the last active event emitter obj
+ * 
+ * TODO: finish the method
+ * 
+ * TODO: add proper doc
+ * 
+ * @param {EventEmitter} The current event emitter obj
+ */
+    node.getCurrentEventEmitter = function() {
+	debugger;
+	
+	// NodeGame default listeners
+	if (!node.game || !node.game.getCurrentStep()) {
+	    return node.events.ee.ng;
+	}	
+
+	// It is a game init function
+	if ((GameStage.compare(node.game.getCurrentStep(), new GameStage(), true) === 0 )) {
+	    return node.events.ee.game;
+	}
+
+	// TODO return the stage ee
+
+	// It is a game step function
+	else {
+	    return node.events.ee.step;
+	}
+    };
 
 /**
  * ### node.once
@@ -13925,13 +14420,13 @@ SessionManager.prototype.store = function() {
  * @see node.on
  * @see node.off
  */		
-	node.once = function (event, listener) {
-		if (!event || !listener) return;
-		node.on(event, listener);
-		node.on(event, function(event, listener) {
-			node.events.remove(event, listener);
-		});
-	};
+    node.once = function (event, listener) {
+	if (!event || !listener) return;
+	node.on(event, listener);
+	node.on(event, function(event, listener) {
+	    node.events.remove(event, listener);
+	});
+    };
 	
 /**
  * ### node.off
@@ -13944,11 +14439,9 @@ SessionManager.prototype.store = function() {
  * @see node.on
  * @see node.EventEmitter.remove
  */			
-	node.off = node.removeListener = function (event, func) {
-		return node.events.remove(event, func);
-	};
-
-	
+    node.off  = function (event, func) {
+	return node.events.remove(event, func);
+    };	
 	
 /**
  * ### node.redirect
@@ -13971,17 +14464,24 @@ SessionManager.prototype.store = function() {
  * @param {string} who A player id or 'ALL'
  * @return {boolean} TRUE, if the redirect message is sent
  */	
-	node.redirect = function (url, who) {
-		if (!url || !who) return false;
-		
-		var msg = node.msg.create({
-			target: node.target.REDIRECT,
-			data: url,
-			to: who
-		});
-		node.socket.send(msg);
-		return true;
-	};
+    node.redirect = function (url, who) {
+	var msg;
+	if ('string' !== typeof url) {
+	    node.err('redirect requires a valid string');
+	    return false;
+	}
+	if ('undefined' === typeof who) {
+	    node.err('redirect requires a valid recipient');
+	    return false;
+	}   
+	msg = node.msg.create({
+	    target: node.target.REDIRECT,
+	    data: url,
+	    to: who
+	});
+	node.socket.send(msg);
+	return true;
+    };
 
 /**
  * ### node.remoteCommand
@@ -13997,9 +14497,17 @@ SessionManager.prototype.store = function() {
  * @return {boolean} TRUE, if the game command is sent
  */	
     node.remoteCommand = function (command, to, options) {
-	if (!command || !to) return false;
+	var msg;
+	if (!command) {
+	    node.err('remoteCommand requires a valid command');
+	    return false;
+	}
+	if ('undefined' === typeof who) {
+	    node.err('remoteCommand requires a valid recipient');
+	    return false;
+	}  
 		
-	var msg = node.msg.create({
+	msg = node.msg.create({
 	    target: node.target.GAMECOMMAND,
 	    text: command,
 	    data: options,
@@ -14008,25 +14516,25 @@ SessionManager.prototype.store = function() {
 	return node.socket.send(msg);
     };
 	
-	node.info(node.version + ' loaded');
+    node.info(node.version + ' loaded');
 	
 	
-	// Creating the objects
-	// <!-- object commented in index.js -->
-	node.events = new EventEmitter();
+    // Creating the objects
+    // <!-- object commented in index.js -->
+    node.events = new EventEmitterManager();
 
-	node.msg	= node.GameMsgGenerator;	
+    node.msg = node.GameMsgGenerator;	
 	
-	node.session = new GameSession();
+    node.session = new GameSession();
 	
-	node.socket = node.gsc = new Socket();
+    node.socket = node.gsc = new Socket();
 	
-	node.game = new Game();
+    node.game = new Game();
 	
 	
 })(
-		this
-	, 	'undefined' != typeof node ? node : module.parent.exports
+    this
+ ,  'undefined' != typeof node ? node : module.parent.exports
 );
 
 /**
@@ -14248,24 +14756,25 @@ var frozen = false;
 // The input parameter can be either an object (function) or 
 // a stringified object (function), and it will be passed as 
 // the configuration object to the contructor of `node.Game`
-	node.setup.register('game', function(game) {
-	    if (!game) return {};
-		
-	    // Trying to parse the string, maybe it
-	    // comes from a remote setup
-	    if ('string' === typeof game) {
-		game = J.parse(game);			
-	    }
-		
-	    if ('function' === typeof game) {
-		// creates the object
-		game = new game();
-	    }
-	    
-	    node.game = new Game(game);
-	    node.emit('NODEGAME_GAME_CREATED');
-	    return node.game;
-	});
+    node.setup.register('game', function(gameState) {
+        // TODO
+        if (!gameState) return {};
+
+        // Trying to parse the string, maybe it
+        // comes from a remote setup
+        if ('string' === typeof gameState) {
+            gameState = J.parse(gameState);			
+        }
+
+        if ('function' === typeof gameState) {
+            // creates the object
+            gameState = new gameState();
+        }
+
+        node.game = new Game(gameState);
+        node.emit('NODEGAME_GAME_CREATED');
+        return node.game;
+    });
 		
 // ### node.setup.player
 // Creates the `node.player` object
@@ -14286,36 +14795,37 @@ var frozen = false;
  * @return{boolean} TRUE, if configuration is successful
  *
  * @see node.setup
+ * @see JSUS.stringifyAll
  */	
-	node.remoteSetup = function (property, options, to) {
-	    var msg, payload;
+    node.remoteSetup = function (property, options, to) {
+        var msg, payload;
 
-	    if (!property) {
-		node.err('cannot send remote setup: empty property');
-		return false;
-	    }
-	    if (!to) {
-		node.err('cannot send remote setup: empty recipient');
-		return false;
-	    }
-	    
-	    payload = J.stringify(options);
-	    
-	    if (!payload) {
-		node.err('an error occurred while stringifying payload for remote setup');
-		return false;
-	    }
-	    
-	    msg = node.msg.create({
-		target: node.target.SETUP,
-		to: to,
-		text: property,
-		data: payload
-	    });
-		
-	    return node.socket.send(msg);
-	};
-		
+        if (!property) {
+            node.err('cannot send remote setup: empty property');
+            return false;
+        }
+        if (!to) {
+            node.err('cannot send remote setup: empty recipient');
+            return false;
+        }
+
+        payload = J.stringifyAll(options);
+
+        if (!payload) {
+            node.err('an error occurred while stringifying payload for remote setup');
+            return false;
+        }
+
+        msg = node.msg.create({
+            target: node.target.SETUP,
+            to: to,
+            text: property,
+            data: payload
+        });
+
+        return node.socket.send(msg);
+    };
+
 
 })(
 	'undefined' != typeof node ? node : module.exports,
@@ -14616,7 +15126,7 @@ node.random = {};
         rules['SYNC_STAGE'] = function(stage, myStageLevel, pl, game) {
             // if next step is going to be a new stage, wait for others
             return myStageLevel === node.Game.stageLevels.DONE;
-                (game.stager.stepsToNextStage(stage) > 1 ||
+                (game.gameLoop.stepsToNextStage(stage) > 1 ||
                  pl.isStageDone(stage));
         };
     }
@@ -14673,11 +15183,11 @@ node.random = {};
  * @emit UPDATED_PLIST
  * @see Game.pl 
  */
-	node.on( IN + say + 'PCONNECT', function (msg) {
-		if (!msg.data) return;
-		node.game.pl.add(new Player(msg.data));
-		node.emit('UPDATED_PLIST');
-	});	
+    node.events.ng.on( IN + say + 'PCONNECT', function (msg) {
+	if (!msg.data) return;
+	node.game.pl.add(new Player(msg.data));
+	node.emit('UPDATED_PLIST');
+    });	
 	
 /**
  * ## in.say.PDISCONNECT
@@ -14687,7 +15197,7 @@ node.random = {};
  * @emit UPDATED_PLIST
  * @see Game.pl 
  */
-	node.on( IN + say + 'PDISCONNECT', function (msg) {
+	node.events.ng.on( IN + say + 'PDISCONNECT', function (msg) {
 		if (!msg.data) return;
 		node.game.pl.remove(msg.data.id);
 		node.emit('UPDATED_PLIST');
@@ -14701,7 +15211,7 @@ node.random = {};
  * @emit UPDATED_MLIST
  * @see Game.ml 
  */
-	node.on( IN + say + 'MCONNECT', function (msg) {
+	node.events.ng.on( IN + say + 'MCONNECT', function (msg) {
 		if (!msg.data) return;
 		node.game.ml.add(new Player(msg.data));
 		node.emit('UPDATED_MLIST');
@@ -14715,7 +15225,7 @@ node.random = {};
  * @emit UPDATED_MLIST
  * @see Game.ml 
  */
-	node.on( IN + say + 'MDISCONNECT', function (msg) {
+	node.events.ng.on( IN + say + 'MDISCONNECT', function (msg) {
 		if (!msg.data) return;
 		node.game.ml.remove(msg.data.id);
 		node.emit('UPDATED_MLIST');
@@ -14730,7 +15240,7 @@ node.random = {};
  * @emit UPDATED_PLIST
  * @see Game.pl 
  */
-node.on( IN + say + 'PLIST', function (msg) {
+node.events.ng.on( IN + say + 'PLIST', function (msg) {
 	if (!msg.data) return;
 	node.game.pl = new PlayerList({}, msg.data);
 	node.emit('UPDATED_PLIST');
@@ -14744,7 +15254,7 @@ node.on( IN + say + 'PLIST', function (msg) {
  * @emit UPDATED_MLIST
  * @see Game.pl 
  */
-node.on( IN + say + 'MLIST', function (msg) {
+node.events.ng.on( IN + say + 'MLIST', function (msg) {
 	if (!msg.data) return;
 	node.game.ml = new PlayerList({}, msg.data);
 	node.emit('UPDATED_MLIST');
@@ -14755,7 +15265,7 @@ node.on( IN + say + 'MLIST', function (msg) {
  * 
  * Experimental feature. Undocumented (for now)
  */ 
-node.on( IN + get + 'DATA', function (msg) {
+node.events.ng.on( IN + get + 'DATA', function (msg) {
 	if (msg.text === 'LOOP'){
 		node.socket.sendDATA(action.SAY, node.game.gameLoop, msg.from, 'GAME');
 	}
@@ -14769,7 +15279,7 @@ node.on( IN + get + 'DATA', function (msg) {
  * Adds an entry to the memory object 
  * 
  */
-node.on( IN + set + 'STATE', function (msg) {
+node.events.ng.on( IN + set + 'STATE', function (msg) {
 	node.game.memory.add(msg.text, msg.data, msg.from);
 });
 
@@ -14779,7 +15289,7 @@ node.on( IN + set + 'STATE', function (msg) {
  * Adds an entry to the memory object 
  * 
  */
-node.on( IN + set + 'DATA', function (msg) {
+node.events.ng.on( IN + set + 'DATA', function (msg) {
 	node.game.memory.add(msg.text, msg.data, msg.from);
 });
 
@@ -14796,7 +15306,7 @@ node.on( IN + set + 'DATA', function (msg) {
  *  @emit UPDATED_PLIST
  *  @see Game.pl 
  */
-	node.on( IN + say + 'STAGE', function (msg) {
+	node.events.ng.on( IN + say + 'STAGE', function (msg) {
 
 		if (node.socket.serverid && msg.from === node.socket.serverid) {
 //			console.log(node.socket.serverid + ' ---><--- ' + msg.from);
@@ -14812,7 +15322,7 @@ node.on( IN + set + 'DATA', function (msg) {
 		// <!-- Assume this is the server for now
 		// TODO: assign a string-id to the server -->
 		else {
-			node.game.execStage(node.game.stager.getStep(msg.data));
+			node.game.execStage(node.game.gameLoop.getStep(msg.data));
 		}
 	});
 
@@ -14828,8 +15338,7 @@ node.on( IN + set + 'DATA', function (msg) {
  *  @emit UPDATED_PLIST
  *  @see Game.pl 
  */
-	node.on( IN + say + 'STAGE_LEVEL', function (msg) {
-
+	node.events.ng.on( IN + say + 'STAGE_LEVEL', function (msg) {
 		if (node.socket.serverid && msg.from === node.socket.serverid) {
 //			console.log(node.socket.serverid + ' ---><--- ' + msg.from);
 //			console.log('NOT EXISTS');
@@ -14844,7 +15353,7 @@ node.on( IN + set + 'DATA', function (msg) {
 		// <!-- Assume this is the server for now
 		// TODO: assign a string-id to the server -->
 		else {
-			//node.game.updateStageLevel(msg.data);
+			//node.game.setStageLevel(msg.data);
 		}
 	});
 	
@@ -14855,7 +15364,7 @@ node.on( IN + set + 'DATA', function (msg) {
  * 
  * @see node.redirect
  */
-node.on( IN + say + 'REDIRECT', function (msg) {
+node.events.ng.on( IN + say + 'REDIRECT', function (msg) {
 	if (!msg.data) return;
 	if ('undefined' === typeof window || !window.location) {
 		node.log('window.location not found. Cannot redirect', 'err');
@@ -14876,7 +15385,7 @@ node.on( IN + say + 'REDIRECT', function (msg) {
  * @see node.setup
  * @see JSUS.parse
  */
-node.on( IN + say + 'SETUP', function (msg) {
+node.events.ng.on( IN + say + 'SETUP', function (msg) {
     if (!msg.text) return;
     var feature = msg.text,
         payload = JSUS.parse(msg.data);
@@ -14896,7 +15405,7 @@ node.on( IN + say + 'SETUP', function (msg) {
  * 
  * @see node.setup
  */
-node.on( IN + say + 'GAMECOMMAND', function (msg) {
+node.events.ng.on( IN + say + 'GAMECOMMAND', function (msg) {
     if (!msg.text || !node.gamecommand[msg.text]) {
 	node.err('unknown game command received: ' + msg.text);
 	return;
@@ -14913,7 +15422,7 @@ node.on( IN + say + 'GAMECOMMAND', function (msg) {
  * does not leave the page, it just switches channel. 
  * 
  */
-node.on( IN + say + 'JOIN', function (msg) {
+node.events.ng.on( IN + say + 'JOIN', function (msg) {
     if (!msg.text) return;
     //node.socket.disconnect();
     node.connect(msg.text);
@@ -14954,7 +15463,7 @@ node.on( IN + say + 'JOIN', function (msg) {
  * The message is for informative purpose
  * 
  */
-node.on( OUT + say + 'STAGE', function (stage, to) {
+node.events.ng.on( OUT + say + 'STAGE', function (stage, to) {
 	node.socket.sendSTAGE(action.SAY, stage, to);
 });	
 	
@@ -14963,7 +15472,7 @@ node.on( OUT + say + 'STAGE', function (stage, to) {
  * 
  * Sends out a TXT message to the specified recipient
  */
-node.on( OUT + say + 'TXT', function (text, to) {
+node.events.ng.on( OUT + say + 'TXT', function (text, to) {
 	node.socket.sendTXT(text,to);
 });
 
@@ -14972,7 +15481,7 @@ node.on( OUT + say + 'TXT', function (text, to) {
  * 
  * Sends out a DATA message to the specified recipient
  */
-node.on( OUT + say + 'DATA', function (data, to, key) {
+node.events.ng.on( OUT + say + 'DATA', function (data, to, key) {
 	node.socket.sendDATA(action.SAY, data, to, key);
 });
 
@@ -14985,7 +15494,7 @@ node.on( OUT + say + 'DATA', function (data, to, key) {
  * The receiver will update its representation of the stage
  * of the sender
  */
-node.on( OUT + set + 'STAGE', function (stage, to) {
+node.events.ng.on( OUT + set + 'STAGE', function (stage, to) {
 	node.socket.sendSTAGE(action.SET, stage, to);
 });
 
@@ -14998,7 +15507,7 @@ node.on( OUT + set + 'STAGE', function (stage, to) {
  * 
  * @see node.GameDB
  */
-node.on( OUT + set + 'DATA', function (data, to, key) {
+node.events.ng.on( OUT + set + 'DATA', function (data, to, key) {
 	node.socket.sendDATA(action.SET, data, to, key);
 });
 
@@ -15009,7 +15518,7 @@ node.on( OUT + set + 'DATA', function (data, to, key) {
  * 
  * Experimental. Undocumented (for now)
  */
-node.on( OUT + get + 'DATA', function (data, to, key) {
+node.events.ng.on( OUT + get + 'DATA', function (data, to, key) {
 	node.socket.sendDATA(action.GET, data, to, data);
 });
 	
@@ -15049,7 +15558,7 @@ node.log('outgoing listeners added');
  * 
  * Fired when all the players in the player list are DONE
  */ 
-node.on('STAGEDONE', function() {
+node.events.ng.on('STAGEDONE', function() {
 	
 	// In single player mode we ignore when all the players have completed the stage
 	if (node.game.solo_mode) {
@@ -15090,15 +15599,15 @@ node.on('STAGEDONE', function() {
  * @emit BEFORE_DONE
  * @emit WAITING...
  */
-node.on('DONE', function(p1, p2, p3) {
+node.events.ng.on('DONE', function(p1, p2, p3) {
 	
     // Execute done handler before updating stage
     var ok = true,
-       done = node.game.currentStepObj.done;
+       done = node.game.getCurrentStep().done;
     
     if (done) ok = done.call(node.game, p1, p2, p3);
     if (!ok) return;
-    node.game.updateStageLevel(Game.stageLevels.DONE)
+    node.game.setStageLevel(Game.stageLevels.DONE)
 	
     // Call all the functions that want to do 
     // something before changing stage
@@ -15123,7 +15632,7 @@ node.on('DONE', function(p1, p2, p3) {
  * @emit BEFORE_LOADING
  * @emit LOADED
  */
-node.on('WINDOW_LOADED', function() {
+node.events.ng.on('WINDOW_LOADED', function() {
 	if (node.game.ready) node.emit('LOADED');
 });
 
@@ -15135,7 +15644,7 @@ node.on('WINDOW_LOADED', function() {
  * @emit BEFORE_LOADING
  * @emit LOADED
  */
-node.on('GAME_LOADED', function() {
+node.events.ng.on('GAME_LOADED', function() {
 	if (node.game.ready) node.emit('LOADED');
 });
 
@@ -15144,9 +15653,9 @@ node.on('GAME_LOADED', function() {
  * 
  * 
  */
-node.on('LOADED', function() {
+node.events.ng.on('LOADED', function() {
 	node.emit('BEFORE_LOADING');
-	node.game.updateStageLevel('PLAYING');
+	node.game.setStageLevel(Game.stageLevels.PLAYING);
 	//TODO: the number of messages to emit to inform other players
 	// about its own stage should be controlled. Observer is 0 
 	//node.game.publishUpdate();
@@ -15159,11 +15668,11 @@ node.on('LOADED', function() {
  * ## NODEGAME_GAMECOMMAND: start
  * 
  */
-node.on('NODEGAME_GAMECOMMAND_' + node.gamecommand.start, function(options) {
+node.events.ng.on('NODEGAME_GAMECOMMAND_' + node.gamecommand.start, function(options) {
 	
     node.emit('BEFORE_GAMECOMMAND', node.gamecommand.start, options);
 	
-    if (node.game.currentStepObj && node.game.currentStepObj.stage !== 0) {
+    if (node.game.getCurrentStep() && node.game.getCurrentStep().stage !== 0) {
 	node.err('Game already started. Use restart if you want to start the game again');
 	return;
     }
@@ -15176,6 +15685,7 @@ node.log('internal listeners added');
 	
 })('undefined' !== typeof node ? node : module.parent.exports); 
 // <!-- ends outgoing listener -->
+
 /**
  * # GameTimer
  * 
@@ -18462,486 +18972,482 @@ node.widgets = new Widgets();
 })(node);
 (function (node) {
 	
+	node.widgets.register('VisualState', VisualState);
 	
-	node.widgets.register('D3', D3);
-	node.widgets.register('D3ts', D3ts);
+	var JSUS = node.JSUS,
+		Table = node.window.Table;
 	
-	D3.prototype.__proto__ = node.Widget.prototype;
-	D3.prototype.constructor = D3;
-
 // ## Defaults
 	
-	D3.defaults = {};
-	D3.defaults.id = 'D3';
-	D3.defaults.fieldset = {
-		legend: 'D3 plot'
-	};
-
+	VisualState.defaults = {};
+	VisualState.defaults.id = 'visualstate';
+	VisualState.defaults.fieldset = { 
+		legend: 'State',
+		id: 'visualstate_fieldset'
+	};	
 	
 // ## Meta-data
 	
-	D3.name = 'D3';
-	D3.version = '0.1';
-	D3.description = 'Real time plots for nodeGame with d3.js';
+	VisualState.name = 'Visual State';
+	VisualState.version = '0.2.1';
+	VisualState.description = 'Visually display current, previous and next state of the game.';
 	
 // ## Dependencies
 	
-	D3.dependencies = {
-		d3: {},	
-		JSUS: {}
+	VisualState.dependencies = {
+		JSUS: {},
+		Table: {}
 	};
 	
-	function D3 (options) {
-		this.id = options.id || D3.id;
-		this.event = options.event || 'D3';
-		this.svg = null;
+	
+	function VisualState (options) {
+		this.id = options.id;
 		
-		var that = this;
-		node.on(this.event, function (value) {
-			that.tick.call(that, value); 
-		});
+		this.root = null;		// the parent element
+		this.table = new Table();
 	}
 	
-	D3.prototype.append = function (root) {
-		this.root = root;
-		this.svg = d3.select(root).append("svg");
+	VisualState.prototype.getRoot = function () {
+		return this.root;
+	};
+	
+	VisualState.prototype.append = function (root, ids) {
+		var that = this;
+		var PREF = this.id + '_';
+		root.appendChild(this.table.table);
+		this.writeState();
 		return root;
 	};
-	
-	D3.prototype.tick = function () {};
-	
-// # D3ts
-	
-	
-// ## Meta-data
-	
-	D3ts.id = 'D3ts';
-	D3ts.name = 'D3ts';
-	D3ts.version = '0.1';
-	D3ts.description = 'Time series plot for nodeGame with d3.js';
-	
-// ## Dependencies	
-	D3ts.dependencies = {
-		D3: {},	
-		JSUS: {}
+		
+	VisualState.prototype.listeners = function () {
+		var that = this;
+		node.on('STATECHANGE', function() {
+			that.writeState();
+		}); 
 	};
 	
-	D3ts.prototype.__proto__ = D3.prototype;
-	D3ts.prototype.constructor = D3ts;
-	
-	D3ts.defaults = {};
-	
-	D3ts.defaults.width = 400;
-	D3ts.defaults.height = 200;
-	
-	D3ts.defaults.margin = {
-    	top: 10, 
-    	right: 10, 
-    	bottom: 20, 
-    	left: 40 
-	};
-	
-	D3ts.defaults.domain = {
-		x: [0, 10],
-		y: [0, 1]
-	};
-	
-    D3ts.defaults.range = {
-    	x: [0, D3ts.defaults.width],
-    	y: [D3ts.defaults.height, 0]
-    };
-	
-	function D3ts (options) {
-		D3.call(this, options);
+	VisualState.prototype.writeState = function () {
+		var state, pr, nx, tmp;
+		var miss = '-';
 		
-		
-		var o = this.options = JSUS.merge(D3ts.defaults, options);
-		
-		var n = this.n = o.n;
-		
-	    this.data = [0];
-	    
-	    this.margin = o.margin;
-	    
-		var width = this.width = o.width - this.margin.left - this.margin.right;
-		var height = this.height = o.height - this.margin.top - this.margin.bottom;
-
-		// identity function
-		var x = this.x = d3.scale.linear()
-		    .domain(o.domain.x)
-		    .range(o.range.x);
-
-		var y = this.y = d3.scale.linear()
-		    .domain(o.domain.y)
-		    .range(o.range.y);
-
-		// line generator
-		this.line = d3.svg.line()
-		    .x(function(d, i) { return x(i); })
-		    .y(function(d, i) { return y(d); });
-	}
-	
-	D3ts.prototype.init = function (options) {
-		//D3.init.call(this, options);
-		
-		console.log('init!');
-		var x = this.x,
-			y = this.y,
-			height = this.height,
-			width = this.width,
-			margin = this.margin;
-		
-		
-		// Create the SVG and place it in the middle
-		this.svg.attr("width", width + margin.left + margin.right)
-		    .attr("height", height + margin.top + margin.bottom)
-		  .append("g")
-		    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-
-		// Line does not go out the axis
-		this.svg.append("defs").append("clipPath")
-		    .attr("id", "clip")
-		  .append("rect")
-		    .attr("width", width)
-		    .attr("height", height);
-
-		// X axis
-		this.svg.append("g")
-		    .attr("class", "x axis")
-		    .attr("transform", "translate(0," + height + ")")
-		    .call(d3.svg.axis().scale(x).orient("bottom"));
-
-		// Y axis
-		this.svg.append("g")
-		    .attr("class", "y axis")
-		    .call(d3.svg.axis().scale(y).orient("left"));
-
-		this.path = this.svg.append("g")
-		    .attr("clip-path", "url(#clip)")
-		  .append("path")
-		    .data([this.data])
-		    .attr("class", "line")
-		    .attr("d", this.line);		
-	};
-	
-	D3ts.prototype.tick = function (value) {
-		this.alreadyInit = this.alreadyInit || false;
-		if (!this.alreadyInit) {
-			this.init();
-			this.alreadyInit = true;
+		if (node.game && node.game.state) {
+			tmp = node.game.gameLoop.getStep(node.game.state);
+			state = (tmp) ? tmp.name : miss;
+			tmp = node.game.gameLoop.getStep(node.game.previous());
+			pr = (tmp) ? tmp.name : miss;
+			tmp = node.game.gameLoop.getStep(node.game.next());
+			nx = (tmp) ? tmp.name : miss;
 		}
-		
-		var x = this.x;
-		
-		console.log('tick!');
-	
-		// push a new data point onto the back
-		this.data.push(value);
-
-		// redraw the line, and slide it to the left
-		this.path
-	    	.attr("d", this.line)
-	    	.attr("transform", null);
-
-		// pop the old data point off the front
-		if (this.data.length > this.n) {
-		
-	  		this.path
-	  			.transition()
-	  			.duration(500)
-	  			.ease("linear")
-	  			.attr("transform", "translate(" + x(-1) + ")");
-	  		
-	  		this.data.shift();
-	  	  
+		else {
+			state = 'Uninitialized';
+			pr = miss;
+			nx = miss;
 		}
+		this.table.clear(true);
+
+		this.table.addRow(['Previous: ', pr]);
+		this.table.addRow(['Current: ', state]);
+		this.table.addRow(['Next: ', nx]);
+	
+		var t = this.table.select('y', '=', 2);
+		t.addClass('strong');
+		t.select('x','=',0).addClass('underline');
+		this.table.parse();
 	};
 	
 })(node);
 (function (node) {
 	
-	node.widgets.register('NDDBBrowser', NDDBBrowser);
+	node.widgets.register('Chat', Chat);
 	
-	var JSUS = node.JSUS,
-		NDDB = node.NDDB,
-		TriggerManager = node.TriggerManager;
+	var J = node.JSUS,
+		W = node.window;	
 
 // ## Defaults
 	
-	NDDBBrowser.defaults = {};
-	NDDBBrowser.defaults.id = 'nddbbrowser';
-	NDDBBrowser.defaults.fieldset = false;
-	
+	Chat.defaults = {};
+	Chat.defaults.id = 'chat';
+	Chat.defaults.fieldset = { legend: 'Chat' };	
+	Chat.defaults.mode = 'MANY_TO_MANY'; 
+	Chat.defaults.textarea_id = 'chat_textarea';
+	Chat.defaults.chat_id = 'chat_chat';
+	Chat.defaults.chat_event = 'CHAT';
+	Chat.defaults.submit_id = 'chat_submit';
+	Chat.defaults.submit_text = 'chat';
+
+			
 // ## Meta-data
 	
-	NDDBBrowser.name = 'NDDBBrowser';
-	NDDBBrowser.version = '0.1.2';
-	NDDBBrowser.description = 'Provides a very simple interface to control a NDDB istance.';
-	
-// ## Dependencies
-	
-	NDDBBrowser.dependencies = {
-		JSUS: {},
-		NDDB: {},
-		TriggerManager: {}
+	// ### Chat.modes
+	// 	MANY_TO_MANY: everybody can see all the messages, and it possible
+	//    to send private messages
+	//  MANY_TO_ONE: everybody can see all the messages, private messages can
+	//    be received, but not sent
+	//  ONE_TO_ONE: everybody sees only personal messages, private messages can
+	//    be received, but not sent. All messages are sent to the SERVER
+	//  RECEIVER_ONLY: messages can only be received, but not sent
+	Chat.modes = { 
+			MANY_TO_MANY: 'MANY_TO_MANY',
+			MANY_TO_ONE: 'MANY_TO_ONE',
+			ONE_TO_ONE: 'ONE_TO_ONE',
+			RECEIVER_ONLY: 'RECEIVER_ONLY'
 	};
 	
-	function NDDBBrowser (options) {
-		this.options = options;
-		this.nddb = null;
+	Chat.name = 'Chat';
+	Chat.version = '0.4';
+	Chat.description = 'Offers a uni / bi-directional communication interface between players, or between players and the experimenter.';
+
+// ## Dependencies
+	
+	Chat.dependencies = {
+		JSUS: {}
+	};
+	
+	function Chat (options) {
+		this.id = options.id || Chat.id;
+		this.mode = options.mode || Chat.defaults.mode;
 		
-		this.commandsDiv = document.createElement('div');
-		this.id = options.id;
-		if ('undefined' !== typeof this.id) {
-			this.commandsDiv.id = this.id;
+		this.root = null;
+		
+		this.textarea_id = options.textarea_id || Chat.defaults.textarea_id;
+		this.chat_id = options.chat_id || Chat.defaults.chat_id;
+		this.submit_id = options.submit_id || Chat.defaults.submit_id;
+		
+		this.chat_event = options.chat_event || Chat.defaults.chat_event;
+		this.submit_text = options.submit_text || Chat.defaults.submit_text;
+
+		this.submit = W.getEventButton(this.chat_event, this.submit_text, this.submit_id);
+		this.textarea = W.getElement('textarea', this.textarea_id);
+		this.chat = W.getElement('div', this.chat_id);
+		
+		if ('undefined' !== typeof options.displayName) {
+			this.displayName = options.displayName;
 		}
 		
-		this.info = null;
+		switch(this.mode) {
+		
+		case Chat.modes.RECEIVER_ONLY:
+			this.recipient = {value: 'SERVER'};
+			break;
+		case Chat.modes.MANY_TO_ONE:
+			this.recipient = {value: 'ALL'};
+			break;
+		case Chat.modes.ONE_TO_ONE:
+			this.recipient = {value: 'SERVER'};
+			break;
+		default:
+			this.recipient = W.getRecipientSelector();
+		}
+	}
+	
+	
+	Chat.prototype.append = function (root) {
+		this.root = root;
+		root.appendChild(this.chat);
+		
+		if (this.mode !== Chat.modes.RECEIVER_ONLY) {	
+			W.writeln('', root);
+			root.appendChild(this.textarea);
+			W.writeln('', root);
+			root.appendChild(this.submit);
+			if (this.mode === Chat.modes.MANY_TO_MANY) {
+				root.appendChild(this.recipient);
+			}
+		}
+		return root;
+	};
+	
+	Chat.prototype.getRoot = function () {
+		return this.root;
+	};
+	
+	Chat.prototype.displayName = function(from) {
+		return from;
+	};
+	
+	Chat.prototype.readTA = function () {
+		var txt = this.textarea.value;
+		this.textarea.value = '';
+		return txt;
+	};
+	
+	Chat.prototype.writeTA = function (string, args) {
+		J.sprintf(string, args, this.chat);
+	    W.writeln('', this.chat);
+	    this.chat.scrollTop = this.chat.scrollHeight;
+	};
+	
+	Chat.prototype.listeners = function() {
+		var that = this;	
+		    
+	    node.on(this.chat_event, function () {
+	      var msg = that.readTA();
+	      if (!msg) return;
+	      
+	      var to = that.recipient.value;
+	      var args = {
+		        '%s': {
+		          'class': 'chat_me'
+		        },
+		        '%msg': {
+		          'class': 'chat_msg'
+		        },
+		        '!txt': msg
+	      };
+	      that.writeTA('%sMe%s: %msg!txt%msg', args);
+	      node.say(msg.trim(), that.chat_event, to);
+	    });
+		  
+		if (this.mode === Chat.modes.MANY_TO_MANY) {
+		    node.on('UPDATED_PLIST', function() {
+			      W.populateRecipientSelector(that.recipient, node.game.pl.fetch());
+		    });
+		}
+
+	    node.onDATA(this.chat_event, function (msg) {
+	    	if (msg.from === node.player.id || msg.from === node.player.sid) {
+	    		return;
+	    	}
+	    	
+	    	if (this.mode === Chat.modes.ONE_TO_ONE) { 
+		    	if (msg.from === this.recipient.value) {
+		    		return;
+		    	}
+	    	}
+	    	
+	    	
+	    	var from = that.displayName(msg.from);
+	    	var args = {
+		        '%s': {
+		          'class': 'chat_others'
+		        },
+		        '%msg': {
+		          'class': 'chat_msg'
+		        },
+		        '!txt': msg.data,
+	            '!from': from
+	      };
+	    	
+	      that.writeTA('%s!from%s: %msg!txt%msg', args);
+	    });
+	};
+	
+})(node);
+(function (node) {
+
+	// TODO: needs major refactoring
+	
+	var GameStage = node.GameStage,
+		PlayerList = node.PlayerList,
+		Table = node.window.Table,
+		HTMLRenderer = node.window.HTMLRenderer;
+	
+	node.widgets.register('DynamicTable', DynamicTable);
+	
+	
+	DynamicTable.prototype = new Table();
+	DynamicTable.prototype.constructor = Table;	
+	
+	
+	DynamicTable.id = 'dynamictable';
+	DynamicTable.name = 'Dynamic Table';
+	DynamicTable.version = '0.3.1';
+	
+	DynamicTable.dependencies = {
+		Table: {},
+		JSUS: {},
+		HTMLRenderer: {}
+	};
+	
+	function DynamicTable (options, data) {
+		//JSUS.extend(node.window.Table,this);
+		Table.call(this, options, data);
+		this.options = options;
+		this.id = options.id;
+		this.name = options.name || 'Dynamic Table';
+		this.fieldset = { legend: this.name,
+							id: this.id + '_fieldset'
+		};
+		
+		this.root = null;
+		this.bindings = {};
 		this.init(this.options);
 	}
 	
-	NDDBBrowser.prototype.init = function (options) {
-		
-		function addButtons() {
-			var id = this.id;
-			node.window.addEventButton(id + '_GO_TO_FIRST', '<<', this.commandsDiv, 'go_to_first');
-			node.window.addEventButton(id + '_GO_TO_PREVIOUS', '<', this.commandsDiv, 'go_to_previous');
-			node.window.addEventButton(id + '_GO_TO_NEXT', '>', this.commandsDiv, 'go_to_next');
-			node.window.addEventButton(id + '_GO_TO_LAST', '>>', this.commandsDiv, 'go_to_last');
-			node.window.addBreak(this.commandsDiv);
-		}
-		function addInfoBar() {
-			var span = this.commandsDiv.appendChild(document.createElement('span'));
-			return span;
-		}
-		
-		
-		addButtons.call(this);
-		this.info = addInfoBar.call(this);
-		
-		this.tm = new TriggerManager();
-		this.tm.init(options.triggers);
-		this.nddb = options.nddb || new NDDB({auto_update_pointer: true});
+	DynamicTable.prototype.init = function (options) {
+		this.options = options;
+		this.name = options.name || this.name;
+		this.auto_update = ('undefined' !== typeof options.auto_update) ? options.auto_update : true;
+		this.replace = options.replace || false;
+		this.htmlRenderer = new HTMLRenderer({renderers: options.renderers});
+		this.c('state', GameStage.compare);
+		this.setLeft([]);
+		this.parse(true);
 	};
-	
-	NDDBBrowser.prototype.append = function (root) {
+		
+	DynamicTable.prototype.bind = function (event, bindings) {
+		if (!event || !bindings) return;
+		var that = this;
+
+		node.on(event, function(msg) {
+			
+			if (bindings.x || bindings.y) {
+				// Cell
+				var func;
+				if (that.replace) {
+					func = function (x, y) {
+						var found = that.get(x,y);
+						if (found.length !== 0) {
+							for (var ci=0; ci < found.length; ci++) {
+								bindings.cell.call(that, msg, found[ci]);
+							}
+						}
+						else {
+							var cell = bindings.cell.call(that, msg, new Table.Cell({x: x, y: y}));
+							that.add(cell);
+						}
+					};
+				}
+				else {
+					func = function (x, y) {
+						var cell = bindings.cell.call(that, msg, new Table.Cell({x: x, y: y}));
+						that.add(cell, x, y);
+					};
+				}
+				
+				var x = bindings.x.call(that, msg);
+				var y = bindings.y.call(that, msg);
+				
+				if (x && y) {
+					
+					x = (x instanceof Array) ? x : [x];
+					y = (y instanceof Array) ? y : [y];
+					
+//					console.log('Bindings found:');
+//					console.log(x);
+//					console.log(y);
+					
+					for (var xi=0; xi < x.length; xi++) {
+						for (var yi=0; yi < y.length; yi++) {
+							// Replace or Add
+							func.call(that, x[xi], y[yi]);
+						}
+					}
+				}
+				// End Cell
+			}
+			
+			// Header
+			if (bindings.header) {
+				var h = bindings.header.call(that, msg);
+				h = (h instanceof Array) ? h : [h];
+				that.setHeader(h);
+			}
+			
+			// Left
+			if (bindings.left) {
+				var l = bindings.left.call(that, msg);
+				if (!JSUS.in_array(l, that.left)) {
+					that.header.push(l);
+				}
+			}
+			
+			// Auto Update?
+			if (that.auto_update) {
+				that.parse();
+			}
+		});
+		
+	};
+
+	DynamicTable.prototype.append = function (root) {
 		this.root = root;
-		root.appendChild(this.commandsDiv);
+		root.appendChild(this.table);
 		return root;
 	};
 	
-	NDDBBrowser.prototype.getRoot = function (root) {
-		return this.commandsDiv;
-	};
-	
-	NDDBBrowser.prototype.add = function (o) {
-		return this.nddb.insert(o);
-	};
-	
-	NDDBBrowser.prototype.sort = function (key) {
-		return this.nddb.sort(key);
-	};
-	
-	NDDBBrowser.prototype.addTrigger = function (trigger) {
-		return this.tm.addTrigger(trigger);
-	};
-	
-	NDDBBrowser.prototype.removeTrigger = function (trigger) {
-		return this.tm.removeTrigger(trigger);
-	};
-	
-	NDDBBrowser.prototype.resetTriggers = function () {
-		return this.tm.resetTriggers();
-	};
-	
-	NDDBBrowser.prototype.listeners = function() {
-		var that = this;
-		var id = this.id;
-		
-		function notification (el, text) {
-			if (el) {
-				node.emit(id + '_GOT', el);
-				this.writeInfo((this.nddb.nddb_pointer + 1) + '/' + this.nddb.length);
-			}
-			else {
-				this.writeInfo('No element found');
-			}
-		}
-		
-		node.on(id + '_GO_TO_FIRST', function() {
-			var el = that.tm.pullTriggers(that.nddb.first());
-			notification.call(that, el);
-		});
-		
-		node.on(id + '_GO_TO_PREVIOUS', function() {
-			var el = that.tm.pullTriggers(that.nddb.previous());
-			notification.call(that, el);
-		});
-		
-		node.on(id + '_GO_TO_NEXT', function() {
-			var el = that.tm.pullTriggers(that.nddb.next());
-			notification.call(that, el);
-		});
+	DynamicTable.prototype.listeners = function () {}; 
 
-		node.on(id + '_GO_TO_LAST', function() {
-			var el = that.tm.pullTriggers(that.nddb.last());
-			notification.call(that, el);
-			
-		});
-	};
-	
-	NDDBBrowser.prototype.writeInfo = function (text) {
-		if (this.infoTimeout) clearTimeout(this.infoTimeout);
-		this.info.innerHTML = text;
-		var that = this;
-		this.infoTimeout = setTimeout(function(){
-			that.info.innerHTML = '';
-		}, 2000);
-	};
-	
-	
 })(node);
 (function (node) {
+
+	var Table = node.window.Table,
+		GameStage = node.GameStage;
 	
-	node.widgets.register('DataBar', DataBar);
-	
-// ## Defaults
-	DataBar.defaults = {};
-	DataBar.defaults.id = 'databar';
-	DataBar.defaults.fieldset = {	
-		legend: 'Send DATA to players'
-	};
-	
-// ## Meta-data
-	DataBar.name = 'Data Bar';
-	DataBar.version = '0.3';
-	DataBar.description = 'Adds a input field to send DATA messages to the players';
-		
-	function DataBar (options) {
-		this.bar = null;
-		this.root = null;
-		this.recipient = null;
-	}
-	
-	
-	DataBar.prototype.append = function (root) {
-		
-		var sendButton, textInput, dataInput;
-		
-		sendButton = W.addButton(root);
-		W.writeln('Text');
-		textInput = W.addTextInput(root, 'data-bar-text');
-		W.writeln('Data');
-		dataInput = W.addTextInput(root, 'data-bar-data');
-		
-		this.recipient = W.addRecipientSelector(root);
-		
-		var that = this;
-		
-		sendButton.onclick = function() {
-			
-			var to, data, text;
-			
-			to = that.recipient.value;
-			text = textInput.value;
-			data = dataInput.value;
-			
-			node.log('Parsed Data: ' + JSON.stringify(data));
-			
-			node.say(data, text, to);
-		};
-		
-		node.on('UPDATED_PLIST', function() {
-			node.window.populateRecipientSelector(that.recipient, node.game.pl);
-		});
-		
-		return root;
-		
-	};
-	
-})(node);
-(function (node) {
-	
-	node.widgets.register('ServerInfoDisplay', ServerInfoDisplay);	
+	node.widgets.register('StateDisplay', StateDisplay);	
 
 // ## Defaults
 	
-	ServerInfoDisplay.defaults = {};
-	ServerInfoDisplay.defaults.id = 'serverinfodisplay';
-	ServerInfoDisplay.defaults.fieldset = {
-			legend: 'Server Info',
-			id: 'serverinfo_fieldset'
-	};		
+	StateDisplay.defaults = {};
+	StateDisplay.defaults.id = 'statedisplay';
+	StateDisplay.defaults.fieldset = { legend: 'State Display' };		
 	
 // ## Meta-data
 	
-	ServerInfoDisplay.name = 'Server Info Display';
-	ServerInfoDisplay.version = '0.3';
+	StateDisplay.name = 'State Display';
+	StateDisplay.version = '0.4.2';
+	StateDisplay.description = 'Display basic information about player\'s status.';
 	
-	function ServerInfoDisplay (options) {	
+	function StateDisplay (options) {
+		
 		this.id = options.id;
-		
-		
+				
 		this.root = null;
-		this.div = document.createElement('div');
-		this.table = null; //new node.window.Table();
-		this.button = null;
-		
+		this.table = new Table();
 	}
 	
-	ServerInfoDisplay.prototype.init = function (options) {
+	// TODO: Write a proper INIT method
+	StateDisplay.prototype.init = function () {};
+	
+	StateDisplay.prototype.getRoot = function () {
+		return this.root;
+	};
+	
+	
+	StateDisplay.prototype.append = function (root) {
 		var that = this;
-		if (!this.div) {
-			this.div = document.createElement('div');
-		}
-		this.div.innerHTML = 'Waiting for the reply from Server...';
-		if (!this.table) {
-			this.table = new node.window.Table(options);
-		}
-		this.table.clear(true);
-		this.button = document.createElement('button');
-		this.button.value = 'Refresh';
-		this.button.appendChild(document.createTextNode('Refresh'));
-		this.button.onclick = function(){
-			that.getInfo();
-		};
-		this.root.appendChild(this.button);
-		this.getInfo();
-	};
-	
-	ServerInfoDisplay.prototype.append = function (root) {
-		this.root = root;
-		root.appendChild(this.div);
-		return root;
-	};
-	
-	ServerInfoDisplay.prototype.getInfo = function() {
-		var that = this;
-		node.get('INFO', function (info) {
-			node.window.removeChildrenFromNode(that.div);
-			that.div.appendChild(that.processInfo(info));
-		});
-	};
-	
-	ServerInfoDisplay.prototype.processInfo = function(info) {
-		this.table.clear(true);
-		for (var key in info) {
-			if (info.hasOwnProperty(key)){
-				this.table.addRow([key,info[key]]);
+		var PREF = this.id + '_';
+		
+		var idFieldset = PREF + 'fieldset';
+		var idPlayer = PREF + 'player';
+		var idState = PREF + 'state'; 
+			
+		var checkPlayerName = setInterval(function(idState,idPlayer) {
+			if (node.player && node.player.id) {
+				clearInterval(checkPlayerName);
+				that.updateAll();
 			}
-		}
-		return this.table.parse();
+		}, 100);
+	
+		root.appendChild(this.table.table);
+		this.root = root;
+		return root;
+		
 	};
 	
-	ServerInfoDisplay.prototype.listeners = function () {
+	StateDisplay.prototype.updateAll = function() {
+		var state = node.game ? new GameStage(node.game.state) : new GameStage(),
+			id = node.player ? node.player.id : '-',
+			name = node.player && node.player.name ? node.player.name : '-';
+			
+		this.table.clear(true);
+		this.table.addRow(['Name: ', name]);
+		this.table.addRow(['State: ', state.toString()]);
+		this.table.addRow(['Id: ', id]);
+		this.table.parse();
+		
+	};
+	
+	StateDisplay.prototype.listeners = function () {
 		var that = this;
-		node.on('NODEGAME_READY', function(){
-			that.init();
-		});
+		
+		node.on('STATECHANGE', function() {
+			that.updateAll();
+		}); 
 	}; 
 	
 })(node);
+
 (function (node) {
 	
 
@@ -19259,307 +19765,6 @@ node.widgets = new Widgets();
 })(node);
 (function (node) {
 	
-	node.widgets.register('VisualState', VisualState);
-	
-	var JSUS = node.JSUS,
-		Table = node.window.Table;
-	
-// ## Defaults
-	
-	VisualState.defaults = {};
-	VisualState.defaults.id = 'visualstate';
-	VisualState.defaults.fieldset = { 
-		legend: 'State',
-		id: 'visualstate_fieldset'
-	};	
-	
-// ## Meta-data
-	
-	VisualState.name = 'Visual State';
-	VisualState.version = '0.2.1';
-	VisualState.description = 'Visually display current, previous and next state of the game.';
-	
-// ## Dependencies
-	
-	VisualState.dependencies = {
-		JSUS: {},
-		Table: {}
-	};
-	
-	
-	function VisualState (options) {
-		this.id = options.id;
-		
-		this.root = null;		// the parent element
-		this.table = new Table();
-	}
-	
-	VisualState.prototype.getRoot = function () {
-		return this.root;
-	};
-	
-	VisualState.prototype.append = function (root, ids) {
-		var that = this;
-		var PREF = this.id + '_';
-		root.appendChild(this.table.table);
-		this.writeState();
-		return root;
-	};
-		
-	VisualState.prototype.listeners = function () {
-		var that = this;
-		node.on('STATECHANGE', function() {
-			that.writeState();
-		}); 
-	};
-	
-	VisualState.prototype.writeState = function () {
-		var state, pr, nx, tmp;
-		var miss = '-';
-		
-		if (node.game && node.game.state) {
-			tmp = node.game.gameLoop.getStep(node.game.state);
-			state = (tmp) ? tmp.name : miss;
-			tmp = node.game.gameLoop.getStep(node.game.previous());
-			pr = (tmp) ? tmp.name : miss;
-			tmp = node.game.gameLoop.getStep(node.game.next());
-			nx = (tmp) ? tmp.name : miss;
-		}
-		else {
-			state = 'Uninitialized';
-			pr = miss;
-			nx = miss;
-		}
-		this.table.clear(true);
-
-		this.table.addRow(['Previous: ', pr]);
-		this.table.addRow(['Current: ', state]);
-		this.table.addRow(['Next: ', nx]);
-	
-		var t = this.table.select('y', '=', 2);
-		t.addClass('strong');
-		t.select('x','=',0).addClass('underline');
-		this.table.parse();
-	};
-	
-})(node);
-(function (node) {
-
-	var Table = node.window.Table,
-		GameStage = node.GameStage;
-	
-	node.widgets.register('StateDisplay', StateDisplay);	
-
-// ## Defaults
-	
-	StateDisplay.defaults = {};
-	StateDisplay.defaults.id = 'statedisplay';
-	StateDisplay.defaults.fieldset = { legend: 'State Display' };		
-	
-// ## Meta-data
-	
-	StateDisplay.name = 'State Display';
-	StateDisplay.version = '0.4.2';
-	StateDisplay.description = 'Display basic information about player\'s status.';
-	
-	function StateDisplay (options) {
-		
-		this.id = options.id;
-				
-		this.root = null;
-		this.table = new Table();
-	}
-	
-	// TODO: Write a proper INIT method
-	StateDisplay.prototype.init = function () {};
-	
-	StateDisplay.prototype.getRoot = function () {
-		return this.root;
-	};
-	
-	
-	StateDisplay.prototype.append = function (root) {
-		var that = this;
-		var PREF = this.id + '_';
-		
-		var idFieldset = PREF + 'fieldset';
-		var idPlayer = PREF + 'player';
-		var idState = PREF + 'state'; 
-			
-		var checkPlayerName = setInterval(function(idState,idPlayer) {
-			if (node.player && node.player.id) {
-				clearInterval(checkPlayerName);
-				that.updateAll();
-			}
-		}, 100);
-	
-		root.appendChild(this.table.table);
-		this.root = root;
-		return root;
-		
-	};
-	
-	StateDisplay.prototype.updateAll = function() {
-		var state = node.game ? new GameStage(node.game.state) : new GameStage(),
-			id = node.player ? node.player.id : '-',
-			name = node.player && node.player.name ? node.player.name : '-';
-			
-		this.table.clear(true);
-		this.table.addRow(['Name: ', name]);
-		this.table.addRow(['State: ', state.toString()]);
-		this.table.addRow(['Id: ', id]);
-		this.table.parse();
-		
-	};
-	
-	StateDisplay.prototype.listeners = function () {
-		var that = this;
-		
-		node.on('STATECHANGE', function() {
-			that.updateAll();
-		}); 
-	}; 
-	
-})(node);
-
-(function (node) {
-
-	// TODO: needs major refactoring
-	
-	var GameStage = node.GameStage,
-		PlayerList = node.PlayerList,
-		Table = node.window.Table,
-		HTMLRenderer = node.window.HTMLRenderer;
-	
-	node.widgets.register('DynamicTable', DynamicTable);
-	
-	
-	DynamicTable.prototype = new Table();
-	DynamicTable.prototype.constructor = Table;	
-	
-	
-	DynamicTable.id = 'dynamictable';
-	DynamicTable.name = 'Dynamic Table';
-	DynamicTable.version = '0.3.1';
-	
-	DynamicTable.dependencies = {
-		Table: {},
-		JSUS: {},
-		HTMLRenderer: {}
-	};
-	
-	function DynamicTable (options, data) {
-		//JSUS.extend(node.window.Table,this);
-		Table.call(this, options, data);
-		this.options = options;
-		this.id = options.id;
-		this.name = options.name || 'Dynamic Table';
-		this.fieldset = { legend: this.name,
-							id: this.id + '_fieldset'
-		};
-		
-		this.root = null;
-		this.bindings = {};
-		this.init(this.options);
-	}
-	
-	DynamicTable.prototype.init = function (options) {
-		this.options = options;
-		this.name = options.name || this.name;
-		this.auto_update = ('undefined' !== typeof options.auto_update) ? options.auto_update : true;
-		this.replace = options.replace || false;
-		this.htmlRenderer = new HTMLRenderer({renderers: options.renderers});
-		this.c('state', GameStage.compare);
-		this.setLeft([]);
-		this.parse(true);
-	};
-		
-	DynamicTable.prototype.bind = function (event, bindings) {
-		if (!event || !bindings) return;
-		var that = this;
-
-		node.on(event, function(msg) {
-			
-			if (bindings.x || bindings.y) {
-				// Cell
-				var func;
-				if (that.replace) {
-					func = function (x, y) {
-						var found = that.get(x,y);
-						if (found.length !== 0) {
-							for (var ci=0; ci < found.length; ci++) {
-								bindings.cell.call(that, msg, found[ci]);
-							}
-						}
-						else {
-							var cell = bindings.cell.call(that, msg, new Table.Cell({x: x, y: y}));
-							that.add(cell);
-						}
-					};
-				}
-				else {
-					func = function (x, y) {
-						var cell = bindings.cell.call(that, msg, new Table.Cell({x: x, y: y}));
-						that.add(cell, x, y);
-					};
-				}
-				
-				var x = bindings.x.call(that, msg);
-				var y = bindings.y.call(that, msg);
-				
-				if (x && y) {
-					
-					x = (x instanceof Array) ? x : [x];
-					y = (y instanceof Array) ? y : [y];
-					
-//					console.log('Bindings found:');
-//					console.log(x);
-//					console.log(y);
-					
-					for (var xi=0; xi < x.length; xi++) {
-						for (var yi=0; yi < y.length; yi++) {
-							// Replace or Add
-							func.call(that, x[xi], y[yi]);
-						}
-					}
-				}
-				// End Cell
-			}
-			
-			// Header
-			if (bindings.header) {
-				var h = bindings.header.call(that, msg);
-				h = (h instanceof Array) ? h : [h];
-				that.setHeader(h);
-			}
-			
-			// Left
-			if (bindings.left) {
-				var l = bindings.left.call(that, msg);
-				if (!JSUS.in_array(l, that.left)) {
-					that.header.push(l);
-				}
-			}
-			
-			// Auto Update?
-			if (that.auto_update) {
-				that.parse();
-			}
-		});
-		
-	};
-
-	DynamicTable.prototype.append = function (root) {
-		this.root = root;
-		root.appendChild(this.table);
-		return root;
-	};
-	
-	DynamicTable.prototype.listeners = function () {}; 
-
-})(node);
-(function (node) {
-	
 	node.widgets.register('GameBoard', GameBoard);
 	
 	var PlayerList = node.PlayerList;
@@ -19681,6 +19886,358 @@ node.widgets = new Widgets();
 		
 		
 		this.status.innerHTML = 'Connected players: ' + node.game.pl.length;
+	};
+	
+})(node);
+(function (node) {
+
+	var GameStage = node.GameStage,
+		PlayerList = node.PlayerList;
+	
+	
+	node.widgets.register('GameTable', GameTable);
+	
+// ## Defaults
+	
+	GameTable.defaults = {};
+	GameTable.defaults.id = 'gametable';
+	GameTable.defaults.fieldset = { 
+			legend: 'Game Table',
+			id: 'gametable_fieldset'
+	};
+	
+// ## Meta-data
+	
+	GameTable.name = 'Game Table';
+	GameTable.version = '0.2';
+	
+// ## Dependencies
+	
+	GameTable.dependencies = {
+		JSUS: {}
+	};
+	
+	function GameTable (options) {
+		this.options = options;
+		this.id = options.id;
+		this.name = options.name || GameTable.name;
+				
+		this.root = null;
+		this.gtbl = null;
+		this.plist = null;
+		
+		this.init(this.options);
+	}
+	
+	GameTable.prototype.init = function (options) {
+		
+		if (!this.plist) this.plist = new PlayerList();
+		
+		this.gtbl = new node.window.Table({
+											auto_update: true,
+											id: options.id || this.id,
+											render: options.render
+		}, node.game.memory.db);
+		
+		
+		this.gtbl.c('state', GameStage.compare);
+		
+		this.gtbl.setLeft([]);
+		
+		this.gtbl.parse(true);
+	};
+	
+
+	GameTable.prototype.addRenderer = function (func) {
+		return this.gtbl.addRenderer(func);
+	};
+	
+	GameTable.prototype.resetRender = function () {
+		return this.gtbl.resetRenderer();
+	};
+	
+	GameTable.prototype.removeRenderer = function (func) {
+		return this.gtbl.removeRenderer(func);
+	};
+	
+	GameTable.prototype.append = function (root) {
+		this.root = root;
+		root.appendChild(this.gtbl.table);
+		return root;
+	};
+	
+	GameTable.prototype.listeners = function () {
+		var that = this;
+		
+		node.onPLIST(function(msg) {	
+			if (!msg.data.length) return;
+			
+			//var diff = JSUS.arrayDiff(msg.data,that.plist.db);
+			var plist = new PlayerList({}, msg.data);
+			var diff = plist.diff(that.plist);
+			if (diff) {
+//				console.log('New Players found');
+//				console.log(diff);
+				diff.forEach(function(el){that.addPlayer(el);});
+			}
+
+			that.gtbl.parse(true);
+		});
+		
+		node.on('in.set.DATA', function (msg) {
+
+			that.addLeft(msg.state, msg.from);
+			var x = that.player2x(msg.from);
+			var y = that.state2y(node.game.state, msg.text);
+			
+			that.gtbl.add(msg.data, x, y);
+			that.gtbl.parse(true);
+		});
+	}; 
+	
+	GameTable.prototype.addPlayer = function (player) {
+		this.plist.add(player);
+		var header = this.plist.map(function(el){return el.name;});
+		this.gtbl.setHeader(header);
+	};
+	
+	GameTable.prototype.addLeft = function (state, player) {
+		if (!state) return;
+		state = new GameStage(state);
+		if (!JSUS.in_array({content:state.toString(), type: 'left'}, this.gtbl.left)){
+			this.gtbl.add2Left(state.toString());
+		}
+		// Is it a new display associated to the same state?
+		else {
+			var y = this.state2y(state);
+			var x = this.player2x(player);
+			if (this.gtbl.select('y','=',y).select('x','=',x).count() > 1) {
+				this.gtbl.add2Left(state.toString());
+			}
+		}
+			
+	};
+	
+	GameTable.prototype.player2x = function (player) {
+		if (!player) return false;
+		return this.plist.select('id', '=', player).first().count;
+	};
+	
+	GameTable.prototype.x2Player = function (x) {
+		if (!x) return false;
+		return this.plist.select('count', '=', x).first().count;
+	};
+	
+	GameTable.prototype.state2y = function (state) {
+		if (!state) return false;
+		return node.game.gameLoop.indexOf(state);
+	};
+	
+	GameTable.prototype.y2State = function (y) {
+		if (!y) return false;
+		return node.game.gameLoop.jumpTo(new GameStage(),y);
+	};
+	
+	
+
+})(node);
+
+(function (node) {
+	
+	
+	node.widgets.register('D3', D3);
+	node.widgets.register('D3ts', D3ts);
+	
+	D3.prototype.__proto__ = node.Widget.prototype;
+	D3.prototype.constructor = D3;
+
+// ## Defaults
+	
+	D3.defaults = {};
+	D3.defaults.id = 'D3';
+	D3.defaults.fieldset = {
+		legend: 'D3 plot'
+	};
+
+	
+// ## Meta-data
+	
+	D3.name = 'D3';
+	D3.version = '0.1';
+	D3.description = 'Real time plots for nodeGame with d3.js';
+	
+// ## Dependencies
+	
+	D3.dependencies = {
+		d3: {},	
+		JSUS: {}
+	};
+	
+	function D3 (options) {
+		this.id = options.id || D3.id;
+		this.event = options.event || 'D3';
+		this.svg = null;
+		
+		var that = this;
+		node.on(this.event, function (value) {
+			that.tick.call(that, value); 
+		});
+	}
+	
+	D3.prototype.append = function (root) {
+		this.root = root;
+		this.svg = d3.select(root).append("svg");
+		return root;
+	};
+	
+	D3.prototype.tick = function () {};
+	
+// # D3ts
+	
+	
+// ## Meta-data
+	
+	D3ts.id = 'D3ts';
+	D3ts.name = 'D3ts';
+	D3ts.version = '0.1';
+	D3ts.description = 'Time series plot for nodeGame with d3.js';
+	
+// ## Dependencies	
+	D3ts.dependencies = {
+		D3: {},	
+		JSUS: {}
+	};
+	
+	D3ts.prototype.__proto__ = D3.prototype;
+	D3ts.prototype.constructor = D3ts;
+	
+	D3ts.defaults = {};
+	
+	D3ts.defaults.width = 400;
+	D3ts.defaults.height = 200;
+	
+	D3ts.defaults.margin = {
+    	top: 10, 
+    	right: 10, 
+    	bottom: 20, 
+    	left: 40 
+	};
+	
+	D3ts.defaults.domain = {
+		x: [0, 10],
+		y: [0, 1]
+	};
+	
+    D3ts.defaults.range = {
+    	x: [0, D3ts.defaults.width],
+    	y: [D3ts.defaults.height, 0]
+    };
+	
+	function D3ts (options) {
+		D3.call(this, options);
+		
+		
+		var o = this.options = JSUS.merge(D3ts.defaults, options);
+		
+		var n = this.n = o.n;
+		
+	    this.data = [0];
+	    
+	    this.margin = o.margin;
+	    
+		var width = this.width = o.width - this.margin.left - this.margin.right;
+		var height = this.height = o.height - this.margin.top - this.margin.bottom;
+
+		// identity function
+		var x = this.x = d3.scale.linear()
+		    .domain(o.domain.x)
+		    .range(o.range.x);
+
+		var y = this.y = d3.scale.linear()
+		    .domain(o.domain.y)
+		    .range(o.range.y);
+
+		// line generator
+		this.line = d3.svg.line()
+		    .x(function(d, i) { return x(i); })
+		    .y(function(d, i) { return y(d); });
+	}
+	
+	D3ts.prototype.init = function (options) {
+		//D3.init.call(this, options);
+		
+		console.log('init!');
+		var x = this.x,
+			y = this.y,
+			height = this.height,
+			width = this.width,
+			margin = this.margin;
+		
+		
+		// Create the SVG and place it in the middle
+		this.svg.attr("width", width + margin.left + margin.right)
+		    .attr("height", height + margin.top + margin.bottom)
+		  .append("g")
+		    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+
+		// Line does not go out the axis
+		this.svg.append("defs").append("clipPath")
+		    .attr("id", "clip")
+		  .append("rect")
+		    .attr("width", width)
+		    .attr("height", height);
+
+		// X axis
+		this.svg.append("g")
+		    .attr("class", "x axis")
+		    .attr("transform", "translate(0," + height + ")")
+		    .call(d3.svg.axis().scale(x).orient("bottom"));
+
+		// Y axis
+		this.svg.append("g")
+		    .attr("class", "y axis")
+		    .call(d3.svg.axis().scale(y).orient("left"));
+
+		this.path = this.svg.append("g")
+		    .attr("clip-path", "url(#clip)")
+		  .append("path")
+		    .data([this.data])
+		    .attr("class", "line")
+		    .attr("d", this.line);		
+	};
+	
+	D3ts.prototype.tick = function (value) {
+		this.alreadyInit = this.alreadyInit || false;
+		if (!this.alreadyInit) {
+			this.init();
+			this.alreadyInit = true;
+		}
+		
+		var x = this.x;
+		
+		console.log('tick!');
+	
+		// push a new data point onto the back
+		this.data.push(value);
+
+		// redraw the line, and slide it to the left
+		this.path
+	    	.attr("d", this.line)
+	    	.attr("transform", null);
+
+		// pop the old data point off the front
+		if (this.data.length > this.n) {
+		
+	  		this.path
+	  			.transition()
+	  			.duration(500)
+	  			.ease("linear")
+	  			.attr("transform", "translate(" + x(-1) + ")");
+	  		
+	  		this.data.shift();
+	  	  
+		}
 	};
 	
 })(node);
@@ -20328,101 +20885,446 @@ node.widgets = new Widgets();
 
 })(node);
 (function (node) {
-
-	var JSUS = node.JSUS;
-
-	node.widgets.register('EventButton', EventButton);
+	
+	
+	// TODO: Introduce rules for update: other vs self
+	
+	node.widgets.register('NextPreviousState', NextPreviousState);
 	
 // ## Defaults
 	
-	EventButton.defaults = {};
-	EventButton.defaults.id = 'eventbutton';
-	EventButton.defaults.fieldset = false;	
+	NextPreviousState.defaults = {};
+	NextPreviousState.defaults.id = 'nextprevious';
+	NextPreviousState.defaults.fieldset = { legend: 'Rew-Fwd' };		
 	
-// ## Meta-data	
+// ## Meta-data
 	
-	EventButton.name = 'Event Button';
-	EventButton.version = '0.2';
+	NextPreviousState.name = 'Next,Previous State';
+	NextPreviousState.version = '0.3.2';
+	NextPreviousState.description = 'Adds two buttons to push forward or rewind the state of the game by one step.';
+		
+	function NextPreviousState(options) {
+		this.id = options.id;
+	}
+	
+	NextPreviousState.prototype.getRoot = function () {
+		return this.root;
+	};
+	
+	NextPreviousState.prototype.append = function (root) {
+		var idRew = this.id + '_button';
+		var idFwd = this.id + '_button';
+		
+		var rew = node.window.addButton(root, idRew, '<<');
+		var fwd = node.window.addButton(root, idFwd, '>>');
+		
+		
+		var that = this;
+	
+		var updateState = function (state) {
+			if (state) {
+				var stateEvent = node.IN + node.action.SAY + '.STATE';
+				var stateMsg = node.msg.createSTATE(stateEvent, state);
+				// Self Update
+				node.emit(stateEvent, stateMsg);
+				
+				// Update Others
+				stateEvent = node.OUT + node.action.SAY + '.STATE';
+				node.emit(stateEvent, state, 'ALL');
+			}
+			else {
+				node.log('No next/previous state. Not sent', 'ERR');
+			}
+		};
+		
+		fwd.onclick = function() {
+			updateState(node.game.next());
+		};
+			
+		rew.onclick = function() {
+			updateState(node.game.previous());
+		};
+		
+		this.root = root;
+		return root;
+	};
+	
+})(node);
+(function (node) {
+	
+	node.widgets.register('ServerInfoDisplay', ServerInfoDisplay);	
+
+// ## Defaults
+	
+	ServerInfoDisplay.defaults = {};
+	ServerInfoDisplay.defaults.id = 'serverinfodisplay';
+	ServerInfoDisplay.defaults.fieldset = {
+			legend: 'Server Info',
+			id: 'serverinfo_fieldset'
+	};		
+	
+// ## Meta-data
+	
+	ServerInfoDisplay.name = 'Server Info Display';
+	ServerInfoDisplay.version = '0.3';
+	
+	function ServerInfoDisplay (options) {	
+		this.id = options.id;
+		
+		
+		this.root = null;
+		this.div = document.createElement('div');
+		this.table = null; //new node.window.Table();
+		this.button = null;
+		
+	}
+	
+	ServerInfoDisplay.prototype.init = function (options) {
+		var that = this;
+		if (!this.div) {
+			this.div = document.createElement('div');
+		}
+		this.div.innerHTML = 'Waiting for the reply from Server...';
+		if (!this.table) {
+			this.table = new node.window.Table(options);
+		}
+		this.table.clear(true);
+		this.button = document.createElement('button');
+		this.button.value = 'Refresh';
+		this.button.appendChild(document.createTextNode('Refresh'));
+		this.button.onclick = function(){
+			that.getInfo();
+		};
+		this.root.appendChild(this.button);
+		this.getInfo();
+	};
+	
+	ServerInfoDisplay.prototype.append = function (root) {
+		this.root = root;
+		root.appendChild(this.div);
+		return root;
+	};
+	
+	ServerInfoDisplay.prototype.getInfo = function() {
+		var that = this;
+		node.get('INFO', function (info) {
+			node.window.removeChildrenFromNode(that.div);
+			that.div.appendChild(that.processInfo(info));
+		});
+	};
+	
+	ServerInfoDisplay.prototype.processInfo = function(info) {
+		this.table.clear(true);
+		for (var key in info) {
+			if (info.hasOwnProperty(key)){
+				this.table.addRow([key,info[key]]);
+			}
+		}
+		return this.table.parse();
+	};
+	
+	ServerInfoDisplay.prototype.listeners = function () {
+		var that = this;
+		node.on('NODEGAME_READY', function(){
+			that.init();
+		});
+	}; 
+	
+})(node);
+(function (node) {
+	
+	node.widgets.register('VisualTimer', VisualTimer);
+	
+	var JSUS = node.JSUS;
+
+// ## Defaults
+	
+	VisualTimer.defaults = {};
+	VisualTimer.defaults.id = 'visualtimer';
+	VisualTimer.defaults.fieldset = {
+			legend: 'Time left',
+			id: 'visualtimer_fieldset'
+	};		
+	
+// ## Meta-data
+	
+	VisualTimer.name = 'Visual Timer';
+	VisualTimer.version = '0.3.3';
+	VisualTimer.description = 'Display a timer for the game. Timer can trigger events. Only for countdown smaller than 1h.';
 	
 // ## Dependencies
 	
-	EventButton.dependencies = {
+	VisualTimer.dependencies = {
+		GameTimer : {},
 		JSUS: {}
 	};
 	
-	function EventButton (options) {
+	function VisualTimer (options) {
 		this.options = options;
 		this.id = options.id;
 
+		this.gameTimer = null;
+		
+		this.timerDiv = null;	// the DIV in which to display the timer
 		this.root = null;		// the parent element
-		this.text = 'Send';
-		this.button = document.createElement('button');
-		this.callback = null;
+		
 		this.init(this.options);
 	}
 	
-	EventButton.prototype.init = function (options) {
+	VisualTimer.prototype.init = function (options) {
 		options = options || this.options;
-		this.button.id = options.id || this.id;
-		var text = options.text || this.text;
-		while (this.button.hasChildNodes()) {
-			this.button.removeChild(this.button.firstChild);
-		}
-		this.button.appendChild(document.createTextNode(text));
-		this.event = options.event || this.event;
-		this.callback = options.callback || this.callback;
 		var that = this;
-		if (this.event) {
-			// Emit Event only if callback is successful
-			this.button.onclick = function() {
-				var ok = true;
-				if (this.callback){
-					ok = options.callback.call(node.game);
+		(function initHooks() {
+			if (options.hooks) {
+				if (!options.hooks instanceof Array) {
+					options.hooks = [options.hooks];
 				}
-				if (ok) node.emit(that.event);
-			};
+			}
+			else {
+				options.hooks = [];
+			}
+			
+			options.hooks.push({hook: that.updateDisplay,
+								ctx: that
+			});
+		})();
+		
+		
+		this.gameTimer = (options.gameTimer) || new node.GameTimer();
+		
+		if (this.gameTimer) {
+			this.gameTimer.init(options);
+		}
+		else {
+			node.log('GameTimer object could not be initialized. VisualTimer will not work properly.', 'ERR');
 		}
 		
-//		// Emit DONE only if callback is successful
-//		this.button.onclick = function() {
-//			var ok = true;
-//			if (options.exec) ok = options.exec.call(node.game);
-//			if (ok) node.emit(that.event);
-//		}
+		if (this.timerDiv) {
+			this.timerDiv.className = options.className || '';
+		}
+		
 	};
 	
-	EventButton.prototype.append = function (root) {
+	VisualTimer.prototype.getRoot = function () {
+		return this.root;
+	};
+	
+	VisualTimer.prototype.append = function (root) {
 		this.root = root;
-		root.appendChild(this.button);
+		this.timerDiv = node.window.addDiv(root, this.id + '_div');
+		this.updateDisplay();
 		return root;	
 	};
 	
-	EventButton.prototype.listeners = function () {};
-		
-// # Done Button
-	
-	node.widgets.register('DoneButton', DoneButton);
-	
-	DoneButton.prototype.__proto__ = EventButton.prototype;
-	DoneButton.prototype.constructor = DoneButton;
-
-// ## Meta-data
-	
-	DoneButton.id = 'donebutton';
-	DoneButton.version = '0.1';
-	DoneButton.name = 'Done Button';
-	
-// ## Dependencies
-	
-	DoneButton.dependencies = {
-		EventButton: {}
+	VisualTimer.prototype.updateDisplay = function () {
+		if (!this.gameTimer.milliseconds || this.gameTimer.milliseconds === 0) {
+			this.timerDiv.innerHTML = '00:00';
+			return;
+		}
+		var time = this.gameTimer.milliseconds - this.gameTimer.timePassed;
+		time = JSUS.parseMilliseconds(time);
+		var minutes = (time[2] < 10) ? '' + '0' + time[2] : time[2];
+		var seconds = (time[3] < 10) ? '' + '0' + time[3] : time[3];
+		this.timerDiv.innerHTML = minutes + ':' + seconds;
 	};
 	
-	function DoneButton (options) {
-		options.event = 'DONE';
-		options.text = options.text || 'Done!';
-		EventButton.call(this, options);
+	VisualTimer.prototype.start = function() {
+		this.updateDisplay();
+		this.gameTimer.start();
+	};
+	
+	VisualTimer.prototype.restart = function (options) {
+		this.init(options);
+		this.start();
+	};
+	
+	VisualTimer.prototype.stop = function (options) {
+		this.gameTimer.stop();
+	};
+	
+	VisualTimer.prototype.resume = function (options) {
+		this.gameTimer.resume();
+	};
+		
+	VisualTimer.prototype.listeners = function () {
+		var that = this;
+		node.on('LOADED', function() {
+		    var stepObj = node.game.getCurrentStep();
+		    if (!stepObj) return;
+		    var timer = stepObj.timer;
+			if (timer) {
+				timer = JSUS.clone(timer);
+				that.timerDiv.className = '';
+				var options = {},
+					typeoftimer = typeof timer; 
+				switch (typeoftimer) {
+				
+					case 'number':
+						options.milliseconds = timer;
+						break;
+					case 'object':
+						options = timer;
+						break;
+					case 'function':
+						options.milliseconds = timer
+						break;
+					case 'string':
+						options.milliseconds = Number(timer);
+						break;
+				};
+			
+				if (!options.milliseconds) return;
+			
+				if ('function' === typeof options.milliseconds) {
+					options.milliseconds = options.milliseconds.call(node.game);
+				}
+				
+				if (!options.timeup) {
+					options.timeup = 'DONE';
+				}
+				
+				that.gameTimer.init(options);
+				that.start();
+			}
+		});
+		
+		node.on('DONE', function() {
+			// TODO: This should be enabled again
+			that.gameTimer.stop();
+			that.timerDiv.className = 'strike';
+		});
+	};
+	
+})(node);
+
+(function (node) {
+
+	node.widgets.register('GameSummary', GameSummary);
+	
+
+// ## Defaults
+	
+	GameSummary.defaults = {};
+	GameSummary.defaults.id = 'gamesummary';
+	GameSummary.defaults.fieldset = { legend: 'Game Summary' };
+	
+// ## Meta-data
+	
+	GameSummary.name = 'Game Summary';
+	GameSummary.version = '0.3';
+	GameSummary.description = 'Show the general configuration options of the game.';
+	
+	function GameSummary (options) {
+		this.summaryDiv = null;
 	}
+	
+	GameSummary.prototype.append = function (root) {
+		this.root = root;
+		this.summaryDiv = node.window.addDiv(root);
+		this.writeSummary();
+		return root;
+	};
+	
+	GameSummary.prototype.writeSummary = function (idState, idSummary) {
+		var gName = document.createTextNode('Name: ' + node.game.metadata.name),
+			gDescr = document.createTextNode('Descr: ' + node.game.metadata.description),
+			gMinP = document.createTextNode('Min Pl.: ' + node.game.minPlayers),
+			gMaxP = document.createTextNode('Max Pl.: ' + node.game.maxPlayers);
+		
+		this.summaryDiv.appendChild(gName);
+		this.summaryDiv.appendChild(document.createElement('br'));
+		this.summaryDiv.appendChild(gDescr);
+		this.summaryDiv.appendChild(document.createElement('br'));
+		this.summaryDiv.appendChild(gMinP);
+		this.summaryDiv.appendChild(document.createElement('br'));
+		this.summaryDiv.appendChild(gMaxP);
+		
+		node.window.addDiv(this.root, this.summaryDiv, idSummary);
+	};
+
+})(node);
+
+(function (node) {
+	
+	node.widgets.register('MoneyTalks', MoneyTalks);
+	
+	var JSUS = node.JSUS;
+	
+// ## Defaults
+	
+	MoneyTalks.defaults = {};
+	MoneyTalks.defaults.id = 'moneytalks';
+	MoneyTalks.defaults.fieldset = {legend: 'Earnings'};
+	
+// ## Meta-data
+	
+	MoneyTalks.name = 'Money talks';
+	MoneyTalks.version = '0.1.0';
+	MoneyTalks.description = 'Display the earnings of a player.';
+
+// ## Dependencies
+	
+	MoneyTalks.dependencies = {
+		JSUS: {}
+	};
+	
+	
+	function MoneyTalks (options) {
+		this.id = options.id || MoneyTalks.defaults.id;
+				
+		this.root = null;		// the parent element
+		
+		this.spanCurrency = document.createElement('span');
+		this.spanMoney = document.createElement('span');
+		
+		this.currency = 'EUR';
+		this.money = 0;
+		this.precision = 2;
+		this.init(options);
+	}
+	
+	
+	MoneyTalks.prototype.init = function (options) {
+		this.currency = options.currency || this.currency;
+		this.money = options.money || this.money;
+		this.precision = options.precision || this.precision;
+		
+		this.spanCurrency.id = options.idCurrency || this.spanCurrency.id || 'moneytalks_currency';
+		this.spanMoney.id = options.idMoney || this.spanMoney.id || 'moneytalks_money';
+		
+		this.spanCurrency.innerHTML = this.currency;
+		this.spanMoney.innerHTML = this.money;
+	};
+	
+	MoneyTalks.prototype.getRoot = function () {
+		return this.root;
+	};
+	
+	MoneyTalks.prototype.append = function (root, ids) {
+		var PREF = this.id + '_';
+		root.appendChild(this.spanMoney);
+		root.appendChild(this.spanCurrency);
+		return root;
+	};
+		
+	MoneyTalks.prototype.listeners = function () {
+		var that = this;
+		node.on('MONEYTALKS', function(amount) {
+			that.update(amount);
+		}); 
+	};
+	
+	MoneyTalks.prototype.update = function (amount) {
+		if ('number' !== typeof amount) {
+			// Try to parse strings
+			amount = parseInt(amount);
+			if (isNaN(n) || !isFinite(n)) {
+				return;
+			}
+		}
+		this.money += amount;
+		this.spanMoney.innerHTML = this.money.toFixed(this.precision);
+	};
 	
 })(node);
 (function (node) {
@@ -21061,130 +21963,174 @@ node.widgets = new Widgets();
 })(node);
 (function (node) {
 
-	node.widgets.register('GameSummary', GameSummary);
-	
-
-// ## Defaults
-	
-	GameSummary.defaults = {};
-	GameSummary.defaults.id = 'gamesummary';
-	GameSummary.defaults.fieldset = { legend: 'Game Summary' };
-	
-// ## Meta-data
-	
-	GameSummary.name = 'Game Summary';
-	GameSummary.version = '0.3';
-	GameSummary.description = 'Show the general configuration options of the game.';
-	
-	function GameSummary (options) {
-		this.summaryDiv = null;
-	}
-	
-	GameSummary.prototype.append = function (root) {
-		this.root = root;
-		this.summaryDiv = node.window.addDiv(root);
-		this.writeSummary();
-		return root;
-	};
-	
-	GameSummary.prototype.writeSummary = function (idState, idSummary) {
-		var gName = document.createTextNode('Name: ' + node.game.name),
-			gDescr = document.createTextNode('Descr: ' + node.game.description),
-			gMinP = document.createTextNode('Min Pl.: ' + node.game.minPlayers),
-			gMaxP = document.createTextNode('Max Pl.: ' + node.game.maxPlayers);
-		
-		this.summaryDiv.appendChild(gName);
-		this.summaryDiv.appendChild(document.createElement('br'));
-		this.summaryDiv.appendChild(gDescr);
-		this.summaryDiv.appendChild(document.createElement('br'));
-		this.summaryDiv.appendChild(gMinP);
-		this.summaryDiv.appendChild(document.createElement('br'));
-		this.summaryDiv.appendChild(gMaxP);
-		
-		node.window.addDiv(this.root, this.summaryDiv, idSummary);
-	};
-
-})(node);
-(function (node) {
-	
-	node.widgets.register('MoneyTalks', MoneyTalks);
-	
 	var JSUS = node.JSUS;
+
+	node.widgets.register('EventButton', EventButton);
 	
 // ## Defaults
 	
-	MoneyTalks.defaults = {};
-	MoneyTalks.defaults.id = 'moneytalks';
-	MoneyTalks.defaults.fieldset = {legend: 'Earnings'};
+	EventButton.defaults = {};
+	EventButton.defaults.id = 'eventbutton';
+	EventButton.defaults.fieldset = false;	
 	
-// ## Meta-data
+// ## Meta-data	
 	
-	MoneyTalks.name = 'Money talks';
-	MoneyTalks.version = '0.1.0';
-	MoneyTalks.description = 'Display the earnings of a player.';
-
+	EventButton.name = 'Event Button';
+	EventButton.version = '0.2';
+	
 // ## Dependencies
 	
-	MoneyTalks.dependencies = {
+	EventButton.dependencies = {
 		JSUS: {}
 	};
 	
-	
-	function MoneyTalks (options) {
-		this.id = options.id || MoneyTalks.defaults.id;
-				
+	function EventButton (options) {
+		this.options = options;
+		this.id = options.id;
+
 		this.root = null;		// the parent element
-		
-		this.spanCurrency = document.createElement('span');
-		this.spanMoney = document.createElement('span');
-		
-		this.currency = 'EUR';
-		this.money = 0;
-		this.precision = 2;
-		this.init(options);
+		this.text = 'Send';
+		this.button = document.createElement('button');
+		this.callback = null;
+		this.init(this.options);
 	}
 	
-	
-	MoneyTalks.prototype.init = function (options) {
-		this.currency = options.currency || this.currency;
-		this.money = options.money || this.money;
-		this.precision = options.precision || this.precision;
-		
-		this.spanCurrency.id = options.idCurrency || this.spanCurrency.id || 'moneytalks_currency';
-		this.spanMoney.id = options.idMoney || this.spanMoney.id || 'moneytalks_money';
-		
-		this.spanCurrency.innerHTML = this.currency;
-		this.spanMoney.innerHTML = this.money;
-	};
-	
-	MoneyTalks.prototype.getRoot = function () {
-		return this.root;
-	};
-	
-	MoneyTalks.prototype.append = function (root, ids) {
-		var PREF = this.id + '_';
-		root.appendChild(this.spanMoney);
-		root.appendChild(this.spanCurrency);
-		return root;
-	};
-		
-	MoneyTalks.prototype.listeners = function () {
-		var that = this;
-		node.on('MONEYTALKS', function(amount) {
-			that.update(amount);
-		}); 
-	};
-	
-	MoneyTalks.prototype.update = function (amount) {
-		if ('number' !== typeof amount) {
-			// Try to parse strings
-			amount = parseInt(amount);
-			if (isNaN(n) || !isFinite(n)) {
-				return;
-			}
+	EventButton.prototype.init = function (options) {
+		options = options || this.options;
+		this.button.id = options.id || this.id;
+		var text = options.text || this.text;
+		while (this.button.hasChildNodes()) {
+			this.button.removeChild(this.button.firstChild);
 		}
-		this.money += amount;
-		this.spanMoney.innerHTML = this.money.toFixed(this.precision);
+		this.button.appendChild(document.createTextNode(text));
+		this.event = options.event || this.event;
+		this.callback = options.callback || this.callback;
+		var that = this;
+		if (this.event) {
+			// Emit Event only if callback is successful
+			this.button.onclick = function() {
+				var ok = true;
+				if (this.callback){
+					ok = options.callback.call(node.game);
+				}
+				if (ok) node.emit(that.event);
+			};
+		}
+		
+//		// Emit DONE only if callback is successful
+//		this.button.onclick = function() {
+//			var ok = true;
+//			if (options.exec) ok = options.exec.call(node.game);
+//			if (ok) node.emit(that.event);
+//		}
+	};
+	
+	EventButton.prototype.append = function (root) {
+		this.root = root;
+		root.appendChild(this.button);
+		return root;	
+	};
+	
+	EventButton.prototype.listeners = function () {};
+		
+// # Done Button
+	
+	node.widgets.register('DoneButton', DoneButton);
+	
+	DoneButton.prototype.__proto__ = EventButton.prototype;
+	DoneButton.prototype.constructor = DoneButton;
+
+// ## Meta-data
+	
+	DoneButton.id = 'donebutton';
+	DoneButton.version = '0.1';
+	DoneButton.name = 'Done Button';
+	
+// ## Dependencies
+	
+	DoneButton.dependencies = {
+		EventButton: {}
+	};
+	
+	function DoneButton (options) {
+		options.event = 'DONE';
+		options.text = options.text || 'Done!';
+		EventButton.call(this, options);
+	}
+	
+})(node);
+(function (node) {
+	
+	node.widgets.register('Wall', Wall);
+	
+	var JSUS = node.JSUS;
+
+// ## Defaults
+	
+	Wall.defaults = {};
+	Wall.defaults.id = 'wall';
+	Wall.defaults.fieldset = { legend: 'Game Log' };		
+	
+// ## Meta-data
+	
+
+	Wall.name = 'Wall';
+	Wall.version = '0.3';
+	Wall.description = 'Intercepts all LOG events and prints them ';
+	Wall.description += 'into a DIV element with an ordinal number and a timestamp.';
+
+// ## Dependencies
+	
+	Wall.dependencies = {
+		JSUS: {}
+	};
+	
+	function Wall (options) {
+		this.id = options.id || Wall.id;
+		this.name = options.name || this.name;
+		this.buffer = [];
+		this.counter = 0;
+
+		this.wall = node.window.getElement('pre', this.id);
+	}
+	
+	Wall.prototype.init = function (options) {
+		options = options || {};
+		this.counter = options.counter || this.counter;
+	};
+	
+	Wall.prototype.append = function (root) {
+		return root.appendChild(this.wall);
+	};
+	
+	Wall.prototype.getRoot = function () {
+		return this.wall;
+	};
+	
+	Wall.prototype.listeners = function() {
+		var that = this;	
+		node.on('LOG', function (msg) {
+			that.debuffer();
+			that.write(msg);
+		});
+	}; 
+	
+	Wall.prototype.write = function (text) {
+		if (document.readyState !== 'complete') {
+			this.buffer.push(s);
+		} else {
+			var mark = this.counter++ + ') ' + JSUS.getTime() + ' ';
+			this.wall.innerHTML = mark + text + "\n" + this.wall.innerHTML;
+		}
+	};
+
+	Wall.prototype.debuffer = function () {
+		if (document.readyState === 'complete' && this.buffer.length > 0) {
+			for (var i=0; i < this.buffer.length; i++) {
+				this.write(this.buffer[i]);
+			}
+			this.buffer = [];
+		}
 	};
 	
 })(node);
@@ -21345,642 +22291,6 @@ node.widgets = new Widgets();
 })(node);
 (function (node) {
 	
-	node.widgets.register('Chat', Chat);
-	
-	var J = node.JSUS,
-		W = node.window;	
-
-// ## Defaults
-	
-	Chat.defaults = {};
-	Chat.defaults.id = 'chat';
-	Chat.defaults.fieldset = { legend: 'Chat' };	
-	Chat.defaults.mode = 'MANY_TO_MANY'; 
-	Chat.defaults.textarea_id = 'chat_textarea';
-	Chat.defaults.chat_id = 'chat_chat';
-	Chat.defaults.chat_event = 'CHAT';
-	Chat.defaults.submit_id = 'chat_submit';
-	Chat.defaults.submit_text = 'chat';
-
-			
-// ## Meta-data
-	
-	// ### Chat.modes
-	// 	MANY_TO_MANY: everybody can see all the messages, and it possible
-	//    to send private messages
-	//  MANY_TO_ONE: everybody can see all the messages, private messages can
-	//    be received, but not sent
-	//  ONE_TO_ONE: everybody sees only personal messages, private messages can
-	//    be received, but not sent. All messages are sent to the SERVER
-	//  RECEIVER_ONLY: messages can only be received, but not sent
-	Chat.modes = { 
-			MANY_TO_MANY: 'MANY_TO_MANY',
-			MANY_TO_ONE: 'MANY_TO_ONE',
-			ONE_TO_ONE: 'ONE_TO_ONE',
-			RECEIVER_ONLY: 'RECEIVER_ONLY'
-	};
-	
-	Chat.name = 'Chat';
-	Chat.version = '0.4';
-	Chat.description = 'Offers a uni / bi-directional communication interface between players, or between players and the experimenter.';
-
-// ## Dependencies
-	
-	Chat.dependencies = {
-		JSUS: {}
-	};
-	
-	function Chat (options) {
-		this.id = options.id || Chat.id;
-		this.mode = options.mode || Chat.defaults.mode;
-		
-		this.root = null;
-		
-		this.textarea_id = options.textarea_id || Chat.defaults.textarea_id;
-		this.chat_id = options.chat_id || Chat.defaults.chat_id;
-		this.submit_id = options.submit_id || Chat.defaults.submit_id;
-		
-		this.chat_event = options.chat_event || Chat.defaults.chat_event;
-		this.submit_text = options.submit_text || Chat.defaults.submit_text;
-
-		this.submit = W.getEventButton(this.chat_event, this.submit_text, this.submit_id);
-		this.textarea = W.getElement('textarea', this.textarea_id);
-		this.chat = W.getElement('div', this.chat_id);
-		
-		if ('undefined' !== typeof options.displayName) {
-			this.displayName = options.displayName;
-		}
-		
-		switch(this.mode) {
-		
-		case Chat.modes.RECEIVER_ONLY:
-			this.recipient = {value: 'SERVER'};
-			break;
-		case Chat.modes.MANY_TO_ONE:
-			this.recipient = {value: 'ALL'};
-			break;
-		case Chat.modes.ONE_TO_ONE:
-			this.recipient = {value: 'SERVER'};
-			break;
-		default:
-			this.recipient = W.getRecipientSelector();
-		}
-	}
-	
-	
-	Chat.prototype.append = function (root) {
-		this.root = root;
-		root.appendChild(this.chat);
-		
-		if (this.mode !== Chat.modes.RECEIVER_ONLY) {	
-			W.writeln('', root);
-			root.appendChild(this.textarea);
-			W.writeln('', root);
-			root.appendChild(this.submit);
-			if (this.mode === Chat.modes.MANY_TO_MANY) {
-				root.appendChild(this.recipient);
-			}
-		}
-		return root;
-	};
-	
-	Chat.prototype.getRoot = function () {
-		return this.root;
-	};
-	
-	Chat.prototype.displayName = function(from) {
-		return from;
-	};
-	
-	Chat.prototype.readTA = function () {
-		var txt = this.textarea.value;
-		this.textarea.value = '';
-		return txt;
-	};
-	
-	Chat.prototype.writeTA = function (string, args) {
-		J.sprintf(string, args, this.chat);
-	    W.writeln('', this.chat);
-	    this.chat.scrollTop = this.chat.scrollHeight;
-	};
-	
-	Chat.prototype.listeners = function() {
-		var that = this;	
-		    
-	    node.on(this.chat_event, function () {
-	      var msg = that.readTA();
-	      if (!msg) return;
-	      
-	      var to = that.recipient.value;
-	      var args = {
-		        '%s': {
-		          'class': 'chat_me'
-		        },
-		        '%msg': {
-		          'class': 'chat_msg'
-		        },
-		        '!txt': msg
-	      };
-	      that.writeTA('%sMe%s: %msg!txt%msg', args);
-	      node.say(msg.trim(), that.chat_event, to);
-	    });
-		  
-		if (this.mode === Chat.modes.MANY_TO_MANY) {
-		    node.on('UPDATED_PLIST', function() {
-			      W.populateRecipientSelector(that.recipient, node.game.pl.fetch());
-		    });
-		}
-
-	    node.onDATA(this.chat_event, function (msg) {
-	    	if (msg.from === node.player.id || msg.from === node.player.sid) {
-	    		return;
-	    	}
-	    	
-	    	if (this.mode === Chat.modes.ONE_TO_ONE) { 
-		    	if (msg.from === this.recipient.value) {
-		    		return;
-		    	}
-	    	}
-	    	
-	    	
-	    	var from = that.displayName(msg.from);
-	    	var args = {
-		        '%s': {
-		          'class': 'chat_others'
-		        },
-		        '%msg': {
-		          'class': 'chat_msg'
-		        },
-		        '!txt': msg.data,
-	            '!from': from
-	      };
-	    	
-	      that.writeTA('%s!from%s: %msg!txt%msg', args);
-	    });
-	};
-	
-})(node);
-(function (node) {
-	
-	node.widgets.register('VisualTimer', VisualTimer);
-	
-	var JSUS = node.JSUS;
-
-// ## Defaults
-	
-	VisualTimer.defaults = {};
-	VisualTimer.defaults.id = 'visualtimer';
-	VisualTimer.defaults.fieldset = {
-			legend: 'Time left',
-			id: 'visualtimer_fieldset'
-	};		
-	
-// ## Meta-data
-	
-	VisualTimer.name = 'Visual Timer';
-	VisualTimer.version = '0.3.3';
-	VisualTimer.description = 'Display a timer for the game. Timer can trigger events. Only for countdown smaller than 1h.';
-	
-// ## Dependencies
-	
-	VisualTimer.dependencies = {
-		GameTimer : {},
-		JSUS: {}
-	};
-	
-	function VisualTimer (options) {
-		this.options = options;
-		this.id = options.id;
-
-		this.gameTimer = null;
-		
-		this.timerDiv = null;	// the DIV in which to display the timer
-		this.root = null;		// the parent element
-		
-		this.init(this.options);
-	}
-	
-	VisualTimer.prototype.init = function (options) {
-		options = options || this.options;
-		var that = this;
-		(function initHooks() {
-			if (options.hooks) {
-				if (!options.hooks instanceof Array) {
-					options.hooks = [options.hooks];
-				}
-			}
-			else {
-				options.hooks = [];
-			}
-			
-			options.hooks.push({hook: that.updateDisplay,
-								ctx: that
-			});
-		})();
-		
-		
-		this.gameTimer = (options.gameTimer) || new node.GameTimer();
-		
-		if (this.gameTimer) {
-			this.gameTimer.init(options);
-		}
-		else {
-			node.log('GameTimer object could not be initialized. VisualTimer will not work properly.', 'ERR');
-		}
-		
-		if (this.timerDiv) {
-			this.timerDiv.className = options.className || '';
-		}
-		
-	};
-	
-	VisualTimer.prototype.getRoot = function () {
-		return this.root;
-	};
-	
-	VisualTimer.prototype.append = function (root) {
-		this.root = root;
-		this.timerDiv = node.window.addDiv(root, this.id + '_div');
-		this.updateDisplay();
-		return root;	
-	};
-	
-	VisualTimer.prototype.updateDisplay = function () {
-		if (!this.gameTimer.milliseconds || this.gameTimer.milliseconds === 0) {
-			this.timerDiv.innerHTML = '00:00';
-			return;
-		}
-		var time = this.gameTimer.milliseconds - this.gameTimer.timePassed;
-		time = JSUS.parseMilliseconds(time);
-		var minutes = (time[2] < 10) ? '' + '0' + time[2] : time[2];
-		var seconds = (time[3] < 10) ? '' + '0' + time[3] : time[3];
-		this.timerDiv.innerHTML = minutes + ':' + seconds;
-	};
-	
-	VisualTimer.prototype.start = function() {
-		this.updateDisplay();
-		this.gameTimer.start();
-	};
-	
-	VisualTimer.prototype.restart = function (options) {
-		this.init(options);
-		this.start();
-	};
-	
-	VisualTimer.prototype.stop = function (options) {
-		this.gameTimer.stop();
-	};
-	
-	VisualTimer.prototype.resume = function (options) {
-		this.gameTimer.resume();
-	};
-		
-	VisualTimer.prototype.listeners = function () {
-		var that = this;
-		node.on('LOADED', function() {
-		    var stepObj = node.game.getStep();
-		    if (!stepObj) return;
-		    var timer = stepObj.timer;
-			if (timer) {
-				timer = JSUS.clone(timer);
-				that.timerDiv.className = '';
-				var options = {},
-					typeoftimer = typeof timer; 
-				switch (typeoftimer) {
-				
-					case 'number':
-						options.milliseconds = timer;
-						break;
-					case 'object':
-						options = timer;
-						break;
-					case 'function':
-						options.milliseconds = timer
-						break;
-					case 'string':
-						options.milliseconds = Number(timer);
-						break;
-				};
-			
-				if (!options.milliseconds) return;
-			
-				if ('function' === typeof options.milliseconds) {
-					options.milliseconds = options.milliseconds.call(node.game);
-				}
-				
-				if (!options.timeup) {
-					options.timeup = 'DONE';
-				}
-				
-				that.gameTimer.init(options);
-				that.start();
-			}
-		});
-		
-		node.on('DONE', function() {
-			// TODO: This should be enabled again
-			that.gameTimer.stop();
-			that.timerDiv.className = 'strike';
-		});
-	};
-	
-})(node);
-(function (node) {
-	
-	
-	// TODO: Introduce rules for update: other vs self
-	
-	node.widgets.register('NextPreviousState', NextPreviousState);
-	
-// ## Defaults
-	
-	NextPreviousState.defaults = {};
-	NextPreviousState.defaults.id = 'nextprevious';
-	NextPreviousState.defaults.fieldset = { legend: 'Rew-Fwd' };		
-	
-// ## Meta-data
-	
-	NextPreviousState.name = 'Next,Previous State';
-	NextPreviousState.version = '0.3.2';
-	NextPreviousState.description = 'Adds two buttons to push forward or rewind the state of the game by one step.';
-		
-	function NextPreviousState(options) {
-		this.id = options.id;
-	}
-	
-	NextPreviousState.prototype.getRoot = function () {
-		return this.root;
-	};
-	
-	NextPreviousState.prototype.append = function (root) {
-		var idRew = this.id + '_button';
-		var idFwd = this.id + '_button';
-		
-		var rew = node.window.addButton(root, idRew, '<<');
-		var fwd = node.window.addButton(root, idFwd, '>>');
-		
-		
-		var that = this;
-	
-		var updateState = function (state) {
-			if (state) {
-				var stateEvent = node.IN + node.action.SAY + '.STATE';
-				var stateMsg = node.msg.createSTATE(stateEvent, state);
-				// Self Update
-				node.emit(stateEvent, stateMsg);
-				
-				// Update Others
-				stateEvent = node.OUT + node.action.SAY + '.STATE';
-				node.emit(stateEvent, state, 'ALL');
-			}
-			else {
-				node.log('No next/previous state. Not sent', 'ERR');
-			}
-		};
-		
-		fwd.onclick = function() {
-			updateState(node.game.next());
-		};
-			
-		rew.onclick = function() {
-			updateState(node.game.previous());
-		};
-		
-		this.root = root;
-		return root;
-	};
-	
-})(node);
-(function (node) {
-	
-	node.widgets.register('Wall', Wall);
-	
-	var JSUS = node.JSUS;
-
-// ## Defaults
-	
-	Wall.defaults = {};
-	Wall.defaults.id = 'wall';
-	Wall.defaults.fieldset = { legend: 'Game Log' };		
-	
-// ## Meta-data
-	
-
-	Wall.name = 'Wall';
-	Wall.version = '0.3';
-	Wall.description = 'Intercepts all LOG events and prints them ';
-	Wall.description += 'into a DIV element with an ordinal number and a timestamp.';
-
-// ## Dependencies
-	
-	Wall.dependencies = {
-		JSUS: {}
-	};
-	
-	function Wall (options) {
-		this.id = options.id || Wall.id;
-		this.name = options.name || this.name;
-		this.buffer = [];
-		this.counter = 0;
-
-		this.wall = node.window.getElement('pre', this.id);
-	}
-	
-	Wall.prototype.init = function (options) {
-		options = options || {};
-		this.counter = options.counter || this.counter;
-	};
-	
-	Wall.prototype.append = function (root) {
-		return root.appendChild(this.wall);
-	};
-	
-	Wall.prototype.getRoot = function () {
-		return this.wall;
-	};
-	
-	Wall.prototype.listeners = function() {
-		var that = this;	
-		node.on('LOG', function (msg) {
-			that.debuffer();
-			that.write(msg);
-		});
-	}; 
-	
-	Wall.prototype.write = function (text) {
-		if (document.readyState !== 'complete') {
-			this.buffer.push(s);
-		} else {
-			var mark = this.counter++ + ') ' + JSUS.getTime() + ' ';
-			this.wall.innerHTML = mark + text + "\n" + this.wall.innerHTML;
-		}
-	};
-
-	Wall.prototype.debuffer = function () {
-		if (document.readyState === 'complete' && this.buffer.length > 0) {
-			for (var i=0; i < this.buffer.length; i++) {
-				this.write(this.buffer[i]);
-			}
-			this.buffer = [];
-		}
-	};
-	
-})(node);
-(function (node) {
-
-	var GameStage = node.GameStage,
-		PlayerList = node.PlayerList;
-	
-	
-	node.widgets.register('GameTable', GameTable);
-	
-// ## Defaults
-	
-	GameTable.defaults = {};
-	GameTable.defaults.id = 'gametable';
-	GameTable.defaults.fieldset = { 
-			legend: 'Game Table',
-			id: 'gametable_fieldset'
-	};
-	
-// ## Meta-data
-	
-	GameTable.name = 'Game Table';
-	GameTable.version = '0.2';
-	
-// ## Dependencies
-	
-	GameTable.dependencies = {
-		JSUS: {}
-	};
-	
-	function GameTable (options) {
-		this.options = options;
-		this.id = options.id;
-		this.name = options.name || GameTable.name;
-				
-		this.root = null;
-		this.gtbl = null;
-		this.plist = null;
-		
-		this.init(this.options);
-	}
-	
-	GameTable.prototype.init = function (options) {
-		
-		if (!this.plist) this.plist = new PlayerList();
-		
-		this.gtbl = new node.window.Table({
-											auto_update: true,
-											id: options.id || this.id,
-											render: options.render
-		}, node.game.memory.db);
-		
-		
-		this.gtbl.c('state', GameStage.compare);
-		
-		this.gtbl.setLeft([]);
-		
-		this.gtbl.parse(true);
-	};
-	
-
-	GameTable.prototype.addRenderer = function (func) {
-		return this.gtbl.addRenderer(func);
-	};
-	
-	GameTable.prototype.resetRender = function () {
-		return this.gtbl.resetRenderer();
-	};
-	
-	GameTable.prototype.removeRenderer = function (func) {
-		return this.gtbl.removeRenderer(func);
-	};
-	
-	GameTable.prototype.append = function (root) {
-		this.root = root;
-		root.appendChild(this.gtbl.table);
-		return root;
-	};
-	
-	GameTable.prototype.listeners = function () {
-		var that = this;
-		
-		node.onPLIST(function(msg) {	
-			if (!msg.data.length) return;
-			
-			//var diff = JSUS.arrayDiff(msg.data,that.plist.db);
-			var plist = new PlayerList({}, msg.data);
-			var diff = plist.diff(that.plist);
-			if (diff) {
-//				console.log('New Players found');
-//				console.log(diff);
-				diff.forEach(function(el){that.addPlayer(el);});
-			}
-
-			that.gtbl.parse(true);
-		});
-		
-		node.on('in.set.DATA', function (msg) {
-
-			that.addLeft(msg.state, msg.from);
-			var x = that.player2x(msg.from);
-			var y = that.state2y(node.game.state, msg.text);
-			
-			that.gtbl.add(msg.data, x, y);
-			that.gtbl.parse(true);
-		});
-	}; 
-	
-	GameTable.prototype.addPlayer = function (player) {
-		this.plist.add(player);
-		var header = this.plist.map(function(el){return el.name;});
-		this.gtbl.setHeader(header);
-	};
-	
-	GameTable.prototype.addLeft = function (state, player) {
-		if (!state) return;
-		state = new GameStage(state);
-		if (!JSUS.in_array({content:state.toString(), type: 'left'}, this.gtbl.left)){
-			this.gtbl.add2Left(state.toString());
-		}
-		// Is it a new display associated to the same state?
-		else {
-			var y = this.state2y(state);
-			var x = this.player2x(player);
-			if (this.gtbl.select('y','=',y).select('x','=',x).count() > 1) {
-				this.gtbl.add2Left(state.toString());
-			}
-		}
-			
-	};
-	
-	GameTable.prototype.player2x = function (player) {
-		if (!player) return false;
-		return this.plist.select('id', '=', player).first().count;
-	};
-	
-	GameTable.prototype.x2Player = function (x) {
-		if (!x) return false;
-		return this.plist.select('count', '=', x).first().count;
-	};
-	
-	GameTable.prototype.state2y = function (state) {
-		if (!state) return false;
-		return node.game.gameLoop.indexOf(state);
-	};
-	
-	GameTable.prototype.y2State = function (y) {
-		if (!y) return false;
-		return node.game.gameLoop.jumpTo(new GameStage(),y);
-	};
-	
-	
-
-})(node);
-
-(function (node) {
-	
 	// TODO: Introduce rules for update: other vs self
 	
 	node.widgets.register('StateBar', StateBar);	
@@ -22068,6 +22378,208 @@ node.widgets = new Widgets();
 		
 		this.root = root;
 		return root;
+	};
+	
+})(node);
+(function (node) {
+	
+	node.widgets.register('NDDBBrowser', NDDBBrowser);
+	
+	var JSUS = node.JSUS,
+		NDDB = node.NDDB,
+		TriggerManager = node.TriggerManager;
+
+// ## Defaults
+	
+	NDDBBrowser.defaults = {};
+	NDDBBrowser.defaults.id = 'nddbbrowser';
+	NDDBBrowser.defaults.fieldset = false;
+	
+// ## Meta-data
+	
+	NDDBBrowser.name = 'NDDBBrowser';
+	NDDBBrowser.version = '0.1.2';
+	NDDBBrowser.description = 'Provides a very simple interface to control a NDDB istance.';
+	
+// ## Dependencies
+	
+	NDDBBrowser.dependencies = {
+		JSUS: {},
+		NDDB: {},
+		TriggerManager: {}
+	};
+	
+	function NDDBBrowser (options) {
+		this.options = options;
+		this.nddb = null;
+		
+		this.commandsDiv = document.createElement('div');
+		this.id = options.id;
+		if ('undefined' !== typeof this.id) {
+			this.commandsDiv.id = this.id;
+		}
+		
+		this.info = null;
+		this.init(this.options);
+	}
+	
+	NDDBBrowser.prototype.init = function (options) {
+		
+		function addButtons() {
+			var id = this.id;
+			node.window.addEventButton(id + '_GO_TO_FIRST', '<<', this.commandsDiv, 'go_to_first');
+			node.window.addEventButton(id + '_GO_TO_PREVIOUS', '<', this.commandsDiv, 'go_to_previous');
+			node.window.addEventButton(id + '_GO_TO_NEXT', '>', this.commandsDiv, 'go_to_next');
+			node.window.addEventButton(id + '_GO_TO_LAST', '>>', this.commandsDiv, 'go_to_last');
+			node.window.addBreak(this.commandsDiv);
+		}
+		function addInfoBar() {
+			var span = this.commandsDiv.appendChild(document.createElement('span'));
+			return span;
+		}
+		
+		
+		addButtons.call(this);
+		this.info = addInfoBar.call(this);
+		
+		this.tm = new TriggerManager();
+		this.tm.init(options.triggers);
+		this.nddb = options.nddb || new NDDB({auto_update_pointer: true});
+	};
+	
+	NDDBBrowser.prototype.append = function (root) {
+		this.root = root;
+		root.appendChild(this.commandsDiv);
+		return root;
+	};
+	
+	NDDBBrowser.prototype.getRoot = function (root) {
+		return this.commandsDiv;
+	};
+	
+	NDDBBrowser.prototype.add = function (o) {
+		return this.nddb.insert(o);
+	};
+	
+	NDDBBrowser.prototype.sort = function (key) {
+		return this.nddb.sort(key);
+	};
+	
+	NDDBBrowser.prototype.addTrigger = function (trigger) {
+		return this.tm.addTrigger(trigger);
+	};
+	
+	NDDBBrowser.prototype.removeTrigger = function (trigger) {
+		return this.tm.removeTrigger(trigger);
+	};
+	
+	NDDBBrowser.prototype.resetTriggers = function () {
+		return this.tm.resetTriggers();
+	};
+	
+	NDDBBrowser.prototype.listeners = function() {
+		var that = this;
+		var id = this.id;
+		
+		function notification (el, text) {
+			if (el) {
+				node.emit(id + '_GOT', el);
+				this.writeInfo((this.nddb.nddb_pointer + 1) + '/' + this.nddb.length);
+			}
+			else {
+				this.writeInfo('No element found');
+			}
+		}
+		
+		node.on(id + '_GO_TO_FIRST', function() {
+			var el = that.tm.pullTriggers(that.nddb.first());
+			notification.call(that, el);
+		});
+		
+		node.on(id + '_GO_TO_PREVIOUS', function() {
+			var el = that.tm.pullTriggers(that.nddb.previous());
+			notification.call(that, el);
+		});
+		
+		node.on(id + '_GO_TO_NEXT', function() {
+			var el = that.tm.pullTriggers(that.nddb.next());
+			notification.call(that, el);
+		});
+
+		node.on(id + '_GO_TO_LAST', function() {
+			var el = that.tm.pullTriggers(that.nddb.last());
+			notification.call(that, el);
+			
+		});
+	};
+	
+	NDDBBrowser.prototype.writeInfo = function (text) {
+		if (this.infoTimeout) clearTimeout(this.infoTimeout);
+		this.info.innerHTML = text;
+		var that = this;
+		this.infoTimeout = setTimeout(function(){
+			that.info.innerHTML = '';
+		}, 2000);
+	};
+	
+	
+})(node);
+(function (node) {
+	
+	node.widgets.register('DataBar', DataBar);
+	
+// ## Defaults
+	DataBar.defaults = {};
+	DataBar.defaults.id = 'databar';
+	DataBar.defaults.fieldset = {	
+		legend: 'Send DATA to players'
+	};
+	
+// ## Meta-data
+	DataBar.name = 'Data Bar';
+	DataBar.version = '0.3';
+	DataBar.description = 'Adds a input field to send DATA messages to the players';
+		
+	function DataBar (options) {
+		this.bar = null;
+		this.root = null;
+		this.recipient = null;
+	}
+	
+	
+	DataBar.prototype.append = function (root) {
+		
+		var sendButton, textInput, dataInput;
+		
+		sendButton = W.addButton(root);
+		W.writeln('Text');
+		textInput = W.addTextInput(root, 'data-bar-text');
+		W.writeln('Data');
+		dataInput = W.addTextInput(root, 'data-bar-data');
+		
+		this.recipient = W.addRecipientSelector(root);
+		
+		var that = this;
+		
+		sendButton.onclick = function() {
+			
+			var to, data, text;
+			
+			to = that.recipient.value;
+			text = textInput.value;
+			data = dataInput.value;
+			
+			node.log('Parsed Data: ' + JSON.stringify(data));
+			
+			node.say(data, text, to);
+		};
+		
+		node.on('UPDATED_PLIST', function() {
+			node.window.populateRecipientSelector(that.recipient, node.game.pl);
+		});
+		
+		return root;
+		
 	};
 	
 })(node);

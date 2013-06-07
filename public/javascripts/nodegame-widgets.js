@@ -340,8 +340,7 @@ node.widgets = new Widgets();
 	
 	node.widgets.register('VisualState', VisualState);
 	
-	var GameState = node.GameState,
-		JSUS = node.JSUS,
+	var JSUS = node.JSUS,
 		Table = node.window.Table;
 	
 // ## Defaults
@@ -369,7 +368,6 @@ node.widgets = new Widgets();
 	
 	function VisualState (options) {
 		this.id = options.id;
-		this.gameLoop = node.game.gameLoop;
 		
 		this.root = null;		// the parent element
 		this.table = new Table();
@@ -395,16 +393,16 @@ node.widgets = new Widgets();
 	};
 	
 	VisualState.prototype.writeState = function () {
-		var state = false;
-		var pr = false;
-		var nx = false;
-		
+		var state, pr, nx, tmp;
 		var miss = '-';
 		
 		if (node.game && node.game.state) {
-			state = this.gameLoop.getName(node.game.state) || miss;
-			pr = this.gameLoop.getName(node.game.previous()) || miss;
-			nx = this.gameLoop.getName(node.game.next()) || miss;
+			tmp = node.game.gameLoop.getStep(node.game.state);
+			state = (tmp) ? tmp.name : miss;
+			tmp = node.game.gameLoop.getStep(node.game.previous());
+			pr = (tmp) ? tmp.name : miss;
+			tmp = node.game.gameLoop.getStep(node.game.next());
+			nx = (tmp) ? tmp.name : miss;
 		}
 		else {
 			state = 'Uninitialized';
@@ -603,7 +601,9 @@ node.widgets = new Widgets();
 })(node);
 (function (node) {
 
-	var GameState = node.GameState,
+	// TODO: needs major refactoring
+	
+	var GameStage = node.GameStage,
 		PlayerList = node.PlayerList,
 		Table = node.window.Table,
 		HTMLRenderer = node.window.HTMLRenderer;
@@ -646,7 +646,7 @@ node.widgets = new Widgets();
 		this.auto_update = ('undefined' !== typeof options.auto_update) ? options.auto_update : true;
 		this.replace = options.replace || false;
 		this.htmlRenderer = new HTMLRenderer({renderers: options.renderers});
-		this.c('state', GameState.compare);
+		this.c('state', GameStage.compare);
 		this.setLeft([]);
 		this.parse(true);
 	};
@@ -738,7 +738,7 @@ node.widgets = new Widgets();
 (function (node) {
 
 	var Table = node.window.Table,
-		GameState = node.GameState;
+		GameStage = node.GameStage;
 	
 	node.widgets.register('StateDisplay', StateDisplay);	
 
@@ -792,8 +792,8 @@ node.widgets = new Widgets();
 	};
 	
 	StateDisplay.prototype.updateAll = function() {
-		var state = node.game ? new GameState(node.game.state) : new GameState(),
-			id = node.player ? node.player.id : '-';
+		var state = node.game ? new GameStage(node.game.state) : new GameStage(),
+			id = node.player ? node.player.id : '-',
 			name = node.player && node.player.name ? node.player.name : '-';
 			
 		this.table.clear(true);
@@ -813,6 +813,7 @@ node.widgets = new Widgets();
 	}; 
 	
 })(node);
+
 (function (node) {
 	
 
@@ -1132,8 +1133,7 @@ node.widgets = new Widgets();
 	
 	node.widgets.register('GameBoard', GameBoard);
 	
-	var GameState = node.GameState,
-		PlayerList = node.PlayerList;
+	var PlayerList = node.PlayerList;
 
 // ## Defaults	
 	
@@ -1257,7 +1257,7 @@ node.widgets = new Widgets();
 })(node);
 (function (node) {
 
-	var GameState = node.GameState,
+	var GameStage = node.GameStage,
 		PlayerList = node.PlayerList;
 	
 	
@@ -1306,7 +1306,7 @@ node.widgets = new Widgets();
 		}, node.game.memory.db);
 		
 		
-		this.gtbl.c('state', GameState.compare);
+		this.gtbl.c('state', GameStage.compare);
 		
 		this.gtbl.setLeft([]);
 		
@@ -1369,7 +1369,7 @@ node.widgets = new Widgets();
 	
 	GameTable.prototype.addLeft = function (state, player) {
 		if (!state) return;
-		state = new GameState(state);
+		state = new GameStage(state);
 		if (!JSUS.in_array({content:state.toString(), type: 'left'}, this.gtbl.left)){
 			this.gtbl.add2Left(state.toString());
 		}
@@ -1401,7 +1401,7 @@ node.widgets = new Widgets();
 	
 	GameTable.prototype.y2State = function (y) {
 		if (!y) return false;
-		return node.game.gameLoop.jumpTo(new GameState(),y);
+		return node.game.gameLoop.jumpTo(new GameStage(),y);
 	};
 	
 	
@@ -2515,7 +2515,9 @@ node.widgets = new Widgets();
 	VisualTimer.prototype.listeners = function () {
 		var that = this;
 		node.on('LOADED', function() {
-			var timer = node.game.gameLoop.getAllParams(node.game.gameState).timer;
+		    var stepObj = node.game.getCurrentStep();
+		    if (!stepObj) return;
+		    var timer = stepObj.timer;
 			if (timer) {
 				timer = JSUS.clone(timer);
 				that.timerDiv.className = '';
@@ -2560,6 +2562,7 @@ node.widgets = new Widgets();
 	};
 	
 })(node);
+
 (function (node) {
 
 	node.widgets.register('GameSummary', GameSummary);
@@ -2589,8 +2592,8 @@ node.widgets = new Widgets();
 	};
 	
 	GameSummary.prototype.writeSummary = function (idState, idSummary) {
-		var gName = document.createTextNode('Name: ' + node.game.name),
-			gDescr = document.createTextNode('Descr: ' + node.game.description),
+		var gName = document.createTextNode('Name: ' + node.game.metadata.name),
+			gDescr = document.createTextNode('Descr: ' + node.game.metadata.description),
 			gMinP = document.createTextNode('Min Pl.: ' + node.game.minPlayers),
 			gMaxP = document.createTextNode('Max Pl.: ' + node.game.maxPlayers);
 		
@@ -2606,6 +2609,7 @@ node.widgets = new Widgets();
 	};
 
 })(node);
+
 (function (node) {
 	
 	node.widgets.register('MoneyTalks', MoneyTalks);
@@ -3715,7 +3719,7 @@ node.widgets = new Widgets();
 				
 				node.log('Parsed State: ' + result.join("|"));
 				
-				state = new node.GameState({
+				state = new node.GameStage({
 					state: state,
 					step: step,
 					round: round
