@@ -8617,8 +8617,8 @@ GameStage.stringify = function(gs) {
 // ## Global scope
 	
 // Setting up global scope variables 
-var	JSUS = node.JSUS,
-	NDDB = node.NDDB;
+var JSUS = node.JSUS,
+    NDDB = node.NDDB;
 
 var GameStage = node.GameStage;
 
@@ -8662,10 +8662,10 @@ PlayerList.prototype.constructor = PlayerList;
  * @see NDDB.globalCompare
  */
 PlayerList.comparePlayers = function (p1, p2) {
-	if (p1.id === p2.id) return 0;
-	if (p1.count < p2.count) return 1;
-	if (p1.count > p2.count) return -1;
-	return 0;
+    if (p1.id === p2.id) return 0;
+    if (p1.count < p2.count) return 1;
+    if (p1.count > p2.count) return -1;
+    return 0;
 };
 
 /**
@@ -8684,38 +8684,38 @@ PlayerList.comparePlayers = function (p1, p2) {
  * @see NDDB.constructor
  */
 function PlayerList (options, db) {
-	options = options || {};
-	if (!options.log) options.log = node.log;
-	if (!options.update) options.update = {};
-	if ('undefined' === typeof options.update.indexes) {
-		options.update.indexes = true;
-	}
+    options = options || {};
+    if (!options.log) options.log = node.log;
+    if (!options.update) options.update = {};
+    if ('undefined' === typeof options.update.indexes) {
+	options.update.indexes = true;
+    }
 	
-	NDDB.call(this, options, db);
+    NDDB.call(this, options, db);
   
-	// Assigns a global comparator function
-	this.globalCompare = PlayerList.comparePlayers;
-	
+    // Assigns a global comparator function
+    this.globalCompare = PlayerList.comparePlayers;
+    
 
-	// We check if the index are not existing already because 
-	// it could be that the constructor is called by the breed function
-	// and in such case we would duplicate them	
-	if (!this.id) {
-		this.index('id', function(p) {
-			return p.id;
-		});
-	}
+    // We check if the index are not existing already because 
+    // it could be that the constructor is called by the breed function
+    // and in such case we would duplicate them	
+    if (!this.id) {
+	this.index('id', function(p) {
+	    return p.id;
+	});
+    }
 
-// Not sure if we need it now	
-//	if (!this.stage) {
-//		this.hash('stage', function(p) {
-//			return p.stage.toHash();
-//		}
-//	}
+    // Not sure if we need it now	
+    //	if (!this.stage) {
+    //		this.hash('stage', function(p) {
+    //			return p.stage.toHash();
+    //		}
+    //	}
 	
-	// The internal counter that will be used to assing the `count` 
-	// property to each inserted player
-	this.pcounter = this.db.length || 0;
+    // The internal counter that will be used to assing the `count` 
+    // property to each inserted player
+    this.pcounter = this.db.length || 0;
 }
 
 // ## PlayerList methods
@@ -8913,25 +8913,6 @@ PlayerList.prototype.isStageDone = function (stage) {
 //	});	
 //	// <!-- node.log('ACTIVES: ' + result); -->
 //	return result;
-//};
-
-///**
-// * ### PlayerList.checkStage
-// * 
-// * If all the players are DONE with the specfied stage,
-// * emits a `STAGEDONE` event
-// * 
-// * @param {GameStage} stage Optional. The GameStage to check. Defaults stage = node.game.stage
-// * @param {Boolean} extended Optional. If TRUE, also newly connected players are checked. Defaults, FALSE
-// * 
-// * 		@see `PlayerList.actives`
-// * 		@see `PlayerList.isStageDone`
-// * 
-// */
-//PlayerList.prototype.checkStage = function (stage, extended) {
-//	if (this.isStageDone(stage, extended)) {
-//		node.emit('STAGEDONE');
-//	}
 //};
 
 /**
@@ -11957,8 +11938,7 @@ var GameMsg = node.GameMsg,
 
 var action = node.action;
 
-var buffer,
-	session;
+var buffer, session;
 
 function Socket(options) {
 	
@@ -11971,17 +11951,17 @@ function Socket(options) {
  * 
  * @api private
  */ 
-	buffer = [];
-	if (node.support.defineProperty) {
-		Object.defineProperty(this, 'buffer', {
-			value: buffer,
-			enumerable: true
-		});
+    buffer = [];
+    if (node.support.defineProperty) {
+	Object.defineProperty(this, 'buffer', {
+	    value: buffer,
+	    enumerable: true
+	});
 	}
-	else {
-		this.buffer = buffer;
-	}
-	
+    else {
+	this.buffer = buffer;
+    }
+    
 /**
  * ### Socket.session
  * 
@@ -11990,122 +11970,120 @@ function Socket(options) {
  * This property is initialized only when a game starts
  * 
  */
-	session = null;
-	if (node.support.defineProperty) {
-		Object.defineProperty(this, 'session', {
-			value: session,
-			enumerable: true
-		});
+    session = null;
+    if (node.support.defineProperty) {
+	Object.defineProperty(this, 'session', {
+	    value: session,
+	    enumerable: true
+	});
 	}
-	else {
-		this.session = session;
-	}
-	
-	this.socket = null;
-	
-	this.url = null;
+    else {
+	this.session = session;
+    }
+    
+    this.socket = null;
+    
+    this.url = null;
 }
-
+    
 
 Socket.prototype.setup = function(options) {
-	options = options || {};
-	
-	if (options.type) {
-		this.setSocketType(options.type, options);
-	}
+    options = options || {};
+    
+    if (options.type) {
+	this.setSocketType(options.type, options);
+    }
 	
 };
-
+    
 Socket.prototype.setSocketType = function(type, options) {
-	var socket =  SocketFactory.get(type, options);
-	if (socket) {
-		this.socket = socket;
-		return true;
-	}
-	else {
-		return false;
-	}
+    var socket =  SocketFactory.get(type, options);
+    if (socket) {
+	this.socket = socket;
+	return true;
+    }
+    else {
+	return false;
+    }
 };
 
 Socket.prototype.connect = function(url, options) {
 	
-	if (!this.socket) {
-		node.err('cannot connet to ' + url + ' . No open socket.');
-		return false;
-	}
+    if (!this.socket) {
+	node.err('cannot connet to ' + url + ' . No open socket.');
+	return false;
+    }
+    
+    this.url = url;
+    node.log('connecting to ' + url);
 	
-	this.url = url;
-	node.log('connecting to ' + url);
-	
-	this.socket.connect(url, options);
+    this.socket.connect(url, options);
 };
 
 Socket.prototype.onDisconnect = function() {
-	// Save the current stage of the game
-	node.session.store();
-	node.log('closed');
+    // Save the current stage of the game
+    node.session.store();
+    node.log('closed');
 };
 
 Socket.prototype.onMessage = function(msg) {
 	
-	msg = this.secureParse(msg);
-	if (!msg) return;
+    msg = this.secureParse(msg);
+    if (!msg) return;
+    
+    var sessionObj;
 	
-	var sessionObj;
+    // Parsing successful
+    if (msg.target === 'HI') {
 	
-	// Parsing successful
-	if (msg.target === 'HI') {
-		
-		// replace itself: will change onMessage
-		this.attachMsgListeners();
-		
-		this.startSession(msg);
-		
-		sessionObj = node.store(msg.session);
-		
-		if (false) {
-		//if (sessionObj) {
-			node.session.restore(sessionObj);
+	// replace itself: will change onMessage
+	this.attachMsgListeners();
+	
+	this.startSession(msg);
+	
+	sessionObj = node.store(msg.session);
+	
+	if (false) {
+	    //if (sessionObj) {
+	    node.session.restore(sessionObj);
 			
-			msg = node.msg.create({
-				action: action.SAY,
-				target: 'HI_AGAIN',
-				data: node.player
-			});
-			
-			this.send(msg);
-			
-		}
-		else {
-			node.store(msg.session, node.session.save());
-			
-			this.sendHI(node.player, 'ALL');
-		}
-		
-		
-
-   	 } 
+	    msg = node.msg.create({
+		action: action.SAY,
+		target: 'HI_AGAIN',
+		data: node.player
+	    });
+	    
+	    this.send(msg);
+	    
+	}
+	else {
+	    node.store(msg.session, node.session.save());
+	    
+	    this.sendHI(node.player, 'ALL');
+	}
+	
+    } 
 };
 
 Socket.prototype.attachMsgListeners = function() {
-	this.onMessage = this.onMessageFull;
-	node.emit('NODEGAME_READY');
+    this.onMessage = this.onMessageFull;
+    node.emit('NODEGAME_READY');
 };
 
 Socket.prototype.onMessageFull = function(msg) {
-	msg = this.secureParse(msg);
-	
-	if (msg) { // Parsing successful
-		// TODO: improve
-		if (node.game.isReady && node.game.isReady()) {
-			node.emit(msg.toInEvent(), msg);
-		}
-		else {
-			console.log('BUFFERING');
-			node.log('buffering: ' + msg, 'DEBUG');
-			buffer.push(msg);
-		}
+    msg = this.secureParse(msg);
+    
+    if (msg) { // Parsing successful
+	// TODO: improve
+	if (node.game.isReady && node.game.isReady()) {
+	    node.emit(msg.toInEvent(), msg);
 	}
+	else {
+	    console.log('BUFFERING');
+	    node.silly('buffering: ' + msg);
+	    buffer.push(msg);
+	}
+    }
 };
 
 
@@ -15036,22 +15014,22 @@ var GameMsg = node.GameMsg,
  * @param {function} cb Optional. If set the return value will be passed as parameter
  *   of the emitted event
  */	
-	node.alias = function(alias, events, cb) {
-		if (!alias || !events) { 
-			node.err('undefined alias or events'); 
-			return; 
-		}
-		if (!J.isArray(events)) events = [events];
-		
-		J.each(events, function(event){
-			node.on[alias] = function(func) {
-				node.on(event, function(msg){
-					func.call(node.game, cb ? cb(msg) : msg);
-				});
-			};
+    node.alias = function(alias, events, cb) {
+	if (!alias || !events) { 
+	    node.err('undefined alias or events'); 
+	    return; 
+	}
+	if (!J.isArray(events)) events = [events];
+	
+	J.each(events, function(event){
+	    node.on[alias] = function(func) {
+		node.on(event, function(msg){
+		    func.call(node.game, cb ? cb(msg) : msg);
 		});
-	};	
-				
+	    };
+	});
+    };	
+    
 	
 /**
  *  ### node.DONE
@@ -15312,25 +15290,20 @@ node.random = {};
 // # Incoming listeners
 // Incoming listeners are fired in response to incoming messages
 (function (node) {
-
-	if (!node) {
-		console.log('nodeGame not found. Cannot add incoming listeners');
-		return false;
-	}
 	
-	var GameMsg = node.GameMsg,
-		GameStage = node.GameStage,
-		PlayerList = node.PlayerList,
-		Player = node.Player,
-		J = node.JSUS;
+    var GameMsg = node.GameMsg,
+        GameStage = node.GameStage,
+        PlayerList = node.PlayerList,
+        Player = node.Player,
+        J = node.JSUS;
 	
-	var action = node.action,
-		target = node.target;
-	
-	var say = action.SAY + '.',
-		set = action.SET + '.',
-		get = action.GET + '.',
-		IN  = node.IN;
+    var action = node.action,
+        target = node.target;
+    
+    var say = action.SAY + '.',
+        set = action.SET + '.',
+        get = action.GET + '.',
+	IN  = node.IN;
 
 	
 /**
@@ -15355,11 +15328,11 @@ node.random = {};
  * @emit UPDATED_PLIST
  * @see Game.pl 
  */
-	node.events.ng.on( IN + say + 'PDISCONNECT', function (msg) {
-		if (!msg.data) return;
-		node.game.pl.remove(msg.data.id);
-		node.emit('UPDATED_PLIST');
-	});	
+    node.events.ng.on( IN + say + 'PDISCONNECT', function (msg) {
+	if (!msg.data) return;
+	node.game.pl.remove(msg.data.id);
+	node.emit('UPDATED_PLIST');
+    });	
 
 /**
  * ## in.say.MCONNECT
@@ -15369,11 +15342,11 @@ node.random = {};
  * @emit UPDATED_MLIST
  * @see Game.ml 
  */
-	node.events.ng.on( IN + say + 'MCONNECT', function (msg) {
-		if (!msg.data) return;
-		node.game.ml.add(new Player(msg.data));
-		node.emit('UPDATED_MLIST');
-	});	
+    node.events.ng.on( IN + say + 'MCONNECT', function (msg) {
+	if (!msg.data) return;
+	node.game.ml.add(new Player(msg.data));
+	node.emit('UPDATED_MLIST');
+    });	
 		
 /**
  * ## in.say.MDISCONNECT
@@ -15383,11 +15356,11 @@ node.random = {};
  * @emit UPDATED_MLIST
  * @see Game.ml 
  */
-	node.events.ng.on( IN + say + 'MDISCONNECT', function (msg) {
-		if (!msg.data) return;
-		node.game.ml.remove(msg.data.id);
-		node.emit('UPDATED_MLIST');
-	});		
+    node.events.ng.on( IN + say + 'MDISCONNECT', function (msg) {
+	if (!msg.data) return;
+	node.game.ml.remove(msg.data.id);
+	node.emit('UPDATED_MLIST');
+    });		
 			
 
 /**
@@ -15399,9 +15372,9 @@ node.random = {};
  * @see Game.pl 
  */
 node.events.ng.on( IN + say + 'PLIST', function (msg) {
-	if (!msg.data) return;
-	node.game.pl = new PlayerList({}, msg.data);
-	node.emit('UPDATED_PLIST');
+    if (!msg.data) return;
+    node.game.pl = new PlayerList({}, msg.data);
+    node.emit('UPDATED_PLIST');
 });	
 	
 /**
@@ -15413,9 +15386,9 @@ node.events.ng.on( IN + say + 'PLIST', function (msg) {
  * @see Game.pl 
  */
 node.events.ng.on( IN + say + 'MLIST', function (msg) {
-	if (!msg.data) return;
-	node.game.ml = new PlayerList({}, msg.data);
-	node.emit('UPDATED_MLIST');
+    if (!msg.data) return;
+    node.game.ml = new PlayerList({}, msg.data);
+    node.emit('UPDATED_MLIST');
 });	
 	
 /**
@@ -15424,11 +15397,11 @@ node.events.ng.on( IN + say + 'MLIST', function (msg) {
  * Experimental feature. Undocumented (for now)
  */ 
 node.events.ng.on( IN + get + 'DATA', function (msg) {
-	if (msg.text === 'LOOP'){
-		node.socket.sendDATA(action.SAY, node.game.gameLoop, msg.from, 'GAME');
-	}
-	// <!-- We could double emit
-	// node.emit(msg.text, msg.data); -->
+    if (msg.text === 'LOOP'){
+	node.socket.sendDATA(action.SAY, node.game.gameLoop, msg.from, 'GAME');
+    }
+    // <!-- We could double emit
+    // node.emit(msg.text, msg.data); -->
 });
 
 /**
@@ -15438,7 +15411,7 @@ node.events.ng.on( IN + get + 'DATA', function (msg) {
  * 
  */
 node.events.ng.on( IN + set + 'STATE', function (msg) {
-	node.game.memory.add(msg.text, msg.data, msg.from);
+    node.game.memory.add(msg.text, msg.data, msg.from);
 });
 
 /**
@@ -15448,7 +15421,7 @@ node.events.ng.on( IN + set + 'STATE', function (msg) {
  * 
  */
 node.events.ng.on( IN + set + 'DATA', function (msg) {
-	node.game.memory.add(msg.text, msg.data, msg.from);
+    node.game.memory.add(msg.text, msg.data, msg.from);
 });
 
 /**
@@ -15464,25 +15437,20 @@ node.events.ng.on( IN + set + 'DATA', function (msg) {
  *  @emit UPDATED_PLIST
  *  @see Game.pl 
  */
-	node.events.ng.on( IN + say + 'STAGE', function (msg) {
+    node.events.ng.on( IN + say + 'STAGE', function (msg) {
 
-		if (node.socket.serverid && msg.from === node.socket.serverid) {
-//			console.log(node.socket.serverid + ' ---><--- ' + msg.from);
-//			console.log('NOT EXISTS');
-		}
-		
-		if (node.game.pl.exist(msg.from)) {			
-			node.game.pl.updatePlayerStage(msg.from, msg.data);
-			node.emit('UPDATED_PLIST');
-			//node.game.pl.checkStage();
+	
+	if (node.game.pl.exist(msg.from)) {			
+	    node.game.pl.updatePlayerStage(msg.from, msg.data);
+	    node.emit('UPDATED_PLIST');
             node.game.shouldStep();
-		}
-		// <!-- Assume this is the server for now
-		// TODO: assign a string-id to the server -->
-		else {
-			node.game.execStage(node.game.gameLoop.getStep(msg.data));
-		}
-	});
+	}
+	// <!-- Assume this is the server for now
+	// TODO: assign a string-id to the server -->
+	else {
+	    node.game.execStage(node.game.gameLoop.getStep(msg.data));
+	}
+    });
 
 /**
  * ## in.say.STAGE_LEVEL
@@ -15496,24 +15464,19 @@ node.events.ng.on( IN + set + 'DATA', function (msg) {
  *  @emit UPDATED_PLIST
  *  @see Game.pl 
  */
-	node.events.ng.on( IN + say + 'STAGE_LEVEL', function (msg) {
-		if (node.socket.serverid && msg.from === node.socket.serverid) {
-//			console.log(node.socket.serverid + ' ---><--- ' + msg.from);
-//			console.log('NOT EXISTS');
-		}
+    node.events.ng.on( IN + say + 'STAGE_LEVEL', function (msg) {
 		
-		if (node.game.pl.exist(msg.from)) {
-			node.game.pl.updatePlayerStageLevel(msg.from, msg.data);
-			node.emit('UPDATED_PLIST');
-			//node.game.pl.checkStage();
+	if (node.game.pl.exist(msg.from)) {
+	    node.game.pl.updatePlayerStageLevel(msg.from, msg.data);
+	    node.emit('UPDATED_PLIST');
             node.game.shouldStep();
-		}
-		// <!-- Assume this is the server for now
-		// TODO: assign a string-id to the server -->
-		else {
-			//node.game.setStageLevel(msg.data);
-		}
-	});
+	}
+	// <!-- Assume this is the server for now
+	// TODO: assign a string-id to the server -->
+	else {
+	    //node.game.setStageLevel(msg.data);
+	}
+    });
 	
 /**
  * ## in.say.REDIRECT
@@ -15523,13 +15486,13 @@ node.events.ng.on( IN + set + 'DATA', function (msg) {
  * @see node.redirect
  */
 node.events.ng.on( IN + say + 'REDIRECT', function (msg) {
-	if (!msg.data) return;
-	if ('undefined' === typeof window || !window.location) {
-		node.log('window.location not found. Cannot redirect', 'err');
-		return false;
-	}
+    if (!msg.data) return;
+    if ('undefined' === typeof window || !window.location) {
+	node.err('window.location not found. Cannot redirect');
+	return false;
+    }
 
-	window.location = msg.data; 
+    window.location = msg.data; 
 });	
 
 
@@ -15579,6 +15542,7 @@ node.events.ng.on( IN + say + 'GAMECOMMAND', function (msg) {
  * It differs from `REDIRECT` messages because the client 
  * does not leave the page, it just switches channel. 
  * 
+ * @experimental
  */
 node.events.ng.on( IN + say + 'JOIN', function (msg) {
     if (!msg.text) return;
@@ -15586,7 +15550,7 @@ node.events.ng.on( IN + say + 'JOIN', function (msg) {
     node.connect(msg.text);
 });	
 
-	node.log('incoming listeners added');
+    node.log('incoming listeners added');
 	
 })('undefined' !== typeof node ? node : module.parent.exports); 
 // <!-- ends incoming listener -->
@@ -15595,22 +15559,17 @@ node.events.ng.on( IN + say + 'JOIN', function (msg) {
 // Outgoing listeners are fired when messages are sent
 
 (function (node) {
-
-	if (!node) {
-		console.log('nodeGame not found. Cannot add outgoing listeners');
-		return false;
-	}
 	
-	var GameMsg = node.GameMsg,
-		GameState = node.GameState;
+    var GameMsg = node.GameMsg,
+        GameState = node.GameState;
+    
+    var action = node.action,
+        target = node.target;
 	
-	var action = node.action,
-		target = node.target;
-	
-	var say = action.SAY + '.',
-		set = action.SET + '.',
-		get = action.GET + '.',
-		OUT  = node.OUT;
+    var say = action.SAY + '.',
+        set = action.SET + '.',
+        get = action.GET + '.',
+        OUT  = node.OUT;
 	
 /**
  * ## out.say.STAGE
@@ -15622,7 +15581,7 @@ node.events.ng.on( IN + say + 'JOIN', function (msg) {
  * 
  */
 node.events.ng.on( OUT + say + 'STAGE', function (stage, to) {
-	node.socket.sendSTAGE(action.SAY, stage, to);
+    node.socket.sendSTAGE(action.SAY, stage, to);
 });	
 	
 /**
@@ -15631,7 +15590,7 @@ node.events.ng.on( OUT + say + 'STAGE', function (stage, to) {
  * Sends out a TXT message to the specified recipient
  */
 node.events.ng.on( OUT + say + 'TXT', function (text, to) {
-	node.socket.sendTXT(text,to);
+    node.socket.sendTXT(text,to);
 });
 
 /**
@@ -15640,7 +15599,7 @@ node.events.ng.on( OUT + say + 'TXT', function (text, to) {
  * Sends out a DATA message to the specified recipient
  */
 node.events.ng.on( OUT + say + 'DATA', function (data, to, key) {
-	node.socket.sendDATA(action.SAY, data, to, key);
+    node.socket.sendDATA(action.SAY, data, to, key);
 });
 
 /**
@@ -15653,7 +15612,7 @@ node.events.ng.on( OUT + say + 'DATA', function (data, to, key) {
  * of the sender
  */
 node.events.ng.on( OUT + set + 'STAGE', function (stage, to) {
-	node.socket.sendSTAGE(action.SET, stage, to);
+    node.socket.sendSTAGE(action.SET, stage, to);
 });
 
 /**
@@ -15666,7 +15625,7 @@ node.events.ng.on( OUT + set + 'STAGE', function (stage, to) {
  * @see node.GameDB
  */
 node.events.ng.on( OUT + set + 'DATA', function (data, to, key) {
-	node.socket.sendDATA(action.SET, data, to, key);
+    node.socket.sendDATA(action.SET, data, to, key);
 });
 
 /**
@@ -15677,7 +15636,7 @@ node.events.ng.on( OUT + set + 'DATA', function (data, to, key) {
  * Experimental. Undocumented (for now)
  */
 node.events.ng.on( OUT + get + 'DATA', function (data, to, key) {
-	node.socket.sendDATA(action.GET, data, to, data);
+    node.socket.sendDATA(action.GET, data, to, data);
 });
 	
 node.log('outgoing listeners added');
@@ -15693,57 +15652,20 @@ node.log('outgoing listeners added');
 
 (function (node) {
 
-	if (!node) {
-		console.log('nodeGame not found. Cannot add internal listeners');
-		return false;
-	}
+    
 	
-	var action = node.action,
-		target = node.target;
+    var action = node.action,
+        target = node.target;
 	
-	var GameMsg = node.GameMsg,
-		GameStage = node.GameStage,
-		Game = node.Game;
-	
-	var say = action.SAY + '.',
-		set = action.SET + '.',
-		get = action.GET + '.',
-		IN  = node.IN,
-		OUT = node.OUT;
-	
-/**
- * ## STAGEDONE
- * 
- * Fired when all the players in the player list are DONE
- */ 
-node.events.ng.on('STAGEDONE', function() {
-	
-	// In single player mode we ignore when all the players have completed the stage
-	if (node.game.solo_mode) {
-		return;
-	}
-	
-	// <!-- If we go auto -->
-	if (node.game.auto_step && !node.game.observer) {
-		node.log('We play AUTO', 'DEBUG');
-		var morePlayers = ('undefined' !== typeof node.game.minPlayers) ? node.game.minPlayers - node.game.pl.count() : 0 ;
-		node.log('Additional player required: ' + morePlayers > 0 ? MorePlayers : 0, 'DEBUG');
-		
-		if (morePlayers > 0) {
-			node.emit(OUT + say + target.TXT, morePlayers + ' player/s still needed to play the game');
-			node.log(morePlayers + ' player/s still needed to play the game');
-		}
-		// TODO: differentiate between before the game starts and during the game
-		else {
-			node.emit(OUT + say + target.TXT, node.game.minPlayers + ' players ready. Game can proceed');
-			node.log(node.game.pl.count() + ' players ready. Game can proceed');
-			node.game.step();
-		}
-	}
-	else {
-		node.log('Waiting for monitor to step', 'DEBUG');
-	}
-});
+    var GameMsg = node.GameMsg,
+        GameStage = node.GameStage,
+        Game = node.Game;
+    
+    var say = action.SAY + '.',
+        set = action.SET + '.',
+        get = action.GET + '.',
+	IN  = node.IN,
+        OUT = node.OUT;
 
 /**
  * ## DONE
@@ -15791,7 +15713,7 @@ node.events.ng.on('DONE', function(p1, p2, p3) {
  * @emit LOADED
  */
 node.events.ng.on('WINDOW_LOADED', function() {
-	if (node.game.ready) node.emit('LOADED');
+    if (node.game.isReady()) node.emit('LOADED');
 });
 
 /**
@@ -15803,7 +15725,7 @@ node.events.ng.on('WINDOW_LOADED', function() {
  * @emit LOADED
  */
 node.events.ng.on('GAME_LOADED', function() {
-	if (node.game.ready) node.emit('LOADED');
+    if (node.game.isReady()) node.emit('LOADED');
 });
 
 /**
@@ -15812,12 +15734,12 @@ node.events.ng.on('GAME_LOADED', function() {
  * 
  */
 node.events.ng.on('LOADED', function() {
-	node.emit('BEFORE_LOADING');
-	node.game.setStageLevel(Game.stageLevels.PLAYING);
-	//TODO: the number of messages to emit to inform other players
-	// about its own stage should be controlled. Observer is 0 
-	//node.game.publishUpdate();
-	node.socket.clearBuffer();
+    node.emit('BEFORE_LOADING');
+    node.game.setStageLevel(Game.stageLevels.PLAYING);
+    //TODO: the number of messages to emit to inform other players
+    // about its own stage should be controlled. Observer is 0 
+    //node.game.publishUpdate();
+    node.socket.clearBuffer();
 	
 });
 
@@ -15842,7 +15764,7 @@ node.events.ng.on('NODEGAME_GAMECOMMAND_' + node.gamecommand.start, function(opt
 node.log('internal listeners added');
 	
 })('undefined' !== typeof node ? node : module.parent.exports); 
-// <!-- ends outgoing listener -->
+// <!-- ends internal listener -->
 
 /**
  * # GameTimer
