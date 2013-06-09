@@ -7177,7 +7177,7 @@ node.msg = {};
  * 
  * @see node.GameSocketClient
  */	
-node.socket = node.gsc = {};
+node.socket = {};
 
 /**
  * ### node.session
@@ -7186,7 +7186,7 @@ node.socket = node.gsc = {};
  * 
  * Session variables can be saved and restored at a later stage
  */
-node.session 	= {};
+node.session = {};
 
 /**
  * ### node.player
@@ -7292,7 +7292,6 @@ if ('object' === typeof module && 'function' === typeof require) {
     // ### Loading Event listeners
     require('./listeners/incoming.js');
     require('./listeners/internal.js');
-    require('./listeners/outgoing.js');
 }
 else {
     // <!-- Browser -->
@@ -8893,28 +8892,6 @@ PlayerList.prototype.isStageDone = function (stage) {
 	return true;
 };
 
-///**
-// * ### PlayerList.actives
-// * 
-// * Counts the number of player whose stage is different from 0:0:0
-// * 
-// * @return {number} result The number of player whose stage is different from 0:0:0
-// * 
-// */
-//PlayerList.prototype.actives = function () {
-//	var result = 0;
-//	var gs;
-//	this.each(function(p) {
-//		gs = new GameStage(p.stage);	
-//		// <!-- Player is on 0.0.0 stage -->
-//		if (GameStage.compare(gs, new GameStage()) !== 0) {
-//			result++;
-//		}
-//	});	
-//	// <!-- node.log('ACTIVES: ' + result); -->
-//	return result;
-//};
-
 /**
  * ### PlayerList.toString
  * 
@@ -8925,13 +8902,13 @@ PlayerList.prototype.isStageDone = function (stage) {
  * @return {string} out The string representation of the stage of the PlayerList
  */
 PlayerList.prototype.toString = function (eol) {
-	var out = '', EOL = eol || '\n', stage;
-	this.forEach(function(p) {
+    var out = '', EOL = eol || '\n', stage;
+    this.forEach(function(p) {
     	out += p.id + ': ' + p.name;
     	stage = new GameStage(p.stage);
     	out += ': ' + stage + EOL;
-	});
-	return out;
+    });
+    return out;
 };
 
 /**
@@ -8942,12 +8919,12 @@ PlayerList.prototype.toString = function (eol) {
  * @param {number} N The number of groups
  * @return {Array} Array containing N `PlayerList` objects 
  * 
- * 		@see `JSUS.getNGroups`
+ * @see `JSUS.getNGroups`
  */
 PlayerList.prototype.getNGroups = function (N) {
-	if (!N) return;
-	var groups = JSUS.getNGroups(this.db, N);
-	return PlayerList.array2Groups(groups);
+    if (!N) return;
+    var groups = JSUS.getNGroups(this.db, N);
+    return PlayerList.array2Groups(groups);
 };	
 
 /**
@@ -8958,12 +8935,12 @@ PlayerList.prototype.getNGroups = function (N) {
  * @param {number} N The number player per group
  * @return {Array} Array containing N `PlayerList` objects 
  * 
- * 		@see `JSUS.getGroupsSizeN`
+ * @see `JSUS.getGroupsSizeN`
  */
 PlayerList.prototype.getGroupsSizeN = function (N) {
-	if (!N) return;
-	var groups = JSUS.getGroupsSizeN(this.db, N);
-	return PlayerList.array2Groups(groups);
+    if (!N) return;
+    var groups = JSUS.getGroupsSizeN(this.db, N);
+    return PlayerList.array2Groups(groups);
 };	
 
 /**
@@ -11457,374 +11434,20 @@ function GameMsgGenerator () {}
  */
 GameMsgGenerator.create = function (msg) {
 
-  var gameMsg = {
-		session: ('undefined' !== typeof msg.session) ? msg.session : node.socket.session, 
-		stage: msg.stage || node.game.stage,
-		action: msg.action || action.SAY,
-		target: msg.target || target.DATA,
-		from: node.player.sid,
-		to: ('undefined' !== typeof msg.to) ? msg.to : 'SERVER',
-		text: msg.text || null,
-		data: msg.data || null,
-		priority: msg.priority || null,
-		reliable: msg.reliable || 1
-  };
-
-  return new GameMsg(gameMsg);
+  return new GameMsg({
+      session: 'undefined' !== typeof msg.session ? msg.session : node.socket.session, 
+      stage: 'undefined' !== typeof msg.stage ? msg.stage : node.game.stage,
+      action: msg.action || action.SAY,
+      target: msg.target || target.DATA,
+      from: node.player.sid, // TODO change to id
+      to: 'undefined' !== typeof msg.to ? msg.to : 'SERVER',
+      text: msg.text || null,
+      data: msg.data || null,
+      priority: msg.priority || null,
+      reliable: msg.reliable || 1
+  });
 
 };
-
-//## HI messages
-
-/**
- * ### GameMSgGenerator.createHI
- * 
- * Notice: this is different from the server;
- * 
- * @param {Player} player The player to communicate
- * @param {string} to The recipient of the message
- * @param {boolean} reliable Optional. Experimental. Requires an acknowledgment
- * 
- * @return {GameMsg|boolean} The game message, or FALSE if error in the input parameters is detected
- */
-GameMsgGenerator.createHI = function (player, to, reliable) {
-	player = player || node.player;
-	if (!player) return false;
-	reliable = reliable || 1;
-  
-	return new GameMsg( {
-            			session: node.gsc.session,
-            			stage: node.game.stage,
-            			action: action.SAY,
-            			target: target.HI,
-            			from: node.player.sid,
-            			to: to,
-            			text: new Player(player) + ' ready.',
-            			data: player,
-            			priority: null,
-            			reliable: reliable
-	});
-};
-
-// ## STATE messages
-
-///**
-// * ### GameMSgGenerator.saySTATE
-// * 
-// * Creates a say.STATE message
-// * 
-// * Notice: stage is different from node.game.stage
-// * 
-// * @param {GameStage} stage The game-stage to communicate
-// * @param {string} to The recipient of the message
-// * @param {boolean} reliable Optional. Experimental. Requires an acknowledgment
-// * 
-// * @return {GameMsg|boolean} The game message, or FALSE if error in the input parameters is detected
-// * 
-// * 	@see GameStage
-// */
-//GameMsgGenerator.saySTATE = function (stage, to, reliable) {
-//	return this.createSTATE(action.SAY, stage, to, reliable);
-//};
-//
-///**
-// * ### GameMSgGenerator.setSTATE
-// * 
-// * Creates a set.STATE message
-// * 
-// * @param {GameStage} stage The game-stage to communicate
-// * @param {string} to The recipient of the message
-// * @param {boolean} reliable Optional. Experimental. Requires an acknowledgment
-// * 
-// * @return {GameMsg|boolean} The game message, or FALSE if error in the input parameters is detected
-// * 
-// * 	@see GameStage
-// */
-//GameMsgGenerator.setSTATE = function (stage, to, reliable) {
-//	return this.createSTATE(action.SET, stage, to, reliable);
-//};
-//
-///**
-// * ### GameMSgGenerator.getSTATE
-// * 
-// * Experimental. Creates a get.STATE message
-// * 
-// * @param {GameStage} stage The game-stage to communicate
-// * @param {string} to The recipient of the message
-// * @param {boolean} reliable Optional. Experimental. Requires an acknowledgment
-// * 
-// * @return {GameMsg|boolean} The game message, or FALSE if error in the input parameters is detected
-// * 
-// * 	@see GameStage
-// */
-//GameMsgGenerator.getSTATE = function (stage, to, reliable) {
-//	return this.createSTATE(action.GET, stage, to,reliable);
-//};
-//
-///**
-// * ### GameMSgGenerator.createSTATE
-// * 
-// * Creates a STATE message
-// * 
-// * @param {string} action A nodeGame action (e.g. 'get' or 'set')
-// * @param {GameStage} stage The game-stage to communicate
-// * @param {string} to Optional. The recipient of the message. Defaults, SERVER
-// * @param {boolean} reliable Optional. Experimental. Requires an acknowledgment
-// * 
-// * @return {GameMsg|boolean} The game message, or FALSE if error in the input parameters is detected
-// * 
-// * 	@see GameStage
-// */
-//GameMsgGenerator.createSTATE = function (action, stage, to, reliable) {
-//	if (!action || !stage) return false;
-//	to = to || 'SERVER';
-//	reliable = reliable || 1;
-//	return new GameMsg({
-//						session: node.gsc.session,
-//						stage: node.game.stage,
-//						action: action,
-//						target: target.STATE,
-//						from: node.player.sid,
-//						to: to,
-//						text: 'New State: ' + GameStage.stringify(stage),
-//						data: stage,
-//						priority: null,
-//						reliable: reliable
-//	});
-//};
-
-//## PLIST messages
-
-/**
- * ### GameMsgGenerator.sayPLIST
- * 
- * Creates a say.PLIST message
- * 
- * @param {PlayerList} plist The player-list to communicate
- * @param {string} to The recipient of the message
- * @param {boolean} reliable Optional. Experimental. Requires an acknowledgment
- * 
- * @return {GameMsg|boolean} The game message, or FALSE if error in the input parameters is detected
- * 
- * 	@see PlayerList
- */
-GameMsgGenerator.sayPLIST = function (plist, to, reliable) {
-	return this.createPLIST(action.SAY, plist, to, reliable);
-};
-
-/**
- * ### GameMSgGenerator.setPLIST
- * 
- * Creates a set.PLIST message
- * 
- * @param {PlayerList} plist The player-list to communicate
- * @param {string} to The recipient of the message
- * @param {boolean} reliable Optional. Experimental. Requires an acknowledgment
- * 
- * @return {GameMsg|boolean} The game message, or FALSE if error in the input parameters is detected
- * 
- * 	@see PlayerList
- */
-GameMsgGenerator.setPLIST = function (plist, to, reliable) {
-	return this.createPLIST(action.SET, plist, to, reliable);
-};
-
-/**
- * ### GameMSgGenerator.getPLIST
- * 
- * Experimental. Creates a get.PLIST message
- * 
- * @param {PlayerList} plist The player-list to communicate
- * @param {string} to The recipient of the message
- * @param {boolean} reliable Optional. Experimental. Requires an acknowledgment
- * 
- * @return {GameMsg|boolean} The game message, or FALSE if error in the input parameters is detected
- * 
- * 	@see PlayerList
- */
-GameMsgGenerator.getPLIST = function (plist, to, reliable) {
-	return this.createPLIST(action.GET, plist, to, reliable);
-};
-
-/**
- * ### GameMSgGenerator.createPLIST
- * 
- * Creates a PLIST message
- * 
- * @param {string} action A nodeGame action (e.g. 'get' or 'set')
- * @param {PlayerList} plist The player-list to communicate
- * @param {string} to Optional. The recipient of the message. Defaults, SERVER
- * @param {boolean} reliable Optional. Experimental. Requires an acknowledgment
- * 
- * @return {GameMsg|boolean} The game message, or FALSE if error in the input parameters is detected
- * 
- *  @see PlayerList
- */
-GameMsgGenerator.createPLIST = function (action, plist, to, reliable) {
-	plist = plist || !node.game || node.game.pl;
-	if (!action || !plist) return false;
-	
-	to = to || 'SERVER';
-	reliable = reliable || 1;
-	
-	return new GameMsg({
-						session: node.gsc.session, 
-						stage: node.game.stage,
-						action: action,
-						target: target.PLIST,
-						from: node.player.sid,
-						to: to,
-						text: 'List of Players: ' + plist.length,
-						data: plist.pl,
-						priority: null,
-						reliable: reliable
-	});
-};
-
-// ## TXT messages
-
-/**
- * ### GameMSgGenerator.createTXT
- * 
- * Creates a say.TXT message
- * 
- * TXT messages are always of action 'say'
- * 
- * @param {string} text The text to communicate
- * @param {string} to The recipient of the message
- * @param {boolean} reliable Optional. Experimental. Requires an acknowledgment
- * 
- * @return {GameMsg|boolean} The game message, or FALSE if error in the input parameters is detected
- */
-GameMsgGenerator.createTXT = function (text, to, reliable) {
-	if (!text) return false;
-	reliable = reliable || 0;
-	
-	return new GameMsg({
-						session: node.gsc.session,
-						stage: node.game.stage,
-						action: action.SAY,
-						target: target.TXT,
-						from: node.player.sid,
-						to: to,
-						text: text,
-						data: null,
-						priority: null,
-						reliable: reliable
-	});
-};
-
-
-// ## DATA messages
-
-/**
- * ### GameMSgGenerator.sayDATA
- * 
- * Creates a say.DATA message
- * 
- * @param {object} data An object to exchange
- * @param {string} to The recipient of the message
- * @param {boolean} reliable Optional. Experimental. Requires an acknowledgment
- * 
- * @return {GameMsg|boolean} The game message, or FALSE if error in the input parameters is detected
- */
-GameMsgGenerator.sayDATA = function (data, to, text, reliable) {
-	return this.createDATA(action.SAY, data, to, text, reliable);
-};
-
-/**
- * ### GameMSgGenerator.setDATA
- * 
- * Creates a set.DATA message
- * 
- * @param {object} data An object to exchange
- * @param {string} to The recipient of the message
- * @param {boolean} reliable Optional. Experimental. Requires an acknowledgment
- * 
- * @return {GameMsg|boolean} The game message, or FALSE if error in the input parameters is detected
- */
-GameMsgGenerator.setDATA = function (data, to, text, reliable) {
-	return this.createDATA(action.SET, data, to, text, reliable);
-};
-
-/**
- * ### GameMSgGenerator.getDATA
- * 
- * Experimental. Creates a say.DATA message
- * 
- * @param {object} data An object to exchange
- * @param {string} to The recipient of the message
- * @param {boolean} reliable Optional. Experimental. Requires an acknowledgment
- * 
- * @return {GameMsg|boolean} The game message, or FALSE if error in the input parameters is detected
- */
-GameMsgGenerator.getDATA = function (data, to, text, reliable) {
-	return this.createDATA(action.GET, data, to, text, reliable);
-};
-
-/**
- * ### GameMSgGenerator.createDATA
- * 
- * Creates a DATA message
- * 
- * @param {string} action A nodeGame action (e.g. 'get' or 'set')
- * @param {object} data An object to exchange
- * @param {string} to The recipient of the message
- * @param {boolean} reliable Optional. Experimental. Requires an acknowledgment
- * 
- * @return {GameMsg|boolean} The game message, or FALSE if error in the input parameters is detected
- */
-GameMsgGenerator.createDATA = function (action, data, to, text, reliable) {
-	if (!action) return false;
-	reliable = reliable || 1;
-	text = text || 'data msg';
-	
-	return new GameMsg({
-						session: node.gsc.session, 
-						stage: node.game.stage,
-						action: action,
-						target: target.DATA,
-						from: node.player.sid,
-						to: to,
-						text: text,
-						data: data,
-						priority: null,
-						reliable: reliable
-	});
-};
-
-// ## ACK messages
-
-/**
- * ### GameMSgGenerator.setACK
- * 
- * Experimental. Undocumented (for now)
- * 
- */
-GameMsgGenerator.createACK = function (gm, to, reliable) {
-	if (!gm) return false;
-	reliable = reliable || 0;
-	
-	var newgm = new GameMsg({
-							session: node.gsc.session, 
-							stage: node.game.stage,
-							action: action.SAY,
-							target: target.ACK,
-							from: node.player.sid,
-							to: to,
-							text: 'Msg ' + gm.id + ' correctly received',
-							data: gm.id,
-							priority: null,
-							reliable: reliable
-	});
-	
-	if (gm.forward) {
-		newgm.forward = 1;
-	}
-	
-	return newgm;
-}; 
-
 
 // ## Closure
 })(
@@ -11931,14 +11554,12 @@ exports.Socket = Socket;
 // ## Global scope
 	
 var GameMsg = node.GameMsg,
-	GameStage = node.GameStage,
-	Player = node.Player,
-	GameMsgGenerator = node.GameMsgGenerator,
-	SocketFactory = node.SocketFactory;
-
+    GameStage = node.GameStage,
+    Player = node.Player,
+    GameMsgGenerator = node.GameMsgGenerator,
+    SocketFactory = node.SocketFactory;
+    
 var action = node.action;
-
-var buffer, session;
 
 function Socket(options) {
 	
@@ -11951,16 +11572,8 @@ function Socket(options) {
  * 
  * @api private
  */ 
-    buffer = [];
-    if (node.support.defineProperty) {
-	Object.defineProperty(this, 'buffer', {
-	    value: buffer,
-	    enumerable: true
-	});
-	}
-    else {
-	this.buffer = buffer;
-    }
+    this.buffer = [];
+    
     
 /**
  * ### Socket.session
@@ -11970,16 +11583,7 @@ function Socket(options) {
  * This property is initialized only when a game starts
  * 
  */
-    session = null;
-    if (node.support.defineProperty) {
-	Object.defineProperty(this, 'session', {
-	    value: session,
-	    enumerable: true
-	});
-	}
-    else {
-	this.session = session;
-    }
+    this.session = null;
     
     this.socket = null;
     
@@ -11997,7 +11601,7 @@ Socket.prototype.setup = function(options) {
 };
     
 Socket.prototype.setSocketType = function(type, options) {
-    var socket =  SocketFactory.get(type, options);
+    var socket = SocketFactory.get(type, options);
     if (socket) {
 	this.socket = socket;
 	return true;
@@ -12048,7 +11652,6 @@ Socket.prototype.onMessage = function(msg) {
 	    node.session.restore(sessionObj);
 			
 	    msg = node.msg.create({
-		action: action.SAY,
 		target: 'HI_AGAIN',
 		data: node.player
 	    });
@@ -12059,7 +11662,13 @@ Socket.prototype.onMessage = function(msg) {
 	else {
 	    node.store(msg.session, node.session.save());
 	    
-	    this.sendHI(node.player, 'ALL');
+	    // send HI to ALL
+	    this.send(node.msg.create({
+		target: 'HI',
+		to: 'ALL',
+		data: node.player
+	    }));
+
 	}
 	
     } 
@@ -12081,7 +11690,7 @@ Socket.prototype.onMessageFull = function(msg) {
 	else {
 	    console.log('BUFFERING');
 	    node.silly('buffering: ' + msg);
-	    buffer.push(msg);
+	    this.buffer.push(msg);
 	}
     }
 };
@@ -12097,20 +11706,22 @@ Socket.prototype.registerServer = function(msg) {
 
 Socket.prototype.secureParse = secureParse = function (msg) {
 	
-	var gameMsg;
-	try {
-		gameMsg = GameMsg.clone(JSON.parse(msg));
-		node.info('R: ' + gameMsg);
-	}
-	catch(e) {
-		return logSecureParseError('malformed msg received',  e);
-	}
-	
-	if (this.session && gameMsg.session !== this.session) {
-		return logSecureParseError('local session id does not match incoming message session id');
-	}
-	
-	return gameMsg;
+    var gameMsg;
+    try {
+	gameMsg = GameMsg.clone(JSON.parse(msg));
+	node.info('R: ' + gameMsg);
+    }
+    catch(e) {
+	return logSecureParseError('malformed msg received',  e);
+    }
+
+    // TODO check why clients do not have the right session id.
+    // session checking disabled for now
+    // if (this.session && gameMsg.session !== this.session) {
+    //	return logSecureParseError('local session id does not match incoming message session id');
+    // }
+    
+    return gameMsg;
 };
 
 
@@ -12122,14 +11733,15 @@ Socket.prototype.secureParse = secureParse = function (msg) {
  * @see node.emit
  */
 Socket.prototype.clearBuffer = function () {
-	var nelem = buffer.length, msg;
-	for (var i=0; i < nelem; i++) {
-		msg = this.buffer.shift();
-		if (msg) {
-			node.emit(msg.toInEvent(), msg);
-			node.log('Debuffered ' + msg, 'DEBUG');
-		}
+    var nelem, msg, i;
+    nelem = this.buffer.length;
+    for (i = 0; i < nelem; i++) {
+	msg = this.buffer.shift();
+	if (msg) {
+	    node.emit(msg.toInEvent(), msg);
+	    node.silly('Debuffered ' + msg);
 	}
+    }
 };
 
 
@@ -12147,21 +11759,18 @@ Socket.prototype.clearBuffer = function () {
  * 	@see node.createPlayer
  */
 Socket.prototype.startSession = function (msg) {
-
-	// Store server info
-	this.registerServer(msg);
-	
-	var player = {
-			id:		msg.data,	
-			sid: 	msg.data
-	};
-	node.createPlayer(player);
-	this.session = msg.session;
-	return true;
+    var player;
+    // Store server info
+    this.registerServer(msg);
+    
+    player = {
+	id: msg.data,	
+	sid: msg.data
+    };
+    node.createPlayer(player);
+    this.session = msg.session;
+    return true;
 };
-
-//## SEND methods
-
 
 /**
 * ### Socket.send
@@ -12172,127 +11781,34 @@ Socket.prototype.startSession = function (msg) {
 * 
 * @param {GameMsg} The game message to send
 * 
-* 	@see GameMsg
+* @see GameMsg
 * 
 * @TODO: Check Do volatile msgs exist for clients?
 */
 Socket.prototype.send = function(msg) {
-	if (!this.socket) {
-		node.err('socket cannot send message. No open socket.');
-		return false;
-	}
-	
-	this.socket.send(msg);
-	node.info('S: ' + msg);
-	return true;
+    if (!this.socket) {
+	node.err('socket cannot send message. No open socket.');
+	return false;
+    }
+    
+    this.socket.send(msg);
+    node.info('S: ' + msg);
+    return true;
 };
-
-
-/**
-* ### Socket.sendHI
-* 
-* Creates a HI message and pushes it into the socket
-*   
-* @param {string} from Optional. The message sender. Defaults node.player
-* @param {string} to Optional. The recipient of the message. Defaults 'SERVER'
-* 
-*/
-Socket.prototype.sendHI = function (from, to) {
-	from = from || node.player;
-	to = to || 'SERVER';
-	var msg = node.msg.createHI(from, to);
-	this.send(msg);
-};
-
-/**
- * @TODO: do we need this??
-* ### Socket.sendSTAGE
-* 
-* Creates a STAGE message and pushes it into the socket
-* 
-* @param {string} action A nodeGame action (e.g. 'get' or 'set')
-* @param {GameStage} stage The GameStage object to send
-* @param {string} to Optional. The recipient of the message.
-*  
-*/
-//Socket.prototype.sendSTATE = function (action, state, to) {	
-//	var msg = node.msg.createSTAGE(action, stage, to);
-//	this.send(msg);
-//};
-
-
-/**
-* ### Socket.sendSTAGE
-* 
-* Creates a STAGE message and pushes it into the socket
-* 
-* @param {string} action A nodeGame action (e.g. 'get' or 'set')
-* @param {GameStage} stage The GameStage object to send
-* @param {string} to Optional. The recipient of the message.
-*  
-*/
-Socket.prototype.sendSTAGE = function (action, stage, to) {	
-	var msg = node.msg.create({
-		action: node.action.SAY,
-		target: node.target.STAGE,
-		data: stage, 
-		to: to
-	});
-	
-	this.send(msg);
-};
-
-/**
-* ### Socket.sendTXT
-*
-* Creates a TXT message and pushes it into the socket
-* 
-* @param {string} text Text to send
-* @param {string} to Optional. The recipient of the message
-*/
-Socket.prototype.sendTXT = function(text, to) {	
-	var msg = node.msg.createTXT(text,to);
-	this.send(msg);
-};
-
-/**
-* ### Socket.sendDATA
-* 
-* Creates a DATA message and pushes it into the socket
-* 
-* @param {string} action Optional. A nodeGame action (e.g. 'get' or 'set'). Defaults 'say'
-* @param {object} data An object to exchange
-* @param {string} to Optional. The recipient of the message. Defaults 'SERVER'
-* @param {string} text Optional. A descriptive text associated to the message.
-* 
-* @TODO: invert parameter order: first data then action
-*/
-Socket.prototype.sendDATA = function (action, data, to, text) {
-	action = action || GameMsg.say;
-	to = to || 'SERVER';
-	text = text || 'DATA';
-	var msg = node.msg.createDATA(action, data, to, text);
-	this.send(msg);
-};
-
 
 // helping methods
 
 var logSecureParseError = function (text, e) {
-	text = text || 'Generic error while parsing a game message';
-	var error = (e) ? text + ": " + e : text;
-	node.log(error, 'ERR');
-	node.emit('LOG', 'E: ' + error);
-	return false;
+    text = text || 'Generic error while parsing a game message';
+    var error = (e) ? text + ": " + e : text;
+    node.log(error, 'ERR');
+    node.emit('LOG', 'E: ' + error);
+    return false;
 };
 
-
-
-
-
 })(
-	'undefined' != typeof node ? node : module.exports,
-	'undefined' != typeof node ? node : module.parent.exports
+    'undefined' != typeof node ? node : module.exports,
+    'undefined' != typeof node ? node : module.parent.exports
 );
 
 /**
@@ -14368,7 +13884,7 @@ SessionManager.prototype.store = function() {
 /**
  * ### node.emit
  * 
- * Emits an event locally
+ * Emits an event locally on all registered event handlers
  *
  * The first parameter be the name of the event as _string_, 
  * followed by any number of parameters that will be passed to the
@@ -14385,17 +13901,15 @@ SessionManager.prototype.store = function() {
  * 
  * Sends a DATA message to a specified recipient
  * 
- * @TODO: switch the order of the parameters data and text, maybe also to
- * 
- * @param {mixed} data The content of the DATA message
  * @param {string} text The label associated to the message
  * @param {string} to Optional. The recipient of the message. Defaults, 'SERVER'
+ * @param {mixed} data Optional. The content of the DATA message
  *  
  */	
-    node.say = function (data, text, to) {
+    node.say = function (label, to, payload) {
 	var msg;
 
-	if ('undefined' === typeof data && 'undefined' === typeof text) {
+	if ('undefined' === typeof label) {
 	    node.err('cannot say empty message');
 	    return false;
 	}
@@ -14403,8 +13917,8 @@ SessionManager.prototype.store = function() {
 	msg = node.msg.create({
 	    target: node.target.DATA,
 	    to: to || 'SERVER',
-	    text: text,
-	    data: data
+	    text: label,
+	    data: payload
 	});
 	// @TODO when refactoring is finished, emit this event.
 	// By default there nothing should happen, but people could listen to it
@@ -14513,6 +14027,44 @@ SessionManager.prototype.store = function() {
 	ee.on(event, listener);
     };
 
+/**
+ * ### node.done
+ * 
+ * Emits a DONE event
+ * 
+ * A DONE event signals that the player has completed 
+ * a game step. After a DONE event the step rules are 
+ * evaluated.
+ * 
+ * Accepts any number of input parameters that will be
+ * passed to the `node.emit`.
+ *
+ * @see node.emit
+ * @emits DONE
+ */	
+    node.done = function() {
+	var args, len;
+	switch(arguments.length) {
+	    
+	case 0:
+	    node.emit('DONE');
+	    break;
+	case 1:
+	    node.emit('DONE', arguments[0]);
+	    break;
+	case 2:
+	    node.emit('DONE', arguments[0], arguments[1]);
+	    break;
+	default:
+	
+	    len = arguments.length;
+	    args = new Array(len - 1);
+	    for (i = 1; i < len; i++) {
+		args[i - 1] = arguments[i];
+	    }
+	    node.emit.apply('DONE', args);
+	}
+    };
 
 /**
  * ### node.getCurrentEventEmitter
@@ -14663,7 +14215,7 @@ SessionManager.prototype.store = function() {
 	
     node.session = new GameSession();
 	
-    node.socket = node.gsc = new Socket();
+    node.socket = new Socket();
 	
     node.game = new Game();
 	
@@ -14985,9 +14537,9 @@ var frozen = false;
 // ## Global scope
 	
 var GameMsg = node.GameMsg,
-	Player = node.Player,
-	GameMsgGenerator = node.GameMsgGenerator,
-	J = node.JSUS;
+    Player = node.Player,
+    GameMsgGenerator = node.GameMsgGenerator,
+    J = node.JSUS;
 
 
 //## Aliases	
@@ -15023,43 +14575,21 @@ var GameMsg = node.GameMsg,
 	
 	J.each(events, function(event){
 	    node.on[alias] = function(func) {
-		node.on(event, function(msg){
-		    func.call(node.game, cb ? cb(msg) : msg);
-		});
+		node.on(event, (cb) ? 
+			function() {
+			    func.call(node.game, cb.apply(node.game, arguments));
+			}
+			: function() {
+			    func.apply(node.game, arguments);
+			}
+		);
+
 	    };
 	});
     };	
     
-	
-/**
- *  ### node.DONE
- * 
- * Emits locally a DONE event
- * 
- * The DONE event signals that the player has terminated a game stage, 
- * and that it is ready to advance to the next one.
- * 
- * @param {mixed} param Optional. An additional parameter passed along
- */
-    node.DONE = function (param) {
-	node.emit("DONE", param);
-    };
+    
 
-/**
- *  ### node.TXT
- * 
- *  Emits locally a TXT event
- *  
- *  The TXT event signals that a text message needs to be delivered
- *  to a recipient.
- *  
- *  @param {string} text The text of the message
- *  @param {string} to The id of the recipient
- */	
-    node.TXT = function (text, to) {
-	node.emit('out.say.TXT', text, to);
-    };			
-	
 // ### node.on.txt	
     node.alias('txt', 'in.say.TXT');
 	
@@ -15079,52 +14609,70 @@ var GameMsg = node.GameMsg,
     node.alias('pconnect', 'in.say.PCONNECT', function(msg) {
         return msg.data;
     });
+
+	
+///**
+// *  ### node.DONE
+// * 
+// * Emits locally a DONE event
+// * 
+// * The DONE event signals that the player has terminated a game stage, 
+// * and that it is ready to advance to the next one.
+// * 
+// * @param {mixed} param Optional. An additional parameter passed along
+// */
+//    node.DONE = function () {
+//	node.emit('DONE', );
+//    };
+//
+	
+
  		
-	node.onTXT = function(func) {
-		if (!func) return;
-		node.on("", function(msg) {
-			func.call(node.game,msg);
-		});
-	};
-	
-	node.onDATA = function(text, func) {
-		if (!text || !func) return;
-		
-		node.on('in.say.DATA', function(msg) {
-			if (msg.text === text) {
-				func.call(node.game, msg);
-			}
-		});
-		
-		node.on('in.set.DATA', function(msg) {
-			if (msg.text === text) {
-				func.call(node.game, msg);
-			}
-		});
-	};
-	
-	node.onSTATE = function(func) {
-		node.on("in.set.STATE", function(msg) {
-			func.call(node.game, msg);
-		});
-	};
-	
-	node.onSTAGE = function(func) {
-		node.on("in.set.STAGE", function(msg) {
-			func.call(node.game, msg);
-		});
-	};
-	
-	node.onPLIST = function(func) {
-		node.on("in.set.PLIST", function(msg) {
-			func.call(node.game, msg);
-		});
-		
-		node.on("in.say.PLIST", function(msg) {
-			func.call(node.game, msg);
-		});
-	};
-		
+//    node.onTXT = function(func) {
+//	if (!func) return;
+//	node.on("", function(msg) {
+//	    func.call(node.game,msg);
+//	});
+//    };
+//	
+//    node.onDATA = function(text, func) {
+//	if (!text || !func) return;
+//	
+//	node.on('in.say.DATA', function(msg) {
+//	    if (msg.text === text) {
+//		func.call(node.game, msg);
+//	    }
+//	});
+//	
+//	node.on('in.set.DATA', function(msg) {
+//	    if (msg.text === text) {
+//		func.call(node.game, msg);
+//	    }
+//	});
+//    };
+//	
+//    node.onSTATE = function(func) {
+//	node.on("in.set.STATE", function(msg) {
+//	    func.call(node.game, msg);
+//	});
+//    };
+//    
+//    node.onSTAGE = function(func) {
+//	node.on("in.set.STAGE", function(msg) {
+//	    func.call(node.game, msg);
+//	});
+//    };
+//    
+//    node.onPLIST = function(func) {
+//	node.on("in.set.PLIST", function(msg) {
+//	    func.call(node.game, msg);
+//	});
+//	
+//	node.on("in.say.PLIST", function(msg) {
+//	    func.call(node.game, msg);
+//	});
+//    };
+//    
 
 
 })(
@@ -15554,95 +15102,6 @@ node.events.ng.on( IN + say + 'JOIN', function (msg) {
 	
 })('undefined' !== typeof node ? node : module.parent.exports); 
 // <!-- ends incoming listener -->
-
-// # Outgoing listeners
-// Outgoing listeners are fired when messages are sent
-
-(function (node) {
-	
-    var GameMsg = node.GameMsg,
-        GameState = node.GameState;
-    
-    var action = node.action,
-        target = node.target;
-	
-    var say = action.SAY + '.',
-        set = action.SET + '.',
-        get = action.GET + '.',
-        OUT  = node.OUT;
-	
-/**
- * ## out.say.STAGE
- * 
- * Sends out a STAGE message to the specified recipient
- * 
- * TODO: check with the server 
- * The message is for informative purpose
- * 
- */
-node.events.ng.on( OUT + say + 'STAGE', function (stage, to) {
-    node.socket.sendSTAGE(action.SAY, stage, to);
-});	
-	
-/**
- * ## out.say.TXT
- * 
- * Sends out a TXT message to the specified recipient
- */
-node.events.ng.on( OUT + say + 'TXT', function (text, to) {
-    node.socket.sendTXT(text,to);
-});
-
-/**
- * ## out.say.DATA
- * 
- * Sends out a DATA message to the specified recipient
- */
-node.events.ng.on( OUT + say + 'DATA', function (data, to, key) {
-    node.socket.sendDATA(action.SAY, data, to, key);
-});
-
-/**
- * ## out.set.STAGE
- * 
- * Sends out a STAGE message to the specified recipient
- * 
- * TODO: check with the server 
- * The receiver will update its representation of the stage
- * of the sender
- */
-node.events.ng.on( OUT + set + 'STAGE', function (stage, to) {
-    node.socket.sendSTAGE(action.SET, stage, to);
-});
-
-/**
- * ## out.set.DATA
- * 
- * Sends out a DATA message to the specified recipient
- * 
- * The sent data will be stored in the memory of the recipient
- * 
- * @see node.GameDB
- */
-node.events.ng.on( OUT + set + 'DATA', function (data, to, key) {
-    node.socket.sendDATA(action.SET, data, to, key);
-});
-
-/**
- * ## out.get.DATA
- * 
- * Issues a DATA request
- * 
- * Experimental. Undocumented (for now)
- */
-node.events.ng.on( OUT + get + 'DATA', function (data, to, key) {
-    node.socket.sendDATA(action.GET, data, to, data);
-});
-	
-node.log('outgoing listeners added');
-
-})('undefined' !== typeof node ? node : module.parent.exports); 
-// <!-- ends outgoing listener -->
 
 // # Internal listeners
 
