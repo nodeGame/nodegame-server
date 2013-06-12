@@ -30,14 +30,14 @@
 var J = node.JSUS;
 
 var Player = node.Player,
-	PlayerList = node.PlayerList,
-	GameMsg = node.GameMsg,
-	GameMsgGenerator = node.GameMsgGenerator;
+    PlayerList = node.PlayerList,
+    GameMsg = node.GameMsg,
+    GameMsgGenerator = node.GameMsgGenerator;
 
 var DOM = J.get('DOM');
 
 if (!DOM) {
-	throw new Error('DOM object not found. Aborting');
+    throw new Error('DOM object not found. Aborting');
 }
 
 GameWindow.prototype = DOM;
@@ -50,9 +50,9 @@ GameWindow.defaults = {};
 GameWindow.defaults.promptOnleave = true;
 GameWindow.defaults.noEscape = true;
 GameWindow.defaults.cacheDefaults = {
-	loadCache:       true,
-	storeCacheNow:   false,
-	storeCacheLater: false
+    loadCache:       true,
+    storeCacheNow:   false,
+    storeCacheLater: false
 };
 
 
@@ -67,31 +67,31 @@ GameWindow.defaults.cacheDefaults = {
  * 
  */
 function GameWindow() {
-	var that = this;
+    var that = this;
 	
-	if ('undefined' === typeof window) {
-		throw new Error('nodeWindow: no DOM found. Are we in a browser? Aborting.');
-	}
-	
-	if ('undefined' === typeof node) {
-		node.log('nodeWindow: nodeGame not found', 'ERR');
-	}
-	
-	node.log('nodeWindow: loading...');
-	
-	this.frame = null; // contains an iframe 
-	this.mainframe = 'mainframe';
-	this.root = null;
-	
-	this.conf = {};
-
+    if ('undefined' === typeof window) {
+	throw new Error('nodeWindow: no DOM found. Are we in a browser? Aborting.');
+    }
+    
+    if ('undefined' === typeof node) {
+	node.log('nodeWindow: nodeGame not found', 'ERR');
+    }
+    
+    node.log('nodeWindow: loading...');
+    
+    this.frame = null; // contains an iframe 
+    this.mainframe = 'mainframe';
+    this.root = null;
+    
+    this.conf = {};
+    
 // ### GameWindow.state
 //
-	this.state = node.is.LOADED;
+    this.state = node.is.LOADED;
 
 // ### GameWindow.areLoading
 // Counts the number of frames currently being loaded
-	this.areLoading = 0;
+    this.areLoading = 0;
 
 // ### GameWindow.cache
 // Cache for loaded iframes
@@ -100,27 +100,26 @@ function GameWindow() {
 //  - `contents` (a string describing the innerHTML or null if not cached),
 //  - optionally 'cacheOnClose' (a bool telling whether to cache the frame when
 //    it is replaced by a new one).
-	this.cache = {};
+    this.cache = {};
 
 // ### GameWindow.currentURIs
 // Currently loaded URIs in the internal frames
 //	
 // Maps frame names (e.g. 'mainframe') to the URIs they are showing.
-	this.currentURIs = {};
+    this.currentURIs = {};
 
 	
 // ### GameWindow.globalLibs
 // Array of strings with the path of the libraries to be loaded in every frame
-	this.globalLibs = [];
+    this.globalLibs = [];
 	
 // ### GameWindow.frameLibs
 // Like `GameWindow.frameLibs`, but contains libraries to be loaded only
 // in specific frames
-	this.frameLibs = {};
+    this.frameLibs = {};
 
 
-	this.init();
-	
+    this.init();	
 }
 
 // ## GameWindow methods
@@ -139,23 +138,23 @@ function GameWindow() {
  * 
  */
 GameWindow.prototype.init = function (options) {
-	options = options || {};
-	this.conf = J.merge(GameWindow.defaults, options);
+    options = options || {};
+    this.conf = J.merge(GameWindow.defaults, options);
 	
-	if (this.conf.promptOnleave) {
-		this.promptOnleave();
-	}
-	else if (this.conf.promptOnleave === false) {
-		this.restoreOnleave();
-	}
-	
-	if (this.conf.noEscape) {
-		this.noEscape();
-	}
-	else if (this.conf.noEscape === false){
-		this.restoreEscape();
-	}
-	
+    if (this.conf.promptOnleave) {
+	this.promptOnleave();
+    }
+    else if (this.conf.promptOnleave === false) {
+	this.restoreOnleave();
+    }
+    
+    if (this.conf.noEscape) {
+	this.noEscape();
+    }
+    else if (this.conf.noEscape === false){
+	this.restoreEscape();
+    }
+    
 };
 
 /**
@@ -1195,70 +1194,62 @@ if ('undefined' !== typeof window) window.W = node.window;
 // Incoming listeners are fired in response to incoming messages
 (function (node, window) {
 	
-	if (!node) {
-		console.log('nodegame-window: node object not found.');
-		return false;
+	
+    node.on('NODEGAME_GAME_CREATED', function() {
+	window.init(node.conf.window);
+    });
+    
+    node.on('HIDE', function(id) {
+	var el = window.getElementById(id);
+	if (!el) {
+	    node.log('Cannot hide element ' + id);
+	    return;
 	}
-	if (!window) {
-		node.err('window object not found.', 'nodegame-window');
-		return false;
+	el.style.visibility = 'hidden';    
+    });
+    
+    node.on('SHOW', function(id) {
+	var el = window.getElementById(id);
+	if (!el) {
+	    node.log('Cannot show element ' + id);
+	    return;
 	}
+	el.style.visibility = 'visible'; 
+    });
+    
+    node.on('TOGGLE', function(id) {
+	var el = window.getElementById(id);
+	if (!el) {
+	    node.log('Cannot toggle element ' + id);
+	    return;
+	}
+	if (el.style.visibility === 'visible') {
+	    el.style.visibility = 'hidden';
+	}
+	else {
+	    el.style.visibility = 'visible';
+	}
+    });
 	
-	node.on('NODEGAME_GAME_CREATED', function() {
-		window.init(node.conf.window);
-	});
-	
-	node.on('HIDE', function(id) {
-		var el = window.getElementById(id);
-		if (!el) {
-			node.log('Cannot hide element ' + id);
-			return;
-		}
-		el.style.visibility = 'hidden';    
-	});
-	
-	node.on('SHOW', function(id) {
-		var el = window.getElementById(id);
-		if (!el) {
-			node.log('Cannot show element ' + id);
-			return;
-		}
-		el.style.visibility = 'visible'; 
-	});
-	
-	node.on('TOGGLE', function(id) {
-		var el = window.getElementById(id);
-		if (!el) {
-			node.log('Cannot toggle element ' + id);
-			return;
-		}
-		if (el.style.visibility === 'visible') {
-			el.style.visibility = 'hidden';
-		}
-		else {
-			el.style.visibility = 'visible';
-		}
-	});
-	
-	// Disable all the input forms found within a given id element
-	node.on('INPUT_DISABLE', function(id) {
-		window.toggleInputs(id, true);			
-	});
-	
-	// Disable all the input forms found within a given id element
-	node.on('INPUT_ENABLE', function(id) {
-		window.toggleInputs(id, false);
-	});
-	
-	// Disable all the input forms found within a given id element
-	node.on('INPUT_TOGGLE', function(id) {
-		window.toggleInputs(id);
-	});
-	
-	node.log('node-window: listeners added');
+    // Disable all the input forms found within a given id element
+    node.on('INPUT_DISABLE', function(id) {
+	window.toggleInputs(id, true);			
+    });
+    
+    // Disable all the input forms found within a given id element
+    node.on('INPUT_ENABLE', function(id) {
+	window.toggleInputs(id, false);
+    });
+    
+    // Disable all the input forms found within a given id element
+    node.on('INPUT_TOGGLE', function(id) {
+	window.toggleInputs(id);
+    });
+    
+    node.log('node-window: listeners added');
 	
 })(
-	'undefined' !== typeof node ? node : undefined
+    'undefined' !== typeof node ? node : undefined
  ,  'undefined' !== typeof node.window ? node.window : undefined			
 ); 
 // <!-- ends nodegame-window listener -->
