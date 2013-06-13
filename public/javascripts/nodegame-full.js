@@ -7441,35 +7441,35 @@ else {
 
 /**
  * # Variables
- * 
+ *
  * Copyright(c) 2012 Stefano Balietti
  * MIT Licensed
- * 
+ *
  * `nodeGame` variables and constants module
- * 
+ *
  * ---
- * 
+ *
  */
 
 (function (exports, node) {
-	
-	// ## Constants
+
+// ## Constants
 
 /**
  * ### node.actions
- * 
+ *
  * Collection of available nodeGame actions
- * 
+ *
  * The action adds an initial semantic meaning to the
  * message. It specify the nature of requests
  * "Why the message was sent?"
- * 
+ *
  * Semantics:
- * 
+ *
  * - SET: Store / changes the value of a property in the receiver of the msg
  * - GET: Asks the value value of a property to the receiver of the msg
  * - SAY: Announces a change of state or other global property in the sender of the msg
- * 
+ *
  */
     node.action = {};
 
@@ -7479,13 +7479,13 @@ else {
 
 /**
  * ### node.target
- * 
+ *
  * Collection of available nodeGame targets
- * 
+ *
  * The target adds an additional level of semantic
  * for the message, and specifies the nature of the
  * information carried in the message.
- * 
+ *
  * It answers the question: "What is the content of the message?"
  */
     node.target = {};
@@ -7494,7 +7494,7 @@ else {
 // #### target.DATA
 // Generic identifier for any type of data
     node.target.DATA = 'DATA';
-	
+
 // #### target.HI
 // A client is connecting for the first time
     node.target.HI = 'HI';
@@ -7506,7 +7506,7 @@ else {
 // #### target.PCONNECT
 // A new client just connected to the player endpoint
     node.target.PCONNECT = 'PCONNECT';
-	
+
 // #### target.PDISCONNECT
 // A client that just disconnected from the player endpoint
     node.target.PDISCONNECT = 'PDISCONNECT';
@@ -7522,7 +7522,7 @@ else {
 // #### target.PLIST
 // The list of clients connected to the player endpoint was updated
     node.target.PLIST = 'PLIST';
-	
+
 // #### target.MLIST
 // The list of clients connected to the admin (monitor) endpoint was updated
     node.target.MLIST = 'MLIST';
@@ -7530,15 +7530,15 @@ else {
 // #### target.STATE
 // A client notifies his own state
     node.target.STATE = 'STATE';
-	
+
 // #### target.STAGE
 // A client notifies his own stage
     node.target.STAGE = 'STAGE';
-	
+
 // #### target.STAGE_LEVEL
 // A client notifies his own stage level
     node.target.STAGE_LEVEL = 'STAGE_LEVEL';
-	
+
 // #### target.REDIRECT
 // Redirects a client to a new uri
     node.target.REDIRECT = 'REDIRECT';
@@ -7546,11 +7546,11 @@ else {
 // #### target.SETUP
 // Asks a client update its configuration
     node.target.SETUP = 'SETUP';
-	
+
 // #### target.GAMECOMMAND
 // Ask a client to start/pause/stop/resume the game
     node.target.GAMECOMMAND = 'GAMECOMMAND';
-	
+
 // #### target.JOIN
 // Asks a client to join another channel/subchannel/room
     node.target.JOIN = 'JOIN';
@@ -7560,47 +7560,47 @@ else {
     node.target.LOG = 'LOG';
 
 //#### not used targets (for future development)
-	
-    node.target.TXT 		= 'TXT';	// Text msg
-	
-    // Still to implement
-    node.target.BYE			= 'BYE';	// Force disconnects
-    node.target.ACK			= 'ACK';	// A reliable msg was received correctly
 
-    node.target.WARN 		= 'WARN';	// To do.
-    node.target.ERR			= 'ERR';	// To do.
+    node.target.TXT  = 'TXT';    // Text msg
+
+    // Still to implement
+    node.target.BYE  = 'BYE';    // Force disconnects
+    node.target.ACK  = 'ACK';    // A reliable msg was received correctly
+
+    node.target.WARN = 'WARN';   // To do.
+    node.target.ERR  = 'ERR';    // To do.
 
 
 /**
  * ### Game commands
- * 
+ *
  * - node.gamecommand.start
  * - node.gamecommand.pause
  * - node.gamecommand.resume
  * - node.gamecommand.stop
  */
     node.gamecommand = {
-	start: 'start',
-	pause: 'pause',
-	resume: 'resume',
-	stop: 'stop',
-	restart: 'restart',
-	goto_stage: 'goto_stage'
+        start: 'start',
+        pause: 'pause',
+        resume: 'resume',
+        stop: 'stop',
+        restart: 'restart',
+        goto_stage: 'goto_stage'
     };
-    
 
-	
+
+
 
 /**
  * ### Direction
- * 
+ *
  * Distiguishes between incoming and outgoing messages
- * 
+ *
  * - node.IN
  * - node.OUT
  */
-    node.IN		= 'in.';
-    node.OUT	= 'out.';
+    node.IN  = 'in.';
+    node.OUT = 'out.';
 
 
 // TODO node.is is basically replaced by Game.stateLevels
@@ -7608,11 +7608,11 @@ else {
 
 /**
  * ### node.is
- * 
+ *
  * Levels associated to the states of the nodeGame engine
- * 
+ *
  * @deprecated
- */	
+ */
     node.is = {};
 
 // #### is.UNKNOWN
@@ -7626,49 +7626,49 @@ else {
 // #### is.INITIALIZED
 // The engine is fully loaded, but there is still no game
     node.is.INITIALIZED = 5;
-	
+
 // #### is.GAMELOADED
 // The engine is fully loaded, and a game has been loaded
     node.is.GAMELOADED = 10;
-	
+
 // #### is.DEAD
 // An unrecoverable error has occurred
     node.is.DEAD = -1;
-	
+
 // TODO: remove these
 // #### is.LOADING
 // A game is loading
     node.is.LOADING = 10;
-	
+
 // #### is.LOADED
 // A game has been loaded, but the GameWindow object could still require some time
     node.is.LOADED  = 25;
-	
+
 // #### is.PLAYING
 // Everything is ready
     node.is.PLAYING = 50;
-	
+
 // #### is.DONE
 // The player completed the game state
     node.is.DONE = 100;
-	
 
-	
+
+
 
 /**
  * ### node.stateLevels
- * 
+ *
  * Levels associated with the states of the Game
- */	
+ */
     node.stateLevels = {
         UNINITIALIZED:  0,  // creating the game object
-        STARTING:		1,  // starting the game
+        STARTING:       1,  // starting the game
         INITIALIZING:   2,  // calling game's init
         INITIALIZED:    5,  // init executed
-        STAGE_INIT:	   10,  // calling stage's init
-        STEP_INIT:	   20,  // calling step's init
+        STAGE_INIT:    10,  // calling stage's init
+        STEP_INIT:     20,  // calling step's init
         PLAYING_STEP:  30,  // executing step
-        FINISHING:	   40,  // calling game's gameover
+        FINISHING:     40,  // calling game's gameover
         GAMEOVER:     100,  // game complete
         RUNTIME_ERROR: -1
     };
@@ -7676,9 +7676,9 @@ else {
 
 /**
  * ### node.stageLevels
- * 
+ *
  * Levels associated with the states of the stages of the Game
- */	
+ */
     node.stageLevels = {
         UNINITIALIZED:  0,
         INITIALIZING:   1,  // executing init
@@ -7693,9 +7693,17 @@ else {
         DONE:         100
     };
 
+
+/**
+ * ### node.UNDEFINED_PLAYER
+ *
+ * Undefined player ID
+ */
+    node.UNDEFINED_PLAYER = -1;
+
 })(
-	'undefined' != typeof node ? node : module.exports,
-	'undefined' != typeof node ? node : module.parent.exports
+    'undefined' != typeof node ? node : module.exports,
+    'undefined' != typeof node ? node : module.parent.exports
 );
 
 /**
@@ -7713,15 +7721,15 @@ else {
     addDefaultRules();
 
     function getRules() {
-    	return rules;
+        return rules;
     }
 
     function get( id ) {
-    	return rules[id];
+        return rules[id];
     }
 
     function register( id, cb ) {
-    	if ('undefined' === typeof id) {
+        if ('undefined' === typeof id) {
             node.err('stepper rule id cannot be undefined');
         }
 
@@ -7736,17 +7744,15 @@ else {
     }
 
     function addDefaultRules() {
-        
-	// TODO node.Game.stageLevels -> node.stageLevels;
 
         // ### SYNC_ALL
-        // Player waits that all the clients have terminated the 
+        // Player waits that all the clients have terminated the
         // current step before going to the next
         rules['SYNC_ALL'] = function(stage, myStageLevel, pl, game) {
             return myStageLevel === node.stageLevels.DONE &&
                 pl.isStepDone(stage);
         };
-        
+
         // ### SOLO
         // Player proceeds to the next step as soon as the current one
         // is DONE, regardless to the situation of other players
@@ -7759,14 +7765,14 @@ else {
         rules['WAIT'] = function(stage, myStageLevel, pl, game) {
             return false;
         };
-    
+
         // ### SYNC_STAGE
         // Player can advance freely within the steps of one stage,
         // but has to wait before going to the next one
         rules['SYNC_STAGE'] = function(stage, myStageLevel, pl, game) {
             var iamdone = myStageLevel === node.stageLevels.DONE;
             console.log();
-            console.log('*** myStageLevel: ' + myStageLevel);
+            console.log('*** myStageLevel: ' + myStageLevel + ' (iamdone: ' + iamdone + ')');
             console.log('*** stepsToNextStage: ' + game.plot.stepsToNextStage(stage));
             console.log('*** isStepDone [upTo]: ' + pl.isStepDone(stage, true));
             if (game.plot.stepsToNextStage(stage) > 1) {
@@ -7777,6 +7783,7 @@ else {
                 return iamdone && pl.isStepDone(stage, true);
             }
         };
+
     }
 
     function clear() {
@@ -7785,9 +7792,9 @@ else {
 
     // expose the methods
     node.stepRules = {
-    	getRules: getRules,
-    	get: get,
-    	register: register,
+        getRules: getRules,
+        get: get,
+        register: register,
         clear: clear,
         addDefaultRules: addDefaultRules
     };
@@ -7795,8 +7802,8 @@ else {
 
 // ## Closure
 })(
-	'undefined' != typeof node ? node : module.exports,
-	'undefined' != typeof node ? node : module.parent.exports
+    'undefined' != typeof node ? node : module.exports,
+    'undefined' != typeof node ? node : module.parent.exports
 );
 
 /**
@@ -7862,6 +7869,21 @@ else {
     NodeGameMisconfiguredGameError.prototype = new Error();
     NodeGameMisconfiguredGameError.prototype.constructor = NodeGameMisconfiguredGameError;
     NodeGameMisconfiguredGameError.prototype.name = 'NodeGameMisconfiguredGameError';
+
+
+    /*
+     * ### NodeGameIllegalOperationError
+     *
+     * An error occurred during the configuration of the Game
+     */
+    function NodeGameIllegalOperationError() {
+        Error.apply(this, arguments);
+        this.stack = (new Error()).stack;
+    }
+
+    NodeGameIllegalOperationError.prototype = new Error();
+    NodeGameIllegalOperationError.prototype.constructor = NodeGameIllegalOperationError;
+    NodeGameIllegalOperationError.prototype.name = 'NodeGameIllegalOperationError';
 
     if (J.isNodeJS()) {
 	// TODO fix this
@@ -8734,23 +8756,23 @@ GameStage.stringify = function(gs) {
 
 /**
  * # PlayerList
- * 
+ *
  * Copyright(c) 2012 Stefano Balietti
- * MIT Licensed 
- * 
+ * MIT Licensed
+ *
  * Stores a collection of `Player` objects and offers methods
  * to perform operation on them
- * 
+ *
  * ---
- * 
+ *
  */
 
 (function (exports, node) {
 
 
 // ## Global scope
-	
-// Setting up global scope variables 
+
+// Setting up global scope variables
 var JSUS = node.JSUS,
     NDDB = node.NDDB;
 
@@ -8760,40 +8782,40 @@ var GameStage = node.GameStage,
 // Exposing constructor
 exports.PlayerList = PlayerList;
 
-// Inheriting from NDDB	
+// Inheriting from NDDB
 PlayerList.prototype = new NDDB();
 PlayerList.prototype.constructor = PlayerList;
 
 
 ///**
 // * ## PlayerList.array2Groups (static)
-// * 
+// *
 // * Transforms an array of array (of players) into an
 // * array of PlayerList instances and returns it.
-// * 
+// *
 // * The original array is modified.
-// * 
+// *
 // * @param {Array} array The array to transform
 // * @return {Array} array The array of `PlayerList` objects
-// * 
+// *
 // */
 //PlayerList.array2Groups = function (array) {
-//	if (!array) return;
-//	for (var i = 0; i < array.length; i++) {
-//		array[i] = new PlayerList({}, array[i]);
-//	};
-//	return array;
+//  if (!array) return;
+//  for (var i = 0; i < array.length; i++) {
+//      array[i] = new PlayerList({}, array[i]);
+//  };
+//  return array;
 //};
 
 /**
  * ### PlayerList.comparePlayers
- * 
+ *
  * Comparator functions between two players
- * 
+ *
  * @param {Player} p1 The first player
  * @param {Player} p2 The second player
  * @return {number} The result of the comparison
- * 
+ *
  * @see NDDB.globalCompare
  */
 PlayerList.comparePlayers = function (p1, p2) {
@@ -8807,15 +8829,15 @@ PlayerList.comparePlayers = function (p1, p2) {
  * ## PlayerList constructor
  *
  * Creates an instance of PlayerList
- * 
+ *
  * The class inherits his prototype from `node.NDDB`.
- * 
+ *
  * It indexes players by their _id_.
- * 
+ *
  * @param {object} options Optional. Configuration object
- * @param {array} db Optional. An initial set of players to import 
+ * @param {array} db Optional. An initial set of players to import
  * @param {PlayerList} parent Optional. A parent object for the instance
- * 
+ *
  * @see NDDB.constructor
  */
 function PlayerList (options, db) {
@@ -8823,32 +8845,32 @@ function PlayerList (options, db) {
     if (!options.log) options.log = node.log;
     if (!options.update) options.update = {};
     if ('undefined' === typeof options.update.indexes) {
-	options.update.indexes = true;
+        options.update.indexes = true;
     }
-	
+
     NDDB.call(this, options, db);
-  
+
     // Assigns a global comparator function
     this.globalCompare = PlayerList.comparePlayers;
-    
 
-    // We check if the index are not existing already because 
+
+    // We check if the index are not existing already because
     // it could be that the constructor is called by the breed function
-    // and in such case we would duplicate them	
+    // and in such case we would duplicate them
     if (!this.id) {
-	this.index('id', function(p) {
-	    return p.id;
-	});
+        this.index('id', function(p) {
+            return p.id;
+        });
     }
 
-    // Not sure if we need it now	
-    //	if (!this.stage) {
-    //		this.hash('stage', function(p) {
-    //			return p.stage.toHash();
-    //		}
-    //	}
-	
-    // The internal counter that will be used to assing the `count` 
+    // Not sure if we need it now
+    //  if (!this.stage) {
+    //      this.hash('stage', function(p) {
+    //          return p.stage.toHash();
+    //      }
+    //  }
+
+    // The internal counter that will be used to assing the `count`
     // property to each inserted player
     this.pcounter = this.db.length || 0;
 }
@@ -8856,116 +8878,116 @@ function PlayerList (options, db) {
 // ## PlayerList methods
 
 /**
- * ### PlayerList.add 
- * 
+ * ### PlayerList.add
+ *
  * Adds a new player to the database
- * 
+ *
  * Before insertion, objects are checked to be valid `Player` objects,
  * that is they must have a unique player id.
- * 
- * The `count` property is added to the player object, and 
+ *
+ * The `count` property is added to the player object, and
  * the internal `pcounter` variable is incremented.
- * 
+ *
  * @param {Player} player The player object to add to the database
  * @return {player|boolean} The inserted player, or FALSE if an error occurs
  */
 PlayerList.prototype.add = function (player) {
-	if (!player || 'undefined' === typeof player.id) {
-		node.err('Player id not found, cannot add object to player list.');
-		return false;
-	}
+    if (!player || 'undefined' === typeof player.id) {
+        node.err('Player id not found, cannot add object to player list.');
+        return false;
+    }
 
-	if (this.exist(player.id)) {
-		node.err('Attempt to add a new player already in the player list: ' + player.id);
-		return false;
-	}
-	
-	this.insert(player);
-	player.count = this.pcounter;
-	this.pcounter++;
-	
-	return player;
+    if (this.exist(player.id)) {
+        node.err('Attempt to add a new player already in the player list: ' + player.id);
+        return false;
+    }
+
+    this.insert(player);
+    player.count = this.pcounter;
+    this.pcounter++;
+
+    return player;
 };
 
 /**
- * ### PlayerList.get 
- * 
+ * ### PlayerList.get
+ *
  * Retrieves a player with the given id
- * 
+ *
  * @param {number} id The id of the player to retrieve
  * @return {Player|boolean} The player with the speficied id, or FALSE if none was found
  */
-PlayerList.prototype.get = function (id) {	
-	if ('undefined' === typeof id) return false; 
-	var player = this.id.get(id);
-	if (!player) {
-		node.warn('Attempt to access a non-existing player from the the player list. id: ' + id);
-		return false;
-	}
-	return player;
+PlayerList.prototype.get = function (id) {
+    if ('undefined' === typeof id) return false;
+    var player = this.id.get(id);
+    if (!player) {
+        node.warn('Attempt to access a non-existing player from the the player list. id: ' + id);
+        return false;
+    }
+    return player;
 };
 
 /**
  * ### PlayerList.remove
- * 
+ *
  * Removes the player with the given id
- * 
+ *
  * Notice: this operation cannot be undone
- * 
+ *
  * @param {number} id The id of the player to remove
- * @return {object|boolean} The removed player object, or FALSE if none was found  
+ * @return {object|boolean} The removed player object, or FALSE if none was found
  */
 PlayerList.prototype.remove = function (id) {
-	if ('undefined' === typeof id) return false; 
-	var player = this.id.pop(id);
-	if (!player) {
-		node.err('Attempt to remove a non-existing player from the the player list. id: ' + id);
-		return false;
-	}
-	return player;
+    if ('undefined' === typeof id) return false;
+    var player = this.id.pop(id);
+    if (!player) {
+        node.err('Attempt to remove a non-existing player from the the player list. id: ' + id);
+        return false;
+    }
+    return player;
 };
 
 // ### PlayerList.pop
-// @deprecated 
+// @deprecated
 // TODO remove after transition is complete
 PlayerList.prototype.pop = PlayerList.prototype.remove;
 
 /**
  * ### PlayerList.exist
- * 
+ *
  * Checks whether a player with the given id already exists
- * 
+ *
  * @param {number} id The id of the player
  * @return {boolean} TRUE, if a player with the specified id is found
  */
 PlayerList.prototype.exist = function (id) {
-	return this.id.get(id) ? true : false;
+    return this.id.get(id) ? true : false;
 };
 
 /**
  * ### PlayerList.updatePlayerStage
- * 
+ *
  * Updates the value of the `stage` object of a player
- * 
+ *
  * @param {number} id The id of the player
  * @param {GameStage} stage The new stage object
  * @return {object|boolean} The updated player object, or FALSE is an error occurred
  */
 PlayerList.prototype.updatePlayerStage = function (id, stage) {
-	
-	if (!this.exist(id)) {
-		node.warn('Attempt to access a non-existing player from the the player list ' + id);
-		return false;	
-	}
-	
-	if ('undefined' === typeof stage) {
-		node.warn('Attempt to assign to a player an undefined stage');
-		return false;
-	}
-	
-	return this.id.update(id, {
-		stage: stage
-	});
+
+    if (!this.exist(id)) {
+        node.warn('Attempt to access a non-existing player from the the player list ' + id);
+        return false;
+    }
+
+    if ('undefined' === typeof stage) {
+        node.warn('Attempt to assign to a player an undefined stage');
+        return false;
+    }
+
+    return this.id.update(id, {
+        stage: stage
+    });
 };
 
 /**
@@ -8995,16 +9017,16 @@ PlayerList.prototype.updatePlayerStageLevel = function (id, stageLevel) {
 
 /**
  * ### PlayerList.isStepDone
- * 
+ *
  * Checks whether all players have terminated the specified game step
- * 
+ *
  * A stage is considered _DONE_ if all players that are found playing
  * that game step have the property `stageLevel` equal to `Game.stageLevels.DONE`.
- * 
+ *
  * Players at other steps are ignored.
- * 
+ *
  * If no player is found at the desired step, it returns TRUE.
- * 
+ *
  * @param {GameStage} gameStage The GameStage of reference
  * @param {boolean} upTo Optional. If TRUE, all players in the stage up to the
  *  given step are checked. Defaults, FALSE.
@@ -9058,104 +9080,104 @@ PlayerList.prototype.isStepDone = function (gameStage, upTo) {
 
 /**
  * ### PlayerList.toString
- * 
- * Returns a string representation of the stage of the 
+ *
+ * Returns a string representation of the stage of the
  * PlayerList
- * 
+ *
  * @param {string} eol Optional. End of line separator between players
  * @return {string} out The string representation of the stage of the PlayerList
  */
 PlayerList.prototype.toString = function (eol) {
     var out = '', EOL = eol || '\n', stage;
     this.forEach(function(p) {
-    	out += p.id + ': ' + p.name;
-    	stage = new GameStage(p.stage);
-    	out += ': ' + stage + EOL;
+        out += p.id + ': ' + p.name;
+        stage = new GameStage(p.stage);
+        out += ': ' + stage + EOL;
     });
     return out;
 };
 
 /**
  * ### PlayerList.getNGroups
- * 
+ *
  * Creates N random groups of players
- * 
+ *
  * @param {number} N The number of groups
- * @return {Array} Array containing N `PlayerList` objects 
- * 
+ * @return {Array} Array containing N `PlayerList` objects
+ *
  * @see `JSUS.getNGroups`
  */
 PlayerList.prototype.getNGroups = function (N) {
     if (!N) return;
     var groups = JSUS.getNGroups(this.db, N);
     return PlayerList.array2Groups(groups);
-};	
+};
 
 /**
  * ### PlayerList.getGroupsSizeN
- * 
+ *
  * Creates random groups of N players
- * 
+ *
  * @param {number} N The number player per group
- * @return {Array} Array containing N `PlayerList` objects 
- * 
+ * @return {Array} Array containing N `PlayerList` objects
+ *
  * @see `JSUS.getGroupsSizeN`
  */
 PlayerList.prototype.getGroupsSizeN = function (N) {
     if (!N) return;
     var groups = JSUS.getGroupsSizeN(this.db, N);
     return PlayerList.array2Groups(groups);
-};	
+};
 
 /**
  * ### PlayerList.getRandom
- * 
- * Returns a set of N random players 
- * 
+ *
+ * Returns a set of N random players
+ *
  * @param {number} N The number of random players to include in the set. Defaults N = 1
  * @return {Player|Array} A single player object or an array of
  */
-PlayerList.prototype.getRandom = function (N) {	
-	if (!N) N = 1;
-	if (N < 1) {
-		node.err('N must be an integer >= 1');
-		return false;
-	}
-	this.shuffle();
-	return this.limit(N).fetch();
+PlayerList.prototype.getRandom = function (N) {
+    if (!N) N = 1;
+    if (N < 1) {
+        node.err('N must be an integer >= 1');
+        return false;
+    }
+    this.shuffle();
+    return this.limit(N).fetch();
 };
 
 
 /**
  * # Player Class
- * 
- * A Player object is a wrapper object for a number of properties 
- * to associate to a player during the game. 
- * 
- * Some of the properties are `private` and can never be changed 
+ *
+ * A Player object is a wrapper object for a number of properties
+ * to associate to a player during the game.
+ *
+ * Some of the properties are `private` and can never be changed
  * after an instance of a Player has been created. Defaults one are:
- * 
- * 	`sid`: The Socket.io session id associated to the player
- * 	`id`: The nodeGame session id associate to the player
- * 	`count`: The id of the player within a PlayerList object
- * 	`admin`: Whether the player is an admin
- * 	`disconnected`: Whether the player has disconnected
- * 
+ *
+ *  `sid`: The Socket.io session id associated to the player
+ *  `id`: The nodeGame session id associate to the player
+ *  `count`: The id of the player within a PlayerList object
+ *  `admin`: Whether the player is an admin
+ *  `disconnected`: Whether the player has disconnected
+ *
  * Others properties are public and can be changed during the game.
- * 
- *	`name`: An alphanumeric name associated to the player 
- *	`stage`: The current stage of the player as relative to a game
- *	`ip`: The ip address of the player
- * 
- * All the additional properties in the configuration object passed 
+ *
+ *  `name`: An alphanumeric name associated to the player
+ *  `stage`: The current stage of the player as relative to a game
+ *  `ip`: The ip address of the player
+ *
+ * All the additional properties in the configuration object passed
  * to the constructor are also created as *private* and cannot be further
- * modified during the game. 
- * 
- * For security reasons, non-default properties cannot be `function`, and 
+ * modified during the game.
+ *
+ * For security reasons, non-default properties cannot be `function`, and
  * cannot overwrite any previously existing property.
- * 
+ *
  * ---
- * 
+ *
  */
 
 
@@ -9164,99 +9186,112 @@ exports.Player = Player;
 
 /**
  * ## Player constructor
- * 
+ *
  * Creates an instance of Player
- * 
+ *
  * @param {object} pl The object literal representing the player
- * 
- * 
+ *
+ *
  */
 function Player (pl) {
-    pl = pl || {};
+    var key;
+
+    if (!pl || !pl.id) {
+        throw new TypeError('Player: invalid pl parameter');
+    }
 
     /**
      * ### Player.id
-     * 
-     * The nodeGame session id associate to the player 
-     * 
-     * Usually it is the same as the Socket.io id, but in 
+     *
+     * The nodeGame session id associate to the player
+     *
+     * Usually it is the same as the Socket.io id, but in
      * case of reconnections it can change
-     * 
-     */	
-    this.id = pl.id || this.sid;
+     *
+     */
+    this.id = pl.id;
 
     /**
      * ### Player.sid
-     * 
-     * The session id received from the nodeGame server 
-     * 
-     */	
+     *
+     * The session id received from the nodeGame server
+     *
+     */
     this.sid = pl.sid;
 
 
     /**
      * ### Player.count
-     * 
+     *
      * The ordinal position of the player in a PlayerList object
-     * 
-     * 	@see PlayerList
-     */		
+     *
+     * @see PlayerList
+     */
     this.count = pl.count;
 
     /**
      * ### Player.admin
-     * 
+     *
      * The admin status of the client
-     * 
-     */	
+     *
+     */
     this.admin = !!pl.admin;
 
     /**
      * ### Player.disconnected
-     * 
+     *
      * The connection status of the client
-     * 
-     */	
+     *
+     */
     this.disconnected = !!pl.disconnected;
 
     // ## Player public properties
 
     /**
      * ### Player.ip
-     * 
+     *
      * The ip address of the player
-     * 
+     *
      * Note: this can change in mobile networks
-     * 
-     */		
+     *
+     */
     this.ip = pl.ip;
 
     /**
      * ### Player.name
-     * 
+     *
      * An alphanumeric name associated with the player
-     * 
-     */	 
+     *
+     */
     this.name = pl.name;
 
     /**
      * ### Player.stage
-     * 
+     *
      * Reference to the game-stage the player currently is
-     * 
-     * 	@see node.game.stage
-     * 	@see GameStage
-     */		
+     *
+     * @see node.game.stage
+     * @see GameStage
+     */
     this.stage = pl.stage || new GameStage();
 
     /**
      * ### Player.stageLevel
-     * 
+     *
      * The current stage level of the player in the game
-     * 
+     *
      * @see node.stageLevels
-     */		
+     */
     this.stageLevel = pl.stageLevel || node.stageLevels.UNINITIALIZED;
+
+    /**
+     * ### Player.stateLevel
+     *
+     * The current state level of the player in the game
+     *
+     * @see node.stateLevels
+     */
+    this.stateLevel = pl.stateLevel || node.stateLevels.UNINITIALIZED;
 
 
     /**
@@ -9264,10 +9299,10 @@ function Player (pl) {
      *
      * Non-default properties are all added as private
      *
-     * For security reasons, they cannot be of type function, and they 
+     * For security reasons, they cannot be of type function, and they
      * cannot overwrite any previously defined variable
      */
-    for (var key in pl) {
+    for (key in pl) {
         if (pl.hasOwnProperty(key)) {
             if ('function' !== typeof pl[key]) {
                 if (!this.hasOwnProperty(key)) {
@@ -9282,19 +9317,19 @@ function Player (pl) {
 
 /**
  * ### Player.toString
- * 
+ *
  * Returns a string representation of a player
- * 
+ *
  * @return {string} The string representation of a player
  */
 Player.prototype.toString = function() {
-	return (this.name || '' ) + ' (' + this.id + ') ' + new GameStage(this.stage);
+    return (this.name || '' ) + ' (' + this.id + ') ' + new GameStage(this.stage);
 };
-		
-// ## Closure	
+
+// ## Closure
 })(
-	'undefined' != typeof node ? node : module.exports,
-	'undefined' != typeof node ? node : module.parent.exports
+    'undefined' != typeof node ? node : module.exports,
+    'undefined' != typeof node ? node : module.parent.exports
 );
 
 /**
@@ -11665,18 +11700,18 @@ function GameMsgGenerator () {}
  */
 GameMsgGenerator.create = function (msg) {
 
-  return new GameMsg({
-      session: 'undefined' !== typeof msg.session ? msg.session : node.socket.session, 
-      stage: 'undefined' !== typeof msg.stage ? msg.stage : node.game.stage,
-      action: msg.action || action.SAY,
-      target: msg.target || target.DATA,
-      from: node.player.sid, // TODO change to id
-      to: 'undefined' !== typeof msg.to ? msg.to : 'SERVER',
-      text: msg.text || null,
-      data: msg.data || null,
-      priority: msg.priority || null,
-      reliable: msg.reliable || 1
-  });
+    return new GameMsg({
+        session: 'undefined' !== typeof msg.session ? msg.session : node.socket.session, 
+           stage: 'undefined' !== typeof msg.stage ? msg.stage : node.game.stage,
+           action: msg.action || action.SAY,
+           target: msg.target || target.DATA,
+           from: node.player ? node.player.sid : node.UNDEFINED_PLAYER, // TODO change to id
+           to: 'undefined' !== typeof msg.to ? msg.to : 'SERVER',
+           text: msg.text || null,
+           data: msg.data || null,
+           priority: msg.priority || null,
+           reliable: msg.reliable || 1
+    });
 
 };
 
@@ -11872,46 +11907,45 @@ Socket.prototype.onDisconnect = function() {
 };
 
 Socket.prototype.onMessage = function(msg) {
-	
     msg = this.secureParse(msg);
     if (!msg) return;
-    
+
     var sessionObj;
-	
+
     // Parsing successful
     if (msg.target === 'HI') {
-	
-	// replace itself: will change onMessage
-	this.attachMsgListeners();
-	
-	this.startSession(msg);
-	
-	sessionObj = node.store(msg.session);
-	
-	if (false) {
-	    //if (sessionObj) {
-	    node.session.restore(sessionObj);
-			
-	    msg = node.msg.create({
-		target: 'HI_AGAIN',
-		data: node.player
-	    });
-	    
-	    this.send(msg);
-	    
-	}
-	else {
-	    node.store(msg.session, node.session.save());
-	    
-	    // send HI to ALL
-	    this.send(node.msg.create({
-		target: 'HI',
-		to: 'ALL',
-		data: node.player
-	    }));
 
-	}
-	
+        // replace itself: will change onMessage
+        this.attachMsgListeners();
+
+        this.startSession(msg);
+
+        sessionObj = node.store(msg.session);
+
+        if (false) {
+            //if (sessionObj) {
+            node.session.restore(sessionObj);
+
+            msg = node.msg.create({
+                target: 'HI_AGAIN',
+                data: node.player
+            });
+
+            this.send(msg);
+
+        }
+        else {
+            node.store(msg.session, node.session.save());
+
+            // send HI to ALL
+            this.send(node.msg.create({
+                target: 'HI',
+                to: 'ALL',
+                data: node.player
+            }));
+
+        }
+
     } 
 };
 
@@ -12000,10 +12034,10 @@ Socket.prototype.startSession = function (msg) {
     var player;
     // Store server info
     this.registerServer(msg);
-    
+
     player = {
-	id: msg.data,	
-	sid: msg.data
+        id: msg.data,	
+        sid: msg.data
     };
     node.createPlayer(player);
     this.session = msg.session;
@@ -12025,10 +12059,15 @@ Socket.prototype.startSession = function (msg) {
 */
 Socket.prototype.send = function(msg) {
     if (!this.socket) {
-	node.err('socket cannot send message. No open socket.');
-	return false;
+        node.err('socket cannot send message. No open socket.');
+        return false;
     }
-    
+
+    if (msg.from === node.UNDEFINED_PLAYER) {
+        node.err('socket cannot send message. Player undefined.');
+        return false;
+    }
+
     this.socket.send(msg);
     node.info('S: ' + msg);
     return true;
@@ -12623,20 +12662,20 @@ Game.prototype.gameover = function() {
         return;
     }
 
-	node.emit('GAMEOVER');
+    node.emit('GAMEOVER');
 
-	// Call gameover callback, if it exists:
-	if (this.plot && this.plot.stager) {
-		onGameover = this.plot.stager.getOnGameover();
-		if (onGameover) {
-			this.setStateLevel(node.stateLevels.FINISHING);
+    // Call gameover callback, if it exists:
+    if (this.plot && this.plot.stager) {
+        onGameover = this.plot.stager.getOnGameover();
+        if (onGameover) {
+            this.setStateLevel(node.stateLevels.FINISHING);
 
-			onGameover.call(node.game);
-		}
-	}
+            onGameover.call(node.game);
+        }
+    }
 
-	this.setStateLevel(node.stateLevels.GAMEOVER);
-	this.setStageLevel(node.stageLevels.DONE);
+    this.setStateLevel(node.stateLevels.GAMEOVER);
+    this.setStageLevel(node.stageLevels.DONE);
 };
 
 /**
@@ -12677,7 +12716,7 @@ Game.prototype.shouldStep = function() {
     stepRule = this.plot.getStepRule(this.getCurrentGameStage());
 
     if ('function' !== typeof stepRule) {
-	throw new node.NodeGameMisconfiguredGameError("step rule is not a function");
+        throw new node.NodeGameMisconfiguredGameError("step rule is not a function");
     }
 
     if (stepRule(this.getCurrentGameStage(), this.getStageLevel(), this.pl, this)) {
@@ -12715,8 +12754,8 @@ Game.prototype.step = function() {
 
     if ('string' === typeof nextStep) {
         if (nextStep === GamePlot.GAMEOVER) {
-			this.gameover();
-			return null;
+            this.gameover();
+            return null;
         }
 
         // else do nothing
@@ -12755,12 +12794,12 @@ Game.prototype.step = function() {
 
         // Execute the init function of the step, if any:
         if (nextStepObj.hasOwnProperty('init')) {
-			this.setStateLevel(node.stateLevels.STEP_INIT);
+            this.setStateLevel(node.stateLevels.STEP_INIT);
             this.setStageLevel(node.stageLevels.INITIALIZING);
             nextStepObj.init.call(node.game);
         }
 
-		this.setStateLevel(node.stateLevels.PLAYING_STEP);
+        this.setStateLevel(node.stateLevels.PLAYING_STEP);
         this.setStageLevel(node.stageLevels.INITIALIZED);
 
         // Load the listeners for the step, if any:
@@ -12790,7 +12829,7 @@ Game.prototype.execStep = function(stage) {
     var cb, res;
 
     if (!stage || 'object' !== typeof stage) {
-	throw new node.NodeGameRuntimeError('game.execStep requires a valid object');
+        throw new node.NodeGameRuntimeError('game.execStep requires a valid object');
     }
     
     cb = stage.cb;
@@ -13854,489 +13893,454 @@ SessionManager.prototype.store = function() {
 
 /**
  * # nodeGame
- * 
+ *
  * Social Experiments in the Browser
- * 
+ *
  * Copyright(c) 2012 Stefano Balietti MIT Licensed
- * 
+ *
  * *nodeGame* is a free, open source, event-driven javascript framework for on
  * line, multiplayer games in the browser.
- * 
+ *
  * ---
- * 
+ *
  */
 (function (exports, node) {
-		
+
     var EventEmitterManager = node.EventEmitterManager,
         EventEmitter = node.EventEmitter,
-	Socket = node.Socket,
-	GameStage = node.GameStage,
-	GameMsg = node.GameMsg,
-	Game = node.Game,
-	Player = node.Player,
-	GameSession = node.GameSession,
-	J = node.JSUS;		
-	
+        Socket = node.Socket,
+        GameStage = node.GameStage,
+        GameMsg = node.GameMsg,
+        Game = node.Game,
+        Player = node.Player,
+        GameSession = node.GameSession,
+        J = node.JSUS;
+
 // ## Methods
-	
-	
+
+
 /**
  * ### node.env
- * 
- * Executes a block of code conditionally to nodeGame environment variables  
- * 
+ *
+ * Executes a block of code conditionally to nodeGame environment variables
+ *
  * @param env {string} The name of the environment
  * @param func {function} The callback function to execute
  * @param ctx {object} Optional. The context of execution
  * @param params {array} Optional. An array of additional parameters for the callback
- * 
- */	
+ *
+ */
     node.env = function (env, func, ctx, params) {
-	if (!env || !func || !node.env[env]) return;
-	ctx = ctx || node;
-	params = params || [];
-	func.apply(ctx, params);
+        if (!env || !func || !node.env[env]) return;
+        ctx = ctx || node;
+        params = params || [];
+        func.apply(ctx, params);
     };
-	
-		
+
+
 /**
  * ### node.createPlayer
- * 
- * Mixes in default properties for the player object and
- * additional configuration variables from node.conf.player
- * 
- * Writes the node.player object
- * 
- * Properties: `id`, `sid`, `ip` can never be overwritten.
- * 
- * Properties added as local configuration cannot be further
- * modified during the game. 
- * 
- * Only the property `name`, can be changed.
- * 
+ *
+ * Creates player
  */
     node.createPlayer = function (player) {
-	
-	player = new Player(player);
-	
-	if (node.conf && node.conf.player) {			
-	    var pconf = node.conf.player;
-	    for (var key in pconf) {
-		if (pconf.hasOwnProperty(key)) {
-		    if (J.inArray(key, ['id', 'sid', 'ip'])) {
-			continue;
-		    } 
-		    
-		    // Cannot be overwritten properties previously 
-		    // set in other sessions (recovery)
-		    //						if (player.hasOwnProperty(key)) {
-		    //							continue;
-		    //						}
-		    if (node.support.defineProperty) {
-			Object.defineProperty(player, key, {
-			    value: pconf[key],
-			    enumerable: true
-			});
-		    }
-		    else {
-			player[key] = pconf[key];
-		    }
-		}
-	    }
-	}
-	
-	
-	if (node.support.defineProperty) {
-	    Object.defineProperty(node, 'player', {
-		value: player,
-		enumerable: true
-	    });
-	}
-	else {
-	    node.player = player;
-	}
-	
-	node.emit('PLAYER_CREATED', player);
-	
-	return player;
-    };	
-	
+        player = new Player(player);
+
+        if (node.player &&
+                node.player.stateLevel >= node.stateLevels.STARTING &&
+                node.player.stateLevel !== node.stateLevels.GAMEOVER) {
+            throw new node.NodeGameIllegalOperationError(
+                    'createPlayer: cannot create player while game is running');
+        }
+
+        // Overwrite existing 'current' player:
+        if (node.player) {
+            node.game.pl.remove(node.player.id);
+        }
+
+        node.player = node.game.pl.add(player);
+
+        node.emit('PLAYER_CREATED', node.player);
+
+        return node.player;
+    };
+
 /**
  * ### node.connect
- * 
+ *
  * Establishes a connection with a nodeGame server
- * 
+ *
  * @param {object} conf A configuration object
  * @param {object} game The game object
- */		
-    node.connect = function (url) {	
-	if (node.socket.connect(url)) {
-	    node.emit('NODEGAME_CONNECTED');
-	}
-    };	
+ */
+    node.connect = function (url) {
+        if (node.socket.connect(url)) {
+            node.emit('NODEGAME_CONNECTED');
+        }
+    };
 
-	
+
 /**
  * ### node.play
- * 
+ *
  * Starts a game
- */	
-    node.play = function() {	
+ */
+    node.play = function() {
         node.game.start();
     };
-	
+
 /**
  * ### node.replay
- * 
+ *
  * Moves the game stage to 1.1.1
- * 
+ *
  * @param {boolean} rest TRUE, to erase the game memory before update the game stage
- */	
+ */
     node.replay = function (reset) {
         if (reset) node.game.memory.clear(true);
         node.game.execStep(node.plot.getStep("1.1.1"));
-    };	
-	
-	
+    };
+
+
 /**
  * ### node.emit
- * 
+ *
  * Emits an event locally on all registered event handlers
  *
- * The first parameter be the name of the event as _string_, 
+ * The first parameter be the name of the event as _string_,
  * followed by any number of parameters that will be passed to the
  * handler callback.
- * 
+ *
  * @see EventEmitterManager.emit
- */	
-    node.emit = function () {	
-	node.events.emit.apply(node.events, arguments);
-    };	
-	
+ */
+    node.emit = function () {
+        node.events.emit.apply(node.events, arguments);
+    };
+
 /**
  * ### node.say
- * 
+ *
  * Sends a DATA message to a specified recipient
- * 
+ *
  * @param {string} text The label associated to the message
  * @param {string} to Optional. The recipient of the message. Defaults, 'SERVER'
  * @param {mixed} data Optional. The content of the DATA message
- *  
- */	
+ *
+ */
     node.say = function (label, to, payload) {
-	var msg;
+        var msg;
 
-	if ('undefined' === typeof label) {
-	    node.err('cannot say empty message');
-	    return false;
-	}
+        if ('undefined' === typeof label) {
+            node.err('cannot say empty message');
+            return false;
+        }
 
-	msg = node.msg.create({
-	    target: node.target.DATA,
-	    to: to || 'SERVER',
-	    text: label,
-	    data: payload
-	});
-	// @TODO when refactoring is finished, emit this event.
-	// By default there nothing should happen, but people could listen to it
-	//node.emit('out.say.DATA', msg);
-	this.socket.send(msg);
+        msg = node.msg.create({
+            target: node.target.DATA,
+            to: to || 'SERVER',
+            text: label,
+            data: payload
+        });
+        // @TODO when refactoring is finished, emit this event.
+        // By default there nothing should happen, but people could listen to it
+        //node.emit('out.say.DATA', msg);
+        this.socket.send(msg);
     };
-	
+
 /**
  * ### node.set
- * 
+ *
  * Stores a key-value pair in the server memory
- * 
- * 
- * 
+ *
+ *
+ *
  * @param {string} key An alphanumeric (must not be unique)
  * @param {mixed} The value to store (can be of any type)
- * 
+ *
  */
     node.set = function (key, value, to) {
-	var msg;
+        var msg;
 
-	if ('undefined' === typeof key) {
-	    node.err('cannot set undefined key');
-	    return false;
-	}
+        if ('undefined' === typeof key) {
+            node.err('cannot set undefined key');
+            return false;
+        }
 
-	msg = node.msg.create({
-	    action: node.action.SET,
-	    target: node.target.DATA,
-	    to: to || 'SERVER',
-	    reliable: 1,
-	    text: key,
-	    data: value
-	});
-	// @TODO when refactoring is finished, emit this event.
-	// By default there nothing should happen, but people could listen to it
-	//node.emit('out.set.DATA', msg);
-	this.socket.send(msg);
+        msg = node.msg.create({
+            action: node.action.SET,
+            target: node.target.DATA,
+            to: to || 'SERVER',
+            reliable: 1,
+            text: key,
+            data: value
+        });
+        // @TODO when refactoring is finished, emit this event.
+        // By default there nothing should happen, but people could listen to it
+        //node.emit('out.set.DATA', msg);
+        this.socket.send(msg);
     };
-	
+
 
 /**
  * ### node.get
- * 
- * Sends a GET message to a recipient and listen to the reply 
- * 
+ *
+ * Sends a GET message to a recipient and listen to the reply
+ *
  * @param {string} key The label of the GET message
  * @param {function} cb The callback function to handle the return message
  *
  * Experimental. Undocumented (for now)
- */	
+ */
     node.get = function (key, cb, to) {
-	var msg, g, ee;
+        var msg, g, ee;
 
-	if ('undefined' === typeof key) {
-	    node.err('cannot get empty key');
-	    return false;
-	}
+        if ('undefined' === typeof key) {
+            node.err('cannot get empty key');
+            return false;
+        }
 
-	if ('function' !== typeof cb) {
-	    node.err('node.get requires a valid callback function');
-	    return false;
-	}
-	
-	msg = node.msg.create({
-	    action: node.action.GET,
-	    target: node.target.DATA,
-	    to: to || 'SERVER',
-	    reliable: 1,
-	    text: key
-	});
-	
-	// @TODO when refactoring is finished, emit this event.
-	// By default there nothing should happen, but people could listen to it
-	//node.events.emit('out.get.DATA', msg);
-	
-	ee = node.getCurrentEventEmitter();
+        if ('function' !== typeof cb) {
+            node.err('node.get requires a valid callback function');
+            return false;
+        }
 
-	function g(msg) {
-	    if (msg.text === key) {
-		cb.call(node.game, msg.data);
-		ee.remove('in.say.DATA', g);
-	    }
-	};
-	
-	ee.on('in.say.DATA', g);
+        msg = node.msg.create({
+            action: node.action.GET,
+            target: node.target.DATA,
+            to: to || 'SERVER',
+            reliable: 1,
+            text: key
+        });
+
+        // @TODO when refactoring is finished, emit this event.
+        // By default there nothing should happen, but people could listen to it
+        //node.events.emit('out.get.DATA', msg);
+
+        ee = node.getCurrentEventEmitter();
+
+        function g(msg) {
+            if (msg.text === key) {
+                cb.call(node.game, msg.data);
+                ee.remove('in.say.DATA', g);
+            }
+        };
+
+        ee.on('in.say.DATA', g);
     };
 
 /**
  * ### node.on
- * 
+ *
  * Registers an event listener
- * 
+ *
  * Listeners registered before a game is started, e.g. in
- * the init function of the game object, will stay valid 
- * throughout the game. Listeners registered after the game 
+ * the init function of the game object, will stay valid
+ * throughout the game. Listeners registered after the game
  * is started will be removed after the game has advanced
- * to its next stage. 
- * 
+ * to its next stage.
+ *
  * @param {string} event The name of the event
  * @param {function} listener The callback function
- */	
+ */
     node.on = function (event, listener) {
-	var ee;
-	ee = node.getCurrentEventEmitter();
-	ee.on(event, listener);
+        var ee;
+        ee = node.getCurrentEventEmitter();
+        ee.on(event, listener);
     };
 
 /**
  * ### node.done
- * 
+ *
  * Emits a DONE event
- * 
- * A DONE event signals that the player has completed 
- * a game step. After a DONE event the step rules are 
+ *
+ * A DONE event signals that the player has completed
+ * a game step. After a DONE event the step rules are
  * evaluated.
- * 
+ *
  * Accepts any number of input parameters that will be
  * passed to the `node.emit`.
  *
  * @see node.emit
  * @emits DONE
- */	
+ */
     node.done = function() {
-	var args, len;
-	switch(arguments.length) {
-	    
-	case 0:
-	    node.emit('DONE');
-	    break;
-	case 1:
-	    node.emit('DONE', arguments[0]);
-	    break;
-	case 2:
-	    node.emit('DONE', arguments[0], arguments[1]);
-	    break;
-	default:
-	
-	    len = arguments.length;
-	    args = new Array(len - 1);
-	    for (i = 1; i < len; i++) {
-		args[i - 1] = arguments[i];
-	    }
-	    node.emit.apply('DONE', args);
-	}
+        var args, len;
+        switch(arguments.length) {
+
+        case 0:
+            node.emit('DONE');
+            break;
+        case 1:
+            node.emit('DONE', arguments[0]);
+            break;
+        case 2:
+            node.emit('DONE', arguments[0], arguments[1]);
+            break;
+        default:
+
+            len = arguments.length;
+            args = new Array(len - 1);
+            for (i = 1; i < len; i++) {
+                args[i - 1] = arguments[i];
+            }
+            node.emit.apply('DONE', args);
+        }
     };
 
 /**
  * ### node.getCurrentEventEmitter
- * 
+ *
  * Returns the last active event emitter obj
- * 
+ *
  * TODO: finish the method
- * 
+ *
  * TODO: add proper doc
- * 
+ *
  * @param {EventEmitter} The current event emitter obj
  */
     node.getCurrentEventEmitter = function() {
-	// NodeGame default listeners
-	if (!node.game || !node.game.getCurrentGameStage()) {
-	    return node.events.ee.ng;
-	}	
+        // NodeGame default listeners
+        if (!node.game || !node.game.getCurrentGameStage()) {
+            return node.events.ee.ng;
+        }
 
-	// It is a game init function
-	if ((GameStage.compare(node.game.getCurrentGameStage(), new GameStage()) === 0 )) {
-	    return node.events.ee.game;
-	}
+        // It is a game init function
+        if ((GameStage.compare(node.game.getCurrentGameStage(), new GameStage()) === 0 )) {
+            return node.events.ee.game;
+        }
 
-	// TODO return the stage ee
+        // TODO return the stage ee
 
-	// It is a game step function
-	else {
-	    return node.events.ee.step;
-	}
+        // It is a game step function
+        else {
+            return node.events.ee.step;
+        }
     };
 
 /**
  * ### node.once
- * 
- * Registers an event listener that will be removed 
+ *
+ * Registers an event listener that will be removed
  * after its first invocation
- * 
+ *
  * @param {string} event The name of the event
  * @param {function} listener The callback function
- * 
+ *
  * @see node.on
  * @see node.off
- */		
+ */
     node.once = function (event, listener) {
-	if (!event || !listener) return;
-	node.on(event, listener);
-	node.on(event, function(event, listener) {
-	    node.events.remove(event, listener);
-	});
+        if (!event || !listener) return;
+        node.on(event, listener);
+        node.on(event, function(event, listener) {
+            node.events.remove(event, listener);
+        });
     };
-	
+
 /**
  * ### node.off
- * 
+ *
  * Deregisters one or multiple event listeners
- * 
+ *
  * @param {string} event The name of the event
  * @param {function} listener The callback function
- * 
+ *
  * @see node.on
  * @see node.EventEmitter.remove
- */			
+ */
     node.off  = function (event, func) {
-	return node.events.remove(event, func);
-    };	
-	
+        return node.events.remove(event, func);
+    };
+
 /**
  * ### node.redirect
- * 
+ *
  * Redirects a player to the specified url
- * 
+ *
  * Works only if it is a monitor client to send
- * the message, i.e. players cannot redirect each 
+ * the message, i.e. players cannot redirect each
  * other.
- * 
+ *
  * Examples
- *  
- * 	// Redirect to http://mydomain/mygame/missing_auth
- * 	node.redirect('missing_auth', 'xxx'); 
- * 
+ *
+ *  // Redirect to http://mydomain/mygame/missing_auth
+ *  node.redirect('missing_auth', 'xxx');
+ *
  *  // Redirect to external urls
  *  node.redirect('http://www.google.com');
- * 
+ *
  * @param {string} url the url of the redirection
  * @param {string} who A player id or 'ALL'
  * @return {boolean} TRUE, if the redirect message is sent
- */	
+ */
     node.redirect = function (url, who) {
-	var msg;
-	if ('string' !== typeof url) {
-	    node.err('redirect requires a valid string');
-	    return false;
-	}
-	if ('undefined' === typeof who) {
-	    node.err('redirect requires a valid recipient');
-	    return false;
-	}   
-	msg = node.msg.create({
-	    target: node.target.REDIRECT,
-	    data: url,
-	    to: who
-	});
-	node.socket.send(msg);
-	return true;
+        var msg;
+        if ('string' !== typeof url) {
+            node.err('redirect requires a valid string');
+            return false;
+        }
+        if ('undefined' === typeof who) {
+            node.err('redirect requires a valid recipient');
+            return false;
+        }
+        msg = node.msg.create({
+            target: node.target.REDIRECT,
+            data: url,
+            to: who
+        });
+        node.socket.send(msg);
+        return true;
     };
 
 /**
  * ### node.remoteCommand
- * 
+ *
  * Executes a game command on a client
- * 
+ *
  * Works only if it is a monitor client to send
- * the message, i.e. players cannot send game commands 
+ * the message, i.e. players cannot send game commands
  * to each others
- * 
+ *
  * @param {string} command The command to execute
  * @param {string} to The id of the player to command
  * @return {boolean} TRUE, if the game command is sent
- */	
+ */
     node.remoteCommand = function (command, to, options) {
-	var msg;
-	if (!command) {
-	    node.err('remoteCommand requires a valid command');
-	    return false;
-	}
-	if ('undefined' === typeof to) {
-	    node.err('remoteCommand requires a valid recipient');
-	    return false;
-	}  
-		
-	msg = node.msg.create({
-	    target: node.target.GAMECOMMAND,
-	    text: command,
-	    data: options,
-	    to: to
-	});
-	return node.socket.send(msg);
+        var msg;
+        if (!command) {
+            node.err('remoteCommand requires a valid command');
+            return false;
+        }
+        if ('undefined' === typeof to) {
+            node.err('remoteCommand requires a valid recipient');
+            return false;
+        }
+
+        msg = node.msg.create({
+            target: node.target.GAMECOMMAND,
+            text: command,
+            data: options,
+            to: to
+        });
+        return node.socket.send(msg);
     };
-	
+
     node.info(node.version + ' loaded');
-	
-	
+
+
     // Creating the objects
     // <!-- object commented in index.js -->
     node.events = new EventEmitterManager();
 
-    node.msg = node.GameMsgGenerator;	
-	
+    node.msg = node.GameMsgGenerator;
+
     node.session = new GameSession();
-	
+
     node.socket = new Socket();
-	
+
     node.game = new Game();
-	
-	
+
+
 })(
     this
  ,  'undefined' != typeof node ? node : module.parent.exports
@@ -14648,7 +14652,13 @@ node.setup.register('game_metadata', function(metadata) {
  * @see node.Player
  * @see node.createPlayer
  */
-node.setup.register('player', node.createPlayer);
+node.setup.register('player', function(player) {
+    if (!player) {
+        return null;
+    }
+
+    return node.createPlayer(player);
+});
 
 /**
  * ### node.setup.plot
@@ -14714,6 +14724,40 @@ node.setup.register('plist', function(playerList, updateRule) {
     }
 
     return node.game.pl;
+});
+
+/**
+ * ### node.setup.mlist
+ *
+ * TODO: docs, merge with plist
+ * Updates the PlayerList in Game
+ *
+ * @param {PlayerList} playerList The new PlayerList
+ * @param {string} updateRule Optional. Whether to 'replace' (default) or
+ *  to 'append'.
+ *
+ * @see node.game.plot
+ * @see Stager.setState
+ */
+node.setup.register('mlist', function(playerList, updateRule) {
+    if (!node.game || !node.game.ml) {
+        node.warn("register('mlist') called before node.game was initialized");
+        throw new NodeGameMisconfiguredGameError("node.game non-existent");
+    }
+
+    if (playerList) {
+        if (!updateRule || updateRule === 'replace') {
+            node.game.ml.clear(true);
+        }
+        else if (updateRule !== 'append') {
+            throw new NodeGameMisconfiguredGameError(
+                    "register('plist') got invalid updateRule");
+        }
+
+        node.game.ml.importDB(playerList);
+    }
+
+    return node.game.ml;
 });
 
 
@@ -14930,64 +14974,64 @@ var GameMsg = node.GameMsg,
 
 /**
  * # Setup
- * 
+ *
  * Copyright(c) 2012 Stefano Balietti
- * MIT Licensed 
- * 
+ * MIT Licensed
+ *
  * `nodeGame` random operation module
- * 
+ *
  * ---
- * 
+ *
  */
 
 (function (exports, node) {
-	
+
 // ## Global scope
-	
+
 var GameMsg = node.GameMsg,
-	Player = node.Player,
-	GameMsgGenerator = node.GameMsgGenerator,
-	J = node.JSUS;
+    Player = node.Player,
+    GameMsgGenerator = node.GameMsgGenerator,
+    J = node.JSUS;
 //## Extra
 
 node.random = {};
 
 /**
 * ### node.random.emit
-* 
-* Emits an event after a random time interval between 0 and maxWait 
-* 
+*
+* Emits an event after a random time interval between 0 and maxWait
+*
 * @param {string} event The name of the event
 * @param {number} maxWait Optional. The maximum time (in milliseconds)
-* 	to wait before emitting the event. to Defaults, 6000
-*/	
-	node.random.emit = function (event, maxWait){
-		maxWait = maxWait || 6000;
-		setTimeout(function(event) {
-			node.emit(event);
-		}, Math.random() * maxWait, event);
-	};
+*   to wait before emitting the event. to Defaults, 6000
+*/
+    node.random.emit = function (event, maxWait){
+        maxWait = maxWait || 6000;
+        setTimeout(function(event) {
+            node.emit(event);
+        }, Math.random() * maxWait, event);
+    };
 
 /**
-* ### node.random.exec 
-* 
-* Executes a callback function after a random time interval between 0 and maxWait 
-* 
+* ### node.random.exec
+*
+* Executes a callback function after a random time interval between 0 and maxWait
+*
 * @param {function} The callback function to execute
-* @param {number} maxWait Optional. The maximum time (in milliseconds) 
-* 	to wait before executing the callback. to Defaults, 6000
-*/	
-	node.random.exec = function (func, maxWait) {
-		maxWait = maxWait || 6000;
-		setTimeout(function(func) {
-			func.call();
-		}, Math.random() * maxWait, func);
-	};	
+* @param {number} maxWait Optional. The maximum time (in milliseconds)
+*   to wait before executing the callback. to Defaults, 6000
+*/
+    node.random.exec = function (func, maxWait) {
+        maxWait = maxWait || 6000;
+        setTimeout(function(func) {
+            func.call();
+        }, Math.random() * maxWait, func);
+    };
 
 
 })(
-	'undefined' != typeof node ? node : module.exports,
-	'undefined' != typeof node ? node : module.parent.exports
+    'undefined' != typeof node ? node : module.exports,
+    'undefined' != typeof node ? node : module.parent.exports
 );
 
 // # Incoming listeners
@@ -15210,7 +15254,7 @@ node.events.ng.on( IN + say + 'REDIRECT', function (msg) {
 node.events.ng.on( IN + say + 'SETUP', function (msg) {
     if (!msg.text) return;
     var feature = msg.text,
-        payload = JSUS.parse(msg.data);
+        payload = ('string' === typeof msg.data) ? J.parse(msg.data) : msg.data;
     
     if (!payload) {
 	node.err('error while parsing incoming remote setup message');
