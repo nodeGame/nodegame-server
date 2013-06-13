@@ -7215,16 +7215,6 @@ node.game.memory = null;
 
 
 /**
- * ### node.game.state
- * 
- * Keeps track of the state of the game
- * 
- * @see node.GameState
- */
-node.game.stateLevel = null;
-
-
-/**
  * ### node.store
  * 
  * Makes the nodeGame session persistent, saving it
@@ -7825,6 +7815,7 @@ else {
     node.NodeGameRuntimeError = NodeGameRuntimeError;
     node.NodeGameStageCallbackError = NodeGameStageCallbackError;
     node.NodeGameMisconfiguredGameError = NodeGameMisconfiguredGameError;
+    node.NodeGameIllegalOperationError = NodeGameIllegalOperationError;
 
     /*
      * ### NodeGameRuntimeError
@@ -12859,11 +12850,11 @@ Game.prototype.execStep = function(stage) {
 };
 
 Game.prototype.getStateLevel = function() {
-    return this.stateLevel;
+    return node.player.stateLevel;
 };
 
 Game.prototype.getStageLevel = function() {
-    return this.stageLevel;
+    return node.player.stageLevel;
 };
 
 Game.prototype.getCurrentStep = function() {
@@ -12871,7 +12862,7 @@ Game.prototype.getCurrentStep = function() {
 };
 
 Game.prototype.getCurrentGameStage = function() {
-    return this.currentGameStage;
+    return node.player.stage;
 };
 
 // ERROR, WORKING, etc
@@ -12881,7 +12872,7 @@ Game.prototype.setStateLevel = function(stateLevel) {
                 'setStateLevel called with invalid parameter: ' + stateLevel);
     }
 
-    this.stateLevel = stateLevel;
+    node.player.stateLevel = stateLevel;
     // TODO do we need to publish this kinds of update?
     //this.publishUpdate();
 };
@@ -12894,18 +12885,18 @@ Game.prototype.setStageLevel = function(stageLevel) {
                 'setStageLevel called with invalid parameter: ' + stageLevel);
     }
     this.publishStageLevelUpdate(stageLevel);
-    this.stageLevel = stageLevel;
+    node.player.stageLevel = stageLevel;
 };
 
 Game.prototype.setCurrentGameStage = function(gameStage) {
     gameStage = new GameStage(gameStage);
     this.publishGameStageUpdate(gameStage);
-    this.currentGameStage = gameStage;
+    node.player.stage = gameStage;
 };
 
 Game.prototype.publishStageLevelUpdate = function(stageLevel) {
     // Publish update:
-    if (!this.observer && this.stageLevel !== stageLevel) {
+    if (!this.observer && node.player.stageLevel !== stageLevel) {
         node.socket.send(node.msg.create({
             target: node.target.STAGE_LEVEL,
             data: stageLevel,
@@ -12916,7 +12907,7 @@ Game.prototype.publishStageLevelUpdate = function(stageLevel) {
 
 Game.prototype.publishGameStageUpdate = function(gameStage) {
     // Publish update:
-    if (!this.observer && this.currentGameStage !== gameStage) {
+    if (!this.observer && node.player.stage !== gameStage) {
         node.socket.send(node.msg.create({
             target: node.target.STAGE,
             data: gameStage,
@@ -13947,7 +13938,7 @@ SessionManager.prototype.store = function() {
         player = new Player(player);
 
         if (node.player &&
-                node.player.stateLevel >= node.stateLevels.STARTING &&
+                node.player.stateLevel > node.stateLevels.STARTING &&
                 node.player.stateLevel !== node.stateLevels.GAMEOVER) {
             throw new node.NodeGameIllegalOperationError(
                     'createPlayer: cannot create player while game is running');
@@ -14616,7 +14607,7 @@ node.setup.register('window', function(conf) {
 node.setup.register('game_settings', function(settings) {
     if (!node.game) {
         node.warn("register('game_settings') called before node.game was initialized");
-        throw new NodeGameMisconfiguredGameError("node.game non-existent");
+        throw new node.NodeGameMisconfiguredGameError("node.game non-existent");
     }
 
     if (settings) {
@@ -14634,7 +14625,7 @@ node.setup.register('game_settings', function(settings) {
 node.setup.register('game_metadata', function(metadata) {
     if (!node.game) {
         node.warn("register('game_metadata') called before node.game was initialized");
-        throw new NodeGameMisconfiguredGameError("node.game non-existent");
+        throw new node.NodeGameMisconfiguredGameError("node.game non-existent");
     }
 
     if (metadata) {
@@ -14675,7 +14666,7 @@ node.setup.register('player', function(player) {
 node.setup.register('plot', function(stagerState, updateRule) {
     if (!node.game) {
         node.warn("register('plot') called before node.game was initialized");
-        throw new NodeGameMisconfiguredGameError("node.game non-existent");
+        throw new node.NodeGameMisconfiguredGameError("node.game non-existent");
     }
 
     stagerState = stagerState || {};
@@ -14708,7 +14699,7 @@ node.setup.register('plot', function(stagerState, updateRule) {
 node.setup.register('plist', function(playerList, updateRule) {
     if (!node.game || !node.game.pl) {
         node.warn("register('plist') called before node.game was initialized");
-        throw new NodeGameMisconfiguredGameError("node.game non-existent");
+        throw new node.NodeGameMisconfiguredGameError("node.game non-existent");
     }
 
     if (playerList) {
@@ -14716,7 +14707,7 @@ node.setup.register('plist', function(playerList, updateRule) {
             node.game.pl.clear(true);
         }
         else if (updateRule !== 'append') {
-            throw new NodeGameMisconfiguredGameError(
+            throw new node.NodeGameMisconfiguredGameError(
                     "register('plist') got invalid updateRule");
         }
 
@@ -14742,7 +14733,7 @@ node.setup.register('plist', function(playerList, updateRule) {
 node.setup.register('mlist', function(playerList, updateRule) {
     if (!node.game || !node.game.ml) {
         node.warn("register('mlist') called before node.game was initialized");
-        throw new NodeGameMisconfiguredGameError("node.game non-existent");
+        throw new node.NodeGameMisconfiguredGameError("node.game non-existent");
     }
 
     if (playerList) {
@@ -14750,7 +14741,7 @@ node.setup.register('mlist', function(playerList, updateRule) {
             node.game.ml.clear(true);
         }
         else if (updateRule !== 'append') {
-            throw new NodeGameMisconfiguredGameError(
+            throw new node.NodeGameMisconfiguredGameError(
                     "register('plist') got invalid updateRule");
         }
 
