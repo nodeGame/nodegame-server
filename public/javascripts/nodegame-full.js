@@ -7737,12 +7737,14 @@ else {
 
     function addDefaultRules() {
         
+	// TODO node.Game.stageLevels -> node.stageLevels;
+
         // ### SYNC_ALL
         // Player waits that all the clients have terminated the 
         // current step before going to the next
         rules['SYNC_ALL'] = function(stage, myStageLevel, pl, game) {
             return myStageLevel === node.stageLevels.DONE &&
-                pl.isStageDone(stage);
+                pl.isStepDone(stage);
         };
         
         // ### SOLO
@@ -7762,10 +7764,18 @@ else {
         // Player can advance freely within the steps of one stage,
         // but has to wait before going to the next one
         rules['SYNC_STAGE'] = function(stage, myStageLevel, pl, game) {
-            // if next step is going to be a new stage, wait for others
-            return myStageLevel === node.stageLevels.DONE;
-                (game.plot.stepsToNextStage(stage) > 1 ||
-                 pl.isStageDone(stage));
+            var iamdone = myStageLevel === node.stageLevels.DONE;
+            console.log();
+            console.log('*** myStageLevel: ' + myStageLevel);
+            console.log('*** stepsToNextStage: ' + game.plot.stepsToNextStage(stage));
+            console.log('*** isStepDone [upTo]: ' + pl.isStepDone(stage, true));
+            if (game.plot.stepsToNextStage(stage) > 1) {
+                return iamdone;
+            }
+            else {
+                // if next step is going to be a new stage, wait for others
+                return iamdone && pl.isStepDone(stage, true);
+            }
         };
     }
 
@@ -7854,6 +7864,7 @@ else {
     NodeGameMisconfiguredGameError.prototype.name = 'NodeGameMisconfiguredGameError';
 
     if (J.isNodeJS()) {
+	// TODO fix this
         //process.on('uncaughtException', function (err) {
         //    node.err('Caught exception: ' + err);
         //    if (node.debug) {
@@ -8983,39 +8994,67 @@ PlayerList.prototype.updatePlayerStageLevel = function (id, stageLevel) {
 };
 
 /**
- * ### PlayerList.isStageDone
+ * ### PlayerList.isStepDone
  * 
- * Checks whether all players have terminated the specified stage
+ * Checks whether all players have terminated the specified game step
  * 
- * A stage is considered _DONE_ if all players that are on that stage
- * have the property `stageLevel` equal to `node.stageLevels.DONE`.
+ * A stage is considered _DONE_ if all players that are found playing
+ * that game step have the property `stageLevel` equal to `Game.stageLevels.DONE`.
  * 
- * Players at other stages are ignored.
+ * Players at other steps are ignored.
  * 
- * If no player is found at the desired stage, it returns TRUE.
+ * If no player is found at the desired step, it returns TRUE.
  * 
- * @param {GameStage} stage The GameStage of reference
- * @param {boolean} extended Optional. If TRUE, all players are checked. Defaults, FALSE.
+ * @param {GameStage} gameStage The GameStage of reference
+ * @param {boolean} upTo Optional. If TRUE, all players in the stage up to the
+ *  given step are checked. Defaults, FALSE.
+ *
  * @return {boolean} TRUE, if all checked players have terminated the stage
  */
-PlayerList.prototype.isStageDone = function (stage) {
+PlayerList.prototype.isStepDone = function (gameStage, upTo) {
     var p, i;
 
-    if (!stage) return false;
+    if (!gameStage) return false;
+
+    upTo = !!upTo;
+
     for (i = 0; i < this.db.length; i++) {
         p = this.db[i];
 
-	// Player is at another stage
-	if (GameStage.compare(stage, p.stage) !== 0) {
-	    continue;
-	}
-	// Player is done for his stage
-	if (p.stageLevel !== node.stageLevels.DONE) {
-	    return false;
-	}
+        if (upTo) {
+            // Check players in current stage up to the reference step:
+
+            // Player in another stage
+            if (gameStage.stage !== p.stage.stage) {
+                continue;
+            }
+
+            // Player after/before given step
+            if (GameStage.compare(gameStage, p.stage) < 0) {
+                continue;
+            }
+            else if (GameStage.compare(gameStage, p.Stage) > 0) {
+                return false;
+            }
+        }
+        else {
+            // Just check players in current step:
+
+            // Player in another step
+            if (GameStage.compare(gameStage, p.stage) !== 0) {
+                continue;
+            }
+        }
+
+        // Player not done with his step
+        if (p.stageLevel !== node.stageLevels.DONE) {
+            return false;
+        }
     }
+
     return true;
 };
+
 
 /**
  * ### PlayerList.toString
@@ -9135,16 +9174,6 @@ exports.Player = Player;
 function Player (pl) {
     pl = pl || {};
 
-    // ## Private properties
-
-    /**
-     * ### Player.sid
-     * 
-     * The session id received from the nodeGame server 
-     * 
-     */	
-    this.sid = pl.sid;
-
     /**
      * ### Player.id
      * 
@@ -9155,6 +9184,15 @@ function Player (pl) {
      * 
      */	
     this.id = pl.id || this.sid;
+
+    /**
+     * ### Player.sid
+     * 
+     * The session id received from the nodeGame server 
+     * 
+     */	
+    this.sid = pl.sid;
+
 
     /**
      * ### Player.count
@@ -9832,7 +9870,7 @@ Stager.prototype.getDefaultStepRule = function() {
  */
 Stager.prototype.setDefaultGlobals = function(defaultGlobals) {
     if (!defaultGlobals || 'object' !== typeof defaultGlobals) {
-        node.warn("setDefaultGlobals didn't receive object parameter");
+        node.warn("setDefaultGlobals did not receive an object as parameter");
         return false;
     }
 
@@ -9868,7 +9906,7 @@ Stager.prototype.getDefaultGlobals = function() {
  */
 Stager.prototype.setDefaultProperties = function(defaultProperties) {
     if (!defaultProperties || 'object' !== typeof defaultProperties) {
-        node.warn("setDefaultProperties didn't receive object parameter");
+        node.warn("setDefaultProperties did not receive an object as parameter");
         return false;
     }
 
@@ -9904,7 +9942,7 @@ Stager.prototype.getDefaultProperties = function() {
  */
 Stager.prototype.setOnInit = function(func) {
     if (func !== null && 'function' !== typeof func) {
-        node.warn("setOnInit didn't receive function parameter");
+        node.warn("setOnInit did not receive a function as parameter");
         return false;
     }
 
@@ -9940,7 +9978,7 @@ Stager.prototype.getOnInit = function(func) {
  */
 Stager.prototype.setOnGameover = function(func) {
     if (func !== null && 'function' !== typeof func) {
-        node.warn("setOnGameover didn't receive function parameter");
+        node.warn("setOnGameover did not receive a function as parameter");
         return false;
     }
 
@@ -11468,7 +11506,6 @@ GamePlot.prototype.getProperty = function(gameStage, property) {
  * @return {boolean} FALSE if stager is empty, TRUE otherwise
  */
 GamePlot.prototype.isReady = function() {
-    debugger;
     return this.stager &&
         (this.stager.sequence.length > 0 ||
          this.stager.generalNextFunction !== null ||
@@ -12640,7 +12677,7 @@ Game.prototype.shouldStep = function() {
     stepRule = this.plot.getStepRule(this.getCurrentGameStage());
 
     if ('function' !== typeof stepRule) {
-	throw new NodeGameMisconfiguredGameError("step rule is not a function");
+	throw new node.NodeGameMisconfiguredGameError("step rule is not a function");
     }
 
     if (stepRule(this.getCurrentGameStage(), this.getStageLevel(), this.pl, this)) {
@@ -12752,6 +12789,10 @@ Game.prototype.step = function() {
 Game.prototype.execStep = function(stage) {
     var cb, res;
 
+    if (!stage || 'object' !== typeof stage) {
+	throw new node.NodeGameRuntimeError('game.execStep requires a valid object');
+    }
+    
     cb = stage.cb;
 
     this.setStageLevel(node.stageLevels.LOADING);
@@ -14561,31 +14602,6 @@ node.setup.register('window', function(conf) {
 
     return conf;
 });
-
-/**
- * ### node.setup.sio
- *
- * Configure the socket.io connection, if existing
- */
-node.setup.register('sio', function(conf) {
-    if (!node.window) {
-        node.warn('node.window not found, cannot configure it.');
-        return;
-    }
-    conf = conf || {};
-    if ('undefined' === typeof conf.promptOnleave) {
-        conf.promptOnleave = false;
-    }
-
-    if ('undefined' === typeof conf.noEscape) {
-        conf.noEscape = true;
-    }
-
-    node.window.init(conf);
-
-    return conf;
-});
-
 
 
 /**
