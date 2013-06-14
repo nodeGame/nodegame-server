@@ -37,7 +37,7 @@ function configure (loggers) {
 	    	level: 'silly',
 	    	timestamp: true,
 	    	filename: logDir + 'servernode',
-	    	maxsize: 1000,
+	    	maxsize: 1000000,
 	    	maxFiles: 10,
 	    },
 	});
@@ -51,7 +51,7 @@ function configure (loggers) {
 	    	level: 'silly',
 	    	timestamp: true,
 	    	filename: logDir + 'channel',
-	    	maxsize: 1000,
+	    	maxsize: 1000000,
 	    	maxFiles: 10,
 	    },
 	});

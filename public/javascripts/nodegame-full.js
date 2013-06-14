@@ -7517,16 +7517,23 @@ else {
 // The list of clients connected to the admin (monitor) endpoint was updated
     node.target.MLIST = 'MLIST';
 
+// #### target.PLAYER
+// A client updates his Player object
+    node.target.PLAYER = 'PLAYER';
+
 // #### target.STATE
 // A client notifies his own state
+// @deprecated
     node.target.STATE = 'STATE';
 
 // #### target.STAGE
 // A client notifies his own stage
+// @deprecated
     node.target.STAGE = 'STAGE';
 
 // #### target.STAGE_LEVEL
 // A client notifies his own stage level
+// @deprecated
     node.target.STAGE_LEVEL = 'STAGE_LEVEL';
 
 // #### target.REDIRECT
@@ -7822,9 +7829,11 @@ else {
      *
      * An error occurred during the execution of nodeGame
      */
-    function NodeGameRuntimeError() {
-        Error.apply(this, arguments);
+    function NodeGameRuntimeError(msg) {
+        //Error.apply(this, arguments);
+        this.msg = msg;
         this.stack = (new Error()).stack;
+        throw 'Runtime: ' + msg;
     }
 
     NodeGameRuntimeError.prototype = new Error();
@@ -7837,9 +7846,11 @@ else {
      *
      * An error occurred during the execution of one of the stage callbacks
      */
-    function NodeGameStageCallbackError() {
-        Error.apply(this, arguments);
+    function NodeGameStageCallbackError(msg) {
+        //Error.apply(this, arguments);
+        this.msg = msg;
         this.stack = (new Error()).stack;
+        throw 'StageCallback: ' + msg;
     }
 
     NodeGameStageCallbackError.prototype = new Error();
@@ -7852,9 +7863,11 @@ else {
      *
      * An error occurred during the configuration of the Game
      */
-    function NodeGameMisconfiguredGameError() {
-        Error.apply(this, arguments);
+    function NodeGameMisconfiguredGameError(msg) {
+        //Error.apply(this, arguments);
+        this.msg = msg;
         this.stack = (new Error()).stack;
+        throw 'MisconfiguredGame: ' + msg;
     }
 
     NodeGameMisconfiguredGameError.prototype = new Error();
@@ -7867,9 +7880,11 @@ else {
      *
      * An error occurred during the configuration of the Game
      */
-    function NodeGameIllegalOperationError() {
-        Error.apply(this, arguments);
+    function NodeGameIllegalOperationError(msg) {
+        //Error.apply(this, arguments);
+        this.msg = msg;
         this.stack = (new Error()).stack;
+        throw 'IllegalOperation: ' + msg;
     }
 
     NodeGameIllegalOperationError.prototype = new Error();
@@ -9046,7 +9061,7 @@ PlayerList.prototype.isStepDone = function (gameStage, upTo) {
             if (GameStage.compare(gameStage, p.stage) < 0) {
                 continue;
             }
-            else if (GameStage.compare(gameStage, p.Stage) > 0) {
+            else if (GameStage.compare(gameStage, p.stage) > 0) {
                 return false;
             }
         }
@@ -9522,26 +9537,26 @@ GameMsg.prototype.stringify = function () {
  * 	@see GameMsg.stringify
  */
 GameMsg.prototype.toString = function () {
-	
-	var SPT = ",\t";
-	var SPTend = "\n";
-	var DLM = "\"";
-	
-	var gs = new GameStage(this.stage);
-	
-	var line = this.created + SPT;
-		line += this.id + SPT;
-		line += this.session + SPT;
-		line += this.action + SPT;
-		line += this.target + SPT;
-		line +=	this.from + SPT;
-		line += this.to + SPT;
-		line += DLM + this.text + DLM + SPT;
-		line += DLM + this.data + DLM + SPT; // maybe to remove
-		line += this.reliable + SPT;
-		line += this.priority + SPTend;
-		
-	return line;
+    var SPT = ",\t";
+    var SPTend = "\n";
+    var DLM = "\"";
+
+    var line;
+    
+    line  = this.created + SPT;
+    line += this.id + SPT;
+    line += this.session + SPT;
+    line += this.action + SPT;
+    line += this.target + SPT;
+    line +=	this.from + SPT;
+    line += this.to + SPT;
+    line += DLM + this.text + DLM + SPT;
+    line += DLM + this.data + DLM + SPT; // maybe to remove
+    line += new GameStage(this.stage) + SPT;
+    line += this.reliable + SPT;
+    line += this.priority + SPTend;
+
+    return line;
 };
 
 /**
@@ -11690,18 +11705,27 @@ function GameMsgGenerator () {}
  * 
  */
 GameMsgGenerator.create = function (msg) {
+    var gameStage;
+    
+    if (msg.stage) {
+        gameStage = msg.stage;
+    }
+    else {
+        gameStage = ('function' === typeof node.game.getCurrentGameStage) ?
+            node.game.getCurrentGameStage() : new GameStage('0.0.0');
+    }
 
     return new GameMsg({
         session: 'undefined' !== typeof msg.session ? msg.session : node.socket.session, 
-           stage: 'undefined' !== typeof msg.stage ? msg.stage : node.game.stage,
-           action: msg.action || action.SAY,
-           target: msg.target || target.DATA,
-           from: node.player ? node.player.sid : node.UNDEFINED_PLAYER, // TODO change to id
-           to: 'undefined' !== typeof msg.to ? msg.to : 'SERVER',
-           text: msg.text || null,
-           data: msg.data || null,
-           priority: msg.priority || null,
-           reliable: msg.reliable || 1
+        stage: gameStage,
+        action: msg.action || action.SAY,
+        target: msg.target || target.DATA,
+        from: node.player ? node.player.sid : node.UNDEFINED_PLAYER, // TODO change to id
+        to: 'undefined' !== typeof msg.to ? msg.to : 'SERVER',
+        text: msg.text || null,
+        data: msg.data || null,
+        priority: msg.priority || null,
+        reliable: msg.reliable || 1
     });
 
 };
@@ -11793,73 +11817,73 @@ GameMsgGenerator.create = function (msg) {
 
 /**
  * # Socket
- * 
+ *
  * Copyright(c) 2012 Stefano Balietti
- * MIT Licensed 
- * 
- * `nodeGame` component responsible for dispatching events and messages 
- * 
+ * MIT Licensed
+ *
+ * `nodeGame` component responsible for dispatching events and messages
+ *
  * ---
- * 
+ *
  */
 
 (function (exports, node) {
 
-	
-exports.Socket = Socket;	
-	
+
+exports.Socket = Socket;
+
 // ## Global scope
-	
+
 var GameMsg = node.GameMsg,
     GameStage = node.GameStage,
     Player = node.Player,
     GameMsgGenerator = node.GameMsgGenerator,
     SocketFactory = node.SocketFactory;
-    
+
 var action = node.action,
-    J = node.JSUS;    
+    J = node.JSUS;
 
 function Socket(options) {
-	
+
 // ## Private properties
 
 /**
  * ### Socket.buffer
- * 
- * Buffer of queued messages 
- * 
+ *
+ * Buffer of queued messages
+ *
  * @api private
- */ 
+ */
     this.buffer = [];
-    
-    
+
+
 /**
  * ### Socket.session
- * 
+ *
  * The session id shared with the server
- * 
+ *
  * This property is initialized only when a game starts
- * 
+ *
  */
     this.session = null;
-    
+
 
 /**
  * ### Socket.user_options
- * 
+ *
  * Contains the options that will be passed to the `connect` method
- * 
+ *
  * The property is set by `node.setup.socket`
- * 
+ *
  * @see node.setup
  */
     this.user_options = {};
 
     this.socket = null;
-    
+
     this.url = null;
 }
-    
+
 
 Socket.prototype.setup = function(options) {
     var type;
@@ -11868,11 +11892,11 @@ Socket.prototype.setup = function(options) {
     delete options.type;
     this.user_options = options;
     if (type) {
-	this.setSocketType(type, options);
+        this.setSocketType(type, options);
     }
 };
-    
-Socket.prototype.setSocketType = function(type, options) {    
+
+Socket.prototype.setSocketType = function(type, options) {
     this.socket = SocketFactory.get(type, options); // returns null on error
     return this.socket;
 };
@@ -11880,13 +11904,13 @@ Socket.prototype.setSocketType = function(type, options) {
 Socket.prototype.connect = function(url) {
 
     if (!this.socket) {
-	node.err('cannot connet to ' + url + ' . No open socket.');
-	return false;
+        node.err('cannot connet to ' + url + ' . No open socket.');
+        return false;
     }
-    
+
     this.url = url;
     node.log('connecting to ' + url);
-	
+
     this.socket.connect(url, this.user_options);
 };
 
@@ -11914,7 +11938,7 @@ Socket.prototype.onMessage = function(msg) {
         sessionObj = node.store(msg.session);
 
         if (false) {
-            //if (sessionObj) {
+        //if (sessionObj) {
             node.session.restore(sessionObj);
 
             msg = node.msg.create({
@@ -11937,7 +11961,7 @@ Socket.prototype.onMessage = function(msg) {
 
         }
 
-    } 
+    }
 };
 
 Socket.prototype.attachMsgListeners = function() {
@@ -11947,79 +11971,79 @@ Socket.prototype.attachMsgListeners = function() {
 
 Socket.prototype.onMessageFull = function(msg) {
     msg = this.secureParse(msg);
-    
+
     if (msg) { // Parsing successful
-	// message with high priority are executed immediately
-	if (msg.priority > 0 || node.game.isReady && node.game.isReady()) {
-	    node.emit(msg.toInEvent(), msg);
-	}
-	else {
-	    node.silly('buffering: ' + msg);
-	    this.buffer.push(msg);
-	}
+        // message with high priority are executed immediately
+        if (msg.priority > 0 || node.game.isReady && node.game.isReady()) {
+            node.emit(msg.toInEvent(), msg);
+        }
+        else {
+            node.silly('buffering: ' + msg);
+            this.buffer.push(msg);
+        }
     }
 };
 
 
 Socket.prototype.registerServer = function(msg) {
-	// Setting global info
-	this.servername = msg.from;
-	// Keep serverid = msg.from for now
-	this.serverid = msg.from;
+    // Setting global info
+    this.servername = msg.from;
+    // Keep serverid = msg.from for now
+    this.serverid = msg.from;
 };
 
 
 Socket.prototype.secureParse = function (msg) {
-	
+
     var gameMsg;
     try {
-	gameMsg = GameMsg.clone(JSON.parse(msg));
-	node.info('R: ' + gameMsg);
+        gameMsg = GameMsg.clone(JSON.parse(msg));
+        node.info('R: ' + gameMsg);
     }
     catch(e) {
-	return logSecureParseError('malformed msg received',  e);
+        return logSecureParseError('malformed msg received',  e);
     }
 
     if (this.session && gameMsg.session !== this.session) {
-	return logSecureParseError('local session id does not match incoming message session id');
+        return logSecureParseError('local session id does not match incoming message session id');
     }
-    
+
     return gameMsg;
 };
 
 
 /**
  * ### Socket.clearBuffer
- * 
+ *
  * Emits and removes all the events in the message buffer
- * 
+ *
  * @see node.emit
  */
 Socket.prototype.clearBuffer = function () {
     var nelem, msg, i;
     nelem = this.buffer.length;
     for (i = 0; i < nelem; i++) {
-	msg = this.buffer.shift();
-	if (msg) {
-	    node.emit(msg.toInEvent(), msg);
-	    node.silly('Debuffered ' + msg);
-	}
+        msg = this.buffer.shift();
+        if (msg) {
+            node.emit(msg.toInEvent(), msg);
+            node.silly('Debuffered ' + msg);
+        }
     }
 };
 
 
 /**
  * ### Socket.startSession
- * 
+ *
  * Initializes a nodeGame session
- * 
- * Creates a the player and saves it in node.player, and 
- * stores the session ids in the session object 
- * 
+ *
+ * Creates a the player and saves it in node.player, and
+ * stores the session ids in the session object
+ *
  * @param {GameMsg} msg A game-msg
  * @return {boolean} TRUE, if session was correctly initialized
- * 
- * 	@see node.createPlayer
+ *
+ * @see node.createPlayer
  */
 Socket.prototype.startSession = function (msg) {
     var player;
@@ -12027,7 +12051,7 @@ Socket.prototype.startSession = function (msg) {
     this.registerServer(msg);
 
     player = {
-        id: msg.data,	
+        id: msg.data,
         sid: msg.data
     };
     node.createPlayer(player);
@@ -12037,15 +12061,15 @@ Socket.prototype.startSession = function (msg) {
 
 /**
 * ### Socket.send
-* 
+*
 * Pushes a message into the socket.
-* 
+*
 * The msg is actually received by the client itself as well.
-* 
+*
 * @param {GameMsg} The game message to send
-* 
+*
 * @see GameMsg
-* 
+*
 * @TODO: Check Do volatile msgs exist for clients?
 */
 Socket.prototype.send = function(msg) {
@@ -12514,7 +12538,7 @@ function Game(settings) {
      * The game's settings
      *
      * Contains following properties:
-     * 
+     *
      *  - observer: If TRUE, silently observes the game. Default: FALSE
      *
      *  - auto_wait: If TRUE, fires a WAITING... event immediately after
@@ -12707,6 +12731,10 @@ Game.prototype.shouldStep = function() {
     stepRule = this.plot.getStepRule(this.getCurrentGameStage());
 
     if ('function' !== typeof stepRule) {
+        console.log();
+        console.log('*** plot: ', this.plot);
+        console.log('*** gameStage: ', this.getCurrentGameStage());
+        console.log('*** stepRule: ', stepRule);
         throw new node.NodeGameMisconfiguredGameError("step rule is not a function");
     }
 
@@ -12820,9 +12848,11 @@ Game.prototype.execStep = function(stage) {
     var cb, res;
 
     if (!stage || 'object' !== typeof stage) {
+        console.log();
+        console.log('*** stage: ', plot);
         throw new node.NodeGameRuntimeError('game.execStep requires a valid object');
     }
-    
+
     cb = stage.cb;
 
     this.setStageLevel(node.stageLevels.LOADING);
@@ -12954,107 +12984,107 @@ Game.prototype.isReady = function() {
 
 /**
  * # GameSession
- * 
+ *
  * Copyright(c) 2012 Stefano Balietti
- * MIT Licensed 
- * 
+ * MIT Licensed
+ *
  * `nodeGame` session manager
- * 
+ *
  * ---
- * 
+ *
  */
 
 (function (exports, node) {
-	
+
 // ## Global scope
-	
+
 var GameMsg = node.GameMsg,
-	Player = node.Player,
-	GameMsgGenerator = node.GameMsgGenerator,
-	J = node.JSUS;
+    Player = node.Player,
+    GameMsgGenerator = node.GameMsgGenerator,
+    J = node.JSUS;
 
 //Exposing constructor
 exports.GameSession = GameSession;
 exports.GameSession.SessionManager = SessionManager;
 
 GameSession.prototype = new SessionManager();
-GameSession.prototype.constructor = GameSession; 
+GameSession.prototype.constructor = GameSession;
 
 function GameSession() {
-	SessionManager.call(this);
-	
-	this.register('player', {
-		set: function(p) {
-			node.createPlayer(p);
-		},
-		get: function() {
-			return node.player;
-		}
-	});
-	
-	this.register('game.memory', {
-		set: function(value) {
-			node.game.memory.clear(true);
-			node.game.memory.importDB(value);
-		},
-		get: function() {
-			return (node.game.memory) ? node.game.memory.fetch() : null;	
-		}
-	});
-	
-	this.register('events.history', {
-		set: function(value) {
-			node.events.history.history.clear(true);
-			node.events.history.history.importDB(value);
-		},
-		get: function() {
-			return (node.events.history) ? node.events.history.history.fetch() : null;
-		}
-	});
-	
-	
-	this.register('game.currentStepObj', {
-		set: GameSession.restoreStage,
+    SessionManager.call(this);
+
+    this.register('player', {
+        set: function(p) {
+            node.createPlayer(p);
+        },
+        get: function() {
+            return node.player;
+        }
+    });
+
+    this.register('game.memory', {
+        set: function(value) {
+            node.game.memory.clear(true);
+            node.game.memory.importDB(value);
+        },
+        get: function() {
+            return (node.game.memory) ? node.game.memory.fetch() : null;
+        }
+    });
+
+    this.register('events.history', {
+        set: function(value) {
+            node.events.history.history.clear(true);
+            node.events.history.history.importDB(value);
+        },
+        get: function() {
+            return (node.events.history) ? node.events.history.history.fetch() : null;
+        }
+    });
+
+
+    this.register('game.currentStepObj', {
+        set: GameSession.restoreStage,
         get: function() {
             return node.game.getCurrentStep();
         }
-	});
-	
-	this.register('node.env');
-	
+    });
+
+    this.register('node.env');
+
 }
 
 
 GameSession.prototype.restoreStage = function(stage) {
-		
-	try {
-		// GOTO STATE
-		node.game.execStage(node.plot.getStep(stage));
-		
-		var discard = ['LOG', 
-		               'STATECHANGE',
-		               'WINDOW_LOADED',
-		               'BEFORE_LOADING',
-		               'LOADED',
-		               'in.say.STATE',
-		               'UPDATED_PLIST',
-		               'NODEGAME_READY',
-		               'out.say.STATE',
-		               'out.set.STATE',
-		               'in.say.PLIST',
-		               'STAGEDONE', // maybe not here
-		               'out.say.HI'	               
-		];
-		
-		// RE-EMIT EVENTS
-		node.events.history.remit(node.game.getStateLevel(), discard);
-		node.info('game stage restored');
-		return true;
-	}
-	catch(e) {
-		node.err('could not restore game stage. An error has occurred: ' + e);
-		return false;
-	}
+
+    try {
+        // GOTO STATE
+        node.game.execStage(node.plot.getStep(stage));
+
+        var discard = ['LOG',
+                       'STATECHANGE',
+                       'WINDOW_LOADED',
+                       'BEFORE_LOADING',
+                       'LOADED',
+                       'in.say.STATE',
+                       'UPDATED_PLIST',
+                       'NODEGAME_READY',
+                       'out.say.STATE',
+                       'out.set.STATE',
+                       'in.say.PLIST',
+                       'STAGEDONE', // maybe not here
+                       'out.say.HI'
+        ];
+
+        // RE-EMIT EVENTS
+        node.events.history.remit(node.game.getStateLevel(), discard);
+        node.info('game stage restored');
+        return true;
+    }
+    catch(e) {
+        node.err('could not restore game stage. An error has occurred: ' + e);
+        return false;
+    }
 
 };
 
@@ -13062,133 +13092,133 @@ GameSession.prototype.restoreStage = function(stage) {
 /// Session Manager
 
 function SessionManager() {
-	this.session = {};
+    this.session = {};
 }
 
 SessionManager.getVariable = function(p) {
-	J.getNestedValue(p, node);
+    J.getNestedValue(p, node);
 };
 
 SessionManager.setVariable = function(p, value) {
-	J.setNestedValue(p, value, node);
+    J.setNestedValue(p, value, node);
 };
 
 SessionManager.prototype.register = function(path, options) {
-	if (!path) {
-		node.err('cannot add an empty path to session');
-		return false;
-	}
-	
-	this.session[path] = {
-			
-		get: (options && options.get) ? options.get
-									  : function() {
-										  return J.getNestedValue(path, node);
-									  },
-									  
-		set: (options && options.set) ? options.set 
-									  : function(value) {
-										  J.setNestedValue(path, value, node);
-									  }
-		
-	};
-	
-	return true;
+    if (!path) {
+        node.err('cannot add an empty path to session');
+        return false;
+    }
+
+    this.session[path] = {
+
+        get: (options && options.get) ? options.get
+                                      : function() {
+                                          return J.getNestedValue(path, node);
+                                      },
+
+        set: (options && options.set) ? options.set
+                                      : function(value) {
+                                          J.setNestedValue(path, value, node);
+                                      }
+
+    };
+
+    return true;
 };
 
 SessionManager.prototype.unregister = function(path) {
-	if (!path) {
-		node.err('cannot delete an empty path from session');
-		return false;
-	}
-	if (!this.session[path]) {
-		node.err(path + ' is not registered in the session');
-		return false;
-	}
-	
-	delete this.session[path];	
-	return true;
+    if (!path) {
+        node.err('cannot delete an empty path from session');
+        return false;
+    }
+    if (!this.session[path]) {
+        node.err(path + ' is not registered in the session');
+        return false;
+    }
+
+    delete this.session[path];
+    return true;
 };
 
 SessionManager.prototype.get = function(path) {
-	var session = {};
-	
-	if (path) {
-		 return (this.session[path]) ? this.session[path].get() : undefined;
-	}
-	else {
-		for (path in this.session) {
-			if (this.session.hasOwnProperty(path)) {
-				session[path] = this.session[path].get();
-			}
-		}
+    var session = {};
 
-		return session;
-	}
+    if (path) {
+        return (this.session[path]) ? this.session[path].get() : undefined;
+    }
+    else {
+        for (path in this.session) {
+            if (this.session.hasOwnProperty(path)) {
+                session[path] = this.session[path].get();
+            }
+        }
+
+        return session;
+    }
 };
 
 SessionManager.prototype.save = function() {
-	var session = {};
-	for (var path in this.session) {
-		if (this.session.hasOwnProperty(path)) {
-			session[path] = {
-					value: this.session[path].get(),
-					get: this.session[path].get,
-					set: this.session[path].set
-			};
-		}
-	}
-	return session;
+    var session = {};
+    for (var path in this.session) {
+        if (this.session.hasOwnProperty(path)) {
+            session[path] = {
+                value: this.session[path].get(),
+                get: this.session[path].get,
+                set: this.session[path].set
+            };
+        }
+    }
+    return session;
 };
 
 SessionManager.prototype.load = function(session) {
-	for (var i in session) {
-		if (session.hasOwnProperty(i)) {
-			this.register(i, session[i]);
-		}
-	}
+    for (var i in session) {
+        if (session.hasOwnProperty(i)) {
+            this.register(i, session[i]);
+        }
+    }
 };
 
 SessionManager.prototype.clear = function() {
-	this.session = {};
+    this.session = {};
 };
 
 SessionManager.prototype.restore = function (sessionObj) {
-	if (!sessionObj) {
-		node.err('cannot restore empty session object');
-		return ;
-	}
-	
-	for (var i in sessionObj) {
-		if (sessionObj.hasOwnProperty(i)) {
-			sessionObj[i].set(sessionObj[i].value);
-		}
-	}
-	
-	return true;
+    if (!sessionObj) {
+        node.err('cannot restore empty session object');
+        return ;
+    }
+
+    for (var i in sessionObj) {
+        if (sessionObj.hasOwnProperty(i)) {
+            sessionObj[i].set(sessionObj[i].value);
+        }
+    }
+
+    return true;
 };
 
 SessionManager.prototype.store = function() {
-	//node.store(node.socket.id, this.get());
+    //node.store(node.socket.id, this.get());
 };
 
 SessionManager.prototype.store = function() {
-	//node.store(node.socket.id, this.get());
+    //node.store(node.socket.id, this.get());
 };
 
 // Helping functions
 
 //function isReference(value) {
-//	var type = typeof(value);
-//	if ('function' === type) return true;
-//	if ('object' === type) return true;
-//	return false;
+//    var type = typeof(value);
+//    if ('function' === type) return true;
+//    if ('object' === type) return true;
+//    return false;
 //}
 
 
 })(
-	'undefined' != typeof node ? node : module.exports,
-	'undefined' != typeof node ? node : module.parent.exports
+    'undefined' != typeof node ? node : module.exports,
+    'undefined' != typeof node ? node : module.parent.exports
 );
 
 /**
@@ -14687,9 +14717,9 @@ node.setup.register('plot', function(stagerState, updateRule) {
 /**
  * ### node.setup.plist
  *
- * Updates the PlayerList in Game
+ * Updates the player list in Game
  *
- * @param {PlayerList} playerList The new PlayerList
+ * @param {PlayerList} playerList The new player list
  * @param {string} updateRule Optional. Whether to 'replace' (default) or
  *  to 'append'.
  *
@@ -14697,58 +14727,24 @@ node.setup.register('plot', function(stagerState, updateRule) {
  * @see Stager.setState
  */
 node.setup.register('plist', function(playerList, updateRule) {
-    if (!node.game || !node.game.pl) {
-        node.warn("register('plist') called before node.game was initialized");
-        throw new node.NodeGameMisconfiguredGameError("node.game non-existent");
-    }
-
-    if (playerList) {
-        if (!updateRule || updateRule === 'replace') {
-            node.game.pl.clear(true);
-        }
-        else if (updateRule !== 'append') {
-            throw new node.NodeGameMisconfiguredGameError(
-                    "register('plist') got invalid updateRule");
-        }
-
-        node.game.pl.importDB(playerList);
-    }
-
-    return node.game.pl;
+    updatePlayerList('pl', playerList, updateRule);
 });
 
 /**
  * ### node.setup.mlist
  *
- * TODO: docs, merge with plist
- * Updates the PlayerList in Game
+ * TODO: merge with plist
+ * Updates the monitor list in Game
  *
- * @param {PlayerList} playerList The new PlayerList
+ * @param {PlayerList} monitorList The new monitor list
  * @param {string} updateRule Optional. Whether to 'replace' (default) or
  *  to 'append'.
  *
  * @see node.game.plot
  * @see Stager.setState
  */
-node.setup.register('mlist', function(playerList, updateRule) {
-    if (!node.game || !node.game.ml) {
-        node.warn("register('mlist') called before node.game was initialized");
-        throw new node.NodeGameMisconfiguredGameError("node.game non-existent");
-    }
-
-    if (playerList) {
-        if (!updateRule || updateRule === 'replace') {
-            node.game.ml.clear(true);
-        }
-        else if (updateRule !== 'append') {
-            throw new node.NodeGameMisconfiguredGameError(
-                    "register('plist') got invalid updateRule");
-        }
-
-        node.game.ml.importDB(playerList);
-    }
-
-    return node.game.ml;
+node.setup.register('mlist', function(monitorList, updateRule) {
+    updatePlayerList('ml', monitorList, updateRule);
 });
 
 
@@ -14796,6 +14792,42 @@ node.remoteSetup = function(property, to) {
     return node.socket.send(msg);
 };
 
+
+// Utility for setup.plist and setup.mlist:
+function updatePlayerList(dstListName, srcList, updateRule) {
+    var dstList;
+
+    if (!node.game) {
+        node.warn('updatePlayerList called before node.game was initialized');
+        throw new node.NodeGameMisconfiguredGameError('node.game non-existent');
+    }
+
+    if (dstListName === 'pl')      dstList = node.game.pl;
+    else if (dstListName === 'ml') dstList = node.game.ml;
+    else {
+        node.warn('updatePlayerList called with invalid dstListName');
+        throw new node.NodeGameMisconfiguredGameError("invalid dstListName");
+    }
+
+    if (!dstList) {
+        node.warn('updatePlayerList called before node.game was initialized');
+        throw new node.NodeGameMisconfiguredGameError('dstList non-existent');
+    }
+
+    if (srcList) {
+        if (!updateRule || updateRule === 'replace') {
+            dstList.clear(true);
+        }
+        else if (updateRule !== 'append') {
+            throw new node.NodeGameMisconfiguredGameError(
+                    "register('plist') got invalid updateRule");
+        }
+
+        dstList.importDB(srcList);
+    }
+
+    return dstList;
+}
 
 })(
     'undefined' != typeof node ? node : module.exports,
@@ -15028,115 +15060,115 @@ node.random = {};
 // # Incoming listeners
 // Incoming listeners are fired in response to incoming messages
 (function (node) {
-	
+
     var GameMsg = node.GameMsg,
         GameSage = node.GameStage,
         PlayerList = node.PlayerList,
         Player = node.Player,
         J = node.JSUS;
-	
+
     var action = node.action,
         target = node.target;
-    
+
     var say = action.SAY + '.',
         set = action.SET + '.',
         get = action.GET + '.',
-	IN  = node.IN;
+        IN  = node.IN;
 
-	
+
 /**
  * ## in.say.PCONNECT
- * 
+ *
  * Adds a new player to the player list from the data contained in the message
- * 
+ *
  * @emit UPDATED_PLIST
- * @see Game.pl 
+ * @see Game.pl
  */
     node.events.ng.on( IN + say + 'PCONNECT', function (msg) {
-	if (!msg.data) return;
-	node.game.pl.add(new Player(msg.data));
-	node.emit('UPDATED_PLIST');
-    });	
-	
+        if (!msg.data) return;
+        node.game.pl.add(new Player(msg.data));
+        node.emit('UPDATED_PLIST');
+    });
+
 /**
  * ## in.say.PDISCONNECT
- * 
+ *
  * Removes a player from the player list based on the data contained in the message
- * 
+ *
  * @emit UPDATED_PLIST
- * @see Game.pl 
+ * @see Game.pl
  */
     node.events.ng.on( IN + say + 'PDISCONNECT', function (msg) {
-	if (!msg.data) return;
-	node.game.pl.remove(msg.data.id);
-	node.emit('UPDATED_PLIST');
-    });	
+        if (!msg.data) return;
+        node.game.pl.remove(msg.data.id);
+        node.emit('UPDATED_PLIST');
+    });
 
 /**
  * ## in.say.MCONNECT
- * 
+ *
  * Adds a new monitor to the monitor list from the data contained in the message
- * 
+ *
  * @emit UPDATED_MLIST
- * @see Game.ml 
+ * @see Game.ml
  */
     node.events.ng.on( IN + say + 'MCONNECT', function (msg) {
-	if (!msg.data) return;
-	node.game.ml.add(new Player(msg.data));
-	node.emit('UPDATED_MLIST');
-    });	
-		
+        if (!msg.data) return;
+        node.game.ml.add(new Player(msg.data));
+        node.emit('UPDATED_MLIST');
+    });
+
 /**
  * ## in.say.MDISCONNECT
- * 
+ *
  * Removes a monitor from the player list based on the data contained in the message
- * 
+ *
  * @emit UPDATED_MLIST
- * @see Game.ml 
+ * @see Game.ml
  */
     node.events.ng.on( IN + say + 'MDISCONNECT', function (msg) {
-	if (!msg.data) return;
-	node.game.ml.remove(msg.data.id);
-	node.emit('UPDATED_MLIST');
-    });		
-			
+        if (!msg.data) return;
+        node.game.ml.remove(msg.data.id);
+        node.emit('UPDATED_MLIST');
+    });
+
 
 /**
  * ## in.say.PLIST
- * 
+ *
  * Creates a new player-list object from the data contained in the message
- * 
+ *
  * @emit UPDATED_PLIST
- * @see Game.pl 
+ * @see Game.pl
  */
 node.events.ng.on( IN + say + 'PLIST', function (msg) {
     if (!msg.data) return;
     node.game.pl = new PlayerList({}, msg.data);
     node.emit('UPDATED_PLIST');
-});	
-	
+});
+
 /**
  * ## in.say.MLIST
- * 
+ *
  * Creates a new monitor-list object from the data contained in the message
- * 
+ *
  * @emit UPDATED_MLIST
- * @see Game.pl 
+ * @see Game.pl
  */
 node.events.ng.on( IN + say + 'MLIST', function (msg) {
     if (!msg.data) return;
     node.game.ml = new PlayerList({}, msg.data);
     node.emit('UPDATED_MLIST');
-});	
-	
+});
+
 /**
  * ## in.get.DATA
- * 
+ *
  * Experimental feature. Undocumented (for now)
- */ 
+ */
 node.events.ng.on( IN + get + 'DATA', function (msg) {
     if (msg.text === 'LOOP'){
-	node.socket.sendDATA(action.SAY, node.game.plot, msg.from, 'GAME');
+        node.socket.sendDATA(action.SAY, node.game.plot, msg.from, 'GAME');
     }
     // <!-- We could double emit
     // node.emit(msg.text, msg.data); -->
@@ -15144,9 +15176,9 @@ node.events.ng.on( IN + get + 'DATA', function (msg) {
 
 /**
  * ## in.set.STATE
- * 
- * Adds an entry to the memory object 
- * 
+ *
+ * Adds an entry to the memory object
+ *
  */
 node.events.ng.on( IN + set + 'STATE', function (msg) {
     node.game.memory.add(msg.text, msg.data, msg.from);
@@ -15154,9 +15186,9 @@ node.events.ng.on( IN + set + 'STATE', function (msg) {
 
 /**
  * ## in.set.DATA
- * 
- * Adds an entry to the memory object 
- * 
+ *
+ * Adds an entry to the memory object
+ *
  */
 node.events.ng.on( IN + set + 'DATA', function (msg) {
     node.game.memory.add(msg.text, msg.data, msg.from);
@@ -15164,79 +15196,79 @@ node.events.ng.on( IN + set + 'DATA', function (msg) {
 
 /**
  * ## in.say.STAGE
- * 
+ *
  * Updates the game stage or updates a player's state in
  * the player-list object
  *
  * If the message is from the server, it updates the game stage,
  * else the stage in the player-list object from the player who
- * sent the message is updated 
- * 
+ * sent the message is updated
+ *
  *  @emit UPDATED_PLIST
- *  @see Game.pl 
+ *  @see Game.pl
  */
     node.events.ng.on( IN + say + 'STAGE', function (msg) {
-	if (node.game.pl.exist(msg.from)) {			
-	    node.game.pl.updatePlayerStage(msg.from, msg.data);
-	    node.emit('UPDATED_PLIST');
+        if (node.game.pl.exist(msg.from)) {
+            node.game.pl.updatePlayerStage(msg.from, msg.data);
+            node.emit('UPDATED_PLIST');
             node.game.shouldStep();
-	}
-	// <!-- Assume this is the server for now
-	// TODO: assign a string-id to the server -->
-	else {
-	    node.game.execStep(node.game.plot.getStep(msg.data));
-	}
+        }
+        // <!-- Assume this is the server for now
+        // TODO: assign a string-id to the server -->
+        else {
+            node.game.execStep(node.game.plot.getStep(msg.data));
+        }
     });
 
 /**
  * ## in.say.STAGE_LEVEL
- * 
+ *
  * Updates a player's stage level in the player-list object
  *
  * If the message is from the server, it updates the game stage,
  * else the stage in the player-list object from the player who
- * sent the message is updated 
- * 
+ * sent the message is updated
+ *
  *  @emit UPDATED_PLIST
- *  @see Game.pl 
+ *  @see Game.pl
  */
     node.events.ng.on( IN + say + 'STAGE_LEVEL', function (msg) {
-		
-	if (node.game.pl.exist(msg.from)) {
-	    node.game.pl.updatePlayerStageLevel(msg.from, msg.data);
-	    node.emit('UPDATED_PLIST');
+
+        if (node.game.pl.exist(msg.from)) {
+            node.game.pl.updatePlayerStageLevel(msg.from, msg.data);
+            node.emit('UPDATED_PLIST');
             node.game.shouldStep();
-	}
-	// <!-- Assume this is the server for now
-	// TODO: assign a string-id to the server -->
-	else {
-	    //node.game.setStageLevel(msg.data);
-	}
+        }
+        // <!-- Assume this is the server for now
+        // TODO: assign a string-id to the server -->
+        else {
+            //node.game.setStageLevel(msg.data);
+        }
     });
-	
+
 /**
  * ## in.say.REDIRECT
- * 
+ *
  * Redirects to a new page
- * 
+ *
  * @see node.redirect
  */
 node.events.ng.on( IN + say + 'REDIRECT', function (msg) {
     if (!msg.data) return;
     if ('undefined' === typeof window || !window.location) {
-	node.err('window.location not found. Cannot redirect');
-	return false;
+        node.err('window.location not found. Cannot redirect');
+        return false;
     }
 
-    window.location = msg.data; 
-});	
+    window.location = msg.data;
+});
 
 
 /**
  * ## in.say.SETUP
- * 
+ *
  * Setups a features of nodegame
- * 
+ *
  * Unstrigifies the payload before calling `node.setup`
  *
  * @see node.setup
@@ -15246,49 +15278,49 @@ node.events.ng.on( IN + say + 'SETUP', function (msg) {
     if (!msg.text) return;
     var feature = msg.text,
         payload = ('string' === typeof msg.data) ? J.parse(msg.data) : msg.data;
-    
+
     if (!payload) {
-	node.err('error while parsing incoming remote setup message');
-	return false;
+        node.err('error while parsing incoming remote setup message');
+        return false;
     }
     node.setup.apply(this, [feature].concat(payload));
-});	
+});
 
 
 /**
  * ## in.say.GAMECOMMAND
- * 
+ *
  * Setups a features of nodegame
- * 
+ *
  * @see node.setup
  */
 node.events.ng.on( IN + say + 'GAMECOMMAND', function (msg) {
     if (!msg.text || !node.gamecommand[msg.text]) {
-	node.err('unknown game command received: ' + msg.text);
-	return;
+        node.err('unknown game command received: ' + msg.text);
+        return;
     }
     node.emit('NODEGAME_GAMECOMMAND_' + msg.text, msg.data);
-});	
+});
 
 /**
  * ## in.say.JOIN
- * 
+ *
  * Invites the client to leave the current channel and joining another one
- * 
- * It differs from `REDIRECT` messages because the client 
- * does not leave the page, it just switches channel. 
- * 
+ *
+ * It differs from `REDIRECT` messages because the client
+ * does not leave the page, it just switches channel.
+ *
  * @experimental
  */
 node.events.ng.on( IN + say + 'JOIN', function (msg) {
     if (!msg.text) return;
     //node.socket.disconnect();
     node.connect(msg.text);
-});	
+});
 
     node.log('incoming listeners added');
-	
-})('undefined' !== typeof node ? node : module.parent.exports); 
+
+})('undefined' !== typeof node ? node : module.parent.exports);
 // <!-- ends incoming listener -->
 
 // # Internal listeners
