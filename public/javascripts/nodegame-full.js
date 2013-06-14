@@ -7517,23 +7517,20 @@ else {
 // The list of clients connected to the admin (monitor) endpoint was updated
     node.target.MLIST = 'MLIST';
 
-// #### target.PLAYER
+// #### target.PLAYER_UPDATE
 // A client updates his Player object
-    node.target.PLAYER = 'PLAYER';
+    node.target.PLAYER_UPDATE = 'PLAYER_UPDATE';
 
 // #### target.STATE
 // A client notifies his own state
-// @deprecated
     node.target.STATE = 'STATE';
 
 // #### target.STAGE
 // A client notifies his own stage
-// @deprecated
     node.target.STAGE = 'STAGE';
 
 // #### target.STAGE_LEVEL
 // A client notifies his own stage level
-// @deprecated
     node.target.STAGE_LEVEL = 'STAGE_LEVEL';
 
 // #### target.REDIRECT
@@ -8971,13 +8968,40 @@ PlayerList.prototype.exist = function (id) {
 };
 
 /**
+ * ### PlayerList.updatePlayer
+ *
+ * Updates the state of a player
+ *
+ * @param {number} id The id of the player
+ * @param {object} playerState An update with fields to update in the player
+ * @return {object|boolean} The updated player object, or FALSE if an error occurred
+ */
+PlayerList.prototype.updatePlayer = function (id, playerState) {
+    // TODO: check playerState
+
+    if (!this.exist(id)) {
+        node.warn('Attempt to access a non-existing player from the the player list: ' + id);
+        return false;
+    }
+
+    if ('undefined' === typeof playerState) {
+        node.warn('Attempt to assign to a player an undefined playerState');
+        return false;
+    }
+
+    return this.id.update(id, playerState);
+};
+
+/**
  * ### PlayerList.updatePlayerStage
  *
  * Updates the value of the `stage` object of a player
  *
  * @param {number} id The id of the player
  * @param {GameStage} stage The new stage object
- * @return {object|boolean} The updated player object, or FALSE is an error occurred
+ * @return {object|boolean} The updated player object, or FALSE if an error occurred
+ *
+ * @deprecated
  */
 PlayerList.prototype.updatePlayerStage = function (id, stage) {
 
@@ -9003,7 +9027,9 @@ PlayerList.prototype.updatePlayerStage = function (id, stage) {
  *
  * @param {number} id The id of the player
  * @param {number} stageLevel The new stageLevel
- * @return {object|boolean} The updated player object, or FALSE is an error occurred
+ * @return {object|boolean} The updated player object, or FALSE if an error occurred
+ *
+ * @deprecated
  */
 PlayerList.prototype.updatePlayerStageLevel = function (id, stageLevel) {
     if (!this.exist(id)) {
@@ -12782,6 +12808,10 @@ Game.prototype.step = function() {
     }
     else {
         // TODO maybe update also in case of string
+
+        // stageLevel needs to be changed, otherwise it stays DONE
+        // for a short time in the new game stage:
+        this.setStageLevel(node.stageLevels.UNINITIALIZED);
         this.setCurrentGameStage(nextStep);
 
         // If we enter a new stage (including repeating the same stage)
@@ -12924,23 +12954,23 @@ Game.prototype.setCurrentGameStage = function(gameStage) {
     node.player.stage = gameStage;
 };
 
-Game.prototype.publishStageLevelUpdate = function(stageLevel) {
+Game.prototype.publishStageLevelUpdate = function(newStageLevel) {
     // Publish update:
-    if (!this.observer && node.player.stageLevel !== stageLevel) {
+    if (!this.observer && node.player.stageLevel !== newStageLevel) {
         node.socket.send(node.msg.create({
-            target: node.target.STAGE_LEVEL,
-            data: stageLevel,
+            target: node.target.PLAYER_UPDATE,
+            data: { stageLevel: newStageLevel },
             to: 'ALL'
         }));
     }
 };
 
-Game.prototype.publishGameStageUpdate = function(gameStage) {
+Game.prototype.publishGameStageUpdate = function(newGameStage) {
     // Publish update:
-    if (!this.observer && node.player.stage !== gameStage) {
+    if (!this.observer && node.player.stage !== newGameStage) {
         node.socket.send(node.msg.create({
-            target: node.target.STAGE,
-            data: gameStage,
+            target: node.target.PLAYER_UPDATE,
+            data: { stage: newGameStage },
             to: 'ALL'
         }));
     }
@@ -15195,55 +15225,36 @@ node.events.ng.on( IN + set + 'DATA', function (msg) {
 });
 
 /**
+ * ## in.say.PLAYER_UPDATE
+ *
+ * Updates the player's state in the player-list object
+ *
+ * @emit UPDATED_PLIST
+ * @see Game.pl
+ */
+    node.events.ng.on( IN + say + 'PLAYER_UPDATE', function (msg) {
+        debugger;
+        node.game.pl.updatePlayer(msg.from, msg.data);
+        node.emit('UPDATED_PLIST');
+        node.game.shouldStep();
+    });
+
+/**
  * ## in.say.STAGE
  *
- * Updates the game stage or updates a player's state in
- * the player-list object
- *
- * If the message is from the server, it updates the game stage,
- * else the stage in the player-list object from the player who
- * sent the message is updated
- *
- *  @emit UPDATED_PLIST
- *  @see Game.pl
+ * Updates the game stage
  */
     node.events.ng.on( IN + say + 'STAGE', function (msg) {
-        if (node.game.pl.exist(msg.from)) {
-            node.game.pl.updatePlayerStage(msg.from, msg.data);
-            node.emit('UPDATED_PLIST');
-            node.game.shouldStep();
-        }
-        // <!-- Assume this is the server for now
-        // TODO: assign a string-id to the server -->
-        else {
-            node.game.execStep(node.game.plot.getStep(msg.data));
-        }
+        node.game.execStep(node.game.plot.getStep(msg.data));
     });
 
 /**
  * ## in.say.STAGE_LEVEL
  *
- * Updates a player's stage level in the player-list object
- *
- * If the message is from the server, it updates the game stage,
- * else the stage in the player-list object from the player who
- * sent the message is updated
- *
- *  @emit UPDATED_PLIST
- *  @see Game.pl
+ * Updates the stage level
  */
     node.events.ng.on( IN + say + 'STAGE_LEVEL', function (msg) {
-
-        if (node.game.pl.exist(msg.from)) {
-            node.game.pl.updatePlayerStageLevel(msg.from, msg.data);
-            node.emit('UPDATED_PLIST');
-            node.game.shouldStep();
-        }
-        // <!-- Assume this is the server for now
-        // TODO: assign a string-id to the server -->
-        else {
-            //node.game.setStageLevel(msg.data);
-        }
+        //node.game.setStageLevel(msg.data);
     });
 
 /**
