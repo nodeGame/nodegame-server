@@ -33,51 +33,92 @@ var util = require('util'),
  */
 function configure (app, servernode) {
 	
-	var rootDir = servernode.rootDir;
-	
-	app.configure(function(){
-	    app.set('views', rootDir + '/views');
-	    app.set('view engine', 'jade');
-	    app.use(express.static(rootDir + '/public'));
-	});
+    var rootDir = servernode.rootDir;
+    
+//    var cookieSessions = function(name) {
+//        return function(req, res, next) {
+//            req.session = req.signedCookies[name] || {};
+//            
+//            res.on('header', function(){
+//                res.signedCookie(name, req.session, { signed: true });
+//            });
+//            
+//            next();
+//        }
+//    }
+//    
 
-	app.configure('development', function(){
-	  app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
-	});
+//    app.get('/count', function(req, res){
+//        req.session.count = req.session.count || 0;
+//        var n = req.session.count++;
+//        res.send('viewed ' + n + ' times\n');
+//    })
+//
 
-	app.configure('production', function(){
-	  app.use(express.errorHandler());
-	});
+    app.use(express.cookieParser());
+    app.use(express.session({secret: 'This is a secret'}));
+    app.use(app.router);
+    //app.set('strict routing', false);
+
+    app.get('/cookie/:name', function(req, res) {
+        // res.cookie('name', 'value', {expires: new Date() + 90000000, maxAge: 90000000000});
+        //res.cookie('name', req.params.name)
+        req.session.name = req.params.name;
+        res.send('<p>To see who you are go <a href="/name">here</a></p>');
+    })
+
+    app.get('/name', function(req, res) {
+        res.send('<p>You are ' + req.session.name + '</p>');
+//        res.clearCookie('name');
+//        res.send('<p>You are ' + req.cookies.name + '</p>');
+    })
+
+    app.configure(function(){
+	app.set('views', rootDir + '/views');
+	app.set('view engine', 'jade');
+	app.use(express.static(rootDir + '/public'));
+    });
+
+    app.configure('development', function(){
+	app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
+    });
+    
+    app.configure('production', function(){
+	app.use(express.errorHandler());
+    });
 
     app.get('/', function(req, res) {
-    	console.log(req.query);
+        var q;
     	if (J.isEmpty(req.query)) {
-    		res.render('index', {
+    	    res.render('index', {
                 title: 'Yay! Your nodeGame server is running.'
             });
     	}
         
-    	if (!req.query.q) {
-    		res.send('Query must start with q=XXX');
-    	}
-    	var q = req.query.q;
+        q = req.query.q;
     	
-    	if (q === "info") {
-    		//console.log(servernode.info);
-    		res.send(servernode.info);
+    	if (!q) {
+    	    res.send('Query must start with q=XXX');
     	}
     	
-    	if (q === "channels") {
-    		//console.log(servernode.info);
-    		res.send(servernode.info.channels);
-    	}
+        switch(q) {
+        case 'info':
+    	    //console.log(servernode.info);
+    	    res.send(servernode.info);
+    	    break;
     	
-    	if (q === "games") {
-    		//console.log(servernode.info);
-    		res.send(servernode.info.games);
-    	}
+    	case 'channels':
+    	    //console.log(servernode.info);
+    	    res.send(servernode.info.channels);
+    	    break;
     	
-    	res.send('Unknown query received.');
+    	case 'games':
+    	    //console.log(servernode.info);
+    	    res.send(servernode.info.games);
+    	    break;
+        default:
+            res.send('Unknown query received.');
+        }
     });
     
     app.get('/error/:type', function(req, res) {
@@ -85,28 +126,68 @@ function configure (app, servernode) {
     	res.render('error/' + type);
     });
     
-    app.get('/:game/*', function(req, res){    
-	
-    	var gameInfo = servernode.info.games[req.params.game];
+    app.get('/javascripts/:file', function(req, res) {
+        var path;
+        if (!req.params.file) return;
+    	if (req.params.file.lastIndexOf('\/') === (req.params.file.length-1)) {
+            req.params.file = req.params.file.substring(0,req.params.file.length-1);
+    	}
+    	
+        // Build path to file
+    	path = rootDir + '/public/javascripts/' + req.params.file;
+        // Send file
+    	res.sendfile(path);
+    });
+
+    app.get('/stylesheets/:file', function(req, res) {
+        var path;
+        if (!req.params.file) return;
+    	if (req.params.file.lastIndexOf('\/') === (req.params.file.length-1)) {
+            req.params.file = req.params.file.substring(0,req.params.file.length-1);
+    	}
+    	
+        // Build path to file
+    	path = rootDir + '/public/stylesheets/' + req.params.file;
+        // Send file
+    	res.sendfile(path);
+    });
+
+    // TODO: does not serve files in nested directories. fix
+    app.get('/:game/*', function(req, res) {
+        var gameInfo, path, file;
+        gameInfo = servernode.info.games[req.params.game];
     	
     	if (!gameInfo) {
-    		res.send('Resource ' + req.params.game + ' is not available.');
-    		return;
+    	    res.send('Resource ' + req.params.game + ' is not available.');
+    	    return;
     	}
     	
-    	if (req.params[0].match(/server\//)){
-    		res.json({error: 'access denied'}, 403);
-    		return;
-    	} 
-    	
-    	if (req.params[0].lastIndexOf('\\') === (req.params[0].length-1)) {
-    		res.send('Malformed query received. Address cannot end with a backslash');
-    		return;
-    	}
-    	
-    	var path = gameInfo.dir + '/' + req.params[0]; 
+        if (!gameInfo.dir) {
+            res.send('Resource ' + req.params.game + ' is not configured properly: missing game directory.');
+    	    return;
+        }
+
+        file = req.params[0];        
+        if (file) {
+    	    if (file.match(/server\//)){
+    	        res.json({error: 'access denied'}, 403);
+    	        return;
+    	    } 
+    	    // removing the trailing slash because it creates Error: ENOTDIR in fetching the file
+    	    if (file.lastIndexOf('\/') === (file.length-1)) {
+               file = file.substring(0,file.length-1);
+                console.log('here');
+    	    }
+        }
+        else {
+            file = 'index.htm';
+        }
+        
+        // Build path to file
+    	path = gameInfo.dir + '/'  + file;
+
+        // Send file (if it is a directory it is not sent)
     	res.sendfile(path);
-		
     });    
     
     return true;
