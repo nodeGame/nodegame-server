@@ -32,8 +32,26 @@ var util = require('util'),
  * @param {object} options The object containing the custom settings
  */
 function configure (app, servernode) {
-	
-    var rootDir = servernode.rootDir;
+    var rootDir;
+    rootDir = servernode.rootDir;
+
+    function verifyGameRequest(req, res) {
+        var gameInfo;
+        gameInfo = servernode.info.games[req.params.game];
+    	
+    	if (!gameInfo) {
+    	    res.send('Resource ' + req.params.game + ' is not available.');
+    	    return false;
+    	}
+    	
+        if (!gameInfo.dir) {
+            res.send('Resource ' + req.params.game + ' is not configured properly: missing game directory.');
+    	    return false;
+        }
+
+        return gameInfo;
+    }
+
     
 //    var cookieSessions = function(name) {
 //        return function(req, res, next) {
@@ -152,36 +170,38 @@ function configure (app, servernode) {
     	res.sendfile(path);
     });
 
-    // TODO: does not serve files in nested directories. fix
+
+    // Serves default game index file: index.htm
+    app.get('/:game', function(req, res) {
+        var gameInfo, path;
+
+        gameInfo = verifyGameRequest(req, res);
+        if (!gameInfo) return;
+                
+        // Build path to file
+    	path = gameInfo.dir + '/index.htm';
+
+        // Send file (if it is a directory it is not sent)
+    	res.sendfile(path);
+    });    
+
+    // Serves any other game file
     app.get('/:game/*', function(req, res) {
         var gameInfo, path, file;
-        gameInfo = servernode.info.games[req.params.game];
-    	
-    	if (!gameInfo) {
-    	    res.send('Resource ' + req.params.game + ' is not available.');
-    	    return;
-    	}
-    	
-        if (!gameInfo.dir) {
-            res.send('Resource ' + req.params.game + ' is not configured properly: missing game directory.');
-    	    return;
-        }
 
+        gameInfo = verifyGameRequest(req, res);
+        if (!gameInfo) return;
+        
         file = req.params[0];        
-        if (file) {
-    	    if (file.match(/server\//)){
-    	        res.json({error: 'access denied'}, 403);
-    	        return;
-    	    } 
-    	    // removing the trailing slash because it creates Error: ENOTDIR in fetching the file
-    	    if (file.lastIndexOf('\/') === (file.length-1)) {
-               file = file.substring(0,file.length-1);
-                console.log('here');
-    	    }
-        }
-        else {
-            file = 'index.htm';
-        }
+        
+    	if (file.match(/server\//)){
+    	    res.json({error: 'access denied'}, 403);
+    	    return;
+    	} 
+    	// removing the trailing slash because it creates Error: ENOTDIR in fetching the file
+    	if (file.lastIndexOf('\/') === (file.length-1)) {
+            file = file.substring(0,file.length-1);
+    	}
         
         // Build path to file
     	path = gameInfo.dir + '/'  + file;
@@ -192,3 +212,4 @@ function configure (app, servernode) {
     
     return true;
 };
+
