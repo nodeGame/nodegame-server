@@ -1,13 +1,13 @@
 /**
  * #  nodeGame ServerNode
- * 
+ *
  * Copyright(c) 2012 Stefano Balietti
  * MIT Licensed
- * 
- * Creates an HTTP server, and loads a Socket.io instance 
- * 
+ *
+ * Creates an HTTP server, and loads a Socket.io instance
+ *
  * ---
- * 
+ *
  */
 
 // ## Global scope
@@ -26,9 +26,9 @@ var util = require('util'),
 
 /**
  * ### ServerNode._configureHTTP
- * 
+ *
  * Defines standard routes for the HTTP server
- * 
+ *
  * @param {object} options The object containing the custom settings
  */
 function configure (app, servernode) {
@@ -38,12 +38,12 @@ function configure (app, servernode) {
     function verifyGameRequest(req, res) {
         var gameInfo;
         gameInfo = servernode.info.games[req.params.game];
-    	
+
     	if (!gameInfo) {
     	    res.send('Resource ' + req.params.game + ' is not available.');
     	    return false;
     	}
-    	
+
         if (!gameInfo.dir) {
             res.send('Resource ' + req.params.game + ' is not configured properly: missing game directory.');
     	    return false;
@@ -52,19 +52,19 @@ function configure (app, servernode) {
         return gameInfo;
     }
 
-    
+
 //    var cookieSessions = function(name) {
 //        return function(req, res, next) {
 //            req.session = req.signedCookies[name] || {};
-//            
+//
 //            res.on('header', function(){
 //                res.signedCookie(name, req.session, { signed: true });
 //            });
-//            
+//
 //            next();
 //        }
 //    }
-//    
+//
 
 //    app.get('/count', function(req, res){
 //        req.session.count = req.session.count || 0;
@@ -100,7 +100,7 @@ function configure (app, servernode) {
     app.configure('development', function(){
 	app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
     });
-    
+
     app.configure('production', function(){
 	app.use(express.errorHandler());
     });
@@ -112,24 +112,24 @@ function configure (app, servernode) {
                 title: 'Yay! Your nodeGame server is running.'
             });
     	}
-        
+
         q = req.query.q;
-    	
+
     	if (!q) {
     	    res.send('Query must start with q=XXX');
     	}
-    	
+
         switch(q) {
         case 'info':
     	    //console.log(servernode.info);
     	    res.send(servernode.info);
     	    break;
-    	
+
     	case 'channels':
     	    //console.log(servernode.info);
     	    res.send(servernode.info.channels);
     	    break;
-    	
+
     	case 'games':
     	    //console.log(servernode.info);
     	    res.send(servernode.info.games);
@@ -138,22 +138,22 @@ function configure (app, servernode) {
             res.send('Unknown query received.');
         }
     });
-    
+
     app.get('/error/:type', function(req, res) {
     	var type = req.params.type;
     	res.render('error/' + type);
     });
-    
+
     app.get('/javascripts/:file', function(req, res) {
         var path;
         if (!req.params.file) return;
     	if (req.params.file.lastIndexOf('\/') === (req.params.file.length-1)) {
             req.params.file = req.params.file.substring(0,req.params.file.length-1);
     	}
-    	
-        // Build path to file
+
+        // Build path to file.
     	path = rootDir + '/public/javascripts/' + req.params.file;
-        // Send file
+        // Send file.
     	res.sendfile(path);
     });
 
@@ -163,53 +163,50 @@ function configure (app, servernode) {
     	if (req.params.file.lastIndexOf('\/') === (req.params.file.length-1)) {
             req.params.file = req.params.file.substring(0,req.params.file.length-1);
     	}
-    	
-        // Build path to file
+
+        // Build path to file.
     	path = rootDir + '/public/stylesheets/' + req.params.file;
-        // Send file
+        // Send file.
     	res.sendfile(path);
     });
 
-
-    // Serves default game index file: index.htm
-    app.get('/:game', function(req, res) {
-        var gameInfo, path;
-
-        gameInfo = verifyGameRequest(req, res);
-        if (!gameInfo) return;
-                
-        // Build path to file
-    	path = gameInfo.dir + '/index.htm';
-
-        // Send file (if it is a directory it is not sent)
-    	res.sendfile(path);
-    });    
-
-    // Serves any other game file
+    // Serves game files or default game index file: index.htm.
     app.get('/:game/*', function(req, res) {
         var gameInfo, path, file;
 
         gameInfo = verifyGameRequest(req, res);
         if (!gameInfo) return;
-        
-        file = req.params[0];        
-        
-    	if (file.match(/server\//)){
-    	    res.json({error: 'access denied'}, 403);
-    	    return;
-    	} 
-    	// removing the trailing slash because it creates Error: ENOTDIR in fetching the file
-    	if (file.lastIndexOf('\/') === (file.length-1)) {
-            file = file.substring(0,file.length-1);
-    	}
-        
-        // Build path to file
+
+        file = req.params[0];
+
+        if ('' === file || 'undefined' === typeof file) {
+            file = 'index.htm';
+        }
+        else {
+    	    if (file.match(/server\//)){
+    	        res.json({error: 'access denied'}, 403);
+    	        return;
+    	    }
+    	    // Removing the trailing slash because it creates:
+            // Error: ENOTDIR in fetching the file.
+    	    if (file.lastIndexOf('\/') === (file.length-1)) {
+                file = file.substring(0, file.length-1);
+    	    }
+        }
+
+        // Build path to file.
     	path = gameInfo.dir + '/'  + file;
 
-        // Send file (if it is a directory it is not sent)
+        // Send file (if it is a directory it is not sent).
     	res.sendfile(path);
-    });    
-    
+    });
+
+
+
+    app.get('/:game', function(req, res) {
+        res.redirect('/' + req.params.game + '/');
+    });
+
     return true;
 };
 
