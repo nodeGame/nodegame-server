@@ -7216,45 +7216,23 @@ JSUS.extend(PARSE);
 
 /**
  * # nodeGame
- * 
+ *
  * Social Experiments in the Browser
- * 
- * Copyright(c) 2012 Stefano Balietti
- * MIT Licensed 
- * 
- * nodeGame is a free, open source, event-driven javascript framework for on line, 
+ *
+ * Copyright(c) 2013 Stefano Balietti
+ * MIT Licensed
+ *
+ * nodeGame is a free, open source, event-driven javascript framework for on line,
  * multiplayer games in the browser.
- * 
- * 
  */
-
 (function (exports) {
 
-    if ('object' === typeof module && 'function' === typeof require) {
-        // <!-- Node.js -->
-
-        // Load all classes
-        var ngc = require('./init.node.js');
-
-        exports.getClient = function(options) {
-            var node;
-            node = new ngc.NodeGameClient();
-            ngc.JSUS.mixin(node, ngc.constants); // TODO maybe not necessary, maybe keep them in .constants
-            ngc.JSUS.mixin(node, ngc.stepRules); // TODO see above
-            return node;
-        }
-    }
-    else {
-        // <!-- Browser -->
-        if ('undefined' !== typeof JSUS) node.JSUS = JSUS;
-        if ('undefined' !== typeof NDDB) node.NDDB = NDDB;
-        if ('undefined' !== typeof store) node.store = store;
-        
-        node.support = JSUS.compatibility();
-    }
+    if ('undefined' !== typeof JSUS) exports.JSUS = JSUS;
+    if ('undefined' !== typeof NDDB) exports.NDDB = NDDB;
+    if ('undefined' !== typeof store) exports.store = store;
+    exports.support = JSUS.compatibility();        
     
-})('object' === typeof module ? module.exports : (window.node = {}));	
-
+})('object' === typeof module ? module.exports : (window.node = {}));
 /**
  * # Variables
  *
@@ -7271,8 +7249,10 @@ JSUS.extend(PARSE);
 
     // ## Constants
 
+    var k = node.constants = {};
+
     // ### version	
-    node.version = '1.0.0-beta';
+    k.version = '1.0.0-beta';
 
     /**
      * ### node.actions
@@ -7290,11 +7270,11 @@ JSUS.extend(PARSE);
      * - SAY: Announces a change of state or other global property in the sender of the msg
      *
      */
-    node.action = {};
+    k.action = {};
 
-    node.action.SET = 'set';
-    node.action.GET = 'get';
-    node.action.SAY = 'say';
+    k.action.SET = 'set';
+    k.action.GET = 'get';
+    k.action.SAY = 'say';
 
     /**
      * ### node.target
@@ -7307,91 +7287,91 @@ JSUS.extend(PARSE);
      *
      * It answers the question: "What is the content of the message?"
      */
-    node.target = {};
+    k.target = {};
 
 
     // #### target.DATA
     // Generic identifier for any type of data
-    node.target.DATA = 'DATA';
+    k.target.DATA = 'DATA';
 
     // #### target.HI
     // A client is connecting for the first time
-    node.target.HI = 'HI';
+    k.target.HI = 'HI';
 
     // #### target.HI_AGAIN
     // A client re-connects to the server within the same session
-    node.target.HI_AGAIN = 'HI_AGAIN';
+    k.target.HI_AGAIN = 'HI_AGAIN';
 
     // #### target.PCONNECT
     // A new client just connected to the player endpoint
-    node.target.PCONNECT = 'PCONNECT';
+    k.target.PCONNECT = 'PCONNECT';
 
     // #### target.PDISCONNECT
     // A client that just disconnected from the player endpoint
-    node.target.PDISCONNECT = 'PDISCONNECT';
+    k.target.PDISCONNECT = 'PDISCONNECT';
 
     // #### target.MCONNECT
     // A client that just connected to the admin (monitor) endpoint
-    node.target.MCONNECT = 'MCONNECT';
+    k.target.MCONNECT = 'MCONNECT';
 
     // #### target.MDISCONNECT
     // A client just disconnected from the admin (monitor) endpoint
-    node.target.MDISCONNECT = 'MDISCONNECT';
+    k.target.MDISCONNECT = 'MDISCONNECT';
 
     // #### target.PLIST
     // The list of clients connected to the player endpoint was updated
-    node.target.PLIST = 'PLIST';
+    k.target.PLIST = 'PLIST';
 
     // #### target.MLIST
     // The list of clients connected to the admin (monitor) endpoint was updated
-    node.target.MLIST = 'MLIST';
+    k.target.MLIST = 'MLIST';
 
     // #### target.PLAYER_UPDATE
     // A client updates his Player object
-    node.target.PLAYER_UPDATE = 'PLAYER_UPDATE';
+    k.target.PLAYER_UPDATE = 'PLAYER_UPDATE';
 
     // #### target.STATE
     // A client notifies his own state
-    node.target.STATE = 'STATE';
+    k.target.STATE = 'STATE';
 
     // #### target.STAGE
     // A client notifies his own stage
-    node.target.STAGE = 'STAGE';
+    k.target.STAGE = 'STAGE';
 
     // #### target.STAGE_LEVEL
     // A client notifies his own stage level
-    node.target.STAGE_LEVEL = 'STAGE_LEVEL';
+    k.target.STAGE_LEVEL = 'STAGE_LEVEL';
 
     // #### target.REDIRECT
     // Redirects a client to a new uri
-    node.target.REDIRECT = 'REDIRECT';
+    k.target.REDIRECT = 'REDIRECT';
 
     // #### target.SETUP
     // Asks a client update its configuration
-    node.target.SETUP = 'SETUP';
+    k.target.SETUP = 'SETUP';
 
     // #### target.GAMECOMMAND
     // Ask a client to start/pause/stop/resume the game
-    node.target.GAMECOMMAND = 'GAMECOMMAND';
+    k.target.GAMECOMMAND = 'GAMECOMMAND';
 
     // #### target.JOIN
     // Asks a client to join another channel/subchannel/room
-    node.target.JOIN = 'JOIN';
+    k.target.JOIN = 'JOIN';
 
     // #### target.LOG
     // A log entry
-    node.target.LOG = 'LOG';
+    k.target.LOG = 'LOG';
 
     //#### not used targets (for future development)
 
-    node.target.TXT  = 'TXT';    // Text msg
+    k.target.TXT  = 'TXT';    // Text msg
 
     // Still to implement
-    node.target.BYE  = 'BYE';    // Force disconnects
-    node.target.ACK  = 'ACK';    // A reliable msg was received correctly
+    k.target.BYE  = 'BYE';    // Force disconnects
+    k.target.ACK  = 'ACK';    // A reliable msg was received correctly
 
-    node.target.WARN = 'WARN';   // To do.
-    node.target.ERR  = 'ERR';    // To do.
+    k.target.WARN = 'WARN';   // To do.
+    k.target.ERR  = 'ERR';    // To do.
 
 
     /**
@@ -7402,7 +7382,7 @@ JSUS.extend(PARSE);
      * - node.gamecommand.resume
      * - node.gamecommand.stop
      */
-    node.gamecommand = {
+    k.gamecommand = {
         start: 'start',
         pause: 'pause',
         resume: 'resume',
@@ -7422,8 +7402,8 @@ JSUS.extend(PARSE);
      * - node.IN
      * - node.OUT
      */
-    node.IN  = 'in.';
-    node.OUT = 'out.';
+    k.IN  = 'in.';
+    k.OUT = 'out.';
 
 
     // TODO node.is is basically replaced by Game.stateLevels
@@ -7436,44 +7416,44 @@ JSUS.extend(PARSE);
      *
      * @deprecated
      */
-    node.is = {};
+    k.is = {};
 
     // #### is.UNKNOWN
     // A game has not been initialized
-    node.is.UNKNOWN = 0;
+    k.is.UNKNOWN = 0;
 
     // #### is.INITIALIZING
     // The engine is loading all the modules
-    node.is.INITIALIZING = 1;
+    k.is.INITIALIZING = 1;
 
     // #### is.INITIALIZED
     // The engine is fully loaded, but there is still no game
-    node.is.INITIALIZED = 5;
+    k.is.INITIALIZED = 5;
 
     // #### is.GAMELOADED
     // The engine is fully loaded, and a game has been loaded
-    node.is.GAMELOADED = 10;
+    k.is.GAMELOADED = 10;
 
     // #### is.DEAD
     // An unrecoverable error has occurred
-    node.is.DEAD = -1;
+    k.is.DEAD = -1;
 
     // TODO: remove these
     // #### is.LOADING
     // A game is loading
-    node.is.LOADING = 10;
+    k.is.LOADING = 10;
 
     // #### is.LOADED
     // A game has been loaded, but the GameWindow object could still require some time
-    node.is.LOADED  = 25;
+    k.is.LOADED  = 25;
 
     // #### is.PLAYING
     // Everything is ready
-    node.is.PLAYING = 50;
+    k.is.PLAYING = 50;
 
     // #### is.DONE
     // The player completed the game state
-    node.is.DONE = 100;
+    k.is.DONE = 100;
 
 
 
@@ -7483,7 +7463,7 @@ JSUS.extend(PARSE);
      *
      * Levels associated with the states of the Game
      */
-    node.stateLevels = {
+    k.stateLevels = {
         UNINITIALIZED:  0,  // creating the game object
         STARTING:       1,  // starting the game
         INITIALIZING:   2,  // calling game's init
@@ -7502,7 +7482,7 @@ JSUS.extend(PARSE);
      *
      * Levels associated with the states of the stages of the Game
      */
-    node.stageLevels = {
+    k.stageLevels = {
         UNINITIALIZED:  0,
         INITIALIZING:   1,  // executing init
         INITIALIZED:    5,  // init executed
@@ -7522,7 +7502,7 @@ JSUS.extend(PARSE);
      *
      * Undefined player ID
      */
-    node.UNDEFINED_PLAYER = -1;
+    k.UNDEFINED_PLAYER = -1;
 
 })('undefined' != typeof node ? node : module.exports);
 
@@ -7596,15 +7576,15 @@ JSUS.extend(PARSE);
  * ---
  *
  */
-(function (exports, node) {
+(function (exports, parent) {
 
 // ## Global scope
-    var J = node.JSUS;
+    var J = parent.JSUS;
 
-    node.NodeGameRuntimeError = NodeGameRuntimeError;
-    node.NodeGameStageCallbackError = NodeGameStageCallbackError;
-    node.NodeGameMisconfiguredGameError = NodeGameMisconfiguredGameError;
-    node.NodeGameIllegalOperationError = NodeGameIllegalOperationError;
+    parent.NodeGameRuntimeError = NodeGameRuntimeError;
+    parent.NodeGameStageCallbackError = NodeGameStageCallbackError;
+    parent.NodeGameMisconfiguredGameError = NodeGameMisconfiguredGameError;
+    parent.NodeGameIllegalOperationError = NodeGameIllegalOperationError;
 
     /*
      * ### NodeGameRuntimeError
@@ -7684,6 +7664,7 @@ JSUS.extend(PARSE);
     }
     else {
         window.onerror = function(msg, url, linenumber) {
+            console.log(node, msg);
             node.err(url + ' ' + linenumber + ': ' + msg);
             return !node.debug;
         };
@@ -9419,7 +9400,6 @@ GameMsg.prototype.toEvent = function () {
 
     // ## Global scope
     exports.Stager = Stager;
-
 
     var stepRules = parent.stepRules;
 
@@ -11589,9 +11569,9 @@ GamePlot.prototype.normalizeGameStage = function(gameStage) {
         return types;
     }
 
-    function get( type, options ) {
+    function get( node, type, options ) {
         var Socket = types[type];
-        return (Socket) ? new Socket(options) : null;
+        return (Socket) ? new Socket(node, options) : null;
     }
 
     function register( type, proto ) {
@@ -11700,7 +11680,7 @@ GamePlot.prototype.normalizeGameStage = function(gameStage) {
     };
 
     Socket.prototype.setSocketType = function(type, options) {
-        this.socket = SocketFactory.get(type, options); // returns null on error
+        this.socket = SocketFactory.get(this.node, type, options); // returns null on error
         return this.socket;
     };
 
@@ -11933,54 +11913,50 @@ GamePlot.prototype.normalizeGameStage = function(gameStage) {
  * 
  */
 
-(function (exports, node, io) {
-	
-// TODO io will be undefined in Node.JS because module.parents.exports.io does not exists
+(function (exports, parent, io) {
+    
+    exports.SocketIo = SocketIo;
 
-// ## Global scope
-	
-var GameMsg = node.GameMsg,
-    Player = node.Player,
-    GameMsgGenerator = node.GameMsgGenerator;
-
-exports.SocketIo = SocketIo;
-
-function SocketIo(options) {
-    this.socket = null;
-}
-
-SocketIo.prototype.connect = function(url, options) {
-    var that;
-    if (!url) {
-	node.err('cannot connect to empty url.', 'ERR');
-	return false;
+    function SocketIo(node, options) {
+        options = options || {};
+        this.options = options;
+        this.node = node;
+        this.socket = null;
     }
-    that = this;
-	
-    this.socket = io.connect(url, options); //conf.io
 
-    this.socket.on('connect', function (msg) {
-	node.info('socket.io connection open'); 
-	that.socket.on('message', function(msg) {
-	    node.socket.onMessage(msg);
-	});	
-    });
+    SocketIo.prototype.connect = function(url, options) {
+        var that, node;
+        node = this.node;
+        if (!url) {
+	    node.err('cannot connect to empty url.', 'ERR');
+	    return false;
+        }
+        that = this;
 	
-    this.socket.on('disconnect', node.socket.onDisconnect);
-    return true;
+        this.socket = io.connect(url, options); //conf.io
+
+        this.socket.on('connect', function (msg) {
+	    node.info('socket.io connection open'); 
+	    that.socket.on('message', function(msg) {
+	        node.socket.onMessage(msg);
+	    });	
+        });
 	
-};
+        this.socket.on('disconnect', node.socket.onDisconnect);
+        return true;
+	
+    };
 
-SocketIo.prototype.send = function (msg) {
-    this.socket.send(msg.stringify());
-};
+    SocketIo.prototype.send = function (msg) {
+        this.socket.send(msg.stringify());
+    };
 
-node.SocketFactory.register('SocketIo', SocketIo);
+    parent.SocketFactory.register('SocketIo', SocketIo);
 
 })(
     'undefined' != typeof node ? node : module.exports,
     'undefined' != typeof node ? node : module.parent.exports,
-    'undefined' != typeof io ? io : module.parent.exports.io 
+    'undefined' != typeof io ? io : require('socket.io-client') 
 );
 
 /**
@@ -12725,7 +12701,7 @@ node.SocketFactory.register('SocketIo', SocketIo);
 
         cb = stage.cb;
 
-        this.setStageLevel(node.stageLevels.LOADING);
+        this.setStageLevel(constants.stageLevels.LOADING);
 
         try {
             res = cb.call(node.game);
@@ -14195,6 +14171,7 @@ SessionManager.prototype.store = function() {
          */
         this.registerSetup('plot', function(stagerState, updateRule) {
             if (!this.game) {
+                console.log(this);
                 this.warn("register('plot') called before node.game was initialized");
                 throw new node.NodeGameMisconfiguredGameError("node.game non-existent");
             }
@@ -14227,7 +14204,7 @@ SessionManager.prototype.store = function() {
          * @see Stager.setState
          */
         this.registerSetup('plist', function(playerList, updateRule) {
-            updatePlayerList('pl', playerList, updateRule);
+            updatePlayerList.call(this, 'pl', playerList, updateRule);
         });
 
         /**
@@ -14244,7 +14221,7 @@ SessionManager.prototype.store = function() {
          * @see Stager.setState
          */
         this.registerSetup('mlist', function(monitorList, updateRule) {
-            updatePlayerList('ml', monitorList, updateRule);
+            updatePlayerList.call(this, 'ml', monitorList, updateRule);
         });
         
         // Utility for setup.plist and setup.mlist:
@@ -14467,7 +14444,6 @@ SessionManager.prototype.store = function() {
      * @return {boolean} TRUE, if configuration is successful
      *
      * @see node.setup.register
-     *
      */
     NGC.prototype.setup = function(property) {
         var res;
@@ -14487,9 +14463,9 @@ SessionManager.prototype.store = function() {
             this.warn('no such property to configure: ' + property);
             return false;
         }
-
+        
         // Setup the property using rest of arguments:
-        res = this.setup[property].apply(exports, Array.prototype.slice.call(arguments, 1));
+        res = this.setup[property].apply(this, Array.prototype.slice.call(arguments, 1));
 
         if (property !== 'nodegame') {
             this.conf[property] = res;
@@ -14697,7 +14673,12 @@ SessionManager.prototype.store = function() {
 (function (exports, parent) {
 
     var NGC = parent.NodeGameClient,
-    Player = parent.Player;
+    Player = parent.Player,
+    constants = parent.constants;
+
+    
+
+    
 
     /**
      * ### NodeGameClient.createPlayer
@@ -14706,8 +14687,8 @@ SessionManager.prototype.store = function() {
      */
     NGC.prototype.createPlayer = function (player) {
         if (this.player &&
-            this.player.stateLevel > this.stateLevels.STARTING &&
-            this.player.stateLevel !== this.stateLevels.GAMEOVER) {
+            this.player.stateLevel > constants.stateLevels.STARTING &&
+            this.player.stateLevel !== constants.stateLevels.GAMEOVER) {
             throw new this.NodeGameIllegalOperationError(
                 'createPlayer: cannot create player while game is running');
         }
@@ -14747,6 +14728,8 @@ SessionManager.prototype.store = function() {
 
 
     var NGC = parent.NodeGameClient;
+    
+    var GameStage = parent.GameStage;
     
     /**
      * ### NodeGameClient.getCurrentEventEmitter
@@ -15523,12 +15506,12 @@ SessionManager.prototype.store = function() {
      * @return {boolean} TRUE on success
      */
     NGC.prototype.addDefaultInternalListeners = function(force) {
-
+        var that;
         if (this.internalAdded && !force) {
             this.err('Default internal listeners already added once. Use the force flag to re-add.');
             return false;
         }
-        
+        that = this;
         /**
          * ## DONE
          * 
@@ -15545,18 +15528,18 @@ SessionManager.prototype.store = function() {
 	    
             // Execute done handler before updating stage
             var ok = true,
-            done = this.game.getCurrentStep().done;
+            done = that.game.getCurrentStep().done;
             
-            if (done) ok = done.apply(this.game, J.obj2Array(arguments));
+            if (done) ok = done.apply(that.game, J.obj2Array(arguments));
             if (!ok) return;
-            this.game.setStageLevel(constants.stageLevels.DONE)
+            that.game.setStageLevel(constants.stageLevels.DONE)
 	    
             // Call all the functions that want to do 
             // something before changing stage
-            this.emit('BEFORE_DONE');
+            that.emit('BEFORE_DONE');
 	    
             // Step forward, if allowed
-            this.game.shouldStep();
+            that.game.shouldStep();
         });
 
         /**
@@ -15565,12 +15548,12 @@ SessionManager.prototype.store = function() {
          * @emit BEFORE_PLAYING 
          */
         this.events.ng.on('PLAYING', function() {
-            this.game.setStageLevel(constants.stageLevels.PLAYING);
+            that.game.setStageLevel(constants.stageLevels.PLAYING);
             //TODO: the number of messages to emit to inform other players
             // about its own stage should be controlled. Observer is 0 
-            //this.game.publishUpdate();
-            this.socket.clearBuffer();	
-            this.emit('BEFORE_PLAYING');
+            //that.game.publishUpdate();
+            that.socket.clearBuffer();	
+            that.emit('BEFORE_PLAYING');
         });
 
 
@@ -15580,14 +15563,14 @@ SessionManager.prototype.store = function() {
          */
         this.events.ng.on('NODEGAME_GAMECOMMAND_' + constants.gamecommand.start, function(options) {
 	    
-            this.emit('BEFORE_GAMECOMMAND', constants.gamecommand.start, options);
+            that.emit('BEFORE_GAMECOMMAND', constants.gamecommand.start, options);
 	    
-            if (this.game.getCurrentStep() && this.game.getCurrentStep().stage !== 0) {
-	        this.err('Game already started. Use restart if you want to start the game again');
+            if (that.game.getCurrentStep() && that.game.getCurrentStep().stage !== 0) {
+	        that.err('Game already started. Use restart if you want to start the game again');
 	        return;
             }
 	    
-            this.game.start();	
+            that.game.start();	
         });
 
         this.incomingAdded = true;
@@ -16269,6 +16252,16 @@ TriggerManager.prototype.size = function () {
 	('undefined' !== typeof node) ? node : module.exports
   , ('undefined' !== typeof node) ? node : module.parent.exports
 );
+/**
+ * Exposing the node object
+ */
+(function (node) {
+
+    var tmp = node;
+    node = new exports.NodeGameClient();
+    JSUS.mixin(node, tmp);
+
+})(window.node);
 /**
  * 
  * # GameWindow
