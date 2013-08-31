@@ -30,7 +30,7 @@ function configure (loggers) {
 	
 	loggers.add('servernode', {
 	    console: {
-	    	level: 'warn',
+	    	level: 'silly',
 	    	colorize: true,
 	    },
 	    file: {
@@ -44,7 +44,7 @@ function configure (loggers) {
 	
 	loggers.add('channel', {
 	    console: {
-	    	level: 'warn',
+	    	level: 'silly',
 	    	colorize: true,
 	    },
 	    file: {
