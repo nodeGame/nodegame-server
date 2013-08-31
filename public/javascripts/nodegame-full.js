@@ -11897,56 +11897,67 @@ GamePlot.prototype.normalizeGameStage = function(gameStage) {
 
 /**
  * # SocketIo
- * 
+ *
  * Copyright(c) 2012 Stefano Balietti
- * MIT Licensed 
- * 
- * Implementation of a remote socket communicating over HTTP 
+ * MIT Licensed
+ *
+ * Implementation of a remote socket communicating over HTTP
  * through Socket.IO
- * 
+ *
  * ---
- * 
+ *
  */
 
-(function (exports, parent, io) {
-    
+(function (exports, node, io) {
+
+    // TODO io will be undefined in Node.JS because module.parents.exports.io does not exists
+
+    // ## Global scope
+
+    var GameMsg = node.GameMsg,
+    Player = node.Player,
+    GameMsgGenerator = node.GameMsgGenerator;
+
     exports.SocketIo = SocketIo;
 
     function SocketIo(node, options) {
-        options = options || {};
-        this.options = options;
         this.node = node;
         this.socket = null;
     }
 
     SocketIo.prototype.connect = function(url, options) {
-        var that, node;
+        var node, socket;
         node = this.node;
-        if (!url) {
-	    node.err('cannot connect to empty url.', 'ERR');
-	    return false;
-        }
-        that = this;
-	
-        this.socket = io.connect(url, options); //conf.io
 
-        this.socket.on('connect', function (msg) {
-	    node.info('socket.io connection open'); 
-	    that.socket.on('message', function(msg) {
-	        node.socket.onMessage(msg);
-	    });	
+        if (!url) {
+            node.err('cannot connect to empty url.', 'ERR');
+            return false;
+        }
+
+        socket = io.connect(url, options); //conf.io
+        socket.on('connect', function (msg) {
+            node.info('socket.io connection open');
+            socket.on('message', function(msg) {
+                node.socket.onMessage(msg);
+            });
         });
-	
-        this.socket.on('disconnect', node.socket.onDisconnect);
+
+        socket.on('disconnect', function() {
+            node.socket.onDisconnect.call(node.socket);
+        });
+
+        this.socket = socket;
+
         return true;
-	
+
     };
 
     SocketIo.prototype.send = function (msg) {
+        console.log(this);
         this.socket.send(msg.stringify());
     };
 
-    parent.SocketFactory.register('SocketIo', SocketIo);
+    node.SocketFactory.register('SocketIo', SocketIo);
 
 })(
     'undefined' != typeof node ? node : module.exports,
@@ -14445,7 +14456,6 @@ GamePlot.prototype.normalizeGameStage = function(gameStage) {
     NGC.prototype.setup = function(property) {
         var res;
         
-
         if (frozen) {
             this.err('nodeGame configuration is frozen. No modification allowed.');
             return false;
@@ -15227,9 +15237,10 @@ GamePlot.prototype.normalizeGameStage = function(gameStage) {
      * @return {boolean} TRUE on success
      */
     NGC.prototype.addDefaultIncomingListeners = function(force) {
+        var node = this;
 
-        if (this.incomingAdded && !force) {
-            this.err('Default incoming listeners already added once. Use the force flag to re-add.');
+        if (node.incomingAdded && !force) {
+            node.err('Default incoming listeners already added once. Use the force flag to re-add.');
             return false;
         }
         
@@ -15241,10 +15252,10 @@ GamePlot.prototype.normalizeGameStage = function(gameStage) {
          * @emit UPDATED_PLIST
          * @see Game.pl
          */
-        this.events.ng.on( IN + say + 'PCONNECT', function (msg) {
+        node.events.ng.on( IN + say + 'PCONNECT', function (msg) {
             if (!msg.data) return;
-            this.game.pl.add(new Player(msg.data));
-            this.emit('UPDATED_PLIST');
+            node.game.pl.add(new Player(msg.data));
+            node.emit('UPDATED_PLIST');
         });
 
         /**
@@ -15255,10 +15266,10 @@ GamePlot.prototype.normalizeGameStage = function(gameStage) {
          * @emit UPDATED_PLIST
          * @see Game.pl
          */
-        this.events.ng.on( IN + say + 'PDISCONNECT', function (msg) {
+        node.events.ng.on( IN + say + 'PDISCONNECT', function (msg) {
             if (!msg.data) return;
-            this.game.pl.remove(msg.data.id);
-            this.emit('UPDATED_PLIST');
+            node.game.pl.remove(msg.data.id);
+            node.emit('UPDATED_PLIST');
         });
 
         /**
@@ -15269,10 +15280,10 @@ GamePlot.prototype.normalizeGameStage = function(gameStage) {
          * @emit UPDATED_MLIST
          * @see Game.ml
          */
-        this.events.ng.on( IN + say + 'MCONNECT', function (msg) {
+        node.events.ng.on( IN + say + 'MCONNECT', function (msg) {
             if (!msg.data) return;
-            this.game.ml.add(new Player(msg.data));
-            this.emit('UPDATED_MLIST');
+            node.game.ml.add(new Player(msg.data));
+            node.emit('UPDATED_MLIST');
         });
 
         /**
@@ -15283,10 +15294,10 @@ GamePlot.prototype.normalizeGameStage = function(gameStage) {
          * @emit UPDATED_MLIST
          * @see Game.ml
          */
-        this.events.ng.on( IN + say + 'MDISCONNECT', function (msg) {
+        node.events.ng.on( IN + say + 'MDISCONNECT', function (msg) {
             if (!msg.data) return;
-            this.game.ml.remove(msg.data.id);
-            this.emit('UPDATED_MLIST');
+            node.game.ml.remove(msg.data.id);
+            node.emit('UPDATED_MLIST');
         });
 
 
@@ -15298,10 +15309,10 @@ GamePlot.prototype.normalizeGameStage = function(gameStage) {
          * @emit UPDATED_PLIST
          * @see Game.pl
          */
-        this.events.ng.on( IN + say + 'PLIST', function (msg) {
+        node.events.ng.on( IN + say + 'PLIST', function (msg) {
             if (!msg.data) return;
-            this.game.pl = new PlayerList({}, msg.data);
-            this.emit('UPDATED_PLIST');
+            node.game.pl = new PlayerList({}, msg.data);
+            node.emit('UPDATED_PLIST');
         });
 
         /**
@@ -15312,10 +15323,10 @@ GamePlot.prototype.normalizeGameStage = function(gameStage) {
          * @emit UPDATED_MLIST
          * @see Game.pl
          */
-        this.events.ng.on( IN + say + 'MLIST', function (msg) {
+        node.events.ng.on( IN + say + 'MLIST', function (msg) {
             if (!msg.data) return;
-            this.game.ml = new PlayerList({}, msg.data);
-            this.emit('UPDATED_MLIST');
+            node.game.ml = new PlayerList({}, msg.data);
+            node.emit('UPDATED_MLIST');
         });
 
         /**
@@ -15323,12 +15334,12 @@ GamePlot.prototype.normalizeGameStage = function(gameStage) {
          *
          * Experimental feature. Undocumented (for now)
          */
-        this.events.ng.on( IN + get + 'DATA', function (msg) {
+        node.events.ng.on( IN + get + 'DATA', function (msg) {
             if (msg.text === 'LOOP'){
-                this.socket.sendDATA(action.SAY, this.game.plot, msg.from, 'GAME');
+                node.socket.sendDATA(action.SAY, node.game.plot, msg.from, 'GAME');
             }
             // <!-- We could double emit
-            // this.emit(msg.text, msg.data); -->
+            // node.emit(msg.text, msg.data); -->
         });
 
         /**
@@ -15337,8 +15348,8 @@ GamePlot.prototype.normalizeGameStage = function(gameStage) {
          * Adds an entry to the memory object
          *
          */
-        this.events.ng.on( IN + set + 'STATE', function (msg) {
-            this.game.memory.add(msg.text, msg.data, msg.from);
+        node.events.ng.on( IN + set + 'STATE', function (msg) {
+            node.game.memory.add(msg.text, msg.data, msg.from);
         });
 
         /**
@@ -15347,8 +15358,8 @@ GamePlot.prototype.normalizeGameStage = function(gameStage) {
          * Adds an entry to the memory object
          *
          */
-        this.events.ng.on( IN + set + 'DATA', function (msg) {
-            this.game.memory.add(msg.text, msg.data, msg.from);
+        node.events.ng.on( IN + set + 'DATA', function (msg) {
+            node.game.memory.add(msg.text, msg.data, msg.from);
         });
 
         /**
@@ -15359,10 +15370,10 @@ GamePlot.prototype.normalizeGameStage = function(gameStage) {
          * @emit UPDATED_PLIST
          * @see Game.pl
          */
-        this.events.ng.on( IN + say + 'PLAYER_UPDATE', function (msg) {
-            this.game.pl.updatePlayer(msg.from, msg.data);
-            this.emit('UPDATED_PLIST');
-            this.game.shouldStep();
+        node.events.ng.on( IN + say + 'PLAYER_UPDATE', function (msg) {
+            node.game.pl.updatePlayer(msg.from, msg.data);
+            node.emit('UPDATED_PLIST');
+            node.game.shouldStep();
         });
 
         /**
@@ -15370,8 +15381,8 @@ GamePlot.prototype.normalizeGameStage = function(gameStage) {
          *
          * Updates the game stage
          */
-        this.events.ng.on( IN + say + 'STAGE', function (msg) {
-            this.game.execStep(this.game.plot.getStep(msg.data));
+        node.events.ng.on( IN + say + 'STAGE', function (msg) {
+            node.game.execStep(node.game.plot.getStep(msg.data));
         });
 
         /**
@@ -15379,8 +15390,8 @@ GamePlot.prototype.normalizeGameStage = function(gameStage) {
          *
          * Updates the stage level
          */
-        this.events.ng.on( IN + say + 'STAGE_LEVEL', function (msg) {
-            //this.game.setStageLevel(msg.data);
+        node.events.ng.on( IN + say + 'STAGE_LEVEL', function (msg) {
+            //node.game.setStageLevel(msg.data);
         });
 
         /**
@@ -15390,10 +15401,10 @@ GamePlot.prototype.normalizeGameStage = function(gameStage) {
          *
          * @see node.redirect
          */
-        this.events.ng.on( IN + say + 'REDIRECT', function (msg) {
+        node.events.ng.on( IN + say + 'REDIRECT', function (msg) {
             if (!msg.data) return;
             if ('undefined' === typeof window || !window.location) {
-                this.err('window.location not found. Cannot redirect');
+                node.err('window.location not found. Cannot redirect');
                 return false;
             }
 
@@ -15411,16 +15422,16 @@ GamePlot.prototype.normalizeGameStage = function(gameStage) {
          * @see node.setup
          * @see JSUS.parse
          */
-        this.events.ng.on( IN + say + 'SETUP', function (msg) {
+        node.events.ng.on( IN + say + 'SETUP', function (msg) {
             if (!msg.text) return;
             var feature = msg.text,
             payload = ('string' === typeof msg.data) ? J.parse(msg.data) : msg.data;
 
             if (!payload) {
-                this.err('error while parsing incoming remote setup message');
+                node.err('error while parsing incoming remote setup message');
                 return false;
             }
-            this.setup.apply(this, [feature].concat(payload));
+            node.setup.apply(node, [feature].concat(payload));
         });
 
 
@@ -15431,12 +15442,12 @@ GamePlot.prototype.normalizeGameStage = function(gameStage) {
          *
          * @see node.setup
          */
-        this.events.ng.on( IN + say + 'GAMECOMMAND', function (msg) {
-            if (!msg.text || !this.gamecommand[msg.text]) {
-                this.err('unknown game command received: ' + msg.text);
+        node.events.ng.on( IN + say + 'GAMECOMMAND', function (msg) {
+            if (!msg.text || !node.gamecommand[msg.text]) {
+                node.err('unknown game command received: ' + msg.text);
                 return;
             }
-            this.emit('NODEGAME_GAMECOMMAND_' + msg.text, msg.data);
+            node.emit('NODEGAME_GAMECOMMAND_' + msg.text, msg.data);
         });
 
         /**
@@ -15449,14 +15460,14 @@ GamePlot.prototype.normalizeGameStage = function(gameStage) {
          *
          * @experimental
          */
-        this.events.ng.on( IN + say + 'JOIN', function (msg) {
+        node.events.ng.on( IN + say + 'JOIN', function (msg) {
             if (!msg.text) return;
-            //this.socket.disconnect();
-            this.connect(msg.text);
+            //node.socket.disconnect();
+            node.connect(msg.text);
         });
 
-        this.incomingAdded = true;
-        this.silly('incoming listeners added');
+        node.incomingAdded = true;
+        node.silly('incoming listeners added');
         return true;
     };
 
@@ -15502,12 +15513,12 @@ GamePlot.prototype.normalizeGameStage = function(gameStage) {
      * @return {boolean} TRUE on success
      */
     NGC.prototype.addDefaultInternalListeners = function(force) {
-        var that;
+        var node = this;
         if (this.internalAdded && !force) {
             this.err('Default internal listeners already added once. Use the force flag to re-add.');
             return false;
         }
-        that = this;
+
         /**
          * ## DONE
          * 
@@ -15524,18 +15535,18 @@ GamePlot.prototype.normalizeGameStage = function(gameStage) {
 	    
             // Execute done handler before updating stage
             var ok = true,
-            done = that.game.getCurrentStep().done;
+            done = node.game.getCurrentStep().done;
             
-            if (done) ok = done.apply(that.game, J.obj2Array(arguments));
+            if (done) ok = done.apply(node.game, J.obj2Array(arguments));
             if (!ok) return;
-            that.game.setStageLevel(constants.stageLevels.DONE)
+            node.game.setStageLevel(constants.stageLevels.DONE)
 	    
             // Call all the functions that want to do 
             // something before changing stage
-            that.emit('BEFORE_DONE');
+            node.emit('BEFORE_DONE');
 	    
             // Step forward, if allowed
-            that.game.shouldStep();
+            node.game.shouldStep();
         });
 
         /**
@@ -15544,12 +15555,12 @@ GamePlot.prototype.normalizeGameStage = function(gameStage) {
          * @emit BEFORE_PLAYING 
          */
         this.events.ng.on('PLAYING', function() {
-            that.game.setStageLevel(constants.stageLevels.PLAYING);
+            node.game.setStageLevel(constants.stageLevels.PLAYING);
             //TODO: the number of messages to emit to inform other players
             // about its own stage should be controlled. Observer is 0 
-            //that.game.publishUpdate();
-            that.socket.clearBuffer();	
-            that.emit('BEFORE_PLAYING');
+            //node.game.publishUpdate();
+            node.socket.clearBuffer();	
+            node.emit('BEFORE_PLAYING');
         });
 
 
@@ -15559,14 +15570,14 @@ GamePlot.prototype.normalizeGameStage = function(gameStage) {
          */
         this.events.ng.on('NODEGAME_GAMECOMMAND_' + constants.gamecommand.start, function(options) {
 	    
-            that.emit('BEFORE_GAMECOMMAND', constants.gamecommand.start, options);
+            node.emit('BEFORE_GAMECOMMAND', constants.gamecommand.start, options);
 	    
-            if (that.game.getCurrentStep() && that.game.getCurrentStep().stage !== 0) {
-	        that.err('Game already started. Use restart if you want to start the game again');
+            if (node.game.getCurrentStep() && node.game.getCurrentStep().stage !== 0) {
+	        node.err('Game already started. Use restart if you want to start the game again');
 	        return;
             }
 	    
-            that.game.start();	
+            node.game.start();	
         });
 
         this.incomingAdded = true;
