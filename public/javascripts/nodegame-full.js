@@ -4199,7 +4199,6 @@ JSUS.extend(PARSE);
      */
     function NDDB (options, db) {
         options = options || {};
-
         if (!J) throw new Error('JSUS not found.');
 
         // ## Public properties
@@ -4907,7 +4906,6 @@ JSUS.extend(PARSE);
     NDDB.prototype._indexIt = function(o, dbidx) {
         if (!o || J.isEmpty(this.__I)) return;
         var func, id, index;
-
         for (var key in this.__I) {
             if (this.__I.hasOwnProperty(key)) {
                 func = this.__I[key];
@@ -7514,37 +7512,39 @@ JSUS.extend(PARSE);
  *
  * ---
  */
-(function (node) {
+(function (exports, parent) {
     
-
-    node.stepRules = {};
+    var constants;
+    constants = parent.constants;
+    exports.stepRules = {};
 
     // ## SYNC_ALL
     // Player waits that all the clients have terminated the
     // current step before going to the next
-    node.stepRules.SYNC_ALL = function(stage, myStageLevel, pl, game) {
-        return myStageLevel === this.stageLevels.DONE &&
+    exports.stepRules.SYNC_ALL = function(stage, myStageLevel, pl, game) {
+        return myStageLevel === constants.stageLevels.DONE &&
             pl.isStepDone(stage);
     };
 
     // ## SOLO
     // Player proceeds to the next step as soon as the current one
     // is DONE, regardless to the situation of other players
-    node.stepRules.SOLO = function(stage, myStageLevel, pl, game) {
-        return myStageLevel === this.stageLevels.DONE;
+    exports.stepRules.SOLO = function(stage, myStageLevel, pl, game) {
+        debugger
+        return myStageLevel === constants.stageLevels.DONE;
     };
 
     // ## WAIT
     // Player waits for explicit step command
-    node.stepRules.WAIT = function(stage, myStageLevel, pl, game) {
+    exports.stepRules.WAIT = function(stage, myStageLevel, pl, game) {
         return false;
     };
 
     // ## SYNC_STAGE
     // Player can advance freely within the steps of one stage,
     // but has to wait before going to the next one
-    node.stepRules.SYNC_STAGE = function(stage, myStageLevel, pl, game) {
-        var iamdone = myStageLevel === this.stageLevels.DONE;
+    exports.stepRules.SYNC_STAGE = function(stage, myStageLevel, pl, game) {
+        var iamdone = myStageLevel === constants.stageLevels.DONE;
         console.log();
         console.log('*** myStageLevel: ' + myStageLevel + ' (iamdone: ' + iamdone + ')');
         console.log('*** stepsToNextStage: ' + game.plot.stepsToNextStage(stage));
@@ -7559,7 +7559,10 @@ JSUS.extend(PARSE);
     };
 
     // ## Closure
-})('undefined' != typeof node ? node : module.exports);
+})(
+    'undefined' != typeof node ? node : module.exports
+  , 'undefined' != typeof node ? node : module.parent.exports
+);
 /**
  * # Stager
  *
@@ -8561,23 +8564,35 @@ GameStage.stringify = function(gs) {
      */
     function PlayerList (options, db) {
         options = options || {};
+        
+        // Updates indexes on the fly.
         if (!options.update) options.update = {};
         if ('undefined' === typeof options.update.indexes) {
             options.update.indexes = true;
         }
+        // Indexing the players by id.
+        // We need to add this for the DB constructor that will be
+        // able to index the players passed in the db parameter
+        if (!options.I) options.I = {};
+        if ('undefined' === typeof options.I.id) {
+            options.I.id =  function(p) { return p.id; };
+        }
 
-        NDDB.call(this, options, db);
-        
         // We check if the index are not existing already because
         // it could be that the constructor is called by the breed function
-        // and in such case we would duplicate them
+        // and in such case we would duplicate them.
+        // We need keep this beside the option setup above, because otherwise
+        // PlayerList.exist will fail.
         if (!this.id) {
             this.index('id', function(p) {
                 return p.id;
             });
         }
-
-        // Assigns a global comparator function
+        
+        // Invoking NDDB constructor.
+        NDDB.call(this, options, db);
+        
+        // Assigns a global comparator function.
         this.globalCompare = PlayerList.comparePlayers;
 
 
@@ -8630,6 +8645,7 @@ GameStage.stringify = function(gs) {
     PlayerList.prototype.add = function (player) {
         if (!(player instanceof Player)) {
             if (!player || 'undefined' === typeof player.id) {
+                debugger
                 this.log('Player id not found, cannot add object to player list.', 'ERR');
                 return false;
             }
@@ -8640,7 +8656,7 @@ GameStage.stringify = function(gs) {
             this.log('Attempt to add a new player already in the player list: ' + player.id, 'ERR');
             return false;
         }
-
+        
         this.insert(player);
         player.count = this.pcounter;
         this.pcounter++;
@@ -11680,14 +11696,14 @@ GamePlot.prototype.normalizeGameStage = function(gameStage) {
     };
 
     Socket.prototype.connect = function(uri) {
-
+        var humanReadableUri = uri || 'local server';
         if (!this.socket) {
-            this.node.err('cannot connet to ' + uri + ' . No open socket.');
+            this.node.err('cannot connet to ' + humanReadableUri + ' . No open socket.');
             return false;
         }
 
         this.url = uri;
-        this.node.log('connecting to ' + uri);
+        this.node.log('connecting to ' + humanReadableUri + '.');
 
         this.socket.connect(uri, this.user_options);
     };
@@ -12451,18 +12467,18 @@ GamePlot.prototype.normalizeGameStage = function(gameStage) {
 
         if (node.player.placeholder) {
             throw new node.NodeGameMisconfiguredGameError(
-                'game.start called without player');
+                'game.start called without a player.');
         }
 
         if (this.getStateLevel() >= constants.stateLevels.INITIALIZING) {
-            node.warn('game.start called on a running game');
+            node.warn('game.start called on a running game.');
             return false;
         }
 
         // Check for the existence of stager contents:
         if (!this.plot.isReady()) {
             throw new node.NodeGameMisconfiguredGameError(
-                'game.start called with unready plot');
+                'game.start called, but plot is not ready.');
         }
 
         // INIT the game
@@ -12478,7 +12494,7 @@ GamePlot.prototype.normalizeGameStage = function(gameStage) {
         this.setCurrentGameStage(new GameStage());
         rc = this.step();
 
-        node.log('game started');
+        node.log('game started.');
 
         return rc;
     };
@@ -12576,7 +12592,7 @@ GamePlot.prototype.normalizeGameStage = function(gameStage) {
         if ('function' !== typeof stepRule) {
             throw new this.node.NodeGameMisconfiguredGameError("step rule is not a function");
         }
-
+        
         if (stepRule(this.getCurrentGameStage(), this.getStageLevel(), this.pl, this)) {
             return this.step();
         }
@@ -12603,7 +12619,7 @@ GamePlot.prototype.normalizeGameStage = function(gameStage) {
         var nextStepObj, nextStageObj;
         var ev, node;
         node = this.node;
-
+        
         curStep = this.getCurrentGameStage();
         nextStep = this.plot.next(curStep);
         node.silly('Next stage ---> ' + nextStep);
@@ -12682,7 +12698,6 @@ GamePlot.prototype.normalizeGameStage = function(gameStage) {
             
             // Emit buffered messages:
             node.socket.shouldClearBuffer();
-
             return this.execStep(this.getCurrentStep());
         }
     };
@@ -12700,7 +12715,7 @@ GamePlot.prototype.normalizeGameStage = function(gameStage) {
     Game.prototype.execStep = function(stage) {
         var cb, res, node;
         node = this.node;
-
+        
         if (!stage || 'object' !== typeof stage) {
             throw new node.NodeGameRuntimeError('game.execStep requires a valid object');
         }
@@ -12726,7 +12741,7 @@ GamePlot.prototype.normalizeGameStage = function(gameStage) {
         }
         
         // TODO node.is is probably going to change
-        if (!node.window || node.window.state == node.is.LOADED) {
+        if (!node.window || node.window.state == node.constants.is.LOADED) {
             // If there is a node.window, we must make sure that the DOM of the page
             // is fully loaded. Only the last one to load (between the window and 
             // the callback will emit 'PLAYING'.
@@ -15382,7 +15397,18 @@ GamePlot.prototype.normalizeGameStage = function(gameStage) {
          * Updates the game stage
          */
         node.events.ng.on( IN + say + 'STAGE', function (msg) {
-            node.game.execStep(node.game.plot.getStep(msg.data));
+            var stageObj;
+            if (!msg.data) {
+                node.warn('Received in.say.STAGE msg with empty stage');
+                return;
+            }
+            stageObj = node.game.plot.getStep(msg.data);
+            
+            if (!stageObj) {
+                node.err('Received in.say.STAGE msg with invalid stage');
+                return;
+            }
+            node.game.execStep(stageObj);
         });
 
         /**
