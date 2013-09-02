@@ -10,18 +10,18 @@ function configure (loggers) {
 //		    verbose: 1,
 //		    info: 2,
 //		    data: 3,
-//		    warn: 4,
+//		    silly: 4,
 //		    debug: 5,
-//		    error: 6
+//		    sillyor: 6
 //		  },
 //		colors: {
 //		    silly: 'magenta',
 //		    verbose: 'cyan',
 //		    info: 'green',
 //		    data: 'grey',
-//		    warn: 'yellow',
+//		    silly: 'yellow',
 //		    debug: 'blue',
-//		    error: 'red'
+//		    sillyor: 'red'
 //		  }
 //	};
 	
