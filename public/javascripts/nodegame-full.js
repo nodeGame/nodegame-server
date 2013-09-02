@@ -4199,6 +4199,7 @@ JSUS.extend(PARSE);
      */
     function NDDB (options, db) {
         options = options || {};
+
         if (!J) throw new Error('JSUS not found.');
 
         // ## Public properties
@@ -4273,6 +4274,10 @@ JSUS.extend(PARSE);
         this.__shared = {};
 
         // ### log
+        // Std out. Can be overriden in options by another function. The function will be
+        // executed with this instance of PlayerList as context, so if it is a method of
+        // another class it might not work. In case you will need to inherit or add
+        // properties and methods from the other class into this PlayerList instance.
         this.log = console.log;
 
         this.init(options);
@@ -4296,7 +4301,7 @@ JSUS.extend(PARSE);
         this.__options = options;
 
         if (options.log) {
-            this.log = options.log;
+            this.initLog(options.log, options.logCtx);
         }
 
         if (options.C) {
@@ -4356,6 +4361,23 @@ JSUS.extend(PARSE);
         }
 
     };
+
+    
+    /**
+     * ### NDDB.initLog
+     *
+     * Setups and external log function to be executed in the proper context
+     *
+     * @param {function} cb The logging function
+     * @param {object} ctx Optional. The context of the log function 
+     *
+     */
+    NDDB.prototype.initLog = function(cb, ctx) {
+        ctx = ctx || this;
+        this.log = function(){
+            return cb.apply(ctx, arguments);
+        };
+    }
 
     // ## CORE
 
@@ -4906,6 +4928,7 @@ JSUS.extend(PARSE);
     NDDB.prototype._indexIt = function(o, dbidx) {
         if (!o || J.isEmpty(this.__I)) return;
         var func, id, index;
+
         for (var key in this.__I) {
             if (this.__I.hasOwnProperty(key)) {
                 func = this.__I[key];
@@ -7252,6 +7275,44 @@ JSUS.extend(PARSE);
     // ### version	
     k.version = '1.0.0-beta';
 
+
+
+    /**
+     * ### node.verbosity_levels
+     * 
+     * ALWAYS, ERR, WARN, INFO, DEBUG
+     */  
+    k.verbosity_levels = {
+	ALWAYS: -(Number.MIN_VALUE + 1), 
+	ERR: -1,
+	WARN: 0,
+	INFO: 1,
+	SILLY: 10,
+	DEBUG: 100,
+	NEVER: Number.MIN_VALUE - 1
+    };	
+    
+    /**
+     *  ### node.verbosity
+     *  
+     *  The minimum level for a log entry to be displayed as output
+     *   
+     *  Defaults, only errors are displayed.
+     *  
+     */
+    k.verbosity = k.verbosity_levels.WARN;
+    
+    /**
+     * ### node.remoteVerbosity
+     *
+     *  The minimum level for a log entry to be reported to the server
+     *   
+     *  Defaults, only errors are displayed.
+     */	
+    k.remoteVerbosity = k.verbosity_levels.WARN;
+
+
+
     /**
      * ### node.actions
      *
@@ -7530,7 +7591,6 @@ JSUS.extend(PARSE);
     // Player proceeds to the next step as soon as the current one
     // is DONE, regardless to the situation of other players
     exports.stepRules.SOLO = function(stage, myStageLevel, pl, game) {
-        debugger
         return myStageLevel === constants.stageLevels.DONE;
     };
 
@@ -8653,7 +8713,7 @@ GameStage.stringify = function(gs) {
         }
 
         if (this.exist(player.id)) {
-            this.log('Attempt to add a new player already in the player list: ' + player.id, 'ERR');
+            this.log('PlayerList.add: Player already existent (id ' + player.id + ')', 'ERR');
             return false;
         }
         
@@ -8676,7 +8736,7 @@ GameStage.stringify = function(gs) {
         if ('undefined' === typeof id) return false;
         var player = this.id.get(id);
         if (!player) {
-            this.log('Attempt to access a non-existing player from the the player list. id: ' + id, 'WARN');
+            this.log('PlayerList.get: Player not found (id ' + id + ')', 'WARN');
             return false;
         }
         return player;
@@ -8696,7 +8756,7 @@ GameStage.stringify = function(gs) {
         if ('undefined' === typeof id) return false;
         var player = this.id.pop(id);
         if (!player) {
-            this.log('Attempt to remove a non-existing player from the the player list. id: ' + id, 'ERR');
+            this.log('PlayerList.remove: Player not found (id ' + id + ')', 'ERR');
             return false;
         }
         return player;
@@ -8732,12 +8792,12 @@ GameStage.stringify = function(gs) {
         // TODO: check playerState
 
         if (!this.exist(id)) {
-            this.log('Attempt to access a non-existing player from the the player list: ' + id, 'WARN');
+            this.log('PlayerList.updatePlayer: Player not found (id ' + id + ')', 'WARN');
             return false;
         }
 
         if ('undefined' === typeof playerState) {
-            this.log('Attempt to assign to a player an undefined playerState', 'WARN');
+            this.log('PlayerList.updatePlayer: Attempt to assign to a player an undefined playerState', 'WARN');
             return false;
         }
 
@@ -8758,12 +8818,12 @@ GameStage.stringify = function(gs) {
     PlayerList.prototype.updatePlayerStage = function (id, stage) {
 
         if (!this.exist(id)) {
-            this.log('Attempt to access a non-existing player from the the player list ' + id, 'WARN');
+            this.log('PlayerList.updatePlayerStage: Player not found (id ' + id + ')', 'WARN');
             return false;
         }
 
         if ('undefined' === typeof stage) {
-            this.log('Attempt to assign to a player an undefined stage', 'WARN');
+            this.log('PlayerList.updatePlayerStage: Attempt to assign to a player an undefined stage', 'WARN');
             return false;
         }
 
@@ -8785,12 +8845,12 @@ GameStage.stringify = function(gs) {
      */
     PlayerList.prototype.updatePlayerStageLevel = function (id, stageLevel) {
         if (!this.exist(id)) {
-            this.log('Attempt to access a non-existing player from the the player list ' + id, 'WARN');
+            this.log('PlayerList.updatePlayerStageLevel: Player not found (id ' + id + ')', 'WARN');
             return false;
         }
 
         if ('undefined' === typeof stageLevel) {
-            this.log('Attempt to assign to a player an undefined stage', 'WARN');
+            this.log('PlayerList.updatePlayerStageLevel: Attempt to assign to a player an undefined stage', 'WARN');
             return false;
         }
 
@@ -12398,7 +12458,10 @@ GamePlot.prototype.normalizeGameStage = function(gameStage) {
          *
          * @api private
          */
-        this.pl = new PlayerList({log: this.node.log});
+        this.pl = new PlayerList({
+            log: this.node.log,
+            logCtx: this.node
+        });
 
         /**
          * ### Game.ml
@@ -12409,7 +12472,10 @@ GamePlot.prototype.normalizeGameStage = function(gameStage) {
          *
          * @api private
          */
-        this.ml = new PlayerList({log: this.node.log});
+        this.ml = new PlayerList({
+            log: this.node.log,
+            logCtx: this.node
+        });
 
 
         // ## Public properties
@@ -12426,6 +12492,7 @@ GamePlot.prototype.normalizeGameStage = function(gameStage) {
          */
         this.memory = new GameDB({
             log: this.node.log,
+            logCtx: this.node,
             shared: { node: this.node }
         });
 
@@ -14335,6 +14402,7 @@ GamePlot.prototype.normalizeGameStage = function(gameStage) {
 (function (exports, parent) {
 
     var NGC = parent.NodeGameClient;
+    var constants = parent.constants;
     
     /**
      * ### NodeGameClient.log
@@ -15469,7 +15537,7 @@ GamePlot.prototype.normalizeGameStage = function(gameStage) {
          * @see node.setup
          */
         node.events.ng.on( IN + say + 'GAMECOMMAND', function (msg) {
-            if (!msg.text || !node.gamecommand[msg.text]) {
+            if (!msg.text || !node.constants.gamecommand[msg.text]) {
                 node.err('unknown game command received: ' + msg.text);
                 return;
             }
@@ -16323,11 +16391,13 @@ TriggerManager.prototype.size = function () {
     
     var J = node.JSUS;
 
+    var constants = node.constants;
+
     var Player = node.Player,
     PlayerList = node.PlayerList,
     GameMsg = node.GameMsg,
     GameMsgGenerator = node.GameMsgGenerator;
-
+    
     var DOM = J.get('DOM');
 
     if (!DOM) {
@@ -16381,7 +16451,7 @@ TriggerManager.prototype.size = function () {
         
         // ### GameWindow.state
         //
-        this.state = node.constants.is.LOADED;
+        this.state = constants.is.LOADED;
 
         // ### GameWindow.areLoading
         // Counts the number of frames currently being loaded
@@ -16494,7 +16564,8 @@ TriggerManager.prototype.size = function () {
      * 
      */
     GameWindow.prototype.setup = function (type){
-
+        var initPage;
+        
 	if (!this.root) {
 	    this.root = document.body;
 	    //this.root = this.generateNodeGameRoot();
@@ -16525,7 +16596,17 @@ TriggerManager.prototype.size = function () {
 	    
 	    //var maincss = this.addCSS(this.root, 'style.css');
 	    this.header     = this.generateHeader();
-	    var mainframe   = this.addIFrame(this.root,'mainframe');
+
+            if (!document.getElementById('mainframe')) {
+                this.addIFrame(this.root,'mainframe');
+                this.frame = window.frames[this.mainframe]; // there is no document yet
+	        initPage = this.getBlankPage();
+	        if (this.conf.noEscape) {
+		    // TODO: inject the no escape code here
+	        }
+	    
+	        window.frames[this.mainframe].src = initPage;
+	    }
 
 	    node.game.vs    = node.widgets.append('VisualState', this.header);
 	    node.game.timer = node.widgets.append('VisualTimer', this.header);
@@ -16539,36 +16620,34 @@ TriggerManager.prototype.size = function () {
 		this.addCSS(document.body, node.conf.host + '/stylesheets/player.css');
 	    }
 	    
-	    this.frame = window.frames[this.mainframe]; // there is no document yet
-	    var initPage = this.getBlankPage();
-	    if (this.conf.noEscape) {
-		// TODO: inject the no escape code here
-	    }
-	    
-	    window.frames[this.mainframe].src = initPage;
+	   
 
 	    break;
 	    
 
         case 'SOLO_PLAYER':
 	    
-	    var mainframe = this.addIFrame(this.root, 'mainframe');            
-	    node.widgets.append('WaitScreen');
+            if (!document.getElementById('mainframe')) {
+                this.addIFrame(this.root,'mainframe');
+                this.frame = window.frames[this.mainframe]; // there is no document yet
+	        initPage = this.getBlankPage();
+	        if (this.conf.noEscape) {
+		    // TODO: inject the no escape code here
+		    // not working
+		    //this.addJS(initPage, node.conf.host + 'javascripts/noescape.js');
+	        }
+	        
+	        window.frames[this.mainframe].src = initPage;
+	    }
+
+            node.widgets.append('WaitScreen');
             
 	    // Add default CSS
 	    if (node.conf.host) {
 		this.addCSS(document.body, node.conf.host + '/stylesheets/player.css');
 	    }
 	    
-	    this.frame = window.frames[this.mainframe]; // there is no document yet
-	    var initPage = this.getBlankPage();
-	    if (this.conf.noEscape) {
-		// TODO: inject the no escape code here
-		// not working
-		//this.addJS(initPage, node.conf.host + 'javascripts/noescape.js');
-	    }
-	    
-	    window.frames[this.mainframe].src = initPage;
+	
             
 	    break;
 	}
@@ -16888,7 +16967,7 @@ TriggerManager.prototype.size = function () {
         // Update frame's currently showing URI:
         this.currentURIs[frame] = uri;
         
-        this.state = node.constants.is.LOADING;
+        this.state = constants.is.LOADING;
         this.areLoading++;  // keep track of nested call to loadFrame
         
         var that = this;
@@ -16971,10 +17050,10 @@ TriggerManager.prototype.size = function () {
         this.areLoading--;
         
         if (this.areLoading === 0) {
-            this.state = node.constants.is.LOADED;
+            this.state = constants.is.LOADED;
             node.emit('WINDOW_LOADED');
             
-            if (node.game.getStageLevel() >= node.stageLevels.LOADED) {
+            if (node.game.getStageLevel() >= constants.stageLevels.LOADED) {
                 // We must make sure that the step callback is fully executed. 
                 // Only the last one to load (between the window and 
                 // the callback will emit 'PLAYING'.
