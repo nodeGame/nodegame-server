@@ -8577,9 +8577,10 @@ GameStage.stringify = function(gs) {
 
     // Setting up global scope variables
     var J = parent.JSUS,
-    NDDB = parent.NDDB,
-    GameStage = parent.GameStage,
-    Game = parent.Game;
+        NDDB = parent.NDDB,
+        GameStage = parent.GameStage,
+        Game = parent.Game,
+        NodeGameRuntimeError = parent.NodeGameRuntimeError;
 
     var stageLevels = parent.constants.stageLevels;
     var stateLevels = parent.constants.stateLevels;
@@ -8700,21 +8701,20 @@ GameStage.stringify = function(gs) {
      * the internal `pcounter` variable is incremented.
      *
      * @param {Player} player The player object to add to the database
-     * @return {player|boolean} The inserted player, or FALSE if an error occurs
+     * @return {player} The inserted player
      */
     PlayerList.prototype.add = function (player) {
         if (!(player instanceof Player)) {
             if (!player || 'undefined' === typeof player.id) {
-                debugger
-                this.log('Player id not found, cannot add object to player list.', 'ERR');
-                return false;
+                throw new NodeGameRuntimeError(
+                        'PlayerList.add: player.id was not given');
             }
             player = new Player(player);
         }
 
         if (this.exist(player.id)) {
-            this.log('PlayerList.add: Player already existent (id ' + player.id + ')', 'ERR');
-            return false;
+            throw new NodeGameRuntimeError(
+                    'PlayerList.add: Player already exists (id ' + player.id + ')');
         }
         
         this.insert(player);
@@ -8730,14 +8730,18 @@ GameStage.stringify = function(gs) {
      * Retrieves a player with the given id
      *
      * @param {number} id The id of the player to retrieve
-     * @return {Player|boolean} The player with the speficied id, or FALSE if none was found
+     * @return {Player} The player with the speficied id
      */
     PlayerList.prototype.get = function (id) {
-        if ('undefined' === typeof id) return false;
+        if ('undefined' === typeof id) {
+            throw new NodeGameRuntimeError(
+                    'PlayerList.get: id was not given');
+
+        }
         var player = this.id.get(id);
         if (!player) {
-            this.log('PlayerList.get: Player not found (id ' + id + ')', 'WARN');
-            return false;
+            throw new NodeGameRuntimeError(
+                    'PlayerList.get: Player not found (id ' + id + ')');
         }
         return player;
     };
@@ -8750,14 +8754,17 @@ GameStage.stringify = function(gs) {
      * Notice: this operation cannot be undone
      *
      * @param {number} id The id of the player to remove
-     * @return {object|boolean} The removed player object, or FALSE if none was found
+     * @return {object} The removed player object
      */
     PlayerList.prototype.remove = function (id) {
-        if ('undefined' === typeof id) return false;
+        if ('undefined' === typeof id) {
+            throw new NodeGameRuntimeError(
+                'PlayerList.remove: id was not given');
+        }
         var player = this.id.pop(id);
         if (!player) {
-            this.log('PlayerList.remove: Player not found (id ' + id + ')', 'ERR');
-            return false;
+            throw new NodeGameRuntimeError(
+                'PlayerList.remove: Player not found (id ' + id + ')');
         }
         return player;
     };
@@ -8786,19 +8793,19 @@ GameStage.stringify = function(gs) {
      *
      * @param {number} id The id of the player
      * @param {object} playerState An update with fields to update in the player
-     * @return {object|boolean} The updated player object, or FALSE if an error occurred
+     * @return {object} The updated player object
      */
     PlayerList.prototype.updatePlayer = function (id, playerState) {
         // TODO: check playerState
 
         if (!this.exist(id)) {
-            this.log('PlayerList.updatePlayer: Player not found (id ' + id + ')', 'WARN');
-            return false;
+            throw new NodeGameRuntimeError(
+                    'PlayerList.updatePlayer: Player not found (id ' + id + ')');
         }
 
         if ('undefined' === typeof playerState) {
-            this.log('PlayerList.updatePlayer: Attempt to assign to a player an undefined playerState', 'WARN');
-            return false;
+            throw new NodeGameRuntimeError(
+                'PlayerList.updatePlayer: Attempt to assign to a player an undefined playerState');
         }
 
         return this.id.update(id, playerState);
@@ -8811,20 +8818,20 @@ GameStage.stringify = function(gs) {
      *
      * @param {number} id The id of the player
      * @param {GameStage} stage The new stage object
-     * @return {object|boolean} The updated player object, or FALSE if an error occurred
+     * @return {object} The updated player object
      *
      * @deprecated
      */
     PlayerList.prototype.updatePlayerStage = function (id, stage) {
 
         if (!this.exist(id)) {
-            this.log('PlayerList.updatePlayerStage: Player not found (id ' + id + ')', 'WARN');
-            return false;
+            throw new NodeGameRuntimeError(
+                    'PlayerList.updatePlayerStage: Player not found (id ' + id + ')');
         }
 
         if ('undefined' === typeof stage) {
-            this.log('PlayerList.updatePlayerStage: Attempt to assign to a player an undefined stage', 'WARN');
-            return false;
+            throw new NodeGameRuntimeError(
+                'PlayerList.updatePlayerStage: Attempt to assign to a player an undefined stage');
         }
 
         return this.id.update(id, {
@@ -8839,19 +8846,19 @@ GameStage.stringify = function(gs) {
      *
      * @param {number} id The id of the player
      * @param {number} stageLevel The new stageLevel
-     * @return {object|boolean} The updated player object, or FALSE if an error occurred
+     * @return {object} The updated player object
      *
      * @deprecated
      */
     PlayerList.prototype.updatePlayerStageLevel = function (id, stageLevel) {
         if (!this.exist(id)) {
-            this.log('PlayerList.updatePlayerStageLevel: Player not found (id ' + id + ')', 'WARN');
-            return false;
+            throw new NodeGameRuntimeError(
+                    'PlayerList.updatePlayerStageLevel: Player not found (id ' + id + ')');
         }
 
         if ('undefined' === typeof stageLevel) {
-            this.log('PlayerList.updatePlayerStageLevel: Attempt to assign to a player an undefined stage', 'WARN');
-            return false;
+            throw new NodeGameRuntimeError(
+                'PlayerList.updatePlayerStageLevel: Attempt to assign to a player an undefined stage');
         }
 
         return this.id.update(id, {
@@ -8987,8 +8994,8 @@ GameStage.stringify = function(gs) {
     PlayerList.prototype.getRandom = function (N) {
         if (!N) N = 1;
         if (N < 1) {
-            this.log('N must be an integer >= 1', 'ERR');
-            return false;
+            throw new NodeGameRuntimeError(
+                    'PlayerList.getRandom: N must be an integer >= 1');
         }
         this.shuffle();
         return this.limit(N).fetch();
@@ -9614,7 +9621,6 @@ GameMsg.prototype.toEvent = function () {
          */
         this.defaultProperties = {};
 
-
         /**
          * ### Stager.onInit
          *
@@ -9658,7 +9664,7 @@ GameMsg.prototype.toEvent = function () {
      */
     Stager.prototype.registerGeneralNext = function(func) {
         if (func !== null && 'function' !== typeof func) {
-            this.log('Stager.registerGeneralNext: expecting a function as parameter.', 'WARN');
+            this.log('Stager.registerGeneralNext: expecting a function as parameter.');
             return false;
         }
 
@@ -9685,12 +9691,12 @@ GameMsg.prototype.toEvent = function () {
      */
     Stager.prototype.registerNext = function(id, func) {
         if ('function' !== typeof func) {
-            this.log('Stager.registerNext: expecting a function as parameter.', 'WARN');
+            this.log('Stager.registerNext: expecting a function as parameter.');
             return false;
         }
 
         if (!this.stages[id]) {
-            this.log('Stager.registerNext: received nonexistent stage id', 'WARN');
+            this.log('Stager.registerNext: received nonexistent stage id');
             return false;
         }
 
@@ -9713,8 +9719,7 @@ GameMsg.prototype.toEvent = function () {
     Stager.prototype.setDefaultStepRule = function(steprule) {
         if (steprule) {
             if ('function' !== typeof steprule) {
-                this.log('Stager.setDefaultStepRule: expecting a function as parameter', 'WARN');
-                return false;
+                throw new Error('Stager.setDefaultStepRule: expecting a function as parameter.');
             }
 
             this.defaultStepRule = steprule;
@@ -9752,7 +9757,7 @@ GameMsg.prototype.toEvent = function () {
      */
     Stager.prototype.setDefaultGlobals = function(defaultGlobals) {
         if (!defaultGlobals || 'object' !== typeof defaultGlobals) {
-            this.log('Stager.setDefaultGlobals: expecting an object as parameter.', 'WARN');
+            this.log('Stager.setDefaultGlobals: expecting an object as parameter.');
             return false;
         }
 
@@ -9788,7 +9793,7 @@ GameMsg.prototype.toEvent = function () {
      */
     Stager.prototype.setDefaultProperties = function(defaultProperties) {
         if (!defaultProperties || 'object' !== typeof defaultProperties) {
-            this.log('Stager.setDefaultProperties: expecting an object as parameter', 'WARN');
+            throw new Error('Stager.setDefaultProperties: expecting an object as parameter.');
             return false;
         }
 
@@ -9824,7 +9829,7 @@ GameMsg.prototype.toEvent = function () {
      */
     Stager.prototype.setOnInit = function(func) {
         if (func !== null && 'function' !== typeof func) {
-            this.log('Stager.setOnInit: expecting a function as parameter', 'WARN');
+            throw new Error('Stager.setOnInit: expecting a function as parameter.');
             return false;
         }
 
@@ -9860,7 +9865,7 @@ GameMsg.prototype.toEvent = function () {
      */
     Stager.prototype.setOnGameover = function(func) {
         if (func !== null && 'function' !== typeof func) {
-            this.log('Stager.setOnGameover: expecting a function as parameter.', 'WARN');
+            throw new Error('Stager.setOnGameover: expecting a function as parameter.');
             return false;
         }
 
@@ -9909,7 +9914,7 @@ GameMsg.prototype.toEvent = function () {
      */
     Stager.prototype.addStep = function(step) {
         if (!this.checkStepValidity(step)) {
-            this.log('Stager.addStep: invalid step received.', 'WARN');
+            throw new Error('Stager.addStep: invalid step received.');
             return false;
         }
 
@@ -9950,7 +9955,7 @@ GameMsg.prototype.toEvent = function () {
         }
 
         if (!this.checkStageValidity(stage)) {
-            this.log('Stager.addStage: invalid stage received.', 'WARN');
+            throw new Error('Stager.addStage: invalid stage received.');
             return false;
         }
 
@@ -10003,7 +10008,7 @@ GameMsg.prototype.toEvent = function () {
         var stageName = this.handleAlias(id);
 
         if (stageName === null) {
-            this.log('Stager.next: invalid stage name received.', 'WARN');
+            throw new Error('Stager.next: invalid stage name received.');
             return null;
         }
 
@@ -10032,12 +10037,12 @@ GameMsg.prototype.toEvent = function () {
         var stageName = this.handleAlias(id);
 
         if (stageName === null) {
-            this.log('repeat received invalid stage name', 'WARN');
+            throw new Error('Stager.repeat: received invalid stage name.');
             return null;
         }
 
         if ('number' !== typeof nRepeats) {
-            this.log('repeat received invalid number of repetitions', 'WARN');
+            throw new Error('Stager.repeat: received invalid number of repetitions.');
             return null;
         }
 
@@ -10055,7 +10060,7 @@ GameMsg.prototype.toEvent = function () {
         var stageName = this.handleAlias(id);
 
         if (stageName === null) {
-            this.log(type + ' received invalid stage name', 'WARN');
+            throw new Error('Stager.' + type + ': received invalid stage name.');
             return null;
         }
 
@@ -10064,7 +10069,7 @@ GameMsg.prototype.toEvent = function () {
         }
 
         if ('function' !== typeof func) {
-            this.log(type + ' received invalid callback', 'WARN');
+            throw new Error('Stager.' + type + ': received invalid callback.');
             return null;
         }
 
@@ -10172,7 +10177,7 @@ GameMsg.prototype.toEvent = function () {
                         break;
 
                     default:
-                        this.log('unknown sequence object type', 'WARN');
+                        throw new Error('Stager.getSequence: unknown sequence object type.');
                         return null;
                     }
                 }
@@ -10217,7 +10222,7 @@ GameMsg.prototype.toEvent = function () {
                         break;
 
                     default:
-                        this.log('unknown sequence object type', 'WARN');
+                        throw new Error('Stager.getSequence: unknown sequence object type.');
                         return null;
                     }
                 }
@@ -10229,7 +10234,7 @@ GameMsg.prototype.toEvent = function () {
             break;
 
         default:
-            this.log('getSequence got invalid format characters', 'WARN');
+            throw new Error('Stager.getSequence: invalid format.');
             return null;
         }
 
@@ -10265,8 +10270,6 @@ GameMsg.prototype.toEvent = function () {
      *
      * If updateRule is 'replace', the Stager is cleared before applying the state.
      *
-     * Throws `NodeGameMisconfiguredGameError` if the given state is invalid.
-     *
      * @param {object} stateObj The Stager's state
      * @param {string} updateRule Optional. Whether to 'replace' (default) or
      *  to 'append'.
@@ -10283,21 +10286,18 @@ GameMsg.prototype.toEvent = function () {
             this.clear();
         }
         else if(updateRule !== 'append') {
-            throw new node.NodeGameMisconfiguredGameError(
-                'setState got invalid updateRule');
+            throw new Error('Stager.setState: invalid updateRule.');
         }
 
         if (!stateObj) {
-            throw new node.NodeGameMisconfiguredGameError(
-                'setState got invalid stateObj');
+            throw new Error('Stager.setState: invalid stateObj.');
         }
 
         // Add steps:
         for (idx in stateObj.steps) {
             if (stateObj.steps.hasOwnProperty(idx)) {
                 if (!this.addStep(stateObj.steps[idx])) {
-                    throw new node.NodeGameMisconfiguredGameError(
-                        'setState got invalid steps');
+                    throw new Error('Stager.setState: invalid steps.');
                 }
             }
         }
@@ -10308,8 +10308,7 @@ GameMsg.prototype.toEvent = function () {
             stageObj = stateObj.stages[idx];
             if (stateObj.stages.hasOwnProperty(idx) && stageObj.id === idx) {
                 if (!this.addStage(stageObj)) {
-                    throw new node.NodeGameMisconfiguredGameError(
-                        'setState got invalid stages');
+                    throw new Error('Stager.setState: invalid stages.');
                 }
             }
         }
@@ -10333,36 +10332,31 @@ GameMsg.prototype.toEvent = function () {
 
                 case 'plain':
                     if (!this.next(seqObj.id)) {
-                        throw new node.NodeGameMisconfiguredGameError(
-                            'setState got invalid sequence');
+                        throw new Error('Stager.setState: invalid sequence.');
                     }
                     break;
 
                 case 'repeat':
                     if (!this.repeat(seqObj.id, seqObj.num)) {
-                        throw new node.NodeGameMisconfiguredGameError(
-                            'setState got invalid sequence');
+                        throw new Error('Stager.setState: invalid sequence.');
                     }
                     break;
 
                 case 'loop':
                     if (!this.loop(seqObj.id, seqObj.cb)) {
-                        throw new node.NodeGameMisconfiguredGameError(
-                            'setState got invalid sequence');
+                        throw new Error('Stager.setState: invalid sequence.');
                     }
                     break;
 
                 case 'doLoop':
                     if (!this.doLoop(seqObj.id, seqObj.cb)) {
-                        throw new node.NodeGameMisconfiguredGameError(
-                            'setState got invalid sequence');
+                        throw new Error('Stager.setState: invalid sequence.');
                     }
                     break;
 
                 default:
                     // Unknown type:
-                    throw new node.NodeGameMisconfiguredGameError(
-                        'setState got invalid sequence');
+                    throw new Error('Stager.setState: invalid sequence.');
                 }
             }
         }
@@ -10370,8 +10364,7 @@ GameMsg.prototype.toEvent = function () {
         // Set general next-decider:
         if (stateObj.hasOwnProperty('generalNextFunction')) {
             if (!this.registerGeneralNext(stateObj.generalNextFunction)) {
-                throw new node.NodeGameMisconfiguredGameError(
-                    'setState got invalid general next-decider');
+                throw new Error('Stager.setState: invalid general next-decider.');
             }
         }
 
@@ -10379,8 +10372,7 @@ GameMsg.prototype.toEvent = function () {
         for (idx in stateObj.nextFunctions) {
             if (stateObj.nextFunctions.hasOwnProperty(idx)) {
                 if (!this.registerNext(idx, stateObj.nextFunctions[idx])) {
-                    throw new node.NodeGameMisconfiguredGameError(
-                        'setState got invalid specific next-deciders');
+                    throw new Error('Stager.setState: invalid specific next-deciders.');
                 }
             }
         }
@@ -10388,40 +10380,35 @@ GameMsg.prototype.toEvent = function () {
         // Set default step-rule:
         if (stateObj.hasOwnProperty('defaultStepRule')) {
             if (!this.setDefaultStepRule(stateObj.defaultStepRule)) {
-                throw new node.NodeGameMisconfiguredGameError(
-                    'setState got invalid default step-rule');
+                throw new Error('Stager.setState: invalid default step-rule.');
             }
         }
 
         // Set default globals:
         if (stateObj.hasOwnProperty('defaultGlobals')) {
             if (!this.setDefaultGlobals(stateObj.defaultGlobals)) {
-                throw new node.NodeGameMisconfiguredGameError(
-                    'setState got invalid default globals');
+                throw new Error('Stager.setState: invalid default globals.');
             }
         }
 
         // Set default properties:
         if (stateObj.hasOwnProperty('defaultProperties')) {
             if (!this.setDefaultProperties(stateObj.defaultProperties)) {
-                throw new node.NodeGameMisconfiguredGameError(
-                    'setState got invalid default properties');
+                throw new Error('Stager.setState: invalid default properties.');
             }
         }
 
         // Set onInit:
         if (stateObj.hasOwnProperty('onInit')) {
             if (!this.setOnInit(stateObj.onInit)) {
-                throw new node.NodeGameMisconfiguredGameError(
-                    'setState got invalid onInit');
+                throw new Error('Stager.setState: invalid onInit.');
             }
         }
 
         // Set onGameover:
         if (stateObj.hasOwnProperty('onGameover')) {
             if (!this.setOnGameover(stateObj.onGameover)) {
-                throw new node.NodeGameMisconfiguredGameError(
-                    'setState got invalid onGameover');
+                throw new Error('Stager.setState: invalid onGameover.');
             }
         }
     };
@@ -10526,102 +10513,6 @@ GameMsg.prototype.toEvent = function () {
         return result;
     };
 
-    // DEBUG:  Run sequence.  Should be deleted later on.
-    Stager.prototype.seqTestRun = function(expertMode, firstStage) {
-        var seqObj;
-        var curStage;
-        var stageNum;
-
-        console.log('* Commencing sequence test run!');
-
-        if (!expertMode) {
-            for (stageNum in this.sequence) {
-                if (this.sequence.hasOwnProperty(stageNum)) {
-                    seqObj = this.sequence[stageNum];
-                    console.log('** num: ' + stageNum + ', type: ' + seqObj.type);
-                    switch (seqObj.type) {
-                    case 'gameover':
-                        console.log('* Game Over.');
-                        return;
-
-                    case 'plain':
-                        this.stageTestRun(seqObj.id);
-                        break;
-
-                    case 'repeat':
-                        for (var i = 0; i < seqObj.num; i++) {
-                            this.stageTestRun(seqObj.id);
-                        }
-                        break;
-
-                    case 'loop':
-                        while (seqObj.cb()) {
-                            this.stageTestRun(seqObj.id);
-                        }
-                        break;
-
-                    case 'doLoop':
-                        do {
-                            this.stageTestRun(seqObj.id);
-                        } while (seqObj.cb());
-                        break;
-
-                    default:
-                        this.log('unknown sequence object type');
-                        break;
-                    }
-                }
-            }
-        }
-        else {
-            // Get first stage:
-            if (firstStage) {
-                curStage = firstStage;
-            }
-            else if (this.generalNextFunction) {
-                curStage = this.generalNextFunction();
-            }
-            else {
-                curStage = null;
-            }
-
-            while (curStage) {
-                this.stageTestRun(curStage);
-
-                // Get next stage:
-                if (this.nextFunctions[curStage]) {
-                    curStage = this.nextFunctions[curStage]();
-                }
-                else if (this.generalNextFunction) {
-                    curStage = this.generalNextFunction();
-                }
-                else {
-                    curStage = null;
-                }
-
-                // Check stage validity:
-                if (curStage !== null && !this.stages[curStage]) {
-                    this.log('next-deciding callback yielded invalid stage');
-                    curStage = null;
-                }
-            }
-        }
-    };
-
-    // DEBUG:  Run stage.  Should be deleted later on.
-    Stager.prototype.stageTestRun = function(stageId) {
-        var steps = this.stages[stageId].steps;
-        var stepId;
-
-        for (var i in steps) {
-            if (steps.hasOwnProperty(i)) {
-                stepId = steps[i];
-                this.steps[stepId].cb();
-            }
-        }
-    };
-
-
     // ## Stager private methods
 
     /**
@@ -10707,7 +10598,7 @@ GameMsg.prototype.toEvent = function () {
 
         // Check ID validity:
         if (!this.stages[id]) {
-            this.log('handleAlias received nonexistent stage id', 'WARN');
+            throw new Error('Stager.handleAlias: received nonexistent stage id.');
             return null;
         }
 
@@ -10715,7 +10606,7 @@ GameMsg.prototype.toEvent = function () {
         for (seqIdx in this.sequence) {
             if (this.sequence.hasOwnProperty(seqIdx) &&
                 this.sequence[seqIdx].id === stageName) {
-                this.log('handleAlias received non-unique stage name', 'WARN');
+                throw new Error('Stager.handleAlias: received non-unique stage name.');
                 return null;
             }
         }
@@ -10742,99 +10633,153 @@ GameMsg.prototype.toEvent = function () {
  *
  * ---
  */
-(function(exports, node) {
+(function(exports, parent) {
 
-// ## Global scope
-exports.GamePlot = GamePlot;
+    // ## Global scope
+    exports.GamePlot = GamePlot;
 
-var Stager = node.Stager;
-var GameStage = node.GameStage;
-var J = node.JSUS;
+    var Stager = parent.Stager;
+    var GameStage = parent.GameStage;
+    var J = parent.JSUS;
 
-// ## Constants
-GamePlot.GAMEOVER = 'NODEGAME_GAMEOVER';
-GamePlot.END_SEQ  = 'NODEGAME_END_SEQ';
-GamePlot.NO_SEQ   = 'NODEGAME_NO_SEQ';
+    var NodeGameMisconfiguredGameError = parent.NodeGameMisconfiguredGameError,
+    NodeGameRuntimeError = parent.NodeGameRuntimeError;
+    // ## Constants
+    GamePlot.GAMEOVER = 'NODEGAME_GAMEOVER';
+    GamePlot.END_SEQ  = 'NODEGAME_END_SEQ';
+    GamePlot.NO_SEQ   = 'NODEGAME_NO_SEQ';
 
-/**
- * ## GamePlot constructor
- *
- * Creates a new instance of GamePlot
- *
- * Takes a sequence object created with Stager.
- *
- * If the Stager parameter has an empty sequence, flexibile mode is assumed
- * (used by e.g. GamePlot.next).
- *
- * @param {Stager} stager Optional. The Stager object.
- *
- * @see Stager
- */
-function GamePlot(stager) {
-    this.init(stager);
-}
+    /**
+     * ## GamePlot constructor
+     *
+     * Creates a new instance of GamePlot
+     *
+     * Takes a sequence object created with Stager.
+     *
+     * If the Stager parameter has an empty sequence, flexibile mode is assumed
+     * (used by e.g. GamePlot.next).
+     *
+     * @param {Stager} stager Optional. The Stager object.
+     *
+     * @see Stager
+     */
+    function GamePlot(stager) {
+        this.init(stager);
+        this.log = console.log;
+    }
 
-// ## GamePlot methods
+    // ## GamePlot methods
 
-/**
- * ### GamePlot.init
- *
- * Initializes the GamePlot with a stager
- *
- * @param {Stager} stager Optional. The Stager object.
- *
- * @see Stager
- */
-GamePlot.prototype.init = function(stager) {
-    if (stager) {
-        if ('object' !== typeof stager) {
-            throw new node.NodeGameMisconfiguredGameError(
-                    'init called with invalid stager');
+    /**
+     * ### GamePlot.init
+     *
+     * Initializes the GamePlot with a stager
+     *
+     * @param {Stager} stager Optional. The Stager object.
+     *
+     * @see Stager
+     */
+    GamePlot.prototype.init = function(stager) {
+        if (stager) {
+            if ('object' !== typeof stager) {
+                throw new NodeGameMisconfiguredGameError(
+                    'GamePlot.init: called with invalid stager');
+            }
+            this.stager = stager;
         }
+        else {
+            this.stager = null;
+        }
+    };
+    
+    /**
+     * ### GamePlot.next
+     *
+     * Returns the next stage in the stager
+     *
+     * If the step in `curStage` is an integer and out of bounds, that bound is assumed.
+     *
+     * @param {GameStage} curStage Optional. The GameStage object from which to get
+     *  the next one. Defaults to returning the first stage.
+     *
+     * @return {GameStage|string} The GameStage describing the next stage
+     *
+     * @see GameStage
+     */
+    GamePlot.prototype.next = function(curStage) {
+        // GamePlot was not correctly initialized
+        if (!this.stager) return GamePlot.NO_SEQ;
 
-        this.stager = stager;
-    }
-    else {
-        this.stager = null;
-    }
-};
+        // Find out flexibility mode:
+        var flexibleMode = this.stager.sequence.length === 0;
 
-/**
- * ### GamePlot.next
- *
- * Returns the next stage in the stager
- *
- * If the step in `curStage` is an integer and out of bounds, that bound is assumed.
- *
- * @param {GameStage} curStage Optional. The GameStage object from which to get
- *  the next one. Defaults to returning the first stage.
- *
- * @return {GameStage|string} The GameStage describing the next stage
- *
- * @see GameStage
- */
-GamePlot.prototype.next = function(curStage) {
-    // GamePlot was not correctly initialized
-    if (!this.stager) return GamePlot.NO_SEQ;
+        var seqIdx, seqObj = null, stageObj;
+        var stageNo, stepNo;
+        var normStage = null;
+        var nextStage = null;
 
-    // Find out flexibility mode:
-    var flexibleMode = this.stager.sequence.length === 0;
+        curStage = new GameStage(curStage);
 
-    var seqIdx, seqObj = null, stageObj;
-    var stageNo, stepNo;
-    var normStage = null;
-    var nextStage = null;
+        if (flexibleMode) {
+            if (curStage.stage === 0) {
+                // Get first stage:
+                if (this.stager.generalNextFunction) {
+                    nextStage = this.stager.generalNextFunction();
+                }
 
-    curStage = new GameStage(curStage);
+                if (nextStage) {
+                    return new GameStage({
+                        stage: nextStage,
+                        step:  1,
+                        round: 1
+                    });
+                }
 
-    if (flexibleMode) {
-        if (curStage.stage === 0) {
-            // Get first stage:
-            if (this.stager.generalNextFunction) {
+                return GamePlot.END_SEQ;
+            }
+
+            // Get stage object:
+            stageObj = this.stager.stages[curStage.stage];
+
+            if ('undefined' === typeof stageObj) {
+                throw new NodeGameRunTimeError('GamePlot.next: received nonexistent stage: ' + curStage.stage);
+            }
+
+            // Find step number:
+            if ('number' === typeof curStage.step) {
+                stepNo = curStage.step;
+            }
+            else {
+                stepNo = stageObj.steps.indexOf(curStage.step) + 1;
+            }
+            if (stepNo < 1) {
+                throw new NodeGameRunTimeError('GamePlot.next: received nonexistent step: ' +
+                          stageObj.id + '.' + curStage.step);
+            }
+
+            // Handle stepping:
+            if (stepNo + 1 <= stageObj.steps.length) {
+                return new GameStage({
+                    stage: stageObj.id,
+                    step:  stepNo + 1,
+                    round: 1
+                });
+            }
+
+            // Get next stage:
+            if (this.stager.nextFunctions[stageObj.id]) {
+                nextStage = this.stager.nextFunctions[stageObj.id]();
+            }
+            else if (this.stager.generalNextFunction) {
                 nextStage = this.stager.generalNextFunction();
             }
 
-            if (nextStage) {
+            // If next-deciding function returns GamePlot.GAMEOVER,
+            // consider it game over.
+            if (nextStage === GamePlot.GAMEOVER)  {
+                return GamePlot.GAMEOVER;
+            }
+            else if (nextStage) {
                 return new GameStage({
                     stage: nextStage,
                     step:  1,
@@ -10844,214 +10789,146 @@ GamePlot.prototype.next = function(curStage) {
 
             return GamePlot.END_SEQ;
         }
-
-        // Get stage object:
-        stageObj = this.stager.stages[curStage.stage];
-
-        if ('undefined' === typeof stageObj) {
-            node.warn('next received nonexistent stage: ' + curStage.stage);
-            return null;
-        }
-
-        // Find step number:
-        if ('number' === typeof curStage.step) {
-            stepNo = curStage.step;
-        }
         else {
-            stepNo = stageObj.steps.indexOf(curStage.step) + 1;
-        }
-        if (stepNo < 1) {
-            node.warn('next received nonexistent step: ' +
-                    stageObj.id + '.' + curStage.step);
-            return null;
-        }
+            if (curStage.stage === 0) {
+                return new GameStage({
+                    stage: 1,
+                    step:  1,
+                    round: 1
+                });
+            }
 
-        // Handle stepping:
-        if (stepNo + 1 <= stageObj.steps.length) {
-            return new GameStage({
-                stage: stageObj.id,
-                step:  stepNo + 1,
-                round: 1
-            });
-        }
+            // Get normalized GameStage:
+            normStage = this.normalizeGameStage(curStage);
+            if (normStage === null) {
+                throw new ('next received invalid stage: ' + curStage);
+                return null;
+            }
+            stageNo  = normStage.stage;
+            stepNo   = normStage.step;
+            seqObj   = this.stager.sequence[stageNo - 1];
+            if (seqObj.type === 'gameover') return GamePlot.GAMEOVER;
+            stageObj = this.stager.stages[seqObj.id];
 
-        // Get next stage:
-        if (this.stager.nextFunctions[stageObj.id]) {
-            nextStage = this.stager.nextFunctions[stageObj.id]();
-        }
-        else if (this.stager.generalNextFunction) {
-            nextStage = this.stager.generalNextFunction();
-        }
+            // Handle stepping:
+            if (stepNo + 1 <= stageObj.steps.length) {
+                return new GameStage({
+                    stage: stageNo,
+                    step:  stepNo + 1,
+                    round: normStage.round
+                });
+            }
 
-        // If next-deciding function returns GamePlot.GAMEOVER,
-        // consider it game over.
-        if (nextStage === GamePlot.GAMEOVER)  {
-            return GamePlot.GAMEOVER;
-        }
-        else if (nextStage) {
-            return new GameStage({
-                stage: nextStage,
-                step:  1,
-                round: 1
-            });
-        }
+            // Handle repeat block:
+            if (seqObj.type === 'repeat' && normStage.round + 1 <= seqObj.num) {
+                return new GameStage({
+                    stage: stageNo,
+                    step:  1,
+                    round: normStage.round + 1
+                });
+            }
 
-        return GamePlot.END_SEQ;
-    }
-    else {
-        if (curStage.stage === 0) {
-            return new GameStage({
-                stage: 1,
-                step:  1,
-                round: 1
-            });
+            // Handle looping blocks:
+            if ((seqObj.type === 'doLoop' || seqObj.type === 'loop') && seqObj.cb()) {
+                return new GameStage({
+                    stage: stageNo,
+                    step:  1,
+                    round: normStage.round + 1
+                });
+            }
+
+            // Go to next stage:
+            if (stageNo < this.stager.sequence.length) {
+                // Skip over loops if their callbacks return false:
+                while (this.stager.sequence[stageNo].type === 'loop' &&
+                       !this.stager.sequence[stageNo].cb()) {
+                    stageNo++;
+                    if (stageNo >= this.stager.sequence.length) return GamePlot.END_SEQ;
+                }
+
+                // Handle gameover:
+                if (this.stager.sequence[stageNo].type === 'gameover') {
+                    return GamePlot.GAMEOVER;
+                }
+
+                return new GameStage({
+                    stage: stageNo + 1,
+                    step:  1,
+                    round: 1
+                });
+            }
+
+            // No more stages remaining:
+            return GamePlot.END_SEQ;
         }
+    };
+
+    /**
+     * ### GamePlot.previous
+     *
+     * Returns the previous stage in the stager
+     *
+     * Works only in simple mode.
+     * Behaves on loops the same as `GamePlot.next`, with round=1 always.
+     *
+     * @param {GameStage} curStage The GameStage object from which to get the previous one
+     *
+     * @return {GameStage} The GameStage describing the previous stage
+     *
+     * @see GameStage
+     */
+    GamePlot.prototype.previous = function(curStage) {
+        // GamePlot was not correctly initialized
+        if (!this.stager) return GamePlot.NO_SEQ;
+
+        var normStage;
+        var seqIdx, seqObj = null, stageObj = null;
+        var prevSeqObj;
+        var stageNo, stepNo, prevStepNo;
+
+        curStage = new GameStage(curStage);
 
         // Get normalized GameStage:
         normStage = this.normalizeGameStage(curStage);
         if (normStage === null) {
-            node.warn('next received invalid stage: ' + curStage);
+            node.warn('previous received invalid stage: ' + curStage);
             return null;
         }
         stageNo  = normStage.stage;
         stepNo   = normStage.step;
         seqObj   = this.stager.sequence[stageNo - 1];
-        if (seqObj.type === 'gameover') return GamePlot.GAMEOVER;
-        stageObj = this.stager.stages[seqObj.id];
 
         // Handle stepping:
-        if (stepNo + 1 <= stageObj.steps.length) {
+        if (stepNo > 1) {
             return new GameStage({
                 stage: stageNo,
-                step:  stepNo + 1,
-                round: normStage.round
+                step:  stepNo - 1,
+                round: curStage.round
             });
         }
 
-        // Handle repeat block:
-        if (seqObj.type === 'repeat' && normStage.round + 1 <= seqObj.num) {
-            return new GameStage({
-                stage: stageNo,
-                step:  1,
-                round: normStage.round + 1
-            });
-        }
-
-        // Handle looping blocks:
-        if ((seqObj.type === 'doLoop' || seqObj.type === 'loop') && seqObj.cb()) {
-            return new GameStage({
-                stage: stageNo,
-                step:  1,
-                round: normStage.round + 1
-            });
-        }
-
-        // Go to next stage:
-        if (stageNo < this.stager.sequence.length) {
-            // Skip over loops if their callbacks return false:
-            while (this.stager.sequence[stageNo].type === 'loop' &&
-                    !this.stager.sequence[stageNo].cb()) {
-                stageNo++;
-                if (stageNo >= this.stager.sequence.length) return GamePlot.END_SEQ;
+        if ('undefined' !== typeof seqObj.id) {
+            stageObj = this.stager.stages[seqObj.id];
+            // Handle rounds:
+            if (curStage.round > 1) {
+                return new GameStage({
+                    stage: stageNo,
+                    step:  stageObj.steps.length,
+                    round: curStage.round - 1
+                });
             }
 
-            // Handle gameover:
-            if (this.stager.sequence[stageNo].type === 'gameover') {
-                return GamePlot.GAMEOVER;
+            // Handle looping blocks:
+            if ((seqObj.type === 'doLoop' || seqObj.type === 'loop') && seqObj.cb()) {
+                return new GameStage({
+                    stage: stageNo,
+                    step:  stageObj.steps.length,
+                    round: 1
+                });
             }
-
-            return new GameStage({
-                stage: stageNo + 1,
-                step:  1,
-                round: 1
-            });
         }
 
-        // No more stages remaining:
-        return GamePlot.END_SEQ;
-    }
-};
-
-/**
- * ### GamePlot.previous
- *
- * Returns the previous stage in the stager
- *
- * Works only in simple mode.
- * Behaves on loops the same as `GamePlot.next`, with round=1 always.
- *
- * @param {GameStage} curStage The GameStage object from which to get the previous one
- *
- * @return {GameStage} The GameStage describing the previous stage
- *
- * @see GameStage
- */
-GamePlot.prototype.previous = function(curStage) {
-    // GamePlot was not correctly initialized
-    if (!this.stager) return GamePlot.NO_SEQ;
-
-    var normStage;
-    var seqIdx, seqObj = null, stageObj = null;
-    var prevSeqObj;
-    var stageNo, stepNo, prevStepNo;
-
-    curStage = new GameStage(curStage);
-
-    // Get normalized GameStage:
-    normStage = this.normalizeGameStage(curStage);
-    if (normStage === null) {
-        node.warn('previous received invalid stage: ' + curStage);
-        return null;
-    }
-    stageNo  = normStage.stage;
-    stepNo   = normStage.step;
-    seqObj   = this.stager.sequence[stageNo - 1];
-
-    // Handle stepping:
-    if (stepNo > 1) {
-        return new GameStage({
-            stage: stageNo,
-            step:  stepNo - 1,
-            round: curStage.round
-        });
-    }
-
-    if ('undefined' !== typeof seqObj.id) {
-        stageObj = this.stager.stages[seqObj.id];
-        // Handle rounds:
-        if (curStage.round > 1) {
-            return new GameStage({
-                stage: stageNo,
-                step:  stageObj.steps.length,
-                round: curStage.round - 1
-            });
-        }
-
-        // Handle looping blocks:
-        if ((seqObj.type === 'doLoop' || seqObj.type === 'loop') && seqObj.cb()) {
-            return new GameStage({
-                stage: stageNo,
-                step:  stageObj.steps.length,
-                round: 1
-            });
-        }
-    }
-
-    // Handle beginning:
-    if (stageNo <= 1) {
-        return new GameStage({
-            stage: 0,
-            step:  0,
-            round: 0
-        });
-    }
-
-    // Go to previous stage:
-    // Skip over loops if their callbacks return false:
-    while (this.stager.sequence[stageNo - 2].type === 'loop' &&
-            !this.stager.sequence[stageNo - 2].cb()) {
-        stageNo--;
-
+        // Handle beginning:
         if (stageNo <= 1) {
             return new GameStage({
                 stage: 0,
@@ -11059,460 +10936,474 @@ GamePlot.prototype.previous = function(curStage) {
                 round: 0
             });
         }
-    }
 
-    // Get previous sequence object:
-    prevSeqObj = this.stager.sequence[stageNo - 2];
+        // Go to previous stage:
+        // Skip over loops if their callbacks return false:
+        while (this.stager.sequence[stageNo - 2].type === 'loop' &&
+               !this.stager.sequence[stageNo - 2].cb()) {
+            stageNo--;
 
-    // Get number of steps in previous stage:
-    prevStepNo = this.stager.stages[prevSeqObj.id].steps.length;
+            if (stageNo <= 1) {
+                return new GameStage({
+                    stage: 0,
+                    step:  0,
+                    round: 0
+                });
+            }
+        }
 
-    // Handle repeat block:
-    if (prevSeqObj.type === 'repeat') {
+        // Get previous sequence object:
+        prevSeqObj = this.stager.sequence[stageNo - 2];
+
+        // Get number of steps in previous stage:
+        prevStepNo = this.stager.stages[prevSeqObj.id].steps.length;
+
+        // Handle repeat block:
+        if (prevSeqObj.type === 'repeat') {
+            return new GameStage({
+                stage: stageNo - 1,
+                step:  prevStepNo,
+                round: prevSeqObj.num
+            });
+        }
+
+        // Handle normal blocks:
         return new GameStage({
             stage: stageNo - 1,
             step:  prevStepNo,
-            round: prevSeqObj.num
+            round: 1
         });
-    }
+    };
 
-    // Handle normal blocks:
-    return new GameStage({
-        stage: stageNo - 1,
-        step:  prevStepNo,
-        round: 1
-    });
-};
+    /**
+     * ### GamePlot.jump
+     *
+     * Returns a distant stage in the stager
+     *
+     * Works with negative delta only in simple mode.
+     * Uses `GamePlot.previous` and `GamePlot.next` for stepping.
+     * If a sequence end is reached, returns immediately.
+     *
+     * @param {GameStage} curStage The GameStage object from which to get the offset one
+     * @param {number} delta The offset. Negative number for backward stepping.
+     *
+     * @return {GameStage|string} The GameStage describing the distant stage
+     *
+     * @see GameStage
+     * @see GamePlot.previous
+     * @see GamePlot.next
+     */
+    GamePlot.prototype.jump = function(curStage, delta) {
+        if (delta < 0) {
+            while (delta < 0) {
+                curStage = this.previous(curStage);
+                delta++;
 
-/**
- * ### GamePlot.jump
- *
- * Returns a distant stage in the stager
- *
- * Works with negative delta only in simple mode.
- * Uses `GamePlot.previous` and `GamePlot.next` for stepping.
- * If a sequence end is reached, returns immediately.
- *
- * @param {GameStage} curStage The GameStage object from which to get the offset one
- * @param {number} delta The offset. Negative number for backward stepping.
- *
- * @return {GameStage|string} The GameStage describing the distant stage
- *
- * @see GameStage
- * @see GamePlot.previous
- * @see GamePlot.next
- */
-GamePlot.prototype.jump = function(curStage, delta) {
-    if (delta < 0) {
-        while (delta < 0) {
-            curStage = this.previous(curStage);
-            delta++;
-
-            if (!(curStage instanceof GameStage) || curStage.stage === 0) {
-                return curStage;
+                if (!(curStage instanceof GameStage) || curStage.stage === 0) {
+                    return curStage;
+                }
             }
         }
-    }
-    else {
-        while (delta > 0) {
-            curStage = this.next(curStage);
-            delta--;
+        else {
+            while (delta > 0) {
+                curStage = this.next(curStage);
+                delta--;
 
-            if (!(curStage instanceof GameStage)) {
-                return curStage;
+                if (!(curStage instanceof GameStage)) {
+                    return curStage;
+                }
             }
         }
-    }
 
-    return curStage;
-};
+        return curStage;
+    };
 
-/**
- * ### GamePlot.stepsToNextStage
- *
- * Returns the number of steps until the beginning of the next stage
- *
- * @param {GameStage|string} gameStage The GameStage object,
- *  or its string representation
- *
- * @return {number|null} The number of steps to go, minimum 1. NULL on error.
- */
-GamePlot.prototype.stepsToNextStage = function(gameStage) {
-    var stageObj, stepNo;
+    /**
+     * ### GamePlot.stepsToNextStage
+     *
+     * Returns the number of steps until the beginning of the next stage
+     *
+     * @param {GameStage|string} gameStage The GameStage object,
+     *  or its string representation
+     *
+     * @return {number|null} The number of steps to go, minimum 1. NULL on error.
+     */
+    GamePlot.prototype.stepsToNextStage = function(gameStage) {
+        var stageObj, stepNo;
 
-    gameStage = new GameStage(gameStage);
-    if (gameStage.stage === 0) return 1;
-    stageObj = this.getStage(gameStage);
-    if (!stageObj) return null;
-
-    if ('number' === typeof gameStage.step) {
-        stepNo = gameStage.step;
-    }
-    else {
-        stepNo = stageObj.steps.indexOf(gameStage.step) + 1;
-        // If indexOf returned -1, stepNo is 0 which will be caught below.
-    }
-
-    if (stepNo < 1 || stepNo > stageObj.steps.length) return null;
-
-    return 1 + stageObj.steps.length - stepNo;
-};
-
-/**
- * ### GamePlot.stepsToPreviousStage
- *
- * Returns the number of steps back until the end of the previous stage
- *
- * @param {GameStage|string} gameStage The GameStage object,
- *  or its string representation
- *
- * @return {number|null} The number of steps to go, minimum 1. NULL on error.
- */
-GamePlot.prototype.stepsToPreviousStage = function(gameStage) {
-    var stageObj, stepNo;
-
-    gameStage = new GameStage(gameStage);
-    stageObj = this.getStage(gameStage);
-    if (!stageObj) return null;
-
-    if ('number' === typeof gameStage.step) {
-        stepNo = gameStage.step;
-    }
-    else {
-        stepNo = stageObj.steps.indexOf(gameStage.step) + 1;
-        // If indexOf returned -1, stepNo is 0 which will be caught below.
-    }
-
-    if (stepNo < 1 || stepNo > stageObj.steps.length) return null;
-
-    return stepNo;
-};
-
-/**
- * ### GamePlot.getStage
- *
- * Returns the stage object corresponding to a GameStage
- *
- * @param {GameStage|string} gameStage The GameStage object,
- *  or its string representation
- *
- * @return {object|null} The corresponding stage object, or NULL
- *  if the step was not found
- */
-GamePlot.prototype.getStage = function(gameStage) {
-    var stageObj;
-
-    if (!this.stager) return null;
-    gameStage = new GameStage(gameStage);
-    if ('number' === typeof gameStage.stage) {
-        stageObj = this.stager.sequence[gameStage.stage - 1];
-        return stageObj ? this.stager.stages[stageObj.id] : null;
-    }
-    else {
-        return this.stager.stages[gameStage.stage] || null;
-    }
-};
-
-/**
- * ### GamePlot.getStep
- *
- * Returns the step object corresponding to a GameStage
- *
- * @param {GameStage|string} gameStage The GameStage object,
- *  or its string representation
- *
- * @return {object|null} The corresponding step object, or NULL
- *  if the step was not found
- */
-GamePlot.prototype.getStep = function(gameStage) {
-    var stageObj;
-
-    if (!this.stager) return null;
-    gameStage = new GameStage(gameStage);
-    if ('number' === typeof gameStage.step) {
+        gameStage = new GameStage(gameStage);
+        if (gameStage.stage === 0) return 1;
         stageObj = this.getStage(gameStage);
-        return stageObj ? this.stager.steps[stageObj.steps[gameStage.step - 1]] : null;
-    }
-    else {
-        return this.stager.steps[gameStage.step] || null;
-    }
-};
+        if (!stageObj) return null;
 
-/**
- * ### GamePlot.getStepRule
- *
- * Returns the step-rule function corresponding to a GameStage
- *
- * If gameStage.stage = 0, it returns a function that always returns TRUE.
- *
- * Otherwise, the order of lookup is:
- *
- * 1. `steprule` property of the step object
- *
- * 2. `steprule` property of the stage object
- *
- * 3. default step-rule of the Stager object
- *
- * @param {GameStage|string} gameStage The GameStage object,
- *  or its string representation
- *
- * @return {function|null} The step-rule function. NULL on error.
- */
-GamePlot.prototype.getStepRule = function(gameStage) {
-    var stageObj, stepObj, rule;
-
-    gameStage = new GameStage(gameStage);
-
-    if (gameStage.stage === 0) {
-        return function() { return false; };
-    }
-    
-    stageObj = this.getStage(gameStage);
-    stepObj  = this.getStep(gameStage);
-
-    if (!stageObj || !stepObj) {
-        // TODO is this an error?
-        return null;
-    }
-    
-    // return a step-defined rule
-    if ('string' === typeof stepObj.steprule) {
-        rule =  node.stepRules.get(stepObj.steprule);        
-    }
-    else if ('function' === typeof stepObj.steprule) {
-        rule = stepObj.steprule;
-    }    
-    if ('function' === typeof rule) return rule;
-
-    // return a stage-defined rule
-    if ('string' === typeof stageObj.steprule) {
-        rule =  node.stepRules.get(stageObj.steprule);        
-    }
-    else if ('function' === typeof stageObj.steprule) {
-        rule = stageObj.steprule;
-    }    
-    if ('function' === typeof rule) return rule;
-
-    // Default rule
-    // TODO: Use first line once possible (serialization issue):
-    //return this.stager.getDefaultStepRule();
-    return this.stager.defaultStepRule;
-};
-
-/**
- * ### GamePlot.getGlobal
- *
- * Looks up the value of a global variable
- *
- * Looks for definitions of a global variable in
- *
- * 1. the globals property of the step object of the given gameStage,
- *
- * 2. the globals property of the stage object of the given gameStage,
- *
- * 3. the defaults, defined in the Stager.
- *
- * @param {GameStage|string} gameStage The GameStage object,
- *  or its string representation
- * @param {string} globalVar The name of the global variable
- *
- * @return {mixed|null} The value of the global variable if found,
- *   NULL otherwise.
- */
-GamePlot.prototype.getGlobal = function(gameStage, globalVar) {
-    var stepObj, stageObj;
-    var stepGlobals, stageGlobals, defaultGlobals;
-    
-    gameStage = new GameStage(gameStage);
-
-    // Look in current step:
-    stepObj = this.getStep(gameStage);
-    if (stepObj) {
-        stepGlobals = stepObj.globals;
-        if (stepGlobals && stepGlobals.hasOwnProperty(globalVar)) {
-            return stepGlobals[globalVar];
+        if ('number' === typeof gameStage.step) {
+            stepNo = gameStage.step;
         }
-    }
-
-    // Look in current stage:
-    stageObj = this.getStage(gameStage);
-    if (stageObj) {
-        stageGlobals = stageObj.globals;
-        if (stageGlobals && stageGlobals.hasOwnProperty(globalVar)) {
-            return stageGlobals[globalVar];
+        else {
+            stepNo = stageObj.steps.indexOf(gameStage.step) + 1;
+            // If indexOf returned -1, stepNo is 0 which will be caught below.
         }
-    }
 
-    // Look in Stager's defaults:
-    if (this.stager) {
-        defaultGlobals = this.stager.getDefaultGlobals();
-        if (defaultGlobals && defaultGlobals.hasOwnProperty(globalVar)) {
-            return defaultGlobals[globalVar];
+        if (stepNo < 1 || stepNo > stageObj.steps.length) return null;
+
+        return 1 + stageObj.steps.length - stepNo;
+    };
+
+    /**
+     * ### GamePlot.stepsToPreviousStage
+     *
+     * Returns the number of steps back until the end of the previous stage
+     *
+     * @param {GameStage|string} gameStage The GameStage object,
+     *  or its string representation
+     *
+     * @return {number|null} The number of steps to go, minimum 1. NULL on error.
+     */
+    GamePlot.prototype.stepsToPreviousStage = function(gameStage) {
+        var stageObj, stepNo;
+
+        gameStage = new GameStage(gameStage);
+        stageObj = this.getStage(gameStage);
+        if (!stageObj) return null;
+
+        if ('number' === typeof gameStage.step) {
+            stepNo = gameStage.step;
         }
-    }
-
-    // Not found:
-    return null;
-};
-
-/**
- * ### GamePlot.getProperty
- *
- * Looks up the value of a property
- *
- * Looks for definitions of a property in
- *
- * 1. the step object of the given gameStage,
- *
- * 2. the stage object of the given gameStage,
- *
- * 3. the defaults, defined in the Stager.
- *
- * @param {GameStage|string} gameStage The GameStage object,
- *  or its string representation
- * @param {string} property The name of the property
- *
- * @return {mixed|null} The value of the property if found, NULL otherwise.
- */
-GamePlot.prototype.getProperty = function(gameStage, property) {
-    var stepObj, stageObj;
-    var defaultProps;
-
-    gameStage = new GameStage(gameStage);
-
-    // Look in current step:
-    stepObj = this.getStep(gameStage);
-    if (stepObj && stepObj.hasOwnProperty(property)) {
-        return stepObj[property];
-    }
-
-    // Look in current stage:
-    stageObj = this.getStage(gameStage);
-    if (stageObj && stageObj.hasOwnProperty(property)) {
-        return stageObj[property];
-    }
-
-    // Look in Stager's defaults:
-    if (this.stager) {
-        defaultProps = this.stager.getDefaultProperties();
-        if (defaultProps && defaultProps.hasOwnProperty(property)) {
-            return defaultProps[property];
+        else {
+            stepNo = stageObj.steps.indexOf(gameStage.step) + 1;
+            // If indexOf returned -1, stepNo is 0 which will be caught below.
         }
-    }
 
-    // Not found:
-    return null;
-};
+        if (stepNo < 1 || stepNo > stageObj.steps.length) return null;
 
+        return stepNo;
+    };
 
-/**
- * ### GamePlot.isReady
- *
- * Returns whether the stager has any content
- *
- * @return {boolean} FALSE if stager is empty, TRUE otherwise
- */
-GamePlot.prototype.isReady = function() {
-    return this.stager &&
-        (this.stager.sequence.length > 0 ||
-         this.stager.generalNextFunction !== null ||
-         !J.isEmpty(this.stager.nextFunctions));
-};
+    /**
+     * ### GamePlot.getStage
+     *
+     * Returns the stage object corresponding to a GameStage
+     *
+     * @param {GameStage|string} gameStage The GameStage object,
+     *  or its string representation
+     *
+     * @return {object|null} The corresponding stage object, or NULL
+     *  if the step was not found
+     */
+    GamePlot.prototype.getStage = function(gameStage) {
+        var stageObj;
 
-/**
- * ### GamePlot.getName
- *
- * TODO: To remove once transition is complete
- * @deprecated
- */
-GamePlot.prototype.getName = function(gameStage) {
-    var s = this.getStep(gameStage);
-    return s ? s.name : s;
-};
+        if (!this.stager) return null;
+        gameStage = new GameStage(gameStage);
+        if ('number' === typeof gameStage.stage) {
+            stageObj = this.stager.sequence[gameStage.stage - 1];
+            return stageObj ? this.stager.stages[stageObj.id] : null;
+        }
+        else {
+            return this.stager.stages[gameStage.stage] || null;
+        }
+    };
 
-/**
- * ### GamePlot.getAllParams
- *
- * TODO: To remove once transition is complete
- * @deprecated
- */
-GamePlot.prototype.getAllParams = GamePlot.prototype.getStep;
+    /**
+     * ### GamePlot.getStep
+     *
+     * Returns the step object corresponding to a GameStage
+     *
+     * @param {GameStage|string} gameStage The GameStage object,
+     *  or its string representation
+     *
+     * @return {object|null} The corresponding step object, or NULL
+     *  if the step was not found
+     */
+    GamePlot.prototype.getStep = function(gameStage) {
+        var stageObj;
 
-/**
- * ### GamePlot.normalizeGameStage
- *
- * Converts the GameStage fields to numbers
- *
- * Works only in simple mode.
- *
- * @param {GameStage} gameStage The GameStage object
- *
- * @return {GameStage|null} The normalized GameStage object; NULL on error
- *
- * @api private
- */
-GamePlot.prototype.normalizeGameStage = function(gameStage) {
-    var stageNo, stepNo, seqIdx, seqObj;
+        if (!this.stager) return null;
+        gameStage = new GameStage(gameStage);
+        if ('number' === typeof gameStage.step) {
+            stageObj = this.getStage(gameStage);
+            return stageObj ? this.stager.steps[stageObj.steps[gameStage.step - 1]] : null;
+        }
+        else {
+            return this.stager.steps[gameStage.step] || null;
+        }
+    };
 
-    if (!gameStage || 'object' !== typeof gameStage) return null;
+    /**
+     * ### GamePlot.getStepRule
+     *
+     * Returns the step-rule function corresponding to a GameStage
+     *
+     * If gameStage.stage = 0, it returns a function that always returns TRUE.
+     *
+     * Otherwise, the order of lookup is:
+     *
+     * 1. `steprule` property of the step object
+     *
+     * 2. `steprule` property of the stage object
+     *
+     * 3. default step-rule of the Stager object
+     *
+     * @param {GameStage|string} gameStage The GameStage object,
+     *  or its string representation
+     *
+     * @return {function|null} The step-rule function. NULL on error.
+     */
+    GamePlot.prototype.getStepRule = function(gameStage) {
+        var stageObj, stepObj, rule;
 
-    // Find stage number:
-    if ('number' === typeof gameStage.stage) {
-        stageNo = gameStage.stage;
-    }
-    else {
-        for (seqIdx = 0; seqIdx < this.stager.sequence.length; seqIdx++) {
-            if (this.stager.sequence[seqIdx].id === gameStage.stage) {
-                break;
+        gameStage = new GameStage(gameStage);
+
+        if (gameStage.stage === 0) {
+            return function() { return false; };
+        }
+        
+        stageObj = this.getStage(gameStage);
+        stepObj  = this.getStep(gameStage);
+
+        if (!stageObj || !stepObj) {
+            // TODO is this an error?
+            return null;
+        }
+        
+        // return a step-defined rule
+        if ('string' === typeof stepObj.steprule) {
+            rule =  node.stepRules.get(stepObj.steprule);        
+        }
+        else if ('function' === typeof stepObj.steprule) {
+            rule = stepObj.steprule;
+        }    
+        if ('function' === typeof rule) return rule;
+
+        // return a stage-defined rule
+        if ('string' === typeof stageObj.steprule) {
+            rule =  node.stepRules.get(stageObj.steprule);        
+        }
+        else if ('function' === typeof stageObj.steprule) {
+            rule = stageObj.steprule;
+        }    
+        if ('function' === typeof rule) return rule;
+
+        // Default rule
+        // TODO: Use first line once possible (serialization issue):
+        //return this.stager.getDefaultStepRule();
+        return this.stager.defaultStepRule;
+    };
+
+    /**
+     * ### GamePlot.getGlobal
+     *
+     * Looks up the value of a global variable
+     *
+     * Looks for definitions of a global variable in
+     *
+     * 1. the globals property of the step object of the given gameStage,
+     *
+     * 2. the globals property of the stage object of the given gameStage,
+     *
+     * 3. the defaults, defined in the Stager.
+     *
+     * @param {GameStage|string} gameStage The GameStage object,
+     *  or its string representation
+     * @param {string} globalVar The name of the global variable
+     *
+     * @return {mixed|null} The value of the global variable if found,
+     *   NULL otherwise.
+     */
+    GamePlot.prototype.getGlobal = function(gameStage, globalVar) {
+        var stepObj, stageObj;
+        var stepGlobals, stageGlobals, defaultGlobals;
+        
+        gameStage = new GameStage(gameStage);
+
+        // Look in current step:
+        stepObj = this.getStep(gameStage);
+        if (stepObj) {
+            stepGlobals = stepObj.globals;
+            if (stepGlobals && stepGlobals.hasOwnProperty(globalVar)) {
+                return stepGlobals[globalVar];
             }
         }
-        stageNo = seqIdx + 1;
-    }
-    if (stageNo < 1 || stageNo > this.stager.sequence.length) {
-        node.warn('normalizeGameStage received nonexistent stage: ' + gameStage.stage);
+
+        // Look in current stage:
+        stageObj = this.getStage(gameStage);
+        if (stageObj) {
+            stageGlobals = stageObj.globals;
+            if (stageGlobals && stageGlobals.hasOwnProperty(globalVar)) {
+                return stageGlobals[globalVar];
+            }
+        }
+
+        // Look in Stager's defaults:
+        if (this.stager) {
+            defaultGlobals = this.stager.getDefaultGlobals();
+            if (defaultGlobals && defaultGlobals.hasOwnProperty(globalVar)) {
+                return defaultGlobals[globalVar];
+            }
+        }
+
+        // Not found:
         return null;
-    }
+    };
 
-    // Get sequence object:
-    seqObj = this.stager.sequence[stageNo - 1];
-    if (!seqObj) return null;
+    /**
+     * ### GamePlot.getProperty
+     *
+     * Looks up the value of a property
+     *
+     * Looks for definitions of a property in
+     *
+     * 1. the step object of the given gameStage,
+     *
+     * 2. the stage object of the given gameStage,
+     *
+     * 3. the defaults, defined in the Stager.
+     *
+     * @param {GameStage|string} gameStage The GameStage object,
+     *  or its string representation
+     * @param {string} property The name of the property
+     *
+     * @return {mixed|null} The value of the property if found, NULL otherwise.
+     */
+    GamePlot.prototype.getProperty = function(gameStage, property) {
+        var stepObj, stageObj;
+        var defaultProps;
 
-    if (seqObj.type === 'gameover') {
+        gameStage = new GameStage(gameStage);
+
+        // Look in current step:
+        stepObj = this.getStep(gameStage);
+        if (stepObj && stepObj.hasOwnProperty(property)) {
+            return stepObj[property];
+        }
+
+        // Look in current stage:
+        stageObj = this.getStage(gameStage);
+        if (stageObj && stageObj.hasOwnProperty(property)) {
+            return stageObj[property];
+        }
+
+        // Look in Stager's defaults:
+        if (this.stager) {
+            defaultProps = this.stager.getDefaultProperties();
+            if (defaultProps && defaultProps.hasOwnProperty(property)) {
+                return defaultProps[property];
+            }
+        }
+
+        // Not found:
+        return null;
+    };
+
+
+    /**
+     * ### GamePlot.isReady
+     *
+     * Returns whether the stager has any content
+     *
+     * @return {boolean} FALSE if stager is empty, TRUE otherwise
+     */
+    GamePlot.prototype.isReady = function() {
+        return this.stager &&
+            (this.stager.sequence.length > 0 ||
+             this.stager.generalNextFunction !== null ||
+             !J.isEmpty(this.stager.nextFunctions));
+    };
+
+    /**
+     * ### GamePlot.getName
+     *
+     * TODO: To remove once transition is complete
+     * @deprecated
+     */
+    GamePlot.prototype.getName = function(gameStage) {
+        var s = this.getStep(gameStage);
+        return s ? s.name : s;
+    };
+
+    /**
+     * ### GamePlot.getAllParams
+     *
+     * TODO: To remove once transition is complete
+     * @deprecated
+     */
+    GamePlot.prototype.getAllParams = GamePlot.prototype.getStep;
+
+    /**
+     * ### GamePlot.normalizeGameStage
+     *
+     * Converts the GameStage fields to numbers
+     *
+     * Works only in simple mode.
+     *
+     * @param {GameStage} gameStage The GameStage object
+     *
+     * @return {GameStage|null} The normalized GameStage object; NULL on error
+     *
+     * @api private
+     */
+    GamePlot.prototype.normalizeGameStage = function(gameStage) {
+        var stageNo, stepNo, seqIdx, seqObj;
+
+        if (!gameStage || 'object' !== typeof gameStage) return null;
+
+        // Find stage number:
+        if ('number' === typeof gameStage.stage) {
+            stageNo = gameStage.stage;
+        }
+        else {
+            for (seqIdx = 0; seqIdx < this.stager.sequence.length; seqIdx++) {
+                if (this.stager.sequence[seqIdx].id === gameStage.stage) {
+                    break;
+                }
+            }
+            stageNo = seqIdx + 1;
+        }
+        if (stageNo < 1 || stageNo > this.stager.sequence.length) {
+            node.warn('normalizeGameStage received nonexistent stage: ' + gameStage.stage);
+            return null;
+        }
+
+        // Get sequence object:
+        seqObj = this.stager.sequence[stageNo - 1];
+        if (!seqObj) return null;
+
+        if (seqObj.type === 'gameover') {
+            return new GameStage({
+                stage: stageNo,
+                step:  1,
+                round: gameStage.round
+            });
+        }
+
+        // Get stage object:
+        stageObj = this.stager.stages[seqObj.id];
+        if (!stageObj) return null;
+
+        // Find step number:
+        if ('number' === typeof gameStage.step) {
+            stepNo = gameStage.step;
+        }
+        else {
+            stepNo = stageObj.steps.indexOf(gameStage.step) + 1;
+        }
+        if (stepNo < 1) {
+            node.warn('normalizeGameStage received nonexistent step: ' +
+                      stageObj.id + '.' + gameStage.step);
+            return null;
+        }
+
+        // Check round property:
+        if ('number' !== typeof gameStage.round) return null;
+
         return new GameStage({
             stage: stageNo,
-            step:  1,
+            step:  stepNo,
             round: gameStage.round
         });
-    }
+    };
 
-    // Get stage object:
-    stageObj = this.stager.stages[seqObj.id];
-    if (!stageObj) return null;
-
-    // Find step number:
-    if ('number' === typeof gameStage.step) {
-        stepNo = gameStage.step;
-    }
-    else {
-        stepNo = stageObj.steps.indexOf(gameStage.step) + 1;
-    }
-    if (stepNo < 1) {
-        node.warn('normalizeGameStage received nonexistent step: ' +
-                stageObj.id + '.' + gameStage.step);
-        return null;
-    }
-
-    // Check round property:
-    if ('number' !== typeof gameStage.round) return null;
-
-    return new GameStage({
-        stage: stageNo,
-        step:  stepNo,
-        round: gameStage.round
-    });
-};
-
-// ## Closure
+    // ## Closure
 })(
     'undefined' != typeof node ? node : module.exports,
     'undefined' != typeof node ? node : module.parent.exports
@@ -11950,7 +11841,12 @@ GamePlot.prototype.normalizeGameStage = function(gameStage) {
             this.node.err('socket cannot send message. Player undefined.');
             return false;
         }
-
+        
+        // TODO: add conf variable node.emitOutMsg
+        if (this.node.debug) {
+            this.node.emit(msg.toOutEvent(), msg);
+        }
+        
         this.socket.send(msg);
         this.node.info('S: ' + msg);
         return true;
@@ -12011,7 +11907,7 @@ GamePlot.prototype.normalizeGameStage = function(gameStage) {
         }
 
         socket = io.connect(url, options); //conf.io
-        socket.on('connect', function (msg) {
+        socket.on('connect', function(msg) {
             node.info('socket.io connection open');
             socket.on('message', function(msg) {
                 node.socket.onMessage(msg);
@@ -12028,8 +11924,7 @@ GamePlot.prototype.normalizeGameStage = function(gameStage) {
 
     };
 
-    SocketIo.prototype.send = function (msg) {
-        console.log(this);
+    SocketIo.prototype.send = function(msg) {
         this.socket.send(msg.stringify());
     };
 
@@ -12040,7 +11935,6 @@ GamePlot.prototype.normalizeGameStage = function(gameStage) {
     'undefined' != typeof node ? node : module.parent.exports,
     'undefined' != typeof io ? io : require('socket.io-client') 
 );
-
 /**
  * # GameDB
  * 
@@ -12371,9 +12265,7 @@ GamePlot.prototype.normalizeGameStage = function(gameStage) {
  * Wrapper class for a `GamePlot` object and functions to control the game flow
  *
  *  ---
- *
  */
-
 (function(exports, parent) {
 
     // ## Global scope
@@ -12504,7 +12396,7 @@ GamePlot.prototype.normalizeGameStage = function(gameStage) {
          * @see GamePlot
          * @api private
          */
-        this.plot = new GamePlot(new Stager(settings.stages));
+        this.plot = new GamePlot(new Stager(settings.stages), node);
 
 
         // TODO: check how to init
@@ -12553,6 +12445,7 @@ GamePlot.prototype.normalizeGameStage = function(gameStage) {
             onInit = this.plot.stager.getOnInit();
             if (onInit) {
                 this.setStateLevel(constants.stateLevels.INITIALIZING);
+                node.emit('INIT');
                 onInit.call(node.game);
             }
         }
@@ -12686,6 +12579,11 @@ GamePlot.prototype.normalizeGameStage = function(gameStage) {
         var nextStepObj, nextStageObj;
         var ev, node;
         node = this.node;
+
+        if (this.getStateLevel() < constants.stateLevels.INITIALIZED) {
+            throw new node.NodeGameMisconfiguredGameError(
+                'game.step called before game.start');
+        }
         
         curStep = this.getCurrentGameStage();
         nextStep = this.plot.next(curStep);
@@ -12950,6 +12848,7 @@ GamePlot.prototype.normalizeGameStage = function(gameStage) {
     'undefined' != typeof node ? node : module.exports
  ,  'undefined' != typeof node ? node : module.parent.exports
 );
+
 /**
  * # GameSession
  *
@@ -14390,15 +14289,13 @@ GamePlot.prototype.normalizeGameStage = function(gameStage) {
 /**
  * # Log
  * 
- * Copyright(c) 2012 Stefano Balietti
+ * Copyright(c) 2013 Stefano Balietti
  * MIT Licensed 
  * 
  * `nodeGame` logging module
  * 
  * ---
- * 
  */
-
 (function (exports, parent) {
 
     var NGC = parent.NodeGameClient;
@@ -14787,7 +14684,7 @@ GamePlot.prototype.normalizeGameStage = function(gameStage) {
         player.stageLevel = this.player.stageLevel;
 
         // Overwrite existing 'current' player:
-        if (this.player) {
+        if (this.player && this.player.id) {
             this.game.pl.remove(this.player.id);
         }
 
@@ -14803,6 +14700,7 @@ GamePlot.prototype.normalizeGameStage = function(gameStage) {
     'undefined' != typeof node ? node : module.exports,
     'undefined' != typeof node ? node : module.parent.exports
 );
+
 /**
  * # NodeGameClient Events Handling  
  *
@@ -19823,169 +19721,197 @@ node.widgets = new Widgets();
 	
 })(node);
 (function (node) {
+    
+    node.widgets.register('VisualState', VisualState);
+    
+    var JSUS = node.JSUS,
+    Table = node.window.Table;
+    
+    // ## Defaults
+    
+    VisualState.defaults = {};
+    VisualState.defaults.id = 'visualstate';
+    VisualState.defaults.fieldset = { 
+	legend: 'State',
+	id: 'visualstate_fieldset'
+    };	
+    
+    // ## Meta-data
+    
+    VisualState.name = 'Visual State';
+    VisualState.version = '0.2.1';
+    VisualState.description = 'Visually display current, previous and next state of the game.';
+    
+    // ## Dependencies
+    
+    VisualState.dependencies = {
+	JSUS: {},
+	Table: {}
+    };
+    
+    
+    function VisualState (options) {
+	this.id = options.id;
 	
-	node.widgets.register('VisualState', VisualState);
-	
-	var JSUS = node.JSUS,
-		Table = node.window.Table;
-	
-// ## Defaults
-	
-	VisualState.defaults = {};
-	VisualState.defaults.id = 'visualstate';
-	VisualState.defaults.fieldset = { 
-		legend: 'State',
-		id: 'visualstate_fieldset'
-	};	
-	
-// ## Meta-data
-	
-	VisualState.name = 'Visual State';
-	VisualState.version = '0.2.1';
-	VisualState.description = 'Visually display current, previous and next state of the game.';
-	
-// ## Dependencies
-	
-	VisualState.dependencies = {
-		JSUS: {},
-		Table: {}
-	};
-	
-	
-	function VisualState (options) {
-		this.id = options.id;
-		
-		this.root = null;		// the parent element
-		this.table = new Table();
-	}
-	
-	VisualState.prototype.getRoot = function () {
-		return this.root;
-	};
-	
-	VisualState.prototype.append = function (root, ids) {
-		var that = this;
-		var PREF = this.id + '_';
-		root.appendChild(this.table.table);
-		this.writeState();
-		return root;
-	};
-		
-	VisualState.prototype.listeners = function () {
-		var that = this;
-		node.on('STATECHANGE', function() {
-			that.writeState();
-		}); 
-	};
-	
-	VisualState.prototype.writeState = function () {
-		var state, pr, nx, tmp;
-		var miss = '-';
-		
-		if (node.game && node.game.state) {
-			tmp = node.game.plot.getStep(node.game.state);
-			state = (tmp) ? tmp.name : miss;
-			tmp = node.game.plot.getStep(node.game.previous());
-			pr = (tmp) ? tmp.name : miss;
-			tmp = node.game.plot.getStep(node.game.next());
-			nx = (tmp) ? tmp.name : miss;
-		}
-		else {
-			state = 'Uninitialized';
-			pr = miss;
-			nx = miss;
-		}
-		this.table.clear(true);
+	this.root = null;		// the parent element
+	this.table = new Table();
+    }
+    
+    VisualState.prototype.getRoot = function () {
+	return this.root;
+    };
+    
+    VisualState.prototype.append = function (root, ids) {
+	var that = this;
+	var PREF = this.id + '_';
+	root.appendChild(this.table.table);
+	this.writeState();
+	return root;
+    };
+    
+    VisualState.prototype.listeners = function () {
+	var that = this;
+        
+        node.on('STEP_CALLBACK_EXECUTED', function() {
+	    that.writeState();
+	});
 
-		this.table.addRow(['Previous: ', pr]);
-		this.table.addRow(['Current: ', state]);
-		this.table.addRow(['Next: ', nx]);
+        // Game over and init?
+    };
+    
+    VisualState.prototype.writeState = function () {
+	var miss, state, pr, nx, tmp;
+        var curStep, nextStep, prevStep;
+	var t;
+        
+        miss = '-';
+	state = 'Uninitialized';
+        pr = miss;
+        nx = miss;
+        
+        curStep = node.game.getCurrentGameStage();
+        
+	if (curStep) {
+            tmp = node.game.plot.getStep(curStep);
+            state = tmp ? tmp.id : miss;
+            
+	    prevStep = node.game.plot.previous(curStep);
+            if (prevStep) {
+                tmp = node.game.plot.getStep(prevStep);
+	        pr = tmp ? tmp.id : miss;
+            }
+            
+	    nextStep = node.game.plot.next(curStep);
+            if (nextStep) {
+                tmp = node.game.plot.getStep(nextStep);
+	        nx = tmp ? tmp.id : miss;
+            }
+        }
+        
+	this.table.clear(true);
+
+	this.table.addRow(['Previous: ', pr]);
+	this.table.addRow(['Current: ', state]);
+	this.table.addRow(['Next: ', nx]);
 	
-		var t = this.table.select('y', '=', 2);
-		t.addClass('strong');
-		t.select('x','=',0).addClass('underline');
-		this.table.parse();
-	};
-	
+	t = this.table.select('y', '=', 2);
+	t.addClass('strong');
+	t.select('x','=',0).addClass('underline');
+	this.table.parse();
+    };
+    
 })(node);
-
 (function (node) {
 
-	var Table = node.window.Table,
-		GameStage = node.GameStage;
-	
-	node.widgets.register('StateDisplay', StateDisplay);	
+    var Table = node.window.Table,
+    GameStage = node.GameStage;
+    
+    node.widgets.register('StateDisplay', StateDisplay);	
 
-// ## Defaults
+    // ## Defaults
+    
+    StateDisplay.defaults = {};
+    StateDisplay.defaults.id = 'statedisplay';
+    StateDisplay.defaults.fieldset = { legend: 'State Display' };		
+    
+    // ## Meta-data
+    
+    StateDisplay.name = 'State Display';
+    StateDisplay.version = '0.4.2';
+    StateDisplay.description = 'Display basic information about player\'s status.';
+    
+    function StateDisplay (options) {
 	
-	StateDisplay.defaults = {};
-	StateDisplay.defaults.id = 'statedisplay';
-	StateDisplay.defaults.fieldset = { legend: 'State Display' };		
+	this.id = options.id;
 	
-// ## Meta-data
+	this.root = null;
+	this.table = new Table();
+    }
+    
+    // TODO: Write a proper INIT method
+    StateDisplay.prototype.init = function () {};
+    
+    StateDisplay.prototype.getRoot = function () {
+	return this.root;
+    };
+    
+    
+    StateDisplay.prototype.append = function (root) {
+	var that = this;
+	var PREF = this.id + '_';
 	
-	StateDisplay.name = 'State Display';
-	StateDisplay.version = '0.4.2';
-	StateDisplay.description = 'Display basic information about player\'s status.';
+	var idFieldset = PREF + 'fieldset';
+	var idPlayer = PREF + 'player';
+	var idState = PREF + 'state'; 
 	
-	function StateDisplay (options) {
-		
-		this.id = options.id;
-				
-		this.root = null;
-		this.table = new Table();
-	}
+	var checkPlayerName = setInterval(function(idState,idPlayer) {
+	    if (node.player && node.player.id) {
+		clearInterval(checkPlayerName);
+		that.updateAll();
+	    }
+	}, 100);
 	
-	// TODO: Write a proper INIT method
-	StateDisplay.prototype.init = function () {};
+	root.appendChild(this.table.table);
+	this.root = root;
+	return root;
 	
-	StateDisplay.prototype.getRoot = function () {
-		return this.root;
-	};
+    };
+    
+    StateDisplay.prototype.updateAll = function() {
+	var stage, stageNo, stageId, playerId, tmp, miss;
+        miss = '-';
+        
+        stageId = miss;
+        stageNo = miss;
+        playerId = miss;
+
+	if (node.player.id) {
+            playerId = node.player.id;
+        }
+        
+	stage = node.game.getCurrentGameStage();	
+	if (stage) {
+            tmp = node.game.plot.getStep(stage);
+            stageId = tmp ? tmp.id : '-';
+            stageNo = stage.toString();
+        }
+        
+	this.table.clear(true);
+	this.table.addRow(['Stage  No: ', stageNo]);
+	this.table.addRow(['Stage  Id: ', stageId]);
+	this.table.addRow(['Player Id: ', playerId]);
+	this.table.parse();
 	
+    };
+    
+    StateDisplay.prototype.listeners = function () {
+	var that = this;
 	
-	StateDisplay.prototype.append = function (root) {
-		var that = this;
-		var PREF = this.id + '_';
-		
-		var idFieldset = PREF + 'fieldset';
-		var idPlayer = PREF + 'player';
-		var idState = PREF + 'state'; 
-			
-		var checkPlayerName = setInterval(function(idState,idPlayer) {
-			if (node.player && node.player.id) {
-				clearInterval(checkPlayerName);
-				that.updateAll();
-			}
-		}, 100);
-	
-		root.appendChild(this.table.table);
-		this.root = root;
-		return root;
-		
-	};
-	
-	StateDisplay.prototype.updateAll = function() {
-		var state = node.game ? new GameStage(node.game.state) : new GameStage(),
-			id = node.player ? node.player.id : '-',
-			name = node.player && node.player.name ? node.player.name : '-';
-			
-		this.table.clear(true);
-		this.table.addRow(['Name: ', name]);
-		this.table.addRow(['State: ', state.toString()]);
-		this.table.addRow(['Id: ', id]);
-		this.table.parse();
-		
-	};
-	
-	StateDisplay.prototype.listeners = function () {
-		var that = this;
-		
-		node.on('STATECHANGE', function() {
-			that.updateAll();
-		}); 
-	}; 
-	
+	node.on('STEP_CALLBACK_EXECUTED', function() {
+	    that.updateAll();
+	}); 
+    }; 
+    
 })(node);
 
 (function (node) {
