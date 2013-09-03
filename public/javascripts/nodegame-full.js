@@ -7574,16 +7574,18 @@ JSUS.extend(PARSE);
  * ---
  */
 (function (exports, parent) {
-    
-    var constants;
-    constants = parent.constants;
+
     exports.stepRules = {};
+    
+    // Renaming parent to node, so that functions can be executed
+    // context-less in the browser too.
+    var node = parent;
 
     // ## SYNC_ALL
     // Player waits that all the clients have terminated the
     // current step before going to the next
     exports.stepRules.SYNC_ALL = function(stage, myStageLevel, pl, game) {
-        return myStageLevel === constants.stageLevels.DONE &&
+        return myStageLevel === node.constants.stageLevels.DONE &&
             pl.isStepDone(stage);
     };
 
@@ -7591,7 +7593,7 @@ JSUS.extend(PARSE);
     // Player proceeds to the next step as soon as the current one
     // is DONE, regardless to the situation of other players
     exports.stepRules.SOLO = function(stage, myStageLevel, pl, game) {
-        return myStageLevel === constants.stageLevels.DONE;
+        return myStageLevel === node.constants.stageLevels.DONE;
     };
 
     // ## WAIT
@@ -7604,7 +7606,7 @@ JSUS.extend(PARSE);
     // Player can advance freely within the steps of one stage,
     // but has to wait before going to the next one
     exports.stepRules.SYNC_STAGE = function(stage, myStageLevel, pl, game) {
-        var iamdone = myStageLevel === constants.stageLevels.DONE;
+        var iamdone = myStageLevel === node.constants.stageLevels.DONE;
         console.log();
         console.log('*** myStageLevel: ' + myStageLevel + ' (iamdone: ' + iamdone + ')');
         console.log('*** stepsToNextStage: ' + game.plot.stepsToNextStage(stage));
