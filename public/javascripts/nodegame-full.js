@@ -15399,7 +15399,7 @@ GameMsg.prototype.toEvent = function () {
                 node.err('Received in.say.STAGE msg with invalid stage');
                 return;
             }
-            node.game.execStep(stageObj);
+            //node.game.execStep(stageObj);
         });
 
         /**
@@ -16301,8 +16301,7 @@ TriggerManager.prototype.size = function () {
  * Dynamic content can be loaded inside the iframe without losing the
  * javascript state inside the page.
  * 
- * Defines a number of pre-defined profiles associated with special
- * configuration of widgets.
+ * Defines a number of profiles associated with special page 1layout.
  * 
  * Depends on nodegame-client. 
  * GameWindow.Table and GameWindow.List depend on NDDB and JSUS.
@@ -16802,6 +16801,21 @@ TriggerManager.prototype.size = function () {
 	}
     }
 
+    var lockedUpdate = false;
+    function updateAreLoading(update) {
+        var that;
+        if (!lockedUpdate) {
+            lockedUpdate = true;
+            this.areLoading = this.areLoading + update;
+            lockedUpdate = false;
+        }
+        else {
+            that = this;
+            setTimeout(function() {
+                updateAreLoading.call(that, update);
+            }, 300);
+        }
+    }
 
     /**
      * ### GameWindow.load
@@ -16891,7 +16905,7 @@ TriggerManager.prototype.size = function () {
         this.currentURIs[frame] = uri;
         
         this.state = constants.is.LOADING;
-        this.areLoading++;  // keep track of nested call to loadFrame
+        updateAreLoading.call(this, 1);  // keep track of nested call to loadFrame
         
         var that = this;
         
@@ -16964,13 +16978,12 @@ TriggerManager.prototype.size = function () {
     GameWindow.prototype.updateStatus = function(func, frame) {
         // Update the reference to the frame obj
         this.frame = window.frames[frame].document;
-        
         if (func) {
 	    func.call(node.game); // TODO: Pass the right this reference
 	    //node.log('Frame Loaded correctly!');
         }
         
-        this.areLoading--;
+        updateAreLoading.call(this, -1);
         
         if (this.areLoading === 0) {
             this.state = constants.is.LOADED;
@@ -16985,7 +16998,7 @@ TriggerManager.prototype.size = function () {
             
         }
         else {
-	    node.silly('Attempt to update state, before the window object was loaded');
+	    node.silly('GameWindow.updateState: ' + this.areLoading + ' loadFrame processes open.');
         }
     };
     
