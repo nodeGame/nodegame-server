@@ -7555,7 +7555,6 @@ JSUS.extend(PARSE);
         DONE:         100
     };
 
-
     /**
      * ### node.UNDEFINED_PLAYER
      *
@@ -7810,9 +7809,11 @@ JSUS.extend(PARSE);
      * @see EventEmitter.addLocal
      */
     EventEmitter.prototype.on = function (type, listener) {
-        if ('undefined' === typeof type || !listener) {
-            this.node.err(this.name + ': trying to add invalid event-listener pair');
-            return;
+        if ('string' !== typeof type) {
+            throw TypeError('EventEmitter.on: type must be a string');
+        }
+        if ('function' !== typeof listener) {
+            throw TypeError('EventEmitter.remove: listener must be a function');
         }
 
         if (!this.events[type]) {
@@ -7828,7 +7829,7 @@ JSUS.extend(PARSE);
             this.events[type] = [this.events[type], listener];
         }
 
-        this.node.silly(this.name + ': added Listener: ' + type + ' ' + listener);
+        this.node.silly('ee.' + this.name + ' added listener: ' + type + ' ' + listener);
     };
 
     /**
@@ -7949,8 +7950,12 @@ JSUS.extend(PARSE);
         var listeners, len, i, type, node;
         node = this.node;
 
+        if ('string' !== typeof type) {
+            throw TypeError('EventEmitter.remove (' + this.name + '): type must be a string');
+        }
+
         if (!this.events[type]) {
-            node.warn('attempt to remove unexisting event ' + type, this.name);
+            node.warn('EventEmitter.remove (' + this.name + '): unexisting event ' + type);
             return false;
         }
 
@@ -7961,31 +7966,32 @@ JSUS.extend(PARSE);
         }
 
         if (listener && 'function' !== typeof listener) {
-            throw TypeError('listener must be a function', this.name);
+            throw TypeError('EventEmitter.remove (' + this.name + '): listener must be a function');
         }
 
 
         if ('function' === typeof this.events[type] ) {
             if (listeners == listener) {
                 listeners.splice(i, 1);
-                node.silly('removed listener ' + type + ' ' + listener, this.name);
+                node.silly('ee.' + this.name + ' removed listener: ' + type + ' ' + listener);
                 return true;
             }
         }
-
-        // array
-        listeners = this.events[type];
-        len = listeners.length;
-        for (i = 0; i < len; i++) {
-            if (listeners[i] == listener) {
-                listeners.splice(i, 1);
-                node.silly('Removed listener ' + type + ' ' + listener, this.name);
-                return true;
+        else {
+            // array
+            listeners = this.events[type];
+            len = listeners.length;
+            for (i = 0; i < len; i++) {
+                if (listeners[i] == listener) {
+                    listeners.splice(i, 1);
+                    node.silly('ee.' + this.name + 'removed listener: ' + type + ' ' + listener);
+                    return true;
+                }
             }
         }
 
+        node.warn('EventEmitter.remove (' + this.name + '): no listener-match found for event ' + type);
         return false;
-
     };
 
     /**
@@ -8187,13 +8193,13 @@ JSUS.extend(PARSE);
     EventEmitterManager.prototype.remove = function(event, listener) {
         var i;
 
-        if ('undefined' === typeof event) {
-            this.node.err('cannot remove listener of undefined event');
+        if ('string' !== typeof event) {
+            this.node.err('EventEmitterManager.remove: event must be string.');
             return false;
         }
 
-        if (listener && 'function' === typeof listener) {
-            this.node.err('listener must be of type function');
+        if (listener && 'function' !== typeof listener) {
+            this.node.err('EventEmitterManager.remove: listener must be function.');
             return false;
         }
 
@@ -11695,7 +11701,7 @@ GameMsg.prototype.toEvent = function () {
 
             // replace itself: will change onMessage
             this.attachMsgListeners();
-
+            
             // This will emit on PLAYER_CREATED
             // If listening on PLAYER_CREATED, functions can be
             // executed before the HI 
@@ -11726,7 +11732,7 @@ GameMsg.prototype.toEvent = function () {
 //                    to: 'ALL',
 //                    data: this.node.player
 //                }));
-//
+
             }
 
         }
@@ -11739,7 +11745,6 @@ GameMsg.prototype.toEvent = function () {
 
     Socket.prototype.onMessageFull = function(msg) {
         msg = this.secureParse(msg);
-
         if (msg) { // Parsing successful
             // message with high priority are executed immediately
             if (msg.priority > 0 || this.node.game.isReady && this.node.game.isReady()) {
@@ -11762,7 +11767,6 @@ GameMsg.prototype.toEvent = function () {
 
 
     Socket.prototype.secureParse = function (msg) {
-
         var gameMsg;
         try {
             gameMsg = GameMsg.clone(JSON.parse(msg));
@@ -12422,7 +12426,7 @@ GameMsg.prototype.toEvent = function () {
 
 
         // TODO: check how to init
-        this.setCurrentGameStage(new GameStage());
+        this.setCurrentGameStage(new GameStage(), true);
 
 
         this.paused = false;
@@ -14684,10 +14688,6 @@ GameMsg.prototype.toEvent = function () {
     Player = parent.Player,
     constants = parent.constants;
 
-    
-
-    
-
     /**
      * ### NodeGameClient.createPlayer
      *
@@ -14818,13 +14818,16 @@ GameMsg.prototype.toEvent = function () {
      * @see NodeGameClient.off
      */
     NGC.prototype.once = function (event, listener) {
-        var that;
-        if (!event || !listener) return;
-        that = this;
-        this.on(event, listener);
-        this.on(event, function(event, listener) {
-            that.events.remove(event, listener);
-        });
+        var ee, cbRemove;
+        // This function will remove the event listener
+        // and itself.
+        cbRemove = function() {
+            ee.remove(event, listener);
+            ee.remove(event, cbRemove);
+        };
+        ee = this.getCurrentEventEmitter();
+        ee.on(event, listener);
+        ee.on(event, cbRemove);
     };
 
     /**
@@ -14882,14 +14885,12 @@ GameMsg.prototype.toEvent = function () {
         }
 
         msg = this.msg.create({
-            target: this.target.DATA,
+            target: this.constants.target.DATA,
             to: to || 'SERVER',
             text: label,
             data: payload
         });
-        // @TODO when refactoring is finished, emit this event.
-        // By default there nothing should happen, but people could listen to it
-        //this.emit('out.say.DATA', msg);
+        debugger
         this.socket.send(msg);
     };
 
@@ -14913,8 +14914,8 @@ GameMsg.prototype.toEvent = function () {
         }
 
         msg = this.msg.create({
-            action: this.action.SET,
-            target: this.target.DATA,
+            action: this.constants.action.SET,
+            target: this.constants.target.DATA,
             to: to || 'SERVER',
             reliable: 1,
             text: key,
@@ -14951,8 +14952,8 @@ GameMsg.prototype.toEvent = function () {
         }
 
         msg = this.msg.create({
-            action: this.action.GET,
-            target: this.target.DATA,
+            action: this.constants.action.GET,
+            target: this.constants.target.DATA,
             to: to || 'SERVER',
             reliable: 1,
             text: key
@@ -15387,7 +15388,6 @@ GameMsg.prototype.toEvent = function () {
          * Updates the game stage
          */
         node.events.ng.on( IN + say + 'STAGE', function (msg) {
-            debugger
             var stageObj;
             if (!msg.data) {
                 node.warn('Received in.say.STAGE msg with empty stage');
@@ -19291,144 +19291,142 @@ node.widgets = new Widgets();
 	
 })(node);
 (function (node) {
+    
+    node.widgets.register('DataBar', DataBar);
+    
+    // ## Defaults
+    DataBar.defaults = {};
+    DataBar.defaults.id = 'databar';
+    DataBar.defaults.fieldset = {	
+	legend: 'Send DATA to players'
+    };
+    
+    // ## Meta-data
+    DataBar.name = 'Data Bar';
+    DataBar.version = '0.4';
+    DataBar.description = 'Adds a input field to send DATA messages to the players';
+    
+    function DataBar (options) {
+	this.bar = null;
+	this.root = null;
+	this.recipient = null;
+    }
+    
+    
+    DataBar.prototype.append = function (root) {
 	
-	node.widgets.register('DataBar', DataBar);
+	var sendButton, textInput, dataInput;
 	
-// ## Defaults
-	DataBar.defaults = {};
-	DataBar.defaults.id = 'databar';
-	DataBar.defaults.fieldset = {	
-		legend: 'Send DATA to players'
+	sendButton = W.addButton(root);
+	W.writeln('Text');
+	textInput = W.addTextInput(root, 'data-bar-text');
+	W.writeln('Data');
+	dataInput = W.addTextInput(root, 'data-bar-data');
+	
+	this.recipient = W.addRecipientSelector(root);
+	
+	var that = this;
+	
+	sendButton.onclick = function() {
+	    
+	    var to, data, text;
+	    
+	    to = that.recipient.value;
+	    text = textInput.value;
+	    data = dataInput.value;
+	    
+	    node.log('Parsed Data: ' + JSON.stringify(data));
+	    
+	    node.say(data, text, to);
 	};
 	
-// ## Meta-data
-	DataBar.name = 'Data Bar';
-	DataBar.version = '0.3';
-	DataBar.description = 'Adds a input field to send DATA messages to the players';
-		
-	function DataBar (options) {
-		this.bar = null;
-		this.root = null;
-		this.recipient = null;
-	}
+	node.on('UPDATED_PLIST', function() {
+	    node.window.populateRecipientSelector(that.recipient, node.game.pl);
+	});
 	
+	return root;
 	
-	DataBar.prototype.append = function (root) {
-		
-		var sendButton, textInput, dataInput;
-		
-		sendButton = W.addButton(root);
-		W.writeln('Text');
-		textInput = W.addTextInput(root, 'data-bar-text');
-		W.writeln('Data');
-		dataInput = W.addTextInput(root, 'data-bar-data');
-		
-		this.recipient = W.addRecipientSelector(root);
-		
-		var that = this;
-		
-		sendButton.onclick = function() {
-			
-			var to, data, text;
-			
-			to = that.recipient.value;
-			text = textInput.value;
-			data = dataInput.value;
-			
-			node.log('Parsed Data: ' + JSON.stringify(data));
-			
-			node.say(data, text, to);
-		};
-		
-		node.on('UPDATED_PLIST', function() {
-			node.window.populateRecipientSelector(that.recipient, node.game.pl);
-		});
-		
-		return root;
-		
-	};
-	
+    };
+    
 })(node);
 (function (node) {
-	
-	node.widgets.register('ServerInfoDisplay', ServerInfoDisplay);	
+    
+    node.widgets.register('ServerInfoDisplay', ServerInfoDisplay);	
 
-// ## Defaults
+    // ## Defaults
+    
+    ServerInfoDisplay.defaults = {};
+    ServerInfoDisplay.defaults.id = 'serverinfodisplay';
+    ServerInfoDisplay.defaults.fieldset = {
+	legend: 'Server Info',
+	id: 'serverinfo_fieldset'
+    };		
+    
+    // ## Meta-data
+    
+    ServerInfoDisplay.name = 'Server Info Display';
+    ServerInfoDisplay.version = '0.4';
+    
+    function ServerInfoDisplay (options) {	
+	this.id = options.id;
 	
-	ServerInfoDisplay.defaults = {};
-	ServerInfoDisplay.defaults.id = 'serverinfodisplay';
-	ServerInfoDisplay.defaults.fieldset = {
-			legend: 'Server Info',
-			id: 'serverinfo_fieldset'
-	};		
-	
-// ## Meta-data
-	
-	ServerInfoDisplay.name = 'Server Info Display';
-	ServerInfoDisplay.version = '0.3';
-	
-	function ServerInfoDisplay (options) {	
-		this.id = options.id;
-		
-		
-		this.root = null;
-		this.div = document.createElement('div');
-		this.table = null; //new node.window.Table();
-		this.button = null;
-		
+	this.root = null;
+	this.div = document.createElement('div');
+	this.table = null; //new node.window.Table();
+	this.button = null;
+    }
+    
+    ServerInfoDisplay.prototype.init = function (options) {
+	var that = this;
+	if (!this.div) {
+	    this.div = document.createElement('div');
 	}
-	
-	ServerInfoDisplay.prototype.init = function (options) {
-		var that = this;
-		if (!this.div) {
-			this.div = document.createElement('div');
-		}
-		this.div.innerHTML = 'Waiting for the reply from Server...';
-		if (!this.table) {
-			this.table = new node.window.Table(options);
-		}
-		this.table.clear(true);
-		this.button = document.createElement('button');
-		this.button.value = 'Refresh';
-		this.button.appendChild(document.createTextNode('Refresh'));
-		this.button.onclick = function(){
-			that.getInfo();
-		};
-		this.root.appendChild(this.button);
-		this.getInfo();
+	this.div.innerHTML = 'Waiting for the reply from Server...';
+	if (!this.table) {
+	    this.table = new node.window.Table(options);
+	}
+	this.table.clear(true);
+	this.button = document.createElement('button');
+	this.button.value = 'Refresh';
+	this.button.appendChild(document.createTextNode('Refresh'));
+	this.button.onclick = function(){
+	    that.getInfo();
 	};
-	
-	ServerInfoDisplay.prototype.append = function (root) {
-		this.root = root;
-		root.appendChild(this.div);
-		return root;
-	};
-	
-	ServerInfoDisplay.prototype.getInfo = function() {
-		var that = this;
-		node.get('INFO', function (info) {
-			node.window.removeChildrenFromNode(that.div);
-			that.div.appendChild(that.processInfo(info));
-		});
-	};
-	
-	ServerInfoDisplay.prototype.processInfo = function(info) {
-		this.table.clear(true);
-		for (var key in info) {
-			if (info.hasOwnProperty(key)){
-				this.table.addRow([key,info[key]]);
-			}
-		}
-		return this.table.parse();
-	};
-	
-	ServerInfoDisplay.prototype.listeners = function () {
-		var that = this;
-		node.on('NODEGAME_READY', function(){
-			that.init();
-		});
-	}; 
-	
+	this.root.appendChild(this.button);
+	this.getInfo();
+    };
+    
+    ServerInfoDisplay.prototype.append = function (root) {
+	this.root = root;
+	root.appendChild(this.div);
+	return root;
+    };
+    
+    ServerInfoDisplay.prototype.getInfo = function() {
+	var that = this;
+	node.get('INFO', function (info) {
+	    node.window.removeChildrenFromNode(that.div);
+	    that.div.appendChild(that.processInfo(info));
+	});
+    };
+    
+    ServerInfoDisplay.prototype.processInfo = function(info) {
+	this.table.clear(true);
+	for (var key in info) {
+	    if (info.hasOwnProperty(key)){
+		this.table.addRow([key,info[key]]);
+	    }
+	}
+	return this.table.parse();
+    };
+    
+    ServerInfoDisplay.prototype.listeners = function () {
+	var that = this;
+	node.on('PLAYER_CREATED', function(){
+	    that.init();
+	});
+    }; 
+    
 })(node);
 (function (node) {
 	
@@ -20076,130 +20074,128 @@ node.widgets = new Widgets();
 
 })(node);
 (function (node) {
-	
-	node.widgets.register('GameBoard', GameBoard);
-	
-	var PlayerList = node.PlayerList;
+    
+    node.widgets.register('GameBoard', GameBoard);
+    
+    var PlayerList = node.PlayerList;
 
-// ## Defaults	
+    // ## Defaults	
+    
+    GameBoard.defaults = {};
+    GameBoard.defaults.id = 'gboard';
+    GameBoard.defaults.fieldset = {
+	legend: 'Game Board'
+    };
+    
+    // ## Meta-data
+    
+    GameBoard.name = 'GameBoard';
+    GameBoard.version = '0.4.0';
+    GameBoard.description = 'Offer a visual representation of the state of all players in the game.';
+    
+    function GameBoard (options) {
 	
-	GameBoard.defaults = {};
-	GameBoard.defaults.id = 'gboard';
-	GameBoard.defaults.fieldset = {
-			legend: 'Game Board'
-	};
+	this.id = options.id || GameBoard.defaults.id;
+	this.status_id = this.id + '_statusbar';
 	
-// ## Meta-data
+	this.board = null;
+	this.status = null;
+	this.root = null;
 	
-	GameBoard.name = 'GameBoard';
-	GameBoard.version = '0.4.0';
-	GameBoard.description = 'Offer a visual representation of the state of all players in the game.';
+    }
+    
+    GameBoard.prototype.append = function (root) {
+	this.root = root;
+	this.status = node.window.addDiv(root, this.status_id);
+	this.board = node.window.addDiv(root, this.id);
 	
-	function GameBoard (options) {
+	this.updateBoard(node.game.pl);
+	
+	
+	return root;
+    };
+    
+    GameBoard.prototype.listeners = function() {
+	var that = this;		
+	node.on('UPDATED_PLIST', function() {
+	    that.updateBoard(node.game.pl);
+	});
+	
+    };
+    
+    GameBoard.prototype.printLine = function (p) {
+
+	var line, levels, level;
+        levels = node.constants.stageLevels;
+
+        line = '[' + (p.name || p.id) + "]> \t"; 
+	line += '(' +  p.stage.round + ') ' + p.stage.stage + '.' + p.stage.step; 
+	line += ' ';
+	
+	switch (p.stageLevel) {
+
+	case levels.UNINITIALIZED:
+	    level = 'uninit.';
+	    break;
+	    
+	case levels.INITIALIZING:
+	    level = 'init...';
+	    break;
+
+	case levels.INITIALIZING:
+	    level = 'init!';
+	    break;
+
+	case node.is.LOADING:
+	    level = 'loading';
+	    break;	    
+
+	case node.is.LOADED:
+	    level = 'loaded';
+	    break;
+	    
+	case node.is.PLAYING:
+	    level = 'playing';
+	    break;
+	case node.is.DONE:
+	    level = 'done';
+	    break;
 		
-		this.id = options.id || GameBoard.defaults.id;
-		this.status_id = this.id + '_statusbar';
-		
-		this.board = null;
-		this.status = null;
-		this.root = null;
+	default:
+	    level = p.stageLevel;
+	    break;		
+	}
+
+	return line + '(' + level + ')';
+    };
+    
+    GameBoard.prototype.printSeparator = function (p) {
+	return W.getElement('hr', null, {style: 'color: #CCC;'});
+    };
+    
+    
+    GameBoard.prototype.updateBoard = function (pl) {
+	var player, separator;
+        var that = this;
 	
+	this.status.innerHTML = 'Updating...';
+	
+	if (pl.size()) {
+	    that.board.innerHTML = '';
+	    pl.forEach( function(p) {
+		player = that.printLine(p);
+		
+		W.write(player, that.board);
+		
+		separator = that.printSeparator(p);
+		W.write(separator, that.board);
+	    });
 	}
 	
-	GameBoard.prototype.append = function (root) {
-		this.root = root;
-		this.status = node.window.addDiv(root, this.status_id);
-		this.board = node.window.addDiv(root, this.id);
-		
-		this.updateBoard(node.game.pl);
-		
-		
-		return root;
-	};
 	
-	GameBoard.prototype.listeners = function() {
-		var that = this;		
-//		node.on('in.say.PCONNECT', function (msg) {
-//			that.addPlayerToBoard(msg.data);
-//		});
-//
-//		node.on('in.say.PDISCONNECT', function (msg) {
-//			that.removePlayerFromBoard(msg.data);
-//		});
-		
-		node.on('UPDATED_PLIST', function() {
-			that.updateBoard(node.game.pl);
-		});
-		
-	};
-	
-	GameBoard.prototype.printLine = function (p) {
-
-		var line = '[' + (p.name || p.id) + "]> \t"; 
-		
-		line += '(' +  p.state.round + ') ' + p.state.state + '.' + p.state.step; 
-		line += ' ';
-		
-		switch (p.state.is) {
-
-			case node.is.UNKNOWN:
-				line += '(unknown)';
-				break;
-				
-			case node.is.LOADING:
-				line += '(loading)';
-				break;
-				
-			case node.is.LOADED:
-				line += '(loaded)';
-				break;
-				
-			case node.is.PLAYING:
-				line += '(playing)';
-				break;
-			case node.is.DONE:
-				line += '(done)';
-				break;		
-			default:
-				line += '('+p.state.is+')';
-				break;		
-		}
-		
-		if (p.state.paused) {
-			line += ' (P)';
-		}
-		
-		return line;
-	};
-	
-	GameBoard.prototype.printSeparator = function (p) {
-		return W.getElement('hr', null, {style: 'color: #CCC;'});
-	};
-	
-	
-	GameBoard.prototype.updateBoard = function (pl) {
-		var that = this;
-		
-		this.status.innerHTML = 'Updating...';
-		
-		var player, separator;
-		
-		if (pl.length) {
-			that.board.innerHTML = '';
-			pl.forEach( function(p) {
-				player = that.printLine(p);
-				
-				W.write(player, that.board);
-				
-				separator = that.printSeparator(p);
-				W.write(separator, that.board);
-			});
-		}
-		
-		
-		this.status.innerHTML = 'Connected players: ' + node.game.pl.length;
-	};
-	
+	this.status.innerHTML = 'Connected players: ' + node.game.pl.length;
+    };
+    
 })(node);
 (function (node) {
 	
@@ -21708,158 +21704,158 @@ node.widgets = new Widgets();
 })(node);
 (function (node) {
 
-	var GameMsg = node.GameMsg,
-		Table = node.window.Table;
-	
-	node.widgets.register('MsgBar', MsgBar);
+    var GameMsg = node.GameMsg,
+    Table = node.window.Table;
+    
+    node.widgets.register('MsgBar', MsgBar);
 
-// ## Defaults
+    // ## Defaults
+    
+    MsgBar.defaults = {};
+    MsgBar.defaults.id = 'msgbar';
+    MsgBar.defaults.fieldset = { legend: 'Send MSG' };	
+    
+    // ## Meta-data
+    
+    MsgBar.name = 'Msg Bar';
+    MsgBar.version = '0.5';
+    MsgBar.description = 'Send a nodeGame message to players';
+    
+    function MsgBar (options) {
 	
-	MsgBar.defaults = {};
-	MsgBar.defaults.id = 'msgbar';
-	MsgBar.defaults.fieldset = { legend: 'Send MSG' };	
+	this.id = options.id;
 	
-// ## Meta-data
+	this.recipient = null;
+	this.actionSel = null;
+	this.targetSel = null;
 	
-	MsgBar.name = 'Msg Bar';
-	MsgBar.version = '0.4';
-	MsgBar.description = 'Send a nodeGame message to players';
+	this.table = new Table();
 	
-	function MsgBar (options) {
+	this.init();
+    }
+    
+    // TODO: Write a proper INIT method
+    MsgBar.prototype.init = function () {
+	var that = this;
+	var gm = new GameMsg();
+	var y = 0;
+	for (var i in gm) {
+	    if (gm.hasOwnProperty(i)) {
+		var id = this.id + '_' + i;
+		this.table.add(i, 0, y);
+		this.table.add(node.window.getTextInput(id), 1, y);
+		if (i === 'target') {
+		    this.targetSel = node.window.getTargetSelector(this.id + '_targets');
+		    this.table.add(this.targetSel, 2, y);
+		    
+		    this.targetSel.onchange = function () {
+			node.window.getElementById(that.id + '_target').value = that.targetSel.value; 
+		    };
+		}
+		else if (i === 'action') {
+		    this.actionSel = node.window.getActionSelector(this.id + '_actions');
+		    this.table.add(this.actionSel, 2, y);
+		    this.actionSel.onchange = function () {
+			node.window.getElementById(that.id + '_action').value = that.actionSel.value; 
+		    };
+		}
+		else if (i === 'to') {
+		    this.recipient = node.window.getRecipientSelector(this.id + 'recipients');
+		    this.table.add(this.recipient, 2, y);
+		    this.recipient.onchange = function () {
+			node.window.getElementById(that.id + '_to').value = that.recipient.value; 
+		    };
+		}
+		y++;
+	    }
+	}
+	this.table.parse();
+    };
+    
+    MsgBar.prototype.append = function (root) {
+	
+	var sendButton = node.window.addButton(root);
+	var stubButton = node.window.addButton(root, 'stub', 'Add Stub');
+	
+	var that = this;
+	sendButton.onclick = function() {
+	    // Should be within the range of valid values
+	    // but we should add a check
+	    
+	    var msg = that.parse();
+	    node.gsc.send(msg);
+	    //console.log(msg.stringify());
+	};
+	stubButton.onclick = function() {
+	    that.addStub();
+	};
+	
+	root.appendChild(this.table.table);
+	
+	this.root = root;
+	return root;
+    };
+    
+    MsgBar.prototype.getRoot = function () {
+	return this.root;
+    };
+    
+    MsgBar.prototype.listeners = function () {
+	var that = this;	
+	node.on.plist( function(msg) {
+	    node.window.populateRecipientSelector(that.recipient, msg.data);
+	    
+	}); 
+    };
+    
+    MsgBar.prototype.parse = function () {
+	var msg = {};
+	var that = this;
+	var key = null;
+	var value = null;
+	this.table.forEach( function(e) {
+	    
+	    if (e.x === 0) {
+		key = e.content;
+		msg[key] = ''; 
+	    }
+	    else if (e.x === 1) {
 		
-		this.id = options.id;
+		value = e.content.value;
+		if (key === 'state' || key === 'data') {
+		    try {
+			value = JSON.parse(e.content.value);
+		    }
+		    catch (ex) {
+			value = e.content.value;
+		    }
+		}
 		
-		this.recipient = null;
-		this.actionSel = null;
-		this.targetSel = null;
-		
-		this.table = new Table();
-			
-		this.init();
+		msg[key] = value;
+	    }
+	});
+	var gameMsg = new GameMsg(msg);
+	node.info(gameMsg, 'MsgBar sent: ');
+	return gameMsg;
+    };
+    
+    MsgBar.prototype.addStub = function () {
+	node.window.getElementById(this.id + '_from').value = (node.player) ? node.player.id : 'undefined';
+	node.window.getElementById(this.id + '_to').value = this.recipient.value;
+	node.window.getElementById(this.id + '_forward').value = 0;
+	node.window.getElementById(this.id + '_reliable').value = 1;
+	node.window.getElementById(this.id + '_priority').value = 0;
+	
+	if (node.gsc && node.gsc.session) {
+	    node.window.getElementById(this.id + '_session').value = node.gsc.session;
 	}
 	
-	// TODO: Write a proper INIT method
-	MsgBar.prototype.init = function () {
-		var that = this;
-		var gm = new GameMsg();
-		var y = 0;
-		for (var i in gm) {
-			if (gm.hasOwnProperty(i)) {
-				var id = this.id + '_' + i;
-				this.table.add(i, 0, y);
-				this.table.add(node.window.getTextInput(id), 1, y);
-				if (i === 'target') {
-					this.targetSel = node.window.getTargetSelector(this.id + '_targets');
-					this.table.add(this.targetSel, 2, y);
-					
-					this.targetSel.onchange = function () {
-						node.window.getElementById(that.id + '_target').value = that.targetSel.value; 
-					};
-				}
-				else if (i === 'action') {
-					this.actionSel = node.window.getActionSelector(this.id + '_actions');
-					this.table.add(this.actionSel, 2, y);
-					this.actionSel.onchange = function () {
-						node.window.getElementById(that.id + '_action').value = that.actionSel.value; 
-					};
-				}
-				else if (i === 'to') {
-					this.recipient = node.window.getRecipientSelector(this.id + 'recipients');
-					this.table.add(this.recipient, 2, y);
-					this.recipient.onchange = function () {
-						node.window.getElementById(that.id + '_to').value = that.recipient.value; 
-					};
-				}
-				y++;
-			}
-		}
-		this.table.parse();
-	};
+	node.window.getElementById(this.id + '_state').value = JSON.stringify(node.state);
+	node.window.getElementById(this.id + '_action').value = this.actionSel.value;
+	node.window.getElementById(this.id + '_target').value = this.targetSel.value;
 	
-	MsgBar.prototype.append = function (root) {
-		
-		var sendButton = node.window.addButton(root);
-		var stubButton = node.window.addButton(root, 'stub', 'Add Stub');
-		
-		var that = this;
-		sendButton.onclick = function() {
-			// Should be within the range of valid values
-			// but we should add a check
-			
-			var msg = that.parse();
-			node.gsc.send(msg);
-			//console.log(msg.stringify());
-		};
-		stubButton.onclick = function() {
-			that.addStub();
-		};
-		
-		root.appendChild(this.table.table);
-		
-		this.root = root;
-		return root;
-	};
-	
-	MsgBar.prototype.getRoot = function () {
-		return this.root;
-	};
-	
-	MsgBar.prototype.listeners = function () {
-		var that = this;	
-		node.onPLIST( function(msg) {
-			node.window.populateRecipientSelector(that.recipient, msg.data);
-		
-		}); 
-	};
-	
-	MsgBar.prototype.parse = function () {
-		var msg = {};
-		var that = this;
-		var key = null;
-		var value = null;
-		this.table.forEach( function(e) {
-			
-				if (e.x === 0) {
-					key = e.content;
-					msg[key] = ''; 
-				}
-				else if (e.x === 1) {
-					
-					value = e.content.value;
-					if (key === 'state' || key === 'data') {
-						try {
-							value = JSON.parse(e.content.value);
-						}
-						catch (ex) {
-							value = e.content.value;
-						}
-					}
-					
-					msg[key] = value;
-				}
-		});
-		var gameMsg = new GameMsg(msg);
-		node.info(gameMsg, 'MsgBar sent: ');
-		return gameMsg;
-	};
-	
-	MsgBar.prototype.addStub = function () {
-		node.window.getElementById(this.id + '_from').value = (node.player) ? node.player.id : 'undefined';
-		node.window.getElementById(this.id + '_to').value = this.recipient.value;
-		node.window.getElementById(this.id + '_forward').value = 0;
-		node.window.getElementById(this.id + '_reliable').value = 1;
-		node.window.getElementById(this.id + '_priority').value = 0;
-		
-		if (node.gsc && node.gsc.session) {
-			node.window.getElementById(this.id + '_session').value = node.gsc.session;
-		}
-		
-		node.window.getElementById(this.id + '_state').value = JSON.stringify(node.state);
-		node.window.getElementById(this.id + '_action').value = this.actionSel.value;
-		node.window.getElementById(this.id + '_target').value = this.targetSel.value;
-		
-	};
-	
+    };
+    
 })(node);
 (function (node) {
 	
@@ -22347,154 +22343,154 @@ node.widgets = new Widgets();
 })(node);
 (function (node) {
 
-	var GameStage = node.GameStage,
-		PlayerList = node.PlayerList;
+    var GameStage = node.GameStage,
+    PlayerList = node.PlayerList;
+    
+    
+    node.widgets.register('GameTable', GameTable);
+    
+    // ## Defaults
+    
+    GameTable.defaults = {};
+    GameTable.defaults.id = 'gametable';
+    GameTable.defaults.fieldset = { 
+	legend: 'Game Table',
+	id: 'gametable_fieldset'
+    };
+    
+    // ## Meta-data
+    
+    GameTable.name = 'Game Table';
+    GameTable.version = '0.3';
+    
+    // ## Dependencies
+    
+    GameTable.dependencies = {
+	JSUS: {}
+    };
+    
+    function GameTable (options) {
+	this.options = options;
+	this.id = options.id;
+	this.name = options.name || GameTable.name;
+	
+	this.root = null;
+	this.gtbl = null;
+	this.plist = null;
+	
+	this.init(this.options);
+    }
+    
+    GameTable.prototype.init = function (options) {
+	
+	if (!this.plist) this.plist = new PlayerList();
+	
+	this.gtbl = new node.window.Table({
+	    auto_update: true,
+	    id: options.id || this.id,
+	    render: options.render
+	}, node.game.memory.db);
 	
 	
-	node.widgets.register('GameTable', GameTable);
+	this.gtbl.c('state', GameStage.compare);
 	
-// ## Defaults
+	this.gtbl.setLeft([]);
 	
-	GameTable.defaults = {};
-	GameTable.defaults.id = 'gametable';
-	GameTable.defaults.fieldset = { 
-			legend: 'Game Table',
-			id: 'gametable_fieldset'
-	};
+	this.gtbl.parse(true);
+    };
+    
+
+    GameTable.prototype.addRenderer = function (func) {
+	return this.gtbl.addRenderer(func);
+    };
+    
+    GameTable.prototype.resetRender = function () {
+	return this.gtbl.resetRenderer();
+    };
+    
+    GameTable.prototype.removeRenderer = function (func) {
+	return this.gtbl.removeRenderer(func);
+    };
+    
+    GameTable.prototype.append = function (root) {
+	this.root = root;
+	root.appendChild(this.gtbl.table);
+	return root;
+    };
+    
+    GameTable.prototype.listeners = function () {
+	var that = this;
 	
-// ## Meta-data
+	node.on.plist(function(msg) {	
+	    if (!msg.data.length) return;
+	    
+	    //var diff = JSUS.arrayDiff(msg.data,that.plist.db);
+	    var plist = new PlayerList({}, msg.data);
+	    var diff = plist.diff(that.plist);
+	    if (diff) {
+                //				console.log('New Players found');
+                //				console.log(diff);
+		diff.forEach(function(el){that.addPlayer(el);});
+	    }
+
+	    that.gtbl.parse(true);
+	});
 	
-	GameTable.name = 'Game Table';
-	GameTable.version = '0.2';
-	
-// ## Dependencies
-	
-	GameTable.dependencies = {
-		JSUS: {}
-	};
-	
-	function GameTable (options) {
-		this.options = options;
-		this.id = options.id;
-		this.name = options.name || GameTable.name;
-				
-		this.root = null;
-		this.gtbl = null;
-		this.plist = null;
-		
-		this.init(this.options);
+	node.on('in.set.DATA', function (msg) {
+
+	    that.addLeft(msg.state, msg.from);
+	    var x = that.player2x(msg.from);
+	    var y = that.state2y(node.game.state, msg.text);
+	    
+	    that.gtbl.add(msg.data, x, y);
+	    that.gtbl.parse(true);
+	});
+    }; 
+    
+    GameTable.prototype.addPlayer = function (player) {
+	this.plist.add(player);
+	var header = this.plist.map(function(el){return el.name;});
+	this.gtbl.setHeader(header);
+    };
+    
+    GameTable.prototype.addLeft = function (state, player) {
+	if (!state) return;
+	state = new GameStage(state);
+	if (!JSUS.in_array({content:state.toString(), type: 'left'}, this.gtbl.left)){
+	    this.gtbl.add2Left(state.toString());
+	}
+	// Is it a new display associated to the same state?
+	else {
+	    var y = this.state2y(state);
+	    var x = this.player2x(player);
+	    if (this.gtbl.select('y','=',y).select('x','=',x).count() > 1) {
+		this.gtbl.add2Left(state.toString());
+	    }
 	}
 	
-	GameTable.prototype.init = function (options) {
-		
-		if (!this.plist) this.plist = new PlayerList();
-		
-		this.gtbl = new node.window.Table({
-											auto_update: true,
-											id: options.id || this.id,
-											render: options.render
-		}, node.game.memory.db);
-		
-		
-		this.gtbl.c('state', GameStage.compare);
-		
-		this.gtbl.setLeft([]);
-		
-		this.gtbl.parse(true);
-	};
-	
-
-	GameTable.prototype.addRenderer = function (func) {
-		return this.gtbl.addRenderer(func);
-	};
-	
-	GameTable.prototype.resetRender = function () {
-		return this.gtbl.resetRenderer();
-	};
-	
-	GameTable.prototype.removeRenderer = function (func) {
-		return this.gtbl.removeRenderer(func);
-	};
-	
-	GameTable.prototype.append = function (root) {
-		this.root = root;
-		root.appendChild(this.gtbl.table);
-		return root;
-	};
-	
-	GameTable.prototype.listeners = function () {
-		var that = this;
-		
-		node.onPLIST(function(msg) {	
-			if (!msg.data.length) return;
-			
-			//var diff = JSUS.arrayDiff(msg.data,that.plist.db);
-			var plist = new PlayerList({}, msg.data);
-			var diff = plist.diff(that.plist);
-			if (diff) {
-//				console.log('New Players found');
-//				console.log(diff);
-				diff.forEach(function(el){that.addPlayer(el);});
-			}
-
-			that.gtbl.parse(true);
-		});
-		
-		node.on('in.set.DATA', function (msg) {
-
-			that.addLeft(msg.state, msg.from);
-			var x = that.player2x(msg.from);
-			var y = that.state2y(node.game.state, msg.text);
-			
-			that.gtbl.add(msg.data, x, y);
-			that.gtbl.parse(true);
-		});
-	}; 
-	
-	GameTable.prototype.addPlayer = function (player) {
-		this.plist.add(player);
-		var header = this.plist.map(function(el){return el.name;});
-		this.gtbl.setHeader(header);
-	};
-	
-	GameTable.prototype.addLeft = function (state, player) {
-		if (!state) return;
-		state = new GameStage(state);
-		if (!JSUS.in_array({content:state.toString(), type: 'left'}, this.gtbl.left)){
-			this.gtbl.add2Left(state.toString());
-		}
-		// Is it a new display associated to the same state?
-		else {
-			var y = this.state2y(state);
-			var x = this.player2x(player);
-			if (this.gtbl.select('y','=',y).select('x','=',x).count() > 1) {
-				this.gtbl.add2Left(state.toString());
-			}
-		}
-			
-	};
-	
-	GameTable.prototype.player2x = function (player) {
-		if (!player) return false;
-		return this.plist.select('id', '=', player).first().count;
-	};
-	
-	GameTable.prototype.x2Player = function (x) {
-		if (!x) return false;
-		return this.plist.select('count', '=', x).first().count;
-	};
-	
-	GameTable.prototype.state2y = function (state) {
-		if (!state) return false;
-		return node.game.plot.indexOf(state);
-	};
-	
-	GameTable.prototype.y2State = function (y) {
-		if (!y) return false;
-		return node.game.plot.jumpTo(new GameStage(),y);
-	};
-	
-	
+    };
+    
+    GameTable.prototype.player2x = function (player) {
+	if (!player) return false;
+	return this.plist.select('id', '=', player).first().count;
+    };
+    
+    GameTable.prototype.x2Player = function (x) {
+	if (!x) return false;
+	return this.plist.select('count', '=', x).first().count;
+    };
+    
+    GameTable.prototype.state2y = function (state) {
+	if (!state) return false;
+	return node.game.plot.indexOf(state);
+    };
+    
+    GameTable.prototype.y2State = function (y) {
+	if (!y) return false;
+	return node.game.plot.jumpTo(new GameStage(),y);
+    };
+    
+    
 
 })(node);
 
