@@ -7955,7 +7955,6 @@ JSUS.extend(PARSE);
         }
 
         if (!this.events[type]) {
-            debugger;
             node.warn('EventEmitter.remove (' + this.name + '): unexisting event ' + type);
             return false;
         }
@@ -7967,7 +7966,6 @@ JSUS.extend(PARSE);
         }
 
         if (listener && 'function' !== typeof listener) {
-            debugger
             throw TypeError('EventEmitter.remove (' + this.name + '): listener must be a function');
         }
 
@@ -8196,13 +8194,11 @@ JSUS.extend(PARSE);
         var i;
 
         if ('string' !== typeof event) {
-            debugger
             this.node.err('EventEmitterManager.remove: event must be string.');
             return false;
         }
 
         if (listener && 'function' !== typeof listener) {
-            debugger
             this.node.err('EventEmitterManager.remove: listener must be function.');
             return false;
         }
@@ -11736,7 +11732,7 @@ GameMsg.prototype.toEvent = function () {
 //                    to: 'ALL',
 //                    data: this.node.player
 //                }));
-//
+
             }
 
         }
@@ -11749,7 +11745,6 @@ GameMsg.prototype.toEvent = function () {
 
     Socket.prototype.onMessageFull = function(msg) {
         msg = this.secureParse(msg);
-        debugger
         if (msg) { // Parsing successful
             // message with high priority are executed immediately
             if (msg.priority > 0 || this.node.game.isReady && this.node.game.isReady()) {
@@ -11772,7 +11767,6 @@ GameMsg.prototype.toEvent = function () {
 
 
     Socket.prototype.secureParse = function (msg) {
-
         var gameMsg;
         try {
             gameMsg = GameMsg.clone(JSON.parse(msg));
@@ -15394,7 +15388,6 @@ GameMsg.prototype.toEvent = function () {
          * Updates the game stage
          */
         node.events.ng.on( IN + say + 'STAGE', function (msg) {
-            debugger
             var stageObj;
             if (!msg.data) {
                 node.warn('Received in.say.STAGE msg with empty stage');
