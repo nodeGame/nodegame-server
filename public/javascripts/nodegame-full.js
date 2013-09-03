@@ -7653,7 +7653,7 @@ JSUS.extend(PARSE);
         //Error.apply(this, arguments);
         this.msg = msg;
         this.stack = (new Error()).stack;
-        throw 'Runtime: ' + msg;
+        throw new Error('Runtime: ' + msg);
     }
 
     NodeGameRuntimeError.prototype = new Error();
@@ -8632,12 +8632,19 @@ GameStage.stringify = function(gs) {
             options.update.indexes = true;
         }
         // Indexing the players by id.
-        // We need to add this for the DB constructor that will be
-        // able to index the players passed in the db parameter
+        // We need to add this option for the NDDB constructor,
+        // so that will be able to index all the players passed 
+        // in the db parameter
         if (!options.I) options.I = {};
         if ('undefined' === typeof options.I.id) {
             options.I.id =  function(p) { return p.id; };
         }
+
+// Probably we don't need this
+//        // Indexing the players by sid.
+//        if ('undefined' === typeof options.I.sid) {
+//            options.I.sid =  function(p) { return p.sid; };
+//        }
 
         // We check if the index are not existing already because
         // it could be that the constructor is called by the breed function
@@ -8649,7 +8656,14 @@ GameStage.stringify = function(gs) {
                 return p.id;
             });
         }
-        
+
+// Probably we don't need this
+//        if (!this.sid) {
+//            this.index('sid', function(p) {
+//                return p.id;
+//            });
+//        }
+
         // Invoking NDDB constructor.
         NDDB.call(this, options, db);
         
@@ -8733,12 +8747,13 @@ GameStage.stringify = function(gs) {
      * @return {Player} The player with the speficied id
      */
     PlayerList.prototype.get = function (id) {
+        var player;
         if ('undefined' === typeof id) {
             throw new NodeGameRuntimeError(
                     'PlayerList.get: id was not given');
 
         }
-        var player = this.id.get(id);
+        player = this.id.get(id);
         if (!player) {
             throw new NodeGameRuntimeError(
                     'PlayerList.get: Player not found (id ' + id + ')');
@@ -8757,11 +8772,13 @@ GameStage.stringify = function(gs) {
      * @return {object} The removed player object
      */
     PlayerList.prototype.remove = function (id) {
+        var player;
+        debugger;
         if ('undefined' === typeof id) {
             throw new NodeGameRuntimeError(
                 'PlayerList.remove: id was not given');
         }
-        var player = this.id.pop(id);
+        player = this.id.pop(id);
         if (!player) {
             throw new NodeGameRuntimeError(
                 'PlayerList.remove: Player not found (id ' + id + ')');
@@ -8799,6 +8816,7 @@ GameStage.stringify = function(gs) {
         // TODO: check playerState
 
         if (!this.exist(id)) {
+            debugger
             throw new NodeGameRuntimeError(
                     'PlayerList.updatePlayer: Player not found (id ' + id + ')');
         }
@@ -14160,7 +14178,6 @@ GameMsg.prototype.toEvent = function () {
          */
         this.registerSetup('plot', function(stagerState, updateRule) {
             if (!this.game) {
-                console.log(this);
                 this.warn("register('plot') called before node.game was initialized");
                 throw new node.NodeGameMisconfiguredGameError("node.game non-existent");
             }
@@ -14435,20 +14452,21 @@ GameMsg.prototype.toEvent = function () {
      */
     NGC.prototype.setup = function(property) {
         var res;
-        
+
+        if ('string' !== typeof property) {
+            throw new Error('node.setup: expects a string as first parameter.');
+        }
+
         if (frozen) {
-            this.err('nodeGame configuration is frozen. No modification allowed.');
-            return false;
+            throw new Error('nodeGame configuration is frozen. No modification allowed.');
         }
 
         if (property === 'register') {
-            this.warn('cannot setup property "register"');
-            return false;
+            throw new Error('cannot setup property "register"');
         }
 
         if (!this.setup[property]) {
-            this.warn('no such property to configure: ' + property);
-            return false;
+            throw new Error('no such property to configure: ' + property);
         }
         
         // Setup the property using rest of arguments:
@@ -14796,10 +14814,12 @@ GameMsg.prototype.toEvent = function () {
      * @see NodeGameClient.off
      */
     NGC.prototype.once = function (event, listener) {
+        var that;
         if (!event || !listener) return;
+        that = this;
         this.on(event, listener);
         this.on(event, function(event, listener) {
-            this.events.remove(event, listener);
+            that.events.remove(event, listener);
         });
     };
 
