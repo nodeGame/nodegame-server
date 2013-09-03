@@ -8775,7 +8775,6 @@ GameStage.stringify = function(gs) {
      */
     PlayerList.prototype.remove = function (id) {
         var player;
-        debugger;
         if ('undefined' === typeof id) {
             throw new NodeGameRuntimeError(
                 'PlayerList.remove: id was not given');
@@ -8818,7 +8817,6 @@ GameStage.stringify = function(gs) {
         // TODO: check playerState
 
         if (!this.exist(id)) {
-            debugger
             throw new NodeGameRuntimeError(
                     'PlayerList.updatePlayer: Player not found (id ' + id + ')');
         }
@@ -11669,7 +11667,7 @@ GameMsg.prototype.toEvent = function () {
     Socket.prototype.connect = function(uri) {
         var humanReadableUri = uri || 'local server';
         if (!this.socket) {
-            this.node.err('cannot connet to ' + humanReadableUri + ' . No open socket.');
+            this.node.err('Socket.connet: cannot connet to ' + humanReadableUri + ' . No open socket.');
             return false;
         }
 
@@ -11698,6 +11696,9 @@ GameMsg.prototype.toEvent = function () {
             // replace itself: will change onMessage
             this.attachMsgListeners();
 
+            // This will emit on PLAYER_CREATED
+            // If listening on PLAYER_CREATED, functions can be
+            // executed before the HI 
             this.startSession(msg);
 
             sessionObj = this.node.store(msg.session);
@@ -11718,13 +11719,14 @@ GameMsg.prototype.toEvent = function () {
             else {
                 this.node.store(msg.session, this.node.session.save());
 
+                // NEW: not necessary with modifications to GameServer
                 // send HI to ALL
-                this.send(this.node.msg.create({
-                    target: 'HI',
-                    to: 'ALL',
-                    data: this.node.player
-                }));
-
+//                this.send(this.node.msg.create({
+//                    target: 'HI',
+//                    to: 'ALL',
+//                    data: this.node.player
+//                }));
+//
             }
 
         }
@@ -11853,12 +11855,12 @@ GameMsg.prototype.toEvent = function () {
      */
     Socket.prototype.send = function(msg) {
         if (!this.socket) {
-            this.node.err('socket cannot send message. No open socket.');
+            this.node.err('Socket.send: cannot send message. No open socket.');
             return false;
         }
 
         if (msg.from === this.node.UNDEFINED_PLAYER) {
-            this.node.err('socket cannot send message. Player undefined.');
+            this.node.err('Socket.send: cannot send message. Player undefined.');
             return false;
         }
         
@@ -12313,8 +12315,8 @@ GameMsg.prototype.toEvent = function () {
 
         this.node = node;
 
-        this.setStateLevel(constants.stateLevels.UNINITIALIZED);
-        this.setStageLevel(constants.stageLevels.UNINITIALIZED);
+        this.setStateLevel(constants.stateLevels.UNINITIALIZED, true);
+        this.setStageLevel(constants.stageLevels.UNINITIALIZED, true);
 
         settings = settings || {};
 
@@ -12754,7 +12756,7 @@ GameMsg.prototype.toEvent = function () {
     };
 
     // ERROR, WORKING, etc
-    Game.prototype.setStateLevel = function(stateLevel) {
+    Game.prototype.setStateLevel = function(stateLevel, silent) {
         var node;
         node = this.node;
         if ('number' !== typeof stateLevel) {
@@ -12764,25 +12766,25 @@ GameMsg.prototype.toEvent = function () {
 
         node.player.stateLevel = stateLevel;
         // TODO do we need to publish this kinds of update?
-        //this.publishUpdate();
+        //if (!silent) this.publishUpdate();
     };
 
     // PLAYING, DONE, etc.
     // Publishes update only if value actually changed.
-    Game.prototype.setStageLevel = function(stageLevel) {
+    Game.prototype.setStageLevel = function(stageLevel, silent) {
         var node;
         node = this.node;
         if ('number' !== typeof stageLevel) {
             throw new node.NodeGameMisconfiguredGameError(
                 'setStageLevel called with invalid parameter: ' + stageLevel);
         }
-        this.publishStageLevelUpdate(stageLevel);
+        if (!silent) this.publishStageLevelUpdate(stageLevel);
         node.player.stageLevel = stageLevel;
     };
 
-    Game.prototype.setCurrentGameStage = function(gameStage) {        
+    Game.prototype.setCurrentGameStage = function(gameStage, silent) {        
         gameStage = new GameStage(gameStage);
-        this.publishGameStageUpdate(gameStage);
+        if (!silent) this.publishGameStageUpdate(gameStage);
         this.node.player.stage = gameStage;
     };
 
@@ -12790,7 +12792,7 @@ GameMsg.prototype.toEvent = function () {
         var node;
         node = this.node;
         // Publish update:
-        if (!this.observer && node.player.stageLevel !== newStageLevel) {
+        if (!this.settings.observer && node.player.stageLevel !== newStageLevel) {
             node.socket.send(node.msg.create({
                 target: constants.target.PLAYER_UPDATE,
                 data: { stageLevel: newStageLevel },
@@ -12803,7 +12805,7 @@ GameMsg.prototype.toEvent = function () {
         var node;
         node = this.node;
         // Publish update:
-        if (!this.observer && node.player.stage !== newGameStage) {
+        if (!this.settings.observer && node.player.stage !== newGameStage) {
             node.socket.send(node.msg.create({
                 target: constants.target.PLAYER_UPDATE,
                 data: { stage: newGameStage },
@@ -15385,6 +15387,7 @@ GameMsg.prototype.toEvent = function () {
          * Updates the game stage
          */
         node.events.ng.on( IN + say + 'STAGE', function (msg) {
+            debugger
             var stageObj;
             if (!msg.data) {
                 node.warn('Received in.say.STAGE msg with empty stage');
