@@ -1255,710 +1255,711 @@ JSUS.extend(COMPATIBILITY);
 
 (function (JSUS) {
     
-function ARRAY(){};
+    function ARRAY(){};
 
 
-/**
- * ## ARRAY.filter
- * 
- * Add the filter method to ARRAY objects in case the method is not
- * supported natively. 
- * 
- * 		@see https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/ARRAY/filter
- * 
- */
-if (!Array.prototype.filter) {  
-    Array.prototype.filter = function(fun /*, thisp */) {  
-        "use strict";  
-        if (this === void 0 || this === null) throw new TypeError();  
+    /**
+     * ## ARRAY.filter
+     * 
+     * Add the filter method to ARRAY objects in case the method is not
+     * supported natively. 
+     * 
+     * @see https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/ARRAY/filter
+     * 
+     */
+    if (!Array.prototype.filter) {  
+        Array.prototype.filter = function(fun /*, thisp */) {  
+            "use strict";  
+            if (this === void 0 || this === null) throw new TypeError();  
 
-        var t = Object(this);  
-        var len = t.length >>> 0;  
-        if (typeof fun !== "function") throw new TypeError();  
-    
-        var res = [];  
-        var thisp = arguments[1];  
-        for (var i = 0; i < len; i++) {  
-            if (i in t) {  
-                var val = t[i]; // in case fun mutates this  
-                if (fun.call(thisp, val, i, t)) { 
-                    res.push(val);  
+            var t = Object(this);  
+            var len = t.length >>> 0;  
+            if (typeof fun !== "function") throw new TypeError();  
+            
+            var res = [];  
+            var thisp = arguments[1];  
+            for (var i = 0; i < len; i++) {  
+                if (i in t) {  
+                    var val = t[i]; // in case fun mutates this  
+                    if (fun.call(thisp, val, i, t)) { 
+                        res.push(val);  
+                    }
                 }
+            }
+            
+            return res;  
+        };
+    }
+
+    /**
+     * ## ARRAY.isArray
+     * 
+     * Returns TRUE if a variable is an Array
+     * 
+     * This method is exactly the same as `Array.isArray`, 
+     * but it works on a larger share of browsers. 
+     * 
+     * @param {object} o The variable to check.
+     * @see Array.isArray
+     *  
+     */
+    ARRAY.isArray = function (o) {
+        if (!o) return false;
+        return Object.prototype.toString.call(o) === '[object Array]';  
+    };
+
+    /**
+     * ## ARRAY.seq
+     * 
+     * Returns an array of sequential numbers from start to end
+     * 
+     * If start > end the series goes backward.
+     * 
+     * The distance between two subsequent numbers can be controlled by the increment parameter.
+     * 
+     * When increment is not a divider of Abs(start - end), end will
+     * be missing from the series.
+     * 
+     * A callback function to apply to each element of the sequence
+     * can be passed as fourth parameter.
+     *  
+     * Returns FALSE, in case parameters are incorrectly specified
+     * 
+     * @param {number} start The first element of the sequence
+     * @param {number} end The last element of the sequence
+     * @param {number} increment Optional. The increment between two subsequents element 
+     *   of the sequence
+     * @param {Function} func Optional. A callback function that can modify 
+     *   each number of the sequence before returning it
+     *  
+     * @return {array} out The final sequence 
+     */
+    ARRAY.seq = function (start, end, increment, func) {
+        if ('number' !== typeof start) return false;
+        if (start === Infinity) return false;
+        if ('number' !== typeof end) return false;
+        if (end === Infinity) return false;
+        if (start === end) return [start];
+        
+        if (increment === 0) return false;
+        if (!JSUS.in_array(typeof increment, ['undefined', 'number'])) {
+            return false;
+        }
+        
+        increment = increment || 1;
+        func = func || function(e) {return e;};
+        
+        var i = start,
+        out = [];
+        
+        if (start < end) {
+            while (i <= end) {
+                out.push(func(i));
+                i = i + increment;
+            }
+        }
+        else {
+            while (i >= end) {
+                out.push(func(i));
+                i = i - increment;
             }
         }
         
-        return res;  
+        return out;
     };
-}
-
-/**
- * ## ARRAY.isArray
- * 
- * Returns TRUE if a variable is an Array
- * 
- * This method is exactly the same as `Array.isArray`, 
- * but it works on a larger share of browsers. 
- * 
- * @param {object} o The variable to check.
- * @see Array.isArray
- *  
- */
-ARRAY.isArray = function (o) {
-	if (!o) return false;
-	return Object.prototype.toString.call(o) === '[object Array]';	
-};
-
-/**
- * ## ARRAY.seq
- * 
- * Returns an array of sequential numbers from start to end
- * 
- * If start > end the series goes backward.
- * 
- * The distance between two subsequent numbers can be controlled by the increment parameter.
- * 
- * When increment is not a divider of Abs(start - end), end will
- * be missing from the series.
- * 
- * A callback function to apply to each element of the sequence
- * can be passed as fourth parameter.
- *  
- * Returns FALSE, in case parameters are incorrectly specified
- * 
- * @param {number} start The first element of the sequence
- * @param {number} end The last element of the sequence
- * @param {number} increment Optional. The increment between two subsequents element of the sequence
- * @param {Function} func Optional. A callback function that can modify each number of the sequence before returning it
- *  
- * @return {array} out The final sequence 
- */
-ARRAY.seq = function (start, end, increment, func) {
-	if ('number' !== typeof start) return false;
-	if (start === Infinity) return false;
-	if ('number' !== typeof end) return false;
-	if (end === Infinity) return false;
-	if (start === end) return [start];
-	
-	if (increment === 0) return false;
-	if (!JSUS.in_array(typeof increment, ['undefined', 'number'])) {
-		return false;
-	}
-	
-	increment = increment || 1;
-	func = func || function(e) {return e;};
-	
-	var i = start,
-		out = [];
-	
-	if (start < end) {
-		while (i <= end) {
-    		out.push(func(i));
-    		i = i + increment;
-    	}
-	}
-	else {
-		while (i >= end) {
-    		out.push(func(i));
-    		i = i - increment;
-    	}
-	}
-	
-    return out;
-};
 
 
-/**
- * ## ARRAY.each
- * 
- * Executes a callback on each element of the array
- * 
- * If an error occurs returns FALSE.
- * 
- * @param {array} array The array to loop in
- * @param {Function} func The callback for each element in the array
- * @param {object} context Optional. The context of execution of the callback. Defaults ARRAY.each
- * 
- * @return {Boolean} TRUE, if execution was successful
- */
-ARRAY.each = function (array, func, context) {
-	if ('object' !== typeof array) return false;
-	if (!func) return false;
-    
-	context = context || this;
-    var i, len = array.length;
-    for (i = 0 ; i < len; i++) {
-        func.call(context, array[i]);
-    }
-    
-    return true;
-};
-
-/**
- * ## ARRAY.map
- * 
- * Applies a callback function to each element in the db, store
- * the results in an array and returns it
- * 
- * Any number of additional parameters can be passed after the 
- * callback function
- * 
- * @return {array} out The result of the mapping execution
- * @see ARRAY.each
- * 
- */
-ARRAY.map = function () {
-    if (arguments.length < 2) return;
-    var	args = Array.prototype.slice.call(arguments),
-    	array = args.shift(),
-    	func = args[0];
-    
-    if (!ARRAY.isArray(array)) {
-    	JSUS.log('ARRAY.map() the first argument must be an array. Found: ' + array);
-    	return;
-    }
-
-    var out = [],
-    	o = undefined;
-    for (var i = 0; i < array.length; i++) {
-    	args[0] = array[i];
-        o = func.apply(this, args);
-        if ('undefined' !== typeof o) out.push(o);
-    }
-    return out;
-};
-
-
-/**
- * ## ARRAY.removeElement
- * 
- * Removes an element from the the array, and returns it
- * 
- * For objects, deep equality comparison is performed 
- * through JSUS.equals.
- * 
- * If no element is removed returns FALSE.
- * 
- * @param {mixed} needle The element to search in the array
- * @param {array} haystack The array to search in
- * 
- * @return {mixed} The element that was removed, FALSE if none was removed
- * @see JSUS.equals
- */
-ARRAY.removeElement = function (needle, haystack) {
-    if ('undefined' === typeof needle || !haystack) return false;
-	
-    if ('object' === typeof needle) {
-        var func = JSUS.equals;
-    } else {
-        var func = function (a,b) {
-            return (a === b);
-        }
-    }
-    
-    for (var i=0; i < haystack.length; i++) {
-        if (func(needle, haystack[i])){
-            return haystack.splice(i,1);
-        }
-    }
-    
-    return false;
-};
-
-/**
- * ## ARRAY.inArray 
- * 
- * Returns TRUE if the element is contained in the array,
- * FALSE otherwise
- * 
- * For objects, deep equality comparison is performed 
- * through JSUS.equals.
- * 
- * Alias ARRAY.in_array (deprecated)
- * 
- * @param {mixed} needle The element to search in the array
- * @param {array} haystack The array to search in
- * @return {Boolean} TRUE, if the element is contained in the array
- * 
- * 	@see JSUS.equals
- */
-ARRAY.inArray = ARRAY.in_array = function (needle, haystack) {
-    if (!haystack) return false;
-    
-    var func = JSUS.equals;    
-    for (var i = 0; i < haystack.length; i++) {
-        if (func.call(this, needle, haystack[i])) {
-        	return true;
-        }
-    }
-    // <!-- console.log(needle, haystack); -->
-    return false;
-};
-
-/**
- * ## ARRAY.getNGroups
- * 
- * Returns an array of N array containing the same number of elements
- * If the length of the array and the desired number of elements per group
- * are not multiple, the last group could have less elements
- * 
- * The original array is not modified.
- *  
- *  @see ARRAY.getGroupsSizeN
- *  @see ARRAY.generateCombinations
- *  @see ARRAY.matchN
- *  
- * @param {array} array The array to split in subgroups
- * @param {number} N The number of subgroups
- * @return {array} Array containing N groups
- */ 
-ARRAY.getNGroups = function (array, N) {
-    return ARRAY.getGroupsSizeN(array, Math.floor(array.length / N));
-};
-
-/**
- * ## ARRAY.getGroupsSizeN
- * 
- * Returns an array of array containing N elements each
- * The last group could have less elements
- * 
- * @param {array} array The array to split in subgroups
- * @param {number} N The number of elements in each subgroup
- * @return {array} Array containing groups of size N
- * 
- *  	@see ARRAY.getNGroups
- *  	@see ARRAY.generateCombinations
- *  	@see ARRAY.matchN
- * 
- */ 
-ARRAY.getGroupsSizeN = function (array, N) {
-    
-    var copy = array.slice(0);
-    var len = copy.length;
-    var originalLen = copy.length;
-    var result = [];
-    
-    // <!-- Init values for the loop algorithm -->
-    var i, idx;
-    var group = [], count = 0;
-    for (i=0; i < originalLen; i++) {
+    /**
+     * ## ARRAY.each
+     * 
+     * Executes a callback on each element of the array
+     * 
+     * If an error occurs returns FALSE.
+     * 
+     * @param {array} array The array to loop in
+     * @param {Function} func The callback for each element in the array
+     * @param {object} context Optional. The context of execution of the callback. Defaults ARRAY.each
+     * 
+     * @return {Boolean} TRUE, if execution was successful
+     */
+    ARRAY.each = function (array, func, context) {
+        if ('object' !== typeof array) return false;
+        if (!func) return false;
         
-        // <!-- Get a random idx between 0 and array length -->
-        idx = Math.floor(Math.random()*len);
+        context = context || this;
+        var i, len = array.length;
+        for (i = 0 ; i < len; i++) {
+            func.call(context, array[i]);
+        }
         
-        // <!-- Prepare the array container for the elements of a new group -->
-        if (count >= N) {
+        return true;
+    };
+
+    /**
+     * ## ARRAY.map
+     * 
+     * Applies a callback function to each element in the db, store
+     * the results in an array and returns it
+     * 
+     * Any number of additional parameters can be passed after the 
+     * callback function
+     * 
+     * @return {array} out The result of the mapping execution
+     * @see ARRAY.each
+     * 
+     */
+    ARRAY.map = function () {
+        if (arguments.length < 2) return;
+        var     args = Array.prototype.slice.call(arguments),
+        array = args.shift(),
+        func = args[0];
+        
+        if (!ARRAY.isArray(array)) {
+            JSUS.log('ARRAY.map() the first argument must be an array. Found: ' + array);
+            return;
+        }
+
+        var out = [],
+        o = undefined;
+        for (var i = 0; i < array.length; i++) {
+            args[0] = array[i];
+            o = func.apply(this, args);
+            if ('undefined' !== typeof o) out.push(o);
+        }
+        return out;
+    };
+
+
+    /**
+     * ## ARRAY.removeElement
+     * 
+     * Removes an element from the the array, and returns it
+     * 
+     * For objects, deep equality comparison is performed 
+     * through JSUS.equals.
+     * 
+     * If no element is removed returns FALSE.
+     * 
+     * @param {mixed} needle The element to search in the array
+     * @param {array} haystack The array to search in
+     * 
+     * @return {mixed} The element that was removed, FALSE if none was removed
+     * @see JSUS.equals
+     */
+    ARRAY.removeElement = function (needle, haystack) {
+        if ('undefined' === typeof needle || !haystack) return false;
+        
+        if ('object' === typeof needle) {
+            var func = JSUS.equals;
+        } else {
+            var func = function (a,b) {
+                return (a === b);
+            }
+        }
+        
+        for (var i=0; i < haystack.length; i++) {
+            if (func(needle, haystack[i])){
+                return haystack.splice(i,1);
+            }
+        }
+        
+        return false;
+    };
+
+    /**
+     * ## ARRAY.inArray 
+     * 
+     * Returns TRUE if the element is contained in the array,
+     * FALSE otherwise
+     * 
+     * For objects, deep equality comparison is performed 
+     * through JSUS.equals.
+     * 
+     * Alias ARRAY.in_array (deprecated)
+     * 
+     * @param {mixed} needle The element to search in the array
+     * @param {array} haystack The array to search in
+     * @return {Boolean} TRUE, if the element is contained in the array
+     * 
+     *  @see JSUS.equals
+     */
+    ARRAY.inArray = ARRAY.in_array = function (needle, haystack) {
+        if (!haystack) return false;
+        
+        var func = JSUS.equals;    
+        for (var i = 0; i < haystack.length; i++) {
+            if (func.call(this, needle, haystack[i])) {
+                return true;
+            }
+        }
+        // <!-- console.log(needle, haystack); -->
+        return false;
+    };
+
+    /**
+     * ## ARRAY.getNGroups
+     * 
+     * Returns an array of N array containing the same number of elements
+     * If the length of the array and the desired number of elements per group
+     * are not multiple, the last group could have less elements
+     * 
+     * The original array is not modified.
+     *  
+     *  @see ARRAY.getGroupsSizeN
+     *  @see ARRAY.generateCombinations
+     *  @see ARRAY.matchN
+     *  
+     * @param {array} array The array to split in subgroups
+     * @param {number} N The number of subgroups
+     * @return {array} Array containing N groups
+     */ 
+    ARRAY.getNGroups = function (array, N) {
+        return ARRAY.getGroupsSizeN(array, Math.floor(array.length / N));
+    };
+
+    /**
+     * ## ARRAY.getGroupsSizeN
+     * 
+     * Returns an array of array containing N elements each
+     * The last group could have less elements
+     * 
+     * @param {array} array The array to split in subgroups
+     * @param {number} N The number of elements in each subgroup
+     * @return {array} Array containing groups of size N
+     * 
+     *          @see ARRAY.getNGroups
+     *          @see ARRAY.generateCombinations
+     *          @see ARRAY.matchN
+     * 
+     */ 
+    ARRAY.getGroupsSizeN = function (array, N) {
+        
+        var copy = array.slice(0);
+        var len = copy.length;
+        var originalLen = copy.length;
+        var result = [];
+        
+        // <!-- Init values for the loop algorithm -->
+        var i, idx;
+        var group = [], count = 0;
+        for (i=0; i < originalLen; i++) {
+            
+            // <!-- Get a random idx between 0 and array length -->
+            idx = Math.floor(Math.random()*len);
+            
+            // <!-- Prepare the array container for the elements of a new group -->
+            if (count >= N) {
+                result.push(group);
+                count = 0;
+                group = [];
+            }
+            
+            // <!-- Insert element in the group -->
+            group.push(copy[idx]);
+            
+            // <!-- Update -->
+            copy.splice(idx,1);
+            len = copy.length;
+            count++;
+        }
+        
+        // <!-- Add any remaining element -->
+        if (group.length > 0) {
             result.push(group);
-            count = 0;
+        }
+        
+        return result;
+    };
+
+    /**
+     * ## ARRAY._latinSquare
+     * 
+     * Generate a random Latin Square of size S
+     * 
+     * If N is defined, it returns "Latin Rectangle" (SxN) 
+     * 
+     * A parameter controls for self-match, i.e. whether the symbol "i" 
+     * is found or not in in column "i".
+     * 
+     * @api private
+     * @param {number} S The number of rows
+     * @param {number} Optional. N The number of columns. Defaults N = S
+     * @param {boolean} Optional. If TRUE self-match is allowed. Defaults TRUE
+     * @return {array} The resulting latin square (or rectangle)
+     * 
+     */
+    ARRAY._latinSquare = function (S, N, self) {
+        self = ('undefined' === typeof self) ? true : self;
+        if (S === N && !self) return false; // <!-- infinite loop -->
+        var seq = [];
+        var latin = [];
+        for (var i=0; i< S; i++) {
+            seq[i] = i;
+        }
+        
+        var idx = null;
+        
+        var start = 0;
+        var limit = S;
+        var extracted = [];
+        if (!self) {
+            limit = S-1;
+        }
+        
+        for (i=0; i < N; i++) {
+            do {
+                idx = JSUS.randomInt(start,limit);
+            }
+            while (JSUS.in_array(idx, extracted));
+            extracted.push(idx);
+            
+            if (idx == 1) {
+                latin[i] = seq.slice(idx);
+                latin[i].push(0);
+            }
+            else {
+                latin[i] = seq.slice(idx).concat(seq.slice(0,(idx)));
+            }
+            
+        }
+        
+        return latin;
+    };
+
+    /**
+     * ## ARRAY.latinSquare
+     * 
+     * Generate a random Latin Square of size S
+     * 
+     * If N is defined, it returns "Latin Rectangle" (SxN) 
+     * 
+     * @param {number} S The number of rows
+     * @param {number} Optional. N The number of columns. Defaults N = S
+     * @return {array} The resulting latin square (or rectangle)
+     * 
+     */
+    ARRAY.latinSquare = function (S, N) {
+        if (!N) N = S;
+        if (!S || S < 0 || (N < 0)) return false;
+        if (N > S) N = S;
+        
+        return ARRAY._latinSquare(S, N, true);
+    };
+
+    /**
+     * ## ARRAY.latinSquareNoSelf
+     * 
+     * Generate a random Latin Square of size Sx(S-1), where 
+     * in each column "i", the symbol "i" is not found
+     * 
+     * If N < S, it returns a "Latin Rectangle" (SxN)
+     * 
+     * @param {number} S The number of rows
+     * @param {number} Optional. N The number of columns. Defaults N = S-1
+     * @return {array} The resulting latin square (or rectangle)
+     */
+    ARRAY.latinSquareNoSelf = function (S, N) {
+        if (!N) N = S-1;
+        if (!S || S < 0 || (N < 0)) return false;
+        if (N > S) N = S-1;
+        
+        return ARRAY._latinSquare(S, N, false);
+    }
+
+
+    /**
+     * ## ARRAY.generateCombinations
+     * 
+     *  Generates all distinct combinations of exactly r elements each 
+     *  and returns them into an array
+     *  
+     *  @param {array} array The array from which the combinations are extracted
+     *  @param {number} r The number of elements in each combination
+     *  @return {array} The total sets of combinations
+     *  
+     *          @see ARRAY.getGroupSizeN
+     *          @see ARRAY.getNGroups
+     *          @see ARRAY.matchN
+     * 
+     */
+    ARRAY.generateCombinations = function (array, r) {
+        function values(i, a) {
+            var ret = [];
+            for (var j = 0; j < i.length; j++) ret.push(a[i[j]]);
+            return ret;
+        }
+        var n = array.length;
+        var indices = [];
+        for (var i = 0; i < r; i++) indices.push(i);
+        var final = [];
+        for (var i = n - r; i < n; i++) final.push(i);
+        while (!JSUS.equals(indices, final)) {
+            callback(values(indices, array));
+            var i = r - 1;
+            while (indices[i] == n - r + i) i -= 1;
+            indices[i] += 1;
+            for (var j = i + 1; j < r; j++) indices[j] = indices[i] + j - i;
+        }
+        return values(indices, array); 
+    };
+
+    /**
+     * ## ARRAY.matchN
+     * 
+     * Match each element of the array with N random others
+     * 
+     * If strict is equal to true, elements cannot be matched multiple times.
+     * 
+     * *Important*: this method has a bug / feature. If the strict parameter is set,
+     * the last elements could remain without match, because all the other have been 
+     * already used. Another recombination would be able to match all the 
+     * elements instead.
+     * 
+     * @param {array} array The array in which operate the matching
+     * @param {number} N The number of matches per element
+     * @param {Boolean} strict Optional. If TRUE, matched elements cannot be repeated. Defaults, FALSE 
+     * @return {array} result The results of the matching
+     * 
+     *          @see ARRAY.getGroupSizeN
+     *          @see ARRAY.getNGroups
+     *          @see ARRAY.generateCombinations
+     * 
+     */
+    ARRAY.matchN = function (array, N, strict) {
+        if (!array) return;
+        if (!N) return array;
+        
+        var result = [],
+        len = array.length,
+        found = [];
+        for (var i = 0 ; i < len ; i++) {
+            // <!-- Recreate the array -->
+            var copy = array.slice(0);
+            copy.splice(i,1);
+            if (strict) {
+                copy = ARRAY.arrayDiff(copy,found);
+            }
+            var group = ARRAY.getNRandom(copy,N);
+            // <!-- Add to the set of used elements -->
+            found = found.concat(group);
+            // <!-- Re-add the current element -->
+            group.splice(0,0,array[i]);
+            result.push(group);
+            
+            // <!-- Update -->
             group = [];
         }
+        return result;
+    };
+
+    /**
+     * ## ARRAY.rep
+     * 
+     * Appends an array to itself a number of times and return a new array
+     * 
+     * The original array is not modified.
+     * 
+     * @param {array} array the array to repeat 
+     * @param {number} times The number of times the array must be appended to itself
+     * @return {array} A copy of the original array appended to itself
+     * 
+     */
+    ARRAY.rep = function (array, times) {
+        if (!array) return;
+        if (!times) return array.slice(0);
+        if (times < 1) {
+            JSUS.log('times must be greater or equal 1', 'ERR');
+            return;
+        }
         
-        // <!-- Insert element in the group -->
-        group.push(copy[idx]);
+        var i = 1, result = array.slice(0);
+        for (; i < times; i++) {
+            result = result.concat(array);
+        }
+        return result;
+    };
+
+    /**
+     * ## ARRAY.stretch
+     * 
+     * Repeats each element of the array N times
+     * 
+     * N can be specified as an integer or as an array. In the former case all 
+     * the elements are repeat the same number of times. In the latter, the each
+     * element can be repeated a custom number of times. If the length of the `times`
+     * array differs from that of the array to stretch a recycle rule is applied.
+     * 
+     * The original array is not modified.
+     * 
+     * E.g.:
+     * 
+     * ```js
+     *  var foo = [1,2,3];
+     * 
+     *  ARRAY.stretch(foo, 2); // [1, 1, 2, 2, 3, 3]
+     * 
+     *  ARRAY.stretch(foo, [1,2,3]); // [1, 2, 2, 3, 3, 3];
+     *
+     *  ARRAY.stretch(foo, [2,1]); // [1, 1, 2, 3, 3];
+     * ```
+     * 
+     * @param {array} array the array to strech
+     * @param {number|array} times The number of times each element must be repeated
+     * @return {array} A stretched copy of the original array
+     * 
+     */
+    ARRAY.stretch = function (array, times) {
+        if (!array) return;
+        if (!times) return array.slice(0);
+        if ('number' === typeof times) {
+            if (times < 1) {
+                JSUS.log('times must be greater or equal 1', 'ERR');
+                return;
+            }
+            times = ARRAY.rep([times], array.length);
+        }
         
-        // <!-- Update -->
-        copy.splice(idx,1);
-        len = copy.length;
-        count++;
-    }
+        var result = [];
+        for (var i = 0; i < array.length; i++) {
+            var repeat = times[(i % times.length)];
+            for (var j = 0; j < repeat ; j++) {
+                result.push(array[i]);
+            }
+        }
+        return result;
+    };
+
+
+    /**
+     * ## ARRAY.arrayIntersect
+     * 
+     * Computes the intersection between two arrays
+     * 
+     * Arrays can contain both primitive types and objects.
+     * 
+     * @param {array} a1 The first array
+     * @param {array} a2 The second array
+     * @return {array} All the values of the first array that are found also in the second one
+     */
+    ARRAY.arrayIntersect = function (a1, a2) {
+        return a1.filter( function(i) {
+            return JSUS.in_array(i, a2);
+        });
+    };
     
-    // <!-- Add any remaining element -->
-    if (group.length > 0) {
-        result.push(group);
-    }
-    
-    return result;
-};
+    /**
+     * ## ARRAY.arrayDiff
+     * 
+     * Performs a diff between two arrays
+     * 
+     * Arrays can contain both primitive types and objects.
+     * 
+     * @param {array} a1 The first array
+     * @param {array} a2 The second array
+     * @return {array} All the values of the first array that are not found in the second one
+     */
+    ARRAY.arrayDiff = function (a1, a2) {
+        return a1.filter( function(i) {
+            return !(JSUS.in_array(i, a2));
+        });
+    };
 
-/**
- * ## ARRAY._latinSquare
- * 
- * Generate a random Latin Square of size S
- * 
- * If N is defined, it returns "Latin Rectangle" (SxN) 
- * 
- * A parameter controls for self-match, i.e. whether the symbol "i" 
- * is found or not in in column "i".
- * 
- * @api private
- * @param {number} S The number of rows
- * @param {number} Optional. N The number of columns. Defaults N = S
- * @param {boolean} Optional. If TRUE self-match is allowed. Defaults TRUE
- * @return {array} The resulting latin square (or rectangle)
- * 
- */
-ARRAY._latinSquare = function (S, N, self) {
-	self = ('undefined' === typeof self) ? true : self;
-	if (S === N && !self) return false; // <!-- infinite loop -->
-	var seq = [];
-	var latin = [];
-	for (var i=0; i< S; i++) {
-		seq[i] = i;
-	}
-	
-	var idx = null;
-	
-	var start = 0;
-	var limit = S;
-	var extracted = [];
-	if (!self) {
-    	limit = S-1;
-	}
-	
-	for (i=0; i < N; i++) {
-		do {
-			idx = JSUS.randomInt(start,limit);
-		}
-		while (JSUS.in_array(idx, extracted));
-		extracted.push(idx);
-		
-		if (idx == 1) {
-			latin[i] = seq.slice(idx);
-			latin[i].push(0);
-		}
-		else {
-			latin[i] = seq.slice(idx).concat(seq.slice(0,(idx)));
-		}
-		
-	}
-	
-	return latin;
-};
-
-/**
- * ## ARRAY.latinSquare
- * 
- * Generate a random Latin Square of size S
- * 
- * If N is defined, it returns "Latin Rectangle" (SxN) 
- * 
- * @param {number} S The number of rows
- * @param {number} Optional. N The number of columns. Defaults N = S
- * @return {array} The resulting latin square (or rectangle)
- * 
- */
-ARRAY.latinSquare = function (S, N) {
-	if (!N) N = S;
-	if (!S || S < 0 || (N < 0)) return false;
-	if (N > S) N = S;
-	
-	return ARRAY._latinSquare(S, N, true);
-};
-
-/**
- * ## ARRAY.latinSquareNoSelf
- * 
- * Generate a random Latin Square of size Sx(S-1), where 
- * in each column "i", the symbol "i" is not found
- * 
- * If N < S, it returns a "Latin Rectangle" (SxN)
- * 
- * @param {number} S The number of rows
- * @param {number} Optional. N The number of columns. Defaults N = S-1
- * @return {array} The resulting latin square (or rectangle)
- */
-ARRAY.latinSquareNoSelf = function (S, N) {
-	if (!N) N = S-1;
-	if (!S || S < 0 || (N < 0)) return false;
-	if (N > S) N = S-1;
-	
-	return ARRAY._latinSquare(S, N, false);
-}
-
-
-/**
- * ## ARRAY.generateCombinations
- * 
- *  Generates all distinct combinations of exactly r elements each 
- *  and returns them into an array
- *  
- *  @param {array} array The array from which the combinations are extracted
- *  @param {number} r The number of elements in each combination
- *  @return {array} The total sets of combinations
- *  
- *  	@see ARRAY.getGroupSizeN
- *  	@see ARRAY.getNGroups
- *  	@see ARRAY.matchN
- * 
- */
-ARRAY.generateCombinations = function (array, r) {
-    function values(i, a) {
-        var ret = [];
-        for (var j = 0; j < i.length; j++) ret.push(a[i[j]]);
-        return ret;
-    }
-    var n = array.length;
-    var indices = [];
-    for (var i = 0; i < r; i++) indices.push(i);
-    var final = [];
-    for (var i = n - r; i < n; i++) final.push(i);
-    while (!JSUS.equals(indices, final)) {
-        callback(values(indices, array));
-        var i = r - 1;
-        while (indices[i] == n - r + i) i -= 1;
-        indices[i] += 1;
-        for (var j = i + 1; j < r; j++) indices[j] = indices[i] + j - i;
-    }
-    return values(indices, array); 
-};
-
-/**
- * ## ARRAY.matchN
- * 
- * Match each element of the array with N random others
- * 
- * If strict is equal to true, elements cannot be matched multiple times.
- * 
- * *Important*: this method has a bug / feature. If the strict parameter is set,
- * the last elements could remain without match, because all the other have been 
- * already used. Another recombination would be able to match all the 
- * elements instead.
- * 
- * @param {array} array The array in which operate the matching
- * @param {number} N The number of matches per element
- * @param {Boolean} strict Optional. If TRUE, matched elements cannot be repeated. Defaults, FALSE 
- * @return {array} result The results of the matching
- * 
- *  	@see ARRAY.getGroupSizeN
- *  	@see ARRAY.getNGroups
- *  	@see ARRAY.generateCombinations
- * 
- */
-ARRAY.matchN = function (array, N, strict) {
-	if (!array) return;
-	if (!N) return array;
-	
-    var result = [],
-    	len = array.length,
-    	found = [];
-    for (var i = 0 ; i < len ; i++) {
-        // <!-- Recreate the array -->
+    /**
+     * ## ARRAY.shuffle
+     * 
+     * Shuffles the elements of the array using the Fischer algorithm
+     * 
+     * The original array is not modified, and a copy is returned.
+     * 
+     * @param {array} shuffle The array to shuffle
+     * @return {array} copy The shuffled array
+     * 
+     *          @see http://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle
+     */
+    ARRAY.shuffle = function (array) {
+        if (!array) return;
         var copy = array.slice(0);
-        copy.splice(i,1);
-        if (strict) {
-            copy = ARRAY.arrayDiff(copy,found);
+        var len = array.length-1; // ! -1
+        var j, tmp;
+        for (var i = len; i > 0; i--) {
+            j = Math.floor(Math.random()*(i+1));
+            tmp = copy[j];
+            copy[j] = copy[i];
+            copy[i] = tmp;
         }
-        var group = ARRAY.getNRandom(copy,N);
-        // <!-- Add to the set of used elements -->
-        found = found.concat(group);
-        // <!-- Re-add the current element -->
-        group.splice(0,0,array[i]);
-        result.push(group);
+        return copy;
+    };
+
+    /**
+     * ## ARRAY.getNRandom
+     * 
+     * Select N random elements from the array and returns them
+     * 
+     * @param {array} array The array from which extracts random elements
+     * @paran {number} N The number of random elements to extract
+     * @return {array} An new array with N elements randomly chose from the original array  
+     */
+    ARRAY.getNRandom = function (array, N) {
+        return ARRAY.shuffle(array).slice(0,N);
+    };                           
+    
+    /**
+     * ## ARRAY.distinct
+     * 
+     * Removes all duplicates entries from an array and returns a copy of it
+     * 
+     * Does not modify original array.
+     * 
+     * Comparison is done with `JSUS.equals`.
+     * 
+     * @param {array} array The array from which eliminates duplicates
+     * @return {array} out A copy of the array without duplicates
+     * 
+     *  @see JSUS.equals
+     */
+    ARRAY.distinct = function (array) {
+        var out = [];
+        if (!array) return out;
         
-        // <!-- Update -->
-        group = [];
-    }
-    return result;
-};
+        ARRAY.each(array, function(e) {
+            if (!ARRAY.in_array(e, out)) {
+                out.push(e);
+            }
+        });
+        return out;
+    };
 
-/**
- * ## ARRAY.rep
- * 
- * Appends an array to itself a number of times and return a new array
- * 
- * The original array is not modified.
- * 
- * @param {array} array the array to repeat 
- * @param {number} times The number of times the array must be appended to itself
- * @return {array} A copy of the original array appended to itself
- * 
- */
-ARRAY.rep = function (array, times) {
-	if (!array) return;
-	if (!times) return array.slice(0);
-	if (times < 1) {
-		JSUS.log('times must be greater or equal 1', 'ERR');
-		return;
-	}
-	
-    var i = 1, result = array.slice(0);
-    for (; i < times; i++) {
-        result = result.concat(array);
-    }
-    return result;
-};
+    /**
+     * ## ARRAY.transpose
+     * 
+     * Transposes a given 2D array.
+     * 
+     * The original array is not modified, and a new copy is
+     * returned.
+     *
+     * @param {array} array The array to transpose
+     * @return {array} The Transposed Array
+     * 
+     */
+    ARRAY.transpose = function (array) {
+        if (!array) return;  
+        
+        // Calculate width and height
+        var w, h, i, j, t = []; 
+        w = array.length || 0;
+        h = (ARRAY.isArray(array[0])) ? array[0].length : 0;
+        if (w === 0 || h === 0) return t;
+        
+        for ( i = 0; i < h; i++) {
+            t[i] = [];
+            for ( j = 0; j < w; j++) {     
+                t[i][j] = array[j][i];
+            }
+        } 
+        return t;
+    };
 
-/**
- * ## ARRAY.stretch
- * 
- * Repeats each element of the array N times
- * 
- * N can be specified as an integer or as an array. In the former case all 
- * the elements are repeat the same number of times. In the latter, the each
- * element can be repeated a custom number of times. If the length of the `times`
- * array differs from that of the array to stretch a recycle rule is applied.
- * 
- * The original array is not modified.
- * 
- * E.g.:
- * 
- * ```js
- * 	var foo = [1,2,3];
- * 
- * 	ARRAY.stretch(foo, 2); // [1, 1, 2, 2, 3, 3]
- * 
- * 	ARRAY.stretch(foo, [1,2,3]); // [1, 2, 2, 3, 3, 3];
- *
- * 	ARRAY.stretch(foo, [2,1]); // [1, 1, 2, 3, 3];
- * ```
- * 
- * @param {array} array the array to strech
- * @param {number|array} times The number of times each element must be repeated
- * @return {array} A stretched copy of the original array
- * 
- */
-ARRAY.stretch = function (array, times) {
-	if (!array) return;
-	if (!times) return array.slice(0);
-	if ('number' === typeof times) {
-		if (times < 1) {
-			JSUS.log('times must be greater or equal 1', 'ERR');
-			return;
-		}
-		times = ARRAY.rep([times], array.length);
-	}
-	
-    var result = [];
-    for (var i = 0; i < array.length; i++) {
-    	var repeat = times[(i % times.length)];
-        for (var j = 0; j < repeat ; j++) {
-        	result.push(array[i]);
-        }
-    }
-    return result;
-};
-
-
-/**
- * ## ARRAY.arrayIntersect
- * 
- * Computes the intersection between two arrays
- * 
- * Arrays can contain both primitive types and objects.
- * 
- * @param {array} a1 The first array
- * @param {array} a2 The second array
- * @return {array} All the values of the first array that are found also in the second one
- */
-ARRAY.arrayIntersect = function (a1, a2) {
-    return a1.filter( function(i) {
-        return JSUS.in_array(i, a2);
-    });
-};
-    
-/**
- * ## ARRAY.arrayDiff
- * 
- * Performs a diff between two arrays
- * 
- * Arrays can contain both primitive types and objects.
- * 
- * @param {array} a1 The first array
- * @param {array} a2 The second array
- * @return {array} All the values of the first array that are not found in the second one
- */
-ARRAY.arrayDiff = function (a1, a2) {
-    return a1.filter( function(i) {
-        return !(JSUS.in_array(i, a2));
-    });
-};
-
-/**
- * ## ARRAY.shuffle
- * 
- * Shuffles the elements of the array using the Fischer algorithm
- * 
- * The original array is not modified, and a copy is returned.
- * 
- * @param {array} shuffle The array to shuffle
- * @return {array} copy The shuffled array
- * 
- * 		@see http://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle
- */
-ARRAY.shuffle = function (array) {
-	if (!array) return;
-    var copy = array.slice(0);
-    var len = array.length-1; // ! -1
-    var j, tmp;
-    for (var i = len; i > 0; i--) {
-        j = Math.floor(Math.random()*(i+1));
-        tmp = copy[j];
-        copy[j] = copy[i];
-        copy[i] = tmp;
-    }
-    return copy;
-};
-
-/**
- * ## ARRAY.getNRandom
- * 
- * Select N random elements from the array and returns them
- * 
- * @param {array} array The array from which extracts random elements
- * @paran {number} N The number of random elements to extract
- * @return {array} An new array with N elements randomly chose from the original array  
- */
-ARRAY.getNRandom = function (array, N) {
-    return ARRAY.shuffle(array).slice(0,N);
-};                           
-    
-/**
- * ## ARRAY.distinct
- * 
- * Removes all duplicates entries from an array and returns a copy of it
- * 
- * Does not modify original array.
- * 
- * Comparison is done with `JSUS.equals`.
- * 
- * @param {array} array The array from which eliminates duplicates
- * @return {array} out A copy of the array without duplicates
- * 
- * 	@see JSUS.equals
- */
-ARRAY.distinct = function (array) {
-	var out = [];
-	if (!array) return out;
-	
-	ARRAY.each(array, function(e) {
-		if (!ARRAY.in_array(e, out)) {
-			out.push(e);
-		}
-	});
-	return out;
-	
-};
-
-/**
- * ## ARRAY.transpose
- * 
- * Transposes a given 2D array.
- * 
- * The original array is not modified, and a new copy is
- * returned.
- *
- * @param {array} array The array to transpose
- * @return {array} The Transposed Array
- * 
- */
-ARRAY.transpose = function (array) {
-	if (!array) return;  
-	
-	// Calculate width and height
-    var w, h, i, j, t = []; 
-	w = array.length || 0;
-	h = (ARRAY.isArray(array[0])) ? array[0].length : 0;
-	if (w === 0 || h === 0) return t;
-	
-	for ( i = 0; i < h; i++) {
-		t[i] = [];
-	    for ( j = 0; j < w; j++) {	   
-	    	t[i][j] = array[j][i];
-	    }
-	} 
-	return t;
-};
-
-JSUS.extend(ARRAY);
+    JSUS.extend(ARRAY);
     
 })('undefined' !== typeof JSUS ? JSUS : module.parent.exports.JSUS);
 /**
@@ -2818,941 +2819,1008 @@ JSUS.extend(EVAL);
 })('undefined' !== typeof JSUS ? JSUS : module.parent.exports.JSUS);
 /**
  * # OBJ
- *  
+ *
  * Copyright(c) 2012 Stefano Balietti
  * MIT Licensed
- * 
+ *
  * Collection of static functions to manipulate javascript objects
- * 
+ *
  */
 (function (JSUS) {
 
+    function OBJ(){};
 
-    
-function OBJ(){};
+    var compatibility = null;
 
-var compatibility = null;
+    if ('undefined' !== typeof JSUS.compatibility) {
+        compatibility = JSUS.compatibility();
+    }
 
-if ('undefined' !== typeof JSUS.compatibility) {
-	compatibility = JSUS.compatibility();
-}
+    /**
+     * ## OBJ.equals
+     *
+     * Checks for deep equality between two objects, string
+     * or primitive types.
+     *
+     * All nested properties are checked, and if they differ
+     * in at least one returns FALSE, otherwise TRUE.
+     *
+     * Takes care of comparing the following special cases:
+     *
+     * - undefined
+     * - null
+     * - NaN
+     * - Infinity
+     * - {}
+     * - falsy values
+     *
+     *
+     */
+    OBJ.equals = function (o1, o2) {
+        var type1 = typeof o1, type2 = typeof o2;
 
+        if (type1 !== type2) return false;
 
-/**
- * ## OBJ.equals
- * 
- * Checks for deep equality between two objects, string 
- * or primitive types.
- * 
- * All nested properties are checked, and if they differ 
- * in at least one returns FALSE, otherwise TRUE.
- * 
- * Takes care of comparing the following special cases: 
- * 
- * - undefined
- * - null
- * - NaN
- * - Infinity
- * - {}
- * - falsy values
- * 
- * 
- */
-OBJ.equals = function (o1, o2) {	
-	var type1 = typeof o1, type2 = typeof o2;
-	
-	if (type1 !== type2) return false;
-	
-	if ('undefined' === type1 || 'undefined' === type2) {
-		return (o1 === o2);
-	}
-	if (o1 === null || o2 === null) {
-		return (o1 === o2);
-	}
-	if (('number' === type1 && isNaN(o1)) && ('number' === type2 && isNaN(o2)) ) {
-		return (isNaN(o1) && isNaN(o2));
-	}
-	
-    // Check whether arguments are not objects
-	var primitives = {number: '', string: '', boolean: ''}
-    if (type1 in primitives) {
-    	return o1 === o2;
-    } 
-	
-	if ('function' === type1) {
-		return o1.toString() === o2.toString();
-	}
+        if ('undefined' === type1 || 'undefined' === type2) {
+            return (o1 === o2);
+        }
+        if (o1 === null || o2 === null) {
+            return (o1 === o2);
+        }
+        if (('number' === type1 && isNaN(o1)) && ('number' === type2 && isNaN(o2)) ) {
+            return (isNaN(o1) && isNaN(o2));
+        }
 
-    for (var p in o1) {
-        if (o1.hasOwnProperty(p)) {
-          
-            if ('undefined' === typeof o2[p] && 'undefined' !== typeof o1[p]) return false;
-            if (!o2[p] && o1[p]) return false; // <!-- null --> 
-            
-            switch (typeof o1[p]) {
+        // Check whether arguments are not objects
+        var primitives = {number: '', string: '', boolean: ''}
+        if (type1 in primitives) {
+            return o1 === o2;
+        }
+
+        if ('function' === type1) {
+            return o1.toString() === o2.toString();
+        }
+
+        for (var p in o1) {
+            if (o1.hasOwnProperty(p)) {
+
+                if ('undefined' === typeof o2[p] && 'undefined' !== typeof o1[p]) return false;
+                if (!o2[p] && o1[p]) return false; // <!-- null -->
+
+                switch (typeof o1[p]) {
                 case 'function':
-                        if (o1[p].toString() !== o2[p].toString()) return false;
-                        
-                    default:
-                    	if (!OBJ.equals(o1[p], o2[p])) return false; 
-              }
-          } 
-      }
-  
-      // Check whether o2 has extra properties
-  // TODO: improve, some properties have already been checked!
-  for (p in o2) {
-      if (o2.hasOwnProperty(p)) {
-          if ('undefined' === typeof o1[p] && 'undefined' !== typeof o2[p]) return false;
-          if (!o1[p] && o2[p]) return false; // <!-- null --> 
-      }
-  }
+                    if (o1[p].toString() !== o2[p].toString()) return false;
 
-  return true;
-};
-
-/**
- * ## OBJ.isEmpty
- * 
- * Returns TRUE if an object has no own properties, 
- * FALSE otherwise
- * 
- * Does not check properties of the prototype chain.
- * 
- * @param {object} o The object to check
- * @return {boolean} TRUE, if the object has no properties
- * 
- */
-OBJ.isEmpty = function (o) {
-	if ('undefined' === typeof o) return true;
-	
-    for (var key in o) {
-        if (o.hasOwnProperty(key)) {
-        	return false;
-        }
-    }
-
-    return true;
-};
-
-
-/**
- * ## OBJ.size
- * 
- * Counts the number of own properties of an object.
- * 
- * Prototype chain properties are excluded.
- * 
- * @param {object} obj The object to check
- * @return {number} The number of properties in the object
- */
-OBJ.size = OBJ.getListSize = function (obj) {
-	if (!obj) return 0;
-	if ('number' === typeof obj) return 0;
-	if ('string' === typeof obj) return 0;
-	
-    var n = 0;
-    for (var key in obj) {
-        if (obj.hasOwnProperty(key)) {
-            n++;
-        }
-    }
-    return n;
-};
-
-/**
- * ## OBJ._obj2Array
- * 
- * Explodes an object into an array of keys and values,
- * according to the specified parameters.
-
- * A fixed level of recursion can be set.
- * 
- * @api private
- * @param {object} obj The object to convert in array
- * @param {boolean} keyed TRUE, if also property names should be included. Defaults FALSE
- * @param {number} level Optional. The level of recursion. Defaults undefined
- * @return {array} The converted object
- */
-OBJ._obj2Array = function(obj, keyed, level, cur_level) {
-    if ('object' !== typeof obj) return [obj];
-    
-    if (level) {
-        cur_level = ('undefined' !== typeof cur_level) ? cur_level : 1;
-        if (cur_level > level) return [obj];
-        cur_level = cur_level + 1;
-    }
-    
-    var result = [];
-    for (var key in obj) {
-        if (obj.hasOwnProperty(key)) {
-        	if (keyed) result.push(key);
-            if ('object' === typeof obj[key]) {
-                result = result.concat(OBJ._obj2Array(obj[key], keyed, level, cur_level));
-            } else {
-                result.push(obj[key]);
+                default:
+                    if (!OBJ.equals(o1[p], o2[p])) return false;
+                }
             }
-           
         }
-    }      
-    
-    return result;
-};
 
-/**
- * ## OBJ.obj2Array
- * 
- * Converts an object into an array, keys are lost
- * 
- * Recursively put the values of the properties of an object into 
- * an array and returns it.
- * 
- * The level of recursion can be set with the parameter level. 
- * By default recursion has no limit, i.e. that the whole object 
- * gets totally unfolded into an array.
- * 
- * @param {object} obj The object to convert in array
- * @param {number} level Optional. The level of recursion. Defaults, undefined
- * @return {array} The converted object
- * 
- * 	@see OBJ._obj2Array
- *	@see OBJ.obj2KeyedArray
- * 
- */
-OBJ.obj2Array = function (obj, level) {
-    return OBJ._obj2Array(obj, false, level);
-};
-
-/**
- * ## OBJ.obj2KeyedArray
- * 
- * Converts an object into array, keys are preserved
- * 
- * Creates an array containing all keys and values of an object and 
- * returns it.
- * 
- * @param {object} obj The object to convert in array
- * @param {number} level Optional. The level of recursion. Defaults, undefined
- * @return {array} The converted object
- * 
- * @see OBJ.obj2Array 
- * 
- */
-OBJ.obj2KeyedArray = OBJ.obj2KeyArray = function (obj, level) {
-    return OBJ._obj2Array(obj, true, level);
-};
-
-/**
- * ## OBJ.keys
- * 
- * Scans an object an returns all the keys of the properties,
- * into an array. 
- * 
- * The second paramter controls the level of nested objects 
- * to be evaluated. Defaults 0 (nested properties are skipped).
- * 
- * @param {object} obj The object from which extract the keys
- * @param {number} level Optional. The level of recursion. Defaults 0
- * @return {array} The array containing the extracted keys
- * 
- * 	@see Object.keys
- * 
- */
-OBJ.keys = OBJ.objGetAllKeys = function (obj, level, curLevel) {
-    if (!obj) return [];
-    level = ('number' === typeof level && level >= 0) ? level : 0; 
-    curLevel = ('number' === typeof curLevel && curLevel >= 0) ? curLevel : 0;
-    var result = [];
-    for (var key in obj) {
-       if (obj.hasOwnProperty(key)) {
-           result.push(key);
-           if (curLevel < level) {
-               if ('object' === typeof obj[key]) {
-                   result = result.concat(OBJ.objGetAllKeys(obj[key], (curLevel+1)));
-               }
-           }
-       }
-    }
-    return result;
-};
-
-/**
- * ## OBJ.implode
- * 
- * Separates each property into a new objects and returns
- * them into an array
- * 
- * E.g.
- * 
- * ```javascript
- * var a = { b:2, c: {a:1}, e:5 };
- * OBJ.implode(a); // [{b:2}, {c:{a:1}}, {e:5}]
- * ```
- * 
- * @param {object} obj The object to implode
- * @return {array} result The array containig all the imploded properties
- * 
- */
-OBJ.implode = OBJ.implodeObj = function (obj) {
-	if (!obj) return [];
-    var result = [];
-    for (var key in obj) {
-        if (obj.hasOwnProperty(key)) {
-            var o = {};
-            o[key] = obj[key];
-            result.push(o);
+        // Check whether o2 has extra properties
+        // TODO: improve, some properties have already been checked!
+        for (p in o2) {
+            if (o2.hasOwnProperty(p)) {
+                if ('undefined' === typeof o1[p] && 'undefined' !== typeof o2[p]) return false;
+                if (!o1[p] && o2[p]) return false; // <!-- null -->
+            }
         }
-    }
-    return result;
-};
- 
-/**
- * ## OBJ.clone
- * 
- * Creates a perfect copy of the object passed as parameter
- * 
- * Recursively scans all the properties of the object to clone.
- * Properties of the prototype chain are copied as well.
- * 
- * Primitive types and special values are returned as they are.
- *  
- * @param {object} obj The object to clone
- * @return {object} clone The clone of the object
- */
-OBJ.clone = function (obj) {
-	if (!obj) return obj;
-	if ('number' === typeof obj) return obj;
-	if ('string' === typeof obj) return obj;
-	if ('boolean' === typeof obj) return obj;
-	if (obj === NaN) return obj;
-	if (obj === Infinity) return obj;
-	
-	var clone;
-	if ('function' === typeof obj) {
-//		clone = obj;
-		// <!-- Check when and if we need this -->
-		clone = function() { return obj.apply(clone, arguments); };
-	}
-	else {
-		clone = (Object.prototype.toString.call(obj) === '[object Array]') ? [] : {};
-	}
-	
-	for (var i in obj) {
-		var value;
-		// TODO: index i is being updated, so apply is called on the 
-		// last element, instead of the correct one.
-//		if ('function' === typeof obj[i]) {
-//			value = function() { return obj[i].apply(clone, arguments); };
-//		}
-		// It is not NULL and it is an object
-		if (obj[i] && 'object' === typeof obj[i]) {
-			// is an array
-			if (Object.prototype.toString.call(obj[i]) === '[object Array]') {
-				value = obj[i].slice(0);
-			}
-			// is an object
-			else {
-				value = OBJ.clone(obj[i]);
-			}
-		}
-		else {
-			value = obj[i];
-		} 
-	 	
-	    if (obj.hasOwnProperty(i)) {
-	    	clone[i] = value;
-	    }
-	    else {
-	    	// we know if object.defineProperty is available
-	    	if (compatibility && compatibility.defineProperty) {
-		    	Object.defineProperty(clone, i, {
-		    		value: value,
-	         		writable: true,
-	         		configurable: true
-	         	});
-	    	}
-	    	else {
-	    		// or we try...
-	    		try {
-	    			Object.defineProperty(clone, i, {
-			    		value: value,
-		         		writable: true,
-		         		configurable: true
-		         	});
-	    		}
-		    	catch(e) {
-		    		clone[i] = value;
-		    	}
-	    	}
-	    }
-    }
-    return clone;
-};
-    
-/**
- * ## OBJ.join
- * 
- * Performs a *left* join on the keys of two objects
- * 
- * Creates a copy of obj1, and in case keys overlap 
- * between obj1 and obj2, the values from obj2 are taken. 
- * 
- * Returns a new object, the original ones are not modified.
- *  
- * E.g.
- * 
- * ```javascript
- * var a = { b:2, c:3, e:5 };
- * var b = { a:10, b:2, c:100, d:4 };
- * OBJ.join(a, b); // { b:2, c:100, e:5 }
- * ```
- *  
- * @param {object} obj1 The object where the merge will take place
- * @param {object} obj2 The merging object
- * @return {object} clone The joined object
- * 
- * 	@see OBJ.merge
- */
-OBJ.join = function (obj1, obj2) {
-    var clone = OBJ.clone(obj1);
-    if (!obj2) return clone;
-    for (var i in clone) {
-        if (clone.hasOwnProperty(i)) {
-            if ('undefined' !== typeof obj2[i]) {
-                if ('object' === typeof obj2[i]) {
-                    clone[i] = OBJ.join(clone[i], obj2[i]);
+
+        return true;
+    };
+
+    /**
+     * ## OBJ.isEmpty
+     *
+     * Returns TRUE if an object has no own properties,
+     * FALSE otherwise
+     *
+     * Does not check properties of the prototype chain.
+     *
+     * @param {object} o The object to check
+     * @return {boolean} TRUE, if the object has no properties
+     *
+     */
+    OBJ.isEmpty = function (o) {
+        if ('undefined' === typeof o) return true;
+
+        for (var key in o) {
+            if (o.hasOwnProperty(key)) {
+                return false;
+            }
+        }
+
+        return true;
+    };
+
+
+    /**
+     * ## OBJ.size
+     *
+     * Counts the number of own properties of an object.
+     *
+     * Prototype chain properties are excluded.
+     *
+     * @param {object} obj The object to check
+     * @return {number} The number of properties in the object
+     */
+    OBJ.size = OBJ.getListSize = function (obj) {
+        if (!obj) return 0;
+        if ('number' === typeof obj) return 0;
+        if ('string' === typeof obj) return 0;
+
+        var n = 0;
+        for (var key in obj) {
+            if (obj.hasOwnProperty(key)) {
+                n++;
+            }
+        }
+        return n;
+    };
+
+    /**
+     * ## OBJ._obj2Array
+     *
+     * Explodes an object into an array of keys and values,
+     * according to the specified parameters.
+
+     * A fixed level of recursion can be set.
+     *
+     * @api private
+     * @param {object} obj The object to convert in array
+     * @param {boolean} keyed TRUE, if also property names should be included. Defaults FALSE
+     * @param {number} level Optional. The level of recursion. Defaults undefined
+     * @return {array} The converted object
+     */
+    OBJ._obj2Array = function(obj, keyed, level, cur_level) {
+        if ('object' !== typeof obj) return [obj];
+
+        if (level) {
+            cur_level = ('undefined' !== typeof cur_level) ? cur_level : 1;
+            if (cur_level > level) return [obj];
+            cur_level = cur_level + 1;
+        }
+
+        var result = [];
+        for (var key in obj) {
+            if (obj.hasOwnProperty(key)) {
+                if (keyed) result.push(key);
+                if ('object' === typeof obj[key]) {
+                    result = result.concat(OBJ._obj2Array(obj[key], keyed, level, cur_level));
+                } else {
+                    result.push(obj[key]);
+                }
+            }
+        }
+
+        return result;
+    };
+
+    /**
+     * ## OBJ.obj2Array
+     *
+     * Converts an object into an array, keys are lost
+     *
+     * Recursively put the values of the properties of an object into
+     * an array and returns it.
+     *
+     * The level of recursion can be set with the parameter level.
+     * By default recursion has no limit, i.e. that the whole object
+     * gets totally unfolded into an array.
+     *
+     * @param {object} obj The object to convert in array
+     * @param {number} level Optional. The level of recursion. Defaults, undefined
+     * @return {array} The converted object
+     *
+     *  @see OBJ._obj2Array
+     *  @see OBJ.obj2KeyedArray
+     *
+     */
+    OBJ.obj2Array = function (obj, level) {
+        return OBJ._obj2Array(obj, false, level);
+    };
+
+    /**
+     * ## OBJ.obj2KeyedArray
+     *
+     * Converts an object into array, keys are preserved
+     *
+     * Creates an array containing all keys and values of an object and
+     * returns it.
+     *
+     * @param {object} obj The object to convert in array
+     * @param {number} level Optional. The level of recursion. Defaults, undefined
+     * @return {array} The converted object
+     *
+     * @see OBJ.obj2Array
+     *
+     */
+    OBJ.obj2KeyedArray = OBJ.obj2KeyArray = function (obj, level) {
+        return OBJ._obj2Array(obj, true, level);
+    };
+
+    /**
+     * ## OBJ.keys
+     *
+     * Scans an object an returns all the keys of the properties,
+     * into an array.
+     *
+     * The second paramter controls the level of nested objects
+     * to be evaluated. Defaults 0 (nested properties are skipped).
+     *
+     * @param {object} obj The object from which extract the keys
+     * @param {number} level Optional. The level of recursion. Defaults 0
+     * @return {array} The array containing the extracted keys
+     *
+     *  @see Object.keys
+     *
+     */
+    OBJ.keys = OBJ.objGetAllKeys = function (obj, level, curLevel) {
+        if (!obj) return [];
+        level = ('number' === typeof level && level >= 0) ? level : 0;
+        curLevel = ('number' === typeof curLevel && curLevel >= 0) ? curLevel : 0;
+        var result = [];
+        for (var key in obj) {
+            if (obj.hasOwnProperty(key)) {
+                result.push(key);
+                if (curLevel < level) {
+                    if ('object' === typeof obj[key]) {
+                        result = result.concat(OBJ.objGetAllKeys(obj[key], (curLevel+1)));
+                    }
+                }
+            }
+        }
+        return result;
+    };
+
+    /**
+     * ## OBJ.implode
+     *
+     * Separates each property into a new objects and returns
+     * them into an array
+     *
+     * E.g.
+     *
+     * ```javascript
+     * var a = { b:2, c: {a:1}, e:5 };
+     * OBJ.implode(a); // [{b:2}, {c:{a:1}}, {e:5}]
+     * ```
+     *
+     * @param {object} obj The object to implode
+     * @return {array} result The array containig all the imploded properties
+     *
+     */
+    OBJ.implode = OBJ.implodeObj = function (obj) {
+        if (!obj) return [];
+        var result = [];
+        for (var key in obj) {
+            if (obj.hasOwnProperty(key)) {
+                var o = {};
+                o[key] = obj[key];
+                result.push(o);
+            }
+        }
+        return result;
+    };
+
+    /**
+     * ## OBJ.clone
+     *
+     * Creates a perfect copy of the object passed as parameter
+     *
+     * Recursively scans all the properties of the object to clone.
+     * Properties of the prototype chain are copied as well.
+     *
+     * Primitive types and special values are returned as they are.
+     *
+     * @param {object} obj The object to clone
+     * @return {object} clone The clone of the object
+     */
+    OBJ.clone = function (obj) {
+        if (!obj) return obj;
+        if ('number' === typeof obj) return obj;
+        if ('string' === typeof obj) return obj;
+        if ('boolean' === typeof obj) return obj;
+        if (obj === NaN) return obj;
+        if (obj === Infinity) return obj;
+
+        var clone;
+        if ('function' === typeof obj) {
+            //          clone = obj;
+            // <!-- Check when and if we need this -->
+            clone = function() { return obj.apply(clone, arguments); };
+        }
+        else {
+            clone = (Object.prototype.toString.call(obj) === '[object Array]') ? [] : {};
+        }
+
+        for (var i in obj) {
+            var value;
+            // TODO: index i is being updated, so apply is called on the
+            // last element, instead of the correct one.
+            //          if ('function' === typeof obj[i]) {
+            //                  value = function() { return obj[i].apply(clone, arguments); };
+            //          }
+            // It is not NULL and it is an object
+            if (obj[i] && 'object' === typeof obj[i]) {
+                // is an array
+                if (Object.prototype.toString.call(obj[i]) === '[object Array]') {
+                    value = obj[i].slice(0);
+                }
+                // is an object
+                else {
+                    value = OBJ.clone(obj[i]);
+                }
+            }
+            else {
+                value = obj[i];
+            }
+
+            if (obj.hasOwnProperty(i)) {
+                clone[i] = value;
+            }
+            else {
+                // we know if object.defineProperty is available
+                if (compatibility && compatibility.defineProperty) {
+                    Object.defineProperty(clone, i, {
+                        value: value,
+                        writable: true,
+                        configurable: true
+                    });
+                }
+                else {
+                    // or we try...
+                    try {
+                        Object.defineProperty(clone, i, {
+                            value: value,
+                            writable: true,
+                            configurable: true
+                        });
+                    }
+                    catch(e) {
+                        clone[i] = value;
+                    }
+                }
+            }
+        }
+        return clone;
+    };
+
+    /**
+     * ## OBJ.join
+     *
+     * Performs a *left* join on the keys of two objects
+     *
+     * Creates a copy of obj1, and in case keys overlap
+     * between obj1 and obj2, the values from obj2 are taken.
+     *
+     * Returns a new object, the original ones are not modified.
+     *
+     * E.g.
+     *
+     * ```javascript
+     * var a = { b:2, c:3, e:5 };
+     * var b = { a:10, b:2, c:100, d:4 };
+     * OBJ.join(a, b); // { b:2, c:100, e:5 }
+     * ```
+     *
+     * @param {object} obj1 The object where the merge will take place
+     * @param {object} obj2 The merging object
+     * @return {object} clone The joined object
+     *
+     *  @see OBJ.merge
+     */
+    OBJ.join = function (obj1, obj2) {
+        var clone = OBJ.clone(obj1);
+        if (!obj2) return clone;
+        for (var i in clone) {
+            if (clone.hasOwnProperty(i)) {
+                if ('undefined' !== typeof obj2[i]) {
+                    if ('object' === typeof obj2[i]) {
+                        clone[i] = OBJ.join(clone[i], obj2[i]);
+                    } else {
+                        clone[i] = obj2[i];
+                    }
+                }
+            }
+        }
+        return clone;
+    };
+
+    /**
+     * ## OBJ.merge
+     *
+     * Merges two objects in one
+     *
+     * In case keys overlap the values from obj2 are taken.
+     *
+     * Only own properties are copied.
+     *
+     * Returns a new object, the original ones are not modified.
+     *
+     * E.g.
+     *
+     * ```javascript
+     * var a = { a:1, b:2, c:3 };
+     * var b = { a:10, b:2, c:100, d:4 };
+     * OBJ.merge(a, b); // { a: 10, b: 2, c: 100, d: 4 }
+     * ```
+     *
+     * @param {object} obj1 The object where the merge will take place
+     * @param {object} obj2 The merging object
+     * @return {object} clone The merged object
+     *
+     *  @see OBJ.join
+     *  @see OBJ.mergeOnKey
+     */
+    OBJ.merge = function (obj1, obj2) {
+        // Checking before starting the algorithm
+        if (!obj1 && !obj2) return false;
+        if (!obj1) return OBJ.clone(obj2);
+        if (!obj2) return OBJ.clone(obj1);
+
+        var clone = OBJ.clone(obj1);
+        for (var i in obj2) {
+
+            if (obj2.hasOwnProperty(i)) {
+                // it is an object and it is not NULL
+                if ( obj2[i] && 'object' === typeof obj2[i] ) {
+                    // If we are merging an object into
+                    // a non-object, we need to cast the
+                    // type of obj1
+                    if ('object' !== typeof clone[i]) {
+                        if (Object.prototype.toString.call(obj2[i]) === '[object Array]') {
+                            clone[i] = [];
+                        }
+                        else {
+                            clone[i] = {};
+                        }
+                    }
+                    clone[i] = OBJ.merge(clone[i], obj2[i]);
                 } else {
                     clone[i] = obj2[i];
                 }
             }
         }
-    }
-    return clone;
-};
 
-/**
- * ## OBJ.merge
- * 
- * Merges two objects in one
- * 
- * In case keys overlap the values from obj2 are taken. 
- * 
- * Only own properties are copied.
- * 
- * Returns a new object, the original ones are not modified.
- * 
- * E.g.
- * 
- * ```javascript
- * var a = { a:1, b:2, c:3 };
- * var b = { a:10, b:2, c:100, d:4 };
- * OBJ.merge(a, b); // { a: 10, b: 2, c: 100, d: 4 }
- * ```
- * 
- * @param {object} obj1 The object where the merge will take place
- * @param {object} obj2 The merging object
- * @return {object} clone The merged object
- * 
- * 	@see OBJ.join
- * 	@see OBJ.mergeOnKey
- */
-OBJ.merge = function (obj1, obj2) {
-	// Checking before starting the algorithm
-	if (!obj1 && !obj2) return false;
-	if (!obj1) return OBJ.clone(obj2);
-	if (!obj2) return OBJ.clone(obj1);
-	
-    var clone = OBJ.clone(obj1);
-    for (var i in obj2) {
-    	
-        if (obj2.hasOwnProperty(i)) {
-        	// it is an object and it is not NULL
-            if ( obj2[i] && 'object' === typeof obj2[i] ) {
-            	// If we are merging an object into  
-            	// a non-object, we need to cast the 
-            	// type of obj1
-            	if ('object' !== typeof clone[i]) {
-            		if (Object.prototype.toString.call(obj2[i]) === '[object Array]') {
-            			clone[i] = [];
-            		}
-            		else {
-            			clone[i] = {};
-            		}
-            	}
-                clone[i] = OBJ.merge(clone[i], obj2[i]);
-            } else {
-                clone[i] = obj2[i];
+        return clone;
+    };
+
+    /**
+     * ## OBJ.mixin
+     *
+     * Adds all the properties of obj2 into obj1
+     *
+     * Original object is modified
+     *
+     * @param {object} obj1 The object to which the new properties will be added
+     * @param {object} obj2 The mixin-in object
+     */
+    OBJ.mixin = function (obj1, obj2) {
+        if (!obj1 && !obj2) return;
+        if (!obj1) return obj2;
+        if (!obj2) return obj1;
+
+        for (var i in obj2) {
+            obj1[i] = obj2[i];
+        }
+    };
+
+    /**
+     * ## OBJ.mixout
+     *
+     * Copies only non-overlapping properties from obj2 to obj1
+     *
+     * Original object is modified
+     *
+     * @param {object} obj1 The object to which the new properties will be added
+     * @param {object} obj2 The mixin-in object
+     */
+    OBJ.mixout = function (obj1, obj2) {
+        if (!obj1 && !obj2) return;
+        if (!obj1) return obj2;
+        if (!obj2) return obj1;
+
+        for (var i in obj2) {
+            if (!obj1[i]) obj1[i] = obj2[i];
+        }
+    };
+
+    /**
+     * ## OBJ.mixcommon
+     *
+     * Copies only overlapping properties from obj2 to obj1
+     *
+     * Original object is modified
+     *
+     * @param {object} obj1 The object to which the new properties will be added
+     * @param {object} obj2 The mixin-in object
+     */
+    OBJ.mixcommon = function (obj1, obj2) {
+        if (!obj1 && !obj2) return;
+        if (!obj1) return obj2;
+        if (!obj2) return obj1;
+
+        for (var i in obj2) {
+            if (obj1[i]) obj1[i] = obj2[i];
+        }
+    };
+
+    /**
+     * ## OBJ.mergeOnKey
+     *
+     * Appends / merges the values of the properties of obj2 into a
+     * a new property named 'key' in obj1.
+     *
+     * Returns a new object, the original ones are not modified.
+     *
+     * This method is useful when we want to merge into a larger
+     * configuration (e.g. min, max, value) object another one that
+     * contains just the values for one of the properties (e.g. value).
+     *
+     * @param {object} obj1 The object where the merge will take place
+     * @param {object} obj2 The merging object
+     * @param {string} key The name of property under which merging the second object
+     * @return {object} clone The merged object
+     *
+     *  @see OBJ.merge
+     *
+     */
+    OBJ.mergeOnKey = function (obj1, obj2, key) {
+        var clone = OBJ.clone(obj1);
+        if (!obj2 || !key) return clone;
+        for (var i in obj2) {
+            if (obj2.hasOwnProperty(i)) {
+                if (!clone[i] || 'object' !== typeof clone[i]) {
+                    clone[i] = {};
+                }
+                clone[i][key] = obj2[i];
             }
         }
-    }
-    
-    return clone;
-};
+        return clone;
+    };
 
-/**
- * ## OBJ.mixin
- * 
- * Adds all the properties of obj2 into obj1
- * 
- * Original object is modified
- * 
- * @param {object} obj1 The object to which the new properties will be added
- * @param {object} obj2 The mixin-in object
- */
-OBJ.mixin = function (obj1, obj2) {
-	if (!obj1 && !obj2) return;
-	if (!obj1) return obj2;
-	if (!obj2) return obj1;
-	
-	for (var i in obj2) {
-		obj1[i] = obj2[i];
-	}
-};
-
-/**
- * ## OBJ.mixout
- * 
- * Copies only non-overlapping properties from obj2 to obj1
- * 
- * Original object is modified
- * 
- * @param {object} obj1 The object to which the new properties will be added
- * @param {object} obj2 The mixin-in object
- */
-OBJ.mixout = function (obj1, obj2) {
-	if (!obj1 && !obj2) return;
-	if (!obj1) return obj2;
-	if (!obj2) return obj1;
-	
-	for (var i in obj2) {
-		if (!obj1[i]) obj1[i] = obj2[i];
-	}
-};
-
-/**
- * ## OBJ.mixcommon
- * 
- * Copies only overlapping properties from obj2 to obj1
- * 
- * Original object is modified
- * 
- * @param {object} obj1 The object to which the new properties will be added
- * @param {object} obj2 The mixin-in object
- */
-OBJ.mixcommon = function (obj1, obj2) {
-	if (!obj1 && !obj2) return;
-	if (!obj1) return obj2;
-	if (!obj2) return obj1;
-	
-	for (var i in obj2) {
-		if (obj1[i]) obj1[i] = obj2[i];
-	}
-};
-
-/**
- * ## OBJ.mergeOnKey
- * 
- * Appends / merges the values of the properties of obj2 into a 
- * a new property named 'key' in obj1.
- * 
- * Returns a new object, the original ones are not modified.
- * 
- * This method is useful when we want to merge into a larger 
- * configuration (e.g. min, max, value) object another one that 
- * contains just the values for one of the properties (e.g. value). 
- * 
- * @param {object} obj1 The object where the merge will take place
- * @param {object} obj2 The merging object
- * @param {string} key The name of property under which merging the second object
- * @return {object} clone The merged object
- * 	
- * 	@see OBJ.merge
- * 
- */
-OBJ.mergeOnKey = function (obj1, obj2, key) {
-    var clone = OBJ.clone(obj1);
-    if (!obj2 || !key) return clone;        
-    for (var i in obj2) {
-        if (obj2.hasOwnProperty(i)) {
-            if (!clone[i] || 'object' !== typeof clone[i]) {
-            	clone[i] = {};
-            } 
-            clone[i][key] = obj2[i];
-        }
-    }
-    return clone;
-};
-    
-/**
- * ## OBJ.subobj
- * 
- * Creates a copy of an object containing only the properties 
- * passed as second parameter
- * 
- * The parameter select can be an array of strings, or the name 
- * of a property. 
- * 
- * Use '.' (dot) to point to a nested property.
- * 
- * @param {object} o The object to dissect
- * @param {string|array} select The selection of properties to extract
- * @return {object} out The subobject with the properties from the parent one 
- * 
- * 	@see OBJ.getNestedValue
- */
-OBJ.subobj = function (o, select) {
-    if (!o) return false;
-    var out = {};
-    if (!select) return out;
-    if (!(select instanceof Array)) select = [select];
-    for (var i=0; i < select.length; i++) {
-        var key = select[i];
-        if (OBJ.hasOwnNestedProperty(key, o)) {
-        	OBJ.setNestedValue(key, OBJ.getNestedValue(key, o), out);
-        }
-    }
-    return out;
-};
-  
-/**
- * ## OBJ.skim
- * 
- * Creates a copy of an object where a set of selected properties
- * have been removed
- * 
- * The parameter `remove` can be an array of strings, or the name 
- * of a property. 
- * 
- * Use '.' (dot) to point to a nested property.
- * 
- * @param {object} o The object to dissect
- * @param {string|array} remove The selection of properties to remove
- * @return {object} out The subobject with the properties from the parent one 
- * 
- * 	@see OBJ.getNestedValue
- */
-OBJ.skim = function (o, remove) {
-    if (!o) return false;
-    var out = OBJ.clone(o);
-    if (!remove) return out;
-    if (!(remove instanceof Array)) remove = [remove];
-    for (var i=0; i < remove.length; i++) {
-    	OBJ.deleteNestedKey(remove[i], out);
-    }
-    return out;
-};
-
-
-/**
- * ## OBJ.setNestedValue
- * 
- * Sets the value of a nested property of an object,
- * and returns it.
- *
- * If the object is not passed a new one is created.
- * If the nested property is not existing, a new one is created.
- * 
- * Use '.' (dot) to point to a nested property.
- *
- * The original object is modified.
- *
- * @param {string} str The path to the value
- * @param {mixed} value The value to set
- * @return {object|boolean} obj The modified object, or FALSE if error occurred
- * 
- * @see OBJ.getNestedValue
- * @see OBJ.deleteNestedKey
- *  
- */
-OBJ.setNestedValue = function (str, value, obj) {
-	if (!str) {
-		JSUS.log('Cannot set value of undefined property', 'ERR');
-		return false;
-	}
-	obj = ('object' === typeof obj) ? obj : {};
-    var keys = str.split('.');
-    if (keys.length === 1) {
-    	obj[str] = value;
-        return obj;
-    }
-    var k = keys.shift();
-    obj[k] = OBJ.setNestedValue(keys.join('.'), value, obj[k]);
-    return obj;
-};
-
-/**
- * ## OBJ.getNestedValue
- * 
- * Returns the value of a property of an object, as defined
- * by a path string. 
- * 
- * Use '.' (dot) to point to a nested property.
- *  
- * Returns undefined if the nested property does not exist.
- * 
- * E.g.
- * 
- * ```javascript
- * var o = { a:1, b:{a:2} };
- * OBJ.getNestedValue('b.a', o); // 2
- * ```
- * 
- * @param {string} str The path to the value
- * @param {object} obj The object from which extract the value
- * @return {mixed} The extracted value
- * 
- * @see OBJ.setNestedValue
- * @see OBJ.deleteNestedKey
- */
-OBJ.getNestedValue = function (str, obj) {
-    if (!obj) return;
-    var keys = str.split('.');
-    if (keys.length === 1) {
-        return obj[str];
-    }
-    var k = keys.shift();
-    return OBJ.getNestedValue(keys.join('.'), obj[k]); 
-};
-
-/**
- * ## OBJ.deleteNestedKey
- * 
- * Deletes a property from an object, as defined by a path string 
- * 
- * Use '.' (dot) to point to a nested property.
- *  
- * The original object is modified.
- * 
- * E.g.
- * 
- * ```javascript
- * var o = { a:1, b:{a:2} };
- * OBJ.deleteNestedKey('b.a', o); // { a:1, b: {} }
- * ```
- * 
- * @param {string} str The path string
- * @param {object} obj The object from which deleting a property
- * @param {boolean} TRUE, if the property was existing, and then deleted
- * 
- * @see OBJ.setNestedValue
- * @see OBJ.getNestedValue
- */
-OBJ.deleteNestedKey = function (str, obj) {
-    if (!obj) return;
-    var keys = str.split('.');
-    if (keys.length === 1) {
-		delete obj[str];
-        return true;
-    }
-    var k = keys.shift();
-    if ('undefined' === typeof obj[k]) {
-    	return false;
-    }
-    return OBJ.deleteNestedKey(keys.join('.'), obj[k]); 
-};
-
-/**
- * ## OBJ.hasOwnNestedProperty
- * 
- * Returns TRUE if a (nested) property exists
- * 
- * Use '.' to specify a nested property.
- * 
- * E.g.
- * 
- * ```javascript
- * var o = { a:1, b:{a:2} };
- * OBJ.hasOwnNestedProperty('b.a', o); // TRUE
- * ```
- * 
- * @param {string} str The path of the (nested) property
- * @param {object} obj The object to test
- * @return {boolean} TRUE, if the (nested) property exists
- * 
- */
-OBJ.hasOwnNestedProperty = function (str, obj) {
-    if (!obj) return false;
-    var keys = str.split('.');
-    if (keys.length === 1) {
-        return obj.hasOwnProperty(str);
-    }
-    var k = keys.shift();
-    return OBJ.hasOwnNestedProperty(keys.join('.'), obj[k]); 
-};
-
-
-/**
- * ## OBJ.split
- *
- * Splits an object along a specified dimension, and returns 
- * all the copies in an array.
- *  
- * It creates as many new objects as the number of properties 
- * contained in the specified dimension. The object are identical,
- * but for the given dimension, which was split. E.g.
- * 
- * ```javascript
- *  var o = { a: 1,
- *            b: {c: 2,
- *                d: 3
- *            },
- *            e: 4
- *  };
- *  
- *  o = OBJ.split(o, 'b');
- *  
- *  // o becomes:
- *  
- *  [{ a: 1,
- *     b: {c: 2},
- *     e: 4
- *  },
- *  { a: 1,
- *    b: {d: 3},
- *    e: 4
- *  }];
- * ```
- * 
- * @param {object} o The object to split
- * @param {sting} key The name of the property to split
- * @return {object} A copy of the object with split values
- */
-OBJ.split = function (o, key) {        
-    if (!o) return;
-    if (!key || 'object' !== typeof o[key]) {
-        return JSUS.clone(o);
-    }
-    
-    var out = [];
-    var model = JSUS.clone(o);
-    model[key] = {};
-    
-    var splitValue = function (value) {
-        for (var i in value) {
-            var copy = JSUS.clone(model);
-            if (value.hasOwnProperty(i)) {
-                if ('object' === typeof value[i]) {
-                    out = out.concat(splitValue(value[i]));
-                }
-                else {
-                    copy[key][i] = value[i]; 
-                    out.push(copy);
-                }
+    /**
+     * ## OBJ.subobj
+     *
+     * Creates a copy of an object containing only the properties
+     * passed as second parameter
+     *
+     * The parameter select can be an array of strings, or the name
+     * of a property.
+     *
+     * Use '.' (dot) to point to a nested property, however if a property
+     * with a '.' in the name is found, it will be used first.
+     *
+     * @param {object} o The object to dissect
+     * @param {string|array} select The selection of properties to extract
+     * @return {object} out The subobject with the properties from the parent one
+     *
+     *  @see OBJ.getNestedValue
+     */
+    OBJ.subobj = function (o, select) {
+        var out, i, key
+        if (!o) return false;
+        out = {};
+        if (!select) return out;
+        if (!(select instanceof Array)) select = [select];
+        for (i=0; i < select.length; i++) {
+            key = select[i];
+            if (o.hasOwnProperty(key)) {
+                out[key] = o[key];
+            }
+            else if (OBJ.hasOwnNestedProperty(key, o)) {
+                OBJ.setNestedValue(key, OBJ.getNestedValue(key, o), out);
             }
         }
         return out;
     };
-    
-    return splitValue(o[key]);
-};
 
-/**
- * ## OBJ.melt
- * 
- * Creates a new object with the specified combination of
- * properties - values
- * 
- * The values are assigned cyclically to the properties, so that
- * they do not need to have the same length. E.g.
- * 
- * ```javascript
- * 	J.createObj(['a','b','c'], [1,2]); // { a: 1, b: 2, c: 1 }
- * ```
- * @param {array} keys The names of the keys to add to the object
- * @param {array} values The values to associate to the keys  
- * @return {object} A new object with keys and values melted together
- */
-OBJ.melt = function(keys, values) {
-	var o = {}, valen = values.length;
-	for (var i = 0; i < keys.length; i++) {
-		o[keys[i]] = values[i % valen];
-	}
-	return o;
-};
-
-/**
- * ## OBJ.uniqueKey
- * 
- * Creates a random unique key name for a collection
- * 
- * User can specify a tentative unique key name, and if already
- * existing an incremental index will be added as suffix to it. 
- * 
- * Notice: the method does not actually creates the key
- * in the object, but it just returns the name.
- * 
- * 
- * @param {object} obj The collection for which a unique key name will be created
- * @param {string} name Optional. A tentative key name. Defaults, a 10-digit random number
- * @param {number} stop Optional. The number of tries before giving up searching
- * 	for a unique key name. Defaults, 1000000.
- * 
- * @return {string|undefined} The unique key name, or undefined if it was not found
- */
-OBJ.uniqueKey = function(obj, name, stop) {
-	if (!obj) {
-		JSUS.log('Cannot find unique name in undefined object', 'ERR');
-		return;
-	}
-	name = name || '' + Math.floor(Math.random()*10000000000);
-	stop = stop || 1000000;
-	var duplicateCounter = 1;
-	while (obj[name]) {
-		name = name + '' + duplicateCounter;
-		duplicateCounter++;
-		if (duplicateCounter > stop) {
-			return;
-		}
-	}
-	return name;
-}
-
-/**
- * ## OBJ.augment
- * 
- * Creates an object containing arrays of all the values of 
- * 
- * User can specifies the subset of keys from both objects 
- * that will subject to augmentation. The values of the other keys 
- * will not be changed
- * 
- * Notice: the method modifies the first input paramteer
- * 
- * E.g.
- * 
- * ```javascript
- * var a = { a:1, b:2, c:3 };
- * var b = { a:10, b:2, c:100, d:4 };
- * OBJ.augment(a, b); // { a: [1, 10], b: [2, 2], c: [3, 100]}
- * 
- * OBJ.augment(a, b, ['b', 'c', 'd']); // { a: 1, b: [2, 2], c: [3, 100], d: [4]});
- * 
- * ```
- * 
- * @param {object} obj1 The object whose properties will be augmented
- * @param {object} obj2 The augmenting object
- * @param {array} key Optional. Array of key names common to both objects taken as
- * 	the set of properties to augment
- */
-OBJ.augment = function(obj1, obj2, keys) {  
-	var i, k, keys = keys || OBJ.keys(obj1);
-	
-	for (i = 0 ; i < keys.length; i++) {
-		k = keys[i];
-		if ('undefined' !== typeof obj1[k] && Object.prototype.toString.call(obj1[k]) !== '[object Array]') {
-			obj1[k] = [obj1[k]];
-		}
-		if ('undefined' !== obj2[k]) {
-			if (!obj1[k]) obj1[k] = []; 
-			obj1[k].push(obj2[k]);
-		}
-	}
-}
+    /**
+     * ## OBJ.skim
+     *
+     * Creates a copy of an object where a set of selected properties
+     * have been removed
+     *
+     * The parameter `remove` can be an array of strings, or the name
+     * of a property.
+     *
+     * Use '.' (dot) to point to a nested property, however if a property
+     * with a '.' in the name is found, it will be deleted first.
+     *
+     * @param {object} o The object to dissect
+     * @param {string|array} remove The selection of properties to remove
+     * @return {object} out The subobject with the properties from the parent one
+     *
+     * @see OBJ.getNestedValue
+     */
+    OBJ.skim = function (o, remove) {
+        var out, i;
+        if (!o) return false;
+        out = OBJ.clone(o);
+        if (!remove) return out;
+        if (!(remove instanceof Array)) remove = [remove];
+        for (i = 0; i < remove.length; i++) {
+            if (out.hasOwnProperty(i)) {
+                delete out[i];
+            }
+            else {
+                OBJ.deleteNestedKey(remove[i], out);
+            }
+        }
+        return out;
+    };
 
 
-JSUS.extend(OBJ);
-    
+    /**
+     * ## OBJ.setNestedValue
+     *
+     * Sets the value of a nested property of an object,
+     * and returns it.
+     *
+     * If the object is not passed a new one is created.
+     * If the nested property is not existing, a new one is created.
+     *
+     * Use '.' (dot) to point to a nested property.
+     *
+     * The original object is modified.
+     *
+     * @param {string} str The path to the value
+     * @param {mixed} value The value to set
+     * @return {object|boolean} obj The modified object, or FALSE if error occurred
+     *
+     * @see OBJ.getNestedValue
+     * @see OBJ.deleteNestedKey
+     *
+     */
+    OBJ.setNestedValue = function (str, value, obj) {
+        var keys, k;
+        if (!str) {
+            JSUS.log('Cannot set value of undefined property', 'ERR');
+            return false;
+        }
+        obj = ('object' === typeof obj) ? obj : {};
+        keys = str.split('.');
+        if (keys.length === 1) {
+            obj[str] = value;
+            return obj;
+        }
+        k = keys.shift();
+        obj[k] = OBJ.setNestedValue(keys.join('.'), value, obj[k]);
+        return obj;
+    };
+
+    /**
+     * ## OBJ.getNestedValue
+     *
+     * Returns the value of a property of an object, as defined
+     * by a path string.
+     *
+     * Use '.' (dot) to point to a nested property.
+     *
+     * Returns undefined if the nested property does not exist.
+     *
+     * E.g.
+     *
+     * ```javascript
+     * var o = { a:1, b:{a:2} };
+     * OBJ.getNestedValue('b.a', o); // 2
+     * ```
+     *
+     * @param {string} str The path to the value
+     * @param {object} obj The object from which extract the value
+     * @return {mixed} The extracted value
+     *
+     * @see OBJ.setNestedValue
+     * @see OBJ.deleteNestedKey
+     */
+    OBJ.getNestedValue = function (str, obj) {
+        if (!obj) return;
+        var keys = str.split('.');
+        if (keys.length === 1) {
+            return obj[str];
+        }
+        var k = keys.shift();
+        return OBJ.getNestedValue(keys.join('.'), obj[k]);
+    };
+
+    /**
+     * ## OBJ.deleteNestedKey
+     *
+     * Deletes a property from an object, as defined by a path string
+     *
+     * Use '.' (dot) to point to a nested property.
+     *
+     * The original object is modified.
+     *
+     * E.g.
+     *
+     * ```javascript
+     * var o = { a:1, b:{a:2} };
+     * OBJ.deleteNestedKey('b.a', o); // { a:1, b: {} }
+     * ```
+     *
+     * @param {string} str The path string
+     * @param {object} obj The object from which deleting a property
+     * @param {boolean} TRUE, if the property was existing, and then deleted
+     *
+     * @see OBJ.setNestedValue
+     * @see OBJ.getNestedValue
+     */
+    OBJ.deleteNestedKey = function (str, obj) {
+        if (!obj) return;
+        var keys = str.split('.');
+        if (keys.length === 1) {
+            delete obj[str];
+            return true;
+        }
+        var k = keys.shift();
+        if ('undefined' === typeof obj[k]) {
+            return false;
+        }
+        return OBJ.deleteNestedKey(keys.join('.'), obj[k]);
+    };
+
+    /**
+     * ## OBJ.hasOwnNestedProperty
+     *
+     * Returns TRUE if a (nested) property exists
+     *
+     * Use '.' to specify a nested property.
+     *
+     * E.g.
+     *
+     * ```javascript
+     * var o = { a:1, b:{a:2} };
+     * OBJ.hasOwnNestedProperty('b.a', o); // TRUE
+     * ```
+     *
+     * @param {string} str The path of the (nested) property
+     * @param {object} obj The object to test
+     * @return {boolean} TRUE, if the (nested) property exists
+     *
+     */
+    OBJ.hasOwnNestedProperty = function (str, obj) {
+        if (!obj) return false;
+        var keys = str.split('.');
+        if (keys.length === 1) {
+            return obj.hasOwnProperty(str);
+        }
+        var k = keys.shift();
+        return OBJ.hasOwnNestedProperty(keys.join('.'), obj[k]);
+    };
+
+
+    /**
+     * ## OBJ.split
+     *
+     * Splits an object along a specified dimension, and returns
+     * all the copies in an array.
+     *
+     * It creates as many new objects as the number of properties
+     * contained in the specified dimension. The object are identical,
+     * but for the given dimension, which was split. E.g.
+     *
+     * ```javascript
+     *  var o = { a: 1,
+     *            b: {c: 2,
+     *                d: 3
+     *            },
+     *            e: 4
+     *  };
+     *
+     *  o = OBJ.split(o, 'b');
+     *
+     *  // o becomes:
+     *
+     *  [{ a: 1,
+     *     b: {c: 2},
+     *     e: 4
+     *  },
+     *  { a: 1,
+     *    b: {d: 3},
+     *    e: 4
+     *  }];
+     * ```
+     *
+     * @param {object} o The object to split
+     * @param {sting} key The name of the property to split
+     * @return {object} A copy of the object with split values
+     */
+    OBJ.split = function (o, key) {
+        if (!o) return;
+        if (!key || 'object' !== typeof o[key]) {
+            return JSUS.clone(o);
+        }
+
+        var out = [];
+        var model = JSUS.clone(o);
+        model[key] = {};
+
+        var splitValue = function (value) {
+            for (var i in value) {
+                var copy = JSUS.clone(model);
+                if (value.hasOwnProperty(i)) {
+                    if ('object' === typeof value[i]) {
+                        out = out.concat(splitValue(value[i]));
+                    }
+                    else {
+                        copy[key][i] = value[i];
+                        out.push(copy);
+                    }
+                }
+            }
+            return out;
+        };
+
+        return splitValue(o[key]);
+    };
+
+    /**
+     * ## OBJ.melt
+     *
+     * Creates a new object with the specified combination of
+     * properties - values
+     *
+     * The values are assigned cyclically to the properties, so that
+     * they do not need to have the same length. E.g.
+     *
+     * ```javascript
+     *  J.createObj(['a','b','c'], [1,2]); // { a: 1, b: 2, c: 1 }
+     * ```
+     * @param {array} keys The names of the keys to add to the object
+     * @param {array} values The values to associate to the keys
+     * @return {object} A new object with keys and values melted together
+     */
+    OBJ.melt = function(keys, values) {
+        var o = {}, valen = values.length;
+        for (var i = 0; i < keys.length; i++) {
+            o[keys[i]] = values[i % valen];
+        }
+        return o;
+    };
+
+    /**
+     * ## OBJ.uniqueKey
+     *
+     * Creates a random unique key name for a collection
+     *
+     * User can specify a tentative unique key name, and if already
+     * existing an incremental index will be added as suffix to it.
+     *
+     * Notice: the method does not actually create the key
+     * in the object, but it just returns the name.
+     *
+     * @param {object} obj The collection for which a unique key name will be created
+     * @param {string} prefixName Optional. A tentative key name. Defaults, a 15-digit random number
+     * @param {number} stop Optional. The number of tries before giving up searching
+     *  for a unique key name. Defaults, 1000000.
+     *
+     * @return {string|undefined} The unique key name, or undefined if it was not found
+     */
+    OBJ.uniqueKey = function(obj, prefixName, stop) {
+        var name;
+        var duplicateCounter = 1;
+        if (!obj) {
+            JSUS.log('Cannot find unique name in undefined object', 'ERR');
+            return;
+        }
+        prefixName = '' + (prefixName || Math.floor(Math.random()*1000000000000000));
+        stop = stop || 1000000;
+        name = prefixName;
+        while (obj[name]) {
+            name = prefixName + duplicateCounter;
+            duplicateCounter++;
+            if (duplicateCounter > stop) {
+                return;
+            }
+        }
+        return name;
+    }
+
+    /**
+     * ## OBJ.augment
+     *
+     * Pushes the values of the properties of an object into another one
+     *
+     * User can specifies the subset of keys from both objects
+     * that will subject to augmentation. The values of the other keys
+     * will not be changed
+     *
+     * Notice: the method modifies the first input paramteer
+     *
+     * E.g.
+     *
+     * ```javascript
+     * var a = { a:1, b:2, c:3 };
+     * var b = { a:10, b:2, c:100, d:4 };
+     * OBJ.augment(a, b); // { a: [1, 10], b: [2, 2], c: [3, 100]}
+     *
+     * OBJ.augment(a, b, ['b', 'c', 'd']); // { a: 1, b: [2, 2], c: [3, 100], d: [4]});
+     *
+     * ```
+     *
+     * @param {object} obj1 The object whose properties will be augmented
+     * @param {object} obj2 The augmenting object
+     * @param {array} key Optional. Array of key names common to both objects taken as
+     *  the set of properties to augment
+     */
+    OBJ.augment = function(obj1, obj2, keys) {
+        var i, k, keys = keys || OBJ.keys(obj1);
+
+        for (i = 0 ; i < keys.length; i++) {
+            k = keys[i];
+            if ('undefined' !== typeof obj1[k] && Object.prototype.toString.call(obj1[k]) !== '[object Array]') {
+                obj1[k] = [obj1[k]];
+            }
+            if ('undefined' !== obj2[k]) {
+                if (!obj1[k]) obj1[k] = [];
+                obj1[k].push(obj2[k]);
+            }
+        }
+    }
+
+
+    /**
+     * ## OBJ.pairwiseWalk
+     *
+     * Given two objects, executes a callback on all attributes with the same name
+     *
+     * The results of each callback are aggregated in a new object under the
+     * same property name.
+     *
+     * Does not traverse nested objects, and properties of the prototype are excluded
+     *
+     * Returns a new object, the original ones are not modified.
+     *
+     * E.g.
+     *
+     * ```javascript
+     * var a = { b:2, c:3, d:5 };
+     * var b = { a:10, b:2, c:100, d:4 };
+     * var sum = function(a,b) {
+     *     if ('undefined' !== typeof a) {
+     *         return 'undefined' !== typeof b ? a + b : a;
+     *     }
+     *     return b;
+     * };
+     * OBJ.pairwiseWalk(a, b, sum); // { a:10, b:4, c:103, d:9 }
+     * ```
+     *
+     * @param {object} o1 The first object
+     * @param {object} o2 The second object
+     * @return {object} clone The object aggregating the results
+     *
+     */
+    OBJ.pairwiseWalk = function(o1, o2, cb) {
+        var i, out;
+        if (!o1 && !o2) return;
+        if (!o1) return o2;
+        if (!o2) return o1;
+
+        out = {};
+        for (i in o1) {
+            if (o1.hasOwnProperty(i)) {
+                out[i] = o2.hasOwnProperty(i) ? cb(o1[i], o2[i]) : cb(o1[i]);
+            }
+        }
+
+        for (i in o2) {
+            if (o2.hasOwnProperty(i)) {
+                if ('undefined' === typeof out[i]) {
+                    out[i] = cb(undefined, o2[i]);
+                }
+            }
+        }
+
+        return out;
+    };
+
+
+    JSUS.extend(OBJ);
+
 })('undefined' !== typeof JSUS ? JSUS : module.parent.exports.JSUS);
+
 /**
  * # RANDOM
  *  
@@ -4295,6 +4363,7 @@ JSUS.extend(PARSE);
      *
      */
     NDDB.prototype.init = function(options) {
+        var i;
         var op, sh;
         options = options || {};
 
@@ -4314,10 +4383,20 @@ JSUS.extend(PARSE);
 
         if (options.I) {
             this.__I = options.I;
+            for (i in options.I) {
+                if (options.I.hasOwnProperty(i)) {
+                    this.index(i, options.I[i]);
+                }
+            }
         }
 
         if (options.V) {
             this.__V = options.V;
+            for (i in options.V) {
+                if (options.V.hasOwnProperty(i)) {
+                    this.view(i, options.V[i]);
+                }
+            }
         }
 
         if (options.tags) {
@@ -7624,6 +7703,7 @@ JSUS.extend(PARSE);
     'undefined' != typeof node ? node : module.exports
   , 'undefined' != typeof node ? node : module.parent.exports
 );
+
 /**
  * # Stager
  *
@@ -9210,285 +9290,311 @@ GameStage.stringify = function(gs) {
 
 /**
  * # GameMsg
- * 
- * Copyright(c) 2012 Stefano Balietti
- * MIT Licensed 
- * 
+ *
+ * Copyright(c) 2013 Stefano Balietti
+ * MIT Licensed
+ *
  * `nodeGame` exchangeable data format
- * 
+ *
  * ---
  */
 (function (exports, node) {
 
-// ## Global scope	
-var GameStage = node.GameStage,
-	JSUS = node.JSUS;
+    // ## Global scope
+    var GameStage = node.GameStage,
+    JSUS = node.JSUS;
 
-exports.GameMsg = GameMsg;
-
-
-/**
- * ### GameMSg.clone (static)
- * 
- * Returns a perfect copy of a game-message
- * 
- * @param {GameMsg} gameMsg The message to clone
- * @return {GameMsg} The cloned messaged
- * 
- * 	@see JSUS.clone
- */
-GameMsg.clone = function (gameMsg) {	
-	return new GameMsg(gameMsg);
-};
+    exports.GameMsg = GameMsg;
 
 
-/**
- * ## GameMsg constructor
- * 
- * Creates an instance of GameMsg
- */
-function GameMsg (gm) {
-	gm = gm || {};
-	
-// ## Private properties
-
-/**
- * ### GameMsg.id
- * 
- * A randomly generated unique id
- * 
- * @api private
- */	
-	var id = gm.id || Math.floor(Math.random()*1000000);
-	if (node.support.defineProperty) {
-		Object.defineProperty(this, 'id', {
-			value: id,
-			enumerable: true
-		});
-	}
-	else {
-		this.id = id;
-	}
-
-/**
- * ### GameMsg.session
- * 
- * The session id in which the message was generated
- * 
- * @api private
- */	
-	var session = gm.session;
-	if (node.support.defineProperty) {
-		Object.defineProperty(this, 'session', {
-			value: session,
-			enumerable: true
-		});
-	}
-	else {
-		this.session = session;
-	}
-
-// ## Public properties	
-
-/**
- * ### GameMsg.stage
- * 
- * The game-stage in which the message was generated
- * 
- * 	@see GameStage
- */	
-	this.stage = gm.stage;
-
-/**
- * ### GameMsg.action
- * 
- * The action of the message
- * 
- * 	@see node.action
- */		
-	this.action = gm.action;
-	
-/**
- * ### GameMsg.target
- * 
- * The target of the message
- * 
- * 	@see node.target
- */	
-	this.target = gm.target;
-	
-/**
- * ### GameMsg.from
- * 
- * The id of the sender of the message
- * 
- * 	@see Player.id
- */		
-	this.from = gm.from;
-
-/**
- * ### GameMsg.to
- * 
- * The id of the receiver of the message
- * 
- * 	@see Player.id
- * 	@see node.player.id
- */		
-	this.to = gm.to;
-
-/**
- * ### GameMsg.text
- * 
- * An optional text adding a description for the message
- */		
-	this.text = gm.text; 
-	
-/**
- * ### GameMsg.data
- * 
- * An optional payload field for the message
- */			
-	this.data = gm.data;
-	
-/**
- * ### GameMsg.priority
- * 
- * A priority index associated to the message
- */	
-	this.priority = gm.priority;
-	
-/**
- * ### GameMsg.reliable
- * 
- * Experimental. Disabled for the moment
- * 
- * If set, requires ackwnoledgment of delivery
- * 
- */	
-	this.reliable = gm.reliable;
-
-/**
- * ### GameMsg.created
- * 
- * A timestamp of the date of creation
- */		
-	this.created = JSUS.getDate();
-	
-/**
- * ### GameMsg.forward
- * 
- * If TRUE, the message is a forward. 
- * 
- * E.g. between nodeGame servers
- */	
-	this.forward = 0;
-}
-
-/**
- * ### GameMsg.stringify
- * 
- * Calls JSON.stringify on the message
- * 
- * @return {string} The stringified game-message
- * 
- * 	@see GameMsg.toString
- */
-GameMsg.prototype.stringify = function () {
-	return JSON.stringify(this);
-};
+    /**
+     * ### GameMSg.clone (static)
+     *
+     * Returns a perfect copy of a game-message
+     *
+     * @param {GameMsg} gameMsg The message to clone
+     * @return {GameMsg} The cloned messaged
+     *
+     *  @see JSUS.clone
+     */
+    GameMsg.clone = function (gameMsg) {
+        return new GameMsg(gameMsg);
+    };
 
 
-/**
- * ### GameMsg.toString
- * 
- * Creates a human readable string representation of the message
- * 
- * @return {string} The string representation of the message
- * 	@see GameMsg.stringify
- */
-GameMsg.prototype.toString = function () {
-    var SPT = ",\t";
-    var SPTend = "\n";
-    var DLM = "\"";
+    /**
+     * ## GameMsg constructor
+     *
+     * Creates an instance of GameMsg
+     */
+    function GameMsg (gm) {
+        gm = gm || {};
 
-    var line;
-    
-    line  = this.created + SPT;
-    line += this.id + SPT;
-    line += this.session + SPT;
-    line += this.action + SPT;
-    line += this.target + SPT;
-    line += this.from + SPT;
-    line += this.to + SPT;
-    line += DLM + this.text + DLM + SPT;
-    line += DLM + this.data + DLM + SPT; // maybe to remove
-    line += new GameStage(this.stage) + SPT;
-    line += this.reliable + SPT;
-    line += this.priority + SPTend;
+        // ## Private properties
 
-    return line;
-};
+        /**
+         * ### GameMsg.id
+         *
+         * A randomly generated unique id
+         *
+         * @api private
+         */
+        var id = gm.id || Math.floor(Math.random()*1000000);
+        if (node.support.defineProperty) {
+            Object.defineProperty(this, 'id', {
+                value: id,
+                enumerable: true
+            });
+        }
+        else {
+            this.id = id;
+        }
 
-/**
- * ### GameMSg.toSMS
- * 
- * Creates a compact visualization of the most important properties
- * 
- * @return {string} A compact string representing the message 
- * 
- * @TODO: Create an hash method as for GameStage
- */
-GameMsg.prototype.toSMS = function () {
-	
-	var parseDate = /\w+/; // Select the second word;
-	var results = parseDate.exec(this.created);
+        /**
+         * ### GameMsg.session
+         *
+         * The session id in which the message was generated
+         *
+         * @api private
+         */
+        var session = gm.session;
+        if (node.support.defineProperty) {
+            Object.defineProperty(this, 'session', {
+                value: session,
+                enumerable: true
+            });
+        }
+        else {
+            this.session = session;
+        }
 
-	var line = '[' + this.from + ']->[' + this.to + ']\t';
-	line += '|' + this.action + '.' + this.target + '|'+ '\t';
-	line += ' ' + this.text + ' ';
-	
-	return line;
-};
+        // ## Public properties
 
-/**
- * ### GameMsg.toInEvent
- * 
- * Hashes the action and target properties of an incoming message
- * 
- * @return {string} The hash string
- * 	@see GameMsg.toEvent 
- */
-GameMsg.prototype.toInEvent = function() {
-	return 'in.' + this.toEvent();
-};
+        /**
+         * ### GameMsg.stage
+         *
+         * The game-stage in which the message was generated
+         *
+         *      @see GameStage
+         */
+        this.stage = gm.stage;
 
-/**
- * ### GameMsg.toOutEvent
- * 
- * Hashes the action and target properties of an outgoing message
- * 
- * @return {string} The hash string
- *  @see GameMsg.toEvent
- */
-GameMsg.prototype.toOutEvent = function() {
-	return 'out.' + this.toEvent();
-};
+        /**
+         * ### GameMsg.action
+         *
+         * The action of the message
+         *
+         *      @see node.action
+         */
+        this.action = gm.action;
 
-/**
- * ### GameMsg.toEvent
- * 
- * Hashes the action and target properties of the message
- * 
- * @return {string} The hash string
- */
-GameMsg.prototype.toEvent = function () {
-	return this.action + '.' + this.target;
-}; 
+        /**
+         * ### GameMsg.target
+         *
+         * The target of the message
+         *
+         *      @see node.target
+         */
+        this.target = gm.target;
 
-// ## Closure
+        /**
+         * ### GameMsg.from
+         *
+         * The id of the sender of the message
+         *
+         *      @see Player.id
+         */
+        this.from = gm.from;
+
+        /**
+         * ### GameMsg.to
+         *
+         * The id of the receiver of the message
+         *
+         *      @see Player.id
+         *      @see node.player.id
+         */
+        this.to = gm.to;
+
+        /**
+         * ### GameMsg.text
+         *
+         * An optional text adding a description for the message
+         */
+        this.text = gm.text;
+
+        /**
+         * ### GameMsg.data
+         *
+         * An optional payload field for the message
+         */
+        this.data = gm.data;
+
+        /**
+         * ### GameMsg.priority
+         *
+         * A priority index associated to the message
+         */
+        this.priority = gm.priority;
+
+        /**
+         * ### GameMsg.reliable
+         *
+         * Experimental. Disabled for the moment
+         *
+         * If set, requires ackwnoledgment of delivery
+         *
+         */
+        this.reliable = gm.reliable;
+
+        /**
+         * ### GameMsg.created
+         *
+         * A timestamp of the date of creation
+         */
+        this.created = JSUS.getDate();
+
+        /**
+         * ### GameMsg.forward
+         *
+         * If TRUE, the message is a forward.
+         *
+         * E.g. between nodeGame servers
+         */
+        this.forward = 0;
+    }
+
+    /**
+     * ### GameMsg.stringify
+     *
+     * Calls JSON.stringify on the message
+     *
+     * @return {string} The stringified game-message
+     *
+     *  @see GameMsg.toString
+     */
+    GameMsg.prototype.stringify = function () {
+        return JSON.stringify(this);
+    };
+
+
+    /**
+     * ### GameMsg.toString
+     *
+     * Creates a human readable string representation of the message
+     *
+     * @return {string} The string representation of the message
+     *  @see GameMsg.stringify
+     */
+    GameMsg.prototype.toString = function () {
+        var SPT, TAB, DLM, line, UNKNOWN, tmp;
+        SPT = ",\t";
+        TAB = "\t";
+        DLM = "\"";
+        UNKNOWN = "\"unknown\"\t";
+        line  = this.created + SPT;
+        line += this.id + SPT;
+        line += this.session + SPT;
+        line += this.action + SPT;
+        line += this.target ? this.target.length < 6  ? this.target + SPT + TAB : this.target + SPT : UNKNOWN;
+        line += this.from ? this.from.length < 6  ? this.from + SPT + TAB : this.from + SPT : UKNOWN;
+        line += this.to ? this.to.length < 6  ? this.to + SPT + TAB : this.to + SPT : UNKNOWN;
+        if (!this.text) {
+            line += "\"no text\"" + SPT;
+        }
+        else {
+            tmp = this.text.toString();
+            if (tmp.length > 9) { 
+                line += DLM + tmp.substr(0,9) + "..." + DLM + SPT;
+            }
+            else if (tmp.length < 6) {
+                line += DLM + tmp + DLM + SPT + TAB;
+            }
+            else {
+                line += DLM + tmp + DLM + SPT;
+            }
+        }
+        if (!this.data) {
+            line += "\"no data\"" + SPT;
+        }
+        else {
+            tmp = this.data.toString();
+            if (tmp.length > 9) { 
+                line += DLM + tmp.substr(0,9) + "..." + DLM + SPT;
+            }
+            else if (tmp.length < 6) {
+                line += DLM + tmp + DLM + SPT + TAB;
+            }
+            else {
+                line += DLM + tmp + DLM + SPT;
+            }
+        }
+        line += new GameStage(this.stage) + SPT;
+        line += this.reliable + SPT;
+        line += this.priority;
+        return line;
+    };
+
+    /**
+     * ### GameMSg.toSMS
+     *
+     * Creates a compact visualization of the most important properties
+     *
+     * @return {string} A compact string representing the message
+     *
+     * @TODO: Create an hash method as for GameStage
+     */
+    GameMsg.prototype.toSMS = function () {
+
+        var parseDate = /\w+/; // Select the second word;
+        var results = parseDate.exec(this.created);
+
+        var line = '[' + this.from + ']->[' + this.to + ']\t';
+        line += '|' + this.action + '.' + this.target + '|'+ '\t';
+        line += ' ' + this.text + ' ';
+
+        return line;
+    };
+
+    /**
+     * ### GameMsg.toInEvent
+     *
+     * Hashes the action and target properties of an incoming message
+     *
+     * @return {string} The hash string
+     *  @see GameMsg.toEvent
+     */
+    GameMsg.prototype.toInEvent = function() {
+        return 'in.' + this.toEvent();
+    };
+
+    /**
+     * ### GameMsg.toOutEvent
+     *
+     * Hashes the action and target properties of an outgoing message
+     *
+     * @return {string} The hash string
+     *  @see GameMsg.toEvent
+     */
+    GameMsg.prototype.toOutEvent = function() {
+        return 'out.' + this.toEvent();
+    };
+
+    /**
+     * ### GameMsg.toEvent
+     *
+     * Hashes the action and target properties of the message
+     *
+     * @return {string} The hash string
+     */
+    GameMsg.prototype.toEvent = function () {
+        return this.action + '.' + this.target;
+    };
+
+    // ## Closure
 })(
-	'undefined' != typeof node ? node : module.exports,
-	'undefined' != typeof node ? node : module.parent.exports
+    'undefined' != typeof node ? node : module.exports,
+    'undefined' != typeof node ? node : module.parent.exports
 );
 
 /**
@@ -11503,7 +11609,7 @@ GameMsg.prototype.toEvent = function () {
             stage: gameStage,
             action: msg.action || constants.action.SAY,
             target: msg.target || constants.target.DATA,
-            from: node.player ? node.player.sid : node.UNDEFINED_PLAYER, // TODO change to id
+            from: node.player ? node.player.id : node.UNDEFINED_PLAYER, // TODO change to id
             to: 'undefined' !== typeof msg.to ? msg.to : 'SERVER',
             text: msg.text || null,
             data: msg.data || null,
@@ -11670,7 +11776,7 @@ GameMsg.prototype.toEvent = function () {
         return this.socket;
     };
 
-    Socket.prototype.connect = function(uri) {
+    Socket.prototype.connect = function(uri, options) {
         var humanReadableUri = uri || 'local server';
         if (!this.socket) {
             this.node.err('Socket.connet: cannot connet to ' + humanReadableUri + ' . No open socket.');
@@ -11680,7 +11786,7 @@ GameMsg.prototype.toEvent = function () {
         this.url = uri;
         this.node.log('connecting to ' + humanReadableUri + '.');
 
-        this.socket.connect(uri, this.user_options);
+        this.socket.connect(uri, 'undefined' !== typeof options ? options : this.user_options);
     };
 
     Socket.prototype.onDisconnect = function() {
@@ -11751,7 +11857,7 @@ GameMsg.prototype.toEvent = function () {
                 this.node.emit(msg.toInEvent(), msg);
             }
             else {
-                this.node.silly('buffering: ' + msg);
+                this.node.silly('B: ' + msg);
                 this.buffer.push(msg);
             }
         }
@@ -11811,7 +11917,7 @@ GameMsg.prototype.toEvent = function () {
             msg = this.buffer.shift();
             if (msg) {
                 this.node.emit(msg.toInEvent(), msg);
-                this.node.silly('Debuffered ' + msg);
+                this.node.silly('D: ' + msg);
             }
         }
     };
@@ -11831,15 +11937,10 @@ GameMsg.prototype.toEvent = function () {
      * @see node.createPlayer
      */
     Socket.prototype.startSession = function (msg) {
-        var player;
         // Store server info
         this.registerServer(msg);
 
-        player = {
-            id: msg.data,
-            sid: msg.data
-        };
-        this.node.createPlayer(player);
+        this.node.createPlayer(msg.data);
         this.session = msg.session;
         return true;
     };
@@ -13841,36 +13942,44 @@ GameMsg.prototype.toEvent = function () {
 
         /**
          * ### node.verbosity_levels
-         * 
+         *
          * ALWAYS, ERR, WARN, INFO, DEBUG
-         */  
+         */
         this.verbosity_levels = {
-	    ALWAYS: -(Number.MIN_VALUE + 1), 
-	    ERR: -1,
-	    WARN: 0,
-	    INFO: 1,
-	    SILLY: 10,
-	    DEBUG: 100,
-	    NEVER: Number.MIN_VALUE - 1
-        };	
-	
+            ALWAYS: -(Number.MIN_VALUE + 1),
+            ERR: -1,
+            WARN: 0,
+            INFO: 1,
+            SILLY: 10,
+            DEBUG: 100,
+            NEVER: Number.MIN_VALUE - 1
+        };
+
         /**
          *  ### node.verbosity
-         *  
+         *
          *  The minimum level for a log entry to be displayed as output
-         *   
+         *
          *  Defaults, only errors are displayed.
-         *  
          */
         this.verbosity = this.verbosity_levels.WARN;
-        
+
+        /**
+         *  ### node.nodename
+         *
+         *  The name of this node, used in logging output
+         *
+         *  Defaults, 'ng'
+         */
+        this.nodename = 'ng';
+
         /**
          * ### node.remoteVerbosity
          *
          *  The minimum level for a log entry to be reported to the server
-         *   
+         *
          *  Defaults, only errors are displayed.
-         */	
+         */
         this.remoteVerbosity = this.verbosity_levels.WARN;
 
         /**
@@ -14043,14 +14152,28 @@ GameMsg.prototype.toEvent = function () {
         });
 
         /**
-         * ### node.setup.verbosity
+         * ### node.setup.nodename
          *
-         * Sets the verbosity level for nodegame
+         * Sets the name for nodegame
+         */
+        this.registerSetup('nodename', function(newName) {
+            newName = newName || 'ng';
+            if ('string' !== typeof newName) {
+                throw new TypeError('node.nodename must be of type string');
+            }
+            this.nodename = newName;
+            return newName;
+        });
+
+        /**
+         * ### node.setup.debug
+         *
+         * Sets the debug flag for nodegame
          */
         this.registerSetup('debug', function(enable) {
             enable = enable || false;
             if ('boolean' !== typeof enable) {
-                throw new TypeError("node.debug must be of type boolean");
+                throw new TypeError('node.debug must be of type boolean');
             }
             this.debug = enable;
             return enable;
@@ -14237,7 +14360,7 @@ GameMsg.prototype.toEvent = function () {
         this.registerSetup('mlist', function(monitorList, updateRule) {
             updatePlayerList.call(this, 'ml', monitorList, updateRule);
         });
-        
+
         // Utility for setup.plist and setup.mlist:
         function updatePlayerList(dstListName, srcList, updateRule) {
             var dstList;
@@ -14267,33 +14390,33 @@ GameMsg.prototype.toEvent = function () {
                     throw new this.NodeGameMisconfiguredGameError(
                         "register('plist') got invalid updateRule");
                 }
-                
-                // automatic cast from Object to Player   
+
+                // automatic cast from Object to Player
                 dstList.importDB(srcList);
             }
 
             return dstList;
         }
-        
+
 
         // ALIAS
 
-        
-        // ### node.on.txt	
+
+        // ### node.on.txt
         this.alias('txt', 'in.say.TXT');
-	
-        // ### node.on.data	
+
+        // ### node.on.data
         this.alias('data', ['in.say.DATA', 'in.set.DATA']);
-	
-        // ### node.on.state	
+
+        // ### node.on.state
         this.alias('state', 'in.set.STATE');
-	
-        // ### node.on.stage	
-        this.alias('stage', 'in.set.STAGE');	
-	
-        // ### node.on.plist	
+
+        // ### node.on.stage
+        this.alias('stage', 'in.set.STAGE');
+
+        // ### node.on.plist
         this.alias('plist', ['in.set.PLIST', 'in.say.PLIST']);
-        
+
         // ### node.on.pconnect
         this.alias('pconnect', 'in.say.PCONNECT', function(msg) {
             return msg.data;
@@ -14311,99 +14434,100 @@ GameMsg.prototype.toEvent = function () {
     'undefined' != typeof node ? node : module.exports
  ,  'undefined' != typeof node ? node : module.parent.exports
 );
+
 /**
  * # Log
- * 
+ *
  * Copyright(c) 2013 Stefano Balietti
- * MIT Licensed 
- * 
+ * MIT Licensed
+ *
  * `nodeGame` logging module
- * 
+ *
  * ---
  */
 (function (exports, parent) {
 
     var NGC = parent.NodeGameClient;
     var constants = parent.constants;
-    
+
     /**
      * ### NodeGameClient.log
-     * 
+     *
      * Default nodeGame standard out, override to redirect
-     * 
-     * Logs entries are displayed to the console if their level is 
+     *
+     * Logs entries are displayed to the console if their level is
      * smaller than `this.verbosity`.
-     * 
+     *
      * TODO: Logs entries are forwarded to the server if their level is
      * smaller than `this.remoteVerbosity`.
-     * 
+     *
      * @param {string} txt The text to output
      * @param {string|number} level Optional. The verbosity level of this log. Defaults, level = 0
-     * @param {string} prefix Optional. A text to display at the beginning of the log entry. Defaults 'ng> ' 
-     * 
+     * @param {string} prefix Optional. A text to display at the beginning of the log entry. Defaults 'ng> '
+     *
      */
     NGC.prototype.log = function (txt, level, prefix) {
-	if ('undefined' === typeof txt) return false;
-	
-	level 	= level || 0;
-	prefix 	= ('undefined' === typeof prefix) ? 'ng> ' : prefix;
-	
-	if ('string' === typeof level) {
-	    level = this.verbosity_levels[level];
-	}
-	if (this.verbosity > level) {
-	    console.log(prefix + txt);
-	}
-        //		if (this.remoteVerbosity > level) {
-        //			var remoteMsg = this.msg.create({
-        //				target: this.target.LOG,
-        //				text: level,
-        //				data: txt,
-        //				to: 'SERVER'
-        //			});
-        //			console.log(txt)
-        //			this.socket.send(remoteMsg);
-        //		}
+        if ('undefined' === typeof txt) return false;
+
+        level  = level || 0;
+        prefix = ('undefined' === typeof prefix) ? this.nodename + '> ' : prefix;
+
+        if ('string' === typeof level) {
+            level = this.verbosity_levels[level];
+        }
+        if (this.verbosity > level) {
+            console.log(prefix + txt);
+        }
+        // if (this.remoteVerbosity > level) {
+        //     var remoteMsg = this.msg.create({
+        //         target: this.target.LOG,
+        //         text: level,
+        //         data: txt,
+        //         to: 'SERVER'
+        //     });
+        //     console.log(txt)
+        //     this.socket.send(remoteMsg);
+        // }
     };
 
     /**
      * ### NodeGameClient.info
-     * 
+     *
      * Logs an INFO message
      */
     NGC.prototype.info = function (txt, prefix) {
-	prefix = (prefix ? 'ng|' + prefix : 'ng') + '> info - ';
-	this.log(txt, this.verbosity_levels.INFO, prefix);
+        prefix = this.nodename + (prefix ? '|' + prefix : '') + '> info - ';
+        this.log(txt, this.verbosity_levels.INFO, prefix);
     };
-    
+
     /**
      * ### NodeGameClient.warn
-     * 
+     *
      * Logs a WARNING message
      */
     NGC.prototype.warn = function (txt, prefix) {
-	prefix = (prefix ? 'ng|' + prefix : 'ng') + '> warn - ';
-	this.log(txt, this.verbosity_levels.WARN, prefix);
+        prefix = this.nodename + (prefix ? '|' + prefix : '') + '> warn - ';
+        this.log(txt, this.verbosity_levels.WARN, prefix);
     };
 
     /**
      * ### NodeGameClient.err
-     * 
+     *
      * Logs an ERROR message
      */
     NGC.prototype.err = function (txt, prefix) {
-	prefix = (prefix ? 'ng|' + prefix : 'ng') + '> error - ';
+        prefix = this.nodename + (prefix ? '|' + prefix : '') + '> error - ';
         this.log(txt, this.verbosity_levels.ERR, prefix);
     };
 
     /**
      * ### NodeGameClient.debug
-     * 
+     *
      * Logs a DEBUG message
      */
     NGC.prototype.silly = function (txt, prefix) {
-	prefix = (prefix ? 'ng|' + prefix : 'ng') + '> silly - ';
-	this.log(txt, this.verbosity_levels.SILLY, prefix);
+        prefix = this.nodename + (prefix ? '|' + prefix : '') + '> silly - ';
+        this.log(txt, this.verbosity_levels.SILLY, prefix);
     };
 
 })(
@@ -14661,8 +14785,8 @@ GameMsg.prototype.toEvent = function () {
      *
      * @param {string} uri Optional. The uri to connect to
      */
-    NGC.prototype.connect = function (uri) {
-        if (this.socket.connect(uri)) {
+    NGC.prototype.connect = function (uri, options) {
+        if (this.socket.connect(uri, options)) {
             this.emit('NODEGAME_CONNECTED');
         }
     };
@@ -15399,6 +15523,9 @@ GameMsg.prototype.toEvent = function () {
                 node.err('Received in.say.STAGE msg with invalid stage');
                 return;
             }
+            // TODO: renable when it does not cause problems.
+            // At the moment the AdminServer sends this kind of msg
+            // each time an admin publishes its own state
             //node.game.execStep(stageObj);
         });
 
@@ -15440,6 +15567,7 @@ GameMsg.prototype.toEvent = function () {
          * @see JSUS.parse
          */
         node.events.ng.on( IN + say + 'SETUP', function (msg) {
+console.log('* SETUP * ', msg);
             if (!msg.text) return;
             var feature = msg.text,
             payload = ('string' === typeof msg.data) ? J.parse(msg.data) : msg.data;
@@ -15460,7 +15588,8 @@ GameMsg.prototype.toEvent = function () {
          * @see node.setup
          */
         node.events.ng.on( IN + say + 'GAMECOMMAND', function (msg) {
-            if (!msg.text || !node.constants.gamecommand[msg.text]) {
+console.log('* GAMECOMMAND * ', msg);
+            if (!msg.text || !parent.constants.gamecommand[msg.text]) {
                 node.err('unknown game command received: ' + msg.text);
                 return;
             }
@@ -15494,6 +15623,7 @@ GameMsg.prototype.toEvent = function () {
     'undefined' != typeof node ? node : module.parent.exports
 );
 // <!-- ends incoming listener -->
+
 // # Internal listeners
 
 // Internal listeners are not directly associated to messages,
@@ -16301,7 +16431,8 @@ TriggerManager.prototype.size = function () {
  * Dynamic content can be loaded inside the iframe without losing the
  * javascript state inside the page.
  * 
- * Defines a number of profiles associated with special page 1layout.
+ * Defines a number of pre-defined profiles associated with special
+ * configuration of widgets.
  * 
  * Depends on nodegame-client. 
  * GameWindow.Table and GameWindow.List depend on NDDB and JSUS.
@@ -16801,21 +16932,6 @@ TriggerManager.prototype.size = function () {
 	}
     }
 
-    var lockedUpdate = false;
-    function updateAreLoading(update) {
-        var that;
-        if (!lockedUpdate) {
-            lockedUpdate = true;
-            this.areLoading = this.areLoading + update;
-            lockedUpdate = false;
-        }
-        else {
-            that = this;
-            setTimeout(function() {
-                updateAreLoading.call(that, update);
-            }, 300);
-        }
-    }
 
     /**
      * ### GameWindow.load
@@ -16905,7 +17021,7 @@ TriggerManager.prototype.size = function () {
         this.currentURIs[frame] = uri;
         
         this.state = constants.is.LOADING;
-        updateAreLoading.call(this, 1);  // keep track of nested call to loadFrame
+        this.areLoading++;  // keep track of nested call to loadFrame
         
         var that = this;
         
@@ -16978,12 +17094,13 @@ TriggerManager.prototype.size = function () {
     GameWindow.prototype.updateStatus = function(func, frame) {
         // Update the reference to the frame obj
         this.frame = window.frames[frame].document;
+        
         if (func) {
 	    func.call(node.game); // TODO: Pass the right this reference
 	    //node.log('Frame Loaded correctly!');
         }
         
-        updateAreLoading.call(this, -1);
+        this.areLoading--;
         
         if (this.areLoading === 0) {
             this.state = constants.is.LOADED;
@@ -16998,7 +17115,7 @@ TriggerManager.prototype.size = function () {
             
         }
         else {
-	    node.silly('GameWindow.updateState: ' + this.areLoading + ' loadFrame processes open.');
+	    node.silly('Attempt to update state, before the window object was loaded');
         }
     };
     
@@ -18962,485 +19079,512 @@ node.widgets = new Widgets();
     }; 
 })(node);
 (function (node) {
+    
+    node.widgets.register('VisualState', VisualState);
+    
+    var JSUS = node.JSUS,
+    Table = node.window.Table;
+    
+    // ## Defaults
+    
+    VisualState.defaults = {};
+    VisualState.defaults.id = 'visualstate';
+    VisualState.defaults.fieldset = { 
+	legend: 'State',
+	id: 'visualstate_fieldset'
+    };	
+    
+    // ## Meta-data
+    
+    VisualState.name = 'Visual State';
+    VisualState.version = '0.2.1';
+    VisualState.description = 'Visually display current, previous and next state of the game.';
+    
+    // ## Dependencies
+    
+    VisualState.dependencies = {
+	JSUS: {},
+	Table: {}
+    };
+    
+    
+    function VisualState (options) {
+	this.id = options.id;
 	
+	this.root = null;		// the parent element
+	this.table = new Table();
+    }
+    
+    VisualState.prototype.getRoot = function () {
+	return this.root;
+    };
+    
+    VisualState.prototype.append = function (root, ids) {
+	var that = this;
+	var PREF = this.id + '_';
+	root.appendChild(this.table.table);
+	this.writeState();
+	return root;
+    };
+    
+    VisualState.prototype.listeners = function () {
+	var that = this;
+        
+        node.on('STEP_CALLBACK_EXECUTED', function() {
+	    that.writeState();
+	});
+
+        // Game over and init?
+    };
+    
+    VisualState.prototype.writeState = function () {
+	var miss, state, pr, nx, tmp;
+        var curStep, nextStep, prevStep;
+	var t;
+        
+        miss = '-';
+	state = 'Uninitialized';
+        pr = miss;
+        nx = miss;
+        
+        curStep = node.game.getCurrentGameStage();
+        
+	if (curStep) {
+            tmp = node.game.plot.getStep(curStep);
+            state = tmp ? tmp.id : miss;
+            
+	    prevStep = node.game.plot.previous(curStep);
+            if (prevStep) {
+                tmp = node.game.plot.getStep(prevStep);
+	        pr = tmp ? tmp.id : miss;
+            }
+            
+	    nextStep = node.game.plot.next(curStep);
+            if (nextStep) {
+                tmp = node.game.plot.getStep(nextStep);
+	        nx = tmp ? tmp.id : miss;
+            }
+        }
+        
+	this.table.clear(true);
+
+	this.table.addRow(['Previous: ', pr]);
+	this.table.addRow(['Current: ', state]);
+	this.table.addRow(['Next: ', nx]);
 	
-	node.widgets.register('D3', D3);
-	node.widgets.register('D3ts', D3ts);
+	t = this.table.select('y', '=', 2);
+	t.addClass('strong');
+	t.select('x','=',0).addClass('underline');
+	this.table.parse();
+    };
+    
+})(node);
+(function (node) {
 	
-	D3.prototype.__proto__ = node.Widget.prototype;
-	D3.prototype.constructor = D3;
+	node.widgets.register('Chat', Chat);
+	
+	var J = node.JSUS,
+		W = node.window;	
 
 // ## Defaults
 	
-	D3.defaults = {};
-	D3.defaults.id = 'D3';
-	D3.defaults.fieldset = {
-		legend: 'D3 plot'
-	};
+	Chat.defaults = {};
+	Chat.defaults.id = 'chat';
+	Chat.defaults.fieldset = { legend: 'Chat' };	
+	Chat.defaults.mode = 'MANY_TO_MANY'; 
+	Chat.defaults.textarea_id = 'chat_textarea';
+	Chat.defaults.chat_id = 'chat_chat';
+	Chat.defaults.chat_event = 'CHAT';
+	Chat.defaults.submit_id = 'chat_submit';
+	Chat.defaults.submit_text = 'chat';
 
-	
+			
 // ## Meta-data
 	
-	D3.name = 'D3';
-	D3.version = '0.1';
-	D3.description = 'Real time plots for nodeGame with d3.js';
+	// ### Chat.modes
+	// 	MANY_TO_MANY: everybody can see all the messages, and it possible
+	//    to send private messages
+	//  MANY_TO_ONE: everybody can see all the messages, private messages can
+	//    be received, but not sent
+	//  ONE_TO_ONE: everybody sees only personal messages, private messages can
+	//    be received, but not sent. All messages are sent to the SERVER
+	//  RECEIVER_ONLY: messages can only be received, but not sent
+	Chat.modes = { 
+			MANY_TO_MANY: 'MANY_TO_MANY',
+			MANY_TO_ONE: 'MANY_TO_ONE',
+			ONE_TO_ONE: 'ONE_TO_ONE',
+			RECEIVER_ONLY: 'RECEIVER_ONLY'
+	};
 	
+	Chat.name = 'Chat';
+	Chat.version = '0.4';
+	Chat.description = 'Offers a uni / bi-directional communication interface between players, or between players and the experimenter.';
+
 // ## Dependencies
 	
-	D3.dependencies = {
-		d3: {},	
+	Chat.dependencies = {
 		JSUS: {}
 	};
 	
-	function D3 (options) {
-		this.id = options.id || D3.id;
-		this.event = options.event || 'D3';
-		this.svg = null;
+	function Chat (options) {
+		this.id = options.id || Chat.id;
+		this.mode = options.mode || Chat.defaults.mode;
 		
-		var that = this;
-		node.on(this.event, function (value) {
-			that.tick.call(that, value); 
-		});
+		this.root = null;
+		
+		this.textarea_id = options.textarea_id || Chat.defaults.textarea_id;
+		this.chat_id = options.chat_id || Chat.defaults.chat_id;
+		this.submit_id = options.submit_id || Chat.defaults.submit_id;
+		
+		this.chat_event = options.chat_event || Chat.defaults.chat_event;
+		this.submit_text = options.submit_text || Chat.defaults.submit_text;
+
+		this.submit = W.getEventButton(this.chat_event, this.submit_text, this.submit_id);
+		this.textarea = W.getElement('textarea', this.textarea_id);
+		this.chat = W.getElement('div', this.chat_id);
+		
+		if ('undefined' !== typeof options.displayName) {
+			this.displayName = options.displayName;
+		}
+		
+		switch(this.mode) {
+		
+		case Chat.modes.RECEIVER_ONLY:
+			this.recipient = {value: 'SERVER'};
+			break;
+		case Chat.modes.MANY_TO_ONE:
+			this.recipient = {value: 'ALL'};
+			break;
+		case Chat.modes.ONE_TO_ONE:
+			this.recipient = {value: 'SERVER'};
+			break;
+		default:
+			this.recipient = W.getRecipientSelector();
+		}
 	}
 	
-	D3.prototype.append = function (root) {
+	
+	Chat.prototype.append = function (root) {
 		this.root = root;
-		this.svg = d3.select(root).append("svg");
+		root.appendChild(this.chat);
+		
+		if (this.mode !== Chat.modes.RECEIVER_ONLY) {	
+			W.writeln('', root);
+			root.appendChild(this.textarea);
+			W.writeln('', root);
+			root.appendChild(this.submit);
+			if (this.mode === Chat.modes.MANY_TO_MANY) {
+				root.appendChild(this.recipient);
+			}
+		}
 		return root;
 	};
 	
-	D3.prototype.tick = function () {};
-	
-// # D3ts
-	
-	
-// ## Meta-data
-	
-	D3ts.id = 'D3ts';
-	D3ts.name = 'D3ts';
-	D3ts.version = '0.1';
-	D3ts.description = 'Time series plot for nodeGame with d3.js';
-	
-// ## Dependencies	
-	D3ts.dependencies = {
-		D3: {},	
-		JSUS: {}
+	Chat.prototype.getRoot = function () {
+		return this.root;
 	};
 	
-	D3ts.prototype.__proto__ = D3.prototype;
-	D3ts.prototype.constructor = D3ts;
-	
-	D3ts.defaults = {};
-	
-	D3ts.defaults.width = 400;
-	D3ts.defaults.height = 200;
-	
-	D3ts.defaults.margin = {
-    	top: 10, 
-    	right: 10, 
-    	bottom: 20, 
-    	left: 40 
+	Chat.prototype.displayName = function(from) {
+		return from;
 	};
 	
-	D3ts.defaults.domain = {
-		x: [0, 10],
-		y: [0, 1]
+	Chat.prototype.readTA = function () {
+		var txt = this.textarea.value;
+		this.textarea.value = '';
+		return txt;
 	};
 	
-    D3ts.defaults.range = {
-    	x: [0, D3ts.defaults.width],
-    	y: [D3ts.defaults.height, 0]
-    };
-	
-	function D3ts (options) {
-		D3.call(this, options);
-		
-		
-		var o = this.options = JSUS.merge(D3ts.defaults, options);
-		
-		var n = this.n = o.n;
-		
-	    this.data = [0];
-	    
-	    this.margin = o.margin;
-	    
-		var width = this.width = o.width - this.margin.left - this.margin.right;
-		var height = this.height = o.height - this.margin.top - this.margin.bottom;
-
-		// identity function
-		var x = this.x = d3.scale.linear()
-		    .domain(o.domain.x)
-		    .range(o.range.x);
-
-		var y = this.y = d3.scale.linear()
-		    .domain(o.domain.y)
-		    .range(o.range.y);
-
-		// line generator
-		this.line = d3.svg.line()
-		    .x(function(d, i) { return x(i); })
-		    .y(function(d, i) { return y(d); });
-	}
-	
-	D3ts.prototype.init = function (options) {
-		//D3.init.call(this, options);
-		
-		console.log('init!');
-		var x = this.x,
-			y = this.y,
-			height = this.height,
-			width = this.width,
-			margin = this.margin;
-		
-		
-		// Create the SVG and place it in the middle
-		this.svg.attr("width", width + margin.left + margin.right)
-		    .attr("height", height + margin.top + margin.bottom)
-		  .append("g")
-		    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-
-		// Line does not go out the axis
-		this.svg.append("defs").append("clipPath")
-		    .attr("id", "clip")
-		  .append("rect")
-		    .attr("width", width)
-		    .attr("height", height);
-
-		// X axis
-		this.svg.append("g")
-		    .attr("class", "x axis")
-		    .attr("transform", "translate(0," + height + ")")
-		    .call(d3.svg.axis().scale(x).orient("bottom"));
-
-		// Y axis
-		this.svg.append("g")
-		    .attr("class", "y axis")
-		    .call(d3.svg.axis().scale(y).orient("left"));
-
-		this.path = this.svg.append("g")
-		    .attr("clip-path", "url(#clip)")
-		  .append("path")
-		    .data([this.data])
-		    .attr("class", "line")
-		    .attr("d", this.line);		
+	Chat.prototype.writeTA = function (string, args) {
+		J.sprintf(string, args, this.chat);
+	    W.writeln('', this.chat);
+	    this.chat.scrollTop = this.chat.scrollHeight;
 	};
 	
-	D3ts.prototype.tick = function (value) {
-		this.alreadyInit = this.alreadyInit || false;
-		if (!this.alreadyInit) {
-			this.init();
-			this.alreadyInit = true;
+	Chat.prototype.listeners = function() {
+		var that = this;	
+		    
+	    node.on(this.chat_event, function () {
+	      var msg = that.readTA();
+	      if (!msg) return;
+	      
+	      var to = that.recipient.value;
+	      var args = {
+		        '%s': {
+		          'class': 'chat_me'
+		        },
+		        '%msg': {
+		          'class': 'chat_msg'
+		        },
+		        '!txt': msg
+	      };
+	      that.writeTA('%sMe%s: %msg!txt%msg', args);
+	      node.say(msg.trim(), that.chat_event, to);
+	    });
+		  
+		if (this.mode === Chat.modes.MANY_TO_MANY) {
+		    node.on('UPDATED_PLIST', function() {
+			      W.populateRecipientSelector(that.recipient, node.game.pl.fetch());
+		    });
 		}
-		
-		var x = this.x;
-		
-		console.log('tick!');
-	
-		// push a new data point onto the back
-		this.data.push(value);
 
-		// redraw the line, and slide it to the left
-		this.path
-	    	.attr("d", this.line)
-	    	.attr("transform", null);
-
-		// pop the old data point off the front
-		if (this.data.length > this.n) {
-		
-	  		this.path
-	  			.transition()
-	  			.duration(500)
-	  			.ease("linear")
-	  			.attr("transform", "translate(" + x(-1) + ")");
-	  		
-	  		this.data.shift();
-	  	  
-		}
+	    node.onDATA(this.chat_event, function (msg) {
+	    	if (msg.from === node.player.id || msg.from === node.player.sid) {
+	    		return;
+	    	}
+	    	
+	    	if (this.mode === Chat.modes.ONE_TO_ONE) { 
+		    	if (msg.from === this.recipient.value) {
+		    		return;
+		    	}
+	    	}
+	    	
+	    	
+	    	var from = that.displayName(msg.from);
+	    	var args = {
+		        '%s': {
+		          'class': 'chat_others'
+		        },
+		        '%msg': {
+		          'class': 'chat_msg'
+		        },
+		        '!txt': msg.data,
+	            '!from': from
+	      };
+	    	
+	      that.writeTA('%s!from%s: %msg!txt%msg', args);
+	    });
 	};
 	
 })(node);
 (function (node) {
-	
-	node.widgets.register('NDDBBrowser', NDDBBrowser);
-	
-	var JSUS = node.JSUS,
-		NDDB = node.NDDB,
-		TriggerManager = node.TriggerManager;
 
-// ## Defaults
+	// TODO: needs major refactoring
 	
-	NDDBBrowser.defaults = {};
-	NDDBBrowser.defaults.id = 'nddbbrowser';
-	NDDBBrowser.defaults.fieldset = false;
+	var GameStage = node.GameStage,
+		PlayerList = node.PlayerList,
+		Table = node.window.Table,
+		HTMLRenderer = node.window.HTMLRenderer;
 	
-// ## Meta-data
+	node.widgets.register('DynamicTable', DynamicTable);
 	
-	NDDBBrowser.name = 'NDDBBrowser';
-	NDDBBrowser.version = '0.1.2';
-	NDDBBrowser.description = 'Provides a very simple interface to control a NDDB istance.';
 	
-// ## Dependencies
+	DynamicTable.prototype = new Table();
+	DynamicTable.prototype.constructor = Table;	
 	
-	NDDBBrowser.dependencies = {
+	
+	DynamicTable.id = 'dynamictable';
+	DynamicTable.name = 'Dynamic Table';
+	DynamicTable.version = '0.3.1';
+	
+	DynamicTable.dependencies = {
+		Table: {},
 		JSUS: {},
-		NDDB: {},
-		TriggerManager: {}
+		HTMLRenderer: {}
 	};
 	
-	function NDDBBrowser (options) {
+	function DynamicTable (options, data) {
+		//JSUS.extend(node.window.Table,this);
+		Table.call(this, options, data);
 		this.options = options;
-		this.nddb = null;
-		
-		this.commandsDiv = document.createElement('div');
 		this.id = options.id;
-		if ('undefined' !== typeof this.id) {
-			this.commandsDiv.id = this.id;
-		}
+		this.name = options.name || 'Dynamic Table';
+		this.fieldset = { legend: this.name,
+							id: this.id + '_fieldset'
+		};
 		
-		this.info = null;
+		this.root = null;
+		this.bindings = {};
 		this.init(this.options);
 	}
 	
-	NDDBBrowser.prototype.init = function (options) {
-		
-		function addButtons() {
-			var id = this.id;
-			node.window.addEventButton(id + '_GO_TO_FIRST', '<<', this.commandsDiv, 'go_to_first');
-			node.window.addEventButton(id + '_GO_TO_PREVIOUS', '<', this.commandsDiv, 'go_to_previous');
-			node.window.addEventButton(id + '_GO_TO_NEXT', '>', this.commandsDiv, 'go_to_next');
-			node.window.addEventButton(id + '_GO_TO_LAST', '>>', this.commandsDiv, 'go_to_last');
-			node.window.addBreak(this.commandsDiv);
-		}
-		function addInfoBar() {
-			var span = this.commandsDiv.appendChild(document.createElement('span'));
-			return span;
-		}
-		
-		
-		addButtons.call(this);
-		this.info = addInfoBar.call(this);
-		
-		this.tm = new TriggerManager();
-		this.tm.init(options.triggers);
-		this.nddb = options.nddb || new NDDB({auto_update_pointer: true});
+	DynamicTable.prototype.init = function (options) {
+		this.options = options;
+		this.name = options.name || this.name;
+		this.auto_update = ('undefined' !== typeof options.auto_update) ? options.auto_update : true;
+		this.replace = options.replace || false;
+		this.htmlRenderer = new HTMLRenderer({renderers: options.renderers});
+		this.c('state', GameStage.compare);
+		this.setLeft([]);
+		this.parse(true);
 	};
-	
-	NDDBBrowser.prototype.append = function (root) {
+		
+	DynamicTable.prototype.bind = function (event, bindings) {
+		if (!event || !bindings) return;
+		var that = this;
+
+		node.on(event, function(msg) {
+			
+			if (bindings.x || bindings.y) {
+				// Cell
+				var func;
+				if (that.replace) {
+					func = function (x, y) {
+						var found = that.get(x,y);
+						if (found.length !== 0) {
+							for (var ci=0; ci < found.length; ci++) {
+								bindings.cell.call(that, msg, found[ci]);
+							}
+						}
+						else {
+							var cell = bindings.cell.call(that, msg, new Table.Cell({x: x, y: y}));
+							that.add(cell);
+						}
+					};
+				}
+				else {
+					func = function (x, y) {
+						var cell = bindings.cell.call(that, msg, new Table.Cell({x: x, y: y}));
+						that.add(cell, x, y);
+					};
+				}
+				
+				var x = bindings.x.call(that, msg);
+				var y = bindings.y.call(that, msg);
+				
+				if (x && y) {
+					
+					x = (x instanceof Array) ? x : [x];
+					y = (y instanceof Array) ? y : [y];
+					
+//					console.log('Bindings found:');
+//					console.log(x);
+//					console.log(y);
+					
+					for (var xi=0; xi < x.length; xi++) {
+						for (var yi=0; yi < y.length; yi++) {
+							// Replace or Add
+							func.call(that, x[xi], y[yi]);
+						}
+					}
+				}
+				// End Cell
+			}
+			
+			// Header
+			if (bindings.header) {
+				var h = bindings.header.call(that, msg);
+				h = (h instanceof Array) ? h : [h];
+				that.setHeader(h);
+			}
+			
+			// Left
+			if (bindings.left) {
+				var l = bindings.left.call(that, msg);
+				if (!JSUS.in_array(l, that.left)) {
+					that.header.push(l);
+				}
+			}
+			
+			// Auto Update?
+			if (that.auto_update) {
+				that.parse();
+			}
+		});
+		
+	};
+
+	DynamicTable.prototype.append = function (root) {
 		this.root = root;
-		root.appendChild(this.commandsDiv);
+		root.appendChild(this.table);
 		return root;
 	};
 	
-	NDDBBrowser.prototype.getRoot = function (root) {
-		return this.commandsDiv;
-	};
-	
-	NDDBBrowser.prototype.add = function (o) {
-		return this.nddb.insert(o);
-	};
-	
-	NDDBBrowser.prototype.sort = function (key) {
-		return this.nddb.sort(key);
-	};
-	
-	NDDBBrowser.prototype.addTrigger = function (trigger) {
-		return this.tm.addTrigger(trigger);
-	};
-	
-	NDDBBrowser.prototype.removeTrigger = function (trigger) {
-		return this.tm.removeTrigger(trigger);
-	};
-	
-	NDDBBrowser.prototype.resetTriggers = function () {
-		return this.tm.resetTriggers();
-	};
-	
-	NDDBBrowser.prototype.listeners = function() {
-		var that = this;
-		var id = this.id;
-		
-		function notification (el, text) {
-			if (el) {
-				node.emit(id + '_GOT', el);
-				this.writeInfo((this.nddb.nddb_pointer + 1) + '/' + this.nddb.length);
-			}
-			else {
-				this.writeInfo('No element found');
-			}
-		}
-		
-		node.on(id + '_GO_TO_FIRST', function() {
-			var el = that.tm.pullTriggers(that.nddb.first());
-			notification.call(that, el);
-		});
-		
-		node.on(id + '_GO_TO_PREVIOUS', function() {
-			var el = that.tm.pullTriggers(that.nddb.previous());
-			notification.call(that, el);
-		});
-		
-		node.on(id + '_GO_TO_NEXT', function() {
-			var el = that.tm.pullTriggers(that.nddb.next());
-			notification.call(that, el);
-		});
+	DynamicTable.prototype.listeners = function () {}; 
 
-		node.on(id + '_GO_TO_LAST', function() {
-			var el = that.tm.pullTriggers(that.nddb.last());
-			notification.call(that, el);
-			
-		});
-	};
-	
-	NDDBBrowser.prototype.writeInfo = function (text) {
-		if (this.infoTimeout) clearTimeout(this.infoTimeout);
-		this.info.innerHTML = text;
-		var that = this;
-		this.infoTimeout = setTimeout(function(){
-			that.info.innerHTML = '';
-		}, 2000);
-	};
-	
-	
 })(node);
 (function (node) {
+
+    var Table = node.window.Table,
+    GameStage = node.GameStage;
     
-    node.widgets.register('DataBar', DataBar);
-    
-    // ## Defaults
-    DataBar.defaults = {};
-    DataBar.defaults.id = 'databar';
-    DataBar.defaults.fieldset = {	
-	legend: 'Send DATA to players'
-    };
-    
-    // ## Meta-data
-    DataBar.name = 'Data Bar';
-    DataBar.version = '0.4';
-    DataBar.description = 'Adds a input field to send DATA messages to the players';
-    
-    function DataBar (options) {
-	this.bar = null;
-	this.root = null;
-	this.recipient = null;
-    }
-    
-    
-    DataBar.prototype.append = function (root) {
-	
-	var sendButton, textInput, dataInput;
-	
-	sendButton = W.addButton(root);
-	W.writeln('Text');
-	textInput = W.addTextInput(root, 'data-bar-text');
-	W.writeln('Data');
-	dataInput = W.addTextInput(root, 'data-bar-data');
-	
-	this.recipient = W.addRecipientSelector(root);
-	
-	var that = this;
-	
-	sendButton.onclick = function() {
-	    
-	    var to, data, text;
-	    
-	    to = that.recipient.value;
-	    text = textInput.value;
-	    data = dataInput.value;
-	    
-	    node.log('Parsed Data: ' + JSON.stringify(data));
-	    
-	    node.say(data, text, to);
-	};
-	
-	node.on('UPDATED_PLIST', function() {
-	    node.window.populateRecipientSelector(that.recipient, node.game.pl);
-	});
-	
-	return root;
-	
-    };
-    
-})(node);
-(function (node) {
-    
-    node.widgets.register('ServerInfoDisplay', ServerInfoDisplay);	
+    node.widgets.register('StateDisplay', StateDisplay);	
 
     // ## Defaults
     
-    ServerInfoDisplay.defaults = {};
-    ServerInfoDisplay.defaults.id = 'serverinfodisplay';
-    ServerInfoDisplay.defaults.fieldset = {
-	legend: 'Server Info',
-	id: 'serverinfo_fieldset'
-    };		
+    StateDisplay.defaults = {};
+    StateDisplay.defaults.id = 'statedisplay';
+    StateDisplay.defaults.fieldset = { legend: 'State Display' };		
     
     // ## Meta-data
     
-    ServerInfoDisplay.name = 'Server Info Display';
-    ServerInfoDisplay.version = '0.4';
+    StateDisplay.name = 'State Display';
+    StateDisplay.version = '0.4.2';
+    StateDisplay.description = 'Display basic information about player\'s status.';
     
-    function ServerInfoDisplay (options) {	
+    function StateDisplay (options) {
+	
 	this.id = options.id;
 	
 	this.root = null;
-	this.div = document.createElement('div');
-	this.table = null; //new node.window.Table();
-	this.button = null;
+	this.table = new Table();
     }
     
-    ServerInfoDisplay.prototype.init = function (options) {
+    // TODO: Write a proper INIT method
+    StateDisplay.prototype.init = function () {};
+    
+    StateDisplay.prototype.getRoot = function () {
+	return this.root;
+    };
+    
+    
+    StateDisplay.prototype.append = function (root) {
 	var that = this;
-	if (!this.div) {
-	    this.div = document.createElement('div');
-	}
-	this.div.innerHTML = 'Waiting for the reply from Server...';
-	if (!this.table) {
-	    this.table = new node.window.Table(options);
-	}
-	this.table.clear(true);
-	this.button = document.createElement('button');
-	this.button.value = 'Refresh';
-	this.button.appendChild(document.createTextNode('Refresh'));
-	this.button.onclick = function(){
-	    that.getInfo();
-	};
-	this.root.appendChild(this.button);
-	this.getInfo();
-    };
-    
-    ServerInfoDisplay.prototype.append = function (root) {
-	this.root = root;
-	root.appendChild(this.div);
-	return root;
-    };
-    
-    ServerInfoDisplay.prototype.getInfo = function() {
-	var that = this;
-	node.get('INFO', function (info) {
-	    node.window.removeChildrenFromNode(that.div);
-	    that.div.appendChild(that.processInfo(info));
-	});
-    };
-    
-    ServerInfoDisplay.prototype.processInfo = function(info) {
-	this.table.clear(true);
-	for (var key in info) {
-	    if (info.hasOwnProperty(key)){
-		this.table.addRow([key,info[key]]);
+	var PREF = this.id + '_';
+	
+	var idFieldset = PREF + 'fieldset';
+	var idPlayer = PREF + 'player';
+	var idState = PREF + 'state'; 
+	
+	var checkPlayerName = setInterval(function(idState,idPlayer) {
+	    if (node.player && node.player.id) {
+		clearInterval(checkPlayerName);
+		that.updateAll();
 	    }
-	}
-	return this.table.parse();
+	}, 100);
+	
+	root.appendChild(this.table.table);
+	this.root = root;
+	return root;
+	
     };
     
-    ServerInfoDisplay.prototype.listeners = function () {
+    StateDisplay.prototype.updateAll = function() {
+	var stage, stageNo, stageId, playerId, tmp, miss;
+        miss = '-';
+        
+        stageId = miss;
+        stageNo = miss;
+        playerId = miss;
+
+	if (node.player.id) {
+            playerId = node.player.id;
+        }
+        
+	stage = node.game.getCurrentGameStage();	
+	if (stage) {
+            tmp = node.game.plot.getStep(stage);
+            stageId = tmp ? tmp.id : '-';
+            stageNo = stage.toString();
+        }
+        
+	this.table.clear(true);
+	this.table.addRow(['Stage  No: ', stageNo]);
+	this.table.addRow(['Stage  Id: ', stageId]);
+	this.table.addRow(['Player Id: ', playerId]);
+	this.table.parse();
+	
+    };
+    
+    StateDisplay.prototype.listeners = function () {
 	var that = this;
-	node.on('PLAYER_CREATED', function(){
-	    that.init();
-	});
+	
+	node.on('STEP_CALLBACK_EXECUTED', function() {
+	    that.updateAll();
+	}); 
     }; 
     
 })(node);
+
 (function (node) {
 	
 
@@ -19758,336 +19902,6 @@ node.widgets = new Widgets();
 })(node);
 (function (node) {
     
-    node.widgets.register('VisualState', VisualState);
-    
-    var JSUS = node.JSUS,
-    Table = node.window.Table;
-    
-    // ## Defaults
-    
-    VisualState.defaults = {};
-    VisualState.defaults.id = 'visualstate';
-    VisualState.defaults.fieldset = { 
-	legend: 'State',
-	id: 'visualstate_fieldset'
-    };	
-    
-    // ## Meta-data
-    
-    VisualState.name = 'Visual State';
-    VisualState.version = '0.2.1';
-    VisualState.description = 'Visually display current, previous and next state of the game.';
-    
-    // ## Dependencies
-    
-    VisualState.dependencies = {
-	JSUS: {},
-	Table: {}
-    };
-    
-    
-    function VisualState (options) {
-	this.id = options.id;
-	
-	this.root = null;		// the parent element
-	this.table = new Table();
-    }
-    
-    VisualState.prototype.getRoot = function () {
-	return this.root;
-    };
-    
-    VisualState.prototype.append = function (root, ids) {
-	var that = this;
-	var PREF = this.id + '_';
-	root.appendChild(this.table.table);
-	this.writeState();
-	return root;
-    };
-    
-    VisualState.prototype.listeners = function () {
-	var that = this;
-        
-        node.on('STEP_CALLBACK_EXECUTED', function() {
-	    that.writeState();
-	});
-
-        // Game over and init?
-    };
-    
-    VisualState.prototype.writeState = function () {
-	var miss, state, pr, nx, tmp;
-        var curStep, nextStep, prevStep;
-	var t;
-        
-        miss = '-';
-	state = 'Uninitialized';
-        pr = miss;
-        nx = miss;
-        
-        curStep = node.game.getCurrentGameStage();
-        
-	if (curStep) {
-            tmp = node.game.plot.getStep(curStep);
-            state = tmp ? tmp.id : miss;
-            
-	    prevStep = node.game.plot.previous(curStep);
-            if (prevStep) {
-                tmp = node.game.plot.getStep(prevStep);
-	        pr = tmp ? tmp.id : miss;
-            }
-            
-	    nextStep = node.game.plot.next(curStep);
-            if (nextStep) {
-                tmp = node.game.plot.getStep(nextStep);
-	        nx = tmp ? tmp.id : miss;
-            }
-        }
-        
-	this.table.clear(true);
-
-	this.table.addRow(['Previous: ', pr]);
-	this.table.addRow(['Current: ', state]);
-	this.table.addRow(['Next: ', nx]);
-	
-	t = this.table.select('y', '=', 2);
-	t.addClass('strong');
-	t.select('x','=',0).addClass('underline');
-	this.table.parse();
-    };
-    
-})(node);
-(function (node) {
-
-    var Table = node.window.Table,
-    GameStage = node.GameStage;
-    
-    node.widgets.register('StateDisplay', StateDisplay);	
-
-    // ## Defaults
-    
-    StateDisplay.defaults = {};
-    StateDisplay.defaults.id = 'statedisplay';
-    StateDisplay.defaults.fieldset = { legend: 'State Display' };		
-    
-    // ## Meta-data
-    
-    StateDisplay.name = 'State Display';
-    StateDisplay.version = '0.4.2';
-    StateDisplay.description = 'Display basic information about player\'s status.';
-    
-    function StateDisplay (options) {
-	
-	this.id = options.id;
-	
-	this.root = null;
-	this.table = new Table();
-    }
-    
-    // TODO: Write a proper INIT method
-    StateDisplay.prototype.init = function () {};
-    
-    StateDisplay.prototype.getRoot = function () {
-	return this.root;
-    };
-    
-    
-    StateDisplay.prototype.append = function (root) {
-	var that = this;
-	var PREF = this.id + '_';
-	
-	var idFieldset = PREF + 'fieldset';
-	var idPlayer = PREF + 'player';
-	var idState = PREF + 'state'; 
-	
-	var checkPlayerName = setInterval(function(idState,idPlayer) {
-	    if (node.player && node.player.id) {
-		clearInterval(checkPlayerName);
-		that.updateAll();
-	    }
-	}, 100);
-	
-	root.appendChild(this.table.table);
-	this.root = root;
-	return root;
-	
-    };
-    
-    StateDisplay.prototype.updateAll = function() {
-	var stage, stageNo, stageId, playerId, tmp, miss;
-        miss = '-';
-        
-        stageId = miss;
-        stageNo = miss;
-        playerId = miss;
-
-	if (node.player.id) {
-            playerId = node.player.id;
-        }
-        
-	stage = node.game.getCurrentGameStage();	
-	if (stage) {
-            tmp = node.game.plot.getStep(stage);
-            stageId = tmp ? tmp.id : '-';
-            stageNo = stage.toString();
-        }
-        
-	this.table.clear(true);
-	this.table.addRow(['Stage  No: ', stageNo]);
-	this.table.addRow(['Stage  Id: ', stageId]);
-	this.table.addRow(['Player Id: ', playerId]);
-	this.table.parse();
-	
-    };
-    
-    StateDisplay.prototype.listeners = function () {
-	var that = this;
-	
-	node.on('STEP_CALLBACK_EXECUTED', function() {
-	    that.updateAll();
-	}); 
-    }; 
-    
-})(node);
-
-(function (node) {
-
-	// TODO: needs major refactoring
-	
-	var GameStage = node.GameStage,
-		PlayerList = node.PlayerList,
-		Table = node.window.Table,
-		HTMLRenderer = node.window.HTMLRenderer;
-	
-	node.widgets.register('DynamicTable', DynamicTable);
-	
-	
-	DynamicTable.prototype = new Table();
-	DynamicTable.prototype.constructor = Table;	
-	
-	
-	DynamicTable.id = 'dynamictable';
-	DynamicTable.name = 'Dynamic Table';
-	DynamicTable.version = '0.3.1';
-	
-	DynamicTable.dependencies = {
-		Table: {},
-		JSUS: {},
-		HTMLRenderer: {}
-	};
-	
-	function DynamicTable (options, data) {
-		//JSUS.extend(node.window.Table,this);
-		Table.call(this, options, data);
-		this.options = options;
-		this.id = options.id;
-		this.name = options.name || 'Dynamic Table';
-		this.fieldset = { legend: this.name,
-							id: this.id + '_fieldset'
-		};
-		
-		this.root = null;
-		this.bindings = {};
-		this.init(this.options);
-	}
-	
-	DynamicTable.prototype.init = function (options) {
-		this.options = options;
-		this.name = options.name || this.name;
-		this.auto_update = ('undefined' !== typeof options.auto_update) ? options.auto_update : true;
-		this.replace = options.replace || false;
-		this.htmlRenderer = new HTMLRenderer({renderers: options.renderers});
-		this.c('state', GameStage.compare);
-		this.setLeft([]);
-		this.parse(true);
-	};
-		
-	DynamicTable.prototype.bind = function (event, bindings) {
-		if (!event || !bindings) return;
-		var that = this;
-
-		node.on(event, function(msg) {
-			
-			if (bindings.x || bindings.y) {
-				// Cell
-				var func;
-				if (that.replace) {
-					func = function (x, y) {
-						var found = that.get(x,y);
-						if (found.length !== 0) {
-							for (var ci=0; ci < found.length; ci++) {
-								bindings.cell.call(that, msg, found[ci]);
-							}
-						}
-						else {
-							var cell = bindings.cell.call(that, msg, new Table.Cell({x: x, y: y}));
-							that.add(cell);
-						}
-					};
-				}
-				else {
-					func = function (x, y) {
-						var cell = bindings.cell.call(that, msg, new Table.Cell({x: x, y: y}));
-						that.add(cell, x, y);
-					};
-				}
-				
-				var x = bindings.x.call(that, msg);
-				var y = bindings.y.call(that, msg);
-				
-				if (x && y) {
-					
-					x = (x instanceof Array) ? x : [x];
-					y = (y instanceof Array) ? y : [y];
-					
-//					console.log('Bindings found:');
-//					console.log(x);
-//					console.log(y);
-					
-					for (var xi=0; xi < x.length; xi++) {
-						for (var yi=0; yi < y.length; yi++) {
-							// Replace or Add
-							func.call(that, x[xi], y[yi]);
-						}
-					}
-				}
-				// End Cell
-			}
-			
-			// Header
-			if (bindings.header) {
-				var h = bindings.header.call(that, msg);
-				h = (h instanceof Array) ? h : [h];
-				that.setHeader(h);
-			}
-			
-			// Left
-			if (bindings.left) {
-				var l = bindings.left.call(that, msg);
-				if (!JSUS.in_array(l, that.left)) {
-					that.header.push(l);
-				}
-			}
-			
-			// Auto Update?
-			if (that.auto_update) {
-				that.parse();
-			}
-		});
-		
-	};
-
-	DynamicTable.prototype.append = function (root) {
-		this.root = root;
-		root.appendChild(this.table);
-		return root;
-	};
-	
-	DynamicTable.prototype.listeners = function () {}; 
-
-})(node);
-(function (node) {
-    
     node.widgets.register('GameBoard', GameBoard);
     
     var PlayerList = node.PlayerList;
@@ -20209,6 +20023,358 @@ node.widgets = new Widgets();
 	this.status.innerHTML = 'Connected players: ' + node.game.pl.length;
     };
     
+})(node);
+(function (node) {
+
+    var GameStage = node.GameStage,
+    PlayerList = node.PlayerList;
+    
+    
+    node.widgets.register('GameTable', GameTable);
+    
+    // ## Defaults
+    
+    GameTable.defaults = {};
+    GameTable.defaults.id = 'gametable';
+    GameTable.defaults.fieldset = { 
+	legend: 'Game Table',
+	id: 'gametable_fieldset'
+    };
+    
+    // ## Meta-data
+    
+    GameTable.name = 'Game Table';
+    GameTable.version = '0.3';
+    
+    // ## Dependencies
+    
+    GameTable.dependencies = {
+	JSUS: {}
+    };
+    
+    function GameTable (options) {
+	this.options = options;
+	this.id = options.id;
+	this.name = options.name || GameTable.name;
+	
+	this.root = null;
+	this.gtbl = null;
+	this.plist = null;
+	
+	this.init(this.options);
+    }
+    
+    GameTable.prototype.init = function (options) {
+	
+	if (!this.plist) this.plist = new PlayerList();
+	
+	this.gtbl = new node.window.Table({
+	    auto_update: true,
+	    id: options.id || this.id,
+	    render: options.render
+	}, node.game.memory.db);
+	
+	
+	this.gtbl.c('state', GameStage.compare);
+	
+	this.gtbl.setLeft([]);
+	
+	this.gtbl.parse(true);
+    };
+    
+
+    GameTable.prototype.addRenderer = function (func) {
+	return this.gtbl.addRenderer(func);
+    };
+    
+    GameTable.prototype.resetRender = function () {
+	return this.gtbl.resetRenderer();
+    };
+    
+    GameTable.prototype.removeRenderer = function (func) {
+	return this.gtbl.removeRenderer(func);
+    };
+    
+    GameTable.prototype.append = function (root) {
+	this.root = root;
+	root.appendChild(this.gtbl.table);
+	return root;
+    };
+    
+    GameTable.prototype.listeners = function () {
+	var that = this;
+	
+	node.on.plist(function(msg) {	
+	    if (!msg.data.length) return;
+	    
+	    //var diff = JSUS.arrayDiff(msg.data,that.plist.db);
+	    var plist = new PlayerList({}, msg.data);
+	    var diff = plist.diff(that.plist);
+	    if (diff) {
+                //				console.log('New Players found');
+                //				console.log(diff);
+		diff.forEach(function(el){that.addPlayer(el);});
+	    }
+
+	    that.gtbl.parse(true);
+	});
+	
+	node.on('in.set.DATA', function (msg) {
+
+	    that.addLeft(msg.state, msg.from);
+	    var x = that.player2x(msg.from);
+	    var y = that.state2y(node.game.state, msg.text);
+	    
+	    that.gtbl.add(msg.data, x, y);
+	    that.gtbl.parse(true);
+	});
+    }; 
+    
+    GameTable.prototype.addPlayer = function (player) {
+	this.plist.add(player);
+	var header = this.plist.map(function(el){return el.name;});
+	this.gtbl.setHeader(header);
+    };
+    
+    GameTable.prototype.addLeft = function (state, player) {
+	if (!state) return;
+	state = new GameStage(state);
+	if (!JSUS.in_array({content:state.toString(), type: 'left'}, this.gtbl.left)){
+	    this.gtbl.add2Left(state.toString());
+	}
+	// Is it a new display associated to the same state?
+	else {
+	    var y = this.state2y(state);
+	    var x = this.player2x(player);
+	    if (this.gtbl.select('y','=',y).select('x','=',x).count() > 1) {
+		this.gtbl.add2Left(state.toString());
+	    }
+	}
+	
+    };
+    
+    GameTable.prototype.player2x = function (player) {
+	if (!player) return false;
+	return this.plist.select('id', '=', player).first().count;
+    };
+    
+    GameTable.prototype.x2Player = function (x) {
+	if (!x) return false;
+	return this.plist.select('count', '=', x).first().count;
+    };
+    
+    GameTable.prototype.state2y = function (state) {
+	if (!state) return false;
+	return node.game.plot.indexOf(state);
+    };
+    
+    GameTable.prototype.y2State = function (y) {
+	if (!y) return false;
+	return node.game.plot.jumpTo(new GameStage(),y);
+    };
+    
+    
+
+})(node);
+
+(function (node) {
+	
+	
+	node.widgets.register('D3', D3);
+	node.widgets.register('D3ts', D3ts);
+	
+	D3.prototype.__proto__ = node.Widget.prototype;
+	D3.prototype.constructor = D3;
+
+// ## Defaults
+	
+	D3.defaults = {};
+	D3.defaults.id = 'D3';
+	D3.defaults.fieldset = {
+		legend: 'D3 plot'
+	};
+
+	
+// ## Meta-data
+	
+	D3.name = 'D3';
+	D3.version = '0.1';
+	D3.description = 'Real time plots for nodeGame with d3.js';
+	
+// ## Dependencies
+	
+	D3.dependencies = {
+		d3: {},	
+		JSUS: {}
+	};
+	
+	function D3 (options) {
+		this.id = options.id || D3.id;
+		this.event = options.event || 'D3';
+		this.svg = null;
+		
+		var that = this;
+		node.on(this.event, function (value) {
+			that.tick.call(that, value); 
+		});
+	}
+	
+	D3.prototype.append = function (root) {
+		this.root = root;
+		this.svg = d3.select(root).append("svg");
+		return root;
+	};
+	
+	D3.prototype.tick = function () {};
+	
+// # D3ts
+	
+	
+// ## Meta-data
+	
+	D3ts.id = 'D3ts';
+	D3ts.name = 'D3ts';
+	D3ts.version = '0.1';
+	D3ts.description = 'Time series plot for nodeGame with d3.js';
+	
+// ## Dependencies	
+	D3ts.dependencies = {
+		D3: {},	
+		JSUS: {}
+	};
+	
+	D3ts.prototype.__proto__ = D3.prototype;
+	D3ts.prototype.constructor = D3ts;
+	
+	D3ts.defaults = {};
+	
+	D3ts.defaults.width = 400;
+	D3ts.defaults.height = 200;
+	
+	D3ts.defaults.margin = {
+    	top: 10, 
+    	right: 10, 
+    	bottom: 20, 
+    	left: 40 
+	};
+	
+	D3ts.defaults.domain = {
+		x: [0, 10],
+		y: [0, 1]
+	};
+	
+    D3ts.defaults.range = {
+    	x: [0, D3ts.defaults.width],
+    	y: [D3ts.defaults.height, 0]
+    };
+	
+	function D3ts (options) {
+		D3.call(this, options);
+		
+		
+		var o = this.options = JSUS.merge(D3ts.defaults, options);
+		
+		var n = this.n = o.n;
+		
+	    this.data = [0];
+	    
+	    this.margin = o.margin;
+	    
+		var width = this.width = o.width - this.margin.left - this.margin.right;
+		var height = this.height = o.height - this.margin.top - this.margin.bottom;
+
+		// identity function
+		var x = this.x = d3.scale.linear()
+		    .domain(o.domain.x)
+		    .range(o.range.x);
+
+		var y = this.y = d3.scale.linear()
+		    .domain(o.domain.y)
+		    .range(o.range.y);
+
+		// line generator
+		this.line = d3.svg.line()
+		    .x(function(d, i) { return x(i); })
+		    .y(function(d, i) { return y(d); });
+	}
+	
+	D3ts.prototype.init = function (options) {
+		//D3.init.call(this, options);
+		
+		console.log('init!');
+		var x = this.x,
+			y = this.y,
+			height = this.height,
+			width = this.width,
+			margin = this.margin;
+		
+		
+		// Create the SVG and place it in the middle
+		this.svg.attr("width", width + margin.left + margin.right)
+		    .attr("height", height + margin.top + margin.bottom)
+		  .append("g")
+		    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+
+		// Line does not go out the axis
+		this.svg.append("defs").append("clipPath")
+		    .attr("id", "clip")
+		  .append("rect")
+		    .attr("width", width)
+		    .attr("height", height);
+
+		// X axis
+		this.svg.append("g")
+		    .attr("class", "x axis")
+		    .attr("transform", "translate(0," + height + ")")
+		    .call(d3.svg.axis().scale(x).orient("bottom"));
+
+		// Y axis
+		this.svg.append("g")
+		    .attr("class", "y axis")
+		    .call(d3.svg.axis().scale(y).orient("left"));
+
+		this.path = this.svg.append("g")
+		    .attr("clip-path", "url(#clip)")
+		  .append("path")
+		    .data([this.data])
+		    .attr("class", "line")
+		    .attr("d", this.line);		
+	};
+	
+	D3ts.prototype.tick = function (value) {
+		this.alreadyInit = this.alreadyInit || false;
+		if (!this.alreadyInit) {
+			this.init();
+			this.alreadyInit = true;
+		}
+		
+		var x = this.x;
+		
+		console.log('tick!');
+	
+		// push a new data point onto the back
+		this.data.push(value);
+
+		// redraw the line, and slide it to the left
+		this.path
+	    	.attr("d", this.line)
+	    	.attr("transform", null);
+
+		// pop the old data point off the front
+		if (this.data.length > this.n) {
+		
+	  		this.path
+	  			.transition()
+	  			.duration(500)
+	  			.ease("linear")
+	  			.attr("transform", "translate(" + x(-1) + ")");
+	  		
+	  		this.data.shift();
+	  	  
+		}
+	};
+	
 })(node);
 (function (node) {
 	
@@ -20854,101 +21020,444 @@ node.widgets = new Widgets();
 
 })(node);
 (function (node) {
-
-	var JSUS = node.JSUS;
-
-	node.widgets.register('EventButton', EventButton);
+	
+	
+	// TODO: Introduce rules for update: other vs self
+	
+	node.widgets.register('NextPreviousState', NextPreviousState);
 	
 // ## Defaults
 	
-	EventButton.defaults = {};
-	EventButton.defaults.id = 'eventbutton';
-	EventButton.defaults.fieldset = false;	
+	NextPreviousState.defaults = {};
+	NextPreviousState.defaults.id = 'nextprevious';
+	NextPreviousState.defaults.fieldset = { legend: 'Rew-Fwd' };		
 	
-// ## Meta-data	
+// ## Meta-data
 	
-	EventButton.name = 'Event Button';
-	EventButton.version = '0.2';
+	NextPreviousState.name = 'Next,Previous State';
+	NextPreviousState.version = '0.3.2';
+	NextPreviousState.description = 'Adds two buttons to push forward or rewind the state of the game by one step.';
+		
+	function NextPreviousState(options) {
+		this.id = options.id;
+	}
+	
+	NextPreviousState.prototype.getRoot = function () {
+		return this.root;
+	};
+	
+	NextPreviousState.prototype.append = function (root) {
+		var idRew = this.id + '_button';
+		var idFwd = this.id + '_button';
+		
+		var rew = node.window.addButton(root, idRew, '<<');
+		var fwd = node.window.addButton(root, idFwd, '>>');
+		
+		
+		var that = this;
+	
+		var updateState = function (state) {
+			if (state) {
+				var stateEvent = node.IN + node.action.SAY + '.STATE';
+				var stateMsg = node.msg.createSTATE(stateEvent, state);
+				// Self Update
+				node.emit(stateEvent, stateMsg);
+				
+				// Update Others
+				stateEvent = node.OUT + node.action.SAY + '.STATE';
+				node.emit(stateEvent, state, 'ALL');
+			}
+			else {
+				node.log('No next/previous state. Not sent', 'ERR');
+			}
+		};
+		
+		fwd.onclick = function() {
+			updateState(node.game.next());
+		};
+			
+		rew.onclick = function() {
+			updateState(node.game.previous());
+		};
+		
+		this.root = root;
+		return root;
+	};
+	
+})(node);
+(function (node) {
+    
+    node.widgets.register('ServerInfoDisplay', ServerInfoDisplay);	
+
+    // ## Defaults
+    
+    ServerInfoDisplay.defaults = {};
+    ServerInfoDisplay.defaults.id = 'serverinfodisplay';
+    ServerInfoDisplay.defaults.fieldset = {
+	legend: 'Server Info',
+	id: 'serverinfo_fieldset'
+    };		
+    
+    // ## Meta-data
+    
+    ServerInfoDisplay.name = 'Server Info Display';
+    ServerInfoDisplay.version = '0.4';
+    
+    function ServerInfoDisplay (options) {	
+	this.id = options.id;
+	
+	this.root = null;
+	this.div = document.createElement('div');
+	this.table = null; //new node.window.Table();
+	this.button = null;
+    }
+    
+    ServerInfoDisplay.prototype.init = function (options) {
+	var that = this;
+	if (!this.div) {
+	    this.div = document.createElement('div');
+	}
+	this.div.innerHTML = 'Waiting for the reply from Server...';
+	if (!this.table) {
+	    this.table = new node.window.Table(options);
+	}
+	this.table.clear(true);
+	this.button = document.createElement('button');
+	this.button.value = 'Refresh';
+	this.button.appendChild(document.createTextNode('Refresh'));
+	this.button.onclick = function(){
+	    that.getInfo();
+	};
+	this.root.appendChild(this.button);
+	this.getInfo();
+    };
+    
+    ServerInfoDisplay.prototype.append = function (root) {
+	this.root = root;
+	root.appendChild(this.div);
+	return root;
+    };
+    
+    ServerInfoDisplay.prototype.getInfo = function() {
+	var that = this;
+	node.get('INFO', function (info) {
+	    node.window.removeChildrenFromNode(that.div);
+	    that.div.appendChild(that.processInfo(info));
+	});
+    };
+    
+    ServerInfoDisplay.prototype.processInfo = function(info) {
+	this.table.clear(true);
+	for (var key in info) {
+	    if (info.hasOwnProperty(key)){
+		this.table.addRow([key,info[key]]);
+	    }
+	}
+	return this.table.parse();
+    };
+    
+    ServerInfoDisplay.prototype.listeners = function () {
+	var that = this;
+	node.on('PLAYER_CREATED', function(){
+	    that.init();
+	});
+    }; 
+    
+})(node);
+(function (node) {
+	
+	node.widgets.register('VisualTimer', VisualTimer);
+	
+	var JSUS = node.JSUS;
+
+// ## Defaults
+	
+	VisualTimer.defaults = {};
+	VisualTimer.defaults.id = 'visualtimer';
+	VisualTimer.defaults.fieldset = {
+			legend: 'Time left',
+			id: 'visualtimer_fieldset'
+	};		
+	
+// ## Meta-data
+	
+	VisualTimer.name = 'Visual Timer';
+	VisualTimer.version = '0.3.3';
+	VisualTimer.description = 'Display a timer for the game. Timer can trigger events. Only for countdown smaller than 1h.';
 	
 // ## Dependencies
 	
-	EventButton.dependencies = {
+	VisualTimer.dependencies = {
+		GameTimer : {},
 		JSUS: {}
 	};
 	
-	function EventButton (options) {
+	function VisualTimer (options) {
 		this.options = options;
 		this.id = options.id;
 
+		this.gameTimer = null;
+		
+		this.timerDiv = null;	// the DIV in which to display the timer
 		this.root = null;		// the parent element
-		this.text = 'Send';
-		this.button = document.createElement('button');
-		this.callback = null;
+		
 		this.init(this.options);
 	}
 	
-	EventButton.prototype.init = function (options) {
+	VisualTimer.prototype.init = function (options) {
 		options = options || this.options;
-		this.button.id = options.id || this.id;
-		var text = options.text || this.text;
-		while (this.button.hasChildNodes()) {
-			this.button.removeChild(this.button.firstChild);
-		}
-		this.button.appendChild(document.createTextNode(text));
-		this.event = options.event || this.event;
-		this.callback = options.callback || this.callback;
 		var that = this;
-		if (this.event) {
-			// Emit Event only if callback is successful
-			this.button.onclick = function() {
-				var ok = true;
-				if (this.callback){
-					ok = options.callback.call(node.game);
+		(function initHooks() {
+			if (options.hooks) {
+				if (!options.hooks instanceof Array) {
+					options.hooks = [options.hooks];
 				}
-				if (ok) node.emit(that.event);
-			};
+			}
+			else {
+				options.hooks = [];
+			}
+			
+			options.hooks.push({hook: that.updateDisplay,
+								ctx: that
+			});
+		})();
+		
+		
+		this.gameTimer = (options.gameTimer) || new node.GameTimer();
+		
+		if (this.gameTimer) {
+			this.gameTimer.init(options);
+		}
+		else {
+			node.log('GameTimer object could not be initialized. VisualTimer will not work properly.', 'ERR');
 		}
 		
-//		// Emit DONE only if callback is successful
-//		this.button.onclick = function() {
-//			var ok = true;
-//			if (options.exec) ok = options.exec.call(node.game);
-//			if (ok) node.emit(that.event);
-//		}
+		if (this.timerDiv) {
+			this.timerDiv.className = options.className || '';
+		}
+		
 	};
 	
-	EventButton.prototype.append = function (root) {
+	VisualTimer.prototype.getRoot = function () {
+		return this.root;
+	};
+	
+	VisualTimer.prototype.append = function (root) {
 		this.root = root;
-		root.appendChild(this.button);
+		this.timerDiv = node.window.addDiv(root, this.id + '_div');
+		this.updateDisplay();
 		return root;	
 	};
 	
-	EventButton.prototype.listeners = function () {};
-		
-// # Done Button
-	
-	node.widgets.register('DoneButton', DoneButton);
-	
-	DoneButton.prototype.__proto__ = EventButton.prototype;
-	DoneButton.prototype.constructor = DoneButton;
-
-// ## Meta-data
-	
-	DoneButton.id = 'donebutton';
-	DoneButton.version = '0.1';
-	DoneButton.name = 'Done Button';
-	
-// ## Dependencies
-	
-	DoneButton.dependencies = {
-		EventButton: {}
+	VisualTimer.prototype.updateDisplay = function () {
+		if (!this.gameTimer.milliseconds || this.gameTimer.milliseconds === 0) {
+			this.timerDiv.innerHTML = '00:00';
+			return;
+		}
+		var time = this.gameTimer.milliseconds - this.gameTimer.timePassed;
+		time = JSUS.parseMilliseconds(time);
+		var minutes = (time[2] < 10) ? '' + '0' + time[2] : time[2];
+		var seconds = (time[3] < 10) ? '' + '0' + time[3] : time[3];
+		this.timerDiv.innerHTML = minutes + ':' + seconds;
 	};
 	
-	function DoneButton (options) {
-		options.event = 'DONE';
-		options.text = options.text || 'Done!';
-		EventButton.call(this, options);
+	VisualTimer.prototype.start = function() {
+		this.updateDisplay();
+		this.gameTimer.start();
+	};
+	
+	VisualTimer.prototype.restart = function (options) {
+		this.init(options);
+		this.start();
+	};
+	
+	VisualTimer.prototype.stop = function (options) {
+		this.gameTimer.stop();
+	};
+	
+	VisualTimer.prototype.resume = function (options) {
+		this.gameTimer.resume();
+	};
+		
+	VisualTimer.prototype.listeners = function () {
+		var that = this;
+		node.on('LOADED', function() {
+		    var stepObj = node.game.getCurrentStep();
+		    if (!stepObj) return;
+		    var timer = stepObj.timer;
+			if (timer) {
+				timer = JSUS.clone(timer);
+				that.timerDiv.className = '';
+				var options = {},
+					typeoftimer = typeof timer; 
+				switch (typeoftimer) {
+				
+					case 'number':
+						options.milliseconds = timer;
+						break;
+					case 'object':
+						options = timer;
+						break;
+					case 'function':
+						options.milliseconds = timer
+						break;
+					case 'string':
+						options.milliseconds = Number(timer);
+						break;
+				};
+			
+				if (!options.milliseconds) return;
+			
+				if ('function' === typeof options.milliseconds) {
+					options.milliseconds = options.milliseconds.call(node.game);
+				}
+				
+				if (!options.timeup) {
+					options.timeup = 'DONE';
+				}
+				
+				that.gameTimer.init(options);
+				that.start();
+			}
+		});
+		
+		node.on('DONE', function() {
+			// TODO: This should be enabled again
+			that.gameTimer.stop();
+			that.timerDiv.className = 'strike';
+		});
+	};
+	
+})(node);
+
+(function (node) {
+
+	node.widgets.register('GameSummary', GameSummary);
+	
+
+// ## Defaults
+	
+	GameSummary.defaults = {};
+	GameSummary.defaults.id = 'gamesummary';
+	GameSummary.defaults.fieldset = { legend: 'Game Summary' };
+	
+// ## Meta-data
+	
+	GameSummary.name = 'Game Summary';
+	GameSummary.version = '0.3';
+	GameSummary.description = 'Show the general configuration options of the game.';
+	
+	function GameSummary (options) {
+		this.summaryDiv = null;
 	}
+	
+	GameSummary.prototype.append = function (root) {
+		this.root = root;
+		this.summaryDiv = node.window.addDiv(root);
+		this.writeSummary();
+		return root;
+	};
+	
+	GameSummary.prototype.writeSummary = function (idState, idSummary) {
+		var gName = document.createTextNode('Name: ' + node.game.metadata.name),
+			gDescr = document.createTextNode('Descr: ' + node.game.metadata.description),
+			gMinP = document.createTextNode('Min Pl.: ' + node.game.minPlayers),
+			gMaxP = document.createTextNode('Max Pl.: ' + node.game.maxPlayers);
+		
+		this.summaryDiv.appendChild(gName);
+		this.summaryDiv.appendChild(document.createElement('br'));
+		this.summaryDiv.appendChild(gDescr);
+		this.summaryDiv.appendChild(document.createElement('br'));
+		this.summaryDiv.appendChild(gMinP);
+		this.summaryDiv.appendChild(document.createElement('br'));
+		this.summaryDiv.appendChild(gMaxP);
+		
+		node.window.addDiv(this.root, this.summaryDiv, idSummary);
+	};
+
+})(node);
+
+(function (node) {
+	
+	node.widgets.register('MoneyTalks', MoneyTalks);
+	
+	var JSUS = node.JSUS;
+	
+// ## Defaults
+	
+	MoneyTalks.defaults = {};
+	MoneyTalks.defaults.id = 'moneytalks';
+	MoneyTalks.defaults.fieldset = {legend: 'Earnings'};
+	
+// ## Meta-data
+	
+	MoneyTalks.name = 'Money talks';
+	MoneyTalks.version = '0.1.0';
+	MoneyTalks.description = 'Display the earnings of a player.';
+
+// ## Dependencies
+	
+	MoneyTalks.dependencies = {
+		JSUS: {}
+	};
+	
+	
+	function MoneyTalks (options) {
+		this.id = options.id || MoneyTalks.defaults.id;
+				
+		this.root = null;		// the parent element
+		
+		this.spanCurrency = document.createElement('span');
+		this.spanMoney = document.createElement('span');
+		
+		this.currency = 'EUR';
+		this.money = 0;
+		this.precision = 2;
+		this.init(options);
+	}
+	
+	
+	MoneyTalks.prototype.init = function (options) {
+		this.currency = options.currency || this.currency;
+		this.money = options.money || this.money;
+		this.precision = options.precision || this.precision;
+		
+		this.spanCurrency.id = options.idCurrency || this.spanCurrency.id || 'moneytalks_currency';
+		this.spanMoney.id = options.idMoney || this.spanMoney.id || 'moneytalks_money';
+		
+		this.spanCurrency.innerHTML = this.currency;
+		this.spanMoney.innerHTML = this.money;
+	};
+	
+	MoneyTalks.prototype.getRoot = function () {
+		return this.root;
+	};
+	
+	MoneyTalks.prototype.append = function (root, ids) {
+		var PREF = this.id + '_';
+		root.appendChild(this.spanMoney);
+		root.appendChild(this.spanCurrency);
+		return root;
+	};
+		
+	MoneyTalks.prototype.listeners = function () {
+		var that = this;
+		node.on('MONEYTALKS', function(amount) {
+			that.update(amount);
+		}); 
+	};
+	
+	MoneyTalks.prototype.update = function (amount) {
+		if ('number' !== typeof amount) {
+			// Try to parse strings
+			amount = parseInt(amount);
+			if (isNaN(n) || !isFinite(n)) {
+				return;
+			}
+		}
+		this.money += amount;
+		this.spanMoney.innerHTML = this.money.toFixed(this.precision);
+	};
 	
 })(node);
 (function (node) {
@@ -21587,131 +22096,174 @@ node.widgets = new Widgets();
 })(node);
 (function (node) {
 
-	node.widgets.register('GameSummary', GameSummary);
-	
-
-// ## Defaults
-	
-	GameSummary.defaults = {};
-	GameSummary.defaults.id = 'gamesummary';
-	GameSummary.defaults.fieldset = { legend: 'Game Summary' };
-	
-// ## Meta-data
-	
-	GameSummary.name = 'Game Summary';
-	GameSummary.version = '0.3';
-	GameSummary.description = 'Show the general configuration options of the game.';
-	
-	function GameSummary (options) {
-		this.summaryDiv = null;
-	}
-	
-	GameSummary.prototype.append = function (root) {
-		this.root = root;
-		this.summaryDiv = node.window.addDiv(root);
-		this.writeSummary();
-		return root;
-	};
-	
-	GameSummary.prototype.writeSummary = function (idState, idSummary) {
-		var gName = document.createTextNode('Name: ' + node.game.metadata.name),
-			gDescr = document.createTextNode('Descr: ' + node.game.metadata.description),
-			gMinP = document.createTextNode('Min Pl.: ' + node.game.minPlayers),
-			gMaxP = document.createTextNode('Max Pl.: ' + node.game.maxPlayers);
-		
-		this.summaryDiv.appendChild(gName);
-		this.summaryDiv.appendChild(document.createElement('br'));
-		this.summaryDiv.appendChild(gDescr);
-		this.summaryDiv.appendChild(document.createElement('br'));
-		this.summaryDiv.appendChild(gMinP);
-		this.summaryDiv.appendChild(document.createElement('br'));
-		this.summaryDiv.appendChild(gMaxP);
-		
-		node.window.addDiv(this.root, this.summaryDiv, idSummary);
-	};
-
-})(node);
-
-(function (node) {
-	
-	node.widgets.register('MoneyTalks', MoneyTalks);
-	
 	var JSUS = node.JSUS;
+
+	node.widgets.register('EventButton', EventButton);
 	
 // ## Defaults
 	
-	MoneyTalks.defaults = {};
-	MoneyTalks.defaults.id = 'moneytalks';
-	MoneyTalks.defaults.fieldset = {legend: 'Earnings'};
+	EventButton.defaults = {};
+	EventButton.defaults.id = 'eventbutton';
+	EventButton.defaults.fieldset = false;	
 	
-// ## Meta-data
+// ## Meta-data	
 	
-	MoneyTalks.name = 'Money talks';
-	MoneyTalks.version = '0.1.0';
-	MoneyTalks.description = 'Display the earnings of a player.';
-
+	EventButton.name = 'Event Button';
+	EventButton.version = '0.2';
+	
 // ## Dependencies
 	
-	MoneyTalks.dependencies = {
+	EventButton.dependencies = {
 		JSUS: {}
 	};
 	
-	
-	function MoneyTalks (options) {
-		this.id = options.id || MoneyTalks.defaults.id;
-				
+	function EventButton (options) {
+		this.options = options;
+		this.id = options.id;
+
 		this.root = null;		// the parent element
-		
-		this.spanCurrency = document.createElement('span');
-		this.spanMoney = document.createElement('span');
-		
-		this.currency = 'EUR';
-		this.money = 0;
-		this.precision = 2;
-		this.init(options);
+		this.text = 'Send';
+		this.button = document.createElement('button');
+		this.callback = null;
+		this.init(this.options);
 	}
 	
-	
-	MoneyTalks.prototype.init = function (options) {
-		this.currency = options.currency || this.currency;
-		this.money = options.money || this.money;
-		this.precision = options.precision || this.precision;
-		
-		this.spanCurrency.id = options.idCurrency || this.spanCurrency.id || 'moneytalks_currency';
-		this.spanMoney.id = options.idMoney || this.spanMoney.id || 'moneytalks_money';
-		
-		this.spanCurrency.innerHTML = this.currency;
-		this.spanMoney.innerHTML = this.money;
-	};
-	
-	MoneyTalks.prototype.getRoot = function () {
-		return this.root;
-	};
-	
-	MoneyTalks.prototype.append = function (root, ids) {
-		var PREF = this.id + '_';
-		root.appendChild(this.spanMoney);
-		root.appendChild(this.spanCurrency);
-		return root;
-	};
-		
-	MoneyTalks.prototype.listeners = function () {
-		var that = this;
-		node.on('MONEYTALKS', function(amount) {
-			that.update(amount);
-		}); 
-	};
-	
-	MoneyTalks.prototype.update = function (amount) {
-		if ('number' !== typeof amount) {
-			// Try to parse strings
-			amount = parseInt(amount);
-			if (isNaN(n) || !isFinite(n)) {
-				return;
-			}
+	EventButton.prototype.init = function (options) {
+		options = options || this.options;
+		this.button.id = options.id || this.id;
+		var text = options.text || this.text;
+		while (this.button.hasChildNodes()) {
+			this.button.removeChild(this.button.firstChild);
 		}
-		this.money += amount;
-		this.spanMoney.innerHTML = this.money.toFixed(this.precision);
+		this.button.appendChild(document.createTextNode(text));
+		this.event = options.event || this.event;
+		this.callback = options.callback || this.callback;
+		var that = this;
+		if (this.event) {
+			// Emit Event only if callback is successful
+			this.button.onclick = function() {
+				var ok = true;
+				if (this.callback){
+					ok = options.callback.call(node.game);
+				}
+				if (ok) node.emit(that.event);
+			};
+		}
+		
+//		// Emit DONE only if callback is successful
+//		this.button.onclick = function() {
+//			var ok = true;
+//			if (options.exec) ok = options.exec.call(node.game);
+//			if (ok) node.emit(that.event);
+//		}
+	};
+	
+	EventButton.prototype.append = function (root) {
+		this.root = root;
+		root.appendChild(this.button);
+		return root;	
+	};
+	
+	EventButton.prototype.listeners = function () {};
+		
+// # Done Button
+	
+	node.widgets.register('DoneButton', DoneButton);
+	
+	DoneButton.prototype.__proto__ = EventButton.prototype;
+	DoneButton.prototype.constructor = DoneButton;
+
+// ## Meta-data
+	
+	DoneButton.id = 'donebutton';
+	DoneButton.version = '0.1';
+	DoneButton.name = 'Done Button';
+	
+// ## Dependencies
+	
+	DoneButton.dependencies = {
+		EventButton: {}
+	};
+	
+	function DoneButton (options) {
+		options.event = 'DONE';
+		options.text = options.text || 'Done!';
+		EventButton.call(this, options);
+	}
+	
+})(node);
+(function (node) {
+	
+	node.widgets.register('Wall', Wall);
+	
+	var JSUS = node.JSUS;
+
+// ## Defaults
+	
+	Wall.defaults = {};
+	Wall.defaults.id = 'wall';
+	Wall.defaults.fieldset = { legend: 'Game Log' };		
+	
+// ## Meta-data
+	
+
+	Wall.name = 'Wall';
+	Wall.version = '0.3';
+	Wall.description = 'Intercepts all LOG events and prints them ';
+	Wall.description += 'into a DIV element with an ordinal number and a timestamp.';
+
+// ## Dependencies
+	
+	Wall.dependencies = {
+		JSUS: {}
+	};
+	
+	function Wall (options) {
+		this.id = options.id || Wall.id;
+		this.name = options.name || this.name;
+		this.buffer = [];
+		this.counter = 0;
+
+		this.wall = node.window.getElement('pre', this.id);
+	}
+	
+	Wall.prototype.init = function (options) {
+		options = options || {};
+		this.counter = options.counter || this.counter;
+	};
+	
+	Wall.prototype.append = function (root) {
+		return root.appendChild(this.wall);
+	};
+	
+	Wall.prototype.getRoot = function () {
+		return this.wall;
+	};
+	
+	Wall.prototype.listeners = function() {
+		var that = this;	
+		node.on('LOG', function (msg) {
+			that.debuffer();
+			that.write(msg);
+		});
+	}; 
+	
+	Wall.prototype.write = function (text) {
+		if (document.readyState !== 'complete') {
+			this.buffer.push(s);
+		} else {
+			var mark = this.counter++ + ') ' + JSUS.getTime() + ' ';
+			this.wall.innerHTML = mark + text + "\n" + this.wall.innerHTML;
+		}
+	};
+
+	Wall.prototype.debuffer = function () {
+		if (document.readyState === 'complete' && this.buffer.length > 0) {
+			for (var i=0; i < this.buffer.length; i++) {
+				this.write(this.buffer[i]);
+			}
+			this.buffer = [];
+		}
 	};
 	
 })(node);
@@ -21872,643 +22424,6 @@ node.widgets = new Widgets();
 })(node);
 (function (node) {
 	
-	node.widgets.register('Chat', Chat);
-	
-	var J = node.JSUS,
-		W = node.window;	
-
-// ## Defaults
-	
-	Chat.defaults = {};
-	Chat.defaults.id = 'chat';
-	Chat.defaults.fieldset = { legend: 'Chat' };	
-	Chat.defaults.mode = 'MANY_TO_MANY'; 
-	Chat.defaults.textarea_id = 'chat_textarea';
-	Chat.defaults.chat_id = 'chat_chat';
-	Chat.defaults.chat_event = 'CHAT';
-	Chat.defaults.submit_id = 'chat_submit';
-	Chat.defaults.submit_text = 'chat';
-
-			
-// ## Meta-data
-	
-	// ### Chat.modes
-	// 	MANY_TO_MANY: everybody can see all the messages, and it possible
-	//    to send private messages
-	//  MANY_TO_ONE: everybody can see all the messages, private messages can
-	//    be received, but not sent
-	//  ONE_TO_ONE: everybody sees only personal messages, private messages can
-	//    be received, but not sent. All messages are sent to the SERVER
-	//  RECEIVER_ONLY: messages can only be received, but not sent
-	Chat.modes = { 
-			MANY_TO_MANY: 'MANY_TO_MANY',
-			MANY_TO_ONE: 'MANY_TO_ONE',
-			ONE_TO_ONE: 'ONE_TO_ONE',
-			RECEIVER_ONLY: 'RECEIVER_ONLY'
-	};
-	
-	Chat.name = 'Chat';
-	Chat.version = '0.4';
-	Chat.description = 'Offers a uni / bi-directional communication interface between players, or between players and the experimenter.';
-
-// ## Dependencies
-	
-	Chat.dependencies = {
-		JSUS: {}
-	};
-	
-	function Chat (options) {
-		this.id = options.id || Chat.id;
-		this.mode = options.mode || Chat.defaults.mode;
-		
-		this.root = null;
-		
-		this.textarea_id = options.textarea_id || Chat.defaults.textarea_id;
-		this.chat_id = options.chat_id || Chat.defaults.chat_id;
-		this.submit_id = options.submit_id || Chat.defaults.submit_id;
-		
-		this.chat_event = options.chat_event || Chat.defaults.chat_event;
-		this.submit_text = options.submit_text || Chat.defaults.submit_text;
-
-		this.submit = W.getEventButton(this.chat_event, this.submit_text, this.submit_id);
-		this.textarea = W.getElement('textarea', this.textarea_id);
-		this.chat = W.getElement('div', this.chat_id);
-		
-		if ('undefined' !== typeof options.displayName) {
-			this.displayName = options.displayName;
-		}
-		
-		switch(this.mode) {
-		
-		case Chat.modes.RECEIVER_ONLY:
-			this.recipient = {value: 'SERVER'};
-			break;
-		case Chat.modes.MANY_TO_ONE:
-			this.recipient = {value: 'ALL'};
-			break;
-		case Chat.modes.ONE_TO_ONE:
-			this.recipient = {value: 'SERVER'};
-			break;
-		default:
-			this.recipient = W.getRecipientSelector();
-		}
-	}
-	
-	
-	Chat.prototype.append = function (root) {
-		this.root = root;
-		root.appendChild(this.chat);
-		
-		if (this.mode !== Chat.modes.RECEIVER_ONLY) {	
-			W.writeln('', root);
-			root.appendChild(this.textarea);
-			W.writeln('', root);
-			root.appendChild(this.submit);
-			if (this.mode === Chat.modes.MANY_TO_MANY) {
-				root.appendChild(this.recipient);
-			}
-		}
-		return root;
-	};
-	
-	Chat.prototype.getRoot = function () {
-		return this.root;
-	};
-	
-	Chat.prototype.displayName = function(from) {
-		return from;
-	};
-	
-	Chat.prototype.readTA = function () {
-		var txt = this.textarea.value;
-		this.textarea.value = '';
-		return txt;
-	};
-	
-	Chat.prototype.writeTA = function (string, args) {
-		J.sprintf(string, args, this.chat);
-	    W.writeln('', this.chat);
-	    this.chat.scrollTop = this.chat.scrollHeight;
-	};
-	
-	Chat.prototype.listeners = function() {
-		var that = this;	
-		    
-	    node.on(this.chat_event, function () {
-	      var msg = that.readTA();
-	      if (!msg) return;
-	      
-	      var to = that.recipient.value;
-	      var args = {
-		        '%s': {
-		          'class': 'chat_me'
-		        },
-		        '%msg': {
-		          'class': 'chat_msg'
-		        },
-		        '!txt': msg
-	      };
-	      that.writeTA('%sMe%s: %msg!txt%msg', args);
-	      node.say(msg.trim(), that.chat_event, to);
-	    });
-		  
-		if (this.mode === Chat.modes.MANY_TO_MANY) {
-		    node.on('UPDATED_PLIST', function() {
-			      W.populateRecipientSelector(that.recipient, node.game.pl.fetch());
-		    });
-		}
-
-	    node.onDATA(this.chat_event, function (msg) {
-	    	if (msg.from === node.player.id || msg.from === node.player.sid) {
-	    		return;
-	    	}
-	    	
-	    	if (this.mode === Chat.modes.ONE_TO_ONE) { 
-		    	if (msg.from === this.recipient.value) {
-		    		return;
-		    	}
-	    	}
-	    	
-	    	
-	    	var from = that.displayName(msg.from);
-	    	var args = {
-		        '%s': {
-		          'class': 'chat_others'
-		        },
-		        '%msg': {
-		          'class': 'chat_msg'
-		        },
-		        '!txt': msg.data,
-	            '!from': from
-	      };
-	    	
-	      that.writeTA('%s!from%s: %msg!txt%msg', args);
-	    });
-	};
-	
-})(node);
-(function (node) {
-	
-	node.widgets.register('VisualTimer', VisualTimer);
-	
-	var JSUS = node.JSUS;
-
-// ## Defaults
-	
-	VisualTimer.defaults = {};
-	VisualTimer.defaults.id = 'visualtimer';
-	VisualTimer.defaults.fieldset = {
-			legend: 'Time left',
-			id: 'visualtimer_fieldset'
-	};		
-	
-// ## Meta-data
-	
-	VisualTimer.name = 'Visual Timer';
-	VisualTimer.version = '0.3.3';
-	VisualTimer.description = 'Display a timer for the game. Timer can trigger events. Only for countdown smaller than 1h.';
-	
-// ## Dependencies
-	
-	VisualTimer.dependencies = {
-		GameTimer : {},
-		JSUS: {}
-	};
-	
-	function VisualTimer (options) {
-		this.options = options;
-		this.id = options.id;
-
-		this.gameTimer = null;
-		
-		this.timerDiv = null;	// the DIV in which to display the timer
-		this.root = null;		// the parent element
-		
-		this.init(this.options);
-	}
-	
-	VisualTimer.prototype.init = function (options) {
-		options = options || this.options;
-		var that = this;
-		(function initHooks() {
-			if (options.hooks) {
-				if (!options.hooks instanceof Array) {
-					options.hooks = [options.hooks];
-				}
-			}
-			else {
-				options.hooks = [];
-			}
-			
-			options.hooks.push({hook: that.updateDisplay,
-								ctx: that
-			});
-		})();
-		
-		
-		this.gameTimer = (options.gameTimer) || new node.GameTimer();
-		
-		if (this.gameTimer) {
-			this.gameTimer.init(options);
-		}
-		else {
-			node.log('GameTimer object could not be initialized. VisualTimer will not work properly.', 'ERR');
-		}
-		
-		if (this.timerDiv) {
-			this.timerDiv.className = options.className || '';
-		}
-		
-	};
-	
-	VisualTimer.prototype.getRoot = function () {
-		return this.root;
-	};
-	
-	VisualTimer.prototype.append = function (root) {
-		this.root = root;
-		this.timerDiv = node.window.addDiv(root, this.id + '_div');
-		this.updateDisplay();
-		return root;	
-	};
-	
-	VisualTimer.prototype.updateDisplay = function () {
-		if (!this.gameTimer.milliseconds || this.gameTimer.milliseconds === 0) {
-			this.timerDiv.innerHTML = '00:00';
-			return;
-		}
-		var time = this.gameTimer.milliseconds - this.gameTimer.timePassed;
-		time = JSUS.parseMilliseconds(time);
-		var minutes = (time[2] < 10) ? '' + '0' + time[2] : time[2];
-		var seconds = (time[3] < 10) ? '' + '0' + time[3] : time[3];
-		this.timerDiv.innerHTML = minutes + ':' + seconds;
-	};
-	
-	VisualTimer.prototype.start = function() {
-		this.updateDisplay();
-		this.gameTimer.start();
-	};
-	
-	VisualTimer.prototype.restart = function (options) {
-		this.init(options);
-		this.start();
-	};
-	
-	VisualTimer.prototype.stop = function (options) {
-		this.gameTimer.stop();
-	};
-	
-	VisualTimer.prototype.resume = function (options) {
-		this.gameTimer.resume();
-	};
-		
-	VisualTimer.prototype.listeners = function () {
-		var that = this;
-		node.on('LOADED', function() {
-		    var stepObj = node.game.getCurrentStep();
-		    if (!stepObj) return;
-		    var timer = stepObj.timer;
-			if (timer) {
-				timer = JSUS.clone(timer);
-				that.timerDiv.className = '';
-				var options = {},
-					typeoftimer = typeof timer; 
-				switch (typeoftimer) {
-				
-					case 'number':
-						options.milliseconds = timer;
-						break;
-					case 'object':
-						options = timer;
-						break;
-					case 'function':
-						options.milliseconds = timer
-						break;
-					case 'string':
-						options.milliseconds = Number(timer);
-						break;
-				};
-			
-				if (!options.milliseconds) return;
-			
-				if ('function' === typeof options.milliseconds) {
-					options.milliseconds = options.milliseconds.call(node.game);
-				}
-				
-				if (!options.timeup) {
-					options.timeup = 'DONE';
-				}
-				
-				that.gameTimer.init(options);
-				that.start();
-			}
-		});
-		
-		node.on('DONE', function() {
-			// TODO: This should be enabled again
-			that.gameTimer.stop();
-			that.timerDiv.className = 'strike';
-		});
-	};
-	
-})(node);
-
-(function (node) {
-	
-	
-	// TODO: Introduce rules for update: other vs self
-	
-	node.widgets.register('NextPreviousState', NextPreviousState);
-	
-// ## Defaults
-	
-	NextPreviousState.defaults = {};
-	NextPreviousState.defaults.id = 'nextprevious';
-	NextPreviousState.defaults.fieldset = { legend: 'Rew-Fwd' };		
-	
-// ## Meta-data
-	
-	NextPreviousState.name = 'Next,Previous State';
-	NextPreviousState.version = '0.3.2';
-	NextPreviousState.description = 'Adds two buttons to push forward or rewind the state of the game by one step.';
-		
-	function NextPreviousState(options) {
-		this.id = options.id;
-	}
-	
-	NextPreviousState.prototype.getRoot = function () {
-		return this.root;
-	};
-	
-	NextPreviousState.prototype.append = function (root) {
-		var idRew = this.id + '_button';
-		var idFwd = this.id + '_button';
-		
-		var rew = node.window.addButton(root, idRew, '<<');
-		var fwd = node.window.addButton(root, idFwd, '>>');
-		
-		
-		var that = this;
-	
-		var updateState = function (state) {
-			if (state) {
-				var stateEvent = node.IN + node.action.SAY + '.STATE';
-				var stateMsg = node.msg.createSTATE(stateEvent, state);
-				// Self Update
-				node.emit(stateEvent, stateMsg);
-				
-				// Update Others
-				stateEvent = node.OUT + node.action.SAY + '.STATE';
-				node.emit(stateEvent, state, 'ALL');
-			}
-			else {
-				node.log('No next/previous state. Not sent', 'ERR');
-			}
-		};
-		
-		fwd.onclick = function() {
-			updateState(node.game.next());
-		};
-			
-		rew.onclick = function() {
-			updateState(node.game.previous());
-		};
-		
-		this.root = root;
-		return root;
-	};
-	
-})(node);
-(function (node) {
-	
-	node.widgets.register('Wall', Wall);
-	
-	var JSUS = node.JSUS;
-
-// ## Defaults
-	
-	Wall.defaults = {};
-	Wall.defaults.id = 'wall';
-	Wall.defaults.fieldset = { legend: 'Game Log' };		
-	
-// ## Meta-data
-	
-
-	Wall.name = 'Wall';
-	Wall.version = '0.3';
-	Wall.description = 'Intercepts all LOG events and prints them ';
-	Wall.description += 'into a DIV element with an ordinal number and a timestamp.';
-
-// ## Dependencies
-	
-	Wall.dependencies = {
-		JSUS: {}
-	};
-	
-	function Wall (options) {
-		this.id = options.id || Wall.id;
-		this.name = options.name || this.name;
-		this.buffer = [];
-		this.counter = 0;
-
-		this.wall = node.window.getElement('pre', this.id);
-	}
-	
-	Wall.prototype.init = function (options) {
-		options = options || {};
-		this.counter = options.counter || this.counter;
-	};
-	
-	Wall.prototype.append = function (root) {
-		return root.appendChild(this.wall);
-	};
-	
-	Wall.prototype.getRoot = function () {
-		return this.wall;
-	};
-	
-	Wall.prototype.listeners = function() {
-		var that = this;	
-		node.on('LOG', function (msg) {
-			that.debuffer();
-			that.write(msg);
-		});
-	}; 
-	
-	Wall.prototype.write = function (text) {
-		if (document.readyState !== 'complete') {
-			this.buffer.push(s);
-		} else {
-			var mark = this.counter++ + ') ' + JSUS.getTime() + ' ';
-			this.wall.innerHTML = mark + text + "\n" + this.wall.innerHTML;
-		}
-	};
-
-	Wall.prototype.debuffer = function () {
-		if (document.readyState === 'complete' && this.buffer.length > 0) {
-			for (var i=0; i < this.buffer.length; i++) {
-				this.write(this.buffer[i]);
-			}
-			this.buffer = [];
-		}
-	};
-	
-})(node);
-(function (node) {
-
-    var GameStage = node.GameStage,
-    PlayerList = node.PlayerList;
-    
-    
-    node.widgets.register('GameTable', GameTable);
-    
-    // ## Defaults
-    
-    GameTable.defaults = {};
-    GameTable.defaults.id = 'gametable';
-    GameTable.defaults.fieldset = { 
-	legend: 'Game Table',
-	id: 'gametable_fieldset'
-    };
-    
-    // ## Meta-data
-    
-    GameTable.name = 'Game Table';
-    GameTable.version = '0.3';
-    
-    // ## Dependencies
-    
-    GameTable.dependencies = {
-	JSUS: {}
-    };
-    
-    function GameTable (options) {
-	this.options = options;
-	this.id = options.id;
-	this.name = options.name || GameTable.name;
-	
-	this.root = null;
-	this.gtbl = null;
-	this.plist = null;
-	
-	this.init(this.options);
-    }
-    
-    GameTable.prototype.init = function (options) {
-	
-	if (!this.plist) this.plist = new PlayerList();
-	
-	this.gtbl = new node.window.Table({
-	    auto_update: true,
-	    id: options.id || this.id,
-	    render: options.render
-	}, node.game.memory.db);
-	
-	
-	this.gtbl.c('state', GameStage.compare);
-	
-	this.gtbl.setLeft([]);
-	
-	this.gtbl.parse(true);
-    };
-    
-
-    GameTable.prototype.addRenderer = function (func) {
-	return this.gtbl.addRenderer(func);
-    };
-    
-    GameTable.prototype.resetRender = function () {
-	return this.gtbl.resetRenderer();
-    };
-    
-    GameTable.prototype.removeRenderer = function (func) {
-	return this.gtbl.removeRenderer(func);
-    };
-    
-    GameTable.prototype.append = function (root) {
-	this.root = root;
-	root.appendChild(this.gtbl.table);
-	return root;
-    };
-    
-    GameTable.prototype.listeners = function () {
-	var that = this;
-	
-	node.on.plist(function(msg) {	
-	    if (!msg.data.length) return;
-	    
-	    //var diff = JSUS.arrayDiff(msg.data,that.plist.db);
-	    var plist = new PlayerList({}, msg.data);
-	    var diff = plist.diff(that.plist);
-	    if (diff) {
-                //				console.log('New Players found');
-                //				console.log(diff);
-		diff.forEach(function(el){that.addPlayer(el);});
-	    }
-
-	    that.gtbl.parse(true);
-	});
-	
-	node.on('in.set.DATA', function (msg) {
-
-	    that.addLeft(msg.state, msg.from);
-	    var x = that.player2x(msg.from);
-	    var y = that.state2y(node.game.state, msg.text);
-	    
-	    that.gtbl.add(msg.data, x, y);
-	    that.gtbl.parse(true);
-	});
-    }; 
-    
-    GameTable.prototype.addPlayer = function (player) {
-	this.plist.add(player);
-	var header = this.plist.map(function(el){return el.name;});
-	this.gtbl.setHeader(header);
-    };
-    
-    GameTable.prototype.addLeft = function (state, player) {
-	if (!state) return;
-	state = new GameStage(state);
-	if (!JSUS.in_array({content:state.toString(), type: 'left'}, this.gtbl.left)){
-	    this.gtbl.add2Left(state.toString());
-	}
-	// Is it a new display associated to the same state?
-	else {
-	    var y = this.state2y(state);
-	    var x = this.player2x(player);
-	    if (this.gtbl.select('y','=',y).select('x','=',x).count() > 1) {
-		this.gtbl.add2Left(state.toString());
-	    }
-	}
-	
-    };
-    
-    GameTable.prototype.player2x = function (player) {
-	if (!player) return false;
-	return this.plist.select('id', '=', player).first().count;
-    };
-    
-    GameTable.prototype.x2Player = function (x) {
-	if (!x) return false;
-	return this.plist.select('count', '=', x).first().count;
-    };
-    
-    GameTable.prototype.state2y = function (state) {
-	if (!state) return false;
-	return node.game.plot.indexOf(state);
-    };
-    
-    GameTable.prototype.y2State = function (y) {
-	if (!y) return false;
-	return node.game.plot.jumpTo(new GameStage(),y);
-    };
-    
-    
-
-})(node);
-
-(function (node) {
-	
 	// TODO: Introduce rules for update: other vs self
 	
 	node.widgets.register('StateBar', StateBar);	
@@ -22598,4 +22513,206 @@ node.widgets = new Widgets();
 		return root;
 	};
 	
+})(node);
+(function (node) {
+	
+	node.widgets.register('NDDBBrowser', NDDBBrowser);
+	
+	var JSUS = node.JSUS,
+		NDDB = node.NDDB,
+		TriggerManager = node.TriggerManager;
+
+// ## Defaults
+	
+	NDDBBrowser.defaults = {};
+	NDDBBrowser.defaults.id = 'nddbbrowser';
+	NDDBBrowser.defaults.fieldset = false;
+	
+// ## Meta-data
+	
+	NDDBBrowser.name = 'NDDBBrowser';
+	NDDBBrowser.version = '0.1.2';
+	NDDBBrowser.description = 'Provides a very simple interface to control a NDDB istance.';
+	
+// ## Dependencies
+	
+	NDDBBrowser.dependencies = {
+		JSUS: {},
+		NDDB: {},
+		TriggerManager: {}
+	};
+	
+	function NDDBBrowser (options) {
+		this.options = options;
+		this.nddb = null;
+		
+		this.commandsDiv = document.createElement('div');
+		this.id = options.id;
+		if ('undefined' !== typeof this.id) {
+			this.commandsDiv.id = this.id;
+		}
+		
+		this.info = null;
+		this.init(this.options);
+	}
+	
+	NDDBBrowser.prototype.init = function (options) {
+		
+		function addButtons() {
+			var id = this.id;
+			node.window.addEventButton(id + '_GO_TO_FIRST', '<<', this.commandsDiv, 'go_to_first');
+			node.window.addEventButton(id + '_GO_TO_PREVIOUS', '<', this.commandsDiv, 'go_to_previous');
+			node.window.addEventButton(id + '_GO_TO_NEXT', '>', this.commandsDiv, 'go_to_next');
+			node.window.addEventButton(id + '_GO_TO_LAST', '>>', this.commandsDiv, 'go_to_last');
+			node.window.addBreak(this.commandsDiv);
+		}
+		function addInfoBar() {
+			var span = this.commandsDiv.appendChild(document.createElement('span'));
+			return span;
+		}
+		
+		
+		addButtons.call(this);
+		this.info = addInfoBar.call(this);
+		
+		this.tm = new TriggerManager();
+		this.tm.init(options.triggers);
+		this.nddb = options.nddb || new NDDB({auto_update_pointer: true});
+	};
+	
+	NDDBBrowser.prototype.append = function (root) {
+		this.root = root;
+		root.appendChild(this.commandsDiv);
+		return root;
+	};
+	
+	NDDBBrowser.prototype.getRoot = function (root) {
+		return this.commandsDiv;
+	};
+	
+	NDDBBrowser.prototype.add = function (o) {
+		return this.nddb.insert(o);
+	};
+	
+	NDDBBrowser.prototype.sort = function (key) {
+		return this.nddb.sort(key);
+	};
+	
+	NDDBBrowser.prototype.addTrigger = function (trigger) {
+		return this.tm.addTrigger(trigger);
+	};
+	
+	NDDBBrowser.prototype.removeTrigger = function (trigger) {
+		return this.tm.removeTrigger(trigger);
+	};
+	
+	NDDBBrowser.prototype.resetTriggers = function () {
+		return this.tm.resetTriggers();
+	};
+	
+	NDDBBrowser.prototype.listeners = function() {
+		var that = this;
+		var id = this.id;
+		
+		function notification (el, text) {
+			if (el) {
+				node.emit(id + '_GOT', el);
+				this.writeInfo((this.nddb.nddb_pointer + 1) + '/' + this.nddb.length);
+			}
+			else {
+				this.writeInfo('No element found');
+			}
+		}
+		
+		node.on(id + '_GO_TO_FIRST', function() {
+			var el = that.tm.pullTriggers(that.nddb.first());
+			notification.call(that, el);
+		});
+		
+		node.on(id + '_GO_TO_PREVIOUS', function() {
+			var el = that.tm.pullTriggers(that.nddb.previous());
+			notification.call(that, el);
+		});
+		
+		node.on(id + '_GO_TO_NEXT', function() {
+			var el = that.tm.pullTriggers(that.nddb.next());
+			notification.call(that, el);
+		});
+
+		node.on(id + '_GO_TO_LAST', function() {
+			var el = that.tm.pullTriggers(that.nddb.last());
+			notification.call(that, el);
+			
+		});
+	};
+	
+	NDDBBrowser.prototype.writeInfo = function (text) {
+		if (this.infoTimeout) clearTimeout(this.infoTimeout);
+		this.info.innerHTML = text;
+		var that = this;
+		this.infoTimeout = setTimeout(function(){
+			that.info.innerHTML = '';
+		}, 2000);
+	};
+	
+	
+})(node);
+(function (node) {
+    
+    node.widgets.register('DataBar', DataBar);
+    
+    // ## Defaults
+    DataBar.defaults = {};
+    DataBar.defaults.id = 'databar';
+    DataBar.defaults.fieldset = {	
+	legend: 'Send DATA to players'
+    };
+    
+    // ## Meta-data
+    DataBar.name = 'Data Bar';
+    DataBar.version = '0.4';
+    DataBar.description = 'Adds a input field to send DATA messages to the players';
+    
+    function DataBar (options) {
+	this.bar = null;
+	this.root = null;
+	this.recipient = null;
+    }
+    
+    
+    DataBar.prototype.append = function (root) {
+	
+	var sendButton, textInput, dataInput;
+	
+	sendButton = W.addButton(root);
+	W.writeln('Text');
+	textInput = W.addTextInput(root, 'data-bar-text');
+	W.writeln('Data');
+	dataInput = W.addTextInput(root, 'data-bar-data');
+	
+	this.recipient = W.addRecipientSelector(root);
+	
+	var that = this;
+	
+	sendButton.onclick = function() {
+	    
+	    var to, data, text;
+	    
+	    to = that.recipient.value;
+	    text = textInput.value;
+	    data = dataInput.value;
+	    
+	    node.log('Parsed Data: ' + JSON.stringify(data));
+	    
+	    node.say(data, text, to);
+	};
+	
+	node.on('UPDATED_PLIST', function() {
+	    node.window.populateRecipientSelector(that.recipient, node.game.pl);
+	});
+	
+	return root;
+	
+    };
+    
 })(node);
