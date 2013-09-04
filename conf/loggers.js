@@ -30,7 +30,8 @@ function configure (loggers) {
 	
 	loggers.add('servernode', {
 	    console: {
-	    	level: 'silly',
+	    	//level: 'silly',
+	    	level: 'error',
 	    	colorize: true,
 	    },
 	    file: {
@@ -44,7 +45,8 @@ function configure (loggers) {
 	
 	loggers.add('channel', {
 	    console: {
-	    	level: 'silly',
+	    	//level: 'silly',
+	    	level: 'error',
 	    	colorize: true,
 	    },
 	    file: {
@@ -59,7 +61,8 @@ function configure (loggers) {
 	
 	loggers.add('messages', {
 	    file: {
-	    	level: 'silly',
+	    	//level: 'silly',
+	    	level: 'error',
 	    	timestamp: true,
 	    	filename: logDir + 'message',
 	    },
