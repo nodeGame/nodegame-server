@@ -4363,7 +4363,6 @@ JSUS.extend(PARSE);
      *
      */
     NDDB.prototype.init = function(options) {
-        var i;
         var op, sh;
         options = options || {};
 
@@ -4383,20 +4382,10 @@ JSUS.extend(PARSE);
 
         if (options.I) {
             this.__I = options.I;
-            for (i in options.I) {
-                if (options.I.hasOwnProperty(i)) {
-                    this.index(i, options.I[i]);
-                }
-            }
         }
 
         if (options.V) {
             this.__V = options.V;
-            for (i in options.V) {
-                if (options.V.hasOwnProperty(i)) {
-                    this.view(i, options.V[i]);
-                }
-            }
         }
 
         if (options.tags) {
@@ -7659,10 +7648,10 @@ JSUS.extend(PARSE);
     // context-less in the browser too.
     var node = parent;
 
-    // ## SYNC_ALL
+    // ## SYNC_STEP
     // Player waits that all the clients have terminated the
     // current step before going to the next
-    exports.stepRules.SYNC_ALL = function(stage, myStageLevel, pl, game) {
+    exports.stepRules.SYNC_STEP = function(stage, myStageLevel, pl, game) {
         return myStageLevel === node.constants.stageLevels.DONE &&
             pl.isStepDone(stage);
     };
@@ -19973,18 +19962,18 @@ node.widgets = new Widgets();
 	    level = 'init!';
 	    break;
 
-	case node.is.LOADING:
+	case levels.LOADING:
 	    level = 'loading';
 	    break;	    
 
-	case node.is.LOADED:
+	case levels.LOADED:
 	    level = 'loaded';
 	    break;
 	    
-	case node.is.PLAYING:
+	case levels.PLAYING:
 	    level = 'playing';
 	    break;
-	case node.is.DONE:
+	case levels.DONE:
 	    level = 'done';
 	    break;
 		
@@ -20024,6 +20013,7 @@ node.widgets = new Widgets();
     };
     
 })(node);
+
 (function (node) {
 
     var GameStage = node.GameStage,
