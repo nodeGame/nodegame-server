@@ -30,22 +30,20 @@ function configure (loggers) {
 	
 	loggers.add('servernode', {
 	    console: {
-	    	//level: 'silly',
 	    	level: 'error',
-	    	colorize: true,
+	    	colorize: true
 	    },
 	    file: {
 	    	level: 'silly',
 	    	timestamp: true,
 	    	filename: logDir + 'servernode',
 	    	maxsize: 1000000,
-	    	maxFiles: 10,
-	    },
+	    	maxFiles: 10
+	    }
 	});
 	
 	loggers.add('channel', {
 	    console: {
-	    	//level: 'silly',
 	    	level: 'error',
 	    	colorize: true,
 	    },
@@ -54,22 +52,18 @@ function configure (loggers) {
 	    	timestamp: true,
 	    	filename: logDir + 'channel',
 	    	maxsize: 1000000,
-	    	maxFiles: 10,
-	    },
+	    	maxFiles: 10
+	    }
 	});
 	
 	
 	loggers.add('messages', {
 	    file: {
 	    	level: 'silly',
-	    	//level: 'error',
 	    	timestamp: true,
-	    	filename: logDir + 'message',
-	    },
+	    	filename: logDir + 'messages'
+	    }
 	});
-	
-	
-    
-	
+		
 	return true;
 }
