@@ -61,8 +61,8 @@ function configure (loggers) {
 	
 	loggers.add('messages', {
 	    file: {
-	    	//level: 'silly',
-	    	level: 'error',
+	    	level: 'silly',
+	    	//level: 'error',
 	    	timestamp: true,
 	    	filename: logDir + 'message',
 	    },
