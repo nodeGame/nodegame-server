@@ -34,7 +34,7 @@ function configure (loggers) {
 	    	colorize: true
 	    },
 	    file: {
-	    	level: 'silly',
+	    	level: 'error',
 	    	timestamp: true,
 	    	filename: logDir + 'servernode',
 	    	maxsize: 1000000,
@@ -48,7 +48,7 @@ function configure (loggers) {
 	    	colorize: true,
 	    },
 	    file: {
-	    	level: 'silly',
+	    	level: 'error',
 	    	timestamp: true,
 	    	filename: logDir + 'channel',
 	    	maxsize: 1000000,

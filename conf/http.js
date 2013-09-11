@@ -73,30 +73,24 @@ function configure (app, servernode) {
 //    })
 //
 
-    app.use(express.cookieParser());
-    app.use(express.session({secret: 'This is a secret'}));
-    app.use(app.router);
+//    app.use(express.cookieParser());
+//    app.use(express.session({secret: 'This is a secret'}));
+//    app.use(app.router);
     //app.set('strict routing', false);
 
-    app.get('/cookie/:name', function(req, res) {
-        // res.cookie('name', 'value', {expires: new Date() + 90000000, maxAge: 90000000000});
-        //res.cookie('name', req.params.name)
-        req.session.name = req.params.name;
-        res.send('<p>To see who you are go <a href="/name">here</a></p>');
-    })
-
-    app.get('/name', function(req, res) {
-        res.send('<p>You are ' + req.session.name + '</p>');
-//        res.clearCookie('name');
-//        res.send('<p>You are ' + req.cookies.name + '</p>');
-    })
-
-    app.configure(function(){
-	app.set('views', rootDir + '/views');
-	app.set('view engine', 'jade');
-	app.use(express.static(rootDir + '/public'));
-    });
-
+//    app.get('/cookie/:name', function(req, res) {
+//        // res.cookie('name', 'value', {expires: new Date() + 90000000, maxAge: 90000000000});
+//        //res.cookie('name', req.params.name)
+//        req.session.name = req.params.name;
+//        res.send('<p>To see who you are go <a href="/name">here</a></p>');
+//    })
+//
+//    app.get('/name', function(req, res) {
+//        res.send('<p>You are ' + req.session.name + '</p>');
+////        res.clearCookie('name');
+////        res.send('<p>You are ' + req.cookies.name + '</p>');
+//    })
+//
     app.configure('development', function(){
 	app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
     });
@@ -205,6 +199,12 @@ function configure (app, servernode) {
 
     app.get('/:game', function(req, res) {
         res.redirect('/' + req.params.game + '/');
+    });
+
+    app.configure(function(){
+	app.set('views', rootDir + '/views');
+	app.set('view engine', 'jade');
+	app.use(express.static(rootDir + '/public'));
     });
 
     return true;
