@@ -7663,15 +7663,11 @@ JSUS.extend(PARSE);
     // but has to wait before going to the next one
     exports.stepRules.SYNC_STAGE = function(stage, myStageLevel, pl, game) {
         var iamdone = myStageLevel === node.constants.stageLevels.DONE;
-        console.log();
-        console.log('*** myStageLevel: ' + myStageLevel + ' (iamdone: ' + iamdone + ')');
-        console.log('*** stepsToNextStage: ' + game.plot.stepsToNextStage(stage));
-        console.log('*** isStepDone [upTo]: ' + pl.isStepDone(stage, true));
         if (game.plot.stepsToNextStage(stage) > 1) {
             return iamdone;
         }
         else {
-            // if next step is going to be a new stage, wait for others
+            // If next step is going to be a new stage, wait for others.
             return iamdone && pl.isStepDone(stage, true);
         }
     };
@@ -15586,7 +15582,6 @@ GameStage.stringify = function(gs) {
          * @see node.setup
          */
         node.events.ng.on( IN + say + 'GAMECOMMAND', function (msg) {
-            console.log('* GAMECOMMAND * ', msg);
             if (!msg.text || !parent.constants.gamecommand[msg.text]) {
                 node.err('unknown game command received: ' + msg.text);
                 return;
