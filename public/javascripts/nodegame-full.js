@@ -7794,13 +7794,11 @@ JSUS.extend(PARSE);
  *
  * Event emitter engine for `nodeGame`
  *
- * Copyright(c) 2012 Stefano Balietti
+ * Copyright(c) 2013 Stefano Balietti
  * MIT Licensed
  *
- * Keeps a register of events and function listeners.
- *
+ * Keeps a register of events listeners.
  * ---
- *
  */
 (function (exports, parent) {
 
@@ -7828,9 +7826,7 @@ JSUS.extend(PARSE);
         /**
          * ### EventEmitter.listeners
          *
-         *
          * Event listeners collection
-         *
          */
         this.events = {};
 
@@ -7842,7 +7838,6 @@ JSUS.extend(PARSE);
          * @see NDDB
          * @see EventEmitter.EventHistory
          * @see EventEmitter.store
-         *
          */
         this.history = new EventHistory(this.node);
     }
@@ -7871,7 +7866,8 @@ JSUS.extend(PARSE);
         }
 
         if (!this.events[type]) {
-            // Optimize the case of one listener. Don't need the extra array object.
+            // Optimize the case of one listener. 
+            // Don't need the extra array object.
             this.events[type] = listener;
         }
         else if (typeof this.events[type] === 'object') {
@@ -7883,7 +7879,8 @@ JSUS.extend(PARSE);
             this.events[type] = [this.events[type], listener];
         }
 
-        this.node.silly('ee.' + this.name + ' added listener: ' + type + ' ' + listener);
+        this.node.silly('ee.' + this.name + ' added listener: ' + 
+                        type + ' ' + listener);
     };
 
     /**
@@ -7907,10 +7904,6 @@ JSUS.extend(PARSE);
         this.on(type, g);
     };
 
-
-
-
-
     /**
      * ### EventEmitter.emit
      *
@@ -7920,20 +7913,31 @@ JSUS.extend(PARSE);
      * followed by any number of parameters that will be passed to the
      * handler callback.
      *
+     * Return values of each callback are aggregated and returned as an
+     * array. If the array contains less than 2 elements, the only element
+     * or _undefined_ is returned instead.
+     *
+     * Technical notice: classic EventEmitter classes do not return any value.
+     * Returning a value creates an overhead when multiple listeners are
+     * registered under the same event, and an array needs to be managed.
+     * Such overhead is anyway very small, and can be neglected (for now).
+     *
+     * @return {mixed} The return value of the callback/s
      */
     EventEmitter.prototype.emit = function() {
 
         var handler, len, args, i, listeners, type, ctx, node;
+        var res, tmpRes;
 
         type = arguments[0];
         handler = this.events[type];
 
-        if ('undefined' === typeof handler) return false;
+        if ('undefined' === typeof handler) return;
 
         node = this.node;
         ctx = node.game;
 
-        // <!-- Debug
+        // Useful for debugging.
         if (this.node.conf.events.dumpEvents) {
             this.node.log('F: ' + type);
         }
@@ -7943,16 +7947,17 @@ JSUS.extend(PARSE);
             switch (arguments.length) {
                 // fast cases
             case 1:
-                handler.call(ctx);
+                res = handler.call(ctx);
                 break;
             case 2:
-                handler.call(ctx, arguments[1]);
+                res = handler.call(ctx, arguments[1]);
                 break;
             case 3:
-                handler.call(ctx, arguments[1], arguments[2]);
+                res = handler.call(ctx, arguments[1], arguments[2]);
                 break;
             case 4:
-                handler.call(ctx, arguments[1], arguments[2], arguments[3]);
+                res = handler.call(ctx, arguments[1], arguments[2],
+                                   arguments[3]);
                 break;
 
             default:
@@ -7962,7 +7967,7 @@ JSUS.extend(PARSE);
                 for (i = 1; i < len; i++) {
                     args[i - 1] = arguments[i];
                 }
-                handler.apply(ctx, args);
+                res = handler.apply(ctx, args);
             }
         }
         else if ('object' === typeof handler) {
@@ -7973,20 +7978,29 @@ JSUS.extend(PARSE);
             }
             listeners = handler.slice();
             len = listeners.length;
-
+            // If more than one event listener is registered,
+            // we will return an array.
+            res = [];
             for (i = 0; i < len; i++) {
-                listeners[i].apply(node.game, args);
+                tmpRes = listeners[i].apply(node.game, args);
+                if ('undefined' !== typeof tmpRes)
+                res.push(tmpRes);
             }
+            // If less than 2 listeners returned a value, compact the result.
+            if (!res.length) res = undefined;
+            else if (res.length === 1) res = res[0];
         }
 
-
-        // Log the event into node.history object, if present
-        if (node.conf && node.conf.events && node.conf.events.history) {
+        // Log the event into node.history object, if present.
+        if (node.conf && node.conf.events 
+            && node.conf.events.history) {
             this.history.insert({
                 stage: node.game.getCurrentGameStage(),
                 args: arguments
             });
         }
+
+        return res;
     };
 
     /**
@@ -7995,7 +8009,8 @@ JSUS.extend(PARSE);
      * Deregisters one or multiple event listeners
      *
      * @param {string} type The event name
-     * @param {function} listener Optional. The specific function to deregister
+     * @param {function} listener Optional. The specific function 
+     *   to deregister
      *
      * @return Boolean TRUE, if the removal is successful
      */
@@ -8005,11 +8020,13 @@ JSUS.extend(PARSE);
         node = this.node;
 
         if ('string' !== typeof type) {
-            throw TypeError('EventEmitter.remove (' + this.name + '): type must be a string');
+            throw TypeError('EventEmitter.remove (' + this.name +
+                            '): type must be a string');
         }
 
         if (!this.events[type]) {
-            node.warn('EventEmitter.remove (' + this.name + '): unexisting event ' + type);
+            node.warn('EventEmitter.remove (' + this.name +
+                      '): unexisting event ' + type);
             return false;
         }
 
@@ -8020,14 +8037,16 @@ JSUS.extend(PARSE);
         }
 
         if (listener && 'function' !== typeof listener) {
-            throw TypeError('EventEmitter.remove (' + this.name + '): listener must be a function');
+            throw TypeError('EventEmitter.remove (' + this.name +
+                            '): listener must be a function');
         }
 
 
         if ('function' === typeof this.events[type] ) {
             if (listeners == listener) {
                 listeners.splice(i, 1);
-                node.silly('ee.' + this.name + ' removed listener: ' + type + ' ' + listener);
+                node.silly('ee.' + this.name + ' removed listener: ' +
+                           type + ' ' + listener);
                 return true;
             }
         }
@@ -8038,13 +8057,15 @@ JSUS.extend(PARSE);
             for (i = 0; i < len; i++) {
                 if (listeners[i] == listener) {
                     listeners.splice(i, 1);
-                    node.silly('ee.' + this.name + 'removed listener: ' + type + ' ' + listener);
+                    node.silly('ee.' + this.name + 'removed ' + 
+                               'listener: ' + type + ' ' + listener);
                     return true;
                 }
             }
         }
 
-        node.warn('EventEmitter.remove (' + this.name + '): no listener-match found for event ' + type);
+        node.warn('EventEmitter.remove (' + this.name + '): no ' + 
+                  'listener-match found for event ' + type);
         return false;
     };
 
@@ -8065,7 +8086,8 @@ JSUS.extend(PARSE);
     EventEmitter.prototype.printAll =  function() {
         for (var i in this.events) {
             if (this.events.hasOwnProperty(i)) {
-                console.log(i + ': ' + i.length ? i.length : 1 + ' listener/s');
+                console.log(i + ': ' + i.length ? i.length : 1 +
+                            ' listener/s');
             }
         }
     };
@@ -8103,10 +8125,13 @@ JSUS.extend(PARSE);
         // Checking if each ee exist
         for (i = 1; i < len; i++) {
             if ('string' !== typeof arguments[i]) {
-                throw new TypeError('EventEmitter name must be a string');
+                throw new TypeError(
+                    'EventEmitter name must be a string');
             }
             if (!this.ee[arguments[i]]) {
-                throw new Error('non-existing EventEmitter in group ' + groupName + ': ' + arguments[i]);
+                throw new Error('EventEmitterManager.createEEGroup: ' +
+                                'non-existing EventEmitter in group ' +
+                                groupName + ': ' + arguments[i]);
             }
         }
 
@@ -8170,7 +8195,7 @@ JSUS.extend(PARSE);
             };
             break;
         default:
-            // slower
+            // Slower.
             len = args.len;
             this[groupName] = {
                 emit: function() {
@@ -8230,31 +8255,33 @@ JSUS.extend(PARSE);
 
 
     EventEmitterManager.prototype.emit = function() {
-        var i, event;
+        var i, event, tmpRes, res;
         event = arguments[0];
-        if ('undefined' === typeof event) {
-            this.node.warn('cannot emit undefined event');
-            return false;
+        if ('string' !== typeof event) {
+            throw new TypeError(
+                'EventEmitterManager.emit: event must be string');
         }
-
         for (i in this.ee) {
             if (this.ee.hasOwnProperty(i)) {
-                this.ee[i].emit.apply(this.ee[i], arguments);
+                tmpRes = this.ee[i].emit.apply(this.ee[i], arguments);
+                if (tmpRes && res) res.push(tmpRes);
+                else res = tmpRes;
             }
         }
+        return res;
     };
 
     EventEmitterManager.prototype.remove = function(event, listener) {
         var i;
 
         if ('string' !== typeof event) {
-            this.node.err('EventEmitterManager.remove: event must be string.');
-            return false;
+            throw new TypeError('EventEmitterManager.remove: ' + 
+                                'event must be string.');
         }
 
         if (listener && 'function' !== typeof listener) {
-            this.node.err('EventEmitterManager.remove: listener must be function.');
-            return false;
+            throw new TypeError('EventEmitterManager.remove: ' + 
+                                'listener must be function.');
         }
 
         for (i in this.ee) {
@@ -8286,7 +8313,8 @@ JSUS.extend(PARSE);
         this.history.h('stage', function(e) {
             var stage;
             if (!e) return;
-            stage = ('object' === typeof e.stage) ? e.stage : this.node.game.stage;
+            stage = 'object' === typeof e.stage ? 
+                e.stage : this.node.game.stage;
             return node.GameStage.toHash(stage, 'S.s.r');
         });
 
@@ -8309,11 +8337,12 @@ JSUS.extend(PARSE);
             hash = new GameStage(session.stage).toHash('S.s.r');
 
             if (!this.history.stage) {
-                node.silly('no old events to re-emit were found during session recovery');
+                node.silly('No past events to re-emit found.');
                 return false;
             }
             if (!this.history.stage[hash]){
-                node.silly('the current stage ' + hash + ' has no events to re-emit');
+                node.silly('Current stage ' + hash + ' has no events ' +
+                           'to re-emit');
                 return false;
             }
 
@@ -13888,17 +13917,15 @@ GameStage.stringify = function(gs) {
 );
 
 /**
- * # nodeGame
+ * # nodeGame: Social Experiments in the Browser!
  *
- * Social Experiments in the Browser
- *
- * Copyright(c) 2012 Stefano Balietti
+ * Copyright(c) 2013 Stefano Balietti
  * MIT Licensed
  *
- * nodeGame is a free, open source, event-driven javascript framework for on line,
+ * `nodeGame` is a free, open source javascript framework for on line,
  * multiplayer games in the browser.
  *
- *
+ * ---
  */
 
 (function (exports, parent) {
@@ -14200,11 +14227,14 @@ GameStage.stringify = function(gs) {
          *
          * Configure the node.window object, if existing
          *
+         * TODO: move in GameWindow
+         *
          * @see GameWindow
          */
         this.registerSetup('window', function(conf) {
             if (!this.window) {
-                this.warn('node.window not found, cannot configure it.');
+                this.warn('node.setup.window: window not found, ' +
+                          'are you in a browser?');
                 return;
             }
             conf = conf || {};
@@ -14357,7 +14387,7 @@ GameStage.stringify = function(gs) {
             }
 
             if (!dstList) {
-                this.warn('updatePlayerList called before this.game was initialized');
+                this.warn('updatePlayerList called before node.game was initialized');
                 throw new this.NodeGameMisconfiguredGameError('dstList non-existent');
             }
 
@@ -14410,7 +14440,6 @@ GameStage.stringify = function(gs) {
     'undefined' != typeof node ? node : module.exports
  ,  'undefined' != typeof node ? node : module.parent.exports
 );
-
 /**
  * # Log
  *
@@ -14627,13 +14656,11 @@ GameStage.stringify = function(gs) {
     NGC.prototype.remoteSetup = function(property, to) {
         var msg, payload;
 
-        if (!property) {
-            this.err('cannot send remote setup: empty property');
-            return false;
+        if ('string' !== typeof 'property') {
+            throw new TypeError('node.remoteSetup: property must be string.');
         }
-        if (!to) {
-            this.err('cannot send remote setup: empty recipient');
-            return false;
+        if ('string' !== typeof to) {
+            throw new TypeError('node.remoteSetup: to must be string.');
         }
 
         payload = J.stringifyAll(Array.prototype.slice.call(arguments, 2));
@@ -14644,7 +14671,7 @@ GameStage.stringify = function(gs) {
         }
 
         msg = this.msg.create({
-            target: this.target.SETUP,
+            target: this.constants.target.SETUP,
             to: to,
             text: property,
             data: payload
@@ -14897,7 +14924,7 @@ GameStage.stringify = function(gs) {
      * @see EventEmitterManager.emit
      */
     NGC.prototype.emit = function () {
-        this.events.emit.apply(this.events, arguments);
+        return this.events.emit.apply(this.events, arguments);
     };
 
     /**
@@ -14971,13 +14998,9 @@ GameStage.stringify = function(gs) {
  *
  * Copyright(c) 2013 Stefano Balietti
  * MIT Licensed
- *
  * ---
- *
  */
-
 (function (exports, parent) {
-
 
     var NGC = parent.NodeGameClient;
 
@@ -14986,26 +15009,22 @@ GameStage.stringify = function(gs) {
      *
      * Sends a DATA message to a specified recipient
      *
-     * @param {string} text The label associated to the message
-     * @param {string} to Optional. The recipient of the message. Defaults, 'SERVER'
-     * @param {mixed} data Optional. The content of the DATA message
-     *
+     * @param {string} text The label associated to the msg
+     * @param {string} to Optional. The recipient of the msg. Defaults, 'SERVER'
+     * @param {mixed} data Optional. Addional data to send along
      */
     NGC.prototype.say = function (label, to, payload) {
         var msg;
-
-        if ('undefined' === typeof label) {
-            this.err('cannot say empty message');
-            return false;
+        if ('string' !== typeof label) {
+            throw new TypeError('node.say: label must be string.');
         }
-
+        debugger
         msg = this.msg.create({
             target: this.constants.target.DATA,
             to: to || 'SERVER',
             text: label,
             data: payload
         });
-        debugger
         this.socket.send(msg);
     };
 
@@ -15014,20 +15033,15 @@ GameStage.stringify = function(gs) {
      *
      * Stores a key-value pair in the server memory
      *
-     *
-     *
      * @param {string} key An alphanumeric (must not be unique)
      * @param {mixed} The value to store (can be of any type)
      *
      */
     NGC.prototype.set = function (key, value, to) {
         var msg;
-
-        if ('undefined' === typeof key) {
-            this.err('cannot set undefined key');
-            return false;
+        if ('string' !== typeof key) {
+            throw new TypeError('node.set: key must be string.');
         }
-
         msg = this.msg.create({
             action: this.constants.action.SET,
             target: this.constants.target.DATA,
@@ -15036,9 +15050,6 @@ GameStage.stringify = function(gs) {
             text: key,
             data: value
         });
-        // @TODO when refactoring is finished, emit this event.
-        // By default there nothing should happen, but people could listen to it
-        //this.emit('out.set.DATA', msg);
         this.socket.send(msg);
     };
 
@@ -15050,20 +15061,19 @@ GameStage.stringify = function(gs) {
      *
      * @param {string} key The label of the GET message
      * @param {function} cb The callback function to handle the return message
-     *
-     * Experimental. Undocumented (for now)
+     * @param {to} Optional. The recipient of the msg. Defaults, SERVER
+     * @param {mixed} Optional. Additional parameters to send along
      */
-    NGC.prototype.get = function (key, cb, to) {
+    NGC.prototype.get = function (key, cb, to, params) {
         var msg, g, ee;
-
-        if ('undefined' === typeof key) {
-            this.err('cannot get empty key');
+        var that;
+        
+        if ('string' !== typeof key) {
+            throw new TypeError('node.get: key must be string.');
             return false;
         }
-
         if ('function' !== typeof cb) {
-            this.err('this.get requires a valid callback function');
-            return false;
+            throw new TypeError('node.get: cb must be function.');
         }
 
         msg = this.msg.create({
@@ -15073,20 +15083,20 @@ GameStage.stringify = function(gs) {
             reliable: 1,
             text: key
         });
-
-        // @TODO when refactoring is finished, emit this event.
-        // By default there nothing should happen, but people could listen to it
-        //this.events.emit('out.get.DATA', msg);
-
+        
+        // TODO: check potential timing issues. Is it safe to send the GET
+        // message before registering the relate listener? (for now yes)
+        this.socket.send(msg);
+        
         ee = this.getCurrentEventEmitter();
-
+        
+        that = this;
         function g(msg) {
             if (msg.text === key) {
-                cb.call(this.game, msg.data);
+                cb.call(that.game, msg.data);
                 ee.remove('in.say.DATA', g);
             }
-        };
-
+        }
         ee.on('in.say.DATA', g);
     };
 
@@ -15181,7 +15191,7 @@ GameStage.stringify = function(gs) {
             return false;
         }
         msg = this.msg.create({
-            target: this.target.REDIRECT,
+            target: this.constants.target.REDIRECT,
             data: url,
             to: who
         });
@@ -15214,7 +15224,7 @@ GameStage.stringify = function(gs) {
         }
 
         msg = this.msg.create({
-            target: this.target.GAMECOMMAND,
+            target: this.constants.target.GAMECOMMAND,
             text: command,
             data: options,
             to: to
@@ -15457,18 +15467,22 @@ GameStage.stringify = function(gs) {
          * Experimental feature. Undocumented (for now)
          */
         node.events.ng.on( IN + get + 'DATA', function (msg) {
-            if (msg.text === 'LOOP'){
-                node.socket.sendDATA(action.SAY, node.game.plot, msg.from, 'GAME');
+            var res;
+            if (!msg.text) {
+                node.warn('node.in.get.DATA: no event name');
+                return;
             }
-            // <!-- We could double emit
-            // node.emit(msg.text, msg.data); -->
+            debugger
+            res = node.emit(msg.text, msg.data);
+            node.say(msg.text, msg.from, res);
         });
-
+        
         /**
          * ## in.set.STATE
          *
          * Adds an entry to the memory object
          *
+         * TODO: check, this should be a player update
          */
         node.events.ng.on( IN + set + 'STATE', function (msg) {
             node.game.memory.add(msg.text, msg.data, msg.from);
@@ -15587,22 +15601,6 @@ GameStage.stringify = function(gs) {
                 return;
             }
             node.emit('NODEGAME_GAMECOMMAND_' + msg.text, msg.data);
-        });
-
-        /**
-         * ## in.say.JOIN
-         *
-         * Invites the client to leave the current channel and joining another one
-         *
-         * It differs from `REDIRECT` messages because the client
-         * does not leave the page, it just switches channel.
-         *
-         * @experimental
-         */
-        node.events.ng.on( IN + say + 'JOIN', function (msg) {
-            if (!msg.text) return;
-            //node.socket.disconnect();
-            node.connect(msg.text);
         });
 
         node.incomingAdded = true;
