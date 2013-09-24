@@ -88,6 +88,9 @@ function configure (app, servernode) {
     ////        res.send('<p>You are ' + req.cookies.name + '</p>');
     //    })
     //
+
+    app.use(express.cookieParser());
+
     app.configure('development', function(){
         app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
     });
@@ -164,7 +167,7 @@ function configure (app, servernode) {
     // Serves game files or default game index file: index.htm.
     app.get('/:game/*', function(req, res) {
         var gameInfo, path, file;
-
+        
         gameInfo = verifyGameRequest(req, res);
         if (!gameInfo) return;
 

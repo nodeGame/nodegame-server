@@ -5,20 +5,20 @@ div#nodegame {
 }
 
 body {
-  height: 98%;
-  margin: 5px;
+  /* height: 98%; */
+  margin: auto;
   padding: 0 5px;
   font-family: Arial, Helvetica, sans-serif;
   font-size: 16px;
   color: black;
 }
 
-iframe#mainframe {
+iframe#mainframe{
   width: 98%;
-  height: 600px;
+  height: 100%;
   border: 0;
-  border-top: 5px solid #CCC;
-  border-bottom: 5px solid #CCC;
+/*  border-top: 5px solid #CCC;
+  border-bottom: 5px solid #CCC; */
   padding: 10px;
 }
 

@@ -7410,6 +7410,10 @@ JSUS.extend(PARSE);
     // A client that just disconnected from the player endpoint
     k.target.PDISCONNECT = 'PDISCONNECT';
 
+    // #### target.PRECONNECT
+    // A previously disconnected client just re-connected to the player endpoint
+    k.target.PRECONNECT = 'PRECONNECT';
+
     // #### target.MCONNECT
     // A client that just connected to the admin (monitor) endpoint
     k.target.MCONNECT = 'MCONNECT';
@@ -7417,6 +7421,10 @@ JSUS.extend(PARSE);
     // #### target.MDISCONNECT
     // A client just disconnected from the admin (monitor) endpoint
     k.target.MDISCONNECT = 'MDISCONNECT';
+
+    // #### target.MRECONNECT
+    // A previously disconnected client just re-connected to the admin endpoint
+    k.target.MRECONNECT = 'MRECONNECT';
 
     // #### target.PLIST
     // The list of clients connected to the player endpoint was updated
@@ -8041,10 +8049,9 @@ JSUS.extend(PARSE);
                             '): listener must be a function');
         }
 
-
         if ('function' === typeof this.events[type] ) {
-            if (listeners == listener) {
-                listeners.splice(i, 1);
+            if (listener == this.events[type]) {
+                delete this.events[type];
                 node.silly('ee.' + this.name + ' removed listener: ' +
                            type + ' ' + listener);
                 return true;
@@ -8261,14 +8268,16 @@ JSUS.extend(PARSE);
             throw new TypeError(
                 'EventEmitterManager.emit: event must be string');
         }
+        res = [];
         for (i in this.ee) {
             if (this.ee.hasOwnProperty(i)) {
                 tmpRes = this.ee[i].emit.apply(this.ee[i], arguments);
-                if (tmpRes && res) res.push(tmpRes);
-                else res = tmpRes;
+                if (tmpRes) res.push(tmpRes);
             }
         }
-        return res;
+        // If there are less than 2 elements, unpack the array.
+        // res[0] is either undefined or some value.
+        return res.length < 2 ? res[0] : res;
     };
 
     EventEmitterManager.prototype.remove = function(event, listener) {
@@ -8859,7 +8868,7 @@ GameStage.stringify = function(gs) {
      *
      * Checks whether a player with the given id already exists
      *
-     * @param {number} id The id of the player
+     * @param {string} id The id of the player
      * @return {boolean} TRUE, if a player with the specified id is found
      */
     PlayerList.prototype.exist = function (id) {
@@ -11747,26 +11756,33 @@ GameStage.stringify = function(gs) {
     };
 
     Socket.prototype.setSocketType = function(type, options) {
-        this.socket = SocketFactory.get(this.node, type, options); // returns null on error
+        // returns null on error.
+        this.socket = SocketFactory.get(this.node, type, options);
         return this.socket;
     };
 
     Socket.prototype.connect = function(uri, options) {
         var humanReadableUri = uri || 'local server';
         if (!this.socket) {
-            this.node.err('Socket.connet: cannot connet to ' + humanReadableUri + ' . No open socket.');
+            this.node.err('Socket.connet: cannot connet to ' + 
+                          humanReadableUri + ' . No open socket.');
             return false;
         }
 
         this.url = uri;
         this.node.log('connecting to ' + humanReadableUri + '.');
 
-        this.socket.connect(uri, 'undefined' !== typeof options ? options : this.user_options);
+        this.socket.connect(uri, 'undefined' !== typeof options 
+                            ? options : this.user_options);
     };
 
     Socket.prototype.onDisconnect = function() {
         // Save the current stage of the game
-        this.node.session.store();
+        //this.node.session.store();
+
+        // PlayerList gets cleared. On re-connection will receive a new one.
+        this.node.game.pl.clear(true);
+
         this.node.log('closed');
 
     };
@@ -11788,33 +11804,23 @@ GameStage.stringify = function(gs) {
             // executed before the HI 
             this.startSession(msg);
 
-            sessionObj = this.node.store(msg.session);
+            // TODO: do we need this?
+            //sessionObj = this.node.store(msg.session);
 
-            // TODO: recover this branch
-            if (false) {
-                //if (sessionObj) {
-                this.node.session.restore(sessionObj);
-
-                msg = this.node.msg.create({
-                    target: 'HI_AGAIN',
-                    data: this.node.player
-                });
-
-                this.send(msg);
-
-            }
-            else {
-                this.node.store(msg.session, this.node.session.save());
-
-                // NEW: not necessary with modifications to GameServer
-                // send HI to ALL
+//            // TODO: recover this branch
+//            if (false) {
+//                //if (sessionObj) {
+//                this.node.session.restore(sessionObj);
+//
 //                this.send(this.node.msg.create({
-//                    target: 'HI',
-//                    to: 'ALL',
+//                    target: 'HI_AGAIN',
 //                    data: this.node.player
-//                }));
-
-            }
+//                }));    
+//            }
+//            else {
+//                // TODO: do we need this ? Every time? Shall set an option?
+//                // this.node.store(msg.session, this.node.session.save());
+//            }
 
         }
     };
@@ -11828,7 +11834,8 @@ GameStage.stringify = function(gs) {
         msg = this.secureParse(msg);
         if (msg) { // Parsing successful
             // message with high priority are executed immediately
-            if (msg.priority > 0 || this.node.game.isReady && this.node.game.isReady()) {
+            if (msg.priority > 0 || 
+                this.node.game.isReady && this.node.game.isReady()) {
                 this.node.emit(msg.toInEvent(), msg);
             }
             else {
@@ -11837,15 +11844,6 @@ GameStage.stringify = function(gs) {
             }
         }
     };
-
-
-    Socket.prototype.registerServer = function(msg) {
-        // Setting global info
-        this.servername = msg.from;
-        // Keep serverid = msg.from for now
-        this.serverid = msg.from;
-    };
-
 
     Socket.prototype.secureParse = function (msg) {
         var gameMsg;
@@ -11858,7 +11856,8 @@ GameStage.stringify = function(gs) {
         }
 
         if (this.session && gameMsg.session !== this.session) {
-            return logSecureParseError('local session id does not match incoming message session id');
+            return logSecureParseError('local session id does not match ' +
+                                       'incoming message session id');
         }
 
         return gameMsg;
@@ -11912,12 +11911,29 @@ GameStage.stringify = function(gs) {
      * @see node.createPlayer
      */
     Socket.prototype.startSession = function (msg) {
-        // Store server info
+        // Extracts server info from the first msg.
         this.registerServer(msg);
-
-        this.node.createPlayer(msg.data);
+        
         this.session = msg.session;
+        this.node.createPlayer(msg.data);
+        
+        if (this.node.store.cookie) {
+            this.node.store.cookie('session', this.session);
+            this.node.store.cookie('player', this.node.player.id);
+        }
+        else {
+            this.node.warn('Socket.startSession: cannot set cookies. Session ' +
+                           'support disabled');
+        }
         return true;
+    };
+
+    
+    Socket.prototype.registerServer = function(msg) {
+        // Setting global info
+        this.servername = msg.from;
+        // Keep serverid = msg.from for now
+        this.serverid = msg.from;
     };
 
     /**
@@ -12159,7 +12175,7 @@ GameStage.stringify = function(gs) {
         
         if (this.node) {
             if ('undefined' === typeof player) {
-                player = node.player;
+                player = this.node.player;
             }
             if ('undefined' === typeof stage) {
                 stage = this.node.game.getCurrentGameStage();
@@ -13943,7 +13959,10 @@ GameStage.stringify = function(gs) {
     Player = parent.Player,
     GameSession = parent.GameSession,
     J = parent.JSUS;
-
+    
+    var that;
+    that = this;
+    
     function NodeGameClient() {
 
         /**
@@ -14345,9 +14364,6 @@ GameStage.stringify = function(gs) {
          * @param {PlayerList} playerList The new player list
          * @param {string} updateRule Optional. Whether to 'replace' (default) or
          *  to 'append'.
-         *
-         * @see node.game.plot
-         * @see Stager.setState
          */
         this.registerSetup('plist', function(playerList, updateRule) {
             updatePlayerList.call(this, 'pl', playerList, updateRule);
@@ -14356,15 +14372,11 @@ GameStage.stringify = function(gs) {
         /**
          * ### this.setup.mlist
          *
-         * TODO: merge with plist
          * Updates the monitor list in Game
          *
          * @param {PlayerList} monitorList The new monitor list
          * @param {string} updateRule Optional. Whether to 'replace' (default) or
          *  to 'append'.
-         *
-         * @see this.game.plot
-         * @see Stager.setState
          */
         this.registerSetup('mlist', function(monitorList, updateRule) {
             updatePlayerList.call(this, 'ml', monitorList, updateRule);
@@ -14415,7 +14427,13 @@ GameStage.stringify = function(gs) {
         this.alias('txt', 'in.say.TXT');
 
         // ### node.on.data
-        this.alias('data', ['in.say.DATA', 'in.set.DATA']);
+        this.alias('data', ['in.say.DATA', 'in.set.DATA'], function(text, cb) {
+            return function(msg) {
+                if (msg.text === text) {
+                    cb.call(that.game, msg);
+                }
+            };
+        });
 
         // ### node.on.stage
         this.alias('stage', 'in.set.STAGE');
@@ -14424,8 +14442,10 @@ GameStage.stringify = function(gs) {
         this.alias('plist', ['in.set.PLIST', 'in.say.PLIST']);
 
         // ### node.on.pconnect
-        this.alias('pconnect', 'in.say.PCONNECT', function(msg) {
-            return msg.data;
+        this.alias('pconnect', 'in.say.PCONNECT', function(cb) {
+            return function(msg) {
+                cb.call(that.game, msg.data);
+            };
         });
 
 
@@ -14722,16 +14742,25 @@ GameStage.stringify = function(gs) {
      * 
      * 
      * ```javascript
-     * 	node.alias('myAlias', ['in.say.DATA', 'myEvent']);
+     *   // The node.on.data alias example with modifier function
+     *   // only DATA msg with the right label will be fired.
+     *   this.alias('data', ['in.say.DATA', 'in.set.DATA'], function(text, cb) {
+     *       return function(msg) {
+     *           if (msg.text === text) {
+     *               cb.call(that.game, msg);
+     *           }
+     *       };
+     *   });
      * 
-     * 	node.on.myAlias(function(){ console.log('myEvent or in.say.DATA'); };
+     * 	node.on.data('myLabel', function(){ ... };
      * ```	
      * 
      * @param {string} alias The name of alias
      * @param {string|array} events The event/s under which the listeners 
      *   will be registered
-     * @param {function} modifier Optional. If set the return value will be 
-     *   passed as parameter of the emitted event
+     * @param {function} modifier Optional. A function that makes a closure
+     *   around its own input parameters, and returns a function that will
+     *   actually be invoked when the aliased event is fired.
      */	
     NGC.prototype.alias = function(alias, events, modifier) {
 	var that, func;
@@ -14750,29 +14779,16 @@ GameStage.stringify = function(gs) {
         }   
 
 	that = this;
-        J.each(events, function(event){
-            // This function - called `definer` - will be used
-            // by developer to register new callbacks on the alias.
-            // It can accepts any number of parameters, but one
-            // must be a function.
+        J.each(events, function(event) {
+            // If set, we use the callback returned by the modifier.
+            // Otherwise, we assume that the first parameter is the callback.
             that.on[alias] = function(func) {
-                
-                // Actual registration of the event listener.
-                that.on(event, (modifier) ?
-                        // The arguments of this function are those
-                        // passed by the original emitted event.
-                        function() {
-                            var res;
-                            res = modifier.apply(node.game, arguments);
-                            // Fires the alias callback, only if 
-                            // the modifier returns a value.
-                            if (res) func.call(node.game, res);
-                        }
-                        : function() {
-                            func.apply(node.game, arguments);
-                        }
-                       );
-
+                if (modifier) {
+                    func = modifier.apply(node.game, arguments);
+                }
+                that.on(event, function() {
+                    func.apply(node.game, arguments);
+                });
             };
         });
     };
@@ -14840,20 +14856,26 @@ GameStage.stringify = function(gs) {
             this.player.stateLevel > constants.stateLevels.STARTING &&
             this.player.stateLevel !== constants.stateLevels.GAMEOVER) {
             throw new this.NodeGameIllegalOperationError(
-                'createPlayer: cannot create player while game is running');
+                'node.createPlayer: cannot create player while game is running');
         }
 
         player = new Player(player);
         player.stateLevel = this.player.stateLevel;
         player.stageLevel = this.player.stageLevel;
 
+        // TODO: do we need to add the local player to the playerList ?
         // Overwrite existing 'current' player:
-        if (this.player && this.player.id) {
-            this.game.pl.remove(this.player.id);
+        // if (this.player && this.player.id) {
+        //     this.game.pl.remove(this.player.id);
+        // }
+        // this.player = this.game.pl.add(player);
+
+        if (this.game.pl.exist(player.id)) {
+            throw new Error('node.createPlayer: already id already found in ' +
+                            'playerList: ' + player.id);
         }
-
-        this.player = this.game.pl.add(player);
-
+        
+        this.player = player;
         this.emit('PLAYER_CREATED', this.player);
 
         return this.player;
@@ -15018,7 +15040,6 @@ GameStage.stringify = function(gs) {
         if ('string' !== typeof label) {
             throw new TypeError('node.say: label must be string.');
         }
-        debugger
         msg = this.msg.create({
             target: this.constants.target.DATA,
             to: to || 'SERVER',
@@ -15059,12 +15080,20 @@ GameStage.stringify = function(gs) {
      *
      * Sends a GET message to a recipient and listen to the reply
      *
+     * The listener function is removed immediately after its first execution.
+     * To allow multiple execution, it is possible to specify a positive timeout
+     * after which the listener will be removed, or specify the timeout as -1,
+     * and in this case the listener will not be removed at all.
+     *
      * @param {string} key The label of the GET message
      * @param {function} cb The callback function to handle the return message
-     * @param {to} Optional. The recipient of the msg. Defaults, SERVER
-     * @param {mixed} Optional. Additional parameters to send along
+     * @param {string} to Optional. The recipient of the msg. Defaults, SERVER
+     * @param {mixed} params Optional. Additional parameters to send along
+     * @param {number} timeout Optional. The number of milliseconds after which
+     *    the listener will be removed. If equal -1, the listener will not be
+     *    removed. Defaults, 0. 
      */
-    NGC.prototype.get = function (key, cb, to, params) {
+    NGC.prototype.get = function (key, cb, to, params, timeout) {
         var msg, g, ee;
         var that;
         
@@ -15075,7 +15104,15 @@ GameStage.stringify = function(gs) {
         if ('function' !== typeof cb) {
             throw new TypeError('node.get: cb must be function.');
         }
-
+        if ('undefined' !== typeof timeout) {
+            if ('number' !== typeof number) {
+                throw new TypeError('node.get: timeout must be number.');
+            }
+            if (timeout < 0 && timeout !== -1 ) {
+                throw new TypeError('node.get: timeout must be positive, ' +
+                                   '0, or -1.');
+            }
+        }
         msg = this.msg.create({
             action: this.constants.action.GET,
             target: this.constants.target.DATA,
@@ -15091,13 +15128,26 @@ GameStage.stringify = function(gs) {
         ee = this.getCurrentEventEmitter();
         
         that = this;
-        function g(msg) {
+
+        // Listener function. If a timeout is not set, the listener
+        // will be removed immediately after its execution.
+        g = function(msg) {
             if (msg.text === key) {
                 cb.call(that.game, msg.data);
-                ee.remove('in.say.DATA', g);
+                if (!timeout) ee.remove('in.say.DATA', g);
             }
-        }
+        };
+        
         ee.on('in.say.DATA', g);
+        
+        // If a timeout is set the listener is removed independently,
+        // of its execution after the timeout is fired.
+        // If timeout === -1, the listener is never removed.
+        if (timeout > 0) {
+            setTimeout(function() {
+                ee.remove('in.say.DATA', g);
+            }, timeout);
+        }
     };
 
     /**
@@ -15472,7 +15522,6 @@ GameStage.stringify = function(gs) {
                 node.warn('node.in.get.DATA: no event name');
                 return;
             }
-            debugger
             res = node.emit(msg.text, msg.data);
             node.say(msg.text, msg.from, res);
         });
@@ -18769,240 +18818,241 @@ Widget.prototype.highlight = function () {};
 	('undefined' !== typeof node) ? node : module.parent.exports.node
 );
 /**
- * 
  * # nodegame-widgets
  * 
- * Copyright(c) 2012 Stefano Balietti
+ * Copyright(c) 2013 Stefano Balietti
  * MIT Licensed
- * 
+ * ---
  */
 (function (window, node) {
 
-	var J = node.JSUS;
-	
-function Widgets() {
-	this.widgets = {};
-	this.root = node.window.root || document.body;
-}
+    var J = node.JSUS;
+    
+    function Widgets() {
+        this.widgets = {};
+        this.root = node.window.root || document.body;
+    }
 
-/**
- * ### Widgets.register
- * 
- * Registers a new widget in the collection
- * 
- * A name and a prototype class must be provided. All properties
- * that are presetn in `node.Widget`, but missing in the prototype
- * are added. 
- * 
- * Registered widgets can be loaded with Widgets.get or Widgets.append.
- * 
- * @param {string} name The id under which registering the widget
- * @param {function} w The widget to add
- * @return {object|boolean} The registered widget, or FALSE if an error occurs
- * 
- */
-Widgets.prototype.register = function (name, w) {
-	if (!name || !w) {
-		node.err('Could not register widget: ' + name, 'nodegame-widgets: ');
-		return false;
-	}
-	
-	// Add default properties to widget prototype
-	for (var i in node.Widget.prototype) {
-		if (!w[i] && !w.prototype[i] && !(w.prototype.__proto__ && w.prototype.__proto__[i])) {
-			w.prototype[i] = J.clone(node.Widget.prototype[i]);
-		}
-	}
-	
-	this.widgets[name] = w;
-	return this.widgets[name];
-};
+    /**
+     * ### Widgets.register
+     * 
+     * Registers a new widget in the collection
+     * 
+     * A name and a prototype class must be provided. All properties
+     * that are presetn in `node.Widget`, but missing in the prototype
+     * are added. 
+     * 
+     * Registered widgets can be loaded with Widgets.get or Widgets.append.
+     * 
+     * @param {string} name The id under which registering the widget
+     * @param {function} w The widget to add
+     * @return {object|boolean} The registered widget, or FALSE if an error occurs
+     */
+    Widgets.prototype.register = function (name, w) {
+        var i;
+        if ('string' !== typeof name) {
+            throw new TypeError('Widgets.register: name must be string.');
+        }
+        if ('function' !== typeof w) {
+            throw new TypeError('Widgets.register: w must be function.');
+        }
 
-/**
- * ### Widgets.get
- * 
- * Retrieves, instantiates and returns the specified widget
- * 
- * It can attach standard javascript listeners to the root element of
- * the widget if specified in the options.
- * 
- * The dependencies are checked, and if the conditions are not met, 
- * returns FALSE.
- * 
- * @param {string} w_str The name of the widget to load
- * @param {options} options Optional. Configuration options to be passed to the widgets
- * 
- * @see Widgets.add
- * 
- * @TODO: add supports for any listener. Maybe requires some refactoring.
- * @TODO: add example.
- * 
- */
-Widgets.prototype.get = function (w_str, options) {
-	if (!w_str) return;
-	var that = this;
-	options = options || {};
-	
-	
-	function createListenerFunction (w, e, l) {
-		if (!w || !e || !l) return;
-		w.getRoot()[e] = function() {
-			l.call(w); 
-		};
-	};
-	
-	function attachListeners (options, w) {
-		if (!options || !w) return;
-		var isEvent = false;
-		for (var i in options) {
-			if (options.hasOwnProperty(i)) {
-				isEvent = J.in_array(i, ['onclick', 'onfocus', 'onblur', 'onchange', 'onsubmit', 'onload', 'onunload', 'onmouseover']);  
-				if (isEvent && 'function' === typeof options[i]) {
-					createListenerFunction(w, i, options[i]);
-				}
-			}			
-		};
-	};
-	
-	var wProto = J.getNestedValue(w_str, this.widgets);
-	var widget;
-	
-	if (!wProto) {
-		node.err('widget ' + w_str + ' not found.', 'node-widgets: ');
-		return;
-	}
-	
-	node.info('registering ' + wProto.name + ' v.' +  wProto.version, 'node-widgets: ');
-	
-	if (!this.checkDependencies(wProto)) return false;
-	
-	// Add missing properties to the user options
-	J.mixout(options, J.clone(wProto.defaults));
-	
-	try {
-		widget = new wProto(options);
-		// Re-inject defaults
-		widget.defaults = options;
-		
-		// Call listeners
-		widget.listeners.call(widget);
-		
-		// user listeners
-		attachListeners(options, widget);
-	}
-	catch (e) {
-		throw new Error('Error while loading widget ' + wProto.name + ': ' + e);
-	}
-	return widget;
-};
+        // Add default properties to widget prototype
+        for (i in node.Widget.prototype) {
+            if (!w[i] && !w.prototype[i] && !(w.prototype.__proto__ && w.prototype.__proto__[i])) {
+                w.prototype[i] = J.clone(node.Widget.prototype[i]);
+            }
+        }
+        
+        this.widgets[name] = w;
+        return this.widgets[name];
+    };
 
-/**
- * ### Widgets.append
- * 
- * Appends a widget to the specified root element. If no root element
- * is specified the widget is append to the global root. 
- * 
- * The first parameter can be string representing the name of the widget or 
- * a valid widget already loaded, for example through Widgets.get. 
- * In the latter case, dependencies are checked, and it returns FALSE if
- * conditions are not met.
- * 
- * It automatically creates a fieldset element around the widget if 
- * requested by the internal widget configuration, or if specified in the
- * options parameter.
- * 
- * @param {string} w_str The name of the widget to load
- * @param {object} root. The HTML element to which appending the widget
- * @param {options} options Optional. Configuration options to be passed to the widgets
- * @return {object|boolean} The requested widget, or FALSE is an error occurs
- * 
- * @see Widgets.get
- * 
- */
-Widgets.prototype.append = Widgets.prototype.add = function (w, root, options) {
-	if (!w) return;
-	var that = this;
-	
-	function appendFieldset(root, options, w) {
-		if (!options) return root;
-		var idFieldset = options.id || w.id + '_fieldset';
-		var legend = options.legend || w.legend;
-		return W.addFieldset(root, idFieldset, legend, options.attributes);
-	};
-	
-	
-	// Init default values
-	root = root || this.root;
-	options = options || {};
+    /**
+     * ### Widgets.get
+     * 
+     * Retrieves, instantiates and returns the specified widget
+     * 
+     * It can attach standard javascript listeners to the root element of
+     * the widget if specified in the options.
+     * 
+     * The dependencies are checked, and if the conditions are not met, 
+     * returns FALSE.
+     * 
+     * @param {string} w_str The name of the widget to load
+     * @param {options} options Optional. Configuration options to be passed to the widgets
+     * 
+     * @see Widgets.add
+     * 
+     * @TODO: add supports for any listener. Maybe requires some refactoring.
+     * @TODO: add example.
+     * 
+     */
+    Widgets.prototype.get = function (w_str, options) {
+        if (!w_str) return;
+        var that = this;
+        options = options || {};
+        
+        
+        function createListenerFunction (w, e, l) {
+            if (!w || !e || !l) return;
+            w.getRoot()[e] = function() {
+                l.call(w); 
+            };
+        };
+        
+        function attachListeners (options, w) {
+            if (!options || !w) return;
+            var isEvent = false;
+            for (var i in options) {
+                if (options.hasOwnProperty(i)) {
+                    isEvent = J.in_array(i, ['onclick', 'onfocus', 'onblur', 'onchange', 'onsubmit', 'onload', 'onunload', 'onmouseover']);  
+                    if (isEvent && 'function' === typeof options[i]) {
+                        createListenerFunction(w, i, options[i]);
+                    }
+                }                       
+            };
+        };
+        
+        var wProto = J.getNestedValue(w_str, this.widgets);
+        var widget;
+        
+        if (!wProto) {
+            node.err('widget ' + w_str + ' not found.', 'node-widgets: ');
+            return;
+        }
+        
+        node.info('registering ' + wProto.name + ' v.' +  wProto.version, 'node-widgets: ');
+        
+        if (!this.checkDependencies(wProto)) return false;
+        
+        // Add missing properties to the user options
+        J.mixout(options, J.clone(wProto.defaults));
+        
+        try {
+            widget = new wProto(options);
+            // Re-inject defaults
+            widget.defaults = options;
+            
+            // Call listeners
+            widget.listeners.call(widget);
+            
+            // user listeners
+            attachListeners(options, widget);
+        }
+        catch (e) {
+            throw new Error('Error while loading widget ' + wProto.name + ': ',  e);
+        }
+        return widget;
+    };
 
-	// Check if it is a object (new widget)
-	// If it is a string is the name of an existing widget
-	// In this case a dependencies check is done
-	if ('object' !== typeof w) w = this.get(w, options);
-	if (!w) return false;	
-	
-	// options exists and options.fieldset exist
-	root = appendFieldset(root, options.fieldset || w.defaults.fieldset, w);
-	w.append(root);
+    /**
+     * ### Widgets.append
+     * 
+     * Appends a widget to the specified root element. If no root element
+     * is specified the widget is append to the global root. 
+     * 
+     * The first parameter can be string representing the name of the widget or 
+     * a valid widget already loaded, for example through Widgets.get. 
+     * In the latter case, dependencies are checked, and it returns FALSE if
+     * conditions are not met.
+     * 
+     * It automatically creates a fieldset element around the widget if 
+     * requested by the internal widget configuration, or if specified in the
+     * options parameter.
+     * 
+     * @param {string} w_str The name of the widget to load
+     * @param {object} root. The HTML element to which appending the widget
+     * @param {options} options Optional. Configuration options to be passed to the widgets
+     * @return {object|boolean} The requested widget, or FALSE is an error occurs
+     * 
+     * @see Widgets.get
+     * 
+     */
+    Widgets.prototype.append = Widgets.prototype.add = function (w, root, options) {
+        if (!w) return;
+        var that = this;
+        
+        function appendFieldset(root, options, w) {
+            if (!options) return root;
+            var idFieldset = options.id || w.id + '_fieldset';
+            var legend = options.legend || w.legend;
+            return W.addFieldset(root, idFieldset, legend, options.attributes);
+        };
+        
+        
+        // Init default values
+        root = root || this.root;
+        options = options || {};
 
-	return w;
-};
+        // Check if it is a object (new widget)
+        // If it is a string is the name of an existing widget
+        // In this case a dependencies check is done
+        if ('object' !== typeof w) w = this.get(w, options);
+        if (!w) return false;   
+        
+        // options exists and options.fieldset exist
+        root = appendFieldset(root, options.fieldset || w.defaults.fieldset, w);
+        w.append(root);
 
-/**
- * ### Widgets.checkDependencies
- * 
- * Checks if all the dependencies are already loaded
- * 
- * Dependencies are searched for in the following objects
- * 
- *  	- window
- *  	- node
- *  	- this.widgets
- *  	- node.window
- * 
- * TODO: Check for version and other constraints.
- * 
- * @param {object} The widget to check
- * @param {boolean} quiet Optional. If TRUE, no warning will be raised. Defaults FALSE
- * @return {boolean} TRUE, if all dependencies are met
- */ 
-Widgets.prototype.checkDependencies = function (w, quiet) {
-	if (!w.dependencies) return true;
-	
-	var errMsg = function (w, d) {
-		var name = w.name || w.id;// || w.toString();
-		node.log(d + ' not found. ' + name + ' cannot be loaded.', 'ERR');
-	};
-	
-	var parents = [window, node, this.widgets, node.window];
-	
-	var d = w.dependencies;
-	for (var lib in d) {
-		if (d.hasOwnProperty(lib)) {
-			var found = false;
-			for (var i=0; i<parents.length; i++) {
-				if (J.getNestedValue(lib, parents[i])) {
-					var found = true;
-					break;
-				}
-			}
-			if (!found) {	
-				if (!quiet) errMsg(w, lib);
-				return false;
-			}
-		
-		}
-	}
-	return true;
-};
+        return w;
+    };
 
-//Expose Widgets to the global object
-node.widgets = new Widgets();
-	
+    /**
+     * ### Widgets.checkDependencies
+     * 
+     * Checks if all the dependencies are already loaded
+     * 
+     * Dependencies are searched for in the following objects
+     * 
+     *          - window
+     *          - node
+     *          - this.widgets
+     *          - node.window
+     * 
+     * TODO: Check for version and other constraints.
+     * 
+     * @param {object} The widget to check
+     * @param {boolean} quiet Optional. If TRUE, no warning will be raised. Defaults FALSE
+     * @return {boolean} TRUE, if all dependencies are met
+     */ 
+    Widgets.prototype.checkDependencies = function (w, quiet) {
+        if (!w.dependencies) return true;
+        
+        var errMsg = function (w, d) {
+            var name = w.name || w.id;// || w.toString();
+            node.log(d + ' not found. ' + name + ' cannot be loaded.', 'ERR');
+        };
+        
+        var parents = [window, node, this.widgets, node.window];
+        
+        var d = w.dependencies;
+        for (var lib in d) {
+            if (d.hasOwnProperty(lib)) {
+                var found = false;
+                for (var i=0; i<parents.length; i++) {
+                    if (J.getNestedValue(lib, parents[i])) {
+                        var found = true;
+                        break;
+                    }
+                }
+                if (!found) {   
+                    if (!quiet) errMsg(w, lib);
+                    return false;
+                }
+                
+            }
+        }
+        return true;
+    };
+
+    //Expose Widgets to the global object
+    node.widgets = new Widgets();
+    
 })(
-	// Widgets works only in the browser environment.
-	('undefined' !== typeof window) ? window : module.parent.exports.window,
-	('undefined' !== typeof window) ? window.node : module.parent.exports.node
+    // Widgets works only in the browser environment.
+    ('undefined' !== typeof window) ? window : module.parent.exports.window,
+    ('undefined' !== typeof window) ? window.node : module.parent.exports.node
 );
 (function (node) {
 
@@ -19563,212 +19613,210 @@ node.widgets = new Widgets();
     
 })(node);
 (function (node) {
-	
+    
 
-	// TODO: handle different events, beside onchange
-	
-	node.widgets.register('Controls', Controls);	
-	
-// ## Defaults
-	
-	var defaults = { id: 'controls' };
-	
-	Controls.defaults = defaults;
-	
-	Controls.Slider = SliderControls;
-	Controls.jQuerySlider = jQuerySliderControls;
-	Controls.Radio	= RadioControls;
-	
-	// Meta-data
-	
-	Controls.name = 'Controls';
-	Controls.version = '0.2';
-	Controls.description = 'Wraps a collection of user-inputs controls.';
-		
-	function Controls (options) {
-		this.options = options;
-		this.id = options.id;
-		this.root = null;
-		
-		this.listRoot = null;
-		this.fieldset = null;
-		this.submit = null;
-		
-		this.changeEvent = this.id + '_change';
-		
-		this.init(options);
-	}
+    // TODO: handle different events, beside onchange
+    
+    node.widgets.register('Controls', Controls);        
+    
+    // ## Defaults
+    
+    var defaults = { id: 'controls' };
+    
+    Controls.defaults = defaults;
+    
+    Controls.Slider = SliderControls;
+    Controls.jQuerySlider = jQuerySliderControls;
+    Controls.Radio = RadioControls;
+    
+    // Meta-data
+    
+    Controls.name = 'Controls';
+    Controls.version = '0.3';
+    Controls.description = 'Wraps a collection of user-inputs controls.';
+    
+    function Controls(options) {
+        this.options = options;
+        this.id = 'undefined' !== typeof options.id ? options.id : 'controls';
+        this.root = null;
+        
+        this.listRoot = null;
+        this.fieldset = null;
+        this.submit = null;
+        
+        this.changeEvent = this.id + '_change';
+        
+        this.init(options);
+    }
 
-	Controls.prototype.add = function (root, id, attributes) {
-		// TODO: node.window.addTextInput
-		//return node.window.addTextInput(root, id, attributes);
-	};
-	
-	Controls.prototype.getItem = function (id, attributes) {
-		// TODO: node.window.addTextInput
-		//return node.window.getTextInput(id, attributes);
-	};
-	
-	Controls.prototype.init = function (options) {
+    Controls.prototype.add = function (root, id, attributes) {
+        // TODO: node.window.addTextInput
+        //return node.window.addTextInput(root, id, attributes);
+    };
+    
+    Controls.prototype.getItem = function (id, attributes) {
+        // TODO: node.window.addTextInput
+        //return node.window.getTextInput(id, attributes);
+    };
+    
+    Controls.prototype.init = function (options) {
 
-		this.hasChanged = false; // TODO: should this be inherited?
-		if ('undefined' !== typeof options.change) {
-			if (!options.change){
-				this.changeEvent = false;
-			}
-			else {
-				this.changeEvent = options.change;
-			}
-		}
-		this.list = new node.window.List(options);
-		this.listRoot = this.list.getRoot();
-		
-		if (!options.features) return;
-		if (!this.root) this.root = this.listRoot;
-		this.features = options.features;
-		this.populate();
-	};
-	
-	Controls.prototype.append = function (root) {
-		this.root = root;
-		var toReturn = this.listRoot;
-		this.list.parse();
-		root.appendChild(this.listRoot);
-		
-		if (this.options.submit) {
-			var idButton = 'submit_' + this.id;
-			if (this.options.submit.id) {
-				idButton = this.options.submit.id;
-				delete this.options.submit.id;
-			}
-			this.submit = node.window.addButton(root, idButton, this.options.submit, this.options.attributes);
-			
-			var that = this;
-			this.submit.onclick = function() {
-				if (that.options.change) {
-					node.emit(that.options.change);
-				}
-			};
-		}		
-		
-		return toReturn;
-	};
-	
-	Controls.prototype.parse = function() {
-		return this.list.parse();
-	};
-	
-	Controls.prototype.populate = function () {
-		var that = this;
-		
-		for (var key in this.features) {
-			if (this.features.hasOwnProperty(key)) {
-				// Prepare the attributes vector
-				var attributes = this.features[key];
-				var id = key;
-				if (attributes.id) {
-					id = attributes.id;
-					delete attributes.id;
-				}
-							
-				var container = document.createElement('div');
-				// Add a different element according to the subclass instantiated
-				var elem = this.add(container, id, attributes);
-								
-				// Fire the onChange event, if one defined
-				if (this.changeEvent) {
-					elem.onchange = function() {
-						node.emit(that.changeEvent);
-					};
-				}
-				
-				if (attributes.label) {
-					node.window.addLabel(container, elem, null, attributes.label);
-				}
-				
-				// Element added to the list
-				this.list.addDT(container);
-			}
-		}
-	};
-	
-	Controls.prototype.listeners = function() {	
-		var that = this;
-		// TODO: should this be inherited?
-		node.on(this.changeEvent, function(){
-			that.hasChanged = true;
-		});
-				
-	};
+        this.hasChanged = false; // TODO: should this be inherited?
+        if ('undefined' !== typeof options.change) {
+            if (!options.change){
+                this.changeEvent = false;
+            }
+            else {
+                this.changeEvent = options.change;
+            }
+        }
+        this.list = new node.window.List(options);
+        this.listRoot = this.list.getRoot();
+        
+        if (!options.features) return;
+        if (!this.root) this.root = this.listRoot;
+        this.features = options.features;
+        this.populate();
+    };
+    
+    Controls.prototype.append = function (root) {
+        this.root = root;
+        var toReturn = this.listRoot;
+        this.list.parse();
+        root.appendChild(this.listRoot);
+        
+        if (this.options.submit) {
+            var idButton = 'submit_' + this.id;
+            if (this.options.submit.id) {
+                idButton = this.options.submit.id;
+                delete this.options.submit.id;
+            }
+            this.submit = node.window.addButton(root, idButton, this.options.submit, this.options.attributes);
+            
+            var that = this;
+            this.submit.onclick = function() {
+                if (that.options.change) {
+                    node.emit(that.options.change);
+                }
+            };
+        }               
+        
+        return toReturn;
+    };
+    
+    Controls.prototype.parse = function() {
+        return this.list.parse();
+    };
+    
+    Controls.prototype.populate = function () {
+        var key, id, attributes, container, elem, that;
+        that = this;
 
-	Controls.prototype.refresh = function() {
-		for (var key in this.features) {	
-			if (this.features.hasOwnProperty(key)) {
-				var el = node.window.getElementById(key);
-				if (el) {
-//					node.log('KEY: ' + key, 'DEBUG');
-//					node.log('VALUE: ' + el.value, 'DEBUG');
-					el.value = this.features[key].value;
-					// TODO: set all the other attributes
-					// TODO: remove/add elements
-				}
-				
-			}
-		}
-		
-		return true;
-	};
-	
-	Controls.prototype.getAllValues = function() {
-		var out = {};
-		for (var key in this.features) {	
-			if (this.features.hasOwnProperty(key)) {
-				var el = node.window.getElementById(key);
-				if (el) {
-//					node.log('KEY: ' + key, 'DEBUG');
-//					node.log('VALUE: ' + el.value, 'DEBUG');
-					out[key] = Number(el.value);
-				}
-				
-			}
-		}
-		
-		return out;
-	};
-	
-	Controls.prototype.highlight = function (code) {
-		return node.window.highlight(this.listRoot, code);
-	};
-	
-	// Sub-classes
-	
-	// Slider 
-	
-	SliderControls.prototype.__proto__ = Controls.prototype;
-	SliderControls.prototype.constructor = SliderControls;
-	
-	SliderControls.id = 'slidercontrols';
-	SliderControls.name = 'Slider Controls';
-	SliderControls.version = '0.2';
-	
-	SliderControls.dependencies = {
-		Controls: {}
-	};
-	
-	
-	function SliderControls (options) {
-		Controls.call(this, options);
-	}
-	
-	SliderControls.prototype.add = function (root, id, attributes) {
-		return node.window.addSlider(root, id, attributes);
-	};
-	
-	SliderControls.prototype.getItem = function (id, attributes) {
-		return node.window.getSlider(id, attributes);
-	};
-	
-	// jQuerySlider
+        for (key in this.features) {
+            if (this.features.hasOwnProperty(key)) {
+                // Prepare the attributes vector.
+                attributes = this.features[key];
+                id = key;
+                if (attributes.id) {
+                    id = attributes.id;
+                    delete attributes.id;
+                }
+                
+                container = document.createElement('div');
+                // Add a different element according 
+                // to the subclass instantiated.
+                elem = this.add(container, id, attributes);
+                
+                // Fire the onChange event, if one defined
+                if (this.changeEvent) {
+                    elem.onchange = function() {
+                        node.emit(that.changeEvent);
+                    };
+                }
+                
+                if (attributes.label) {
+                    W.addLabel(container, elem, null, attributes.label);
+                }
+                
+                // Element added to the list.
+                this.list.addDT(container);
+            }
+        }
+    };
+    
+    Controls.prototype.listeners = function() { 
+        var that = this;
+        // TODO: should this be inherited?
+        node.on(this.changeEvent, function(){
+            that.hasChanged = true;
+        });
+        
+    };
+
+    Controls.prototype.refresh = function() {
+        var key, el;
+        for (key in this.features) {        
+            if (this.features.hasOwnProperty(key)) {
+                el = node.window.getElementById(key);
+                if (el) {
+                    // node.log('KEY: ' + key, 'DEBUG');
+                    // node.log('VALUE: ' + el.value, 'DEBUG');
+                    el.value = this.features[key].value;
+                    // TODO: set all the other attributes
+                    // TODO: remove/add elements
+                }
+                
+            }
+        }
+        
+        return true;
+    };
+    
+    Controls.prototype.getAllValues = function() {
+        var out, el, key;
+        out = {};
+        for (key in this.features) {        
+            if (this.features.hasOwnProperty(key)) {
+                el = node.window.getElementById(key);
+                if (el) out[key] = Number(el.value);
+            }
+        }        
+        return out;
+    };
+    
+    Controls.prototype.highlight = function (code) {
+        return node.window.highlight(this.listRoot, code);
+    };
+    
+    // Sub-classes
+    
+    // Slider 
+    
+    SliderControls.prototype.__proto__ = Controls.prototype;
+    SliderControls.prototype.constructor = SliderControls;
+    
+    SliderControls.id = 'slidercontrols';
+    SliderControls.name = 'Slider Controls';
+    SliderControls.version = '0.2';
+    
+    SliderControls.dependencies = {
+        Controls: {}
+    };
+    
+    
+    function SliderControls (options) {
+        Controls.call(this, options);
+    }
+    
+    SliderControls.prototype.add = function (root, id, attributes) {
+        return node.window.addSlider(root, id, attributes);
+    };
+    
+    SliderControls.prototype.getItem = function (id, attributes) {
+        return node.window.getSlider(id, attributes);
+    };
+    
+    // jQuerySlider
     
     jQuerySliderControls.prototype.__proto__ = Controls.prototype;
     jQuerySliderControls.prototype.constructor = jQuerySliderControls;
@@ -19789,93 +19837,126 @@ node.widgets = new Widgets();
     
     jQuerySliderControls.prototype.add = function (root, id, attributes) {
         var slider = jQuery('<div/>', {
-			id: id
-		}).slider();
-	
-		var s = slider.appendTo(root);
-		return s[0];
-	};
-	
-	jQuerySliderControls.prototype.getItem = function (id, attributes) {
-		var slider = jQuery('<div/>', {
-			id: id
-			}).slider();
-		
-		return slider;
-	};
+            id: id
+        }).slider();
+        
+        var s = slider.appendTo(root);
+        return s[0];
+    };
+    
+    jQuerySliderControls.prototype.getItem = function (id, attributes) {
+        var slider = jQuery('<div/>', {
+            id: id
+        }).slider();
+        
+        return slider;
+    };
 
 
     ///////////////////////////
 
-	
-	
-	
+    
+    // Radio
+    
+    RadioControls.prototype.__proto__ = Controls.prototype;
+    RadioControls.prototype.constructor = RadioControls;
+    
+    RadioControls.id = 'radiocontrols';
+    RadioControls.name = 'Radio Controls';
+    RadioControls.version = '0.1.1';
+    
+    RadioControls.dependencies = {
+        Controls: {}
+    };
+    
+    function RadioControls (options) {
+        Controls.call(this,options);
+        this.groupName = ('undefined' !== typeof options.name) ? options.name : 
+            node.window.generateUniqueId(); 
+        this.radioElem = null;
+    }
+    
+    // overriding populare also. There is an error with the Label
+    RadioControls.prototype.populate = function() {
+        var key, id, attributes, container, elem, that;
+        that = this;
 
-	
-	// Radio
-	
-	RadioControls.prototype.__proto__ = Controls.prototype;
-	RadioControls.prototype.constructor = RadioControls;
-	
-	RadioControls.id = 'radiocontrols';
-	RadioControls.name = 'Radio Controls';
-	RadioControls.version = '0.1.1';
-	
-	RadioControls.dependencies = {
-		Controls: {}
-	};
-	
-	function RadioControls (options) {
-		Controls.call(this,options);
-		this.groupName = ('undefined' !== typeof options.name) ? options.name : 
-																node.window.generateUniqueId(); 
-		//alert(this.groupName);
-	}
-	
-	RadioControls.prototype.add = function (root, id, attributes) {
-		//console.log('ADDDING radio');
-		//console.log(attributes);
-		// add the group name if not specified
-		// TODO: is this a javascript bug?
-		if ('undefined' === typeof attributes.name) {
-//			console.log(this);
-//			console.log(this.name);
-//			console.log('MODMOD ' + this.name);
-			attributes.name = this.groupName;
-		}
-		//console.log(attributes);
-		return node.window.addRadioButton(root, id, attributes);	
-	};
-	
-	RadioControls.prototype.getItem = function (id, attributes) {
-		//console.log('ADDDING radio');
-		//console.log(attributes);
-		// add the group name if not specified
-		// TODO: is this a javascript bug?
-		if ('undefined' === typeof attributes.name) {
-//			console.log(this);
-//			console.log(this.name);
-//			console.log('MODMOD ' + this.name);
-			attributes.name = this.groupName;
-		}
-		//console.log(attributes);
-		return node.window.getRadioButton(id, attributes);	
-	};
-	
-	// Override getAllValues for Radio Controls
-	RadioControls.prototype.getAllValues = function() {
-		
-		for (var key in this.features) {
-			if (this.features.hasOwnProperty(key)) {
-				var el = node.window.getElementById(key);
-				if (el.checked) {
-					return el.value;
-				}
-			}
-		}
-		return false;
-	};
-	
+        if (!this.radioElem) {
+            this.radioElem = document.createElement('radio');
+            this.radioElem.group = this.name || "radioGroup";
+            this.radioElem.group = this.id || "radioGroup";
+            root.appendChild(this.radioElem);
+        }
+
+        for (key in this.features) {
+            if (this.features.hasOwnProperty(key)) {
+                // Prepare the attributes vector.
+                attributes = this.features[key];
+                id = key;
+                if (attributes.id) {
+                    id = attributes.id;
+                    delete attributes.id;
+                }
+                
+                // Add a different element according 
+                // to the subclass instantiated.
+                elem = this.add(this.radioElem, id, attributes);
+                
+                // Fire the onChange event, if one defined
+                if (this.changeEvent) {
+                    elem.onchange = function() {
+                        node.emit(that.changeEvent);
+                    };
+                }
+                
+                // Element added to the list.
+                this.list.addDT(elem);
+            }
+        }
+    };
+
+    RadioControls.prototype.add = function (root, id, attributes) {
+        var elem;
+        if ('undefined' === typeof attributes.name) {
+            attributes.name = this.groupName;
+        }
+        
+        elem = node.window.addRadioButton(root, id, attributes);
+         // Adding the text for the radio button
+        elem.appendChild(document.createTextNode(attributes.label));
+        return elem;
+    };
+
+    
+    RadioControls.prototype.getItem = function (id, attributes) {
+        //console.log('ADDDING radio');
+        //console.log(attributes);
+        // add the group name if not specified
+        // TODO: is this a javascript bug?
+        if ('undefined' === typeof attributes.name) {
+            //                  console.log(this);
+            //                  console.log(this.name);
+            //                  console.log('MODMOD ' + this.name);
+            attributes.name = this.groupName;
+        }
+        //console.log(attributes);
+        return node.window.getRadioButton(id, attributes);      
+    };
+    
+    // Override getAllValues for Radio Controls
+    RadioControls.prototype.getAllValues = function() {
+        
+        for (var key in this.features) {
+            if (this.features.hasOwnProperty(key)) {
+                var el = node.window.getElementById(key);
+                if (el.checked) {
+                    return el.value;
+                }
+            }
+        }
+        return false;
+    };
+    
 })(node);
 (function (node) {
     
