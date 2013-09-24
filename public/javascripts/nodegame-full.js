@@ -14448,6 +14448,19 @@ GameStage.stringify = function(gs) {
             };
         });
 
+        // ### node.on.pdisconnect
+        this.alias('pdisconnect', 'in.say.PDISCONNECT', function(cb) {
+            return function(msg) {
+                cb.call(that.game, msg.data);
+            };
+        });
+
+        // ### node.on.preconnect
+        this.alias('preconnect', 'in.say.PRECONNECT', function(cb) {
+            return function(msg) {
+                cb.call(that.game, msg.data);
+            };
+        });
 
         // LISTENERS
 
