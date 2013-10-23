@@ -7381,43 +7381,43 @@ JSUS.extend(PARSE);
 
     var k = node.constants = {};
 
-    // ### version	
+    // ### version
     k.version = '1.0.0-beta';
 
     /**
      * ### node.verbosity_levels
-     * 
+     *
      * ALWAYS, ERR, WARN, INFO, DEBUG
-     */  
+     */
     k.verbosity_levels = {
-	ALWAYS: -(Number.MIN_VALUE + 1), 
-	ERR: -1,
-	WARN: 0,
-	INFO: 1,
-	SILLY: 10,
-	DEBUG: 100,
-	NEVER: Number.MIN_VALUE - 1
-    };	
-    
+        ALWAYS: -(Number.MIN_VALUE + 1),
+        ERR: -1,
+        WARN: 0,
+        INFO: 1,
+        SILLY: 10,
+        DEBUG: 100,
+        NEVER: Number.MIN_VALUE - 1
+    };
+
     // TODO: do we need these defaults ?
 
     /**
      *  ### node.verbosity
-     *  
+     *
      *  The minimum level for a log entry to be displayed as output
-     *   
+     *
      *  Defaults, only errors are displayed.
-     *  
+     *
      */
     k.verbosity = k.verbosity_levels.WARN;
-    
+
     /**
      * ### node.remoteVerbosity
      *
      *  The minimum level for a log entry to be reported to the server
-     *   
+     *
      *  Defaults, only errors are displayed.
-     */	
+     */
     k.remoteVerbosity = k.verbosity_levels.WARN;
 
 
@@ -7661,8 +7661,8 @@ JSUS.extend(PARSE);
         LOADING:       30,
         LOADED:        40,
         PLAYING:       50,
-        PAUSING:       55,
-        PAUSED:        60,
+        PAUSING:       55,  // to be removed
+        PAUSED:        60,  // to be removed
         RESUMING:      65,
         RESUMED:       70,
         DONE:         100
@@ -7680,20 +7680,20 @@ JSUS.extend(PARSE);
      * ### node.verbosity_levels
      *
      * The level of updates that the server receives about the state of a game
-     * 
+     *
      * - ALL: all stateLevel, stageLevel, and gameStage updates
      * - MOST: all stageLevel and gameStage updates
      * - REGULAR: only stageLevel PLAYING and DONE, and all gameStage updates
      * - MODERATE: only gameStage updates (might not work for multiplayer games)
      * - NONE: no updates. The same as observer.
-     */  
+     */
     k.publish_levels = {
-	ALL: 4,
-	MOST: 3,
-	REGULAR: 2,
-	FEW: 1,
-	NONE: 0
-    };	
+        ALL: 4,
+        MOST: 3,
+        REGULAR: 2,
+        FEW: 1,
+        NONE: 0
+    };
 
 })('undefined' != typeof node ? node : module.exports);
 
@@ -8015,7 +8015,7 @@ JSUS.extend(PARSE);
 
         // Useful for debugging.
         if (this.node.conf.events.dumpEvents) {
-            this.node.log('F: ' + type);
+            this.node.log('F - ' + this.name + ': ' + type);
         }
 
         if ('function' === typeof handler) {
@@ -8471,6 +8471,7 @@ JSUS.extend(PARSE);
     'undefined' != typeof node ? node : module.exports
   , 'undefined' != typeof node ? node : module.parent.exports
 );
+
 /**
  * # GameStage
  *
@@ -11767,7 +11768,7 @@ GameStage.stringify = function(gs) {
     J = parent.JSUS;
 
     var action = parent.action;
-    
+
     function Socket(node, options) {
 
         // ## Private properties
@@ -11832,7 +11833,7 @@ GameStage.stringify = function(gs) {
     Socket.prototype.connect = function(uri, options) {
         var humanReadableUri = uri || 'local server';
         if (!this.socket) {
-            this.node.err('Socket.connet: cannot connet to ' + 
+            this.node.err('Socket.connet: cannot connet to ' +
                           humanReadableUri + ' . No open socket.');
             return false;
         }
@@ -11840,8 +11841,8 @@ GameStage.stringify = function(gs) {
         this.url = uri;
         this.node.log('connecting to ' + humanReadableUri + '.');
 
-        this.socket.connect(uri, 'undefined' !== typeof options 
-                            ? options : this.user_options);
+        this.socket.connect(uri, 'undefined' !== typeof options ?
+                            options : this.user_options);
     };
 
     Socket.prototype.onDisconnect = function() {
@@ -11866,10 +11867,10 @@ GameStage.stringify = function(gs) {
 
             // replace itself: will change onMessage
             this.attachMsgListeners();
-            
+
             // This will emit on PLAYER_CREATED
             // If listening on PLAYER_CREATED, functions can be
-            // executed before the HI 
+            // executed before the HI
             this.startSession(msg);
 
             // TODO: do we need this?
@@ -11883,7 +11884,7 @@ GameStage.stringify = function(gs) {
 //                this.send(this.node.msg.create({
 //                    target: 'HI_AGAIN',
 //                    data: this.node.player
-//                }));    
+//                }));
 //            }
 //            else {
 //                // TODO: do we need this ? Every time? Shall set an option?
@@ -11898,12 +11899,22 @@ GameStage.stringify = function(gs) {
         this.node.emit('NODEGAME_READY');
     };
 
+    Socket.prototype.setMsgListener = function(msgHandler) {
+        if (msgHandler && 'function' !== typeof msgHandler) {
+            throw new TypeError('Socket.setMsgListener: msgHandler must be a ' +
+                                'function or undefined');
+        }
+
+        this.onMessage = msgHandler || this.onMessageFull;
+    };
+
     Socket.prototype.onMessageFull = function(msg) {
+        var msgHandler;
+
         msg = this.secureParse(msg);
         if (msg) { // Parsing successful
             // message with high priority are executed immediately
-            if (msg.priority > 0 || 
-                this.node.game.isReady && this.node.game.isReady()) {
+            if (msg.priority > 0 || this.node.game.isReady()) {
                 this.node.emit(msg.toInEvent(), msg);
             }
             else {
@@ -11937,11 +11948,18 @@ GameStage.stringify = function(gs) {
      *
      * Clears buffer conditionally
      *
+     * @param msgHandler {function} Optional. Callback function which is
+     *  called for every message in the buffer instead of the messages
+     *  being emitted.
+     *  Default: Emit every buffered message.
+     *
      * @see this.node.emit
+     * @see Socket.clearBuffer
      */
-    Socket.prototype.shouldClearBuffer = function () {
-        if (this.node.game.isReady && this.node.game.isReady()) {
-            this.clearBuffer();
+    Socket.prototype.shouldClearBuffer = function (msgHandler) {
+        //if (this.node.game.isReady && this.node.game.isReady()) {
+        if (this.node.game.isReady()) {
+            this.clearBuffer(msgHandler);
         }
     };
 
@@ -11950,15 +11968,32 @@ GameStage.stringify = function(gs) {
      *
      * Emits and removes all the events in the message buffer
      *
+     * @param msgHandler {function} Optional. Callback function which is
+     *  called for every message in the buffer instead of the messages
+     *  being emitted.
+     *  Default: Emit every buffered message.
+     *
      * @see node.emit
+     * @see Socket.shouldClearBuffer
      */
-    Socket.prototype.clearBuffer = function () {
+    Socket.prototype.clearBuffer = function (msgHandler) {
         var nelem, msg, i;
+        var funcCtx, func;
+       
+        if (msgHandler) {
+            funcCtx = this.node.game;
+            func = msgHandler;
+        }
+        else {
+            funcCtx = this.node.events;
+            func = this.node.events.emit;
+        }
+
         nelem = this.buffer.length;
         for (i = 0; i < nelem; i++) {
-            msg = this.buffer.shift();
+            msg = this.buffer.shift();  // necessary? costly!
             if (msg) {
-                this.node.emit(msg.toInEvent(), msg);
+                func.call(funcCtx, msg.toInEvent(), msg);
                 this.node.silly('D: ' + msg);
             }
         }
@@ -11981,10 +12016,10 @@ GameStage.stringify = function(gs) {
     Socket.prototype.startSession = function (msg) {
         // Extracts server info from the first msg.
         this.registerServer(msg);
-        
+
         this.session = msg.session;
         this.node.createPlayer(msg.data);
-        
+
         if (this.node.store.cookie) {
             this.node.store.cookie('session', this.session);
             this.node.store.cookie('player', this.node.player.id);
@@ -11996,7 +12031,7 @@ GameStage.stringify = function(gs) {
         return true;
     };
 
-    
+
     Socket.prototype.registerServer = function(msg) {
         // Setting global info
         this.servername = msg.from;
@@ -12027,12 +12062,12 @@ GameStage.stringify = function(gs) {
             this.node.err('Socket.send: cannot send message. Player undefined.');
             return false;
         }
-        
+
         // TODO: add conf variable node.emitOutMsg
         if (this.node.debug) {
             this.node.emit(msg.toOutEvent(), msg);
         }
-        
+
         this.socket.send(msg);
         this.node.info('S: ' + msg);
         return true;
@@ -12049,8 +12084,8 @@ GameStage.stringify = function(gs) {
     };
 
 })(
-    'undefined' != typeof node ? node : module.exports
- ,  'undefined' != typeof node ? node : module.parent.exports
+    'undefined' != typeof node ? node : module.exports,
+    'undefined' != typeof node ? node : module.parent.exports
 );
 
 /**
@@ -12463,7 +12498,7 @@ GameStage.stringify = function(gs) {
     GamePlot = parent.GamePlot,
     PlayerList = parent.PlayerList,
     Stager = parent.Stager;
-    
+
     var constants = parent.constants;
 
     /**
@@ -12583,7 +12618,7 @@ GameStage.stringify = function(gs) {
          * and checks them with the PlayerList object.
          *
          * @return {boolean} TRUE if all checks are passed
-         * 
+         *
          * @see Game.step
          */
         this.checkPlistSize = function() { return true; };
@@ -12657,7 +12692,7 @@ GameStage.stringify = function(gs) {
      * or give an option to send it?
      *
      * TODO: check if the game has started already, and give a warning if not
-     * 
+     *
      * @experimental
      */
     Game.prototype.restart = function (reset) {
@@ -12705,7 +12740,31 @@ GameStage.stringify = function(gs) {
      * @TODO: check with Game.ready
      */
     Game.prototype.pause = function() {
+        var msgHandler;
+
+        if (this.paused) {
+            throw new Error('Game.pause: called while already paused');
+        }
+
+        this.node.emit('PAUSING');
+
         this.paused = true;
+
+        // If the Stager has a method for accepting messages during a
+        // pause, pass them to it. Otherwise, buffer the messages
+        // until the game is resumed.
+        msgHandler = this.plot.getProperty(this.getCurrentGameStage(),
+                                           'pauseMsgHandler');
+        if (msgHandler) {
+            this.node.socket.setMsgListener(function(msg) {
+                msg = this.node.socket.secureParse(msg);
+                msgHandler.call(this.node.game, msg.toInEvent(), msg);
+            });
+        }
+
+        this.node.emit('PAUSED');
+
+        // broadcast?
     };
 
     /**
@@ -12716,7 +12775,35 @@ GameStage.stringify = function(gs) {
      * @TODO: check with Game.ready
      */
     Game.prototype.resume = function() {
+        var msgHandler;
+
+        if (!this.paused) {
+            throw new Error('Game.pause: called while not paused');
+        }
+
+        this.node.emit('RESUMING');
+
         this.paused = false;
+
+        // If the Stager defines an appropriate handler, give it the messages
+        // that were buffered during the pause.
+        // Otherwise, emit the buffered messages normally.
+        msgHandler = this.plot.getProperty(this.getCurrentGameStage(),
+                                           'resumeMsgHandler');
+        if (msgHandler) {
+            // shouldClearBuffer checks Game.isReady and we don't want that
+            this.node.socket.clearBuffer(msgHandler);
+        }
+        else {
+            this.node.socket.shouldClearBuffer();
+        }
+
+        // Reset the Socket's message handler to the default:
+        this.node.socket.setMsgListener();
+
+        this.node.emit('RESUMED');
+
+        // broadcast?
     };
 
     /**
@@ -12742,7 +12829,7 @@ GameStage.stringify = function(gs) {
             throw new this.node.NodeGameMisconfiguredGameError(
                 'Game.shouldStep: rule is not a function');
         }
-        
+
         if (stepRule(this.getCurrentGameStage(), this.getStageLevel(),
                      this.pl, this)) {
             return this.step();
@@ -12778,7 +12865,7 @@ GameStage.stringify = function(gs) {
             throw new node.NodeGameMisconfiguredGameError(
                 'game.step called before game.start');
         }
-        
+
         curStep = this.getCurrentGameStage();
         nextStep = this.plot.next(curStep);
         node.silly('Next stage ---> ' + nextStep);
@@ -12958,7 +13045,7 @@ GameStage.stringify = function(gs) {
                     node.events.ee.step.on(ev, nextStepObjs.on[ev]);
                 }
             }
-            
+
             // Emit buffered messages:
             node.socket.shouldClearBuffer();
             return this.execStep(this.getCurrentStep());
@@ -12978,7 +13065,7 @@ GameStage.stringify = function(gs) {
     Game.prototype.execStep = function(stage) {
         var cb, res, node;
         node = this.node;
-        
+
         if (!stage || 'object' !== typeof stage) {
             throw new node.NodeGameRuntimeError(
                 'game.execStep requires a valid object');
@@ -13004,7 +13091,7 @@ GameStage.stringify = function(gs) {
             node.err('A non fatal error occurred while executing ' +
                      'the callback of stage ' + this.getCurrentGameStage());
         }
-        
+
         // TODO node.is is probably going to change
         if (!node.window || node.window.state == node.constants.is.LOADED) {
             // If there is a node.window, we must make sure that the DOM
@@ -13060,7 +13147,7 @@ GameStage.stringify = function(gs) {
         node.player.stageLevel = stageLevel;
     };
 
-    Game.prototype.setCurrentGameStage = function(gameStage, silent) {        
+    Game.prototype.setCurrentGameStage = function(gameStage, silent) {
         gameStage = new GameStage(gameStage);
         // Important: First publish, then actually update.
         if (!silent) this.publishUpdate('stage', gameStage);
@@ -13093,7 +13180,7 @@ GameStage.stringify = function(gs) {
                 }));
         }
     };
-    
+
     /**
      * ## Game.shouldPublishUpdate
      *
@@ -13117,14 +13204,14 @@ GameStage.stringify = function(gs) {
         }
         levels = constants.publish_levels;
         switch(this.settings.publishLevel) {
-        case levels.NONE: 
+        case levels.NONE:
             return false;
         case levels.FEW:
             return type === 'stage';
         case levels.REGULAR:
             if (type === 'stateLevel') return false;
             if (type === 'stageLevel') {
-                return (value === constants.stageLevels.PLAYING || 
+                return (value === constants.stageLevels.PLAYING ||
                         value === constants.stageLevels.DONE);
             }
             return true; // type === 'stage'
@@ -13133,8 +13220,8 @@ GameStage.stringify = function(gs) {
         case levels.ALL:
             return true;
         default:
-            // Unknown values of publishLevels are treated as ALL. 
-            return true; 
+            // Unknown values of publishLevels are treated as ALL.
+            return true;
         }
     };
 
@@ -13162,10 +13249,12 @@ GameStage.stringify = function(gs) {
      */
     Game.prototype.isReady = function() {
         var node, stageLevel, stateLevel;
+
+        if (this.paused) return false;
+
         stateLevel = this.getStateLevel();
         stageLevel = this.getStageLevel();
         node = this.node;
-
 
         switch (stateLevel) {
         case constants.stateLevels.UNINITIALIZED:
@@ -13182,6 +13271,7 @@ GameStage.stringify = function(gs) {
             case constants.stageLevels.RESUMING:
                 return false;
             }
+            break;
         }
 
         // TODO: make node.window use other than the .is constant
@@ -14128,6 +14218,170 @@ GameStage.stringify = function(gs) {
 );
 
 /**
+ * # Timer
+ * Copyright(c) 2013 Stefano Balietti
+ * MIT Licensed
+ *
+ * Timing-related utility functions
+ *
+ *  ---
+ */
+(function(exports, parent) {
+
+    // ## Global scope
+
+    // Exposing Timer constructor
+    exports.Timer = Timer;
+
+    var constants = parent.constants;
+
+    /**
+     * ## Timer constructor
+     *
+     * Creates a new instance of Timer
+     *
+     * @param {NodeGameClient} node. A valid NodeGameClient object
+     * @param {object} settings Optional. A configuration object
+     */
+    function Timer(node, settings) {
+        this.node = node;
+
+        settings = settings || {};
+    }
+
+    // ## Timer methods
+
+    /**
+     * ### Timer.createTimer
+     *
+     * Returns a new GameTimer
+     *
+     * The GameTimer instance is automatically paused and resumed on
+     * the respective events.
+     *
+     * @param {object} options The options that are given to GameTimer
+     *
+     * @see GameTimer
+     */
+    Timer.prototype.createTimer = function(options) {
+        var gameTimer, pausedCb, resumedCb;
+
+        // Create the GameTimer:
+        gameTimer = new this.node.GameTimer(options);
+
+        // Attach pause / resume listeners:
+        pausedCb = function() {
+            // TODO: Possible problem: Pausing before starting?
+            if (!gameTimer.isPaused()) {
+                gameTimer.pause();
+            }
+        };
+        this.node.on('PAUSED', pausedCb);
+
+        resumedCb = function() {
+            if (gameTimer.isPaused()) {
+                gameTimer.resume();
+            }
+        };
+        this.node.on('RESUMED', resumedCb);
+
+        // Attach listener handlers to GameTimer object so they can be
+        // unregistered later:
+        gameTimer.timerPausedCallback = pausedCb;
+        gameTimer.timerResumedCallback = resumedCb;
+
+        return gameTimer;
+    };
+
+    /**
+     * ### Timer.destroyTimer
+     *
+     * Stops and removes a GameTimer
+     *
+     * The event handlers listening on PAUSED/RESUMED that are attached to
+     * the given GameTimer object are removed.
+     */
+    Timer.prototype.destroyTimer = function(gameTimer) {
+        // Stop timer:
+        if (!gameTimer.isStopped()) {
+            gameTimer.stop();
+        }
+
+        // Detach listeners:
+        this.node.off('PAUSED', gameTimer.timerPausedCallback);
+        this.node.off('RESUMED', gameTimer.timerResumedCallback);
+    };
+
+    // Common handler for randomEmit and randomExec
+    function randomFire(hook, maxWait, emit) {
+        var that = this;
+        var waitTime;
+        var callback;
+        var timerObj;
+
+        // Get time to wait:
+        maxWait = maxWait || 6000;
+        waitTime = Math.random() * maxWait;
+
+        // Define timeup callback:
+        if (emit) {
+            callback = function() {
+                that.destroyTimer(timerObj);
+                that.node.emit(hook);
+            };
+        }
+        else {
+            callback = function() {
+                that.destroyTimer(timerObj);
+                hook.call();
+            };
+        }
+
+        // Create and run timer:
+        timerObj = this.createTimer({
+            milliseconds: waitTime,
+            timeup: callback
+        });
+        timerObj.start();
+    }
+
+    /**
+     * ### Timer.randomEmit
+     *
+     * Emits an event after a random time interval between 0 and maxWait
+     *
+     * Respects pausing / resuming.
+     *
+     * @param {string} event The name of the event
+     * @param {number} maxWait Optional. The maximum time (in milliseconds)
+     *   to wait before emitting the event. to Defaults, 6000
+     */
+    Timer.prototype.randomEmit = function(event, maxWait) {
+        randomFire.call(this, event, maxWait, true);
+    };
+
+    /**
+     * ### Timer.randomExec
+     *
+     * Executes a callback function after a random time interval between 0 and maxWait
+     *
+     * Respects pausing / resuming.
+     *
+     * @param {function} The callback function to execute
+     * @param {number} maxWait Optional. The maximum time (in milliseconds)
+     *   to wait before executing the callback. to Defaults, 6000
+     */
+    Timer.prototype.randomExec = function(func, maxWait) {
+        randomFire.call(this, func, maxWait, false);
+    };
+
+    // ## Closure
+})(
+    'undefined' != typeof node ? node : module.exports,
+    'undefined' != typeof node ? node : module.parent.exports
+);
+
+/**
  * # nodeGame: Social Experiments in the Browser!
  *
  * Copyright(c) 2013 Stefano Balietti
@@ -14145,15 +14399,16 @@ GameStage.stringify = function(gs) {
     exports.NodeGameClient = NodeGameClient;
 
     var EventEmitterManager = parent.EventEmitterManager,
-    EventEmitter = parent.EventEmitter,
-    GameMsgGenerator = parent.GameMsgGenerator,
-    Socket = parent.Socket,
-    GameStage = parent.GameStage,
-    GameMsg = parent.GameMsg,
-    Game = parent.Game,
-    Player = parent.Player,
-    GameSession = parent.GameSession,
-    J = parent.JSUS;
+        EventEmitter = parent.EventEmitter,
+        GameMsgGenerator = parent.GameMsgGenerator,
+        Socket = parent.Socket,
+        GameStage = parent.GameStage,
+        GameMsg = parent.GameMsg,
+        Game = parent.Game,
+        Timer = parent.Timer,
+        Player = parent.Player,
+        GameSession = parent.GameSession,
+        J = parent.JSUS;
     
     var that;
     that = this;
@@ -14260,6 +14515,15 @@ GameStage.stringify = function(gs) {
          * @see Game
          */
         this.game = new Game(this);
+
+        /**
+         * ### node.timer
+         *
+         * Instance of node.Timer
+         *
+         * @see Timer
+         */
+        this.timer = new Timer(this);
 
 
         /**
@@ -14668,6 +14932,7 @@ GameStage.stringify = function(gs) {
     'undefined' != typeof node ? node : module.exports
  ,  'undefined' != typeof node ? node : module.parent.exports
 );
+
 /**
  * # Log
  *
@@ -15248,6 +15513,9 @@ GameStage.stringify = function(gs) {
         if ('string' !== typeof label) {
             throw new TypeError('node.say: label must be string.');
         }
+        if (!to) {
+            throw new TypeError('node.say: to must be defined.');
+        }
         msg = this.msg.create({
             target: this.constants.target.DATA,
             to: to || 'SERVER',
@@ -15532,38 +15800,6 @@ GameStage.stringify = function(gs) {
     };
 
     /**
-     * ### NodeGameClient.randomEmit
-     *
-     * Emits an event after a random time interval between 0 and maxWait
-     *
-     * @param {string} event The name of the event
-     * @param {number} maxWait Optional. The maximum time (in milliseconds)
-     *   to wait before emitting the event. to Defaults, 6000
-     */
-    NGC.prototype.randomEmit = function (event, maxWait){
-        maxWait = maxWait || 6000;
-        setTimeout(function(event) {
-            node.emit(event);
-        }, Math.random() * maxWait, event);
-    };
-
-    /**
-     * ### NodeGameClient.randomExec
-     *
-     * Executes a callback function after a random time interval between 0 and maxWait
-     *
-     * @param {function} The callback function to execute
-     * @param {number} maxWait Optional. The maximum time (in milliseconds)
-     *   to wait before executing the callback. to Defaults, 6000
-     */
-    NGC.prototype.randomExec = function (func, maxWait) {
-        maxWait = maxWait || 6000;
-        setTimeout(function(func) {
-            func.call();
-        }, Math.random() * maxWait, func);
-    };
-
-    /**
      * ###  NodeGameClient.play
      *
      * Starts a game
@@ -15618,7 +15854,7 @@ GameStage.stringify = function(gs) {
     /**
      * ## NodeGameClient.addDefaultIncomingListeners
      *
-     * Adds a battery of event listeners for incoming messages 
+     * Adds a battery of event listeners for incoming messages
      *
      * If executed once, it requires a force flag to re-add the listeners
      *
@@ -15633,7 +15869,7 @@ GameStage.stringify = function(gs) {
                      'added once. Use the force flag to re-add.');
             return false;
         }
-        
+
         /**
          * ## in.say.PCONNECT
          *
@@ -15733,7 +15969,7 @@ GameStage.stringify = function(gs) {
             res = node.emit(msg.text, msg.data);
             node.say(msg.text, msg.from, res);
         });
-        
+
         /**
          * ## in.set.STATE
          *
@@ -15781,7 +16017,7 @@ GameStage.stringify = function(gs) {
                 return;
             }
             stageObj = node.game.plot.getStep(msg.data);
-            
+
             if (!stageObj) {
                 node.err('Received in.say.STAGE msg with invalid stage');
                 return;
@@ -15833,7 +16069,7 @@ GameStage.stringify = function(gs) {
             var feature;
             if (!msg.text) return;
             feature = msg.text,
-            payload = 'string' === typeof msg.data ? 
+            payload = 'string' === typeof msg.data ?
                 J.parse(msg.data) : msg.data;
 
             if (!payload) {
@@ -15865,7 +16101,7 @@ GameStage.stringify = function(gs) {
         return true;
     };
 
-    
+
 })(
     'undefined' != typeof node ? node : module.exports,
     'undefined' != typeof node ? node : module.parent.exports
@@ -15875,11 +16111,11 @@ GameStage.stringify = function(gs) {
 // # Internal listeners
 
 // Internal listeners are not directly associated to messages,
-// but they are usually responding to internal nodeGame events, 
-// such as progressing in the loading chain, or finishing a game stage 
+// but they are usually responding to internal nodeGame events,
+// such as progressing in the loading chain, or finishing a game stage
 
 (function (exports, parent) {
-    
+
     var NGC = parent.NodeGameClient;
 
     var GameMsg = parent.GameMsg,
@@ -15888,7 +16124,7 @@ GameStage.stringify = function(gs) {
     Player = parent.Player,
     J = parent.JSUS,
     constants = parent.constants;
-    
+
     var action = constants.action,
     target = constants.target;
 
@@ -15900,7 +16136,7 @@ GameStage.stringify = function(gs) {
     /**
      * ## NodeGameClient.addDefaultInternalListeners
      *
-     * Adds a battery of event listeners for internal events 
+     * Adds a battery of event listeners for internal events
      *
      * If executed once, it requires a force flag to re-add the listeners
      *
@@ -15916,69 +16152,87 @@ GameStage.stringify = function(gs) {
 
         /**
          * ## DONE
-         * 
-         * Updates and publishes that the client has successfully terminated a stage 
-         * 
+         *
+         * Updates and publishes that the client has successfully terminated a stage
+         *
          * If a DONE handler is defined in the game-plot, it will executes it before
          * continuing with further operations. In case it returns FALSE, the update
-         * process is stopped. 
-         * 
+         * process is stopped.
+         *
          * @emit BEFORE_DONE
          *
          */
         this.events.ng.on('DONE', function() {
-	    
             // Execute done handler before updating stage
             var ok = true,
-            done = node.game.getCurrentStep().done;
-            
+                done = node.game.getCurrentStep().done;
+
             if (done) ok = done.apply(node.game, J.obj2Array(arguments));
             if (!ok) return;
-            node.game.setStageLevel(constants.stageLevels.DONE)
-	    
-            // Call all the functions that want to do 
+            node.game.setStageLevel(constants.stageLevels.DONE);
+
+            // Call all the functions that want to do
             // something before changing stage
             node.emit('BEFORE_DONE');
-	    
+
             // Step forward, if allowed
             node.game.shouldStep();
         });
 
         /**
          * ## PLAYING
-         * 
-         * @emit BEFORE_PLAYING 
+         *
+         * @emit BEFORE_PLAYING
          */
         this.events.ng.on('PLAYING', function() {
             node.game.setStageLevel(constants.stageLevels.PLAYING);
             //TODO: the number of messages to emit to inform other players
-            // about its own stage should be controlled. Observer is 0 
+            // about its own stage should be controlled. Observer is 0
             //node.game.publishUpdate();
-            node.socket.clearBuffer();	
+            node.socket.clearBuffer();
             node.emit('BEFORE_PLAYING');
         });
 
 
         /**
          * ## NODEGAME_GAMECOMMAND: start
-         * 
+         *
          */
         this.events.ng.on('NODEGAME_GAMECOMMAND_' + constants.gamecommand.start, function(options) {
-	    
             node.emit('BEFORE_GAMECOMMAND', constants.gamecommand.start, options);
-	    
+
             if (node.game.getCurrentStep() && node.game.getCurrentStep().stage !== 0) {
-	        node.err('Game already started. Use restart if you want to start the game again');
-	        return;
+                node.err('Game already started. Use restart if you want to start the game again');
+                return;
             }
-	    
-            node.game.start();	
+
+            node.game.start();
+        });
+
+        /**
+         * ## NODEGAME_GAMECOMMAND: pause
+         *
+         */
+        this.events.ng.on('NODEGAME_GAMECOMMAND_' + constants.gamecommand.pause, function(options) {
+            node.emit('BEFORE_GAMECOMMAND', constants.gamecommand.pause, options);
+
+            node.game.pause();
+        });
+
+        /**
+         * ## NODEGAME_GAMECOMMAND: resume
+         *
+         */
+        this.events.ng.on('NODEGAME_GAMECOMMAND_' + constants.gamecommand.resume, function(options) {
+            node.emit('BEFORE_GAMECOMMAND', constants.gamecommand.resume, options);
+
+            node.game.resume();
         });
 
         this.incomingAdded = true;
         this.silly('internal listeners added');
         return true;
-    }
+    };
 })(
     'undefined' != typeof node ? node : module.exports,
     'undefined' != typeof node ? node : module.parent.exports
@@ -15987,369 +16241,495 @@ GameStage.stringify = function(gs) {
 
 /**
  * # GameTimer
- * 
+ *
  * Copyright(c) 2012 Stefano Balietti
- * MIT Licensed 
- * 
- * Creates a controllable timer object for nodeGame 
- * 
+ * MIT Licensed
+ *
+ * Creates a controllable timer object for nodeGame
+ *
  * ---
- * 
+ *
  */
 
 (function (exports, node) {
-	
+
 // ## Global scope
-	
-	exports.GameTimer = GameTimer;
-	
-	var JSUS = node.JSUS;
+
+    exports.GameTimer = GameTimer;
+
+    var JSUS = node.JSUS;
 
 /**
  * ### GameTimer status levels
  * Numerical levels representing the state of the GameTimer
- * 
- * 	@see GameTimer.status
+ *
+ * @see GameTimer.status
  */
-	GameTimer.STOPPED = -5
-	GameTimer.PAUSED = -3;
-	GameTimer.UNINITIALIZED = -1;
-	GameTimer.INITIALIZED = 0;
-	GameTimer.LOADING = 3;
-	GameTimer.RUNNING = 5;
-	
+    GameTimer.STOPPED = -5;
+    GameTimer.PAUSED = -3;
+    GameTimer.UNINITIALIZED = -1;
+    GameTimer.INITIALIZED = 0;
+    GameTimer.LOADING = 3;
+    GameTimer.RUNNING = 5;
+
 /**
  * ## GameTimer constructor
- * 
+ *
  * Creates an instance of GameTimer
- * 
+ *
  * @param {object} options. Optional. A configuration object
- */	
+ */
 function GameTimer (options) {
-	options = options || {};
+    options = options || {};
 
 // ## Public properties
 
 /**
  * ### GameTimer.status
- * 
+ *
  * Numerical index representing the current the state of the GameTimer object
- * 
+ *
  */
-	this.status = GameTimer.UNINITIALIZED;	
-	
+    this.status = GameTimer.UNINITIALIZED;
+
 /**
  * ### GameTimer.options
- * 
+ *
  * The current settings for the GameTimer
- * 
- */	
-	this.options = options;
+ *
+ */
+    this.options = options;
 
 /**
  * ### GameTimer.timer
- * 
+ *
  * The ID of the javascript interval
- * 
- */	
-	this.timer = null; 		
+ *
+ */
+    this.timer = null;
 
 /**
  * ### GameTimer.timeLeft
- * 
+ *
  * Milliseconds left before time is up
- * 
- */	
-	this.timeLeft = null;
-	
+ *
+ */
+    this.timeLeft = null;
+
 /**
  * ### GameTimer.timePassed
- * 
+ *
  * Milliseconds already passed from the start of the timer
- * 
- */	
-	this.timePassed = 0;
+ *
+ */
+    this.timePassed = 0;
 
 /**
  * ### GameTimer.update
- * 
+ *
  * The frequency of update for the timer (in milliseconds)
- * 
- */	
-	this.update = 1000;	
-	
+ *
+ */
+    this.update = 1000;
+
+/**
+ * ### GameTimer.updateRemaining
+ *
+ * Milliseconds remaining for current update
+ *
+ */
+    this.updateRemaining = 0;
+
+/**
+ * ### GameTimer.updateStart
+ *
+ * Timestamp of the start of the last update
+ *
+ */
+    this.updateStart = 0;
+
+/**
+ * ### GameTimer.startPaused
+ *
+ * Whether to enter the pause state when starting
+ *
+ */
+    this.startPaused = false;
+
 /**
  * ### GameTimer.timeup
- * 
+ *
  * Event string or function to fire when the time is up
- * 
- * 	@see GameTimer.fire
- */		
-	this.timeup = 'TIMEUP';	
-	
+ *
+ * @see GameTimer.fire
+ */
+    this.timeup = 'TIMEUP';
+
 /**
  * ### GameTimer.hooks
- * 
+ *
  * Array of hook functions to fire at every update
- * 
+ *
  * The array works as a LIFO queue
- * 
- * 	@see GameTimer.fire
- */	
-	this.hooks = [];
-	
-	this.init();
-	// TODO: remove into a new addon
-	this.listeners();
-};
+ *
+ * @see GameTimer.fire
+ */
+    this.hooks = [];
+
+    this.init();
+    // TODO: remove into a new addon
+    this.listeners();
+}
 
 // ## GameTimer methods
 
 /**
  * ### GameTimer.init
- * 
+ *
  * Inits the GameTimer
- * 
- * Takes the configuration as an input parameter or 
+ *
+ * Takes the configuration as an input parameter or
  * recycles the settings in `this.options`.
- * 
+ *
  * The configuration object is of the type
- * 
- * 	var options = {
- * 		milliseconds: 4000, // The length of the interval
- * 		update: 1000, // How often to update the time counter. Defaults every 1sec
- * 		timeup: 'MY_EVENT', // An event ot function to fire when the timer expires
- * 		hooks: [ myFunc, // Array of functions or events to fire at every update
- * 				'MY_EVENT_UPDATE', 
- * 				{ hook: myFunc2,
- * 				  ctx: that, }, 	
- * 				], 
- * 	} 
- * 	// Units are in milliseconds 
- * 
+ *
+ *  var options = {
+ *      milliseconds: 4000, // The length of the interval
+ *      update: 1000, // How often to update the time counter. Defaults to milliseconds
+ *      timeup: 'MY_EVENT', // An event or function to fire when the timer expires
+ *      hooks: [ myFunc, // Array of functions or events to fire at every update
+ *              'MY_EVENT_UPDATE',
+ *              { hook: myFunc2,
+ *                ctx: that, },
+ *              ],
+ *  }
+ *  // Units are in milliseconds
+ *
  * @param {object} options Optional. Configuration object
- * 
- * 	@see GameTimer.addHook
+ *
+ * @see GameTimer.addHook
  */
 GameTimer.prototype.init = function (options) {
-	options = options || this.options;
-	this.status = GameTimer.UNINITIALIZED;
-	if (this.timer) clearInterval(this.timer);
-	this.milliseconds = options.milliseconds || 0;
-	this.timeLeft = this.milliseconds;
-	this.timePassed = 0;
-	this.update = options.update || 1000;
-	this.timeup = options.timeup || 'TIMEUP'; // event to be fire when timer is expired
-	// TODO: update and milliseconds must be multiple now
-	if (options.hooks) {
-		for (var i=0; i < options.hooks.length; i++){
-			this.addHook(options.hooks[i]);
-		}
-	}
-	
-	this.status = GameTimer.INITIALIZED;
+    options = options || this.options;
+
+    this.status = GameTimer.UNINITIALIZED;
+    if (this.timer) clearInterval(this.timer);
+    this.milliseconds = options.milliseconds;
+    this.update = options.update || this.milliseconds;
+    this.timeLeft = this.milliseconds;
+    this.timePassed = 0;
+    this.timeup = options.timeup || 'TIMEUP'; // event to be fired when timer expires
+    // TODO: update and milliseconds must be multiple now
+    if (options.hooks) {
+        for (var i=0; i < options.hooks.length; i++){
+            this.addHook(options.hooks[i]);
+        }
+    }
+
+    this.status = GameTimer.INITIALIZED;
 };
 
 
 /**
  * ### GameTimer.fire
- * 
+ *
  * Fires a registered hook
- * 
- * If it is a string it is emitted as an event, 
+ *
+ * If it is a string it is emitted as an event,
  * otherwise it called as a function.
- * 
+ *
  * @param {mixed} h The hook to fire
- * 
+ *
  */
 GameTimer.prototype.fire = function (h) {
-	if (!h && !h.hook) return;
-	var hook = h.hook || h;
-	if ('function' === typeof hook) {
-		var ctx = h.ctx || node.game;
-		hook.call(ctx);
-	}
-	else {
-		node.emit(hook);
-	}	
+    if (!h) {
+        throw new Error('GameTimer.fire: missing argument');
+    }
+
+    var hook = h.hook || h;
+    if ('function' === typeof hook) {
+        var ctx = h.ctx || node.game;
+        hook.call(ctx);
+    }
+    else {
+        node.emit(hook);
+    }
 };
-	
+
 /**
  * ### GameTimer.start
- * 
+ *
  * Starts the timer
- * 
+ *
  * Updates the status of the timer and calls `setInterval`
- * At every update all the registered hooks are fired, and 
- * time left is checked. 
- * 
+ * At every update all the registered hooks are fired, and
+ * time left is checked.
+ *
  * When the timer expires the timeup event is fired, and the
  * timer is stopped
- * 
- * 	@see GameTimer.status
- * 	@see GameTimer.timeup
- * 	@see GameTimer.fire 
- * 
+ *
+ * @see GameTimer.status
+ * @see GameTimer.timeup
+ * @see GameTimer.fire
+ *
  */
 GameTimer.prototype.start = function() {
-	this.status = GameTimer.LOADING;
-	// fire the event immediately if time is zero
-	if (this.options.milliseconds === 0) {
-		node.emit(this.timeup);
-		return;
-	}
+    // Check validity of state
+    if ('number' !== typeof this.milliseconds) {
+        throw new Error('GameTimer.start: this.milliseconds must be a number');
+    }
+    if (this.update > this.milliseconds) {
+        throw new Error('GameTimer.start: this.update must not be greater ' +
+                        'than this.milliseconds');
+    }
 
-	var that = this;
-	this.timer = setInterval(function() {
-		that.status = GameTimer.RUNNING;
-		node.log('interval started: ' + that.timeLeft, 'DEBUG', 'GameTimer: ');
-		that.timePassed = that.timePassed + that.update;
-		that.timeLeft = that.milliseconds - that.timePassed;
-		// Fire custom hooks from the latest to the first if any
-		for (var i = that.hooks.length; i > 0; i--) {
-			that.fire(that.hooks[(i-1)]);
-		}
-		// Fire Timeup Event
-		if (that.timeLeft <= 0) {
-			// First stop the timer and then call the timeup
-			that.stop();
-			that.fire(that.timeup);
-			node.log('time is up: ' + that.timeup, 'DEBUG', 'GameTimer: ');
-		}
-		
-	}, this.update);
+    this.status = GameTimer.LOADING;
+
+    if (this.startPaused) {
+        this.pause();
+        return;
+    }
+
+    // fire the event immediately if time is zero
+    if (this.options.milliseconds === 0) {
+        this.fire(this.timeup);
+        return;
+    }
+
+    // Remember time of start:
+    this.updateStart = (new Date()).getTime();
+    this.updateRemaining = this.update;
+
+    this.timer = setInterval(updateCallback, this.update, this);
 };
-	
+
 /**
  * ### GameTimer.addHook
- * 
- * 
+ *
+ *
  * Add an hook to the hook list after performing conformity checks.
  * The first parameter hook can be a string, a function, or an object
  * containing an hook property.
  */
 GameTimer.prototype.addHook = function (hook, ctx) {
-	if (!hook) return;
-	var ctx = ctx || node.game;
-	if (hook.hook) {
-		ctx = hook.ctx || ctx;
-		var hook = hook.hook;
-	}
-	this.hooks.push({hook: hook, ctx: ctx});
+    if (!hook) {
+        throw new Error('GameTimer.addHook: missing argument');
+    }
+
+    ctx = ctx || node.game;
+    if (hook.hook) {
+        ctx = hook.ctx || ctx;
+        hook = hook.hook;
+    }
+    this.hooks.push({hook: hook, ctx: ctx});
 };
 
 /**
  * ### GameTimer.pause
- * 
+ *
  * Pauses the timer
- * 
+ *
  * If the timer was running, clear the interval and sets the
  * status property to `GameTimer.PAUSED`
- * 
+ *
  */
 GameTimer.prototype.pause = function() {
-	if (this.status > 0) {
-		this.status = GameTimer.PAUSED;
-		//console.log('Clearing Interval... pause')
-		clearInterval(this.timer);
-	}
-};	
+    var timestamp;
+
+    if (this.isRunning()) {
+        clearInterval(this.timer);
+        clearTimeout(this.timer);
+
+        this.status = GameTimer.PAUSED;
+
+        // Save time of pausing:
+        timestamp = (new Date()).getTime();
+        this.updateRemaining -= timestamp - this.updateStart;
+    }
+    else if (!this.isPaused()) {
+        // pause() was called before start(); remember it:
+        this.startPaused = true;
+    }
+    else {
+        throw new Error('GameTimer.pause: timer was already paused');
+    }
+};
 
 /**
  * ### GameTimer.resume
- * 
+ *
  * Resumes a paused timer
- * 
+ *
  * If the timer was paused, restarts it with the current configuration
- * 
- * 	@see GameTimer.restart
+ *
+ * @see GameTimer.restart
  */
 GameTimer.prototype.resume = function() {
-	if (this.status !== GameTimer.PAUSED) return; // timer was not paused
-	var options = JSUS.extend({milliseconds: this.milliseconds - this.timePassed}, this.options);
-	this.restart(options);
-};	
+    var that = this;
+
+    if (!this.isPaused()) {
+        throw new Error('GameTimer.resume: timer was not paused');
+    }
+
+    this.status = GameTimer.LOADING;
+
+    this.startPaused = false;
+
+    this.updateStart = (new Date()).getTime();
+
+    // Run rest of this "update" interval:
+    this.timer = setTimeout(function() {
+        if (updateCallback(that)) {
+            that.start();
+        }
+    }, this.updateRemaining);
+};
 
 /**
  * ### GameTimer.stop
- * 
+ *
  * Stops the timer
- * 
+ *
  * If the timer was paused or running, clear the interval, sets the
  * status property to `GameTimer.STOPPED`, and reset the time passed
  * and time left properties
- * 
+ *
  */
 GameTimer.prototype.stop = function() {
-	if (this.status === GameTimer.UNINITIALIZED) return;
-	if (this.status === GameTimer.INITIALIZED) return;
-	if (this.status === GameTimer.STOPPED) return;
-	this.status = GameTimer.STOPPED;
-	clearInterval(this.timer);
-	this.timePassed = 0;
-	this.timeLeft = null;
-};	
+    if (this.isStopped()) {
+        throw new Error('GameTimer.stop: timer was not running');
+    }
+
+    this.status = GameTimer.STOPPED;
+    clearInterval(this.timer);
+    this.timePassed = 0;
+    this.timeLeft = null;
+};
 
 /**
  * ### GameTimer.restart
- * 
+ *
  * Restarts the timer
- *  
- * Uses the input parameter as configuration object, 
- * or the current settings, if undefined 
- *  
+ *
+ * Uses the input parameter as configuration object,
+ * or the current settings, if undefined
+ *
  * @param {object} options Optional. A configuration object
- *  
- * 	@see GameTimer.init
+ *
+ * @see GameTimer.init
  */
 GameTimer.prototype.restart = function (options) {
-	this.init(options);
-	this.start();
+    this.init(options);
+    this.start();
 };
 
 /**
  * ### GameTimer.listeners
- * 
+ *
  * Experimental. Undocumented (for now)
- * 
+ *
  */
 GameTimer.prototype.listeners = function () {
-	var that = this;
-// <!--	
-//		node.on('GAME_TIMER_START', function() {
-//			that.start();
-//		}); 
-//		
-//		node.on('GAME_TIMER_PAUSE', function() {
-//			that.pause();
-//		});
-//		
-//		node.on('GAME_TIMER_RESUME', function() {
-//			that.resume();
-//		});
-//		
-//		node.on('GAME_TIMER_STOP', function() {
-//			that.stop();
-//		});
-	
-//		node.on('DONE', function(){
-//			console.log('TIMER PAUSED');
-//			that.pause();
-//		});
-	
-	// TODO: check what is right behavior for this
-//		node.on('WAITING...', function(){
-//			that.pause();
-//		});
+    var that = this;
+// <!--
+//      node.on('GAME_TIMER_START', function() {
+//          that.start();
+//      });
+//
+//      node.on('GAME_TIMER_PAUSE', function() {
+//          that.pause();
+//      });
+//
+//      node.on('GAME_TIMER_RESUME', function() {
+//          that.resume();
+//      });
+//
+//      node.on('GAME_TIMER_STOP', function() {
+//          that.stop();
+//      });
+
+//      node.on('DONE', function(){
+//          that.pause();
+//      });
+
+    // TODO: check what is right behavior for this
+//      node.on('WAITING...', function(){
+//          that.pause();
+//      });
 // -->
-	
+
 };
+
+/**
+ * ### GameTimer.isRunning
+ *
+ * Returns whether timer is running
+ *
+ * Running means either LOADING or RUNNING.
+ */
+GameTimer.prototype.isRunning = function() {
+    return (this.status > 0);
+};
+
+/**
+ * ### GameTimer.isStopped
+ *
+ * Returns whether timer is stopped
+ *
+ * Stopped means either UNINITIALIZED, INITIALIZED or STOPPED.
+ *
+ * @see GameTimer.isPaused
+ */
+GameTimer.prototype.isStopped = function() {
+    if (this.status === GameTimer.UNINITIALIZED ||
+        this.status === GameTimer.INITIALIZED ||
+        this.status === GameTimer.STOPPED) {
+
+        return true;
+    }
+    else {
+        return false;
+    }
+};
+
+/**
+ * ### GameTimer.isPaused
+ *
+ * Returns whether timer is paused
+ */
+GameTimer.prototype.isPaused = function() {
+    return (this.status === GameTimer.PAUSED);
+};
+
+// Do a timer update.
+// Return false if timer ran out, true otherwise.
+function updateCallback(that) {
+    that.status = GameTimer.RUNNING;
+    that.timePassed += that.update;
+    that.timeLeft -= that.update;
+    that.updateStart = (new Date()).getTime();
+    // Fire custom hooks from the latest to the first if any
+    for (var i = that.hooks.length; i > 0; i--) {
+        that.fire(that.hooks[(i-1)]);
+    }
+    // Fire Timeup Event
+    if (that.timeLeft <= 0) {
+        // First stop the timer and then call the timeup
+        that.stop();
+        that.fire(that.timeup);
+        return false;
+    }
+    else {
+        return true;
+    }
+}
 
 // ## Closure
 })(
-	'undefined' != typeof node ? node : module.exports
-  , 'undefined' != typeof node ? node : module.parent.exports
+    'undefined' != typeof node ? node : module.exports,
+    'undefined' != typeof node ? node : module.parent.exports
 );
+
 /**
  * 
  * # TriggerManager: 
@@ -19123,20 +19503,16 @@ Widgets.prototype.get = function (w_str, options) {
 	// Add missing properties to the user options
 	J.mixout(options, J.clone(wProto.defaults));
 	
-	try {
-		widget = new wProto(options);
-		// Re-inject defaults
-		widget.defaults = options;
-		
-		// Call listeners
-		widget.listeners.call(widget);
-		
-		// user listeners
-		attachListeners(options, widget);
-	}
-	catch (e) {
-		throw new Error('Error while loading widget ' + wProto.name + ': ' + e);
-	}
+    widget = new wProto(options);
+    // Re-inject defaults
+    widget.defaults = options;
+    
+    // Call listeners
+    widget.listeners.call(widget);
+    
+    // user listeners
+    attachListeners(options, widget);
+
 	return widget;
 };
 
@@ -19248,185 +19624,7 @@ node.widgets = new Widgets();
 	('undefined' !== typeof window) ? window : module.parent.exports.window,
 	('undefined' !== typeof window) ? window.node : module.parent.exports.node
 );
-(function (node) {
 
-    node.widgets.register('WaitScreen', WaitScreen);
-	
-// ## Defaults
-	
-    WaitScreen.defaults = {};
-    WaitScreen.defaults.id = 'waiting';
-    WaitScreen.defaults.fieldset = false;
-    
-// ## Meta-data
-	
-    WaitScreen.name = 'WaitingScreen';
-    WaitScreen.version = '0.4.0';
-    WaitScreen.description = 'Show a standard waiting screen';
-    
-    function WaitScreen (options) {
-	this.id = options.id;
-	
-	this.text = {
-            waiting: options.waitingText || 'Waiting for other players to be done...',
-            stepping: options.steppingText || 'Initializing, game will start soon...'
-        }
-
-	this.waitingDiv = null;
-    }
-    
-    function updateScreen(text) {
-        if (!this.waitingDiv) {
-	    this.waitingDiv = node.window.addDiv(document.body, this.id);
-	}
-	    
-	if (this.waitingDiv.style.display === 'none'){
-	    this.waitingDiv.style.display = '';
-	}			
-	
-	this.waitingDiv.innerHTML = text;
-    }
-
-    function hideScreen() {
-        if (this.waitingDiv) {
-            if (this.waitingDiv.style.display === '') {
-                this.waitingDiv.style.display = 'none';
-            }
-        }
-    }
-
-    WaitScreen.prototype.append = function(root) {
-	return root;
-    };
-    
-    WaitScreen.prototype.getRoot = function() {
-	return this.waitingDiv;
-    };
-    
-    WaitScreen.prototype.listeners = function() {
-        var that = this;
-        node.on('BEFORE_DONE', function(text) {
-            updateScreen.call(that, text || that.text.waiting)
-        });
-	
-        node.on('STEPPING', function(text) {
-            updateScreen.call(that, text || that.text.stepping)
-        });
-               
-	// It is supposed to fade away when a new state starts
-        node.on('PLAYING', function(text) {
-            hideScreen.call(that);
-        });
-
-        // It is supposed to fade away when a new state starts
-        node.on('GAME_OVER', function(text) {
-            hideScreen.call(that);
-        });
-
-
-    }; 
-})(node);
-(function (node) {
-    
-    node.widgets.register('VisualState', VisualState);
-    
-    var JSUS = node.JSUS,
-    Table = node.window.Table;
-    
-    // ## Defaults
-    
-    VisualState.defaults = {};
-    VisualState.defaults.id = 'visualstate';
-    VisualState.defaults.fieldset = { 
-	legend: 'State',
-	id: 'visualstate_fieldset'
-    };	
-    
-    // ## Meta-data
-    
-    VisualState.name = 'Visual State';
-    VisualState.version = '0.2.1';
-    VisualState.description = 'Visually display current, previous and next state of the game.';
-    
-    // ## Dependencies
-    
-    VisualState.dependencies = {
-	JSUS: {},
-	Table: {}
-    };
-    
-    
-    function VisualState (options) {
-	this.id = options.id;
-	
-	this.root = null;		// the parent element
-	this.table = new Table();
-    }
-    
-    VisualState.prototype.getRoot = function () {
-	return this.root;
-    };
-    
-    VisualState.prototype.append = function (root, ids) {
-	var that = this;
-	var PREF = this.id + '_';
-	root.appendChild(this.table.table);
-	this.writeState();
-	return root;
-    };
-    
-    VisualState.prototype.listeners = function () {
-	var that = this;
-        
-        node.on('STEP_CALLBACK_EXECUTED', function() {
-	    that.writeState();
-	});
-
-        // Game over and init?
-    };
-    
-    VisualState.prototype.writeState = function () {
-	var miss, state, pr, nx, tmp;
-        var curStep, nextStep, prevStep;
-	var t;
-        
-        miss = '-';
-	state = 'Uninitialized';
-        pr = miss;
-        nx = miss;
-        
-        curStep = node.game.getCurrentGameStage();
-        
-	if (curStep) {
-            tmp = node.game.plot.getStep(curStep);
-            state = tmp ? tmp.id : miss;
-            
-	    prevStep = node.game.plot.previous(curStep);
-            if (prevStep) {
-                tmp = node.game.plot.getStep(prevStep);
-	        pr = tmp ? tmp.id : miss;
-            }
-            
-	    nextStep = node.game.plot.next(curStep);
-            if (nextStep) {
-                tmp = node.game.plot.getStep(nextStep);
-	        nx = tmp ? tmp.id : miss;
-            }
-        }
-        
-	this.table.clear(true);
-
-	this.table.addRow(['Previous: ', pr]);
-	this.table.addRow(['Current: ', state]);
-	this.table.addRow(['Next: ', nx]);
-	
-	t = this.table.select('y', '=', 2);
-	t.addClass('strong');
-	t.select('x','=',0).addClass('underline');
-	this.table.parse();
-    };
-    
-})(node);
 (function (node) {
 	
 	node.widgets.register('Chat', Chat);
@@ -19605,1025 +19803,638 @@ node.widgets = new Widgets();
 	
 })(node);
 (function (node) {
-
-	// TODO: needs major refactoring
 	
-	var GameStage = node.GameStage,
-		PlayerList = node.PlayerList,
-		Table = node.window.Table,
-		HTMLRenderer = node.window.HTMLRenderer;
+	var JSUS = node.JSUS,
+		Table = node.window.Table;
 	
-	node.widgets.register('DynamicTable', DynamicTable);
+	node.widgets.register('ChernoffFaces', ChernoffFaces);
 	
+	// ## Defaults
 	
-	DynamicTable.prototype = new Table();
-	DynamicTable.prototype.constructor = Table;	
+	ChernoffFaces.defaults = {};
+	ChernoffFaces.defaults.id = 'ChernoffFaces';
+	ChernoffFaces.defaults.canvas = {};
+	ChernoffFaces.defaults.canvas.width = 100;
+	ChernoffFaces.defaults.canvas.heigth = 100;
 	
+	// ## Meta-data
 	
-	DynamicTable.id = 'dynamictable';
-	DynamicTable.name = 'Dynamic Table';
-	DynamicTable.version = '0.3.1';
+	ChernoffFaces.name = 'Chernoff Faces';
+	ChernoffFaces.version = '0.3';
+	ChernoffFaces.description = 'Display parametric data in the form of a Chernoff Face.';
 	
-	DynamicTable.dependencies = {
-		Table: {},
+	// ## Dependencies 
+	ChernoffFaces.dependencies = {
 		JSUS: {},
-		HTMLRenderer: {}
+		Table: {},
+		Canvas: {},
+		'Controls.Slider': {}
 	};
 	
-	function DynamicTable (options, data) {
-		//JSUS.extend(node.window.Table,this);
-		Table.call(this, options, data);
+	ChernoffFaces.FaceVector = FaceVector;
+	ChernoffFaces.FacePainter = FacePainter;
+	
+	function ChernoffFaces (options) {
 		this.options = options;
 		this.id = options.id;
-		this.name = options.name || 'Dynamic Table';
-		this.fieldset = { legend: this.name,
-							id: this.id + '_fieldset'
+		this.table = new Table({id: 'cf_table'});
+		this.root = options.root || document.createElement('div');
+		this.root.id = this.id;
+		
+		this.sc = node.widgets.get('Controls.Slider');	// Slider Controls
+		this.fp = null;	// Face Painter
+		this.canvas = null;
+
+		this.change = 'CF_CHANGE';
+		var that = this;
+		this.changeFunc = function () {
+			that.draw(that.sc.getAllValues());
 		};
 		
-		this.root = null;
-		this.bindings = {};
+		this.features = null;
+		this.controls = null;
+		
 		this.init(this.options);
 	}
 	
-	DynamicTable.prototype.init = function (options) {
-		this.options = options;
-		this.name = options.name || this.name;
-		this.auto_update = ('undefined' !== typeof options.auto_update) ? options.auto_update : true;
-		this.replace = options.replace || false;
-		this.htmlRenderer = new HTMLRenderer({renderers: options.renderers});
-		this.c('state', GameStage.compare);
-		this.setLeft([]);
-		this.parse(true);
-	};
-		
-	DynamicTable.prototype.bind = function (event, bindings) {
-		if (!event || !bindings) return;
+	ChernoffFaces.prototype.init = function (options) {
 		var that = this;
-
-		node.on(event, function(msg) {
-			
-			if (bindings.x || bindings.y) {
-				// Cell
-				var func;
-				if (that.replace) {
-					func = function (x, y) {
-						var found = that.get(x,y);
-						if (found.length !== 0) {
-							for (var ci=0; ci < found.length; ci++) {
-								bindings.cell.call(that, msg, found[ci]);
-							}
-						}
-						else {
-							var cell = bindings.cell.call(that, msg, new Table.Cell({x: x, y: y}));
-							that.add(cell);
-						}
-					};
-				}
-				else {
-					func = function (x, y) {
-						var cell = bindings.cell.call(that, msg, new Table.Cell({x: x, y: y}));
-						that.add(cell, x, y);
-					};
-				}
-				
-				var x = bindings.x.call(that, msg);
-				var y = bindings.y.call(that, msg);
-				
-				if (x && y) {
-					
-					x = (x instanceof Array) ? x : [x];
-					y = (y instanceof Array) ? y : [y];
-					
-//					console.log('Bindings found:');
-//					console.log(x);
-//					console.log(y);
-					
-					for (var xi=0; xi < x.length; xi++) {
-						for (var yi=0; yi < y.length; yi++) {
-							// Replace or Add
-							func.call(that, x[xi], y[yi]);
-						}
-					}
-				}
-				// End Cell
-			}
-			
-			// Header
-			if (bindings.header) {
-				var h = bindings.header.call(that, msg);
-				h = (h instanceof Array) ? h : [h];
-				that.setHeader(h);
-			}
-			
-			// Left
-			if (bindings.left) {
-				var l = bindings.left.call(that, msg);
-				if (!JSUS.in_array(l, that.left)) {
-					that.header.push(l);
-				}
-			}
-			
-			// Auto Update?
-			if (that.auto_update) {
-				that.parse();
-			}
-		});
+		this.id = options.id || this.id;
+		var PREF = this.id + '_';
 		
-	};
-
-	DynamicTable.prototype.append = function (root) {
-		this.root = root;
-		root.appendChild(this.table);
-		return root;
-	};
-	
-	DynamicTable.prototype.listeners = function () {}; 
-
-})(node);
-(function (node) {
-
-    var Table = node.window.Table,
-    GameStage = node.GameStage;
-    
-    node.widgets.register('StateDisplay', StateDisplay);	
-
-    // ## Defaults
-    
-    StateDisplay.defaults = {};
-    StateDisplay.defaults.id = 'statedisplay';
-    StateDisplay.defaults.fieldset = { legend: 'State Display' };		
-    
-    // ## Meta-data
-    
-    StateDisplay.name = 'State Display';
-    StateDisplay.version = '0.4.2';
-    StateDisplay.description = 'Display basic information about player\'s status.';
-    
-    function StateDisplay (options) {
-	
-	this.id = options.id;
-	
-	this.root = null;
-	this.table = new Table();
-    }
-    
-    // TODO: Write a proper INIT method
-    StateDisplay.prototype.init = function () {};
-    
-    StateDisplay.prototype.getRoot = function () {
-	return this.root;
-    };
-    
-    
-    StateDisplay.prototype.append = function (root) {
-	var that = this;
-	var PREF = this.id + '_';
-	
-	var idFieldset = PREF + 'fieldset';
-	var idPlayer = PREF + 'player';
-	var idState = PREF + 'state'; 
-	
-	var checkPlayerName = setInterval(function(idState,idPlayer) {
-	    if (node.player && node.player.id) {
-		clearInterval(checkPlayerName);
-		that.updateAll();
-	    }
-	}, 100);
-	
-	root.appendChild(this.table.table);
-	this.root = root;
-	return root;
-	
-    };
-    
-    StateDisplay.prototype.updateAll = function() {
-	var stage, stageNo, stageId, playerId, tmp, miss;
-        miss = '-';
-        
-        stageId = miss;
-        stageNo = miss;
-        playerId = miss;
-
-	if (node.player.id) {
-            playerId = node.player.id;
-        }
-        
-	stage = node.game.getCurrentGameStage();	
-	if (stage) {
-            tmp = node.game.plot.getStep(stage);
-            stageId = tmp ? tmp.id : '-';
-            stageNo = stage.toString();
-        }
-        
-	this.table.clear(true);
-	this.table.addRow(['Stage  No: ', stageNo]);
-	this.table.addRow(['Stage  Id: ', stageId]);
-	this.table.addRow(['Player Id: ', playerId]);
-	this.table.parse();
-	
-    };
-    
-    StateDisplay.prototype.listeners = function () {
-	var that = this;
-	
-	node.on('STEP_CALLBACK_EXECUTED', function() {
-	    that.updateAll();
-	}); 
-    }; 
-    
-})(node);
-
-(function (node) {
-	
-
-	// TODO: handle different events, beside onchange
-	
-	node.widgets.register('Controls', Controls);	
-	
-// ## Defaults
-	
-	var defaults = { id: 'controls' };
-	
-	Controls.defaults = defaults;
-	
-	Controls.Slider = SliderControls;
-	Controls.jQuerySlider = jQuerySliderControls;
-	Controls.Radio	= RadioControls;
-	
-	// Meta-data
-	
-	Controls.name = 'Controls';
-	Controls.version = '0.2';
-	Controls.description = 'Wraps a collection of user-inputs controls.';
+		this.features = options.features || this.features || FaceVector.random();
 		
-	function Controls (options) {
-		this.options = options;
-		this.id = options.id;
-		this.root = null;
+		this.controls = ('undefined' !== typeof options.controls) ?  options.controls : true;
 		
-		this.listRoot = null;
-		this.fieldset = null;
-		this.submit = null;
+		var idCanvas = (options.idCanvas) ? options.idCanvas : PREF + 'canvas';
+		var idButton = (options.idButton) ? options.idButton : PREF + 'button';
 		
-		this.changeEvent = this.id + '_change';
+		this.canvas = node.window.getCanvas(idCanvas, options.canvas);
+		this.fp = new FacePainter(this.canvas);		
+		this.fp.draw(new FaceVector(this.features));
 		
-		this.init(options);
-	}
-
-	Controls.prototype.add = function (root, id, attributes) {
-		// TODO: node.window.addTextInput
-		//return node.window.addTextInput(root, id, attributes);
-	};
-	
-	Controls.prototype.getItem = function (id, attributes) {
-		// TODO: node.window.addTextInput
-		//return node.window.getTextInput(id, attributes);
-	};
-	
-	Controls.prototype.init = function (options) {
-
-		this.hasChanged = false; // TODO: should this be inherited?
-		if ('undefined' !== typeof options.change) {
-			if (!options.change){
-				this.changeEvent = false;
+		var sc_options = {
+			id: 'cf_controls',
+			features: JSUS.mergeOnKey(FaceVector.defaults, this.features, 'value'),
+			change: this.change,
+			fieldset: {id: this.id + '_controls_fieldest', 
+						legend: this.controls.legend || 'Controls'
+			},
+			submit: 'Send'
+		};
+		
+		this.sc = node.widgets.get('Controls.Slider', sc_options);
+		
+		// Controls are always there, but may not be visible
+		if (this.controls) {
+			this.table.add(this.sc);
+		}
+		
+		// Dealing with the onchange event
+		if ('undefined' === typeof options.change) {	
+			node.on(this.change, this.changeFunc); 
+		} else {
+			if (options.change) {
+				node.on(options.change, this.changeFunc);
 			}
 			else {
-				this.changeEvent = options.change;
+				node.removeListener(this.change, this.changeFunc);
 			}
-		}
-		this.list = new node.window.List(options);
-		this.listRoot = this.list.getRoot();
-		
-		if (!options.features) return;
-		if (!this.root) this.root = this.listRoot;
-		this.features = options.features;
-		this.populate();
-	};
-	
-	Controls.prototype.append = function (root) {
-		this.root = root;
-		var toReturn = this.listRoot;
-		this.list.parse();
-		root.appendChild(this.listRoot);
-		
-		if (this.options.submit) {
-			var idButton = 'submit_' + this.id;
-			if (this.options.submit.id) {
-				idButton = this.options.submit.id;
-				delete this.options.submit.id;
-			}
-			this.submit = node.window.addButton(root, idButton, this.options.submit, this.options.attributes);
-			
-			var that = this;
-			this.submit.onclick = function() {
-				if (that.options.change) {
-					node.emit(that.options.change);
-				}
-			};
-		}		
-		
-		return toReturn;
-	};
-	
-	Controls.prototype.parse = function() {
-		return this.list.parse();
-	};
-	
-	Controls.prototype.populate = function () {
-		var that = this;
-		
-		for (var key in this.features) {
-			if (this.features.hasOwnProperty(key)) {
-				// Prepare the attributes vector
-				var attributes = this.features[key];
-				var id = key;
-				if (attributes.id) {
-					id = attributes.id;
-					delete attributes.id;
-				}
-							
-				var container = document.createElement('div');
-				// Add a different element according to the subclass instantiated
-				var elem = this.add(container, id, attributes);
-								
-				// Fire the onChange event, if one defined
-				if (this.changeEvent) {
-					elem.onchange = function() {
-						node.emit(that.changeEvent);
-					};
-				}
-				
-				if (attributes.label) {
-					node.window.addLabel(container, elem, null, attributes.label);
-				}
-				
-				// Element added to the list
-				this.list.addDT(container);
-			}
-		}
-	};
-	
-	Controls.prototype.listeners = function() {	
-		var that = this;
-		// TODO: should this be inherited?
-		node.on(this.changeEvent, function(){
-			that.hasChanged = true;
-		});
-				
-	};
-
-	Controls.prototype.refresh = function() {
-		for (var key in this.features) {	
-			if (this.features.hasOwnProperty(key)) {
-				var el = node.window.getElementById(key);
-				if (el) {
-//					node.log('KEY: ' + key, 'DEBUG');
-//					node.log('VALUE: ' + el.value, 'DEBUG');
-					el.value = this.features[key].value;
-					// TODO: set all the other attributes
-					// TODO: remove/add elements
-				}
-				
-			}
+			this.change = options.change;
 		}
 		
+		
+		this.table.add(this.canvas);
+		this.table.parse();
+		this.root.appendChild(this.table.table);
+	};
+	
+	ChernoffFaces.prototype.getCanvas = function() {
+		return this.canvas;
+	};
+	
+	ChernoffFaces.prototype.append = function (root) {
+		root.appendChild(this.root);
+		this.table.parse();
+		return this.root;
+	};
+	
+	ChernoffFaces.prototype.draw = function (features) {
+		if (!features) return;
+		var fv = new FaceVector(features);
+		this.fp.redraw(fv);
+		// Without merging wrong values are passed as attributes
+		this.sc.init({features: JSUS.mergeOnKey(FaceVector.defaults, features, 'value')});
+		this.sc.refresh();
+	};
+	
+	ChernoffFaces.prototype.getAllValues = function() {
+		//if (this.sc) return this.sc.getAllValues();
+		return this.fp.face;
+	};
+	
+	ChernoffFaces.prototype.randomize = function() {
+		var fv = FaceVector.random();
+		this.fp.redraw(fv);
+	
+		var sc_options = {
+				features: JSUS.mergeOnValue(FaceVector.defaults, fv),
+				change: this.change
+		};
+		this.sc.init(sc_options);
+		this.sc.refresh();
+	
 		return true;
 	};
 	
-	Controls.prototype.getAllValues = function() {
+	
+	// FacePainter
+	// The class that actually draws the faces on the Canvas
+	function FacePainter (canvas, settings) {
+			
+		this.canvas = new node.window.Canvas(canvas);
+		
+		this.scaleX = canvas.width / ChernoffFaces.defaults.canvas.width;
+		this.scaleY = canvas.height / ChernoffFaces.defaults.canvas.heigth;
+	}
+	
+	//Draws a Chernoff face.
+	FacePainter.prototype.draw = function (face, x, y) {
+		if (!face) return;
+		this.face = face;
+		this.fit2Canvas(face);
+		this.canvas.scale(face.scaleX, face.scaleY);
+		
+		//console.log('Face Scale ' + face.scaleY + ' ' + face.scaleX );
+		
+		x = x || this.canvas.centerX;
+		y = y || this.canvas.centerY;
+		
+		this.drawHead(face, x, y);
+			
+		this.drawEyes(face, x, y);
+	
+		this.drawPupils(face, x, y);
+	
+		this.drawEyebrow(face, x, y);
+	
+		this.drawNose(face, x, y);
+		
+		this.drawMouth(face, x, y);
+		
+	};		
+		
+	FacePainter.prototype.redraw = function (face, x, y) {
+		this.canvas.clear();
+		this.draw(face,x,y);
+	};
+	
+	FacePainter.prototype.scale = function (x, y) {
+		this.canvas.scale(this.scaleX, this.scaleY);
+	};
+	
+	// TODO: Improve. It eats a bit of the margins
+	FacePainter.prototype.fit2Canvas = function(face) {
+		if (!this.canvas) {
+		console.log('No canvas found');
+			return;
+		}
+		
+		var ration;
+		if (this.canvas.width > this.canvas.height) {
+			ratio = this.canvas.width / face.head_radius * face.head_scale_x;
+		}
+		else {
+			ratio = this.canvas.height / face.head_radius * face.head_scale_y;
+		}
+		
+		face.scaleX = ratio / 2;
+		face.scaleY = ratio / 2;
+	};
+	
+	FacePainter.prototype.drawHead = function (face, x, y) {
+		
+		var radius = face.head_radius;
+		
+		this.canvas.drawOval({
+						x: x, 
+						y: y,
+						radius: radius,
+						scale_x: face.head_scale_x,
+						scale_y: face.head_scale_y,
+						color: face.color,
+						lineWidth: face.lineWidth
+		});
+	};
+	
+	FacePainter.prototype.drawEyes = function (face, x, y) {
+		
+		var height = FacePainter.computeFaceOffset(face, face.eye_height, y);
+		var spacing = face.eye_spacing;
+			
+		var radius = face.eye_radius;
+		//console.log(face);
+		this.canvas.drawOval({
+						x: x - spacing,
+						y: height,
+						radius: radius,
+						scale_x: face.eye_scale_x,
+						scale_y: face.eye_scale_y,
+						color: face.color,
+						lineWidth: face.lineWidth
+						
+		});
+		//console.log(face);
+		this.canvas.drawOval({
+						x: x + spacing,
+						y: height,
+						radius: radius,
+						scale_x: face.eye_scale_x,
+						scale_y: face.eye_scale_y,
+						color: face.color,
+						lineWidth: face.lineWidth
+		});
+	};
+	
+	FacePainter.prototype.drawPupils = function (face, x, y) {
+			
+		var radius = face.pupil_radius;
+		var spacing = face.eye_spacing;
+		var height = FacePainter.computeFaceOffset(face, face.eye_height, y);
+		
+		this.canvas.drawOval({
+						x: x - spacing,
+						y: height,
+						radius: radius,
+						scale_x: face.pupil_scale_x,
+						scale_y: face.pupil_scale_y,
+						color: face.color,
+						lineWidth: face.lineWidth
+		});
+		
+		this.canvas.drawOval({
+						x: x + spacing,
+						y: height,
+						radius: radius,
+						scale_x: face.pupil_scale_x,
+						scale_y: face.pupil_scale_y,
+						color: face.color,
+						lineWidth: face.lineWidth
+		});
+	
+	};
+	
+	FacePainter.prototype.drawEyebrow = function (face, x, y) {
+		
+		var height = FacePainter.computeEyebrowOffset(face,y);
+		var spacing = face.eyebrow_spacing;
+		var length = face.eyebrow_length;
+		var angle = face.eyebrow_angle;
+		
+		this.canvas.drawLine({
+						x: x - spacing,
+						y: height,
+						length: length,
+						angle: angle,
+						color: face.color,
+						lineWidth: face.lineWidth
+					
+						
+		});
+		
+		this.canvas.drawLine({
+						x: x + spacing,
+						y: height,
+						length: 0-length,
+						angle: -angle,	
+						color: face.color,
+						lineWidth: face.lineWidth
+		});
+		
+	};
+	
+	FacePainter.prototype.drawNose = function (face, x, y) {
+		
+		var height = FacePainter.computeFaceOffset(face, face.nose_height, y);
+		var nastril_r_x = x + face.nose_width / 2;
+		var nastril_r_y = height + face.nose_length;
+		var nastril_l_x = nastril_r_x - face.nose_width;
+		var nastril_l_y = nastril_r_y; 
+		
+		this.canvas.ctx.lineWidth = face.lineWidth;
+		this.canvas.ctx.strokeStyle = face.color;
+		
+		this.canvas.ctx.save();
+		this.canvas.ctx.beginPath();
+		this.canvas.ctx.moveTo(x,height);
+		this.canvas.ctx.lineTo(nastril_r_x,nastril_r_y);
+		this.canvas.ctx.lineTo(nastril_l_x,nastril_l_y);
+		//this.canvas.ctx.closePath();
+		this.canvas.ctx.stroke();
+		this.canvas.ctx.restore();
+	
+	};
+			
+	FacePainter.prototype.drawMouth = function (face, x, y) {
+		
+		var height = FacePainter.computeFaceOffset(face, face.mouth_height, y);
+		var startX = x - face.mouth_width / 2;
+		var endX = x + face.mouth_width / 2;
+		
+		var top_y = height - face.mouth_top_y;
+		var bottom_y = height + face.mouth_bottom_y;
+		
+		// Upper Lip
+		this.canvas.ctx.moveTo(startX,height);
+		this.canvas.ctx.quadraticCurveTo(x, top_y, endX, height);
+		this.canvas.ctx.stroke();
+		
+		//Lower Lip
+		this.canvas.ctx.moveTo(startX,height);
+		this.canvas.ctx.quadraticCurveTo(x, bottom_y, endX, height);
+		this.canvas.ctx.stroke();
+	
+	};	
+	
+	
+	//TODO Scaling ?
+	FacePainter.computeFaceOffset = function (face, offset, y) {
+		y = y || 0;
+		//var pos = y - face.head_radius * face.scaleY + face.head_radius * face.scaleY * 2 * offset;
+		var pos = y - face.head_radius + face.head_radius * 2 * offset;
+		//console.log('POS: ' + pos);
+		return pos;
+	};
+	
+	FacePainter.computeEyebrowOffset = function (face, y) {
+		y = y || 0;
+		var eyemindistance = 2;
+		return FacePainter.computeFaceOffset(face, face.eye_height, y) - eyemindistance - face.eyebrow_eyedistance;
+	};
+	
+	
+	/*!
+	* 
+	* A description of a Chernoff Face.
+	*
+	* This class packages the 11-dimensional vector of numbers from 0 through 1 that completely
+	* describe a Chernoff face.  
+	*
+	*/
+
+	
+	FaceVector.defaults = {
+			// Head
+			head_radius: {
+				// id can be specified otherwise is taken head_radius
+				min: 10,
+				max: 100,
+				step: 0.01,
+				value: 30,
+				label: 'Face radius'
+			},
+			head_scale_x: {
+				min: 0.2,
+				max: 2,
+				step: 0.01,
+				value: 0.5,
+				label: 'Scale head horizontally'
+			},
+			head_scale_y: {
+				min: 0.2,
+				max: 2,
+				step: 0.01,
+				value: 1,
+				label: 'Scale head vertically'
+			},
+			// Eye
+			eye_height: {
+				min: 0.1,
+				max: 0.9,
+				step: 0.01,
+				value: 0.4,
+				label: 'Eye height'
+			},
+			eye_radius: {
+				min: 2,
+				max: 30,
+				step: 0.01,
+				value: 5,
+				label: 'Eye radius'
+			},
+			eye_spacing: {
+				min: 0,
+				max: 50,
+				step: 0.01,
+				value: 10,
+				label: 'Eye spacing'
+			},
+			eye_scale_x: {
+				min: 0.2,
+				max: 2,
+				step: 0.01,
+				value: 1,
+				label: 'Scale eyes horizontally'
+			},
+			eye_scale_y: {
+				min: 0.2,
+				max: 2,
+				step: 0.01,
+				value: 1,
+				label: 'Scale eyes vertically'
+			},
+			// Pupil
+			pupil_radius: {
+				min: 1,
+				max: 9,
+				step: 0.01,
+				value: 1,  //this.eye_radius;
+				label: 'Pupil radius'
+			},
+			pupil_scale_x: {
+				min: 0.2,
+				max: 2,
+				step: 0.01,
+				value: 1,
+				label: 'Scale pupils horizontally'
+			},
+			pupil_scale_y: {
+				min: 0.2,
+				max: 2,
+				step: 0.01,
+				value: 1,
+				label: 'Scale pupils vertically'
+			},
+			// Eyebrow
+			eyebrow_length: {
+				min: 1,
+				max: 30,
+				step: 0.01,
+				value: 10,
+				label: 'Eyebrow length'
+			},
+			eyebrow_eyedistance: {
+				min: 0.3,
+				max: 10,
+				step: 0.01,
+				value: 3, // From the top of the eye
+				label: 'Eyebrow from eye'
+			},
+			eyebrow_angle: {
+				min: -2,
+				max: 2,
+				step: 0.01,
+				value: -0.5,
+				label: 'Eyebrow angle'
+			},
+			eyebrow_spacing: {
+				min: 0,
+				max: 20,
+				step: 0.01,
+				value: 5,
+				label: 'Eyebrow spacing'
+			},
+			// Nose
+			nose_height: {
+				min: 0.4,
+				max: 1,
+				step: 0.01,
+				value: 0.4,
+				label: 'Nose height'
+			},
+			nose_length: {
+				min: 0.2,
+				max: 30,
+				step: 0.01,
+				value: 15,
+				label: 'Nose length'
+			},
+			nose_width: {
+				min: 0,
+				max: 30,
+				step: 0.01,
+				value: 10,
+				label: 'Nose width'
+			},
+			// Mouth
+			mouth_height: {
+				min: 0.2,
+				max: 2,
+				step: 0.01,
+				value: 0.75, 
+				label: 'Mouth height'
+			},
+			mouth_width: {
+				min: 2,
+				max: 100,
+				step: 0.01,
+				value: 20,
+				label: 'Mouth width'
+			},
+			mouth_top_y: {
+				min: -10,
+				max: 30,
+				step: 0.01,
+				value: -2,
+				label: 'Upper lip'
+			},
+			mouth_bottom_y: {
+				min: -10,
+				max: 30,
+				step: 0.01,
+				value: 20,
+				label: 'Lower lip'
+			}					
+	};
+	
+	//Constructs a random face vector.
+	FaceVector.random = function () {
 		var out = {};
-		for (var key in this.features) {	
-			if (this.features.hasOwnProperty(key)) {
-				var el = node.window.getElementById(key);
-				if (el) {
-//					node.log('KEY: ' + key, 'DEBUG');
-//					node.log('VALUE: ' + el.value, 'DEBUG');
-					out[key] = Number(el.value);
+		for (var key in FaceVector.defaults) {
+			if (FaceVector.defaults.hasOwnProperty(key)) {
+				if (!JSUS.in_array(key,['color','lineWidth','scaleX','scaleY'])) {
+					out[key] = FaceVector.defaults[key].min + Math.random() * FaceVector.defaults[key].max;
 				}
-				
+			}
+		}
+	
+		out.scaleX = 1;
+		out.scaleY = 1;
+		
+		out.color = 'green';
+		out.lineWidth = 1; 
+		
+		return new FaceVector(out);
+	};
+	
+	function FaceVector (faceVector) {
+		faceVector = faceVector || {};
+
+		this.scaleX = faceVector.scaleX || 1;
+		this.scaleY = faceVector.scaleY || 1;
+
+
+		this.color = faceVector.color || 'green';
+		this.lineWidth = faceVector.lineWidth || 1;
+		
+		// Merge on key
+		for (var key in FaceVector.defaults) {
+			if (FaceVector.defaults.hasOwnProperty(key)){
+				if (faceVector.hasOwnProperty(key)){
+					this[key] = faceVector[key];
+				}
+				else {
+					this[key] = FaceVector.defaults[key].value;
+				}
 			}
 		}
 		
+	}
+
+	//Constructs a random face vector.
+	FaceVector.prototype.shuffle = function () {
+		for (var key in this) {
+			if (this.hasOwnProperty(key)) {
+				if (FaceVector.defaults.hasOwnProperty(key)) {
+					if (key !== 'color') {
+						this[key] = FaceVector.defaults[key].min + Math.random() * FaceVector.defaults[key].max;
+						
+					}
+				}
+			}
+		}
+	};
+	
+	//Computes the Euclidean distance between two FaceVectors.
+	FaceVector.prototype.distance = function (face) {
+		return FaceVector.distance(this,face);
+	};
+		
+		
+	FaceVector.distance = function (face1, face2) {
+		var sum = 0.0;
+		var diff;
+		
+		for (var key in face1) {
+			if (face1.hasOwnProperty(key)) {
+				diff = face1[key] - face2[key];
+				sum = sum + diff * diff;
+			}
+		}
+		
+		return Math.sqrt(sum);
+	};
+	
+	FaceVector.prototype.toString = function() {
+		var out = 'Face: ';
+		for (var key in this) {
+			if (this.hasOwnProperty(key)) {
+				out += key + ' ' + this[key];
+			}
+		}
 		return out;
 	};
-	
-	Controls.prototype.highlight = function (code) {
-		return node.window.highlight(this.listRoot, code);
-	};
-	
-	// Sub-classes
-	
-	// Slider 
-	
-	SliderControls.prototype.__proto__ = Controls.prototype;
-	SliderControls.prototype.constructor = SliderControls;
-	
-	SliderControls.id = 'slidercontrols';
-	SliderControls.name = 'Slider Controls';
-	SliderControls.version = '0.2';
-	
-	SliderControls.dependencies = {
-		Controls: {}
-	};
-	
-	
-	function SliderControls (options) {
-		Controls.call(this, options);
-	}
-	
-	SliderControls.prototype.add = function (root, id, attributes) {
-		return node.window.addSlider(root, id, attributes);
-	};
-	
-	SliderControls.prototype.getItem = function (id, attributes) {
-		return node.window.getSlider(id, attributes);
-	};
-	
-	// jQuerySlider
-    
-    jQuerySliderControls.prototype.__proto__ = Controls.prototype;
-    jQuerySliderControls.prototype.constructor = jQuerySliderControls;
-    
-    jQuerySliderControls.id = 'jqueryslidercontrols';
-    jQuerySliderControls.name = 'Experimental: jQuery Slider Controls';
-    jQuerySliderControls.version = '0.13';
-    
-    jQuerySliderControls.dependencies = {
-        jQuery: {},
-        Controls: {}
-    };
-    
-    
-    function jQuerySliderControls (options) {
-        Controls.call(this, options);
-    }
-    
-    jQuerySliderControls.prototype.add = function (root, id, attributes) {
-        var slider = jQuery('<div/>', {
-			id: id
-		}).slider();
-	
-		var s = slider.appendTo(root);
-		return s[0];
-	};
-	
-	jQuerySliderControls.prototype.getItem = function (id, attributes) {
-		var slider = jQuery('<div/>', {
-			id: id
-			}).slider();
-		
-		return slider;
-	};
 
-
-    ///////////////////////////
-
-	
-	
-	
-
-	
-	// Radio
-	
-	RadioControls.prototype.__proto__ = Controls.prototype;
-	RadioControls.prototype.constructor = RadioControls;
-	
-	RadioControls.id = 'radiocontrols';
-	RadioControls.name = 'Radio Controls';
-	RadioControls.version = '0.1.1';
-	
-	RadioControls.dependencies = {
-		Controls: {}
-	};
-	
-	function RadioControls (options) {
-		Controls.call(this,options);
-		this.groupName = ('undefined' !== typeof options.name) ? options.name : 
-																node.window.generateUniqueId(); 
-		//alert(this.groupName);
-	}
-	
-	RadioControls.prototype.add = function (root, id, attributes) {
-		//console.log('ADDDING radio');
-		//console.log(attributes);
-		// add the group name if not specified
-		// TODO: is this a javascript bug?
-		if ('undefined' === typeof attributes.name) {
-//			console.log(this);
-//			console.log(this.name);
-//			console.log('MODMOD ' + this.name);
-			attributes.name = this.groupName;
-		}
-		//console.log(attributes);
-		return node.window.addRadioButton(root, id, attributes);	
-	};
-	
-	RadioControls.prototype.getItem = function (id, attributes) {
-		//console.log('ADDDING radio');
-		//console.log(attributes);
-		// add the group name if not specified
-		// TODO: is this a javascript bug?
-		if ('undefined' === typeof attributes.name) {
-//			console.log(this);
-//			console.log(this.name);
-//			console.log('MODMOD ' + this.name);
-			attributes.name = this.groupName;
-		}
-		//console.log(attributes);
-		return node.window.getRadioButton(id, attributes);	
-	};
-	
-	// Override getAllValues for Radio Controls
-	RadioControls.prototype.getAllValues = function() {
-		
-		for (var key in this.features) {
-			if (this.features.hasOwnProperty(key)) {
-				var el = node.window.getElementById(key);
-				if (el.checked) {
-					return el.value;
-				}
-			}
-		}
-		return false;
-	};
-	
-})(node);
-(function (node) {
-    
-    node.widgets.register('GameBoard', GameBoard);
-    
-    var PlayerList = node.PlayerList;
-
-    // ## Defaults	
-    
-    GameBoard.defaults = {};
-    GameBoard.defaults.id = 'gboard';
-    GameBoard.defaults.fieldset = {
-	legend: 'Game Board'
-    };
-    
-    // ## Meta-data
-    
-    GameBoard.name = 'GameBoard';
-    GameBoard.version = '0.4.0';
-    GameBoard.description = 'Offer a visual representation of the state of all players in the game.';
-    
-    function GameBoard (options) {
-	
-	this.id = options.id || GameBoard.defaults.id;
-	this.status_id = this.id + '_statusbar';
-	
-	this.board = null;
-	this.status = null;
-	this.root = null;
-	
-    }
-    
-    GameBoard.prototype.append = function (root) {
-	this.root = root;
-	this.status = node.window.addDiv(root, this.status_id);
-	this.board = node.window.addDiv(root, this.id);
-	
-	this.updateBoard(node.game.pl);
-	
-	
-	return root;
-    };
-    
-    GameBoard.prototype.listeners = function() {
-	var that = this;		
-	node.on('UPDATED_PLIST', function() {
-	    that.updateBoard(node.game.pl);
-	});
-	
-    };
-    
-    GameBoard.prototype.printLine = function (p) {
-
-	var line, levels, level;
-        levels = node.constants.stageLevels;
-
-        line = '[' + (p.name || p.id) + "]> \t"; 
-	line += '(' +  p.stage.round + ') ' + p.stage.stage + '.' + p.stage.step; 
-	line += ' ';
-	
-	switch (p.stageLevel) {
-
-	case levels.UNINITIALIZED:
-	    level = 'uninit.';
-	    break;
-	    
-	case levels.INITIALIZING:
-	    level = 'init...';
-	    break;
-
-	case levels.INITIALIZING:
-	    level = 'init!';
-	    break;
-
-	case levels.LOADING:
-	    level = 'loading';
-	    break;	    
-
-	case levels.LOADED:
-	    level = 'loaded';
-	    break;
-	    
-	case levels.PLAYING:
-	    level = 'playing';
-	    break;
-	case levels.DONE:
-	    level = 'done';
-	    break;
-		
-	default:
-	    level = p.stageLevel;
-	    break;		
-	}
-
-	return line + '(' + level + ')';
-    };
-    
-    GameBoard.prototype.printSeparator = function (p) {
-	return W.getElement('hr', null, {style: 'color: #CCC;'});
-    };
-    
-    
-    GameBoard.prototype.updateBoard = function (pl) {
-	var player, separator;
-        var that = this;
-	
-	this.status.innerHTML = 'Updating...';
-	
-	if (pl.size()) {
-	    that.board.innerHTML = '';
-	    pl.forEach( function(p) {
-		player = that.printLine(p);
-		
-		W.write(player, that.board);
-		
-		separator = that.printSeparator(p);
-		W.write(separator, that.board);
-	    });
-	}
-	
-	
-	this.status.innerHTML = 'Connected players: ' + node.game.pl.length;
-    };
-    
-})(node);
-
-(function (node) {
-
-    var GameStage = node.GameStage,
-    PlayerList = node.PlayerList;
-    
-    
-    node.widgets.register('GameTable', GameTable);
-    
-    // ## Defaults
-    
-    GameTable.defaults = {};
-    GameTable.defaults.id = 'gametable';
-    GameTable.defaults.fieldset = { 
-	legend: 'Game Table',
-	id: 'gametable_fieldset'
-    };
-    
-    // ## Meta-data
-    
-    GameTable.name = 'Game Table';
-    GameTable.version = '0.3';
-    
-    // ## Dependencies
-    
-    GameTable.dependencies = {
-	JSUS: {}
-    };
-    
-    function GameTable (options) {
-	this.options = options;
-	this.id = options.id;
-	this.name = options.name || GameTable.name;
-	
-	this.root = null;
-	this.gtbl = null;
-	this.plist = null;
-	
-	this.init(this.options);
-    }
-    
-    GameTable.prototype.init = function (options) {
-	
-	if (!this.plist) this.plist = new PlayerList();
-	
-	this.gtbl = new node.window.Table({
-	    auto_update: true,
-	    id: options.id || this.id,
-	    render: options.render
-	}, node.game.memory.db);
-	
-	
-	this.gtbl.c('state', GameStage.compare);
-	
-	this.gtbl.setLeft([]);
-	
-	this.gtbl.parse(true);
-    };
-    
-
-    GameTable.prototype.addRenderer = function (func) {
-	return this.gtbl.addRenderer(func);
-    };
-    
-    GameTable.prototype.resetRender = function () {
-	return this.gtbl.resetRenderer();
-    };
-    
-    GameTable.prototype.removeRenderer = function (func) {
-	return this.gtbl.removeRenderer(func);
-    };
-    
-    GameTable.prototype.append = function (root) {
-	this.root = root;
-	root.appendChild(this.gtbl.table);
-	return root;
-    };
-    
-    GameTable.prototype.listeners = function () {
-	var that = this;
-	
-	node.on.plist(function(msg) {	
-	    if (!msg.data.length) return;
-	    
-	    //var diff = JSUS.arrayDiff(msg.data,that.plist.db);
-	    var plist = new PlayerList({}, msg.data);
-	    var diff = plist.diff(that.plist);
-	    if (diff) {
-                //				console.log('New Players found');
-                //				console.log(diff);
-		diff.forEach(function(el){that.addPlayer(el);});
-	    }
-
-	    that.gtbl.parse(true);
-	});
-	
-	node.on('in.set.DATA', function (msg) {
-
-	    that.addLeft(msg.state, msg.from);
-	    var x = that.player2x(msg.from);
-	    var y = that.state2y(node.game.state, msg.text);
-	    
-	    that.gtbl.add(msg.data, x, y);
-	    that.gtbl.parse(true);
-	});
-    }; 
-    
-    GameTable.prototype.addPlayer = function (player) {
-	this.plist.add(player);
-	var header = this.plist.map(function(el){return el.name;});
-	this.gtbl.setHeader(header);
-    };
-    
-    GameTable.prototype.addLeft = function (state, player) {
-	if (!state) return;
-	state = new GameStage(state);
-	if (!JSUS.in_array({content:state.toString(), type: 'left'}, this.gtbl.left)){
-	    this.gtbl.add2Left(state.toString());
-	}
-	// Is it a new display associated to the same state?
-	else {
-	    var y = this.state2y(state);
-	    var x = this.player2x(player);
-	    if (this.gtbl.select('y','=',y).select('x','=',x).count() > 1) {
-		this.gtbl.add2Left(state.toString());
-	    }
-	}
-	
-    };
-    
-    GameTable.prototype.player2x = function (player) {
-	if (!player) return false;
-	return this.plist.select('id', '=', player).first().count;
-    };
-    
-    GameTable.prototype.x2Player = function (x) {
-	if (!x) return false;
-	return this.plist.select('count', '=', x).first().count;
-    };
-    
-    GameTable.prototype.state2y = function (state) {
-	if (!state) return false;
-	return node.game.plot.indexOf(state);
-    };
-    
-    GameTable.prototype.y2State = function (y) {
-	if (!y) return false;
-	return node.game.plot.jumpTo(new GameStage(),y);
-    };
-    
-    
-
-})(node);
-
-(function (node) {
-	
-	
-	node.widgets.register('D3', D3);
-	node.widgets.register('D3ts', D3ts);
-	
-	D3.prototype.__proto__ = node.Widget.prototype;
-	D3.prototype.constructor = D3;
-
-// ## Defaults
-	
-	D3.defaults = {};
-	D3.defaults.id = 'D3';
-	D3.defaults.fieldset = {
-		legend: 'D3 plot'
-	};
-
-	
-// ## Meta-data
-	
-	D3.name = 'D3';
-	D3.version = '0.1';
-	D3.description = 'Real time plots for nodeGame with d3.js';
-	
-// ## Dependencies
-	
-	D3.dependencies = {
-		d3: {},	
-		JSUS: {}
-	};
-	
-	function D3 (options) {
-		this.id = options.id || D3.id;
-		this.event = options.event || 'D3';
-		this.svg = null;
-		
-		var that = this;
-		node.on(this.event, function (value) {
-			that.tick.call(that, value); 
-		});
-	}
-	
-	D3.prototype.append = function (root) {
-		this.root = root;
-		this.svg = d3.select(root).append("svg");
-		return root;
-	};
-	
-	D3.prototype.tick = function () {};
-	
-// # D3ts
-	
-	
-// ## Meta-data
-	
-	D3ts.id = 'D3ts';
-	D3ts.name = 'D3ts';
-	D3ts.version = '0.1';
-	D3ts.description = 'Time series plot for nodeGame with d3.js';
-	
-// ## Dependencies	
-	D3ts.dependencies = {
-		D3: {},	
-		JSUS: {}
-	};
-	
-	D3ts.prototype.__proto__ = D3.prototype;
-	D3ts.prototype.constructor = D3ts;
-	
-	D3ts.defaults = {};
-	
-	D3ts.defaults.width = 400;
-	D3ts.defaults.height = 200;
-	
-	D3ts.defaults.margin = {
-    	top: 10, 
-    	right: 10, 
-    	bottom: 20, 
-    	left: 40 
-	};
-	
-	D3ts.defaults.domain = {
-		x: [0, 10],
-		y: [0, 1]
-	};
-	
-    D3ts.defaults.range = {
-    	x: [0, D3ts.defaults.width],
-    	y: [D3ts.defaults.height, 0]
-    };
-	
-	function D3ts (options) {
-		D3.call(this, options);
-		
-		
-		var o = this.options = JSUS.merge(D3ts.defaults, options);
-		
-		var n = this.n = o.n;
-		
-	    this.data = [0];
-	    
-	    this.margin = o.margin;
-	    
-		var width = this.width = o.width - this.margin.left - this.margin.right;
-		var height = this.height = o.height - this.margin.top - this.margin.bottom;
-
-		// identity function
-		var x = this.x = d3.scale.linear()
-		    .domain(o.domain.x)
-		    .range(o.range.x);
-
-		var y = this.y = d3.scale.linear()
-		    .domain(o.domain.y)
-		    .range(o.range.y);
-
-		// line generator
-		this.line = d3.svg.line()
-		    .x(function(d, i) { return x(i); })
-		    .y(function(d, i) { return y(d); });
-	}
-	
-	D3ts.prototype.init = function (options) {
-		//D3.init.call(this, options);
-		
-		console.log('init!');
-		var x = this.x,
-			y = this.y,
-			height = this.height,
-			width = this.width,
-			margin = this.margin;
-		
-		
-		// Create the SVG and place it in the middle
-		this.svg.attr("width", width + margin.left + margin.right)
-		    .attr("height", height + margin.top + margin.bottom)
-		  .append("g")
-		    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-
-		// Line does not go out the axis
-		this.svg.append("defs").append("clipPath")
-		    .attr("id", "clip")
-		  .append("rect")
-		    .attr("width", width)
-		    .attr("height", height);
-
-		// X axis
-		this.svg.append("g")
-		    .attr("class", "x axis")
-		    .attr("transform", "translate(0," + height + ")")
-		    .call(d3.svg.axis().scale(x).orient("bottom"));
-
-		// Y axis
-		this.svg.append("g")
-		    .attr("class", "y axis")
-		    .call(d3.svg.axis().scale(y).orient("left"));
-
-		this.path = this.svg.append("g")
-		    .attr("clip-path", "url(#clip)")
-		  .append("path")
-		    .data([this.data])
-		    .attr("class", "line")
-		    .attr("d", this.line);		
-	};
-	
-	D3ts.prototype.tick = function (value) {
-		this.alreadyInit = this.alreadyInit || false;
-		if (!this.alreadyInit) {
-			this.init();
-			this.alreadyInit = true;
-		}
-		
-		var x = this.x;
-		
-		console.log('tick!');
-	
-		// push a new data point onto the back
-		this.data.push(value);
-
-		// redraw the line, and slide it to the left
-		this.path
-	    	.attr("d", this.line)
-	    	.attr("transform", null);
-
-		// pop the old data point off the front
-		if (this.data.length > this.n) {
-		
-	  		this.path
-	  			.transition()
-	  			.duration(500)
-	  			.ease("linear")
-	  			.attr("transform", "translate(" + x(-1) + ")");
-	  		
-	  		this.data.shift();
-	  	  
-		}
-	};
-	
 })(node);
 (function (node) {
 	
@@ -21270,1077 +21081,711 @@ node.widgets = new Widgets();
 })(node);
 (function (node) {
 	
+
+	// TODO: handle different events, beside onchange
 	
-	// TODO: Introduce rules for update: other vs self
-	
-	node.widgets.register('NextPreviousState', NextPreviousState);
+	node.widgets.register('Controls', Controls);	
 	
 // ## Defaults
 	
-	NextPreviousState.defaults = {};
-	NextPreviousState.defaults.id = 'nextprevious';
-	NextPreviousState.defaults.fieldset = { legend: 'Rew-Fwd' };		
+	var defaults = { id: 'controls' };
 	
-// ## Meta-data
+	Controls.defaults = defaults;
 	
-	NextPreviousState.name = 'Next,Previous State';
-	NextPreviousState.version = '0.3.2';
-	NextPreviousState.description = 'Adds two buttons to push forward or rewind the state of the game by one step.';
+	Controls.Slider = SliderControls;
+	Controls.jQuerySlider = jQuerySliderControls;
+	Controls.Radio	= RadioControls;
+	
+	// Meta-data
+	
+	Controls.name = 'Controls';
+	Controls.version = '0.2';
+	Controls.description = 'Wraps a collection of user-inputs controls.';
 		
-	function NextPreviousState(options) {
-		this.id = options.id;
-	}
-	
-	NextPreviousState.prototype.getRoot = function () {
-		return this.root;
-	};
-	
-	NextPreviousState.prototype.append = function (root) {
-		var idRew = this.id + '_button';
-		var idFwd = this.id + '_button';
-		
-		var rew = node.window.addButton(root, idRew, '<<');
-		var fwd = node.window.addButton(root, idFwd, '>>');
-		
-		
-		var that = this;
-	
-		var updateState = function (state) {
-			if (state) {
-				var stateEvent = node.IN + node.action.SAY + '.STATE';
-				var stateMsg = node.msg.createSTATE(stateEvent, state);
-				// Self Update
-				node.emit(stateEvent, stateMsg);
-				
-				// Update Others
-				stateEvent = node.OUT + node.action.SAY + '.STATE';
-				node.emit(stateEvent, state, 'ALL');
-			}
-			else {
-				node.log('No next/previous state. Not sent', 'ERR');
-			}
-		};
-		
-		fwd.onclick = function() {
-			updateState(node.game.next());
-		};
-			
-		rew.onclick = function() {
-			updateState(node.game.previous());
-		};
-		
-		this.root = root;
-		return root;
-	};
-	
-})(node);
-(function (node) {
-    
-    node.widgets.register('ServerInfoDisplay', ServerInfoDisplay);	
-
-    // ## Defaults
-    
-    ServerInfoDisplay.defaults = {};
-    ServerInfoDisplay.defaults.id = 'serverinfodisplay';
-    ServerInfoDisplay.defaults.fieldset = {
-	legend: 'Server Info',
-	id: 'serverinfo_fieldset'
-    };		
-    
-    // ## Meta-data
-    
-    ServerInfoDisplay.name = 'Server Info Display';
-    ServerInfoDisplay.version = '0.4';
-    
-    function ServerInfoDisplay (options) {	
-	this.id = options.id;
-	
-	this.root = null;
-	this.div = document.createElement('div');
-	this.table = null; //new node.window.Table();
-	this.button = null;
-    }
-    
-    ServerInfoDisplay.prototype.init = function (options) {
-	var that = this;
-	if (!this.div) {
-	    this.div = document.createElement('div');
-	}
-	this.div.innerHTML = 'Waiting for the reply from Server...';
-	if (!this.table) {
-	    this.table = new node.window.Table(options);
-	}
-	this.table.clear(true);
-	this.button = document.createElement('button');
-	this.button.value = 'Refresh';
-	this.button.appendChild(document.createTextNode('Refresh'));
-	this.button.onclick = function(){
-	    that.getInfo();
-	};
-	this.root.appendChild(this.button);
-	this.getInfo();
-    };
-    
-    ServerInfoDisplay.prototype.append = function (root) {
-	this.root = root;
-	root.appendChild(this.div);
-	return root;
-    };
-    
-    ServerInfoDisplay.prototype.getInfo = function() {
-	var that = this;
-	node.get('INFO', function (info) {
-	    node.window.removeChildrenFromNode(that.div);
-	    that.div.appendChild(that.processInfo(info));
-	});
-    };
-    
-    ServerInfoDisplay.prototype.processInfo = function(info) {
-	this.table.clear(true);
-	for (var key in info) {
-	    if (info.hasOwnProperty(key)){
-		this.table.addRow([key,info[key]]);
-	    }
-	}
-	return this.table.parse();
-    };
-    
-    ServerInfoDisplay.prototype.listeners = function () {
-	var that = this;
-	node.on('PLAYER_CREATED', function(){
-	    that.init();
-	});
-    }; 
-    
-})(node);
-(function (node) {
-	
-	node.widgets.register('VisualTimer', VisualTimer);
-	
-	var JSUS = node.JSUS;
-
-// ## Defaults
-	
-	VisualTimer.defaults = {};
-	VisualTimer.defaults.id = 'visualtimer';
-	VisualTimer.defaults.fieldset = {
-			legend: 'Time left',
-			id: 'visualtimer_fieldset'
-	};		
-	
-// ## Meta-data
-	
-	VisualTimer.name = 'Visual Timer';
-	VisualTimer.version = '0.3.3';
-	VisualTimer.description = 'Display a timer for the game. Timer can trigger events. Only for countdown smaller than 1h.';
-	
-// ## Dependencies
-	
-	VisualTimer.dependencies = {
-		GameTimer : {},
-		JSUS: {}
-	};
-	
-	function VisualTimer (options) {
+	function Controls (options) {
 		this.options = options;
 		this.id = options.id;
-
-		this.gameTimer = null;
+		this.root = null;
 		
-		this.timerDiv = null;	// the DIV in which to display the timer
-		this.root = null;		// the parent element
+		this.listRoot = null;
+		this.fieldset = null;
+		this.submit = null;
 		
-		this.init(this.options);
-	}
-	
-	VisualTimer.prototype.init = function (options) {
-		options = options || this.options;
-		var that = this;
-		(function initHooks() {
-			if (options.hooks) {
-				if (!options.hooks instanceof Array) {
-					options.hooks = [options.hooks];
-				}
-			}
-			else {
-				options.hooks = [];
-			}
-			
-			options.hooks.push({hook: that.updateDisplay,
-								ctx: that
-			});
-		})();
+		this.changeEvent = this.id + '_change';
 		
-		
-		this.gameTimer = (options.gameTimer) || new node.GameTimer();
-		
-		if (this.gameTimer) {
-			this.gameTimer.init(options);
-		}
-		else {
-			node.log('GameTimer object could not be initialized. VisualTimer will not work properly.', 'ERR');
-		}
-		
-		if (this.timerDiv) {
-			this.timerDiv.className = options.className || '';
-		}
-		
-	};
-	
-	VisualTimer.prototype.getRoot = function () {
-		return this.root;
-	};
-	
-	VisualTimer.prototype.append = function (root) {
-		this.root = root;
-		this.timerDiv = node.window.addDiv(root, this.id + '_div');
-		this.updateDisplay();
-		return root;	
-	};
-	
-	VisualTimer.prototype.updateDisplay = function () {
-		if (!this.gameTimer.milliseconds || this.gameTimer.milliseconds === 0) {
-			this.timerDiv.innerHTML = '00:00';
-			return;
-		}
-		var time = this.gameTimer.milliseconds - this.gameTimer.timePassed;
-		time = JSUS.parseMilliseconds(time);
-		var minutes = (time[2] < 10) ? '' + '0' + time[2] : time[2];
-		var seconds = (time[3] < 10) ? '' + '0' + time[3] : time[3];
-		this.timerDiv.innerHTML = minutes + ':' + seconds;
-	};
-	
-	VisualTimer.prototype.start = function() {
-		this.updateDisplay();
-		this.gameTimer.start();
-	};
-	
-	VisualTimer.prototype.restart = function (options) {
-		this.init(options);
-		this.start();
-	};
-	
-	VisualTimer.prototype.stop = function (options) {
-		this.gameTimer.stop();
-	};
-	
-	VisualTimer.prototype.resume = function (options) {
-		this.gameTimer.resume();
-	};
-		
-	VisualTimer.prototype.listeners = function () {
-		var that = this;
-		node.on('LOADED', function() {
-		    var stepObj = node.game.getCurrentStep();
-		    if (!stepObj) return;
-		    var timer = stepObj.timer;
-			if (timer) {
-				timer = JSUS.clone(timer);
-				that.timerDiv.className = '';
-				var options = {},
-					typeoftimer = typeof timer; 
-				switch (typeoftimer) {
-				
-					case 'number':
-						options.milliseconds = timer;
-						break;
-					case 'object':
-						options = timer;
-						break;
-					case 'function':
-						options.milliseconds = timer
-						break;
-					case 'string':
-						options.milliseconds = Number(timer);
-						break;
-				};
-			
-				if (!options.milliseconds) return;
-			
-				if ('function' === typeof options.milliseconds) {
-					options.milliseconds = options.milliseconds.call(node.game);
-				}
-				
-				if (!options.timeup) {
-					options.timeup = 'DONE';
-				}
-				
-				that.gameTimer.init(options);
-				that.start();
-			}
-		});
-		
-		node.on('DONE', function() {
-			// TODO: This should be enabled again
-			that.gameTimer.stop();
-			that.timerDiv.className = 'strike';
-		});
-	};
-	
-})(node);
-
-(function (node) {
-
-	node.widgets.register('GameSummary', GameSummary);
-	
-
-// ## Defaults
-	
-	GameSummary.defaults = {};
-	GameSummary.defaults.id = 'gamesummary';
-	GameSummary.defaults.fieldset = { legend: 'Game Summary' };
-	
-// ## Meta-data
-	
-	GameSummary.name = 'Game Summary';
-	GameSummary.version = '0.3';
-	GameSummary.description = 'Show the general configuration options of the game.';
-	
-	function GameSummary (options) {
-		this.summaryDiv = null;
-	}
-	
-	GameSummary.prototype.append = function (root) {
-		this.root = root;
-		this.summaryDiv = node.window.addDiv(root);
-		this.writeSummary();
-		return root;
-	};
-	
-	GameSummary.prototype.writeSummary = function (idState, idSummary) {
-		var gName = document.createTextNode('Name: ' + node.game.metadata.name),
-			gDescr = document.createTextNode('Descr: ' + node.game.metadata.description),
-			gMinP = document.createTextNode('Min Pl.: ' + node.game.minPlayers),
-			gMaxP = document.createTextNode('Max Pl.: ' + node.game.maxPlayers);
-		
-		this.summaryDiv.appendChild(gName);
-		this.summaryDiv.appendChild(document.createElement('br'));
-		this.summaryDiv.appendChild(gDescr);
-		this.summaryDiv.appendChild(document.createElement('br'));
-		this.summaryDiv.appendChild(gMinP);
-		this.summaryDiv.appendChild(document.createElement('br'));
-		this.summaryDiv.appendChild(gMaxP);
-		
-		node.window.addDiv(this.root, this.summaryDiv, idSummary);
-	};
-
-})(node);
-
-(function (node) {
-	
-	node.widgets.register('MoneyTalks', MoneyTalks);
-	
-	var JSUS = node.JSUS;
-	
-// ## Defaults
-	
-	MoneyTalks.defaults = {};
-	MoneyTalks.defaults.id = 'moneytalks';
-	MoneyTalks.defaults.fieldset = {legend: 'Earnings'};
-	
-// ## Meta-data
-	
-	MoneyTalks.name = 'Money talks';
-	MoneyTalks.version = '0.1.0';
-	MoneyTalks.description = 'Display the earnings of a player.';
-
-// ## Dependencies
-	
-	MoneyTalks.dependencies = {
-		JSUS: {}
-	};
-	
-	
-	function MoneyTalks (options) {
-		this.id = options.id || MoneyTalks.defaults.id;
-				
-		this.root = null;		// the parent element
-		
-		this.spanCurrency = document.createElement('span');
-		this.spanMoney = document.createElement('span');
-		
-		this.currency = 'EUR';
-		this.money = 0;
-		this.precision = 2;
 		this.init(options);
 	}
-	
-	
-	MoneyTalks.prototype.init = function (options) {
-		this.currency = options.currency || this.currency;
-		this.money = options.money || this.money;
-		this.precision = options.precision || this.precision;
-		
-		this.spanCurrency.id = options.idCurrency || this.spanCurrency.id || 'moneytalks_currency';
-		this.spanMoney.id = options.idMoney || this.spanMoney.id || 'moneytalks_money';
-		
-		this.spanCurrency.innerHTML = this.currency;
-		this.spanMoney.innerHTML = this.money;
-	};
-	
-	MoneyTalks.prototype.getRoot = function () {
-		return this.root;
-	};
-	
-	MoneyTalks.prototype.append = function (root, ids) {
-		var PREF = this.id + '_';
-		root.appendChild(this.spanMoney);
-		root.appendChild(this.spanCurrency);
-		return root;
-	};
-		
-	MoneyTalks.prototype.listeners = function () {
-		var that = this;
-		node.on('MONEYTALKS', function(amount) {
-			that.update(amount);
-		}); 
-	};
-	
-	MoneyTalks.prototype.update = function (amount) {
-		if ('number' !== typeof amount) {
-			// Try to parse strings
-			amount = parseInt(amount);
-			if (isNaN(n) || !isFinite(n)) {
-				return;
-			}
-		}
-		this.money += amount;
-		this.spanMoney.innerHTML = this.money.toFixed(this.precision);
-	};
-	
-})(node);
-(function (node) {
-	
-	var JSUS = node.JSUS,
-		Table = node.window.Table;
-	
-	node.widgets.register('ChernoffFaces', ChernoffFaces);
-	
-	// ## Defaults
-	
-	ChernoffFaces.defaults = {};
-	ChernoffFaces.defaults.id = 'ChernoffFaces';
-	ChernoffFaces.defaults.canvas = {};
-	ChernoffFaces.defaults.canvas.width = 100;
-	ChernoffFaces.defaults.canvas.heigth = 100;
-	
-	// ## Meta-data
-	
-	ChernoffFaces.name = 'Chernoff Faces';
-	ChernoffFaces.version = '0.3';
-	ChernoffFaces.description = 'Display parametric data in the form of a Chernoff Face.';
-	
-	// ## Dependencies 
-	ChernoffFaces.dependencies = {
-		JSUS: {},
-		Table: {},
-		Canvas: {},
-		'Controls.Slider': {}
-	};
-	
-	ChernoffFaces.FaceVector = FaceVector;
-	ChernoffFaces.FacePainter = FacePainter;
-	
-	function ChernoffFaces (options) {
-		this.options = options;
-		this.id = options.id;
-		this.table = new Table({id: 'cf_table'});
-		this.root = options.root || document.createElement('div');
-		this.root.id = this.id;
-		
-		this.sc = node.widgets.get('Controls.Slider');	// Slider Controls
-		this.fp = null;	// Face Painter
-		this.canvas = null;
 
-		this.change = 'CF_CHANGE';
-		var that = this;
-		this.changeFunc = function () {
-			that.draw(that.sc.getAllValues());
-		};
-		
-		this.features = null;
-		this.controls = null;
-		
-		this.init(this.options);
-	}
+	Controls.prototype.add = function (root, id, attributes) {
+		// TODO: node.window.addTextInput
+		//return node.window.addTextInput(root, id, attributes);
+	};
 	
-	ChernoffFaces.prototype.init = function (options) {
-		var that = this;
-		this.id = options.id || this.id;
-		var PREF = this.id + '_';
-		
-		this.features = options.features || this.features || FaceVector.random();
-		
-		this.controls = ('undefined' !== typeof options.controls) ?  options.controls : true;
-		
-		var idCanvas = (options.idCanvas) ? options.idCanvas : PREF + 'canvas';
-		var idButton = (options.idButton) ? options.idButton : PREF + 'button';
-		
-		this.canvas = node.window.getCanvas(idCanvas, options.canvas);
-		this.fp = new FacePainter(this.canvas);		
-		this.fp.draw(new FaceVector(this.features));
-		
-		var sc_options = {
-			id: 'cf_controls',
-			features: JSUS.mergeOnKey(FaceVector.defaults, this.features, 'value'),
-			change: this.change,
-			fieldset: {id: this.id + '_controls_fieldest', 
-						legend: this.controls.legend || 'Controls'
-			},
-			submit: 'Send'
-		};
-		
-		this.sc = node.widgets.get('Controls.Slider', sc_options);
-		
-		// Controls are always there, but may not be visible
-		if (this.controls) {
-			this.table.add(this.sc);
-		}
-		
-		// Dealing with the onchange event
-		if ('undefined' === typeof options.change) {	
-			node.on(this.change, this.changeFunc); 
-		} else {
-			if (options.change) {
-				node.on(options.change, this.changeFunc);
+	Controls.prototype.getItem = function (id, attributes) {
+		// TODO: node.window.addTextInput
+		//return node.window.getTextInput(id, attributes);
+	};
+	
+	Controls.prototype.init = function (options) {
+
+		this.hasChanged = false; // TODO: should this be inherited?
+		if ('undefined' !== typeof options.change) {
+			if (!options.change){
+				this.changeEvent = false;
 			}
 			else {
-				node.removeListener(this.change, this.changeFunc);
+				this.changeEvent = options.change;
 			}
-			this.change = options.change;
+		}
+		this.list = new node.window.List(options);
+		this.listRoot = this.list.getRoot();
+		
+		if (!options.features) return;
+		if (!this.root) this.root = this.listRoot;
+		this.features = options.features;
+		this.populate();
+	};
+	
+	Controls.prototype.append = function (root) {
+		this.root = root;
+		var toReturn = this.listRoot;
+		this.list.parse();
+		root.appendChild(this.listRoot);
+		
+		if (this.options.submit) {
+			var idButton = 'submit_' + this.id;
+			if (this.options.submit.id) {
+				idButton = this.options.submit.id;
+				delete this.options.submit.id;
+			}
+			this.submit = node.window.addButton(root, idButton, this.options.submit, this.options.attributes);
+			
+			var that = this;
+			this.submit.onclick = function() {
+				if (that.options.change) {
+					node.emit(that.options.change);
+				}
+			};
+		}		
+		
+		return toReturn;
+	};
+	
+	Controls.prototype.parse = function() {
+		return this.list.parse();
+	};
+	
+	Controls.prototype.populate = function () {
+		var that = this;
+		
+		for (var key in this.features) {
+			if (this.features.hasOwnProperty(key)) {
+				// Prepare the attributes vector
+				var attributes = this.features[key];
+				var id = key;
+				if (attributes.id) {
+					id = attributes.id;
+					delete attributes.id;
+				}
+							
+				var container = document.createElement('div');
+				// Add a different element according to the subclass instantiated
+				var elem = this.add(container, id, attributes);
+								
+				// Fire the onChange event, if one defined
+				if (this.changeEvent) {
+					elem.onchange = function() {
+						node.emit(that.changeEvent);
+					};
+				}
+				
+				if (attributes.label) {
+					node.window.addLabel(container, elem, null, attributes.label);
+				}
+				
+				// Element added to the list
+				this.list.addDT(container);
+			}
+		}
+	};
+	
+	Controls.prototype.listeners = function() {	
+		var that = this;
+		// TODO: should this be inherited?
+		node.on(this.changeEvent, function(){
+			that.hasChanged = true;
+		});
+				
+	};
+
+	Controls.prototype.refresh = function() {
+		for (var key in this.features) {	
+			if (this.features.hasOwnProperty(key)) {
+				var el = node.window.getElementById(key);
+				if (el) {
+//					node.log('KEY: ' + key, 'DEBUG');
+//					node.log('VALUE: ' + el.value, 'DEBUG');
+					el.value = this.features[key].value;
+					// TODO: set all the other attributes
+					// TODO: remove/add elements
+				}
+				
+			}
 		}
 		
-		
-		this.table.add(this.canvas);
-		this.table.parse();
-		this.root.appendChild(this.table.table);
-	};
-	
-	ChernoffFaces.prototype.getCanvas = function() {
-		return this.canvas;
-	};
-	
-	ChernoffFaces.prototype.append = function (root) {
-		root.appendChild(this.root);
-		this.table.parse();
-		return this.root;
-	};
-	
-	ChernoffFaces.prototype.draw = function (features) {
-		if (!features) return;
-		var fv = new FaceVector(features);
-		this.fp.redraw(fv);
-		// Without merging wrong values are passed as attributes
-		this.sc.init({features: JSUS.mergeOnKey(FaceVector.defaults, features, 'value')});
-		this.sc.refresh();
-	};
-	
-	ChernoffFaces.prototype.getAllValues = function() {
-		//if (this.sc) return this.sc.getAllValues();
-		return this.fp.face;
-	};
-	
-	ChernoffFaces.prototype.randomize = function() {
-		var fv = FaceVector.random();
-		this.fp.redraw(fv);
-	
-		var sc_options = {
-				features: JSUS.mergeOnValue(FaceVector.defaults, fv),
-				change: this.change
-		};
-		this.sc.init(sc_options);
-		this.sc.refresh();
-	
 		return true;
 	};
 	
-	
-	// FacePainter
-	// The class that actually draws the faces on the Canvas
-	function FacePainter (canvas, settings) {
-			
-		this.canvas = new node.window.Canvas(canvas);
-		
-		this.scaleX = canvas.width / ChernoffFaces.defaults.canvas.width;
-		this.scaleY = canvas.height / ChernoffFaces.defaults.canvas.heigth;
-	}
-	
-	//Draws a Chernoff face.
-	FacePainter.prototype.draw = function (face, x, y) {
-		if (!face) return;
-		this.face = face;
-		this.fit2Canvas(face);
-		this.canvas.scale(face.scaleX, face.scaleY);
-		
-		//console.log('Face Scale ' + face.scaleY + ' ' + face.scaleX );
-		
-		x = x || this.canvas.centerX;
-		y = y || this.canvas.centerY;
-		
-		this.drawHead(face, x, y);
-			
-		this.drawEyes(face, x, y);
-	
-		this.drawPupils(face, x, y);
-	
-		this.drawEyebrow(face, x, y);
-	
-		this.drawNose(face, x, y);
-		
-		this.drawMouth(face, x, y);
-		
-	};		
-		
-	FacePainter.prototype.redraw = function (face, x, y) {
-		this.canvas.clear();
-		this.draw(face,x,y);
-	};
-	
-	FacePainter.prototype.scale = function (x, y) {
-		this.canvas.scale(this.scaleX, this.scaleY);
-	};
-	
-	// TODO: Improve. It eats a bit of the margins
-	FacePainter.prototype.fit2Canvas = function(face) {
-		if (!this.canvas) {
-		console.log('No canvas found');
-			return;
-		}
-		
-		var ration;
-		if (this.canvas.width > this.canvas.height) {
-			ratio = this.canvas.width / face.head_radius * face.head_scale_x;
-		}
-		else {
-			ratio = this.canvas.height / face.head_radius * face.head_scale_y;
-		}
-		
-		face.scaleX = ratio / 2;
-		face.scaleY = ratio / 2;
-	};
-	
-	FacePainter.prototype.drawHead = function (face, x, y) {
-		
-		var radius = face.head_radius;
-		
-		this.canvas.drawOval({
-						x: x, 
-						y: y,
-						radius: radius,
-						scale_x: face.head_scale_x,
-						scale_y: face.head_scale_y,
-						color: face.color,
-						lineWidth: face.lineWidth
-		});
-	};
-	
-	FacePainter.prototype.drawEyes = function (face, x, y) {
-		
-		var height = FacePainter.computeFaceOffset(face, face.eye_height, y);
-		var spacing = face.eye_spacing;
-			
-		var radius = face.eye_radius;
-		//console.log(face);
-		this.canvas.drawOval({
-						x: x - spacing,
-						y: height,
-						radius: radius,
-						scale_x: face.eye_scale_x,
-						scale_y: face.eye_scale_y,
-						color: face.color,
-						lineWidth: face.lineWidth
-						
-		});
-		//console.log(face);
-		this.canvas.drawOval({
-						x: x + spacing,
-						y: height,
-						radius: radius,
-						scale_x: face.eye_scale_x,
-						scale_y: face.eye_scale_y,
-						color: face.color,
-						lineWidth: face.lineWidth
-		});
-	};
-	
-	FacePainter.prototype.drawPupils = function (face, x, y) {
-			
-		var radius = face.pupil_radius;
-		var spacing = face.eye_spacing;
-		var height = FacePainter.computeFaceOffset(face, face.eye_height, y);
-		
-		this.canvas.drawOval({
-						x: x - spacing,
-						y: height,
-						radius: radius,
-						scale_x: face.pupil_scale_x,
-						scale_y: face.pupil_scale_y,
-						color: face.color,
-						lineWidth: face.lineWidth
-		});
-		
-		this.canvas.drawOval({
-						x: x + spacing,
-						y: height,
-						radius: radius,
-						scale_x: face.pupil_scale_x,
-						scale_y: face.pupil_scale_y,
-						color: face.color,
-						lineWidth: face.lineWidth
-		});
-	
-	};
-	
-	FacePainter.prototype.drawEyebrow = function (face, x, y) {
-		
-		var height = FacePainter.computeEyebrowOffset(face,y);
-		var spacing = face.eyebrow_spacing;
-		var length = face.eyebrow_length;
-		var angle = face.eyebrow_angle;
-		
-		this.canvas.drawLine({
-						x: x - spacing,
-						y: height,
-						length: length,
-						angle: angle,
-						color: face.color,
-						lineWidth: face.lineWidth
-					
-						
-		});
-		
-		this.canvas.drawLine({
-						x: x + spacing,
-						y: height,
-						length: 0-length,
-						angle: -angle,	
-						color: face.color,
-						lineWidth: face.lineWidth
-		});
-		
-	};
-	
-	FacePainter.prototype.drawNose = function (face, x, y) {
-		
-		var height = FacePainter.computeFaceOffset(face, face.nose_height, y);
-		var nastril_r_x = x + face.nose_width / 2;
-		var nastril_r_y = height + face.nose_length;
-		var nastril_l_x = nastril_r_x - face.nose_width;
-		var nastril_l_y = nastril_r_y; 
-		
-		this.canvas.ctx.lineWidth = face.lineWidth;
-		this.canvas.ctx.strokeStyle = face.color;
-		
-		this.canvas.ctx.save();
-		this.canvas.ctx.beginPath();
-		this.canvas.ctx.moveTo(x,height);
-		this.canvas.ctx.lineTo(nastril_r_x,nastril_r_y);
-		this.canvas.ctx.lineTo(nastril_l_x,nastril_l_y);
-		//this.canvas.ctx.closePath();
-		this.canvas.ctx.stroke();
-		this.canvas.ctx.restore();
-	
-	};
-			
-	FacePainter.prototype.drawMouth = function (face, x, y) {
-		
-		var height = FacePainter.computeFaceOffset(face, face.mouth_height, y);
-		var startX = x - face.mouth_width / 2;
-		var endX = x + face.mouth_width / 2;
-		
-		var top_y = height - face.mouth_top_y;
-		var bottom_y = height + face.mouth_bottom_y;
-		
-		// Upper Lip
-		this.canvas.ctx.moveTo(startX,height);
-		this.canvas.ctx.quadraticCurveTo(x, top_y, endX, height);
-		this.canvas.ctx.stroke();
-		
-		//Lower Lip
-		this.canvas.ctx.moveTo(startX,height);
-		this.canvas.ctx.quadraticCurveTo(x, bottom_y, endX, height);
-		this.canvas.ctx.stroke();
-	
-	};	
-	
-	
-	//TODO Scaling ?
-	FacePainter.computeFaceOffset = function (face, offset, y) {
-		y = y || 0;
-		//var pos = y - face.head_radius * face.scaleY + face.head_radius * face.scaleY * 2 * offset;
-		var pos = y - face.head_radius + face.head_radius * 2 * offset;
-		//console.log('POS: ' + pos);
-		return pos;
-	};
-	
-	FacePainter.computeEyebrowOffset = function (face, y) {
-		y = y || 0;
-		var eyemindistance = 2;
-		return FacePainter.computeFaceOffset(face, face.eye_height, y) - eyemindistance - face.eyebrow_eyedistance;
-	};
-	
-	
-	/*!
-	* 
-	* A description of a Chernoff Face.
-	*
-	* This class packages the 11-dimensional vector of numbers from 0 through 1 that completely
-	* describe a Chernoff face.  
-	*
-	*/
-
-	
-	FaceVector.defaults = {
-			// Head
-			head_radius: {
-				// id can be specified otherwise is taken head_radius
-				min: 10,
-				max: 100,
-				step: 0.01,
-				value: 30,
-				label: 'Face radius'
-			},
-			head_scale_x: {
-				min: 0.2,
-				max: 2,
-				step: 0.01,
-				value: 0.5,
-				label: 'Scale head horizontally'
-			},
-			head_scale_y: {
-				min: 0.2,
-				max: 2,
-				step: 0.01,
-				value: 1,
-				label: 'Scale head vertically'
-			},
-			// Eye
-			eye_height: {
-				min: 0.1,
-				max: 0.9,
-				step: 0.01,
-				value: 0.4,
-				label: 'Eye height'
-			},
-			eye_radius: {
-				min: 2,
-				max: 30,
-				step: 0.01,
-				value: 5,
-				label: 'Eye radius'
-			},
-			eye_spacing: {
-				min: 0,
-				max: 50,
-				step: 0.01,
-				value: 10,
-				label: 'Eye spacing'
-			},
-			eye_scale_x: {
-				min: 0.2,
-				max: 2,
-				step: 0.01,
-				value: 1,
-				label: 'Scale eyes horizontally'
-			},
-			eye_scale_y: {
-				min: 0.2,
-				max: 2,
-				step: 0.01,
-				value: 1,
-				label: 'Scale eyes vertically'
-			},
-			// Pupil
-			pupil_radius: {
-				min: 1,
-				max: 9,
-				step: 0.01,
-				value: 1,  //this.eye_radius;
-				label: 'Pupil radius'
-			},
-			pupil_scale_x: {
-				min: 0.2,
-				max: 2,
-				step: 0.01,
-				value: 1,
-				label: 'Scale pupils horizontally'
-			},
-			pupil_scale_y: {
-				min: 0.2,
-				max: 2,
-				step: 0.01,
-				value: 1,
-				label: 'Scale pupils vertically'
-			},
-			// Eyebrow
-			eyebrow_length: {
-				min: 1,
-				max: 30,
-				step: 0.01,
-				value: 10,
-				label: 'Eyebrow length'
-			},
-			eyebrow_eyedistance: {
-				min: 0.3,
-				max: 10,
-				step: 0.01,
-				value: 3, // From the top of the eye
-				label: 'Eyebrow from eye'
-			},
-			eyebrow_angle: {
-				min: -2,
-				max: 2,
-				step: 0.01,
-				value: -0.5,
-				label: 'Eyebrow angle'
-			},
-			eyebrow_spacing: {
-				min: 0,
-				max: 20,
-				step: 0.01,
-				value: 5,
-				label: 'Eyebrow spacing'
-			},
-			// Nose
-			nose_height: {
-				min: 0.4,
-				max: 1,
-				step: 0.01,
-				value: 0.4,
-				label: 'Nose height'
-			},
-			nose_length: {
-				min: 0.2,
-				max: 30,
-				step: 0.01,
-				value: 15,
-				label: 'Nose length'
-			},
-			nose_width: {
-				min: 0,
-				max: 30,
-				step: 0.01,
-				value: 10,
-				label: 'Nose width'
-			},
-			// Mouth
-			mouth_height: {
-				min: 0.2,
-				max: 2,
-				step: 0.01,
-				value: 0.75, 
-				label: 'Mouth height'
-			},
-			mouth_width: {
-				min: 2,
-				max: 100,
-				step: 0.01,
-				value: 20,
-				label: 'Mouth width'
-			},
-			mouth_top_y: {
-				min: -10,
-				max: 30,
-				step: 0.01,
-				value: -2,
-				label: 'Upper lip'
-			},
-			mouth_bottom_y: {
-				min: -10,
-				max: 30,
-				step: 0.01,
-				value: 20,
-				label: 'Lower lip'
-			}					
-	};
-	
-	//Constructs a random face vector.
-	FaceVector.random = function () {
+	Controls.prototype.getAllValues = function() {
 		var out = {};
-		for (var key in FaceVector.defaults) {
-			if (FaceVector.defaults.hasOwnProperty(key)) {
-				if (!JSUS.in_array(key,['color','lineWidth','scaleX','scaleY'])) {
-					out[key] = FaceVector.defaults[key].min + Math.random() * FaceVector.defaults[key].max;
+		for (var key in this.features) {	
+			if (this.features.hasOwnProperty(key)) {
+				var el = node.window.getElementById(key);
+				if (el) {
+//					node.log('KEY: ' + key, 'DEBUG');
+//					node.log('VALUE: ' + el.value, 'DEBUG');
+					out[key] = Number(el.value);
 				}
-			}
-		}
-	
-		out.scaleX = 1;
-		out.scaleY = 1;
-		
-		out.color = 'green';
-		out.lineWidth = 1; 
-		
-		return new FaceVector(out);
-	};
-	
-	function FaceVector (faceVector) {
-		faceVector = faceVector || {};
-
-		this.scaleX = faceVector.scaleX || 1;
-		this.scaleY = faceVector.scaleY || 1;
-
-
-		this.color = faceVector.color || 'green';
-		this.lineWidth = faceVector.lineWidth || 1;
-		
-		// Merge on key
-		for (var key in FaceVector.defaults) {
-			if (FaceVector.defaults.hasOwnProperty(key)){
-				if (faceVector.hasOwnProperty(key)){
-					this[key] = faceVector[key];
-				}
-				else {
-					this[key] = FaceVector.defaults[key].value;
-				}
+				
 			}
 		}
 		
-	}
-
-	//Constructs a random face vector.
-	FaceVector.prototype.shuffle = function () {
-		for (var key in this) {
-			if (this.hasOwnProperty(key)) {
-				if (FaceVector.defaults.hasOwnProperty(key)) {
-					if (key !== 'color') {
-						this[key] = FaceVector.defaults[key].min + Math.random() * FaceVector.defaults[key].max;
-						
-					}
-				}
-			}
-		}
-	};
-	
-	//Computes the Euclidean distance between two FaceVectors.
-	FaceVector.prototype.distance = function (face) {
-		return FaceVector.distance(this,face);
-	};
-		
-		
-	FaceVector.distance = function (face1, face2) {
-		var sum = 0.0;
-		var diff;
-		
-		for (var key in face1) {
-			if (face1.hasOwnProperty(key)) {
-				diff = face1[key] - face2[key];
-				sum = sum + diff * diff;
-			}
-		}
-		
-		return Math.sqrt(sum);
-	};
-	
-	FaceVector.prototype.toString = function() {
-		var out = 'Face: ';
-		for (var key in this) {
-			if (this.hasOwnProperty(key)) {
-				out += key + ' ' + this[key];
-			}
-		}
 		return out;
 	};
+	
+	Controls.prototype.highlight = function (code) {
+		return node.window.highlight(this.listRoot, code);
+	};
+	
+	// Sub-classes
+	
+	// Slider 
+	
+	SliderControls.prototype.__proto__ = Controls.prototype;
+	SliderControls.prototype.constructor = SliderControls;
+	
+	SliderControls.id = 'slidercontrols';
+	SliderControls.name = 'Slider Controls';
+	SliderControls.version = '0.2';
+	
+	SliderControls.dependencies = {
+		Controls: {}
+	};
+	
+	
+	function SliderControls (options) {
+		Controls.call(this, options);
+	}
+	
+	SliderControls.prototype.add = function (root, id, attributes) {
+		return node.window.addSlider(root, id, attributes);
+	};
+	
+	SliderControls.prototype.getItem = function (id, attributes) {
+		return node.window.getSlider(id, attributes);
+	};
+	
+	// jQuerySlider
+    
+    jQuerySliderControls.prototype.__proto__ = Controls.prototype;
+    jQuerySliderControls.prototype.constructor = jQuerySliderControls;
+    
+    jQuerySliderControls.id = 'jqueryslidercontrols';
+    jQuerySliderControls.name = 'Experimental: jQuery Slider Controls';
+    jQuerySliderControls.version = '0.13';
+    
+    jQuerySliderControls.dependencies = {
+        jQuery: {},
+        Controls: {}
+    };
+    
+    
+    function jQuerySliderControls (options) {
+        Controls.call(this, options);
+    }
+    
+    jQuerySliderControls.prototype.add = function (root, id, attributes) {
+        var slider = jQuery('<div/>', {
+			id: id
+		}).slider();
+	
+		var s = slider.appendTo(root);
+		return s[0];
+	};
+	
+	jQuerySliderControls.prototype.getItem = function (id, attributes) {
+		var slider = jQuery('<div/>', {
+			id: id
+			}).slider();
+		
+		return slider;
+	};
+
+
+    ///////////////////////////
+
+	
+	
+	
+
+	
+	// Radio
+	
+	RadioControls.prototype.__proto__ = Controls.prototype;
+	RadioControls.prototype.constructor = RadioControls;
+	
+	RadioControls.id = 'radiocontrols';
+	RadioControls.name = 'Radio Controls';
+	RadioControls.version = '0.1.1';
+	
+	RadioControls.dependencies = {
+		Controls: {}
+	};
+	
+	function RadioControls (options) {
+		Controls.call(this,options);
+		this.groupName = ('undefined' !== typeof options.name) ? options.name : 
+																node.window.generateUniqueId(); 
+		//alert(this.groupName);
+	}
+	
+	RadioControls.prototype.add = function (root, id, attributes) {
+		//console.log('ADDDING radio');
+		//console.log(attributes);
+		// add the group name if not specified
+		// TODO: is this a javascript bug?
+		if ('undefined' === typeof attributes.name) {
+//			console.log(this);
+//			console.log(this.name);
+//			console.log('MODMOD ' + this.name);
+			attributes.name = this.groupName;
+		}
+		//console.log(attributes);
+		return node.window.addRadioButton(root, id, attributes);	
+	};
+	
+	RadioControls.prototype.getItem = function (id, attributes) {
+		//console.log('ADDDING radio');
+		//console.log(attributes);
+		// add the group name if not specified
+		// TODO: is this a javascript bug?
+		if ('undefined' === typeof attributes.name) {
+//			console.log(this);
+//			console.log(this.name);
+//			console.log('MODMOD ' + this.name);
+			attributes.name = this.groupName;
+		}
+		//console.log(attributes);
+		return node.window.getRadioButton(id, attributes);	
+	};
+	
+	// Override getAllValues for Radio Controls
+	RadioControls.prototype.getAllValues = function() {
+		
+		for (var key in this.features) {
+			if (this.features.hasOwnProperty(key)) {
+				var el = node.window.getElementById(key);
+				if (el.checked) {
+					return el.value;
+				}
+			}
+		}
+		return false;
+	};
+	
+})(node);
+(function (node) {
+	
+	
+	node.widgets.register('D3', D3);
+	node.widgets.register('D3ts', D3ts);
+	
+	D3.prototype.__proto__ = node.Widget.prototype;
+	D3.prototype.constructor = D3;
+
+// ## Defaults
+	
+	D3.defaults = {};
+	D3.defaults.id = 'D3';
+	D3.defaults.fieldset = {
+		legend: 'D3 plot'
+	};
+
+	
+// ## Meta-data
+	
+	D3.name = 'D3';
+	D3.version = '0.1';
+	D3.description = 'Real time plots for nodeGame with d3.js';
+	
+// ## Dependencies
+	
+	D3.dependencies = {
+		d3: {},	
+		JSUS: {}
+	};
+	
+	function D3 (options) {
+		this.id = options.id || D3.id;
+		this.event = options.event || 'D3';
+		this.svg = null;
+		
+		var that = this;
+		node.on(this.event, function (value) {
+			that.tick.call(that, value); 
+		});
+	}
+	
+	D3.prototype.append = function (root) {
+		this.root = root;
+		this.svg = d3.select(root).append("svg");
+		return root;
+	};
+	
+	D3.prototype.tick = function () {};
+	
+// # D3ts
+	
+	
+// ## Meta-data
+	
+	D3ts.id = 'D3ts';
+	D3ts.name = 'D3ts';
+	D3ts.version = '0.1';
+	D3ts.description = 'Time series plot for nodeGame with d3.js';
+	
+// ## Dependencies	
+	D3ts.dependencies = {
+		D3: {},	
+		JSUS: {}
+	};
+	
+	D3ts.prototype.__proto__ = D3.prototype;
+	D3ts.prototype.constructor = D3ts;
+	
+	D3ts.defaults = {};
+	
+	D3ts.defaults.width = 400;
+	D3ts.defaults.height = 200;
+	
+	D3ts.defaults.margin = {
+    	top: 10, 
+    	right: 10, 
+    	bottom: 20, 
+    	left: 40 
+	};
+	
+	D3ts.defaults.domain = {
+		x: [0, 10],
+		y: [0, 1]
+	};
+	
+    D3ts.defaults.range = {
+    	x: [0, D3ts.defaults.width],
+    	y: [D3ts.defaults.height, 0]
+    };
+	
+	function D3ts (options) {
+		D3.call(this, options);
+		
+		
+		var o = this.options = JSUS.merge(D3ts.defaults, options);
+		
+		var n = this.n = o.n;
+		
+	    this.data = [0];
+	    
+	    this.margin = o.margin;
+	    
+		var width = this.width = o.width - this.margin.left - this.margin.right;
+		var height = this.height = o.height - this.margin.top - this.margin.bottom;
+
+		// identity function
+		var x = this.x = d3.scale.linear()
+		    .domain(o.domain.x)
+		    .range(o.range.x);
+
+		var y = this.y = d3.scale.linear()
+		    .domain(o.domain.y)
+		    .range(o.range.y);
+
+		// line generator
+		this.line = d3.svg.line()
+		    .x(function(d, i) { return x(i); })
+		    .y(function(d, i) { return y(d); });
+	}
+	
+	D3ts.prototype.init = function (options) {
+		//D3.init.call(this, options);
+		
+		console.log('init!');
+		var x = this.x,
+			y = this.y,
+			height = this.height,
+			width = this.width,
+			margin = this.margin;
+		
+		
+		// Create the SVG and place it in the middle
+		this.svg.attr("width", width + margin.left + margin.right)
+		    .attr("height", height + margin.top + margin.bottom)
+		  .append("g")
+		    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+
+		// Line does not go out the axis
+		this.svg.append("defs").append("clipPath")
+		    .attr("id", "clip")
+		  .append("rect")
+		    .attr("width", width)
+		    .attr("height", height);
+
+		// X axis
+		this.svg.append("g")
+		    .attr("class", "x axis")
+		    .attr("transform", "translate(0," + height + ")")
+		    .call(d3.svg.axis().scale(x).orient("bottom"));
+
+		// Y axis
+		this.svg.append("g")
+		    .attr("class", "y axis")
+		    .call(d3.svg.axis().scale(y).orient("left"));
+
+		this.path = this.svg.append("g")
+		    .attr("clip-path", "url(#clip)")
+		  .append("path")
+		    .data([this.data])
+		    .attr("class", "line")
+		    .attr("d", this.line);		
+	};
+	
+	D3ts.prototype.tick = function (value) {
+		this.alreadyInit = this.alreadyInit || false;
+		if (!this.alreadyInit) {
+			this.init();
+			this.alreadyInit = true;
+		}
+		
+		var x = this.x;
+		
+		console.log('tick!');
+	
+		// push a new data point onto the back
+		this.data.push(value);
+
+		// redraw the line, and slide it to the left
+		this.path
+	    	.attr("d", this.line)
+	    	.attr("transform", null);
+
+		// pop the old data point off the front
+		if (this.data.length > this.n) {
+		
+	  		this.path
+	  			.transition()
+	  			.duration(500)
+	  			.ease("linear")
+	  			.attr("transform", "translate(" + x(-1) + ")");
+	  		
+	  		this.data.shift();
+	  	  
+		}
+	};
+	
+})(node);
+(function (node) {
+    
+    node.widgets.register('DataBar', DataBar);
+    
+    // ## Defaults
+    DataBar.defaults = {};
+    DataBar.defaults.id = 'databar';
+    DataBar.defaults.fieldset = {	
+	legend: 'Send DATA to players'
+    };
+    
+    // ## Meta-data
+    DataBar.name = 'Data Bar';
+    DataBar.version = '0.4';
+    DataBar.description = 'Adds a input field to send DATA messages to the players';
+    
+    function DataBar (options) {
+	this.bar = null;
+	this.root = null;
+	this.recipient = null;
+    }
+    
+    
+    DataBar.prototype.append = function (root) {
+	
+	var sendButton, textInput, dataInput;
+	
+	sendButton = W.addButton(root);
+	W.writeln('Text');
+	textInput = W.addTextInput(root, 'data-bar-text');
+	W.writeln('Data');
+	dataInput = W.addTextInput(root, 'data-bar-data');
+	
+	this.recipient = W.addRecipientSelector(root);
+	
+	var that = this;
+	
+	sendButton.onclick = function() {
+	    
+	    var to, data, text;
+	    
+	    to = that.recipient.value;
+	    text = textInput.value;
+	    data = dataInput.value;
+	    
+	    node.log('Parsed Data: ' + JSON.stringify(data));
+	    
+	    node.say(data, text, to);
+	};
+	
+	node.on('UPDATED_PLIST', function() {
+	    node.window.populateRecipientSelector(that.recipient, node.game.pl);
+	});
+	
+	return root;
+	
+    };
+    
+})(node);
+(function (node) {
+
+	// TODO: needs major refactoring
+	
+	var GameStage = node.GameStage,
+		PlayerList = node.PlayerList,
+		Table = node.window.Table,
+		HTMLRenderer = node.window.HTMLRenderer;
+	
+	node.widgets.register('DynamicTable', DynamicTable);
+	
+	
+	DynamicTable.prototype = new Table();
+	DynamicTable.prototype.constructor = Table;	
+	
+	
+	DynamicTable.id = 'dynamictable';
+	DynamicTable.name = 'Dynamic Table';
+	DynamicTable.version = '0.3.1';
+	
+	DynamicTable.dependencies = {
+		Table: {},
+		JSUS: {},
+		HTMLRenderer: {}
+	};
+	
+	function DynamicTable (options, data) {
+		//JSUS.extend(node.window.Table,this);
+		Table.call(this, options, data);
+		this.options = options;
+		this.id = options.id;
+		this.name = options.name || 'Dynamic Table';
+		this.fieldset = { legend: this.name,
+							id: this.id + '_fieldset'
+		};
+		
+		this.root = null;
+		this.bindings = {};
+		this.init(this.options);
+	}
+	
+	DynamicTable.prototype.init = function (options) {
+		this.options = options;
+		this.name = options.name || this.name;
+		this.auto_update = ('undefined' !== typeof options.auto_update) ? options.auto_update : true;
+		this.replace = options.replace || false;
+		this.htmlRenderer = new HTMLRenderer({renderers: options.renderers});
+		this.c('state', GameStage.compare);
+		this.setLeft([]);
+		this.parse(true);
+	};
+		
+	DynamicTable.prototype.bind = function (event, bindings) {
+		if (!event || !bindings) return;
+		var that = this;
+
+		node.on(event, function(msg) {
+			
+			if (bindings.x || bindings.y) {
+				// Cell
+				var func;
+				if (that.replace) {
+					func = function (x, y) {
+						var found = that.get(x,y);
+						if (found.length !== 0) {
+							for (var ci=0; ci < found.length; ci++) {
+								bindings.cell.call(that, msg, found[ci]);
+							}
+						}
+						else {
+							var cell = bindings.cell.call(that, msg, new Table.Cell({x: x, y: y}));
+							that.add(cell);
+						}
+					};
+				}
+				else {
+					func = function (x, y) {
+						var cell = bindings.cell.call(that, msg, new Table.Cell({x: x, y: y}));
+						that.add(cell, x, y);
+					};
+				}
+				
+				var x = bindings.x.call(that, msg);
+				var y = bindings.y.call(that, msg);
+				
+				if (x && y) {
+					
+					x = (x instanceof Array) ? x : [x];
+					y = (y instanceof Array) ? y : [y];
+					
+//					console.log('Bindings found:');
+//					console.log(x);
+//					console.log(y);
+					
+					for (var xi=0; xi < x.length; xi++) {
+						for (var yi=0; yi < y.length; yi++) {
+							// Replace or Add
+							func.call(that, x[xi], y[yi]);
+						}
+					}
+				}
+				// End Cell
+			}
+			
+			// Header
+			if (bindings.header) {
+				var h = bindings.header.call(that, msg);
+				h = (h instanceof Array) ? h : [h];
+				that.setHeader(h);
+			}
+			
+			// Left
+			if (bindings.left) {
+				var l = bindings.left.call(that, msg);
+				if (!JSUS.in_array(l, that.left)) {
+					that.header.push(l);
+				}
+			}
+			
+			// Auto Update?
+			if (that.auto_update) {
+				that.parse();
+			}
+		});
+		
+	};
+
+	DynamicTable.prototype.append = function (root) {
+		this.root = root;
+		root.appendChild(this.table);
+		return root;
+	};
+	
+	DynamicTable.prototype.listeners = function () {}; 
 
 })(node);
 (function (node) {
@@ -22442,77 +21887,410 @@ node.widgets = new Widgets();
 	
 })(node);
 (function (node) {
+    
+    node.widgets.register('GameBoard', GameBoard);
+    
+    var PlayerList = node.PlayerList;
+
+    // ## Defaults	
+    
+    GameBoard.defaults = {};
+    GameBoard.defaults.id = 'gboard';
+    GameBoard.defaults.fieldset = {
+	legend: 'Game Board'
+    };
+    
+    // ## Meta-data
+    
+    GameBoard.name = 'GameBoard';
+    GameBoard.version = '0.4.0';
+    GameBoard.description = 'Offer a visual representation of the state of all players in the game.';
+    
+    function GameBoard (options) {
 	
-	node.widgets.register('Wall', Wall);
+	this.id = options.id || GameBoard.defaults.id;
+	this.status_id = this.id + '_statusbar';
 	
-	var JSUS = node.JSUS;
+	this.board = null;
+	this.status = null;
+	this.root = null;
+	
+    }
+    
+    GameBoard.prototype.append = function (root) {
+	this.root = root;
+	this.status = node.window.addDiv(root, this.status_id);
+	this.board = node.window.addDiv(root, this.id);
+	
+	this.updateBoard(node.game.pl);
+	
+	
+	return root;
+    };
+    
+    GameBoard.prototype.listeners = function() {
+	var that = this;		
+	node.on('UPDATED_PLIST', function() {
+	    that.updateBoard(node.game.pl);
+	});
+	
+    };
+    
+    GameBoard.prototype.printLine = function (p) {
+
+	var line, levels, level;
+        levels = node.constants.stageLevels;
+
+        line = '[' + (p.name || p.id) + "]> \t"; 
+	line += '(' +  p.stage.round + ') ' + p.stage.stage + '.' + p.stage.step; 
+	line += ' ';
+	
+	switch (p.stageLevel) {
+
+	case levels.UNINITIALIZED:
+	    level = 'uninit.';
+	    break;
+	    
+	case levels.INITIALIZING:
+	    level = 'init...';
+	    break;
+
+	case levels.INITIALIZING:
+	    level = 'init!';
+	    break;
+
+	case levels.LOADING:
+	    level = 'loading';
+	    break;	    
+
+	case levels.LOADED:
+	    level = 'loaded';
+	    break;
+	    
+	case levels.PLAYING:
+	    level = 'playing';
+	    break;
+	case levels.DONE:
+	    level = 'done';
+	    break;
+		
+	default:
+	    level = p.stageLevel;
+	    break;		
+	}
+
+	return line + '(' + level + ')';
+    };
+    
+    GameBoard.prototype.printSeparator = function (p) {
+	return W.getElement('hr', null, {style: 'color: #CCC;'});
+    };
+    
+    
+    GameBoard.prototype.updateBoard = function (pl) {
+	var player, separator;
+        var that = this;
+	
+	this.status.innerHTML = 'Updating...';
+	
+	if (pl.size()) {
+	    that.board.innerHTML = '';
+	    pl.forEach( function(p) {
+		player = that.printLine(p);
+		
+		W.write(player, that.board);
+		
+		separator = that.printSeparator(p);
+		W.write(separator, that.board);
+	    });
+	}
+	
+	
+	this.status.innerHTML = 'Connected players: ' + node.game.pl.length;
+    };
+    
+})(node);
+
+(function (node) {
+
+	node.widgets.register('GameSummary', GameSummary);
+	
 
 // ## Defaults
 	
-	Wall.defaults = {};
-	Wall.defaults.id = 'wall';
-	Wall.defaults.fieldset = { legend: 'Game Log' };		
+	GameSummary.defaults = {};
+	GameSummary.defaults.id = 'gamesummary';
+	GameSummary.defaults.fieldset = { legend: 'Game Summary' };
 	
 // ## Meta-data
 	
+	GameSummary.name = 'Game Summary';
+	GameSummary.version = '0.3';
+	GameSummary.description = 'Show the general configuration options of the game.';
+	
+	function GameSummary (options) {
+		this.summaryDiv = null;
+	}
+	
+	GameSummary.prototype.append = function (root) {
+		this.root = root;
+		this.summaryDiv = node.window.addDiv(root);
+		this.writeSummary();
+		return root;
+	};
+	
+	GameSummary.prototype.writeSummary = function (idState, idSummary) {
+		var gName = document.createTextNode('Name: ' + node.game.metadata.name),
+			gDescr = document.createTextNode('Descr: ' + node.game.metadata.description),
+			gMinP = document.createTextNode('Min Pl.: ' + node.game.minPlayers),
+			gMaxP = document.createTextNode('Max Pl.: ' + node.game.maxPlayers);
+		
+		this.summaryDiv.appendChild(gName);
+		this.summaryDiv.appendChild(document.createElement('br'));
+		this.summaryDiv.appendChild(gDescr);
+		this.summaryDiv.appendChild(document.createElement('br'));
+		this.summaryDiv.appendChild(gMinP);
+		this.summaryDiv.appendChild(document.createElement('br'));
+		this.summaryDiv.appendChild(gMaxP);
+		
+		node.window.addDiv(this.root, this.summaryDiv, idSummary);
+	};
 
-	Wall.name = 'Wall';
-	Wall.version = '0.3';
-	Wall.description = 'Intercepts all LOG events and prints them ';
-	Wall.description += 'into a DIV element with an ordinal number and a timestamp.';
+})(node);
+
+(function (node) {
+
+    var GameStage = node.GameStage,
+    PlayerList = node.PlayerList;
+    
+    
+    node.widgets.register('GameTable', GameTable);
+    
+    // ## Defaults
+    
+    GameTable.defaults = {};
+    GameTable.defaults.id = 'gametable';
+    GameTable.defaults.fieldset = { 
+	legend: 'Game Table',
+	id: 'gametable_fieldset'
+    };
+    
+    // ## Meta-data
+    
+    GameTable.name = 'Game Table';
+    GameTable.version = '0.3';
+    
+    // ## Dependencies
+    
+    GameTable.dependencies = {
+	JSUS: {}
+    };
+    
+    function GameTable (options) {
+	this.options = options;
+	this.id = options.id;
+	this.name = options.name || GameTable.name;
+	
+	this.root = null;
+	this.gtbl = null;
+	this.plist = null;
+	
+	this.init(this.options);
+    }
+    
+    GameTable.prototype.init = function (options) {
+	
+	if (!this.plist) this.plist = new PlayerList();
+	
+	this.gtbl = new node.window.Table({
+	    auto_update: true,
+	    id: options.id || this.id,
+	    render: options.render
+	}, node.game.memory.db);
+	
+	
+	this.gtbl.c('state', GameStage.compare);
+	
+	this.gtbl.setLeft([]);
+	
+	this.gtbl.parse(true);
+    };
+    
+
+    GameTable.prototype.addRenderer = function (func) {
+	return this.gtbl.addRenderer(func);
+    };
+    
+    GameTable.prototype.resetRender = function () {
+	return this.gtbl.resetRenderer();
+    };
+    
+    GameTable.prototype.removeRenderer = function (func) {
+	return this.gtbl.removeRenderer(func);
+    };
+    
+    GameTable.prototype.append = function (root) {
+	this.root = root;
+	root.appendChild(this.gtbl.table);
+	return root;
+    };
+    
+    GameTable.prototype.listeners = function () {
+	var that = this;
+	
+	node.on.plist(function(msg) {	
+	    if (!msg.data.length) return;
+	    
+	    //var diff = JSUS.arrayDiff(msg.data,that.plist.db);
+	    var plist = new PlayerList({}, msg.data);
+	    var diff = plist.diff(that.plist);
+	    if (diff) {
+                //				console.log('New Players found');
+                //				console.log(diff);
+		diff.forEach(function(el){that.addPlayer(el);});
+	    }
+
+	    that.gtbl.parse(true);
+	});
+	
+	node.on('in.set.DATA', function (msg) {
+
+	    that.addLeft(msg.state, msg.from);
+	    var x = that.player2x(msg.from);
+	    var y = that.state2y(node.game.state, msg.text);
+	    
+	    that.gtbl.add(msg.data, x, y);
+	    that.gtbl.parse(true);
+	});
+    }; 
+    
+    GameTable.prototype.addPlayer = function (player) {
+	this.plist.add(player);
+	var header = this.plist.map(function(el){return el.name;});
+	this.gtbl.setHeader(header);
+    };
+    
+    GameTable.prototype.addLeft = function (state, player) {
+	if (!state) return;
+	state = new GameStage(state);
+	if (!JSUS.in_array({content:state.toString(), type: 'left'}, this.gtbl.left)){
+	    this.gtbl.add2Left(state.toString());
+	}
+	// Is it a new display associated to the same state?
+	else {
+	    var y = this.state2y(state);
+	    var x = this.player2x(player);
+	    if (this.gtbl.select('y','=',y).select('x','=',x).count() > 1) {
+		this.gtbl.add2Left(state.toString());
+	    }
+	}
+	
+    };
+    
+    GameTable.prototype.player2x = function (player) {
+	if (!player) return false;
+	return this.plist.select('id', '=', player).first().count;
+    };
+    
+    GameTable.prototype.x2Player = function (x) {
+	if (!x) return false;
+	return this.plist.select('count', '=', x).first().count;
+    };
+    
+    GameTable.prototype.state2y = function (state) {
+	if (!state) return false;
+	return node.game.plot.indexOf(state);
+    };
+    
+    GameTable.prototype.y2State = function (y) {
+	if (!y) return false;
+	return node.game.plot.jumpTo(new GameStage(),y);
+    };
+    
+    
+
+})(node);
+
+(function (node) {
+	
+	node.widgets.register('MoneyTalks', MoneyTalks);
+	
+	var JSUS = node.JSUS;
+	
+// ## Defaults
+	
+	MoneyTalks.defaults = {};
+	MoneyTalks.defaults.id = 'moneytalks';
+	MoneyTalks.defaults.fieldset = {legend: 'Earnings'};
+	
+// ## Meta-data
+	
+	MoneyTalks.name = 'Money talks';
+	MoneyTalks.version = '0.1.0';
+	MoneyTalks.description = 'Display the earnings of a player.';
 
 // ## Dependencies
 	
-	Wall.dependencies = {
+	MoneyTalks.dependencies = {
 		JSUS: {}
 	};
 	
-	function Wall (options) {
-		this.id = options.id || Wall.id;
-		this.name = options.name || this.name;
-		this.buffer = [];
-		this.counter = 0;
-
-		this.wall = node.window.getElement('pre', this.id);
+	
+	function MoneyTalks (options) {
+		this.id = options.id || MoneyTalks.defaults.id;
+				
+		this.root = null;		// the parent element
+		
+		this.spanCurrency = document.createElement('span');
+		this.spanMoney = document.createElement('span');
+		
+		this.currency = 'EUR';
+		this.money = 0;
+		this.precision = 2;
+		this.init(options);
 	}
 	
-	Wall.prototype.init = function (options) {
-		options = options || {};
-		this.counter = options.counter || this.counter;
+	
+	MoneyTalks.prototype.init = function (options) {
+		this.currency = options.currency || this.currency;
+		this.money = options.money || this.money;
+		this.precision = options.precision || this.precision;
+		
+		this.spanCurrency.id = options.idCurrency || this.spanCurrency.id || 'moneytalks_currency';
+		this.spanMoney.id = options.idMoney || this.spanMoney.id || 'moneytalks_money';
+		
+		this.spanCurrency.innerHTML = this.currency;
+		this.spanMoney.innerHTML = this.money;
 	};
 	
-	Wall.prototype.append = function (root) {
-		return root.appendChild(this.wall);
+	MoneyTalks.prototype.getRoot = function () {
+		return this.root;
 	};
 	
-	Wall.prototype.getRoot = function () {
-		return this.wall;
+	MoneyTalks.prototype.append = function (root, ids) {
+		var PREF = this.id + '_';
+		root.appendChild(this.spanMoney);
+		root.appendChild(this.spanCurrency);
+		return root;
+	};
+		
+	MoneyTalks.prototype.listeners = function () {
+		var that = this;
+		node.on('MONEYTALKS', function(amount) {
+			that.update(amount);
+		}); 
 	};
 	
-	Wall.prototype.listeners = function() {
-		var that = this;	
-		node.on('LOG', function (msg) {
-			that.debuffer();
-			that.write(msg);
-		});
-	}; 
-	
-	Wall.prototype.write = function (text) {
-		if (document.readyState !== 'complete') {
-			this.buffer.push(s);
-		} else {
-			var mark = this.counter++ + ') ' + JSUS.getTime() + ' ';
-			this.wall.innerHTML = mark + text + "\n" + this.wall.innerHTML;
-		}
-	};
-
-	Wall.prototype.debuffer = function () {
-		if (document.readyState === 'complete' && this.buffer.length > 0) {
-			for (var i=0; i < this.buffer.length; i++) {
-				this.write(this.buffer[i]);
+	MoneyTalks.prototype.update = function (amount) {
+		if ('number' !== typeof amount) {
+			// Try to parse strings
+			amount = parseInt(amount);
+			if (isNaN(n) || !isFinite(n)) {
+				return;
 			}
-			this.buffer = [];
 		}
+		this.money += amount;
+		this.spanMoney.innerHTML = this.money.toFixed(this.precision);
 	};
 	
 })(node);
@@ -22673,98 +22451,6 @@ node.widgets = new Widgets();
 })(node);
 (function (node) {
 	
-	// TODO: Introduce rules for update: other vs self
-	
-	node.widgets.register('StateBar', StateBar);	
-	
-// ## Defaults
-	
-	StateBar.defaults = {};
-	StateBar.defaults.id = 'statebar';
-	StateBar.defaults.fieldset = { legend: 'Change Game State' };	
-	
-// ## Meta-data
-	
-	StateBar.name = 'State Bar';
-	StateBar.version = '0.3.2';
-	StateBar.description = 'Provides a simple interface to change the state of the game.';
-	
-	function StateBar (options) {
-		this.id = options.id;
-		this.recipient = null;
-	}
-	
-	StateBar.prototype.getRoot = function () {
-		return this.root;
-	};
-	
-	StateBar.prototype.append = function (root) {
-		
-		var PREF = this.id + '_';
-		
-		var idButton = PREF + 'sendButton',
-			idStateSel = PREF + 'stateSel',
-			idRecipient = PREF + 'recipient'; 
-				
-		var sendButton = node.window.addButton(root, idButton);
-		var stateSel = node.window.addStateSelector(root, idStateSel);
-		this.recipient = node.window.addRecipientSelector(root, idRecipient);
-		
-		var that = this;
-		
-		node.on('UPDATED_PLIST', function() {
-			node.window.populateRecipientSelector(that.recipient, node.game.pl);
-		});
-		
-		sendButton.onclick = function() {
-	
-			// Should be within the range of valid values
-			// but we should add a check
-			var to = that.recipient.value;
-			
-			// STATE.STEP:ROUND
-			var parseState = /^(\d+)(?:\.(\d+))?(?::(\d+))?$/;
-			
-			var result = parseState.exec(stateSel.value);
-			var state, step, round, stateEvent, stateMsg;
-			if (result !== null) {
-				// Note: not result[0]!
-				state = result[1];
-				step = result[2] || 1;
-				round = result[3] || 1;
-				
-				node.log('Parsed State: ' + result.join("|"));
-				
-				state = new node.GameStage({
-					state: state,
-					step: step,
-					round: round
-				});
-				
-				// Self Update
-				if (to === 'ALL') {
-					stateEvent = node.IN + node.action.SAY + '.STATE';
-					stateMsg = node.msg.createSTATE(stateEvent, state);
-					node.emit(stateEvent, stateMsg);
-				}
-				
-				// Update Others
-				stateEvent = node.OUT + node.action.SAY + '.STATE';
-				node.emit(stateEvent, state, to);
-			}
-			else {
-				node.err('Not valid state. Not sent.');
-				node.socket.sendTXT('E: not valid state. Not sent');
-			}
-		};
-		
-		this.root = root;
-		return root;
-	};
-	
-})(node);
-(function (node) {
-	
 	node.widgets.register('NDDBBrowser', NDDBBrowser);
 	
 	var JSUS = node.JSUS,
@@ -22907,61 +22593,756 @@ node.widgets = new Widgets();
 	
 })(node);
 (function (node) {
-    
-    node.widgets.register('DataBar', DataBar);
-    
-    // ## Defaults
-    DataBar.defaults = {};
-    DataBar.defaults.id = 'databar';
-    DataBar.defaults.fieldset = {	
-	legend: 'Send DATA to players'
-    };
-    
-    // ## Meta-data
-    DataBar.name = 'Data Bar';
-    DataBar.version = '0.4';
-    DataBar.description = 'Adds a input field to send DATA messages to the players';
-    
-    function DataBar (options) {
-	this.bar = null;
-	this.root = null;
-	this.recipient = null;
-    }
-    
-    
-    DataBar.prototype.append = function (root) {
 	
-	var sendButton, textInput, dataInput;
 	
-	sendButton = W.addButton(root);
-	W.writeln('Text');
-	textInput = W.addTextInput(root, 'data-bar-text');
-	W.writeln('Data');
-	dataInput = W.addTextInput(root, 'data-bar-data');
+	// TODO: Introduce rules for update: other vs self
 	
-	this.recipient = W.addRecipientSelector(root);
+	node.widgets.register('NextPreviousState', NextPreviousState);
 	
-	var that = this;
+// ## Defaults
 	
-	sendButton.onclick = function() {
-	    
-	    var to, data, text;
-	    
-	    to = that.recipient.value;
-	    text = textInput.value;
-	    data = dataInput.value;
-	    
-	    node.log('Parsed Data: ' + JSON.stringify(data));
-	    
-	    node.say(data, text, to);
+	NextPreviousState.defaults = {};
+	NextPreviousState.defaults.id = 'nextprevious';
+	NextPreviousState.defaults.fieldset = { legend: 'Rew-Fwd' };		
+	
+// ## Meta-data
+	
+	NextPreviousState.name = 'Next,Previous State';
+	NextPreviousState.version = '0.3.2';
+	NextPreviousState.description = 'Adds two buttons to push forward or rewind the state of the game by one step.';
+		
+	function NextPreviousState(options) {
+		this.id = options.id;
+	}
+	
+	NextPreviousState.prototype.getRoot = function () {
+		return this.root;
 	};
 	
-	node.on('UPDATED_PLIST', function() {
-	    node.window.populateRecipientSelector(that.recipient, node.game.pl);
-	});
+	NextPreviousState.prototype.append = function (root) {
+		var idRew = this.id + '_button';
+		var idFwd = this.id + '_button';
+		
+		var rew = node.window.addButton(root, idRew, '<<');
+		var fwd = node.window.addButton(root, idFwd, '>>');
+		
+		
+		var that = this;
 	
+		var updateState = function (state) {
+			if (state) {
+				var stateEvent = node.IN + node.action.SAY + '.STATE';
+				var stateMsg = node.msg.createSTATE(stateEvent, state);
+				// Self Update
+				node.emit(stateEvent, stateMsg);
+				
+				// Update Others
+				stateEvent = node.OUT + node.action.SAY + '.STATE';
+				node.emit(stateEvent, state, 'ALL');
+			}
+			else {
+				node.log('No next/previous state. Not sent', 'ERR');
+			}
+		};
+		
+		fwd.onclick = function() {
+			updateState(node.game.next());
+		};
+			
+		rew.onclick = function() {
+			updateState(node.game.previous());
+		};
+		
+		this.root = root;
+		return root;
+	};
+	
+})(node);
+(function (node) {
+    
+    node.widgets.register('ServerInfoDisplay', ServerInfoDisplay);	
+
+    // ## Defaults
+    
+    ServerInfoDisplay.defaults = {};
+    ServerInfoDisplay.defaults.id = 'serverinfodisplay';
+    ServerInfoDisplay.defaults.fieldset = {
+	legend: 'Server Info',
+	id: 'serverinfo_fieldset'
+    };		
+    
+    // ## Meta-data
+    
+    ServerInfoDisplay.name = 'Server Info Display';
+    ServerInfoDisplay.version = '0.4';
+    
+    function ServerInfoDisplay (options) {	
+	this.id = options.id;
+	
+	this.root = null;
+	this.div = document.createElement('div');
+	this.table = null; //new node.window.Table();
+	this.button = null;
+    }
+    
+    ServerInfoDisplay.prototype.init = function (options) {
+	var that = this;
+	if (!this.div) {
+	    this.div = document.createElement('div');
+	}
+	this.div.innerHTML = 'Waiting for the reply from Server...';
+	if (!this.table) {
+	    this.table = new node.window.Table(options);
+	}
+	this.table.clear(true);
+	this.button = document.createElement('button');
+	this.button.value = 'Refresh';
+	this.button.appendChild(document.createTextNode('Refresh'));
+	this.button.onclick = function(){
+	    that.getInfo();
+	};
+	this.root.appendChild(this.button);
+	this.getInfo();
+    };
+    
+    ServerInfoDisplay.prototype.append = function (root) {
+	this.root = root;
+	root.appendChild(this.div);
+	return root;
+    };
+    
+    ServerInfoDisplay.prototype.getInfo = function() {
+	var that = this;
+	node.get('INFO', function (info) {
+	    node.window.removeChildrenFromNode(that.div);
+	    that.div.appendChild(that.processInfo(info));
+	});
+    };
+    
+    ServerInfoDisplay.prototype.processInfo = function(info) {
+	this.table.clear(true);
+	for (var key in info) {
+	    if (info.hasOwnProperty(key)){
+		this.table.addRow([key,info[key]]);
+	    }
+	}
+	return this.table.parse();
+    };
+    
+    ServerInfoDisplay.prototype.listeners = function () {
+	var that = this;
+	node.on('PLAYER_CREATED', function(){
+	    that.init();
+	});
+    }; 
+    
+})(node);
+(function (node) {
+	
+	// TODO: Introduce rules for update: other vs self
+	
+	node.widgets.register('StateBar', StateBar);	
+	
+// ## Defaults
+	
+	StateBar.defaults = {};
+	StateBar.defaults.id = 'statebar';
+	StateBar.defaults.fieldset = { legend: 'Change Game State' };	
+	
+// ## Meta-data
+	
+	StateBar.name = 'State Bar';
+	StateBar.version = '0.3.2';
+	StateBar.description = 'Provides a simple interface to change the state of the game.';
+	
+	function StateBar (options) {
+		this.id = options.id;
+		this.recipient = null;
+	}
+	
+	StateBar.prototype.getRoot = function () {
+		return this.root;
+	};
+	
+	StateBar.prototype.append = function (root) {
+		
+		var PREF = this.id + '_';
+		
+		var idButton = PREF + 'sendButton',
+			idStateSel = PREF + 'stateSel',
+			idRecipient = PREF + 'recipient'; 
+				
+		var sendButton = node.window.addButton(root, idButton);
+		var stateSel = node.window.addStateSelector(root, idStateSel);
+		this.recipient = node.window.addRecipientSelector(root, idRecipient);
+		
+		var that = this;
+		
+		node.on('UPDATED_PLIST', function() {
+			node.window.populateRecipientSelector(that.recipient, node.game.pl);
+		});
+		
+		sendButton.onclick = function() {
+	
+			// Should be within the range of valid values
+			// but we should add a check
+			var to = that.recipient.value;
+			
+			// STATE.STEP:ROUND
+			var parseState = /^(\d+)(?:\.(\d+))?(?::(\d+))?$/;
+			
+			var result = parseState.exec(stateSel.value);
+			var state, step, round, stateEvent, stateMsg;
+			if (result !== null) {
+				// Note: not result[0]!
+				state = result[1];
+				step = result[2] || 1;
+				round = result[3] || 1;
+				
+				node.log('Parsed State: ' + result.join("|"));
+				
+				state = new node.GameStage({
+					state: state,
+					step: step,
+					round: round
+				});
+				
+				// Self Update
+				if (to === 'ALL') {
+					stateEvent = node.IN + node.action.SAY + '.STATE';
+					stateMsg = node.msg.createSTATE(stateEvent, state);
+					node.emit(stateEvent, stateMsg);
+				}
+				
+				// Update Others
+				stateEvent = node.OUT + node.action.SAY + '.STATE';
+				node.emit(stateEvent, state, to);
+			}
+			else {
+				node.err('Not valid state. Not sent.');
+				node.socket.sendTXT('E: not valid state. Not sent');
+			}
+		};
+		
+		this.root = root;
+		return root;
+	};
+	
+})(node);
+(function (node) {
+
+    var Table = node.window.Table,
+    GameStage = node.GameStage;
+    
+    node.widgets.register('StateDisplay', StateDisplay);	
+
+    // ## Defaults
+    
+    StateDisplay.defaults = {};
+    StateDisplay.defaults.id = 'statedisplay';
+    StateDisplay.defaults.fieldset = { legend: 'State Display' };		
+    
+    // ## Meta-data
+    
+    StateDisplay.name = 'State Display';
+    StateDisplay.version = '0.4.2';
+    StateDisplay.description = 'Display basic information about player\'s status.';
+    
+    function StateDisplay (options) {
+	
+	this.id = options.id;
+	
+	this.root = null;
+	this.table = new Table();
+    }
+    
+    // TODO: Write a proper INIT method
+    StateDisplay.prototype.init = function () {};
+    
+    StateDisplay.prototype.getRoot = function () {
+	return this.root;
+    };
+    
+    
+    StateDisplay.prototype.append = function (root) {
+	var that = this;
+	var PREF = this.id + '_';
+	
+	var idFieldset = PREF + 'fieldset';
+	var idPlayer = PREF + 'player';
+	var idState = PREF + 'state'; 
+	
+	var checkPlayerName = setInterval(function(idState,idPlayer) {
+	    if (node.player && node.player.id) {
+		clearInterval(checkPlayerName);
+		that.updateAll();
+	    }
+	}, 100);
+	
+	root.appendChild(this.table.table);
+	this.root = root;
 	return root;
 	
     };
     
+    StateDisplay.prototype.updateAll = function() {
+	var stage, stageNo, stageId, playerId, tmp, miss;
+        miss = '-';
+        
+        stageId = miss;
+        stageNo = miss;
+        playerId = miss;
+
+	if (node.player.id) {
+            playerId = node.player.id;
+        }
+        
+	stage = node.game.getCurrentGameStage();	
+	if (stage) {
+            tmp = node.game.plot.getStep(stage);
+            stageId = tmp ? tmp.id : '-';
+            stageNo = stage.toString();
+        }
+        
+	this.table.clear(true);
+	this.table.addRow(['Stage  No: ', stageNo]);
+	this.table.addRow(['Stage  Id: ', stageId]);
+	this.table.addRow(['Player Id: ', playerId]);
+	this.table.parse();
+	
+    };
+    
+    StateDisplay.prototype.listeners = function () {
+	var that = this;
+	
+	node.on('STEP_CALLBACK_EXECUTED', function() {
+	    that.updateAll();
+	}); 
+    }; 
+    
+})(node);
+
+(function (node) {
+    
+    node.widgets.register('VisualState', VisualState);
+    
+    var JSUS = node.JSUS,
+    Table = node.window.Table;
+    
+    // ## Defaults
+    
+    VisualState.defaults = {};
+    VisualState.defaults.id = 'visualstate';
+    VisualState.defaults.fieldset = { 
+	legend: 'State',
+	id: 'visualstate_fieldset'
+    };	
+    
+    // ## Meta-data
+    
+    VisualState.name = 'Visual State';
+    VisualState.version = '0.2.1';
+    VisualState.description = 'Visually display current, previous and next state of the game.';
+    
+    // ## Dependencies
+    
+    VisualState.dependencies = {
+	JSUS: {},
+	Table: {}
+    };
+    
+    
+    function VisualState (options) {
+	this.id = options.id;
+	
+	this.root = null;		// the parent element
+	this.table = new Table();
+    }
+    
+    VisualState.prototype.getRoot = function () {
+	return this.root;
+    };
+    
+    VisualState.prototype.append = function (root, ids) {
+	var that = this;
+	var PREF = this.id + '_';
+	root.appendChild(this.table.table);
+	this.writeState();
+	return root;
+    };
+    
+    VisualState.prototype.listeners = function () {
+	var that = this;
+        
+        node.on('STEP_CALLBACK_EXECUTED', function() {
+	    that.writeState();
+	});
+
+        // Game over and init?
+    };
+    
+    VisualState.prototype.writeState = function () {
+	var miss, state, pr, nx, tmp;
+        var curStep, nextStep, prevStep;
+	var t;
+        
+        miss = '-';
+	state = 'Uninitialized';
+        pr = miss;
+        nx = miss;
+        
+        curStep = node.game.getCurrentGameStage();
+        
+	if (curStep) {
+            tmp = node.game.plot.getStep(curStep);
+            state = tmp ? tmp.id : miss;
+            
+	    prevStep = node.game.plot.previous(curStep);
+            if (prevStep) {
+                tmp = node.game.plot.getStep(prevStep);
+	        pr = tmp ? tmp.id : miss;
+            }
+            
+	    nextStep = node.game.plot.next(curStep);
+            if (nextStep) {
+                tmp = node.game.plot.getStep(nextStep);
+	        nx = tmp ? tmp.id : miss;
+            }
+        }
+        
+	this.table.clear(true);
+
+	this.table.addRow(['Previous: ', pr]);
+	this.table.addRow(['Current: ', state]);
+	this.table.addRow(['Next: ', nx]);
+	
+	t = this.table.select('y', '=', 2);
+	t.addClass('strong');
+	t.select('x','=',0).addClass('underline');
+	this.table.parse();
+    };
+    
+})(node);
+(function (node) {
+	
+	node.widgets.register('VisualTimer', VisualTimer);
+	
+	var JSUS = node.JSUS;
+
+// ## Defaults
+	
+	VisualTimer.defaults = {};
+	VisualTimer.defaults.id = 'visualtimer';
+	VisualTimer.defaults.fieldset = {
+			legend: 'Time left',
+			id: 'visualtimer_fieldset'
+	};		
+	
+// ## Meta-data
+	
+	VisualTimer.name = 'Visual Timer';
+	VisualTimer.version = '0.3.3';
+	VisualTimer.description = 'Display a timer for the game. Timer can trigger events. Only for countdown smaller than 1h.';
+	
+// ## Dependencies
+	
+	VisualTimer.dependencies = {
+		GameTimer : {},
+		JSUS: {}
+	};
+	
+	function VisualTimer (options) {
+		this.options = options;
+		this.id = options.id;
+
+		this.gameTimer = null;
+		
+		this.timerDiv = null;	// the DIV in which to display the timer
+		this.root = null;		// the parent element
+		
+		this.init(this.options);
+	}
+	
+	VisualTimer.prototype.init = function (options) {
+		options = options || this.options;
+		var that = this;
+		(function initHooks() {
+			if (options.hooks) {
+				if (!options.hooks instanceof Array) {
+					options.hooks = [options.hooks];
+				}
+			}
+			else {
+				options.hooks = [];
+			}
+			
+			options.hooks.push({hook: that.updateDisplay,
+								ctx: that
+			});
+		})();
+		
+		
+		this.gameTimer = (options.gameTimer) || node.timer.createTimer();
+		
+		if (this.gameTimer) {
+			this.gameTimer.init(options);
+		}
+		else {
+			node.log('GameTimer object could not be initialized. VisualTimer will not work properly.', 'ERR');
+		}
+		
+		if (this.timerDiv) {
+			this.timerDiv.className = options.className || '';
+		}
+		
+	};
+	
+	VisualTimer.prototype.getRoot = function () {
+		return this.root;
+	};
+	
+	VisualTimer.prototype.append = function (root) {
+		this.root = root;
+		this.timerDiv = node.window.addDiv(root, this.id + '_div');
+		this.updateDisplay();
+		return root;	
+	};
+	
+	VisualTimer.prototype.updateDisplay = function () {
+		if (!this.gameTimer.milliseconds || this.gameTimer.milliseconds === 0) {
+			this.timerDiv.innerHTML = '00:00';
+			return;
+		}
+		var time = this.gameTimer.milliseconds - this.gameTimer.timePassed;
+		time = JSUS.parseMilliseconds(time);
+		var minutes = (time[2] < 10) ? '' + '0' + time[2] : time[2];
+		var seconds = (time[3] < 10) ? '' + '0' + time[3] : time[3];
+		this.timerDiv.innerHTML = minutes + ':' + seconds;
+	};
+	
+	VisualTimer.prototype.start = function() {
+		this.updateDisplay();
+		this.gameTimer.start();
+	};
+	
+	VisualTimer.prototype.restart = function (options) {
+		this.init(options);
+		this.start();
+	};
+	
+	VisualTimer.prototype.stop = function (options) {
+        if (!this.gameTimer.isStopped()) {
+            this.gameTimer.stop();
+        }
+	};
+	
+	VisualTimer.prototype.resume = function (options) {
+		this.gameTimer.resume();
+	};
+		
+	VisualTimer.prototype.listeners = function () {
+		var that = this;
+		node.on('PLAYING', function() {
+		    var stepObj = node.game.getCurrentStep();
+		    if (!stepObj) return;
+		    var timer = stepObj.timer;
+			if (timer) {
+				timer = JSUS.clone(timer);
+				that.timerDiv.className = '';
+				var options = {},
+					typeoftimer = typeof timer; 
+				switch (typeoftimer) {
+				
+					case 'number':
+						options.milliseconds = timer;
+						break;
+					case 'object':
+						options = timer;
+						break;
+					case 'function':
+						options.milliseconds = timer;
+						break;
+					case 'string':
+						options.milliseconds = Number(timer);
+						break;
+				}
+			
+				if (!options.milliseconds) return;
+
+                options.update = 1000;
+			
+				if ('function' === typeof options.milliseconds) {
+					options.milliseconds = options.milliseconds.call(node.game);
+				}
+				
+				if (!options.timeup) {
+					options.timeup = 'DONE';
+				}
+				
+				that.gameTimer.init(options);
+				that.start();
+			}
+		});
+		
+		node.on('DONE', function() {
+			// TODO: This should be enabled again
+			that.stop();
+			that.timerDiv.className = 'strike';
+		});
+	};
+	
+})(node);
+
+(function (node) {
+
+    node.widgets.register('WaitScreen', WaitScreen);
+	
+// ## Defaults
+	
+    WaitScreen.defaults = {};
+    WaitScreen.defaults.id = 'waiting';
+    WaitScreen.defaults.fieldset = false;
+    
+// ## Meta-data
+	
+    WaitScreen.name = 'WaitingScreen';
+    WaitScreen.version = '0.4.0';
+    WaitScreen.description = 'Show a standard waiting screen';
+    
+    function WaitScreen (options) {
+	this.id = options.id;
+	
+	this.text = {
+            waiting: options.waitingText || 'Waiting for other players to be done...',
+            stepping: options.steppingText || 'Initializing, game will start soon...'
+        }
+
+	this.waitingDiv = null;
+    }
+    
+    function updateScreen(text) {
+        if (!this.waitingDiv) {
+	    this.waitingDiv = node.window.addDiv(document.body, this.id);
+	}
+	    
+	if (this.waitingDiv.style.display === 'none'){
+	    this.waitingDiv.style.display = '';
+	}			
+	
+	this.waitingDiv.innerHTML = text;
+    }
+
+    function hideScreen() {
+        if (this.waitingDiv) {
+            if (this.waitingDiv.style.display === '') {
+                this.waitingDiv.style.display = 'none';
+            }
+        }
+    }
+
+    WaitScreen.prototype.append = function(root) {
+	return root;
+    };
+    
+    WaitScreen.prototype.getRoot = function() {
+	return this.waitingDiv;
+    };
+    
+    WaitScreen.prototype.listeners = function() {
+        var that = this;
+        node.on('BEFORE_DONE', function(text) {
+            updateScreen.call(that, text || that.text.waiting)
+        });
+	
+        node.on('STEPPING', function(text) {
+            updateScreen.call(that, text || that.text.stepping)
+        });
+               
+	// It is supposed to fade away when a new state starts
+        node.on('PLAYING', function(text) {
+            hideScreen.call(that);
+        });
+
+        // It is supposed to fade away when a new state starts
+        node.on('GAME_OVER', function(text) {
+            hideScreen.call(that);
+        });
+
+
+    }; 
+})(node);
+(function (node) {
+	
+	node.widgets.register('Wall', Wall);
+	
+	var JSUS = node.JSUS;
+
+// ## Defaults
+	
+	Wall.defaults = {};
+	Wall.defaults.id = 'wall';
+	Wall.defaults.fieldset = { legend: 'Game Log' };		
+	
+// ## Meta-data
+	
+
+	Wall.name = 'Wall';
+	Wall.version = '0.3';
+	Wall.description = 'Intercepts all LOG events and prints them ';
+	Wall.description += 'into a DIV element with an ordinal number and a timestamp.';
+
+// ## Dependencies
+	
+	Wall.dependencies = {
+		JSUS: {}
+	};
+	
+	function Wall (options) {
+		this.id = options.id || Wall.id;
+		this.name = options.name || this.name;
+		this.buffer = [];
+		this.counter = 0;
+
+		this.wall = node.window.getElement('pre', this.id);
+	}
+	
+	Wall.prototype.init = function (options) {
+		options = options || {};
+		this.counter = options.counter || this.counter;
+	};
+	
+	Wall.prototype.append = function (root) {
+		return root.appendChild(this.wall);
+	};
+	
+	Wall.prototype.getRoot = function () {
+		return this.wall;
+	};
+	
+	Wall.prototype.listeners = function() {
+		var that = this;	
+		node.on('LOG', function (msg) {
+			that.debuffer();
+			that.write(msg);
+		});
+	}; 
+	
+	Wall.prototype.write = function (text) {
+		if (document.readyState !== 'complete') {
+			this.buffer.push(s);
+		} else {
+			var mark = this.counter++ + ') ' + JSUS.getTime() + ' ';
+			this.wall.innerHTML = mark + text + "\n" + this.wall.innerHTML;
+		}
+	};
+
+	Wall.prototype.debuffer = function () {
+		if (document.readyState === 'complete' && this.buffer.length > 0) {
+			for (var i=0; i < this.buffer.length; i++) {
+				this.write(this.buffer[i]);
+			}
+			this.buffer = [];
+		}
+	};
+	
 })(node);
