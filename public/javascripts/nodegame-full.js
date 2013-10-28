@@ -1255,711 +1255,710 @@ JSUS.extend(COMPATIBILITY);
 
 (function (JSUS) {
     
-    function ARRAY(){};
+function ARRAY(){};
 
 
-    /**
-     * ## ARRAY.filter
-     * 
-     * Add the filter method to ARRAY objects in case the method is not
-     * supported natively. 
-     * 
-     * @see https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/ARRAY/filter
-     * 
-     */
-    if (!Array.prototype.filter) {  
-        Array.prototype.filter = function(fun /*, thisp */) {  
-            "use strict";  
-            if (this === void 0 || this === null) throw new TypeError();  
+/**
+ * ## ARRAY.filter
+ * 
+ * Add the filter method to ARRAY objects in case the method is not
+ * supported natively. 
+ * 
+ * 		@see https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/ARRAY/filter
+ * 
+ */
+if (!Array.prototype.filter) {  
+    Array.prototype.filter = function(fun /*, thisp */) {  
+        "use strict";  
+        if (this === void 0 || this === null) throw new TypeError();  
 
-            var t = Object(this);  
-            var len = t.length >>> 0;  
-            if (typeof fun !== "function") throw new TypeError();  
-            
-            var res = [];  
-            var thisp = arguments[1];  
-            for (var i = 0; i < len; i++) {  
-                if (i in t) {  
-                    var val = t[i]; // in case fun mutates this  
-                    if (fun.call(thisp, val, i, t)) { 
-                        res.push(val);  
-                    }
+        var t = Object(this);  
+        var len = t.length >>> 0;  
+        if (typeof fun !== "function") throw new TypeError();  
+    
+        var res = [];  
+        var thisp = arguments[1];  
+        for (var i = 0; i < len; i++) {  
+            if (i in t) {  
+                var val = t[i]; // in case fun mutates this  
+                if (fun.call(thisp, val, i, t)) { 
+                    res.push(val);  
                 }
             }
-            
-            return res;  
-        };
+        }
+        
+        return res;  
+    };
+}
+
+/**
+ * ## ARRAY.isArray
+ * 
+ * Returns TRUE if a variable is an Array
+ * 
+ * This method is exactly the same as `Array.isArray`, 
+ * but it works on a larger share of browsers. 
+ * 
+ * @param {object} o The variable to check.
+ * @see Array.isArray
+ *  
+ */
+ARRAY.isArray = function (o) {
+	if (!o) return false;
+	return Object.prototype.toString.call(o) === '[object Array]';	
+};
+
+/**
+ * ## ARRAY.seq
+ * 
+ * Returns an array of sequential numbers from start to end
+ * 
+ * If start > end the series goes backward.
+ * 
+ * The distance between two subsequent numbers can be controlled by the increment parameter.
+ * 
+ * When increment is not a divider of Abs(start - end), end will
+ * be missing from the series.
+ * 
+ * A callback function to apply to each element of the sequence
+ * can be passed as fourth parameter.
+ *  
+ * Returns FALSE, in case parameters are incorrectly specified
+ * 
+ * @param {number} start The first element of the sequence
+ * @param {number} end The last element of the sequence
+ * @param {number} increment Optional. The increment between two subsequents element of the sequence
+ * @param {Function} func Optional. A callback function that can modify each number of the sequence before returning it
+ *  
+ * @return {array} out The final sequence 
+ */
+ARRAY.seq = function (start, end, increment, func) {
+	if ('number' !== typeof start) return false;
+	if (start === Infinity) return false;
+	if ('number' !== typeof end) return false;
+	if (end === Infinity) return false;
+	if (start === end) return [start];
+	
+	if (increment === 0) return false;
+	if (!JSUS.in_array(typeof increment, ['undefined', 'number'])) {
+		return false;
+	}
+	
+	increment = increment || 1;
+	func = func || function(e) {return e;};
+	
+	var i = start,
+		out = [];
+	
+	if (start < end) {
+		while (i <= end) {
+    		out.push(func(i));
+    		i = i + increment;
+    	}
+	}
+	else {
+		while (i >= end) {
+    		out.push(func(i));
+    		i = i - increment;
+    	}
+	}
+	
+    return out;
+};
+
+
+/**
+ * ## ARRAY.each
+ * 
+ * Executes a callback on each element of the array
+ * 
+ * If an error occurs returns FALSE.
+ * 
+ * @param {array} array The array to loop in
+ * @param {Function} func The callback for each element in the array
+ * @param {object} context Optional. The context of execution of the callback. Defaults ARRAY.each
+ * 
+ * @return {Boolean} TRUE, if execution was successful
+ */
+ARRAY.each = function (array, func, context) {
+	if ('object' !== typeof array) return false;
+	if (!func) return false;
+    
+	context = context || this;
+    var i, len = array.length;
+    for (i = 0 ; i < len; i++) {
+        func.call(context, array[i]);
+    }
+    
+    return true;
+};
+
+/**
+ * ## ARRAY.map
+ * 
+ * Applies a callback function to each element in the db, store
+ * the results in an array and returns it
+ * 
+ * Any number of additional parameters can be passed after the 
+ * callback function
+ * 
+ * @return {array} out The result of the mapping execution
+ * @see ARRAY.each
+ * 
+ */
+ARRAY.map = function () {
+    if (arguments.length < 2) return;
+    var	args = Array.prototype.slice.call(arguments),
+    	array = args.shift(),
+    	func = args[0];
+    
+    if (!ARRAY.isArray(array)) {
+    	JSUS.log('ARRAY.map() the first argument must be an array. Found: ' + array);
+    	return;
     }
 
-    /**
-     * ## ARRAY.isArray
-     * 
-     * Returns TRUE if a variable is an Array
-     * 
-     * This method is exactly the same as `Array.isArray`, 
-     * but it works on a larger share of browsers. 
-     * 
-     * @param {object} o The variable to check.
-     * @see Array.isArray
-     *  
-     */
-    ARRAY.isArray = function (o) {
-        if (!o) return false;
-        return Object.prototype.toString.call(o) === '[object Array]';  
-    };
-
-    /**
-     * ## ARRAY.seq
-     * 
-     * Returns an array of sequential numbers from start to end
-     * 
-     * If start > end the series goes backward.
-     * 
-     * The distance between two subsequent numbers can be controlled by the increment parameter.
-     * 
-     * When increment is not a divider of Abs(start - end), end will
-     * be missing from the series.
-     * 
-     * A callback function to apply to each element of the sequence
-     * can be passed as fourth parameter.
-     *  
-     * Returns FALSE, in case parameters are incorrectly specified
-     * 
-     * @param {number} start The first element of the sequence
-     * @param {number} end The last element of the sequence
-     * @param {number} increment Optional. The increment between two subsequents element 
-     *   of the sequence
-     * @param {Function} func Optional. A callback function that can modify 
-     *   each number of the sequence before returning it
-     *  
-     * @return {array} out The final sequence 
-     */
-    ARRAY.seq = function (start, end, increment, func) {
-        if ('number' !== typeof start) return false;
-        if (start === Infinity) return false;
-        if ('number' !== typeof end) return false;
-        if (end === Infinity) return false;
-        if (start === end) return [start];
-        
-        if (increment === 0) return false;
-        if (!JSUS.in_array(typeof increment, ['undefined', 'number'])) {
-            return false;
-        }
-        
-        increment = increment || 1;
-        func = func || function(e) {return e;};
-        
-        var i = start,
-        out = [];
-        
-        if (start < end) {
-            while (i <= end) {
-                out.push(func(i));
-                i = i + increment;
-            }
-        }
-        else {
-            while (i >= end) {
-                out.push(func(i));
-                i = i - increment;
-            }
-        }
-        
-        return out;
-    };
-
-
-    /**
-     * ## ARRAY.each
-     * 
-     * Executes a callback on each element of the array
-     * 
-     * If an error occurs returns FALSE.
-     * 
-     * @param {array} array The array to loop in
-     * @param {Function} func The callback for each element in the array
-     * @param {object} context Optional. The context of execution of the callback. Defaults ARRAY.each
-     * 
-     * @return {Boolean} TRUE, if execution was successful
-     */
-    ARRAY.each = function (array, func, context) {
-        if ('object' !== typeof array) return false;
-        if (!func) return false;
-        
-        context = context || this;
-        var i, len = array.length;
-        for (i = 0 ; i < len; i++) {
-            func.call(context, array[i]);
-        }
-        
-        return true;
-    };
-
-    /**
-     * ## ARRAY.map
-     * 
-     * Applies a callback function to each element in the db, store
-     * the results in an array and returns it
-     * 
-     * Any number of additional parameters can be passed after the 
-     * callback function
-     * 
-     * @return {array} out The result of the mapping execution
-     * @see ARRAY.each
-     * 
-     */
-    ARRAY.map = function () {
-        if (arguments.length < 2) return;
-        var     args = Array.prototype.slice.call(arguments),
-        array = args.shift(),
-        func = args[0];
-        
-        if (!ARRAY.isArray(array)) {
-            JSUS.log('ARRAY.map() the first argument must be an array. Found: ' + array);
-            return;
-        }
-
-        var out = [],
-        o = undefined;
-        for (var i = 0; i < array.length; i++) {
-            args[0] = array[i];
-            o = func.apply(this, args);
-            if ('undefined' !== typeof o) out.push(o);
-        }
-        return out;
-    };
-
-
-    /**
-     * ## ARRAY.removeElement
-     * 
-     * Removes an element from the the array, and returns it
-     * 
-     * For objects, deep equality comparison is performed 
-     * through JSUS.equals.
-     * 
-     * If no element is removed returns FALSE.
-     * 
-     * @param {mixed} needle The element to search in the array
-     * @param {array} haystack The array to search in
-     * 
-     * @return {mixed} The element that was removed, FALSE if none was removed
-     * @see JSUS.equals
-     */
-    ARRAY.removeElement = function (needle, haystack) {
-        if ('undefined' === typeof needle || !haystack) return false;
-        
-        if ('object' === typeof needle) {
-            var func = JSUS.equals;
-        } else {
-            var func = function (a,b) {
-                return (a === b);
-            }
-        }
-        
-        for (var i=0; i < haystack.length; i++) {
-            if (func(needle, haystack[i])){
-                return haystack.splice(i,1);
-            }
-        }
-        
-        return false;
-    };
-
-    /**
-     * ## ARRAY.inArray 
-     * 
-     * Returns TRUE if the element is contained in the array,
-     * FALSE otherwise
-     * 
-     * For objects, deep equality comparison is performed 
-     * through JSUS.equals.
-     * 
-     * Alias ARRAY.in_array (deprecated)
-     * 
-     * @param {mixed} needle The element to search in the array
-     * @param {array} haystack The array to search in
-     * @return {Boolean} TRUE, if the element is contained in the array
-     * 
-     *  @see JSUS.equals
-     */
-    ARRAY.inArray = ARRAY.in_array = function (needle, haystack) {
-        if (!haystack) return false;
-        
-        var func = JSUS.equals;    
-        for (var i = 0; i < haystack.length; i++) {
-            if (func.call(this, needle, haystack[i])) {
-                return true;
-            }
-        }
-        // <!-- console.log(needle, haystack); -->
-        return false;
-    };
-
-    /**
-     * ## ARRAY.getNGroups
-     * 
-     * Returns an array of N array containing the same number of elements
-     * If the length of the array and the desired number of elements per group
-     * are not multiple, the last group could have less elements
-     * 
-     * The original array is not modified.
-     *  
-     *  @see ARRAY.getGroupsSizeN
-     *  @see ARRAY.generateCombinations
-     *  @see ARRAY.matchN
-     *  
-     * @param {array} array The array to split in subgroups
-     * @param {number} N The number of subgroups
-     * @return {array} Array containing N groups
-     */ 
-    ARRAY.getNGroups = function (array, N) {
-        return ARRAY.getGroupsSizeN(array, Math.floor(array.length / N));
-    };
-
-    /**
-     * ## ARRAY.getGroupsSizeN
-     * 
-     * Returns an array of array containing N elements each
-     * The last group could have less elements
-     * 
-     * @param {array} array The array to split in subgroups
-     * @param {number} N The number of elements in each subgroup
-     * @return {array} Array containing groups of size N
-     * 
-     *          @see ARRAY.getNGroups
-     *          @see ARRAY.generateCombinations
-     *          @see ARRAY.matchN
-     * 
-     */ 
-    ARRAY.getGroupsSizeN = function (array, N) {
-        
-        var copy = array.slice(0);
-        var len = copy.length;
-        var originalLen = copy.length;
-        var result = [];
-        
-        // <!-- Init values for the loop algorithm -->
-        var i, idx;
-        var group = [], count = 0;
-        for (i=0; i < originalLen; i++) {
-            
-            // <!-- Get a random idx between 0 and array length -->
-            idx = Math.floor(Math.random()*len);
-            
-            // <!-- Prepare the array container for the elements of a new group -->
-            if (count >= N) {
-                result.push(group);
-                count = 0;
-                group = [];
-            }
-            
-            // <!-- Insert element in the group -->
-            group.push(copy[idx]);
-            
-            // <!-- Update -->
-            copy.splice(idx,1);
-            len = copy.length;
-            count++;
-        }
-        
-        // <!-- Add any remaining element -->
-        if (group.length > 0) {
-            result.push(group);
-        }
-        
-        return result;
-    };
-
-    /**
-     * ## ARRAY._latinSquare
-     * 
-     * Generate a random Latin Square of size S
-     * 
-     * If N is defined, it returns "Latin Rectangle" (SxN) 
-     * 
-     * A parameter controls for self-match, i.e. whether the symbol "i" 
-     * is found or not in in column "i".
-     * 
-     * @api private
-     * @param {number} S The number of rows
-     * @param {number} Optional. N The number of columns. Defaults N = S
-     * @param {boolean} Optional. If TRUE self-match is allowed. Defaults TRUE
-     * @return {array} The resulting latin square (or rectangle)
-     * 
-     */
-    ARRAY._latinSquare = function (S, N, self) {
-        self = ('undefined' === typeof self) ? true : self;
-        if (S === N && !self) return false; // <!-- infinite loop -->
-        var seq = [];
-        var latin = [];
-        for (var i=0; i< S; i++) {
-            seq[i] = i;
-        }
-        
-        var idx = null;
-        
-        var start = 0;
-        var limit = S;
-        var extracted = [];
-        if (!self) {
-            limit = S-1;
-        }
-        
-        for (i=0; i < N; i++) {
-            do {
-                idx = JSUS.randomInt(start,limit);
-            }
-            while (JSUS.in_array(idx, extracted));
-            extracted.push(idx);
-            
-            if (idx == 1) {
-                latin[i] = seq.slice(idx);
-                latin[i].push(0);
-            }
-            else {
-                latin[i] = seq.slice(idx).concat(seq.slice(0,(idx)));
-            }
-            
-        }
-        
-        return latin;
-    };
-
-    /**
-     * ## ARRAY.latinSquare
-     * 
-     * Generate a random Latin Square of size S
-     * 
-     * If N is defined, it returns "Latin Rectangle" (SxN) 
-     * 
-     * @param {number} S The number of rows
-     * @param {number} Optional. N The number of columns. Defaults N = S
-     * @return {array} The resulting latin square (or rectangle)
-     * 
-     */
-    ARRAY.latinSquare = function (S, N) {
-        if (!N) N = S;
-        if (!S || S < 0 || (N < 0)) return false;
-        if (N > S) N = S;
-        
-        return ARRAY._latinSquare(S, N, true);
-    };
-
-    /**
-     * ## ARRAY.latinSquareNoSelf
-     * 
-     * Generate a random Latin Square of size Sx(S-1), where 
-     * in each column "i", the symbol "i" is not found
-     * 
-     * If N < S, it returns a "Latin Rectangle" (SxN)
-     * 
-     * @param {number} S The number of rows
-     * @param {number} Optional. N The number of columns. Defaults N = S-1
-     * @return {array} The resulting latin square (or rectangle)
-     */
-    ARRAY.latinSquareNoSelf = function (S, N) {
-        if (!N) N = S-1;
-        if (!S || S < 0 || (N < 0)) return false;
-        if (N > S) N = S-1;
-        
-        return ARRAY._latinSquare(S, N, false);
+    var out = [],
+    	o = undefined;
+    for (var i = 0; i < array.length; i++) {
+    	args[0] = array[i];
+        o = func.apply(this, args);
+        if ('undefined' !== typeof o) out.push(o);
     }
+    return out;
+};
 
 
-    /**
-     * ## ARRAY.generateCombinations
-     * 
-     *  Generates all distinct combinations of exactly r elements each 
-     *  and returns them into an array
-     *  
-     *  @param {array} array The array from which the combinations are extracted
-     *  @param {number} r The number of elements in each combination
-     *  @return {array} The total sets of combinations
-     *  
-     *          @see ARRAY.getGroupSizeN
-     *          @see ARRAY.getNGroups
-     *          @see ARRAY.matchN
-     * 
-     */
-    ARRAY.generateCombinations = function (array, r) {
-        function values(i, a) {
-            var ret = [];
-            for (var j = 0; j < i.length; j++) ret.push(a[i[j]]);
-            return ret;
+/**
+ * ## ARRAY.removeElement
+ * 
+ * Removes an element from the the array, and returns it
+ * 
+ * For objects, deep equality comparison is performed 
+ * through JSUS.equals.
+ * 
+ * If no element is removed returns FALSE.
+ * 
+ * @param {mixed} needle The element to search in the array
+ * @param {array} haystack The array to search in
+ * 
+ * @return {mixed} The element that was removed, FALSE if none was removed
+ * @see JSUS.equals
+ */
+ARRAY.removeElement = function (needle, haystack) {
+    if ('undefined' === typeof needle || !haystack) return false;
+	
+    if ('object' === typeof needle) {
+        var func = JSUS.equals;
+    } else {
+        var func = function (a,b) {
+            return (a === b);
         }
-        var n = array.length;
-        var indices = [];
-        for (var i = 0; i < r; i++) indices.push(i);
-        var final = [];
-        for (var i = n - r; i < n; i++) final.push(i);
-        while (!JSUS.equals(indices, final)) {
-            callback(values(indices, array));
-            var i = r - 1;
-            while (indices[i] == n - r + i) i -= 1;
-            indices[i] += 1;
-            for (var j = i + 1; j < r; j++) indices[j] = indices[i] + j - i;
+    }
+    
+    for (var i=0; i < haystack.length; i++) {
+        if (func(needle, haystack[i])){
+            return haystack.splice(i,1);
         }
-        return values(indices, array); 
-    };
+    }
+    
+    return false;
+};
 
-    /**
-     * ## ARRAY.matchN
-     * 
-     * Match each element of the array with N random others
-     * 
-     * If strict is equal to true, elements cannot be matched multiple times.
-     * 
-     * *Important*: this method has a bug / feature. If the strict parameter is set,
-     * the last elements could remain without match, because all the other have been 
-     * already used. Another recombination would be able to match all the 
-     * elements instead.
-     * 
-     * @param {array} array The array in which operate the matching
-     * @param {number} N The number of matches per element
-     * @param {Boolean} strict Optional. If TRUE, matched elements cannot be repeated. Defaults, FALSE 
-     * @return {array} result The results of the matching
-     * 
-     *          @see ARRAY.getGroupSizeN
-     *          @see ARRAY.getNGroups
-     *          @see ARRAY.generateCombinations
-     * 
-     */
-    ARRAY.matchN = function (array, N, strict) {
-        if (!array) return;
-        if (!N) return array;
+/**
+ * ## ARRAY.inArray 
+ * 
+ * Returns TRUE if the element is contained in the array,
+ * FALSE otherwise
+ * 
+ * For objects, deep equality comparison is performed 
+ * through JSUS.equals.
+ * 
+ * Alias ARRAY.in_array (deprecated)
+ * 
+ * @param {mixed} needle The element to search in the array
+ * @param {array} haystack The array to search in
+ * @return {Boolean} TRUE, if the element is contained in the array
+ * 
+ * 	@see JSUS.equals
+ */
+ARRAY.inArray = ARRAY.in_array = function (needle, haystack) {
+    if (!haystack) return false;
+    
+    var func = JSUS.equals;    
+    for (var i = 0; i < haystack.length; i++) {
+        if (func.call(this, needle, haystack[i])) {
+        	return true;
+        }
+    }
+    // <!-- console.log(needle, haystack); -->
+    return false;
+};
+
+/**
+ * ## ARRAY.getNGroups
+ * 
+ * Returns an array of N array containing the same number of elements
+ * If the length of the array and the desired number of elements per group
+ * are not multiple, the last group could have less elements
+ * 
+ * The original array is not modified.
+ *  
+ *  @see ARRAY.getGroupsSizeN
+ *  @see ARRAY.generateCombinations
+ *  @see ARRAY.matchN
+ *  
+ * @param {array} array The array to split in subgroups
+ * @param {number} N The number of subgroups
+ * @return {array} Array containing N groups
+ */ 
+ARRAY.getNGroups = function (array, N) {
+    return ARRAY.getGroupsSizeN(array, Math.floor(array.length / N));
+};
+
+/**
+ * ## ARRAY.getGroupsSizeN
+ * 
+ * Returns an array of array containing N elements each
+ * The last group could have less elements
+ * 
+ * @param {array} array The array to split in subgroups
+ * @param {number} N The number of elements in each subgroup
+ * @return {array} Array containing groups of size N
+ * 
+ *  	@see ARRAY.getNGroups
+ *  	@see ARRAY.generateCombinations
+ *  	@see ARRAY.matchN
+ * 
+ */ 
+ARRAY.getGroupsSizeN = function (array, N) {
+    
+    var copy = array.slice(0);
+    var len = copy.length;
+    var originalLen = copy.length;
+    var result = [];
+    
+    // <!-- Init values for the loop algorithm -->
+    var i, idx;
+    var group = [], count = 0;
+    for (i=0; i < originalLen; i++) {
         
-        var result = [],
-        len = array.length,
-        found = [];
-        for (var i = 0 ; i < len ; i++) {
-            // <!-- Recreate the array -->
-            var copy = array.slice(0);
-            copy.splice(i,1);
-            if (strict) {
-                copy = ARRAY.arrayDiff(copy,found);
-            }
-            var group = ARRAY.getNRandom(copy,N);
-            // <!-- Add to the set of used elements -->
-            found = found.concat(group);
-            // <!-- Re-add the current element -->
-            group.splice(0,0,array[i]);
+        // <!-- Get a random idx between 0 and array length -->
+        idx = Math.floor(Math.random()*len);
+        
+        // <!-- Prepare the array container for the elements of a new group -->
+        if (count >= N) {
             result.push(group);
-            
-            // <!-- Update -->
+            count = 0;
             group = [];
         }
-        return result;
-    };
-
-    /**
-     * ## ARRAY.rep
-     * 
-     * Appends an array to itself a number of times and return a new array
-     * 
-     * The original array is not modified.
-     * 
-     * @param {array} array the array to repeat 
-     * @param {number} times The number of times the array must be appended to itself
-     * @return {array} A copy of the original array appended to itself
-     * 
-     */
-    ARRAY.rep = function (array, times) {
-        if (!array) return;
-        if (!times) return array.slice(0);
-        if (times < 1) {
-            JSUS.log('times must be greater or equal 1', 'ERR');
-            return;
-        }
         
-        var i = 1, result = array.slice(0);
-        for (; i < times; i++) {
-            result = result.concat(array);
-        }
-        return result;
-    };
-
-    /**
-     * ## ARRAY.stretch
-     * 
-     * Repeats each element of the array N times
-     * 
-     * N can be specified as an integer or as an array. In the former case all 
-     * the elements are repeat the same number of times. In the latter, the each
-     * element can be repeated a custom number of times. If the length of the `times`
-     * array differs from that of the array to stretch a recycle rule is applied.
-     * 
-     * The original array is not modified.
-     * 
-     * E.g.:
-     * 
-     * ```js
-     *  var foo = [1,2,3];
-     * 
-     *  ARRAY.stretch(foo, 2); // [1, 1, 2, 2, 3, 3]
-     * 
-     *  ARRAY.stretch(foo, [1,2,3]); // [1, 2, 2, 3, 3, 3];
-     *
-     *  ARRAY.stretch(foo, [2,1]); // [1, 1, 2, 3, 3];
-     * ```
-     * 
-     * @param {array} array the array to strech
-     * @param {number|array} times The number of times each element must be repeated
-     * @return {array} A stretched copy of the original array
-     * 
-     */
-    ARRAY.stretch = function (array, times) {
-        if (!array) return;
-        if (!times) return array.slice(0);
-        if ('number' === typeof times) {
-            if (times < 1) {
-                JSUS.log('times must be greater or equal 1', 'ERR');
-                return;
-            }
-            times = ARRAY.rep([times], array.length);
-        }
+        // <!-- Insert element in the group -->
+        group.push(copy[idx]);
         
-        var result = [];
-        for (var i = 0; i < array.length; i++) {
-            var repeat = times[(i % times.length)];
-            for (var j = 0; j < repeat ; j++) {
-                result.push(array[i]);
-            }
-        }
-        return result;
-    };
-
-
-    /**
-     * ## ARRAY.arrayIntersect
-     * 
-     * Computes the intersection between two arrays
-     * 
-     * Arrays can contain both primitive types and objects.
-     * 
-     * @param {array} a1 The first array
-     * @param {array} a2 The second array
-     * @return {array} All the values of the first array that are found also in the second one
-     */
-    ARRAY.arrayIntersect = function (a1, a2) {
-        return a1.filter( function(i) {
-            return JSUS.in_array(i, a2);
-        });
-    };
+        // <!-- Update -->
+        copy.splice(idx,1);
+        len = copy.length;
+        count++;
+    }
     
-    /**
-     * ## ARRAY.arrayDiff
-     * 
-     * Performs a diff between two arrays
-     * 
-     * Arrays can contain both primitive types and objects.
-     * 
-     * @param {array} a1 The first array
-     * @param {array} a2 The second array
-     * @return {array} All the values of the first array that are not found in the second one
-     */
-    ARRAY.arrayDiff = function (a1, a2) {
-        return a1.filter( function(i) {
-            return !(JSUS.in_array(i, a2));
-        });
-    };
+    // <!-- Add any remaining element -->
+    if (group.length > 0) {
+        result.push(group);
+    }
+    
+    return result;
+};
 
-    /**
-     * ## ARRAY.shuffle
-     * 
-     * Shuffles the elements of the array using the Fischer algorithm
-     * 
-     * The original array is not modified, and a copy is returned.
-     * 
-     * @param {array} shuffle The array to shuffle
-     * @return {array} copy The shuffled array
-     * 
-     *          @see http://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle
-     */
-    ARRAY.shuffle = function (array) {
-        if (!array) return;
+/**
+ * ## ARRAY._latinSquare
+ * 
+ * Generate a random Latin Square of size S
+ * 
+ * If N is defined, it returns "Latin Rectangle" (SxN) 
+ * 
+ * A parameter controls for self-match, i.e. whether the symbol "i" 
+ * is found or not in in column "i".
+ * 
+ * @api private
+ * @param {number} S The number of rows
+ * @param {number} Optional. N The number of columns. Defaults N = S
+ * @param {boolean} Optional. If TRUE self-match is allowed. Defaults TRUE
+ * @return {array} The resulting latin square (or rectangle)
+ * 
+ */
+ARRAY._latinSquare = function (S, N, self) {
+	self = ('undefined' === typeof self) ? true : self;
+	if (S === N && !self) return false; // <!-- infinite loop -->
+	var seq = [];
+	var latin = [];
+	for (var i=0; i< S; i++) {
+		seq[i] = i;
+	}
+	
+	var idx = null;
+	
+	var start = 0;
+	var limit = S;
+	var extracted = [];
+	if (!self) {
+    	limit = S-1;
+	}
+	
+	for (i=0; i < N; i++) {
+		do {
+			idx = JSUS.randomInt(start,limit);
+		}
+		while (JSUS.in_array(idx, extracted));
+		extracted.push(idx);
+		
+		if (idx == 1) {
+			latin[i] = seq.slice(idx);
+			latin[i].push(0);
+		}
+		else {
+			latin[i] = seq.slice(idx).concat(seq.slice(0,(idx)));
+		}
+		
+	}
+	
+	return latin;
+};
+
+/**
+ * ## ARRAY.latinSquare
+ * 
+ * Generate a random Latin Square of size S
+ * 
+ * If N is defined, it returns "Latin Rectangle" (SxN) 
+ * 
+ * @param {number} S The number of rows
+ * @param {number} Optional. N The number of columns. Defaults N = S
+ * @return {array} The resulting latin square (or rectangle)
+ * 
+ */
+ARRAY.latinSquare = function (S, N) {
+	if (!N) N = S;
+	if (!S || S < 0 || (N < 0)) return false;
+	if (N > S) N = S;
+	
+	return ARRAY._latinSquare(S, N, true);
+};
+
+/**
+ * ## ARRAY.latinSquareNoSelf
+ * 
+ * Generate a random Latin Square of size Sx(S-1), where 
+ * in each column "i", the symbol "i" is not found
+ * 
+ * If N < S, it returns a "Latin Rectangle" (SxN)
+ * 
+ * @param {number} S The number of rows
+ * @param {number} Optional. N The number of columns. Defaults N = S-1
+ * @return {array} The resulting latin square (or rectangle)
+ */
+ARRAY.latinSquareNoSelf = function (S, N) {
+	if (!N) N = S-1;
+	if (!S || S < 0 || (N < 0)) return false;
+	if (N > S) N = S-1;
+	
+	return ARRAY._latinSquare(S, N, false);
+}
+
+
+/**
+ * ## ARRAY.generateCombinations
+ * 
+ *  Generates all distinct combinations of exactly r elements each 
+ *  and returns them into an array
+ *  
+ *  @param {array} array The array from which the combinations are extracted
+ *  @param {number} r The number of elements in each combination
+ *  @return {array} The total sets of combinations
+ *  
+ *  	@see ARRAY.getGroupSizeN
+ *  	@see ARRAY.getNGroups
+ *  	@see ARRAY.matchN
+ * 
+ */
+ARRAY.generateCombinations = function (array, r) {
+    function values(i, a) {
+        var ret = [];
+        for (var j = 0; j < i.length; j++) ret.push(a[i[j]]);
+        return ret;
+    }
+    var n = array.length;
+    var indices = [];
+    for (var i = 0; i < r; i++) indices.push(i);
+    var final = [];
+    for (var i = n - r; i < n; i++) final.push(i);
+    while (!JSUS.equals(indices, final)) {
+        callback(values(indices, array));
+        var i = r - 1;
+        while (indices[i] == n - r + i) i -= 1;
+        indices[i] += 1;
+        for (var j = i + 1; j < r; j++) indices[j] = indices[i] + j - i;
+    }
+    return values(indices, array); 
+};
+
+/**
+ * ## ARRAY.matchN
+ * 
+ * Match each element of the array with N random others
+ * 
+ * If strict is equal to true, elements cannot be matched multiple times.
+ * 
+ * *Important*: this method has a bug / feature. If the strict parameter is set,
+ * the last elements could remain without match, because all the other have been 
+ * already used. Another recombination would be able to match all the 
+ * elements instead.
+ * 
+ * @param {array} array The array in which operate the matching
+ * @param {number} N The number of matches per element
+ * @param {Boolean} strict Optional. If TRUE, matched elements cannot be repeated. Defaults, FALSE 
+ * @return {array} result The results of the matching
+ * 
+ *  	@see ARRAY.getGroupSizeN
+ *  	@see ARRAY.getNGroups
+ *  	@see ARRAY.generateCombinations
+ * 
+ */
+ARRAY.matchN = function (array, N, strict) {
+	if (!array) return;
+	if (!N) return array;
+	
+    var result = [],
+    	len = array.length,
+    	found = [];
+    for (var i = 0 ; i < len ; i++) {
+        // <!-- Recreate the array -->
         var copy = array.slice(0);
-        var len = array.length-1; // ! -1
-        var j, tmp;
-        for (var i = len; i > 0; i--) {
-            j = Math.floor(Math.random()*(i+1));
-            tmp = copy[j];
-            copy[j] = copy[i];
-            copy[i] = tmp;
+        copy.splice(i,1);
+        if (strict) {
+            copy = ARRAY.arrayDiff(copy,found);
         }
-        return copy;
-    };
+        var group = ARRAY.getNRandom(copy,N);
+        // <!-- Add to the set of used elements -->
+        found = found.concat(group);
+        // <!-- Re-add the current element -->
+        group.splice(0,0,array[i]);
+        result.push(group);
+        
+        // <!-- Update -->
+        group = [];
+    }
+    return result;
+};
 
-    /**
-     * ## ARRAY.getNRandom
-     * 
-     * Select N random elements from the array and returns them
-     * 
-     * @param {array} array The array from which extracts random elements
-     * @paran {number} N The number of random elements to extract
-     * @return {array} An new array with N elements randomly chose from the original array  
-     */
-    ARRAY.getNRandom = function (array, N) {
-        return ARRAY.shuffle(array).slice(0,N);
-    };                           
+/**
+ * ## ARRAY.rep
+ * 
+ * Appends an array to itself a number of times and return a new array
+ * 
+ * The original array is not modified.
+ * 
+ * @param {array} array the array to repeat 
+ * @param {number} times The number of times the array must be appended to itself
+ * @return {array} A copy of the original array appended to itself
+ * 
+ */
+ARRAY.rep = function (array, times) {
+	if (!array) return;
+	if (!times) return array.slice(0);
+	if (times < 1) {
+		JSUS.log('times must be greater or equal 1', 'ERR');
+		return;
+	}
+	
+    var i = 1, result = array.slice(0);
+    for (; i < times; i++) {
+        result = result.concat(array);
+    }
+    return result;
+};
+
+/**
+ * ## ARRAY.stretch
+ * 
+ * Repeats each element of the array N times
+ * 
+ * N can be specified as an integer or as an array. In the former case all 
+ * the elements are repeat the same number of times. In the latter, the each
+ * element can be repeated a custom number of times. If the length of the `times`
+ * array differs from that of the array to stretch a recycle rule is applied.
+ * 
+ * The original array is not modified.
+ * 
+ * E.g.:
+ * 
+ * ```js
+ * 	var foo = [1,2,3];
+ * 
+ * 	ARRAY.stretch(foo, 2); // [1, 1, 2, 2, 3, 3]
+ * 
+ * 	ARRAY.stretch(foo, [1,2,3]); // [1, 2, 2, 3, 3, 3];
+ *
+ * 	ARRAY.stretch(foo, [2,1]); // [1, 1, 2, 3, 3];
+ * ```
+ * 
+ * @param {array} array the array to strech
+ * @param {number|array} times The number of times each element must be repeated
+ * @return {array} A stretched copy of the original array
+ * 
+ */
+ARRAY.stretch = function (array, times) {
+	if (!array) return;
+	if (!times) return array.slice(0);
+	if ('number' === typeof times) {
+		if (times < 1) {
+			JSUS.log('times must be greater or equal 1', 'ERR');
+			return;
+		}
+		times = ARRAY.rep([times], array.length);
+	}
+	
+    var result = [];
+    for (var i = 0; i < array.length; i++) {
+    	var repeat = times[(i % times.length)];
+        for (var j = 0; j < repeat ; j++) {
+        	result.push(array[i]);
+        }
+    }
+    return result;
+};
+
+
+/**
+ * ## ARRAY.arrayIntersect
+ * 
+ * Computes the intersection between two arrays
+ * 
+ * Arrays can contain both primitive types and objects.
+ * 
+ * @param {array} a1 The first array
+ * @param {array} a2 The second array
+ * @return {array} All the values of the first array that are found also in the second one
+ */
+ARRAY.arrayIntersect = function (a1, a2) {
+    return a1.filter( function(i) {
+        return JSUS.in_array(i, a2);
+    });
+};
     
-    /**
-     * ## ARRAY.distinct
-     * 
-     * Removes all duplicates entries from an array and returns a copy of it
-     * 
-     * Does not modify original array.
-     * 
-     * Comparison is done with `JSUS.equals`.
-     * 
-     * @param {array} array The array from which eliminates duplicates
-     * @return {array} out A copy of the array without duplicates
-     * 
-     *  @see JSUS.equals
-     */
-    ARRAY.distinct = function (array) {
-        var out = [];
-        if (!array) return out;
-        
-        ARRAY.each(array, function(e) {
-            if (!ARRAY.in_array(e, out)) {
-                out.push(e);
-            }
-        });
-        return out;
-    };
+/**
+ * ## ARRAY.arrayDiff
+ * 
+ * Performs a diff between two arrays
+ * 
+ * Arrays can contain both primitive types and objects.
+ * 
+ * @param {array} a1 The first array
+ * @param {array} a2 The second array
+ * @return {array} All the values of the first array that are not found in the second one
+ */
+ARRAY.arrayDiff = function (a1, a2) {
+    return a1.filter( function(i) {
+        return !(JSUS.in_array(i, a2));
+    });
+};
 
-    /**
-     * ## ARRAY.transpose
-     * 
-     * Transposes a given 2D array.
-     * 
-     * The original array is not modified, and a new copy is
-     * returned.
-     *
-     * @param {array} array The array to transpose
-     * @return {array} The Transposed Array
-     * 
-     */
-    ARRAY.transpose = function (array) {
-        if (!array) return;  
-        
-        // Calculate width and height
-        var w, h, i, j, t = []; 
-        w = array.length || 0;
-        h = (ARRAY.isArray(array[0])) ? array[0].length : 0;
-        if (w === 0 || h === 0) return t;
-        
-        for ( i = 0; i < h; i++) {
-            t[i] = [];
-            for ( j = 0; j < w; j++) {     
-                t[i][j] = array[j][i];
-            }
-        } 
-        return t;
-    };
+/**
+ * ## ARRAY.shuffle
+ * 
+ * Shuffles the elements of the array using the Fischer algorithm
+ * 
+ * The original array is not modified, and a copy is returned.
+ * 
+ * @param {array} shuffle The array to shuffle
+ * @return {array} copy The shuffled array
+ * 
+ * 		@see http://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle
+ */
+ARRAY.shuffle = function (array) {
+	if (!array) return;
+    var copy = array.slice(0);
+    var len = array.length-1; // ! -1
+    var j, tmp;
+    for (var i = len; i > 0; i--) {
+        j = Math.floor(Math.random()*(i+1));
+        tmp = copy[j];
+        copy[j] = copy[i];
+        copy[i] = tmp;
+    }
+    return copy;
+};
 
-    JSUS.extend(ARRAY);
+/**
+ * ## ARRAY.getNRandom
+ * 
+ * Select N random elements from the array and returns them
+ * 
+ * @param {array} array The array from which extracts random elements
+ * @paran {number} N The number of random elements to extract
+ * @return {array} An new array with N elements randomly chose from the original array  
+ */
+ARRAY.getNRandom = function (array, N) {
+    return ARRAY.shuffle(array).slice(0,N);
+};                           
+    
+/**
+ * ## ARRAY.distinct
+ * 
+ * Removes all duplicates entries from an array and returns a copy of it
+ * 
+ * Does not modify original array.
+ * 
+ * Comparison is done with `JSUS.equals`.
+ * 
+ * @param {array} array The array from which eliminates duplicates
+ * @return {array} out A copy of the array without duplicates
+ * 
+ * 	@see JSUS.equals
+ */
+ARRAY.distinct = function (array) {
+	var out = [];
+	if (!array) return out;
+	
+	ARRAY.each(array, function(e) {
+		if (!ARRAY.in_array(e, out)) {
+			out.push(e);
+		}
+	});
+	return out;
+	
+};
+
+/**
+ * ## ARRAY.transpose
+ * 
+ * Transposes a given 2D array.
+ * 
+ * The original array is not modified, and a new copy is
+ * returned.
+ *
+ * @param {array} array The array to transpose
+ * @return {array} The Transposed Array
+ * 
+ */
+ARRAY.transpose = function (array) {
+	if (!array) return;  
+	
+	// Calculate width and height
+    var w, h, i, j, t = []; 
+	w = array.length || 0;
+	h = (ARRAY.isArray(array[0])) ? array[0].length : 0;
+	if (w === 0 || h === 0) return t;
+	
+	for ( i = 0; i < h; i++) {
+		t[i] = [];
+	    for ( j = 0; j < w; j++) {	   
+	    	t[i][j] = array[j][i];
+	    }
+	} 
+	return t;
+};
+
+JSUS.extend(ARRAY);
     
 })('undefined' !== typeof JSUS ? JSUS : module.parent.exports.JSUS);
 /**
@@ -2819,1008 +2818,941 @@ JSUS.extend(EVAL);
 })('undefined' !== typeof JSUS ? JSUS : module.parent.exports.JSUS);
 /**
  * # OBJ
- *
+ *  
  * Copyright(c) 2012 Stefano Balietti
  * MIT Licensed
- *
+ * 
  * Collection of static functions to manipulate javascript objects
- *
+ * 
  */
 (function (JSUS) {
 
-    function OBJ(){};
 
-    var compatibility = null;
+    
+function OBJ(){};
 
-    if ('undefined' !== typeof JSUS.compatibility) {
-        compatibility = JSUS.compatibility();
+var compatibility = null;
+
+if ('undefined' !== typeof JSUS.compatibility) {
+	compatibility = JSUS.compatibility();
+}
+
+
+/**
+ * ## OBJ.equals
+ * 
+ * Checks for deep equality between two objects, string 
+ * or primitive types.
+ * 
+ * All nested properties are checked, and if they differ 
+ * in at least one returns FALSE, otherwise TRUE.
+ * 
+ * Takes care of comparing the following special cases: 
+ * 
+ * - undefined
+ * - null
+ * - NaN
+ * - Infinity
+ * - {}
+ * - falsy values
+ * 
+ * 
+ */
+OBJ.equals = function (o1, o2) {	
+	var type1 = typeof o1, type2 = typeof o2;
+	
+	if (type1 !== type2) return false;
+	
+	if ('undefined' === type1 || 'undefined' === type2) {
+		return (o1 === o2);
+	}
+	if (o1 === null || o2 === null) {
+		return (o1 === o2);
+	}
+	if (('number' === type1 && isNaN(o1)) && ('number' === type2 && isNaN(o2)) ) {
+		return (isNaN(o1) && isNaN(o2));
+	}
+	
+    // Check whether arguments are not objects
+	var primitives = {number: '', string: '', boolean: ''}
+    if (type1 in primitives) {
+    	return o1 === o2;
+    } 
+	
+	if ('function' === type1) {
+		return o1.toString() === o2.toString();
+	}
+
+    for (var p in o1) {
+        if (o1.hasOwnProperty(p)) {
+          
+            if ('undefined' === typeof o2[p] && 'undefined' !== typeof o1[p]) return false;
+            if (!o2[p] && o1[p]) return false; // <!-- null --> 
+            
+            switch (typeof o1[p]) {
+                case 'function':
+                        if (o1[p].toString() !== o2[p].toString()) return false;
+                        
+                    default:
+                    	if (!OBJ.equals(o1[p], o2[p])) return false; 
+              }
+          } 
+      }
+  
+      // Check whether o2 has extra properties
+  // TODO: improve, some properties have already been checked!
+  for (p in o2) {
+      if (o2.hasOwnProperty(p)) {
+          if ('undefined' === typeof o1[p] && 'undefined' !== typeof o2[p]) return false;
+          if (!o1[p] && o2[p]) return false; // <!-- null --> 
+      }
+  }
+
+  return true;
+};
+
+/**
+ * ## OBJ.isEmpty
+ * 
+ * Returns TRUE if an object has no own properties, 
+ * FALSE otherwise
+ * 
+ * Does not check properties of the prototype chain.
+ * 
+ * @param {object} o The object to check
+ * @return {boolean} TRUE, if the object has no properties
+ * 
+ */
+OBJ.isEmpty = function (o) {
+	if ('undefined' === typeof o) return true;
+	
+    for (var key in o) {
+        if (o.hasOwnProperty(key)) {
+        	return false;
+        }
     }
 
-    /**
-     * ## OBJ.equals
-     *
-     * Checks for deep equality between two objects, string
-     * or primitive types.
-     *
-     * All nested properties are checked, and if they differ
-     * in at least one returns FALSE, otherwise TRUE.
-     *
-     * Takes care of comparing the following special cases:
-     *
-     * - undefined
-     * - null
-     * - NaN
-     * - Infinity
-     * - {}
-     * - falsy values
-     *
-     *
-     */
-    OBJ.equals = function (o1, o2) {
-        var type1 = typeof o1, type2 = typeof o2;
+    return true;
+};
 
-        if (type1 !== type2) return false;
 
-        if ('undefined' === type1 || 'undefined' === type2) {
-            return (o1 === o2);
+/**
+ * ## OBJ.size
+ * 
+ * Counts the number of own properties of an object.
+ * 
+ * Prototype chain properties are excluded.
+ * 
+ * @param {object} obj The object to check
+ * @return {number} The number of properties in the object
+ */
+OBJ.size = OBJ.getListSize = function (obj) {
+	if (!obj) return 0;
+	if ('number' === typeof obj) return 0;
+	if ('string' === typeof obj) return 0;
+	
+    var n = 0;
+    for (var key in obj) {
+        if (obj.hasOwnProperty(key)) {
+            n++;
         }
-        if (o1 === null || o2 === null) {
-            return (o1 === o2);
-        }
-        if (('number' === type1 && isNaN(o1)) && ('number' === type2 && isNaN(o2)) ) {
-            return (isNaN(o1) && isNaN(o2));
-        }
+    }
+    return n;
+};
 
-        // Check whether arguments are not objects
-        var primitives = {number: '', string: '', boolean: ''}
-        if (type1 in primitives) {
-            return o1 === o2;
-        }
+/**
+ * ## OBJ._obj2Array
+ * 
+ * Explodes an object into an array of keys and values,
+ * according to the specified parameters.
 
-        if ('function' === type1) {
-            return o1.toString() === o2.toString();
-        }
-
-        for (var p in o1) {
-            if (o1.hasOwnProperty(p)) {
-
-                if ('undefined' === typeof o2[p] && 'undefined' !== typeof o1[p]) return false;
-                if (!o2[p] && o1[p]) return false; // <!-- null -->
-
-                switch (typeof o1[p]) {
-                case 'function':
-                    if (o1[p].toString() !== o2[p].toString()) return false;
-
-                default:
-                    if (!OBJ.equals(o1[p], o2[p])) return false;
-                }
+ * A fixed level of recursion can be set.
+ * 
+ * @api private
+ * @param {object} obj The object to convert in array
+ * @param {boolean} keyed TRUE, if also property names should be included. Defaults FALSE
+ * @param {number} level Optional. The level of recursion. Defaults undefined
+ * @return {array} The converted object
+ */
+OBJ._obj2Array = function(obj, keyed, level, cur_level) {
+    if ('object' !== typeof obj) return [obj];
+    
+    if (level) {
+        cur_level = ('undefined' !== typeof cur_level) ? cur_level : 1;
+        if (cur_level > level) return [obj];
+        cur_level = cur_level + 1;
+    }
+    
+    var result = [];
+    for (var key in obj) {
+        if (obj.hasOwnProperty(key)) {
+        	if (keyed) result.push(key);
+            if ('object' === typeof obj[key]) {
+                result = result.concat(OBJ._obj2Array(obj[key], keyed, level, cur_level));
+            } else {
+                result.push(obj[key]);
             }
+           
         }
+    }      
+    
+    return result;
+};
 
-        // Check whether o2 has extra properties
-        // TODO: improve, some properties have already been checked!
-        for (p in o2) {
-            if (o2.hasOwnProperty(p)) {
-                if ('undefined' === typeof o1[p] && 'undefined' !== typeof o2[p]) return false;
-                if (!o1[p] && o2[p]) return false; // <!-- null -->
-            }
+/**
+ * ## OBJ.obj2Array
+ * 
+ * Converts an object into an array, keys are lost
+ * 
+ * Recursively put the values of the properties of an object into 
+ * an array and returns it.
+ * 
+ * The level of recursion can be set with the parameter level. 
+ * By default recursion has no limit, i.e. that the whole object 
+ * gets totally unfolded into an array.
+ * 
+ * @param {object} obj The object to convert in array
+ * @param {number} level Optional. The level of recursion. Defaults, undefined
+ * @return {array} The converted object
+ * 
+ * 	@see OBJ._obj2Array
+ *	@see OBJ.obj2KeyedArray
+ * 
+ */
+OBJ.obj2Array = function (obj, level) {
+    return OBJ._obj2Array(obj, false, level);
+};
+
+/**
+ * ## OBJ.obj2KeyedArray
+ * 
+ * Converts an object into array, keys are preserved
+ * 
+ * Creates an array containing all keys and values of an object and 
+ * returns it.
+ * 
+ * @param {object} obj The object to convert in array
+ * @param {number} level Optional. The level of recursion. Defaults, undefined
+ * @return {array} The converted object
+ * 
+ * @see OBJ.obj2Array 
+ * 
+ */
+OBJ.obj2KeyedArray = OBJ.obj2KeyArray = function (obj, level) {
+    return OBJ._obj2Array(obj, true, level);
+};
+
+/**
+ * ## OBJ.keys
+ * 
+ * Scans an object an returns all the keys of the properties,
+ * into an array. 
+ * 
+ * The second paramter controls the level of nested objects 
+ * to be evaluated. Defaults 0 (nested properties are skipped).
+ * 
+ * @param {object} obj The object from which extract the keys
+ * @param {number} level Optional. The level of recursion. Defaults 0
+ * @return {array} The array containing the extracted keys
+ * 
+ * 	@see Object.keys
+ * 
+ */
+OBJ.keys = OBJ.objGetAllKeys = function (obj, level, curLevel) {
+    if (!obj) return [];
+    level = ('number' === typeof level && level >= 0) ? level : 0; 
+    curLevel = ('number' === typeof curLevel && curLevel >= 0) ? curLevel : 0;
+    var result = [];
+    for (var key in obj) {
+       if (obj.hasOwnProperty(key)) {
+           result.push(key);
+           if (curLevel < level) {
+               if ('object' === typeof obj[key]) {
+                   result = result.concat(OBJ.objGetAllKeys(obj[key], (curLevel+1)));
+               }
+           }
+       }
+    }
+    return result;
+};
+
+/**
+ * ## OBJ.implode
+ * 
+ * Separates each property into a new objects and returns
+ * them into an array
+ * 
+ * E.g.
+ * 
+ * ```javascript
+ * var a = { b:2, c: {a:1}, e:5 };
+ * OBJ.implode(a); // [{b:2}, {c:{a:1}}, {e:5}]
+ * ```
+ * 
+ * @param {object} obj The object to implode
+ * @return {array} result The array containig all the imploded properties
+ * 
+ */
+OBJ.implode = OBJ.implodeObj = function (obj) {
+	if (!obj) return [];
+    var result = [];
+    for (var key in obj) {
+        if (obj.hasOwnProperty(key)) {
+            var o = {};
+            o[key] = obj[key];
+            result.push(o);
         }
-
-        return true;
-    };
-
-    /**
-     * ## OBJ.isEmpty
-     *
-     * Returns TRUE if an object has no own properties,
-     * FALSE otherwise
-     *
-     * Does not check properties of the prototype chain.
-     *
-     * @param {object} o The object to check
-     * @return {boolean} TRUE, if the object has no properties
-     *
-     */
-    OBJ.isEmpty = function (o) {
-        if ('undefined' === typeof o) return true;
-
-        for (var key in o) {
-            if (o.hasOwnProperty(key)) {
-                return false;
-            }
-        }
-
-        return true;
-    };
-
-
-    /**
-     * ## OBJ.size
-     *
-     * Counts the number of own properties of an object.
-     *
-     * Prototype chain properties are excluded.
-     *
-     * @param {object} obj The object to check
-     * @return {number} The number of properties in the object
-     */
-    OBJ.size = OBJ.getListSize = function (obj) {
-        if (!obj) return 0;
-        if ('number' === typeof obj) return 0;
-        if ('string' === typeof obj) return 0;
-
-        var n = 0;
-        for (var key in obj) {
-            if (obj.hasOwnProperty(key)) {
-                n++;
-            }
-        }
-        return n;
-    };
-
-    /**
-     * ## OBJ._obj2Array
-     *
-     * Explodes an object into an array of keys and values,
-     * according to the specified parameters.
-
-     * A fixed level of recursion can be set.
-     *
-     * @api private
-     * @param {object} obj The object to convert in array
-     * @param {boolean} keyed TRUE, if also property names should be included. Defaults FALSE
-     * @param {number} level Optional. The level of recursion. Defaults undefined
-     * @return {array} The converted object
-     */
-    OBJ._obj2Array = function(obj, keyed, level, cur_level) {
-        if ('object' !== typeof obj) return [obj];
-
-        if (level) {
-            cur_level = ('undefined' !== typeof cur_level) ? cur_level : 1;
-            if (cur_level > level) return [obj];
-            cur_level = cur_level + 1;
-        }
-
-        var result = [];
-        for (var key in obj) {
-            if (obj.hasOwnProperty(key)) {
-                if (keyed) result.push(key);
-                if ('object' === typeof obj[key]) {
-                    result = result.concat(OBJ._obj2Array(obj[key], keyed, level, cur_level));
-                } else {
-                    result.push(obj[key]);
-                }
-            }
-        }
-
-        return result;
-    };
-
-    /**
-     * ## OBJ.obj2Array
-     *
-     * Converts an object into an array, keys are lost
-     *
-     * Recursively put the values of the properties of an object into
-     * an array and returns it.
-     *
-     * The level of recursion can be set with the parameter level.
-     * By default recursion has no limit, i.e. that the whole object
-     * gets totally unfolded into an array.
-     *
-     * @param {object} obj The object to convert in array
-     * @param {number} level Optional. The level of recursion. Defaults, undefined
-     * @return {array} The converted object
-     *
-     *  @see OBJ._obj2Array
-     *  @see OBJ.obj2KeyedArray
-     *
-     */
-    OBJ.obj2Array = function (obj, level) {
-        return OBJ._obj2Array(obj, false, level);
-    };
-
-    /**
-     * ## OBJ.obj2KeyedArray
-     *
-     * Converts an object into array, keys are preserved
-     *
-     * Creates an array containing all keys and values of an object and
-     * returns it.
-     *
-     * @param {object} obj The object to convert in array
-     * @param {number} level Optional. The level of recursion. Defaults, undefined
-     * @return {array} The converted object
-     *
-     * @see OBJ.obj2Array
-     *
-     */
-    OBJ.obj2KeyedArray = OBJ.obj2KeyArray = function (obj, level) {
-        return OBJ._obj2Array(obj, true, level);
-    };
-
-    /**
-     * ## OBJ.keys
-     *
-     * Scans an object an returns all the keys of the properties,
-     * into an array.
-     *
-     * The second paramter controls the level of nested objects
-     * to be evaluated. Defaults 0 (nested properties are skipped).
-     *
-     * @param {object} obj The object from which extract the keys
-     * @param {number} level Optional. The level of recursion. Defaults 0
-     * @return {array} The array containing the extracted keys
-     *
-     *  @see Object.keys
-     *
-     */
-    OBJ.keys = OBJ.objGetAllKeys = function (obj, level, curLevel) {
-        if (!obj) return [];
-        level = ('number' === typeof level && level >= 0) ? level : 0;
-        curLevel = ('number' === typeof curLevel && curLevel >= 0) ? curLevel : 0;
-        var result = [];
-        for (var key in obj) {
-            if (obj.hasOwnProperty(key)) {
-                result.push(key);
-                if (curLevel < level) {
-                    if ('object' === typeof obj[key]) {
-                        result = result.concat(OBJ.objGetAllKeys(obj[key], (curLevel+1)));
-                    }
-                }
-            }
-        }
-        return result;
-    };
-
-    /**
-     * ## OBJ.implode
-     *
-     * Separates each property into a new objects and returns
-     * them into an array
-     *
-     * E.g.
-     *
-     * ```javascript
-     * var a = { b:2, c: {a:1}, e:5 };
-     * OBJ.implode(a); // [{b:2}, {c:{a:1}}, {e:5}]
-     * ```
-     *
-     * @param {object} obj The object to implode
-     * @return {array} result The array containig all the imploded properties
-     *
-     */
-    OBJ.implode = OBJ.implodeObj = function (obj) {
-        if (!obj) return [];
-        var result = [];
-        for (var key in obj) {
-            if (obj.hasOwnProperty(key)) {
-                var o = {};
-                o[key] = obj[key];
-                result.push(o);
-            }
-        }
-        return result;
-    };
-
-    /**
-     * ## OBJ.clone
-     *
-     * Creates a perfect copy of the object passed as parameter
-     *
-     * Recursively scans all the properties of the object to clone.
-     * Properties of the prototype chain are copied as well.
-     *
-     * Primitive types and special values are returned as they are.
-     *
-     * @param {object} obj The object to clone
-     * @return {object} clone The clone of the object
-     */
-    OBJ.clone = function (obj) {
-        if (!obj) return obj;
-        if ('number' === typeof obj) return obj;
-        if ('string' === typeof obj) return obj;
-        if ('boolean' === typeof obj) return obj;
-        if (obj === NaN) return obj;
-        if (obj === Infinity) return obj;
-
-        var clone;
-        if ('function' === typeof obj) {
-            //          clone = obj;
-            // <!-- Check when and if we need this -->
-            clone = function() { return obj.apply(clone, arguments); };
-        }
-        else {
-            clone = (Object.prototype.toString.call(obj) === '[object Array]') ? [] : {};
-        }
-
-        for (var i in obj) {
-            var value;
-            // TODO: index i is being updated, so apply is called on the
-            // last element, instead of the correct one.
-            //          if ('function' === typeof obj[i]) {
-            //                  value = function() { return obj[i].apply(clone, arguments); };
-            //          }
-            // It is not NULL and it is an object
-            if (obj[i] && 'object' === typeof obj[i]) {
-                // is an array
-                if (Object.prototype.toString.call(obj[i]) === '[object Array]') {
-                    value = obj[i].slice(0);
-                }
-                // is an object
-                else {
-                    value = OBJ.clone(obj[i]);
-                }
-            }
-            else {
-                value = obj[i];
-            }
-
-            if (obj.hasOwnProperty(i)) {
-                clone[i] = value;
-            }
-            else {
-                // we know if object.defineProperty is available
-                if (compatibility && compatibility.defineProperty) {
-                    Object.defineProperty(clone, i, {
-                        value: value,
-                        writable: true,
-                        configurable: true
-                    });
-                }
-                else {
-                    // or we try...
-                    try {
-                        Object.defineProperty(clone, i, {
-                            value: value,
-                            writable: true,
-                            configurable: true
-                        });
-                    }
-                    catch(e) {
-                        clone[i] = value;
-                    }
-                }
-            }
-        }
-        return clone;
-    };
-
-    /**
-     * ## OBJ.join
-     *
-     * Performs a *left* join on the keys of two objects
-     *
-     * Creates a copy of obj1, and in case keys overlap
-     * between obj1 and obj2, the values from obj2 are taken.
-     *
-     * Returns a new object, the original ones are not modified.
-     *
-     * E.g.
-     *
-     * ```javascript
-     * var a = { b:2, c:3, e:5 };
-     * var b = { a:10, b:2, c:100, d:4 };
-     * OBJ.join(a, b); // { b:2, c:100, e:5 }
-     * ```
-     *
-     * @param {object} obj1 The object where the merge will take place
-     * @param {object} obj2 The merging object
-     * @return {object} clone The joined object
-     *
-     *  @see OBJ.merge
-     */
-    OBJ.join = function (obj1, obj2) {
-        var clone = OBJ.clone(obj1);
-        if (!obj2) return clone;
-        for (var i in clone) {
-            if (clone.hasOwnProperty(i)) {
-                if ('undefined' !== typeof obj2[i]) {
-                    if ('object' === typeof obj2[i]) {
-                        clone[i] = OBJ.join(clone[i], obj2[i]);
-                    } else {
-                        clone[i] = obj2[i];
-                    }
-                }
-            }
-        }
-        return clone;
-    };
-
-    /**
-     * ## OBJ.merge
-     *
-     * Merges two objects in one
-     *
-     * In case keys overlap the values from obj2 are taken.
-     *
-     * Only own properties are copied.
-     *
-     * Returns a new object, the original ones are not modified.
-     *
-     * E.g.
-     *
-     * ```javascript
-     * var a = { a:1, b:2, c:3 };
-     * var b = { a:10, b:2, c:100, d:4 };
-     * OBJ.merge(a, b); // { a: 10, b: 2, c: 100, d: 4 }
-     * ```
-     *
-     * @param {object} obj1 The object where the merge will take place
-     * @param {object} obj2 The merging object
-     * @return {object} clone The merged object
-     *
-     *  @see OBJ.join
-     *  @see OBJ.mergeOnKey
-     */
-    OBJ.merge = function (obj1, obj2) {
-        // Checking before starting the algorithm
-        if (!obj1 && !obj2) return false;
-        if (!obj1) return OBJ.clone(obj2);
-        if (!obj2) return OBJ.clone(obj1);
-
-        var clone = OBJ.clone(obj1);
-        for (var i in obj2) {
-
-            if (obj2.hasOwnProperty(i)) {
-                // it is an object and it is not NULL
-                if ( obj2[i] && 'object' === typeof obj2[i] ) {
-                    // If we are merging an object into
-                    // a non-object, we need to cast the
-                    // type of obj1
-                    if ('object' !== typeof clone[i]) {
-                        if (Object.prototype.toString.call(obj2[i]) === '[object Array]') {
-                            clone[i] = [];
-                        }
-                        else {
-                            clone[i] = {};
-                        }
-                    }
-                    clone[i] = OBJ.merge(clone[i], obj2[i]);
+    }
+    return result;
+};
+ 
+/**
+ * ## OBJ.clone
+ * 
+ * Creates a perfect copy of the object passed as parameter
+ * 
+ * Recursively scans all the properties of the object to clone.
+ * Properties of the prototype chain are copied as well.
+ * 
+ * Primitive types and special values are returned as they are.
+ *  
+ * @param {object} obj The object to clone
+ * @return {object} clone The clone of the object
+ */
+OBJ.clone = function (obj) {
+	if (!obj) return obj;
+	if ('number' === typeof obj) return obj;
+	if ('string' === typeof obj) return obj;
+	if ('boolean' === typeof obj) return obj;
+	if (obj === NaN) return obj;
+	if (obj === Infinity) return obj;
+	
+	var clone;
+	if ('function' === typeof obj) {
+//		clone = obj;
+		// <!-- Check when and if we need this -->
+		clone = function() { return obj.apply(clone, arguments); };
+	}
+	else {
+		clone = (Object.prototype.toString.call(obj) === '[object Array]') ? [] : {};
+	}
+	
+	for (var i in obj) {
+		var value;
+		// TODO: index i is being updated, so apply is called on the 
+		// last element, instead of the correct one.
+//		if ('function' === typeof obj[i]) {
+//			value = function() { return obj[i].apply(clone, arguments); };
+//		}
+		// It is not NULL and it is an object
+		if (obj[i] && 'object' === typeof obj[i]) {
+			// is an array
+			if (Object.prototype.toString.call(obj[i]) === '[object Array]') {
+				value = obj[i].slice(0);
+			}
+			// is an object
+			else {
+				value = OBJ.clone(obj[i]);
+			}
+		}
+		else {
+			value = obj[i];
+		} 
+	 	
+	    if (obj.hasOwnProperty(i)) {
+	    	clone[i] = value;
+	    }
+	    else {
+	    	// we know if object.defineProperty is available
+	    	if (compatibility && compatibility.defineProperty) {
+		    	Object.defineProperty(clone, i, {
+		    		value: value,
+	         		writable: true,
+	         		configurable: true
+	         	});
+	    	}
+	    	else {
+	    		// or we try...
+	    		try {
+	    			Object.defineProperty(clone, i, {
+			    		value: value,
+		         		writable: true,
+		         		configurable: true
+		         	});
+	    		}
+		    	catch(e) {
+		    		clone[i] = value;
+		    	}
+	    	}
+	    }
+    }
+    return clone;
+};
+    
+/**
+ * ## OBJ.join
+ * 
+ * Performs a *left* join on the keys of two objects
+ * 
+ * Creates a copy of obj1, and in case keys overlap 
+ * between obj1 and obj2, the values from obj2 are taken. 
+ * 
+ * Returns a new object, the original ones are not modified.
+ *  
+ * E.g.
+ * 
+ * ```javascript
+ * var a = { b:2, c:3, e:5 };
+ * var b = { a:10, b:2, c:100, d:4 };
+ * OBJ.join(a, b); // { b:2, c:100, e:5 }
+ * ```
+ *  
+ * @param {object} obj1 The object where the merge will take place
+ * @param {object} obj2 The merging object
+ * @return {object} clone The joined object
+ * 
+ * 	@see OBJ.merge
+ */
+OBJ.join = function (obj1, obj2) {
+    var clone = OBJ.clone(obj1);
+    if (!obj2) return clone;
+    for (var i in clone) {
+        if (clone.hasOwnProperty(i)) {
+            if ('undefined' !== typeof obj2[i]) {
+                if ('object' === typeof obj2[i]) {
+                    clone[i] = OBJ.join(clone[i], obj2[i]);
                 } else {
                     clone[i] = obj2[i];
                 }
             }
         }
+    }
+    return clone;
+};
 
-        return clone;
-    };
-
-    /**
-     * ## OBJ.mixin
-     *
-     * Adds all the properties of obj2 into obj1
-     *
-     * Original object is modified
-     *
-     * @param {object} obj1 The object to which the new properties will be added
-     * @param {object} obj2 The mixin-in object
-     */
-    OBJ.mixin = function (obj1, obj2) {
-        if (!obj1 && !obj2) return;
-        if (!obj1) return obj2;
-        if (!obj2) return obj1;
-
-        for (var i in obj2) {
-            obj1[i] = obj2[i];
-        }
-    };
-
-    /**
-     * ## OBJ.mixout
-     *
-     * Copies only non-overlapping properties from obj2 to obj1
-     *
-     * Original object is modified
-     *
-     * @param {object} obj1 The object to which the new properties will be added
-     * @param {object} obj2 The mixin-in object
-     */
-    OBJ.mixout = function (obj1, obj2) {
-        if (!obj1 && !obj2) return;
-        if (!obj1) return obj2;
-        if (!obj2) return obj1;
-
-        for (var i in obj2) {
-            if (!obj1[i]) obj1[i] = obj2[i];
-        }
-    };
-
-    /**
-     * ## OBJ.mixcommon
-     *
-     * Copies only overlapping properties from obj2 to obj1
-     *
-     * Original object is modified
-     *
-     * @param {object} obj1 The object to which the new properties will be added
-     * @param {object} obj2 The mixin-in object
-     */
-    OBJ.mixcommon = function (obj1, obj2) {
-        if (!obj1 && !obj2) return;
-        if (!obj1) return obj2;
-        if (!obj2) return obj1;
-
-        for (var i in obj2) {
-            if (obj1[i]) obj1[i] = obj2[i];
-        }
-    };
-
-    /**
-     * ## OBJ.mergeOnKey
-     *
-     * Appends / merges the values of the properties of obj2 into a
-     * a new property named 'key' in obj1.
-     *
-     * Returns a new object, the original ones are not modified.
-     *
-     * This method is useful when we want to merge into a larger
-     * configuration (e.g. min, max, value) object another one that
-     * contains just the values for one of the properties (e.g. value).
-     *
-     * @param {object} obj1 The object where the merge will take place
-     * @param {object} obj2 The merging object
-     * @param {string} key The name of property under which merging the second object
-     * @return {object} clone The merged object
-     *
-     *  @see OBJ.merge
-     *
-     */
-    OBJ.mergeOnKey = function (obj1, obj2, key) {
-        var clone = OBJ.clone(obj1);
-        if (!obj2 || !key) return clone;
-        for (var i in obj2) {
-            if (obj2.hasOwnProperty(i)) {
-                if (!clone[i] || 'object' !== typeof clone[i]) {
-                    clone[i] = {};
-                }
-                clone[i][key] = obj2[i];
+/**
+ * ## OBJ.merge
+ * 
+ * Merges two objects in one
+ * 
+ * In case keys overlap the values from obj2 are taken. 
+ * 
+ * Only own properties are copied.
+ * 
+ * Returns a new object, the original ones are not modified.
+ * 
+ * E.g.
+ * 
+ * ```javascript
+ * var a = { a:1, b:2, c:3 };
+ * var b = { a:10, b:2, c:100, d:4 };
+ * OBJ.merge(a, b); // { a: 10, b: 2, c: 100, d: 4 }
+ * ```
+ * 
+ * @param {object} obj1 The object where the merge will take place
+ * @param {object} obj2 The merging object
+ * @return {object} clone The merged object
+ * 
+ * 	@see OBJ.join
+ * 	@see OBJ.mergeOnKey
+ */
+OBJ.merge = function (obj1, obj2) {
+	// Checking before starting the algorithm
+	if (!obj1 && !obj2) return false;
+	if (!obj1) return OBJ.clone(obj2);
+	if (!obj2) return OBJ.clone(obj1);
+	
+    var clone = OBJ.clone(obj1);
+    for (var i in obj2) {
+    	
+        if (obj2.hasOwnProperty(i)) {
+        	// it is an object and it is not NULL
+            if ( obj2[i] && 'object' === typeof obj2[i] ) {
+            	// If we are merging an object into  
+            	// a non-object, we need to cast the 
+            	// type of obj1
+            	if ('object' !== typeof clone[i]) {
+            		if (Object.prototype.toString.call(obj2[i]) === '[object Array]') {
+            			clone[i] = [];
+            		}
+            		else {
+            			clone[i] = {};
+            		}
+            	}
+                clone[i] = OBJ.merge(clone[i], obj2[i]);
+            } else {
+                clone[i] = obj2[i];
             }
         }
-        return clone;
-    };
+    }
+    
+    return clone;
+};
 
-    /**
-     * ## OBJ.subobj
-     *
-     * Creates a copy of an object containing only the properties
-     * passed as second parameter
-     *
-     * The parameter select can be an array of strings, or the name
-     * of a property.
-     *
-     * Use '.' (dot) to point to a nested property, however if a property
-     * with a '.' in the name is found, it will be used first.
-     *
-     * @param {object} o The object to dissect
-     * @param {string|array} select The selection of properties to extract
-     * @return {object} out The subobject with the properties from the parent one
-     *
-     *  @see OBJ.getNestedValue
-     */
-    OBJ.subobj = function (o, select) {
-        var out, i, key
-        if (!o) return false;
-        out = {};
-        if (!select) return out;
-        if (!(select instanceof Array)) select = [select];
-        for (i=0; i < select.length; i++) {
-            key = select[i];
-            if (o.hasOwnProperty(key)) {
-                out[key] = o[key];
-            }
-            else if (OBJ.hasOwnNestedProperty(key, o)) {
-                OBJ.setNestedValue(key, OBJ.getNestedValue(key, o), out);
-            }
-        }
-        return out;
-    };
+/**
+ * ## OBJ.mixin
+ * 
+ * Adds all the properties of obj2 into obj1
+ * 
+ * Original object is modified
+ * 
+ * @param {object} obj1 The object to which the new properties will be added
+ * @param {object} obj2 The mixin-in object
+ */
+OBJ.mixin = function (obj1, obj2) {
+	if (!obj1 && !obj2) return;
+	if (!obj1) return obj2;
+	if (!obj2) return obj1;
+	
+	for (var i in obj2) {
+		obj1[i] = obj2[i];
+	}
+};
 
-    /**
-     * ## OBJ.skim
-     *
-     * Creates a copy of an object where a set of selected properties
-     * have been removed
-     *
-     * The parameter `remove` can be an array of strings, or the name
-     * of a property.
-     *
-     * Use '.' (dot) to point to a nested property, however if a property
-     * with a '.' in the name is found, it will be deleted first.
-     *
-     * @param {object} o The object to dissect
-     * @param {string|array} remove The selection of properties to remove
-     * @return {object} out The subobject with the properties from the parent one
-     *
-     * @see OBJ.getNestedValue
-     */
-    OBJ.skim = function (o, remove) {
-        var out, i;
-        if (!o) return false;
-        out = OBJ.clone(o);
-        if (!remove) return out;
-        if (!(remove instanceof Array)) remove = [remove];
-        for (i = 0; i < remove.length; i++) {
-            if (out.hasOwnProperty(i)) {
-                delete out[i];
-            }
-            else {
-                OBJ.deleteNestedKey(remove[i], out);
-            }
+/**
+ * ## OBJ.mixout
+ * 
+ * Copies only non-overlapping properties from obj2 to obj1
+ * 
+ * Original object is modified
+ * 
+ * @param {object} obj1 The object to which the new properties will be added
+ * @param {object} obj2 The mixin-in object
+ */
+OBJ.mixout = function (obj1, obj2) {
+	if (!obj1 && !obj2) return;
+	if (!obj1) return obj2;
+	if (!obj2) return obj1;
+	
+	for (var i in obj2) {
+		if (!obj1[i]) obj1[i] = obj2[i];
+	}
+};
+
+/**
+ * ## OBJ.mixcommon
+ * 
+ * Copies only overlapping properties from obj2 to obj1
+ * 
+ * Original object is modified
+ * 
+ * @param {object} obj1 The object to which the new properties will be added
+ * @param {object} obj2 The mixin-in object
+ */
+OBJ.mixcommon = function (obj1, obj2) {
+	if (!obj1 && !obj2) return;
+	if (!obj1) return obj2;
+	if (!obj2) return obj1;
+	
+	for (var i in obj2) {
+		if (obj1[i]) obj1[i] = obj2[i];
+	}
+};
+
+/**
+ * ## OBJ.mergeOnKey
+ * 
+ * Appends / merges the values of the properties of obj2 into a 
+ * a new property named 'key' in obj1.
+ * 
+ * Returns a new object, the original ones are not modified.
+ * 
+ * This method is useful when we want to merge into a larger 
+ * configuration (e.g. min, max, value) object another one that 
+ * contains just the values for one of the properties (e.g. value). 
+ * 
+ * @param {object} obj1 The object where the merge will take place
+ * @param {object} obj2 The merging object
+ * @param {string} key The name of property under which merging the second object
+ * @return {object} clone The merged object
+ * 	
+ * 	@see OBJ.merge
+ * 
+ */
+OBJ.mergeOnKey = function (obj1, obj2, key) {
+    var clone = OBJ.clone(obj1);
+    if (!obj2 || !key) return clone;        
+    for (var i in obj2) {
+        if (obj2.hasOwnProperty(i)) {
+            if (!clone[i] || 'object' !== typeof clone[i]) {
+            	clone[i] = {};
+            } 
+            clone[i][key] = obj2[i];
         }
-        return out;
-    };
+    }
+    return clone;
+};
+    
+/**
+ * ## OBJ.subobj
+ * 
+ * Creates a copy of an object containing only the properties 
+ * passed as second parameter
+ * 
+ * The parameter select can be an array of strings, or the name 
+ * of a property. 
+ * 
+ * Use '.' (dot) to point to a nested property.
+ * 
+ * @param {object} o The object to dissect
+ * @param {string|array} select The selection of properties to extract
+ * @return {object} out The subobject with the properties from the parent one 
+ * 
+ * 	@see OBJ.getNestedValue
+ */
+OBJ.subobj = function (o, select) {
+    if (!o) return false;
+    var out = {};
+    if (!select) return out;
+    if (!(select instanceof Array)) select = [select];
+    for (var i=0; i < select.length; i++) {
+        var key = select[i];
+        if (OBJ.hasOwnNestedProperty(key, o)) {
+        	OBJ.setNestedValue(key, OBJ.getNestedValue(key, o), out);
+        }
+    }
+    return out;
+};
+  
+/**
+ * ## OBJ.skim
+ * 
+ * Creates a copy of an object where a set of selected properties
+ * have been removed
+ * 
+ * The parameter `remove` can be an array of strings, or the name 
+ * of a property. 
+ * 
+ * Use '.' (dot) to point to a nested property.
+ * 
+ * @param {object} o The object to dissect
+ * @param {string|array} remove The selection of properties to remove
+ * @return {object} out The subobject with the properties from the parent one 
+ * 
+ * 	@see OBJ.getNestedValue
+ */
+OBJ.skim = function (o, remove) {
+    if (!o) return false;
+    var out = OBJ.clone(o);
+    if (!remove) return out;
+    if (!(remove instanceof Array)) remove = [remove];
+    for (var i=0; i < remove.length; i++) {
+    	OBJ.deleteNestedKey(remove[i], out);
+    }
+    return out;
+};
 
 
-    /**
-     * ## OBJ.setNestedValue
-     *
-     * Sets the value of a nested property of an object,
-     * and returns it.
-     *
-     * If the object is not passed a new one is created.
-     * If the nested property is not existing, a new one is created.
-     *
-     * Use '.' (dot) to point to a nested property.
-     *
-     * The original object is modified.
-     *
-     * @param {string} str The path to the value
-     * @param {mixed} value The value to set
-     * @return {object|boolean} obj The modified object, or FALSE if error occurred
-     *
-     * @see OBJ.getNestedValue
-     * @see OBJ.deleteNestedKey
-     *
-     */
-    OBJ.setNestedValue = function (str, value, obj) {
-        var keys, k;
-        if (!str) {
-            JSUS.log('Cannot set value of undefined property', 'ERR');
-            return false;
-        }
-        obj = ('object' === typeof obj) ? obj : {};
-        keys = str.split('.');
-        if (keys.length === 1) {
-            obj[str] = value;
-            return obj;
-        }
-        k = keys.shift();
-        obj[k] = OBJ.setNestedValue(keys.join('.'), value, obj[k]);
+/**
+ * ## OBJ.setNestedValue
+ * 
+ * Sets the value of a nested property of an object,
+ * and returns it.
+ *
+ * If the object is not passed a new one is created.
+ * If the nested property is not existing, a new one is created.
+ * 
+ * Use '.' (dot) to point to a nested property.
+ *
+ * The original object is modified.
+ *
+ * @param {string} str The path to the value
+ * @param {mixed} value The value to set
+ * @return {object|boolean} obj The modified object, or FALSE if error occurred
+ * 
+ * @see OBJ.getNestedValue
+ * @see OBJ.deleteNestedKey
+ *  
+ */
+OBJ.setNestedValue = function (str, value, obj) {
+	if (!str) {
+		JSUS.log('Cannot set value of undefined property', 'ERR');
+		return false;
+	}
+	obj = ('object' === typeof obj) ? obj : {};
+    var keys = str.split('.');
+    if (keys.length === 1) {
+    	obj[str] = value;
         return obj;
-    };
+    }
+    var k = keys.shift();
+    obj[k] = OBJ.setNestedValue(keys.join('.'), value, obj[k]);
+    return obj;
+};
 
-    /**
-     * ## OBJ.getNestedValue
-     *
-     * Returns the value of a property of an object, as defined
-     * by a path string.
-     *
-     * Use '.' (dot) to point to a nested property.
-     *
-     * Returns undefined if the nested property does not exist.
-     *
-     * E.g.
-     *
-     * ```javascript
-     * var o = { a:1, b:{a:2} };
-     * OBJ.getNestedValue('b.a', o); // 2
-     * ```
-     *
-     * @param {string} str The path to the value
-     * @param {object} obj The object from which extract the value
-     * @return {mixed} The extracted value
-     *
-     * @see OBJ.setNestedValue
-     * @see OBJ.deleteNestedKey
-     */
-    OBJ.getNestedValue = function (str, obj) {
-        if (!obj) return;
-        var keys = str.split('.');
-        if (keys.length === 1) {
-            return obj[str];
-        }
-        var k = keys.shift();
-        return OBJ.getNestedValue(keys.join('.'), obj[k]);
-    };
+/**
+ * ## OBJ.getNestedValue
+ * 
+ * Returns the value of a property of an object, as defined
+ * by a path string. 
+ * 
+ * Use '.' (dot) to point to a nested property.
+ *  
+ * Returns undefined if the nested property does not exist.
+ * 
+ * E.g.
+ * 
+ * ```javascript
+ * var o = { a:1, b:{a:2} };
+ * OBJ.getNestedValue('b.a', o); // 2
+ * ```
+ * 
+ * @param {string} str The path to the value
+ * @param {object} obj The object from which extract the value
+ * @return {mixed} The extracted value
+ * 
+ * @see OBJ.setNestedValue
+ * @see OBJ.deleteNestedKey
+ */
+OBJ.getNestedValue = function (str, obj) {
+    if (!obj) return;
+    var keys = str.split('.');
+    if (keys.length === 1) {
+        return obj[str];
+    }
+    var k = keys.shift();
+    return OBJ.getNestedValue(keys.join('.'), obj[k]); 
+};
 
-    /**
-     * ## OBJ.deleteNestedKey
-     *
-     * Deletes a property from an object, as defined by a path string
-     *
-     * Use '.' (dot) to point to a nested property.
-     *
-     * The original object is modified.
-     *
-     * E.g.
-     *
-     * ```javascript
-     * var o = { a:1, b:{a:2} };
-     * OBJ.deleteNestedKey('b.a', o); // { a:1, b: {} }
-     * ```
-     *
-     * @param {string} str The path string
-     * @param {object} obj The object from which deleting a property
-     * @param {boolean} TRUE, if the property was existing, and then deleted
-     *
-     * @see OBJ.setNestedValue
-     * @see OBJ.getNestedValue
-     */
-    OBJ.deleteNestedKey = function (str, obj) {
-        if (!obj) return;
-        var keys = str.split('.');
-        if (keys.length === 1) {
-            delete obj[str];
-            return true;
-        }
-        var k = keys.shift();
-        if ('undefined' === typeof obj[k]) {
-            return false;
-        }
-        return OBJ.deleteNestedKey(keys.join('.'), obj[k]);
-    };
+/**
+ * ## OBJ.deleteNestedKey
+ * 
+ * Deletes a property from an object, as defined by a path string 
+ * 
+ * Use '.' (dot) to point to a nested property.
+ *  
+ * The original object is modified.
+ * 
+ * E.g.
+ * 
+ * ```javascript
+ * var o = { a:1, b:{a:2} };
+ * OBJ.deleteNestedKey('b.a', o); // { a:1, b: {} }
+ * ```
+ * 
+ * @param {string} str The path string
+ * @param {object} obj The object from which deleting a property
+ * @param {boolean} TRUE, if the property was existing, and then deleted
+ * 
+ * @see OBJ.setNestedValue
+ * @see OBJ.getNestedValue
+ */
+OBJ.deleteNestedKey = function (str, obj) {
+    if (!obj) return;
+    var keys = str.split('.');
+    if (keys.length === 1) {
+		delete obj[str];
+        return true;
+    }
+    var k = keys.shift();
+    if ('undefined' === typeof obj[k]) {
+    	return false;
+    }
+    return OBJ.deleteNestedKey(keys.join('.'), obj[k]); 
+};
 
-    /**
-     * ## OBJ.hasOwnNestedProperty
-     *
-     * Returns TRUE if a (nested) property exists
-     *
-     * Use '.' to specify a nested property.
-     *
-     * E.g.
-     *
-     * ```javascript
-     * var o = { a:1, b:{a:2} };
-     * OBJ.hasOwnNestedProperty('b.a', o); // TRUE
-     * ```
-     *
-     * @param {string} str The path of the (nested) property
-     * @param {object} obj The object to test
-     * @return {boolean} TRUE, if the (nested) property exists
-     *
-     */
-    OBJ.hasOwnNestedProperty = function (str, obj) {
-        if (!obj) return false;
-        var keys = str.split('.');
-        if (keys.length === 1) {
-            return obj.hasOwnProperty(str);
-        }
-        var k = keys.shift();
-        return OBJ.hasOwnNestedProperty(keys.join('.'), obj[k]);
-    };
+/**
+ * ## OBJ.hasOwnNestedProperty
+ * 
+ * Returns TRUE if a (nested) property exists
+ * 
+ * Use '.' to specify a nested property.
+ * 
+ * E.g.
+ * 
+ * ```javascript
+ * var o = { a:1, b:{a:2} };
+ * OBJ.hasOwnNestedProperty('b.a', o); // TRUE
+ * ```
+ * 
+ * @param {string} str The path of the (nested) property
+ * @param {object} obj The object to test
+ * @return {boolean} TRUE, if the (nested) property exists
+ * 
+ */
+OBJ.hasOwnNestedProperty = function (str, obj) {
+    if (!obj) return false;
+    var keys = str.split('.');
+    if (keys.length === 1) {
+        return obj.hasOwnProperty(str);
+    }
+    var k = keys.shift();
+    return OBJ.hasOwnNestedProperty(keys.join('.'), obj[k]); 
+};
 
 
-    /**
-     * ## OBJ.split
-     *
-     * Splits an object along a specified dimension, and returns
-     * all the copies in an array.
-     *
-     * It creates as many new objects as the number of properties
-     * contained in the specified dimension. The object are identical,
-     * but for the given dimension, which was split. E.g.
-     *
-     * ```javascript
-     *  var o = { a: 1,
-     *            b: {c: 2,
-     *                d: 3
-     *            },
-     *            e: 4
-     *  };
-     *
-     *  o = OBJ.split(o, 'b');
-     *
-     *  // o becomes:
-     *
-     *  [{ a: 1,
-     *     b: {c: 2},
-     *     e: 4
-     *  },
-     *  { a: 1,
-     *    b: {d: 3},
-     *    e: 4
-     *  }];
-     * ```
-     *
-     * @param {object} o The object to split
-     * @param {sting} key The name of the property to split
-     * @return {object} A copy of the object with split values
-     */
-    OBJ.split = function (o, key) {
-        if (!o) return;
-        if (!key || 'object' !== typeof o[key]) {
-            return JSUS.clone(o);
-        }
-
-        var out = [];
-        var model = JSUS.clone(o);
-        model[key] = {};
-
-        var splitValue = function (value) {
-            for (var i in value) {
-                var copy = JSUS.clone(model);
-                if (value.hasOwnProperty(i)) {
-                    if ('object' === typeof value[i]) {
-                        out = out.concat(splitValue(value[i]));
-                    }
-                    else {
-                        copy[key][i] = value[i];
-                        out.push(copy);
-                    }
+/**
+ * ## OBJ.split
+ *
+ * Splits an object along a specified dimension, and returns 
+ * all the copies in an array.
+ *  
+ * It creates as many new objects as the number of properties 
+ * contained in the specified dimension. The object are identical,
+ * but for the given dimension, which was split. E.g.
+ * 
+ * ```javascript
+ *  var o = { a: 1,
+ *            b: {c: 2,
+ *                d: 3
+ *            },
+ *            e: 4
+ *  };
+ *  
+ *  o = OBJ.split(o, 'b');
+ *  
+ *  // o becomes:
+ *  
+ *  [{ a: 1,
+ *     b: {c: 2},
+ *     e: 4
+ *  },
+ *  { a: 1,
+ *    b: {d: 3},
+ *    e: 4
+ *  }];
+ * ```
+ * 
+ * @param {object} o The object to split
+ * @param {sting} key The name of the property to split
+ * @return {object} A copy of the object with split values
+ */
+OBJ.split = function (o, key) {        
+    if (!o) return;
+    if (!key || 'object' !== typeof o[key]) {
+        return JSUS.clone(o);
+    }
+    
+    var out = [];
+    var model = JSUS.clone(o);
+    model[key] = {};
+    
+    var splitValue = function (value) {
+        for (var i in value) {
+            var copy = JSUS.clone(model);
+            if (value.hasOwnProperty(i)) {
+                if ('object' === typeof value[i]) {
+                    out = out.concat(splitValue(value[i]));
                 }
-            }
-            return out;
-        };
-
-        return splitValue(o[key]);
-    };
-
-    /**
-     * ## OBJ.melt
-     *
-     * Creates a new object with the specified combination of
-     * properties - values
-     *
-     * The values are assigned cyclically to the properties, so that
-     * they do not need to have the same length. E.g.
-     *
-     * ```javascript
-     *  J.createObj(['a','b','c'], [1,2]); // { a: 1, b: 2, c: 1 }
-     * ```
-     * @param {array} keys The names of the keys to add to the object
-     * @param {array} values The values to associate to the keys
-     * @return {object} A new object with keys and values melted together
-     */
-    OBJ.melt = function(keys, values) {
-        var o = {}, valen = values.length;
-        for (var i = 0; i < keys.length; i++) {
-            o[keys[i]] = values[i % valen];
-        }
-        return o;
-    };
-
-    /**
-     * ## OBJ.uniqueKey
-     *
-     * Creates a random unique key name for a collection
-     *
-     * User can specify a tentative unique key name, and if already
-     * existing an incremental index will be added as suffix to it.
-     *
-     * Notice: the method does not actually create the key
-     * in the object, but it just returns the name.
-     *
-     * @param {object} obj The collection for which a unique key name will be created
-     * @param {string} prefixName Optional. A tentative key name. Defaults, a 15-digit random number
-     * @param {number} stop Optional. The number of tries before giving up searching
-     *  for a unique key name. Defaults, 1000000.
-     *
-     * @return {string|undefined} The unique key name, or undefined if it was not found
-     */
-    OBJ.uniqueKey = function(obj, prefixName, stop) {
-        var name;
-        var duplicateCounter = 1;
-        if (!obj) {
-            JSUS.log('Cannot find unique name in undefined object', 'ERR');
-            return;
-        }
-        prefixName = '' + (prefixName || Math.floor(Math.random()*1000000000000000));
-        stop = stop || 1000000;
-        name = prefixName;
-        while (obj[name]) {
-            name = prefixName + duplicateCounter;
-            duplicateCounter++;
-            if (duplicateCounter > stop) {
-                return;
-            }
-        }
-        return name;
-    }
-
-    /**
-     * ## OBJ.augment
-     *
-     * Pushes the values of the properties of an object into another one
-     *
-     * User can specifies the subset of keys from both objects
-     * that will subject to augmentation. The values of the other keys
-     * will not be changed
-     *
-     * Notice: the method modifies the first input paramteer
-     *
-     * E.g.
-     *
-     * ```javascript
-     * var a = { a:1, b:2, c:3 };
-     * var b = { a:10, b:2, c:100, d:4 };
-     * OBJ.augment(a, b); // { a: [1, 10], b: [2, 2], c: [3, 100]}
-     *
-     * OBJ.augment(a, b, ['b', 'c', 'd']); // { a: 1, b: [2, 2], c: [3, 100], d: [4]});
-     *
-     * ```
-     *
-     * @param {object} obj1 The object whose properties will be augmented
-     * @param {object} obj2 The augmenting object
-     * @param {array} key Optional. Array of key names common to both objects taken as
-     *  the set of properties to augment
-     */
-    OBJ.augment = function(obj1, obj2, keys) {
-        var i, k, keys = keys || OBJ.keys(obj1);
-
-        for (i = 0 ; i < keys.length; i++) {
-            k = keys[i];
-            if ('undefined' !== typeof obj1[k] && Object.prototype.toString.call(obj1[k]) !== '[object Array]') {
-                obj1[k] = [obj1[k]];
-            }
-            if ('undefined' !== obj2[k]) {
-                if (!obj1[k]) obj1[k] = [];
-                obj1[k].push(obj2[k]);
-            }
-        }
-    }
-
-
-    /**
-     * ## OBJ.pairwiseWalk
-     *
-     * Given two objects, executes a callback on all attributes with the same name
-     *
-     * The results of each callback are aggregated in a new object under the
-     * same property name.
-     *
-     * Does not traverse nested objects, and properties of the prototype are excluded
-     *
-     * Returns a new object, the original ones are not modified.
-     *
-     * E.g.
-     *
-     * ```javascript
-     * var a = { b:2, c:3, d:5 };
-     * var b = { a:10, b:2, c:100, d:4 };
-     * var sum = function(a,b) {
-     *     if ('undefined' !== typeof a) {
-     *         return 'undefined' !== typeof b ? a + b : a;
-     *     }
-     *     return b;
-     * };
-     * OBJ.pairwiseWalk(a, b, sum); // { a:10, b:4, c:103, d:9 }
-     * ```
-     *
-     * @param {object} o1 The first object
-     * @param {object} o2 The second object
-     * @return {object} clone The object aggregating the results
-     *
-     */
-    OBJ.pairwiseWalk = function(o1, o2, cb) {
-        var i, out;
-        if (!o1 && !o2) return;
-        if (!o1) return o2;
-        if (!o2) return o1;
-
-        out = {};
-        for (i in o1) {
-            if (o1.hasOwnProperty(i)) {
-                out[i] = o2.hasOwnProperty(i) ? cb(o1[i], o2[i]) : cb(o1[i]);
-            }
-        }
-
-        for (i in o2) {
-            if (o2.hasOwnProperty(i)) {
-                if ('undefined' === typeof out[i]) {
-                    out[i] = cb(undefined, o2[i]);
+                else {
+                    copy[key][i] = value[i]; 
+                    out.push(copy);
                 }
             }
         }
-
         return out;
     };
+    
+    return splitValue(o[key]);
+};
+
+/**
+ * ## OBJ.melt
+ * 
+ * Creates a new object with the specified combination of
+ * properties - values
+ * 
+ * The values are assigned cyclically to the properties, so that
+ * they do not need to have the same length. E.g.
+ * 
+ * ```javascript
+ * 	J.createObj(['a','b','c'], [1,2]); // { a: 1, b: 2, c: 1 }
+ * ```
+ * @param {array} keys The names of the keys to add to the object
+ * @param {array} values The values to associate to the keys  
+ * @return {object} A new object with keys and values melted together
+ */
+OBJ.melt = function(keys, values) {
+	var o = {}, valen = values.length;
+	for (var i = 0; i < keys.length; i++) {
+		o[keys[i]] = values[i % valen];
+	}
+	return o;
+};
+
+/**
+ * ## OBJ.uniqueKey
+ * 
+ * Creates a random unique key name for a collection
+ * 
+ * User can specify a tentative unique key name, and if already
+ * existing an incremental index will be added as suffix to it. 
+ * 
+ * Notice: the method does not actually creates the key
+ * in the object, but it just returns the name.
+ * 
+ * 
+ * @param {object} obj The collection for which a unique key name will be created
+ * @param {string} name Optional. A tentative key name. Defaults, a 10-digit random number
+ * @param {number} stop Optional. The number of tries before giving up searching
+ * 	for a unique key name. Defaults, 1000000.
+ * 
+ * @return {string|undefined} The unique key name, or undefined if it was not found
+ */
+OBJ.uniqueKey = function(obj, name, stop) {
+	if (!obj) {
+		JSUS.log('Cannot find unique name in undefined object', 'ERR');
+		return;
+	}
+	name = name || '' + Math.floor(Math.random()*10000000000);
+	stop = stop || 1000000;
+	var duplicateCounter = 1;
+	while (obj[name]) {
+		name = name + '' + duplicateCounter;
+		duplicateCounter++;
+		if (duplicateCounter > stop) {
+			return;
+		}
+	}
+	return name;
+}
+
+/**
+ * ## OBJ.augment
+ * 
+ * Creates an object containing arrays of all the values of 
+ * 
+ * User can specifies the subset of keys from both objects 
+ * that will subject to augmentation. The values of the other keys 
+ * will not be changed
+ * 
+ * Notice: the method modifies the first input paramteer
+ * 
+ * E.g.
+ * 
+ * ```javascript
+ * var a = { a:1, b:2, c:3 };
+ * var b = { a:10, b:2, c:100, d:4 };
+ * OBJ.augment(a, b); // { a: [1, 10], b: [2, 2], c: [3, 100]}
+ * 
+ * OBJ.augment(a, b, ['b', 'c', 'd']); // { a: 1, b: [2, 2], c: [3, 100], d: [4]});
+ * 
+ * ```
+ * 
+ * @param {object} obj1 The object whose properties will be augmented
+ * @param {object} obj2 The augmenting object
+ * @param {array} key Optional. Array of key names common to both objects taken as
+ * 	the set of properties to augment
+ */
+OBJ.augment = function(obj1, obj2, keys) {  
+	var i, k, keys = keys || OBJ.keys(obj1);
+	
+	for (i = 0 ; i < keys.length; i++) {
+		k = keys[i];
+		if ('undefined' !== typeof obj1[k] && Object.prototype.toString.call(obj1[k]) !== '[object Array]') {
+			obj1[k] = [obj1[k]];
+		}
+		if ('undefined' !== obj2[k]) {
+			if (!obj1[k]) obj1[k] = []; 
+			obj1[k].push(obj2[k]);
+		}
+	}
+}
 
 
-    JSUS.extend(OBJ);
-
+JSUS.extend(OBJ);
+    
 })('undefined' !== typeof JSUS ? JSUS : module.parent.exports.JSUS);
-
 /**
  * # RANDOM
  *  
@@ -7366,15 +7298,12 @@ JSUS.extend(PARSE);
 /**
  * # Variables
  *
- * Copyright(c) 2012 Stefano Balietti
+ * Copyright(c) 2013 Stefano Balietti
  * MIT Licensed
  *
  * `nodeGame` variables and constants module
- *
  * ---
- *
  */
-
 (function (node) {
 
     // ## Constants
@@ -7420,8 +7349,6 @@ JSUS.extend(PARSE);
      */
     k.remoteVerbosity = k.verbosity_levels.WARN;
 
-
-
     /**
      * ### node.actions
      *
@@ -7435,8 +7362,7 @@ JSUS.extend(PARSE);
      *
      * - SET: Store / changes the value of a property in the receiver of the msg
      * - GET: Asks the value value of a property to the receiver of the msg
-     * - SAY: Announces a change of state or other global property in the sender of the msg
-     *
+     * - SAY: Announces a change of state or property in the sender of the msg
      */
     k.action = {};
 
@@ -7567,9 +7493,6 @@ JSUS.extend(PARSE);
         goto_stage: 'goto_stage'
     };
 
-
-
-
     /**
      * ### Direction
      *
@@ -7580,56 +7503,6 @@ JSUS.extend(PARSE);
      */
     k.IN  = 'in.';
     k.OUT = 'out.';
-
-
-    // TODO node.is is basically replaced by Game.stateLevels
-
-
-    /**
-     * ### node.is
-     *
-     * Levels associated to the states of the nodeGame engine
-     *
-     * @deprecated
-     */
-    k.is = {};
-
-    // #### is.UNKNOWN
-    // A game has not been initialized
-    k.is.UNKNOWN = 0;
-
-    // #### is.INITIALIZING
-    // The engine is loading all the modules
-    k.is.INITIALIZING = 1;
-
-    // #### is.INITIALIZED
-    // The engine is fully loaded, but there is still no game
-    k.is.INITIALIZED = 5;
-
-    // #### is.GAMELOADED
-    // The engine is fully loaded, and a game has been loaded
-    k.is.GAMELOADED = 10;
-
-    // #### is.DEAD
-    // An unrecoverable error has occurred
-    k.is.DEAD = -1;
-
-    // TODO: remove these
-    // #### is.LOADING
-    // A game is loading
-    k.is.LOADING = 10;
-
-    // #### is.LOADED
-    // A game has been loaded, but the GameWindow object could still require some time
-    k.is.LOADED  = 25;
-
-    // #### is.PLAYING
-    // Everything is ready
-    k.is.PLAYING = 50;
-
-    // #### is.DONE
-    // The player completed the game state
-    k.is.DONE = 100;
 
     /**
      * ### node.stateLevels
@@ -7655,17 +7528,34 @@ JSUS.extend(PARSE);
      * Levels associated with the states of the stages of the Game
      */
     k.stageLevels = {
-        UNINITIALIZED:  0,
-        INITIALIZING:   1,  // executing init
-        INITIALIZED:    5,  // init executed
-        LOADING:       30,
-        LOADED:        40,
-        PLAYING:       50,
-        PAUSING:       55,  // to be removed
-        PAUSED:        60,  // to be removed
-        RESUMING:      65,
-        RESUMED:       70,
-        DONE:         100
+        UNINITIALIZED:       0,  // Constructor called.
+        INITIALIZING:        1,  // Executing init.
+        INITIALIZED:         5,  // Init executed.
+        EXECUTING_CALLBACK:  30, // Executing the stage callback.
+        CALLBACK_EXECUTED:   40, // Stage callback executed.
+        LOADED:              45, // Both GameWindow loaded and cb executed.
+        PLAYING:             50, // Player playing.
+        PAUSING:             55,  // to be removed
+        PAUSED:              60,  // to be removed
+        RESUMING:            65,
+        RESUMED:             70,
+        DONE:                100
+    };
+
+    /**
+     * ### node.stageLevels
+     *
+     * Levels associated with the states of the stages of the Game
+     */
+    k.windowLevels = {
+        UNINITIALIZED:  0, // GameWindow constructor called
+        INITIALIZING:   1, // Executing init.
+        INITIALIZED:    5, // Init executed.
+        LOADING:       30, // Loading a new Frame.
+        LOADED:        40, // Frame Loaded.
+        FREEZING:      50,  // The screen is about to be frozen. 
+        FROZEN:        60, // The screen is freezed.
+        DEFROSTING:    65  // The screen is defrosting.
     };
 
     /**
@@ -7929,16 +7819,14 @@ JSUS.extend(PARSE);
      * whole length of the game
      *
      * @param {string} type The event name
-     * @param {function} listener The function to fire
-     *
-     * @see EventEmitter.addLocal
+     * @param {function} listener The function to emit
      */
     EventEmitter.prototype.on = function (type, listener) {
         if ('string' !== typeof type) {
-            throw TypeError('EventEmitter.on: type must be a string');
+            throw TypeError('EventEmitter.on: type must be a string.');
         }
         if ('function' !== typeof listener) {
-            throw TypeError('EventEmitter.remove: listener must be a function');
+            throw TypeError('EventEmitter.on: listener must be a function.');
         }
 
         if (!this.events[type]) {
@@ -8132,7 +8020,7 @@ JSUS.extend(PARSE);
             for (i = 0; i < len; i++) {
                 if (listeners[i] == listener) {
                     listeners.splice(i, 1);
-                    node.silly('ee.' + this.name + 'removed ' + 
+                    node.silly('ee.' + this.name + ' removed ' + 
                                'listener: ' + type + ' ' + listener);
                     return true;
                 }
@@ -8727,16 +8615,13 @@ GameStage.stringify = function(gs) {
 /**
  * # PlayerList
  *
- * Copyright(c) 2012 Stefano Balietti
+ * Copyright(c) 2013 Stefano Balietti
  * MIT Licensed
  *
- * Stores a collection of `Player` objects and offers methods
- * to perform operation on them
+ * Handles a collection of `Player` objects.
  *
  * ---
- *
  */
-
 (function (exports, parent) {
 
     // ## Global scope
@@ -9043,13 +8928,24 @@ GameStage.stringify = function(gs) {
      * @return {boolean} TRUE, if all checked players have terminated the stage
      */
     PlayerList.prototype.isStepDone = function (gameStage, upTo) {
-        var p, i, cmp;
+        return this.arePlayersSync(gameStage, stageLevels.DONE, upTo);
+    };
 
-        if (!gameStage) return false;
+    // TODO doc
+    PlayerList.prototype.isStepLoaded = function (gameStage, upTo) {
+        return this.arePlayersSync(gameStage, stageLevels.LOADED, upTo);
+    };
+    
+    // TODO: doc
+    PlayerList.prototype.arePlayersSync = function(gameStage, stageLevel, upTo) {
+        var p, i, len, cmp;
 
+        if (!gameStage) {
+            throw new TypeError('PlayerList.arePlayersSync: invalid gameStage.');
+        }
         upTo = !!upTo;
-
-        for (i = 0; i < this.db.length; i++) {
+        len = this.db.length;
+        for (i = 0; i < len; i++) {
             p = this.db[i];
             cmp = GameStage.compare(gameStage, p.stage);
 
@@ -9080,15 +8976,14 @@ GameStage.stringify = function(gs) {
                 }
             }
 
-            // Player not done with his step
-            if (p.stageLevel !== stageLevels.DONE) {
+            // Player not at the desider 
+            if (p.stageLevel !== stageLevel) {
                 return false;
             }
         }
 
         return true;
     };
-
 
     /**
      * ### PlayerList.toString
@@ -9159,7 +9054,6 @@ GameStage.stringify = function(gs) {
         return this.limit(N).fetch();
     };
 
-
     /**
      * # Player Class
      *
@@ -9191,7 +9085,6 @@ GameStage.stringify = function(gs) {
      * ---
      *
      */
-
 
     // Expose Player constructor
     exports.Player = Player;
@@ -11747,17 +11640,13 @@ GameStage.stringify = function(gs) {
 /**
  * # Socket
  *
- * Copyright(c) 2012 Stefano Balietti
+ * Copyright(c) 2013 Stefano Balietti
  * MIT Licensed
  *
  * `nodeGame` component responsible for dispatching events and messages
- *
  * ---
- *
  */
-
 (function (exports, parent) {
-
 
     exports.Socket = Socket;
 
@@ -11782,7 +11671,6 @@ GameStage.stringify = function(gs) {
          */
         this.buffer = [];
 
-
         /**
          * ### Socket.session
          *
@@ -11792,7 +11680,6 @@ GameStage.stringify = function(gs) {
          *
          */
         this.session = null;
-
 
         /**
          * ### Socket.user_options
@@ -11860,10 +11747,9 @@ GameStage.stringify = function(gs) {
         msg = this.secureParse(msg);
         if (!msg) return;
 
-        var sessionObj;
-
-        // Parsing successful
+        // Parsing successful.
         if (msg.target === 'HI') {
+            // TODO: do we need to more checkings, besides is HI?
 
             // replace itself: will change onMessage
             this.attachMsgListeners();
@@ -11872,25 +11758,6 @@ GameStage.stringify = function(gs) {
             // If listening on PLAYER_CREATED, functions can be
             // executed before the HI
             this.startSession(msg);
-
-            // TODO: do we need this?
-            //sessionObj = this.node.store(msg.session);
-
-//            // TODO: recover this branch
-//            if (false) {
-//                //if (sessionObj) {
-//                this.node.session.restore(sessionObj);
-//
-//                this.send(this.node.msg.create({
-//                    target: 'HI_AGAIN',
-//                    data: this.node.player
-//                }));
-//            }
-//            else {
-//                // TODO: do we need this ? Every time? Shall set an option?
-//                // this.node.store(msg.session, this.node.session.save());
-//            }
-
         }
     };
 
@@ -11956,11 +11823,8 @@ GameStage.stringify = function(gs) {
      * @see this.node.emit
      * @see Socket.clearBuffer
      */
-    Socket.prototype.shouldClearBuffer = function (msgHandler) {
-        //if (this.node.game.isReady && this.node.game.isReady()) {
-        if (this.node.game.isReady()) {
-            this.clearBuffer(msgHandler);
-        }
+    Socket.prototype.shouldClearBuffer = function () {
+        return this.node.game.isReady();
     };
 
     /**
@@ -12482,9 +12346,8 @@ GameStage.stringify = function(gs) {
  * Copyright(c) 2013 Stefano Balietti
  * MIT Licensed
  *
- * Wrapper class for a `GamePlot` object and functions to control the game flow
- *
- *  ---
+ * Handles flow of the game.
+ * ---
  */
 (function(exports, parent) {
 
@@ -12518,7 +12381,6 @@ GameStage.stringify = function(gs) {
         // This updates are never published.
         this.setStateLevel(constants.stateLevels.UNINITIALIZED, true);
         this.setStageLevel(constants.stageLevels.UNINITIALIZED, true);
-
 
         // ## Private properties
 
@@ -12644,6 +12506,9 @@ GameStage.stringify = function(gs) {
     Game.prototype.start = function() {
         var onInit, rc, node;
         node = this.node;
+
+        // Store time:
+        this.node.timer.setTimestamp('start');
 
         if (node.player.placeholder) {
             throw new node.NodeGameMisconfiguredGameError(
@@ -12775,33 +12640,38 @@ GameStage.stringify = function(gs) {
      * @TODO: check with Game.ready
      */
     Game.prototype.resume = function() {
-        var msgHandler;
+        var msgHandler, node;
 
         if (!this.paused) {
             throw new Error('Game.pause: called while not paused');
         }
+        
+        node = this.node;
 
-        this.node.emit('RESUMING');
+        node.emit('RESUMING');
 
         this.paused = false;
-
+        
         // If the Stager defines an appropriate handler, give it the messages
         // that were buffered during the pause.
         // Otherwise, emit the buffered messages normally.
         msgHandler = this.plot.getProperty(this.getCurrentGameStage(),
                                            'resumeMsgHandler');
-        if (msgHandler) {
-            // shouldClearBuffer checks Game.isReady and we don't want that
-            this.node.socket.clearBuffer(msgHandler);
-        }
-        else {
-            this.node.socket.shouldClearBuffer();
-        }
+
+        node.socket.clearBuffer(msgHandler);
+
+// TODO: check if we this lengthy construct
+//        if (msgHandler) {
+//            // shouldClearBuffer checks Game.isReady and we don't want that
+//            this.node.socket.clearBuffer(msgHandler);
+//        }
+//        else {
+//            node.socket.shouldClearBuffer();
+//        }
 
         // Reset the Socket's message handler to the default:
-        this.node.socket.setMsgListener();
-
-        this.node.emit('RESUMED');
+        node.socket.setMsgListener();
+        node.emit('RESUMED');
 
         // broadcast?
     };
@@ -12830,13 +12700,8 @@ GameStage.stringify = function(gs) {
                 'Game.shouldStep: rule is not a function');
         }
 
-        if (stepRule(this.getCurrentGameStage(), this.getStageLevel(),
-                     this.pl, this)) {
-            return this.step();
-        }
-        else {
-            return null;
-        }
+        return stepRule(this.getCurrentGameStage(), this.getStageLevel(),
+                        this.pl, this);
     };
 
     /**
@@ -12859,6 +12724,7 @@ GameStage.stringify = function(gs) {
         var property, handler;
         var minThreshold, maxThreshold, exactThreshold;
         var minCallback = null, maxCallback = null, exactCallback = null;
+
         node = this.node;
 
         if (this.getStateLevel() < constants.stateLevels.INITIALIZED) {
@@ -12874,13 +12740,18 @@ GameStage.stringify = function(gs) {
         node.events.ee.step.clear();
 
         // Emit buffered messages:
-        node.socket.shouldClearBuffer();
+        if (node.socket.shouldClearBuffer()) {
+            node.socket.clearBuffer();
+        }
 
         if ('string' === typeof nextStep) {
             if (nextStep === GamePlot.GAMEOVER) {
                 this.gameover();
                 // Emit buffered messages:
-                node.socket.shouldClearBuffer();
+                if (node.socket.shouldClearBuffer()) {
+                    node.socket.clearBuffer();
+                }
+                
                 node.emit('GAME_OVER');
                 return null;
             }
@@ -12903,6 +12774,9 @@ GameStage.stringify = function(gs) {
             if (this.plot.stepsToNextStage(curStep) === 1) {
                 nextStageObj = this.plot.getStage(nextStep);
                 if (!nextStageObj) return false;
+
+                // Store time:
+                this.node.timer.setTimestamp('stage', (new Date()).getTime());
 
                 // clear the previous stage listeners
                 node.events.ee.stage.clear();
@@ -13047,8 +12921,12 @@ GameStage.stringify = function(gs) {
             }
 
             // Emit buffered messages:
-            node.socket.shouldClearBuffer();
+            if (node.socket.shouldClearBuffer()) {
+                node.socket.clearBuffer();
+            }
+
             return this.execStep(this.getCurrentStep());
+            
         }
     };
 
@@ -13064,6 +12942,7 @@ GameStage.stringify = function(gs) {
      */
     Game.prototype.execStep = function(stage) {
         var cb, res, node;
+
         node = this.node;
 
         if (!stage || 'object' !== typeof stage) {
@@ -13073,7 +12952,7 @@ GameStage.stringify = function(gs) {
 
         cb = stage.cb;
 
-        this.setStageLevel(constants.stageLevels.LOADING);
+        this.setStageLevel(constants.stageLevels.EXECUTING_CALLBACK);
 
         try {
             res = cb.call(node.game);
@@ -13083,23 +12962,17 @@ GameStage.stringify = function(gs) {
             node.err('An error occurred while executing a custom callback');
             throw new node.NodeGameRuntimeError(e);
         }
-
-        this.setStageLevel(constants.stageLevels.LOADED);
-        node.emit('STEP_CALLBACK_EXECUTED');
         if (res === false) {
-            // A non fatal error occurred
+            // A non fatal error occurred.
             node.err('A non fatal error occurred while executing ' +
                      'the callback of stage ' + this.getCurrentGameStage());
         }
-
-        // TODO node.is is probably going to change
-        if (!node.window || node.window.state == node.constants.is.LOADED) {
-            // If there is a node.window, we must make sure that the DOM
-            // of the page is fully loaded. Only the last one to load
-            // (between the window and the callback) will emit 'PLAYING'.
-            // @see GameWindow.updateStatus
-            node.emit('PLAYING');
-        }
+        
+        this.setStageLevel(constants.stageLevels.CALLBACK_EXECUTED);
+        
+        node.emit('STEP_CALLBACK_EXECUTED');
+        
+        // Internal listeners will check whether we need to emit PLAYING.
 
         return res;
     };
@@ -13108,14 +12981,37 @@ GameStage.stringify = function(gs) {
         return this.node.player.stateLevel;
     };
 
-    Game.prototype.getStageLevel = function() {
-        return this.node.player.stageLevel;
-    };
-
     Game.prototype.getCurrentStep = function() {
         return this.plot.getStep(this.getCurrentGameStage());
     };
 
+    /**
+     * ## Game.getStageLevel
+     *
+     * Return the execution level of the current game stage
+     *
+     * The execution level is defined in `node.constants.stageLevels`,
+     * and it is of the type INITIALIZED, CALLBACK_EXECUTED, etc.
+     * The return value is a reference to `node.player.stageLevel`.
+     *
+     * @return GameStage
+     * @see node.player.stageLevel
+     * @see node.constants.stageLevels
+     */
+    Game.prototype.getStageLevel = function() {
+        return this.node.player.stageLevel;
+    };
+    
+    /**
+     * ## Game.getCurrentGameStage
+     *
+     * Return the GameStage that is currently being executed. 
+     *
+     * The return value is a reference to node.player.stage.
+     *
+     * @return GameStage
+     * @see node.player.stage
+     */
     Game.prototype.getCurrentGameStage = function() {
         return this.node.player.stage;
     };
@@ -13154,9 +13050,6 @@ GameStage.stringify = function(gs) {
         this.node.player.stage = gameStage;
     };
 
-    // TODO check the update rules and how they are inserted in the general
-    // framework
-
     Game.prototype.publishUpdate = function(type, newValue) {
         var node, data;
         if ('string' !== typeof type) {
@@ -13189,6 +13082,8 @@ GameStage.stringify = function(gs) {
      * Evaluates the current `publishLevel`, the type of update, and the
      * value of the update to decide whether is to be published or not.
      *
+     * Checks also if the `syncOnLoaded` option is on.
+     *
      * Updates rules are described in '/lib/modules/variables.js'.
      *
      * @param {string} type The type of update:
@@ -13197,22 +13092,36 @@ GameStage.stringify = function(gs) {
      * @return {boolean} TRUE, if the update should be sent
      */
     Game.prototype.shouldPublishUpdate = function(type, value) {
-        var levels;
+        var levels, myPublishLevel, stageLevels;
         if ('string' !== typeof type) {
             throw new TypeError(
                 'Game.shouldPublishUpdate: type must be string.');
         }
+        myPublishLevel = this.settings.myPublishLevel;
         levels = constants.publish_levels;
-        switch(this.settings.publishLevel) {
-        case levels.NONE:
+        stageLevels = constants.stageLevels;
+
+        // Two cases are handled outside of the switch: NO msg
+        // and LOADED stage with syncOnLoaded option.
+        if (myPublishLevel === levels.NONE) {
             return false;
+        }
+        if (this.plot.getProperty(this.getCurrentGameStage(), 'syncOnLoaded')) {
+            if (type === 'stateLevel' && value === stageLevels.LOADED) {
+                return true;
+            }
+            // Else will be evaluated below.
+        }
+
+        // Check all the other cases.
+        switch(myPublishLevel) {
         case levels.FEW:
             return type === 'stage';
         case levels.REGULAR:
             if (type === 'stateLevel') return false;
             if (type === 'stageLevel') {
-                return (value === constants.stageLevels.PLAYING ||
-                        value === constants.stageLevels.DONE);
+                return (value === stageLevels.PLAYING ||
+                        value === stageLevels.DONE);
             }
             return true; // type === 'stage'
         case levels.MOST:
@@ -13243,9 +13152,6 @@ GameStage.stringify = function(gs) {
      * If the browser does not support the method object setters,
      * this property is disabled, and Game.isReady() should be used
      * instead.
-     *
-     * TODO check whether the conditions are adequate
-     *
      */
     Game.prototype.isReady = function() {
         var node, stageLevel, stateLevel;
@@ -13266,25 +13172,56 @@ GameStage.stringify = function(gs) {
 
         case constants.stateLevels.PLAYING_STEP:
             switch (stageLevel) {
-            case constants.stageLevels.LOADING:
+            case constants.stageLevels.EXECUTING_CALLBACK:
+            case constants.stageLevels.CALLBACK_EXECUTED:
             case constants.stageLevels.PAUSING:
             case constants.stageLevels.RESUMING:
                 return false;
             }
             break;
         }
-
-        // TODO: make node.window use other than the .is constant
         // Check if there is a gameWindow obj and whether it is loading
-        return node.window ? node.window.state >= constants.is.LOADED : true;
+        return node.window ? node.window.isReady() : true;
     };
 
+    
+    /**
+     * ## Game.shouldEmitPlaying
+     *
+     * Gives the last green light to let the players play a step.
+     *
+     * Sometimes we want to synchronize players to the very last
+     * moment before they start playing. Here we check again.
+     * This handles the case also if some players has disconnected
+     * between the beginning of the stepping procedure and this
+     * method call.
+     *
+     * Checks also the GameWindow object.
+     * @param {boolean} strict If TRUE, PLAYING can be emitted only coming
+     *   from the LOADED stage level. Defaults, TRUE.
+     * @return {boolean} TRUE, if the PLAYING event should be emitted.
+     */
+    Game.prototype.shouldEmitPlaying = function(strict) {
+        var curGameStage, curStageLevel, syncOnLoaded, node;
+        if ('undefined' === typeof strict || strict) {
+            // Should emit PLAYING only after LOADED.
+            curStageLevel = this.getStageLevel();
+            if (curStageLevel !== constants.stageLevels.LOADED) return false;
+        }
+        node = this.node;
+        curGameStage = this.getCurrentGameStage();
+        if (!this.isReady()) return false;
+        if (!this.checkPlistSize()) return false;
+        
+        syncOnLoaded = this.plot.getProperty(curGameStage, 'syncOnLoaded');
+        if (!syncOnLoaded) return true;
+        return node.game.pl.isStepLoaded(curGameStage);
+    }
     // ## Closure
 })(
     'undefined' != typeof node ? node : module.exports,
     'undefined' != typeof node ? node : module.parent.exports
 );
-
 /**
  * # GameSession
  *
@@ -14223,17 +14160,16 @@ GameStage.stringify = function(gs) {
  * MIT Licensed
  *
  * Timing-related utility functions
- *
  *  ---
  */
 (function(exports, parent) {
 
     // ## Global scope
+    var J = parent.JSUS;
+    var constants = parent.constants;
 
     // Exposing Timer constructor
     exports.Timer = Timer;
-
-    var constants = parent.constants;
 
     /**
      * ## Timer constructor
@@ -14246,7 +14182,28 @@ GameStage.stringify = function(gs) {
     function Timer(node, settings) {
         this.node = node;
 
-        settings = settings || {};
+        this.settings = settings || {};
+
+        /**
+         * ### Timer.timers
+         *
+         * Collection of currently active timers created with `Timer.createTimer`
+         * @see Timer.createTimer
+         */
+        this.timers = {};
+
+        /**
+         * ### Timer.timestamps
+         *
+         * Named timestamp collection
+         *
+         * Maps names to numbers (milliseconds since epoch)
+         *
+         * @see Timer.setTimestamp
+         * @see Timer.getTimestamp
+         * @see Timer.getTimeSince
+         */
+        this.timestamps = {};
     }
 
     // ## Timer methods
@@ -14265,9 +14222,17 @@ GameStage.stringify = function(gs) {
      */
     Timer.prototype.createTimer = function(options) {
         var gameTimer, pausedCb, resumedCb;
+        options = options || {};
+        options.name = options.name || 
+            J.uniqueKey(this.timers, 'timer_' + J.randomInt(0, 10000000));
+
+        if (this.timers[options.name]) {
+            throw new Error('Timer.createTimer: timer ' + options.name +
+                            ' already existing.');
+        }
 
         // Create the GameTimer:
-        gameTimer = new this.node.GameTimer(options);
+        gameTimer = new GameTimer(this.node, options);
 
         // Attach pause / resume listeners:
         pausedCb = function() {
@@ -14289,6 +14254,9 @@ GameStage.stringify = function(gs) {
         // unregistered later:
         gameTimer.timerPausedCallback = pausedCb;
         gameTimer.timerResumedCallback = resumedCb;
+        
+        // Add a reference into this.timers.
+        this.timers[gameTimer.name] = gameTimer;
 
         return gameTimer;
     };
@@ -14306,10 +14274,12 @@ GameStage.stringify = function(gs) {
         if (!gameTimer.isStopped()) {
             gameTimer.stop();
         }
-
+        
         // Detach listeners:
         this.node.off('PAUSED', gameTimer.timerPausedCallback);
         this.node.off('RESUMED', gameTimer.timerResumedCallback);
+        // Delete reference in this.timers.
+        delete this.timers[gameTimer.name];
     };
 
     // Common handler for randomEmit and randomExec
@@ -14318,6 +14288,7 @@ GameStage.stringify = function(gs) {
         var waitTime;
         var callback;
         var timerObj;
+        var tentativeName;
 
         // Get time to wait:
         maxWait = maxWait || 6000;
@@ -14337,13 +14308,119 @@ GameStage.stringify = function(gs) {
             };
         }
 
+        tentativeName = emit 
+            ? 'rndEmit_' + hook + '_' + J.randomInt(0, 1000000)
+            : 'rndExec_' + J.randomInt(0, 1000000);       
+
         // Create and run timer:
         timerObj = this.createTimer({
             milliseconds: waitTime,
-            timeup: callback
+            timeup: callback,
+            name: J.uniqueKey(this.timers, tentativeName)
         });
-        timerObj.start();
+
+        // TODO: check if this condition is ok.
+        if (this.node.game.isReady()) {
+            timerObj.start();
+        }
+        else {
+            // TODO: this is not enough. Does not cover all use cases.
+            this.node.once('PLAYING', function() {
+                timerObj.start();
+            });
+        }
     }
+
+    /**
+     * ### Timer.setTimestamp
+     *
+     * Adds or changes a named timestamp
+     *
+     * @param {string} name The name of the timestamp
+     * @param {number|undefined} time Optional. The time in ms as returned by
+     *   Date.getTime(). Default: Current time.
+     */
+    Timer.prototype.setTimestamp = function(name, time) {
+        // Default time: Current time
+        if ('undefined' === typeof time) time = (new Date()).getTime();
+
+        // Check inputs:
+        if ('string' !== typeof name) {
+            throw new Error('Timer.setTimestamp: name must be a string');
+        }
+        if ('number' !== typeof time) {
+            throw new Error('Timer.setTimestamp: time must be a number or ' +
+                            'undefined');
+        }
+
+        this.timestamps[name] = time;
+    };
+
+    /**
+     * ### Timer.getTimestamp
+     *
+     * Retrieves a named timestamp
+     *
+     * @param {string} name The name of the timestamp
+     *
+     * @return {number|null} The time associated with the timestamp,
+     *   NULL if it doesn't exist
+     */
+    Timer.prototype.getTimestamp = function(name) {
+        // Check input:
+        if ('string' !== typeof name) {
+            throw new Error('Timer.getTimestamp: name must be a string');
+        }
+
+        if (this.timestamps.hasOwnProperty(name)) {
+            return this.timestamps[name];
+        }
+        else {
+            return null;
+        }
+    };
+
+    /**
+     * ### Timer.getAllTimestamps
+     *
+     * Returns the map with all timestamps
+     *
+     * Do not change the returned object.
+     *
+     * @return {object} The timestamp map
+     */
+    Timer.prototype.getAllTimestamps = function() {
+        return this.timestamps;
+    };
+
+    /**
+     * ### Timer.getTimeSince
+     *
+     * Gets the time in ms since a timestamp
+     *
+     * @param {string} name The name of the timestamp
+     *
+     * @return {number|null} The time since the timestamp in ms,
+     *   NULL if it doesn't exist
+     */
+    Timer.prototype.getTimeSince = function(name) {
+        var currentTime;
+
+        // Get current time:
+        currentTime = (new Date()).getTime();
+
+        // Check input:
+        if ('string' !== typeof name) {
+            throw new Error('Timer.getTimeSince: name must be a string');
+        }
+
+        if (this.timestamps.hasOwnProperty(name)) {
+            return currentTime - this.timestamps[name];
+        }
+        else {
+            return null;
+        }
+    };
 
     /**
      * ### Timer.randomEmit
@@ -14374,6 +14451,458 @@ GameStage.stringify = function(gs) {
     Timer.prototype.randomExec = function(func, maxWait) {
         randomFire.call(this, func, maxWait, false);
     };
+    
+
+    /**
+     * # GameTimer Class
+     *
+     * Copyright(c) 2013 Stefano Balietti
+     * MIT Licensed
+     *
+     * Creates a controllable timer object for nodeGame.
+     * ---
+     */
+    exports.GameTimer = GameTimer;
+
+    /**
+     * ### GameTimer status levels
+     * Numerical levels representing the state of the GameTimer
+     *
+     * @see GameTimer.status
+     */
+    GameTimer.STOPPED = -5;
+    GameTimer.PAUSED = -3;
+    GameTimer.UNINITIALIZED = -1;
+    GameTimer.INITIALIZED = 0;
+    GameTimer.LOADING = 3;
+    GameTimer.RUNNING = 5;
+
+    /**
+     * ## GameTimer constructor
+     *
+     * Creates an instance of GameTimer
+     *
+     * @param {object} options. Optional. A configuration object
+     */
+    function GameTimer(node, options) {
+        options = options || {};
+
+        // ## Public properties
+
+        /**
+         * ### node
+         *
+         * Internal reference to node.
+         */
+        this.node = node;
+
+        /**
+         * ### name
+         *
+         * Internal name of the timer.
+         */
+        this.name = options.name || 'timer_' + J.randomInt(0, 1000000);
+
+        /**
+         * ### GameTimer.status
+         *
+         * Numerical index keeping the current the state of the GameTimer obj.
+         */
+        this.status = GameTimer.UNINITIALIZED;
+
+        /**
+         * ### GameTimer.options
+         *
+         * The current settings for the GameTimer.
+         */
+        this.options = options;
+
+        /**
+         * ### GameTimer.timerId
+         *
+         * The ID of the javascript interval.
+         */
+        this.timerId = null;
+
+        /**
+         * ### GameTimer.timeLeft
+         *
+         * Milliseconds left before time is up.
+         */
+        this.timeLeft = null;
+
+        /**
+         * ### GameTimer.timePassed
+         *
+         * Milliseconds already passed from the start of the timer.
+         */
+        this.timePassed = 0;
+
+        /**
+         * ### GameTimer.update
+         *
+         * The frequency of update for the timer (in milliseconds).
+         */
+        this.update = 1000;
+
+        /**
+         * ### GameTimer.updateRemaining
+         *
+         * Milliseconds remaining for current update.
+         */
+        this.updateRemaining = 0;
+
+        /**
+         * ### GameTimer.updateStart
+         *
+         * Timestamp of the start of the last update
+         *
+         */
+        this.updateStart = 0;
+
+        /**
+         * ### GameTimer.startPaused
+         *
+         * Whether to enter the pause state when starting
+         *
+         */
+        this.startPaused = false;
+
+        /**
+         * ### GameTimer.timeup
+         *
+         * Event string or function to fire when the time is up
+         *
+         * @see GameTimer.fire
+         */
+        this.timeup = 'TIMEUP';
+
+        /**
+         * ### GameTimer.hooks
+         *
+         * Array of hook functions to fire at every update
+         *
+         * The array works as a LIFO queue
+         *
+         * @see GameTimer.fire
+         */
+        this.hooks = [];
+        
+        // Init!
+        this.init();
+    }
+
+    // ## GameTimer methods
+
+    /**
+     * ### GameTimer.init
+     *
+     * Inits the GameTimer
+     *
+     * Takes the configuration as an input parameter or
+     * recycles the settings in `this.options`.
+     *
+     * The configuration object is of the type
+     *
+     *  var options = {
+     *      milliseconds: 4000, // The length of the interval
+     *      update: 1000, // How often to update the time counter. Defaults to milliseconds
+     *      timeup: 'MY_EVENT', // An event or function to fire when the timer expires
+     *      hooks: [ myFunc, // Array of functions or events to fire at every update
+     *              'MY_EVENT_UPDATE',
+     *              { hook: myFunc2,
+     *                ctx: that, },
+     *              ],
+     *  }
+     *  // Units are in milliseconds
+     *
+     * @param {object} options Optional. Configuration object
+     *
+     * @see GameTimer.addHook
+     */
+    GameTimer.prototype.init = function (options) {
+        var i, len;
+        options = options || this.options;
+
+        this.status = GameTimer.UNINITIALIZED;
+        if (this.timerId) {
+            clearInterval(this.timerId);
+            this.timerId = null;
+        }
+        this.milliseconds = options.milliseconds;
+        this.update = options.update || this.milliseconds;
+        this.timeLeft = this.milliseconds;
+        this.timePassed = 0;
+        // Event to be fired when timer expires.
+        this.timeup = options.timeup || 'TIMEUP';
+        // TODO: update and milliseconds must be multiple now
+        if (options.hooks) {
+            len = options.hooks.length;
+            for (i = 0; i < len; i++){
+                this.addHook(options.hooks[i]);
+            }
+        }
+
+        this.status = GameTimer.INITIALIZED;
+    };
+
+
+    /**
+     * ### GameTimer.fire
+     *
+     * Fires a registered hook
+     *
+     * If it is a string it is emitted as an event,
+     * otherwise it called as a function.
+     *
+     * @param {mixed} h The hook to fire
+     */
+    GameTimer.prototype.fire = function (h) {
+        var hook, ctx;
+        if (!h) {
+            throw new Error('GameTimer.fire: missing argument');
+        }
+
+        hook = h.hook || h;
+        if ('function' === typeof hook) {
+            ctx = h.ctx || this.node.game;
+            hook.call(ctx);
+        }
+        else {
+            this.node.emit(hook);
+        }
+    };
+
+    /**
+     * ### GameTimer.start
+     *
+     * Starts the timer
+     *
+     * Updates the status of the timer and calls `setInterval`
+     * At every update all the registered hooks are fired, and
+     * time left is checked.
+     *
+     * When the timer expires the timeup event is fired, and the
+     * timer is stopped
+     *
+     * @see GameTimer.status
+     * @see GameTimer.timeup
+     * @see GameTimer.fire
+     *
+     */
+    GameTimer.prototype.start = function() {
+        // Check validity of state
+        if ('number' !== typeof this.milliseconds) {
+            throw new Error('GameTimer.start: this.milliseconds must be a number');
+        }
+        if (this.update > this.milliseconds) {
+            throw new Error('GameTimer.start: this.update must not be greater ' +
+                            'than this.milliseconds');
+        }
+
+        this.status = GameTimer.LOADING;
+
+        if (this.startPaused) {
+            this.pause();
+            return;
+        }
+
+        // fire the event immediately if time is zero
+        if (this.options.milliseconds === 0) {
+            this.fire(this.timeup);
+            return;
+        }
+
+        // Remember time of start:
+        this.updateStart = (new Date()).getTime();
+        this.updateRemaining = this.update;
+
+        this.timerId = setInterval(updateCallback, this.update, this);
+    };
+
+    /**
+     * ### GameTimer.addHook
+     *
+     *
+     * Add an hook to the hook list after performing conformity checks.
+     * The first parameter hook can be a string, a function, or an object
+     * containing an hook property.
+     */
+    GameTimer.prototype.addHook = function (hook, ctx) {
+        if (!hook) {
+            throw new Error('GameTimer.addHook: missing argument');
+        }
+
+        ctx = ctx || this.node.game;
+        if (hook.hook) {
+            ctx = hook.ctx || ctx;
+            hook = hook.hook;
+        }
+        this.hooks.push({hook: hook, ctx: ctx});
+    };
+
+    /**
+     * ### GameTimer.pause
+     *
+     * Pauses the timer
+     *
+     * If the timer was running, clear the interval and sets the
+     * status property to `GameTimer.PAUSED`.
+     */
+    GameTimer.prototype.pause = function() {
+        var timestamp;
+
+        if (this.isRunning()) {
+            clearInterval(this.timerId);
+            clearTimeout(this.timerId);
+
+            this.status = GameTimer.PAUSED;
+
+            // Save time of pausing:
+            timestamp = (new Date()).getTime();
+            this.updateRemaining -= timestamp - this.updateStart;
+        }
+        else if (!this.isPaused()) {
+            // pause() was called before start(); remember it:
+            this.startPaused = true;
+        }
+        else {
+            throw new Error('GameTimer.pause: timer was already paused');
+        }
+    };
+
+    /**
+     * ### GameTimer.resume
+     *
+     * Resumes a paused timer
+     *
+     * If the timer was paused, restarts it with the current configuration
+     *
+     * @see GameTimer.restart
+     */
+    GameTimer.prototype.resume = function() {
+        var that = this;
+
+        if (!this.isPaused()) {
+            throw new Error('GameTimer.resume: timer was not paused');
+        }
+
+        this.status = GameTimer.LOADING;
+
+        this.startPaused = false;
+
+        this.updateStart = (new Date()).getTime();
+
+        // Run rest of this "update" interval:
+        this.timerId = setTimeout(function() {
+            if (updateCallback(that)) {
+                that.start();
+            }
+        }, this.updateRemaining);
+    };
+
+    /**
+     * ### GameTimer.stop
+     *
+     * Stops the timer
+     *
+     * If the timer was paused or running, clear the interval, sets the
+     * status property to `GameTimer.STOPPED`, and reset the time passed
+     * and time left properties
+     *
+     */
+    GameTimer.prototype.stop = function() {
+        if (this.isStopped()) {
+            throw new Error('GameTimer.stop: timer was not running');
+        }
+
+        this.status = GameTimer.STOPPED;
+        clearInterval(this.timerId);
+        this.timePassed = 0;
+        this.timeLeft = null;
+    };
+
+    /**
+     * ### GameTimer.restart
+     *
+     * Restarts the timer
+     *
+     * Uses the input parameter as configuration object,
+     * or the current settings, if undefined
+     *
+     * @param {object} options Optional. A configuration object
+     *
+     * @see GameTimer.init
+     */
+    GameTimer.prototype.restart = function (options) {
+        this.init(options);
+        this.start();
+    };
+
+    /**
+     * ### GameTimer.isRunning
+     *
+     * Returns whether timer is running
+     *
+     * Running means either LOADING or RUNNING.
+     */
+    GameTimer.prototype.isRunning = function() {
+        return (this.status > 0);
+    };
+
+    /**
+     * ### GameTimer.isStopped
+     *
+     * Returns whether timer is stopped
+     *
+     * Stopped means either UNINITIALIZED, INITIALIZED or STOPPED.
+     *
+     * @see GameTimer.isPaused
+     */
+    GameTimer.prototype.isStopped = function() {
+        if (this.status === GameTimer.UNINITIALIZED ||
+            this.status === GameTimer.INITIALIZED ||
+            this.status === GameTimer.STOPPED) {
+
+            return true;
+        }
+        else {
+            return false;
+        }
+    };
+
+    /**
+     * ### GameTimer.isPaused
+     *
+     * Returns whether timer is paused
+     */
+    GameTimer.prototype.isPaused = function() {
+        return this.status === GameTimer.PAUSED;
+    };
+
+    // Do a timer update.
+    // Return false if timer ran out, true otherwise.
+    function updateCallback(that) {
+        that.status = GameTimer.RUNNING;
+        that.timePassed += that.update;
+        that.timeLeft -= that.update;
+        that.updateStart = (new Date()).getTime();
+        // Fire custom hooks from the latest to the first if any
+        for (var i = that.hooks.length; i > 0; i--) {
+            that.fire(that.hooks[(i-1)]);
+        }
+        // Fire Timeup Event
+        if (that.timeLeft <= 0) {
+            // First stop the timer and then call the timeup
+            that.stop();
+            that.fire(that.timeup);
+            return false;
+        }
+        else {
+            return true;
+        }
+    }
+
 
     // ## Closure
 })(
@@ -15833,7 +16362,7 @@ GameStage.stringify = function(gs) {
 
 // # Incoming listeners
 // Incoming listeners are fired in response to incoming messages
-(function (exports, parent) {
+(function(exports, parent) {
 
     var NGC = parent.NodeGameClient;
 
@@ -15878,7 +16407,7 @@ GameStage.stringify = function(gs) {
          * @emit UPDATED_PLIST
          * @see Game.pl
          */
-        node.events.ng.on( IN + say + 'PCONNECT', function (msg) {
+        node.events.ng.on( IN + say + 'PCONNECT', function(msg) {
             if (!msg.data) return;
             node.game.pl.add(new Player(msg.data));
             node.emit('UPDATED_PLIST');
@@ -15892,7 +16421,7 @@ GameStage.stringify = function(gs) {
          * @emit UPDATED_PLIST
          * @see Game.pl
          */
-        node.events.ng.on( IN + say + 'PDISCONNECT', function (msg) {
+        node.events.ng.on( IN + say + 'PDISCONNECT', function(msg) {
             if (!msg.data) return;
             node.game.pl.remove(msg.data.id);
             node.emit('UPDATED_PLIST');
@@ -15906,7 +16435,7 @@ GameStage.stringify = function(gs) {
          * @emit UPDATED_MLIST
          * @see Game.ml
          */
-        node.events.ng.on( IN + say + 'MCONNECT', function (msg) {
+        node.events.ng.on( IN + say + 'MCONNECT', function(msg) {
             if (!msg.data) return;
             node.game.ml.add(new Player(msg.data));
             node.emit('UPDATED_MLIST');
@@ -15920,12 +16449,11 @@ GameStage.stringify = function(gs) {
          * @emit UPDATED_MLIST
          * @see Game.ml
          */
-        node.events.ng.on( IN + say + 'MDISCONNECT', function (msg) {
+        node.events.ng.on( IN + say + 'MDISCONNECT', function(msg) {
             if (!msg.data) return;
             node.game.ml.remove(msg.data.id);
             node.emit('UPDATED_MLIST');
         });
-
 
         /**
          * ## in.say.PLIST
@@ -15935,7 +16463,7 @@ GameStage.stringify = function(gs) {
          * @emit UPDATED_PLIST
          * @see Game.pl
          */
-        node.events.ng.on( IN + say + 'PLIST', function (msg) {
+        node.events.ng.on( IN + say + 'PLIST', function(msg) {
             if (!msg.data) return;
             node.game.pl = new PlayerList({}, msg.data);
             node.emit('UPDATED_PLIST');
@@ -15949,7 +16477,7 @@ GameStage.stringify = function(gs) {
          * @emit UPDATED_MLIST
          * @see Game.pl
          */
-        node.events.ng.on( IN + say + 'MLIST', function (msg) {
+        node.events.ng.on( IN + say + 'MLIST', function(msg) {
             if (!msg.data) return;
             node.game.ml = new PlayerList({}, msg.data);
             node.emit('UPDATED_MLIST');
@@ -15960,7 +16488,7 @@ GameStage.stringify = function(gs) {
          *
          * Experimental feature. Undocumented (for now)
          */
-        node.events.ng.on( IN + get + 'DATA', function (msg) {
+        node.events.ng.on( IN + get + 'DATA', function(msg) {
             var res;
             if (!msg.text) {
                 node.warn('node.in.get.DATA: no event name');
@@ -15977,7 +16505,7 @@ GameStage.stringify = function(gs) {
          *
          * TODO: check, this should be a player update
          */
-        node.events.ng.on( IN + set + 'STATE', function (msg) {
+        node.events.ng.on( IN + set + 'STATE', function(msg) {
             node.game.memory.add(msg.text, msg.data, msg.from);
         });
 
@@ -15987,7 +16515,7 @@ GameStage.stringify = function(gs) {
          * Adds an entry to the memory object
          *
          */
-        node.events.ng.on( IN + set + 'DATA', function (msg) {
+        node.events.ng.on( IN + set + 'DATA', function(msg) {
             node.game.memory.add(msg.text, msg.data, msg.from);
         });
 
@@ -15999,10 +16527,15 @@ GameStage.stringify = function(gs) {
          * @emit UPDATED_PLIST
          * @see Game.pl
          */
-        node.events.ng.on( IN + say + 'PLAYER_UPDATE', function (msg) {
+        node.events.ng.on( IN + say + 'PLAYER_UPDATE', function(msg) {
             node.game.pl.updatePlayer(msg.from, msg.data);
             node.emit('UPDATED_PLIST');
-            node.game.shouldStep();
+            if (node.game.shouldStep()) {
+                node.game.step();
+            }
+            else if (node.game.shouldEmitPlaying()) {
+                node.emit('PLAYING');
+            }
         });
 
         /**
@@ -16010,7 +16543,7 @@ GameStage.stringify = function(gs) {
          *
          * Updates the game stage
          */
-        node.events.ng.on( IN + say + 'STAGE', function (msg) {
+        node.events.ng.on( IN + say + 'STAGE', function(msg) {
             var stageObj;
             if (!msg.data) {
                 node.warn('Received in.say.STAGE msg with empty stage');
@@ -16033,7 +16566,7 @@ GameStage.stringify = function(gs) {
          *
          * Updates the stage level
          */
-        node.events.ng.on( IN + say + 'STAGE_LEVEL', function (msg) {
+        node.events.ng.on( IN + say + 'STAGE_LEVEL', function(msg) {
             //node.game.setStageLevel(msg.data);
         });
 
@@ -16044,7 +16577,7 @@ GameStage.stringify = function(gs) {
          *
          * @see node.redirect
          */
-        node.events.ng.on( IN + say + 'REDIRECT', function (msg) {
+        node.events.ng.on( IN + say + 'REDIRECT', function(msg) {
             if (!msg.data) return;
             if ('undefined' === typeof window || !window.location) {
                 node.err('window.location not found. Cannot redirect');
@@ -16065,7 +16598,7 @@ GameStage.stringify = function(gs) {
          * @see node.setup
          * @see JSUS.parse
          */
-        node.events.ng.on( IN + say + 'SETUP', function (msg) {
+        node.events.ng.on( IN + say + 'SETUP', function(msg) {
             var feature;
             if (!msg.text) return;
             feature = msg.text,
@@ -16080,7 +16613,6 @@ GameStage.stringify = function(gs) {
             node.setup.apply(node, [feature].concat(payload));
         });
 
-
         /**
          * ## in.say.GAMECOMMAND
          *
@@ -16088,7 +16620,7 @@ GameStage.stringify = function(gs) {
          *
          * @see node.setup
          */
-        node.events.ng.on( IN + say + 'GAMECOMMAND', function (msg) {
+        node.events.ng.on( IN + say + 'GAMECOMMAND', function(msg) {
             if (!msg.text || !parent.constants.gamecommand[msg.text]) {
                 node.err('unknown game command received: ' + msg.text);
                 return;
@@ -16108,11 +16640,11 @@ GameStage.stringify = function(gs) {
 );
 // <!-- ends incoming listener -->
 
-// # Internal listeners
+// # Internal listeners.
 
 // Internal listeners are not directly associated to messages,
 // but they are usually responding to internal nodeGame events,
-// such as progressing in the loading chain, or finishing a game stage
+// such as progressing in the loading chain, or finishing a game stage.
 
 (function (exports, parent) {
 
@@ -16127,6 +16659,7 @@ GameStage.stringify = function(gs) {
 
     var action = constants.action,
     target = constants.target;
+    stageLevels = constants.stageLevels;
 
     var say = action.SAY + '.',
     set = action.SET + '.',
@@ -16163,20 +16696,62 @@ GameStage.stringify = function(gs) {
          *
          */
         this.events.ng.on('DONE', function() {
-            // Execute done handler before updating stage
+            // Execute done handler before updating stage.
             var ok = true,
                 done = node.game.getCurrentStep().done;
 
-            if (done) ok = done.apply(node.game, J.obj2Array(arguments));
+            if (done) ok = done.apply(node.game, arguments);
             if (!ok) return;
-            node.game.setStageLevel(constants.stageLevels.DONE);
+            node.game.setStageLevel(stageLevels.DONE);
 
             // Call all the functions that want to do
-            // something before changing stage
+            // something before changing stage.
             node.emit('BEFORE_DONE');
 
-            // Step forward, if allowed
-            node.game.shouldStep();
+            // Step forward, if allowed.
+            if (node.game.shouldStep()){
+                node.game.step();
+            }
+        });
+        
+        /**
+         * ## STEP_CALLBACK_EXECUTED
+         *
+         * @emit LOADED
+         */
+        this.events.ng.on('STEP_CALLBACK_EXECUTED', function() {
+            if (!node.window || node.window.isReady()) {
+                node.game.setStageLevel(stageLevels.LOADED);
+                node.emit('LOADED');
+            }
+        });
+        
+        /**
+         * ## WINDOW_LOADED
+         *
+         * @emit LOADED
+         */
+        this.events.ng.on('WINDOW_LOADED', function() {
+            // TODO we should have a better check
+            if (node.game.getStageLevel() >= stageLevels.CALLBACK_EXECUTED) {
+                node.game.setStageLevel(stageLevels.LOADED);
+                node.emit('LOADED');
+            }
+        });
+
+        /**
+         * ## LOADED
+         *
+         * @emit PLAYING
+         */
+        this.events.ng.on('LOADED', function() {
+            node.game.setStageLevel(constants.stageLevels.LOADED);
+            if (node.socket.shouldClearBuffer()) {
+                node.socket.clearBuffer();
+            }
+            if (node.game.shouldEmitPlaying()) {
+                node.emit('PLAYING');
+            }
         });
 
         /**
@@ -16185,12 +16760,15 @@ GameStage.stringify = function(gs) {
          * @emit BEFORE_PLAYING
          */
         this.events.ng.on('PLAYING', function() {
-            node.game.setStageLevel(constants.stageLevels.PLAYING);
-            //TODO: the number of messages to emit to inform other players
-            // about its own stage should be controlled. Observer is 0
-            //node.game.publishUpdate();
+            var currentTime;
+            node.game.setStageLevel(stageLevels.PLAYING);
             node.socket.clearBuffer();
             node.emit('BEFORE_PLAYING');
+
+            // Store time:
+            currentTime = (new Date()).getTime();
+            node.timer.setTimestamp(node.game.getCurrentGameStage().toString(), currentTime);
+            node.timer.setTimestamp('step', currentTime);
         });
 
 
@@ -16239,496 +16817,21 @@ GameStage.stringify = function(gs) {
 );
 // <!-- ends internal listener -->
 
-/**
- * # GameTimer
- *
- * Copyright(c) 2012 Stefano Balietti
- * MIT Licensed
- *
- * Creates a controllable timer object for nodeGame
- *
- * ---
- *
- */
-
-(function (exports, node) {
-
-// ## Global scope
-
-    exports.GameTimer = GameTimer;
-
-    var JSUS = node.JSUS;
-
-/**
- * ### GameTimer status levels
- * Numerical levels representing the state of the GameTimer
- *
- * @see GameTimer.status
- */
-    GameTimer.STOPPED = -5;
-    GameTimer.PAUSED = -3;
-    GameTimer.UNINITIALIZED = -1;
-    GameTimer.INITIALIZED = 0;
-    GameTimer.LOADING = 3;
-    GameTimer.RUNNING = 5;
-
-/**
- * ## GameTimer constructor
- *
- * Creates an instance of GameTimer
- *
- * @param {object} options. Optional. A configuration object
- */
-function GameTimer (options) {
-    options = options || {};
-
-// ## Public properties
-
-/**
- * ### GameTimer.status
- *
- * Numerical index representing the current the state of the GameTimer object
- *
- */
-    this.status = GameTimer.UNINITIALIZED;
-
-/**
- * ### GameTimer.options
- *
- * The current settings for the GameTimer
- *
- */
-    this.options = options;
-
-/**
- * ### GameTimer.timer
- *
- * The ID of the javascript interval
- *
- */
-    this.timer = null;
-
-/**
- * ### GameTimer.timeLeft
- *
- * Milliseconds left before time is up
- *
- */
-    this.timeLeft = null;
-
-/**
- * ### GameTimer.timePassed
- *
- * Milliseconds already passed from the start of the timer
- *
- */
-    this.timePassed = 0;
-
-/**
- * ### GameTimer.update
- *
- * The frequency of update for the timer (in milliseconds)
- *
- */
-    this.update = 1000;
-
-/**
- * ### GameTimer.updateRemaining
- *
- * Milliseconds remaining for current update
- *
- */
-    this.updateRemaining = 0;
-
-/**
- * ### GameTimer.updateStart
- *
- * Timestamp of the start of the last update
- *
- */
-    this.updateStart = 0;
-
-/**
- * ### GameTimer.startPaused
- *
- * Whether to enter the pause state when starting
- *
- */
-    this.startPaused = false;
-
-/**
- * ### GameTimer.timeup
- *
- * Event string or function to fire when the time is up
- *
- * @see GameTimer.fire
- */
-    this.timeup = 'TIMEUP';
-
-/**
- * ### GameTimer.hooks
- *
- * Array of hook functions to fire at every update
- *
- * The array works as a LIFO queue
- *
- * @see GameTimer.fire
- */
-    this.hooks = [];
-
-    this.init();
-    // TODO: remove into a new addon
-    this.listeners();
-}
-
-// ## GameTimer methods
-
-/**
- * ### GameTimer.init
- *
- * Inits the GameTimer
- *
- * Takes the configuration as an input parameter or
- * recycles the settings in `this.options`.
- *
- * The configuration object is of the type
- *
- *  var options = {
- *      milliseconds: 4000, // The length of the interval
- *      update: 1000, // How often to update the time counter. Defaults to milliseconds
- *      timeup: 'MY_EVENT', // An event or function to fire when the timer expires
- *      hooks: [ myFunc, // Array of functions or events to fire at every update
- *              'MY_EVENT_UPDATE',
- *              { hook: myFunc2,
- *                ctx: that, },
- *              ],
- *  }
- *  // Units are in milliseconds
- *
- * @param {object} options Optional. Configuration object
- *
- * @see GameTimer.addHook
- */
-GameTimer.prototype.init = function (options) {
-    options = options || this.options;
-
-    this.status = GameTimer.UNINITIALIZED;
-    if (this.timer) clearInterval(this.timer);
-    this.milliseconds = options.milliseconds;
-    this.update = options.update || this.milliseconds;
-    this.timeLeft = this.milliseconds;
-    this.timePassed = 0;
-    this.timeup = options.timeup || 'TIMEUP'; // event to be fired when timer expires
-    // TODO: update and milliseconds must be multiple now
-    if (options.hooks) {
-        for (var i=0; i < options.hooks.length; i++){
-            this.addHook(options.hooks[i]);
-        }
-    }
-
-    this.status = GameTimer.INITIALIZED;
-};
-
-
-/**
- * ### GameTimer.fire
- *
- * Fires a registered hook
- *
- * If it is a string it is emitted as an event,
- * otherwise it called as a function.
- *
- * @param {mixed} h The hook to fire
- *
- */
-GameTimer.prototype.fire = function (h) {
-    if (!h) {
-        throw new Error('GameTimer.fire: missing argument');
-    }
-
-    var hook = h.hook || h;
-    if ('function' === typeof hook) {
-        var ctx = h.ctx || node.game;
-        hook.call(ctx);
-    }
-    else {
-        node.emit(hook);
-    }
-};
-
-/**
- * ### GameTimer.start
- *
- * Starts the timer
- *
- * Updates the status of the timer and calls `setInterval`
- * At every update all the registered hooks are fired, and
- * time left is checked.
- *
- * When the timer expires the timeup event is fired, and the
- * timer is stopped
- *
- * @see GameTimer.status
- * @see GameTimer.timeup
- * @see GameTimer.fire
- *
- */
-GameTimer.prototype.start = function() {
-    // Check validity of state
-    if ('number' !== typeof this.milliseconds) {
-        throw new Error('GameTimer.start: this.milliseconds must be a number');
-    }
-    if (this.update > this.milliseconds) {
-        throw new Error('GameTimer.start: this.update must not be greater ' +
-                        'than this.milliseconds');
-    }
-
-    this.status = GameTimer.LOADING;
-
-    if (this.startPaused) {
-        this.pause();
-        return;
-    }
-
-    // fire the event immediately if time is zero
-    if (this.options.milliseconds === 0) {
-        this.fire(this.timeup);
-        return;
-    }
-
-    // Remember time of start:
-    this.updateStart = (new Date()).getTime();
-    this.updateRemaining = this.update;
-
-    this.timer = setInterval(updateCallback, this.update, this);
-};
-
-/**
- * ### GameTimer.addHook
- *
- *
- * Add an hook to the hook list after performing conformity checks.
- * The first parameter hook can be a string, a function, or an object
- * containing an hook property.
- */
-GameTimer.prototype.addHook = function (hook, ctx) {
-    if (!hook) {
-        throw new Error('GameTimer.addHook: missing argument');
-    }
-
-    ctx = ctx || node.game;
-    if (hook.hook) {
-        ctx = hook.ctx || ctx;
-        hook = hook.hook;
-    }
-    this.hooks.push({hook: hook, ctx: ctx});
-};
-
-/**
- * ### GameTimer.pause
- *
- * Pauses the timer
- *
- * If the timer was running, clear the interval and sets the
- * status property to `GameTimer.PAUSED`
- *
- */
-GameTimer.prototype.pause = function() {
-    var timestamp;
-
-    if (this.isRunning()) {
-        clearInterval(this.timer);
-        clearTimeout(this.timer);
-
-        this.status = GameTimer.PAUSED;
-
-        // Save time of pausing:
-        timestamp = (new Date()).getTime();
-        this.updateRemaining -= timestamp - this.updateStart;
-    }
-    else if (!this.isPaused()) {
-        // pause() was called before start(); remember it:
-        this.startPaused = true;
-    }
-    else {
-        throw new Error('GameTimer.pause: timer was already paused');
-    }
-};
-
-/**
- * ### GameTimer.resume
- *
- * Resumes a paused timer
- *
- * If the timer was paused, restarts it with the current configuration
- *
- * @see GameTimer.restart
- */
-GameTimer.prototype.resume = function() {
-    var that = this;
-
-    if (!this.isPaused()) {
-        throw new Error('GameTimer.resume: timer was not paused');
-    }
-
-    this.status = GameTimer.LOADING;
-
-    this.startPaused = false;
-
-    this.updateStart = (new Date()).getTime();
-
-    // Run rest of this "update" interval:
-    this.timer = setTimeout(function() {
-        if (updateCallback(that)) {
-            that.start();
-        }
-    }, this.updateRemaining);
-};
-
-/**
- * ### GameTimer.stop
- *
- * Stops the timer
- *
- * If the timer was paused or running, clear the interval, sets the
- * status property to `GameTimer.STOPPED`, and reset the time passed
- * and time left properties
- *
- */
-GameTimer.prototype.stop = function() {
-    if (this.isStopped()) {
-        throw new Error('GameTimer.stop: timer was not running');
-    }
-
-    this.status = GameTimer.STOPPED;
-    clearInterval(this.timer);
-    this.timePassed = 0;
-    this.timeLeft = null;
-};
-
-/**
- * ### GameTimer.restart
- *
- * Restarts the timer
- *
- * Uses the input parameter as configuration object,
- * or the current settings, if undefined
- *
- * @param {object} options Optional. A configuration object
- *
- * @see GameTimer.init
- */
-GameTimer.prototype.restart = function (options) {
-    this.init(options);
-    this.start();
-};
-
-/**
- * ### GameTimer.listeners
- *
- * Experimental. Undocumented (for now)
- *
- */
-GameTimer.prototype.listeners = function () {
-    var that = this;
-// <!--
-//      node.on('GAME_TIMER_START', function() {
-//          that.start();
-//      });
+//(function (exports, node) {
 //
-//      node.on('GAME_TIMER_PAUSE', function() {
-//          that.pause();
-//      });
+//// ## Global scope
 //
-//      node.on('GAME_TIMER_RESUME', function() {
-//          that.resume();
-//      });
+//    exports.GameTimer = GameTimer;
 //
-//      node.on('GAME_TIMER_STOP', function() {
-//          that.stop();
-//      });
-
-//      node.on('DONE', function(){
-//          that.pause();
-//      });
-
-    // TODO: check what is right behavior for this
-//      node.on('WAITING...', function(){
-//          that.pause();
-//      });
-// -->
-
-};
-
-/**
- * ### GameTimer.isRunning
- *
- * Returns whether timer is running
- *
- * Running means either LOADING or RUNNING.
- */
-GameTimer.prototype.isRunning = function() {
-    return (this.status > 0);
-};
-
-/**
- * ### GameTimer.isStopped
- *
- * Returns whether timer is stopped
- *
- * Stopped means either UNINITIALIZED, INITIALIZED or STOPPED.
- *
- * @see GameTimer.isPaused
- */
-GameTimer.prototype.isStopped = function() {
-    if (this.status === GameTimer.UNINITIALIZED ||
-        this.status === GameTimer.INITIALIZED ||
-        this.status === GameTimer.STOPPED) {
-
-        return true;
-    }
-    else {
-        return false;
-    }
-};
-
-/**
- * ### GameTimer.isPaused
- *
- * Returns whether timer is paused
- */
-GameTimer.prototype.isPaused = function() {
-    return (this.status === GameTimer.PAUSED);
-};
-
-// Do a timer update.
-// Return false if timer ran out, true otherwise.
-function updateCallback(that) {
-    that.status = GameTimer.RUNNING;
-    that.timePassed += that.update;
-    that.timeLeft -= that.update;
-    that.updateStart = (new Date()).getTime();
-    // Fire custom hooks from the latest to the first if any
-    for (var i = that.hooks.length; i > 0; i--) {
-        that.fire(that.hooks[(i-1)]);
-    }
-    // Fire Timeup Event
-    if (that.timeLeft <= 0) {
-        // First stop the timer and then call the timeup
-        that.stop();
-        that.fire(that.timeup);
-        return false;
-    }
-    else {
-        return true;
-    }
-}
-
-// ## Closure
-})(
-    'undefined' != typeof node ? node : module.exports,
-    'undefined' != typeof node ? node : module.parent.exports
-);
+//    var JSUS = node.JSUS;
+//
+//
+//
+//// ## Closure
+//})(
+//    'undefined' != typeof node ? node : module.exports,
+//    'undefined' != typeof node ? node : module.parent.exports
+//);
 
 /**
  * 
@@ -17047,7 +17150,7 @@ TriggerManager.prototype.size = function () {
 /**
  * # GameWindow
  * 
- * Copyright(c) 2012 Stefano Balietti
+ * Copyright(c) 2013 Stefano Balietti
  * MIT Licensed
  * 
  * GameWindow provides a handy API to interface nodeGame with the 
@@ -17059,8 +17162,7 @@ TriggerManager.prototype.size = function () {
  * Dynamic content can be loaded inside the iframe without losing the
  * javascript state inside the page.
  * 
- * Defines a number of pre-defined profiles associated with special
- * configuration of widgets.
+ * Defines a number of profiles associated with special page 1layout.
  * 
  * Depends on nodegame-client. 
  * GameWindow.Table and GameWindow.List depend on NDDB and JSUS.
@@ -17106,16 +17208,15 @@ TriggerManager.prototype.size = function () {
      * 
      * The constructor performs the following operations:
      * 
-     *      - creates a root div element (this.root)
-     *      - creates an iframe element inside the root element (this.frame)
-     *      - defines standard event listeners for showing and hiding elements
-     * 
+     *   - creates a root div element (this.root)
+     *   - creates an iframe element inside the root element (this.frame)
+     *   - defines standard event listeners for showing and hiding elements
      */
     function GameWindow() {
-        var that = this;
-	
+        this.setStateLevel('UNINITIALIZED');
+
         if ('undefined' === typeof window) {
-	    throw new Error('nodeWindow: no DOM found. Are we in a browser? Aborting.');
+	    throw new Error('nodeWindow: no DOM found. Are you in a browser?');
         }
         
         if ('undefined' === typeof node) {
@@ -17130,10 +17231,6 @@ TriggerManager.prototype.size = function () {
         
         this.conf = {};
         
-        // ### GameWindow.state
-        //
-        this.state = constants.is.LOADED;
-
         // ### GameWindow.areLoading
         // Counts the number of frames currently being loaded
         this.areLoading = 0;
@@ -17163,7 +17260,6 @@ TriggerManager.prototype.size = function () {
         // in specific frames
         this.frameLibs = {};
 
-
         this.init();	
     }
 
@@ -17175,14 +17271,13 @@ TriggerManager.prototype.size = function () {
      * Sets global variables based on local configuration.
      * 
      * Defaults:
-     * 
-     *      - promptOnleave TRUE
-     *      - captures ESC key
+     *  - promptOnleave TRUE
+     *  - captures ESC key
      * 
      * @param {object} options Configuration options
-     * 
      */
     GameWindow.prototype.init = function (options) {
+        this.setStateLevel('INITIALIZING');
         options = options || {};
         this.conf = J.merge(GameWindow.defaults, options);
 	
@@ -17199,8 +17294,27 @@ TriggerManager.prototype.size = function () {
         else if (this.conf.noEscape === false){
 	    this.restoreEscape();
         }
-        
+        this.setStateLevel('INITIALIZED');
     };
+
+    /**
+     * ## GameWindow.setStateLevel
+     *
+     * Validates and sets window's state level. 
+     *
+     * @see constants.windowLevels
+     */
+    GameWindow.prototype.setStateLevel = function(level) {
+        if ('string' !== typeof level) {
+            throw new TypeError('GameWindow.setStateLevel: level must be string');
+        }
+        if ('undefined' === typeof constants.windowLevels[level]) {
+            throw new Error('GameWindow.setStateLevel: unrecognized level.');
+        }
+        
+        this.state = constants.windowLevels[level];
+    };
+
 
     /**
      * ### GameWindow.getElementById
@@ -17242,7 +17356,6 @@ TriggerManager.prototype.size = function () {
      * Setups the page with a predefined configuration of widgets.
      * 
      * @param {string} type The type of page to setup (MONITOR|PLAYER)
-     * 
      */
     GameWindow.prototype.setup = function (type){
         var initPage;
@@ -17560,6 +17673,21 @@ TriggerManager.prototype.size = function () {
 	}
     }
 
+    var lockedUpdate = false;
+    function updateAreLoading(update) {
+        var that;
+        if (!lockedUpdate) {
+            lockedUpdate = true;
+            this.areLoading = this.areLoading + update;
+            lockedUpdate = false;
+        }
+        else {
+            that = this;
+            setTimeout(function() {
+                updateAreLoading.call(that, update);
+            }, 300);
+        }
+    }
 
     /**
      * ### GameWindow.load
@@ -17587,8 +17715,13 @@ TriggerManager.prototype.size = function () {
      * 
      */
     GameWindow.prototype.load = GameWindow.prototype.loadFrame = function (uri, func, opts) {
-        if (!uri) return;
+        if ('string' !== typeof uri) {
+            throw new TypeError('GameWindow.loadFrame: uri must be string.');
+        }
+        this.setStateLevel('LOADING');
         
+        var that = this;
+
         // Default options:
         var frame = this.mainframe;
         var loadCache = GameWindow.defaults.cacheDefaults.loadCache;
@@ -17648,24 +17781,13 @@ TriggerManager.prototype.size = function () {
         // Update frame's currently showing URI:
         this.currentURIs[frame] = uri;
         
-        this.state = constants.is.LOADING;
-        this.areLoading++;  // keep track of nested call to loadFrame
-        
-        var that = this;
+        // Keep track of nested call to loadFrame.
+        updateAreLoading.call(this, 1);
         
         // Add the onload event listener:
         iframe.onload = function() {
-	    if (that.conf.noEscape) {
-	        
-	        // TODO: inject the no escape code here
-	        
-	        //that.addJS(iframe.document, node.conf.host + 'javascripts/noescape.js');
-	        //that.addJS(that.getElementById('mainframe'), node.conf.host + 'javascripts/noescape.js');
-	    }
-            
-	    handleFrameLoad.call(that, uri, frame, loadCache, storeCacheNow);
-            
-	    that.updateStatus(func, frame);
+	    handleFrameLoad.call(that, uri, frame, loadCache, storeCacheNow);    
+	    that.updateLoadFrameState(func, frame);
         };
         
         // Cache lookup:
@@ -17679,7 +17801,7 @@ TriggerManager.prototype.size = function () {
 	        handleFrameLoad.call(this, uri, frame, loadCache, storeCacheNow);
 	        
 	        // Update status (onload isn't called if frame was already ready):
-	        this.updateStatus(func, frame);
+	        this.updateLoadFrameState(func, frame);
 	    }
         }
         else {
@@ -17705,7 +17827,7 @@ TriggerManager.prototype.size = function () {
     };
 
     /**
-     * ### GameWindow.updateStatus
+     * ### GameWindow.loadFrameState
      * 
      * Cleans up the window state after an iframe has been loaded
      * 
@@ -17719,33 +17841,37 @@ TriggerManager.prototype.size = function () {
      * @param {object} The iframe of reference
      * 
      */
-    GameWindow.prototype.updateStatus = function(func, frame) {
+    GameWindow.prototype.updateLoadFrameState = function(func, frame) {
         // Update the reference to the frame obj
         this.frame = window.frames[frame].document;
-        
         if (func) {
 	    func.call(node.game); // TODO: Pass the right this reference
 	    //node.log('Frame Loaded correctly!');
         }
         
-        this.areLoading--;
+        updateAreLoading.call(this, -1);
         
         if (this.areLoading === 0) {
-            this.state = constants.is.LOADED;
+            this.setStateLevel('LOADED');
             node.emit('WINDOW_LOADED');
-            
-            if (node.game.getStageLevel() >= constants.stageLevels.LOADED) {
-                // We must make sure that the step callback is fully executed. 
-                // Only the last one to load (between the window and 
-                // the callback will emit 'PLAYING'.
-                node.emit('PLAYING');
-            }
-            
+            // The listener will take care of emitting PLAYING,
+            // if all conditions are met. 
         }
         else {
-	    node.silly('Attempt to update state, before the window object was loaded');
+	    node.silly('GameWindow.updateState: ' + this.areLoading + ' loadFrame processes open.');
         }
     };
+
+    /**
+     * ## GameWindow.isReady
+     *
+     * Returns TRUE if the state is either INITIALIZED or LOADED.
+     */
+       
+    GameWindow.prototype.isReady = function() {
+        var l = constants.windowLevels;
+        return this.state === l.INITIALIZED || this.state === l.LOADED;
+    }
     
     /**
      * Creates and adds a container div with id 'gn_header' to 
@@ -18669,211 +18795,211 @@ function Entity (e) {
 );
 
 (function(exports, node){
-	
-	var JSUS = node.JSUS;
-	var NDDB = node.NDDB;
+    
+    var JSUS = node.JSUS;
+    var NDDB = node.NDDB;
 
-	var HTMLRenderer = node.window.HTMLRenderer;
-	var Entity = node.window.HTMLRenderer.Entity;
-	
-	/*!
-	* 
-	* List: handle list operation
-	* 
-	*/
-	
-	exports.List = List;
-	
-	List.prototype = new NDDB();
-	List.prototype.constructor = List;	
-	
-	function List (options, data) {
-		options = options || {};
-		this.options = options;
-		
-		NDDB.call(this, options, data); 
-		
-		this.id = options.id || 'list_' + Math.round(Math.random() * 1000);
-		
-		this.DL = null;
-		this.auto_update = this.options.auto_update || false;
-		this.htmlRenderer = null; 
-		this.lifo = false;
-		
-		this.init(this.options);
-	}
-	
-	// TODO: improve init
-	List.prototype.init = function (options) {
-		options = options || this.options;
-		
-		this.FIRST_LEVEL = options.first_level || 'dl';
-		this.SECOND_LEVEL = options.second_level || 'dt';
-		this.THIRD_LEVEL = options.third_level || 'dd';
-		
-		this.last_dt = 0;
-		this.last_dd = 0;
-		this.auto_update = ('undefined' !== typeof options.auto_update) ? options.auto_update
-																		: this.auto_update;
-		
-		var lifo = this.lifo = ('undefined' !== typeof options.lifo) ? options.lifo : this.lifo;
-		
-		this.globalCompare = function (o1, o2) {
-			if (!o1 && !o2) return 0;
-			if (!o2) return 1;
-			if (!o1) return -1;
+    var HTMLRenderer = node.window.HTMLRenderer;
+    var Entity = node.window.HTMLRenderer.Entity;
+    
+    /*!
+     * 
+     * List: handle list operation
+     * 
+     */
+    
+    exports.List = List;
+    
+    List.prototype = new NDDB();
+    List.prototype.constructor = List;  
+    
+    function List (options, data) {
+        options = options || {};
+        this.options = options;
+        
+        NDDB.call(this, options, data); 
+        
+        this.id = options.id || 'list_' + Math.round(Math.random() * 1000);
+        
+        this.DL = null;
+        this.auto_update = this.options.auto_update || false;
+        this.htmlRenderer = null; 
+        this.lifo = false;
+        
+        this.init(this.options);
+    }
+    
+    // TODO: improve init
+    List.prototype.init = function (options) {
+        options = options || this.options;
+        
+        this.FIRST_LEVEL = options.first_level || 'dl';
+        this.SECOND_LEVEL = options.second_level || 'dt';
+        this.THIRD_LEVEL = options.third_level || 'dd';
+        
+        this.last_dt = 0;
+        this.last_dd = 0;
+        this.auto_update = ('undefined' !== typeof options.auto_update) ? options.auto_update
+            : this.auto_update;
+        
+        var lifo = this.lifo = ('undefined' !== typeof options.lifo) ? options.lifo : this.lifo;
+        
+        this.globalCompare = function (o1, o2) {
+            if (!o1 && !o2) return 0;
+            if (!o2) return 1;
+            if (!o1) return -1;
 
-			// FIFO
-			if (!lifo) {
-				if (o1.dt < o2.dt) return -1;
-				if (o1.dt > o2.dt) return 1;
-			}
-			else {
-				if (o1.dt < o2.dt) return 1;
-				if (o1.dt > o2.dt) return -1;
-			}
-			if (o1.dt === o2.dt) {
-				if ('undefined' === typeof o1.dd) return -1;
-				if ('undefined'=== typeof o2.dd) return 1;
-				if (o1.dd < o2.dd) return -1;
-				if (o1.dd > o2.dd) return 1;
-				if (o1.nddbid < o2.nddbid) return 1;
-				if (o1.nddbid > o2.nddbid) return -1;
-			}
-			return 0;
-		}; 
-		
-		
-		this.DL = options.list || document.createElement(this.FIRST_LEVEL);
-		this.DL.id = options.id || this.id;
-		if (options.className) {
-			this.DL.className = options.className;
-		}
-		if (this.options.title) {
-			this.DL.appendChild(document.createTextNode(options.title));
-		}
-		
-		// was
-		//this.htmlRenderer = new HTMLRenderer({renderers: options.renderer});
-		this.htmlRenderer = new HTMLRenderer({render: options.render});
-	};
-	
-	List.prototype._add = function (node) {
-		if (!node) return;
-//		console.log('about to add node');
-//		console.log(node);
-		this.insert(node);
-		if (this.auto_update) {
-			this.parse();
-		}
-	};
-	
-	List.prototype.addDT = function (elem, dt) {
-		if ('undefined' === typeof elem) return;
-		this.last_dt++;
-		dt = ('undefined' !== typeof dt) ? dt: this.last_dt;  
-		this.last_dd = 0;
-		var node = new Node({dt: dt, content: elem});
-		return this._add(node);
-	};
-	
-	List.prototype.addDD = function (elem, dt, dd) {
-		if ('undefined' === typeof elem) return;
-		dt = ('undefined' !== typeof dt) ? dt: this.last_dt;
-		dd = ('undefined' !== typeof dd) ? dd: this.last_dd++;
-		var node = new Node({dt: dt, dd: dd, content: elem});
-		return this._add(node);
-	};
-	
-	List.prototype.parse = function() {
-		this.sort();
-		var old_dt = null;
-		var old_dd = null;
-		
-		var appendDT = function() {
-			var node = document.createElement(this.SECOND_LEVEL);
-			this.DL.appendChild(node);
-			old_dd = null;
-			old_dt = node;
-			return node;
-		};
-		
-		var appendDD = function() {
-			var node = document.createElement(this.THIRD_LEVEL);
-//			if (old_dd) {
-//				old_dd.appendChild(node);
-//			}
-//			else if (!old_dt) {
-//				old_dt = appendDT.call(this);
-//			}
-//			old_dt.appendChild(node);
-			this.DL.appendChild(node);
-//			old_dd = null;
-//			old_dt = node;
-			return node;
-		};
-		
-		// Reparse all every time
-		// TODO: improve this
-		if (this.DL) {
-			while (this.DL.hasChildNodes()) {
-				this.DL.removeChild(this.DL.firstChild);
-			}
-			if (this.options.title) {
-				this.DL.appendChild(document.createTextNode(this.options.title));
-			}
-		}
-		
-		for (var i=0; i<this.db.length; i++) {
-			var el = this.db[i];
-			var node;
-			if ('undefined' === typeof el.dd) {
-				node = appendDT.call(this);
-				//console.log('just created dt');
-			}
-			else {
-				node = appendDD.call(this);
-			}
-//			console.log('This is the el')
-//			console.log(el);
-			var content = this.htmlRenderer.render(el);
-//			console.log('This is how it is rendered');
-//			console.log(content);
-			node.appendChild(content);		
-		}
-		
-		return this.DL;
-	};
-	
-	List.prototype.getRoot = function() {
-		return this.DL;
-	};
-	
-	
-	
-//	List.prototype.createItem = function(id) {
-//		var item = document.createElement(this.SECOND_LEVEL);
-//		if (id) {
-//			item.id = id;
-//		}
-//		return item;
-//	};
-	
-	// Cell Class
-	Node.prototype = new Entity();
-	Node.prototype.constructor = Node;
-	
-	function Node (node) {
-		Entity.call(this, node);
-		this.dt = ('undefined' !== typeof node.dt) ? node.dt : null;
-		if ('undefined' !== typeof node.dd) {
-			this.dd = node.dd;
-		}
-	}
-	
+            // FIFO
+            if (!lifo) {
+                if (o1.dt < o2.dt) return -1;
+                if (o1.dt > o2.dt) return 1;
+            }
+            else {
+                if (o1.dt < o2.dt) return 1;
+                if (o1.dt > o2.dt) return -1;
+            }
+            if (o1.dt === o2.dt) {
+                if ('undefined' === typeof o1.dd) return -1;
+                if ('undefined'=== typeof o2.dd) return 1;
+                if (o1.dd < o2.dd) return -1;
+                if (o1.dd > o2.dd) return 1;
+                if (o1.nddbid < o2.nddbid) return 1;
+                if (o1.nddbid > o2.nddbid) return -1;
+            }
+            return 0;
+        }; 
+        
+        
+        this.DL = options.list || document.createElement(this.FIRST_LEVEL);
+        this.DL.id = options.id || this.id;
+        if (options.className) {
+            this.DL.className = options.className;
+        }
+        if (this.options.title) {
+            this.DL.appendChild(document.createTextNode(options.title));
+        }
+        
+        // was
+        //this.htmlRenderer = new HTMLRenderer({renderers: options.renderer});
+        this.htmlRenderer = new HTMLRenderer({render: options.render});
+    };
+    
+    List.prototype._add = function (node) {
+        if (!node) return;
+        //              console.log('about to add node');
+        //              console.log(node);
+        this.insert(node);
+        if (this.auto_update) {
+            this.parse();
+        }
+    };
+    
+    List.prototype.addDT = function (elem, dt) {
+        if ('undefined' === typeof elem) return;
+        this.last_dt++;
+        dt = ('undefined' !== typeof dt) ? dt: this.last_dt;  
+        this.last_dd = 0;
+        var node = new Node({dt: dt, content: elem});
+        return this._add(node);
+    };
+    
+    List.prototype.addDD = function (elem, dt, dd) {
+        if ('undefined' === typeof elem) return;
+        dt = ('undefined' !== typeof dt) ? dt: this.last_dt;
+        dd = ('undefined' !== typeof dd) ? dd: this.last_dd++;
+        var node = new Node({dt: dt, dd: dd, content: elem});
+        return this._add(node);
+    };
+    
+    List.prototype.parse = function() {
+        this.sort();
+        var old_dt = null;
+        var old_dd = null;
+        
+        var appendDT = function() {
+            var node = document.createElement(this.SECOND_LEVEL);
+            this.DL.appendChild(node);
+            old_dd = null;
+            old_dt = node;
+            return node;
+        };
+        
+        var appendDD = function() {
+            var node = document.createElement(this.THIRD_LEVEL);
+            //                  if (old_dd) {
+            //                          old_dd.appendChild(node);
+            //                  }
+            //                  else if (!old_dt) {
+            //                          old_dt = appendDT.call(this);
+            //                  }
+            //                  old_dt.appendChild(node);
+            this.DL.appendChild(node);
+            //                  old_dd = null;
+            //                  old_dt = node;
+            return node;
+        };
+        
+        // Reparse all every time
+        // TODO: improve this
+        if (this.DL) {
+            while (this.DL.hasChildNodes()) {
+                this.DL.removeChild(this.DL.firstChild);
+            }
+            if (this.options.title) {
+                this.DL.appendChild(document.createTextNode(this.options.title));
+            }
+        }
+        
+        for (var i=0; i<this.db.length; i++) {
+            var el = this.db[i];
+            var node;
+            if ('undefined' === typeof el.dd) {
+                node = appendDT.call(this);
+                //console.log('just created dt');
+            }
+            else {
+                node = appendDD.call(this);
+            }
+            //                  console.log('This is the el')
+            //                  console.log(el);
+            var content = this.htmlRenderer.render(el);
+            //                  console.log('This is how it is rendered');
+            //                  console.log(content);
+            node.appendChild(content);          
+        }
+        
+        return this.DL;
+    };
+    
+    List.prototype.getRoot = function() {
+        return this.DL;
+    };
+    
+    
+    
+    //  List.prototype.createItem = function(id) {
+    //          var item = document.createElement(this.SECOND_LEVEL);
+    //          if (id) {
+    //                  item.id = id;
+    //          }
+    //          return item;
+    //  };
+    
+    // Cell Class
+    Node.prototype = new Entity();
+    Node.prototype.constructor = Node;
+    
+    function Node (node) {
+        Entity.call(this, node);
+        this.dt = ('undefined' !== typeof node.dt) ? node.dt : null;
+        if ('undefined' !== typeof node.dd) {
+            this.dd = node.dd;
+        }
+    }
+    
 })(
-	('undefined' !== typeof node) ? (('undefined' !== typeof node.window) ? node.window : node) : module.parent.exports, 
-	('undefined' !== typeof node) ? node : module.parent.exports
+    ('undefined' !== typeof node) ? (('undefined' !== typeof node.window) ? node.window : node) : module.parent.exports, 
+    ('undefined' !== typeof node) ? node : module.parent.exports
 );
 
 (function(exports, window, node) {
@@ -19393,107 +19519,108 @@ Widget.prototype.highlight = function () {};
 	('undefined' !== typeof node) ? node : module.parent.exports.node
 );
 /**
- * 
  * # nodegame-widgets
  * 
- * Copyright(c) 2012 Stefano Balietti
+ * Copyright(c) 2013 Stefano Balietti
  * MIT Licensed
- * 
+ * ---
  */
 (function (window, node) {
 
-	var J = node.JSUS;
-	
-function Widgets() {
-	this.widgets = {};
-	this.root = node.window.root || document.body;
-}
+    var J = node.JSUS;
+    
+    function Widgets() {
+        this.widgets = {};
+        this.root = node.window.root || document.body;
+    }
 
-/**
- * ### Widgets.register
- * 
- * Registers a new widget in the collection
- * 
- * A name and a prototype class must be provided. All properties
- * that are presetn in `node.Widget`, but missing in the prototype
- * are added. 
- * 
- * Registered widgets can be loaded with Widgets.get or Widgets.append.
- * 
- * @param {string} name The id under which registering the widget
- * @param {function} w The widget to add
- * @return {object|boolean} The registered widget, or FALSE if an error occurs
- * 
- */
-Widgets.prototype.register = function (name, w) {
-	if (!name || !w) {
-		node.err('Could not register widget: ' + name, 'nodegame-widgets: ');
-		return false;
-	}
-	
-	// Add default properties to widget prototype
-	for (var i in node.Widget.prototype) {
-		if (!w[i] && !w.prototype[i] && !(w.prototype.__proto__ && w.prototype.__proto__[i])) {
-			w.prototype[i] = J.clone(node.Widget.prototype[i]);
-		}
-	}
-	
-	this.widgets[name] = w;
-	return this.widgets[name];
-};
+    /**
+     * ### Widgets.register
+     * 
+     * Registers a new widget in the collection
+     * 
+     * A name and a prototype class must be provided. All properties
+     * that are presetn in `node.Widget`, but missing in the prototype
+     * are added. 
+     * 
+     * Registered widgets can be loaded with Widgets.get or Widgets.append.
+     * 
+     * @param {string} name The id under which registering the widget
+     * @param {function} w The widget to add
+     * @return {object|boolean} The registered widget, or FALSE if an error occurs
+     */
+    Widgets.prototype.register = function (name, w) {
+        var i;
+        if ('string' !== typeof name) {
+            throw new TypeError('Widgets.register: name must be string.');
+        }
+        if ('function' !== typeof w) {
+            throw new TypeError('Widgets.register: w must be function.');
+        }
 
-/**
- * ### Widgets.get
- * 
- * Retrieves, instantiates and returns the specified widget
- * 
- * It can attach standard javascript listeners to the root element of
- * the widget if specified in the options.
- * 
- * The dependencies are checked, and if the conditions are not met, 
- * returns FALSE.
- * 
- * @param {string} w_str The name of the widget to load
- * @param {options} options Optional. Configuration options to be passed to the widgets
- * 
- * @see Widgets.add
- * 
- * @TODO: add supports for any listener. Maybe requires some refactoring.
- * @TODO: add example.
- * 
- */
-Widgets.prototype.get = function (w_str, options) {
+        // Add default properties to widget prototype
+        for (i in node.Widget.prototype) {
+            if (!w[i] && !w.prototype[i] && !(w.prototype.__proto__ && w.prototype.__proto__[i])) {
+                w.prototype[i] = J.clone(node.Widget.prototype[i]);
+            }
+        }
+        
+        this.widgets[name] = w;
+        return this.widgets[name];
+    };
+
+    /**
+     * ### Widgets.get
+     * 
+     * Retrieves, instantiates and returns the specified widget
+     * 
+     * It can attach standard javascript listeners to the root element of
+     * the widget if specified in the options.
+     * 
+     * The dependencies are checked, and if the conditions are not met, 
+     * returns FALSE.
+     * 
+     * @param {string} w_str The name of the widget to load
+     * @param {options} options Optional. Configuration options to be passed to the widgets
+     * 
+     * @see Widgets.add
+     * 
+     * @TODO: add supports for any listener. Maybe requires some refactoring.
+     * @TODO: add example.
+     * 
+     */
+    Widgets.prototype.get = function (w_str, options) {
 	if (!w_str) return;
 	var that = this;
 	options = options || {};
 	
 	
 	function createListenerFunction (w, e, l) {
-		if (!w || !e || !l) return;
-		w.getRoot()[e] = function() {
-			l.call(w); 
-		};
+	    if (!w || !e || !l) return;
+	    w.getRoot()[e] = function() {
+		l.call(w); 
+	    };
 	};
 	
 	function attachListeners (options, w) {
-		if (!options || !w) return;
-		var isEvent = false;
-		for (var i in options) {
-			if (options.hasOwnProperty(i)) {
-				isEvent = J.in_array(i, ['onclick', 'onfocus', 'onblur', 'onchange', 'onsubmit', 'onload', 'onunload', 'onmouseover']);  
-				if (isEvent && 'function' === typeof options[i]) {
-					createListenerFunction(w, i, options[i]);
-				}
-			}			
-		};
+	    if (!options || !w) return;
+	    var isEvent = false;
+	    for (var i in options) {
+		if (options.hasOwnProperty(i)) {
+		    isEvent = J.in_array(i, ['onclick', 'onfocus', 'onblur', 'onchange', 'onsubmit', 'onload', 'onunload', 'onmouseover']);  
+		    if (isEvent && 'function' === typeof options[i]) {
+			createListenerFunction(w, i, options[i]);
+		    }
+		}			
+	    };
 	};
 	
 	var wProto = J.getNestedValue(w_str, this.widgets);
 	var widget;
 	
 	if (!wProto) {
-		node.err('widget ' + w_str + ' not found.', 'node-widgets: ');
-		return;
+	    node.err('widget ' + w_str + ' not found.', 'node-widgets: ');
+	    return;
 	}
 	
 	node.info('registering ' + wProto.name + ' v.' +  wProto.version, 'node-widgets: ');
@@ -19503,939 +19630,1485 @@ Widgets.prototype.get = function (w_str, options) {
 	// Add missing properties to the user options
 	J.mixout(options, J.clone(wProto.defaults));
 	
-    widget = new wProto(options);
-    // Re-inject defaults
-    widget.defaults = options;
-    
-    // Call listeners
-    widget.listeners.call(widget);
-    
-    // user listeners
-    attachListeners(options, widget);
+        widget = new wProto(options);
+        // Re-inject defaults
+        widget.defaults = options;
+        
+        // Call listeners
+        widget.listeners.call(widget);
+        
+        // user listeners
+        attachListeners(options, widget);
 
 	return widget;
-};
+    };
+    /**
+     * ### Widgets.append
+     * 
+     * Appends a widget to the specified root element. If no root element
+     * is specified the widget is append to the global root. 
+     * 
+     * The first parameter can be string representing the name of the widget or 
+     * a valid widget already loaded, for example through Widgets.get. 
+     * In the latter case, dependencies are checked, and it returns FALSE if
+     * conditions are not met.
+     * 
+     * It automatically creates a fieldset element around the widget if 
+     * requested by the internal widget configuration, or if specified in the
+     * options parameter.
+     * 
+     * @param {string} w_str The name of the widget to load
+     * @param {object} root. The HTML element to which appending the widget
+     * @param {options} options Optional. Configuration options to be passed to the widgets
+     * @return {object|boolean} The requested widget, or FALSE is an error occurs
+     * 
+     * @see Widgets.get
+     * 
+     */
+    Widgets.prototype.append = Widgets.prototype.add = function (w, root, options) {
+        if (!w) return;
+        var that = this;
+        
+        function appendFieldset(root, options, w) {
+            if (!options) return root;
+            var idFieldset = options.id || w.id + '_fieldset';
+            var legend = options.legend || w.legend;
+            return W.addFieldset(root, idFieldset, legend, options.attributes);
+        };
+        
+        
+        // Init default values
+        root = root || this.root;
+        options = options || {};
 
-/**
- * ### Widgets.append
- * 
- * Appends a widget to the specified root element. If no root element
- * is specified the widget is append to the global root. 
- * 
- * The first parameter can be string representing the name of the widget or 
- * a valid widget already loaded, for example through Widgets.get. 
- * In the latter case, dependencies are checked, and it returns FALSE if
- * conditions are not met.
- * 
- * It automatically creates a fieldset element around the widget if 
- * requested by the internal widget configuration, or if specified in the
- * options parameter.
- * 
- * @param {string} w_str The name of the widget to load
- * @param {object} root. The HTML element to which appending the widget
- * @param {options} options Optional. Configuration options to be passed to the widgets
- * @return {object|boolean} The requested widget, or FALSE is an error occurs
- * 
- * @see Widgets.get
- * 
- */
-Widgets.prototype.append = Widgets.prototype.add = function (w, root, options) {
-	if (!w) return;
-	var that = this;
-	
-	function appendFieldset(root, options, w) {
-		if (!options) return root;
-		var idFieldset = options.id || w.id + '_fieldset';
-		var legend = options.legend || w.legend;
-		return W.addFieldset(root, idFieldset, legend, options.attributes);
-	};
-	
-	
-	// Init default values
-	root = root || this.root;
-	options = options || {};
+        // Check if it is a object (new widget)
+        // If it is a string is the name of an existing widget
+        // In this case a dependencies check is done
+        if ('object' !== typeof w) w = this.get(w, options);
+        if (!w) return false;   
+        
+        // options exists and options.fieldset exist
+        root = appendFieldset(root, options.fieldset || w.defaults.fieldset, w);
+        w.append(root);
 
-	// Check if it is a object (new widget)
-	// If it is a string is the name of an existing widget
-	// In this case a dependencies check is done
-	if ('object' !== typeof w) w = this.get(w, options);
-	if (!w) return false;	
-	
-	// options exists and options.fieldset exist
-	root = appendFieldset(root, options.fieldset || w.defaults.fieldset, w);
-	w.append(root);
+        return w;
+    };
 
-	return w;
-};
+    /**
+     * ### Widgets.checkDependencies
+     * 
+     * Checks if all the dependencies are already loaded
+     * 
+     * Dependencies are searched for in the following objects
+     * 
+     *          - window
+     *          - node
+     *          - this.widgets
+     *          - node.window
+     * 
+     * TODO: Check for version and other constraints.
+     * 
+     * @param {object} The widget to check
+     * @param {boolean} quiet Optional. If TRUE, no warning will be raised. Defaults FALSE
+     * @return {boolean} TRUE, if all dependencies are met
+     */ 
+    Widgets.prototype.checkDependencies = function (w, quiet) {
+        if (!w.dependencies) return true;
+        
+        var errMsg = function (w, d) {
+            var name = w.name || w.id;// || w.toString();
+            node.log(d + ' not found. ' + name + ' cannot be loaded.', 'ERR');
+        };
+        
+        var parents = [window, node, this.widgets, node.window];
+        
+        var d = w.dependencies;
+        for (var lib in d) {
+            if (d.hasOwnProperty(lib)) {
+                var found = false;
+                for (var i=0; i<parents.length; i++) {
+                    if (J.getNestedValue(lib, parents[i])) {
+                        var found = true;
+                        break;
+                    }
+                }
+                if (!found) {   
+                    if (!quiet) errMsg(w, lib);
+                    return false;
+                }
+                
+            }
+        }
+        return true;
+    };
 
-/**
- * ### Widgets.checkDependencies
- * 
- * Checks if all the dependencies are already loaded
- * 
- * Dependencies are searched for in the following objects
- * 
- *  	- window
- *  	- node
- *  	- this.widgets
- *  	- node.window
- * 
- * TODO: Check for version and other constraints.
- * 
- * @param {object} The widget to check
- * @param {boolean} quiet Optional. If TRUE, no warning will be raised. Defaults FALSE
- * @return {boolean} TRUE, if all dependencies are met
- */ 
-Widgets.prototype.checkDependencies = function (w, quiet) {
-	if (!w.dependencies) return true;
-	
-	var errMsg = function (w, d) {
-		var name = w.name || w.id;// || w.toString();
-		node.log(d + ' not found. ' + name + ' cannot be loaded.', 'ERR');
-	};
-	
-	var parents = [window, node, this.widgets, node.window];
-	
-	var d = w.dependencies;
-	for (var lib in d) {
-		if (d.hasOwnProperty(lib)) {
-			var found = false;
-			for (var i=0; i<parents.length; i++) {
-				if (J.getNestedValue(lib, parents[i])) {
-					var found = true;
-					break;
-				}
-			}
-			if (!found) {	
-				if (!quiet) errMsg(w, lib);
-				return false;
-			}
-		
-		}
-	}
-	return true;
-};
-
-//Expose Widgets to the global object
-node.widgets = new Widgets();
-	
+    //Expose Widgets to the global object
+    node.widgets = new Widgets();
+    
 })(
-	// Widgets works only in the browser environment.
-	('undefined' !== typeof window) ? window : module.parent.exports.window,
-	('undefined' !== typeof window) ? window.node : module.parent.exports.node
+    // Widgets works only in the browser environment.
+    ('undefined' !== typeof window) ? window : module.parent.exports.window,
+    ('undefined' !== typeof window) ? window.node : module.parent.exports.node
 );
+(function (node) {
 
+    node.widgets.register('WaitScreen', WaitScreen);
+	
+// ## Defaults
+	
+    WaitScreen.defaults = {};
+    WaitScreen.defaults.id = 'waiting';
+    WaitScreen.defaults.fieldset = false;
+    
+// ## Meta-data
+	
+    WaitScreen.name = 'WaitingScreen';
+    WaitScreen.version = '0.4.0';
+    WaitScreen.description = 'Show a standard waiting screen';
+    
+    function WaitScreen (options) {
+	this.id = options.id;
+	
+	this.text = {
+            waiting: options.waitingText || 'Waiting for other players to be done...',
+            stepping: options.steppingText || 'Initializing, game will start soon...'
+        }
+
+	this.waitingDiv = null;
+    }
+    
+    function updateScreen(text) {
+        if (!this.waitingDiv) {
+	    this.waitingDiv = node.window.addDiv(document.body, this.id);
+	}
+	    
+	if (this.waitingDiv.style.display === 'none'){
+	    this.waitingDiv.style.display = '';
+	}			
+	
+	this.waitingDiv.innerHTML = text;
+    }
+
+    function hideScreen() {
+        if (this.waitingDiv) {
+            if (this.waitingDiv.style.display === '') {
+                this.waitingDiv.style.display = 'none';
+            }
+        }
+    }
+
+    WaitScreen.prototype.append = function(root) {
+	return root;
+    };
+    
+    WaitScreen.prototype.getRoot = function() {
+	return this.waitingDiv;
+    };
+    
+    WaitScreen.prototype.listeners = function() {
+        var that = this;
+        node.on('BEFORE_DONE', function(text) {
+            updateScreen.call(that, text || that.text.waiting)
+        });
+	
+        node.on('STEPPING', function(text) {
+            updateScreen.call(that, text || that.text.stepping)
+        });
+               
+	// It is supposed to fade away when a new state starts
+        node.on('PLAYING', function(text) {
+            hideScreen.call(that);
+        });
+
+        // It is supposed to fade away when a new state starts
+        node.on('GAME_OVER', function(text) {
+            hideScreen.call(that);
+        });
+
+
+    }; 
+})(node);
 (function (node) {
 	
-	node.widgets.register('Chat', Chat);
 	
-	var J = node.JSUS,
-		W = node.window;	
+	node.widgets.register('D3', D3);
+	node.widgets.register('D3ts', D3ts);
+	
+	D3.prototype.__proto__ = node.Widget.prototype;
+	D3.prototype.constructor = D3;
 
 // ## Defaults
 	
-	Chat.defaults = {};
-	Chat.defaults.id = 'chat';
-	Chat.defaults.fieldset = { legend: 'Chat' };	
-	Chat.defaults.mode = 'MANY_TO_MANY'; 
-	Chat.defaults.textarea_id = 'chat_textarea';
-	Chat.defaults.chat_id = 'chat_chat';
-	Chat.defaults.chat_event = 'CHAT';
-	Chat.defaults.submit_id = 'chat_submit';
-	Chat.defaults.submit_text = 'chat';
+	D3.defaults = {};
+	D3.defaults.id = 'D3';
+	D3.defaults.fieldset = {
+		legend: 'D3 plot'
+	};
 
-			
+	
 // ## Meta-data
 	
-	// ### Chat.modes
-	// 	MANY_TO_MANY: everybody can see all the messages, and it possible
-	//    to send private messages
-	//  MANY_TO_ONE: everybody can see all the messages, private messages can
-	//    be received, but not sent
-	//  ONE_TO_ONE: everybody sees only personal messages, private messages can
-	//    be received, but not sent. All messages are sent to the SERVER
-	//  RECEIVER_ONLY: messages can only be received, but not sent
-	Chat.modes = { 
-			MANY_TO_MANY: 'MANY_TO_MANY',
-			MANY_TO_ONE: 'MANY_TO_ONE',
-			ONE_TO_ONE: 'ONE_TO_ONE',
-			RECEIVER_ONLY: 'RECEIVER_ONLY'
-	};
+	D3.name = 'D3';
+	D3.version = '0.1';
+	D3.description = 'Real time plots for nodeGame with d3.js';
 	
-	Chat.name = 'Chat';
-	Chat.version = '0.4';
-	Chat.description = 'Offers a uni / bi-directional communication interface between players, or between players and the experimenter.';
-
 // ## Dependencies
 	
-	Chat.dependencies = {
+	D3.dependencies = {
+		d3: {},	
 		JSUS: {}
 	};
 	
-	function Chat (options) {
-		this.id = options.id || Chat.id;
-		this.mode = options.mode || Chat.defaults.mode;
+	function D3 (options) {
+		this.id = options.id || D3.id;
+		this.event = options.event || 'D3';
+		this.svg = null;
 		
-		this.root = null;
-		
-		this.textarea_id = options.textarea_id || Chat.defaults.textarea_id;
-		this.chat_id = options.chat_id || Chat.defaults.chat_id;
-		this.submit_id = options.submit_id || Chat.defaults.submit_id;
-		
-		this.chat_event = options.chat_event || Chat.defaults.chat_event;
-		this.submit_text = options.submit_text || Chat.defaults.submit_text;
-
-		this.submit = W.getEventButton(this.chat_event, this.submit_text, this.submit_id);
-		this.textarea = W.getElement('textarea', this.textarea_id);
-		this.chat = W.getElement('div', this.chat_id);
-		
-		if ('undefined' !== typeof options.displayName) {
-			this.displayName = options.displayName;
-		}
-		
-		switch(this.mode) {
-		
-		case Chat.modes.RECEIVER_ONLY:
-			this.recipient = {value: 'SERVER'};
-			break;
-		case Chat.modes.MANY_TO_ONE:
-			this.recipient = {value: 'ALL'};
-			break;
-		case Chat.modes.ONE_TO_ONE:
-			this.recipient = {value: 'SERVER'};
-			break;
-		default:
-			this.recipient = W.getRecipientSelector();
-		}
+		var that = this;
+		node.on(this.event, function (value) {
+			that.tick.call(that, value); 
+		});
 	}
 	
-	
-	Chat.prototype.append = function (root) {
+	D3.prototype.append = function (root) {
 		this.root = root;
-		root.appendChild(this.chat);
-		
-		if (this.mode !== Chat.modes.RECEIVER_ONLY) {	
-			W.writeln('', root);
-			root.appendChild(this.textarea);
-			W.writeln('', root);
-			root.appendChild(this.submit);
-			if (this.mode === Chat.modes.MANY_TO_MANY) {
-				root.appendChild(this.recipient);
-			}
-		}
+		this.svg = d3.select(root).append("svg");
 		return root;
 	};
 	
-	Chat.prototype.getRoot = function () {
-		return this.root;
+	D3.prototype.tick = function () {};
+	
+// # D3ts
+	
+	
+// ## Meta-data
+	
+	D3ts.id = 'D3ts';
+	D3ts.name = 'D3ts';
+	D3ts.version = '0.1';
+	D3ts.description = 'Time series plot for nodeGame with d3.js';
+	
+// ## Dependencies	
+	D3ts.dependencies = {
+		D3: {},	
+		JSUS: {}
 	};
 	
-	Chat.prototype.displayName = function(from) {
-		return from;
+	D3ts.prototype.__proto__ = D3.prototype;
+	D3ts.prototype.constructor = D3ts;
+	
+	D3ts.defaults = {};
+	
+	D3ts.defaults.width = 400;
+	D3ts.defaults.height = 200;
+	
+	D3ts.defaults.margin = {
+    	top: 10, 
+    	right: 10, 
+    	bottom: 20, 
+    	left: 40 
 	};
 	
-	Chat.prototype.readTA = function () {
-		var txt = this.textarea.value;
-		this.textarea.value = '';
-		return txt;
+	D3ts.defaults.domain = {
+		x: [0, 10],
+		y: [0, 1]
 	};
 	
-	Chat.prototype.writeTA = function (string, args) {
-		J.sprintf(string, args, this.chat);
-	    W.writeln('', this.chat);
-	    this.chat.scrollTop = this.chat.scrollHeight;
-	};
+    D3ts.defaults.range = {
+    	x: [0, D3ts.defaults.width],
+    	y: [D3ts.defaults.height, 0]
+    };
 	
-	Chat.prototype.listeners = function() {
-		var that = this;	
-		    
-	    node.on(this.chat_event, function () {
-	      var msg = that.readTA();
-	      if (!msg) return;
-	      
-	      var to = that.recipient.value;
-	      var args = {
-		        '%s': {
-		          'class': 'chat_me'
-		        },
-		        '%msg': {
-		          'class': 'chat_msg'
-		        },
-		        '!txt': msg
-	      };
-	      that.writeTA('%sMe%s: %msg!txt%msg', args);
-	      node.say(msg.trim(), that.chat_event, to);
-	    });
-		  
-		if (this.mode === Chat.modes.MANY_TO_MANY) {
-		    node.on('UPDATED_PLIST', function() {
-			      W.populateRecipientSelector(that.recipient, node.game.pl.fetch());
-		    });
-		}
+	function D3ts (options) {
+		D3.call(this, options);
+		
+		
+		var o = this.options = JSUS.merge(D3ts.defaults, options);
+		
+		var n = this.n = o.n;
+		
+	    this.data = [0];
+	    
+	    this.margin = o.margin;
+	    
+		var width = this.width = o.width - this.margin.left - this.margin.right;
+		var height = this.height = o.height - this.margin.top - this.margin.bottom;
 
-	    node.onDATA(this.chat_event, function (msg) {
-	    	if (msg.from === node.player.id || msg.from === node.player.sid) {
-	    		return;
-	    	}
-	    	
-	    	if (this.mode === Chat.modes.ONE_TO_ONE) { 
-		    	if (msg.from === this.recipient.value) {
-		    		return;
-		    	}
-	    	}
-	    	
-	    	
-	    	var from = that.displayName(msg.from);
-	    	var args = {
-		        '%s': {
-		          'class': 'chat_others'
-		        },
-		        '%msg': {
-		          'class': 'chat_msg'
-		        },
-		        '!txt': msg.data,
-	            '!from': from
-	      };
-	    	
-	      that.writeTA('%s!from%s: %msg!txt%msg', args);
-	    });
+		// identity function
+		var x = this.x = d3.scale.linear()
+		    .domain(o.domain.x)
+		    .range(o.range.x);
+
+		var y = this.y = d3.scale.linear()
+		    .domain(o.domain.y)
+		    .range(o.range.y);
+
+		// line generator
+		this.line = d3.svg.line()
+		    .x(function(d, i) { return x(i); })
+		    .y(function(d, i) { return y(d); });
+	}
+	
+	D3ts.prototype.init = function (options) {
+		//D3.init.call(this, options);
+		
+		console.log('init!');
+		var x = this.x,
+			y = this.y,
+			height = this.height,
+			width = this.width,
+			margin = this.margin;
+		
+		
+		// Create the SVG and place it in the middle
+		this.svg.attr("width", width + margin.left + margin.right)
+		    .attr("height", height + margin.top + margin.bottom)
+		  .append("g")
+		    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+
+		// Line does not go out the axis
+		this.svg.append("defs").append("clipPath")
+		    .attr("id", "clip")
+		  .append("rect")
+		    .attr("width", width)
+		    .attr("height", height);
+
+		// X axis
+		this.svg.append("g")
+		    .attr("class", "x axis")
+		    .attr("transform", "translate(0," + height + ")")
+		    .call(d3.svg.axis().scale(x).orient("bottom"));
+
+		// Y axis
+		this.svg.append("g")
+		    .attr("class", "y axis")
+		    .call(d3.svg.axis().scale(y).orient("left"));
+
+		this.path = this.svg.append("g")
+		    .attr("clip-path", "url(#clip)")
+		  .append("path")
+		    .data([this.data])
+		    .attr("class", "line")
+		    .attr("d", this.line);		
+	};
+	
+	D3ts.prototype.tick = function (value) {
+		this.alreadyInit = this.alreadyInit || false;
+		if (!this.alreadyInit) {
+			this.init();
+			this.alreadyInit = true;
+		}
+		
+		var x = this.x;
+		
+		console.log('tick!');
+	
+		// push a new data point onto the back
+		this.data.push(value);
+
+		// redraw the line, and slide it to the left
+		this.path
+	    	.attr("d", this.line)
+	    	.attr("transform", null);
+
+		// pop the old data point off the front
+		if (this.data.length > this.n) {
+		
+	  		this.path
+	  			.transition()
+	  			.duration(500)
+	  			.ease("linear")
+	  			.attr("transform", "translate(" + x(-1) + ")");
+	  		
+	  		this.data.shift();
+	  	  
+		}
 	};
 	
 })(node);
 (function (node) {
 	
+	node.widgets.register('NDDBBrowser', NDDBBrowser);
+	
 	var JSUS = node.JSUS,
-		Table = node.window.Table;
+		NDDB = node.NDDB,
+		TriggerManager = node.TriggerManager;
+
+// ## Defaults
 	
-	node.widgets.register('ChernoffFaces', ChernoffFaces);
+	NDDBBrowser.defaults = {};
+	NDDBBrowser.defaults.id = 'nddbbrowser';
+	NDDBBrowser.defaults.fieldset = false;
 	
-	// ## Defaults
+// ## Meta-data
 	
-	ChernoffFaces.defaults = {};
-	ChernoffFaces.defaults.id = 'ChernoffFaces';
-	ChernoffFaces.defaults.canvas = {};
-	ChernoffFaces.defaults.canvas.width = 100;
-	ChernoffFaces.defaults.canvas.heigth = 100;
+	NDDBBrowser.name = 'NDDBBrowser';
+	NDDBBrowser.version = '0.1.2';
+	NDDBBrowser.description = 'Provides a very simple interface to control a NDDB istance.';
 	
-	// ## Meta-data
+// ## Dependencies
 	
-	ChernoffFaces.name = 'Chernoff Faces';
-	ChernoffFaces.version = '0.3';
-	ChernoffFaces.description = 'Display parametric data in the form of a Chernoff Face.';
-	
-	// ## Dependencies 
-	ChernoffFaces.dependencies = {
+	NDDBBrowser.dependencies = {
 		JSUS: {},
-		Table: {},
-		Canvas: {},
-		'Controls.Slider': {}
+		NDDB: {},
+		TriggerManager: {}
 	};
 	
-	ChernoffFaces.FaceVector = FaceVector;
-	ChernoffFaces.FacePainter = FacePainter;
-	
-	function ChernoffFaces (options) {
+	function NDDBBrowser (options) {
 		this.options = options;
+		this.nddb = null;
+		
+		this.commandsDiv = document.createElement('div');
 		this.id = options.id;
-		this.table = new Table({id: 'cf_table'});
-		this.root = options.root || document.createElement('div');
-		this.root.id = this.id;
+		if ('undefined' !== typeof this.id) {
+			this.commandsDiv.id = this.id;
+		}
 		
-		this.sc = node.widgets.get('Controls.Slider');	// Slider Controls
-		this.fp = null;	// Face Painter
-		this.canvas = null;
-
-		this.change = 'CF_CHANGE';
-		var that = this;
-		this.changeFunc = function () {
-			that.draw(that.sc.getAllValues());
-		};
-		
-		this.features = null;
-		this.controls = null;
-		
+		this.info = null;
 		this.init(this.options);
 	}
 	
-	ChernoffFaces.prototype.init = function (options) {
-		var that = this;
-		this.id = options.id || this.id;
-		var PREF = this.id + '_';
+	NDDBBrowser.prototype.init = function (options) {
 		
-		this.features = options.features || this.features || FaceVector.random();
-		
-		this.controls = ('undefined' !== typeof options.controls) ?  options.controls : true;
-		
-		var idCanvas = (options.idCanvas) ? options.idCanvas : PREF + 'canvas';
-		var idButton = (options.idButton) ? options.idButton : PREF + 'button';
-		
-		this.canvas = node.window.getCanvas(idCanvas, options.canvas);
-		this.fp = new FacePainter(this.canvas);		
-		this.fp.draw(new FaceVector(this.features));
-		
-		var sc_options = {
-			id: 'cf_controls',
-			features: JSUS.mergeOnKey(FaceVector.defaults, this.features, 'value'),
-			change: this.change,
-			fieldset: {id: this.id + '_controls_fieldest', 
-						legend: this.controls.legend || 'Controls'
-			},
-			submit: 'Send'
-		};
-		
-		this.sc = node.widgets.get('Controls.Slider', sc_options);
-		
-		// Controls are always there, but may not be visible
-		if (this.controls) {
-			this.table.add(this.sc);
+		function addButtons() {
+			var id = this.id;
+			node.window.addEventButton(id + '_GO_TO_FIRST', '<<', this.commandsDiv, 'go_to_first');
+			node.window.addEventButton(id + '_GO_TO_PREVIOUS', '<', this.commandsDiv, 'go_to_previous');
+			node.window.addEventButton(id + '_GO_TO_NEXT', '>', this.commandsDiv, 'go_to_next');
+			node.window.addEventButton(id + '_GO_TO_LAST', '>>', this.commandsDiv, 'go_to_last');
+			node.window.addBreak(this.commandsDiv);
+		}
+		function addInfoBar() {
+			var span = this.commandsDiv.appendChild(document.createElement('span'));
+			return span;
 		}
 		
-		// Dealing with the onchange event
-		if ('undefined' === typeof options.change) {	
-			node.on(this.change, this.changeFunc); 
-		} else {
-			if (options.change) {
-				node.on(options.change, this.changeFunc);
+		
+		addButtons.call(this);
+		this.info = addInfoBar.call(this);
+		
+		this.tm = new TriggerManager();
+		this.tm.init(options.triggers);
+		this.nddb = options.nddb || new NDDB({auto_update_pointer: true});
+	};
+	
+	NDDBBrowser.prototype.append = function (root) {
+		this.root = root;
+		root.appendChild(this.commandsDiv);
+		return root;
+	};
+	
+	NDDBBrowser.prototype.getRoot = function (root) {
+		return this.commandsDiv;
+	};
+	
+	NDDBBrowser.prototype.add = function (o) {
+		return this.nddb.insert(o);
+	};
+	
+	NDDBBrowser.prototype.sort = function (key) {
+		return this.nddb.sort(key);
+	};
+	
+	NDDBBrowser.prototype.addTrigger = function (trigger) {
+		return this.tm.addTrigger(trigger);
+	};
+	
+	NDDBBrowser.prototype.removeTrigger = function (trigger) {
+		return this.tm.removeTrigger(trigger);
+	};
+	
+	NDDBBrowser.prototype.resetTriggers = function () {
+		return this.tm.resetTriggers();
+	};
+	
+	NDDBBrowser.prototype.listeners = function() {
+		var that = this;
+		var id = this.id;
+		
+		function notification (el, text) {
+			if (el) {
+				node.emit(id + '_GOT', el);
+				this.writeInfo((this.nddb.nddb_pointer + 1) + '/' + this.nddb.length);
 			}
 			else {
-				node.removeListener(this.change, this.changeFunc);
+				this.writeInfo('No element found');
 			}
-			this.change = options.change;
 		}
 		
+		node.on(id + '_GO_TO_FIRST', function() {
+			var el = that.tm.pullTriggers(that.nddb.first());
+			notification.call(that, el);
+		});
 		
-		this.table.add(this.canvas);
-		this.table.parse();
-		this.root.appendChild(this.table.table);
-	};
-	
-	ChernoffFaces.prototype.getCanvas = function() {
-		return this.canvas;
-	};
-	
-	ChernoffFaces.prototype.append = function (root) {
-		root.appendChild(this.root);
-		this.table.parse();
-		return this.root;
-	};
-	
-	ChernoffFaces.prototype.draw = function (features) {
-		if (!features) return;
-		var fv = new FaceVector(features);
-		this.fp.redraw(fv);
-		// Without merging wrong values are passed as attributes
-		this.sc.init({features: JSUS.mergeOnKey(FaceVector.defaults, features, 'value')});
-		this.sc.refresh();
-	};
-	
-	ChernoffFaces.prototype.getAllValues = function() {
-		//if (this.sc) return this.sc.getAllValues();
-		return this.fp.face;
-	};
-	
-	ChernoffFaces.prototype.randomize = function() {
-		var fv = FaceVector.random();
-		this.fp.redraw(fv);
-	
-		var sc_options = {
-				features: JSUS.mergeOnValue(FaceVector.defaults, fv),
-				change: this.change
-		};
-		this.sc.init(sc_options);
-		this.sc.refresh();
-	
-		return true;
-	};
-	
-	
-	// FacePainter
-	// The class that actually draws the faces on the Canvas
-	function FacePainter (canvas, settings) {
+		node.on(id + '_GO_TO_PREVIOUS', function() {
+			var el = that.tm.pullTriggers(that.nddb.previous());
+			notification.call(that, el);
+		});
+		
+		node.on(id + '_GO_TO_NEXT', function() {
+			var el = that.tm.pullTriggers(that.nddb.next());
+			notification.call(that, el);
+		});
+
+		node.on(id + '_GO_TO_LAST', function() {
+			var el = that.tm.pullTriggers(that.nddb.last());
+			notification.call(that, el);
 			
-		this.canvas = new node.window.Canvas(canvas);
+		});
+	};
+	
+	NDDBBrowser.prototype.writeInfo = function (text) {
+		if (this.infoTimeout) clearTimeout(this.infoTimeout);
+		this.info.innerHTML = text;
+		var that = this;
+		this.infoTimeout = setTimeout(function(){
+			that.info.innerHTML = '';
+		}, 2000);
+	};
+	
+	
+})(node);
+(function (node) {
+    
+    node.widgets.register('DataBar', DataBar);
+    
+    // ## Defaults
+    DataBar.defaults = {};
+    DataBar.defaults.id = 'databar';
+    DataBar.defaults.fieldset = {	
+	legend: 'Send DATA to players'
+    };
+    
+    // ## Meta-data
+    DataBar.name = 'Data Bar';
+    DataBar.version = '0.4';
+    DataBar.description = 'Adds a input field to send DATA messages to the players';
+    
+    function DataBar (options) {
+	this.bar = null;
+	this.root = null;
+	this.recipient = null;
+    }
+    
+    
+    DataBar.prototype.append = function (root) {
+	
+	var sendButton, textInput, dataInput;
+	
+	sendButton = W.addButton(root);
+	W.writeln('Text');
+	textInput = W.addTextInput(root, 'data-bar-text');
+	W.writeln('Data');
+	dataInput = W.addTextInput(root, 'data-bar-data');
+	
+	this.recipient = W.addRecipientSelector(root);
+	
+	var that = this;
+	
+	sendButton.onclick = function() {
+	    
+	    var to, data, text;
+	    
+	    to = that.recipient.value;
+	    text = textInput.value;
+	    data = dataInput.value;
+	    
+	    node.log('Parsed Data: ' + JSON.stringify(data));
+	    
+	    node.say(data, text, to);
+	};
+	
+	node.on('UPDATED_PLIST', function() {
+	    node.window.populateRecipientSelector(that.recipient, node.game.pl);
+	});
+	
+	return root;
+	
+    };
+    
+})(node);
+(function (node) {
+    
+    node.widgets.register('ServerInfoDisplay', ServerInfoDisplay);	
+
+    // ## Defaults
+    
+    ServerInfoDisplay.defaults = {};
+    ServerInfoDisplay.defaults.id = 'serverinfodisplay';
+    ServerInfoDisplay.defaults.fieldset = {
+	legend: 'Server Info',
+	id: 'serverinfo_fieldset'
+    };		
+    
+    // ## Meta-data
+    
+    ServerInfoDisplay.name = 'Server Info Display';
+    ServerInfoDisplay.version = '0.4';
+    
+    function ServerInfoDisplay (options) {	
+	this.id = options.id;
+	
+	this.root = null;
+	this.div = document.createElement('div');
+	this.table = null; //new node.window.Table();
+	this.button = null;
+    }
+    
+    ServerInfoDisplay.prototype.init = function (options) {
+	var that = this;
+	if (!this.div) {
+	    this.div = document.createElement('div');
+	}
+	this.div.innerHTML = 'Waiting for the reply from Server...';
+	if (!this.table) {
+	    this.table = new node.window.Table(options);
+	}
+	this.table.clear(true);
+	this.button = document.createElement('button');
+	this.button.value = 'Refresh';
+	this.button.appendChild(document.createTextNode('Refresh'));
+	this.button.onclick = function(){
+	    that.getInfo();
+	};
+	this.root.appendChild(this.button);
+	this.getInfo();
+    };
+    
+    ServerInfoDisplay.prototype.append = function (root) {
+	this.root = root;
+	root.appendChild(this.div);
+	return root;
+    };
+    
+    ServerInfoDisplay.prototype.getInfo = function() {
+	var that = this;
+	node.get('INFO', function (info) {
+	    node.window.removeChildrenFromNode(that.div);
+	    that.div.appendChild(that.processInfo(info));
+	});
+    };
+    
+    ServerInfoDisplay.prototype.processInfo = function(info) {
+	this.table.clear(true);
+	for (var key in info) {
+	    if (info.hasOwnProperty(key)){
+		this.table.addRow([key,info[key]]);
+	    }
+	}
+	return this.table.parse();
+    };
+    
+    ServerInfoDisplay.prototype.listeners = function () {
+	var that = this;
+	node.on('PLAYER_CREATED', function(){
+	    that.init();
+	});
+    }; 
+    
+})(node);
+(function (node) {
+    
+
+    // TODO: handle different events, beside onchange
+    
+    node.widgets.register('Controls', Controls);        
+    
+    // ## Defaults
+    
+    var defaults = { id: 'controls' };
+    
+    Controls.defaults = defaults;
+    
+    Controls.Slider = SliderControls;
+    Controls.jQuerySlider = jQuerySliderControls;
+    Controls.Radio = RadioControls;
+    
+    // Meta-data
+    
+    Controls.name = 'Controls';
+    Controls.version = '0.3';
+    Controls.description = 'Wraps a collection of user-inputs controls.';
+    
+    function Controls(options) {
+        this.options = options;
+        this.id = 'undefined' !== typeof options.id ? options.id : 'controls';
+        this.root = null;
+        
+        this.listRoot = null;
+        this.fieldset = null;
+        this.submit = null;
+        
+        this.changeEvent = this.id + '_change';
+        
+        this.init(options);
+    }
+
+    Controls.prototype.add = function (root, id, attributes) {
+        // TODO: node.window.addTextInput
+        //return node.window.addTextInput(root, id, attributes);
+    };
+    
+    Controls.prototype.getItem = function (id, attributes) {
+        // TODO: node.window.addTextInput
+        //return node.window.getTextInput(id, attributes);
+    };
+    
+    Controls.prototype.init = function (options) {
+
+        this.hasChanged = false; // TODO: should this be inherited?
+        if ('undefined' !== typeof options.change) {
+            if (!options.change){
+                this.changeEvent = false;
+            }
+            else {
+                this.changeEvent = options.change;
+            }
+        }
+        this.list = new node.window.List(options);
+        this.listRoot = this.list.getRoot();
+        
+        if (!options.features) return;
+        if (!this.root) this.root = this.listRoot;
+        this.features = options.features;
+        this.populate();
+    };
+    
+    Controls.prototype.append = function (root) {
+        this.root = root;
+        var toReturn = this.listRoot;
+        this.list.parse();
+        root.appendChild(this.listRoot);
+        
+        if (this.options.submit) {
+            var idButton = 'submit_' + this.id;
+            if (this.options.submit.id) {
+                idButton = this.options.submit.id;
+                delete this.options.submit.id;
+            }
+            this.submit = node.window.addButton(root, idButton, this.options.submit, this.options.attributes);
+            
+            var that = this;
+            this.submit.onclick = function() {
+                if (that.options.change) {
+                    node.emit(that.options.change);
+                }
+            };
+        }               
+        
+        return toReturn;
+    };
+    
+    Controls.prototype.parse = function() {
+        return this.list.parse();
+    };
+    
+    Controls.prototype.populate = function () {
+        var key, id, attributes, container, elem, that;
+        that = this;
+
+        for (key in this.features) {
+            if (this.features.hasOwnProperty(key)) {
+                // Prepare the attributes vector.
+                attributes = this.features[key];
+                id = key;
+                if (attributes.id) {
+                    id = attributes.id;
+                    delete attributes.id;
+                }
+                
+                container = document.createElement('div');
+                // Add a different element according 
+                // to the subclass instantiated.
+                elem = this.add(container, id, attributes);
+                
+                // Fire the onChange event, if one defined
+                if (this.changeEvent) {
+                    elem.onchange = function() {
+                        node.emit(that.changeEvent);
+                    };
+                }
+                
+                if (attributes.label) {
+                    W.addLabel(container, elem, null, attributes.label);
+                }
+                
+                // Element added to the list.
+                this.list.addDT(container);
+            }
+        }
+    };
+    
+    Controls.prototype.listeners = function() { 
+        var that = this;
+        // TODO: should this be inherited?
+        node.on(this.changeEvent, function(){
+            that.hasChanged = true;
+        });
+        
+    };
+
+    Controls.prototype.refresh = function() {
+        var key, el;
+        for (key in this.features) {        
+            if (this.features.hasOwnProperty(key)) {
+                el = node.window.getElementById(key);
+                if (el) {
+                    // node.log('KEY: ' + key, 'DEBUG');
+                    // node.log('VALUE: ' + el.value, 'DEBUG');
+                    el.value = this.features[key].value;
+                    // TODO: set all the other attributes
+                    // TODO: remove/add elements
+                }
+                
+            }
+        }
+        
+        return true;
+    };
+    
+    Controls.prototype.getAllValues = function() {
+        var out, el, key;
+        out = {};
+        for (key in this.features) {        
+            if (this.features.hasOwnProperty(key)) {
+                el = node.window.getElementById(key);
+                if (el) out[key] = Number(el.value);
+            }
+        }        
+        return out;
+    };
+    
+    Controls.prototype.highlight = function (code) {
+        return node.window.highlight(this.listRoot, code);
+    };
+    
+    // Sub-classes
+    
+    // Slider 
+    
+    SliderControls.prototype.__proto__ = Controls.prototype;
+    SliderControls.prototype.constructor = SliderControls;
+    
+    SliderControls.id = 'slidercontrols';
+    SliderControls.name = 'Slider Controls';
+    SliderControls.version = '0.2';
+    
+    SliderControls.dependencies = {
+        Controls: {}
+    };
+    
+    
+    function SliderControls (options) {
+        Controls.call(this, options);
+    }
+    
+    SliderControls.prototype.add = function (root, id, attributes) {
+        return node.window.addSlider(root, id, attributes);
+    };
+    
+    SliderControls.prototype.getItem = function (id, attributes) {
+        return node.window.getSlider(id, attributes);
+    };
+    
+    // jQuerySlider
+    
+    jQuerySliderControls.prototype.__proto__ = Controls.prototype;
+    jQuerySliderControls.prototype.constructor = jQuerySliderControls;
+    
+    jQuerySliderControls.id = 'jqueryslidercontrols';
+    jQuerySliderControls.name = 'Experimental: jQuery Slider Controls';
+    jQuerySliderControls.version = '0.13';
+    
+    jQuerySliderControls.dependencies = {
+        jQuery: {},
+        Controls: {}
+    };
+    
+    
+    function jQuerySliderControls (options) {
+        Controls.call(this, options);
+    }
+    
+    jQuerySliderControls.prototype.add = function (root, id, attributes) {
+        var slider = jQuery('<div/>', {
+            id: id
+        }).slider();
+        
+        var s = slider.appendTo(root);
+        return s[0];
+    };
+    
+    jQuerySliderControls.prototype.getItem = function (id, attributes) {
+        var slider = jQuery('<div/>', {
+            id: id
+        }).slider();
+        
+        return slider;
+    };
+
+
+    ///////////////////////////
+
+    
+    // Radio
+    
+    RadioControls.prototype.__proto__ = Controls.prototype;
+    RadioControls.prototype.constructor = RadioControls;
+    
+    RadioControls.id = 'radiocontrols';
+    RadioControls.name = 'Radio Controls';
+    RadioControls.version = '0.1.1';
+    
+    RadioControls.dependencies = {
+        Controls: {}
+    };
+    
+    function RadioControls (options) {
+        Controls.call(this,options);
+        this.groupName = ('undefined' !== typeof options.name) ? options.name : 
+            node.window.generateUniqueId(); 
+        this.radioElem = null;
+    }
+    
+    // overriding populare also. There is an error with the Label
+    RadioControls.prototype.populate = function() {
+        var key, id, attributes, container, elem, that;
+        that = this;
+
+        if (!this.radioElem) {
+            this.radioElem = document.createElement('radio');
+            this.radioElem.group = this.name || "radioGroup";
+            this.radioElem.group = this.id || "radioGroup";
+            root.appendChild(this.radioElem);
+        }
+
+        for (key in this.features) {
+            if (this.features.hasOwnProperty(key)) {
+                // Prepare the attributes vector.
+                attributes = this.features[key];
+                id = key;
+                if (attributes.id) {
+                    id = attributes.id;
+                    delete attributes.id;
+                }
+                
+                // Add a different element according 
+                // to the subclass instantiated.
+                elem = this.add(this.radioElem, id, attributes);
+                
+                // Fire the onChange event, if one defined
+                if (this.changeEvent) {
+                    elem.onchange = function() {
+                        node.emit(that.changeEvent);
+                    };
+                }
+                
+                // Element added to the list.
+                this.list.addDT(elem);
+            }
+        }
+    };
+
+    RadioControls.prototype.add = function (root, id, attributes) {
+        var elem;
+        if ('undefined' === typeof attributes.name) {
+            attributes.name = this.groupName;
+        }
+        
+        elem = node.window.addRadioButton(root, id, attributes);
+         // Adding the text for the radio button
+        elem.appendChild(document.createTextNode(attributes.label));
+        return elem;
+    };
+
+    
+    RadioControls.prototype.getItem = function (id, attributes) {
+        //console.log('ADDDING radio');
+        //console.log(attributes);
+        // add the group name if not specified
+        // TODO: is this a javascript bug?
+        if ('undefined' === typeof attributes.name) {
+            //                  console.log(this);
+            //                  console.log(this.name);
+            //                  console.log('MODMOD ' + this.name);
+            attributes.name = this.groupName;
+        }
+        //console.log(attributes);
+        return node.window.getRadioButton(id, attributes);      
+    };
+    
+    // Override getAllValues for Radio Controls
+    RadioControls.prototype.getAllValues = function() {
+        
+        for (var key in this.features) {
+            if (this.features.hasOwnProperty(key)) {
+                var el = node.window.getElementById(key);
+                if (el.checked) {
+                    return el.value;
+                }
+            }
+        }
+        return false;
+    };
+    
+})(node);
+(function (node) {
+    
+    node.widgets.register('VisualState', VisualState);
+    
+    var JSUS = node.JSUS,
+    Table = node.window.Table;
+    
+    // ## Defaults
+    
+    VisualState.defaults = {};
+    VisualState.defaults.id = 'visualstate';
+    VisualState.defaults.fieldset = { 
+	legend: 'State',
+	id: 'visualstate_fieldset'
+    };	
+    
+    // ## Meta-data
+    
+    VisualState.name = 'Visual State';
+    VisualState.version = '0.2.1';
+    VisualState.description = 'Visually display current, previous and next state of the game.';
+    
+    // ## Dependencies
+    
+    VisualState.dependencies = {
+	JSUS: {},
+	Table: {}
+    };
+    
+    
+    function VisualState (options) {
+	this.id = options.id;
+	
+	this.root = null;		// the parent element
+	this.table = new Table();
+    }
+    
+    VisualState.prototype.getRoot = function () {
+	return this.root;
+    };
+    
+    VisualState.prototype.append = function (root, ids) {
+	var that = this;
+	var PREF = this.id + '_';
+	root.appendChild(this.table.table);
+	this.writeState();
+	return root;
+    };
+    
+    VisualState.prototype.listeners = function () {
+	var that = this;
+        
+        node.on('STEP_CALLBACK_EXECUTED', function() {
+	    that.writeState();
+	});
+
+        // Game over and init?
+    };
+    
+    VisualState.prototype.writeState = function () {
+	var miss, state, pr, nx, tmp;
+        var curStep, nextStep, prevStep;
+	var t;
+        
+        miss = '-';
+	state = 'Uninitialized';
+        pr = miss;
+        nx = miss;
+        
+        curStep = node.game.getCurrentGameStage();
+        
+	if (curStep) {
+            tmp = node.game.plot.getStep(curStep);
+            state = tmp ? tmp.id : miss;
+            
+	    prevStep = node.game.plot.previous(curStep);
+            if (prevStep) {
+                tmp = node.game.plot.getStep(prevStep);
+	        pr = tmp ? tmp.id : miss;
+            }
+            
+	    nextStep = node.game.plot.next(curStep);
+            if (nextStep) {
+                tmp = node.game.plot.getStep(nextStep);
+	        nx = tmp ? tmp.id : miss;
+            }
+        }
+        
+	this.table.clear(true);
+
+	this.table.addRow(['Previous: ', pr]);
+	this.table.addRow(['Current: ', state]);
+	this.table.addRow(['Next: ', nx]);
+	
+	t = this.table.select('y', '=', 2);
+	t.addClass('strong');
+	t.select('x','=',0).addClass('underline');
+	this.table.parse();
+    };
+    
+})(node);
+(function (node) {
+
+    var Table = node.window.Table,
+    GameStage = node.GameStage;
+    
+    node.widgets.register('StateDisplay', StateDisplay);	
+
+    // ## Defaults
+    
+    StateDisplay.defaults = {};
+    StateDisplay.defaults.id = 'statedisplay';
+    StateDisplay.defaults.fieldset = { legend: 'State Display' };		
+    
+    // ## Meta-data
+    
+    StateDisplay.name = 'State Display';
+    StateDisplay.version = '0.4.2';
+    StateDisplay.description = 'Display basic information about player\'s status.';
+    
+    function StateDisplay (options) {
+	
+	this.id = options.id;
+	
+	this.root = null;
+	this.table = new Table();
+    }
+    
+    // TODO: Write a proper INIT method
+    StateDisplay.prototype.init = function () {};
+    
+    StateDisplay.prototype.getRoot = function () {
+	return this.root;
+    };
+    
+    
+    StateDisplay.prototype.append = function (root) {
+	var that = this;
+	var PREF = this.id + '_';
+	
+	var idFieldset = PREF + 'fieldset';
+	var idPlayer = PREF + 'player';
+	var idState = PREF + 'state'; 
+	
+	var checkPlayerName = setInterval(function(idState,idPlayer) {
+	    if (node.player && node.player.id) {
+		clearInterval(checkPlayerName);
+		that.updateAll();
+	    }
+	}, 100);
+	
+	root.appendChild(this.table.table);
+	this.root = root;
+	return root;
+	
+    };
+    
+    StateDisplay.prototype.updateAll = function() {
+	var stage, stageNo, stageId, playerId, tmp, miss;
+        miss = '-';
+        
+        stageId = miss;
+        stageNo = miss;
+        playerId = miss;
+
+	if (node.player.id) {
+            playerId = node.player.id;
+        }
+        
+	stage = node.game.getCurrentGameStage();	
+	if (stage) {
+            tmp = node.game.plot.getStep(stage);
+            stageId = tmp ? tmp.id : '-';
+            stageNo = stage.toString();
+        }
+        
+	this.table.clear(true);
+	this.table.addRow(['Stage  No: ', stageNo]);
+	this.table.addRow(['Stage  Id: ', stageId]);
+	this.table.addRow(['Player Id: ', playerId]);
+	this.table.parse();
+	
+    };
+    
+    StateDisplay.prototype.listeners = function () {
+	var that = this;
+	
+	node.on('LOADED', function() {
+	    that.updateAll();
+	}); 
+    }; 
+    
+})(node);
+
+(function (node) {
+
+	// TODO: needs major refactoring
+	
+	var GameStage = node.GameStage,
+		PlayerList = node.PlayerList,
+		Table = node.window.Table,
+		HTMLRenderer = node.window.HTMLRenderer;
+	
+	node.widgets.register('DynamicTable', DynamicTable);
+	
+	
+	DynamicTable.prototype = new Table();
+	DynamicTable.prototype.constructor = Table;	
+	
+	
+	DynamicTable.id = 'dynamictable';
+	DynamicTable.name = 'Dynamic Table';
+	DynamicTable.version = '0.3.1';
+	
+	DynamicTable.dependencies = {
+		Table: {},
+		JSUS: {},
+		HTMLRenderer: {}
+	};
+	
+	function DynamicTable (options, data) {
+		//JSUS.extend(node.window.Table,this);
+		Table.call(this, options, data);
+		this.options = options;
+		this.id = options.id;
+		this.name = options.name || 'Dynamic Table';
+		this.fieldset = { legend: this.name,
+							id: this.id + '_fieldset'
+		};
 		
-		this.scaleX = canvas.width / ChernoffFaces.defaults.canvas.width;
-		this.scaleY = canvas.height / ChernoffFaces.defaults.canvas.heigth;
+		this.root = null;
+		this.bindings = {};
+		this.init(this.options);
 	}
 	
-	//Draws a Chernoff face.
-	FacePainter.prototype.draw = function (face, x, y) {
-		if (!face) return;
-		this.face = face;
-		this.fit2Canvas(face);
-		this.canvas.scale(face.scaleX, face.scaleY);
-		
-		//console.log('Face Scale ' + face.scaleY + ' ' + face.scaleX );
-		
-		x = x || this.canvas.centerX;
-		y = y || this.canvas.centerY;
-		
-		this.drawHead(face, x, y);
-			
-		this.drawEyes(face, x, y);
-	
-		this.drawPupils(face, x, y);
-	
-		this.drawEyebrow(face, x, y);
-	
-		this.drawNose(face, x, y);
-		
-		this.drawMouth(face, x, y);
-		
-	};		
-		
-	FacePainter.prototype.redraw = function (face, x, y) {
-		this.canvas.clear();
-		this.draw(face,x,y);
+	DynamicTable.prototype.init = function (options) {
+		this.options = options;
+		this.name = options.name || this.name;
+		this.auto_update = ('undefined' !== typeof options.auto_update) ? options.auto_update : true;
+		this.replace = options.replace || false;
+		this.htmlRenderer = new HTMLRenderer({renderers: options.renderers});
+		this.c('state', GameStage.compare);
+		this.setLeft([]);
+		this.parse(true);
 	};
-	
-	FacePainter.prototype.scale = function (x, y) {
-		this.canvas.scale(this.scaleX, this.scaleY);
-	};
-	
-	// TODO: Improve. It eats a bit of the margins
-	FacePainter.prototype.fit2Canvas = function(face) {
-		if (!this.canvas) {
-		console.log('No canvas found');
-			return;
-		}
 		
-		var ration;
-		if (this.canvas.width > this.canvas.height) {
-			ratio = this.canvas.width / face.head_radius * face.head_scale_x;
-		}
-		else {
-			ratio = this.canvas.height / face.head_radius * face.head_scale_y;
-		}
-		
-		face.scaleX = ratio / 2;
-		face.scaleY = ratio / 2;
-	};
-	
-	FacePainter.prototype.drawHead = function (face, x, y) {
-		
-		var radius = face.head_radius;
-		
-		this.canvas.drawOval({
-						x: x, 
-						y: y,
-						radius: radius,
-						scale_x: face.head_scale_x,
-						scale_y: face.head_scale_y,
-						color: face.color,
-						lineWidth: face.lineWidth
-		});
-	};
-	
-	FacePainter.prototype.drawEyes = function (face, x, y) {
-		
-		var height = FacePainter.computeFaceOffset(face, face.eye_height, y);
-		var spacing = face.eye_spacing;
-			
-		var radius = face.eye_radius;
-		//console.log(face);
-		this.canvas.drawOval({
-						x: x - spacing,
-						y: height,
-						radius: radius,
-						scale_x: face.eye_scale_x,
-						scale_y: face.eye_scale_y,
-						color: face.color,
-						lineWidth: face.lineWidth
-						
-		});
-		//console.log(face);
-		this.canvas.drawOval({
-						x: x + spacing,
-						y: height,
-						radius: radius,
-						scale_x: face.eye_scale_x,
-						scale_y: face.eye_scale_y,
-						color: face.color,
-						lineWidth: face.lineWidth
-		});
-	};
-	
-	FacePainter.prototype.drawPupils = function (face, x, y) {
-			
-		var radius = face.pupil_radius;
-		var spacing = face.eye_spacing;
-		var height = FacePainter.computeFaceOffset(face, face.eye_height, y);
-		
-		this.canvas.drawOval({
-						x: x - spacing,
-						y: height,
-						radius: radius,
-						scale_x: face.pupil_scale_x,
-						scale_y: face.pupil_scale_y,
-						color: face.color,
-						lineWidth: face.lineWidth
-		});
-		
-		this.canvas.drawOval({
-						x: x + spacing,
-						y: height,
-						radius: radius,
-						scale_x: face.pupil_scale_x,
-						scale_y: face.pupil_scale_y,
-						color: face.color,
-						lineWidth: face.lineWidth
-		});
-	
-	};
-	
-	FacePainter.prototype.drawEyebrow = function (face, x, y) {
-		
-		var height = FacePainter.computeEyebrowOffset(face,y);
-		var spacing = face.eyebrow_spacing;
-		var length = face.eyebrow_length;
-		var angle = face.eyebrow_angle;
-		
-		this.canvas.drawLine({
-						x: x - spacing,
-						y: height,
-						length: length,
-						angle: angle,
-						color: face.color,
-						lineWidth: face.lineWidth
-					
-						
-		});
-		
-		this.canvas.drawLine({
-						x: x + spacing,
-						y: height,
-						length: 0-length,
-						angle: -angle,	
-						color: face.color,
-						lineWidth: face.lineWidth
-		});
-		
-	};
-	
-	FacePainter.prototype.drawNose = function (face, x, y) {
-		
-		var height = FacePainter.computeFaceOffset(face, face.nose_height, y);
-		var nastril_r_x = x + face.nose_width / 2;
-		var nastril_r_y = height + face.nose_length;
-		var nastril_l_x = nastril_r_x - face.nose_width;
-		var nastril_l_y = nastril_r_y; 
-		
-		this.canvas.ctx.lineWidth = face.lineWidth;
-		this.canvas.ctx.strokeStyle = face.color;
-		
-		this.canvas.ctx.save();
-		this.canvas.ctx.beginPath();
-		this.canvas.ctx.moveTo(x,height);
-		this.canvas.ctx.lineTo(nastril_r_x,nastril_r_y);
-		this.canvas.ctx.lineTo(nastril_l_x,nastril_l_y);
-		//this.canvas.ctx.closePath();
-		this.canvas.ctx.stroke();
-		this.canvas.ctx.restore();
-	
-	};
-			
-	FacePainter.prototype.drawMouth = function (face, x, y) {
-		
-		var height = FacePainter.computeFaceOffset(face, face.mouth_height, y);
-		var startX = x - face.mouth_width / 2;
-		var endX = x + face.mouth_width / 2;
-		
-		var top_y = height - face.mouth_top_y;
-		var bottom_y = height + face.mouth_bottom_y;
-		
-		// Upper Lip
-		this.canvas.ctx.moveTo(startX,height);
-		this.canvas.ctx.quadraticCurveTo(x, top_y, endX, height);
-		this.canvas.ctx.stroke();
-		
-		//Lower Lip
-		this.canvas.ctx.moveTo(startX,height);
-		this.canvas.ctx.quadraticCurveTo(x, bottom_y, endX, height);
-		this.canvas.ctx.stroke();
-	
-	};	
-	
-	
-	//TODO Scaling ?
-	FacePainter.computeFaceOffset = function (face, offset, y) {
-		y = y || 0;
-		//var pos = y - face.head_radius * face.scaleY + face.head_radius * face.scaleY * 2 * offset;
-		var pos = y - face.head_radius + face.head_radius * 2 * offset;
-		//console.log('POS: ' + pos);
-		return pos;
-	};
-	
-	FacePainter.computeEyebrowOffset = function (face, y) {
-		y = y || 0;
-		var eyemindistance = 2;
-		return FacePainter.computeFaceOffset(face, face.eye_height, y) - eyemindistance - face.eyebrow_eyedistance;
-	};
-	
-	
-	/*!
-	* 
-	* A description of a Chernoff Face.
-	*
-	* This class packages the 11-dimensional vector of numbers from 0 through 1 that completely
-	* describe a Chernoff face.  
-	*
-	*/
+	DynamicTable.prototype.bind = function (event, bindings) {
+		if (!event || !bindings) return;
+		var that = this;
 
-	
-	FaceVector.defaults = {
-			// Head
-			head_radius: {
-				// id can be specified otherwise is taken head_radius
-				min: 10,
-				max: 100,
-				step: 0.01,
-				value: 30,
-				label: 'Face radius'
-			},
-			head_scale_x: {
-				min: 0.2,
-				max: 2,
-				step: 0.01,
-				value: 0.5,
-				label: 'Scale head horizontally'
-			},
-			head_scale_y: {
-				min: 0.2,
-				max: 2,
-				step: 0.01,
-				value: 1,
-				label: 'Scale head vertically'
-			},
-			// Eye
-			eye_height: {
-				min: 0.1,
-				max: 0.9,
-				step: 0.01,
-				value: 0.4,
-				label: 'Eye height'
-			},
-			eye_radius: {
-				min: 2,
-				max: 30,
-				step: 0.01,
-				value: 5,
-				label: 'Eye radius'
-			},
-			eye_spacing: {
-				min: 0,
-				max: 50,
-				step: 0.01,
-				value: 10,
-				label: 'Eye spacing'
-			},
-			eye_scale_x: {
-				min: 0.2,
-				max: 2,
-				step: 0.01,
-				value: 1,
-				label: 'Scale eyes horizontally'
-			},
-			eye_scale_y: {
-				min: 0.2,
-				max: 2,
-				step: 0.01,
-				value: 1,
-				label: 'Scale eyes vertically'
-			},
-			// Pupil
-			pupil_radius: {
-				min: 1,
-				max: 9,
-				step: 0.01,
-				value: 1,  //this.eye_radius;
-				label: 'Pupil radius'
-			},
-			pupil_scale_x: {
-				min: 0.2,
-				max: 2,
-				step: 0.01,
-				value: 1,
-				label: 'Scale pupils horizontally'
-			},
-			pupil_scale_y: {
-				min: 0.2,
-				max: 2,
-				step: 0.01,
-				value: 1,
-				label: 'Scale pupils vertically'
-			},
-			// Eyebrow
-			eyebrow_length: {
-				min: 1,
-				max: 30,
-				step: 0.01,
-				value: 10,
-				label: 'Eyebrow length'
-			},
-			eyebrow_eyedistance: {
-				min: 0.3,
-				max: 10,
-				step: 0.01,
-				value: 3, // From the top of the eye
-				label: 'Eyebrow from eye'
-			},
-			eyebrow_angle: {
-				min: -2,
-				max: 2,
-				step: 0.01,
-				value: -0.5,
-				label: 'Eyebrow angle'
-			},
-			eyebrow_spacing: {
-				min: 0,
-				max: 20,
-				step: 0.01,
-				value: 5,
-				label: 'Eyebrow spacing'
-			},
-			// Nose
-			nose_height: {
-				min: 0.4,
-				max: 1,
-				step: 0.01,
-				value: 0.4,
-				label: 'Nose height'
-			},
-			nose_length: {
-				min: 0.2,
-				max: 30,
-				step: 0.01,
-				value: 15,
-				label: 'Nose length'
-			},
-			nose_width: {
-				min: 0,
-				max: 30,
-				step: 0.01,
-				value: 10,
-				label: 'Nose width'
-			},
-			// Mouth
-			mouth_height: {
-				min: 0.2,
-				max: 2,
-				step: 0.01,
-				value: 0.75, 
-				label: 'Mouth height'
-			},
-			mouth_width: {
-				min: 2,
-				max: 100,
-				step: 0.01,
-				value: 20,
-				label: 'Mouth width'
-			},
-			mouth_top_y: {
-				min: -10,
-				max: 30,
-				step: 0.01,
-				value: -2,
-				label: 'Upper lip'
-			},
-			mouth_bottom_y: {
-				min: -10,
-				max: 30,
-				step: 0.01,
-				value: 20,
-				label: 'Lower lip'
-			}					
-	};
-	
-	//Constructs a random face vector.
-	FaceVector.random = function () {
-		var out = {};
-		for (var key in FaceVector.defaults) {
-			if (FaceVector.defaults.hasOwnProperty(key)) {
-				if (!JSUS.in_array(key,['color','lineWidth','scaleX','scaleY'])) {
-					out[key] = FaceVector.defaults[key].min + Math.random() * FaceVector.defaults[key].max;
-				}
-			}
-		}
-	
-		out.scaleX = 1;
-		out.scaleY = 1;
-		
-		out.color = 'green';
-		out.lineWidth = 1; 
-		
-		return new FaceVector(out);
-	};
-	
-	function FaceVector (faceVector) {
-		faceVector = faceVector || {};
-
-		this.scaleX = faceVector.scaleX || 1;
-		this.scaleY = faceVector.scaleY || 1;
-
-
-		this.color = faceVector.color || 'green';
-		this.lineWidth = faceVector.lineWidth || 1;
-		
-		// Merge on key
-		for (var key in FaceVector.defaults) {
-			if (FaceVector.defaults.hasOwnProperty(key)){
-				if (faceVector.hasOwnProperty(key)){
-					this[key] = faceVector[key];
+		node.on(event, function(msg) {
+			
+			if (bindings.x || bindings.y) {
+				// Cell
+				var func;
+				if (that.replace) {
+					func = function (x, y) {
+						var found = that.get(x,y);
+						if (found.length !== 0) {
+							for (var ci=0; ci < found.length; ci++) {
+								bindings.cell.call(that, msg, found[ci]);
+							}
+						}
+						else {
+							var cell = bindings.cell.call(that, msg, new Table.Cell({x: x, y: y}));
+							that.add(cell);
+						}
+					};
 				}
 				else {
-					this[key] = FaceVector.defaults[key].value;
+					func = function (x, y) {
+						var cell = bindings.cell.call(that, msg, new Table.Cell({x: x, y: y}));
+						that.add(cell, x, y);
+					};
 				}
-			}
-		}
-		
-	}
-
-	//Constructs a random face vector.
-	FaceVector.prototype.shuffle = function () {
-		for (var key in this) {
-			if (this.hasOwnProperty(key)) {
-				if (FaceVector.defaults.hasOwnProperty(key)) {
-					if (key !== 'color') {
-						this[key] = FaceVector.defaults[key].min + Math.random() * FaceVector.defaults[key].max;
-						
+				
+				var x = bindings.x.call(that, msg);
+				var y = bindings.y.call(that, msg);
+				
+				if (x && y) {
+					
+					x = (x instanceof Array) ? x : [x];
+					y = (y instanceof Array) ? y : [y];
+					
+//					console.log('Bindings found:');
+//					console.log(x);
+//					console.log(y);
+					
+					for (var xi=0; xi < x.length; xi++) {
+						for (var yi=0; yi < y.length; yi++) {
+							// Replace or Add
+							func.call(that, x[xi], y[yi]);
+						}
 					}
 				}
+				// End Cell
 			}
-		}
-	};
-	
-	//Computes the Euclidean distance between two FaceVectors.
-	FaceVector.prototype.distance = function (face) {
-		return FaceVector.distance(this,face);
-	};
-		
-		
-	FaceVector.distance = function (face1, face2) {
-		var sum = 0.0;
-		var diff;
-		
-		for (var key in face1) {
-			if (face1.hasOwnProperty(key)) {
-				diff = face1[key] - face2[key];
-				sum = sum + diff * diff;
+			
+			// Header
+			if (bindings.header) {
+				var h = bindings.header.call(that, msg);
+				h = (h instanceof Array) ? h : [h];
+				that.setHeader(h);
 			}
-		}
-		
-		return Math.sqrt(sum);
-	};
-	
-	FaceVector.prototype.toString = function() {
-		var out = 'Face: ';
-		for (var key in this) {
-			if (this.hasOwnProperty(key)) {
-				out += key + ' ' + this[key];
+			
+			// Left
+			if (bindings.left) {
+				var l = bindings.left.call(that, msg);
+				if (!JSUS.in_array(l, that.left)) {
+					that.header.push(l);
+				}
 			}
-		}
-		return out;
+			
+			// Auto Update?
+			if (that.auto_update) {
+				that.parse();
+			}
+		});
+		
 	};
 
+	DynamicTable.prototype.append = function (root) {
+		this.root = root;
+		root.appendChild(this.table);
+		return root;
+	};
+	
+	DynamicTable.prototype.listeners = function () {}; 
+
 })(node);
+(function (node) {
+    
+    node.widgets.register('GameBoard', GameBoard);
+    
+    var PlayerList = node.PlayerList;
+
+    // ## Defaults	
+    
+    GameBoard.defaults = {};
+    GameBoard.defaults.id = 'gboard';
+    GameBoard.defaults.fieldset = {
+	legend: 'Game Board'
+    };
+    
+    // ## Meta-data
+    
+    GameBoard.name = 'GameBoard';
+    GameBoard.version = '0.4.0';
+    GameBoard.description = 'Offer a visual representation of the state of all players in the game.';
+    
+    function GameBoard (options) {
+	
+	this.id = options.id || GameBoard.defaults.id;
+	this.status_id = this.id + '_statusbar';
+	
+	this.board = null;
+	this.status = null;
+	this.root = null;
+	
+    }
+    
+    GameBoard.prototype.append = function (root) {
+	this.root = root;
+	this.status = node.window.addDiv(root, this.status_id);
+	this.board = node.window.addDiv(root, this.id);
+	
+	this.updateBoard(node.game.pl);
+	
+	
+	return root;
+    };
+    
+    GameBoard.prototype.listeners = function() {
+	var that = this;		
+	node.on('UPDATED_PLIST', function() {
+	    that.updateBoard(node.game.pl);
+	});
+	
+    };
+    
+    GameBoard.prototype.printLine = function (p) {
+
+	var line, levels, level;
+        levels = node.constants.stageLevels;
+
+        line = '[' + (p.name || p.id) + "]> \t"; 
+	line += '(' +  p.stage.round + ') ' + p.stage.stage + '.' + p.stage.step; 
+	line += ' ';
+	
+	switch (p.stageLevel) {
+
+	case levels.UNINITIALIZED:
+	    level = 'uninit.';
+	    break;
+	    
+	case levels.INITIALIZING:
+	    level = 'init...';
+	    break;
+
+	case levels.INITIALIZING:
+	    level = 'init!';
+	    break;
+
+	case levels.LOADING:
+	    level = 'loading';
+	    break;	    
+
+	case levels.LOADED:
+	    level = 'loaded';
+	    break;
+	    
+	case levels.PLAYING:
+	    level = 'playing';
+	    break;
+	case levels.DONE:
+	    level = 'done';
+	    break;
+		
+	default:
+	    level = p.stageLevel;
+	    break;		
+	}
+
+	return line + '(' + level + ')';
+    };
+    
+    GameBoard.prototype.printSeparator = function (p) {
+	return W.getElement('hr', null, {style: 'color: #CCC;'});
+    };
+    
+    
+    GameBoard.prototype.updateBoard = function (pl) {
+	var player, separator;
+        var that = this;
+	
+	this.status.innerHTML = 'Updating...';
+	
+	if (pl.size()) {
+	    that.board.innerHTML = '';
+	    pl.forEach( function(p) {
+		player = that.printLine(p);
+		
+		W.write(player, that.board);
+		
+		separator = that.printSeparator(p);
+		W.write(separator, that.board);
+	    });
+	}
+	
+	
+	this.status.innerHTML = 'Connected players: ' + node.game.pl.length;
+    };
+    
+})(node);
+
 (function (node) {
 	
 	var Table = node.window.Table;
@@ -21080,715 +21753,6 @@ node.widgets = new Widgets();
 
 })(node);
 (function (node) {
-	
-
-	// TODO: handle different events, beside onchange
-	
-	node.widgets.register('Controls', Controls);	
-	
-// ## Defaults
-	
-	var defaults = { id: 'controls' };
-	
-	Controls.defaults = defaults;
-	
-	Controls.Slider = SliderControls;
-	Controls.jQuerySlider = jQuerySliderControls;
-	Controls.Radio	= RadioControls;
-	
-	// Meta-data
-	
-	Controls.name = 'Controls';
-	Controls.version = '0.2';
-	Controls.description = 'Wraps a collection of user-inputs controls.';
-		
-	function Controls (options) {
-		this.options = options;
-		this.id = options.id;
-		this.root = null;
-		
-		this.listRoot = null;
-		this.fieldset = null;
-		this.submit = null;
-		
-		this.changeEvent = this.id + '_change';
-		
-		this.init(options);
-	}
-
-	Controls.prototype.add = function (root, id, attributes) {
-		// TODO: node.window.addTextInput
-		//return node.window.addTextInput(root, id, attributes);
-	};
-	
-	Controls.prototype.getItem = function (id, attributes) {
-		// TODO: node.window.addTextInput
-		//return node.window.getTextInput(id, attributes);
-	};
-	
-	Controls.prototype.init = function (options) {
-
-		this.hasChanged = false; // TODO: should this be inherited?
-		if ('undefined' !== typeof options.change) {
-			if (!options.change){
-				this.changeEvent = false;
-			}
-			else {
-				this.changeEvent = options.change;
-			}
-		}
-		this.list = new node.window.List(options);
-		this.listRoot = this.list.getRoot();
-		
-		if (!options.features) return;
-		if (!this.root) this.root = this.listRoot;
-		this.features = options.features;
-		this.populate();
-	};
-	
-	Controls.prototype.append = function (root) {
-		this.root = root;
-		var toReturn = this.listRoot;
-		this.list.parse();
-		root.appendChild(this.listRoot);
-		
-		if (this.options.submit) {
-			var idButton = 'submit_' + this.id;
-			if (this.options.submit.id) {
-				idButton = this.options.submit.id;
-				delete this.options.submit.id;
-			}
-			this.submit = node.window.addButton(root, idButton, this.options.submit, this.options.attributes);
-			
-			var that = this;
-			this.submit.onclick = function() {
-				if (that.options.change) {
-					node.emit(that.options.change);
-				}
-			};
-		}		
-		
-		return toReturn;
-	};
-	
-	Controls.prototype.parse = function() {
-		return this.list.parse();
-	};
-	
-	Controls.prototype.populate = function () {
-		var that = this;
-		
-		for (var key in this.features) {
-			if (this.features.hasOwnProperty(key)) {
-				// Prepare the attributes vector
-				var attributes = this.features[key];
-				var id = key;
-				if (attributes.id) {
-					id = attributes.id;
-					delete attributes.id;
-				}
-							
-				var container = document.createElement('div');
-				// Add a different element according to the subclass instantiated
-				var elem = this.add(container, id, attributes);
-								
-				// Fire the onChange event, if one defined
-				if (this.changeEvent) {
-					elem.onchange = function() {
-						node.emit(that.changeEvent);
-					};
-				}
-				
-				if (attributes.label) {
-					node.window.addLabel(container, elem, null, attributes.label);
-				}
-				
-				// Element added to the list
-				this.list.addDT(container);
-			}
-		}
-	};
-	
-	Controls.prototype.listeners = function() {	
-		var that = this;
-		// TODO: should this be inherited?
-		node.on(this.changeEvent, function(){
-			that.hasChanged = true;
-		});
-				
-	};
-
-	Controls.prototype.refresh = function() {
-		for (var key in this.features) {	
-			if (this.features.hasOwnProperty(key)) {
-				var el = node.window.getElementById(key);
-				if (el) {
-//					node.log('KEY: ' + key, 'DEBUG');
-//					node.log('VALUE: ' + el.value, 'DEBUG');
-					el.value = this.features[key].value;
-					// TODO: set all the other attributes
-					// TODO: remove/add elements
-				}
-				
-			}
-		}
-		
-		return true;
-	};
-	
-	Controls.prototype.getAllValues = function() {
-		var out = {};
-		for (var key in this.features) {	
-			if (this.features.hasOwnProperty(key)) {
-				var el = node.window.getElementById(key);
-				if (el) {
-//					node.log('KEY: ' + key, 'DEBUG');
-//					node.log('VALUE: ' + el.value, 'DEBUG');
-					out[key] = Number(el.value);
-				}
-				
-			}
-		}
-		
-		return out;
-	};
-	
-	Controls.prototype.highlight = function (code) {
-		return node.window.highlight(this.listRoot, code);
-	};
-	
-	// Sub-classes
-	
-	// Slider 
-	
-	SliderControls.prototype.__proto__ = Controls.prototype;
-	SliderControls.prototype.constructor = SliderControls;
-	
-	SliderControls.id = 'slidercontrols';
-	SliderControls.name = 'Slider Controls';
-	SliderControls.version = '0.2';
-	
-	SliderControls.dependencies = {
-		Controls: {}
-	};
-	
-	
-	function SliderControls (options) {
-		Controls.call(this, options);
-	}
-	
-	SliderControls.prototype.add = function (root, id, attributes) {
-		return node.window.addSlider(root, id, attributes);
-	};
-	
-	SliderControls.prototype.getItem = function (id, attributes) {
-		return node.window.getSlider(id, attributes);
-	};
-	
-	// jQuerySlider
-    
-    jQuerySliderControls.prototype.__proto__ = Controls.prototype;
-    jQuerySliderControls.prototype.constructor = jQuerySliderControls;
-    
-    jQuerySliderControls.id = 'jqueryslidercontrols';
-    jQuerySliderControls.name = 'Experimental: jQuery Slider Controls';
-    jQuerySliderControls.version = '0.13';
-    
-    jQuerySliderControls.dependencies = {
-        jQuery: {},
-        Controls: {}
-    };
-    
-    
-    function jQuerySliderControls (options) {
-        Controls.call(this, options);
-    }
-    
-    jQuerySliderControls.prototype.add = function (root, id, attributes) {
-        var slider = jQuery('<div/>', {
-			id: id
-		}).slider();
-	
-		var s = slider.appendTo(root);
-		return s[0];
-	};
-	
-	jQuerySliderControls.prototype.getItem = function (id, attributes) {
-		var slider = jQuery('<div/>', {
-			id: id
-			}).slider();
-		
-		return slider;
-	};
-
-
-    ///////////////////////////
-
-	
-	
-	
-
-	
-	// Radio
-	
-	RadioControls.prototype.__proto__ = Controls.prototype;
-	RadioControls.prototype.constructor = RadioControls;
-	
-	RadioControls.id = 'radiocontrols';
-	RadioControls.name = 'Radio Controls';
-	RadioControls.version = '0.1.1';
-	
-	RadioControls.dependencies = {
-		Controls: {}
-	};
-	
-	function RadioControls (options) {
-		Controls.call(this,options);
-		this.groupName = ('undefined' !== typeof options.name) ? options.name : 
-																node.window.generateUniqueId(); 
-		//alert(this.groupName);
-	}
-	
-	RadioControls.prototype.add = function (root, id, attributes) {
-		//console.log('ADDDING radio');
-		//console.log(attributes);
-		// add the group name if not specified
-		// TODO: is this a javascript bug?
-		if ('undefined' === typeof attributes.name) {
-//			console.log(this);
-//			console.log(this.name);
-//			console.log('MODMOD ' + this.name);
-			attributes.name = this.groupName;
-		}
-		//console.log(attributes);
-		return node.window.addRadioButton(root, id, attributes);	
-	};
-	
-	RadioControls.prototype.getItem = function (id, attributes) {
-		//console.log('ADDDING radio');
-		//console.log(attributes);
-		// add the group name if not specified
-		// TODO: is this a javascript bug?
-		if ('undefined' === typeof attributes.name) {
-//			console.log(this);
-//			console.log(this.name);
-//			console.log('MODMOD ' + this.name);
-			attributes.name = this.groupName;
-		}
-		//console.log(attributes);
-		return node.window.getRadioButton(id, attributes);	
-	};
-	
-	// Override getAllValues for Radio Controls
-	RadioControls.prototype.getAllValues = function() {
-		
-		for (var key in this.features) {
-			if (this.features.hasOwnProperty(key)) {
-				var el = node.window.getElementById(key);
-				if (el.checked) {
-					return el.value;
-				}
-			}
-		}
-		return false;
-	};
-	
-})(node);
-(function (node) {
-	
-	
-	node.widgets.register('D3', D3);
-	node.widgets.register('D3ts', D3ts);
-	
-	D3.prototype.__proto__ = node.Widget.prototype;
-	D3.prototype.constructor = D3;
-
-// ## Defaults
-	
-	D3.defaults = {};
-	D3.defaults.id = 'D3';
-	D3.defaults.fieldset = {
-		legend: 'D3 plot'
-	};
-
-	
-// ## Meta-data
-	
-	D3.name = 'D3';
-	D3.version = '0.1';
-	D3.description = 'Real time plots for nodeGame with d3.js';
-	
-// ## Dependencies
-	
-	D3.dependencies = {
-		d3: {},	
-		JSUS: {}
-	};
-	
-	function D3 (options) {
-		this.id = options.id || D3.id;
-		this.event = options.event || 'D3';
-		this.svg = null;
-		
-		var that = this;
-		node.on(this.event, function (value) {
-			that.tick.call(that, value); 
-		});
-	}
-	
-	D3.prototype.append = function (root) {
-		this.root = root;
-		this.svg = d3.select(root).append("svg");
-		return root;
-	};
-	
-	D3.prototype.tick = function () {};
-	
-// # D3ts
-	
-	
-// ## Meta-data
-	
-	D3ts.id = 'D3ts';
-	D3ts.name = 'D3ts';
-	D3ts.version = '0.1';
-	D3ts.description = 'Time series plot for nodeGame with d3.js';
-	
-// ## Dependencies	
-	D3ts.dependencies = {
-		D3: {},	
-		JSUS: {}
-	};
-	
-	D3ts.prototype.__proto__ = D3.prototype;
-	D3ts.prototype.constructor = D3ts;
-	
-	D3ts.defaults = {};
-	
-	D3ts.defaults.width = 400;
-	D3ts.defaults.height = 200;
-	
-	D3ts.defaults.margin = {
-    	top: 10, 
-    	right: 10, 
-    	bottom: 20, 
-    	left: 40 
-	};
-	
-	D3ts.defaults.domain = {
-		x: [0, 10],
-		y: [0, 1]
-	};
-	
-    D3ts.defaults.range = {
-    	x: [0, D3ts.defaults.width],
-    	y: [D3ts.defaults.height, 0]
-    };
-	
-	function D3ts (options) {
-		D3.call(this, options);
-		
-		
-		var o = this.options = JSUS.merge(D3ts.defaults, options);
-		
-		var n = this.n = o.n;
-		
-	    this.data = [0];
-	    
-	    this.margin = o.margin;
-	    
-		var width = this.width = o.width - this.margin.left - this.margin.right;
-		var height = this.height = o.height - this.margin.top - this.margin.bottom;
-
-		// identity function
-		var x = this.x = d3.scale.linear()
-		    .domain(o.domain.x)
-		    .range(o.range.x);
-
-		var y = this.y = d3.scale.linear()
-		    .domain(o.domain.y)
-		    .range(o.range.y);
-
-		// line generator
-		this.line = d3.svg.line()
-		    .x(function(d, i) { return x(i); })
-		    .y(function(d, i) { return y(d); });
-	}
-	
-	D3ts.prototype.init = function (options) {
-		//D3.init.call(this, options);
-		
-		console.log('init!');
-		var x = this.x,
-			y = this.y,
-			height = this.height,
-			width = this.width,
-			margin = this.margin;
-		
-		
-		// Create the SVG and place it in the middle
-		this.svg.attr("width", width + margin.left + margin.right)
-		    .attr("height", height + margin.top + margin.bottom)
-		  .append("g")
-		    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-
-		// Line does not go out the axis
-		this.svg.append("defs").append("clipPath")
-		    .attr("id", "clip")
-		  .append("rect")
-		    .attr("width", width)
-		    .attr("height", height);
-
-		// X axis
-		this.svg.append("g")
-		    .attr("class", "x axis")
-		    .attr("transform", "translate(0," + height + ")")
-		    .call(d3.svg.axis().scale(x).orient("bottom"));
-
-		// Y axis
-		this.svg.append("g")
-		    .attr("class", "y axis")
-		    .call(d3.svg.axis().scale(y).orient("left"));
-
-		this.path = this.svg.append("g")
-		    .attr("clip-path", "url(#clip)")
-		  .append("path")
-		    .data([this.data])
-		    .attr("class", "line")
-		    .attr("d", this.line);		
-	};
-	
-	D3ts.prototype.tick = function (value) {
-		this.alreadyInit = this.alreadyInit || false;
-		if (!this.alreadyInit) {
-			this.init();
-			this.alreadyInit = true;
-		}
-		
-		var x = this.x;
-		
-		console.log('tick!');
-	
-		// push a new data point onto the back
-		this.data.push(value);
-
-		// redraw the line, and slide it to the left
-		this.path
-	    	.attr("d", this.line)
-	    	.attr("transform", null);
-
-		// pop the old data point off the front
-		if (this.data.length > this.n) {
-		
-	  		this.path
-	  			.transition()
-	  			.duration(500)
-	  			.ease("linear")
-	  			.attr("transform", "translate(" + x(-1) + ")");
-	  		
-	  		this.data.shift();
-	  	  
-		}
-	};
-	
-})(node);
-(function (node) {
-    
-    node.widgets.register('DataBar', DataBar);
-    
-    // ## Defaults
-    DataBar.defaults = {};
-    DataBar.defaults.id = 'databar';
-    DataBar.defaults.fieldset = {	
-	legend: 'Send DATA to players'
-    };
-    
-    // ## Meta-data
-    DataBar.name = 'Data Bar';
-    DataBar.version = '0.4';
-    DataBar.description = 'Adds a input field to send DATA messages to the players';
-    
-    function DataBar (options) {
-	this.bar = null;
-	this.root = null;
-	this.recipient = null;
-    }
-    
-    
-    DataBar.prototype.append = function (root) {
-	
-	var sendButton, textInput, dataInput;
-	
-	sendButton = W.addButton(root);
-	W.writeln('Text');
-	textInput = W.addTextInput(root, 'data-bar-text');
-	W.writeln('Data');
-	dataInput = W.addTextInput(root, 'data-bar-data');
-	
-	this.recipient = W.addRecipientSelector(root);
-	
-	var that = this;
-	
-	sendButton.onclick = function() {
-	    
-	    var to, data, text;
-	    
-	    to = that.recipient.value;
-	    text = textInput.value;
-	    data = dataInput.value;
-	    
-	    node.log('Parsed Data: ' + JSON.stringify(data));
-	    
-	    node.say(data, text, to);
-	};
-	
-	node.on('UPDATED_PLIST', function() {
-	    node.window.populateRecipientSelector(that.recipient, node.game.pl);
-	});
-	
-	return root;
-	
-    };
-    
-})(node);
-(function (node) {
-
-	// TODO: needs major refactoring
-	
-	var GameStage = node.GameStage,
-		PlayerList = node.PlayerList,
-		Table = node.window.Table,
-		HTMLRenderer = node.window.HTMLRenderer;
-	
-	node.widgets.register('DynamicTable', DynamicTable);
-	
-	
-	DynamicTable.prototype = new Table();
-	DynamicTable.prototype.constructor = Table;	
-	
-	
-	DynamicTable.id = 'dynamictable';
-	DynamicTable.name = 'Dynamic Table';
-	DynamicTable.version = '0.3.1';
-	
-	DynamicTable.dependencies = {
-		Table: {},
-		JSUS: {},
-		HTMLRenderer: {}
-	};
-	
-	function DynamicTable (options, data) {
-		//JSUS.extend(node.window.Table,this);
-		Table.call(this, options, data);
-		this.options = options;
-		this.id = options.id;
-		this.name = options.name || 'Dynamic Table';
-		this.fieldset = { legend: this.name,
-							id: this.id + '_fieldset'
-		};
-		
-		this.root = null;
-		this.bindings = {};
-		this.init(this.options);
-	}
-	
-	DynamicTable.prototype.init = function (options) {
-		this.options = options;
-		this.name = options.name || this.name;
-		this.auto_update = ('undefined' !== typeof options.auto_update) ? options.auto_update : true;
-		this.replace = options.replace || false;
-		this.htmlRenderer = new HTMLRenderer({renderers: options.renderers});
-		this.c('state', GameStage.compare);
-		this.setLeft([]);
-		this.parse(true);
-	};
-		
-	DynamicTable.prototype.bind = function (event, bindings) {
-		if (!event || !bindings) return;
-		var that = this;
-
-		node.on(event, function(msg) {
-			
-			if (bindings.x || bindings.y) {
-				// Cell
-				var func;
-				if (that.replace) {
-					func = function (x, y) {
-						var found = that.get(x,y);
-						if (found.length !== 0) {
-							for (var ci=0; ci < found.length; ci++) {
-								bindings.cell.call(that, msg, found[ci]);
-							}
-						}
-						else {
-							var cell = bindings.cell.call(that, msg, new Table.Cell({x: x, y: y}));
-							that.add(cell);
-						}
-					};
-				}
-				else {
-					func = function (x, y) {
-						var cell = bindings.cell.call(that, msg, new Table.Cell({x: x, y: y}));
-						that.add(cell, x, y);
-					};
-				}
-				
-				var x = bindings.x.call(that, msg);
-				var y = bindings.y.call(that, msg);
-				
-				if (x && y) {
-					
-					x = (x instanceof Array) ? x : [x];
-					y = (y instanceof Array) ? y : [y];
-					
-//					console.log('Bindings found:');
-//					console.log(x);
-//					console.log(y);
-					
-					for (var xi=0; xi < x.length; xi++) {
-						for (var yi=0; yi < y.length; yi++) {
-							// Replace or Add
-							func.call(that, x[xi], y[yi]);
-						}
-					}
-				}
-				// End Cell
-			}
-			
-			// Header
-			if (bindings.header) {
-				var h = bindings.header.call(that, msg);
-				h = (h instanceof Array) ? h : [h];
-				that.setHeader(h);
-			}
-			
-			// Left
-			if (bindings.left) {
-				var l = bindings.left.call(that, msg);
-				if (!JSUS.in_array(l, that.left)) {
-					that.header.push(l);
-				}
-			}
-			
-			// Auto Update?
-			if (that.auto_update) {
-				that.parse();
-			}
-		});
-		
-	};
-
-	DynamicTable.prototype.append = function (root) {
-		this.root = root;
-		root.appendChild(this.table);
-		return root;
-	};
-	
-	DynamicTable.prototype.listeners = function () {}; 
-
-})(node);
-(function (node) {
 
 	var JSUS = node.JSUS;
 
@@ -21887,130 +21851,639 @@ node.widgets = new Widgets();
 	
 })(node);
 (function (node) {
-    
-    node.widgets.register('GameBoard', GameBoard);
-    
-    var PlayerList = node.PlayerList;
-
-    // ## Defaults	
-    
-    GameBoard.defaults = {};
-    GameBoard.defaults.id = 'gboard';
-    GameBoard.defaults.fieldset = {
-	legend: 'Game Board'
-    };
-    
-    // ## Meta-data
-    
-    GameBoard.name = 'GameBoard';
-    GameBoard.version = '0.4.0';
-    GameBoard.description = 'Offer a visual representation of the state of all players in the game.';
-    
-    function GameBoard (options) {
 	
-	this.id = options.id || GameBoard.defaults.id;
-	this.status_id = this.id + '_statusbar';
+	var JSUS = node.JSUS,
+		Table = node.window.Table;
 	
-	this.board = null;
-	this.status = null;
-	this.root = null;
+	node.widgets.register('ChernoffFaces', ChernoffFaces);
 	
-    }
-    
-    GameBoard.prototype.append = function (root) {
-	this.root = root;
-	this.status = node.window.addDiv(root, this.status_id);
-	this.board = node.window.addDiv(root, this.id);
+	// ## Defaults
 	
-	this.updateBoard(node.game.pl);
+	ChernoffFaces.defaults = {};
+	ChernoffFaces.defaults.id = 'ChernoffFaces';
+	ChernoffFaces.defaults.canvas = {};
+	ChernoffFaces.defaults.canvas.width = 100;
+	ChernoffFaces.defaults.canvas.heigth = 100;
 	
+	// ## Meta-data
 	
-	return root;
-    };
-    
-    GameBoard.prototype.listeners = function() {
-	var that = this;		
-	node.on('UPDATED_PLIST', function() {
-	    that.updateBoard(node.game.pl);
-	});
+	ChernoffFaces.name = 'Chernoff Faces';
+	ChernoffFaces.version = '0.3';
+	ChernoffFaces.description = 'Display parametric data in the form of a Chernoff Face.';
 	
-    };
-    
-    GameBoard.prototype.printLine = function (p) {
-
-	var line, levels, level;
-        levels = node.constants.stageLevels;
-
-        line = '[' + (p.name || p.id) + "]> \t"; 
-	line += '(' +  p.stage.round + ') ' + p.stage.stage + '.' + p.stage.step; 
-	line += ' ';
+	// ## Dependencies 
+	ChernoffFaces.dependencies = {
+		JSUS: {},
+		Table: {},
+		Canvas: {},
+		'Controls.Slider': {}
+	};
 	
-	switch (p.stageLevel) {
-
-	case levels.UNINITIALIZED:
-	    level = 'uninit.';
-	    break;
-	    
-	case levels.INITIALIZING:
-	    level = 'init...';
-	    break;
-
-	case levels.INITIALIZING:
-	    level = 'init!';
-	    break;
-
-	case levels.LOADING:
-	    level = 'loading';
-	    break;	    
-
-	case levels.LOADED:
-	    level = 'loaded';
-	    break;
-	    
-	case levels.PLAYING:
-	    level = 'playing';
-	    break;
-	case levels.DONE:
-	    level = 'done';
-	    break;
+	ChernoffFaces.FaceVector = FaceVector;
+	ChernoffFaces.FacePainter = FacePainter;
+	
+	function ChernoffFaces (options) {
+		this.options = options;
+		this.id = options.id;
+		this.table = new Table({id: 'cf_table'});
+		this.root = options.root || document.createElement('div');
+		this.root.id = this.id;
 		
-	default:
-	    level = p.stageLevel;
-	    break;		
-	}
+		this.sc = node.widgets.get('Controls.Slider');	// Slider Controls
+		this.fp = null;	// Face Painter
+		this.canvas = null;
 
-	return line + '(' + level + ')';
-    };
-    
-    GameBoard.prototype.printSeparator = function (p) {
-	return W.getElement('hr', null, {style: 'color: #CCC;'});
-    };
-    
-    
-    GameBoard.prototype.updateBoard = function (pl) {
-	var player, separator;
-        var that = this;
-	
-	this.status.innerHTML = 'Updating...';
-	
-	if (pl.size()) {
-	    that.board.innerHTML = '';
-	    pl.forEach( function(p) {
-		player = that.printLine(p);
+		this.change = 'CF_CHANGE';
+		var that = this;
+		this.changeFunc = function () {
+			that.draw(that.sc.getAllValues());
+		};
 		
-		W.write(player, that.board);
+		this.features = null;
+		this.controls = null;
 		
-		separator = that.printSeparator(p);
-		W.write(separator, that.board);
-	    });
+		this.init(this.options);
 	}
 	
+	ChernoffFaces.prototype.init = function (options) {
+		var that = this;
+		this.id = options.id || this.id;
+		var PREF = this.id + '_';
+		
+		this.features = options.features || this.features || FaceVector.random();
+		
+		this.controls = ('undefined' !== typeof options.controls) ?  options.controls : true;
+		
+		var idCanvas = (options.idCanvas) ? options.idCanvas : PREF + 'canvas';
+		var idButton = (options.idButton) ? options.idButton : PREF + 'button';
+		
+		this.canvas = node.window.getCanvas(idCanvas, options.canvas);
+		this.fp = new FacePainter(this.canvas);		
+		this.fp.draw(new FaceVector(this.features));
+		
+		var sc_options = {
+			id: 'cf_controls',
+			features: JSUS.mergeOnKey(FaceVector.defaults, this.features, 'value'),
+			change: this.change,
+			fieldset: {id: this.id + '_controls_fieldest', 
+						legend: this.controls.legend || 'Controls'
+			},
+			submit: 'Send'
+		};
+		
+		this.sc = node.widgets.get('Controls.Slider', sc_options);
+		
+		// Controls are always there, but may not be visible
+		if (this.controls) {
+			this.table.add(this.sc);
+		}
+		
+		// Dealing with the onchange event
+		if ('undefined' === typeof options.change) {	
+			node.on(this.change, this.changeFunc); 
+		} else {
+			if (options.change) {
+				node.on(options.change, this.changeFunc);
+			}
+			else {
+				node.removeListener(this.change, this.changeFunc);
+			}
+			this.change = options.change;
+		}
+		
+		
+		this.table.add(this.canvas);
+		this.table.parse();
+		this.root.appendChild(this.table.table);
+	};
 	
-	this.status.innerHTML = 'Connected players: ' + node.game.pl.length;
-    };
-    
+	ChernoffFaces.prototype.getCanvas = function() {
+		return this.canvas;
+	};
+	
+	ChernoffFaces.prototype.append = function (root) {
+		root.appendChild(this.root);
+		this.table.parse();
+		return this.root;
+	};
+	
+	ChernoffFaces.prototype.draw = function (features) {
+		if (!features) return;
+		var fv = new FaceVector(features);
+		this.fp.redraw(fv);
+		// Without merging wrong values are passed as attributes
+		this.sc.init({features: JSUS.mergeOnKey(FaceVector.defaults, features, 'value')});
+		this.sc.refresh();
+	};
+	
+	ChernoffFaces.prototype.getAllValues = function() {
+		//if (this.sc) return this.sc.getAllValues();
+		return this.fp.face;
+	};
+	
+	ChernoffFaces.prototype.randomize = function() {
+		var fv = FaceVector.random();
+		this.fp.redraw(fv);
+	
+		var sc_options = {
+				features: JSUS.mergeOnValue(FaceVector.defaults, fv),
+				change: this.change
+		};
+		this.sc.init(sc_options);
+		this.sc.refresh();
+	
+		return true;
+	};
+	
+	
+	// FacePainter
+	// The class that actually draws the faces on the Canvas
+	function FacePainter (canvas, settings) {
+			
+		this.canvas = new node.window.Canvas(canvas);
+		
+		this.scaleX = canvas.width / ChernoffFaces.defaults.canvas.width;
+		this.scaleY = canvas.height / ChernoffFaces.defaults.canvas.heigth;
+	}
+	
+	//Draws a Chernoff face.
+	FacePainter.prototype.draw = function (face, x, y) {
+		if (!face) return;
+		this.face = face;
+		this.fit2Canvas(face);
+		this.canvas.scale(face.scaleX, face.scaleY);
+		
+		//console.log('Face Scale ' + face.scaleY + ' ' + face.scaleX );
+		
+		x = x || this.canvas.centerX;
+		y = y || this.canvas.centerY;
+		
+		this.drawHead(face, x, y);
+			
+		this.drawEyes(face, x, y);
+	
+		this.drawPupils(face, x, y);
+	
+		this.drawEyebrow(face, x, y);
+	
+		this.drawNose(face, x, y);
+		
+		this.drawMouth(face, x, y);
+		
+	};		
+		
+	FacePainter.prototype.redraw = function (face, x, y) {
+		this.canvas.clear();
+		this.draw(face,x,y);
+	};
+	
+	FacePainter.prototype.scale = function (x, y) {
+		this.canvas.scale(this.scaleX, this.scaleY);
+	};
+	
+	// TODO: Improve. It eats a bit of the margins
+	FacePainter.prototype.fit2Canvas = function(face) {
+		if (!this.canvas) {
+		console.log('No canvas found');
+			return;
+		}
+		
+		var ration;
+		if (this.canvas.width > this.canvas.height) {
+			ratio = this.canvas.width / face.head_radius * face.head_scale_x;
+		}
+		else {
+			ratio = this.canvas.height / face.head_radius * face.head_scale_y;
+		}
+		
+		face.scaleX = ratio / 2;
+		face.scaleY = ratio / 2;
+	};
+	
+	FacePainter.prototype.drawHead = function (face, x, y) {
+		
+		var radius = face.head_radius;
+		
+		this.canvas.drawOval({
+						x: x, 
+						y: y,
+						radius: radius,
+						scale_x: face.head_scale_x,
+						scale_y: face.head_scale_y,
+						color: face.color,
+						lineWidth: face.lineWidth
+		});
+	};
+	
+	FacePainter.prototype.drawEyes = function (face, x, y) {
+		
+		var height = FacePainter.computeFaceOffset(face, face.eye_height, y);
+		var spacing = face.eye_spacing;
+			
+		var radius = face.eye_radius;
+		//console.log(face);
+		this.canvas.drawOval({
+						x: x - spacing,
+						y: height,
+						radius: radius,
+						scale_x: face.eye_scale_x,
+						scale_y: face.eye_scale_y,
+						color: face.color,
+						lineWidth: face.lineWidth
+						
+		});
+		//console.log(face);
+		this.canvas.drawOval({
+						x: x + spacing,
+						y: height,
+						radius: radius,
+						scale_x: face.eye_scale_x,
+						scale_y: face.eye_scale_y,
+						color: face.color,
+						lineWidth: face.lineWidth
+		});
+	};
+	
+	FacePainter.prototype.drawPupils = function (face, x, y) {
+			
+		var radius = face.pupil_radius;
+		var spacing = face.eye_spacing;
+		var height = FacePainter.computeFaceOffset(face, face.eye_height, y);
+		
+		this.canvas.drawOval({
+						x: x - spacing,
+						y: height,
+						radius: radius,
+						scale_x: face.pupil_scale_x,
+						scale_y: face.pupil_scale_y,
+						color: face.color,
+						lineWidth: face.lineWidth
+		});
+		
+		this.canvas.drawOval({
+						x: x + spacing,
+						y: height,
+						radius: radius,
+						scale_x: face.pupil_scale_x,
+						scale_y: face.pupil_scale_y,
+						color: face.color,
+						lineWidth: face.lineWidth
+		});
+	
+	};
+	
+	FacePainter.prototype.drawEyebrow = function (face, x, y) {
+		
+		var height = FacePainter.computeEyebrowOffset(face,y);
+		var spacing = face.eyebrow_spacing;
+		var length = face.eyebrow_length;
+		var angle = face.eyebrow_angle;
+		
+		this.canvas.drawLine({
+						x: x - spacing,
+						y: height,
+						length: length,
+						angle: angle,
+						color: face.color,
+						lineWidth: face.lineWidth
+					
+						
+		});
+		
+		this.canvas.drawLine({
+						x: x + spacing,
+						y: height,
+						length: 0-length,
+						angle: -angle,	
+						color: face.color,
+						lineWidth: face.lineWidth
+		});
+		
+	};
+	
+	FacePainter.prototype.drawNose = function (face, x, y) {
+		
+		var height = FacePainter.computeFaceOffset(face, face.nose_height, y);
+		var nastril_r_x = x + face.nose_width / 2;
+		var nastril_r_y = height + face.nose_length;
+		var nastril_l_x = nastril_r_x - face.nose_width;
+		var nastril_l_y = nastril_r_y; 
+		
+		this.canvas.ctx.lineWidth = face.lineWidth;
+		this.canvas.ctx.strokeStyle = face.color;
+		
+		this.canvas.ctx.save();
+		this.canvas.ctx.beginPath();
+		this.canvas.ctx.moveTo(x,height);
+		this.canvas.ctx.lineTo(nastril_r_x,nastril_r_y);
+		this.canvas.ctx.lineTo(nastril_l_x,nastril_l_y);
+		//this.canvas.ctx.closePath();
+		this.canvas.ctx.stroke();
+		this.canvas.ctx.restore();
+	
+	};
+			
+	FacePainter.prototype.drawMouth = function (face, x, y) {
+		
+		var height = FacePainter.computeFaceOffset(face, face.mouth_height, y);
+		var startX = x - face.mouth_width / 2;
+		var endX = x + face.mouth_width / 2;
+		
+		var top_y = height - face.mouth_top_y;
+		var bottom_y = height + face.mouth_bottom_y;
+		
+		// Upper Lip
+		this.canvas.ctx.moveTo(startX,height);
+		this.canvas.ctx.quadraticCurveTo(x, top_y, endX, height);
+		this.canvas.ctx.stroke();
+		
+		//Lower Lip
+		this.canvas.ctx.moveTo(startX,height);
+		this.canvas.ctx.quadraticCurveTo(x, bottom_y, endX, height);
+		this.canvas.ctx.stroke();
+	
+	};	
+	
+	
+	//TODO Scaling ?
+	FacePainter.computeFaceOffset = function (face, offset, y) {
+		y = y || 0;
+		//var pos = y - face.head_radius * face.scaleY + face.head_radius * face.scaleY * 2 * offset;
+		var pos = y - face.head_radius + face.head_radius * 2 * offset;
+		//console.log('POS: ' + pos);
+		return pos;
+	};
+	
+	FacePainter.computeEyebrowOffset = function (face, y) {
+		y = y || 0;
+		var eyemindistance = 2;
+		return FacePainter.computeFaceOffset(face, face.eye_height, y) - eyemindistance - face.eyebrow_eyedistance;
+	};
+	
+	
+	/*!
+	* 
+	* A description of a Chernoff Face.
+	*
+	* This class packages the 11-dimensional vector of numbers from 0 through 1 that completely
+	* describe a Chernoff face.  
+	*
+	*/
+
+	
+	FaceVector.defaults = {
+			// Head
+			head_radius: {
+				// id can be specified otherwise is taken head_radius
+				min: 10,
+				max: 100,
+				step: 0.01,
+				value: 30,
+				label: 'Face radius'
+			},
+			head_scale_x: {
+				min: 0.2,
+				max: 2,
+				step: 0.01,
+				value: 0.5,
+				label: 'Scale head horizontally'
+			},
+			head_scale_y: {
+				min: 0.2,
+				max: 2,
+				step: 0.01,
+				value: 1,
+				label: 'Scale head vertically'
+			},
+			// Eye
+			eye_height: {
+				min: 0.1,
+				max: 0.9,
+				step: 0.01,
+				value: 0.4,
+				label: 'Eye height'
+			},
+			eye_radius: {
+				min: 2,
+				max: 30,
+				step: 0.01,
+				value: 5,
+				label: 'Eye radius'
+			},
+			eye_spacing: {
+				min: 0,
+				max: 50,
+				step: 0.01,
+				value: 10,
+				label: 'Eye spacing'
+			},
+			eye_scale_x: {
+				min: 0.2,
+				max: 2,
+				step: 0.01,
+				value: 1,
+				label: 'Scale eyes horizontally'
+			},
+			eye_scale_y: {
+				min: 0.2,
+				max: 2,
+				step: 0.01,
+				value: 1,
+				label: 'Scale eyes vertically'
+			},
+			// Pupil
+			pupil_radius: {
+				min: 1,
+				max: 9,
+				step: 0.01,
+				value: 1,  //this.eye_radius;
+				label: 'Pupil radius'
+			},
+			pupil_scale_x: {
+				min: 0.2,
+				max: 2,
+				step: 0.01,
+				value: 1,
+				label: 'Scale pupils horizontally'
+			},
+			pupil_scale_y: {
+				min: 0.2,
+				max: 2,
+				step: 0.01,
+				value: 1,
+				label: 'Scale pupils vertically'
+			},
+			// Eyebrow
+			eyebrow_length: {
+				min: 1,
+				max: 30,
+				step: 0.01,
+				value: 10,
+				label: 'Eyebrow length'
+			},
+			eyebrow_eyedistance: {
+				min: 0.3,
+				max: 10,
+				step: 0.01,
+				value: 3, // From the top of the eye
+				label: 'Eyebrow from eye'
+			},
+			eyebrow_angle: {
+				min: -2,
+				max: 2,
+				step: 0.01,
+				value: -0.5,
+				label: 'Eyebrow angle'
+			},
+			eyebrow_spacing: {
+				min: 0,
+				max: 20,
+				step: 0.01,
+				value: 5,
+				label: 'Eyebrow spacing'
+			},
+			// Nose
+			nose_height: {
+				min: 0.4,
+				max: 1,
+				step: 0.01,
+				value: 0.4,
+				label: 'Nose height'
+			},
+			nose_length: {
+				min: 0.2,
+				max: 30,
+				step: 0.01,
+				value: 15,
+				label: 'Nose length'
+			},
+			nose_width: {
+				min: 0,
+				max: 30,
+				step: 0.01,
+				value: 10,
+				label: 'Nose width'
+			},
+			// Mouth
+			mouth_height: {
+				min: 0.2,
+				max: 2,
+				step: 0.01,
+				value: 0.75, 
+				label: 'Mouth height'
+			},
+			mouth_width: {
+				min: 2,
+				max: 100,
+				step: 0.01,
+				value: 20,
+				label: 'Mouth width'
+			},
+			mouth_top_y: {
+				min: -10,
+				max: 30,
+				step: 0.01,
+				value: -2,
+				label: 'Upper lip'
+			},
+			mouth_bottom_y: {
+				min: -10,
+				max: 30,
+				step: 0.01,
+				value: 20,
+				label: 'Lower lip'
+			}					
+	};
+	
+	//Constructs a random face vector.
+	FaceVector.random = function () {
+		var out = {};
+		for (var key in FaceVector.defaults) {
+			if (FaceVector.defaults.hasOwnProperty(key)) {
+				if (!JSUS.in_array(key,['color','lineWidth','scaleX','scaleY'])) {
+					out[key] = FaceVector.defaults[key].min + Math.random() * FaceVector.defaults[key].max;
+				}
+			}
+		}
+	
+		out.scaleX = 1;
+		out.scaleY = 1;
+		
+		out.color = 'green';
+		out.lineWidth = 1; 
+		
+		return new FaceVector(out);
+	};
+	
+	function FaceVector (faceVector) {
+		faceVector = faceVector || {};
+
+		this.scaleX = faceVector.scaleX || 1;
+		this.scaleY = faceVector.scaleY || 1;
+
+
+		this.color = faceVector.color || 'green';
+		this.lineWidth = faceVector.lineWidth || 1;
+		
+		// Merge on key
+		for (var key in FaceVector.defaults) {
+			if (FaceVector.defaults.hasOwnProperty(key)){
+				if (faceVector.hasOwnProperty(key)){
+					this[key] = faceVector[key];
+				}
+				else {
+					this[key] = FaceVector.defaults[key].value;
+				}
+			}
+		}
+		
+	}
+
+	//Constructs a random face vector.
+	FaceVector.prototype.shuffle = function () {
+		for (var key in this) {
+			if (this.hasOwnProperty(key)) {
+				if (FaceVector.defaults.hasOwnProperty(key)) {
+					if (key !== 'color') {
+						this[key] = FaceVector.defaults[key].min + Math.random() * FaceVector.defaults[key].max;
+						
+					}
+				}
+			}
+		}
+	};
+	
+	//Computes the Euclidean distance between two FaceVectors.
+	FaceVector.prototype.distance = function (face) {
+		return FaceVector.distance(this,face);
+	};
+		
+		
+	FaceVector.distance = function (face1, face2) {
+		var sum = 0.0;
+		var diff;
+		
+		for (var key in face1) {
+			if (face1.hasOwnProperty(key)) {
+				diff = face1[key] - face2[key];
+				sum = sum + diff * diff;
+			}
+		}
+		
+		return Math.sqrt(sum);
+	};
+	
+	FaceVector.prototype.toString = function() {
+		var out = 'Face: ';
+		for (var key in this) {
+			if (this.hasOwnProperty(key)) {
+				out += key + ' ' + this[key];
+			}
+		}
+		return out;
+	};
+
 })(node);
-
 (function (node) {
 
 	node.widgets.register('GameSummary', GameSummary);
@@ -22055,159 +22528,6 @@ node.widgets = new Widgets();
 		
 		node.window.addDiv(this.root, this.summaryDiv, idSummary);
 	};
-
-})(node);
-
-(function (node) {
-
-    var GameStage = node.GameStage,
-    PlayerList = node.PlayerList;
-    
-    
-    node.widgets.register('GameTable', GameTable);
-    
-    // ## Defaults
-    
-    GameTable.defaults = {};
-    GameTable.defaults.id = 'gametable';
-    GameTable.defaults.fieldset = { 
-	legend: 'Game Table',
-	id: 'gametable_fieldset'
-    };
-    
-    // ## Meta-data
-    
-    GameTable.name = 'Game Table';
-    GameTable.version = '0.3';
-    
-    // ## Dependencies
-    
-    GameTable.dependencies = {
-	JSUS: {}
-    };
-    
-    function GameTable (options) {
-	this.options = options;
-	this.id = options.id;
-	this.name = options.name || GameTable.name;
-	
-	this.root = null;
-	this.gtbl = null;
-	this.plist = null;
-	
-	this.init(this.options);
-    }
-    
-    GameTable.prototype.init = function (options) {
-	
-	if (!this.plist) this.plist = new PlayerList();
-	
-	this.gtbl = new node.window.Table({
-	    auto_update: true,
-	    id: options.id || this.id,
-	    render: options.render
-	}, node.game.memory.db);
-	
-	
-	this.gtbl.c('state', GameStage.compare);
-	
-	this.gtbl.setLeft([]);
-	
-	this.gtbl.parse(true);
-    };
-    
-
-    GameTable.prototype.addRenderer = function (func) {
-	return this.gtbl.addRenderer(func);
-    };
-    
-    GameTable.prototype.resetRender = function () {
-	return this.gtbl.resetRenderer();
-    };
-    
-    GameTable.prototype.removeRenderer = function (func) {
-	return this.gtbl.removeRenderer(func);
-    };
-    
-    GameTable.prototype.append = function (root) {
-	this.root = root;
-	root.appendChild(this.gtbl.table);
-	return root;
-    };
-    
-    GameTable.prototype.listeners = function () {
-	var that = this;
-	
-	node.on.plist(function(msg) {	
-	    if (!msg.data.length) return;
-	    
-	    //var diff = JSUS.arrayDiff(msg.data,that.plist.db);
-	    var plist = new PlayerList({}, msg.data);
-	    var diff = plist.diff(that.plist);
-	    if (diff) {
-                //				console.log('New Players found');
-                //				console.log(diff);
-		diff.forEach(function(el){that.addPlayer(el);});
-	    }
-
-	    that.gtbl.parse(true);
-	});
-	
-	node.on('in.set.DATA', function (msg) {
-
-	    that.addLeft(msg.state, msg.from);
-	    var x = that.player2x(msg.from);
-	    var y = that.state2y(node.game.state, msg.text);
-	    
-	    that.gtbl.add(msg.data, x, y);
-	    that.gtbl.parse(true);
-	});
-    }; 
-    
-    GameTable.prototype.addPlayer = function (player) {
-	this.plist.add(player);
-	var header = this.plist.map(function(el){return el.name;});
-	this.gtbl.setHeader(header);
-    };
-    
-    GameTable.prototype.addLeft = function (state, player) {
-	if (!state) return;
-	state = new GameStage(state);
-	if (!JSUS.in_array({content:state.toString(), type: 'left'}, this.gtbl.left)){
-	    this.gtbl.add2Left(state.toString());
-	}
-	// Is it a new display associated to the same state?
-	else {
-	    var y = this.state2y(state);
-	    var x = this.player2x(player);
-	    if (this.gtbl.select('y','=',y).select('x','=',x).count() > 1) {
-		this.gtbl.add2Left(state.toString());
-	    }
-	}
-	
-    };
-    
-    GameTable.prototype.player2x = function (player) {
-	if (!player) return false;
-	return this.plist.select('id', '=', player).first().count;
-    };
-    
-    GameTable.prototype.x2Player = function (x) {
-	if (!x) return false;
-	return this.plist.select('count', '=', x).first().count;
-    };
-    
-    GameTable.prototype.state2y = function (state) {
-	if (!state) return false;
-	return node.game.plot.indexOf(state);
-    };
-    
-    GameTable.prototype.y2State = function (y) {
-	if (!y) return false;
-	return node.game.plot.jumpTo(new GameStage(),y);
-    };
-    
-    
 
 })(node);
 
@@ -22451,577 +22771,180 @@ node.widgets = new Widgets();
 })(node);
 (function (node) {
 	
-	node.widgets.register('NDDBBrowser', NDDBBrowser);
+	node.widgets.register('Chat', Chat);
 	
-	var JSUS = node.JSUS,
-		NDDB = node.NDDB,
-		TriggerManager = node.TriggerManager;
+	var J = node.JSUS,
+		W = node.window;	
 
 // ## Defaults
 	
-	NDDBBrowser.defaults = {};
-	NDDBBrowser.defaults.id = 'nddbbrowser';
-	NDDBBrowser.defaults.fieldset = false;
-	
+	Chat.defaults = {};
+	Chat.defaults.id = 'chat';
+	Chat.defaults.fieldset = { legend: 'Chat' };	
+	Chat.defaults.mode = 'MANY_TO_MANY'; 
+	Chat.defaults.textarea_id = 'chat_textarea';
+	Chat.defaults.chat_id = 'chat_chat';
+	Chat.defaults.chat_event = 'CHAT';
+	Chat.defaults.submit_id = 'chat_submit';
+	Chat.defaults.submit_text = 'chat';
+
+			
 // ## Meta-data
 	
-	NDDBBrowser.name = 'NDDBBrowser';
-	NDDBBrowser.version = '0.1.2';
-	NDDBBrowser.description = 'Provides a very simple interface to control a NDDB istance.';
+	// ### Chat.modes
+	// 	MANY_TO_MANY: everybody can see all the messages, and it possible
+	//    to send private messages
+	//  MANY_TO_ONE: everybody can see all the messages, private messages can
+	//    be received, but not sent
+	//  ONE_TO_ONE: everybody sees only personal messages, private messages can
+	//    be received, but not sent. All messages are sent to the SERVER
+	//  RECEIVER_ONLY: messages can only be received, but not sent
+	Chat.modes = { 
+			MANY_TO_MANY: 'MANY_TO_MANY',
+			MANY_TO_ONE: 'MANY_TO_ONE',
+			ONE_TO_ONE: 'ONE_TO_ONE',
+			RECEIVER_ONLY: 'RECEIVER_ONLY'
+	};
 	
+	Chat.name = 'Chat';
+	Chat.version = '0.4';
+	Chat.description = 'Offers a uni / bi-directional communication interface between players, or between players and the experimenter.';
+
 // ## Dependencies
 	
-	NDDBBrowser.dependencies = {
-		JSUS: {},
-		NDDB: {},
-		TriggerManager: {}
+	Chat.dependencies = {
+		JSUS: {}
 	};
 	
-	function NDDBBrowser (options) {
-		this.options = options;
-		this.nddb = null;
+	function Chat (options) {
+		this.id = options.id || Chat.id;
+		this.mode = options.mode || Chat.defaults.mode;
 		
-		this.commandsDiv = document.createElement('div');
-		this.id = options.id;
-		if ('undefined' !== typeof this.id) {
-			this.commandsDiv.id = this.id;
+		this.root = null;
+		
+		this.textarea_id = options.textarea_id || Chat.defaults.textarea_id;
+		this.chat_id = options.chat_id || Chat.defaults.chat_id;
+		this.submit_id = options.submit_id || Chat.defaults.submit_id;
+		
+		this.chat_event = options.chat_event || Chat.defaults.chat_event;
+		this.submit_text = options.submit_text || Chat.defaults.submit_text;
+
+		this.submit = W.getEventButton(this.chat_event, this.submit_text, this.submit_id);
+		this.textarea = W.getElement('textarea', this.textarea_id);
+		this.chat = W.getElement('div', this.chat_id);
+		
+		if ('undefined' !== typeof options.displayName) {
+			this.displayName = options.displayName;
 		}
 		
-		this.info = null;
-		this.init(this.options);
+		switch(this.mode) {
+		
+		case Chat.modes.RECEIVER_ONLY:
+			this.recipient = {value: 'SERVER'};
+			break;
+		case Chat.modes.MANY_TO_ONE:
+			this.recipient = {value: 'ALL'};
+			break;
+		case Chat.modes.ONE_TO_ONE:
+			this.recipient = {value: 'SERVER'};
+			break;
+		default:
+			this.recipient = W.getRecipientSelector();
+		}
 	}
 	
-	NDDBBrowser.prototype.init = function (options) {
-		
-		function addButtons() {
-			var id = this.id;
-			node.window.addEventButton(id + '_GO_TO_FIRST', '<<', this.commandsDiv, 'go_to_first');
-			node.window.addEventButton(id + '_GO_TO_PREVIOUS', '<', this.commandsDiv, 'go_to_previous');
-			node.window.addEventButton(id + '_GO_TO_NEXT', '>', this.commandsDiv, 'go_to_next');
-			node.window.addEventButton(id + '_GO_TO_LAST', '>>', this.commandsDiv, 'go_to_last');
-			node.window.addBreak(this.commandsDiv);
-		}
-		function addInfoBar() {
-			var span = this.commandsDiv.appendChild(document.createElement('span'));
-			return span;
-		}
-		
-		
-		addButtons.call(this);
-		this.info = addInfoBar.call(this);
-		
-		this.tm = new TriggerManager();
-		this.tm.init(options.triggers);
-		this.nddb = options.nddb || new NDDB({auto_update_pointer: true});
-	};
 	
-	NDDBBrowser.prototype.append = function (root) {
+	Chat.prototype.append = function (root) {
 		this.root = root;
-		root.appendChild(this.commandsDiv);
+		root.appendChild(this.chat);
+		
+		if (this.mode !== Chat.modes.RECEIVER_ONLY) {	
+			W.writeln('', root);
+			root.appendChild(this.textarea);
+			W.writeln('', root);
+			root.appendChild(this.submit);
+			if (this.mode === Chat.modes.MANY_TO_MANY) {
+				root.appendChild(this.recipient);
+			}
+		}
 		return root;
 	};
 	
-	NDDBBrowser.prototype.getRoot = function (root) {
-		return this.commandsDiv;
-	};
-	
-	NDDBBrowser.prototype.add = function (o) {
-		return this.nddb.insert(o);
-	};
-	
-	NDDBBrowser.prototype.sort = function (key) {
-		return this.nddb.sort(key);
-	};
-	
-	NDDBBrowser.prototype.addTrigger = function (trigger) {
-		return this.tm.addTrigger(trigger);
-	};
-	
-	NDDBBrowser.prototype.removeTrigger = function (trigger) {
-		return this.tm.removeTrigger(trigger);
-	};
-	
-	NDDBBrowser.prototype.resetTriggers = function () {
-		return this.tm.resetTriggers();
-	};
-	
-	NDDBBrowser.prototype.listeners = function() {
-		var that = this;
-		var id = this.id;
-		
-		function notification (el, text) {
-			if (el) {
-				node.emit(id + '_GOT', el);
-				this.writeInfo((this.nddb.nddb_pointer + 1) + '/' + this.nddb.length);
-			}
-			else {
-				this.writeInfo('No element found');
-			}
-		}
-		
-		node.on(id + '_GO_TO_FIRST', function() {
-			var el = that.tm.pullTriggers(that.nddb.first());
-			notification.call(that, el);
-		});
-		
-		node.on(id + '_GO_TO_PREVIOUS', function() {
-			var el = that.tm.pullTriggers(that.nddb.previous());
-			notification.call(that, el);
-		});
-		
-		node.on(id + '_GO_TO_NEXT', function() {
-			var el = that.tm.pullTriggers(that.nddb.next());
-			notification.call(that, el);
-		});
-
-		node.on(id + '_GO_TO_LAST', function() {
-			var el = that.tm.pullTriggers(that.nddb.last());
-			notification.call(that, el);
-			
-		});
-	};
-	
-	NDDBBrowser.prototype.writeInfo = function (text) {
-		if (this.infoTimeout) clearTimeout(this.infoTimeout);
-		this.info.innerHTML = text;
-		var that = this;
-		this.infoTimeout = setTimeout(function(){
-			that.info.innerHTML = '';
-		}, 2000);
-	};
-	
-	
-})(node);
-(function (node) {
-	
-	
-	// TODO: Introduce rules for update: other vs self
-	
-	node.widgets.register('NextPreviousState', NextPreviousState);
-	
-// ## Defaults
-	
-	NextPreviousState.defaults = {};
-	NextPreviousState.defaults.id = 'nextprevious';
-	NextPreviousState.defaults.fieldset = { legend: 'Rew-Fwd' };		
-	
-// ## Meta-data
-	
-	NextPreviousState.name = 'Next,Previous State';
-	NextPreviousState.version = '0.3.2';
-	NextPreviousState.description = 'Adds two buttons to push forward or rewind the state of the game by one step.';
-		
-	function NextPreviousState(options) {
-		this.id = options.id;
-	}
-	
-	NextPreviousState.prototype.getRoot = function () {
+	Chat.prototype.getRoot = function () {
 		return this.root;
 	};
 	
-	NextPreviousState.prototype.append = function (root) {
-		var idRew = this.id + '_button';
-		var idFwd = this.id + '_button';
-		
-		var rew = node.window.addButton(root, idRew, '<<');
-		var fwd = node.window.addButton(root, idFwd, '>>');
-		
-		
-		var that = this;
-	
-		var updateState = function (state) {
-			if (state) {
-				var stateEvent = node.IN + node.action.SAY + '.STATE';
-				var stateMsg = node.msg.createSTATE(stateEvent, state);
-				// Self Update
-				node.emit(stateEvent, stateMsg);
-				
-				// Update Others
-				stateEvent = node.OUT + node.action.SAY + '.STATE';
-				node.emit(stateEvent, state, 'ALL');
-			}
-			else {
-				node.log('No next/previous state. Not sent', 'ERR');
-			}
-		};
-		
-		fwd.onclick = function() {
-			updateState(node.game.next());
-		};
-			
-		rew.onclick = function() {
-			updateState(node.game.previous());
-		};
-		
-		this.root = root;
-		return root;
+	Chat.prototype.displayName = function(from) {
+		return from;
 	};
 	
-})(node);
-(function (node) {
-    
-    node.widgets.register('ServerInfoDisplay', ServerInfoDisplay);	
-
-    // ## Defaults
-    
-    ServerInfoDisplay.defaults = {};
-    ServerInfoDisplay.defaults.id = 'serverinfodisplay';
-    ServerInfoDisplay.defaults.fieldset = {
-	legend: 'Server Info',
-	id: 'serverinfo_fieldset'
-    };		
-    
-    // ## Meta-data
-    
-    ServerInfoDisplay.name = 'Server Info Display';
-    ServerInfoDisplay.version = '0.4';
-    
-    function ServerInfoDisplay (options) {	
-	this.id = options.id;
-	
-	this.root = null;
-	this.div = document.createElement('div');
-	this.table = null; //new node.window.Table();
-	this.button = null;
-    }
-    
-    ServerInfoDisplay.prototype.init = function (options) {
-	var that = this;
-	if (!this.div) {
-	    this.div = document.createElement('div');
-	}
-	this.div.innerHTML = 'Waiting for the reply from Server...';
-	if (!this.table) {
-	    this.table = new node.window.Table(options);
-	}
-	this.table.clear(true);
-	this.button = document.createElement('button');
-	this.button.value = 'Refresh';
-	this.button.appendChild(document.createTextNode('Refresh'));
-	this.button.onclick = function(){
-	    that.getInfo();
-	};
-	this.root.appendChild(this.button);
-	this.getInfo();
-    };
-    
-    ServerInfoDisplay.prototype.append = function (root) {
-	this.root = root;
-	root.appendChild(this.div);
-	return root;
-    };
-    
-    ServerInfoDisplay.prototype.getInfo = function() {
-	var that = this;
-	node.get('INFO', function (info) {
-	    node.window.removeChildrenFromNode(that.div);
-	    that.div.appendChild(that.processInfo(info));
-	});
-    };
-    
-    ServerInfoDisplay.prototype.processInfo = function(info) {
-	this.table.clear(true);
-	for (var key in info) {
-	    if (info.hasOwnProperty(key)){
-		this.table.addRow([key,info[key]]);
-	    }
-	}
-	return this.table.parse();
-    };
-    
-    ServerInfoDisplay.prototype.listeners = function () {
-	var that = this;
-	node.on('PLAYER_CREATED', function(){
-	    that.init();
-	});
-    }; 
-    
-})(node);
-(function (node) {
-	
-	// TODO: Introduce rules for update: other vs self
-	
-	node.widgets.register('StateBar', StateBar);	
-	
-// ## Defaults
-	
-	StateBar.defaults = {};
-	StateBar.defaults.id = 'statebar';
-	StateBar.defaults.fieldset = { legend: 'Change Game State' };	
-	
-// ## Meta-data
-	
-	StateBar.name = 'State Bar';
-	StateBar.version = '0.3.2';
-	StateBar.description = 'Provides a simple interface to change the state of the game.';
-	
-	function StateBar (options) {
-		this.id = options.id;
-		this.recipient = null;
-	}
-	
-	StateBar.prototype.getRoot = function () {
-		return this.root;
+	Chat.prototype.readTA = function () {
+		var txt = this.textarea.value;
+		this.textarea.value = '';
+		return txt;
 	};
 	
-	StateBar.prototype.append = function (root) {
-		
-		var PREF = this.id + '_';
-		
-		var idButton = PREF + 'sendButton',
-			idStateSel = PREF + 'stateSel',
-			idRecipient = PREF + 'recipient'; 
-				
-		var sendButton = node.window.addButton(root, idButton);
-		var stateSel = node.window.addStateSelector(root, idStateSel);
-		this.recipient = node.window.addRecipientSelector(root, idRecipient);
-		
-		var that = this;
-		
-		node.on('UPDATED_PLIST', function() {
-			node.window.populateRecipientSelector(that.recipient, node.game.pl);
-		});
-		
-		sendButton.onclick = function() {
-	
-			// Should be within the range of valid values
-			// but we should add a check
-			var to = that.recipient.value;
-			
-			// STATE.STEP:ROUND
-			var parseState = /^(\d+)(?:\.(\d+))?(?::(\d+))?$/;
-			
-			var result = parseState.exec(stateSel.value);
-			var state, step, round, stateEvent, stateMsg;
-			if (result !== null) {
-				// Note: not result[0]!
-				state = result[1];
-				step = result[2] || 1;
-				round = result[3] || 1;
-				
-				node.log('Parsed State: ' + result.join("|"));
-				
-				state = new node.GameStage({
-					state: state,
-					step: step,
-					round: round
-				});
-				
-				// Self Update
-				if (to === 'ALL') {
-					stateEvent = node.IN + node.action.SAY + '.STATE';
-					stateMsg = node.msg.createSTATE(stateEvent, state);
-					node.emit(stateEvent, stateMsg);
-				}
-				
-				// Update Others
-				stateEvent = node.OUT + node.action.SAY + '.STATE';
-				node.emit(stateEvent, state, to);
-			}
-			else {
-				node.err('Not valid state. Not sent.');
-				node.socket.sendTXT('E: not valid state. Not sent');
-			}
-		};
-		
-		this.root = root;
-		return root;
+	Chat.prototype.writeTA = function (string, args) {
+		J.sprintf(string, args, this.chat);
+	    W.writeln('', this.chat);
+	    this.chat.scrollTop = this.chat.scrollHeight;
 	};
 	
-})(node);
-(function (node) {
+	Chat.prototype.listeners = function() {
+		var that = this;	
+		    
+	    node.on(this.chat_event, function () {
+	      var msg = that.readTA();
+	      if (!msg) return;
+	      
+	      var to = that.recipient.value;
+	      var args = {
+		        '%s': {
+		          'class': 'chat_me'
+		        },
+		        '%msg': {
+		          'class': 'chat_msg'
+		        },
+		        '!txt': msg
+	      };
+	      that.writeTA('%sMe%s: %msg!txt%msg', args);
+	      node.say(msg.trim(), that.chat_event, to);
+	    });
+		  
+		if (this.mode === Chat.modes.MANY_TO_MANY) {
+		    node.on('UPDATED_PLIST', function() {
+			      W.populateRecipientSelector(that.recipient, node.game.pl.fetch());
+		    });
+		}
 
-    var Table = node.window.Table,
-    GameStage = node.GameStage;
-    
-    node.widgets.register('StateDisplay', StateDisplay);	
-
-    // ## Defaults
-    
-    StateDisplay.defaults = {};
-    StateDisplay.defaults.id = 'statedisplay';
-    StateDisplay.defaults.fieldset = { legend: 'State Display' };		
-    
-    // ## Meta-data
-    
-    StateDisplay.name = 'State Display';
-    StateDisplay.version = '0.4.2';
-    StateDisplay.description = 'Display basic information about player\'s status.';
-    
-    function StateDisplay (options) {
+	    node.onDATA(this.chat_event, function (msg) {
+	    	if (msg.from === node.player.id || msg.from === node.player.sid) {
+	    		return;
+	    	}
+	    	
+	    	if (this.mode === Chat.modes.ONE_TO_ONE) { 
+		    	if (msg.from === this.recipient.value) {
+		    		return;
+		    	}
+	    	}
+	    	
+	    	
+	    	var from = that.displayName(msg.from);
+	    	var args = {
+		        '%s': {
+		          'class': 'chat_others'
+		        },
+		        '%msg': {
+		          'class': 'chat_msg'
+		        },
+		        '!txt': msg.data,
+	            '!from': from
+	      };
+	    	
+	      that.writeTA('%s!from%s: %msg!txt%msg', args);
+	    });
+	};
 	
-	this.id = options.id;
-	
-	this.root = null;
-	this.table = new Table();
-    }
-    
-    // TODO: Write a proper INIT method
-    StateDisplay.prototype.init = function () {};
-    
-    StateDisplay.prototype.getRoot = function () {
-	return this.root;
-    };
-    
-    
-    StateDisplay.prototype.append = function (root) {
-	var that = this;
-	var PREF = this.id + '_';
-	
-	var idFieldset = PREF + 'fieldset';
-	var idPlayer = PREF + 'player';
-	var idState = PREF + 'state'; 
-	
-	var checkPlayerName = setInterval(function(idState,idPlayer) {
-	    if (node.player && node.player.id) {
-		clearInterval(checkPlayerName);
-		that.updateAll();
-	    }
-	}, 100);
-	
-	root.appendChild(this.table.table);
-	this.root = root;
-	return root;
-	
-    };
-    
-    StateDisplay.prototype.updateAll = function() {
-	var stage, stageNo, stageId, playerId, tmp, miss;
-        miss = '-';
-        
-        stageId = miss;
-        stageNo = miss;
-        playerId = miss;
-
-	if (node.player.id) {
-            playerId = node.player.id;
-        }
-        
-	stage = node.game.getCurrentGameStage();	
-	if (stage) {
-            tmp = node.game.plot.getStep(stage);
-            stageId = tmp ? tmp.id : '-';
-            stageNo = stage.toString();
-        }
-        
-	this.table.clear(true);
-	this.table.addRow(['Stage  No: ', stageNo]);
-	this.table.addRow(['Stage  Id: ', stageId]);
-	this.table.addRow(['Player Id: ', playerId]);
-	this.table.parse();
-	
-    };
-    
-    StateDisplay.prototype.listeners = function () {
-	var that = this;
-	
-	node.on('STEP_CALLBACK_EXECUTED', function() {
-	    that.updateAll();
-	}); 
-    }; 
-    
-})(node);
-
-(function (node) {
-    
-    node.widgets.register('VisualState', VisualState);
-    
-    var JSUS = node.JSUS,
-    Table = node.window.Table;
-    
-    // ## Defaults
-    
-    VisualState.defaults = {};
-    VisualState.defaults.id = 'visualstate';
-    VisualState.defaults.fieldset = { 
-	legend: 'State',
-	id: 'visualstate_fieldset'
-    };	
-    
-    // ## Meta-data
-    
-    VisualState.name = 'Visual State';
-    VisualState.version = '0.2.1';
-    VisualState.description = 'Visually display current, previous and next state of the game.';
-    
-    // ## Dependencies
-    
-    VisualState.dependencies = {
-	JSUS: {},
-	Table: {}
-    };
-    
-    
-    function VisualState (options) {
-	this.id = options.id;
-	
-	this.root = null;		// the parent element
-	this.table = new Table();
-    }
-    
-    VisualState.prototype.getRoot = function () {
-	return this.root;
-    };
-    
-    VisualState.prototype.append = function (root, ids) {
-	var that = this;
-	var PREF = this.id + '_';
-	root.appendChild(this.table.table);
-	this.writeState();
-	return root;
-    };
-    
-    VisualState.prototype.listeners = function () {
-	var that = this;
-        
-        node.on('STEP_CALLBACK_EXECUTED', function() {
-	    that.writeState();
-	});
-
-        // Game over and init?
-    };
-    
-    VisualState.prototype.writeState = function () {
-	var miss, state, pr, nx, tmp;
-        var curStep, nextStep, prevStep;
-	var t;
-        
-        miss = '-';
-	state = 'Uninitialized';
-        pr = miss;
-        nx = miss;
-        
-        curStep = node.game.getCurrentGameStage();
-        
-	if (curStep) {
-            tmp = node.game.plot.getStep(curStep);
-            state = tmp ? tmp.id : miss;
-            
-	    prevStep = node.game.plot.previous(curStep);
-            if (prevStep) {
-                tmp = node.game.plot.getStep(prevStep);
-	        pr = tmp ? tmp.id : miss;
-            }
-            
-	    nextStep = node.game.plot.next(curStep);
-            if (nextStep) {
-                tmp = node.game.plot.getStep(nextStep);
-	        nx = tmp ? tmp.id : miss;
-            }
-        }
-        
-	this.table.clear(true);
-
-	this.table.addRow(['Previous: ', pr]);
-	this.table.addRow(['Current: ', state]);
-	this.table.addRow(['Next: ', nx]);
-	
-	t = this.table.select('y', '=', 2);
-	t.addClass('strong');
-	t.select('x','=',0).addClass('underline');
-	this.table.parse();
-    };
-    
 })(node);
 (function (node) {
 	
@@ -23194,82 +23117,70 @@ node.widgets = new Widgets();
 })(node);
 
 (function (node) {
-
-    node.widgets.register('WaitScreen', WaitScreen);
+	
+	
+	// TODO: Introduce rules for update: other vs self
+	
+	node.widgets.register('NextPreviousState', NextPreviousState);
 	
 // ## Defaults
 	
-    WaitScreen.defaults = {};
-    WaitScreen.defaults.id = 'waiting';
-    WaitScreen.defaults.fieldset = false;
-    
+	NextPreviousState.defaults = {};
+	NextPreviousState.defaults.id = 'nextprevious';
+	NextPreviousState.defaults.fieldset = { legend: 'Rew-Fwd' };		
+	
 // ## Meta-data
 	
-    WaitScreen.name = 'WaitingScreen';
-    WaitScreen.version = '0.4.0';
-    WaitScreen.description = 'Show a standard waiting screen';
-    
-    function WaitScreen (options) {
-	this.id = options.id;
-	
-	this.text = {
-            waiting: options.waitingText || 'Waiting for other players to be done...',
-            stepping: options.steppingText || 'Initializing, game will start soon...'
-        }
-
-	this.waitingDiv = null;
-    }
-    
-    function updateScreen(text) {
-        if (!this.waitingDiv) {
-	    this.waitingDiv = node.window.addDiv(document.body, this.id);
+	NextPreviousState.name = 'Next,Previous State';
+	NextPreviousState.version = '0.3.2';
+	NextPreviousState.description = 'Adds two buttons to push forward or rewind the state of the game by one step.';
+		
+	function NextPreviousState(options) {
+		this.id = options.id;
 	}
-	    
-	if (this.waitingDiv.style.display === 'none'){
-	    this.waitingDiv.style.display = '';
-	}			
 	
-	this.waitingDiv.innerHTML = text;
-    }
-
-    function hideScreen() {
-        if (this.waitingDiv) {
-            if (this.waitingDiv.style.display === '') {
-                this.waitingDiv.style.display = 'none';
-            }
-        }
-    }
-
-    WaitScreen.prototype.append = function(root) {
-	return root;
-    };
-    
-    WaitScreen.prototype.getRoot = function() {
-	return this.waitingDiv;
-    };
-    
-    WaitScreen.prototype.listeners = function() {
-        var that = this;
-        node.on('BEFORE_DONE', function(text) {
-            updateScreen.call(that, text || that.text.waiting)
-        });
+	NextPreviousState.prototype.getRoot = function () {
+		return this.root;
+	};
 	
-        node.on('STEPPING', function(text) {
-            updateScreen.call(that, text || that.text.stepping)
-        });
-               
-	// It is supposed to fade away when a new state starts
-        node.on('PLAYING', function(text) {
-            hideScreen.call(that);
-        });
-
-        // It is supposed to fade away when a new state starts
-        node.on('GAME_OVER', function(text) {
-            hideScreen.call(that);
-        });
-
-
-    }; 
+	NextPreviousState.prototype.append = function (root) {
+		var idRew = this.id + '_button';
+		var idFwd = this.id + '_button';
+		
+		var rew = node.window.addButton(root, idRew, '<<');
+		var fwd = node.window.addButton(root, idFwd, '>>');
+		
+		
+		var that = this;
+	
+		var updateState = function (state) {
+			if (state) {
+				var stateEvent = node.IN + node.action.SAY + '.STATE';
+				var stateMsg = node.msg.createSTATE(stateEvent, state);
+				// Self Update
+				node.emit(stateEvent, stateMsg);
+				
+				// Update Others
+				stateEvent = node.OUT + node.action.SAY + '.STATE';
+				node.emit(stateEvent, state, 'ALL');
+			}
+			else {
+				node.log('No next/previous state. Not sent', 'ERR');
+			}
+		};
+		
+		fwd.onclick = function() {
+			updateState(node.game.next());
+		};
+			
+		rew.onclick = function() {
+			updateState(node.game.previous());
+		};
+		
+		this.root = root;
+		return root;
+	};
+	
 })(node);
 (function (node) {
 	
@@ -23343,6 +23254,251 @@ node.widgets = new Widgets();
 			}
 			this.buffer = [];
 		}
+	};
+	
+})(node);
+(function (node) {
+
+    var GameStage = node.GameStage,
+    PlayerList = node.PlayerList;
+    
+    
+    node.widgets.register('GameTable', GameTable);
+    
+    // ## Defaults
+    
+    GameTable.defaults = {};
+    GameTable.defaults.id = 'gametable';
+    GameTable.defaults.fieldset = { 
+	legend: 'Game Table',
+	id: 'gametable_fieldset'
+    };
+    
+    // ## Meta-data
+    
+    GameTable.name = 'Game Table';
+    GameTable.version = '0.3';
+    
+    // ## Dependencies
+    
+    GameTable.dependencies = {
+	JSUS: {}
+    };
+    
+    function GameTable (options) {
+	this.options = options;
+	this.id = options.id;
+	this.name = options.name || GameTable.name;
+	
+	this.root = null;
+	this.gtbl = null;
+	this.plist = null;
+	
+	this.init(this.options);
+    }
+    
+    GameTable.prototype.init = function (options) {
+	
+	if (!this.plist) this.plist = new PlayerList();
+	
+	this.gtbl = new node.window.Table({
+	    auto_update: true,
+	    id: options.id || this.id,
+	    render: options.render
+	}, node.game.memory.db);
+	
+	
+	this.gtbl.c('state', GameStage.compare);
+	
+	this.gtbl.setLeft([]);
+	
+	this.gtbl.parse(true);
+    };
+    
+
+    GameTable.prototype.addRenderer = function (func) {
+	return this.gtbl.addRenderer(func);
+    };
+    
+    GameTable.prototype.resetRender = function () {
+	return this.gtbl.resetRenderer();
+    };
+    
+    GameTable.prototype.removeRenderer = function (func) {
+	return this.gtbl.removeRenderer(func);
+    };
+    
+    GameTable.prototype.append = function (root) {
+	this.root = root;
+	root.appendChild(this.gtbl.table);
+	return root;
+    };
+    
+    GameTable.prototype.listeners = function () {
+	var that = this;
+	
+	node.on.plist(function(msg) {	
+	    if (!msg.data.length) return;
+	    
+	    //var diff = JSUS.arrayDiff(msg.data,that.plist.db);
+	    var plist = new PlayerList({}, msg.data);
+	    var diff = plist.diff(that.plist);
+	    if (diff) {
+                //				console.log('New Players found');
+                //				console.log(diff);
+		diff.forEach(function(el){that.addPlayer(el);});
+	    }
+
+	    that.gtbl.parse(true);
+	});
+	
+	node.on('in.set.DATA', function (msg) {
+
+	    that.addLeft(msg.state, msg.from);
+	    var x = that.player2x(msg.from);
+	    var y = that.state2y(node.game.state, msg.text);
+	    
+	    that.gtbl.add(msg.data, x, y);
+	    that.gtbl.parse(true);
+	});
+    }; 
+    
+    GameTable.prototype.addPlayer = function (player) {
+	this.plist.add(player);
+	var header = this.plist.map(function(el){return el.name;});
+	this.gtbl.setHeader(header);
+    };
+    
+    GameTable.prototype.addLeft = function (state, player) {
+	if (!state) return;
+	state = new GameStage(state);
+	if (!JSUS.in_array({content:state.toString(), type: 'left'}, this.gtbl.left)){
+	    this.gtbl.add2Left(state.toString());
+	}
+	// Is it a new display associated to the same state?
+	else {
+	    var y = this.state2y(state);
+	    var x = this.player2x(player);
+	    if (this.gtbl.select('y','=',y).select('x','=',x).count() > 1) {
+		this.gtbl.add2Left(state.toString());
+	    }
+	}
+	
+    };
+    
+    GameTable.prototype.player2x = function (player) {
+	if (!player) return false;
+	return this.plist.select('id', '=', player).first().count;
+    };
+    
+    GameTable.prototype.x2Player = function (x) {
+	if (!x) return false;
+	return this.plist.select('count', '=', x).first().count;
+    };
+    
+    GameTable.prototype.state2y = function (state) {
+	if (!state) return false;
+	return node.game.plot.indexOf(state);
+    };
+    
+    GameTable.prototype.y2State = function (y) {
+	if (!y) return false;
+	return node.game.plot.jumpTo(new GameStage(),y);
+    };
+    
+    
+
+})(node);
+
+(function (node) {
+	
+	// TODO: Introduce rules for update: other vs self
+	
+	node.widgets.register('StateBar', StateBar);	
+	
+// ## Defaults
+	
+	StateBar.defaults = {};
+	StateBar.defaults.id = 'statebar';
+	StateBar.defaults.fieldset = { legend: 'Change Game State' };	
+	
+// ## Meta-data
+	
+	StateBar.name = 'State Bar';
+	StateBar.version = '0.3.2';
+	StateBar.description = 'Provides a simple interface to change the state of the game.';
+	
+	function StateBar (options) {
+		this.id = options.id;
+		this.recipient = null;
+	}
+	
+	StateBar.prototype.getRoot = function () {
+		return this.root;
+	};
+	
+	StateBar.prototype.append = function (root) {
+		
+		var PREF = this.id + '_';
+		
+		var idButton = PREF + 'sendButton',
+			idStateSel = PREF + 'stateSel',
+			idRecipient = PREF + 'recipient'; 
+				
+		var sendButton = node.window.addButton(root, idButton);
+		var stateSel = node.window.addStateSelector(root, idStateSel);
+		this.recipient = node.window.addRecipientSelector(root, idRecipient);
+		
+		var that = this;
+		
+		node.on('UPDATED_PLIST', function() {
+			node.window.populateRecipientSelector(that.recipient, node.game.pl);
+		});
+		
+		sendButton.onclick = function() {
+	
+			// Should be within the range of valid values
+			// but we should add a check
+			var to = that.recipient.value;
+			
+			// STATE.STEP:ROUND
+			var parseState = /^(\d+)(?:\.(\d+))?(?::(\d+))?$/;
+			
+			var result = parseState.exec(stateSel.value);
+			var state, step, round, stateEvent, stateMsg;
+			if (result !== null) {
+				// Note: not result[0]!
+				state = result[1];
+				step = result[2] || 1;
+				round = result[3] || 1;
+				
+				node.log('Parsed State: ' + result.join("|"));
+				
+				state = new node.GameStage({
+					state: state,
+					step: step,
+					round: round
+				});
+				
+				// Self Update
+				if (to === 'ALL') {
+					stateEvent = node.IN + node.action.SAY + '.STATE';
+					stateMsg = node.msg.createSTATE(stateEvent, state);
+					node.emit(stateEvent, stateMsg);
+				}
+				
+				// Update Others
+				stateEvent = node.OUT + node.action.SAY + '.STATE';
+				node.emit(stateEvent, state, to);
+			}
+			else {
+				node.err('Not valid state. Not sent.');
+				node.socket.sendTXT('E: not valid state. Not sent');
+			}
+		};
+		
+		this.root = root;
+		return root;
 	};
 	
 })(node);
