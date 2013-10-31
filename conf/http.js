@@ -166,7 +166,7 @@ function configure (app, servernode) {
 
     // Serves game files or default game index file: index.htm.
     app.get('/:game/*', function(req, res) {
-        var gameInfo, path, file;
+        var gameInfo, filepath, file;
         
         gameInfo = verifyGameRequest(req, res);
         if (!gameInfo) return;
@@ -188,11 +188,12 @@ function configure (app, servernode) {
             }
         }
 
-        // Build path to file.
-        path = gameInfo.dir + '/'  + file;
+        // Build filepath to file.
+        filepath = gameInfo.dir + '/'  + file;
 
         // Send file (if it is a directory it is not sent).
-        res.sendfile(path);
+        //res.sendfile(path.basename(filepath), {root: path.dirname(filepath)});
+        res.sendfile(filepath);
     });
 
     app.get('/:game', function(req, res) {
