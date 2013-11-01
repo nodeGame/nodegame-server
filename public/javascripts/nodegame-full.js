@@ -7649,7 +7649,8 @@ JSUS.extend(PARSE);
         var stage;
         if (!pl.size()) return false;
         stage = pl.first().stage;
-        return pl.arePlayersSync(stage, node.constants.stageLevels.DONE, 'EXACT');
+        return pl.arePlayersSync(stage, node.constants.stageLevels.DONE,
+                                 'EXACT');
     };
 
     // ## Closure
@@ -14721,7 +14722,7 @@ JSUS.extend(PARSE);
          *
          * The frequency of update for the timer (in milliseconds).
          */
-        this.update = 1000;
+        this.update = undefined;
 
         /**
          * ### GameTimer.updateRemaining
@@ -14808,7 +14809,7 @@ JSUS.extend(PARSE);
             this.timerId = null;
         }
         this.milliseconds = options.milliseconds;
-        this.update = options.update || this.milliseconds;
+        this.update = options.update || this.update || this.milliseconds;
         this.timeLeft = this.milliseconds;
         this.timePassed = 0;
         // Event to be fired when timer expires.
@@ -14840,7 +14841,6 @@ JSUS.extend(PARSE);
         if (!h) {
             throw new Error('GameTimer.fire: missing argument');
         }
-        console.log(this.name);
         hook = h.hook || h;
         if ('function' === typeof hook) {
             ctx = h.ctx || this.node.game;
