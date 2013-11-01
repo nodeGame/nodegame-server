@@ -7540,7 +7540,7 @@ JSUS.extend(PARSE);
         PAUSED:              60,  // to be removed
         RESUMING:            65,
         RESUMED:             70,
-        DONE:                100
+        DONE:                100 // Player completed the stage
     };
 
     /**
@@ -7554,9 +7554,9 @@ JSUS.extend(PARSE);
         INITIALIZED:    5, // Init executed.
         LOADING:       30, // Loading a new Frame.
         LOADED:        40, // Frame Loaded.
-        FREEZING:      50,  // The screen is about to be frozen. 
-        FROZEN:        60, // The screen is freezed.
-        DEFROSTING:    65  // The screen is defrosting.
+        LOCKING:       50, // The screen is about to be locked. 
+        LOCKED:        60, // The screen is locked.
+        UNLOCKING:     65  // The screen is about to be unlocked.
     };
 
     /**
@@ -17381,6 +17381,7 @@ TriggerManager.prototype.size = function () {
     var J = node.JSUS;
 
     var constants = node.constants;
+    var windowLevels = constants.windowLevels;
 
     var Player = node.Player,
     PlayerList = node.PlayerList,
@@ -17408,7 +17409,6 @@ TriggerManager.prototype.size = function () {
         storeCacheLater: false
     };
 
-
     /**
      * ## GameWindow constructor
      * 
@@ -17420,11 +17420,11 @@ TriggerManager.prototype.size = function () {
         this.setStateLevel('UNINITIALIZED');
 
         if ('undefined' === typeof window) {
-	    throw new Error('nodeWindow: no DOM found. Are you in a browser?');
+            throw new Error('nodeWindow: no DOM found. Are you in a browser?');
         }
         
         if ('undefined' === typeof node) {
-	    node.log('nodeWindow: nodeGame not found', 'ERR');
+            node.log('nodeWindow: nodeGame not found', 'ERR');
         }
         
         node.log('nodeWindow: loading...');
@@ -17460,12 +17460,12 @@ TriggerManager.prototype.size = function () {
         this.conf = {};
         
         // ### GameWindow.areLoading
-        // Counts the number of frames currently being loaded
+        // Counts the number of frames currently being loaded.
         this.areLoading = 0;
 
         // ### GameWindow.cache
         // Cache for loaded iframes
-        //	
+        //      
         // Maps URI to a cache object with the following properties:
         // - `contents` (the innerHTML property or null if not cached),
         // - optionally 'cacheOnClose' (a bool telling whether to cache 
@@ -17474,22 +17474,22 @@ TriggerManager.prototype.size = function () {
 
         // ### GameWindow.currentURIs
         // Currently loaded URIs in the internal frames
-        //	
+        //      
         // Maps frame names (e.g. 'mainframe') to the URIs they are showing.
         this.currentURIs = {};
 
-	
+        
         // ### GameWindow.globalLibs
         // Array of strings with the path of the libraries 
         // to be loaded in every frame.
         this.globalLibs = [];
-	
+        
         // ### GameWindow.frameLibs
         // Like `GameWindow.frameLibs`, but contains libraries
         // to be loaded only in specific frames.
         this.frameLibs = {};
 
-        this.init();	
+        this.init();    
     }
 
     // ## GameWindow methods
@@ -17509,21 +17509,21 @@ TriggerManager.prototype.size = function () {
         this.setStateLevel('INITIALIZING');
         options = options || {};
         this.conf = J.merge(GameWindow.defaults, options);
-	
+        
         this.mainframe = options.mainframe || 'mainframe';
 
         if (this.conf.promptOnleave) {
-	    this.promptOnleave();
+            this.promptOnleave();
         }
         else if (this.conf.promptOnleave === false) {
-	    this.restoreOnleave();
+            this.restoreOnleave();
         }
         
         if (this.conf.noEscape) {
-	    this.noEscape();
+            this.noEscape();
         }
         else if (this.conf.noEscape === false){
-	    this.restoreEscape();
+            this.restoreEscape();
         }
         this.setStateLevel('INITIALIZED');
     };
@@ -17533,6 +17533,8 @@ TriggerManager.prototype.size = function () {
      *
      * Validates and sets window's state level. 
      *
+     * @param {string} level The level of the update.
+     *
      * @see constants.windowLevels
      */
     GameWindow.prototype.setStateLevel = function(level) {
@@ -17540,11 +17542,22 @@ TriggerManager.prototype.size = function () {
             throw new TypeError('GameWindow.setStateLevel: ' +
                                 'level must be string');
         }
-        if ('undefined' === typeof constants.windowLevels[level]) {
+        if ('undefined' === typeof windowLevels[level]) {
             throw new Error('GameWindow.setStateLevel: unrecognized level.');
         }
         
-        this.state = constants.windowLevels[level];
+        this.state = windowLevels[level];
+    };
+
+    /**
+     * ## GameWindow.getStateLevel
+     *
+     * Returns the current state level
+     *
+     * @see constants.windowLevels
+     */
+    GameWindow.prototype.getStateLevel = function() {
+        return this.state;
     };
 
     /**
@@ -17559,14 +17572,14 @@ TriggerManager.prototype.size = function () {
      * @see GameWindow.getElementsByTagName
      */
     GameWindow.prototype.getElementById = function(id) {
-	var el = null;
-	if (this.frame && this.frame.getElementById) {
-	    el = this.frame.getElementById(id);
-	}
-	if (!el) {
-	    el = document.getElementById(id);
-	}
-	return el; 
+        var el = null;
+        if (this.frame && this.frame.getElementById) {
+            el = this.frame.getElementById(id);
+        }
+        if (!el) {
+            el = document.getElementById(id);
+        }
+        return el; 
     };
 
     /**
@@ -17579,7 +17592,7 @@ TriggerManager.prototype.size = function () {
      * @see GameWindow.getElementById
      */
     GameWindow.prototype.getElementsByTagName = function(tag) {
-	return this.frame ? 
+        return this.frame ? 
             this.frame.getElementsByTagName(tag) : 
             document.getElementsByTagName(tag);
     };
@@ -17594,67 +17607,68 @@ TriggerManager.prototype.size = function () {
     GameWindow.prototype.setup = function(type){
         var initPage;
         
-	if (!this.root) {
-	    this.root = document.body;
-	    //this.root = this.generateNodeGameRoot();
-	}
-	
-	switch (type) {
-	    
-	case 'MONITOR':
-	    
-	    node.widgets.append('NextPreviousState');
-	    node.widgets.append('GameSummary');
-	    node.widgets.append('StateDisplay');
-	    node.widgets.append('StateBar');
-	    node.widgets.append('DataBar');
-	    node.widgets.append('MsgBar');
-	    node.widgets.append('GameBoard');
-	    node.widgets.append('ServerInfoDisplay');
-	    node.widgets.append('Wall');
-
-	    // Add default CSS.
-	    if (node.conf.host) {
-		this.addCSS(this.root, 
-                            node.conf.host + '/stylesheets/monitor.css');
-	    }
-	    
-	    break;
-	    
-	case 'PLAYER':
-	    
-	    this.header = this.generateHeader();
+        if (!this.root) {
+            this.root = document.body;
+            //this.root = this.generateNodeGameRoot();
+        }
+        
+        switch (type) {
             
-            node.game.vs    = node.widgets.append('VisualState', this.header);
-	    node.game.timer = node.widgets.append('VisualTimer', this.header);
-	    node.game.sd    = node.widgets.append('StateDisplay', this.header);
-	    
+        case 'MONITOR':
+            
+            node.widgets.append('NextPreviousState');
+            node.widgets.append('GameSummary');
+            node.widgets.append('StateDisplay');
+            node.widgets.append('StateBar');
+            node.widgets.append('DataBar');
+            node.widgets.append('MsgBar');
+            node.widgets.append('GameBoard');
+            node.widgets.append('ServerInfoDisplay');
+            node.widgets.append('Wall');
+
+            // Add default CSS.
+            if (node.conf.host) {
+                this.addCSS(this.root, 
+                            node.conf.host + '/stylesheets/monitor.css');
+            }
+            
+            break;
+            
+        case 'PLAYER':
+            
+            this.header = this.generateHeader();
+            
+            node.game.visualState = node.widgets.append('VisualState', this.header);
+            node.game.timer = node.widgets.append('VisualTimer', this.header);
+            node.game.stateDisplay = node.widgets.append('StateDisplay', this.header);
+            
             // Will continue in SOLO_PLAYER
 
         case 'SOLO_PLAYER':
-	    
+            
             if (!this.getFrame()) {
                 this.addIFrame(this.root, this.mainframe);
                 // At this point, there is no document in the iframe yet.
                 this.frame = window.frames[this.mainframe];
-	        initPage = this.getBlankPage();
-	        if (this.conf.noEscape) {
-		    // TODO: inject the no escape code here
-	        }
-	        window.frames[this.mainframe].src = initPage;
-	    }
-
-            node.widgets.append('WaitScreen');
+                initPage = this.getBlankPage();
+                if (this.conf.noEscape) {
+                    // TODO: inject the no escape code here
+                }
+                window.frames[this.mainframe].src = initPage;
+            }
             
-	    // Add default CSS.
-	    if (node.conf.host) {
-		this.addCSS(this.root,
+            // Adding the WaitScreen.
+            node.game.waitScreen = node.widgets.append('WaitScreen');
+            
+            // Add default CSS.
+            if (node.conf.host) {
+                this.addCSS(this.root,
                             node.conf.host + '/stylesheets/player.css');
-	    }
-	      
-	    break;
-	}
-	
+            }
+              
+            break;
+        }
+        
     };
 
     /**
@@ -17672,16 +17686,16 @@ TriggerManager.prototype.size = function () {
      * @api private
      */
     function removeLibraries(frameNode) {
-	var contentDocument = frameNode.contentDocument ? frameNode.contentDocument
-	    : frameNode.contentWindow.document;
+        var contentDocument = frameNode.contentDocument ? frameNode.contentDocument
+            : frameNode.contentWindow.document;
 
-	var scriptNodes, scriptNodeIdx, scriptNode;
+        var scriptNodes, scriptNodeIdx, scriptNode;
 
-	scriptNodes = contentDocument.getElementsByClassName('injectedlib');
-	for (scriptNodeIdx = 0; scriptNodeIdx < scriptNodes.length; ++scriptNodeIdx) {
-	    scriptNode = scriptNodes[scriptNodeIdx];
-	    scriptNode.parentNode.removeChild(scriptNode);
-	}
+        scriptNodes = contentDocument.getElementsByClassName('injectedlib');
+        for (scriptNodeIdx = 0; scriptNodeIdx < scriptNodes.length; ++scriptNodeIdx) {
+            scriptNode = scriptNodes[scriptNodeIdx];
+            scriptNode.parentNode.removeChild(scriptNode);
+        }
     }
 
 
@@ -17699,7 +17713,7 @@ TriggerManager.prototype.size = function () {
      */
     function reloadScripts(frameNode) {
         var contentDocument = frameNode.contentDocument ? frameNode.contentDocument
-	    : frameNode.contentWindow.document;
+            : frameNode.contentWindow.document;
 
         var headNode = contentDocument.getElementsByTagName('head')[0];
         var tag, scriptNodes, scriptNodeIdx, scriptNode;
@@ -17707,19 +17721,19 @@ TriggerManager.prototype.size = function () {
         
         scriptNodes = contentDocument.getElementsByTagName('script');
         for (scriptNodeIdx = 0; scriptNodeIdx < scriptNodes.length; ++scriptNodeIdx) {
-	    // Remove tag:
-	    tag = scriptNodes[scriptNodeIdx];
-	    tag.parentNode.removeChild(tag);
+            // Remove tag:
+            tag = scriptNodes[scriptNodeIdx];
+            tag.parentNode.removeChild(tag);
 
-	    // Reinsert tag for reloading:
-	    scriptNode = document.createElement('script');
-	    if (tag.innerHTML) scriptNode.innerHTML = tag.innerHTML;
-	    for (attrIdx = 0; attrIdx < tag.attributes.length; ++attrIdx) {
-		attr = tag.attributes[attrIdx];
-		scriptNode.setAttribute(attr.name, attr.value);
-	    }
-	    headNode.appendChild(scriptNode);
-	}
+            // Reinsert tag for reloading:
+            scriptNode = document.createElement('script');
+            if (tag.innerHTML) scriptNode.innerHTML = tag.innerHTML;
+            for (attrIdx = 0; attrIdx < tag.attributes.length; ++attrIdx) {
+                attr = tag.attributes[attrIdx];
+                scriptNode.setAttribute(attr.name, attr.value);
+            }
+            headNode.appendChild(scriptNode);
+        }
     }
 
 
@@ -17740,20 +17754,20 @@ TriggerManager.prototype.size = function () {
      * 
      */
     function injectLibraries(frameNode, libs) {
-	var contentDocument = frameNode.contentDocument ? frameNode.contentDocument
-	    : frameNode.contentWindow.document;
+        var contentDocument = frameNode.contentDocument ? frameNode.contentDocument
+            : frameNode.contentWindow.document;
 
-	var headNode = contentDocument.getElementsByTagName('head')[0];
-	var scriptNode;
-	var libIdx, lib;
+        var headNode = contentDocument.getElementsByTagName('head')[0];
+        var scriptNode;
+        var libIdx, lib;
 
-	for (libIdx = 0; libIdx < libs.length; ++libIdx) {
-	    lib = libs[libIdx];
-	    scriptNode = document.createElement('script');
-	    scriptNode.className = 'injectedlib';
-	    scriptNode.src = lib;
-	    headNode.appendChild(scriptNode);
-	}
+        for (libIdx = 0; libIdx < libs.length; ++libIdx) {
+            lib = libs[libIdx];
+            scriptNode = document.createElement('script');
+            scriptNode.className = 'injectedlib';
+            scriptNode.src = lib;
+            headNode.appendChild(scriptNode);
+        }
     }
 
 
@@ -17772,8 +17786,8 @@ TriggerManager.prototype.size = function () {
      *
      */
     GameWindow.prototype.initLibs = function(globalLibs, frameLibs) {
-	this.globalLibs = globalLibs || [];
-	this.frameLibs = frameLibs || {};
+        this.globalLibs = globalLibs || [];
+        this.frameLibs = frameLibs || {};
     };
 
     /**
@@ -17786,54 +17800,54 @@ TriggerManager.prototype.size = function () {
      *
      */
     GameWindow.prototype.preCache = function(uris, callback) {
-	// Don't preload if no URIs are given:
-	if (!uris || !uris.length) {
-	    if(callback) callback();
-	    return;
-	}
+        // Don't preload if no URIs are given:
+        if (!uris || !uris.length) {
+            if(callback) callback();
+            return;
+        }
 
-	var that = this;
+        var that = this;
 
-	// Keep count of loaded URIs:
-	var loadedCount = 0;
+        // Keep count of loaded URIs:
+        var loadedCount = 0;
 
-	for (var uriIdx = 0; uriIdx < uris.length; ++uriIdx) {
-	    var currentUri = uris[uriIdx];
+        for (var uriIdx = 0; uriIdx < uris.length; ++uriIdx) {
+            var currentUri = uris[uriIdx];
 
-	    // Create an invisible internal frame for the current URI:
-	    var iframe = document.createElement('iframe');
-	    iframe.style.visibility = 'hidden';
-	    var iframeName = 'tmp_iframe_' + uriIdx;
-	    iframe.id = iframeName;
-	    iframe.name = iframeName;
-	    document.body.appendChild(iframe);
+            // Create an invisible internal frame for the current URI:
+            var iframe = document.createElement('iframe');
+            iframe.style.visibility = 'hidden';
+            var iframeName = 'tmp_iframe_' + uriIdx;
+            iframe.id = iframeName;
+            iframe.name = iframeName;
+            document.body.appendChild(iframe);
 
-	    // Register the onload handler:
-	    iframe.onload = (function(uri, thisIframe) {
-		return function() {
-		    var frameDocumentElement =
-			(thisIframe.contentDocument ? thisIframe.contentDocument : thisIframe.contentWindow.document)
-			.documentElement;
+            // Register the onload handler:
+            iframe.onload = (function(uri, thisIframe) {
+                return function() {
+                    var frameDocumentElement =
+                        (thisIframe.contentDocument ? thisIframe.contentDocument : thisIframe.contentWindow.document)
+                        .documentElement;
 
-		    // Store the contents in the cache:
-		    that.cache[uri] = { contents: frameDocumentElement.innerHTML,
-				        cacheOnClose: false };
+                    // Store the contents in the cache:
+                    that.cache[uri] = { contents: frameDocumentElement.innerHTML,
+                                        cacheOnClose: false };
 
-		    // Remove the internal frame:
-		    document.body.removeChild(thisIframe);
+                    // Remove the internal frame:
+                    document.body.removeChild(thisIframe);
 
-		    // Increment loaded URIs counter:
-		    ++ loadedCount;
-		    if (loadedCount >= uris.length) {
-			// All requested URIs have been loaded at this point.
-			if (callback) callback();
-		    }
-		};
-	    })(currentUri, iframe);
+                    // Increment loaded URIs counter:
+                    ++ loadedCount;
+                    if (loadedCount >= uris.length) {
+                        // All requested URIs have been loaded at this point.
+                        if (callback) callback();
+                    }
+                };
+            })(currentUri, iframe);
 
-	    // Start loading the page:
-	    window.frames[iframeName].location = currentUri;
-	}
+            // Start loading the page:
+            window.frames[iframeName].location = currentUri;
+        }
     };
 
 
@@ -17857,27 +17871,27 @@ TriggerManager.prototype.size = function () {
      * @api private
      */
     function handleFrameLoad (uri, frame, loadCache, storeCache) {
-	var frameNode = document.getElementById(frame);
-	var frameDocumentElement =
-	    (frameNode.contentDocument ? frameNode.contentDocument : frameNode.contentWindow.document)
-	    .documentElement;
+        var frameNode = document.getElementById(frame);
+        var frameDocumentElement =
+            (frameNode.contentDocument ? frameNode.contentDocument : frameNode.contentWindow.document)
+            .documentElement;
 
-	if (loadCache) {
-	    // Load frame from cache:
-	    frameDocumentElement.innerHTML = this.cache[uri].contents;
-	}
+        if (loadCache) {
+            // Load frame from cache:
+            frameDocumentElement.innerHTML = this.cache[uri].contents;
+        }
 
-	// (Re-)Inject libraries and reload scripts:
-	removeLibraries(frameNode);
-	if (loadCache) {
-	    reloadScripts(frameNode);
-	}
-	injectLibraries(frameNode, this.globalLibs.concat(uri in this.frameLibs ? this.frameLibs[uri] : []));
+        // (Re-)Inject libraries and reload scripts:
+        removeLibraries(frameNode);
+        if (loadCache) {
+            reloadScripts(frameNode);
+        }
+        injectLibraries(frameNode, this.globalLibs.concat(uri in this.frameLibs ? this.frameLibs[uri] : []));
 
-	if (storeCache) {
-	    // Store frame in cache:
-	    this.cache[uri].contents = frameDocumentElement.innerHTML;
-	}
+        if (storeCache) {
+            // Store frame in cache:
+            this.cache[uri].contents = frameDocumentElement.innerHTML;
+        }
     }
 
     var lockedUpdate = false;
@@ -17936,25 +17950,25 @@ TriggerManager.prototype.size = function () {
         
         // Get options:
         if (opts) {
-	    if (opts.frame) frame = opts.frame;
+            if (opts.frame) frame = opts.frame;
   
-	    if (opts.cache) {
-	        if (opts.cache.loadMode === 'reload') loadCache = false;
-	        else if (opts.cache.loadMode === 'cache') loadCache = true;
+            if (opts.cache) {
+                if (opts.cache.loadMode === 'reload') loadCache = false;
+                else if (opts.cache.loadMode === 'cache') loadCache = true;
 
-	        if (opts.cache.storeMode === 'off') {
-		    storeCacheNow = false;
-		    storeCacheLater = false;
-	        }
-	        else if (opts.cache.storeMode === 'onLoad') {
-		    storeCacheNow = true;
-		    storeCacheLater = false;
-	        }
-	        else if (opts.cache.storeMode === 'onClose') {
-		    storeCacheNow = false;
-		    storeCacheLater = true;
-	        }
-	    }
+                if (opts.cache.storeMode === 'off') {
+                    storeCacheNow = false;
+                    storeCacheLater = false;
+                }
+                else if (opts.cache.storeMode === 'onLoad') {
+                    storeCacheNow = true;
+                    storeCacheLater = false;
+                }
+                else if (opts.cache.storeMode === 'onClose') {
+                    storeCacheNow = false;
+                    storeCacheLater = true;
+                }
+            }
         }
 
         // Get the internal frame object:
@@ -17969,12 +17983,12 @@ TriggerManager.prototype.size = function () {
         // If the last frame requested to be cached on closing, do that:
         var lastURI = this.currentURIs[frame];
         if ((lastURI in this.cache) && this.cache[lastURI].cacheOnClose) {
-	    frameNode = document.getElementById(frame);
-	    frameDocumentElement =
-	        (frameNode.contentDocument ? frameNode.contentDocument : frameNode.contentWindow.document)
-	        .documentElement;
+            frameNode = document.getElementById(frame);
+            frameDocumentElement =
+                (frameNode.contentDocument ? frameNode.contentDocument : frameNode.contentWindow.document)
+                .documentElement;
             
-	    this.cache[lastURI].contents = frameDocumentElement.innerHTML;
+            this.cache[lastURI].contents = frameDocumentElement.innerHTML;
         }
 
         // Create entry for this URI in cache object and store cacheOnClose flag:
@@ -17984,7 +17998,7 @@ TriggerManager.prototype.size = function () {
         this.cache[uri].cacheOnClose = storeCacheLater;
 
         // Disable loadCache if contents aren't cached:
-        if(this.cache[uri].contents === null) loadCache = false;
+        if (this.cache[uri].contents === null) loadCache = false;
 
         // Update frame's currently showing URI:
         this.currentURIs[frame] = uri;
@@ -17994,44 +18008,44 @@ TriggerManager.prototype.size = function () {
         
         // Add the onload event listener:
         iframe.onload = function() {
-	    handleFrameLoad.call(that, uri, frame, loadCache, storeCacheNow);    
-	    that.updateLoadFrameState(func, frame);
+            handleFrameLoad.call(that, uri, frame, loadCache, storeCacheNow);    
+            that.updateLoadFrameState(func, frame);
         };
         
         // Cache lookup:
         if (loadCache) {
-	    // Load iframe contents at this point only if the iframe is already "ready"
-	    // (see definition of frameReady), otherwise the contents would be cleared
-	    // once the iframe becomes ready.  In that case, iframe.onload handles the
-	    // filling of the contents.
-	    // TODO: Fix code duplication between here and onload function.
-	    if (frameReady) {
-	        handleFrameLoad.call(this, uri, frame, loadCache, storeCacheNow);
-	        
-	        // Update status (onload isn't called if frame was already ready):
-	        this.updateLoadFrameState(func, frame);
-	    }
+            // Load iframe contents at this point only if the iframe is already "ready"
+            // (see definition of frameReady), otherwise the contents would be cleared
+            // once the iframe becomes ready.  In that case, iframe.onload handles the
+            // filling of the contents.
+            // TODO: Fix code duplication between here and onload function.
+            if (frameReady) {
+                handleFrameLoad.call(this, uri, frame, loadCache, storeCacheNow);
+                
+                // Update status (onload isn't called if frame was already ready):
+                this.updateLoadFrameState(func, frame);
+            }
         }
         else {
-	    // Update the frame location:
-	    window.frames[frame].location = uri;
+            // Update the frame location:
+            window.frames[frame].location = uri;
         }
         
         
         // Adding a reference to nodeGame also in the iframe
         window.frames[frame].window.node = node;
-        //		console.log('the frame just as it is');
-        //		console.log(window.frames[frame]);
+        //              console.log('the frame just as it is');
+        //              console.log(window.frames[frame]);
         // Experimental
-        //		if (uri === 'blank') {
-        //			window.frames[frame].src = this.getBlankPage();
-        //			window.frames[frame].location = '';
-        //		}
-        //		else {
-        //			window.frames[frame].location = uri;
-        //		}
+        //              if (uri === 'blank') {
+        //                      window.frames[frame].src = this.getBlankPage();
+        //                      window.frames[frame].location = '';
+        //              }
+        //              else {
+        //                      window.frames[frame].location = uri;
+        //              }
         
-	
+        
     };
 
     /**
@@ -18053,8 +18067,8 @@ TriggerManager.prototype.size = function () {
         // Update the reference to the frame obj
         this.frame = window.frames[frame].document;
         if (func) {
-	    func.call(node.game); // TODO: Pass the right this reference
-	    //node.log('Frame Loaded correctly!');
+            func.call(node.game); // TODO: Pass the right this reference
+            //node.log('Frame Loaded correctly!');
         }
         
         updateAreLoading.call(this, -1);
@@ -18066,7 +18080,7 @@ TriggerManager.prototype.size = function () {
             // if all conditions are met. 
         }
         else {
-	    node.silly('GameWindow.updateState: ' + this.areLoading + ' loadFrame processes open.');
+            node.silly('GameWindow.updateState: ' + this.areLoading + ' loadFrame processes open.');
         }
     };
 
@@ -18082,23 +18096,36 @@ TriggerManager.prototype.size = function () {
     };
 
     /**
+     * ## GameWindow.getFrameRoot
+     *
+     * Returns a reference to root element in the iframe
+     *
+     * @return {Element} The root element in the iframe
+     */
+    GameWindow.prototype.getFrameRoot = function() {
+        return this.root;
+    };
+
+    /**
+     * ## GameWindow.getFrameRoot
+     *
+     * Returns a reference to document object of the iframe
+     *
+     * @return {object} The document object of the iframe
+     */
+    GameWindow.prototype.getFrameDocument = function() {
+        return this.frame;
+    };
+
+    /**
      * ## GameWindow.clearFrame
      *
      * Clear the content of the frame
      *
-     * Optionally appends a text.
-     *
-     
-     // TODO: does not work. Fix.
-     
      * @return {Element} The mainframe
      */
     GameWindow.prototype.clearFrame = function() {
         var mainframe;
-//        if (text && 'string' !== typeof text) {
-//            throw new TypeErro('GameWindow.clearFrame: text must be string ' +
-//                               'or undefined');
-//        }
         mainframe = this.getFrame();
         if (!mainframe) {
             throw new Error('GameWindow.clearFrame: cannot detect frame');
@@ -18129,12 +18156,12 @@ TriggerManager.prototype.size = function () {
      * @TODO: Should be always added as first child
      */
     GameWindow.prototype.generateHeader = function() {
-	if (this.header) {
-	    this.header.innerHTML = '';
-	    this.header = null;
-	}
-	
-	return this.addElement('div', this.root, 'gn_header');
+        if (this.header) {
+            this.header.innerHTML = '';
+            this.header = null;
+        }
+        
+        return this.addElement('div', this.root, 'gn_header');
     };
 
 
@@ -18154,12 +18181,12 @@ TriggerManager.prototype.size = function () {
      * 
      */
     GameWindow.prototype.write = function(text, root) {
-	root = root || this.getScreen();
-	if (!root) {
-	    node.log('Could not determine where writing', 'ERR');
-	    return false;
-	}
-	return this._write(root, text);
+        root = root || this.getScreen();
+        if (!root) {
+            node.log('Could not determine where writing', 'ERR');
+            return false;
+        }
+        return this._write(root, text);
     };
 
     /**
@@ -18173,60 +18200,115 @@ TriggerManager.prototype.size = function () {
      * used.
      * 
      * @see GameWindow.write
-     * 
      */
     GameWindow.prototype.writeln = function(text, root, br) {
-	root = root || this.getScreen();
-	if (!root) {
-	    node.log('Could not determine where writing', 'ERR');
-	    return false;
-	}
-	return this._writeln(root, text, br);
+        root = root || this.getScreen();
+        if (!root) {
+            node.log('Could not determine where writing', 'ERR');
+            return false;
+        }
+        return this._writeln(root, text, br);
     };
 
     /**
      * ### GameWindow.toggleInputs
      * 
-     * Enables / Disables all input in a container with id @id.
-     * If no container with id @id is found, then the whole document is used.
+     * Enables / disables the input forms.
+     *
+     * If an id is provided, only children of the element with the specified
+     * id are toggled.
+     *
+     * If id is given it will use _GameWindow.getRoot()_ to determine the
+     * forms to toggle.
      * 
-     * If @op is defined, all the input are set to @op, otherwise, the disabled
-     * property is toggled. (i.e. false means enable, true means disable) 
-     * 
+     * If a state parameter is given, all the input forms will be either
+     * disabled or enabled (and not toggled).
+     *
+     * @param {string} id The id of the element container of the forms.
+     * @param {boolean} state The state enabled / disabled for the forms.
      */
-    GameWindow.prototype.toggleInputs = function(id, op) {
-	var container;
-	
-	if ('undefined' !== typeof id) {
-	    container = this.getElementById(id);
-	}
-	if ('undefined' === typeof container) {
-	    container = this.frame.body;
-	}
-	
-	var inputTags = ['button', 'select', 'textarea', 'input'];
+    GameWindow.prototype.toggleInputs = function(id, state) {
+        var container, inputTags, j, len, i, inputs, nInputs;
+        
+        if ('undefined' !== typeof id) {
+            container = this.getElementById(id);
+            if (!container) {
+                throw new Error('GameWindow.toggleInputs: no elements found ' +
+                                'with id ' + id + '.');
+            }
+        }
+        else {
+            container = this.getFrameDocument();
+            if (!container) {
+                // No warning.
+                return;
+            }
+        }
 
-	var j=0;
-	for (;j<inputTags.length;j++) {
-	    var all = container.getElementsByTagName(inputTags[j]);
-	    var i=0;
-	    var max = all.length;
-	    for (; i < max; i++) {
-		
-		// If op is defined do that
-		// Otherwise toggle
-		state = ('undefined' !== typeof op) ? op 
-		    : all[i].disabled ? false 
-		    : true;
-		
-		if (state) {
-		    all[i].disabled = state;
-		}
-		else {
-		    all[i].removeAttribute('disabled');
-		}
-	    }
-	}
+        inputTags = ['button', 'select', 'textarea', 'input'];
+        len = inputTags.length;
+        for (j = 0; j < len; j++) {
+            inputs = container.getElementsByTagName(inputTags[j]);
+            nInputs = inputs.length;
+            for (i = 0; i < nInputs; i++) { 
+                // Set to state, or toggle.
+                if ('undefined' === typeof state) {
+                    state = inputs[i].disabled ? false : true;
+                }
+                if (state) {
+                    inputs[i].disabled = state;
+                }
+                else {
+                    inputs[i].removeAttribute('disabled');
+                }
+            }
+        }
+    };
+
+    /**
+     * ### GameWindow.lockFrame
+     * 
+     * Locks the frame by opening the waitScreen widget on top.
+     *
+     * Notice: requires the waitScreen widget to be loaded.
+     *
+     * TODO: check if this can be called in any stage.
+     *
+     * @param {string} text Optional. A text to be shown in the locked frame.
+     */
+    GameWindow.prototype.lockFrame = function(text) {
+        if (!node.game.waitScreen) {
+            throw new Errot('GameWindow.lockFrame: waitScreen not found.');
+        }
+        if (text && 'string' !== typeof text) {
+            throw new TypeError('GameWindow.lockFrame: text must be string ' +
+                                'or undefined');
+        }
+        this.setStateLevel('LOCKING')
+        text = text || 'Screen locked. Please wait...';
+        node.game.waitScreen.lock(text);
+        this.setStateLevel('LOCKED')
+    };
+
+    /**
+     * ### GameWindow.unlockFrame
+     * 
+     * Locks the frame by opening the waitScreen widget on top.
+     *
+     * Notice: requires the waitScreen widget to be loaded.
+     *
+     * @param {string} text Optional. A text to be shown in the locked frame.
+     */
+    GameWindow.prototype.unlockFrame = function() {
+        if (!node.game.waitScreen) {
+            throw new Error('GameWindow.unlockFrame: waitScreen not found.');
+        }
+        if (this.getStateLevel() !== windowLevels.LOCKED) {
+            throw new Error('GameWindow.unlockFrame: frame is not locked.');
+        }
+        this.setStateLevel('UNLOCKING')
+        node.game.waitScreen.unlock();
+        this.setStateLevel('LOADED')
     };
 
     /**
@@ -18246,15 +18328,14 @@ TriggerManager.prototype.size = function () {
      * 
      */
     GameWindow.prototype._generateRoot = function(root, id) {
-	root = root || document.body || document.lastElementChild;
-	if (!root) {
-	    this.addElement('body', document);
-	    root = document.body;
-	}
-	this.root = this.addElement('div', root, id);
-	return this.root;
+        root = root || document.body || document.lastElementChild;
+        if (!root) {
+            this.addElement('body', document);
+            root = document.body;
+        }
+        this.root = this.addElement('div', root, id);
+        return this.root;
     };
-
 
     /**
      * Creates a div element with id 'nodegame' and returns it.
@@ -18263,7 +18344,7 @@ TriggerManager.prototype.size = function () {
      * 
      */
     GameWindow.prototype.generateNodeGameRoot = function(root) {
-	return this._generateRoot(root, 'nodegame');
+        return this._generateRoot(root, 'nodegame');
     };
 
     /**
@@ -18273,8 +18354,10 @@ TriggerManager.prototype.size = function () {
      * 
      */
     GameWindow.prototype.generateRandomRoot = function(root, id) {
-	return this._generateRoot(root, this.generateUniqueId());
+        return this._generateRoot(root, this.generateUniqueId());
     };
+
+    
 
     // Useful
 
@@ -18284,12 +18367,12 @@ TriggerManager.prototype.size = function () {
      * 
      */
     GameWindow.prototype.getEventButton = function(event, text, id, attributes) {
-	if (!event) return;
-	var b = this.getButton(id, text, attributes);
-	b.onclick = function() {
-	    node.emit(event);
-	};
-	return b;
+        if (!event) return;
+        var b = this.getButton(id, text, attributes);
+        b.onclick = function() {
+            node.emit(event);
+        };
+        return b;
     };
 
     /**
@@ -18302,14 +18385,14 @@ TriggerManager.prototype.size = function () {
      * 
      */
     GameWindow.prototype.addEventButton = function(event, text, root, id, attributes) {
-	if (!event) return;
-	if (!root) {
-            //			var root = root || this.frame.body;
-            //			root = root.lastElementChild || root;
-	    root = this.getScreen();
-	}
-	var eb = this.getEventButton(event, text, id, attributes);
-	return root.appendChild(eb);
+        if (!event) return;
+        if (!root) {
+            //                  var root = root || this.frame.body;
+            //                  root = root.lastElementChild || root;
+            root = this.getScreen();
+        }
+        var eb = this.getEventButton(event, text, id, attributes);
+        return root.appendChild(eb);
     };
 
 
@@ -18327,12 +18410,12 @@ TriggerManager.prototype.size = function () {
      * 
      */
     GameWindow.prototype.getRecipientSelector = function(id) {
-	var toSelector = document.createElement('select');
-	if ('undefined' !== typeof id) {
-	    toSelector.id = id;
-	}
-	this.addStandardRecipients(toSelector);
-	return toSelector;
+        var toSelector = document.createElement('select');
+        if ('undefined' !== typeof id) {
+            toSelector.id = id;
+        }
+        this.addStandardRecipients(toSelector);
+        return toSelector;
     };
 
     /**
@@ -18348,9 +18431,9 @@ TriggerManager.prototype.size = function () {
      * 
      */
     GameWindow.prototype.addRecipientSelector = function(root, id) {
-	if (!root) return false;
-	var toSelector = this.getRecipientSelector(id);
-	return root.appendChild(toSelector);		
+        if (!root) return false;
+        var toSelector = this.getRecipientSelector(id);
+        return root.appendChild(toSelector);            
     };
 
     /**
@@ -18365,17 +18448,17 @@ TriggerManager.prototype.size = function () {
      * @see GameWindow.populateRecipientSelector
      */
     GameWindow.prototype.addStandardRecipients = function(toSelector) {
-	
-	var opt = document.createElement('option');
-	opt.value = 'ALL';
-	opt.appendChild(document.createTextNode('ALL'));
-	toSelector.appendChild(opt);
-	
-	opt = document.createElement('option');
-	opt.value = 'SERVER';
-	opt.appendChild(document.createTextNode('SERVER'));
-	toSelector.appendChild(opt);
-	
+        
+        var opt = document.createElement('option');
+        opt.value = 'ALL';
+        opt.appendChild(document.createTextNode('ALL'));
+        toSelector.appendChild(opt);
+        
+        opt = document.createElement('option');
+        opt.value = 'SERVER';
+        opt.appendChild(document.createTextNode('SERVER'));
+        toSelector.appendChild(opt);
+        
     };
 
     /**
@@ -18386,22 +18469,22 @@ TriggerManager.prototype.size = function () {
      * 
      */
     GameWindow.prototype.populateRecipientSelector = function(toSelector, playerList) {
-	if ('object' !==  typeof playerList || 'object' !== typeof toSelector) return;
+        if ('object' !==  typeof playerList || 'object' !== typeof toSelector) return;
 
-	this.removeChildrenFromNode(toSelector);
-	this.addStandardRecipients(toSelector);
-	
-	var players, opt;
-	
-	// check if it is a DB or a PlayerList object
-	players = playerList.db || playerList; 
-	
-	J.each(players, function(p) {
-	    opt = document.createElement('option');
-	    opt.value = p.id;
-	    opt.appendChild(document.createTextNode(p.name || p.id));
-	    toSelector.appendChild(opt);
-	});
+        this.removeChildrenFromNode(toSelector);
+        this.addStandardRecipients(toSelector);
+        
+        var players, opt;
+        
+        // check if it is a DB or a PlayerList object
+        players = playerList.db || playerList; 
+        
+        J.each(players, function(p) {
+            opt = document.createElement('option');
+            opt.value = p.id;
+            opt.appendChild(document.createTextNode(p.name || p.id));
+            toSelector.appendChild(opt);
+        });
     };
 
     /**
@@ -18414,12 +18497,12 @@ TriggerManager.prototype.size = function () {
      * 
      */
     GameWindow.prototype.getActionSelector = function(id) {
-	var actionSelector = document.createElement('select');
-	if ('undefined' !== typeof id ) {
-	    actionSelector.id = id;
-	}
-	this.populateSelect(actionSelector, node.actions);
-	return actionSelector;
+        var actionSelector = document.createElement('select');
+        if ('undefined' !== typeof id ) {
+            actionSelector.id = id;
+        }
+        this.populateSelect(actionSelector, node.actions);
+        return actionSelector;
     };
 
     /**
@@ -18429,9 +18512,9 @@ TriggerManager.prototype.size = function () {
      * 
      */
     GameWindow.prototype.addActionSelector = function(root, id) {
-	if (!root) return;
-	var actionSelector = this.getActionSelector(id);
-	return root.appendChild(actionSelector);
+        if (!root) return;
+        var actionSelector = this.getActionSelector(id);
+        return root.appendChild(actionSelector);
     };
 
     /**
@@ -18444,12 +18527,12 @@ TriggerManager.prototype.size = function () {
      * 
      */
     GameWindow.prototype.getTargetSelector = function(id) {
-	var targetSelector = document.createElement('select');
-	if ('undefined' !== typeof id ) {
-	    targetSelector.id = id;
-	}
-	this.populateSelect(targetSelector, node.targets);
-	return targetSelector;
+        var targetSelector = document.createElement('select');
+        if ('undefined' !== typeof id ) {
+            targetSelector.id = id;
+        }
+        this.populateSelect(targetSelector, node.targets);
+        return targetSelector;
     };
 
     /**
@@ -18459,9 +18542,9 @@ TriggerManager.prototype.size = function () {
      * 
      */
     GameWindow.prototype.addTargetSelector = function(root, id) {
-	if (!root) return;
-	var targetSelector = this.getTargetSelector(id);
-	return root.appendChild(targetSelector);
+        if (!root) return;
+        var targetSelector = this.getTargetSelector(id);
+        return root.appendChild(targetSelector);
     };
 
     /**
@@ -18474,8 +18557,8 @@ TriggerManager.prototype.size = function () {
      * @see GameWindow.addActionSelector
      */
     GameWindow.prototype.getStateSelector = function(id) {
-	var stateSelector = this.getTextInput(id);
-	return stateSelector;
+        var stateSelector = this.getTextInput(id);
+        return stateSelector;
     };
 
     /**
@@ -18487,9 +18570,9 @@ TriggerManager.prototype.size = function () {
      * 
      */
     GameWindow.prototype.addStateSelector = function(root, id) {
-	if (!root) return;
-	var stateSelector = this.getStateSelector(id);
-	return root.appendChild(stateSelector);
+        if (!root) return;
+        var stateSelector = this.getStateSelector(id);
+        return root.appendChild(stateSelector);
     };
 
 
@@ -18504,14 +18587,14 @@ TriggerManager.prototype.size = function () {
      * 
      */
     GameWindow.prototype.generateUniqueId = function(prefix) {
-	var id = '' + (prefix || J.randomInt(0, 1000));
-	var found = this.getElementById(id);
-	
-	while (found) {
-	    id = '' + prefix + '_' + J.randomInt(0, 1000);
-	    found = this.getElementById(id);
-	}
-	return id;
+        var id = '' + (prefix || J.randomInt(0, 1000));
+        var found = this.getElementById(id);
+        
+        while (found) {
+            id = '' + prefix + '_' + J.randomInt(0, 1000);
+            found = this.getElementById(id);
+        }
+        return id;
     };
 
 
@@ -18529,13 +18612,13 @@ TriggerManager.prototype.size = function () {
      * @param {object} windowObj Optional. The window container in which binding the ESC key
      */
     GameWindow.prototype.noEscape = function(windowObj) {
-	windowObj = windowObj || window;
-	windowObj.document.onkeydown = function(e) {
-	    var keyCode = (window.event) ? event.keyCode : e.keyCode;
-	    if (keyCode === 27) {
-		return false;
-	    }
-	}; 
+        windowObj = windowObj || window;
+        windowObj.document.onkeydown = function(e) {
+            var keyCode = (window.event) ? event.keyCode : e.keyCode;
+            if (keyCode === 27) {
+                return false;
+            }
+        }; 
     };
 
     /**
@@ -18547,8 +18630,8 @@ TriggerManager.prototype.size = function () {
      * @see GameWindow.noEscape()
      */
     GameWindow.prototype.restoreEscape = function(windowObj) {
-	windowObj = windowObj || window;
-	windowObj.document.onkeydown = null;
+        windowObj = windowObj || window;
+        windowObj.document.onkeydown = null;
     };
 
     /**
@@ -18564,17 +18647,17 @@ TriggerManager.prototype.size = function () {
      * 
      */
     GameWindow.prototype.promptOnleave = function(windowObj, text) {
-	windowObj = windowObj || window;
-	text = ('undefined' === typeof text) ? this.conf.textOnleave : text; 
-	windowObj.onbeforeunload = function(e) {
-	    e = e || window.event;
-	    // For IE<8 and Firefox prior to version 4
-	    if (e) {
-		e.returnValue = text;
-	    }
-	    // For Chrome, Safari, IE8+ and Opera 12+
-	    return text;
-	};
+        windowObj = windowObj || window;
+        text = ('undefined' === typeof text) ? this.conf.textOnleave : text; 
+        windowObj.onbeforeunload = function(e) {
+            e = e || window.event;
+            // For IE<8 and Firefox prior to version 4
+            if (e) {
+                e.returnValue = text;
+            }
+            // For Chrome, Safari, IE8+ and Opera 12+
+            return text;
+        };
     };
 
     /**
@@ -18589,8 +18672,8 @@ TriggerManager.prototype.size = function () {
      * 
      */
     GameWindow.prototype.restoreOnleave = function(windowObj) {
-	windowObj = windowObj || window;
-	windowObj.onbeforeunload = null;
+        windowObj = windowObj || window;
+        windowObj.onbeforeunload = null;
     };
 
     // Do we need these?
@@ -18608,14 +18691,14 @@ TriggerManager.prototype.size = function () {
      * 
      */
     GameWindow.prototype.getScreen = function() {
-	var el = this.frame;
-	if (el) {
-	    el = this.frame.body || el;
-	}
-	else {
-	    el = document.body || document.lastElementChild;
-	}
-	return el;
+        var el = this.frame;
+        if (el) {
+            el = this.frame.body || el;
+        }
+        else {
+            el = document.body || document.lastElementChild;
+        }
+        return el;
     };
 
     //Expose nodeGame to the global object
@@ -18629,69 +18712,75 @@ TriggerManager.prototype.size = function () {
     ('undefined' !== typeof window) ? window.node : module.parent.exports.node
 );
 
-// ## Game incoming listeners
-// Incoming listeners are fired in response to incoming messages
-(function (node, window) {
-	
-	
+/**
+ * # GameWindow listeners
+ * Copyright(c) 2013 Stefano Balietti
+ * MIT Licensed
+ *
+ * www.nodegame.org
+ * ---
+ */
+(function(node, window) {
+
+    "use strict";
+
     node.on('NODEGAME_GAME_CREATED', function() {
-	window.init(node.conf.window);
+        window.init(node.conf.window);
     });
-    
+
     node.on('HIDE', function(id) {
-	var el = window.getElementById(id);
-	if (!el) {
-	    node.log('Cannot hide element ' + id);
-	    return;
-	}
-	el.style.visibility = 'hidden';    
+        var el = window.getElementById(id);
+        if (!el) {
+            node.log('Cannot hide element ' + id);
+            return;
+        }
+        el.style.visibility = 'hidden';
     });
-    
+
     node.on('SHOW', function(id) {
-	var el = window.getElementById(id);
-	if (!el) {
-	    node.log('Cannot show element ' + id);
-	    return;
-	}
-	el.style.visibility = 'visible'; 
+        var el = window.getElementById(id);
+        if (!el) {
+            node.log('Cannot show element ' + id);
+            return;
+        }
+        el.style.visibility = 'visible';
     });
-    
+
     node.on('TOGGLE', function(id) {
-	var el = window.getElementById(id);
-	if (!el) {
-	    node.log('Cannot toggle element ' + id);
-	    return;
-	}
-	if (el.style.visibility === 'visible') {
-	    el.style.visibility = 'hidden';
-	}
-	else {
-	    el.style.visibility = 'visible';
-	}
+        var el = window.getElementById(id);
+        if (!el) {
+            node.log('Cannot toggle element ' + id);
+            return;
+        }
+        if (el.style.visibility === 'visible') {
+            el.style.visibility = 'hidden';
+        }
+        else {
+            el.style.visibility = 'visible';
+        }
     });
-	
-    // Disable all the input forms found within a given id element
+
+    // Disable all the input forms found within a given id element.
     node.on('INPUT_DISABLE', function(id) {
-	window.toggleInputs(id, true);			
+        window.toggleInputs(id, true);
     });
-    
-    // Disable all the input forms found within a given id element
+
+    // Disable all the input forms found within a given id element.
     node.on('INPUT_ENABLE', function(id) {
-	window.toggleInputs(id, false);
+        window.toggleInputs(id, false);
     });
-    
-    // Disable all the input forms found within a given id element
+
+    // Disable all the input forms found within a given id element.
     node.on('INPUT_TOGGLE', function(id) {
-	window.toggleInputs(id);
+        window.toggleInputs(id);
     });
-    
+
     node.log('node-window: listeners added');
-	
+
 })(
     'undefined' !== typeof node ? node : undefined
- ,  'undefined' !== typeof node.window ? node.window : undefined			
-); 
-// <!-- ends nodegame-window listener -->
+ ,  'undefined' !== typeof node.window ? node.window : undefined
+);
 /**
  * # Canvas class for nodeGame window
  * Copyright(c) 2013 Stefano Balietti
@@ -23835,7 +23924,7 @@ TriggerManager.prototype.size = function () {
 
     // ## Meta-data
 
-    WaitScreen.version = '0.4.0';
+    WaitScreen.version = '0.5.0';
     WaitScreen.description = 'Show a standard waiting screen';
 
     function WaitScreen(options) {
@@ -23851,25 +23940,23 @@ TriggerManager.prototype.size = function () {
 	this.waitingDiv = null;
     }
 
-    function updateScreen(text) {
+    WaitScreen.prototype.lock = function(text) {
         if (!this.waitingDiv) {
-	    this.waitingDiv = node.window.addDiv(document.body, this.id);
+	    this.waitingDiv = W.addDiv(W.getFrameRoot(), this.id);
 	}
-
-	if (this.waitingDiv.style.display === 'none'){
+	if (this.waitingDiv.style.display === 'none') {
 	    this.waitingDiv.style.display = '';
 	}
-
 	this.waitingDiv.innerHTML = text;
-    }
+    };
 
-    function hideScreen() {
+    WaitScreen.prototype.unlock = function() {
         if (this.waitingDiv) {
             if (this.waitingDiv.style.display === '') {
                 this.waitingDiv.style.display = 'none';
             }
         }
-    }
+    };
 
     WaitScreen.prototype.append = function(root) {
 	return root;
@@ -23882,23 +23969,16 @@ TriggerManager.prototype.size = function () {
     WaitScreen.prototype.listeners = function() {
         var that = this;
         node.on('BEFORE_DONE', function(text) {
-            updateScreen.call(that, text || that.text.waiting)
+            that.lock(text || that.text.waiting)
         });
 
         node.on('STEPPING', function(text) {
-            updateScreen.call(that, text || that.text.stepping)
+            that.unlock(text || that.text.stepping)
         });
 
-	// It is supposed to fade away when a new state starts
         node.on('PLAYING', function(text) {
-            hideScreen.call(that);
+            that.unlock();
         });
-
-        // It is supposed to fade away when a new state starts
-        node.on('GAME_OVER', function(text) {
-            hideScreen.call(that);
-        });
-
     };
 })(node);
 /**
