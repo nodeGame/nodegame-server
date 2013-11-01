@@ -159,6 +159,19 @@ function configure (app, servernode) {
         }
 
         // Build path to file.
+        path = rootDir + '/public/pages/' + req.params.file;
+        // Send file.
+        res.sendfile(path);
+    });
+
+    app.get('/pages/:file', function(req, res) {
+        var path;
+        if (!req.params.file) return;
+        if (req.params.file.lastIndexOf('\/') === (req.params.file.length-1)) {
+            req.params.file = req.params.file.substring(0,req.params.file.length-1);
+        }
+
+        // Build path to file.
         path = rootDir + '/public/stylesheets/' + req.params.file;
         // Send file.
         res.sendfile(path);

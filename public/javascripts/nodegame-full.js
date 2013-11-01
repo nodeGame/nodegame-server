@@ -12488,17 +12488,13 @@ JSUS.extend(PARSE);
          *
          * Contains following properties:
          *
-         *  - minPlayers: Default: 1
-         *
-         *  - maxPlayers: Default: 1000
-         *
          *  - publishLevel: Default: REGULAR (10)
+         *  - syncStepping: Default: false
          */
         this.settings = {
-            minPlayers: settings.minPlayers || 1, // 0 is invalid
-            maxPlayers: settings.maxPlayers || 1000, // 0 is invalid
             publishLevel: 'undefined' === typeof settings.publishLevel ?
-                constants.publish_levels.REGULAR : settings.publishLevel
+                constants.publish_levels.REGULAR : settings.publishLevel,
+            syncStepping: settings.syncStepping ? true : false
         };
 
         /**
@@ -12809,12 +12805,22 @@ JSUS.extend(PARSE);
         nextStep = this.plot.next(curStep);
         node.silly('Next stage ---> ' + nextStep);
 
-        // Listeners from previous step are cleared in any case
+        // Listeners from previous step are cleared in any case.
         node.events.ee.step.clear();
 
         // Emit buffered messages:
         if (node.socket.shouldClearBuffer()) {
             node.socket.clearBuffer();
+        }
+
+        // Sends start / step command to connected clients if option is on.
+        if (this.settings.syncStepping) {
+            if (curStep.stage === 0) {
+                node.remoteCommand('start', 'ALL');
+            }
+            else {
+                node.remoteCommand('step', 'ALL');
+            }
         }
 
         if ('string' === typeof nextStep) {
@@ -14792,7 +14798,7 @@ JSUS.extend(PARSE);
      *
      * @see GameTimer.addHook
      */
-    GameTimer.prototype.init = function (options) {
+    GameTimer.prototype.init = function(options) {
         var i, len;
         options = options || this.options;
 
@@ -14829,7 +14835,7 @@ JSUS.extend(PARSE);
      *
      * @param {mixed} h The hook to fire
      */
-    GameTimer.prototype.fire = function (h) {
+    GameTimer.prototype.fire = function(h) {
         var hook, ctx;
         if (!h) {
             throw new Error('GameTimer.fire: missing argument');
@@ -14900,7 +14906,7 @@ JSUS.extend(PARSE);
      * The first parameter hook can be a string, a function, or an object
      * containing an hook property.
      */
-    GameTimer.prototype.addHook = function (hook, ctx) {
+    GameTimer.prototype.addHook = function(hook, ctx) {
         if (!hook) {
             throw new Error('GameTimer.addHook: missing argument');
         }
@@ -15006,7 +15012,7 @@ JSUS.extend(PARSE);
      *
      * @see GameTimer.init
      */
-    GameTimer.prototype.restart = function (options) {
+    GameTimer.prototype.restart = function(options) {
         this.init(options);
         this.start();
     };
@@ -16841,7 +16847,7 @@ JSUS.extend(PARSE);
 // but they are usually responding to internal nodeGame events,
 // such as progressing in the loading chain, or finishing a game stage.
 
-(function (exports, parent) {
+(function(exports, parent) {
 
     "use strict";
 
@@ -16864,13 +16870,14 @@ JSUS.extend(PARSE);
     OUT = constants.OUT;
 
     var gcommands = constants.gamecommands;
+    var CMD = 'NODEGAME_GAMECOMMAND_';
 
     /**
      * ## NodeGameClient.addDefaultInternalListeners
      *
      * Adds a battery of event listeners for internal events
      *
-     * If executed once, it requires a force flag to re-add the listeners
+     * If executed once, it requires a force flag to re-add the listeners.
      *
      * @param {boolean} TRUE, to force re-adding the listeners
      * @return {boolean} TRUE on success
@@ -16878,26 +16885,28 @@ JSUS.extend(PARSE);
     NGC.prototype.addDefaultInternalListeners = function(force) {
         var node = this;
         if (this.internalAdded && !force) {
-            this.err('Default internal listeners already added once. Use the force flag to re-add.');
+            this.err('Default internal listeners already added once. ' +
+                     'Use the force flag to re-add.');
             return false;
         }
 
         /**
          * ## DONE
          *
-         * Updates and publishes that the client has successfully terminated a stage
+         * Registers the stageLevel _DONE_ and eventually steps forward.
          *
-         * If a DONE handler is defined in the game-plot, it will executes it before
-         * continuing with further operations. In case it returns FALSE, the update
+         * If a DONE handler is defined in the game-plot, it will execute it. 
+         * In case it returns FALSE, the update
          * process is stopped.
          *
          * @emit BEFORE_DONE
-         *
          */
         this.events.ng.on('DONE', function() {
             // Execute done handler before updating stage.
-            var ok = true,
-                done = node.game.getCurrentStep().done;
+            var ok, done;
+            ok = true;
+            done = node.game.plot.getProperty(node.game.getCurrentGameStage(),
+                                              'done');
 
             if (done) ok = done.apply(node.game, arguments);
             if (!ok) return;
@@ -16912,7 +16921,7 @@ JSUS.extend(PARSE);
                 node.game.step();
             }
         });
-        
+
         /**
          * ## STEP_CALLBACK_EXECUTED
          *
@@ -16923,7 +16932,7 @@ JSUS.extend(PARSE);
                 node.emit('LOADED');
             }
         });
-        
+
         /**
          * ## WINDOW_LOADED
          *
@@ -16973,7 +16982,7 @@ JSUS.extend(PARSE);
          * ## NODEGAME_GAMECOMMAND: start
          *
          */
-        this.events.ng.on('NODEGAME_GAMECOMMAND_' + gcommands.start, function(options) {
+        this.events.ng.on(CMD + gcommands.start, function(options) {
             node.emit('BEFORE_GAMECOMMAND', gcommands.start, options);
 
             if (node.game.getCurrentStep() &&
@@ -16987,12 +16996,12 @@ JSUS.extend(PARSE);
         });
 
         /**
-         * ## NODEGAME_GAMECOMMAND: pause
+         * ## NODEGAME_GAMECMD: pause
          *
          */
-        this.events.ng.on('NODEGAME_GAMECOMMAND_' + gcommands.pause, function(options) {
+        this.events.ng.on(CMD + gcommands.pause, function(options) {
             node.emit('BEFORE_GAMECOMMAND', gcommands.pause, options);
-            
+
             // TODO: check conditions
 
             node.game.pause();
@@ -17002,7 +17011,7 @@ JSUS.extend(PARSE);
          * ## NODEGAME_GAMECOMMAND: resume
          *
          */
-        this.events.ng.on('NODEGAME_GAMECOMMAND_' + gcommands.resume, function(options) {
+        this.events.ng.on(CMD + gcommands.resume, function(options) {
             node.emit('BEFORE_GAMECOMMAND', gcommands.resume, options);
 
             // TODO: check conditions
@@ -17014,7 +17023,7 @@ JSUS.extend(PARSE);
          * ## NODEGAME_GAMECOMMAND: resume
          *
          */
-        this.events.ng.on('NODEGAME_GAMECOMMAND_' + gcommands.step, function(options) {
+        this.events.ng.on(CMD + gcommands.step, function(options) {
             node.emit('BEFORE_GAMECOMMAND', gcommands.step, options);
 
             // TODO: check conditions
@@ -17022,7 +17031,7 @@ JSUS.extend(PARSE);
             node.game.step();
         });
 
-        this.incomingAdded = true;
+        this.internalAdded = true;
         this.silly('internal listeners added');
         return true;
     };
@@ -17031,7 +17040,6 @@ JSUS.extend(PARSE);
     'undefined' != typeof node ? node : module.parent.exports
 );
 // <!-- ends internal listener -->
-
 /**
  * 
  * # TriggerManager: 
@@ -17348,7 +17356,6 @@ TriggerManager.prototype.size = function () {
 })();
 /**
  * # GameWindow
- * 
  * Copyright(c) 2013 Stefano Balietti
  * MIT Licensed
  * 
@@ -17365,9 +17372,7 @@ TriggerManager.prototype.size = function () {
  * 
  * Depends on nodegame-client. 
  * GameWindow.Table and GameWindow.List depend on NDDB and JSUS.
- * 
- * Widgets can have custom dependencies, which are checked internally 
- * by the GameWindow engine.
+ * ---
  */
 (function(window, node) {
     
@@ -17385,7 +17390,7 @@ TriggerManager.prototype.size = function () {
     var DOM = J.get('DOM');
 
     if (!DOM) {
-        throw new Error('DOM object not found. Aborting');
+        throw new Error('JSUS DOM object not found. Aborting');
     }
 
     GameWindow.prototype = DOM;
@@ -17407,11 +17412,9 @@ TriggerManager.prototype.size = function () {
     /**
      * ## GameWindow constructor
      * 
-     * The constructor performs the following operations:
-     * 
-     *   - creates a root div element (this.root)
-     *   - creates an iframe element inside the root element (this.frame)
-     *   - defines standard event listeners for showing and hiding elements
+     * Creates the GameWindow object.
+     *
+     * @see GameWindow.init
      */
     function GameWindow() {
         this.setStateLevel('UNINITIALIZED');
@@ -17426,10 +17429,34 @@ TriggerManager.prototype.size = function () {
         
         node.log('nodeWindow: loading...');
         
-        this.frame = null; // contains an iframe 
-        this.mainframe = 'mainframe';
+        // ## GameWindow properties
+
+        /**
+         * ### GameWindow.mainframe
+         *
+         * The name (and also id) of the iframe where the pages are loaded. 
+         */
+        this.mainframe = null;
+        
+        /**
+         * ### GameWindow.frame
+         *
+         * A reference to the iframe document.
+         */
+        this.frame = null;
+
+        /**
+         * ## GameWindow.root
+         *
+         * A reference to the top element in the iframe, usually the `body` tag.
+         */
         this.root = null;
         
+        /**
+         * ## GameWindow.conf
+         *
+         * Object containing the current configuration.
+         */
         this.conf = {};
         
         // ### GameWindow.areLoading
@@ -17440,9 +17467,9 @@ TriggerManager.prototype.size = function () {
         // Cache for loaded iframes
         //	
         // Maps URI to a cache object with the following properties:
-        //  - `contents` (a string describing the innerHTML or null if not cached),
-        //  - optionally 'cacheOnClose' (a bool telling whether to cache the frame when
-        //    it is replaced by a new one).
+        // - `contents` (the innerHTML property or null if not cached),
+        // - optionally 'cacheOnClose' (a bool telling whether to cache 
+        //    the frame when it is replaced by a new one).
         this.cache = {};
 
         // ### GameWindow.currentURIs
@@ -17453,12 +17480,13 @@ TriggerManager.prototype.size = function () {
 
 	
         // ### GameWindow.globalLibs
-        // Array of strings with the path of the libraries to be loaded in every frame
+        // Array of strings with the path of the libraries 
+        // to be loaded in every frame.
         this.globalLibs = [];
 	
         // ### GameWindow.frameLibs
-        // Like `GameWindow.frameLibs`, but contains libraries to be loaded only
-        // in specific frames
+        // Like `GameWindow.frameLibs`, but contains libraries
+        // to be loaded only in specific frames.
         this.frameLibs = {};
 
         this.init();	
@@ -17477,11 +17505,13 @@ TriggerManager.prototype.size = function () {
      * 
      * @param {object} options Configuration options
      */
-    GameWindow.prototype.init = function (options) {
+    GameWindow.prototype.init = function(options) {
         this.setStateLevel('INITIALIZING');
         options = options || {};
         this.conf = J.merge(GameWindow.defaults, options);
 	
+        this.mainframe = options.mainframe || 'mainframe';
+
         if (this.conf.promptOnleave) {
 	    this.promptOnleave();
         }
@@ -17507,7 +17537,8 @@ TriggerManager.prototype.size = function () {
      */
     GameWindow.prototype.setStateLevel = function(level) {
         if ('string' !== typeof level) {
-            throw new TypeError('GameWindow.setStateLevel: level must be string');
+            throw new TypeError('GameWindow.setStateLevel: ' +
+                                'level must be string');
         }
         if ('undefined' === typeof constants.windowLevels[level]) {
             throw new Error('GameWindow.setStateLevel: unrecognized level.');
@@ -17516,17 +17547,19 @@ TriggerManager.prototype.size = function () {
         this.state = constants.windowLevels[level];
     };
 
-
     /**
      * ### GameWindow.getElementById
      * 
      * Returns the element with id 'id'. Looks first into the iframe,
      * and then into the rest of the page.
+     *
+     * @param {string} id The id of the element
+     * @return {Element|null} The element in the page, or null if none is found.
      * 
      * @see GameWindow.getElementsByTagName
      */
-    GameWindow.prototype.getElementById = function (id) {
-	var el = null; // @TODO: should be init to undefined instead ?
+    GameWindow.prototype.getElementById = function(id) {
+	var el = null;
 	if (this.frame && this.frame.getElementById) {
 	    el = this.frame.getElementById(id);
 	}
@@ -17544,11 +17577,11 @@ TriggerManager.prototype.size = function () {
      * Looks first into the iframe and then into the rest of the page.
      * 
      * @see GameWindow.getElementById
-     * 
      */
-    GameWindow.prototype.getElementsByTagName = function (tag) {
-	// @TODO: Should that be more similar to GameWindow.getElementById
-	return (this.frame) ? this.frame.getElementsByTagName(tag) : document.getElementsByTagName(tag);
+    GameWindow.prototype.getElementsByTagName = function(tag) {
+	return this.frame ? 
+            this.frame.getElementsByTagName(tag) : 
+            document.getElementsByTagName(tag);
     };
 
     /**
@@ -17558,7 +17591,7 @@ TriggerManager.prototype.size = function () {
      * 
      * @param {string} type The type of page to setup (MONITOR|PLAYER)
      */
-    GameWindow.prototype.setup = function (type){
+    GameWindow.prototype.setup = function(type){
         var initPage;
         
 	if (!this.root) {
@@ -17580,75 +17613,49 @@ TriggerManager.prototype.size = function () {
 	    node.widgets.append('ServerInfoDisplay');
 	    node.widgets.append('Wall');
 
-	    // Add default CSS
+	    // Add default CSS.
 	    if (node.conf.host) {
-		this.addCSS(document.body, node.conf.host + '/stylesheets/monitor.css');
+		this.addCSS(this.root, 
+                            node.conf.host + '/stylesheets/monitor.css');
 	    }
 	    
 	    break;
 	    
 	case 'PLAYER':
 	    
-	    //var maincss = this.addCSS(this.root, 'style.css');
-	    this.header     = this.generateHeader();
-
-            if (!document.getElementById('mainframe')) {
-                this.addIFrame(this.root,'mainframe');
-                this.frame = window.frames[this.mainframe]; // there is no document yet
-	        initPage = this.getBlankPage();
-	        if (this.conf.noEscape) {
-		    // TODO: inject the no escape code here
-	        }
-	    
-	        window.frames[this.mainframe].src = initPage;
-	    }
-
-	    node.game.vs    = node.widgets.append('VisualState', this.header);
+	    this.header = this.generateHeader();
+            
+            node.game.vs    = node.widgets.append('VisualState', this.header);
 	    node.game.timer = node.widgets.append('VisualTimer', this.header);
-	    //node.game.doneb = node.widgets.append('DoneButton', this.header);
 	    node.game.sd    = node.widgets.append('StateDisplay', this.header);
-
-	    node.widgets.append('WaitScreen');
-
-	    // Add default CSS
-	    if (node.conf.host) {
-		this.addCSS(document.body, node.conf.host + '/stylesheets/player.css');
-	    }
 	    
-	   
-
-	    break;
-	    
+            // Will continue in SOLO_PLAYER
 
         case 'SOLO_PLAYER':
 	    
-            if (!document.getElementById('mainframe')) {
-                this.addIFrame(this.root,'mainframe');
-                this.frame = window.frames[this.mainframe]; // there is no document yet
+            if (!this.getFrame()) {
+                this.addIFrame(this.root, this.mainframe);
+                // At this point, there is no document in the iframe yet.
+                this.frame = window.frames[this.mainframe];
 	        initPage = this.getBlankPage();
 	        if (this.conf.noEscape) {
 		    // TODO: inject the no escape code here
-		    // not working
-		    //this.addJS(initPage, node.conf.host + 'javascripts/noescape.js');
 	        }
-	        
 	        window.frames[this.mainframe].src = initPage;
 	    }
 
             node.widgets.append('WaitScreen');
             
-	    // Add default CSS
+	    // Add default CSS.
 	    if (node.conf.host) {
-		this.addCSS(document.body, node.conf.host + '/stylesheets/player.css');
+		this.addCSS(this.root,
+                            node.conf.host + '/stylesheets/player.css');
 	    }
-	    
-	
-            
+	      
 	    break;
 	}
 	
     };
-
 
     /**
      * ### removeLibraries
@@ -17664,7 +17671,7 @@ TriggerManager.prototype.size = function () {
      * 
      * @api private
      */
-    function removeLibraries (frameNode) {
+    function removeLibraries(frameNode) {
 	var contentDocument = frameNode.contentDocument ? frameNode.contentDocument
 	    : frameNode.contentWindow.document;
 
@@ -17755,7 +17762,7 @@ TriggerManager.prototype.size = function () {
      *
      * Specifies the libraries to be loaded automatically in the iframes
      * 
-     * This method must be called before any calls to GameWindow.load .
+     * This method must be called before any calls to GameWindow.loadFrame.
      *
      * @param {array} globalLibs Array of strings describing absolute library paths that
      *    should be loaded in every iframe.
@@ -17764,11 +17771,10 @@ TriggerManager.prototype.size = function () {
      *    This must not contain any elements that are also in globalLibs.
      *
      */
-    GameWindow.prototype.initLibs = function (globalLibs, frameLibs) {
+    GameWindow.prototype.initLibs = function(globalLibs, frameLibs) {
 	this.globalLibs = globalLibs || [];
 	this.frameLibs = frameLibs || {};
     };
-
 
     /**
      * ### GameWindow.preCache
@@ -17836,7 +17842,7 @@ TriggerManager.prototype.size = function () {
      *
      * Handles iframe contents loading
      *
-     * A helper method of GameWindow.load .
+     * A helper method of GameWindow.loadFrame.
      * Puts cached contents into the iframe or caches new contents if requested.
      * Handles reloading of script tags and injected libraries.
      * Must be called with `this` set to GameWindow instance.
@@ -17846,7 +17852,7 @@ TriggerManager.prototype.size = function () {
      * @param {bool} loadCache whether to load from cache
      * @param {bool} storeCache whether to store to cache
      *
-     * @see GameWindow.load
+     * @see GameWindow.loadFrame
      *
      * @api private
      */
@@ -17891,7 +17897,7 @@ TriggerManager.prototype.size = function () {
     }
 
     /**
-     * ### GameWindow.load
+     * ### GameWindow.loadFrame
      * 
      * Loads content from an uri (remote or local) into the iframe, 
      * and after it is loaded executes the callback function. 
@@ -17914,7 +17920,7 @@ TriggerManager.prototype.size = function () {
      * @param {function} func The callback function to call once the DOM is ready
      * @param {object} opts The options object
      */
-    GameWindow.prototype.load = GameWindow.prototype.loadFrame = function (uri, func, opts) {
+    GameWindow.prototype.loadFrame = function(uri, func, opts) {
         if ('string' !== typeof uri) {
             throw new TypeError('GameWindow.loadFrame: uri must be string.');
         }
@@ -17931,7 +17937,7 @@ TriggerManager.prototype.size = function () {
         // Get options:
         if (opts) {
 	    if (opts.frame) frame = opts.frame;
-            
+  
 	    if (opts.cache) {
 	        if (opts.cache.loadMode === 'reload') loadCache = false;
 	        else if (opts.cache.loadMode === 'cache') loadCache = true;
@@ -17972,7 +17978,9 @@ TriggerManager.prototype.size = function () {
         }
 
         // Create entry for this URI in cache object and store cacheOnClose flag:
-        if(!(uri in this.cache)) this.cache[uri] = { contents: null, cacheOnClose: false };
+        if (!(uri in this.cache)) {
+            this.cache[uri] = { contents: null, cacheOnClose: false };
+        }
         this.cache[uri].cacheOnClose = storeCacheLater;
 
         // Disable loadCache if contents aren't cached:
@@ -18063,6 +18071,43 @@ TriggerManager.prototype.size = function () {
     };
 
     /**
+     * ## GameWindow.getFrame
+     *
+     * Returns a reference to the frame (mainframe) 
+     *
+     * @return {Element} The mainframe
+     */
+    GameWindow.prototype.getFrame = function() {
+        return document.getElementById(this.mainframe);
+    };
+
+    /**
+     * ## GameWindow.clearFrame
+     *
+     * Clear the content of the frame
+     *
+     * Optionally appends a text.
+     *
+     
+     // TODO: does not work. Fix.
+     
+     * @return {Element} The mainframe
+     */
+    GameWindow.prototype.clearFrame = function() {
+        var mainframe;
+//        if (text && 'string' !== typeof text) {
+//            throw new TypeErro('GameWindow.clearFrame: text must be string ' +
+//                               'or undefined');
+//        }
+        mainframe = this.getFrame();
+        if (!mainframe) {
+            throw new Error('GameWindow.clearFrame: cannot detect frame');
+        }
+        mainframe.onload = null;
+        mainframe.src = 'about:blank';
+    };
+
+    /**
      * ## GameWindow.isReady
      *
      * Returns TRUE if the state is either INITIALIZED or LOADED.
@@ -18083,7 +18128,7 @@ TriggerManager.prototype.size = function () {
      * 
      * @TODO: Should be always added as first child
      */
-    GameWindow.prototype.generateHeader = function () {
+    GameWindow.prototype.generateHeader = function() {
 	if (this.header) {
 	    this.header.innerHTML = '';
 	    this.header = null;
@@ -18108,7 +18153,7 @@ TriggerManager.prototype.size = function () {
      * @see GameWindow.writeln
      * 
      */
-    GameWindow.prototype.write = function (text, root) {
+    GameWindow.prototype.write = function(text, root) {
 	root = root || this.getScreen();
 	if (!root) {
 	    node.log('Could not determine where writing', 'ERR');
@@ -18130,7 +18175,7 @@ TriggerManager.prototype.size = function () {
      * @see GameWindow.write
      * 
      */
-    GameWindow.prototype.writeln = function (text, root, br) {
+    GameWindow.prototype.writeln = function(text, root, br) {
 	root = root || this.getScreen();
 	if (!root) {
 	    node.log('Could not determine where writing', 'ERR');
@@ -18138,7 +18183,6 @@ TriggerManager.prototype.size = function () {
 	}
 	return this._writeln(root, text, br);
     };
-
 
     /**
      * ### GameWindow.toggleInputs
@@ -18150,7 +18194,7 @@ TriggerManager.prototype.size = function () {
      * property is toggled. (i.e. false means enable, true means disable) 
      * 
      */
-    GameWindow.prototype.toggleInputs = function (id, op) {
+    GameWindow.prototype.toggleInputs = function(id, op) {
 	var container;
 	
 	if ('undefined' !== typeof id) {
@@ -18201,7 +18245,7 @@ TriggerManager.prototype.size = function () {
      * @api private
      * 
      */
-    GameWindow.prototype._generateRoot = function (root, id) {
+    GameWindow.prototype._generateRoot = function(root, id) {
 	root = root || document.body || document.lastElementChild;
 	if (!root) {
 	    this.addElement('body', document);
@@ -18218,7 +18262,7 @@ TriggerManager.prototype.size = function () {
      * @see GameWindow._generateRoot()
      * 
      */
-    GameWindow.prototype.generateNodeGameRoot = function (root) {
+    GameWindow.prototype.generateNodeGameRoot = function(root) {
 	return this._generateRoot(root, 'nodegame');
     };
 
@@ -18228,7 +18272,7 @@ TriggerManager.prototype.size = function () {
      * @see GameWindow._generateRoot()
      * 
      */
-    GameWindow.prototype.generateRandomRoot = function (root, id) {
+    GameWindow.prototype.generateRandomRoot = function(root, id) {
 	return this._generateRoot(root, this.generateUniqueId());
     };
 
@@ -18239,10 +18283,10 @@ TriggerManager.prototype.size = function () {
      * nodeGame event when clicked and returns it.
      * 
      */
-    GameWindow.prototype.getEventButton = function (event, text, id, attributes) {
+    GameWindow.prototype.getEventButton = function(event, text, id, attributes) {
 	if (!event) return;
 	var b = this.getButton(id, text, attributes);
-	b.onclick = function () {
+	b.onclick = function() {
 	    node.emit(event);
 	};
 	return b;
@@ -18257,7 +18301,7 @@ TriggerManager.prototype.size = function () {
      * @see GameWindow.getEventButton
      * 
      */
-    GameWindow.prototype.addEventButton = function (event, text, root, id, attributes) {
+    GameWindow.prototype.addEventButton = function(event, text, root, id, attributes) {
 	if (!event) return;
 	if (!root) {
             //			var root = root || this.frame.body;
@@ -18282,7 +18326,7 @@ TriggerManager.prototype.size = function () {
      * @see GameWindow.populateRecipientSelector
      * 
      */
-    GameWindow.prototype.getRecipientSelector = function (id) {
+    GameWindow.prototype.getRecipientSelector = function(id) {
 	var toSelector = document.createElement('select');
 	if ('undefined' !== typeof id) {
 	    toSelector.id = id;
@@ -18303,7 +18347,7 @@ TriggerManager.prototype.size = function () {
      * @see GameWindow.populateRecipientSelector
      * 
      */
-    GameWindow.prototype.addRecipientSelector = function (root, id) {
+    GameWindow.prototype.addRecipientSelector = function(root, id) {
 	if (!root) return false;
 	var toSelector = this.getRecipientSelector(id);
 	return root.appendChild(toSelector);		
@@ -18320,7 +18364,7 @@ TriggerManager.prototype.size = function () {
      * 
      * @see GameWindow.populateRecipientSelector
      */
-    GameWindow.prototype.addStandardRecipients = function (toSelector) {
+    GameWindow.prototype.addStandardRecipients = function(toSelector) {
 	
 	var opt = document.createElement('option');
 	opt.value = 'ALL';
@@ -18341,7 +18385,7 @@ TriggerManager.prototype.size = function () {
      * @see GameWindow.addStandardRecipients 
      * 
      */
-    GameWindow.prototype.populateRecipientSelector = function (toSelector, playerList) {
+    GameWindow.prototype.populateRecipientSelector = function(toSelector, playerList) {
 	if ('object' !==  typeof playerList || 'object' !== typeof toSelector) return;
 
 	this.removeChildrenFromNode(toSelector);
@@ -18369,7 +18413,7 @@ TriggerManager.prototype.size = function () {
      * @see GameWindow.addActionSelector
      * 
      */
-    GameWindow.prototype.getActionSelector = function (id) {
+    GameWindow.prototype.getActionSelector = function(id) {
 	var actionSelector = document.createElement('select');
 	if ('undefined' !== typeof id ) {
 	    actionSelector.id = id;
@@ -18384,7 +18428,7 @@ TriggerManager.prototype.size = function () {
      * @see GameWindow.getActionSelector
      * 
      */
-    GameWindow.prototype.addActionSelector = function (root, id) {
+    GameWindow.prototype.addActionSelector = function(root, id) {
 	if (!root) return;
 	var actionSelector = this.getActionSelector(id);
 	return root.appendChild(actionSelector);
@@ -18399,7 +18443,7 @@ TriggerManager.prototype.size = function () {
      * @see GameWindow.addActionSelector
      * 
      */
-    GameWindow.prototype.getTargetSelector = function (id) {
+    GameWindow.prototype.getTargetSelector = function(id) {
 	var targetSelector = document.createElement('select');
 	if ('undefined' !== typeof id ) {
 	    targetSelector.id = id;
@@ -18414,12 +18458,11 @@ TriggerManager.prototype.size = function () {
      * @see GameWindow.getTargetSelector
      * 
      */
-    GameWindow.prototype.addTargetSelector = function (root, id) {
+    GameWindow.prototype.addTargetSelector = function(root, id) {
 	if (!root) return;
 	var targetSelector = this.getTargetSelector(id);
 	return root.appendChild(targetSelector);
     };
-
 
     /**
      * @experimental
@@ -18430,7 +18473,7 @@ TriggerManager.prototype.size = function () {
      * 
      * @see GameWindow.addActionSelector
      */
-    GameWindow.prototype.getStateSelector = function (id) {
+    GameWindow.prototype.getStateSelector = function(id) {
 	var stateSelector = this.getTextInput(id);
 	return stateSelector;
     };
@@ -18443,7 +18486,7 @@ TriggerManager.prototype.size = function () {
      * @see GameWindow.getActionSelector
      * 
      */
-    GameWindow.prototype.addStateSelector = function (root, id) {
+    GameWindow.prototype.addStateSelector = function(root, id) {
 	if (!root) return;
 	var stateSelector = this.getStateSelector(id);
 	return root.appendChild(stateSelector);
@@ -18460,7 +18503,7 @@ TriggerManager.prototype.size = function () {
      * @TODO: fix doc
      * 
      */
-    GameWindow.prototype.generateUniqueId = function (prefix) {
+    GameWindow.prototype.generateUniqueId = function(prefix) {
 	var id = '' + (prefix || J.randomInt(0, 1000));
 	var found = this.getElementById(id);
 	
@@ -18485,7 +18528,7 @@ TriggerManager.prototype.size = function () {
      * 
      * @param {object} windowObj Optional. The window container in which binding the ESC key
      */
-    GameWindow.prototype.noEscape = function (windowObj) {
+    GameWindow.prototype.noEscape = function(windowObj) {
 	windowObj = windowObj || window;
 	windowObj.document.onkeydown = function(e) {
 	    var keyCode = (window.event) ? event.keyCode : e.keyCode;
@@ -18503,12 +18546,10 @@ TriggerManager.prototype.size = function () {
      * @param {object} windowObj Optional. The window container in which binding the ESC key
      * @see GameWindow.noEscape()
      */
-    GameWindow.prototype.restoreEscape = function (windowObj) {
+    GameWindow.prototype.restoreEscape = function(windowObj) {
 	windowObj = windowObj || window;
 	windowObj.document.onkeydown = null;
     };
-
-
 
     /**
      * ### GameWindow.promptOnleave
@@ -18522,7 +18563,7 @@ TriggerManager.prototype.size = function () {
      * @see https://developer.mozilla.org/en/DOM/window.onbeforeunload
      * 
      */
-    GameWindow.prototype.promptOnleave = function (windowObj, text) {
+    GameWindow.prototype.promptOnleave = function(windowObj, text) {
 	windowObj = windowObj || window;
 	text = ('undefined' === typeof text) ? this.conf.textOnleave : text; 
 	windowObj.onbeforeunload = function(e) {
@@ -18547,7 +18588,7 @@ TriggerManager.prototype.size = function () {
      * @see https://developer.mozilla.org/en/DOM/window.onbeforeunload
      * 
      */
-    GameWindow.prototype.restoreOnleave = function (windowObj) {
+    GameWindow.prototype.restoreOnleave = function(windowObj) {
 	windowObj = windowObj || window;
 	windowObj.onbeforeunload = null;
     };
@@ -18576,17 +18617,6 @@ TriggerManager.prototype.size = function () {
 	}
 	return el;
     };
-
-    /**
-     * Returns the document element of the iframe of the game.
-     * 
-     * @TODO: What happens if the mainframe is not called mainframe?
-     */
-    GameWindow.prototype.getFrame = function() {
-	return this.frame = window.frames['mainframe'].document;
-    };
-
-
 
     //Expose nodeGame to the global object
     node.window = new GameWindow();
