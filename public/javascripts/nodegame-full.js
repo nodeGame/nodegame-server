@@ -7392,10 +7392,6 @@ JSUS.extend(PARSE);
     // A client is connecting for the first time
     k.target.HI = 'HI';
 
-    // #### target.HI_AGAIN
-    // A client re-connects to the server within the same session
-    k.target.HI_AGAIN = 'HI_AGAIN';
-
     // #### target.PCONNECT
     // A new client just connected to the player endpoint
     k.target.PCONNECT = 'PCONNECT';
@@ -7431,10 +7427,6 @@ JSUS.extend(PARSE);
     // #### target.PLAYER_UPDATE
     // A client updates his Player object
     k.target.PLAYER_UPDATE = 'PLAYER_UPDATE';
-
-    // #### target.STATE
-    // A client notifies his own state
-    k.target.STATE = 'STATE';
 
     // #### target.STAGE
     // A client notifies his own stage
@@ -11575,8 +11567,6 @@ JSUS.extend(PARSE);
  *
  * Static factory of objects of type `GameMsg`.
  *
- * All message are reliable, but TXT messages.
- *
  * @see GameMSg
  * @see node.target
  * @see node.action
@@ -11587,7 +11577,7 @@ JSUS.extend(PARSE);
     "use strict";
 
     // ## Global scope
-    
+
     exports.GameMsgGenerator = GameMsgGenerator;
 
     var GameMsg = parent.GameMsg,
@@ -11612,7 +11602,10 @@ JSUS.extend(PARSE);
      * Primitive for creating a new GameMsg object
      *
      * Decorates an input object with all the missing properties
-     * of a full GameMsg object
+     * of a full GameMsg object.
+     *
+     * By default GAMECOMMAND, REDIRECT, PCONNET, PDISCONNECT, PRECONNECT
+     * have priority 1, all the other targets have priority 0.
      *
      * @param {object} Optional. The init object
      * @return {GameMsg} The full GameMsg object
@@ -11620,26 +11613,43 @@ JSUS.extend(PARSE);
      * @see GameMsg
      */
     GameMsgGenerator.prototype.create = function(msg) {
-        var gameStage, node;
+        var gameStage, priority, node;
         node = this.node;
 
         if (msg.stage) {
             gameStage = msg.stage;
         }
         else {
-            gameStage = node.game ? node.game.getCurrentGameStage() : new GameStage('0.0.0');
+            gameStage = node.game ?
+                node.game.getCurrentGameStage(): new GameStage('0.0.0');
+        }
+
+        if ('undefined' !== typeof msg.priority) {
+            priority = msg.priority;
+        }
+        else if (msg.target === constants.target.GAMECOMMAND ||
+                 msg.target === constants.target.REDIRECT ||
+                 msg.target === constants.target.PCONNECT ||
+                 msg.target === constants.target.PDISCONNECT ||
+                 msg.target === constants.target.PRECONNECT) {
+
+            priority = 1;
+        }
+        else {
+            priority = 0;
         }
 
         return new GameMsg({
-            session: 'undefined' !== typeof msg.session ? msg.session : node.socket.session,
+            session: 'undefined' !== typeof msg.session ?
+                msg.session : node.socket.session,
             stage: gameStage,
             action: msg.action || constants.action.SAY,
             target: msg.target || constants.target.DATA,
-            from: node.player ? node.player.id : node.UNDEFINED_PLAYER, // TODO change to id
+            from: node.player ? node.player.id : constants.UNDEFINED_PLAYER,
             to: 'undefined' !== typeof msg.to ? msg.to : 'SERVER',
             text: msg.text || null,
             data: msg.data || null,
-            priority: msg.priority || null,
+            priority: priority,
             reliable: msg.reliable || 1
         });
 
@@ -11650,7 +11660,6 @@ JSUS.extend(PARSE);
     'undefined' != typeof node ? node : module.exports,
     'undefined' != typeof node ? node : module.parent.exports
 );
-
 /**
  * # SocketFactory
  *
@@ -11722,7 +11731,7 @@ JSUS.extend(PARSE);
  * Copyright(c) 2013 Stefano Balietti
  * MIT Licensed
  *
- * `nodeGame` component responsible for dispatching events and messages
+ * `nodeGame` component responsible for dispatching events and messages.
  * ---
  */
 (function(exports, parent) {
@@ -11780,7 +11789,14 @@ JSUS.extend(PARSE);
         this.node = node;
     }
 
-
+    /**
+     * ## Socket.setup
+     *
+     * Configure the socket. 
+     *
+     * @param {object} options Optional. Configuration options.
+     * @see node.setup.socket
+     */
     Socket.prototype.setup = function(options) {
         var type;
         options = options ? J.clone(options) : {};
@@ -11792,12 +11808,31 @@ JSUS.extend(PARSE);
         }
     };
 
+    /**
+     * ## Socket.setSocketType
+     *
+     * Set the default socket by requesting it to the Socket Factory.
+     *
+     * Supported types: 'Direct', 'SocketIo'.
+     *
+     * @param {string} type The name of the socket to use.
+     * @param {object} options Optional. Configuration options for the socket.
+     * @see SocketFactory
+     */
     Socket.prototype.setSocketType = function(type, options) {
         // returns null on error.
         this.socket = SocketFactory.get(this.node, type, options);
         return this.socket;
     };
 
+    /**
+     * ## Socket.connect
+     *
+     * Calls the connect method on the actual socket object.
+     *
+     * @param {string} uri The uri to which to connect.
+     * @param {object} options Optional. Configuration options for the socket.
+     */
     Socket.prototype.connect = function(uri, options) {
         var humanReadableUri = uri || 'local server';
         if (!this.socket) {
@@ -11813,65 +11848,34 @@ JSUS.extend(PARSE);
                             options : this.user_options);
     };
 
+    /**
+     * ## Socket.onDisconnect
+     *
+     * Handler for disconnections from the server.
+     *
+     * Clears the player and monitor lists.
+     */
     Socket.prototype.onDisconnect = function() {
         // Save the current stage of the game
         //this.node.session.store();
 
-        // PlayerList gets cleared. On re-connection will receive a new one.
+        // On re-connection will receive a new ones.
         this.node.game.pl.clear(true);
+        this.node.game.ml.clear(true);
 
         this.node.log('closed');
-
     };
 
-    Socket.prototype.onMessage = function(msg) {
-        msg = this.secureParse(msg);
-        if (!msg) return;
-
-        // Parsing successful.
-        if (msg.target === 'HI') {
-            // TODO: do we need to more checkings, besides is HI?
-
-            // replace itself: will change onMessage
-            this.attachMsgListeners();
-
-            // This will emit on PLAYER_CREATED
-            // If listening on PLAYER_CREATED, functions can be
-            // executed before the HI
-            this.startSession(msg);
-        }
-    };
-
-    Socket.prototype.attachMsgListeners = function() {
-        this.onMessage = this.onMessageFull;
-        this.node.emit('NODEGAME_READY');
-    };
-
-    Socket.prototype.setMsgListener = function(msgHandler) {
-        if (msgHandler && 'function' !== typeof msgHandler) {
-            throw new TypeError('Socket.setMsgListener: msgHandler must be a ' +
-                                'function or undefined');
-        }
-
-        this.onMessage = msgHandler || this.onMessageFull;
-    };
-
-    Socket.prototype.onMessageFull = function(msg) {
-        var msgHandler;
-
-        msg = this.secureParse(msg);
-        if (msg) { // Parsing successful
-            // message with high priority are executed immediately
-            if (msg.priority > 0 || this.node.game.isReady()) {
-                this.node.emit(msg.toInEvent(), msg);
-            }
-            else {
-                this.node.silly('B: ' + msg);
-                this.buffer.push(msg);
-            }
-        }
-    };
-
+    /**
+     * ## Socket.secureParse
+     *
+     * Parses a string representing a game msg into a game msg object
+     *
+     * Checks that the id of the session is correct.
+     *
+     * @param {string} msg The msg string as received by the socket.
+     * @return {GameMsg|undefined} gameMsg The parsed msg, or undefined on error.
+     */
     Socket.prototype.secureParse = function(msg) {
         var gameMsg;
         try {
@@ -11890,6 +11894,67 @@ JSUS.extend(PARSE);
         return gameMsg;
     };
 
+    /**
+     * ## Socket.onMessage
+     *
+     * Initial handler for incoming messages from the server.
+     *
+     * This handler will be replaced by the FULL handler, upon receiving
+     * a HI message from the server.
+     *
+     * This method starts the game session, by creating a player object
+     * with the data received by the server.
+     *
+     * @param {string} msg The msg string as received by the socket.
+     * 
+     * @see Socket.startSession
+     * @see Socket.onMessageFull
+     * @see node.createPlayer
+     */
+    Socket.prototype.onMessage = function(msg) {
+        msg = this.secureParse(msg);
+        if (!msg) return;
+
+        // Parsing successful.
+        if (msg.target === 'HI') {
+            // TODO: do we need to more checkings, besides is HI?
+
+            // Replace itself: will change onMessage to onMessageFull.
+            this.setMsgListener();
+            this.node.emit('NODEGAME_READY');
+
+            // This will emit PLAYER_CREATED
+            this.startSession(msg);
+            // Functions listening to these events can be executed before HI. 
+        }
+    };
+
+    /**
+     * ## Socket.onMessageFull
+     *
+     * Full handler for incoming messages from the server.
+     *
+     * All parsed messages are either emitted immediately or buffered,
+     * if the game is not ready, and the message priority is low.x
+     *
+     * @param {string} msg The msg string as received by the socket.
+     * 
+     * @see Socket.onMessage
+     * @see Game.isReady
+     */
+    Socket.prototype.onMessageFull = function(msg) {
+        msg = this.secureParse(msg);
+        if (msg) { // Parsing successful
+            // message with high priority are executed immediately
+            if (msg.priority > 0 || this.node.game.isReady()) {
+                this.node.emit(msg.toInEvent(), msg);
+            }
+            else {
+                this.node.silly('B: ' + msg);
+                this.buffer.push(msg);
+            }
+        }
+    };
 
     /**
      * ### Socket.shouldClearBuffer
@@ -11903,6 +11968,24 @@ JSUS.extend(PARSE);
      *
      * @see this.node.emit
      * @see Socket.clearBuffer
+     */
+    Socket.prototype.setMsgListener = function(msgHandler) {
+        if (msgHandler && 'function' !== typeof msgHandler) {
+            throw new TypeError('Socket.setMsgListener: msgHandler must be a ' +
+                                'function or undefined');
+        }
+
+        this.onMessage = msgHandler || this.onMessageFull;
+    };
+
+    /**
+     * ### Socket.shouldClearBuffer
+     *
+     * Returns TRUE, if buffered messages can be emitted
+     *
+     * @see node.emit
+     * @see Socket.clearBuffer
+     * @see Game.isReady
      */
     Socket.prototype.shouldClearBuffer = function() {
         return this.node.game.isReady();
@@ -11936,14 +12019,15 @@ JSUS.extend(PARSE);
 
         nelem = this.buffer.length;
         for (i = 0; i < nelem; i++) {
-            msg = this.buffer.shift();  // necessary? costly!
+            // Modify the buffer at every iteration, so that if an error
+            // occurs, already emitted messages are out of the way.
+            msg = this.buffer.shift();
             if (msg) {
                 func.call(funcCtx, msg.toInEvent(), msg);
                 this.node.silly('D: ' + msg);
             }
         }
     };
-
 
     /**
      * ### Socket.startSession
@@ -11957,6 +12041,7 @@ JSUS.extend(PARSE);
      * @return {boolean} TRUE, if session was correctly initialized
      *
      * @see node.createPlayer
+     * @see Socket.registerServer
      */
     Socket.prototype.startSession = function(msg) {
         // Extracts server info from the first msg.
@@ -11976,7 +12061,15 @@ JSUS.extend(PARSE);
         return true;
     };
 
-
+    /**
+     * ### Socket.registerServer
+     *
+     * Saves the server information based on anx incoming message
+     *
+     * @param {GameMsg} msg A game message
+     *
+     * @see node.createPlayer
+     */
     Socket.prototype.registerServer = function(msg) {
         // Setting global info
         this.servername = msg.from;
@@ -11992,10 +12085,9 @@ JSUS.extend(PARSE);
      * The msg is actually received by the client itself as well.
      *
      * @param {GameMsg} The game message to send
+     * @return {boolean} TRUE, on success.
      *
      * @see GameMsg
-     *
-     * @TODO: Check Do volatile msgs exist for clients?
      */
     Socket.prototype.send = function(msg) {
         if (!this.socket) {
@@ -12032,7 +12124,6 @@ JSUS.extend(PARSE);
     'undefined' != typeof node ? node : module.exports,
     'undefined' != typeof node ? node : module.parent.exports
 );
-
 /**
  * # SocketIo
  *
@@ -12946,7 +13037,11 @@ JSUS.extend(PARSE);
             if (minCallback || maxCallback || exactCallback) {
                 // Register event handler:
                 handler = function() {
-                    var nPlayers = node.game.pl.size() + 1;
+                    var nPlayers = node.game.pl.size();
+                    // Players should count themselves too.
+                    if (!node.player.admin) {
+                        nPlayers++;
+                    }
 
                     if (minCallback && nPlayers < minThreshold) {
                         minCallback.call(node.game);
@@ -17358,24 +17453,24 @@ TriggerManager.prototype.size = function () {
  * # GameWindow
  * Copyright(c) 2013 Stefano Balietti
  * MIT Licensed
- * 
- * GameWindow provides a handy API to interface nodeGame with the 
+ *
+ * GameWindow provides a handy API to interface nodeGame with the
  * browser window.
- * 
+ *
  * Creates a custom root element inside the HTML page, and insert an
  * iframe element inside it.
- * 
+ *
  * Dynamic content can be loaded inside the iframe without losing the
  * javascript state inside the page.
- * 
- * Defines a number of profiles associated with special page 1layout.
- * 
- * Depends on nodegame-client. 
+ *
+ * Defines a number of profiles associated with special page layout.
+ *
+ * Depends on nodegame-client.
  * GameWindow.Table and GameWindow.List depend on NDDB and JSUS.
  * ---
  */
 (function(window, node) {
-    
+
     "use strict";
 
     var J = node.JSUS;
@@ -17384,10 +17479,10 @@ TriggerManager.prototype.size = function () {
     var windowLevels = constants.windowLevels;
 
     var Player = node.Player,
-    PlayerList = node.PlayerList,
-    GameMsg = node.GameMsg,
-    GameMsgGenerator = node.GameMsgGenerator;
-    
+        PlayerList = node.PlayerList,
+        GameMsg = node.GameMsg,
+        GameMsgGenerator = node.GameMsgGenerator;
+
     var DOM = J.get('DOM');
 
     if (!DOM) {
@@ -17411,7 +17506,7 @@ TriggerManager.prototype.size = function () {
 
     /**
      * ## GameWindow constructor
-     * 
+     *
      * Creates the GameWindow object.
      *
      * @see GameWindow.init
@@ -17422,94 +17517,113 @@ TriggerManager.prototype.size = function () {
         if ('undefined' === typeof window) {
             throw new Error('nodeWindow: no DOM found. Are you in a browser?');
         }
-        
+
         if ('undefined' === typeof node) {
-            node.log('nodeWindow: nodeGame not found', 'ERR');
+            throw new Error('nodeWindow: nodeGame not found');
         }
-        
+
         node.log('nodeWindow: loading...');
-        
+
         // ## GameWindow properties
 
         /**
          * ### GameWindow.mainframe
          *
-         * The name (and also id) of the iframe where the pages are loaded. 
+         * The name (and also id) of the iframe where the pages are loaded
          */
         this.mainframe = null;
-        
+
         /**
          * ### GameWindow.frame
          *
-         * A reference to the iframe document.
+         * A reference to the iframe document
          */
         this.frame = null;
 
         /**
-         * ## GameWindow.root
+         * ### GameWindow.root
          *
-         * A reference to the top element in the iframe, usually the `body` tag.
+         * A reference to the top element in the iframe, usually the `body` tag
          */
         this.root = null;
-        
+
         /**
-         * ## GameWindow.conf
+         * ### GameWindow.conf
          *
-         * Object containing the current configuration.
+         * Object containing the current configuration
          */
         this.conf = {};
-        
-        // ### GameWindow.areLoading
-        // Counts the number of frames currently being loaded.
+
+        /**
+         * ### GameWindow.areLoading
+         *
+         * The number of frames currently being loaded
+         */
         this.areLoading = 0;
 
-        // ### GameWindow.cache
-        // Cache for loaded iframes
-        //      
-        // Maps URI to a cache object with the following properties:
-        // - `contents` (the innerHTML property or null if not cached),
-        // - optionally 'cacheOnClose' (a bool telling whether to cache 
-        //    the frame when it is replaced by a new one).
+        /**
+         * ### GameWindow.cache
+         *
+         * Cache for loaded iframes
+         *
+         * Maps URI to a cache object with the following properties:
+         * - `contents` (the innerHTML property or null if not cached)
+         * - optionally 'cacheOnClose' (a bool telling whether to cache
+         *   the frame when it is replaced by a new one)
+         */
         this.cache = {};
 
-        // ### GameWindow.currentURIs
-        // Currently loaded URIs in the internal frames
-        //      
-        // Maps frame names (e.g. 'mainframe') to the URIs they are showing.
+        /**
+         * ### GameWindow.currentURIs
+         *
+         * Currently loaded URIs in the internal frames
+         *
+         * Maps frame names (e.g. 'mainframe') to the URIs they are showing.
+         */
         this.currentURIs = {};
 
-        
-        // ### GameWindow.globalLibs
-        // Array of strings with the path of the libraries 
-        // to be loaded in every frame.
+
+        /**
+         * ### GameWindow.globalLibs
+         *
+         * Array of strings with the path of the libraries
+         * to be loaded in every frame
+         */
         this.globalLibs = [];
-        
-        // ### GameWindow.frameLibs
-        // Like `GameWindow.frameLibs`, but contains libraries
-        // to be loaded only in specific frames.
+
+        /**
+         * ### GameWindow.frameLibs
+         *
+         * The libraries to be loaded in specific frames
+         *
+         * Maps frame names to arrays of strings. These strings are the
+         * libraries that should be loaded for a frame.
+         *
+         * @see GameWindow.globalLibs
+         */
         this.frameLibs = {};
 
-        this.init();    
+        this.init();
     }
 
     // ## GameWindow methods
 
     /**
      * ### GameWindow.init
-     * 
-     * Sets global variables based on local configuration.
-     * 
+     *
+     * Sets global variables based on local configuration
+     *
      * Defaults:
      *  - promptOnleave TRUE
      *  - captures ESC key
-     * 
-     * @param {object} options Configuration options
+     *
+     * @param {object} options Optional. Configuration options
      */
     GameWindow.prototype.init = function(options) {
         this.setStateLevel('INITIALIZING');
         options = options || {};
         this.conf = J.merge(GameWindow.defaults, options);
-        
+
         this.mainframe = options.mainframe || 'mainframe';
 
         if (this.conf.promptOnleave) {
@@ -17518,22 +17632,22 @@ TriggerManager.prototype.size = function () {
         else if (this.conf.promptOnleave === false) {
             this.restoreOnleave();
         }
-        
+
         if (this.conf.noEscape) {
             this.noEscape();
         }
-        else if (this.conf.noEscape === false){
+        else if (this.conf.noEscape === false) {
             this.restoreEscape();
         }
         this.setStateLevel('INITIALIZED');
     };
 
     /**
-     * ## GameWindow.setStateLevel
+     * ### GameWindow.setStateLevel
      *
-     * Validates and sets window's state level. 
+     * Validates and sets window's state level
      *
-     * @param {string} level The level of the update.
+     * @param {string} level The level of the update
      *
      * @see constants.windowLevels
      */
@@ -17545,14 +17659,16 @@ TriggerManager.prototype.size = function () {
         if ('undefined' === typeof windowLevels[level]) {
             throw new Error('GameWindow.setStateLevel: unrecognized level.');
         }
-        
+
         this.state = windowLevels[level];
     };
 
     /**
-     * ## GameWindow.getStateLevel
+     * ### GameWindow.getStateLevel
      *
      * Returns the current state level
+     *
+     * @return {number} The state level
      *
      * @see constants.windowLevels
      */
@@ -17562,60 +17678,65 @@ TriggerManager.prototype.size = function () {
 
     /**
      * ### GameWindow.getElementById
-     * 
-     * Returns the element with id 'id'. Looks first into the iframe,
-     * and then into the rest of the page.
+     *
+     * Returns the element with the given id
+     *
+     * Looks first into the iframe and then into the rest of the page.
      *
      * @param {string} id The id of the element
-     * @return {Element|null} The element in the page, or null if none is found.
-     * 
+     * @return {Element|null} The element in the page, or null if none is found
+     *
      * @see GameWindow.getElementsByTagName
      */
     GameWindow.prototype.getElementById = function(id) {
-        var el = null;
+        var el;
+
+        el = null;
         if (this.frame && this.frame.getElementById) {
             el = this.frame.getElementById(id);
         }
         if (!el) {
             el = document.getElementById(id);
         }
-        return el; 
+        return el;
     };
 
     /**
      * ### GameWindow.getElementsByTagName
-     * 
+     *
      * Returns a list of elements with the given tag name
-     *  
+     *
      * Looks first into the iframe and then into the rest of the page.
-     * 
+     *
+     * @param {string} tag The tag of the elements
+     * @return {array|null} The elements in the page, or null if none is found
+     *
      * @see GameWindow.getElementById
      */
     GameWindow.prototype.getElementsByTagName = function(tag) {
-        return this.frame ? 
-            this.frame.getElementsByTagName(tag) : 
+        return this.frame ?
+            this.frame.getElementsByTagName(tag) :
             document.getElementsByTagName(tag);
     };
 
     /**
      * ### GameWindow.setup
-     * 
-     * Setups the page with a predefined configuration of widgets.
-     * 
-     * @param {string} type The type of page to setup (MONITOR|PLAYER)
+     *
+     * Sets up the page with a predefined configuration of widgets
+     *
+     * @param {string} type The type of page to setup ('MONITOR'|'PLAYER')
      */
-    GameWindow.prototype.setup = function(type){
+    GameWindow.prototype.setup = function(type) {
         var initPage;
-        
+
         if (!this.root) {
             this.root = document.body;
-            //this.root = this.generateNodeGameRoot();
         }
-        
+
         switch (type) {
-            
+
         case 'MONITOR':
-            
+
             node.widgets.append('NextPreviousState');
             node.widgets.append('GameSummary');
             node.widgets.append('StateDisplay');
@@ -17628,24 +17749,27 @@ TriggerManager.prototype.size = function () {
 
             // Add default CSS.
             if (node.conf.host) {
-                this.addCSS(this.root, 
+                this.addCSS(this.root,
                             node.conf.host + '/stylesheets/monitor.css');
             }
-            
+
             break;
-            
+
         case 'PLAYER':
-            
+
             this.header = this.generateHeader();
-            
-            node.game.visualState = node.widgets.append('VisualState', this.header);
-            node.game.timer = node.widgets.append('VisualTimer', this.header);
-            node.game.stateDisplay = node.widgets.append('StateDisplay', this.header);
-            
+
+            node.game.visualState = node.widgets.append('VisualState',
+                    this.header);
+            node.game.timer = node.widgets.append('VisualTimer',
+                    this.header);
+            node.game.stateDisplay = node.widgets.append('StateDisplay',
+                    this.header);
+
             // Will continue in SOLO_PLAYER
 
         case 'SOLO_PLAYER':
-            
+
             if (!this.getFrame()) {
                 this.addIFrame(this.root, this.mainframe);
                 // At this point, there is no document in the iframe yet.
@@ -17656,19 +17780,19 @@ TriggerManager.prototype.size = function () {
                 }
                 window.frames[this.mainframe].src = initPage;
             }
-            
+
             // Adding the WaitScreen.
             node.game.waitScreen = node.widgets.append('WaitScreen');
-            
+
             // Add default CSS.
             if (node.conf.host) {
                 this.addCSS(this.root,
                             node.conf.host + '/stylesheets/player.css');
             }
-              
+
             break;
         }
-        
+
     };
 
     /**
@@ -17678,22 +17802,24 @@ TriggerManager.prototype.size = function () {
      *
      * Takes out all the script tags with the className "injectedlib"
      * that were inserted by injectLibraries.
-     * 
-     * @param {object} frameNode The node object of the iframe
+     *
+     * @param {NodeGameClient} frameNode The node object of the iframe
      *
      * @see injectLibraries
-     * 
+     *
      * @api private
      */
     function removeLibraries(frameNode) {
-        var contentDocument = frameNode.contentDocument ? frameNode.contentDocument
-            : frameNode.contentWindow.document;
+        var idx;
+        var contentDocument;
+        var scriptNodes, scriptNode;
 
-        var scriptNodes, scriptNodeIdx, scriptNode;
+        contentDocument = frameNode.contentDocument ?
+            frameNode.contentDocument : frameNode.contentWindow.document;
 
         scriptNodes = contentDocument.getElementsByClassName('injectedlib');
-        for (scriptNodeIdx = 0; scriptNodeIdx < scriptNodes.length; ++scriptNodeIdx) {
-            scriptNode = scriptNodes[scriptNodeIdx];
+        for (idx = 0; idx < scriptNodes.length; idx++) {
+            scriptNode = scriptNodes[idx];
             scriptNode.parentNode.removeChild(scriptNode);
         }
     }
@@ -17704,23 +17830,28 @@ TriggerManager.prototype.size = function () {
      *
      * Reloads all script nodes in iframe
      *
-     * Deletes and reinserts all the script tags, effectively reloading the scripts.
-     * The placement of the tags can change, but the order is kept.
-     * 
-     * @param {object} frameNode The node object of the iframe
-     * 
+     * Deletes and reinserts all the script tags, effectively reloading the
+     * scripts. The placement of the tags can change, but the order is kept.
+     *
+     * @param {NodeGameClient} frameNode The node object of the iframe
+     *
      * @api private
      */
     function reloadScripts(frameNode) {
-        var contentDocument = frameNode.contentDocument ? frameNode.contentDocument
-            : frameNode.contentWindow.document;
-
-        var headNode = contentDocument.getElementsByTagName('head')[0];
+        var contentDocument;
+        var headNode;
         var tag, scriptNodes, scriptNodeIdx, scriptNode;
         var attrIdx, attr;
-        
+
+        contentDocument = frameNode.contentDocument ?
+            frameNode.contentDocument : frameNode.contentWindow.document;
+
+        headNode = contentDocument.getElementsByTagName('head')[0];
+
         scriptNodes = contentDocument.getElementsByTagName('script');
-        for (scriptNodeIdx = 0; scriptNodeIdx < scriptNodes.length; ++scriptNodeIdx) {
+        for (scriptNodeIdx = 0; scriptNodeIdx < scriptNodes.length;
+                scriptNodeIdx++) {
+
             // Remove tag:
             tag = scriptNodes[scriptNodeIdx];
             tag.parentNode.removeChild(tag);
@@ -17728,7 +17859,7 @@ TriggerManager.prototype.size = function () {
             // Reinsert tag for reloading:
             scriptNode = document.createElement('script');
             if (tag.innerHTML) scriptNode.innerHTML = tag.innerHTML;
-            for (attrIdx = 0; attrIdx < tag.attributes.length; ++attrIdx) {
+            for (attrIdx = 0; attrIdx < tag.attributes.length; attrIdx++) {
                 attr = tag.attributes[attrIdx];
                 scriptNode.setAttribute(attr.name, attr.value);
             }
@@ -17739,29 +17870,31 @@ TriggerManager.prototype.size = function () {
 
     /**
      * ### injectLibraries
-     * 
+     *
      * Injects scripts into the iframe
-     * 
+     *
      * First removes all old injected script tags.
      * Then injects `<script class="injectedlib" src="...">` lines into given
      * iframe object, one for every given library.
-     * 
-     * @param {object} frameNode The node object of the iframe
-     * @param {array} libs An array of strings giving the "src" attribute for the `<script>`
-     *                     lines to insert
-     * 
+     *
+     * @param {NodeGameClient} frameNode The node object of the iframe
+     * @param {array} libs An array of strings giving the "src" attribute for
+     *   the `<script>` lines to insert
+     *
      * @api private
-     * 
      */
     function injectLibraries(frameNode, libs) {
-        var contentDocument = frameNode.contentDocument ? frameNode.contentDocument
-            : frameNode.contentWindow.document;
-
-        var headNode = contentDocument.getElementsByTagName('head')[0];
+        var contentDocument;
+        var headNode;
         var scriptNode;
         var libIdx, lib;
 
-        for (libIdx = 0; libIdx < libs.length; ++libIdx) {
+        contentDocument = frameNode.contentDocument ?
+            frameNode.contentDocument : frameNode.contentWindow.document;
+
+        headNode = contentDocument.getElementsByTagName('head')[0];
+
+        for (libIdx = 0; libIdx < libs.length; libIdx++) {
             lib = libs[libIdx];
             scriptNode = document.createElement('script');
             scriptNode.className = 'injectedlib';
@@ -17775,15 +17908,15 @@ TriggerManager.prototype.size = function () {
      * ### GameWindow.initLibs
      *
      * Specifies the libraries to be loaded automatically in the iframes
-     * 
+     *
      * This method must be called before any calls to GameWindow.loadFrame.
      *
-     * @param {array} globalLibs Array of strings describing absolute library paths that
-     *    should be loaded in every iframe.
-     * @param {object} frameLibs Map from URIs to string arrays (as above) specifying
-     *    libraries that should only be loaded for iframes displaying the given URI.
-     *    This must not contain any elements that are also in globalLibs.
-     *
+     * @param {array} globalLibs Array of strings describing absolute library
+     *   paths that should be loaded in every iframe
+     * @param {object} frameLibs Map from URIs to string arrays (as above)
+     *   specifying libraries that should only be loaded for iframes displaying
+     *   the given URI. This must not contain any elements that are also in
+     *   globalLibs.
      */
     GameWindow.prototype.initLibs = function(globalLibs, frameLibs) {
         this.globalLibs = globalLibs || [];
@@ -17797,27 +17930,31 @@ TriggerManager.prototype.size = function () {
      *
      * @param {array} uris The URIs to cache
      * @param {function} callback The function to call once the caching is done
-     *
      */
     GameWindow.prototype.preCache = function(uris, callback) {
+        var that;
+        var loadedCount;
+        var currentUri, uriIdx;
+        var iframe, iframeName;
+
         // Don't preload if no URIs are given:
         if (!uris || !uris.length) {
             if(callback) callback();
             return;
         }
 
-        var that = this;
+        that = this;
 
         // Keep count of loaded URIs:
-        var loadedCount = 0;
+        loadedCount = 0;
 
-        for (var uriIdx = 0; uriIdx < uris.length; ++uriIdx) {
-            var currentUri = uris[uriIdx];
+        for (uriIdx = 0; uriIdx < uris.length; uriIdx++) {
+            currentUri = uris[uriIdx];
 
             // Create an invisible internal frame for the current URI:
-            var iframe = document.createElement('iframe');
+            iframe = document.createElement('iframe');
             iframe.style.visibility = 'hidden';
-            var iframeName = 'tmp_iframe_' + uriIdx;
+            iframeName = 'tmp_iframe_' + uriIdx;
             iframe.id = iframeName;
             iframe.name = iframeName;
             document.body.appendChild(iframe);
@@ -17825,19 +17962,25 @@ TriggerManager.prototype.size = function () {
             // Register the onload handler:
             iframe.onload = (function(uri, thisIframe) {
                 return function() {
-                    var frameDocumentElement =
-                        (thisIframe.contentDocument ? thisIframe.contentDocument : thisIframe.contentWindow.document)
+                    var frameDocumentElement;
+
+                    frameDocumentElement =
+                        (thisIframe.contentDocument ?
+                         thisIframe.contentDocument :
+                         thisIframe.contentWindow.document)
                         .documentElement;
 
                     // Store the contents in the cache:
-                    that.cache[uri] = { contents: frameDocumentElement.innerHTML,
-                                        cacheOnClose: false };
+                    that.cache[uri] = {
+                        contents: frameDocumentElement.innerHTML,
+                        cacheOnClose: false
+                    };
 
                     // Remove the internal frame:
                     document.body.removeChild(thisIframe);
 
                     // Increment loaded URIs counter:
-                    ++ loadedCount;
+                    loadedCount++;
                     if (loadedCount >= uris.length) {
                         // All requested URIs have been loaded at this point.
                         if (callback) callback();
@@ -17870,10 +18013,14 @@ TriggerManager.prototype.size = function () {
      *
      * @api private
      */
-    function handleFrameLoad (uri, frame, loadCache, storeCache) {
-        var frameNode = document.getElementById(frame);
-        var frameDocumentElement =
-            (frameNode.contentDocument ? frameNode.contentDocument : frameNode.contentWindow.document)
+    function handleFrameLoad(uri, frame, loadCache, storeCache) {
+        var frameNode;
+        var frameDocumentElement;
+
+        frameNode = document.getElementById(frame);
+        frameDocumentElement =
+            (frameNode.contentDocument ?
+             frameNode.contentDocument : frameNode.contentWindow.document)
             .documentElement;
 
         if (loadCache) {
@@ -17886,7 +18033,8 @@ TriggerManager.prototype.size = function () {
         if (loadCache) {
             reloadScripts(frameNode);
         }
-        injectLibraries(frameNode, this.globalLibs.concat(uri in this.frameLibs ? this.frameLibs[uri] : []));
+        injectLibraries(frameNode, this.globalLibs.concat(
+                this.frameLibs.hasOwnProperty(uri) ? this.frameLibs[uri] : []));
 
         if (storeCache) {
             // Store frame in cache:
@@ -17912,46 +18060,57 @@ TriggerManager.prototype.size = function () {
 
     /**
      * ### GameWindow.loadFrame
-     * 
-     * Loads content from an uri (remote or local) into the iframe, 
-     * and after it is loaded executes the callback function. 
-     * 
+     *
+     * Loads content from an uri (remote or local) into the iframe,
+     * and after it is loaded executes the callback function
+     *
      * The third parameter is an options object with the following fields
      * (any fields left out assume the default setting):
      *
-     *  - frame (string): The name of the frame in which to load the uri (default: default iframe of the game)
+     *  - frame (string): The name of the frame in which to load the uri
+     *    (default: default iframe of the game)
      *  - cache (object): Caching options.  Fields:
-     *      * loadMode (string): 'reload' (default; reload page without the cache),
-     *                           'cache' (get the page from cache if possible)
-     *      * storeMode (string): 'off' (default; don't cache page),
-     *                            'onLoad' (cache given page after it is loaded)
-     *                            'onClose' (cache given page after it is replaced by a new page)
-     * 
-     * Warning: Security policies may block this methods, if the 
+     *      * loadMode (string):
+     *          'reload' (default; reload page without the cache),
+     *          'cache' (get the page from cache if possible)
+     *      * storeMode (string):
+     *          'off' (default; don't cache page),
+     *          'onLoad' (cache given page after it is loaded),
+     *          'onClose' (cache given page after it is replaced by a new page)
+     *
+     * Warning: Security policies may block this method if the
      * content is coming from another domain.
-     * 
+     *
      * @param {string} uri The uri to load
-     * @param {function} func The callback function to call once the DOM is ready
+     * @param {function} func The function to call once the DOM is ready
      * @param {object} opts The options object
      */
     GameWindow.prototype.loadFrame = function(uri, func, opts) {
+        var that;
+        var frame;
+        var loadCache;
+        var storeCacheNow, storeCacheLater;
+        var iframe;
+        var frameNode, frameDocumentElement, frameReady;
+        var lastURI;
+
         if ('string' !== typeof uri) {
             throw new TypeError('GameWindow.loadFrame: uri must be string.');
         }
         this.setStateLevel('LOADING');
-        
-        var that = this;
+
+        that = this;
 
         // Default options:
-        var frame = this.mainframe;
-        var loadCache = GameWindow.defaults.cacheDefaults.loadCache;
-        var storeCacheNow = GameWindow.defaults.cacheDefaults.storeCacheNow;
-        var storeCacheLater = GameWindow.defaults.cacheDefaults.storeCacheLater;
-        
+        frame = this.mainframe;
+        loadCache = GameWindow.defaults.cacheDefaults.loadCache;
+        storeCacheNow = GameWindow.defaults.cacheDefaults.storeCacheNow;
+        storeCacheLater = GameWindow.defaults.cacheDefaults.storeCacheLater;
+
         // Get options:
         if (opts) {
             if (opts.frame) frame = opts.frame;
-  
+
             if (opts.cache) {
                 if (opts.cache.loadMode === 'reload') loadCache = false;
                 else if (opts.cache.loadMode === 'cache') loadCache = true;
@@ -17972,26 +18131,29 @@ TriggerManager.prototype.size = function () {
         }
 
         // Get the internal frame object:
-        var iframe = document.getElementById(frame);
-        var frameNode;
-        var frameDocumentElement;
+        iframe = document.getElementById(frame);
         // Query readiness (so we know whether onload is going to be called):
-        var frameReady = iframe.contentWindow.document.readyState;
+        frameReady = iframe.contentWindow.document.readyState;
         // ...reduce it to a boolean:
-        frameReady = (frameReady === 'interactive' || frameReady === 'complete');
-        
+        frameReady = frameReady === 'interactive' || frameReady === 'complete';
+
         // If the last frame requested to be cached on closing, do that:
-        var lastURI = this.currentURIs[frame];
-        if ((lastURI in this.cache) && this.cache[lastURI].cacheOnClose) {
+        lastURI = this.currentURIs[frame];
+
+        if (this.cache.hasOwnProperty(lastURI) &&
+                this.cache[lastURI].cacheOnClose) {
+
             frameNode = document.getElementById(frame);
             frameDocumentElement =
-                (frameNode.contentDocument ? frameNode.contentDocument : frameNode.contentWindow.document)
+                (frameNode.contentDocument ?
+                 frameNode.contentDocument : frameNode.contentWindow.document)
                 .documentElement;
-            
+
             this.cache[lastURI].contents = frameDocumentElement.innerHTML;
         }
 
-        // Create entry for this URI in cache object and store cacheOnClose flag:
+        // Create entry for this URI in cache object
+        // and store cacheOnClose flag:
         if (!(uri in this.cache)) {
             this.cache[uri] = { contents: null, cacheOnClose: false };
         }
@@ -18002,27 +18164,28 @@ TriggerManager.prototype.size = function () {
 
         // Update frame's currently showing URI:
         this.currentURIs[frame] = uri;
-        
+
         // Keep track of nested call to loadFrame.
         updateAreLoading.call(this, 1);
-        
+
         // Add the onload event listener:
         iframe.onload = function() {
-            handleFrameLoad.call(that, uri, frame, loadCache, storeCacheNow);    
+            handleFrameLoad.call(that, uri, frame, loadCache, storeCacheNow);
             that.updateLoadFrameState(func, frame);
         };
-        
+
         // Cache lookup:
         if (loadCache) {
-            // Load iframe contents at this point only if the iframe is already "ready"
-            // (see definition of frameReady), otherwise the contents would be cleared
-            // once the iframe becomes ready.  In that case, iframe.onload handles the
-            // filling of the contents.
+            // Load iframe contents at this point only if the iframe is already
+            // "ready" (see definition of frameReady), otherwise the contents
+            // would be cleared once the iframe becomes ready.  In that case,
+            // iframe.onload handles the filling of the contents.
             // TODO: Fix code duplication between here and onload function.
             if (frameReady) {
-                handleFrameLoad.call(this, uri, frame, loadCache, storeCacheNow);
-                
-                // Update status (onload isn't called if frame was already ready):
+                handleFrameLoad.call(this,
+                        uri, frame, loadCache, storeCacheNow);
+
+                // Update status (onload not called if frame was already ready):
                 this.updateLoadFrameState(func, frame);
             }
         }
@@ -18030,64 +18193,51 @@ TriggerManager.prototype.size = function () {
             // Update the frame location:
             window.frames[frame].location = uri;
         }
-        
-        
+
+
         // Adding a reference to nodeGame also in the iframe
         window.frames[frame].window.node = node;
-        //              console.log('the frame just as it is');
-        //              console.log(window.frames[frame]);
-        // Experimental
-        //              if (uri === 'blank') {
-        //                      window.frames[frame].src = this.getBlankPage();
-        //                      window.frames[frame].location = '';
-        //              }
-        //              else {
-        //                      window.frames[frame].location = uri;
-        //              }
-        
-        
     };
 
     /**
      * ### GameWindow.loadFrameState
-     * 
+     *
      * Cleans up the window state after an iframe has been loaded
-     * 
-     * The methods performs the following operations:
-     * 
-     *  - executes a given callback function, 
+     *
+     * The method performs the following operations:
+     *
+     *  - executes a given callback function
      *  - decrements the counter of loading iframes
      *  - set the window state as loaded (eventually)
-     * 
-     * @param {function} A callback function
+     *
+     * @param {function} Optional. A callback function
      * @param {object} The iframe of reference
-     * 
      */
     GameWindow.prototype.updateLoadFrameState = function(func, frame) {
         // Update the reference to the frame obj
         this.frame = window.frames[frame].document;
         if (func) {
             func.call(node.game); // TODO: Pass the right this reference
-            //node.log('Frame Loaded correctly!');
         }
-        
+
         updateAreLoading.call(this, -1);
-        
+
         if (this.areLoading === 0) {
             this.setStateLevel('LOADED');
             node.emit('WINDOW_LOADED');
             // The listener will take care of emitting PLAYING,
-            // if all conditions are met. 
+            // if all conditions are met.
         }
         else {
-            node.silly('GameWindow.updateState: ' + this.areLoading + ' loadFrame processes open.');
+            node.silly('GameWindow.updateState: ' + this.areLoading +
+                       ' loadFrame processes open.');
         }
     };
 
     /**
-     * ## GameWindow.getFrame
+     * ### GameWindow.getFrame
      *
-     * Returns a reference to the frame (mainframe) 
+     * Returns a reference to the frame (mainframe)
      *
      * @return {Element} The mainframe
      */
@@ -18096,9 +18246,9 @@ TriggerManager.prototype.size = function () {
     };
 
     /**
-     * ## GameWindow.getFrameRoot
+     * ### GameWindow.getFrameRoot
      *
-     * Returns a reference to root element in the iframe
+     * Returns a reference to the root element in the iframe
      *
      * @return {Element} The root element in the iframe
      */
@@ -18107,9 +18257,9 @@ TriggerManager.prototype.size = function () {
     };
 
     /**
-     * ## GameWindow.getFrameRoot
+     * ### GameWindow.getFrameRoot
      *
-     * Returns a reference to document object of the iframe
+     * Returns a reference to the document object of the iframe
      *
      * @return {object} The document object of the iframe
      */
@@ -18118,11 +18268,9 @@ TriggerManager.prototype.size = function () {
     };
 
     /**
-     * ## GameWindow.clearFrame
+     * ### GameWindow.clearFrame
      *
      * Clear the content of the frame
-     *
-     * @return {Element} The mainframe
      */
     GameWindow.prototype.clearFrame = function() {
         var mainframe;
@@ -18135,24 +18283,29 @@ TriggerManager.prototype.size = function () {
     };
 
     /**
-     * ## GameWindow.isReady
+     * ### GameWindow.isReady
+     *
+     * Returns whether the GameWindow is ready
      *
      * Returns TRUE if the state is either INITIALIZED or LOADED.
+     *
+     * @return {boolean} Whether the window is ready
      */
     GameWindow.prototype.isReady = function() {
-        var l = constants.windowLevels;
-        return this.state === l.INITIALIZED || this.state === l.LOADED;
+        return this.state === windowLevels.INITIALIZED ||
+               this.state === windowLevels.LOADED;
     };
-    
+
     /**
-     * ## GameWindow.generateHeader
+     * ### GameWindow.generateHeader
      *
-     * Creates and adds a container div with id 'gn_header' to 
-     * the root element. 
-     * 
-     * If an header element has already been created, deletes it, 
+     * Creates and adds a container div with id 'gn_header' to the root element
+     *
+     * If a header element has already been created, deletes it,
      * and creates a new one.
-     * 
+     *
+     * @return {Element} The created element
+     *
      * @TODO: Should be always added as first child
      */
     GameWindow.prototype.generateHeader = function() {
@@ -18160,7 +18313,7 @@ TriggerManager.prototype.size = function () {
             this.header.innerHTML = '';
             this.header = null;
         }
-        
+
         return this.addElement('div', this.root, 'gn_header');
     };
 
@@ -18170,57 +18323,61 @@ TriggerManager.prototype.size = function () {
     GameWindow.prototype._writeln = DOM.writeln;
     /**
      * ### GameWindow.write
-     * 
-     * Appends a text string, an HTML node or element inside
-     * the specified root element. 
-     * 
-     * If no root element is specified, the default screen is 
-     * used.
-     * 
+     *
+     * Appends content inside a root element
+     *
+     * The content can be a text string, an HTML node or element.
+     * If no root element is specified, the default screen is used.
+     *
+     * @param {string|object} text The content to write
+     * @param {Element} root The root element
+     * @return {string|object} The content written
+     *
      * @see GameWindow.writeln
-     * 
      */
     GameWindow.prototype.write = function(text, root) {
         root = root || this.getScreen();
         if (!root) {
-            node.log('Could not determine where writing', 'ERR');
-            return false;
+            throw new
+                Error('GameWindow.write: could not determine where to write');
         }
         return this._write(root, text);
     };
 
     /**
      * ### GameWindow.writeln
-     * 
-     * Appends a text string, an HTML node or element inside
-     * the specified root element, and adds a break element
-     * immediately afterwards.
-     * 
-     * If no root element is specified, the default screen is 
-     * used.
-     * 
+     *
+     * Appends content inside a root element followed by a break element
+     *
+     * The content can be a text string, an HTML node or element.
+     * If no root element is specified, the default screen is used.
+     *
+     * @param {string|object} text The content to write
+     * @param {Element} root The root element
+     * @return {string|object} The content written
+     *
      * @see GameWindow.write
      */
     GameWindow.prototype.writeln = function(text, root, br) {
         root = root || this.getScreen();
         if (!root) {
-            node.log('Could not determine where writing', 'ERR');
-            return false;
+            throw new
+                Error('GameWindow.writeln: could not determine where to write');
         }
         return this._writeln(root, text, br);
     };
 
     /**
      * ### GameWindow.toggleInputs
-     * 
-     * Enables / disables the input forms.
+     *
+     * Enables / disables the input forms
      *
      * If an id is provided, only children of the element with the specified
      * id are toggled.
      *
      * If id is given it will use _GameWindow.getRoot()_ to determine the
      * forms to toggle.
-     * 
+     *
      * If a state parameter is given, all the input forms will be either
      * disabled or enabled (and not toggled).
      *
@@ -18229,7 +18386,7 @@ TriggerManager.prototype.size = function () {
      */
     GameWindow.prototype.toggleInputs = function(id, state) {
         var container, inputTags, j, len, i, inputs, nInputs;
-        
+
         if ('undefined' !== typeof id) {
             container = this.getElementById(id);
             if (!container) {
@@ -18250,7 +18407,7 @@ TriggerManager.prototype.size = function () {
         for (j = 0; j < len; j++) {
             inputs = container.getElementsByTagName(inputTags[j]);
             nInputs = inputs.length;
-            for (i = 0; i < nInputs; i++) { 
+            for (i = 0; i < nInputs; i++) {
                 // Set to state, or toggle.
                 if ('undefined' === typeof state) {
                     state = inputs[i].disabled ? false : true;
@@ -18267,37 +18424,35 @@ TriggerManager.prototype.size = function () {
 
     /**
      * ### GameWindow.lockFrame
-     * 
-     * Locks the frame by opening the waitScreen widget on top.
      *
-     * Notice: requires the waitScreen widget to be loaded.
+     * Locks the frame by opening the waitScreen widget on top
+     *
+     * Requires the waitScreen widget to be loaded.
+     *
+     * @param {string} text Optional. The text to be shown in the locked frame
      *
      * TODO: check if this can be called in any stage.
-     *
-     * @param {string} text Optional. A text to be shown in the locked frame.
      */
     GameWindow.prototype.lockFrame = function(text) {
         if (!node.game.waitScreen) {
-            throw new Errot('GameWindow.lockFrame: waitScreen not found.');
+            throw new Error('GameWindow.lockFrame: waitScreen not found.');
         }
         if (text && 'string' !== typeof text) {
             throw new TypeError('GameWindow.lockFrame: text must be string ' +
                                 'or undefined');
         }
-        this.setStateLevel('LOCKING')
+        this.setStateLevel('LOCKING');
         text = text || 'Screen locked. Please wait...';
         node.game.waitScreen.lock(text);
-        this.setStateLevel('LOCKED')
+        this.setStateLevel('LOCKED');
     };
 
     /**
      * ### GameWindow.unlockFrame
-     * 
-     * Locks the frame by opening the waitScreen widget on top.
      *
-     * Notice: requires the waitScreen widget to be loaded.
+     * Unlocks the frame by removing the waitScreen widget on top
      *
-     * @param {string} text Optional. A text to be shown in the locked frame.
+     * Requires the waitScreen widget to be loaded.
      */
     GameWindow.prototype.unlockFrame = function() {
         if (!node.game.waitScreen) {
@@ -18306,26 +18461,49 @@ TriggerManager.prototype.size = function () {
         if (this.getStateLevel() !== windowLevels.LOCKED) {
             throw new Error('GameWindow.unlockFrame: frame is not locked.');
         }
-        this.setStateLevel('UNLOCKING')
+        this.setStateLevel('UNLOCKING');
         node.game.waitScreen.unlock();
-        this.setStateLevel('LOADED')
+        this.setStateLevel('LOADED');
     };
 
     /**
-     * Creates a div element with the given id and 
-     * tries to append it in the following order to:
-     * 
+     * ### GameWindow.getScreenInfo
+     *
+     * Returns information about the screen in which nodeGame is running
+     *
+     * @return {object} A object containing the scren info
+     */
+    GameWindow.prototype.getScreenInfo = function() {
+        var screen = window.screen;
+        return {
+            height: screen.height,
+            widht: screen.width,
+            availHeight: screen.availHeight,
+            availWidth: screen.availWidht,
+            colorDepth: screen.colorDepth,
+            pixelDepth: screen.pixedDepth
+        };
+    };
+
+    /**
+     * ### GameWindow._generateRoot
+     *
+     * Creates a div element with the given id
+     *
+     * After creation it tries to append the element in the following order to:
+     *
      *      - the specified root element
      *      - the body element
      *      - the last element of the document
-     * 
+     *
      * If it fails, it creates a new body element, appends it
      * to the document, and then appends the div element to it.
-     * 
-     * Returns the newly created root element.
-     * 
+     *
+     * @param {Element} root Optional. The root element
+     * @param {string} id The id
+     * @return {Element} The newly created root element
+     *
      * @api private
-     * 
      */
     GameWindow.prototype._generateRoot = function(root, id) {
         root = root || document.body || document.lastElementChild;
@@ -18338,37 +18516,55 @@ TriggerManager.prototype.size = function () {
     };
 
     /**
-     * Creates a div element with id 'nodegame' and returns it.
-     * 
+     * ### GameWindow.generateNodeGameRoot
+     *
+     * Creates a div element with id 'nodegame'
+     *
+     * @param {Element} root Optional. The root element
+     * @return {Element} The newly created element
+     *
      * @see GameWindow._generateRoot()
-     * 
      */
     GameWindow.prototype.generateNodeGameRoot = function(root) {
         return this._generateRoot(root, 'nodegame');
     };
 
     /**
-     * Creates a div element with id 'nodegame' and returns it.
-     * 
+     * ### GameWindow.generateRandomRoot
+     *
+     * Creates a div element with a unique random id
+     *
+     * @param {Element} root Optional. The root element
+     * @return {Element} The newly created root element
+     *
      * @see GameWindow._generateRoot()
-     * 
      */
-    GameWindow.prototype.generateRandomRoot = function(root, id) {
+    GameWindow.prototype.generateRandomRoot = function(root) {
         return this._generateRoot(root, this.generateUniqueId());
     };
 
-    
+
 
     // Useful
 
     /**
-     * Creates an HTML button element that will emit the specified
-     * nodeGame event when clicked and returns it.
-     * 
+     * ### GameWindow.getEventButton
+     *
+     * Creates an HTML button element that will emit an event when clicked
+     *
+     * @param {string} event The event to emit when clicked
+     * @param {string} text Optional. The text on the button
+     * @param {string} id The id of the button
+     * @param {object} attributes Optional. The attributes of the button
+     * @return {Element} The newly created button
      */
-    GameWindow.prototype.getEventButton = function(event, text, id, attributes) {
+    GameWindow.prototype.getEventButton =
+    function(event, text, id, attributes) {
+        var b;
+
         if (!event) return;
-        var b = this.getButton(id, text, attributes);
+
+        b = this.getButton(id, text, attributes);
         b.onclick = function() {
             node.emit(event);
         };
@@ -18376,41 +18572,57 @@ TriggerManager.prototype.size = function () {
     };
 
     /**
-     * Adds an EventButton to the specified root element.
-     * 
+     * ### GameWindow.addEventButton
+     *
+     * Adds an EventButton to the specified root element
+     *
      * If no valid root element is provided, it is append as last element
      * in the current screen.
-     * 
+     *
+     * @param {string} event The event to emit when clicked
+     * @param {string} text Optional. The text on the button
+     * @param {Element} root Optional. The root element
+     * @param {string} id The id of the button
+     * @param {object} attributes Optional. The attributes of the button
+     * @return {Element} The newly created button
+     *
      * @see GameWindow.getEventButton
-     * 
      */
-    GameWindow.prototype.addEventButton = function(event, text, root, id, attributes) {
+    GameWindow.prototype.addEventButton =
+    function(event, text, root, id, attributes) {
+        var eb;
+
         if (!event) return;
         if (!root) {
-            //                  var root = root || this.frame.body;
-            //                  root = root.lastElementChild || root;
             root = this.getScreen();
         }
-        var eb = this.getEventButton(event, text, id, attributes);
+
+        eb = this.getEventButton(event, text, id, attributes);
+
         return root.appendChild(eb);
     };
 
 
-    //Useful API
+    // Useful API
 
     /**
-     * Creates an HTML select element already populated with the 
-     * of the data of other players.
-     * 
-     * @TODO: adds options to control which players/servers to add.
-     * 
+     * ### GameWindow.getRecipientSelector
+     *
+     * Creates an HTML select element populated with the data of other players
+     *
+     * @param {string} id Optional. The id of the element
+     * @return The newly created select element
+     *
      * @see GameWindow.addRecipientSelector
      * @see GameWindow.addStandardRecipients
      * @see GameWindow.populateRecipientSelector
-     * 
+     *
+     * TODO: add options to control which players/servers to add.
      */
     GameWindow.prototype.getRecipientSelector = function(id) {
-        var toSelector = document.createElement('select');
+        var toSelector;
+
+        toSelector = document.createElement('select');
         if ('undefined' !== typeof id) {
             toSelector.id = id;
         }
@@ -18419,66 +18631,78 @@ TriggerManager.prototype.size = function () {
     };
 
     /**
-     * Appends a RecipientSelector element to the specified root element.
-     * 
-     * Returns FALSE if no valid root element is found.
-     * 
-     * @TODO: adds options to control which players/servers to add.
-     * 
+     * ### GameWindow.addRecipientSelector
+     *
+     * Appends a RecipientSelector element to the specified root element
+     *
+     * @param {Element} root The root element
+     * @param {string} id The id of the selector
+     * @return {boolean} FALSE if no valid root element is found, TRUE otherwise
+     *
      * @see GameWindow.addRecipientSelector
-     * @see GameWindow.addStandardRecipients 
+     * @see GameWindow.addStandardRecipients
      * @see GameWindow.populateRecipientSelector
-     * 
+     *
+     * TODO: adds options to control which players/servers to add.
      */
     GameWindow.prototype.addRecipientSelector = function(root, id) {
+        var toSelector;
+
         if (!root) return false;
-        var toSelector = this.getRecipientSelector(id);
-        return root.appendChild(toSelector);            
+        toSelector = this.getRecipientSelector(id);
+        return root.appendChild(toSelector);
     };
 
     /**
-     * ## GameWindow.addStandardRecipients
-     * 
+     * ### GameWindow.addStandardRecipients
+     *
      * Adds an ALL and a SERVER option to a specified select element.
-     * 
-     * @TODO: adds options to control which players/servers to add.
-     * 
-     * @param {object} toSelector An HTML `<select>` element 
-     * 
+     *
+     * @param {object} toSelector An HTML `<select>` element
+     *
      * @see GameWindow.populateRecipientSelector
+     *
+     * TODO: adds options to control which players/servers to add.
      */
     GameWindow.prototype.addStandardRecipients = function(toSelector) {
-        
-        var opt = document.createElement('option');
+        var opt;
+
+        opt = document.createElement('option');
         opt.value = 'ALL';
         opt.appendChild(document.createTextNode('ALL'));
         toSelector.appendChild(opt);
-        
+
         opt = document.createElement('option');
         opt.value = 'SERVER';
         opt.appendChild(document.createTextNode('SERVER'));
         toSelector.appendChild(opt);
-        
     };
 
     /**
+     * ### GameWindow.populateRecipientSelector
+     *
      * Adds all the players from a specified playerList object to a given
-     * select element.
-     * 
-     * @see GameWindow.addStandardRecipients 
-     * 
+     * select element
+     *
+     * @param {object} toSelector An HTML `<select>` element
+     * @param {PlayerList} playerList The PlayerList object
+     *
+     * @see GameWindow.addStandardRecipients
      */
-    GameWindow.prototype.populateRecipientSelector = function(toSelector, playerList) {
-        if ('object' !==  typeof playerList || 'object' !== typeof toSelector) return;
+    GameWindow.prototype.populateRecipientSelector =
+    function(toSelector, playerList) {
+        var players, opt;
+
+        if ('object' !== typeof playerList || 'object' !== typeof toSelector) {
+            return;
+        }
 
         this.removeChildrenFromNode(toSelector);
         this.addStandardRecipients(toSelector);
-        
-        var players, opt;
-        
+
         // check if it is a DB or a PlayerList object
-        players = playerList.db || playerList; 
-        
+        players = playerList.db || playerList;
+
         J.each(players, function(p) {
             opt = document.createElement('option');
             opt.value = p.id;
@@ -18488,58 +18712,76 @@ TriggerManager.prototype.size = function () {
     };
 
     /**
+     * ### GameWindow.getActionSelector
+     *
      * Creates an HTML select element with all the predefined actions
-     * (SET,GET,SAY,SHOW*) as options and returns it.
-     * 
-     * *not yet implemented
-     * 
+     * (SET,GET,SAY,SHOW*) as options
+     *
+     * @param {string} id The id of the selector
+     * @return {Element} The newly created selector
+     *
      * @see GameWindow.addActionSelector
-     * 
      */
     GameWindow.prototype.getActionSelector = function(id) {
         var actionSelector = document.createElement('select');
-        if ('undefined' !== typeof id ) {
+        if ('undefined' !== typeof id) {
             actionSelector.id = id;
         }
-        this.populateSelect(actionSelector, node.actions);
+        this.populateSelect(actionSelector, constants.action);
         return actionSelector;
     };
 
     /**
-     * Appends an ActionSelector element to the specified root element.
-     * 
+     * ### GameWindow.addActionSelector
+     *
+     * Appends an ActionSelector element to the specified root element
+     *
+     * @param {Element} root The root element
+     * @param {string} id The id of the selector
+     * @return {Element} The newly created selector
+     *
      * @see GameWindow.getActionSelector
-     * 
      */
     GameWindow.prototype.addActionSelector = function(root, id) {
+        var actionSelector;
+
         if (!root) return;
-        var actionSelector = this.getActionSelector(id);
+        actionSelector = this.getActionSelector(id);
         return root.appendChild(actionSelector);
     };
 
     /**
+     * ### GameWindow.getTargetSelector
+     *
      * Creates an HTML select element with all the predefined targets
-     * (HI,TXT,DATA, etc.) as options and returns it.
-     * 
-     * *not yet implemented
-     * 
+     * (HI,TXT,DATA, etc.) as options
+     *
+     * @param {string} id The id of the selector
+     * @return {Element} The newly created selector
+     *
      * @see GameWindow.addActionSelector
-     * 
      */
     GameWindow.prototype.getTargetSelector = function(id) {
-        var targetSelector = document.createElement('select');
+        var targetSelector;
+
+        targetSelector = document.createElement('select');
         if ('undefined' !== typeof id ) {
             targetSelector.id = id;
         }
-        this.populateSelect(targetSelector, node.targets);
+        this.populateSelect(targetSelector, constants.target);
         return targetSelector;
     };
 
     /**
-     * Appends a Target Selector element to the specified root element.
-     * 
+     * ### GameWindow.addTargetSelector
+     *
+     * Appends a target selector element to the specified root element
+     *
+     * @param {Element} root The root element
+     * @param {string} id The id of the selector
+     * @return {Element} The newly created selector
+     *
      * @see GameWindow.getTargetSelector
-     * 
      */
     GameWindow.prototype.addTargetSelector = function(root, id) {
         if (!root) return;
@@ -18548,30 +18790,42 @@ TriggerManager.prototype.size = function () {
     };
 
     /**
-     * @experimental
-     * 
-     * Creates an HTML text input element where a nodeGame state can
-     * be inserted. This method should be improved to automatically
-     * show all the available states of a game.
-     * 
+     * ### GameWindow.getStateSelector
+     *
+     * Creates an HTML text input element where a nodeGame state can be inserted
+     *
+     * @param {string} id The id of the element
+     * @return {Element} The newly created element
+     *
      * @see GameWindow.addActionSelector
+     *
+     * TODO: This method should be improved to automatically
+     *       show all the available states of a game.
+     *
+     * @experimental
      */
     GameWindow.prototype.getStateSelector = function(id) {
-        var stateSelector = this.getTextInput(id);
-        return stateSelector;
+        return this.getTextInput(id);
     };
 
     /**
-     * @experimental
-     * 
-     * Appends a StateSelector to the specified root element.
-     * 
+     * ### GameWindow.addStateSelector
+     *
+     * Appends a StateSelector to the specified root element
+     *
+     * @param {Element} root The root element
+     * @param {string} id The id of the element
+     * @return {Element} The newly created element
+     *
      * @see GameWindow.getActionSelector
-     * 
+     *
+     * @experimental
      */
     GameWindow.prototype.addStateSelector = function(root, id) {
+        var stateSelector;
+
         if (!root) return;
-        var stateSelector = this.getStateSelector(id);
+        stateSelector = this.getStateSelector(id);
         return root.appendChild(stateSelector);
     };
 
@@ -18579,17 +18833,24 @@ TriggerManager.prototype.size = function () {
     // Do we need it?
 
     /**
-     * Overrides JSUS.DOM.generateUniqueId
-     * 
+     * ### GameWindow.generateUniqueId
+     *
+     * Generates a unique id
+     *
+     * Overrides JSUS.DOM.generateUniqueId.
+     *
+     * @param {string} prefix Optional. A prefix to use
+     * @return {string} The generated id
+     *
      * @experimental
-     * @TODO: it is not always working fine. 
-     * @TODO: fix doc
-     * 
+     * TODO: it is not always working fine.
      */
     GameWindow.prototype.generateUniqueId = function(prefix) {
-        var id = '' + (prefix || J.randomInt(0, 1000));
-        var found = this.getElementById(id);
-        
+        var id, found;
+
+        id = '' + (prefix || J.randomInt(0, 1000));
+        found = this.getElementById(id);
+
         while (found) {
             id = '' + prefix + '_' + J.randomInt(0, 1000);
             found = this.getElementById(id);
@@ -18603,13 +18864,13 @@ TriggerManager.prototype.size = function () {
 
     /**
      * ### GameWindow.noEscape
-     * 
-     * Binds the ESC key to a function that always returns FALSE.
-     * 
-     * This prevents socket.io to break the connection with the
-     * server.
-     * 
-     * @param {object} windowObj Optional. The window container in which binding the ESC key
+     *
+     * Binds the ESC key to a function that always returns FALSE
+     *
+     * This prevents socket.io to break the connection with the server.
+     *
+     * @param {object} windowObj Optional. The window container in which
+     *   to bind the ESC key
      */
     GameWindow.prototype.noEscape = function(windowObj) {
         windowObj = windowObj || window;
@@ -18618,15 +18879,17 @@ TriggerManager.prototype.size = function () {
             if (keyCode === 27) {
                 return false;
             }
-        }; 
+        };
     };
 
     /**
      * ### GameWindow.restoreEscape
-     * 
-     * Removes the the listener on the ESC key.
-     * 
-     * @param {object} windowObj Optional. The window container in which binding the ESC key
+     *
+     * Removes the the listener on the ESC key
+     *
+     * @param {object} windowObj Optional. The window container in which
+     *   to bind the ESC key
+     *
      * @see GameWindow.noEscape()
      */
     GameWindow.prototype.restoreEscape = function(windowObj) {
@@ -18636,19 +18899,19 @@ TriggerManager.prototype.size = function () {
 
     /**
      * ### GameWindow.promptOnleave
-     * 
-     * Captures the onbeforeunload event, and warns the user
-     * that leaving the page may halt the game.
-     * 
-     * @param {object} windowObj Optional. The window container in which binding the ESC key
-     * @param {string} text Optional. A text to be displayed in the alert message. 
-     * 
+     *
+     * Captures the onbeforeunload event and warns the user that leaving the
+     * page may halt the game.
+     *
+     * @param {object} windowObj Optional. The window container in which
+     *   to bind the ESC key
+     * @param {string} text Optional. A text to be displayed with the alert
+     *
      * @see https://developer.mozilla.org/en/DOM/window.onbeforeunload
-     * 
      */
     GameWindow.prototype.promptOnleave = function(windowObj, text) {
         windowObj = windowObj || window;
-        text = ('undefined' === typeof text) ? this.conf.textOnleave : text; 
+        text = ('undefined' === typeof text) ? this.conf.textOnleave : text;
         windowObj.onbeforeunload = function(e) {
             e = e || window.event;
             // For IE<8 and Firefox prior to version 4
@@ -18662,14 +18925,14 @@ TriggerManager.prototype.size = function () {
 
     /**
      * ### GameWindow.restoreOnleave
-     * 
-     * Removes the onbeforeunload event listener.
-     * 
-     * @param {object} windowObj Optional. The window container in which binding the ESC key
-     * 
+     *
+     * Removes the onbeforeunload event listener
+     *
+     * @param {object} windowObj Optional. The window container in which
+     *   to bind the ESC key
+     *
      * @see GameWindow.promptOnleave
      * @see https://developer.mozilla.org/en/DOM/window.onbeforeunload
-     * 
      */
     GameWindow.prototype.restoreOnleave = function(windowObj) {
         windowObj = windowObj || window;
@@ -18679,16 +18942,19 @@ TriggerManager.prototype.size = function () {
     // Do we need these?
 
     /**
+     * ### GameWindow.getScreen
+     *
      * Returns the screen of the game, i.e. the innermost element
-     * inside which to display content. 
-     * 
+     * inside which to display content
+     *
      * In the following order the screen can be:
-     * 
-     *      - the body element of the iframe 
-     *      - the document element of the iframe 
-     *      - the body element of the document 
+     *
+     *      - the body element of the iframe
+     *      - the document element of the iframe
+     *      - the body element of the document
      *      - the last child element of the document
-     * 
+     *
+     * @return {Element} The screen
      */
     GameWindow.prototype.getScreen = function() {
         var el = this.frame;
@@ -18704,9 +18970,9 @@ TriggerManager.prototype.size = function () {
     //Expose nodeGame to the global object
     node.window = new GameWindow();
     if ('undefined' !== typeof window) window.W = node.window;
-    
+
 })(
-    // GameWindow works only in the browser environment. The reference 
+    // GameWindow works only in the browser environment. The reference
     // to the node.js module object is for testing purpose only
     ('undefined' !== typeof window) ? window : module.parent.exports.window,
     ('undefined' !== typeof window) ? window.node : module.parent.exports.node
@@ -18892,12 +19158,9 @@ TriggerManager.prototype.size = function () {
  * performs the following operations:
  *
  * - if it is already an HTML element, returns it;
- * - if it contains a  #parse() method, tries to invoke it to
- *      generate HTML;
- * - if it is an object, tries to render it as a table of
- *   key:value pairs;
+ * - if it contains a  #parse() method, tries to invoke it to generate HTML;
+ * - if it is an object, tries to render it as a table of key:value pairs;
  * - finally, creates an HTML text node with it and returns it
- *
  *
  * Depends on the nodegame-client add-on TriggerManager
  *
@@ -18914,6 +19177,10 @@ TriggerManager.prototype.size = function () {
     JSUS = node.JSUS;
 
     var TriggerManager = node.TriggerManager;
+
+    if (!TriggerManager) {
+        throw new Error('HTMLRenderer requires node.TriggerManager to load.');
+    }
 
     exports.HTMLRenderer = HTMLRenderer;
     exports.HTMLRenderer.Entity = Entity;
@@ -19214,7 +19481,7 @@ TriggerManager.prototype.size = function () {
         
         // was
         //this.htmlRenderer = new HTMLRenderer({renderers: options.renderer});
-        this.htmlRenderer = new HTMLRenderer({render: options.render});
+        this.htmlRenderer = new HTMLRenderer(options.render);
     };
     
     List.prototype._add = function(node) {
@@ -19372,7 +19639,7 @@ TriggerManager.prototype.size = function () {
 
     Table.log = node.log;
 
-    function Table (options, data, parent) {
+    function Table(options, data, parent) {
         options = options || {};
 
         Table.log = options.log || Table.log;
@@ -20111,8 +20378,7 @@ TriggerManager.prototype.size = function () {
 
     "use strict";
 
-    var J = node.JSUS,
-    W = node.window;
+    var J = node.JSUS;
 
     // ## Defaults
 
@@ -20245,7 +20511,7 @@ TriggerManager.prototype.size = function () {
                 '!txt': msg
             };
             that.writeTA('%sMe%s: %msg!txt%msg', args);
-            node.say(msg.trim(), that.chat_event, to);
+            node.say(that.chat_event, to, msg.trim());
         });
 
         if (this.mode === Chat.modes.MANY_TO_MANY) {
@@ -22517,8 +22783,7 @@ TriggerManager.prototype.size = function () {
 	this.board = node.window.addDiv(root, this.id);
 	
 	this.updateBoard(node.game.pl);
-	
-	
+		
 	return root;
     };
     
@@ -23311,6 +23576,159 @@ TriggerManager.prototype.size = function () {
         this.root = root;
         return root;
     };
+
+})(node);
+/**
+ * # Requirements widget for nodeGame
+ * Copyright(c) 2013 Stefano Balietti
+ * MIT Licensed
+ *
+ * Checks a list of requirements and displays the results.
+ *
+ * www.nodegame.org
+ * ---
+ */
+(function(node) {
+
+    "use strict";
+
+    var J = node.JSUS;
+
+    // ## Defaults
+
+    Requirements.defaults = {};
+    Requirements.defaults.id = 'requirements';
+    Requirements.defaults.fieldset = { 
+        legend: 'Requirements'
+    };
+    
+    // ## Meta-data
+
+    Requirements.version = '0.1';
+    Requirements.description = 'Checks a set of requirements and display the ' +
+        'results';
+
+    // ## Dependencies
+
+    Requirements.dependencies = {
+        JSUS: {},
+        List: {}
+    };
+
+    function Requirements(options) {
+        this.id = options.id || Requirements.id;
+        this.root = null;
+        this.callbacks = [];
+
+        function renderResult(o) {
+            var imgPath, img, span, text;
+            imgPath = '/images/' + (o.content.success ? 
+                                    'success-icon.png' : 'delete-icon.png');
+            
+            img = document.createElement('img');
+            img.src = imgPath;
+            text = document.createTextNode(o.content.text);
+            span = document.createElement('span');
+            span.className = 'requirement';
+            span.appendChild(img);
+            span.appendChild(text);
+            return span;
+        }
+        
+        // TODO: simplify render syntax.
+        this.list = new W.List({
+            render: {
+                pipeline: renderResult,
+                returnAt: 'first'
+            }
+        });
+    }
+
+    Requirements.prototype.addRequirements = function() {
+        var i, len;
+        i = -1, len = arguments.length;
+        for ( ; ++i < len ; ) {
+            if ('function' !== typeof arguments[i]) {
+                throw new TypeError('Requirements.addRequirements: ' +
+                                    'all requirements must be function.');
+            }
+            this.callbacks.push(arguments[i]);
+        }
+    };
+
+    Requirements.prototype.checkRequirements = function(display) {
+        var i, len;
+        var errors, cbErrors;
+        if (!this.callbacks.length) {
+            throw new Error('Requirements.checkRequirements: no callback ' +
+                            'found.');
+        }
+        errors = [];
+        i = -1, len = this.callbacks.length;
+        for ( ; ++i < len ; ) {
+            try {
+                cbErrors = this.callbacks[i]();
+            }
+            catch(e) {
+                errors.push('An exception occurred in requirement ' + 
+                            (this.callbacks[i].name || 'n.' + i) + '.');
+            }
+            errors = errors.concat(cbErrors);
+        }
+        
+        if ('undefined' === typeof display ? true : false) {
+            this.displayResults(errors);
+        }
+        return errors;
+    };
+
+    Requirements.prototype.displayResults = function(results) {
+        var i, len;
+        if (!this.list) {
+            throw new Error('Requirements.displayResults: list not found. ' +
+                            'Have you called .append() first?');
+        }
+        
+        if (!J.isArray(results)) {
+            throw new TypeError('Requirements.displayResults: results must ' +
+                                'be array.');
+        }
+        if (!results.length) {
+            // All tests passed.
+            this.list.addDT({
+                success: true,
+                text:'All tests passed'
+            });
+        }
+        else {
+            
+            i = -1, len = results.length;
+            for ( ; ++i < len ; ) {
+                this.list.addDT({
+                    success: false,
+                    text: results[i]
+                });
+            }
+        }
+        // Parse deletes previously existing nodes in the list.
+        this.list.parse();
+    };
+
+    Requirements.prototype.append = function(root) {
+        this.root = root;
+        root.appendChild(this.list.getRoot());
+        return root;
+    };
+
+    Requirements.prototype.getRoot = function() {
+        return this.root;
+    };
+
+    Requirements.prototype.listeners = function() {
+        var that = this;
+    };
+
+    node.widgets.register('Requirements', Requirements);
 
 })(node);
 /**

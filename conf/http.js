@@ -49,6 +49,18 @@ function configure (app, servernode) {
         return gameInfo;
     }
 
+    function sendFromPublic(type, req, res) {
+        var path;
+        if (!req.params.file) return;
+        if (req.params.file.lastIndexOf('\/') === (req.params.file.length-1)) {
+            req.params.file = req.params.file.substring(0,req.params.file.length-1);
+        }
+
+        // Build path to file.
+        path = rootDir + '/public/' + type + '/' + req.params.file;
+        // Send file.
+        res.sendfile(path);
+    }
 
     //    var cookieSessions = function(name) {
     //        return function(req, res, next) {
@@ -138,43 +150,20 @@ function configure (app, servernode) {
         res.render('error/' + type);
     });
 
-    app.get('/javascripts/:file', function(req, res) {
-        var path;
-        if (!req.params.file) return;
-        if (req.params.file.lastIndexOf('\/') === (req.params.file.length-1)) {
-            req.params.file = req.params.file.substring(0,req.params.file.length-1);
-        }
+    app.get('/images/:file', function(req, res) {
+        sendFromPublic('images', req, res);
+    });
 
-        // Build path to file.
-        path = rootDir + '/public/javascripts/' + req.params.file;
-        // Send file.
-        res.sendfile(path);
+    app.get('/javascripts/:file', function(req, res) {
+        sendFromPublic('javascripts', req, res);
     });
 
     app.get('/stylesheets/:file', function(req, res) {
-        var path;
-        if (!req.params.file) return;
-        if (req.params.file.lastIndexOf('\/') === (req.params.file.length-1)) {
-            req.params.file = req.params.file.substring(0,req.params.file.length-1);
-        }
-
-        // Build path to file.
-        path = rootDir + '/public/pages/' + req.params.file;
-        // Send file.
-        res.sendfile(path);
+        sendFromPublic('stylesheets', req, res);
     });
 
     app.get('/pages/:file', function(req, res) {
-        var path;
-        if (!req.params.file) return;
-        if (req.params.file.lastIndexOf('\/') === (req.params.file.length-1)) {
-            req.params.file = req.params.file.substring(0,req.params.file.length-1);
-        }
-
-        // Build path to file.
-        path = rootDir + '/public/stylesheets/' + req.params.file;
-        // Send file.
-        res.sendfile(path);
+        sendFromPublic('pages', req, res);
     });
 
     // Serves game files or default game index file: index.htm.
