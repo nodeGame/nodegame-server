@@ -14,9 +14,10 @@ var path = require('path');
 function configure(servernode) {
     
     var rootDir = servernode.rootDir;
-    
+    debugger
     if (!rootDir) {
-        throw new Error('configure servernode: rootDir is not configured.');
+        servernode.logger.error('configure servernode: rootDir is not configured.');
+        return false;
     }
 
     servernode.name = "nodeGame server";
