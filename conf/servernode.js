@@ -1,11 +1,24 @@
+/**
+ * # servernode.js
+ *
+ * Copyright(c) 2013 Stefano Balietti
+ * MIT Licensed
+ *
+ * Configuration file for ServerNode in nodegame-server
+ * ---
+ */
 module.exports = configure;
 
 var path = require('path');
 
-function configure (servernode) {
+function configure(servernode) {
     
-    var rootDir = path.resolve(__dirname, '..');
+    var rootDir = servernode.rootDir;
     
+    if (!rootDir) {
+        throw new Error('configure servernode: rootDir is not configured.');
+    }
+
     servernode.name = "nodeGame server";
     servernode.verbosity = 10;
     

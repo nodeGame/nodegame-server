@@ -7383,7 +7383,6 @@ JSUS.extend(PARSE);
      */
     k.target = {};
 
-
     // #### target.DATA
     // Generic identifier for any type of data
     k.target.DATA = 'DATA';
@@ -7504,7 +7503,7 @@ JSUS.extend(PARSE);
      */
     k.stateLevels = {
         UNINITIALIZED:  0,  // creating the game object
-        STARTING:       1,  // starting the game
+        STARTING:       1,  // constructor executed
         INITIALIZING:   2,  // calling game's init
         INITIALIZED:    5,  // init executed
         STAGE_INIT:    10,  // calling stage's init
@@ -12730,9 +12729,47 @@ JSUS.extend(PARSE);
      *
      * @experimental
      */
-    Game.prototype.restart = function (reset) {
-        if (reset) this.memory.clear(true);
-        this.execStep(this.plot.getStep("1.1.1"));
+    Game.prototype.restart = function() {
+        if (this.getStateLevel() <= constants.stateLevels.INITIALIZING) {
+            throw new Error('Game.restart: game is not running.');
+        }
+        this.stop();
+        this.start();
+    };
+
+    /**
+     * ### Game.stop
+     *
+     * Stops the current game
+     *
+     * Clears timers, event handlers, local memory, and window frame (if any)
+     *
+     * Server is notified. 
+     */
+    Game.prototype.stop = function() {
+        if (this.getStateLevel() <= constants.stateLevels.INITIALIZING) {
+            throw new Error('Game.stop: game is not runnning.');
+        }
+        // Destroy currently running timers.
+        node.timer.destroyAllTimers(true);
+ 
+        // Remove all events registered during the game.
+        node.events.ee.game.clear();
+        node.events.ee.stage.clear();
+        node.events.ee.step.clear();
+
+        // Remove loaded frame, if one is found.
+        if (node.window && node.window.getFrame()) {
+            node.window.clearFrame();
+        }
+
+        this.memory.clear(true);
+
+        // Update state/stage levels and game stage.
+        this.setStateLevel(constants.stateLevels.STARTING, true);
+        this.setStageLevel(constants.stageLevels.UNINITIALIZED, true);
+        // This command is notifying the server.
+        this.setCurrentGameStage(new GameStage());
     };
 
     /**
@@ -14554,6 +14591,22 @@ JSUS.extend(PARSE);
         this.node.off('RESUMED', gameTimer.timerResumedCallback);
         // Delete reference in this.timers.
         delete this.timers[gameTimer.name];
+    };
+
+    /**
+     * ### Timer.destroyAllTimers
+     *
+     * Stops and removes all registered GameTimers
+     */
+    Timer.prototype.destroyAllTimers = function(confirm) {
+        if (!confirm) {
+            node.warn('Timer.destroyAllTimers: confirm must be true to ' +
+                      'proceed. No timer destroyed.');
+            return false;
+        }
+        for (var i in this.timers) {
+            this.destroyTimer(this.timers[i]);
+        }
     };
 
     // Common handler for randomEmit and randomExec
@@ -16594,7 +16647,6 @@ JSUS.extend(PARSE);
  * `nodeGame` extra functions
  * ---
  */
-
 (function(exports, parent) {
     
     "use strict";
@@ -16608,45 +16660,61 @@ JSUS.extend(PARSE);
      *
      * Executes a block of code conditionally to nodeGame environment variables
      *
-     * @param env {string} The name of the environment
-     * @param func {function} The callback function to execute
-     * @param ctx {object} Optional. The context of execution
-     * @param params {array} Optional. An array of additional parameters for the callback
+     * Notice: the value of the requested variable is returned after
+     * the execution of the callback, that could modify it.
      *
+     * @param {string} env The name of the environment
+     * @param {function} func Optional The callback to execute conditionally
+     * @param {object} ctx Optional. The context of execution
+     * @param {array} params Optional. An array of parameters for the callback
+     *
+     * @see node.setup.env
+     * @see node.clearEnv
      */
-    NGC.prototype.env = function (env, func, ctx, params) {
-        if (!env || !func || !this.env[env]) return;
-        ctx = ctx || node;
-        params = params || [];
-        func.apply(ctx, params);
+    NGC.prototype.env = function(env, func, ctx, params) {
+        var envValue;
+        if ('string' !== typeof env) {
+            throw new TypeError('node.env: env must be string.');
+        }
+        if (func && 'function' !== typeof func) {
+            throw new TypeError('node.env: func must be function or undefined.');
+        }
+        if (ctx && 'object' !== typeof ctx) {
+            throw new TypeError('node.env: ctx must be object or undefined.');
+        }
+        if (params && 'object' !== typeof params) {
+            throw new TypeError('node.env: params must be array-like ' +
+                                'or undefined.');
+        }
+
+        envValue = this.env[env];
+        // Executes the function conditionally to _envValue_.
+        if (func && envValue) {            
+            ctx = ctx || node;
+            params = params || [];
+            func.apply(ctx, params);
+        }
+        // Returns the value of the requested _env_ variable in any case.
+        return envValue;
     };
 
     /**
-     * ###  NodeGameClient.play
+     * ### node.clearEnv
      *
-     * Starts a game
+     * Deletes all previously set enviroment variables
      *
-     * @deprecated use game.start directly
+     * @see node.env
+     * @see node.setup.env
      */
-    NGC.prototype.play = function() {
-        this.game.start();
+    NGC.prototype.clearEnv = function() {
+        for (var i in this.env) {
+            if (this.env.hasOwnProperty(i)) {
+                delete this.env[i];
+            }
+        }
     };
 
-    /**
-     * ### NodeGameClient.replay
-     *
-     * Moves the game stage to 1.1.1
-     *
-     * @param {boolean} rest TRUE, to erase the game memory before update the game stage
-     *
-     * @deprecated use game.start directly
-     * also this.plot is wrong
-     */
-    NGC.prototype.replay = function (reset) {
-        if (reset) this.game.memory.clear(true);
-        this.game.execStep(this.plot.getStep("1.1.1"));
-    };
-
+    
 
 })(
     'undefined' != typeof node ? node : module.exports,
@@ -17096,9 +17164,7 @@ JSUS.extend(PARSE);
          */
         this.events.ng.on(CMD + gcommands.pause, function(options) {
             node.emit('BEFORE_GAMECOMMAND', gcommands.pause, options);
-
             // TODO: check conditions
-
             node.game.pause();
         });
 
@@ -17108,22 +17174,28 @@ JSUS.extend(PARSE);
          */
         this.events.ng.on(CMD + gcommands.resume, function(options) {
             node.emit('BEFORE_GAMECOMMAND', gcommands.resume, options);
-
-            // TODO: check conditions
-
+            // TODO: check conditions.
             node.game.resume();
         });
 
         /**
-         * ## NODEGAME_GAMECOMMAND: resume
+         * ## NODEGAME_GAMECOMMAND: step
          *
          */
         this.events.ng.on(CMD + gcommands.step, function(options) {
             node.emit('BEFORE_GAMECOMMAND', gcommands.step, options);
-
-            // TODO: check conditions
-
+            // TODO: check conditions.
             node.game.step();
+        });
+
+        /**
+         * ## NODEGAME_GAMECOMMAND: stop
+         *
+         */
+        this.events.ng.on(CMD + gcommands.stop, function(options) {
+            node.emit('BEFORE_GAMECOMMAND', gcommands.stop, options);
+            // Conditions checked inside stop.
+            node.game.stop();
         });
 
         this.internalAdded = true;

@@ -8,10 +8,9 @@
  *
  * ---
  */
+module.exports = configure;
 
 // ## Global scope
-
-module.exports = configure;
 
 var util = require('util'),
 fs = require('fs'),
@@ -27,7 +26,7 @@ nodemailer = require('nodemailer');
  *
  * @param {object} options The object containing the custom settings
  */
-function configure (app, servernode) {
+function configure(app, servernode) {
     var rootDir;
     rootDir = servernode.rootDir;
 

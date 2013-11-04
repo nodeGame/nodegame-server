@@ -1,3 +1,12 @@
+/**
+ * # sio.js
+ *
+ * Copyright(c) 2013 Stefano Balietti
+ * MIT Licensed
+ *
+ * Configuration file for Socket.io server in nodegame-server
+ * ---
+ */
 module.exports = configure;
 
 function configure (sio, servernode) {
