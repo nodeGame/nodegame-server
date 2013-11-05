@@ -14,7 +14,7 @@ var path = require('path');
 function configure(servernode) {
     
     var rootDir = servernode.rootDir;
-    debugger
+
     if (!rootDir) {
         servernode.logger.error('configure servernode: rootDir is not configured.');
         return false;

@@ -11781,10 +11781,46 @@ JSUS.extend(PARSE);
          */
         this.user_options = {};
 
+        /**
+         * ### Socket.connected
+         *
+         * Boolean flag, TRUE if socket is connected to server
+         */
+        this.user_options = {};
+
+        /**
+         * ### Socket.socket
+         *
+         * The actual socket object (e.g. SocketDirect, or SocketIo)
+         */
         this.socket = null;
 
+         /**
+         * ### Socket.connected
+         *
+         * Socket connection established.
+         *
+         * @see Socket.isConnected
+         * @see Socket.onConnect
+         * @see Socket.onDisconnect
+         */
+        this.connected = false;
+
+        /**
+         * ### Socket.url
+         *
+         * The url to which the socket is connected
+         *
+         * It might not be meaningful for all types of sockets. For example, 
+         * in case of SocketDirect, it is not an real url.
+         */
         this.url = null;
 
+        /**
+         * ### Socket.node
+         *
+         * Reference to the node object.
+         */
         this.node = node;
     }
 
@@ -11836,15 +11872,28 @@ JSUS.extend(PARSE);
         var humanReadableUri = uri || 'local server';
         if (!this.socket) {
             this.node.err('Socket.connet: cannot connet to ' +
-                          humanReadableUri + ' . No open socket.');
+                          humanReadableUri + ' . No socket defined.');
             return false;
         }
 
         this.url = uri;
         this.node.log('connecting to ' + humanReadableUri + '.');
 
-        this.socket.connect(uri, 'undefined' !== typeof options ?
+        this.socket.connect(uri,'undefined' !== typeof options ?
                             options : this.user_options);
+    };
+
+    /**
+     * ## Socket.onConnect
+     *
+     * Handler for connections to the server.
+     *
+     * @emit SOCKET_CONNECT
+     */
+    Socket.prototype.onConnect = function() {
+        this.connected = true;
+        this.node.emit('SOCKET_CONNECT');
+        this.node.log('socket connected.');
     };
 
     /**
@@ -11853,8 +11902,12 @@ JSUS.extend(PARSE);
      * Handler for disconnections from the server.
      *
      * Clears the player and monitor lists.
+     *
+     * @emit SOCKET_DISCONNECT
      */
     Socket.prototype.onDisconnect = function() {
+        this.connected = false;
+        node.emit('SOCKET_DISCONNECT');
         // Save the current stage of the game
         //this.node.session.store();
 
@@ -11862,7 +11915,7 @@ JSUS.extend(PARSE);
         this.node.game.pl.clear(true);
         this.node.game.ml.clear(true);
 
-        this.node.log('closed');
+        this.node.log('socket closed.');
     };
 
     /**
@@ -12077,6 +12130,15 @@ JSUS.extend(PARSE);
     };
 
     /**
+     * ### Socket.isConnected
+     *
+     * Returns TRUE if socket connection is ready.
+     */
+    Socket.prototype.isConnected = function() {
+        return this.connected && this.socket && this.socket.isConnected();
+    };
+
+    /**
      * ### Socket.send
      *
      * Pushes a message into the socket.
@@ -12087,9 +12149,13 @@ JSUS.extend(PARSE);
      * @return {boolean} TRUE, on success.
      *
      * @see GameMsg
+     *
+     * TODO: when trying to send a message and the socket is not connected
+     * the message is just discarded. Outgoing messages could be buffered
+     * and sent out whenever the connection is available again.
      */
     Socket.prototype.send = function(msg) {
-        if (!this.socket) {
+        if (!this.isConnected()) {
             this.node.err('Socket.send: cannot send message. No open socket.');
             return false;
         }
@@ -12163,8 +12229,10 @@ JSUS.extend(PARSE);
         }
 
         socket = io.connect(url, options); //conf.io
+
         socket.on('connect', function(msg) {
             node.info('socket.io connection open');
+            node.socket.onConnect.call(node.socket);
             socket.on('message', function(msg) {
                 node.socket.onMessage(msg);
             });
@@ -12178,6 +12246,12 @@ JSUS.extend(PARSE);
 
         return true;
 
+    };
+
+    SocketIo.prototype.isConnected = function() {
+        return this.socket &&
+            this.socket.socket &&
+            this.socket.socket.connected;
     };
 
     SocketIo.prototype.send = function(msg) {
@@ -12710,29 +12784,17 @@ JSUS.extend(PARSE);
         rc = this.step();
 
         node.log('game started.');
-
-        return rc;
     };
 
     /**
      * ### Game.restart
      *
-     * Moves the game stage to 1.1.1
+     * Stops and starts the game.
      *
-     * @param {boolean} rest If TRUE, erases the game memory before restarting.
-     *   Defaults, FALSE.
-     *
-     * TODO: should we send a message to connected players as well,
-     * or give an option to send it?
-     *
-     * TODO: check if the game has started already, and give a warning if not
-     *
-     * @experimental
+     * @see Game.stop
+     * @see Game.start
      */
     Game.prototype.restart = function() {
-        if (this.getStateLevel() <= constants.stateLevels.INITIALIZING) {
-            throw new Error('Game.restart: game is not running.');
-        }
         this.stop();
         this.start();
     };
@@ -12742,9 +12804,16 @@ JSUS.extend(PARSE);
      *
      * Stops the current game
      *
-     * Clears timers, event handlers, local memory, and window frame (if any)
+     * Clears timers, event handlers, local memory, and window frame (if any).
      *
-     * Server is notified. 
+     * Does **not** clear _node.env_ variables and any node.player extra
+     * property.
+     *
+     * If additional properties (e.g. widgets) have been added to the game
+     * object by any of the previous game callbacks, they will not be removed.
+     * TODO: avoid pollution of the game object.
+     *
+     * GameStage is set to 0.0.0 and srver is notified.
      */
     Game.prototype.stop = function() {
         if (this.getStateLevel() <= constants.stateLevels.INITIALIZING) {
@@ -12770,6 +12839,8 @@ JSUS.extend(PARSE);
         this.setStageLevel(constants.stageLevels.UNINITIALIZED, true);
         // This command is notifying the server.
         this.setCurrentGameStage(new GameStage());
+
+        node.log('game stopped.');
     };
 
     /**
@@ -12802,6 +12873,8 @@ JSUS.extend(PARSE);
 
         this.setStateLevel(constants.stateLevels.GAMEOVER);
         this.setStageLevel(constants.stageLevels.DONE);
+
+        node.log('game over.');
     };
 
     /**
@@ -12835,8 +12908,10 @@ JSUS.extend(PARSE);
         }
 
         this.node.emit('PAUSED');
-
+        
         // broadcast?
+
+        node.log('game paused.');
     };
 
     /**
@@ -12872,6 +12947,8 @@ JSUS.extend(PARSE);
         node.emit('RESUMED');
 
         // broadcast?
+
+        node.log('game resumed.');
     };
 
     /**
@@ -16153,11 +16230,11 @@ JSUS.extend(PARSE);
 /**
  * # Connect module
  * 
- * Copyright(c) 2012 Stefano Balietti
+ * Copyright(c) 2013 Stefano Balietti
  * MIT Licensed 
  * 
- * `nodeGame` logging module
- * 
+ * `nodeGame` connect module
+ * TODO: integrate in main NGC file ?
  * ---
  */
 (function(exports, parent) {
@@ -16171,12 +16248,25 @@ JSUS.extend(PARSE);
      *
      * Establishes a connection with a nodeGame server
      *
-     * @param {string} uri Optional. The uri to connect to
+     * @param {string} uri Optional. The uri to connect to.
+     * @param {function} cb Optional. A callback to execute as soon as the
+     *   connection is established.
+     * @param {object} socketOptions Optional. A configuration object for
+     *   the socket connect method.
+     *
+     * @emit SOCKET_CONNECT
      */
-    NGC.prototype.connect = function (uri, options) {
-        if (this.socket.connect(uri, options)) {
-            this.emit('NODEGAME_CONNECTED');
+    NGC.prototype.connect = function(uri, cb, socketOptions) {
+        if (cb) {
+            if ('function' !== typeof cb) {
+                throw new TypeError('node.connect: cb must be function or ' +
+                                    'undefined');
+            }
+            this.once('SOCKET_CONNECT', function() {
+                cb();
+            });
         }
+        this.socket.connect(uri, socketOptions);
     };
 
 })(
@@ -16471,7 +16561,8 @@ JSUS.extend(PARSE);
             target: this.constants.target.DATA,
             to: to || 'SERVER',
             reliable: 1,
-            text: key
+            text: key,
+            data: params
         });
         
         // TODO: check potential timing issues. Is it safe to send the GET
@@ -17821,7 +17912,7 @@ TriggerManager.prototype.size = function () {
 
             // Add default CSS.
             if (node.conf.host) {
-                this.addCSS(this.root,
+                this.addCSS(this.getFrameRoot(),
                             node.conf.host + '/stylesheets/monitor.css');
             }
 
@@ -17829,7 +17920,7 @@ TriggerManager.prototype.size = function () {
 
         case 'PLAYER':
 
-            this.header = this.generateHeader();
+            this.generateHeader();
 
             node.game.visualState = node.widgets.append('VisualState',
                     this.header);
@@ -17838,12 +17929,12 @@ TriggerManager.prototype.size = function () {
             node.game.stateDisplay = node.widgets.append('StateDisplay',
                     this.header);
 
-            // Will continue in SOLO_PLAYER
+            // Will continue in SOLO_PLAYER.
 
         case 'SOLO_PLAYER':
 
             if (!this.getFrame()) {
-                this.addIFrame(this.root, this.mainframe);
+                this.addIFrame(this.getFrameRoot(), this.mainframe);
                 // At this point, there is no document in the iframe yet.
                 this.frame = window.frames[this.mainframe];
                 initPage = this.getBlankPage();
@@ -17858,7 +17949,7 @@ TriggerManager.prototype.size = function () {
 
             // Add default CSS.
             if (node.conf.host) {
-                this.addCSS(this.root,
+                this.addCSS(this.getFrameRoot(),
                             node.conf.host + '/stylesheets/player.css');
             }
 
@@ -18266,7 +18357,6 @@ TriggerManager.prototype.size = function () {
             window.frames[frame].location = uri;
         }
 
-
         // Adding a reference to nodeGame also in the iframe
         window.frames[frame].window.node = node;
     };
@@ -18371,28 +18461,43 @@ TriggerManager.prototype.size = function () {
     /**
      * ### GameWindow.generateHeader
      *
-     * Creates and adds a container div with id 'gn_header' to the root element
+     * Adds a container div with id 'gn_header' to the root element
      *
-     * If a header element has already been created, deletes it,
-     * and creates a new one.
+     * If a header element already exists, deletes its content
+     * and returns it.
      *
-     * @return {Element} The created element
-     *
-     * @TODO: Should be always added as first child
+     * @return {Element} The header element
      */
     GameWindow.prototype.generateHeader = function() {
-        if (this.header) {
-            this.header.innerHTML = '';
-            this.header = null;
+        var root, header;
+        header = this.getHeader();
+        if (header) {
+            header.innerHTML = '';
         }
+        else {
+            root = this.getFrameRoot();
+            this.header = this.addElement('div', root, 'gn_header');
+            header = this.header;
+        }   
+        return header;
+    };
 
-        return this.addElement('div', this.root, 'gn_header');
+    /**
+     * ### GameWindow.getHeader
+     *
+     * Returns a reference to the header element, if defined
+     *
+     * @return {Element} The header element
+     */
+    GameWindow.prototype.getHeader = function() {
+        return this.header;
     };
 
 
     // Overriding Document.write and DOM.writeln and DOM.write
     GameWindow.prototype._write = DOM.write;
     GameWindow.prototype._writeln = DOM.writeln;
+
     /**
      * ### GameWindow.write
      *
@@ -18440,6 +18545,54 @@ TriggerManager.prototype.size = function () {
     };
 
     /**
+     * ### GameWindow.getLoadingDots
+     *
+     * Creats and returns a span element with incrementing dots inside
+     *
+     * New dots are added every second, until the limit is reached, and it 
+     * starts from the beginning
+     *
+     * Gives the impression of a loading time.
+     *
+     * @param {string} id Optional The id of the span
+     * @return {object} An object containing two properties: the span element
+     *   and a method stop, that clears the interval.
+     */
+    GameWindow.prototype.getLoadingDots = function(len, id) {
+        var span_dots, i, limit, intervalId;
+        if (len & len < 0) {
+            throw new Error('GameWindow.getLoadingDots: len < 0.');
+        }
+        len = len || 5;
+        span_dots = document.createElement('span');
+        span_dots.id = id || 'span_dots';
+        limit = '';
+        for (i = 0; i < len; i++) {
+            limit = limit + '.';
+        }
+        // Refreshing the dots...
+        intervalId = setInterval(function() {
+            if (span_dots.innerHTML !== limit) {
+                span_dots.innerHTML = span_dots.innerHTML + '.';  
+            }
+            else {
+                span_dots.innerHTML = '.';
+            }
+        }, 1000);
+
+        function stop() {
+            span_dots.innerHTML = '.';
+            clearInterval(intervalId);
+        }
+
+        return {
+            span: span_dots,
+            stop: stop
+        }
+    };
+
+
+    /**
      * ### GameWindow.toggleInputs
      *
      * Enables / disables the input forms
@@ -18447,7 +18600,7 @@ TriggerManager.prototype.size = function () {
      * If an id is provided, only children of the element with the specified
      * id are toggled.
      *
-     * If id is given it will use _GameWindow.getRoot()_ to determine the
+     * If id is given it will use _GameWindow.getFrameDocument()_ to determine the
      * forms to toggle.
      *
      * If a state parameter is given, all the input forms will be either
@@ -19632,30 +19785,15 @@ TriggerManager.prototype.size = function () {
             else {
                 node = appendDD.call(this);
             }
-            //                  console.log('This is the el')
-            //                  console.log(el);
             var content = this.htmlRenderer.render(el);
-            //                  console.log('This is how it is rendered');
-            //                  console.log(content);
             node.appendChild(content);          
-        }
-        
+        }        
         return this.DL;
     };
     
     List.prototype.getRoot = function() {
         return this.DL;
     };
-    
-    
-    
-    //  List.prototype.createItem = function(id) {
-    //          var item = document.createElement(this.SECOND_LEVEL);
-    //          if (id) {
-    //                  item.id = id;
-    //          }
-    //          return item;
-    //  };
     
     // Cell Class
     Node.prototype = new Entity();
@@ -20468,13 +20606,18 @@ TriggerManager.prototype.size = function () {
     // ## Meta-data
 
     // ### Chat.modes
-    //  MANY_TO_MANY: everybody can see all the messages, and it possible
-    //    to send private messages
-    //  MANY_TO_ONE: everybody can see all the messages, private messages can
-    //    be received, but not sent
-    //  ONE_TO_ONE: everybody sees only personal messages, private messages can
-    //    be received, but not sent. All messages are sent to the SERVER
-    //  RECEIVER_ONLY: messages can only be received, but not sent
+    //
+    // - MANY_TO_MANY: everybody can see all the messages, and it possible
+    //   to send private messages.
+    //
+    // - MANY_TO_ONE: everybody can see all the messages, private messages can
+    //   be received, but not sent.
+    //
+    // ONE_TO_ONE: everybody sees only personal messages, private messages can
+    //   be received, but not sent. All messages are sent to the SERVER.
+    //
+    // RECEIVER_ONLY: messages can only be received, but not sent.
+    //
     Chat.modes = {
         MANY_TO_MANY: 'MANY_TO_MANY',
         MANY_TO_ONE: 'MANY_TO_ONE',
@@ -20483,7 +20626,8 @@ TriggerManager.prototype.size = function () {
     };
 
     Chat.version = '0.4';
-    Chat.description = 'Offers a uni / bi-directional communication interface between players, or between players and the experimenter.';
+    Chat.description = 'Offers a uni / bi-directional communication interface ' +
+        'between players, or between players and the experimenter.';
 
     // ## Dependencies
 
@@ -20569,11 +20713,12 @@ TriggerManager.prototype.size = function () {
         var that = this;
 
         node.on(this.chat_event, function() {
-            var msg = that.readTA();
+            var msg, to, args;
+            msg = that.readTA();
             if (!msg) return;
 
-            var to = that.recipient.value;
-            var args = {
+            to = that.recipient.value;
+            args = {
                 '%s': {
                     'class': 'chat_me'
                 },
@@ -20592,7 +20737,8 @@ TriggerManager.prototype.size = function () {
             });
         }
 
-        node.onDATA(this.chat_event, function(msg) {
+        node.on.data(this.chat_event, function(msg) {
+            var from, args;
             if (msg.from === node.player.id || msg.from === node.player.sid) {
                 return;
             }
@@ -20603,8 +20749,8 @@ TriggerManager.prototype.size = function () {
                 }
             }
 
-            var from = that.displayName(msg.from);
-            var args = {
+            from = that.displayName(msg.from);
+            args = {
                 '%s': {
                     'class': 'chat_others'
                 },
@@ -22808,6 +22954,90 @@ TriggerManager.prototype.size = function () {
 
 })(node);
 /**
+ * # Feedback widget for nodeGame
+ * Copyright(c) 2013 Stefano Balietti
+ * MIT Licensed
+ *
+ * Sends a feedback message to the server.
+ *
+ * www.nodegame.org
+ * ---
+ */
+(function(node) {
+
+    "use strict";
+
+    var J = node.JSUS;
+
+    // ## Defaults
+
+    Feedback.defaults = {};
+    Feedback.defaults.id = 'feedback';
+    Feedback.defaults.fieldset = { 
+        legend: 'Feedback'
+    };
+    
+    // ## Meta-data
+
+    Feedback.version = '0.1';
+    Feedback.description = 'Displays a simple feedback form';
+
+    // ## Dependencies
+
+    Feedback.dependencies = {
+        JSUS: {},
+    };
+
+    function Feedback(options) {
+        this.id = options.id || Feedback.id;
+        this.root = null;
+        this.textarea = null;
+        this.submit = null;
+        this.label = options.label || 'FEEDBACK';
+    }
+
+    Feedback.prototype.append = function(root) {
+        this.root = root;
+        this.textarea = document.createElement('textarea');
+        this.submit = document.createElement('button');
+        this.submit.onclick = function() {
+            var feedback, sent;
+            feedback = this.textarea.value;
+            if (!feedback.length) {
+                J.highlight(this.textarea, 'ERR');
+                alert('Feedback is empty, not sent.');
+                return false;
+            }
+            J.highlight(this.textarea, 'OK');
+            sent = node.say('FEEDBACK', 'SERVER', {
+                feedback: feedback,
+                navigator: navigator
+            });
+
+            if (sent) {
+                alert('Feedback sent. Thank you.');
+                this.submit.disabled = true;
+            }
+            else {
+                alert('An error has occurred, feedback not sent.');
+            }
+        };
+        root.appendChild(this.textarea);
+        return root;
+    };
+
+    Feedback.prototype.getRoot = function() {
+        return this.root;
+    };
+
+    Feedback.prototype.listeners = function() {
+        var that = this;
+    };
+
+    node.widgets.register('Feedback', Feedback);
+
+})(node);
+/**
  * # GameBoard widget for nodeGame
  * Copyright(c) 2013 Stefano Balietti
  * MIT Licensed
@@ -23691,12 +23921,22 @@ TriggerManager.prototype.size = function () {
         this.id = options.id || Requirements.id;
         this.root = null;
         this.callbacks = [];
+        this.stillChecking = 0;
+        this.withTimeout = options.withTimeout || true;
+        this.timeoutTime = options.timeoutTime || 10000;
+        this.timeoutId = null;
+
+        this.summary = null;
+        this.summaryUpdate = null;
+
+        this.onComplete = null;
+        this.onSuccess = null;
+        this.onFail = null;
 
         function renderResult(o) {
             var imgPath, img, span, text;
             imgPath = '/images/' + (o.content.success ? 
                                     'success-icon.png' : 'delete-icon.png');
-            
             img = document.createElement('img');
             img.src = imgPath;
             text = document.createTextNode(o.content.text);
@@ -23728,6 +23968,20 @@ TriggerManager.prototype.size = function () {
         }
     };
 
+    function resultCb(that, i) {
+        var update = function(result) {
+            this.updateStillChecking(-1);
+            if (result) {
+                if (!J.isArray(result)) {
+                    throw new Error('Requirements.checkRequirements: ' +
+                                    'result must be array or undefined.');
+                }
+                that.displayResults(result);
+            }
+        };
+        return that.callbacks[i](update);
+    }
+
     Requirements.prototype.checkRequirements = function(display) {
         var i, len;
         var errors, cbErrors;
@@ -23735,23 +23989,91 @@ TriggerManager.prototype.size = function () {
             throw new Error('Requirements.checkRequirements: no callback ' +
                             'found.');
         }
+
+        this.updateStillChecking(this.callbacks.length, true);
+
         errors = [];
         i = -1, len = this.callbacks.length;
         for ( ; ++i < len ; ) {
             try {
-                cbErrors = this.callbacks[i]();
+                cbErrors = resultCb(this, i);
             }
             catch(e) {
+                this.updateStillChecking(-1);
                 errors.push('An exception occurred in requirement ' + 
-                            (this.callbacks[i].name || 'n.' + i) + '.');
+                            (this.callbacks[i].name || 'n.' + i) + ': ' + e );
+                
             }
-            errors = errors.concat(cbErrors);
+            if (cbErrors) {
+                this.updateStillChecking(-1);
+                errors = errors.concat(cbErrors);
+            }
         }
         
+        if (this.withTimeout) {
+            this.addTimeout();
+        }
+
         if ('undefined' === typeof display ? true : false) {
             this.displayResults(errors);
         }
         return errors;
+    };
+
+        
+    Requirements.prototype.addTimeout = function() {
+        var that = this;
+        var errStr = 'One or more function is taking too long. This is ' +
+            'likely to be due to a compatibility issue with your browser ' +
+            'or to bad network connectivity.';
+
+        this.timeoutId = setTimeout(function() {
+            if (that.stillChecking > 0) {
+                that.displayResults([errStr]);
+            }
+            that.timeoutId = null;
+            that.checkingFinished();
+        }, this.timeoutTime);
+    };
+
+    Requirements.prototype.clearTimeout = function() {
+        if (this.timeoutId) {
+            clearTimeout(this.timeoutId);
+            this.timeoutId = null;
+        }
+    };
+
+    Requirements.prototype.updateStillChecking = function(update, absolute) {
+        this.stillChecking = absolute ? update : this.stillChecking + update;
+
+        this.summaryUpdate.innerHTML = '(' + this.stillChecking +
+            ' / ' + this.callbacks.length + ')';
+
+        if (this.stillChecking <= 0) {
+            this.checkingFinished();
+        }
+    };
+    
+    Requirements.prototype.checkingFinished = function() {
+        
+        if (this.timeoutId) {
+            clearTimeout(this.timeoutId);
+        }
+
+        this.dots.stop();
+
+        if (this.onComplete) {
+            this.onComplete();
+        }
+            
+        if (this.list.size()) {
+            if (this.onFail) {
+                this.onFail();
+            }
+        }
+        else if (this.onSuccess) {
+            this.onSuccess();
+        }
     };
 
     Requirements.prototype.displayResults = function(results) {
@@ -23765,15 +24087,20 @@ TriggerManager.prototype.size = function () {
             throw new TypeError('Requirements.displayResults: results must ' +
                                 'be array.');
         }
+
+        // No errors.
         if (!results.length) {
-            // All tests passed.
-            this.list.addDT({
-                success: true,
-                text:'All tests passed'
-            });
+            // Last check and no previous errors.
+            if (!this.list.size() && this.stillChecking <= 0) {
+                // All tests passed.
+                this.list.addDT({
+                    success: true,
+                    text:'All tests passed'
+                });
+            }
         }
         else {
-            
+            // Add the errors.
             i = -1, len = results.length;
             for ( ; ++i < len ; ) {
                 this.list.addDT({
@@ -23788,6 +24115,19 @@ TriggerManager.prototype.size = function () {
 
     Requirements.prototype.append = function(root) {
         this.root = root;
+        
+        this.summary = document.createElement('span');
+        this.summary.appendChild(document.createTextNode('Evaluating requirements'));
+        
+        this.summaryUpdate = document.createElement('span');
+        this.summary.appendChild(this.summaryUpdate);
+        
+        this.dots = W.getLoadingDots();
+
+        this.summary.appendChild(this.dots.span);
+        
+        root.appendChild(this.summary);
+        
         root.appendChild(this.list.getRoot());
         return root;
     };
@@ -23799,6 +24139,43 @@ TriggerManager.prototype.size = function () {
     Requirements.prototype.listeners = function() {
         var that = this;
     };
+
+    Requirements.prototype.nodeGameRequirements = function() {
+        var errors = [];
+   
+        if ('undefined' === typeof NDDB) {
+            errors.push('NDDB not found.');
+        }
+        
+        if ('undefined' === typeof JSUS) {
+            errors.push('JSUS not found.');
+        }
+        
+        if ('undefined' === typeof node.window) {
+            errors.push('node.window not found.');
+        }
+        
+        if ('undefined' === typeof W) {
+            errors.push('W not found.');
+        }
+        
+        if ('undefined' === typeof node.widgets) {
+            errors.push('node.widgets not found.');
+        }
+        
+        if ('undefined' !== typeof NDDB) {
+            try {
+                var db = new NDDB();
+            }
+            catch(e) {
+                errors.push('An error occurred manipulating the NDDB object: ' +
+                            e.message);
+            }
+        }
+        
+        return errors;
+    };
+
 
     node.widgets.register('Requirements', Requirements);
 
