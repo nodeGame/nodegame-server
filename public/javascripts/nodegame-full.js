@@ -7700,9 +7700,11 @@ JSUS.extend(PARSE);
      * @param {NodeGameClient} node Reference to the active node object.
      */
     ErrorManager.prototype.init = function(node) {
+        var that;
         if (J.isNodeJS()) {
+            that = this;
             process.on('uncaughtException', function(err) {
-                this.lastError = err;
+                that.lastError = err;
                 node.err('Caught exception: ' + err);
                 if (node.debug) {
                     throw err;
@@ -9150,7 +9152,6 @@ JSUS.extend(PARSE);
      *
      * For security reasons, non-default properties cannot be `function`, and
      * cannot overwrite any previously existing property.
-     *
      * ---
      */
 
@@ -9167,8 +9168,12 @@ JSUS.extend(PARSE);
     function Player(player) {
         var key;
 
-        if (!player || !player.id) {
-            throw new TypeError('Player: invalid player parameter');
+        if ('object' !== typeof player) {
+            throw new TypeError('Player constructor: player must be ' +
+                                'an object.');
+        }
+        if (!player.id) {
+            throw new TypeError('Player constructor: missing id property.');
         }
 
         /**
@@ -15724,10 +15729,7 @@ JSUS.extend(PARSE);
          * @see node.createPlayer
          */
         this.registerSetup('player', function(player) {
-            if (!player) {
-                return null;
-            }
-
+            if (!player) return null;
             return this.createPlayer(player);
         });
 
@@ -16305,15 +16307,15 @@ JSUS.extend(PARSE);
             throw new this.NodeGameIllegalOperationError(
                 'node.createPlayer: cannot create player while game is running');
         }
-
-        player = new Player(player);
-        player.stateLevel = this.player.stateLevel;
-        player.stageLevel = this.player.stageLevel;
-
         if (this.game.pl.exist(player.id)) {
             throw new Error('node.createPlayer: already id already found in ' +
                             'playerList: ' + player.id);
         }
+        // Cast to player (will perform consistency checks)
+        player = new Player(player);
+        player.stateLevel = this.player.stateLevel;
+        player.stageLevel = this.player.stageLevel;
+
         
         this.player = player;
         this.emit('PLAYER_CREATED', this.player);
@@ -16522,6 +16524,19 @@ JSUS.extend(PARSE);
      * ### NodeGameClient.get
      *
      * Sends a GET message to a recipient and listen to the reply
+     *
+     * The receiver of a GET message must be implement an internal listener
+     * with the same label, and return the value requested. For example,
+     *
+     * ```javascript
+     *
+     * // Sender.
+     * node.get('myLabel, function(reply) {});
+     *
+     * // Receiver.
+     * node.on('myLabel', function() { return 'OK'; });
+     *
+     * ```
      *
      * The listener function is removed immediately after its first execution.
      * To allow multiple execution, it is possible to specify a positive timeout
@@ -23970,14 +23985,15 @@ TriggerManager.prototype.size = function () {
 
     function resultCb(that, i) {
         var update = function(result) {
-            this.updateStillChecking(-1);
             if (result) {
                 if (!J.isArray(result)) {
                     throw new Error('Requirements.checkRequirements: ' +
                                     'result must be array or undefined.');
                 }
                 that.displayResults(result);
-            }
+             
+            }            
+            that.updateStillChecking(-1);
         };
         return that.callbacks[i](update);
     }
@@ -24044,10 +24060,13 @@ TriggerManager.prototype.size = function () {
     };
 
     Requirements.prototype.updateStillChecking = function(update, absolute) {
+        var total, remaining;
+
         this.stillChecking = absolute ? update : this.stillChecking + update;
 
-        this.summaryUpdate.innerHTML = '(' + this.stillChecking +
-            ' / ' + this.callbacks.length + ')';
+        total = this.callbacks.length;
+        remaining = total - this.stillChecking;
+        this.summaryUpdate.innerHTML = ' (' +  remaining + ' / ' + total + ')';
 
         if (this.stillChecking <= 0) {
             this.checkingFinished();
