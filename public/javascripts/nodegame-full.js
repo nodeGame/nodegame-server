@@ -7297,7 +7297,6 @@ JSUS.extend(PARSE);
 })('object' === typeof module ? module.exports : (window.node = {}));
 /**
  * # Variables
- *
  * Copyright(c) 2013 Stefano Balietti
  * MIT Licensed
  *
@@ -7316,7 +7315,7 @@ JSUS.extend(PARSE);
     k.version = '1.0.0-beta';
 
     /**
-     * ### node.verbosity_levels
+     * ### node.constants.verbosity_levels
      *
      * ALWAYS, ERR, WARN, INFO, DEBUG
      */
@@ -7333,7 +7332,7 @@ JSUS.extend(PARSE);
     // TODO: do we need these defaults ?
 
     /**
-     *  ### node.verbosity
+     *  ### node.constants.verbosity
      *
      *  The minimum level for a log entry to be displayed as output
      *
@@ -7343,7 +7342,7 @@ JSUS.extend(PARSE);
     k.verbosity = k.verbosity_levels.WARN;
 
     /**
-     * ### node.remoteVerbosity
+     * ### node.constants.remoteVerbosity
      *
      *  The minimum level for a log entry to be reported to the server
      *
@@ -7352,7 +7351,7 @@ JSUS.extend(PARSE);
     k.remoteVerbosity = k.verbosity_levels.WARN;
 
     /**
-     * ### node.actions
+     * ### node.constants.actions
      *
      * Collection of available nodeGame actions
      *
@@ -7373,7 +7372,7 @@ JSUS.extend(PARSE);
     k.action.SAY = 'say';
 
     /**
-     * ### node.target
+     * ### node.constants.target
      *
      * Collection of available nodeGame targets
      *
@@ -7470,16 +7469,7 @@ JSUS.extend(PARSE);
     k.target.ERR  = 'ERR';    // To do.
 
 
-    /**
-     * ### Game commands
-     *
-     * - node.gamecommand.start
-     * - node.gamecommand.pause
-     * - node.gamecommand.resume
-     * - node.gamecommand.stop
-     * - node.gamecommand.step
-     * - node.gamecommand.goto_stage
-     */
+    // ### node.constants.gamecommands
     k.gamecommands = {
         start: 'start',
         pause: 'pause',
@@ -7495,14 +7485,14 @@ JSUS.extend(PARSE);
      *
      * Distiguishes between incoming and outgoing messages
      *
-     * - node.IN
-     * - node.OUT
+     * - node.constants.IN
+     * - node.constants.OUT
      */
     k.IN  = 'in.';
     k.OUT = 'out.';
 
     /**
-     * ### node.stateLevels
+     * ### node.constants.stateLevels
      *
      * Levels associated with the states of the Game
      */
@@ -7520,7 +7510,7 @@ JSUS.extend(PARSE);
     };
 
     /**
-     * ### node.stageLevels
+     * ### node.constants.stageLevels
      *
      * Levels associated with the states of the stages of the Game
      */
@@ -7540,7 +7530,7 @@ JSUS.extend(PARSE);
     };
 
     /**
-     * ### node.stageLevels
+     * ### node.constants.stageLevels
      *
      * Levels associated with the states of the stages of the Game
      */
@@ -7556,7 +7546,7 @@ JSUS.extend(PARSE);
     };
 
     /**
-     * ### node.UNDEFINED_PLAYER
+     * ### node.constants.UNDEFINED_PLAYER
      *
      * Undefined player ID
      */
@@ -7564,7 +7554,7 @@ JSUS.extend(PARSE);
 
 
      /**
-     * ### node.verbosity_levels
+     * ### node.constants.verbosity_levels
      *
      * The level of updates that the server receives about the state of a game
      *
@@ -8871,6 +8861,20 @@ JSUS.extend(PARSE);
         return this.id.get(id) ? true : false;
     };
 
+
+    /**
+     * ### PlayerList.clear
+     *
+     * Clears the PlayerList and rebuilds the indexes
+     *
+     * @param {boolean} confirm Must be TRUE to actually clear the list
+     * @return {boolean} TRUE, if a player with the specified id is found
+     */
+    PlayerList.prototype.clear = function(confirm) {
+        NDDB.prototype.clear.call(this, confirm);
+        this.rebuildIndexes();
+    };
+
     /**
      * ### PlayerList.updatePlayer
      *
@@ -9680,8 +9684,8 @@ JSUS.extend(PARSE);
          *
          * key: stage ID,  value: stage object
          *
-         * Stage aliases are stored the same way, with a reference to the original
-         * stage object as the value.
+         * Stage aliases are stored the same way, with a reference to the
+         * original stage object as the value.
          *
          * @see Stager.addStage
          */
@@ -9752,8 +9756,8 @@ JSUS.extend(PARSE);
          *
          * Defaults of global variables
          *
-         * This map holds the default values of global variables. These values are
-         * overridable by more specific version in step and stage objects.
+         * This map holds the default values of global variables. These values
+         * are overridable by more specific version in step and stage objects.
          *
          * @see Stager.setDefaultGlobals
          * @see GamePlot.getGlobal
@@ -9808,15 +9812,16 @@ JSUS.extend(PARSE);
      * Available only when nodegame is executed in _flexible_ mode.
      * The callback given here is used to determine the next stage.
      *
-     * @param {function|null} func The decider callback.  It should return the name of
-     *  the next stage, 'NODEGAME_GAMEOVER' to end the game or FALSE for sequence end.
-     *  NULL can be given to signify non-existence.
+     * @param {function|null} func The decider callback. It should return the
+     *  name of the next stage, 'NODEGAME_GAMEOVER' to end the game or FALSE for
+     *  sequence end. NULL can be given to signify non-existence.
      *
      * @return {boolean} TRUE on success, FALSE on error
      */
     Stager.prototype.registerGeneralNext = function(func) {
         if (func !== null && 'function' !== typeof func) {
-            this.log('Stager.registerGeneralNext: expecting a function as parameter.');
+            this.log('Stager.registerGeneralNext: ' +
+                     'expecting a function as parameter.');
             return false;
         }
 
@@ -9833,9 +9838,11 @@ JSUS.extend(PARSE);
      * and determines the next stage.
      * Available only when nodegame is executed in _flexible_ mode.
      *
-     * @param {string} id The name of the stage after which the decider function will be called
-     * @param {function} func The decider callback.  It should return the name of
-     *  the next stage, 'NODEGAME_GAMEOVER' to end the game or FALSE for sequence end.
+     * @param {string} id The name of the stage after which the decider function
+     *  will be called
+     * @param {function} func The decider callback. It should return the name
+     *  of the next stage, 'NODEGAME_GAMEOVER' to end the game or FALSE for
+     *  sequence end.
      *
      * @return {boolean} TRUE on success, FALSE on error
      *
@@ -9871,7 +9878,8 @@ JSUS.extend(PARSE);
     Stager.prototype.setDefaultStepRule = function(steprule) {
         if (steprule) {
             if ('function' !== typeof steprule) {
-                throw new Error('Stager.setDefaultStepRule: expecting a function as parameter.');
+                throw new Error('Stager.setDefaultStepRule: ' +
+                                'expecting a function as parameter.');
             }
 
             this.defaultStepRule = steprule;
@@ -9909,7 +9917,8 @@ JSUS.extend(PARSE);
      */
     Stager.prototype.setDefaultGlobals = function(defaultGlobals) {
         if (!defaultGlobals || 'object' !== typeof defaultGlobals) {
-            this.log('Stager.setDefaultGlobals: expecting an object as parameter.');
+            this.log('Stager.setDefaultGlobals: ' +
+                     'expecting an object as parameter.');
             return false;
         }
 
@@ -9945,7 +9954,8 @@ JSUS.extend(PARSE);
      */
     Stager.prototype.setDefaultProperties = function(defaultProperties) {
         if (!defaultProperties || 'object' !== typeof defaultProperties) {
-            throw new Error('Stager.setDefaultProperties: expecting an object as parameter.');
+            throw new Error('Stager.setDefaultProperties: ' +
+                            'expecting an object as parameter.');
             return false;
         }
 
@@ -9981,7 +9991,8 @@ JSUS.extend(PARSE);
      */
     Stager.prototype.setOnInit = function(func) {
         if (func !== null && 'function' !== typeof func) {
-            throw new Error('Stager.setOnInit: expecting a function as parameter.');
+            throw new Error('Stager.setOnInit: ' +
+                            'expecting a function as parameter.');
             return false;
         }
 
@@ -10017,7 +10028,8 @@ JSUS.extend(PARSE);
      */
     Stager.prototype.setOnGameover = function(func) {
         if (func !== null && 'function' !== typeof func) {
-            throw new Error('Stager.setOnGameover: expecting a function as parameter.');
+            throw new Error('Stager.setOnGameover: ' +
+                            'expecting a function as parameter.');
             return false;
         }
 
@@ -10055,12 +10067,13 @@ JSUS.extend(PARSE);
      *
      * Adds a new step
      *
-     * Registers a new game step object.  This must have at least the following fields:
+     * Registers a new game step object. This must have at least the following
+     * fields:
      *
      *  - id (string): The step's name
      *  - cb (function): The step's callback function
      *
-     * @param {object} step A valid step object.  Shallowly copied.
+     * @param {object} step A valid step object. Shallowly copied.
      *
      * @return {boolean} TRUE on success, FALSE on error
      */
@@ -10079,22 +10092,26 @@ JSUS.extend(PARSE);
      *
      * Adds a new stage
      *
-     * Registers a new game stage object. This must have at least the following fields:
+     * Registers a new game stage object. This must have at least the following
+     * fields:
      *
      *  - id (string): The stage's name
-     *  - steps (array of strings): The names of the steps that belong to this stage.
-     *     These must have been added with the `addStep` method before this call.
+     *  - steps (array of strings): The names of the steps that belong to this
+     *     stage. These must have been added with the `addStep` method before
+     *     this call.
      *
-     * Alternatively, a step object may be given.  Then that step and a stage
+     * Alternatively, a step object may be given. Then that step and a stage
      * containing only that step are added.
      *
-     * @param {object} stage A valid stage or step object.  Shallowly copied.
+     * @param {object} stage A valid stage or step object. Shallowly copied.
      *
      * @return {boolean} TRUE on success, FALSE on error
      *
      * @see Stager.addStep
      */
     Stager.prototype.addStage = function(stage) {
+        var rc;
+
         // Handle wrapped steps:
         if (this.checkStepValidity(stage)) {
             if (!this.addStep(stage)) return false;
@@ -10106,8 +10123,9 @@ JSUS.extend(PARSE);
             return true;
         }
 
-        if (!this.checkStageValidity(stage)) {
-            throw new Error('Stager.addStage: invalid stage received.');
+        rc = this.checkStageValidity(stage);
+        if (rc !== null) {
+            throw new Error('Stager.addStage: invalid stage received - ' + rc);
             return false;
         }
 
@@ -10194,7 +10212,8 @@ JSUS.extend(PARSE);
         }
 
         if ('number' !== typeof nRepeats) {
-            throw new Error('Stager.repeat: received invalid number of repetitions.');
+            throw new Error('Stager.repeat: ' +
+                            'received invalid number of repetitions.');
             return null;
         }
 
@@ -10208,11 +10227,12 @@ JSUS.extend(PARSE);
     };
 
 
-    function addLoop(type, id, func) {
-        var stageName = this.handleAlias(id);
+    function addLoop(that, type, id, func) {
+        var stageName = that.handleAlias(id);
 
         if (stageName === null) {
-            throw new Error('Stager.' + type + ': received invalid stage name.');
+            throw new Error('Stager.' + type +
+                            ': received invalid stage name.');
             return null;
         }
 
@@ -10225,14 +10245,14 @@ JSUS.extend(PARSE);
             return null;
         }
 
-        this.sequence.push({
+        that.sequence.push({
             type: type,
             id: stageName,
             cb: func
         });
 
-        return this;
-    };
+        return that;
+    }
 
 
     /**
@@ -10240,14 +10260,14 @@ JSUS.extend(PARSE);
      *
      * Adds looped stage block to sequence
      *
-     * The given stage will be repeated as long as the `func` callback returns TRUE.
-     * If it returns FALSE on the first time, the stage is never executed.
+     * The given stage will be repeated as long as the `func` callback returns
+     * TRUE. If it returns FALSE on the first time, the stage is never executed.
      *
      * If no callback function is specified the loop is repeated indefinetely.
      *
      * @param {string} id A valid stage name with optional alias
-     * @param {function} func Optional. Callback returning TRUE for repetition. Defaults,
-     *   a function that returns always TRUE.
+     * @param {function} func Optional. Callback returning TRUE for repetition.
+     *  Defaults, a function that returns always TRUE.
      *
      * @return {Stager|null} this object on success, NULL on error
      *
@@ -10256,7 +10276,7 @@ JSUS.extend(PARSE);
      * @see Stager.doLoop
      */
     Stager.prototype.loop = function(id, func) {
-        return addLoop.call(this, 'loop', id, func);
+        return addLoop(this, 'loop', id, func);
     };
 
     /**
@@ -10268,8 +10288,8 @@ JSUS.extend(PARSE);
      * callback returns TRUE.
      *
      * @param {string} id A valid stage name with optional alias
-     * @param {function} func Optional. Callback returning TRUE for repetition. Defaults,
-     *   a function that returns always TRUE.
+     * @param {function} func Optional. Callback returning TRUE for repetition.
+     *  Defaults, a function that returns always TRUE.
      *
      * @return {Stager|null} this object on success, NULL on error
      *
@@ -10278,7 +10298,7 @@ JSUS.extend(PARSE);
      * @see Stager.loop
      */
     Stager.prototype.doLoop = function(id, func) {
-        return addLoop.call(this, 'doLoop', id, func);
+        return addLoop(this, 'doLoop', id, func);
     };
 
     /**
@@ -10286,11 +10306,12 @@ JSUS.extend(PARSE);
      *
      * Returns the sequence of stages
      *
-     * @param {string} format 'hstages' for an array of human-readable stage descriptions,
-     *  'hsteps' for an array of human-readable step descriptions,
+     * @param {string} format 'hstages' for an array of human-readable stage
+     *  descriptions, 'hsteps' for an array of human-readable step descriptions,
      *  'o' for the internal JavaScript object
      *
-     * @return {array|object|null} The stage sequence in requested format. NULL on error.
+     * @return {array|object|null} The stage sequence in requested format. NULL
+     *   on error.
      */
     Stager.prototype.getSequence = function(format) {
         var result;
@@ -10329,7 +10350,8 @@ JSUS.extend(PARSE);
                         break;
 
                     default:
-                        throw new Error('Stager.getSequence: unknown sequence object type.');
+                        throw new Error('Stager.getSequence: ' +
+                                        'unknown sequence object type.');
                         return null;
                     }
                 }
@@ -10357,7 +10379,8 @@ JSUS.extend(PARSE);
 
                     case 'repeat':
                         this.stages[seqObj.id].steps.map(function(stepID) {
-                            result.push(stepPrefix + stepID + ' [x' + seqObj.num + ']');
+                            result.push(stepPrefix + stepID +
+                                        ' [x' + seqObj.num + ']');
                         });
                         break;
 
@@ -10374,7 +10397,8 @@ JSUS.extend(PARSE);
                         break;
 
                     default:
-                        throw new Error('Stager.getSequence: unknown sequence object type.');
+                        throw new Error('Stager.getSequence: ' +
+                                        'unknown sequence object type.');
                         return null;
                     }
                 }
@@ -10413,14 +10437,15 @@ JSUS.extend(PARSE);
      * Sets the internal state of the Stager
      *
      * The passed state object can have the following fields:
-     * steps, stages, sequence, generalNextFunction, nextFunctions, defaultStepRule,
-     * defaultGlobals, defaultProperties, onInit, onGameover.
+     * steps, stages, sequence, generalNextFunction, nextFunctions,
+     * defaultStepRule, defaultGlobals, defaultProperties, onInit, onGameover.
      * All fields are optional.
      *
      * This function calls the corresponding functions to set these fields, and
      * performs error checking.
      *
-     * If updateRule is 'replace', the Stager is cleared before applying the state.
+     * If updateRule is 'replace', the Stager is cleared before applying the
+     * state.
      *
      * @param {object} stateObj The Stager's state
      * @param {string} updateRule Optional. Whether to 'replace' (default) or
@@ -10455,7 +10480,8 @@ JSUS.extend(PARSE);
         }
 
         // Add stages:
-        // first, handle all non-aliases (key of `stages` entry is same as `id` field of its value)
+        // first, handle all non-aliases
+        // (key of `stages` entry is same as `id` field of its value)
         for (idx in stateObj.stages) {
             stageObj = stateObj.stages[idx];
             if (stateObj.stages.hasOwnProperty(idx) && stageObj.id === idx) {
@@ -10464,7 +10490,8 @@ JSUS.extend(PARSE);
                 }
             }
         }
-        // second, handle all aliases (key of `stages` entry is different from `id` field of its value)
+        // second, handle all aliases
+        // (key of `stages` entry is different from `id` field of its value)
         for (idx in stateObj.stages) {
             stageObj = stateObj.stages[idx];
             if (stateObj.stages.hasOwnProperty(idx) && stageObj.id !== idx) {
@@ -10516,7 +10543,8 @@ JSUS.extend(PARSE);
         // Set general next-decider:
         if (stateObj.hasOwnProperty('generalNextFunction')) {
             if (!this.registerGeneralNext(stateObj.generalNextFunction)) {
-                throw new Error('Stager.setState: invalid general next-decider.');
+                throw new Error('Stager.setState: ' +
+                                'invalid general next-decider.');
             }
         }
 
@@ -10524,7 +10552,8 @@ JSUS.extend(PARSE);
         for (idx in stateObj.nextFunctions) {
             if (stateObj.nextFunctions.hasOwnProperty(idx)) {
                 if (!this.registerNext(idx, stateObj.nextFunctions[idx])) {
-                    throw new Error('Stager.setState: invalid specific next-deciders.');
+                    throw new Error('Stager.setState: ' +
+                                    'invalid specific next-deciders.');
                 }
             }
         }
@@ -10571,8 +10600,8 @@ JSUS.extend(PARSE);
      * Returns the internal state of the Stager
      *
      * Fields of returned object:
-     * steps, stages, sequence, generalNextFunction, nextFunctions, defaultStepRule,
-     * defaultGlobals, defaultProperties, onInit, onGameover.
+     * steps, stages, sequence, generalNextFunction, nextFunctions,
+     * defaultStepRule, defaultGlobals, defaultProperties, onInit, onGameover.
      *
      * @return {object} The Stager's state
      *
@@ -10603,8 +10632,8 @@ JSUS.extend(PARSE);
      * The `sequence` is optionally set to a single `next` block for the stage.
      *
      * @param {string|array} id Valid stage name(s)
-     * @param {boolean} useSeq Optional. Whether to generate a singleton sequence.
-     *  TRUE by default.
+     * @param {boolean} useSeq Optional. Whether to generate a singleton
+     *  sequence.  TRUE by default.
      *
      * @return {object|null} The state object on success, NULL on error
      *
@@ -10627,7 +10656,8 @@ JSUS.extend(PARSE);
         }
         else return null;
 
-        useSeq = (useSeq === false) ? false : true;  // undefined (default) -> true
+        // undefined (default) -> true
+        useSeq = (useSeq === false) ? false : true;
 
         for (idIdx in idArray) {
             if (idArray.hasOwnProperty(idIdx)) {
@@ -10701,25 +10731,27 @@ JSUS.extend(PARSE);
      *
      * @param {object} stage The stage object
      *
-     * @return {bool} TRUE for valid stage objects, FALSE otherwise
+     * @return {string} NULL for valid stages, error description otherwise
      *
      * @see Stager.addStage
      *
      * @api private
      */
     Stager.prototype.checkStageValidity = function(stage) {
-        if (!stage) return false;
-        if ('string' !== typeof stage.id) return false;
-        if (!stage.steps && !stage.steps.length) return false;
+        if (!stage) return 'missing stage object';
+        if ('string' !== typeof stage.id) return 'missing ID';
+        if (!stage.steps && !stage.steps.length) return 'missing "steps" array';
 
         // Check whether the referenced steps exist:
         for (var i in stage.steps) {
             if (stage.steps.hasOwnProperty(i)) {
-                if (!this.steps[stage.steps[i]]) return false;
+                if (!this.steps[stage.steps[i]]) {
+                    return 'unknown step "' + stage.steps[i] +'"';
+                }
             }
         }
 
-        return true;
+        return null;
     };
 
     /**
@@ -10727,8 +10759,8 @@ JSUS.extend(PARSE);
      *
      * Handles stage id and alias strings
      *
-     * Takes a string like 'stageID' or 'stageID AS alias' and registers the alias,
-     * if existent.
+     * Takes a string like 'stageID' or 'stageID AS alias' and registers the
+     * alias, if existent.
      * Checks whether parameter is valid and unique.
      *
      * @param {string} nameAndAlias The stage-name string
@@ -10750,7 +10782,8 @@ JSUS.extend(PARSE);
 
         // Check ID validity:
         if (!this.stages[id]) {
-            throw new Error('Stager.handleAlias: received nonexistent stage id.');
+            throw new Error('Stager.handleAlias: ' +
+                            'received nonexistent stage id.');
             return null;
         }
 
@@ -10758,7 +10791,8 @@ JSUS.extend(PARSE);
         for (seqIdx in this.sequence) {
             if (this.sequence.hasOwnProperty(seqIdx) &&
                 this.sequence[seqIdx].id === stageName) {
-                throw new Error('Stager.handleAlias: received non-unique stage name.');
+                throw new Error('Stager.handleAlias: ' +
+                                'received non-unique stage name.');
                 return null;
             }
         }
@@ -13618,6 +13652,7 @@ JSUS.extend(PARSE);
     'undefined' != typeof node ? node : module.exports,
     'undefined' != typeof node ? node : module.parent.exports
 );
+
 /**
  * # GameSession
  *
@@ -14844,7 +14879,7 @@ JSUS.extend(PARSE);
      *
      * @param {string} event The name of the event
      * @param {number} maxWait Optional. The maximum time (in milliseconds)
-     *   to wait before emitting the event. to Defaults, 6000
+     *   to wait before emitting the event. Defaults, 6000
      */
     Timer.prototype.randomEmit = function(event, maxWait) {
         randomFire.call(this, event, maxWait, true);
@@ -14859,7 +14894,7 @@ JSUS.extend(PARSE);
      *
      * @param {function} The callback function to execute
      * @param {number} maxWait Optional. The maximum time (in milliseconds)
-     *   to wait before executing the callback. to Defaults, 6000
+     *   to wait before executing the callback. Defaults, 6000
      */
     Timer.prototype.randomExec = function(func, maxWait) {
         randomFire.call(this, func, maxWait, false);
