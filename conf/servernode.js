@@ -56,7 +56,8 @@ function configure(servernode) {
 	notifyPlayers: {
 	    onConnect: true,
 	    onStageUpdate: true,
-	    onStageLevelUpdate: false //true
+	    onStageLevelUpdate: false,
+        onStageLoadedUpdate: true
 	},
 	forwardAllMessages: true,
     };
