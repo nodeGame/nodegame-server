@@ -4143,7 +4143,7 @@ JSUS.extend(PARSE);
  * See README.md for help.
  * ---
  */
-(function(exports, J, store) {
+(function (exports, J, store) {
 
     NDDB.compatibility = J.compatibility();
 
@@ -4440,7 +4440,7 @@ JSUS.extend(PARSE);
      */
     NDDB.prototype._autoUpdate = function(options) {
         var update = options ? J.merge(this.__update, options) : this.__update;
-        
+
         if (update.pointer) {
             this.nddb_pointer = this.db.length-1;
         }
@@ -4452,6 +4452,7 @@ JSUS.extend(PARSE);
             this.rebuildIndexes();
         }
     };
+
 
     function nddb_insert(o, update) {
         if (o === null) return;
@@ -4951,6 +4952,7 @@ JSUS.extend(PARSE);
 
         var cb, idx;
         if (!h && !i && !v) return;
+
         // Reset current indexes
         this.resetIndexes({h: h, v: v, i: i});
 
@@ -4990,7 +4992,7 @@ JSUS.extend(PARSE);
         }
 
         for (idx = 0 ; idx < this.db.length ; idx++) {
-            // _hashIt and viewIt do not need idx, it is no harm anyway.
+            // _hashIt and viewIt do not need idx, it is no harm anyway
             cb.call(this, this.db[idx], idx);
         }
     };
@@ -5011,7 +5013,7 @@ JSUS.extend(PARSE);
             if (this.__I.hasOwnProperty(key)) {
                 func = this.__I[key];
                 index = func(o);
-                
+
                 if ('undefined' === typeof index) continue;
 
                 if (!this[key]) this[key] = new NDDBIndex(key, this);
@@ -7231,7 +7233,7 @@ JSUS.extend(PARSE);
         o = this.nddb.db[dbidx];
         J.mixin(o, update);
         this.nddb.emit('update', o);
-        //this.nddb._autoUpdate();
+        this.nddb._autoUpdate();
         return o;
     };
 
@@ -7447,19 +7449,20 @@ JSUS.extend(PARSE);
     // Ask a client to start/pause/stop/resume the game
     k.target.GAMECOMMAND = 'GAMECOMMAND';
 
-    // #### target.JOIN
-    // Asks a client to join another channel/subchannel/room
-    k.target.JOIN = 'JOIN';
-
-    // #### target.LOG
-    // A log entry
-    k.target.LOG = 'LOG';
+    // #### target.ALERT
+    // Displays an alert message in the receiving client (if in the browser)
+    k.target.ALERT = 'ALERT';
+    
 
     //#### not used targets (for future development)
 
+    k.target.LOG = 'LOG';     // A log entry
+
+
+    k.target.JOIN = 'JOIN';   // Asks a client to join another channel
+
     k.target.TXT  = 'TXT';    // Text msg
 
-    // Still to implement
     k.target.BYE  = 'BYE';    // Force disconnects
     k.target.ACK  = 'ACK';    // A reliable msg was received correctly
 
@@ -7474,6 +7477,8 @@ JSUS.extend(PARSE);
      * - node.gamecommand.pause
      * - node.gamecommand.resume
      * - node.gamecommand.stop
+     * - node.gamecommand.step
+     * - node.gamecommand.goto_stage
      */
     k.gamecommands = {
         start: 'start',
@@ -8795,7 +8800,6 @@ JSUS.extend(PARSE);
             throw new NodeGameRuntimeError(
                 'PlayerList.add: Player already exists (id ' + player.id + ')');
         }
-        
         this.insert(player);
         player.count = this.pcounter;
         this.pcounter++;
@@ -11940,12 +11944,12 @@ JSUS.extend(PARSE);
             this.node.info('R: ' + gameMsg);
         }
         catch(e) {
-            return logSecureParseError('malformed msg received',  e);
+            return logSecureParseError.call(this, 'malformed msg received',  e);
         }
 
         if (this.session && gameMsg.session !== this.session) {
-            return logSecureParseError('local session id does not match ' +
-                                       'incoming message session id');
+            return logSecureParseError.call(this, 'local session id does not ' +
+                                       'match incoming message session id.');
         }
 
         return gameMsg;
@@ -12183,10 +12187,10 @@ JSUS.extend(PARSE);
     // helping methods
 
     var logSecureParseError = function(text, e) {
-        text = text || 'Generic error while parsing a game message';
-        var error = (e) ? text + ": " + e : text;
-        this.node.log(error, 'ERR');
-        this.node.emit('LOG', 'E: ' + error);
+        var error;
+        text = text || 'generic error while parsing a game message.';
+        error = (e) ? text + ": " + e : text;
+        this.node.err('Socket.secureParse: ' + error);
         return false;
     };
 
@@ -15320,7 +15324,6 @@ JSUS.extend(PARSE);
 
 /**
  * # nodeGame: Social Experiments in the Browser!
- *
  * Copyright(c) 2013 Stefano Balietti
  * MIT Licensed
  *
@@ -15871,6 +15874,27 @@ JSUS.extend(PARSE);
             };
         });
 
+        // ### node.on.mconnect
+        this.alias('mconnect', 'in.say.MCONNECT', function(cb) {
+            return function(msg) {
+                cb.call(that.game, msg.data);
+            };
+        });
+
+        // ### node.on.mreconnect
+        this.alias('mreconnect', 'in.say.MRECONNECT', function(cb) {
+            return function(msg) {
+                cb.call(that.game, msg.data);
+            };
+        });
+
+        // ### node.on.mdisconnect
+        this.alias('mdisconnect', 'in.say.MDISCONNECT', function(cb) {
+            return function(msg) {
+                cb.call(that.game, msg.data);
+            };
+        });
+
         // ### node.on.stepdone
         // Uses the step rule to determine when a step is DONE.
         this.alias('stepdone', 'UPDATED_PLIST', function(cb) {
@@ -15881,8 +15905,7 @@ JSUS.extend(PARSE);
             };
         });
 
-        // LISTENERS
-
+        // LISTENERS.
         this.addDefaultIncomingListeners();
         this.addDefaultInternalListeners();
     }
@@ -15892,7 +15915,6 @@ JSUS.extend(PARSE);
     'undefined' != typeof node ? node : module.exports
  ,  'undefined' != typeof node ? node : module.parent.exports
 );
-
 /**
  * # Log
  *
@@ -16501,7 +16523,6 @@ JSUS.extend(PARSE);
      *
      * @param {string} key An alphanumeric (must not be unique)
      * @param {mixed} The value to store (can be of any type)
-     *
      */
     NGC.prototype.set = function(key, value, to) {
         var msg;
@@ -16542,6 +16563,9 @@ JSUS.extend(PARSE);
      * To allow multiple execution, it is possible to specify a positive timeout
      * after which the listener will be removed, or specify the timeout as -1,
      * and in this case the listener will not be removed at all.
+     *
+     * If there is no registered listener on the receiver, the callback will
+     * never be executed.
      *
      * @param {string} key The label of the GET message
      * @param {function} cb The callback function to handle the return message
@@ -16685,17 +16709,14 @@ JSUS.extend(PARSE);
      *
      * @param {string} url the url of the redirection
      * @param {string} who A player id or 'ALL'
-     * @return {boolean} TRUE, if the redirect message is sent
      */
     NGC.prototype.redirect = function(url, who) {
         var msg;
         if ('string' !== typeof url) {
-            this.err('redirect requires a valid string');
-            return false;
+            throw new TypeError('node.redirect: url must be string.');
         }
         if ('undefined' === typeof who) {
-            this.err('redirect requires a valid recipient');
-            return false;
+            throw new TypeError('node.redirect: who must be string.');
         }
         msg = this.msg.create({
             target: this.constants.target.REDIRECT,
@@ -16703,7 +16724,6 @@ JSUS.extend(PARSE);
             to: who
         });
         this.socket.send(msg);
-        return true;
     };
 
     /**
@@ -16711,23 +16731,23 @@ JSUS.extend(PARSE);
      *
      * Executes a game command on a client
      *
-     * Works only if it is a monitor client to send
-     * the message, i.e. players cannot send game commands
-     * to each others
+     * By default, only admins can send use this method, as messages
+     * sent by players will be filtered out by the server.
      *
      * @param {string} command The command to execute
      * @param {string} to The id of the player to command
-     * @return {boolean} TRUE, if the game command is sent
      */
     NGC.prototype.remoteCommand = function(command, to, options) {
         var msg;
-        if (!command || !parent.constants.gamecommands[command]) {
-            this.err('node.remoteCommand: invalid command.');
-            return false;
+        if ('string' !== typeof command) {
+            throw new TypeError('node.remoteCommand: command must be string.');
         }
-        if ('undefined' === typeof to) {
-            this.err('node.remoteCommand: invalid recipient.');
-            return false;
+        if (!parent.constants.gamecommands[command]) {
+            throw new Error('node.remoteCommand: unknown command: ' +
+                            command + '.');
+        }
+        if ('string' !== typeof to) {
+            throw new TypeError('node.remoteCommand: to must be string.');
         }
 
         msg = this.msg.create({
@@ -16736,7 +16756,34 @@ JSUS.extend(PARSE);
             data: options,
             to: to
         });
-        return this.socket.send(msg);
+        this.socket.send(msg);
+    };
+
+    /**
+     * ### NodeGameClient.remoteAlert
+     *
+     * Displays an alert message in the screen of the client
+     *
+     * Message is effective only if the client has a _window_ object
+     * with a global _alert_ method.
+     *
+     * @param {string} text The text of of the messagex
+     * @param {string} to The id of the player to alert
+     */
+    NGC.prototype.remoteAlert = function(text, to) {
+        var msg;
+        if ('string' !== typeof text) {
+            throw new TypeError('node.remoteAlert: text must be string.');
+        }
+        if ('undefined' === typeof to) {
+            throw new TypeError('node.remoteAlert: to must be string.');
+        }
+        msg = this.msg.create({
+            target: this.constants.target.ALERT,
+            text: text,
+            to: to
+        });
+        this.socket.send(msg);
     };
 
 })(
@@ -16827,8 +16874,12 @@ JSUS.extend(PARSE);
     'undefined' != typeof node ? node : module.parent.exports
 );
 
-// # Incoming listeners
-// Incoming listeners are fired in response to incoming messages
+/**
+ * # Listeners for incoming messages.
+ * Copyright(c) 2013 Stefano Balietti
+ * MIT Licensed
+ * ---
+ */
 (function(exports, parent) {
 
     "use strict";
@@ -16885,7 +16936,7 @@ JSUS.extend(PARSE);
         /**
          * ## in.say.PDISCONNECT
          *
-         * Removes a player from the player list based on the data contained in the message
+         * Removes a player from the player list
          *
          * @emit UPDATED_PLIST
          * @see Game.pl
@@ -16899,7 +16950,7 @@ JSUS.extend(PARSE);
         /**
          * ## in.say.MCONNECT
          *
-         * Adds a new monitor to the monitor list from the data contained in the message
+         * Adds a new monitor to the monitor list
          *
          * @emit UPDATED_MLIST
          * @see Game.ml
@@ -16913,7 +16964,7 @@ JSUS.extend(PARSE);
         /**
          * ## in.say.MDISCONNECT
          *
-         * Removes a monitor from the player list based on the data contained in the message
+         * Removes a monitor from the player list
          *
          * @emit UPDATED_MLIST
          * @see Game.ml
@@ -16927,7 +16978,7 @@ JSUS.extend(PARSE);
         /**
          * ## in.say.PLIST
          *
-         * Creates a new player-list object from the data contained in the message
+         * Creates a new player-list object
          *
          * @emit UPDATED_PLIST
          * @see Game.pl
@@ -16941,7 +16992,7 @@ JSUS.extend(PARSE);
         /**
          * ## in.say.MLIST
          *
-         * Creates a new monitor-list object from the data contained in the message
+         * Creates a new monitor-list object
          *
          * @emit UPDATED_MLIST
          * @see Game.pl
@@ -16955,16 +17006,19 @@ JSUS.extend(PARSE);
         /**
          * ## in.get.DATA
          *
-         * Experimental feature. Undocumented (for now)
+         * Emits the content 
          */
         node.events.ng.on( IN + get + 'DATA', function(msg) {
             var res;
-            if (!msg.text) {
-                node.warn('node.in.get.DATA: no event name');
+            
+            if ('string' !== typeof msg.text || msg.text === '') {
+                node.warn('node.in.get.DATA: invalid / missing event name.');
                 return;
             }
-            res = node.emit(msg.text, msg.data);
-            node.say(msg.text, msg.from, res);
+            res = node.emit(msg.text, msg);
+            if (!J.isEmpty(res)) {
+                node.say(msg.text, msg.from, res);
+            }
         });
 
         /**
@@ -17098,6 +17152,35 @@ JSUS.extend(PARSE);
             node.emit('NODEGAME_GAMECOMMAND_' + msg.text, msg.data);
         });
 
+        /**
+         * ## in.say.ALERT
+         *
+         * Displays an alert message (if in the browser window)
+         *
+         * If in Node.js, the message will be printed to standard output.
+         *
+         * @see node.setup
+         */
+        node.events.ng.on( IN + say + 'ALERT', function(msg) {
+            if (J.isEmpty(msg.text)) {
+                node.err('Alert message received, but content is empty.');
+                return;
+            }
+            if ('undefined' !== typeof window) {
+                if ('undefined' === typeof alert) {
+                    node.err('Alert msg received, but alert is not defined:' +
+                             msg.text);
+                    return;
+                }
+                alert(msg.text);
+            }
+            else {
+                console.log('****** ALERT ******');
+                console.log(msg.text);
+                console.log('*******************');
+            }
+        });
+
         node.incomingAdded = true;
         node.silly('incoming listeners added');
         return true;
@@ -17108,14 +17191,17 @@ JSUS.extend(PARSE);
     'undefined' != typeof node ? node : module.exports,
     'undefined' != typeof node ? node : module.parent.exports
 );
-// <!-- ends incoming listener -->
 
-// # Internal listeners.
-
-// Internal listeners are not directly associated to messages,
-// but they are usually responding to internal nodeGame events,
-// such as progressing in the loading chain, or finishing a game stage.
-
+/**
+ * # Listeners for incoming messages.
+ * Copyright(c) 2013 Stefano Balietti
+ * MIT Licensed
+ * 
+ * Internal listeners are not directly associated to messages,
+ * but they are usually responding to internal nodeGame events,
+ * such as progressing in the loading chain, or finishing a game stage.
+ * ---
+ */
 (function(exports, parent) {
 
     "use strict";
@@ -17312,7 +17398,6 @@ JSUS.extend(PARSE);
     'undefined' != typeof node ? node : module.exports,
     'undefined' != typeof node ? node : module.parent.exports
 );
-// <!-- ends internal listener -->
 /**
  * 
  * # TriggerManager: 
@@ -17781,6 +17866,15 @@ TriggerManager.prototype.size = function () {
          */
         this.frameLibs = {};
 
+        /**
+         * ### GameWindow.state
+         *
+         * The window's state level
+         *
+         * @see constants.windowLevels
+         */
+        this.state = null;
+
         this.init();
     }
 
@@ -17946,6 +18040,7 @@ TriggerManager.prototype.size = function () {
 
             // Will continue in SOLO_PLAYER.
 
+        /* falls through */
         case 'SOLO_PLAYER':
 
             if (!this.getFrame()) {
@@ -18117,7 +18212,7 @@ TriggerManager.prototype.size = function () {
 
         // Don't preload if no URIs are given:
         if (!uris || !uris.length) {
-            if(callback) callback();
+            if (callback) callback();
             return;
         }
 
@@ -18180,18 +18275,19 @@ TriggerManager.prototype.size = function () {
      * A helper method of GameWindow.loadFrame.
      * Puts cached contents into the iframe or caches new contents if requested.
      * Handles reloading of script tags and injected libraries.
-     * Must be called with `this` set to GameWindow instance.
+     * Must be called with the current GameWindow instance.
      *
+     * @param {GameWindow} that The GameWindow instance
      * @param {uri} uri URI to load
      * @param {string} frame ID of GameWindow's frame
-     * @param {bool} loadCache whether to load from cache
-     * @param {bool} storeCache whether to store to cache
+     * @param {bool} loadCache Whether to load from cache
+     * @param {bool} storeCache Whether to store to cache
      *
      * @see GameWindow.loadFrame
      *
      * @api private
      */
-    function handleFrameLoad(uri, frame, loadCache, storeCache) {
+    function handleFrameLoad(that, uri, frame, loadCache, storeCache) {
         var frameNode;
         var frameDocumentElement;
 
@@ -18203,7 +18299,7 @@ TriggerManager.prototype.size = function () {
 
         if (loadCache) {
             // Load frame from cache:
-            frameDocumentElement.innerHTML = this.cache[uri].contents;
+            frameDocumentElement.innerHTML = that.cache[uri].contents;
         }
 
         // (Re-)Inject libraries and reload scripts:
@@ -18211,12 +18307,12 @@ TriggerManager.prototype.size = function () {
         if (loadCache) {
             reloadScripts(frameNode);
         }
-        injectLibraries(frameNode, this.globalLibs.concat(
-                this.frameLibs.hasOwnProperty(uri) ? this.frameLibs[uri] : []));
+        injectLibraries(frameNode, that.globalLibs.concat(
+                that.frameLibs.hasOwnProperty(uri) ? that.frameLibs[uri] : []));
 
         if (storeCache) {
             // Store frame in cache:
-            this.cache[uri].contents = frameDocumentElement.innerHTML;
+            that.cache[uri].contents = frameDocumentElement.innerHTML;
         }
     }
 
@@ -18332,7 +18428,7 @@ TriggerManager.prototype.size = function () {
 
         // Create entry for this URI in cache object
         // and store cacheOnClose flag:
-        if (!(uri in this.cache)) {
+        if (!this.cache.hasOwnProperty(uri)) {
             this.cache[uri] = { contents: null, cacheOnClose: false };
         }
         this.cache[uri].cacheOnClose = storeCacheLater;
@@ -18348,7 +18444,7 @@ TriggerManager.prototype.size = function () {
 
         // Add the onload event listener:
         iframe.onload = function() {
-            handleFrameLoad.call(that, uri, frame, loadCache, storeCacheNow);
+            handleFrameLoad(that, uri, frame, loadCache, storeCacheNow);
             that.updateLoadFrameState(func, frame);
         };
 
@@ -18360,8 +18456,7 @@ TriggerManager.prototype.size = function () {
             // iframe.onload handles the filling of the contents.
             // TODO: Fix code duplication between here and onload function.
             if (frameReady) {
-                handleFrameLoad.call(this,
-                        uri, frame, loadCache, storeCacheNow);
+                handleFrameLoad(this, uri, frame, loadCache, storeCacheNow);
 
                 // Update status (onload not called if frame was already ready):
                 this.updateLoadFrameState(func, frame);
@@ -18493,7 +18588,7 @@ TriggerManager.prototype.size = function () {
             root = this.getFrameRoot();
             this.header = this.addElement('div', root, 'gn_header');
             header = this.header;
-        }   
+        }
         return header;
     };
 
@@ -18562,10 +18657,10 @@ TriggerManager.prototype.size = function () {
     /**
      * ### GameWindow.getLoadingDots
      *
-     * Creats and returns a span element with incrementing dots inside
+     * Creates and returns a span element with incrementing dots inside
      *
-     * New dots are added every second, until the limit is reached, and it 
-     * starts from the beginning
+     * New dots are added every second until the limit is reached, then it
+     * starts from the beginning.
      *
      * Gives the impression of a loading time.
      *
@@ -18588,7 +18683,7 @@ TriggerManager.prototype.size = function () {
         // Refreshing the dots...
         intervalId = setInterval(function() {
             if (span_dots.innerHTML !== limit) {
-                span_dots.innerHTML = span_dots.innerHTML + '.';  
+                span_dots.innerHTML = span_dots.innerHTML + '.';
             }
             else {
                 span_dots.innerHTML = '.';
@@ -18603,7 +18698,7 @@ TriggerManager.prototype.size = function () {
         return {
             span: span_dots,
             stop: stop
-        }
+        };
     };
 
 
@@ -19098,8 +19193,6 @@ TriggerManager.prototype.size = function () {
         return id;
     };
 
-
-
     // Where to place them?
 
     /**
@@ -19230,39 +19323,47 @@ TriggerManager.prototype.size = function () {
 
     "use strict";
 
+    function getElement(idOrObj, prefix) {
+        var el;
+        if ('string' === typeof idOrObj) {
+            el = window.getElementById(idOrObj);
+            if (!el) {
+                throw new Error(prefix + ': could not find element ' +
+                                'with id ' + idOrObj);
+            }
+        }
+        else if (J.isElement(idOrObj)) {
+            el = idOrObj;
+        }
+        else {
+            throw new TypeError(prefix + ': idOrObj must be string ' +
+                                ' or HTML Element.');
+        }
+        return el;
+    }
+
     node.on('NODEGAME_GAME_CREATED', function() {
         window.init(node.conf.window);
     });
 
-    node.on('HIDE', function(id) {
-        var el = window.getElementById(id);
-        if (!el) {
-            node.log('Cannot hide element ' + id);
-            return;
-        }
-        el.style.visibility = 'hidden';
+    node.on('HIDE', function(idOrObj) {
+        var el = getElement(idOrObj, 'GameWindow.on.HIDE');
+        el.style.display = 'none';
     });
 
-    node.on('SHOW', function(id) {
-        var el = window.getElementById(id);
-        if (!el) {
-            node.log('Cannot show element ' + id);
-            return;
-        }
-        el.style.visibility = 'visible';
+    node.on('SHOW', function(idOrObj) {
+        var el = getElement(idOrObj, 'GameWindow.on.SHOW');
+        el.style.display = '';
     });
 
-    node.on('TOGGLE', function(id) {
-        var el = window.getElementById(id);
-        if (!el) {
-            node.log('Cannot toggle element ' + id);
-            return;
-        }
-        if (el.style.visibility === 'visible') {
-            el.style.visibility = 'hidden';
+    node.on('TOGGLE', function(idOrObj) {
+        var el = getElement(idOrObj, 'GameWindow.on.TOGGLE');
+        
+        if (el.style.display === 'none') {
+            el.style.display = '';
         }
         else {
-            el.style.visibility = 'visible';
+            el.style.display = 'none';
         }
     });
 
@@ -19281,7 +19382,7 @@ TriggerManager.prototype.size = function () {
         window.toggleInputs(id);
     });
 
-    node.log('node-window: listeners added');
+    node.log('node-window: listeners added.');
 
 })(
     'undefined' !== typeof node ? node : undefined
