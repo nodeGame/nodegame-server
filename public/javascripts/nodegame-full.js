@@ -13894,7 +13894,6 @@ JSUS.extend(PARSE);
 );
 /**
  * # GroupManager
- * 
  * Copyright(c) 2013 Stefano Balietti
  * MIT Licensed 
  * 
@@ -13924,18 +13923,31 @@ JSUS.extend(PARSE);
 
     // Groups.rowLimit determines how many unique elements per row
 
-
-
     exports.RMatcher = RMatcher;
+    exports.Group = Group;
 
-    //J = require('nodegame-client').JSUS;
 
-    function RMatcher (options) {
+    /**
+     * ## RMatcher constructor
+     *
+     * Creates an instance of RMatcher
+     *
+     * @param {object} options
+     */
+    function RMatcher(options) {
         this.groups = [];
         this.maxIteration = 10;
         this.doneCounter = 0;
     }
 
+    /**
+     * ## RMatcher.init
+     *
+     * Initializes the RMatcher object
+     *
+     * @param array elements Array of elements (string, numbers...)
+     * @param array pools Array of arrays
+     */
     RMatcher.prototype.init = function(elements, pools) {
         var i, g;
         for (i = 0; i < elements.length; i++) {
@@ -13949,14 +13961,30 @@ JSUS.extend(PARSE);
         };
     };
 
+    /**
+     * ## RMatcher.addGroup
+     *
+     * Adds a group in the group array 
+     *
+     * @param Group group The group to addx
+     */
     RMatcher.prototype.addGroup = function(group) {
-        if (!group) return;
+        if ('object' !== typeof group) {
+            throw new TypeError('RMatcher.addGroup: group must be object.');
+        }
         this.groups.push(group);
     };
 
+    /**
+     * ## RMatcher.match
+     *
+     * Does the matching according to pre-specified criteria 
+     *
+     * @return array The result of the matching
+     */
     RMatcher.prototype.match = function() {
         var i;
-        // Do first match
+        // Do first match.
         for (i = 0 ; i < this.groups.length ; i++) {
             this.groups[i].match();
             if (this.groups[i].matches.done) {
@@ -13975,6 +14003,13 @@ JSUS.extend(PARSE);
         return J.map(this.groups, function(g) { return g.matched; });
     };
 
+    /**
+     * ## RMatcher.inverMatched
+     *
+     * 
+     *
+     * @return 
+     */
     RMatcher.prototype.invertMatched = function() {
 
         var tmp, elements = [], inverted = [];
@@ -13992,16 +14027,19 @@ JSUS.extend(PARSE);
         };
     };
 
-
+    
     RMatcher.prototype.allGroupsDone = function() {
         return this.doneCounter === this.groups.length;
     };
 
     RMatcher.prototype.tryOtherLeftOvers = function(g) {
+        var i;
         var group, groupId;
-        var order = J.seq(0, (this.groups.length-1));
+        var order, leftOver;
+
+        order = J.seq(0, (this.groups.length-1));
         order = J.shuffle(order);
-        for (var i = 0 ; i < order.length ; i++) {
+        for (i = 0 ; i < order.length ; i++) {
             groupId = order[i];
             if (groupId === g) continue;
             group = this.groups[groupId];
@@ -14119,41 +14157,73 @@ JSUS.extend(PARSE);
 
     ////////////////// GROUP
 
-    function Group() {
+    /**
+     * ## Group constructor
+     *
+     * Creates a group
+     */
+    function Group(options) {
 
         this.elements = [];
+        
+        this.pool = [];
+
         this.matched = [];
 
         this.leftOver = [];
+
         this.pointer = 0;
 
-        this.matches = {};
-        this.matches.total = 0;
-        this.matches.requested = 0;
-        this.matches.done = false;
+        this.matches = {
+            total: 0,
+            requested: 0,
+            done: false
+        };
 
-        this.rowLimit = 3;
+        this.rowLimit = 1;
 
         this.noSelf = true;
 
-        this.pool = [];
-
         this.shuffle = true;
+
         this.stretch = true;
+        debugger
+        this.init(options);
     }
 
-    Group.prototype.init = function(elements, pool) {
-        this.elements = elements;
-        this.pool = J.clone(pool);
+    
+    Group.prototype.init = function(options) {
+        
+        this.noSelf = 'undefined' === typeof options.noSelf ?
+            this.noSelf : options.noSelf;
 
-        for (var i = 0; i < this.pool.length; i++) {
-            if (this.stretch) {
-                this.pool[i] = J.stretch(this.pool[i], this.rowLimit);
-            }
-            if (this.shuffle) {
-                this.pool[i] = J.shuffle(this.pool[i]);
-            }
+        this.shuffle = 'undefined' === typeof options.shuffle ?
+            this.shuffle : options.shuffle;
+
+        this.stretch = 'undefined' === typeof options.stretch ?
+            this.stretch : options.stretch;
+
+        this.rowLimit = 'undefined' === typeof options.rowLimit ?
+            this.rowLimit : options.rowLimit;
+
+        if (options.elements) {
+            this.setElements(options.elements);
         }
+
+        if (options.pool) {
+            this.setPool(options.pool);
+        }
+
+    };
+
+    Group.prototype.setElements = function(elements) {
+        var i;
+
+        if (!J.isArray(elements)) {
+            throw new TypeError('Group.setElements: elements must be array.');
+        }
+
+        this.elements = elements;
 
         if (!elements.length) {
             this.matches.done = true;
@@ -14166,6 +14236,26 @@ JSUS.extend(PARSE);
 
         this.matches.requested = this.elements.length * this.rowLimit;
     };
+
+    Group.prototype.setPool = function(pool) {
+        var i;
+
+        if (!J.isArray(pool)) {
+            throw new TypeError('Group.setPool: pool must be array.');
+        }
+
+        this.pool = J.clone(pool);
+
+        for (i = 0; i < this.pool.length; i++) {
+            if (this.stretch) {
+                this.pool[i] = J.stretch(this.pool[i], this.rowLimit);
+            }
+            if (this.shuffle) {
+                this.pool[i] = J.shuffle(this.pool[i]);
+            }
+        }
+    };
+
 
 
     /**
@@ -16533,14 +16623,16 @@ JSUS.extend(PARSE);
      * @param {string} text The label associated to the msg
      * @param {string} to The recipient of the msg.
      * @param {mixed} payload Optional. Addional data to send along
+     *
+     * @return {boolean} TRUE, if SAY message is sent
      */
     NGC.prototype.say = function(label, to, payload) {
         var msg;
         if ('string' !== typeof label) {
             throw new TypeError('node.say: label must be string.');
         }
-        if (!to) {
-            throw new TypeError('node.say: to must be defined.');
+        if (to && 'string' !== typeof to) {
+            throw new TypeError('node.say: to must be string or undefined.');
         }
         msg = this.msg.create({
             target: this.constants.target.DATA,
@@ -16548,7 +16640,7 @@ JSUS.extend(PARSE);
             text: label,
             data: payload
         });
-        this.socket.send(msg);
+        return this.socket.send(msg);
     };
 
     /**
@@ -16558,6 +16650,8 @@ JSUS.extend(PARSE);
      *
      * @param {string} key An alphanumeric (must not be unique)
      * @param {mixed} The value to store (can be of any type)
+     *
+     * @return {boolean} TRUE, if SET message is sent
      */
     NGC.prototype.set = function(key, value, to) {
         var msg;
@@ -16572,9 +16666,8 @@ JSUS.extend(PARSE);
             text: key,
             data: value
         });
-        this.socket.send(msg);
+        return this.socket.send(msg);
     };
-
 
     /**
      * ### NodeGameClient.get
@@ -16594,6 +16687,9 @@ JSUS.extend(PARSE);
      *
      * ```
      *
+     * The label string cannot contain any "." (dot) characther for security
+     * reason.
+     *
      * The listener function is removed immediately after its first execution.
      * To allow multiple execution, it is possible to specify a positive timeout
      * after which the listener will be removed, or specify the timeout as -1,
@@ -16602,25 +16698,44 @@ JSUS.extend(PARSE);
      * If there is no registered listener on the receiver, the callback will
      * never be executed.
      *
+     * If the socket is not able to send the GET message for any reason, the
+     * listener function is never registered.
+     *
      * @param {string} key The label of the GET message
      * @param {function} cb The callback function to handle the return message
      * @param {string} to Optional. The recipient of the msg. Defaults, SERVER
      * @param {mixed} params Optional. Additional parameters to send along
      * @param {number} timeout Optional. The number of milliseconds after which
      *    the listener will be removed. If equal -1, the listener will not be
-     *    removed. Defaults, 0. 
+     *    removed. Defaults, 0.
+     *
+     * @return {boolean} TRUE, if GET message is sent and listener registered
      */
     NGC.prototype.get = function(key, cb, to, params, timeout) {
         var msg, g, ee;
-        var that;
+        var that, res;
         
         if ('string' !== typeof key) {
             throw new TypeError('node.get: key must be string.');
-            return false;
         }
+
+        if (key === '') {
+            throw new TypeError('node.get: key cannot be empty.');
+        }
+
+        if (key.split('.') > 1) {
+            throw new TypeError(
+                'node.get: key cannot contain the dot "." character.');
+        }
+
         if ('function' !== typeof cb) {
             throw new TypeError('node.get: cb must be function.');
         }
+
+        if (to && 'string' !== typeof to) {
+            throw new TypeError('node.get: to must be string or undefined.');
+        }
+
         if ('undefined' !== typeof timeout) {
             if ('number' !== typeof number) {
                 throw new TypeError('node.get: timeout must be number.');
@@ -16641,31 +16756,34 @@ JSUS.extend(PARSE);
         
         // TODO: check potential timing issues. Is it safe to send the GET
         // message before registering the relate listener? (for now yes)
-        this.socket.send(msg);
+        res = this.socket.send(msg);
         
-        ee = this.getCurrentEventEmitter();
-        
-        that = this;
+        if (res) {
+            ee = this.getCurrentEventEmitter();
+            
+            that = this;
 
-        // Listener function. If a timeout is not set, the listener
-        // will be removed immediately after its execution.
-        g = function(msg) {
-            if (msg.text === key) {
-                cb.call(that.game, msg.data);
-                if (!timeout) ee.remove('in.say.DATA', g);
+            // Listener function. If a timeout is not set, the listener
+            // will be removed immediately after its execution.
+            g = function(msg) {
+                if (msg.text === key) {
+                    cb.call(that.game, msg.data);
+                    if (!timeout) ee.remove('in.say.DATA', g);
+                }
+            };
+            
+            ee.on('in.say.DATA', g);
+            
+            // If a timeout is set the listener is removed independently,
+            // of its execution after the timeout is fired.
+            // If timeout === -1, the listener is never removed.
+            if (timeout > 0) {
+                setTimeout(function() {
+                    ee.remove('in.say.DATA', g);
+                }, timeout);
             }
-        };
-        
-        ee.on('in.say.DATA', g);
-        
-        // If a timeout is set the listener is removed independently,
-        // of its execution after the timeout is fired.
-        // If timeout === -1, the listener is never removed.
-        if (timeout > 0) {
-            setTimeout(function() {
-                ee.remove('in.say.DATA', g);
-            }, timeout);
         }
+        return res;
     };
 
     /**
@@ -23148,32 +23266,37 @@ TriggerManager.prototype.size = function () {
     }
 
     Feedback.prototype.append = function(root) {
+        var that = this;
         this.root = root;
         this.textarea = document.createElement('textarea');
         this.submit = document.createElement('button');
+        this.submit.appendChild(document.createTextNode('Submit'));
         this.submit.onclick = function() {
             var feedback, sent;
-            feedback = this.textarea.value;
+            feedback = that.textarea.value;
             if (!feedback.length) {
-                J.highlight(this.textarea, 'ERR');
+                J.highlight(that.textarea, 'ERR');
                 alert('Feedback is empty, not sent.');
                 return false;
             }
-            J.highlight(this.textarea, 'OK');
             sent = node.say('FEEDBACK', 'SERVER', {
                 feedback: feedback,
-                navigator: navigator
+                userAgent: navigator.userAgent
             });
 
             if (sent) {
+                J.highlight(that.textarea, 'OK');
                 alert('Feedback sent. Thank you.');
-                this.submit.disabled = true;
+                that.textarea.disabled = true;
+                that.submit.disabled = true;
             }
             else {
+                J.highlight(that.textarea, 'ERR');
                 alert('An error has occurred, feedback not sent.');
             }
         };
         root.appendChild(this.textarea);
+        root.appendChild(this.submit);
         return root;
     };
 
@@ -24069,17 +24192,42 @@ TriggerManager.prototype.size = function () {
     };
 
     function Requirements(options) {
+        // The id of the widget.
         this.id = options.id || Requirements.id;
+        // The root element under which the widget will appended.
         this.root = null;
+        // Array of all test callbacks.
         this.callbacks = [];
+        // Number of tests still pending.
         this.stillChecking = 0;
+        // If TRUE, a maximum timeout to the execution of ALL tests is set.
         this.withTimeout = options.withTimeout || true;
+        // The time in milliseconds for the timeout to expire.
         this.timeoutTime = options.timeoutTime || 10000;
+        // The id of the timeout, if created.
         this.timeoutId = null;
 
+        // Span summarizing the status of the tests.
         this.summary = null;
+        // Span counting how many tests have been completed.
         this.summaryUpdate = null;
+        // Looping dots to give the user the feeling of code execution.
+        this.dots = null;
 
+        // TRUE if at least one test has failed.
+        this.hasFailed = false;
+
+        // The outcomes of all tests.
+        this.results = [];
+
+        // If true, the final result of the tests will be sent to the server.
+        this.sayResults = options.sayResults || false;
+        // The label of the SAY message that will be sent to the server.
+        this.sayResultsLabel = options.sayResultLabel || 'requirements';
+        // Callback to add properties to the result object to send to the server. 
+        this.addToResults = options.addToResults || null;
+
+        // Callbacks to be executed at the end of all tests.
         this.onComplete = null;
         this.onSuccess = null;
         this.onFail = null;
@@ -24121,15 +24269,17 @@ TriggerManager.prototype.size = function () {
 
     function resultCb(that, i) {
         var update = function(result) {
+            that.updateStillChecking(-1);
             if (result) {
                 if (!J.isArray(result)) {
                     throw new Error('Requirements.checkRequirements: ' +
                                     'result must be array or undefined.');
                 }
                 that.displayResults(result);
-             
-            }            
-            that.updateStillChecking(-1);
+            }
+            if (that.isCheckingFinished()) {
+                that.checkingFinished();
+            }
         };
         return that.callbacks[i](update);
     }
@@ -24169,10 +24319,14 @@ TriggerManager.prototype.size = function () {
         if ('undefined' === typeof display ? true : false) {
             this.displayResults(errors);
         }
+        
+        if (this.isCheckingFinished()) {
+            this.checkingFinished();
+        }
+        
         return errors;
     };
-
-        
+       
     Requirements.prototype.addTimeout = function() {
         var that = this;
         var errStr = 'One or more function is taking too long. This is ' +
@@ -24184,6 +24338,8 @@ TriggerManager.prototype.size = function () {
                 that.displayResults([errStr]);
             }
             that.timeoutId = null;
+            that.hasFailed = true;
+            that.results.push(errStr);
             that.checkingFinished();
         }, this.timeoutTime);
     };
@@ -24203,25 +24359,39 @@ TriggerManager.prototype.size = function () {
         total = this.callbacks.length;
         remaining = total - this.stillChecking;
         this.summaryUpdate.innerHTML = ' (' +  remaining + ' / ' + total + ')';
-
-        if (this.stillChecking <= 0) {
-            this.checkingFinished();
-        }
     };
-    
+
+            
+    Requirements.prototype.isCheckingFinished = function() {  
+        return this.stillChecking <= 0;
+    };
+
     Requirements.prototype.checkingFinished = function() {
-        
+        var results;
+
         if (this.timeoutId) {
             clearTimeout(this.timeoutId);
         }
 
         this.dots.stop();
 
+        if (this.sayResults) {
+            results = {
+                userAgent: navigator.userAgent,
+                result: this.results
+            };
+
+            if (this.addToResults) {
+                J.mixin(results, this.addToResults()); 
+            }
+            node.say(this.sayResultsLabel, 'SERVER', results);
+        }
+
         if (this.onComplete) {
             this.onComplete();
         }
-            
-        if (this.list.size()) {
+        
+        if (this.hasFailed) {
             if (this.onFail) {
                 this.onFail();
             }
@@ -24233,6 +24403,7 @@ TriggerManager.prototype.size = function () {
 
     Requirements.prototype.displayResults = function(results) {
         var i, len;
+        
         if (!this.list) {
             throw new Error('Requirements.displayResults: list not found. ' +
                             'Have you called .append() first?');
@@ -24246,15 +24417,18 @@ TriggerManager.prototype.size = function () {
         // No errors.
         if (!results.length) {
             // Last check and no previous errors.
-            if (!this.list.size() && this.stillChecking <= 0) {
+            if (!this.hasFailed && this.stillChecking <= 0) {
                 // All tests passed.
                 this.list.addDT({
                     success: true,
-                    text:'All tests passed'
+                    text:'All tests passed.'
                 });
+                // Add to the array of results.
+                this.results.push('All tests passed.');
             }
         }
         else {
+            this.hasFailed = true;
             // Add the errors.
             i = -1, len = results.length;
             for ( ; ++i < len ; ) {
@@ -24262,6 +24436,8 @@ TriggerManager.prototype.size = function () {
                     success: false,
                     text: results[i]
                 });
+                // Add to the array of results.
+                this.results.push(results[i]);
             }
         }
         // Parse deletes previously existing nodes in the list.
