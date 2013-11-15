@@ -110,6 +110,8 @@ function configure(app, servernode) {
         app.use(express.errorHandler());
     });
 
+    app.enable("jsonp callback");
+
     app.get('/', function(req, res) {
         var q;
         if (J.isEmpty(req.query)) {
@@ -192,6 +194,13 @@ function configure(app, servernode) {
         // Build filepath to file.
         filepath = gameInfo.dir + '/'  + file;
 
+        
+        if (file.match(/\.json$/)) {     
+            res.header('Content-Type', 'application/json');
+            res.header('Charset', 'utf-8') 
+            //res.send(req.query.callback + '({"something": "rather", "more": "pork", "tua": "tara"});'); 
+            //return;
+        }  
         // Send file (if it is a directory it is not sent).
         //res.sendfile(path.basename(filepath), {root: path.dirname(filepath)});
         res.sendfile(filepath);

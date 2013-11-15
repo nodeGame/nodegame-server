@@ -185,6 +185,245 @@ store.parse = function(o) {
 
 }('undefined' !== typeof module && 'undefined' !== typeof module.exports ? module.exports: this));
 /**
+ * ## Amplify storage for Shelf.js
+ * 
+ */
+
+(function(exports) {
+
+var store = exports.store;	
+
+if (!store) {
+	console.log('amplify.shelf.js: shelf.js core not found. Amplify storage not available.');
+	return;
+}
+
+if ('undefined' === typeof window) {
+	console.log('amplify.shelf.js: am I running in a browser? Amplify storage not available.');
+	return;
+}
+
+//var rprefix = /^__shelf__/;
+var regex = new RegExp("^" + store.name); 
+function createFromStorageInterface(storageType, storage) {
+	store.addType(storageType, function(key, value, options) {
+		var storedValue, parsed, i, remove,
+			ret = value,
+			now = (new Date()).getTime();
+
+		if (!key) {
+			ret = {};
+			remove = [];
+			i = 0;
+			try {
+				// accessing the length property works around a localStorage bug
+				// in Firefox 4.0 where the keys don't update cross-page
+				// we assign to key just to avoid Closure Compiler from removing
+				// the access as "useless code"
+				// https://bugzilla.mozilla.org/show_bug.cgi?id=662511
+				key = storage.length;
+
+				while (key = storage.key(i++)) {
+					if (regex.test(key)) {
+						parsed = store.parse(storage.getItem(key));
+						if (parsed.expires && parsed.expires <= now) {
+							remove.push(key);
+						} else {
+							ret[key.replace(rprefix, "")] = parsed.data;
+						}
+					}
+				}
+				while (key = remove.pop()) {
+					storage.removeItem(key);
+				}
+			} catch (error) {}
+			return ret;
+		}
+
+		// protect against name collisions with direct storage
+		key = store.name + key;
+
+
+		if (value === undefined) {
+			storedValue = storage.getItem(key);
+			parsed = storedValue ? store.parse(storedValue) : { expires: -1 };
+			if (parsed.expires && parsed.expires <= now) {
+				storage.removeItem(key);
+			} else {
+				return parsed.data;
+			}
+		} else {
+			if (value === null) {
+				storage.removeItem(key);
+			} else {
+				parsed = store.stringify({
+					data: value,
+					expires: options.expires ? now + options.expires : null
+				});
+				try {
+					storage.setItem(key, parsed);
+				// quota exceeded
+				} catch(error) {
+					// expire old data and try again
+					store[storageType]();
+					try {
+						storage.setItem(key, parsed);
+					} catch(error) {
+						throw store.error();
+					}
+				}
+			}
+		}
+
+		return ret;
+	});
+}
+
+// ## localStorage + sessionStorage
+// IE 8+, Firefox 3.5+, Safari 4+, Chrome 4+, Opera 10.5+, iPhone 2+, Android 2+
+for (var webStorageType in { localStorage: 1, sessionStorage: 1 }) {
+	// try/catch for file protocol in Firefox
+	try {
+		if (window[webStorageType].getItem) {
+			createFromStorageInterface(webStorageType, window[webStorageType]);
+		}
+	} catch(e) {}
+}
+
+// ## globalStorage
+// non-standard: Firefox 2+
+// https://developer.mozilla.org/en/dom/storage#globalStorage
+if (!store.types.localStorage && window.globalStorage) {
+	// try/catch for file protocol in Firefox
+	try {
+		createFromStorageInterface("globalStorage",
+			window.globalStorage[window.location.hostname]);
+		// Firefox 2.0 and 3.0 have sessionStorage and globalStorage
+		// make sure we default to globalStorage
+		// but don't default to globalStorage in 3.5+ which also has localStorage
+		if (store.type === "sessionStorage") {
+			store.type = "globalStorage";
+		}
+	} catch(e) {}
+}
+
+// ## userData
+// non-standard: IE 5+
+// http://msdn.microsoft.com/en-us/library/ms531424(v=vs.85).aspx
+(function() {
+	// IE 9 has quirks in userData that are a huge pain
+	// rather than finding a way to detect these quirks
+	// we just don't register userData if we have localStorage
+	if (store.types.localStorage) {
+		return;
+	}
+
+	// append to html instead of body so we can do this from the head
+	var div = document.createElement("div"),
+		attrKey = "shelf";
+	div.style.display = "none";
+	document.getElementsByTagName("head")[0].appendChild(div);
+
+	// we can't feature detect userData support
+	// so just try and see if it fails
+	// surprisingly, even just adding the behavior isn't enough for a failure
+	// so we need to load the data as well
+	try {
+		div.addBehavior("#default#userdata");
+		div.load(attrKey);
+	} catch(e) {
+		div.parentNode.removeChild(div);
+		return;
+	}
+
+	store.addType("userData", function(key, value, options) {
+		div.load(attrKey);
+		var attr, parsed, prevValue, i, remove,
+			ret = value,
+			now = (new Date()).getTime();
+
+		if (!key) {
+			ret = {};
+			remove = [];
+			i = 0;
+			while (attr = div.XMLDocument.documentElement.attributes[i++]) {
+				parsed = store.parse(attr.value);
+				if (parsed.expires && parsed.expires <= now) {
+					remove.push(attr.name);
+				} else {
+					ret[attr.name] = parsed.data;
+				}
+			}
+			while (key = remove.pop()) {
+				div.removeAttribute(key);
+			}
+			div.save(attrKey);
+			return ret;
+		}
+
+		// convert invalid characters to dashes
+		// http://www.w3.org/TR/REC-xml/#NT-Name
+		// simplified to assume the starting character is valid
+		// also removed colon as it is invalid in HTML attribute names
+		key = key.replace(/[^-._0-9A-Za-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u37f-\u1fff\u200c-\u200d\u203f\u2040\u2070-\u218f]/g, "-");
+		// adjust invalid starting character to deal with our simplified sanitization
+		key = key.replace(/^-/, "_-");
+
+		if (value === undefined) {
+			attr = div.getAttribute(key);
+			parsed = attr ? store.parse(attr) : { expires: -1 };
+			if (parsed.expires && parsed.expires <= now) {
+				div.removeAttribute(key);
+			} else {
+				return parsed.data;
+			}
+		} else {
+			if (value === null) {
+				div.removeAttribute(key);
+			} else {
+				// we need to get the previous value in case we need to rollback
+				prevValue = div.getAttribute(key);
+				parsed = store.stringify({
+					data: value,
+					expires: (options.expires ? (now + options.expires) : null)
+				});
+				div.setAttribute(key, parsed);
+			}
+		}
+
+		try {
+			div.save(attrKey);
+		// quota exceeded
+		} catch (error) {
+			// roll the value back to the previous value
+			if (prevValue === null) {
+				div.removeAttribute(key);
+			} else {
+				div.setAttribute(key, prevValue);
+			}
+
+			// expire old data and try again
+			store.userData();
+			try {
+				div.setAttribute(key, parsed);
+				div.save(attrKey);
+			} catch (error) {
+				// roll the value back to the previous value
+				if (prevValue === null) {
+					div.removeAttribute(key);
+				} else {
+					div.setAttribute(key, prevValue);
+				}
+				throw store.error();
+			}
+		}
+		return ret;
+	});
+}());
+
+
+}(this));
+/**
  * ## Cookie storage for Shelf.js
  * 
  */
@@ -499,533 +738,6 @@ if (cookie.test()) {
 }
 
 }(this));
-/**
- * ## Amplify storage for Shelf.js
- * 
- */
-
-(function(exports) {
-
-var store = exports.store;	
-
-if (!store) {
-	console.log('amplify.shelf.js: shelf.js core not found. Amplify storage not available.');
-	return;
-}
-
-if ('undefined' === typeof window) {
-	console.log('amplify.shelf.js: am I running in a browser? Amplify storage not available.');
-	return;
-}
-
-//var rprefix = /^__shelf__/;
-var regex = new RegExp("^" + store.name); 
-function createFromStorageInterface(storageType, storage) {
-	store.addType(storageType, function(key, value, options) {
-		var storedValue, parsed, i, remove,
-			ret = value,
-			now = (new Date()).getTime();
-
-		if (!key) {
-			ret = {};
-			remove = [];
-			i = 0;
-			try {
-				// accessing the length property works around a localStorage bug
-				// in Firefox 4.0 where the keys don't update cross-page
-				// we assign to key just to avoid Closure Compiler from removing
-				// the access as "useless code"
-				// https://bugzilla.mozilla.org/show_bug.cgi?id=662511
-				key = storage.length;
-
-				while (key = storage.key(i++)) {
-					if (regex.test(key)) {
-						parsed = store.parse(storage.getItem(key));
-						if (parsed.expires && parsed.expires <= now) {
-							remove.push(key);
-						} else {
-							ret[key.replace(rprefix, "")] = parsed.data;
-						}
-					}
-				}
-				while (key = remove.pop()) {
-					storage.removeItem(key);
-				}
-			} catch (error) {}
-			return ret;
-		}
-
-		// protect against name collisions with direct storage
-		key = store.name + key;
-
-
-		if (value === undefined) {
-			storedValue = storage.getItem(key);
-			parsed = storedValue ? store.parse(storedValue) : { expires: -1 };
-			if (parsed.expires && parsed.expires <= now) {
-				storage.removeItem(key);
-			} else {
-				return parsed.data;
-			}
-		} else {
-			if (value === null) {
-				storage.removeItem(key);
-			} else {
-				parsed = store.stringify({
-					data: value,
-					expires: options.expires ? now + options.expires : null
-				});
-				try {
-					storage.setItem(key, parsed);
-				// quota exceeded
-				} catch(error) {
-					// expire old data and try again
-					store[storageType]();
-					try {
-						storage.setItem(key, parsed);
-					} catch(error) {
-						throw store.error();
-					}
-				}
-			}
-		}
-
-		return ret;
-	});
-}
-
-// ## localStorage + sessionStorage
-// IE 8+, Firefox 3.5+, Safari 4+, Chrome 4+, Opera 10.5+, iPhone 2+, Android 2+
-for (var webStorageType in { localStorage: 1, sessionStorage: 1 }) {
-	// try/catch for file protocol in Firefox
-	try {
-		if (window[webStorageType].getItem) {
-			createFromStorageInterface(webStorageType, window[webStorageType]);
-		}
-	} catch(e) {}
-}
-
-// ## globalStorage
-// non-standard: Firefox 2+
-// https://developer.mozilla.org/en/dom/storage#globalStorage
-if (!store.types.localStorage && window.globalStorage) {
-	// try/catch for file protocol in Firefox
-	try {
-		createFromStorageInterface("globalStorage",
-			window.globalStorage[window.location.hostname]);
-		// Firefox 2.0 and 3.0 have sessionStorage and globalStorage
-		// make sure we default to globalStorage
-		// but don't default to globalStorage in 3.5+ which also has localStorage
-		if (store.type === "sessionStorage") {
-			store.type = "globalStorage";
-		}
-	} catch(e) {}
-}
-
-// ## userData
-// non-standard: IE 5+
-// http://msdn.microsoft.com/en-us/library/ms531424(v=vs.85).aspx
-(function() {
-	// IE 9 has quirks in userData that are a huge pain
-	// rather than finding a way to detect these quirks
-	// we just don't register userData if we have localStorage
-	if (store.types.localStorage) {
-		return;
-	}
-
-	// append to html instead of body so we can do this from the head
-	var div = document.createElement("div"),
-		attrKey = "shelf";
-	div.style.display = "none";
-	document.getElementsByTagName("head")[0].appendChild(div);
-
-	// we can't feature detect userData support
-	// so just try and see if it fails
-	// surprisingly, even just adding the behavior isn't enough for a failure
-	// so we need to load the data as well
-	try {
-		div.addBehavior("#default#userdata");
-		div.load(attrKey);
-	} catch(e) {
-		div.parentNode.removeChild(div);
-		return;
-	}
-
-	store.addType("userData", function(key, value, options) {
-		div.load(attrKey);
-		var attr, parsed, prevValue, i, remove,
-			ret = value,
-			now = (new Date()).getTime();
-
-		if (!key) {
-			ret = {};
-			remove = [];
-			i = 0;
-			while (attr = div.XMLDocument.documentElement.attributes[i++]) {
-				parsed = store.parse(attr.value);
-				if (parsed.expires && parsed.expires <= now) {
-					remove.push(attr.name);
-				} else {
-					ret[attr.name] = parsed.data;
-				}
-			}
-			while (key = remove.pop()) {
-				div.removeAttribute(key);
-			}
-			div.save(attrKey);
-			return ret;
-		}
-
-		// convert invalid characters to dashes
-		// http://www.w3.org/TR/REC-xml/#NT-Name
-		// simplified to assume the starting character is valid
-		// also removed colon as it is invalid in HTML attribute names
-		key = key.replace(/[^-._0-9A-Za-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u37f-\u1fff\u200c-\u200d\u203f\u2040\u2070-\u218f]/g, "-");
-		// adjust invalid starting character to deal with our simplified sanitization
-		key = key.replace(/^-/, "_-");
-
-		if (value === undefined) {
-			attr = div.getAttribute(key);
-			parsed = attr ? store.parse(attr) : { expires: -1 };
-			if (parsed.expires && parsed.expires <= now) {
-				div.removeAttribute(key);
-			} else {
-				return parsed.data;
-			}
-		} else {
-			if (value === null) {
-				div.removeAttribute(key);
-			} else {
-				// we need to get the previous value in case we need to rollback
-				prevValue = div.getAttribute(key);
-				parsed = store.stringify({
-					data: value,
-					expires: (options.expires ? (now + options.expires) : null)
-				});
-				div.setAttribute(key, parsed);
-			}
-		}
-
-		try {
-			div.save(attrKey);
-		// quota exceeded
-		} catch (error) {
-			// roll the value back to the previous value
-			if (prevValue === null) {
-				div.removeAttribute(key);
-			} else {
-				div.setAttribute(key, prevValue);
-			}
-
-			// expire old data and try again
-			store.userData();
-			try {
-				div.setAttribute(key, parsed);
-				div.save(attrKey);
-			} catch (error) {
-				// roll the value back to the previous value
-				if (prevValue === null) {
-					div.removeAttribute(key);
-				} else {
-					div.setAttribute(key, prevValue);
-				}
-				throw store.error();
-			}
-		}
-		return ret;
-	});
-}());
-
-
-}(this));
-/**
- * ## File System storage for Shelf.js
- * 
- * ### Available only in Node.JS
- */
-
-(function(exports) {
-	
-var store = exports.store;
-
-if (!store) {
-	console.log('fs.shelf.js: shelf.js core not found. File system storage not available.');
-	return;
-}
-
-var lock = false;
-
-var queue = [];
-
-function clearQueue() {
-	if (isLocked()) {
-//		console.log('cannot clear queue if lock is active');
-		return false;
-	}
-//	console.log('clearing queue');
-	for (var i=0; i< queue.length; i++) {
-		queue[i].call(queue[i]);
-	}
-}
-
-function locked() {
-	lock = true;
-}
-
-function unlocked() {
-	lock = false;
-}
-
-function isLocked() {
-	return lock;
-}
-
-function addToQueue(cb) {
-	queue.push(cb);
-}
-
-var counter = 0;
-
-store.filename = './shelf.out';
-
-var fs = require('fs'),
-	path = require('path'),
-	util = require('util');
-
-// https://github.com/jprichardson/node-fs-extra/blob/master/lib/copy.js
-//var copyFile = function(srcFile, destFile, cb) {
-//	
-//    var fdr, fdw;
-//    
-//    fdr = fs.createReadStream(srcFile, {
-//    	flags: 'r'
-//    });
-////    fs.flockSync(fdr, 'sh');
-//    
-//    fdw = fs.createWriteStream(destFile, {
-//    	flags: 'w'
-//    });
-//    
-////    fs.flockSync(fdw, 'ex');
-//    		
-//	fdr.on('end', function() {
-////      fs.flockSync(fdr, 'un');
-//    });
-//	
-//    fdw.on('close', function() {
-////        fs.flockSync(fdw, 'un');
-//    	if (cb) cb(null);
-//    });
-//    
-//    fdr.pipe(fdw);
-//};
-
-//var overwrite = function (fileName, items) {
-//console.log('OW: ' + counter++);
-//
-//var file = fileName || store.filename;
-//if (!file) {
-//	store.log('You must specify a valid file.', 'ERR');
-//	return false;
-//}
-//
-//var tmp_copy = path.dirname(file) + '/.' + path.basename(file);
-//
-////console.log('files')
-////console.log(file);
-////console.log(fileName);
-////console.log(tmp_copy)
-//
-//copyFile(file, tmp_copy, function(){
-//	var s = store.stringify(items);
-//	// removing leading { and trailing }
-//	s = s.substr(1, s = s.substr(0, s.legth-1));
-////	console.log('SAVING')
-////	console.log(s)
-//	fs.writeFile(file, s, 'utf-8', function(e) {
-//		console.log('UNLINK ' + counter)
-//		if (e) throw e;
-////		fs.unlinkSync(tmp_copy);
-//		fs.unlink(tmp_copy, function (err) {
-//			if (err) throw err;  
-//		});
-//		return true;
-//	});
-//
-//});
-//
-//};
-
-var BUF_LENGTH = 64 * 1024;
-var _buff = new Buffer(BUF_LENGTH);
-
-var copyFileSync = function(srcFile, destFile) {
-	  var bytesRead, fdr, fdw, pos;
-	  fdr = fs.openSync(srcFile, 'r');
-	  fdw = fs.openSync(destFile, 'w');
-	  bytesRead = 1;
-	  pos = 0;
-	  while (bytesRead > 0) {
-	    bytesRead = fs.readSync(fdr, _buff, 0, BUF_LENGTH, pos);
-	    fs.writeSync(fdw, _buff, 0, bytesRead);
-	    pos += bytesRead;
-	  }
-	  fs.closeSync(fdr);
-	  return fs.closeSync(fdw);
-};
-
-
-var timeout = {};
-
-
-
-var overwrite = function (fileName, items) {
-	
-	if (isLocked()) {
-		addToQueue(this);
-		return false;
-	}
-	
-	locked();
-	
-//	console.log('OW: ' + counter++);
-	
-	var file = fileName || store.filename;
-	if (!file) {
-		store.log('You must specify a valid file.', 'ERR');
-		return false;
-	}
-	
-	var tmp_copy = path.dirname(file) + '/.' + path.basename(file);
-	copyFileSync(file, tmp_copy);
-	
-	var s = store.stringify(items);
-
-	// removing leading { and trailing }
-	s = s.substr(1, s = s.substr(0, s.legth-1));
-	
-	fs.writeFileSync(file, s, 'utf-8');
-	fs.unlinkSync(tmp_copy);
-	
-//	console.log('UNLINK ' + counter);
-	
-	
-	unlocked();
-	
-	clearQueue();
-	return true;	
-};
-
-
-if ('undefined' !== typeof fs.appendFileSync) {
-	// node 0.8
-	var save = function (fileName, key, value) {
-		var file = fileName || store.filename;
-		if (!file) {
-			store.log('You must specify a valid file.', 'ERR');
-			return false;
-		}
-		if (!key) return;
-		
-		var item = store.stringify(key) + ": " + store.stringify(value) + ",\n";
-		
-		return fs.appendFileSync(file, item, 'utf-8');
-	};	
-}
-else {
-	// node < 0.8
-	var save = function (fileName, key, value) {
-		var file = fileName || store.filename;
-		if (!file) {
-			store.log('You must specify a valid file.', 'ERR');
-			return false;
-		}
-		if (!key) return;
-		
-		var item = store.stringify(key) + ": " + store.stringify(value) + ",\n";
-		
-
-
-		var fd = fs.openSync(file, 'a', '0666');
-		fs.writeSync(fd, item, null, 'utf8');
-		fs.closeSync(fd);
-		return true;
-	};
-}
-
-var load = function (fileName, key) {
-	var file = fileName || store.filename;
-	if (!file) {
-		store.log('You must specify a valid file.', 'ERR');
-		return false;
-	}
-
-	var s = fs.readFileSync(file, 'utf-8');
-	
-//	console.log('BEFORE removing end')
-//	console.log(s)
-	
-	
-	s = s.substr(0, s.length-2); // removing last ',' and /n
-	
-//	console.log('BEFORE PARSING')
-//	console.log(s)
-	
-	var items = store.parse('{' + s + '}');
-	
-//	console.log('PARSED')
-//	console.log(items)
-	
-	return (key) ? items[key] : items; 
-
-};
-
-var deleteVariable = function (fileName, key) {
-	var file = fileName || store.filename;
-	var items = load(file);
-//	console.log('dele')
-//	console.log(items)
-//	console.log(key)
-	delete items[key];
-	overwrite(file, items);
-	return null;
-};
-
-store.addType("fs", function(key, value, options) {
-	
-	var filename = options.file || store.filename;
-	
-	if (!key) { 
-		return load(filename);
-	}
-
-	if (value === undefined) {
-		return load(filename, key);
-	}
-
-	if (timeout[key]) {
-		clearTimeout(timeout[key]);
-		deleteVariable(filename, key);
-	}
-
-	if (value === null) {
-		deleteVariable(filename, key);
-		return null;
-	}
-	
-	// save item
-	save(filename, key, value);
-	
-	if (options.expires) {
-		timeout[key] = setTimeout(function() {
-			deleteVariable(filename, key);
-		}, options.expires);
-	}
-
-	return value;
-});
-
-}(('undefined' !== typeof module && 'function' === typeof require) ? module.exports || module.parent.exports : {}));
 /**
  * # JSUS: JavaScript UtilS. 
  * Copyright(c) 2012 Stefano Balietti
@@ -15640,15 +15352,26 @@ JSUS.extend(PARSE);
          *
          * Runs all the registered configuration functions
          *
-         * Matches the keys of the configuration objects with the name of the registered
-         * functions and executes them. If no match is found, the configuration function
-         * will set the default values.
+         * Matches the keys of the configuration objects with the name
+         * of the registered functions and executes them.
+         * If no match is found, the configuration function will set 
+         * the default values.
+         *
+         * @param {object} options The configuration object
          */
         this.registerSetup('nodegame', function(options) {
+            var i;
+            if (options && 'object' !== typeof options) {
+                throw new TypeError('node.setup.nodegame: options must ' +
+                                    'object or undefined.');
+            }
             options = options || {};
-            for (var i in this.setup) {
+            for (i in this.setup) {
                 if (this.setup.hasOwnProperty(i)) {
-                    if (i !== 'register' && i !== 'nodegame') {
+                    // Opera loops over the prototype property as well.
+                    if (i !== 'register' &&
+                        i !== 'nodegame' &&
+                        i !== 'prototype') {
                         this.conf[i] = this.setup[i].call(this, options[i]);
                     }
                 }
@@ -16188,26 +15911,29 @@ JSUS.extend(PARSE);
      * @see node.setup.register
      */
     NGC.prototype.setup = function(property) {
-        var res;
+        var res, func;
 
         if ('string' !== typeof property) {
             throw new Error('node.setup: expects a string as first parameter.');
         }
 
         if (frozen) {
-            throw new Error('nodeGame configuration is frozen. No modification allowed.');
+            throw new Error('node.setup: nodeGame configuration is frozen. ' +
+                            'Calling setup is not allowed.');
         }
 
         if (property === 'register') {
-            throw new Error('cannot setup property "register"');
+            throw new Error('node.setup: cannot setup property "register".');
         }
 
-        if (!this.setup[property]) {
-            throw new Error('no such property to configure: ' + property);
+        func = this.setup[property];
+        if (!func) {
+            throw new Error('node.setup: no such property to configure: '
+                            + property + '.');
         }
         
         // Setup the property using rest of arguments:
-        res = this.setup[property].apply(this, Array.prototype.slice.call(arguments, 1));
+        res = func.apply(this, Array.prototype.slice.call(arguments, 1));
 
         if (property !== 'nodegame') {
             this.conf[property] = res;
@@ -16217,7 +15943,7 @@ JSUS.extend(PARSE);
     };
 
     /**
-     * ### node.setup.register
+     * ### node.registerSetup
      *
      * Registers a configuration function
      *
@@ -16225,17 +15951,17 @@ JSUS.extend(PARSE);
      *
      * @param {string} property The feature to configure
      * @param {mixed} options The value of the option to configure
-     * @return{boolean} TRUE, if configuration is successful
      *
      * @see node.setup
      */
     NGC.prototype.registerSetup = function(property, func) {
-        if (!property || !func) {
-            this.err('cannot register empty setup function');
-            return false;
+        if ('string' !== typeof property) {
+            throw new TypeError('node.registerSetup: property must be string.');
+        }
+        if ('function' !== typeof func) {
+            throw new TypeError('node.registerSetup: func must be function.');
         }
         this.setup[property] = func;
-        return true;
     };
 
     /**
@@ -17552,308 +17278,294 @@ JSUS.extend(PARSE);
     'undefined' != typeof node ? node : module.parent.exports
 );
 /**
- * 
- * # TriggerManager: 
- * 
- * Copyright(c) 2012 Stefano Balietti
- * MIT Licensed 
- * 
+ * # TriggerManager
+ * Copyright(c) 2013 Stefano Balietti
+ * MIT Licensed
+ *
  * Manages a collection of trigger functions to be called sequentially
- *  
+ *
  * ## Note for developers
- * 
- * Triggers are functions that operate on a common object, and each 
- * sequentially adds further modifications to it. 
- * 
+ *
+ * Triggers are functions that operate on a common object, and each
+ * sequentially adds further modifications to it.
+ *
  * If the TriggerManager were a beauty saloon, the first trigger function
  * would wash the hair, the second would cut the washed hair, and the third
  * would style it. All these operations needs to be done sequentially, and
  * the TriggerManager takes care of handling this process.
- * 
- * If `TriggerManager.returnAt` is set equal to `TriggerManager.first`, 
+ *
+ * If `TriggerManager.returnAt` is set equal to `TriggerManager.first`,
  * the first trigger function returning a truthy value will stop the process
  * and the target object will be immediately returned. In these settings,
  * if a trigger function returns `undefined`, the target is passed to the next
- * trigger function. 
- * 
+ * trigger function.
+ *
  * Notice: TriggerManager works as a *LIFO* queue, i.e. new trigger functions
  * will be executed first.
- * 
  * ---
- * 
  */
+(function(exports, node) {
 
-(function(exports, node){
+    // ## Global scope
 
-// ## Global scope
-	
-exports.TriggerManager = TriggerManager;
+    exports.TriggerManager = TriggerManager;
 
-TriggerManager.first = 'first';
-TriggerManager.last = 'last';
+    TriggerManager.first = 'first';
+    TriggerManager.last = 'last';
 
+    /**
+     * ## TriggerManager constructor
+     *
+     * Creates a new instance of TriggerManager
+     *
+     * @param {object} options Configuration options
+     */
+    function TriggerManager(options) {
+        // ## Public properties
 
+        /**
+         * ### TriggerManager.options
+         *
+         * Reference to current configuration
+         */
+        this.options = options || {};
 
-/**
- * ## TriggerManager constructor
- * 
- * Creates a new instance of TriggerManager
- * 
- */
-function TriggerManager (options) {
-// ## Public properties
-	
-	
-/**
- * ### TriggerManager.triggers
- * 
- * Array of trigger functions 
- * 
- */
-this.triggers = [];
-	
-// ## Public properties
+        /**
+         * ### TriggerManager.triggers
+         *
+         * Array of trigger functions
+         */
+        this.triggers = [];
 
-/**
- * ### TriggerManager.options
- * 
- * Reference to current configuration
- * 
- */	
-	this.options = options || {};
+        /**
+         * ### TriggerManager.returnAt
+         *
+         * Controls the behavior of TriggerManager.pullTriggers
+         *
+         * By default it is equal to `TriggerManager.first`
+         */
+        this.returnAt = TriggerManager.first;
 
-/**
- * ### TriggerManager.returnAt
- * 
- * Controls the behavior of TriggerManager.pullTriggers
- * 
- * By default it is equal to `TriggerManager.first`
- */	
-	var returnAt = TriggerManager.first;
-	Object.defineProperty(this, 'returnAt', {
-		set: function(at){
-			if (!at || (at !== TriggerManager.first && at !== TriggerManager.last)) {
-				node.log('Invalid returnAt type: ' + at);
-				return false;
-			}
-			returnAt = at;
-			return at;
-		},
-		get: function(){
-			return returnAt;
-		},
-		configurable: true,
-		enumerable: true
-	});
+        this.init();
+    };
 
-/**
- * ### TriggerManager.length
- * 
- * The number of registered trigger functions
- * 
- */
-	Object.defineProperty(this, 'length', {
-		set: function(){},
-		get: function(){
-			return this.triggers.length;
-		},
-		configurable: true
-	});
-	
-	this.init();
-};
+    // ## TriggerManager methods
 
-// ## TriggerManager methods
+    
+    /**
+     * ### TriggerManager.size
+     *
+     * Returns the number of registered trigger functions
+     */
+    TriggerManager.prototype.size = function() {
+        return this.triggers.length;
+    };
 
-/**
- * ### TriggerManager.init
- * 
- * Configures the TriggerManager instance
- * 
- * Takes the configuration as an input parameter or 
- * recycles the settings in `this.options`.
- * 
- * The configuration object is of the type
- * 
- * 	var options = {
- * 		returnAt: 'first', // or 'last'
- * 		triggers: [ myFunc,
- * 					myFunc2 
- * 		],
- * 	} 
- * 	 
- * @param {object} options Optional. Configuration object
- * 
- */
-TriggerManager.prototype.init = function (options) {
-	this.options = options || this.options;
-	if (this.options.returnAt === TriggerManager.first || this.options.returnAt === TriggerManager.last) {
-		this.returnAt = this.options.returnAt;
-	}
-	this.resetTriggers();
-};
+    /**
+     * ### TriggerManager.init
+     *
+     * Configures the TriggerManager instance
+     *
+     * Takes the configuration as an input parameter or recycles the settings
+     * in `this.options`.
+     *
+     * The configuration object is of the type:
+     *
+     *  var options = {
+     *      returnAt: 'last',
+     *      triggers: [ myFunc, myFunc2 ]
+     *  };
+     *
+     * @param {object} options Optional. Configuration object
+     */
+    TriggerManager.prototype.init = function(options) {
+        if (options && 'object' !== typeof options) {
+            throw new TypeError('TriggerManager.init: options must be ' + 
+                                'object or undefined.');
+        }
 
-/**
- * ### TriggerManager.initTriggers
- * 
- * Adds a collection of trigger functions to the trigger array
- * 
- * @param {function|array} triggers An array of trigger functions or a single function 
- */
-TriggerManager.prototype.initTriggers = function (triggers) {
-	if (!triggers) return;
-	if (!(triggers instanceof Array)) {
-		triggers = [triggers];
-	}
-	for (var i=0; i< triggers.length; i++) {
-		this.triggers.push(triggers[i]);
-	}
-  };
-	
-/**
- * ### TriggerManager.resetTriggers
- *   
- * Resets the trigger array to initial configuration
- *   
- * Delete existing trigger functions and re-add the ones
- * contained in `TriggerManager.options.triggers`
- * 
- */
-TriggerManager.prototype.resetTriggers = function () {
-	this.triggers = [];
-	this.initTriggers(this.options.triggers);
-};
+        if (options) {
+            if (options.returnAt) {
+                this.setReturnAt(options.returnAt);
+            }
+            this.options = options;
+        }
+        
+        this.resetTriggers();
+    };
 
-/**
- * ### TriggerManager.clear
- * 
- * Clears the trigger array
- * 
- * Requires a boolean parameter to be passed for confirmation
- * 
- * @param {boolean} clear TRUE, to confirm clearing
- * @return {boolean} TRUE, if clearing was successful
- */
-TriggerManager.prototype.clear = function (clear) {
-	if (!clear) {
-		node.log('Do you really want to clear the current TriggerManager obj? Please use clear(true)', 'WARN');
-		return false;
-	}
-	this.triggers = [];
-	return clear;
-};
-	
-/**
- * ### TriggerManager.addTrigger
- * 
- * Pushes a trigger into the trigger array
- * 
- * @param {function} trigger The function to add
- * @param {number} pos Optional. The index of the trigger in the array
- * @return {boolean} TRUE, if insertion is successful
- */	  
-TriggerManager.prototype.addTrigger = function (trigger, pos) {
-	if (!trigger) return false;
-	if (!('function' === typeof trigger)) return false;
-	if (!pos) {
-		this.triggers.push(trigger);
-	}
-	else {
-		this.triggers.splice(pos, 0, trigger);
-	}
-	return true;
-};
-	  
-/**
- * ### TriggerManager.removeTrigger
- * 
- * Removes a trigger from the trigger array
- * 
- * @param {function} trigger The function to remove
- * @return {boolean} TRUE, if removal is successful
- */	  
-TriggerManager.prototype.removeTrigger = function (trigger) {
-	if (!trigger) return false;
-	for (var i=0; i< this.triggers.length; i++) {
-		if (this.triggers[i] == trigger) {
-			return this.triggers.splice(i,1);
-		}
-	}  
-	return false;
-};
+   
+    /**
+     * ### TriggerManager.setReturnAt
+     *
+     * Verifies and sets the returnAt option.x
+     *
+     * @param {string} returnAt The value of the returnAt policy
+     *
+     * @see TriggerManager.first
+     * @see TriggerManager.last
+     */
+    TriggerManager.prototype.setReturnAt = function(returnAt) {
+        var f =  TriggerManager.first, l = TriggerManager.last;
+        if ('string' !== typeof returnAt) {
+            throw new TypeError('TriggerManager.setReturnAt: returnAt must ' +
+                                'be string.');
+        }
+        if (returnAt !== f && returnAt !== l) {
+            throw new TypeError('TriggerManager.setReturnAt: returnAt must be ' +
+                                f + ' or ' + l + '. Given:' + returnAt + '.');
+        }
+        this.returnAt = returnAt;
+    };
+        
+    /**
+     * ### TriggerManager.initTriggers
+     *
+     * Adds a collection of trigger functions to the trigger array
+     *
+     * @param {function|array} triggers An array of trigger functions 
+     *   or a single function.
+     */
+    TriggerManager.prototype.initTriggers = function(triggers) {
+        var i;
+        if (!triggers) return;
+        if (!(triggers instanceof Array)) {
+            triggers = [triggers];
+        }
+        for (i = 0 ; i < triggers.length ; i++) {
+            this.triggers.push(triggers[i]);
+        }
+    };
 
-/**
- * ### TriggerManager.pullTriggers
- * 
- * Fires the collection of trigger functions on the target object
- * 
- * Triggers are fired according to a LIFO queue, i.e. new trigger
- * functions are fired first.
- * 
- * Depending on the value of `TriggerManager.returnAt`, some trigger
- * functions may not be called. In fact a value is returned 
- * 
- * 	- 'first': after the first trigger returns a truthy value
- * 	- 'last': after all triggers have been executed
- * 
- * If no trigger is registered the target object is returned unchanged
- * 
- * @param {object} o The target object
- * @return {object} The target object after the triggers have been fired
- * 
- */	
-TriggerManager.prototype.pullTriggers = function (o) {
-	if ('undefined' === typeof o) return;
-	if (!this.length) return o;
-	
-	for (var i = this.triggers.length; i > 0; i--) {
-		var out = this.triggers[(i-1)].call(this, o);
-		if ('undefined' !== typeof out) {
-			if (this.returnAt === TriggerManager.first) {
-				return out;
-			}
-		}
-	}
-	// Safety return
-	return ('undefined' !== typeof out) ? out : o;
-};
+    /**
+     * ### TriggerManager.resetTriggers
+     *
+     * Resets the trigger array to initial configuration
+     *
+     * Delete existing trigger functions and re-add the ones
+     * contained in `TriggerManager.options.triggers`.
+     */
+    TriggerManager.prototype.resetTriggers = function() {
+        this.triggers = [];
+        this.initTriggers(this.options.triggers);
+    };
 
-// <!-- old pullTriggers
-//TriggerManager.prototype.pullTriggers = function (o) {
-//	if (!o) return;
-//	
-//	for (var i = triggersArray.length; i > 0; i--) {
-//		var out = triggersArray[(i-1)].call(this, o);
-//		if (out) {
-//			if (this.returnAt === TriggerManager.first) {
-//				return out;
-//			}
-//		}
-//	}
-//	// Safety return
-//	return o;
-//}; 
-//-->
+    /**
+     * ### TriggerManager.clear
+     *
+     * Clears the trigger array
+     *
+     * Requires a boolean parameter to be passed for confirmation
+     *
+     * @param {boolean} clear TRUE, to confirm clearing
+     * @return {boolean} TRUE, if clearing was successful
+     */
+    TriggerManager.prototype.clear = function(clear) {
+        if (!clear) {
+            node.warn('Do you really want to clear the current ' + 
+                      'TriggerManager obj? Please use clear(true)');
+            return false;
+        }
+        this.triggers = [];
+        return clear;
+    };
 
+    /**
+     * ### TriggerManager.addTrigger
+     *
+     * Pushes a trigger into the trigger array
+     *
+     * @param {function} trigger The function to add
+     * @param {number} pos Optional. The index of the trigger in the array
+     * @return {boolean} TRUE, if insertion is successful
+     */
+    TriggerManager.prototype.addTrigger = function(trigger, pos) {
+        if (!trigger) return false;
+        if (!('function' === typeof trigger)) return false;
+        if (!pos) {
+            this.triggers.push(trigger);
+        }
+        else {
+            this.triggers.splice(pos, 0, trigger);
+        }
+        return true;
+    };
 
-/**
- * ### TriggerManager.size
- * 
- * Returns the number of registered trigger functions
- * 
- * Use TriggerManager.length instead 
- * 
- * @deprecated
- */
-TriggerManager.prototype.size = function () {
-	return this.triggers.length;
-};
-	
+    /**
+     * ### TriggerManager.removeTrigger
+     *
+     * Removes a trigger from the trigger array
+     *
+     * @param {function} trigger The function to remove
+     * @return {boolean} TRUE, if removal is successful
+     */
+    TriggerManager.prototype.removeTrigger = function(trigger) {
+        var i;
+        if (!trigger) return false;
+        for (i = 0 ; i < this.triggers.length ; i++) {
+            if (this.triggers[i] == trigger) {
+                return this.triggers.splice(i,1);
+            }
+        }
+        return false;
+    };
 
-// ## Closure	
+    /**
+     * ### TriggerManager.pullTriggers
+     *
+     * Fires the collection of trigger functions on the target object
+     *
+     * Triggers are fired according to a LIFO queue, i.e. new trigger
+     * functions are fired first.
+     *
+     * Depending on the value of `TriggerManager.returnAt`, some trigger
+     * functions may not be called. In fact a value is returned:
+     *
+     *  - 'first': after the first trigger returns a truthy value
+     *  - 'last': after all triggers have been executed
+     *
+     * If no trigger is registered the target object is returned unchanged
+     *
+     * @param {object} o The target object
+     * @return {object} The target object after the triggers have been fired
+     */
+    TriggerManager.prototype.pullTriggers = function(o) {
+        var i, out;
+        if ('undefined' === typeof o) return;
+        if (!this.size()) return o;
+
+        for (i = this.triggers.length; i > 0; i--) {
+            out = this.triggers[(i-1)].call(this, o);
+            if ('undefined' !== typeof out) {
+                if (this.returnAt === TriggerManager.first) {
+                    return out;
+                }
+            }
+        }
+        // Safety return.
+        return ('undefined' !== typeof out) ? out : o;
+    };
+
+    // <!-- old pullTriggers
+    //TriggerManager.prototype.pullTriggers = function(o) {
+    //  if (!o) return;
+    //
+    //  for (var i = triggersArray.length; i > 0; i--) {
+    //          var out = triggersArray[(i-1)].call(this, o);
+    //          if (out) {
+    //                  if (this.returnAt === TriggerManager.first) {
+    //                          return out;
+    //                  }
+    //          }
+    //  }
+    //  // Safety return
+    //  return o;
+    //};
+    //-->
+
 })(
-	('undefined' !== typeof node) ? node : module.exports
-  , ('undefined' !== typeof node) ? node : module.parent.exports
+    ('undefined' !== typeof node) ? node : module.exports
+    , ('undefined' !== typeof node) ? node : module.parent.exports
 );
 /**
  * Exposing the node object
@@ -24339,7 +24051,6 @@ TriggerManager.prototype.size = function () {
             }
             that.timeoutId = null;
             that.hasFailed = true;
-            that.results.push(errStr);
             that.checkingFinished();
         }, this.timeoutTime);
     };
