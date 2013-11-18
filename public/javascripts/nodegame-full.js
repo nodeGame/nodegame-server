@@ -7264,7 +7264,6 @@ JSUS.extend(PARSE);
      */
     k.UNDEFINED_PLAYER = -1;
 
-
      /**
      * ### node.constants.verbosity_levels
      *
@@ -8203,24 +8202,28 @@ JSUS.extend(PARSE);
             var stepNum  = parseInt(tokens[1], 10);
             var roundNum = parseInt(tokens[2], 10);
 
-            if (tokens[0])
+            if (tokens[0]) {
                 this.stage = !isNaN(stageNum) ? stageNum : tokens[0];
-
-            if ('undefined' !== typeof tokens[1])
+            }
+            if ('undefined' !== typeof tokens[1]) {
                 this.step  = !isNaN(stepNum)  ? stepNum  : tokens[1];
-
-            if ('undefined' !== typeof tokens[2])
+            }
+            if ('undefined' !== typeof tokens[2]) {
                 this.round = roundNum;
+            }
         }
         else if ('object' === typeof gs) {
-            if ('undefined' !== typeof gs.stage)
+            if ('undefined' !== typeof gs.stage) {
                 this.stage = gs.stage;
+            }
 
-            if ('undefined' !== typeof gs.step)
+            if ('undefined' !== typeof gs.step) {
                 this.step  = gs.step;
+            }
 
-            if ('undefined' !== typeof gs.round)
+            if ('undefined' !== typeof gs.round) {
                 this.round = gs.round;
+            }
         }
 
     }
@@ -10526,11 +10529,10 @@ JSUS.extend(PARSE);
 
 /**
  * # GamePlot
- *
  * Copyright(c) 2013 Stefano Balietti
  * MIT Licensed
  *
- * `nodeGame` container of game-state functions.
+ * `nodeGame` container of game stages functions.
  * ---
  */
 (function(exports, parent) {
@@ -10613,7 +10615,7 @@ JSUS.extend(PARSE);
         if (!this.stager) return GamePlot.NO_SEQ;
 
         // Find out flexibility mode:
-        var flexibleMode = this.stager.sequence.length === 0;
+        var flexibleMode = this.isFlexibleMode();
 
         var seqIdx, seqObj = null, stageObj;
         var stageNo, stepNo;
@@ -11304,6 +11306,22 @@ JSUS.extend(PARSE);
             round: gameStage.round
         });
     };
+
+    /**
+     * ## GamePlot.isFlexibleMode
+     *
+     * Returns TRUE if operating in _flexible_ mode
+     *
+     * In _flexible_ mode the next step to be executed is decided by a
+     * a callback function.
+     *
+     * In standard mode all steps are already inserted in a sequence.
+     *
+     * @return {boolean} TRUE if flexible mode is on
+     */
+    GamePlot.prototype.isFlexibleMode = function() {
+        return this.stager.sequence.length === 0;
+    }
 
     // ## Closure
 })(
@@ -12346,7 +12364,7 @@ JSUS.extend(PARSE);
  * Copyright(c) 2013 Stefano Balietti
  * MIT Licensed
  *
- * Handles flow of the game.
+ * Handles the flow of the game.
  * ---
  */
 (function(exports, parent) {
@@ -12588,7 +12606,9 @@ JSUS.extend(PARSE);
         }
 
         this.memory.clear(true);
-
+        if (node.window) {
+            node.window.clearCache();
+        }
         // Update state/stage levels and game stage.
         this.setStateLevel(constants.stateLevels.STARTING, true);
         this.setStageLevel(constants.stageLevels.UNINITIALIZED, true);
@@ -12743,27 +12763,67 @@ JSUS.extend(PARSE);
      *
      * @see Game.stager
      * @see Game.currentStage
+     * @see Game.gotoStep
      * @see Game.execStep
-     *
-     * TODO: harmonize return values
      */
     Game.prototype.step = function() {
-        var nextStep, curStep;
+        var curStep, nextStep, node;
+        node = this.node;
+        curStep = this.getCurrentGameStage();
+        nextStep = this.plot.next(curStep);
+        // Sends start / step command to connected clients if option is on.
+        if (this.settings.syncStepping) {
+            if (curStep.stage === 0) {
+                node.remoteCommand('start', 'ALL');
+            }
+            else {
+                node.remoteCommand('step', 'ALL');
+            }
+        }
+        return this.gotoStep(nextStep);
+    };
+
+    /**
+     * ## Game.gotoStep
+     *
+     * Updates the current game step to toStep and executes it.
+     *
+     * It unloads the old step listeners, before loading the listeners of the
+     * new one.
+     *
+     * It does note check if the next step is different from the current one,
+     * and in this case the same step is re-executed.
+     *
+     * @param {string|GameStage} nextStep A game stage object, or a string like
+     *   GAME_OVER.
+     *
+     * @see Game.execStep
+     * @see GameStage
+     *
+     * TODO: harmonize return values
+     * TODO: remove some unused comments in the code.
+     */
+    Game.prototype.gotoStep = function(nextStep) {
+        var curStep;
         var nextStepObj, nextStageObj;
         var ev, node;
         var property, handler;
         var minThreshold, maxThreshold, exactThreshold;
         var minCallback = null, maxCallback = null, exactCallback = null;
 
-        node = this.node;
-
         if (this.getStateLevel() < constants.stateLevels.INITIALIZED) {
             throw new node.NodeGameMisconfiguredGameError(
-                'game.step called before game.start');
+                'Game.gotoStep: game was not started yet.');
         }
 
+        if ('string' !== typeof nextStep && 'object' !== typeof nextStep) {
+            throw new TypeError('Game.gotoStep: nextStep must be ' +
+                               'an object or a string.');
+        }
+        
         curStep = this.getCurrentGameStage();
-        nextStep = this.plot.next(curStep);
+        node = this.node;
+
         node.silly('Next stage ---> ' + nextStep);
 
         // Listeners from previous step are cleared in any case.
@@ -12774,15 +12834,7 @@ JSUS.extend(PARSE);
             node.socket.clearBuffer();
         }
 
-        // Sends start / step command to connected clients if option is on.
-        if (this.settings.syncStepping) {
-            if (curStep.stage === 0) {
-                node.remoteCommand('start', 'ALL');
-            }
-            else {
-                node.remoteCommand('step', 'ALL');
-            }
-        }
+        // TODO: here was the syncStepping option.
 
         if ('string' === typeof nextStep) {
             if (nextStep === GamePlot.GAMEOVER) {
@@ -12811,7 +12863,8 @@ JSUS.extend(PARSE);
 
             // If we enter a new stage (including repeating the same stage)
             // we need to update a few things:
-            if (this.plot.stepsToNextStage(curStep) === 1) {
+            //if (this.plot.stepsToNextStage(curStep) === 1) {
+            if (curStep.stage !== nextStep.stage) {
                 nextStageObj = this.plot.getStage(nextStep);
                 if (!nextStageObj) return false;
 
@@ -12856,8 +12909,8 @@ JSUS.extend(PARSE);
             if (property) {
                 if (property.length < 2) {
                     throw new TypeError(
-                        'Game.step: minPlayers field must be an array ' +
-                        'of length 2.');
+                        'Game.gotoStep: minPlayers field must be an array ' +
+                            'of length 2.');
                 }
 
                 minThreshold = property[0];
@@ -12865,16 +12918,16 @@ JSUS.extend(PARSE);
                 if ('number' !== typeof minThreshold ||
                     'function' !== typeof minCallback) {
                     throw new TypeError(
-                        'Game.step: minPlayers field must contain a number ' +
-                        'and a function.');
+                        'Game.gotoStep: minPlayers field must contain a ' +
+                            'number and a function.');
                 }
             }
             property = this.plot.getProperty(nextStep, 'maxPlayers');
             if (property) {
                 if (property.length < 2) {
                     throw new TypeError(
-                        'Game.step: maxPlayers field must be an array ' +
-                        'of length 2.');
+                        'Game.gotoStep: maxPlayers field must be an array ' +
+                            'of length 2.');
                 }
 
                 maxThreshold = property[0];
@@ -12882,16 +12935,16 @@ JSUS.extend(PARSE);
                 if ('number' !== typeof maxThreshold ||
                     'function' !== typeof maxCallback) {
                     throw new TypeError(
-                        'Game.step: maxPlayers field must contain a number ' +
-                        'and a function.');
+                        'Game.gotoStep: maxPlayers field must contain a ' +
+                            'number and a function.');
                 }
             }
             property = this.plot.getProperty(nextStep, 'exactPlayers');
             if (property) {
                 if (property.length < 2) {
                     throw new TypeError(
-                        'Game.step: exactPlayers field must be an array ' +
-                        'of length 2.');
+                        'Game.gotoStep: exactPlayers field must be an array ' +
+                            'of length 2.');
                 }
 
                 exactThreshold = property[0];
@@ -12899,8 +12952,8 @@ JSUS.extend(PARSE);
                 if ('number' !== typeof exactThreshold ||
                     'function' !== typeof exactCallback) {
                     throw new TypeError(
-                        'Game.step: exactPlayers field must contain a number ' +
-                        'and a function.');
+                        'Game.gotoStep: exactPlayers field must contain a ' +
+                            'number and a function.');
                 }
             }
             if (minCallback || maxCallback || exactCallback) {
@@ -12969,9 +13022,9 @@ JSUS.extend(PARSE);
                 node.socket.clearBuffer();
             }
 
-            return this.execStep(this.getCurrentStep());
         }
-    };
+        return this.execStep(this.getCurrentStep());
+    }
 
     /**
      * ### Game.execStep
@@ -15368,7 +15421,7 @@ JSUS.extend(PARSE);
             options = options || {};
             for (i in this.setup) {
                 if (this.setup.hasOwnProperty(i)) {
-                    // Opera loops over the prototype property as well.
+                    // Old Operas loop over the prototype property as well.
                     if (i !== 'register' &&
                         i !== 'nodegame' &&
                         i !== 'prototype') {
@@ -16754,6 +16807,113 @@ JSUS.extend(PARSE);
 );
 
 /**
+ * # NodeGameClient JSON fetching  
+ *
+ * Copyright(c) 2013 Stefano Balietti
+ * MIT Licensed
+ *
+ * ---
+ */
+
+(function(exports, parent) {
+
+    "use strict";
+
+    var NGC = parent.NodeGameClient;
+
+    /**
+     * ### NodeGameClient.getJSON
+     *
+     * Retrieves JSON data via JSONP from one or many URIs
+     *
+     * The callback will be called with the JSON object as the parameter.
+     *
+     * TODO: Update doc
+     * @param {array|string} uris The URI(s)
+     * @param {function} callback The function to call with the data
+     */
+    NGC.prototype.getJSON = function(uris, dataCb, doneCb) {
+        // TODO: Work in progress
+        var that;
+        var loadedCount;
+        var currentUri, uriIdx;
+        var cbScriptTag;
+        var jsonpCallbackName;
+        var scriptTag, scriptTagName;
+
+        if ('string' === typeof uris) {
+            uris = [ uris ];
+        }
+
+        // Do nothing if no URIs are given:
+        if (!uris || !uris.length) {
+            if (doneCb) doneCb();
+            return;
+        }
+
+        that = this;
+
+        // Keep count of loaded data:
+        loadedCount = 0;
+
+        // Create a temporary script tag with the JSONP callback:
+        cbScriptTag = document.createElement('script');
+        cbScriptTag.id = 'tmp_script_' + uriIdx;
+        cbScriptTag.innerHTML =
+            'function NGC_getJSON_callback(data){' +
+                //'dataCb(data);' +
+                'console.log("JSONP!!!");' +
+                'console.log(data);' +
+            '}';
+        document.body.appendChild(scriptTag);
+
+        for (uriIdx = 0; uriIdx < uris.length; uriIdx++) {
+            currentUri = uris[uriIdx];
+
+            // Create a temporary script tag for the current URI:
+            scriptTag = document.createElement('script');
+            scriptTagName = 'tmp_script_' + uriIdx;
+            scriptTag.id = scriptTagName;
+            scriptTag.name = scriptTagName;
+            document.body.appendChild(scriptTag);
+
+            // Register the onload handler:
+            scriptTag.onload = (function(uri, thisScriptTag) {
+                return function() {
+                    var frameDocumentElement;
+
+                    frameDocumentElement =
+                        (thisScriptTag.contentDocument ?
+                         thisScriptTag.contentDocument :
+                         thisScriptTag.contentWindow.document)
+                        .documentElement;
+
+                    // Store the contents in the cache:
+                    that.cache[uri] = {
+                        contents: frameDocumentElement.innerHTML,
+                        cacheOnClose: false
+                    };
+
+                    // Remove the internal frame:
+                    document.body.removeChild(thisScriptTag);
+
+                    // Increment loaded URIs counter:
+                    loadedCount++;
+                    if (loadedCount >= uris.length) {
+                        // All requested URIs have been loaded at this point.
+                        if (doneCb) doneCb();
+                    }
+                };
+            })(currentUri, scriptTag);
+        }
+    };
+
+})(
+    'undefined' != typeof node ? node : module.exports,
+    'undefined' != typeof node ? node : module.parent.exports
+);
+
+/**
  * # Listeners for incoming messages.
  * Copyright(c) 2013 Stefano Balietti
  * MIT Licensed
@@ -17025,7 +17185,8 @@ JSUS.extend(PARSE);
         node.events.ng.on( IN + say + 'GAMECOMMAND', function(msg) {
             // console.log('GM', msg);
             if (!msg.text || !parent.constants.gamecommands[msg.text]) {
-                node.err('unknown game command received: ' + msg.text);
+                node.err('node.on.in.say.GAMECOMMAND: unknown game command ' +
+                         'received: ' + msg.text);
                 return;
             }
             node.emit('NODEGAME_GAMECOMMAND_' + msg.text, msg.data);
@@ -17269,6 +17430,16 @@ JSUS.extend(PARSE);
             node.game.stop();
         });
 
+        /**
+         * ## NODEGAME_GAMECOMMAND: goto_stage
+         *
+         */
+        this.events.ng.on(CMD + gcommands.goto_stage, function(stage, options) {
+            node.emit('BEFORE_GAMECOMMAND', gcommands.goto_stage, options);
+            // Conditions checked inside stop.
+            node.game.stop();
+        });
+
         this.internalAdded = true;
         this.silly('internal listeners added');
         return true;
@@ -17305,6 +17476,8 @@ JSUS.extend(PARSE);
  * ---
  */
 (function(exports, node) {
+
+    "use strict";
 
     // ## Global scope
 
@@ -18064,16 +18237,21 @@ JSUS.extend(PARSE);
     /**
      * ### GameWindow.preCache
      *
-     * Loads the HTML content of the given URIs into the cache
+     * Loads the HTML content of the given URI(s) into the cache
      *
-     * @param {array} uris The URIs to cache
-     * @param {function} callback The function to call once the caching is done
+     * @param {string|array} uris The URI(s) to cache
+     * @param {function} callback Optional. The function to call once the
+     *   caching is done
      */
     GameWindow.prototype.preCache = function(uris, callback) {
         var that;
         var loadedCount;
         var currentUri, uriIdx;
         var iframe, iframeName;
+
+        if ('string' === typeof uris) {
+            uris = [ uris ];
+        }
 
         // Don't preload if no URIs are given:
         if (!uris || !uris.length) {
@@ -18091,7 +18269,7 @@ JSUS.extend(PARSE);
 
             // Create an invisible internal frame for the current URI:
             iframe = document.createElement('iframe');
-            iframe.style.visibility = 'hidden';
+            iframe.style.display = 'none';
             iframeName = 'tmp_iframe_' + uriIdx;
             iframe.id = iframeName;
             iframe.name = iframeName;
@@ -18129,6 +18307,15 @@ JSUS.extend(PARSE);
             // Start loading the page:
             window.frames[iframeName].location = currentUri;
         }
+    };
+
+    /**
+     * ### GameWindow.clearCache
+     *
+     * Empties the cache
+     */
+    GameWindow.prototype.clearCache = function() {
+        this.cache = {};
     };
 
 
@@ -18210,8 +18397,8 @@ JSUS.extend(PARSE);
      *    (default: default iframe of the game)
      *  - cache (object): Caching options.  Fields:
      *      * loadMode (string):
-     *          'reload' (default; reload page without the cache),
-     *          'cache' (get the page from cache if possible)
+     *          'cache' (default; get the page from cache if possible),
+     *          'reload' (reload page without the cache)
      *      * storeMode (string):
      *          'off' (default; don't cache page),
      *          'onLoad' (cache given page after it is loaded),
@@ -18221,8 +18408,9 @@ JSUS.extend(PARSE);
      * content is coming from another domain.
      *
      * @param {string} uri The uri to load
-     * @param {function} func The function to call once the DOM is ready
-     * @param {object} opts The options object
+     * @param {function} func Optional. The function to call once the DOM is
+     *   ready
+     * @param {object} opts Optional. The options object
      */
     GameWindow.prototype.loadFrame = function(uri, func, opts) {
         var that;
