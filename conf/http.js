@@ -40,7 +40,7 @@ function configure(app, servernode) {
         }
 
         if (!gameInfo.dir) {
-            res.send('Resource ' + req.params.game + 
+            res.send('Resource ' + req.params.game +
                      ' is not configured properly: missing game directory.');
             return false;
         }
@@ -170,7 +170,7 @@ function configure(app, servernode) {
     // Serves game files or default game index file: index.htm.
     app.get('/:game/*', function(req, res) {
         var gameInfo, filepath, file;
-        
+
         gameInfo = verifyGameRequest(req, res);
         if (!gameInfo) return;
 
@@ -194,13 +194,27 @@ function configure(app, servernode) {
         // Build filepath to file.
         filepath = gameInfo.dir + '/'  + file;
 
-        
-        if (file.match(/\.json$/)) {     
-            res.header('Content-Type', 'application/json');
-            res.header('Charset', 'utf-8') 
-            //res.send(req.query.callback + '({"something": "rather", "more": "pork", "tua": "tara"});'); 
-            //return;
-        }  
+
+        // Send JSON data as JSONP if there is a callback query parameter:
+        if (file.match(/\.json$/) && req.query.callback) {
+            // Load file contents:
+            fs.readFile(filepath, 'utf8', function(err, data) {
+                var callback;
+
+                if (err) {
+                    res.json({error: 'file not found'}, 404);
+                    return;
+                }
+
+                // Send it:
+                res.header('Content-Type', 'application/javascript');
+                res.header('Charset', 'utf-8');
+                res.send(req.query.callback + '(' + data + ');');
+            });
+
+            return;
+        }
+
         // Send file (if it is a directory it is not sent).
         //res.sendfile(path.basename(filepath), {root: path.dirname(filepath)});
         res.sendfile(filepath);
@@ -217,5 +231,5 @@ function configure(app, servernode) {
     });
 
     return true;
-};
+}
 

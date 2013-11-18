@@ -4296,7 +4296,8 @@ JSUS.extend(PARSE);
      *   plus the shared objects
      */
     NDDB.prototype.cloneSettings = function(leaveOut) {
-        var options, keepShared;
+        var i, options, keepShared;
+        var logCopy, logCtxCopy;
         options = this.__options || {};
         keepShared = true;
 
@@ -4309,8 +4310,21 @@ JSUS.extend(PARSE);
         options.hooks = this.hooks;
         options.globalCompare = this.globalCompare;
 
-        options = J.clone(options);
+        // Must be removed before cloning.
+        if (options.log) {
+            logCopy = options.log;
+            delete options.log;
+        }
+        // Must be removed before cloning.
+        if (options.logCtx) {
+            logCtxCopy = options.logCtx;
+            delete options.logCtx;
+        }
 
+        // Cloning.
+        options = J.clone(options);
+        
+        // Removing unwanted options.
         for (i in leaveOut) {
             if (leaveOut.hasOwnProperty(i)) {
                 if (i === 'shared') {
@@ -4322,8 +4336,18 @@ JSUS.extend(PARSE);
                 delete options[i];
             }
         }
-        
-        if (keepShared) options.shared = this.__shared;
+
+        if (keepShared) {
+            options.shared = this.__shared;
+        }
+        if (logCopy) {
+            options.log = logCopy;
+            this.__options.log = logCopy;
+        }
+        if (logCtxCopy) {
+            options.logCtx = logCtxCopy;
+            this.__options.logCtx = logCtxCopy;
+        }
         return options;
     };
 
@@ -6939,13 +6963,21 @@ JSUS.extend(PARSE);
      * @see NDDBIndex.remove
      */
     NDDBIndex.prototype.update = function(idx, update) {
-        var o, dbidx;
+        var o, dbidx, nddb;
         dbidx = this.resolve[idx];
         if ('undefined' === typeof dbidx) return false;
-        o = this.nddb.db[dbidx];
+        nddb = this.nddb;
+        o = nddb.db[dbidx];
+        nddb.emit('update', o, update);
         J.mixin(o, update);
-        this.nddb.emit('update', o);
-        this.nddb._autoUpdate();
+        // We do indexes separately from the other components of _autoUpdate
+        // to avoid looping through all the other elements that are unchanged.
+        if (nddb.__update.indexes) {
+            nddb._indexIt(o, dbidx);
+            nddb._hashIt(o);
+            nddb._viewIt(o);
+        }
+        nddb._autoUpdate({indexes: false});
         return o;
     };
 
