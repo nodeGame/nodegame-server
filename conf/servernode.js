@@ -35,9 +35,6 @@ function configure(servernode) {
     // The name of the server.
     servernode.name = "nodeGame server";
 
-    // The verbosity of the server.
-    servernode.verbosity = 10;
-
     // Default games directory.
     servernode.defaultGamesDir = rootDir + '/games/';
     

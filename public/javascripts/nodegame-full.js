@@ -6981,6 +6981,7 @@ JSUS.extend(PARSE);
         return o;
     };
 
+
     /**
      * ### NDDBIndex.getAllKeys
      *
@@ -7221,7 +7222,7 @@ JSUS.extend(PARSE);
         stop: 'stop',
         restart: 'restart',
         step: 'step',
-        goto_stage: 'goto_stage'
+        goto_step: 'goto_step'
     };
 
     /**
@@ -8425,6 +8426,27 @@ JSUS.extend(PARSE);
     PlayerList.prototype.constructor = PlayerList;
 
     /**
+     * ## PlayerList.array2Groups (static)
+     *
+     * Transforms an array of array (of players) into an
+     * array of PlayerList instances and returns it.
+     *
+     * The original array is modified.
+     *
+     * @param {Array} array The array to transform
+     * @return {Array} array The array of `PlayerList` objects
+     *
+     */
+    PlayerList.array2Groups = function (array) {
+        if (!array) return;
+        for (var i = 0; i < array.length; i++) {
+            array[i] = new PlayerList({}, array[i]);
+        };
+        return array;
+    };
+
+
+    /**
      * ### PlayerList.comparePlayers
      *
      * Comparator functions between two players
@@ -8631,24 +8653,26 @@ JSUS.extend(PARSE);
      * @param {object} playerState An update with fields to update in the player
      * @return {object} The updated player object
      */
-    PlayerList.prototype.updatePlayer = function(id, playerState) {
-        // TODO: check playerState
-
+    PlayerList.prototype.updatePlayer = function(id, update) {
+        //var player;
+        if ('string' !== typeof id) {
+            throw new TypeError(
+                'PlayerList.updatePlayer: id must be string.');
+        }
         if (!this.exist(id)) {
             throw new NodeGameRuntimeError(
                 'PlayerList.updatePlayer: Player not found (id ' + id + ')');
         }
 
-        if ('undefined' === typeof playerState) {
-            throw new NodeGameRuntimeError(
-                'PlayerList.updatePlayer: Attempt to assign to a player an ' +
-                    'undefined playerState');
+        if ('object' !== typeof update) {
+            throw new TypeError(
+                'PlayerList.updatePlayer: update must be object.');
         }
-        var player = this.id.get(id);
-        J.mixin(player, playerState);
-        return player;
+        //player = this.id.get(id);
+        //J.mixin(player, update);
+        //return player;
         // This creates some problems with the _autoUpdate...to be investigated.
-        //return this.id.update(id, playerState);
+        return this.id.update(id, update);
     };
 
     /**
@@ -9240,12 +9264,11 @@ JSUS.extend(PARSE);
      *
      * @return {string} The stringified game-message
      *
-     *  @see GameMsg.toString
+     * @see GameMsg.toString
      */
     GameMsg.prototype.stringify = function() {
         return JSON.stringify(this);
     };
-
 
     /**
      * ### GameMsg.toString
@@ -9253,7 +9276,7 @@ JSUS.extend(PARSE);
      * Creates a human readable string representation of the message
      *
      * @return {string} The string representation of the message
-     *  @see GameMsg.stringify
+     * @see GameMsg.stringify
      */
     GameMsg.prototype.toString = function() {
         var SPT, TAB, DLM, line, UNKNOWN, tmp;
@@ -9265,14 +9288,26 @@ JSUS.extend(PARSE);
         line += this.id + SPT;
         line += this.session + SPT;
         line += this.action + SPT;
-        line += this.target ? this.target.length < 6  ? this.target + SPT + TAB : this.target + SPT : UNKNOWN;
-        line += this.from ? this.from.length < 6  ? this.from + SPT + TAB : this.from + SPT : UKNOWN;
-        line += this.to ? this.to.length < 6  ? this.to + SPT + TAB : this.to + SPT : UNKNOWN;
-        if (!this.text) {
+
+        line += this.target ? 
+            this.target.length < 6  ?
+            this.target + SPT + TAB : this.target + SPT : UNKNOWN;
+        line += this.from ?
+            this.from.length < 6  ?
+            this.from + SPT + TAB : this.from + SPT : UKNOWN;
+        line += this.to ?
+            this.to.length < 6  ?
+            this.to + SPT + TAB : this.to + SPT : UNKNOWN;
+
+        if (this.text === null || 'undefined' === typeof this.text) {
             line += "\"no text\"" + SPT;
+        }
+        else if ('number' === typeof this.text) {
+            line += "" + this.text;
         }
         else {
             tmp = this.text.toString();
+            
             if (tmp.length > 12) { 
                 line += DLM + tmp.substr(0,9) + "..." + DLM + SPT;
             }
@@ -9283,8 +9318,12 @@ JSUS.extend(PARSE);
                 line += DLM + tmp + DLM + SPT;
             }
         }
-        if (!this.data) {
+
+        if (this.data === null || 'undefined' === typeof this.data) {
             line += "\"no data\"" + SPT;
+        }
+        else if ('number' === typeof this.data) {
+            line += "" + this.data;
         }
         else {
             tmp = this.data.toString();
@@ -9298,6 +9337,7 @@ JSUS.extend(PARSE);
                 line += DLM + tmp + DLM + SPT;
             }
         }
+
         line += new GameStage(this.stage) + SPT;
         line += this.reliable + SPT;
         line += this.priority;
@@ -11451,8 +11491,8 @@ JSUS.extend(PARSE);
             target: msg.target || constants.target.DATA,
             from: node.player ? node.player.id : constants.UNDEFINED_PLAYER,
             to: 'undefined' !== typeof msg.to ? msg.to : 'SERVER',
-            text: msg.text || null,
-            data: msg.data || null,
+            text: 'undefined' !== typeof msg.text ? "" + msg.text : null,
+            data: 'undefined' !== typeof msg.data ? msg.data : null,
             priority: priority,
             reliable: msg.reliable || 1
         });
@@ -11909,7 +11949,14 @@ JSUS.extend(PARSE);
 
         if (this.node.store.cookie) {
             this.node.store.cookie('session', this.session);
-            this.node.store.cookie('player', this.node.player.id);
+            
+            // Do not store player cookie if client failed authorization.
+            if (this.node.player.id === 'unauthorized_client') {
+                this.node.store.cookie('auth_failed', 1);
+            }
+            else {
+                this.node.store.cookie('player', this.node.player.id);
+            }
         }
         else {
             this.node.warn('Socket.startSession: cannot set cookies. Session ' +
@@ -12732,7 +12779,7 @@ JSUS.extend(PARSE);
         var msgHandler, node;
 
         if (!this.paused) {
-            throw new Error('Game.pause: called while not paused');
+            throw new Error('Game.resume: called while not paused');
         }
         
         node = this.node;
@@ -12803,15 +12850,6 @@ JSUS.extend(PARSE);
         node = this.node;
         curStep = this.getCurrentGameStage();
         nextStep = this.plot.next(curStep);
-        // Sends start / step command to connected clients if option is on.
-        if (this.settings.syncStepping) {
-            if (curStep.stage === 0) {
-                node.remoteCommand('start', 'ALL');
-            }
-            else {
-                node.remoteCommand('step', 'ALL');
-            }
-        }
         return this.gotoStep(nextStep);
     };
 
@@ -12866,7 +12904,15 @@ JSUS.extend(PARSE);
             node.socket.clearBuffer();
         }
 
-        // TODO: here was the syncStepping option.
+        // Sends start / step command to connected clients if option is on.
+        if (this.settings.syncStepping) {
+            if (curStep.stage === 0) {
+                node.remoteCommand('start', 'ALL');
+            }
+            else {
+                node.remoteCommand('goto_step', 'ALL', nextStep);
+            }
+        }
 
         if ('string' === typeof nextStep) {
             if (nextStep === GamePlot.GAMEOVER) {
@@ -16969,7 +17015,7 @@ JSUS.extend(PARSE);
     var say = action.SAY + '.',
     set = action.SET + '.',
     get = action.GET + '.',
-        IN = parent.constants.IN;
+    IN = parent.constants.IN;
 
     /**
      * ## NodeGameClient.addDefaultIncomingListeners
@@ -17281,7 +17327,7 @@ JSUS.extend(PARSE);
     var NGC = parent.NodeGameClient;
 
     var GameMsg = parent.GameMsg,
-    GameSage = parent.GameStage,
+    GameStage = parent.GameStage,
     PlayerList = parent.PlayerList,
     Player = parent.Player,
     J = parent.JSUS,
@@ -17463,13 +17509,13 @@ JSUS.extend(PARSE);
         });
 
         /**
-         * ## NODEGAME_GAMECOMMAND: goto_stage
+         * ## NODEGAME_GAMECOMMAND: goto_step
          *
          */
-        this.events.ng.on(CMD + gcommands.goto_stage, function(stage, options) {
-            node.emit('BEFORE_GAMECOMMAND', gcommands.goto_stage, options);
-            // Conditions checked inside stop.
-            node.game.stop();
+        this.events.ng.on(CMD + gcommands.goto_step, function(step) {
+            node.emit('BEFORE_GAMECOMMAND', gcommands.goto_step, step);
+            // Conditions checked inside gotoStep.
+            node.game.gotoStep(new GameStage(step));
         });
 
         this.internalAdded = true;
