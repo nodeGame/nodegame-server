@@ -3855,7 +3855,7 @@ JSUS.extend(PARSE);
  * See README.md for help.
  * ---
  */
-(function (exports, J, store) {
+(function(exports, J, store) {
 
     NDDB.compatibility = J.compatibility();
 
@@ -3896,7 +3896,6 @@ JSUS.extend(PARSE);
         return e;
     };
 
-
     /**
      * ## NDDB constructor
      *
@@ -3907,6 +3906,8 @@ JSUS.extend(PARSE);
      *
      */
     function NDDB(options, db) {
+        var that;
+        that = this;
         options = options || {};
 
         if (!J) throw new Error('JSUS not found.');
@@ -3946,6 +3947,10 @@ JSUS.extend(PARSE);
         // ### query
         // QueryBuilder obj.
         this.query = new QueryBuilder();
+
+        // ### filters
+        // Available db filters
+        this.addDefaultFilters();
 
         // ### __C
         // List of comparator functions.
@@ -4004,6 +4009,35 @@ JSUS.extend(PARSE);
             return -1;
         };
 
+        // TODO see where placing
+        var that;
+        that = this;
+        // TODO: maybe give users the option to overwrite it.
+        // Adding the compareInAllFields function
+       this.comparator('*', function(o1, o2, trigger1, trigger2) {
+           var d, c, res;
+           for (d in o1) {
+               c = that.getComparator(d);
+               o2[d] = o2['*'];
+               res = c(o1, o2);
+               if (res === trigger1) return res;
+               if ('undefined' !== trigger2 && res === trigger2) return res;
+               // No need to delete o2[d] afer comparison.
+           }
+
+           // We are not interested in sorting.
+           // Figuring out the right return value
+           if (trigger1 === 0) {
+               return trigger2 === 1 ? -1 : 1;
+           }
+           if (trigger1 === 1) {
+               return trigger2 === 0 ? -1 : 0;
+           }
+
+           return trigger2 === 0 ? 1 : 0;
+
+       });
+
         // Mixing in user options and defaults.
         this.init(options);
 
@@ -4012,6 +4046,330 @@ JSUS.extend(PARSE);
             this.importDB(db);
         }
     };
+
+
+      /**
+     * ### NDDB.addFilter
+     *
+     * Registers a _select_ function under an alphanumeric id
+     *
+     * When calling `NDDB.select('d','OP','value')` the second parameter (_OP_)
+     * will be matched with the callback function specified here.
+     *
+     * Callback function must accept three input parameters:
+     *
+     *  - d: dimension of comparison
+     *  - value: second-term of comparison
+     *  - comparator: the comparator function as defined by `NDDB.c`
+     *
+     * and return a function that execute the desired operation.
+     *
+     * Registering a new operator under an already existing id will
+     * overwrite the old operator.
+     *
+     * @param {string} op An alphanumeric id
+     * @param {function} cb The callback function
+     *
+     * @see QueryBuilder.registerDefaultOperators
+     */
+    NDDB.prototype.addFilter = function(op, cb) {
+        this.filters[op] = cb;
+    };
+
+    /**
+     * ### NDDB.registerDefaultFilters
+     *
+     * Register default filters for NDDB
+     */
+    NDDB.prototype.addDefaultFilters = function() {
+        if (!this.filters) this.filters = {};
+        var that;
+        that = this;
+
+        // Exists
+        this.filters['E'] = function(d, value, comparator) {
+            if ('object' === typeof d) {
+                return function(elem) {
+                    var d, c;
+                    for (d in elem) {
+                        c = that.getComparator(d);
+                        value[d] = value[0]['*']
+                        if (c(elem, value, 1) > 0) {
+                            value[d] = value[1]['*']
+                            if (c(elem, value, -1) < 0) {
+                                return elem;
+                            }
+                        }
+                    }
+                    if ('undefined' !== typeof elem[d]) {
+                        return elem;
+                    }
+                    else if ('undefined' !== typeof J.getNestedValue(d,elem)) {
+                        return elem;
+                    }
+                }
+            }
+            else {
+                return function(elem) {
+                    if ('undefined' !== typeof elem[d]) {
+                        return elem;
+                    }
+                    else if ('undefined' !== typeof J.getNestedValue(d,elem)) {
+                        return elem;
+                    }
+                }
+            }
+        };
+
+        // (strict) Equals
+        this.filters['=='] = function(d, value, comparator) {
+            return function(elem) {
+
+                if (comparator(elem, value, 0) === 0) return elem;
+            };
+        };
+
+
+        // Smaller than
+        this.filters['>'] = function(d, value, comparator) {
+            if ('object' === typeof d || d === '*') {
+                return function(elem) {
+                    if (comparator(elem, value, 1) === 1) return elem;
+                };
+            }
+            else {
+                return function(elem) {
+                    if ('undefined' === typeof elem[d]) return;
+                    if (comparator(elem, value, 1) === 1) return elem;
+                };
+            }
+        };
+
+        // Greater than
+        this.filters['>='] = function(d, value, comparator) {
+            if ('object' === typeof d || d === '*') {
+                return function(elem) {
+                    var compared = comparator(elem, value, 0, 1);
+                    if (compared === 1 || compared === 0) return elem;
+                };
+            }
+            else {
+                return function(elem) {
+                    if ('undefined' === typeof elem[d]) return;
+                    var compared = comparator(elem, value, 0, 1);
+                    if (compared === 1 || compared === 0) return elem;
+                };
+            }
+        };
+
+        // Smaller than
+        this.filters['<'] = function(d, value, comparator) {
+            if ('object' === typeof d || d === '*') {
+                return function(elem) {
+                    if (comparator(elem, value, -1) === -1) return elem;
+                };
+            }
+            else {
+                return function(elem) {
+                    if ('undefined' === typeof elem[d]) return;
+                    if (comparator(elem, value, -1) === -1) return elem;
+                };
+            }
+        };
+
+        //  Smaller or equal than
+        this.filters['<='] = function(d, value, comparator) {
+            if ('object' === typeof d || d === '*') {
+                return function(elem) {
+                    var compared = comparator(elem, value, 0, -1);
+                    if (compared === -1 || compared === 0) return elem;
+                };
+            }
+            else {
+                return function(elem) {
+                    if ('undefined' === typeof elem[d]) return;
+                    var compared = comparator(elem, value, 0, -1);
+                    if (compared === -1 || compared === 0) return elem;
+                };
+            }
+        };
+
+        // Between
+        this.filters['><'] = function(d, value, comparator) {
+            if ('object' === typeof d) {
+                return function(elem) {
+                    var i, len;
+                    len = d.length;
+                    for (i = 0; i < len ; i++) {
+                        if (comparator(elem, value[0], 1) > 0 &&
+                            comparator(elem, value[1], -1) < 0) {
+                            return elem;
+                        }
+                    }
+                };
+            }
+            else if (d === '*') {
+                return function(elem) {
+                    var d, c;
+                    for (d in elem) {
+                        c = that.getComparator(d);
+                        value[d] = value[0]['*']
+                        if (c(elem, value, 1) > 0) {
+                            value[d] = value[1]['*']
+                            if (c(elem, value, -1) < 0) {
+                                return elem;
+                            }
+                        }
+                    }
+                };
+            }
+            else {
+                return function(elem) {
+                    if (comparator(elem, value[0], 1) > 0 &&
+                        comparator(elem, value[1], -1) < 0) {
+                        return elem;
+                    }
+                };
+            }
+        };
+
+        // Not Between
+        this.filters['<>'] = function(d, value, comparator) {
+            if ('object' === typeof d || d === '*') {
+                return function(elem) {
+                    if (comparator(elem, value[0], -1) < 0 ||
+                        comparator(elem, value[1], 1) > 0) {
+                        return elem;
+                    }
+                };
+            }
+            else {
+                return function(elem) {
+                    if ('undefined' === typeof elem[d]) return;
+                    if (comparator(elem, value[0], -1) < 0 ||
+                        comparator(elem, value[1], 1) > 0) {
+                        return elem;
+                    }
+                };
+            }
+        };
+
+        // In Array
+        this.filters['in'] = function(d, value, comparator) {
+            if ('object' === typeof d) {
+                return function(elem) {
+                    var i, len;
+                    len = value.length;
+                    for (i = 0; i < len; i++) {
+                        if (comparator(elem, value[i], 0) === 0) {
+                            return elem;
+                        }
+                    }
+                };
+            }
+            else {
+                return function(elem) {
+                    var i, obj, len;
+                    obj = {}, len = value.length;
+                    for (i = 0; i < len; i++) {
+                        obj[d] = value[i];
+                        if (comparator(elem, obj, 0) === 0) {
+                            return elem;
+                        }
+                    }
+                };
+            }
+        };
+
+        // Not In Array
+        this.filters['!in'] = function(d, value, comparator) {
+            if ('object' === typeof d) {
+                return function(elem) {
+                    var i, len;
+                    len = value.length;
+                    for (i = 0; i < len; i++) {
+                        if (comparator(elem, value[i], 0) === 0) {
+                            return;
+                        }
+                    }
+                    return elem;
+                };
+            }
+            else {
+                return function(elem) {
+                    var i, obj, len;
+                    obj = {}, len = value.length;
+                    for (i = 0; i < len; i++) {
+                        obj[d] = value[i];
+                        if (comparator(elem, obj, 0) === 0) {
+                            return
+                        }
+                    }
+                    return elem;
+                }
+            }
+        };
+
+        // Supports `_` and `%` wildcards 
+        function generalLike(d, value, comparator, sensitive) {
+            var regex;
+
+            RegExp.escape = function(str) {
+                return str.replace(/([.*+?^=!:${}()|[\]\/\\])/g, '\\$1');
+            };
+            
+            regex = RegExp.escape(value);
+            regex = regex.replace(/%/g, '.*').replace(/_/g, '.');
+            regex = new RegExp('^' + regex + '$', sensitive);
+
+            if ('object' === typeof d) {
+                return function(elem) {
+                    var i, len;
+                    len = d.length;
+                    for (i = 0; i < len; i++) {
+                        if ('undefined' !== typeof elem[d[i]]) {
+                            if (regex.test(elem[d[i]])) {
+                                return elem;
+                            }
+                        }
+                    }
+                };
+            } 
+            else if (d === '*') {
+                return function(elem) {
+                    var d;
+                    for (d in elem) {
+                        if ('undefined' !== typeof elem[d]) { 
+                            if (regex.test(elem[d])) {
+                                return elem;
+                            }
+                        }
+                    }
+                };
+            }
+            else {
+                return function(elem) {
+                    if ('undefined' !== typeof elem[d]) { 
+                        if (regex.test(elem[d])) {
+                            return elem;
+                        }
+                    }
+                };
+            }
+        }
+
+        // Like operator (Case Sensitive). 
+        this.filters['LIKE'] = function likeOperator(d, value, comparator) {
+            return generalLike(d, value, comparator);
+        };
+    
+        // Like operator (Case Insensitive). 
+        this.filters['iLIKE'] = function likeOperatorI(d, value, comparator) {
+            return generalLike(d, value, comparator, 'i');
+        };            
+
+    };
+
 
     // ## METHODS
 
@@ -4025,7 +4383,7 @@ JSUS.extend(PARSE);
      * TODO: type checking on input params
      */
     NDDB.prototype.init = function(options) {
-        var op, sh, i;
+        var filter, sh, i;
         options = options || {};
 
         this.__options = options;
@@ -4060,9 +4418,9 @@ JSUS.extend(PARSE);
             }
         }
 
-        if ('object' === typeof options.operators) {
-            for (op in options.operators) {
-                this.query.registerOperator(op, options.operators[op]);
+        if ('object' === typeof options.filters) {
+            for (filter in options.filters) {
+                this.addFilter(filter, options.filters[filter]);
             }
         }
 
@@ -4118,7 +4476,6 @@ JSUS.extend(PARSE);
      *
      * @param {function} cb The logging function
      * @param {object} ctx Optional. The context of the log function
-     *
      */
     NDDB.prototype.initLog = function(cb, ctx) {
         ctx = ctx || this;
@@ -4128,10 +4485,9 @@ JSUS.extend(PARSE);
     }
 
     /**
-     * ## NDDB._getCons
+     * ## NDDB._getConstrName
      *
      * Returns 'NDDB' or the name of the inheriting class.
-     *
      */
     NDDB.prototype._getConstrName = function() {
         return this.constructor && this.constructor.name ?
@@ -4172,34 +4528,34 @@ JSUS.extend(PARSE);
         if (type === 'undefined') return;
         if (type === 'string') return;
         if (type === 'number') return;
+        this.emit('insert', o);
         this.db.push(o);
         if (update) {
             this._indexIt(o, (this.db.length-1));
             this._hashIt(o);
             this._viewIt(o);
         }
-        this.emit('insert', o);
     }
 
-// TODO: To test
-//    function nddb_insert(o, update) {
-//        if (o === null) {
-//            throw new TypeError(this._getConstrName() +
-//                     '.insert: null received.');
-//        }
-//        if (('object' !== typeof o) && ('function' !== typeof o)) {
-//            throw new TypeError(this._getConstrName() +
-//                                '.insert: expects object or function, ' +
-//                                typeof o + ' received.');
-//        }
-//        this.db.push(o);
-//        if (update) {
-//            this._indexIt(o, (this.db.length-1));
-//            this._hashIt(o);
-//            this._viewIt(o);
-//        }
-//        this.emit('insert', o);
-//    }
+    // TODO: To test
+    //    function nddb_insert(o, update) {
+    //        if (o === null) {
+    //            throw new TypeError(this._getConstrName() +
+    //                     '.insert: null received.');
+    //        }
+    //        if (('object' !== typeof o) && ('function' !== typeof o)) {
+    //            throw new TypeError(this._getConstrName() +
+    //                                '.insert: expects object or function, ' +
+    //                                typeof o + ' received.');
+    //        }
+    //        this.db.push(o);
+    //        this.emit('insert', o);
+    //        if (update) {
+    //            this._indexIt(o, (this.db.length-1));
+    //            this._hashIt(o);
+    //            this._viewIt(o);
+    //        }
+    //    }
 
     /**
      * ### NDDB.importDB
@@ -4285,6 +4641,7 @@ JSUS.extend(PARSE);
      *
      * Copies by reference:
      *  - the shared objects
+     *  - the log and logCtx options (might have cyclyc structures)
      *
      * It is possible to specifies the name of the properties to leave out
      * out of the cloned object as a parameter. By default, all options
@@ -4359,8 +4716,9 @@ JSUS.extend(PARSE);
      * @return {string} out A human-readable representation of the database
      */
     NDDB.prototype.toString = function() {
-        var out = '';
-        for (var i=0; i< this.db.length; i++) {
+        var out, i;
+        out = '';
+        for (i = 0; i < this.db.length; i++) {
             out += this.db[i] + "\n";
         }
         return out;
@@ -4432,50 +4790,98 @@ JSUS.extend(PARSE);
      *
      * Retrieves the comparator function for dimension d.
      *
-     * If no comparator function is found, returns a generic
-     * comparator function. The generic comparator function
-     * supports nested attributes search, but if a property
+     * If no comparator function is found, returns a general comparator
+     * function. Supports nested attributes search, but if a property
      * containing dots with the same name is found, this will
      * returned first.
      *
-     * @param {string} d The name of the dimension
+     * The dimension can be the wildcard '*' or an array of dimesions.
+     * In the latter case a custom comparator function is built on the fly.
+     *
+     * @param {string|array} d The name/s of the dimension/s
      * @return {function} The comparator function
      *
      * @see NDDB.compare
      */
     NDDB.prototype.getComparator = function(d) {
-        if ('undefined' !== typeof this.__C[d]) {
-            return this.__C[d];
+        var len, comparator, comparators;
+
+        // Given field or '*'.
+        if ('string' === typeof d) {
+            if ('undefined' !== typeof this.__C[d]) {
+                comparator = this.__C[d];
+            }
+            else {
+                comparator = function generalComparator(o1, o2) {
+                    var v1, v2;
+                    if ('undefined' === typeof o1 &&
+                        'undefined' === typeof o2) return 0;
+                    if ('undefined' === typeof o1) return 1;
+                    if ('undefined' === typeof o2) return -1;
+
+                    if ('undefined' !== typeof o1[d]) {
+                        v1 = o1[d];
+                    }
+                    else if (d.lastIndexOf('.') !== -1) {
+                        v1 = J.getNestedValue(d, o1);
+                    }
+
+                    if ('undefined' !== typeof o2[d]) {
+                        v2 = o2[d];
+                    }
+                    else if (d.lastIndexOf('.') !== -1) {
+                        v2 = J.getNestedValue(d, o2);
+                    }
+
+                    if ('undefined' === typeof v1 &&
+                        'undefined' === typeof v2) return 0;
+                    if ('undefined' === typeof v1) return 1;
+                    if ('undefined' === typeof v2) return -1;
+                    if (v1 > v2) return 1;
+                    if (v2 > v1) return -1;
+
+
+                    return 0;
+                };
+            }
         }
-
-        return function(o1, o2) {
-            var v1, v2;
-            if ('undefined' === typeof o1 && 'undefined' === typeof o2) return 0;
-            if ('undefined' === typeof o1) return 1;
-            if ('undefined' === typeof o2) return -1;
-
-
-            if ('undefined' !== typeof o1[d]) {
-                v1 = o1[d];
-            }
-            else if (d.lastIndexOf('.') !== -1) {
-                v1 = J.getNestedValue(d, o1);
+        // Pre-defined array o fields to check.
+        else {
+            // Creates the array of comparators functions.
+            comparators = {};
+            len = d.length;
+            for (i = 0; i < len; i++) {
+                // Every comparator has its own d in scope.
+                // TODO: here there should be no wildcard '*' (check earlier)
+                comparators[d[i]] = this.getComparator(d[i]);
             }
 
-            if ('undefined' !== typeof o2[d]) {
-                v2 = o2[d];
-            }
-            else if (d.lastIndexOf('.') !== -1) {
-                v2 = J.getNestedValue(d, o2);
-            }
+            comparator = function(o1, o2, trigger1, trigger2) {
+                var i, res, obj;
+                for (i in comparators) {
+                    if (comparators.hasOwnProperty(i)) {
+                        if ('undefined' === typeof o1[i]) continue;
+                        obj = {};
+                        obj[i] = o2;
+                        res = comparators[i](o1, obj);
+                        if (res === trigger1) return res;
+                        if ('undefined' !== trigger2 && res === trigger2) return res;
+                    }
+                }
+                // We are not interested in sorting.
+                // Figuring out the right return value
+                if (trigger1 === 0) {
+                    return trigger2 === 1 ? -1 : 1;
+                }
+                if (trigger1 === 1) {
+                    return trigger2 === 0 ? -1 : 0;
+                }
 
-            if ('undefined' === typeof v1 && 'undefined' === typeof v2) return 0;
-            if ('undefined' === typeof v1) return 1;
-            if ('undefined' === typeof v2) return -1;
-            if (v1 > v2) return 1;
-            if (v2 > v1) return -1;
-            return 0;
-        };
+                return trigger2 === 0 ? 1 : 0;
+
+            }
+        }
+        return comparator;
     };
 
     /**
@@ -4689,9 +5095,6 @@ JSUS.extend(PARSE);
         var cb, idx;
         if (!h && !i && !v) return;
 
-        // Reset current indexes
-        this.resetIndexes({h: h, v: v, i: i});
-
         if (h && !i && !v) {
             cb = this._hashIt;
         }
@@ -4726,6 +5129,9 @@ JSUS.extend(PARSE);
                 this._viewIt(o);
             };
         }
+ 
+        // Reset current indexes.
+        this.resetIndexes({h: h, v: v, i: i});
 
         for (idx = 0 ; idx < this.db.length ; idx++) {
             // _hashIt and viewIt do not need idx, it is no harm anyway
@@ -4887,21 +5293,30 @@ JSUS.extend(PARSE);
      *
      * Fires all the listeners associated with an event
      *
-     * @param event {string} The event name
-     * @param {object} o Optional. A parameter to be passed to the listener
+     * Accepts any number of parameters, the first one is the event type, and
+     * the rest will be passed to the event listeners.
      */
-    NDDB.prototype.emit = function(event, o) {
-        var i;
+    NDDB.prototype.emit = function() {
+        var i, event;
+        event = Array.prototype.splice.call(arguments, 0, 1);
         if (!event || !this.hooks[event] || !this.hooks[event].length) {
             return;
         }
-
         for (i = 0; i < this.hooks[event].length; i++) {
-            this.hooks[event][i].call(this, o);
+            this.hooks[event][i].apply(this, arguments);
         }
     };
 
     // ## Sort and Select
+
+    function queryError(d, op, value) {
+        var miss, err;
+        miss = '(?)';
+        err = 'Malformed query: ' + d || miss + ' ' + op || miss +
+            ' ' + value || miss;
+        this.log(err, 'WARN');
+        return false;
+    }
 
     /**
      * ### NDDB._analyzeQuery
@@ -4916,18 +5331,12 @@ JSUS.extend(PARSE);
      *   if an error was detected
      */
     NDDB.prototype._analyzeQuery = function(d, op, value) {
-        var that;
+        var that, i, len, newValue;
         that = this;
 
-        function raiseError(d,op,value) {
-            var miss = '(?)';
-            var err = 'Malformed query: ' + d || miss + ' ' + op || miss + ' ' + value || miss;
-            that.log(err, 'WARN');
-            return false;
+        if ('undefined' === typeof d) {
+            return queryError.call(this, d, op,value);
         }
-
-
-        if ('undefined' === typeof d) raiseError(d,op,value);
 
         // Verify input
         if ('undefined' !== typeof op) {
@@ -4936,8 +5345,10 @@ JSUS.extend(PARSE);
                 op = '==';
             }
 
-            if (!(op in this.query.operators)) {
-                this.log('Query error. Invalid operator detected: ' + op, 'WARN');
+//            if (!(op in this.query.operators)) {
+            if (!(op in this.filters)) {
+                this.log('Query error. Invalid operator detected: ' + op,
+                         'WARN');
                 return false;
             }
 
@@ -4945,25 +5356,39 @@ JSUS.extend(PARSE);
             if (J.in_array(op,['><', '<>', 'in', '!in'])) {
 
                 if (!(value instanceof Array)) {
-                    this.log('Range-queries need an array as third parameter', 'WARN');
-                    raiseError(d,op,value);
+                    this.log('Range-queries need an array as third parameter',
+                             'WARN');
+                    queryError.call(this, d,op,value);
                 }
                 if (op === '<>' || op === '><') {
 
-                    // TODO: when to nest and when keep the '.' in the name?
-                    value[0] = J.setNestedValue(d, value[0]);
-                    value[1] = J.setNestedValue(d, value[1]);
+                    // It will be nested by the comparator function.
+                    if (!J.isArray(d)){
+                        // TODO: when to nest and when keep the '.' in the name?
+                        value[0] = J.setNestedValue(d, value[0]);
+                        value[1] = J.setNestedValue(d, value[1]);
+                    }
                 }
             }
 
             else if (J.in_array(op, ['>', '==', '>=', '<', '<='])){
                 // Comparison queries need a third parameter
-                if ('undefined' === typeof value) raiseError(d,op,value);
-
+                if ('undefined' === typeof value) {
+                    queryError.call(this, d, op, value);
+                }
                 // TODO: when to nest and when keep the '.' in the name?
                 // Comparison queries need to have the same
                 // data structure in the compared object
-                value = J.setNestedValue(d,value);
+                if (J.isArray(d)) {
+                    len = d.length;
+                    for (i = 0; i < len; i++) {
+                        J.setNestedValue(d[i],value);
+                    }
+
+                }
+                else {
+                    value = J.setNestedValue(d,value);
+                }
             }
 
             // other (e.g. user-defined) operators do not have constraints,
@@ -4971,7 +5396,7 @@ JSUS.extend(PARSE);
 
         }
         else if ('undefined' !== typeof value) {
-            raiseError(d,op,value);
+            queryError.call(this, d, op, value);
         }
         else {
             op = 'E'; // exists
@@ -5005,7 +5430,7 @@ JSUS.extend(PARSE);
      *
      * Input parameters:
      *
-     * - d: the string representation of the dimension used to filter. Mandatory.
+     * - d: string representation of the dimension used to filter. Mandatory.
      * - op: operator for selection. Allowed: >, <, >=, <=, = (same as ==),
      *   ==, ===, !=, !==, in (in array), !in, >< (not in interval),
      *   <> (in interval)
@@ -5056,9 +5481,11 @@ JSUS.extend(PARSE);
         //              addBreakInQuery();
         //      }
         //      else {
-        var condition = this._analyzeQuery(d, op, value);
-        if (!condition) return false;
-        this.query.addCondition('AND', condition, this.getComparator(d));
+        var q, cb;
+        q = this._analyzeQuery(d, op, value);
+        if (!q) return false;
+        cb = this.filters[q.op](q.d, q.value, this.getComparator(q.d));
+        this.query.addCondition('AND', cb);
         //      }
         return this;
     };
@@ -5084,9 +5511,12 @@ JSUS.extend(PARSE);
         //              addBreakInQuery();
         //      }
         //      else {
-        var condition = this._analyzeQuery(d, op, value);
-        if (!condition) return false;
-        this.query.addCondition('OR', condition, this.getComparator(d));
+        var q, cb;
+        q = this._analyzeQuery(d, op, value);
+        if (!q) return false;
+        cb = this.filters[q.op](q.d, q.value, this.getComparator(q.d));
+        this.query.addCondition('OR', cb);
+        //this.query.addCondition('OR', condition, this.getComparator(d));
         //      }
         return this;
     };
@@ -5127,7 +5557,7 @@ JSUS.extend(PARSE);
      * @param {string} d The dimension of comparison
      * @param {string} op Optional. The operation to perform
      * @param {mixed} value Optional. The right-hand element of comparison
-     * @return {NDDB} A new NDDB instance with the previously selected items in the db
+     * @return {NDDB} A new NDDB instance with selected items in the db
      *
      * @see NDDB.select
      * @see NDDB.selexec
@@ -5252,15 +5682,21 @@ JSUS.extend(PARSE);
     /**
      * ### NDDB.shuffle
      *
-     * Randomly shuffles all the entries of the database
+     * Returns a copy of the current database with randomly shuffled items
      *
-     * Changes the order of elements in the current database
+     * @param {boolean} update Optional. If TRUE, items in the current database
+     *   are also shuffled. Defaults, FALSE.
      *
-     * @return {NDDB} A a reference to the current instance with shuffled entries
+     * @return {NDDB} A new instance of NDDB with the shuffled entries
      */
-    NDDB.prototype.shuffle = function() {
-        this.db = J.shuffle(this.db);
-        return this;
+    NDDB.prototype.shuffle = function(update) {
+        var shuffled;
+        shuffled = J.shuffle(this.db);
+        if (update) {
+            this.db = shuffled;
+            this.rebuildIndexes();
+        }
+        return this.breed(shuffled);
     };
 
     // ## Custom callbacks
@@ -5353,8 +5789,8 @@ JSUS.extend(PARSE);
         if (!this.db.length || !update) return this;
 
         for (var i = 0; i < this.db.length; i++) {
+            this.emit('update', this.db[i], update);
             J.mixin(this.db[i], update);
-            this.emit('update', this.db[i]);
         }
 
         this._autoUpdate();
@@ -5464,8 +5900,10 @@ JSUS.extend(PARSE);
      *
      * @param {string} key1 First property to compare
      * @param {string} key2 Second property to compare
-     * @param {string} pos Optional. The property under which the join is performed. Defaults 'joined'
-     * @param {string|array} select Optional. The properties to copy in the join. Defaults undefined
+     * @param {string} pos Optional. The property under which the join is
+     *   performed. Defaults 'joined'
+     * @param {string|array} select Optional. The properties to copy in
+     *   the join. Defaults undefined
      * @return {NDDB} A new database containing the concatenated entries
      *
      *  @see NDDB._join
@@ -5504,6 +5942,8 @@ JSUS.extend(PARSE);
      * @see NDDB.breed
      */
     NDDB.prototype._join = function(key1, key2, comparator, pos, select) {
+        var out, idxs, foreign_key, key;
+        var i, j, o, o2;
         if (!key1 || !key2) return this.breed([]);
 
         comparator = comparator || J.equals;
@@ -5511,13 +5951,13 @@ JSUS.extend(PARSE);
         if (select) {
             select = (select instanceof Array) ? select : [select];
         }
-        var out = [], idxs = [], foreign_key, key;
 
-        for (var i=0; i < this.db.length; i++) {
+        out = [], idxs = [];
+        for (i = 0; i < this.db.length; i++) {
 
             foreign_key = J.getNestedValue(key1, this.db[i]);
             if ('undefined' !== typeof foreign_key) {
-                for (var j=i+1; j < this.db.length; j++) {
+                for (j = i+1; j < this.db.length; j++) {
 
                     key = J.getNestedValue(key2, this.db[j]);
 
@@ -5525,8 +5965,10 @@ JSUS.extend(PARSE);
                         if (comparator(foreign_key, key)) {
                             // Inject the matched obj into the
                             // reference one
-                            var o = J.clone(this.db[i]);
-                            var o2 = (select) ? J.subobj(this.db[j], select) : this.db[j];
+                            o = J.clone(this.db[i]);
+                            o2 = (select) ?
+                                J.subobj(this.db[j], select)
+                                : this.db[j];
                             o[pos] = o2;
                             out.push(o);
                         }
@@ -5773,7 +6215,8 @@ JSUS.extend(PARSE);
      * No further chaining is permitted after fetching.
      *
      * @api private
-     * @param {string|array} key Optional. If set, returns key/values only from the specified property
+     * @param {string|array} key Optional. If set, returns key/values only
+     *   from the specified property
      * @param {boolean} keyed. Optional. If set, also the keys are returned
      * @return {array} out The fetched values
      *
@@ -5860,7 +6303,8 @@ JSUS.extend(PARSE);
      *
      * No further chaining is permitted after fetching.
      *
-     * @param {string} key Optional. If set, returns only the value from the specified property
+     * @param {string} key Optional. If set, returns only the value
+     *   from the specified property
      * @return {array} out The fetched values
      *
      * @see NDDB._fetchArray
@@ -5963,7 +6407,8 @@ JSUS.extend(PARSE);
      * Non numeric values are ignored.
      *
      * @param {string} key The dimension to sum
-     * @return {number|boolean} sum The sum of the values for the dimension, or FALSE if it does not exist
+     * @return {number|boolean} sum The sum of the values for the dimension,
+     *   or FALSE if it does not exist
      *
      */
     NDDB.prototype.sum = function(key) {
@@ -5988,7 +6433,8 @@ JSUS.extend(PARSE);
      * from the computation of the mean.
      *
      * @param {string} key The dimension to average
-     * @return {number|boolean} The mean of the values for the dimension, or FALSE if it does not exist
+     * @return {number|boolean} The mean of the values for the dimension,
+     *   or FALSE if it does not exist
      *
      */
     NDDB.prototype.mean = function(key) {
@@ -6015,7 +6461,8 @@ JSUS.extend(PARSE);
      * from the computation of the standard deviation.
      *
      * @param {string} key The dimension to average
-     * @return {number|boolean} The mean of the values for the dimension, or FALSE if it does not exist
+     * @return {number|boolean} The mean of the values for the dimension,
+     *   or FALSE if it does not exist
      *
      * @see NDDB.mean
      *
@@ -6049,7 +6496,8 @@ JSUS.extend(PARSE);
      * Entries with non numeric values are ignored.
      *
      * @param {string} key The dimension of which to find the min
-     * @return {number|boolean} The smallest value for the dimension, or FALSE if it does not exist
+     * @return {number|boolean} The smallest value for the dimension,
+     *   or FALSE if it does not exist
      *
      * @see NDDB.max
      */
@@ -6074,7 +6522,8 @@ JSUS.extend(PARSE);
      * Entries with non numeric values are ignored.
      *
      * @param {string} key The dimension of which to find the max
-     * @return {number|boolean} The biggest value for the dimension, or FALSE if it does not exist
+     * @return {number|boolean} The biggest value for the dimension,
+     *   or FALSE if it does not exist
      *
      * @see NDDB.min
      */
@@ -6282,7 +6731,8 @@ JSUS.extend(PARSE);
      * Returns the first entry of the database, or undefined
      * if the database is empty.
      *
-     * @param {string} key Optional. If set, moves to the pointer to the first entry along this dimension
+     * @param {string} key Optional. If set, moves to the pointer
+     *   to the first entry along this dimension
      * @return {object} The first entry found
      *
      * @see NDDB.last
@@ -6305,7 +6755,8 @@ JSUS.extend(PARSE);
      * Returns the last entry of the database, or undefined
      * if the database is empty.
      *
-     * @param {string} key Optional. If set, moves to the pointer to the last entry along this dimension
+     * @param {string} key Optional. If set, moves to the pointer
+     *   to the last entry along this dimension
      * @return {object} The last entry found
      *
      * @see NDDB.first
@@ -6336,7 +6787,8 @@ JSUS.extend(PARSE);
      * but changes on update of the elements of the database.
      *
      * @param {string|number} tag An alphanumeric id
-     * @param {mixed} idx Optional. The reference to the object. Defaults, `nddb_pointer`
+     * @param {mixed} idx Optional. The reference to the object.
+     *   Defaults, `nddb_pointer`
      * @return {object} ref A reference to the tagged object
      *
      * @see NDDB.resolveTag
@@ -6413,12 +6865,14 @@ JSUS.extend(PARSE);
      * If no `store` object is found, an error is issued and the database
      * is not saved.
      *
-     * Cyclic objects are decycled, and do not cause errors. Upon loading, the cycles
-     * are restored.
+     * Cyclic objects are decycled, and do not cause errors.
+     * Upon loading, the cycles are restored.
      *
-     * @param {string} file The file system path, or the identifier for the browser database
-     * @param {function} callback Optional. A callback to execute after the database was saved
-     * @param {compress} boolean Optional. If TRUE, output will be compressed. Defaults, FALSE
+     * @param {string} file The  identifier for the browser database
+     * @param {function} cb Optional. A callback to execute after
+     *    the database is saved
+     * @param {compress} boolean Optional. If TRUE, output will be compressed.
+     *    Defaults, FALSE
      * @return {boolean} TRUE, if operation is successful
      *
      * @see NDDB.load
@@ -6427,7 +6881,7 @@ JSUS.extend(PARSE);
 
      *
      */
-    NDDB.prototype.save = function(file, callback, compress) {
+    NDDB.prototype.save = function(file, cb, compress) {
         if ('string' !== typeof file) {
             throw new TypeError(this._getConstrName() +
                                 'load: you must specify a valid file name.');
@@ -6440,7 +6894,7 @@ JSUS.extend(PARSE);
             return false;
         }
         store(file, this.stringify(compress));
-        if (callback) callback();
+        if (cb) cb();
         return true;
     };
 
@@ -6508,7 +6962,6 @@ JSUS.extend(PARSE);
      * Helper class for NDDB query selector
      *
      * ---
-     *
      */
 
     /**
@@ -6517,8 +6970,7 @@ JSUS.extend(PARSE);
      * Manages the _select_ queries of NDDB
      */
     function QueryBuilder() {
-        this.operators = {};
-        this.registerDefaultOperators();
+        // Creates the query array and internal pointer.
         this.reset();
     }
 
@@ -6528,160 +6980,15 @@ JSUS.extend(PARSE);
      * Adds a new _select_ condition
      *
      * @param {string} type. The type of the operation (e.g. 'OR', or 'AND')
-     * @param {object} condition. An object containing the parameters of the
-     *   _select_ query
-     * @param {function} comparator. The comparator function associated with
-     *   the dimension inside the condition object.
+     * @param {function} filter. The filter callback
      */
-    QueryBuilder.prototype.addCondition = function(type, condition, comparator) {
-        condition.type = type;
-        condition.comparator = comparator;
-        this.query[this.pointer].push(condition);
+    QueryBuilder.prototype.addCondition = function(type, filter) {
+        this.query[this.pointer].push({
+            type: type,
+            cb: filter
+        });
     };
 
-    /**
-     * ### QueryBuilder.registerOperator
-     *
-     * Registers a _select_ function under an alphanumeric id
-     *
-     * When calling `NDDB.select('d','OP','value')` the second parameter (_OP_)
-     * will be matched with the callback function specified here.
-     *
-     * Callback function must accept three input parameters:
-     *
-     *  - d: dimension of comparison
-     *  - value: second-term of comparison
-     *  - comparator: the comparator function as defined by `NDDB.c`
-     *
-     * and return a function that execute the desired operation.
-     *
-     * Registering a new operator under an already existing id will
-     * overwrite the old operator.
-     *
-     * @param {string} op An alphanumeric id
-     * @param {function} cb The callback function
-     *
-     * @see QueryBuilder.registerDefaultOperators
-     */
-    QueryBuilder.prototype.registerOperator = function(op, cb) {
-        this.operators[op] = cb;
-    };
-
-    /**
-     * ### QueryBuilder.registerDefaultOperators
-     *
-     * Register default operators for NDDB
-     *
-     */
-    QueryBuilder.prototype.registerDefaultOperators = function() {
-        var that = this;
-
-        // Exists
-        this.operators['E'] = function(d, value, comparator) {
-            return function(elem) {
-                if ('undefined' !== typeof elem[d]) {
-                    return elem;
-                }
-                else if ('undefined' !== typeof J.getNestedValue(d,elem)) {
-                    return elem;
-                }
-            }
-        };
-
-        // (strict) Equals
-        this.operators['=='] = function(d, value, comparator) {
-            return function(elem) {
-                if (comparator(elem, value) === 0) return elem;
-            };
-        };
-
-        // Greater than
-        this.operators['>'] = function(d, value, comparator) {
-            return function(elem) {
-                var compared = comparator(elem, value);
-                if (compared === 1 || compared === 0) return elem;
-            };
-        };
-
-        // Smaller than
-        this.operators['<'] = function(d, value, comparator) {
-            return function(elem) {
-                if (comparator(elem, value) === -1) return elem;
-            };
-        };
-
-        //  Smaller or equal than
-        this.operators['<='] = function(d, value, comparator) {
-            return function(elem) {
-                var compared = comparator(elem, value);
-                if (compared === -1 || compared === 0) return elem;
-            };
-        };
-
-        // Between
-        this.operators['><'] = function(d, value, comparator) {
-            return function(elem) {
-                if (comparator(elem, value[0]) > 0 && comparator(elem, value[1]) < 0) {
-                    return elem;
-                }
-            };
-        };
-        // Not Between
-        this.operators['<>'] = function(d, value, comparator) {
-            return function(elem) {
-                if (comparator(elem, value[0]) < 0 && comparator(elem, value[1] > 0)) {
-                    return elem;
-                }
-            };
-        };
-
-        // In Array
-        this.operators['in'] = function(d, value, comparator) {
-            return function(elem) {
-                var i, obj;
-                obj = {};
-                for (i = 0; i < value.length; i++) {
-                    obj[d] = value[i];
-                    if (comparator(elem, obj) === 0) {
-                        return elem;
-                    }
-                }
-            };
-        };
-
-        // Not In Array
-        this.operators['!in'] = function(d, value, comparator) {
-            return function(elem) {
-                var i, obj;
-                obj = {};
-                for (i = 0; i < value.length; i++) {
-                    obj[d] = value[i];
-                    if (comparator(elem, obj) !== 0) {
-                        return elem;
-                    }
-                }
-            }
-        };
-
-
-        //        // In Array
-        //        this.operators['in'] = function(d, value, comparator) {
-        //            return function(elem) {
-        //                if (J.in_array(J.getNestedValue(d,elem), value)) {
-        //                    return elem;
-        //                }
-        //            };
-        //        };
-        //
-        //        // Not In Array
-        //        this.operators['!in'] = function(d, value, comparator) {
-        //            return function(elem) {
-        //                if (!J.in_array(J.getNestedValue(d,elem), value)) {
-        //                    return elem;
-        //                }
-        //            };
-        //        };
-    };
 
     /**
      * ### QueryBuilder.addBreak
@@ -6703,6 +7010,12 @@ JSUS.extend(PARSE);
         this.query = [];
         this.pointer = 0;
         this.query[this.pointer] = [];
+    };
+
+
+
+    function findCallback(obj) {
+        return obj.cb;
     };
 
     /**
@@ -6727,26 +7040,18 @@ JSUS.extend(PARSE);
         var query = this.query, pointer = this.pointer;
         var operators = this.operators;
 
-        function findCallback(obj, operators) {
-            var d = obj.d,
-            op = obj.op,
-            value = obj.value,
-            comparator = obj.comparator;
-            return operators[op](d, value, comparator);
-        };
-
-        // Ready to support nested queries, not yet implemented
+        // Ready to support nested queries, not yet implemented.
         if (pointer === 0) {
             line = query[pointer]
             lineLen = line.length;
 
             if (lineLen === 1) {
-                return findCallback(line[0], operators);
+                return findCallback(line[0]);
             }
 
             else if (lineLen === 2) {
-                f1 = findCallback(line[0], operators);
-                f2 = findCallback(line[1], operators);
+                f1 = findCallback(line[0]);
+                f2 = findCallback(line[1]);
                 type1 = line[1].type;
 
                 switch (type1) {
@@ -6757,20 +7062,22 @@ JSUS.extend(PARSE);
                     }
                 case 'AND':
                     return function(elem) {
-                        if ('undefined' !== typeof f1(elem) && 'undefined' !== typeof f2(elem)) return elem;
+                        if ('undefined' !== typeof f1(elem) &&
+                            'undefined' !== typeof f2(elem)) return elem;
                     }
 
                 case 'NOT':
                     return function(elem) {
-                        if ('undefined' !== typeof f1(elem) && 'undefined' === typeof f2(elem)) return elem;
+                        if ('undefined' !== typeof f1(elem) &&
+                            'undefined' === typeof f2(elem)) return elem;
                     }
                 }
             }
 
             else if (lineLen === 3) {
-                f1 = findCallback(line[0], operators);
-                f2 = findCallback(line[1], operators);
-                f3 = findCallback(line[2], operators);
+                f1 = findCallback(line[0]);
+                f2 = findCallback(line[1]);
+                f3 = findCallback(line[2]);
                 type1 = line[1].type;
                 type2 = line[2].type;
                 type1 = type1 + '_' + type2;
@@ -6811,9 +7118,7 @@ JSUS.extend(PARSE);
                     var i, f, type, resOK;
                     var prevType = 'OR', prevResOK = true;
                     for (i = lineLen-1 ; i > -1 ; i--) {
-
-
-                        f = findCallback(line[i], operators);
+                        f = findCallback(line[i]);
                         type = line[i].type,
                         resOK = 'undefined' !== typeof f(elem);
 
@@ -6909,7 +7214,7 @@ JSUS.extend(PARSE);
      * Gets the entry from database with the given id
      *
      * @param {mixed} idx The id of the item to get
-     * @return {object|boolean} The requested entry, or FALSE if the index is invalid
+     * @return {object|boolean} The indexed entry, or FALSE if index is invalid
      *
      * @see NDDB.index
      * @see NDDBIndex.remove
@@ -6962,7 +7267,7 @@ JSUS.extend(PARSE);
      * @see NDDBIndex.get
      * @see NDDBIndex.remove
      */
-    NDDBIndex.prototype.update = function(idx, update) {
+        NDDBIndex.prototype.update = function(idx, update) {
         var o, dbidx, nddb;
         dbidx = this.resolve[idx];
         if ('undefined' === typeof dbidx) return false;
@@ -6980,7 +7285,6 @@ JSUS.extend(PARSE);
         nddb._autoUpdate({indexes: false});
         return o;
     };
-
 
     /**
      * ### NDDBIndex.getAllKeys
@@ -7020,7 +7324,6 @@ JSUS.extend(PARSE);
     , 'undefined' !== typeof JSUS ? JSUS : module.parent.exports.JSUS || require('JSUS').JSUS
     , ('object' === typeof module && 'function' === typeof require) ? module.parent.exports.store || require('shelf.js/build/shelf-fs.js').store : this.store
 );
-
 /**
  * # nodeGame
  *
@@ -7297,6 +7600,16 @@ JSUS.extend(PARSE);
      */
     k.UNDEFINED_PLAYER = -1;
 
+    /**
+     * ### node.constants.UNAUTH_PLAYER
+     *
+     * Unauthorized player ID
+     *
+     * This string is returned by the server if authentication fails.
+     */
+    k.UNAUTH_PLAYER = 'unautorized_player';
+
+
      /**
      * ### node.constants.verbosity_levels
      *
@@ -7388,7 +7701,6 @@ JSUS.extend(PARSE);
     'undefined' != typeof node ? node : module.exports
   , 'undefined' != typeof node ? node : module.parent.exports
 );
-
 /**
  * # ErrorManager
  *
@@ -8180,19 +8492,21 @@ JSUS.extend(PARSE);
      *
      * Creates an instance of a GameStage
      *
-     * It accepts an object literal or an hash string as defined in `GameStage.defaults.hash`.
+     * It accepts an object literal, a number, or an hash string as defined in
+     * `GameStage.defaults.hash`.
      *
      * The stage and step can be either an integer (1-based index) or a string
-     * (valid stage/step name).  The round must be an integer.
+     * (valid stage/step name). The round must be an integer.
      *
      * If no parameter is passed, all the properties of the GameStage
      * object are set to 0
      *
-     * @param {object|string} gs An object literal | hash string representing the game stage
+     * @param {object|string|number} gs Optional. The game stage
      *
      * @see GameStage.defaults.hash
      */
     function GameStage(gs) {
+        var tokens, stageNum, stepNum, roundNum;
 
         // ## Public properties
 
@@ -8200,9 +8514,6 @@ JSUS.extend(PARSE);
          * ### GameStage.stage
          *
          * The N-th game-block (stage) in the game-plot currently being executed
-         *
-         * @see GamePlot
-         *
          */
         this.stage = 0;
 
@@ -8210,30 +8521,22 @@ JSUS.extend(PARSE);
          * ### GameStage.step
          *
          * The N-th game-block (step) nested in the current stage
-         *
-         *  @see GameStage.stage
-         *
          */
-        this.step = 1;
+        this.step = 0;
 
         /**
          * ### GameStage.round
          *
          * The number of times the current stage was repeated
-         *
          */
-        this.round = 1;
+        this.round = 0;
 
-        if (!gs || 'undefined' === typeof gs) {
-            this.stage = 0;
-            this.step  = 0;
-            this.round = 0;
-        }
-        else if ('string' === typeof gs) {
-            var tokens = gs.split('.');
-            var stageNum = parseInt(tokens[0], 10);
-            var stepNum  = parseInt(tokens[1], 10);
-            var roundNum = parseInt(tokens[2], 10);
+        // String.
+        if ('string' === typeof gs) {
+            tokens = gs.split('.');
+            stageNum = parseInt(tokens[0], 10);
+            stepNum  = parseInt(tokens[1], 10);
+            roundNum = parseInt(tokens[2], 10);
 
             if (tokens[0]) {
                 this.stage = !isNaN(stageNum) ? stageNum : tokens[0];
@@ -8245,7 +8548,8 @@ JSUS.extend(PARSE);
                 this.round = roundNum;
             }
         }
-        else if ('object' === typeof gs) {
+        // Not null object.
+        else if (gs && 'object' === typeof gs) {
             if ('undefined' !== typeof gs.stage) {
                 this.stage = gs.stage;
             }
@@ -8258,6 +8562,23 @@ JSUS.extend(PARSE);
                 this.round = gs.round;
             }
         }
+        // Number.
+        else if ('number' === typeof gs) {
+            if (gs % 1 !== 0) {
+               throw new TypeError('GameStage constructor: gs cannot be ' +
+                                   'a non-integer number.'); 
+            }
+            if (gs < 0) {
+                throw new TypeError('GameStage constructor: gs cannot be ' +
+                                    'a negative number.');
+            }
+            this.stage = gs;
+        }
+        // Defaults or error.
+        else if (gs !== null && 'undefined' !== typeof gs) {
+            throw new TypeError('GameStage constructor: gs must be string, ' +
+                                'object, a positive number, or undefined.');
+        }
 
     }
 
@@ -8266,7 +8587,7 @@ JSUS.extend(PARSE);
      *
      * Converts the current instance of GameStage to a string
      *
-     * @return {string} out The string representation of the stage of the GameStage
+     * @return {string} out The string representation of game stage
      */
     GameStage.prototype.toString = function() {
         return this.toHash('S.s.r');
@@ -8316,15 +8637,18 @@ JSUS.extend(PARSE);
      * @return {string} hash The hashed game stages
      */
     GameStage.toHash = function(gs, str) {
-        if (!gs || 'object' !== typeof gs) return false;
+        var hash, i, idx, properties, symbols;
+        if (!gs || 'object' !== typeof gs) {
+            throw new TypeError('GameStage.toHash: gs must be object.');
+        }
         if (!str || !str.length) return gs.toString();
 
-        var hash = '',
+        hash = '',
         symbols = 'Ssr',
         properties = ['stage', 'step', 'round'];
 
-        for (var i = 0; i < str.length; i++) {
-            var idx = symbols.indexOf(str[i]);
+        for (i = 0; i < str.length; i++) {
+            idx = symbols.indexOf(str[i]);
             hash += (idx < 0) ? str[i] : gs[properties[idx]];
         }
         return hash;
@@ -8333,23 +8657,21 @@ JSUS.extend(PARSE);
     /**
      * ## GameStage.compare (static)
      *
-     * Compares two GameStage objects|hash strings and returns
+     * Compares two GameStage objects|hash strings and returns:
      *
-     *  - 0 if they represent the same game stage
-     *  - a positive number if gs1 is ahead of gs2
-     *  - a negative number if gs2 is ahead of gs1
+     * - 0 if they represent the same game stage
+     * - a positive number if gs1 is ahead of gs2
+     * - a negative number if gs2 is ahead of gs1
      *
      * The accepted hash string format is the following: 'S.s.r'.
      * Refer to `GameStage.toHash` for the semantic of the characters.
      *
-     *
-     * @param {GameStage|string} gs1 The first GameStage object|string to compare
-     * @param {GameStage|string} gs2 The second GameStage object|string to compare
+     * @param {GameStage|string} gs1 The first game stage to compare
+     * @param {GameStage|string} gs2 The second game stage to compare
      *
      * @return {Number} result The result of the comparison
      *
      * @see GameStage.toHash (static)
-     *
      */
     GameStage.compare = function(gs1, gs2) {
         var result;
@@ -8384,8 +8706,7 @@ JSUS.extend(PARSE);
      */
     GameStage.stringify = function(gs) {
         if (!gs) return;
-        var out = new GameStage(gs).toHash('(r) S.s_i');
-        return out;
+        return new GameStage(gs).toHash('(r) S.s_i');
     };
 
     // ## Closure
@@ -8444,7 +8765,6 @@ JSUS.extend(PARSE);
         };
         return array;
     };
-
 
     /**
      * ### PlayerList.comparePlayers
@@ -8630,7 +8950,6 @@ JSUS.extend(PARSE);
         return this.id.get(id) ? true : false;
     };
 
-
     /**
      * ### PlayerList.clear
      *
@@ -8668,9 +8987,9 @@ JSUS.extend(PARSE);
             throw new TypeError(
                 'PlayerList.updatePlayer: update must be object.');
         }
-        //player = this.id.get(id);
-        //J.mixin(player, update);
-        //return player;
+        // var player = this.id.get(id);
+        // J.mixin(player, update);
+        // return player;
         // This creates some problems with the _autoUpdate...to be investigated.
         return this.id.update(id, update);
     };
@@ -12522,11 +12841,21 @@ JSUS.extend(PARSE);
          *
          * The list of players connected to the game
          *
-         * The list may be empty, depending on the server settings
+         * The list may be empty, depending on the server settings.
+         *
+         * Two players with the same id, or any player with id equal to
+         * `node.player.id` is not allowed, and it will throw an error.
          */
         this.pl = new PlayerList({
             log: this.node.log,
             logCtx: this.node
+        });
+
+        this.pl.on('insert', function(p) {
+            if (p.id === node.player.id) {
+                throw new Error('node.game.pl.on.insert: cannot add player ' +
+                                'with id equal to node.player.id.');
+            }
         });
 
         /**
@@ -12829,7 +13158,7 @@ JSUS.extend(PARSE);
 
         if ('function' !== typeof stepRule) {
             throw new this.node.NodeGameMisconfiguredGameError(
-                'Game.shouldStep: rule is not a function');
+                'Game.shouldStep: stepRule is not a function.');
         }
 
         return stepRule(this.getCurrentGameStage(), this.getStageLevel(),
@@ -17171,7 +17500,7 @@ JSUS.extend(PARSE);
          * @see Game.pl
          */
         node.events.ng.on( IN + say + 'PLAYER_UPDATE', function(msg) {
-            console.log('PLAYER_UPDATE', msg.data, msg.from);
+            //console.log('PLAYER_UPDATE', msg.data, msg.from);
             node.game.pl.updatePlayer(msg.from, msg.data);
             node.emit('UPDATED_PLIST');
             if (node.game.shouldStep()) {
