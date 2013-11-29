@@ -20512,38 +20512,65 @@ JSUS.extend(PARSE);
     exports.Table = Table;
     exports.Table.Cell = Cell;
 
-    // For simple testing
-    // module.exports = Table;
-
     var JSUS = node.JSUS;
     var NDDB = node.NDDB;
     var HTMLRenderer = node.window.HTMLRenderer;
     var Entity = node.window.HTMLRenderer.Entity;
 
-
-    Table.prototype = JSUS.clone(NDDB.prototype);
-    //Table.prototype = new NDDB();
+    Table.prototype = new NDDB();
     Table.prototype.constructor = Table;
 
-    Table.H = ['x','y','z'];
-    Table.V = ['y','x', 'z'];
+    Table.H = ['x', 'y', 'z'];
+    Table.V = ['y', 'x', 'z'];
 
     Table.log = node.log;
 
-    function Table(options, data, parent) {
+    /**
+     * Table constructor
+     *
+     * Creates a new Table object
+     *
+     * @param {object} options Optional. Configuration for NDDB
+     * @param {array} data Optional. Array of initial items
+     */
+    function Table(options, data) {
         options = options || {};
+        // Updates indexes on the fly.
+        if (!options.update) options.update = {};
+        if ('undefined' === typeof options.update.indexes) {
+            options.update.indexes = true;
+        }
 
-        Table.log = options.log || Table.log;
+        NDDB.call(this, options, data);
+
+        if (!this.row) {
+            this.index('row', function(c) {
+                return c.x;
+            });
+        }
+        if (!this.col) {
+            this.index('col', function(c) {
+                return c.y;
+            });
+        }
+        if (!this.rowcol) {
+            this.index('rowcol', function(c) {
+                return c.x + '_' + c.y;
+            });
+        }
+
         this.defaultDim1 = options.defaultDim1 || 'x';
         this.defaultDim2 = options.defaultDim2 || 'y';
         this.defaultDim3 = options.defaultDim3 || 'z';
 
         this.table = options.table || document.createElement('table');
-        this.id = options.id || 'table_' + Math.round(Math.random() * 1000);
+        this.id = options.id || 
+            'table_' + Math.round(Math.random() * 1000);
 
-        this.auto_update = ('undefined' !== typeof options.auto_update) ? options.auto_update : false;
+        this.auto_update = 'undefined' !== typeof options.auto_update ?
+            options.auto_update : false;
 
-        // Class for missing cells
+        // Class for missing cells.
         this.missing = options.missing || 'missing';
         this.pointers = {
             x: options.pointerX || 0,
@@ -20557,36 +20584,36 @@ JSUS.extend(PARSE);
         this.left = [];
         this.right = [];
 
-
-        NDDB.call(this, options, data, parent);
-
-        // From NDDB
-        this.options = this.__options;
-    }
-
-    // TODO: improve init
-    Table.prototype.init = function (options) {
-        NDDB.prototype.init.call(this, options);
-
-        options = options || this.options;
         if ('undefined' !== typeof options.id) {
-
             this.table.id = options.id;
             this.id = options.id;
         }
         if (options.className) {
             this.table.className = options.className;
         }
-        this.initRenderer(options.render);
-    };
 
-    Table.prototype.initRenderer = function (options) {
+        // Init renderer.
+        this.initRenderer(options.render);
+    }
+
+    /**
+     * Table.initRenderer
+     *
+     * Inits the `HTMLRenderer` object and adds a renderer for objects.
+     *
+     * @param {object} options Optional. Configuration for the renderer
+     *
+     * @see HTMLRenderer
+     * @see HTMLRenderer.addRenderer
+     */
+    Table.prototype.initRenderer = function(options) {
         options = options || {};
         this.htmlRenderer = new HTMLRenderer(options);
         this.htmlRenderer.addRenderer(function(el) {
+            var tbl, key;
             if ('object' === typeof el.content) {
-                var tbl = new Table();
-                for (var key in el.content) {
+                tbl = new Table();
+                for (key in el.content) {
                     if (el.content.hasOwnProperty(key)){
                         tbl.addRow([key,el.content[key]]);
                     }
@@ -20596,23 +20623,39 @@ JSUS.extend(PARSE);
         }, 2);
     };
 
-    // TODO: make it 3D
-    Table.prototype.get = function (x, y) {
-        var out = this;
-        if ('undefined' !== typeof x) {
-            out = this.select('x','=',x);
+    /**
+     * Table.get
+     *
+     * Returns the element at row column (x,y)
+     *
+     * @param {number} row The row number
+     * @param {number} col The column number
+     *
+     * @see HTMLRenderer
+     * @see HTMLRenderer.addRenderer
+     */
+    Table.prototype.get = function(row, col) {
+        if ('undefined' !== typeof row && 'number' !== typeof row) {
+            throw new TypeError('Table.get: row must be number.');
         }
-        if ('undefined' !== typeof y) {
-            out = out.select('y','=',y);
+        if ('undefined' !== typeof col && 'number' !== typeof col) {
+            throw new TypeError('Table.get: col must be number.');
         }
 
-        return out.fetch();
+        if ('undefined' === typeof row) {
+            return this.col.get(col);
+        }
+        if ('undefined' === typeof col) {
+            return this.row.get(row);
+        }
+
+        return this.rowcol.get(row + '_' + col);
     };
 
-    Table.prototype.addClass = function (c) {
+    Table.prototype.addClass = function(c) {
         if (!c) return;
         if (c instanceof Array) c = c.join(' ');
-        this.forEach(function (el) {
+        this.forEach(function(el) {
             node.window.addClass(el, c);
         });
 
@@ -20624,7 +20667,7 @@ JSUS.extend(PARSE);
     };
 
     // Depends on node.window
-    Table.prototype.removeClass = function (c) {
+    Table.prototype.removeClass = function(c) {
         if (!c) return;
 
         var func;
@@ -20639,7 +20682,7 @@ JSUS.extend(PARSE);
             func = node.window.removeClass;
         }
 
-        this.forEach(function (el) {
+        this.forEach(function(el) {
             func.call(this,el,c);
         });
 
@@ -20650,7 +20693,7 @@ JSUS.extend(PARSE);
         return this;
     };
 
-    Table.prototype._addSpecial = function (data, type) {
+    Table.prototype._addSpecial = function(data, type) {
         if (!data) return;
         type = type || 'header';
         if ('object' !== typeof data) {
@@ -20665,32 +20708,32 @@ JSUS.extend(PARSE);
     };
 
 
-    Table.prototype.setHeader = function (header) {
+    Table.prototype.setHeader = function(header) {
         this.header = this._addSpecial(header);
     };
 
-    Table.prototype.add2Header = function (header) {
+    Table.prototype.add2Header = function(header) {
         this.header = this.header.concat(this._addSpecial(header));
     };
 
-    Table.prototype.setLeft = function (left) {
+    Table.prototype.setLeft = function(left) {
         this.left = this._addSpecial(left, 'left');
     };
 
-    Table.prototype.add2Left = function (left) {
+    Table.prototype.add2Left = function(left) {
         this.left = this.left.concat(this._addSpecial(left, 'left'));
     };
 
     // TODO: setRight
-    //Table.prototype.setRight = function (left) {
+    //Table.prototype.setRight = function(left) {
     //  this.right = this._addSpecial(left, 'right');
     //};
 
-    Table.prototype.setFooter = function (footer) {
+    Table.prototype.setFooter = function(footer) {
         this.footer = this._addSpecial(footer, 'footer');
     };
 
-    Table._checkDim123 = function (dims) {
+    Table._checkDim123 = function(dims) {
         var t = Table.H.slice(0);
         for (var i=0; i< dims.length; i++) {
             if (!JSUS.removeElement(dims[i],t)) return false;
@@ -20703,7 +20746,7 @@ JSUS.extend(PARSE);
      *
      * @param
      */
-    Table.prototype.updatePointer = function (pointer, value) {
+    Table.prototype.updatePointer = function(pointer, value) {
         if (!pointer) return false;
         if (!JSUS.in_array(pointer, Table.H)) {
             Table.log('Cannot update invalid pointer: ' + pointer, 'ERR');
@@ -20717,7 +20760,7 @@ JSUS.extend(PARSE);
 
     };
 
-    Table.prototype._add = function (data, dims, x, y, z) {
+    Table.prototype._add = function(data, dims, x, y, z) {
         if (!data) return false;
         if (dims) {
             if (!Table._checkDim123(dims)) {
@@ -20729,21 +20772,21 @@ JSUS.extend(PARSE);
             dims = Table.H;
         }
 
-        var insertCell = function (content){
+        var insertCell = function(content){
             //Table.log('content');
             //Table.log(x + ' ' + y + ' ' + z);
             //Table.log(i + ' ' + j + ' ' + h);
 
             var cell = {};
             cell[dims[0]] = i; // i always defined
-            cell[dims[1]] = (j) ? y+j : y;
-            cell[dims[2]] = (h) ? z+h : z;
+            cell[dims[1]] = (j) ? y + j : y;
+            cell[dims[2]] = (h) ? z + h : z;
             cell.content = content;
             //Table.log(cell);
             this.insert(new Cell(cell));
-            this.updatePointer(dims[0],cell[dims[0]]);
-            this.updatePointer(dims[1],cell[dims[1]]);
-            this.updatePointer(dims[2],cell[dims[2]]);
+            this.updatePointer(dims[0], cell[dims[0]]);
+            this.updatePointer(dims[1], cell[dims[1]]);
+            this.updatePointer(dims[2], cell[dims[2]]);
         };
 
         // By default, only the second dimension is incremented
@@ -20795,7 +20838,7 @@ JSUS.extend(PARSE);
 
     };
 
-    Table.prototype.add = function (data, x, y) {
+    Table.prototype.add = function(data, x, y) {
         if (!data) return;
         var cell = (data instanceof Cell) ? data : new Cell({
             x: x,
@@ -20811,28 +20854,28 @@ JSUS.extend(PARSE);
         return result;
     };
 
-    Table.prototype.addColumn = function (data, x, y) {
+    Table.prototype.addColumn = function(data, x, y) {
         if (!data) return false;
         return this._add(data, Table.V, x, y);
     };
 
-    Table.prototype.addRow = function (data, x, y) {
+    Table.prototype.addRow = function(data, x, y) {
         if (!data) return false;
         return this._add(data, Table.H, x, y);
     };
 
-    //Table.prototype.bind = function (dim, property) {
+    //Table.prototype.bind = function(dim, property) {
     //this.binds[property] = dim;
     //};
 
     // TODO: Only 2D for now
     // TODO: improve algorithm, rewrite
-    Table.prototype.parse = function () {
+    Table.prototype.parse = function() {
 
         // Create a cell element (td,th...)
         // and fill it with the return value of a
         // render value.
-        var fromCell2TD = function (cell, el) {
+        var fromCell2TD = function(cell, el) {
             if (!cell) return;
             el = el || 'td';
             var TD = document.createElement(el);
@@ -20937,7 +20980,7 @@ JSUS.extend(PARSE);
         return TABLE;
     };
 
-    Table.prototype.resetPointers = function (pointers) {
+    Table.prototype.resetPointers = function(pointers) {
         pointers = pointers || {};
         this.pointers = {
             x: pointers.pointerX || 0,
@@ -20947,7 +20990,7 @@ JSUS.extend(PARSE);
     };
 
 
-    Table.prototype.clear = function (confirm) {
+    Table.prototype.clear = function(confirm) {
         if (NDDB.prototype.clear.call(this, confirm)) {
             this.resetPointers();
         }
@@ -20969,6 +21012,7 @@ JSUS.extend(PARSE);
     ('undefined' !== typeof window) ? window : module.parent.exports.window, // window
     ('undefined' !== typeof node) ? node : module.parent.exports.node // node
 );
+
 /**
  * # Widget
  * Copyright(c) 2013 Stefano Balietti
