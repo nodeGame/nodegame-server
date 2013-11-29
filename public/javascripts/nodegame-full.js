@@ -4430,6 +4430,8 @@ JSUS.extend(PARSE);
                     this.__shared[sh] = options.shared[sh];
                 }
             }
+            // Delete from options to avoid copy.
+            delete this.__options.shared;
         }
 
         if (options.log) {
@@ -4654,7 +4656,7 @@ JSUS.extend(PARSE);
      */
     NDDB.prototype.cloneSettings = function(leaveOut) {
         var i, options, keepShared;
-        var logCopy, logCtxCopy;
+        var logCopy, logCtxCopy, sharedCopy;
         options = this.__options || {};
         keepShared = true;
 
@@ -4746,7 +4748,7 @@ JSUS.extend(PARSE);
         this.each(function(e) {
             // decycle, if possible
             e = NDDB.decycle(e);
-            out += J.stringify(e) + ', ';
+            out += J.stringify(e, spaces) + ', ';
         });
         out = out.replace(/, $/,']');
 
@@ -7496,6 +7498,10 @@ JSUS.extend(PARSE);
     // Ask a client to start/pause/stop/resume the game
     k.target.GAMECOMMAND = 'GAMECOMMAND';
 
+    // #### target.SERVERCOMMAND
+    // Ask a server to execute a command
+    k.target.SERVERCOMMAND = 'SERVERCOMMAND';
+
     // #### target.ALERT
     // Displays an alert message in the receiving client (if in the browser)
     k.target.ALERT = 'ALERT';
@@ -8542,25 +8548,23 @@ JSUS.extend(PARSE);
                 this.stage = !isNaN(stageNum) ? stageNum : tokens[0];
             }
             if ('undefined' !== typeof tokens[1]) {
-                this.step  = !isNaN(stepNum)  ? stepNum  : tokens[1];
+                this.step  = !isNaN(stepNum) ? stepNum : tokens[1];
+            }
+            else if (this.stage !== 0) {
+                this.step = 1;
             }
             if ('undefined' !== typeof tokens[2]) {
                 this.round = roundNum;
             }
+            else if (this.stage !== 0) {
+                this.round = 1;
+            }
         }
         // Not null object.
         else if (gs && 'object' === typeof gs) {
-            if ('undefined' !== typeof gs.stage) {
-                this.stage = gs.stage;
-            }
-
-            if ('undefined' !== typeof gs.step) {
-                this.step  = gs.step;
-            }
-
-            if ('undefined' !== typeof gs.round) {
-                this.round = gs.round;
-            }
+            this.stage = gs.stage;
+            this.step = 'undefined' !== typeof gs.step ? gs.step : 1;
+            this.round = 'undefined' !== typeof gs.round ? gs.round : 1;
         }
         // Number.
         else if ('number' === typeof gs) {
@@ -8573,13 +8577,37 @@ JSUS.extend(PARSE);
                                     'a negative number.');
             }
             this.stage = gs;
+            this.step = 1;
+            this.round = 1;
         }
         // Defaults or error.
         else if (gs !== null && 'undefined' !== typeof gs) {
             throw new TypeError('GameStage constructor: gs must be string, ' +
                                 'object, a positive number, or undefined.');
         }
+        
+        // Final sanity checks.
 
+        if ('undefined' === typeof this.stage) {
+            throw new Error('GameStage constructor: stage cannot be ' +
+                            'undefined.'); 
+        }
+        if ('undefined' === typeof this.step) {
+            throw new Error('GameStage constructor: step cannot be ' +
+                            'undefined.'); 
+        }
+        if ('undefined' === typeof this.round) {
+            throw new Error('GameStage constructor: round cannot be ' +
+                            'undefined.'); 
+        }
+        
+        // Either 0.0.0 or no 0 is allowed.
+        if (!(this.stage === 0 && this.step === 0 && this.round === 0)) {
+            if (this.stage === 0 || this.step === 0 || this.round === 0) {
+                throw new Error('GameStage constructor: non-sensical game ' +
+                                'stage: ' + this.toString()); 
+            }
+        }
     }
 
     /**
@@ -8756,7 +8784,6 @@ JSUS.extend(PARSE);
      *
      * @param {Array} array The array to transform
      * @return {Array} array The array of `PlayerList` objects
-     *
      */
     PlayerList.array2Groups = function (array) {
         if (!array) return;
@@ -9291,6 +9318,19 @@ JSUS.extend(PARSE);
          */
         this.sid = player.sid;
 
+        /**
+         * ### Player.group
+         *
+         * The group to which the player belongs
+         */
+        this.group = null;
+
+        /**
+         * ### Player.role
+         *
+         * The role of the player
+         */
+        this.role = null;
 
         /**
          * ### Player.count
@@ -9361,7 +9401,7 @@ JSUS.extend(PARSE);
          */
         this.stateLevel = player.stateLevel || stateLevels.UNINITIALIZED;
 
-
+        
         /**
          * ## Extra properties
          *
@@ -12363,6 +12403,7 @@ JSUS.extend(PARSE);
     'undefined' != typeof node ? node : module.exports,
     'undefined' != typeof node ? node : module.parent.exports
 );
+
 /**
  * # SocketIo
  *
@@ -12485,15 +12526,15 @@ JSUS.extend(PARSE);
      * Creates an instance of GameDB
      * 
      * @param {object} options Optional. A configuration object
-     * @param {array} db Optional. An initial array of items to import into the database
+     * @param {array} db Optional. An initial array of items
      * 
      * @see NDDB constructor
      */
     function GameDB(options, db) {
         options = options || {};
-
         if (!options.update) options.update = {};
-        // Auto build indexes by default
+
+        // Auto build indexes by default.
         options.update.indexes = true;
         
         NDDB.call(this, options, db);
@@ -12501,23 +12542,24 @@ JSUS.extend(PARSE);
         this.comparator('stage', GameBit.compareState);
         
         if (!this.player) {
-            this.index('player', function(gb) {
+            this.hash('player', function(gb) {
                 return gb.player;
             });
         }
         if (!this.stage) {
-            this.index('stage', function(gb) {
-                return GameStage.toHash(gb.stage, 'S.s.r');
+            this.hash('stage', function(gb) {
+                if (gb.stage) {
+                    return GameStage.toHash(gb.stage, 'S.s.r');
+                }
             });
         }  
         if (!this.key) {
-            this.index('key', function(gb) {
+            this.hash('key', function(gb) {
                 return gb.key;
             });
         }
 
-        this.node = options.shared ? (options.shared.node ? options.shared.node : null) : null;
-        
+        this.node = this.__shared.node;
     }
 
     // ## GameDB methods
@@ -12550,13 +12592,12 @@ JSUS.extend(PARSE);
      * 
      * @return {boolean} TRUE, if insertion was successful
      * 
-     *  @see GameBit
+     * @see GameBit
      */
     GameDB.prototype.add = function(key, value, player, stage) {
         var gb;
-        if (!key) {
-            this.log("GameDB.add: Missing mandatory attribute 'key'.", 'ERR');
-            return false;
+        if ('string' !== typeof key) {
+            throw new TypeError('GameDB.add: key must be string.');
         }
         
         if (this.node) {
@@ -12580,11 +12621,9 @@ JSUS.extend(PARSE);
     /**
      * # GameBit
      * 
-     * ### Container of relevant information for the game
-     * 
-     *  ---
+     * Container of relevant information for the game
      *  
-     * A GameBit unit always contains the following properties
+     * A GameBit unit always contains the following properties:
      * 
      * - stage GameStage
      * - player Player
@@ -12601,14 +12640,12 @@ JSUS.extend(PARSE);
      * Creates a new instance of GameBit
      */
     function GameBit(options) {
-        
         this.stage = options.stage;
         this.player = options.player;
         this.key = options.key;
         this.value = options.value;
         this.time = (Date) ? Date.now() : null;
     }
-
 
     /**
      * ### GameBit.toString
@@ -12618,7 +12655,8 @@ JSUS.extend(PARSE);
      * @return {string} string representation of the instance of GameBit
      */
     GameBit.prototype.toString = function() {
-        return this.player + ', ' + GameStage.stringify(this.stage) + ', ' + this.key + ', ' + this.value;
+        return this.player + ', ' + GameStage.stringify(this.stage) + 
+            ', ' + this.key + ', ' + this.value;
     };
 
     /** 
@@ -12634,14 +12672,15 @@ JSUS.extend(PARSE);
      *  
      * @param {GameBit} gb1 The first game-bit to compare
      * @param {GameBit} gb2 The second game-bit to compare
-     * @param {boolean} strict Optional. If TRUE, compares also the `value` property
+     * @param {boolean} strict Optional. If TRUE, compares also the 
+     *  `value` property
      * 
      * @return {boolean} TRUE, if the two objects are equals
      * 
-     *  @see GameBit.comparePlayer
-     *  @see GameBit.compareState
-     *  @see GameBit.compareKey
-     *  @see GameBit.compareValue
+     * @see GameBit.comparePlayer
+     * @see GameBit.compareState
+     * @see GameBit.compareKey
+     * @see GameBit.compareValue
      */
     GameBit.equals = function(gb1, gb2, strict) {
         if (!gb1 || !gb2) return false;
@@ -12649,7 +12688,8 @@ JSUS.extend(PARSE);
         if (GameBit.comparePlayer(gb1, gb2) !== 0) return false;
         if (GameBit.compareState(gb1, gb2) !== 0) return false;
         if (GameBit.compareKey(gb1, gb2) !== 0) return false;
-        if (strict && gb1.value && GameBit.compareValue(gb1, gb2) !== 0) return false;
+        if (strict &&
+            gb1.value && GameBit.compareValue(gb1, gb2) !== 0) return false;
         return true;    
     };
 
@@ -12674,7 +12714,6 @@ JSUS.extend(PARSE);
         if (!gb1) return 1;
         if (!gb2) return -1;
         if (gb1.player === gb2.player) return 0;
-
         if (gb1.player > gb2.player) return 1;
         return -1;
     };
@@ -12733,8 +12772,10 @@ JSUS.extend(PARSE);
      * 
      * Returns a numerical id that can assume the following values
      * 
-     * - `-1`: the value of the first game-bit comes first alphabetically / numerically
-     * - `1`: the value of the second game-bit comes first alphabetically / numerically 
+     * - `-1`: the value of the first game-bit comes first alphabetically or
+     *    numerically
+     * - `1`: the value of the second game-bit comes first alphabetically or
+     *   numerically 
      * - `0`: the two gamebits have identical value properties
      * 
      * @param {GameBit} gb1 The first game-bit to compare
@@ -12742,7 +12783,7 @@ JSUS.extend(PARSE);
      * 
      * @return {number} The result of the comparison
      * 
-     *  @see JSUS.equals
+     * @see JSUS.equals
      */
     GameBit.compareValue = function(gb1, gb2) {
         if (!gb1 && !gb2) return 0;
@@ -12753,13 +12794,10 @@ JSUS.extend(PARSE);
         return -1;
     };  
 
-    // ## Closure
-    
 })(
     'undefined' != typeof node ? node : module.exports,
     'undefined' != typeof node ? node : module.parent.exports
 );
-
 /**
  * # Game
  * Copyright(c) 2013 Stefano Balietti
@@ -13153,7 +13191,7 @@ JSUS.extend(PARSE);
         if (!this.checkPlistSize()) {
             return;
         }
-
+        
         stepRule = this.plot.getStepRule(this.getCurrentGameStage());
 
         if ('function' !== typeof stepRule) {
@@ -13459,15 +13497,9 @@ JSUS.extend(PARSE);
         cb = stage.cb;
 
         this.setStageLevel(constants.stageLevels.EXECUTING_CALLBACK);
-
-        try {
-            res = cb.call(node.game);
-        }
-        catch (e) {
-            if (node.debug) throw e;
-            node.err('An error occurred while executing a custom callback');
-            throw new node.NodeGameRuntimeError(e);
-        }
+        
+        // Execute custom callback. Can throw errors.
+        res = cb.call(node.game);
         if (res === false) {
             // A non fatal error occurred.
             node.err('A non fatal error occurred while executing ' +
@@ -15781,7 +15813,6 @@ JSUS.extend(PARSE);
          */
         this.timer = new Timer(this);
 
-
         /**
          * ### node.store
          *
@@ -17224,7 +17255,6 @@ JSUS.extend(PARSE);
  *
  * ---
  */
-
 (function(exports, parent) {
 
     "use strict";
@@ -17236,27 +17266,43 @@ JSUS.extend(PARSE);
      *
      * Retrieves JSON data via JSONP from one or many URIs
      *
-     * The callback will be called with the JSON object as the parameter.
+     * The dataCb callback will be called every time the data from one of the
+     * URIs has been fetched.
      *
-     * TODO: Update doc
+     * This method creates a temporary entry in the node instance,
+     * `node.tempCallbacks`, to store a temporary internal callback.
+     * This field is deleted again after the internal callbacks are done.
+     *
      * @param {array|string} uris The URI(s)
-     * @param {function} callback The function to call with the data
+     * @param {function} dataCb The function to call with the data
+     * @param {function} doneCb Optional. The function to call after all the
+     *   data has been retrieved
      */
     NGC.prototype.getJSON = function(uris, dataCb, doneCb) {
-        // TODO: Work in progress
         var that;
         var loadedCount;
         var currentUri, uriIdx;
-        var cbScriptTag;
-        var jsonpCallbackName;
+        var tempCb, cbIdx;
         var scriptTag, scriptTagName;
 
+        // Check input:
         if ('string' === typeof uris) {
             uris = [ uris ];
         }
+        else if ('object' !== typeof uris || 'number' !== typeof uris.length) {
+            throw new Error('NGC.getJSON: uris must be an array or a string');
+        }
 
-        // Do nothing if no URIs are given:
-        if (!uris || !uris.length) {
+        if ('function' !== typeof dataCb) {
+            throw new Error('NGC.getJSON: dataCb must be a function');
+        }
+
+        if ('undefined' !== typeof doneCb && 'function' !== typeof doneCb) {
+            throw new Error('NGC.getJSON: doneCb must be undefined or function');
+        }
+
+        // If no URIs are given, we're done:
+        if (uris.length === 0) {
             if (doneCb) doneCb();
             return;
         }
@@ -17266,45 +17312,42 @@ JSUS.extend(PARSE);
         // Keep count of loaded data:
         loadedCount = 0;
 
-        // Create a temporary script tag with the JSONP callback:
-        cbScriptTag = document.createElement('script');
-        cbScriptTag.id = 'tmp_script_' + uriIdx;
-        cbScriptTag.innerHTML =
-            'function NGC_getJSON_callback(data){' +
-                //'dataCb(data);' +
-                'console.log("JSONP!!!");' +
-                'console.log(data);' +
-            '}';
-        document.body.appendChild(scriptTag);
+        // Create a temporary JSONP callback, store it with the node instance:
+        if ('undefined' === typeof this.tempCallbacks) {
+            this.tempCallbacks = { counter: 0 };
+        }
+        else {
+            this.tempCallbacks.counter++;
+        }
+        cbIdx = this.tempCallbacks.counter;
+
+        tempCb = function(data) {
+            dataCb(data);
+
+            // Clean up:
+            delete that.tempCallbacks[cbIdx];
+            if (JSUS.size(that.tempCallbacks) <= 1) {
+                delete that.tempCallbacks;
+            }
+        };
+        this.tempCallbacks[cbIdx] = tempCb;
 
         for (uriIdx = 0; uriIdx < uris.length; uriIdx++) {
             currentUri = uris[uriIdx];
 
             // Create a temporary script tag for the current URI:
             scriptTag = document.createElement('script');
-            scriptTagName = 'tmp_script_' + uriIdx;
+            scriptTagName = 'tmp_script_' + cbIdx + '_' + uriIdx;
             scriptTag.id = scriptTagName;
             scriptTag.name = scriptTagName;
+            scriptTag.src = currentUri +
+                '?callback=node.tempCallbacks[' + cbIdx + ']';
             document.body.appendChild(scriptTag);
 
             // Register the onload handler:
             scriptTag.onload = (function(uri, thisScriptTag) {
                 return function() {
-                    var frameDocumentElement;
-
-                    frameDocumentElement =
-                        (thisScriptTag.contentDocument ?
-                         thisScriptTag.contentDocument :
-                         thisScriptTag.contentWindow.document)
-                        .documentElement;
-
-                    // Store the contents in the cache:
-                    that.cache[uri] = {
-                        contents: frameDocumentElement.innerHTML,
-                        cacheOnClose: false
-                    };
-
-                    // Remove the internal frame:
+                    // Remove the script tag:
                     document.body.removeChild(thisScriptTag);
 
                     // Increment loaded URIs counter:
@@ -17322,7 +17365,6 @@ JSUS.extend(PARSE);
     'undefined' != typeof node ? node : module.exports,
     'undefined' != typeof node ? node : module.parent.exports
 );
-
 /**
  * # Listeners for incoming messages.
  * Copyright(c) 2013 Stefano Balietti
@@ -18323,6 +18365,16 @@ JSUS.extend(PARSE);
          */
         this.state = null;
 
+        /**
+         * ### GameWindow.waitScreen
+         *
+         * Reference to the _WaitScreen_ widget, if one is appended in the page 
+         *
+         * @see node.widgets.WaitScreen
+         */
+        this.waitScreen = null;
+
+        // Init.
         this.init();
     }
 
@@ -19066,7 +19118,6 @@ JSUS.extend(PARSE);
         return this.header;
     };
 
-
     // Overriding Document.write and DOM.writeln and DOM.write
     GameWindow.prototype._write = DOM.write;
     GameWindow.prototype._writeln = DOM.writeln;
@@ -19127,6 +19178,8 @@ JSUS.extend(PARSE);
      *
      * Gives the impression of a loading time.
      *
+     * @param {number} len Optional. The maximum length of the loading dots.
+     *   Defaults, 5
      * @param {string} id Optional The id of the span
      * @return {object} An object containing two properties: the span element
      *   and a method stop, that clears the interval.
@@ -19164,6 +19217,26 @@ JSUS.extend(PARSE);
         };
     };
 
+    /**
+     * ### GameWindow.addLoadingDots
+     *
+     * Appends _loading dots_ to an HTML element
+     *
+     * By invoking this method you lose access to the _stop_ function of the
+     * _loading dots_ element.
+     *
+     * @param {HTMLElement} root The element to which the loading dots will be
+     *   appended.
+     * @param {number} len Optional. The maximum length of the loading dots.
+     *   Defaults, 5
+     * @param {string} id Optional The id of the span
+     * @return {object} The span with the loading dots.
+     *
+     * @see GameWindow.getLoadingDots
+     */
+    GameWindow.prototype.addLoadingDots = function(root, len, id) {
+        return root.appendChild(this.getLoadingDots(len, id).span);
+    };
 
     /**
      * ### GameWindow.toggleInputs
@@ -19194,8 +19267,8 @@ JSUS.extend(PARSE);
         }
         else {
             container = this.getFrameDocument();
-            if (!container) {
-                // No warning.
+            if (!container || !container.getElementsByTagName) {
+                // Frame either not existing or not ready. No warning.
                 return;
             }
         }
@@ -19232,7 +19305,7 @@ JSUS.extend(PARSE);
      * TODO: check if this can be called in any stage.
      */
     GameWindow.prototype.lockFrame = function(text) {
-        if (!node.game.waitScreen) {
+        if (!this.waitScreen) {
             throw new Error('GameWindow.lockFrame: waitScreen not found.');
         }
         if (text && 'string' !== typeof text) {
@@ -20410,38 +20483,65 @@ JSUS.extend(PARSE);
     exports.Table = Table;
     exports.Table.Cell = Cell;
 
-    // For simple testing
-    // module.exports = Table;
-
     var JSUS = node.JSUS;
     var NDDB = node.NDDB;
     var HTMLRenderer = node.window.HTMLRenderer;
     var Entity = node.window.HTMLRenderer.Entity;
 
-
-    Table.prototype = JSUS.clone(NDDB.prototype);
-    //Table.prototype = new NDDB();
+    Table.prototype = new NDDB();
     Table.prototype.constructor = Table;
 
-    Table.H = ['x','y','z'];
-    Table.V = ['y','x', 'z'];
+    Table.H = ['x', 'y', 'z'];
+    Table.V = ['y', 'x', 'z'];
 
     Table.log = node.log;
 
-    function Table(options, data, parent) {
+    /**
+     * Table constructor
+     *
+     * Creates a new Table object
+     *
+     * @param {object} options Optional. Configuration for NDDB
+     * @param {array} data Optional. Array of initial items
+     */
+    function Table(options, data) {
         options = options || {};
+        // Updates indexes on the fly.
+        if (!options.update) options.update = {};
+        if ('undefined' === typeof options.update.indexes) {
+            options.update.indexes = true;
+        }
 
-        Table.log = options.log || Table.log;
+        NDDB.call(this, options, data);
+
+        if (!this.row) {
+            this.index('row', function(c) {
+                return c.x;
+            });
+        }
+        if (!this.col) {
+            this.index('col', function(c) {
+                return c.y;
+            });
+        }
+        if (!this.rowcol) {
+            this.index('rowcol', function(c) {
+                return c.x + '_' + c.y;
+            });
+        }
+
         this.defaultDim1 = options.defaultDim1 || 'x';
         this.defaultDim2 = options.defaultDim2 || 'y';
         this.defaultDim3 = options.defaultDim3 || 'z';
 
         this.table = options.table || document.createElement('table');
-        this.id = options.id || 'table_' + Math.round(Math.random() * 1000);
+        this.id = options.id || 
+            'table_' + Math.round(Math.random() * 1000);
 
-        this.auto_update = ('undefined' !== typeof options.auto_update) ? options.auto_update : false;
+        this.auto_update = 'undefined' !== typeof options.auto_update ?
+            options.auto_update : false;
 
-        // Class for missing cells
+        // Class for missing cells.
         this.missing = options.missing || 'missing';
         this.pointers = {
             x: options.pointerX || 0,
@@ -20455,36 +20555,36 @@ JSUS.extend(PARSE);
         this.left = [];
         this.right = [];
 
-
-        NDDB.call(this, options, data, parent);
-
-        // From NDDB
-        this.options = this.__options;
-    }
-
-    // TODO: improve init
-    Table.prototype.init = function (options) {
-        NDDB.prototype.init.call(this, options);
-
-        options = options || this.options;
         if ('undefined' !== typeof options.id) {
-
             this.table.id = options.id;
             this.id = options.id;
         }
         if (options.className) {
             this.table.className = options.className;
         }
-        this.initRenderer(options.render);
-    };
 
-    Table.prototype.initRenderer = function (options) {
+        // Init renderer.
+        this.initRenderer(options.render);
+    }
+
+    /**
+     * Table.initRenderer
+     *
+     * Inits the `HTMLRenderer` object and adds a renderer for objects.
+     *
+     * @param {object} options Optional. Configuration for the renderer
+     *
+     * @see HTMLRenderer
+     * @see HTMLRenderer.addRenderer
+     */
+    Table.prototype.initRenderer = function(options) {
         options = options || {};
         this.htmlRenderer = new HTMLRenderer(options);
         this.htmlRenderer.addRenderer(function(el) {
+            var tbl, key;
             if ('object' === typeof el.content) {
-                var tbl = new Table();
-                for (var key in el.content) {
+                tbl = new Table();
+                for (key in el.content) {
                     if (el.content.hasOwnProperty(key)){
                         tbl.addRow([key,el.content[key]]);
                     }
@@ -20494,23 +20594,39 @@ JSUS.extend(PARSE);
         }, 2);
     };
 
-    // TODO: make it 3D
-    Table.prototype.get = function (x, y) {
-        var out = this;
-        if ('undefined' !== typeof x) {
-            out = this.select('x','=',x);
+    /**
+     * Table.get
+     *
+     * Returns the element at row column (x,y)
+     *
+     * @param {number} row The row number
+     * @param {number} col The column number
+     *
+     * @see HTMLRenderer
+     * @see HTMLRenderer.addRenderer
+     */
+    Table.prototype.get = function(row, col) {
+        if ('undefined' !== typeof row && 'number' !== typeof row) {
+            throw new TypeError('Table.get: row must be number.');
         }
-        if ('undefined' !== typeof y) {
-            out = out.select('y','=',y);
+        if ('undefined' !== typeof col && 'number' !== typeof col) {
+            throw new TypeError('Table.get: col must be number.');
         }
 
-        return out.fetch();
+        if ('undefined' === typeof row) {
+            return this.col.get(col);
+        }
+        if ('undefined' === typeof col) {
+            return this.row.get(row);
+        }
+
+        return this.rowcol.get(row + '_' + col);
     };
 
-    Table.prototype.addClass = function (c) {
+    Table.prototype.addClass = function(c) {
         if (!c) return;
         if (c instanceof Array) c = c.join(' ');
-        this.forEach(function (el) {
+        this.forEach(function(el) {
             node.window.addClass(el, c);
         });
 
@@ -20522,7 +20638,7 @@ JSUS.extend(PARSE);
     };
 
     // Depends on node.window
-    Table.prototype.removeClass = function (c) {
+    Table.prototype.removeClass = function(c) {
         if (!c) return;
 
         var func;
@@ -20537,7 +20653,7 @@ JSUS.extend(PARSE);
             func = node.window.removeClass;
         }
 
-        this.forEach(function (el) {
+        this.forEach(function(el) {
             func.call(this,el,c);
         });
 
@@ -20548,7 +20664,7 @@ JSUS.extend(PARSE);
         return this;
     };
 
-    Table.prototype._addSpecial = function (data, type) {
+    Table.prototype._addSpecial = function(data, type) {
         if (!data) return;
         type = type || 'header';
         if ('object' !== typeof data) {
@@ -20563,32 +20679,32 @@ JSUS.extend(PARSE);
     };
 
 
-    Table.prototype.setHeader = function (header) {
+    Table.prototype.setHeader = function(header) {
         this.header = this._addSpecial(header);
     };
 
-    Table.prototype.add2Header = function (header) {
+    Table.prototype.add2Header = function(header) {
         this.header = this.header.concat(this._addSpecial(header));
     };
 
-    Table.prototype.setLeft = function (left) {
+    Table.prototype.setLeft = function(left) {
         this.left = this._addSpecial(left, 'left');
     };
 
-    Table.prototype.add2Left = function (left) {
+    Table.prototype.add2Left = function(left) {
         this.left = this.left.concat(this._addSpecial(left, 'left'));
     };
 
     // TODO: setRight
-    //Table.prototype.setRight = function (left) {
+    //Table.prototype.setRight = function(left) {
     //  this.right = this._addSpecial(left, 'right');
     //};
 
-    Table.prototype.setFooter = function (footer) {
+    Table.prototype.setFooter = function(footer) {
         this.footer = this._addSpecial(footer, 'footer');
     };
 
-    Table._checkDim123 = function (dims) {
+    Table._checkDim123 = function(dims) {
         var t = Table.H.slice(0);
         for (var i=0; i< dims.length; i++) {
             if (!JSUS.removeElement(dims[i],t)) return false;
@@ -20601,7 +20717,7 @@ JSUS.extend(PARSE);
      *
      * @param
      */
-    Table.prototype.updatePointer = function (pointer, value) {
+    Table.prototype.updatePointer = function(pointer, value) {
         if (!pointer) return false;
         if (!JSUS.in_array(pointer, Table.H)) {
             Table.log('Cannot update invalid pointer: ' + pointer, 'ERR');
@@ -20615,7 +20731,7 @@ JSUS.extend(PARSE);
 
     };
 
-    Table.prototype._add = function (data, dims, x, y, z) {
+    Table.prototype._add = function(data, dims, x, y, z) {
         if (!data) return false;
         if (dims) {
             if (!Table._checkDim123(dims)) {
@@ -20627,7 +20743,7 @@ JSUS.extend(PARSE);
             dims = Table.H;
         }
 
-        var insertCell = function (content){
+        var insertCell = function(content){
             //Table.log('content');
             //Table.log(x + ' ' + y + ' ' + z);
             //Table.log(i + ' ' + j + ' ' + h);
@@ -20693,7 +20809,7 @@ JSUS.extend(PARSE);
 
     };
 
-    Table.prototype.add = function (data, x, y) {
+    Table.prototype.add = function(data, x, y) {
         if (!data) return;
         var cell = (data instanceof Cell) ? data : new Cell({
             x: x,
@@ -20709,28 +20825,28 @@ JSUS.extend(PARSE);
         return result;
     };
 
-    Table.prototype.addColumn = function (data, x, y) {
+    Table.prototype.addColumn = function(data, x, y) {
         if (!data) return false;
         return this._add(data, Table.V, x, y);
     };
 
-    Table.prototype.addRow = function (data, x, y) {
+    Table.prototype.addRow = function(data, x, y) {
         if (!data) return false;
         return this._add(data, Table.H, x, y);
     };
 
-    //Table.prototype.bind = function (dim, property) {
+    //Table.prototype.bind = function(dim, property) {
     //this.binds[property] = dim;
     //};
 
     // TODO: Only 2D for now
     // TODO: improve algorithm, rewrite
-    Table.prototype.parse = function () {
+    Table.prototype.parse = function() {
 
         // Create a cell element (td,th...)
         // and fill it with the return value of a
         // render value.
-        var fromCell2TD = function (cell, el) {
+        var fromCell2TD = function(cell, el) {
             if (!cell) return;
             el = el || 'td';
             var TD = document.createElement(el);
@@ -20835,7 +20951,7 @@ JSUS.extend(PARSE);
         return TABLE;
     };
 
-    Table.prototype.resetPointers = function (pointers) {
+    Table.prototype.resetPointers = function(pointers) {
         pointers = pointers || {};
         this.pointers = {
             x: pointers.pointerX || 0,
@@ -20845,7 +20961,7 @@ JSUS.extend(PARSE);
     };
 
 
-    Table.prototype.clear = function (confirm) {
+    Table.prototype.clear = function(confirm) {
         if (NDDB.prototype.clear.call(this, confirm)) {
             this.resetPointers();
         }
@@ -20867,6 +20983,7 @@ JSUS.extend(PARSE);
     ('undefined' !== typeof window) ? window : module.parent.exports.window, // window
     ('undefined' !== typeof node) ? node : module.parent.exports.node // node
 );
+
 /**
  * # Widget
  * Copyright(c) 2013 Stefano Balietti
@@ -20934,8 +21051,15 @@ JSUS.extend(PARSE);
     var J = node.JSUS;
 
     function Widgets() {
+
+        /**
+         * ## Widgets.widgets
+         *
+         * Container of currently registered widgets 
+         *
+         * @see Widgets.register
+         */
         this.widgets = {};
-        this.root = node.window.root || document.body;
     }
 
     /**
@@ -20987,6 +21111,7 @@ JSUS.extend(PARSE);
      * @param {string} w_str The name of the widget to load
      * @param {options} options Optional. Configuration options
      *   to be passed to the widgets
+     * @return {object} widget The requested widget
      *
      * @see Widgets.add
      *
@@ -20994,8 +21119,17 @@ JSUS.extend(PARSE);
      * @TODO: add example.
      */
     Widgets.prototype.get = function(w_str, options) {
-	if (!w_str) return;
-	var that = this;
+        var wProto, widget;
+        var that;
+        if ('string' !== typeof w_str) {
+            throw new TypeError('Widgets.get: w_str must be string.');
+        }
+        if (options && 'object' !== typeof options) {
+            throw new TypeError('Widgets.get: options must be object or ' +
+                                'undefined.');
+        }
+        
+        that = this;
 	options = options || {};
 
 	function createListenerFunction(w, e, l) {
@@ -21007,10 +21141,12 @@ JSUS.extend(PARSE);
 
 	function attachListeners(options, w) {
 	    if (!options || !w) return;
+            var events = ['onclick', 'onfocus', 'onblur', 'onchange', 
+                          'onsubmit', 'onload', 'onunload', 'onmouseover'];
 	    var isEvent = false;
 	    for (var i in options) {
 		if (options.hasOwnProperty(i)) {
-		    isEvent = J.in_array(i, ['onclick', 'onfocus', 'onblur', 'onchange', 'onsubmit', 'onload', 'onunload', 'onmouseover']);
+		    isEvent = J.in_array(i, events);
 		    if (isEvent && 'function' === typeof options[i]) {
 			createListenerFunction(w, i, options[i]);
 		    }
@@ -21018,17 +21154,17 @@ JSUS.extend(PARSE);
 	    };
 	};
 
-	var wProto = J.getNestedValue(w_str, this.widgets);
-	var widget;
-
+	wProto = J.getNestedValue(w_str, this.widgets);
+	
 	if (!wProto) {
-	    node.err('widget ' + w_str + ' not found.');
-	    return;
+            throw new Error('Widgets.get: ' + w_str + ' not found.');
 	}
 
 	node.info('registering ' + wProto.name + ' v.' +  wProto.version);
 
-	if (!this.checkDependencies(wProto)) return false;
+	if (!this.checkDependencies(wProto)) {
+            throw new Error('Widgets.get: ' + w_str + ' has unmet dependecies.');
+        }
 
 	// Add missing properties to the user options
 	J.mixout(options, J.clone(wProto.defaults));
@@ -21045,6 +21181,7 @@ JSUS.extend(PARSE);
 
 	return widget;
     };
+
     /**
      * ### Widgets.append
      *
@@ -21061,16 +21198,30 @@ JSUS.extend(PARSE);
      * options parameter.
      *
      * @param {string} w_str The name of the widget to load
-     * @param {object} root. The HTML element to which appending the widget
+     * @param {object} root. Optional. The HTML element under which the widget
+     *   will be appended. Defaults, `GameWindow.getFrameRoot()` or document.body
      * @param {options} options Optional. Configuration options to be passed
      *   to the widgets
      * @return {object|boolean} The requested widget, or FALSE is an error occurs
      *
      * @see Widgets.get
      */
-    Widgets.prototype.append = Widgets.prototype.add = function(w, root, options) {
-        if (!w) return;
-        var that = this;
+    Widgets.prototype.append = Widgets.prototype.add = function(w, root,
+                                                                options) {
+        var that;
+        if ('string' !== typeof w && 'object' !== typeof w) {
+            throw new TypeError('Widgets.append: w must be string or object');
+        }
+        if (root && !J.isElement(root)) {
+            throw new TypeError('Widgets.append: root must be HTMLElement ' +
+                                'or undefined.');
+        }
+        if (options && 'object' !== typeof options) {
+            throw new TypeError('Widgets.append: options must be object or ' +
+                                'undefined.');
+        }
+        
+        that = this;
 
         function appendFieldset(root, options, w) {
             if (!options) return root;
@@ -21079,15 +21230,16 @@ JSUS.extend(PARSE);
             return W.addFieldset(root, idFieldset, legend, options.attributes);
         };
 
-        // Init default values
-        root = root || this.root;
+        // Init default values.
+        root = root || W.getFrameRoot() || document.body;
         options = options || {};
 
         // Check if it is a object (new widget)
         // If it is a string is the name of an existing widget
         // In this case a dependencies check is done
-        if ('object' !== typeof w) w = this.get(w, options);
-        if (!w) return false;
+        if ('string' === typeof w) {
+            w = this.get(w, options);
+        }
 
         // options exists and options.fieldset exist
         root = appendFieldset(root, options.fieldset || w.defaults.fieldset, w);
@@ -21153,6 +21305,7 @@ JSUS.extend(PARSE);
     ('undefined' !== typeof window) ? window : module.parent.exports.window,
     ('undefined' !== typeof window) ? window.node : module.parent.exports.node
 );
+
 /**
  * # Chat widget for nodeGame
  * Copyright(c) 2013 Stefano Balietti
@@ -23244,8 +23397,9 @@ JSUS.extend(PARSE);
 	var sendButton, textInput, dataInput;
 
 	sendButton = W.addButton(root);
-	W.writeln('Text');
+	//W.writeln('Text');
 	textInput = W.addTextInput(root, 'data-bar-text');
+	W.addLabel(root, textInput, undefined, 'Text');
 	W.writeln('Data');
 	dataInput = W.addTextInput(root, 'data-bar-data');
 
@@ -23263,7 +23417,7 @@ JSUS.extend(PARSE);
 
 	    node.log('Parsed Data: ' + JSON.stringify(data));
 
-	    node.say(data, text, to);
+	    node.say(text, to, data);
 	};
 
 	node.on('UPDATED_PLIST', function() {
@@ -23275,6 +23429,7 @@ JSUS.extend(PARSE);
     };
 
 })(node);
+
 /**
  * # Dynamic Table widget for nodeGame
  * Copyright(c) 2013 Stefano Balietti
@@ -25112,7 +25267,7 @@ JSUS.extend(PARSE);
     StateDisplay.prototype.listeners = function() {
 	var that = this;
 
-	node.on('LOADED', function() {
+	node.on('STEP_CALLBACK_EXECUTED', function() {
 	    that.updateAll();
 	});
     };
@@ -25271,6 +25426,9 @@ JSUS.extend(PARSE);
 
     function VisualTimer(options) {
         this.options = options;
+        this.options.update = ('undefined' === typeof this.options.update) ?
+            1000 : this.options.update;
+
         this.id = options.id;
 
         this.gameTimer = null;
@@ -25384,8 +25542,6 @@ JSUS.extend(PARSE);
 
                 if (!options.milliseconds) return;
 
-                options.update = 1000;
-
                 if ('function' === typeof options.milliseconds) {
                     options.milliseconds = options.milliseconds.call(node.game);
                 }
@@ -25431,11 +25587,14 @@ JSUS.extend(PARSE);
 
     // ## Meta-data
 
-    WaitScreen.version = '0.5.0';
+    WaitScreen.version = '0.6.0';
     WaitScreen.description = 'Show a standard waiting screen';
 
     function WaitScreen(options) {
+
 	this.id = options.id;
+
+        this.root = null;
 
 	this.text = {
             waiting: options.waitingText ||
@@ -25466,6 +25625,10 @@ JSUS.extend(PARSE);
     };
 
     WaitScreen.prototype.append = function(root) {
+        // Saves a reference of the widget in GameWindow
+        // that will use it in the GameWindow.lockFrame method.
+        W.waitScreen = this;
+        this.root = root;
 	return root;
     };
 
@@ -25486,6 +25649,14 @@ JSUS.extend(PARSE);
         node.on('PLAYING', function(text) {
             that.unlock();
         });
+    };
+
+    WaitScreen.prototype.destroy = function() {
+        this.unlock();
+        if (this.waitingDiv) {
+            this.root.removeChild(this.waitingDiv);
+        }
+        W.waitScreen = null; 
     };
 })(node);
 /**
