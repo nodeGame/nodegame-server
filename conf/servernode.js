@@ -91,7 +91,7 @@ function configure(servernode) {
             // A client enters a new stage;
 	    onStageUpdate: true,
 
-            // A client changes stageLevel (e.g. INIT, CALLBACK_EXECUTED, DONE);
+            // A client changes stageLevel (e.g. INIT, CALLBACK_EXECUTED);
 	    onStageLevelUpdate: false,
 
             // A client is LOADED (this option is needed in combination with

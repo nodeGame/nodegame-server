@@ -2937,26 +2937,25 @@ if (JSUS.isNodeJS()) {
      * @see DOM.style
      */
     DOM.highlight = function(elem, code) {
-        var color;
         if (!elem) return;
 
         // default value is ERR
         switch (code) {
         case 'OK':
-            color =  'green';
+            var color =  'green';
             break;
         case 'WARN':
-            color = 'yellow';
+            var color = 'yellow';
             break;
         case 'ERR':
-            color = 'red';
+            var color = 'red';
             break;
         default:
-            if (code.charAt(0) === '#') {
-                color = code;
+            if (code[0] === '#') {
+                var color = code;
             }
             else {
-                color = 'red';
+                var color = 'red';
             }
         }
 
@@ -2985,24 +2984,23 @@ if (JSUS.isNodeJS()) {
      * ### DOM.style
      *
      * Styles an element as an in-line css.
+     * Takes care to add new styles, and not overwriting previuous
+     * attributes.
      *
-     * Existing style properties are maintained, and new ones added.
+     * Returns the element.
      *
-     * @param {HTMLElement} elem The element to style
-     * @param {object} Objects containing the properties to add.
-     * @return {HTMLElement} elem The styled element
+     * @see DOM.setAttribute
      */
     DOM.style = function(elem, properties) {
-        var i;
+        var style, i;
         if (!elem || !properties) return;
         if (!DOM.isElement(elem)) return;
 
+        style = '';
         for (i in properties) {
-            if (properties.hasOwnProperty(i)) {              
-                elem.style[i] = properties[i];
-            }
-        }
-        return elem;
+            style += i + ': ' + properties[i] + '; ';
+        };
+        return elem.setAttribute('style', style);
     };
 
     /**
@@ -9398,8 +9396,8 @@ JSUS.extend(TIME);
         properties = ['stage', 'step', 'round'];
 
         for (i = 0; i < str.length; i++) {
-            idx = symbols.indexOf(str.charAt(i));
-            hash += (idx < 0) ? str.charAt(i) : gs[properties[idx]];
+            idx = symbols.indexOf(str[i]);
+            hash += (idx < 0) ? str[i] : gs[properties[idx]];
         }
         return hash;
     };
@@ -10383,7 +10381,7 @@ JSUS.extend(TIME);
             this.target + SPT + TAB : this.target + SPT : UNKNOWN;
         line += this.from ?
             this.from.length < 6  ?
-            this.from + SPT + TAB : this.from + SPT : UNKNOWN;
+            this.from + SPT + TAB : this.from + SPT : UKNOWN;
         line += this.to ?
             this.to.length < 6  ?
             this.to + SPT + TAB : this.to + SPT : UNKNOWN;
@@ -20867,7 +20865,6 @@ JSUS.extend(TIME);
         else if (this.cacheSupported === false) {
             node.warn('GameWindow.preCache: caching is not supported by ' +
                       'your browser.');
-            if (callback) callback();
             return;
         }
 
@@ -21134,7 +21131,7 @@ JSUS.extend(TIME);
                 that.updateLoadFrameState(func);
             });
         }
-        
+
         // Cache lookup:
         if (loadCache) {
             // Load iframe contents at this point only if the iframe is already
