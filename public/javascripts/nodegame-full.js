@@ -8,11 +8,13 @@
  * ---
  */
 
-String.prototype.trim = function() {
-    return this.replace(/^\s+|\s+$/g, '');
-};
+if ('undefined' === typeof String.prototype.trim) {
+    String.prototype.trim = function() {
+        return this.replace(/^\s+|\s+$/g, '');
+    };
+}
 
-if (typeof console == "undefined") {
+if ('undefined' === typeof console) {
     this.console = {log: function() {}};
 }
 
@@ -354,557 +356,570 @@ if (!JSON) {
 
 /**
  * # Shelf.JS 
- * 
- * Persistent Client-Side Storage @VERSION
- * 
- * Copyright 2012 Stefano Balietti
+ * Copyright 2014 Stefano Balietti
  * GPL licenses.
+ *
+ * Persistent Client-Side Storage
  * 
  * ---
- * 
  */
 (function(exports){
-	
-var version = '0.3';
+    
+    var version = '0.5';
 
-var store = exports.store = function (key, value, options, type) {
+    var store = exports.store = function(key, value, options, type) {
 	options = options || {};
 	type = (options.type && options.type in store.types) ? options.type : store.type;
 	if (!type || !store.types[type]) {
-		store.log("Cannot save/load value. Invalid storage type selected: " + type, 'ERR');
-		return;
+	    store.log("Cannot save/load value. Invalid storage type selected: " + type, 'ERR');
+	    return;
 	}
 	store.log('Accessing ' + type + ' storage');
 	
 	return store.types[type](key, value, options);
-};
+    };
 
-// Adding functions and properties to store
-///////////////////////////////////////////
-store.name = "__shelf__";
+    // Adding functions and properties to store
+    ///////////////////////////////////////////
+    store.prefix = "__shelf__";
 
-store.verbosity = 0;
-store.types = {};
+    store.verbosity = 0;
+    store.types = {};
 
 
-var mainStorageType = "volatile";
+    var mainStorageType = "volatile";
 
-//if Object.defineProperty works...
-try {	
+    //if Object.defineProperty works...
+    try {	
 	
 	Object.defineProperty(store, 'type', {
-		set: function(type){
-			if ('undefined' === typeof store.types[type]) {
-				store.log('Cannot set store.type to an invalid type: ' + type);
-				return false;
-			}
-			mainStorageType = type;
-			return type;
-		},
-		get: function(){
-			return mainStorageType;
-		},
-		configurable: false,
-		enumerable: true
+	    set: function(type){
+		if ('undefined' === typeof store.types[type]) {
+		    store.log('Cannot set store.type to an invalid type: ' + type);
+		    return false;
+		}
+		mainStorageType = type;
+		return type;
+	    },
+	    get: function(){
+		return mainStorageType;
+	    },
+	    configurable: false,
+	    enumerable: true
 	});
-}
-catch(e) {
+    }
+    catch(e) {
 	store.type = mainStorageType; // default: memory
-}
+    }
 
-store.addType = function (type, storage) {
+    store.addType = function(type, storage) {
 	store.types[type] = storage;
-	store[type] = function (key, value, options) {
-		options = options || {};
-		options.type = type;
-		return store(key, value, options);
+	store[type] = function(key, value, options) {
+	    options = options || {};
+	    options.type = type;
+	    return store(key, value, options);
 	};
 	
 	if (!store.type || store.type === "volatile") {
-		store.type = type;
+	    store.type = type;
 	}
-};
+    };
 
-store.error = function() {
-	return "shelf quota exceeded"; 
-};
+    // TODO: create unit test
+    store.onquotaerror = undefined;
+    store.error = function() {	
+	console.log("shelf quota exceeded"); 
+	if ('function' === typeof store.onquotaerror) {
+	    store.onquotaerror(null);
+	}
+    };
 
-store.log = function(text) {
+    store.log = function(text) {
 	if (store.verbosity > 0) {
-		console.log('Shelf v.' + version + ': ' + text);
+	    console.log('Shelf v.' + version + ': ' + text);
 	}
 	
-};
+    };
 
-store.isPersistent = function() {
+    store.isPersistent = function() {
 	if (!store.types) return false;
 	if (store.type === "volatile") return false;
 	return true;
-};
+    };
 
-//if Object.defineProperty works...
-try {	
+    //if Object.defineProperty works...
+    try {	
 	Object.defineProperty(store, 'persistent', {
-		set: function(){},
-		get: store.isPersistent,
-		configurable: false
+	    set: function(){},
+	    get: store.isPersistent,
+	    configurable: false
 	});
-}
-catch(e) {
+    }
+    catch(e) {
 	// safe case
 	store.persistent = false;
-}
+    }
 
-store.decycle = function(o) {
+    store.decycle = function(o) {
 	if (JSON && JSON.decycle && 'function' === typeof JSON.decycle) {
-		o = JSON.decycle(o);
+	    o = JSON.decycle(o);
 	}
 	return o;
-};
+    };
     
-store.retrocycle = function(o) {
+    store.retrocycle = function(o) {
 	if (JSON && JSON.retrocycle && 'function' === typeof JSON.retrocycle) {
-		o = JSON.retrocycle(o);
+	    o = JSON.retrocycle(o);
 	}
 	return o;
-};
+    };
 
-store.stringify = function(o) {
+    store.stringify = function(o) {
 	if (!JSON || !JSON.stringify || 'function' !== typeof JSON.stringify) {
-		throw new Error('JSON.stringify not found. Received non-string value and could not serialize.');
+	    throw new Error('JSON.stringify not found. Received non-string value and could not serialize.');
 	}
 	
 	o = store.decycle(o);
 	return JSON.stringify(o);
-};
+    };
 
-store.parse = function(o) {
+    store.parse = function(o) {
 	if ('undefined' === typeof o) return undefined;
 	if (JSON && JSON.parse && 'function' === typeof JSON.parse) {
-		try {
-			o = JSON.parse(o);
-		}
-		catch (e) {
-			store.log('Error while parsing a value: ' + e, 'ERR');
-			store.log(o);
-		}
+	    try {
+		o = JSON.parse(o);
+	    }
+	    catch (e) {
+		store.log('Error while parsing a value: ' + e, 'ERR');
+		store.log(o);
+	    }
 	}
 	
 	o = store.retrocycle(o);
 	return o;
-};
+    };
 
-// ## In-memory storage
-// ### fallback for all browsers to enable the API even if we can't persist data
-(function() {
+    // ## In-memory storage
+    // ### fallback for all browsers to enable the API even if we can't persist data
+    (function() {
 	
 	var memory = {},
-		timeout = {};
+	timeout = {};
 	
 	function copy(obj) {
-		return store.parse(store.stringify(obj));
+	    return store.parse(store.stringify(obj));
 	}
 
 	store.addType("volatile", function(key, value, options) {
-		
-		if (!key) {
-			return copy(memory);
-		}
+	    
+	    if (!key) {
+		return copy(memory);
+	    }
 
-		if (value === undefined) {
-			return copy(memory[key]);
-		}
+	    if (value === undefined) {
+		return copy(memory[key]);
+	    }
 
-		if (timeout[key]) {
-			clearTimeout(timeout[key]);
-			delete timeout[key];
-		}
+	    if (timeout[key]) {
+		clearTimeout(timeout[key]);
+		delete timeout[key];
+	    }
 
-		if (value === null) {
-			delete memory[key];
-			return null;
-		}
+	    if (value === null) {
+		delete memory[key];
+		return null;
+	    }
 
-		memory[key] = value;
-		if (options.expires) {
-			timeout[key] = setTimeout(function() {
-				delete memory[key];
-				delete timeout[key];
-			}, options.expires);
-		}
+	    memory[key] = value;
+	    if (options.expires) {
+		timeout[key] = setTimeout(function() {
+		    delete memory[key];
+		    delete timeout[key];
+		}, options.expires);
+	    }
 
-		return value;
+	    return value;
 	});
-}());
+    }());
 
 }('undefined' !== typeof module && 'undefined' !== typeof module.exports ? module.exports: this));
 /**
  * ## Amplify storage for Shelf.js
  * 
+ * v. 1.1.0 22.05.2013 a275f32ee7603fbae6607c4e4f37c4d6ada6c3d5
+ * 
+ * Important! When updating to next Amplify.JS release, remember to change: 
+ * 
+ * - JSON.stringify -> store.stringify to keep support for cyclic objects
+ * - JSON.parse -> store.parse (cyclic objects)
+ * - store.name -> store.prefix (check)
+ * - rprefix -> regex
+ * -  "__amplify__" -> store.prefix
+ *
+ * ---
  */
-
 (function(exports) {
 
-var store = exports.store;	
+    var store = exports.store;	
 
-if (!store) {
-	console.log('amplify.shelf.js: shelf.js core not found. Amplify storage not available.');
-	return;
-}
+    if (!store) {
+	throw new Error('amplify.shelf.js: shelf.js core not found.');
+    }
 
-if ('undefined' === typeof window) {
-	console.log('amplify.shelf.js: am I running in a browser? Amplify storage not available.');
-	return;
-}
+    if ('undefined' === typeof window) {
+	throw new Error('amplify.shelf.js:  window object not found.');
+    }
 
-//var rprefix = /^__shelf__/;
-var regex = new RegExp("^" + store.name); 
-function createFromStorageInterface(storageType, storage) {
-	store.addType(storageType, function(key, value, options) {
-		var storedValue, parsed, i, remove,
-			ret = value,
-			now = (new Date()).getTime();
+    var regex = new RegExp("^" + store.prefix);
+    function createFromStorageInterface( storageType, storage ) {
+	store.addType( storageType, function( key, value, options ) {
+	    var storedValue, parsed, i, remove,
+	    ret = value,
+	    now = (new Date()).getTime();
 
-		if (!key) {
-			ret = {};
-			remove = [];
-			i = 0;
-			try {
-				// accessing the length property works around a localStorage bug
-				// in Firefox 4.0 where the keys don't update cross-page
-				// we assign to key just to avoid Closure Compiler from removing
-				// the access as "useless code"
-				// https://bugzilla.mozilla.org/show_bug.cgi?id=662511
-				key = storage.length;
+	    if ( !key ) {
+		ret = {};
+		remove = [];
+		i = 0;
+		try {
+		    // accessing the length property works around a localStorage bug
+		    // in Firefox 4.0 where the keys don't update cross-page
+		    // we assign to key just to avoid Closure Compiler from removing
+		    // the access as "useless code"
+		    // https://bugzilla.mozilla.org/show_bug.cgi?id=662511
+		    key = storage.length;
 
-				while (key = storage.key(i++)) {
-					if (regex.test(key)) {
-						parsed = store.parse(storage.getItem(key));
-						if (parsed.expires && parsed.expires <= now) {
-							remove.push(key);
-						} else {
-							ret[key.replace(rprefix, "")] = parsed.data;
-						}
-					}
-				}
-				while (key = remove.pop()) {
-					storage.removeItem(key);
-				}
-			} catch (error) {}
-			return ret;
-		}
-
-		// protect against name collisions with direct storage
-		key = store.name + key;
-
-
-		if (value === undefined) {
-			storedValue = storage.getItem(key);
-			parsed = storedValue ? store.parse(storedValue) : { expires: -1 };
-			if (parsed.expires && parsed.expires <= now) {
-				storage.removeItem(key);
-			} else {
-				return parsed.data;
+		    while ( key = storage.key( i++ ) ) {
+			if ( regex.test( key ) ) {
+			    parsed = store.parse( storage.getItem( key ) );
+			    if ( parsed.expires && parsed.expires <= now ) {
+				remove.push( key );
+			    } else {
+				ret[ key.replace( rprefix, "" ) ] = parsed.data;
+			    }
 			}
-		} else {
-			if (value === null) {
-				storage.removeItem(key);
-			} else {
-				parsed = store.stringify({
-					data: value,
-					expires: options.expires ? now + options.expires : null
-				});
-				try {
-					storage.setItem(key, parsed);
-				// quota exceeded
-				} catch(error) {
-					// expire old data and try again
-					store[storageType]();
-					try {
-						storage.setItem(key, parsed);
-					} catch(error) {
-						throw store.error();
-					}
-				}
-			}
-		}
-
+		    }
+		    while ( key = remove.pop() ) {
+			storage.removeItem( key );
+		    }
+		} catch ( error ) {}
 		return ret;
+	    }
+
+	    // protect against name collisions with direct storage
+	    key = store.prefix + key;
+
+	    if ( value === undefined ) {
+		storedValue = storage.getItem( key );
+		parsed = storedValue ? store.parse( storedValue ) : { expires: -1 };
+		if ( parsed.expires && parsed.expires <= now ) {
+		    storage.removeItem( key );
+		} else {
+		    return parsed.data;
+		}
+	    } else {
+		if ( value === null ) {
+		    storage.removeItem( key );
+		} else {
+		    parsed = store.stringify({
+			data: value,
+			expires: options.expires ? now + options.expires : null
+		    });
+		    try {
+			storage.setItem( key, parsed );
+			// quota exceeded
+		    } catch( error ) {
+			// expire old data and try again
+			store[ storageType ]();
+			try {
+			    storage.setItem( key, parsed );
+			} catch( error ) {
+			    throw store.error();
+			}
+		    }
+		}
+	    }
+
+	    return ret;
 	});
-}
+    }
 
-// ## localStorage + sessionStorage
-// IE 8+, Firefox 3.5+, Safari 4+, Chrome 4+, Opera 10.5+, iPhone 2+, Android 2+
-for (var webStorageType in { localStorage: 1, sessionStorage: 1 }) {
+    // localStorage + sessionStorage
+    // IE 8+, Firefox 3.5+, Safari 4+, Chrome 4+, Opera 10.5+, iPhone 2+, Android 2+
+    for ( var webStorageType in { localStorage: 1, sessionStorage: 1 } ) {
+	// try/catch for file protocol in Firefox and Private Browsing in Safari 5
+	try {
+	    // Safari 5 in Private Browsing mode exposes localStorage
+	    // but doesn't allow storing data, so we attempt to store and remove an item.
+	    // This will unfortunately give us a false negative if we're at the limit.
+	    window[ webStorageType ].setItem(store.prefix, "x" );
+	    window[ webStorageType ].removeItem(store.prefix );
+	    createFromStorageInterface( webStorageType, window[ webStorageType ] );
+	} catch( e ) {}
+    }
+
+    // globalStorage
+    // non-standard: Firefox 2+
+    // https://developer.mozilla.org/en/dom/storage#globalStorage
+    if ( !store.types.localStorage && window.globalStorage ) {
 	// try/catch for file protocol in Firefox
 	try {
-		if (window[webStorageType].getItem) {
-			createFromStorageInterface(webStorageType, window[webStorageType]);
-		}
-	} catch(e) {}
-}
+	    createFromStorageInterface( "globalStorage",
+			                window.globalStorage[ window.location.hostname ] );
+	    // Firefox 2.0 and 3.0 have sessionStorage and globalStorage
+	    // make sure we default to globalStorage
+	    // but don't default to globalStorage in 3.5+ which also has localStorage
+	    if ( store.type === "sessionStorage" ) {
+		store.type = "globalStorage";
+	    }
+	} catch( e ) {}
+    }
 
-// ## globalStorage
-// non-standard: Firefox 2+
-// https://developer.mozilla.org/en/dom/storage#globalStorage
-if (!store.types.localStorage && window.globalStorage) {
-	// try/catch for file protocol in Firefox
-	try {
-		createFromStorageInterface("globalStorage",
-			window.globalStorage[window.location.hostname]);
-		// Firefox 2.0 and 3.0 have sessionStorage and globalStorage
-		// make sure we default to globalStorage
-		// but don't default to globalStorage in 3.5+ which also has localStorage
-		if (store.type === "sessionStorage") {
-			store.type = "globalStorage";
-		}
-	} catch(e) {}
-}
-
-// ## userData
-// non-standard: IE 5+
-// http://msdn.microsoft.com/en-us/library/ms531424(v=vs.85).aspx
-(function() {
+    // userData
+    // non-standard: IE 5+
+    // http://msdn.microsoft.com/en-us/library/ms531424(v=vs.85).aspx
+    (function() {
 	// IE 9 has quirks in userData that are a huge pain
 	// rather than finding a way to detect these quirks
 	// we just don't register userData if we have localStorage
-	if (store.types.localStorage) {
-		return;
+	if ( store.types.localStorage ) {
+	    return;
 	}
 
 	// append to html instead of body so we can do this from the head
-	var div = document.createElement("div"),
-		attrKey = "shelf";
+	var div = document.createElement( "div" ),
+	attrKey = store.prefix; // was "amplify" and not __amplify__
 	div.style.display = "none";
-	document.getElementsByTagName("head")[0].appendChild(div);
+	document.getElementsByTagName( "head" )[ 0 ].appendChild( div );
 
 	// we can't feature detect userData support
 	// so just try and see if it fails
 	// surprisingly, even just adding the behavior isn't enough for a failure
 	// so we need to load the data as well
 	try {
-		div.addBehavior("#default#userdata");
-		div.load(attrKey);
-	} catch(e) {
-		div.parentNode.removeChild(div);
-		return;
+	    div.addBehavior( "#default#userdata" );
+	    div.load( attrKey );
+	} catch( e ) {
+	    div.parentNode.removeChild( div );
+	    return;
 	}
 
-	store.addType("userData", function(key, value, options) {
-		div.load(attrKey);
-		var attr, parsed, prevValue, i, remove,
-			ret = value,
-			now = (new Date()).getTime();
+	store.addType( "userData", function( key, value, options ) {
+	    div.load( attrKey );
+	    var attr, parsed, prevValue, i, remove,
+	    ret = value,
+	    now = (new Date()).getTime();
 
-		if (!key) {
-			ret = {};
-			remove = [];
-			i = 0;
-			while (attr = div.XMLDocument.documentElement.attributes[i++]) {
-				parsed = store.parse(attr.value);
-				if (parsed.expires && parsed.expires <= now) {
-					remove.push(attr.name);
-				} else {
-					ret[attr.name] = parsed.data;
-				}
-			}
-			while (key = remove.pop()) {
-				div.removeAttribute(key);
-			}
-			div.save(attrKey);
-			return ret;
+	    if ( !key ) {
+		ret = {};
+		remove = [];
+		i = 0;
+		while ( attr = div.XMLDocument.documentElement.attributes[ i++ ] ) {
+		    parsed = store.parse( attr.value );
+		    if ( parsed.expires && parsed.expires <= now ) {
+			remove.push( attr.name );
+		    } else {
+			ret[ attr.name ] = parsed.data;
+		    }
 		}
-
-		// convert invalid characters to dashes
-		// http://www.w3.org/TR/REC-xml/#NT-Name
-		// simplified to assume the starting character is valid
-		// also removed colon as it is invalid in HTML attribute names
-		key = key.replace(/[^-._0-9A-Za-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u37f-\u1fff\u200c-\u200d\u203f\u2040\u2070-\u218f]/g, "-");
-		// adjust invalid starting character to deal with our simplified sanitization
-		key = key.replace(/^-/, "_-");
-
-		if (value === undefined) {
-			attr = div.getAttribute(key);
-			parsed = attr ? store.parse(attr) : { expires: -1 };
-			if (parsed.expires && parsed.expires <= now) {
-				div.removeAttribute(key);
-			} else {
-				return parsed.data;
-			}
-		} else {
-			if (value === null) {
-				div.removeAttribute(key);
-			} else {
-				// we need to get the previous value in case we need to rollback
-				prevValue = div.getAttribute(key);
-				parsed = store.stringify({
-					data: value,
-					expires: (options.expires ? (now + options.expires) : null)
-				});
-				div.setAttribute(key, parsed);
-			}
+		while ( key = remove.pop() ) {
+		    div.removeAttribute( key );
 		}
-
-		try {
-			div.save(attrKey);
-		// quota exceeded
-		} catch (error) {
-			// roll the value back to the previous value
-			if (prevValue === null) {
-				div.removeAttribute(key);
-			} else {
-				div.setAttribute(key, prevValue);
-			}
-
-			// expire old data and try again
-			store.userData();
-			try {
-				div.setAttribute(key, parsed);
-				div.save(attrKey);
-			} catch (error) {
-				// roll the value back to the previous value
-				if (prevValue === null) {
-					div.removeAttribute(key);
-				} else {
-					div.setAttribute(key, prevValue);
-				}
-				throw store.error();
-			}
-		}
+		div.save( attrKey );
 		return ret;
-	});
-}());
+	    }
 
+	    // convert invalid characters to dashes
+	    // http://www.w3.org/TR/REC-xml/#NT-Name
+	    // simplified to assume the starting character is valid
+	    // also removed colon as it is invalid in HTML attribute names
+	    key = key.replace( /[^\-._0-9A-Za-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c-\u200d\u203f\u2040\u2070-\u218f]/g, "-" );
+	    // adjust invalid starting character to deal with our simplified sanitization
+	    key = key.replace( /^-/, "_-" );
+
+	    if ( value === undefined ) {
+		attr = div.getAttribute( key );
+		parsed = attr ? store.parse( attr ) : { expires: -1 };
+		if ( parsed.expires && parsed.expires <= now ) {
+		    div.removeAttribute( key );
+		} else {
+		    return parsed.data;
+		}
+	    } else {
+		if ( value === null ) {
+		    div.removeAttribute( key );
+		} else {
+		    // we need to get the previous value in case we need to rollback
+		    prevValue = div.getAttribute( key );
+		    parsed = store.stringify({
+			data: value,
+			expires: (options.expires ? (now + options.expires) : null)
+		    });
+		    div.setAttribute( key, parsed );
+		}
+	    }
+
+	    try {
+		div.save( attrKey );
+		// quota exceeded
+	    } catch ( error ) {
+		// roll the value back to the previous value
+		if ( prevValue === null ) {
+		    div.removeAttribute( key );
+		} else {
+		    div.setAttribute( key, prevValue );
+		}
+
+		// expire old data and try again
+		store.userData();
+		try {
+		    div.setAttribute( key, parsed );
+		    div.save( attrKey );
+		} catch ( error ) {
+		    // roll the value back to the previous value
+		    if ( prevValue === null ) {
+			div.removeAttribute( key );
+		    } else {
+			div.setAttribute( key, prevValue );
+		    }
+		    throw store.error();
+		}
+	    }
+	    return ret;
+	});
+    }());
 
 }(this));
 /**
  * ## Cookie storage for Shelf.js
+ * Copyright 2015 Stefano Balietti
  * 
+ * Original library from:
+ * See http://code.google.com/p/cookies/
  */
-
 (function(exports) {
 
-var store = exports.store;
-	
-if (!store) {
-	console.log('cookie.shelf.js: shelf.js core not found. Cookie storage not available.');
-	return;
-}
+    var store = exports.store;
+    
+    if (!store) {
+	throw new Error('cookie.shelf.js: shelf.js core not found.');
+    }
 
-if ('undefined' === typeof window) {
-	console.log('cookie.shelf.js: am I running in a browser? Cookie storage not available.');
-	return;
-}
+    if ('undefined' === typeof window) {
+	throw new Error('cookie.shelf.js: window object not found.');
+    }
 
-var cookie = (function() {
+    var cookie = (function() {
 	
-	var resolveOptions, assembleOptionsString, parseCookies, constructor, defaultOptions = {
-		expiresAt: null,
-		path: '/',
-		domain:  null,
-		secure: false
+	var resolveOptions, assembleOptionsString, parseCookies, constructor;
+        var defaultOptions = {
+	    expiresAt: null,
+	    path: '/',
+	    domain:  null,
+	    secure: false
 	};
 	
 	/**
-	* resolveOptions - receive an options object and ensure all options are present and valid, replacing with defaults where necessary
-	*
-	* @access private
-	* @static
-	* @parameter Object options - optional options to start with
-	* @return Object complete and valid options object
-	*/
+	 * resolveOptions - receive an options object and ensure all options
+         * are present and valid, replacing with defaults where necessary
+	 *
+	 * @access private
+	 * @static
+	 * @parameter Object options - optional options to start with
+	 * @return Object complete and valid options object
+	 */
 	resolveOptions = function(options){
-		
-		var returnValue, expireDate;
+	    
+	    var returnValue, expireDate;
 
-		if(typeof options !== 'object' || options === null){
-			returnValue = defaultOptions;
+	    if(typeof options !== 'object' || options === null){
+		returnValue = defaultOptions;
+	    }
+	    else {
+		returnValue = {
+		    expiresAt: defaultOptions.expiresAt,
+		    path: defaultOptions.path,
+		    domain: defaultOptions.domain,
+		    secure: defaultOptions.secure
+		};
+
+		if (typeof options.expiresAt === 'object' && options.expiresAt instanceof Date) {
+		    returnValue.expiresAt = options.expiresAt;
 		}
-		else {
-			returnValue = {
-				expiresAt: defaultOptions.expiresAt,
-				path: defaultOptions.path,
-				domain: defaultOptions.domain,
-				secure: defaultOptions.secure
-			};
-
-			if (typeof options.expiresAt === 'object' && options.expiresAt instanceof Date) {
-				returnValue.expiresAt = options.expiresAt;
-			}
-			else if (typeof options.hoursToLive === 'number' && options.hoursToLive !== 0){
-				expireDate = new Date();
-				expireDate.setTime(expireDate.getTime() + (options.hoursToLive * 60 * 60 * 1000));
-				returnValue.expiresAt = expireDate;
-			}
-
-			if (typeof options.path === 'string' && options.path !== '') {
-				returnValue.path = options.path;
-			}
-
-			if (typeof options.domain === 'string' && options.domain !== '') {
-				returnValue.domain = options.domain;
-			}
-
-			if (options.secure === true) {
-				returnValue.secure = options.secure;
-			}
+		else if (typeof options.hoursToLive === 'number' && options.hoursToLive !== 0){
+		    expireDate = new Date();
+		    expireDate.setTime(expireDate.getTime() + (options.hoursToLive * 60 * 60 * 1000));
+		    returnValue.expiresAt = expireDate;
 		}
 
-		return returnValue;
+		if (typeof options.path === 'string' && options.path !== '') {
+		    returnValue.path = options.path;
+		}
+
+		if (typeof options.domain === 'string' && options.domain !== '') {
+		    returnValue.domain = options.domain;
+		}
+
+		if (options.secure === true) {
+		    returnValue.secure = options.secure;
+		}
+	    }
+
+	    return returnValue;
 	};
 	
 	/**
-	* assembleOptionsString - analyze options and assemble appropriate string for setting a cookie with those options
-	*
-	* @access private
-	* @static
-	* @parameter options OBJECT - optional options to start with
-	* @return STRING - complete and valid cookie setting options
-	*/
+	 * assembleOptionsString - analyze options and assemble appropriate string for setting a cookie with those options
+	 *
+	 * @access private
+	 * @static
+	 * @parameter options OBJECT - optional options to start with
+	 * @return STRING - complete and valid cookie setting options
+	 */
 	assembleOptionsString = function (options) {
-		options = resolveOptions(options);
+	    options = resolveOptions(options);
 
-		return (
-			(typeof options.expiresAt === 'object' && options.expiresAt instanceof Date ? '; expires=' + options.expiresAt.toGMTString() : '') +
-			'; path=' + options.path +
-			(typeof options.domain === 'string' ? '; domain=' + options.domain : '') +
-			(options.secure === true ? '; secure' : '')
-		);
+	    return (
+		(typeof options.expiresAt === 'object' && options.expiresAt instanceof Date ? '; expires=' + options.expiresAt.toGMTString() : '') +
+		    '; path=' + options.path +
+		    (typeof options.domain === 'string' ? '; domain=' + options.domain : '') +
+		    (options.secure === true ? '; secure' : '')
+	    );
 	};
 	
 	/**
-	* parseCookies - retrieve document.cookie string and break it into a hash with values decoded and unserialized
-	*
-	* @access private
-	* @static
-	* @return OBJECT - hash of cookies from document.cookie
-	*/
+	 * parseCookies - retrieve document.cookie string and break it into a hash with values decoded and unserialized
+	 *
+	 * @access private
+	 * @static
+	 * @return OBJECT - hash of cookies from document.cookie
+	 */
 	parseCookies = function() {
-		var cookies = {}, i, pair, name, value, separated = document.cookie.split(';'), unparsedValue;
-		for(i = 0; i < separated.length; i = i + 1){
-			pair = separated[i].split('=');
-			name = pair[0].replace(/^\s*/, '').replace(/\s*$/, '');
+	    var cookies = {}, i, pair, name, value, separated = document.cookie.split(';'), unparsedValue;
+	    for(i = 0; i < separated.length; i = i + 1){
+		pair = separated[i].split('=');
+		name = pair[0].replace(/^\s*/, '').replace(/\s*$/, '');
 
-			try {
-				value = decodeURIComponent(pair[1]);
-			}
-			catch(e1) {
-				value = pair[1];
-			}
-
-//						if (JSON && 'object' === typeof JSON && 'function' === typeof JSON.parse) {
-//							try {
-//								unparsedValue = value;
-//								value = JSON.parse(value);
-//							}
-//							catch (e2) {
-//								value = unparsedValue;
-//							}
-//						}
-
-			cookies[name] = store.parse(value);
+		try {
+		    value = decodeURIComponent(pair[1]);
 		}
-		return cookies;
+		catch(e1) {
+		    value = pair[1];
+		}
+
+                //						if (JSON && 'object' === typeof JSON && 'function' === typeof JSON.parse) {
+                //							try {
+                //								unparsedValue = value;
+                //								value = JSON.parse(value);
+                //							}
+                //							catch (e2) {
+                //								value = unparsedValue;
+                //							}
+                //						}
+
+		cookies[name] = store.parse(value);
+	    }
+	    return cookies;
 	};
 
 	constructor = function(){};
@@ -918,28 +933,28 @@ var cookie = (function() {
 	 * @return Mixed - Value of cookie as set; Null:if only one cookie is requested and is not found; Object:hash of multiple or all cookies (if multiple or all requested);
 	 */
 	constructor.prototype.get = function(cookieName) {
-		
-		var returnValue, item, cookies = parseCookies();
+	    
+	    var returnValue, item, cookies = parseCookies();
 
-		if(typeof cookieName === 'string') {
-			returnValue = (typeof cookies[cookieName] !== 'undefined') ? cookies[cookieName] : null;
+	    if(typeof cookieName === 'string') {
+		returnValue = (typeof cookies[cookieName] !== 'undefined') ? cookies[cookieName] : null;
+	    }
+	    else if (typeof cookieName === 'object' && cookieName !== null) {
+		returnValue = {};
+		for (item in cookieName) {
+		    if (typeof cookies[cookieName[item]] !== 'undefined') {
+			returnValue[cookieName[item]] = cookies[cookieName[item]];
+		    }
+		    else {
+			returnValue[cookieName[item]] = null;
+		    }
 		}
-		else if (typeof cookieName === 'object' && cookieName !== null) {
-			returnValue = {};
-			for (item in cookieName) {
-				if (typeof cookies[cookieName[item]] !== 'undefined') {
-					returnValue[cookieName[item]] = cookies[cookieName[item]];
-				}
-				else {
-					returnValue[cookieName[item]] = null;
-				}
-			}
-		}
-		else {
-			returnValue = cookies;
-		}
+	    }
+	    else {
+		returnValue = cookies;
+	    }
 
-		return returnValue;
+	    return returnValue;
 	};
 	
 	/**
@@ -950,19 +965,19 @@ var cookie = (function() {
 	 * @return Mixed - Object:hash of cookies whose names match the RegExp
 	 */
 	constructor.prototype.filter = function (cookieNameRegExp) {
-		var cookieName, returnValue = {}, cookies = parseCookies();
+	    var cookieName, returnValue = {}, cookies = parseCookies();
 
-		if (typeof cookieNameRegExp === 'string') {
-			cookieNameRegExp = new RegExp(cookieNameRegExp);
+	    if (typeof cookieNameRegExp === 'string') {
+		cookieNameRegExp = new RegExp(cookieNameRegExp);
+	    }
+
+	    for (cookieName in cookies) {
+		if (cookieName.match(cookieNameRegExp)) {
+		    returnValue[cookieName] = cookies[cookieName];
 		}
+	    }
 
-		for (cookieName in cookies) {
-			if (cookieName.match(cookieNameRegExp)) {
-				returnValue[cookieName] = cookies[cookieName];
-			}
-		}
-
-		return returnValue;
+	    return returnValue;
 	};
 	
 	/**
@@ -975,31 +990,31 @@ var cookie = (function() {
 	 * @return void
 	 */
 	constructor.prototype.set = function(cookieName, value, options){
-		if (typeof options !== 'object' || options === null) {
-			options = {};
-		}
+	    if (typeof options !== 'object' || options === null) {
+		options = {};
+	    }
 
-		if (typeof value === 'undefined' || value === null) {
-			value = '';
-			options.hoursToLive = -8760;
-		}
+	    if (typeof value === 'undefined' || value === null) {
+		value = '';
+		options.hoursToLive = -8760;
+	    }
 
-		else if (typeof value !== 'string'){
-//						if(typeof JSON === 'object' && JSON !== null && typeof store.stringify === 'function') {
-//							
-//							value = JSON.stringify(value);
-//						}
-//						else {
-//							throw new Error('cookies.set() received non-string value and could not serialize.');
-//						}
-			
-			value = store.stringify(value);
-		}
+	    else if (typeof value !== 'string'){
+                //						if(typeof JSON === 'object' && JSON !== null && typeof store.stringify === 'function') {
+                //							
+                //							value = JSON.stringify(value);
+                //						}
+                //						else {
+                //							throw new Error('cookies.set() received non-string value and could not serialize.');
+                //						}
+		
+		value = store.stringify(value);
+	    }
 
 
-		var optionsString = assembleOptionsString(options);
+	    var optionsString = assembleOptionsString(options);
 
-		document.cookie = cookieName + '=' + encodeURIComponent(value) + optionsString;
+	    document.cookie = cookieName + '=' + encodeURIComponent(value) + optionsString;
 	};
 	
 	/**
@@ -1011,24 +1026,24 @@ var cookie = (function() {
 	 * @return void
 	 */
 	constructor.prototype.del = function(cookieName, options) {
-		var allCookies = {}, name;
+	    var allCookies = {}, name;
 
-		if(typeof options !== 'object' || options === null) {
-			options = {};
-		}
+	    if(typeof options !== 'object' || options === null) {
+		options = {};
+	    }
 
-		if(typeof cookieName === 'boolean' && cookieName === true) {
-			allCookies = this.get();
-		}
-		else if(typeof cookieName === 'string') {
-			allCookies[cookieName] = true;
-		}
+	    if(typeof cookieName === 'boolean' && cookieName === true) {
+		allCookies = this.get();
+	    }
+	    else if(typeof cookieName === 'string') {
+		allCookies[cookieName] = true;
+	    }
 
-		for(name in allCookies) {
-			if(typeof name === 'string' && name !== '') {
-				this.set(name, null, options);
-			}
+	    for(name in allCookies) {
+		if(typeof name === 'string' && name !== '') {
+		    this.set(name, null, options);
 		}
+	    }
 	};
 	
 	/**
@@ -1038,16 +1053,16 @@ var cookie = (function() {
 	 * @return Boolean
 	 */
 	constructor.prototype.test = function() {
-		var returnValue = false, testName = 'cT', testValue = 'data';
+	    var returnValue = false, testName = 'cT', testValue = 'data';
 
-		this.set(testName, testValue);
+	    this.set(testName, testValue);
 
-		if(this.get(testName) === testValue) {
-			this.del(testName);
-			returnValue = true;
-		}
+	    if(this.get(testName) === testValue) {
+		this.del(testName);
+		returnValue = true;
+	    }
 
-		return returnValue;
+	    return returnValue;
 	};
 	
 	/**
@@ -1058,38 +1073,38 @@ var cookie = (function() {
 	 * @return void
 	 */
 	constructor.prototype.setOptions = function(options) {
-		if(typeof options !== 'object') {
-			options = null;
-		}
+	    if(typeof options !== 'object') {
+		options = null;
+	    }
 
-		defaultOptions = resolveOptions(options);
+	    defaultOptions = resolveOptions(options);
 	};
 
 	return new constructor();
-})();
+    })();
 
-// if cookies are supported by the browser
-if (cookie.test()) {
+    // if cookies are supported by the browser
+    if (cookie.test()) {
 
-	store.addType("cookie", function (key, value, options) {
-		
-		if ('undefined' === typeof key) {
-			return cookie.get();
-		}
+	store.addType("cookie", function(key, value, options) {
+	    
+	    if ('undefined' === typeof key) {
+		return cookie.get();
+	    }
 
-		if ('undefined' === typeof value) {
-			return cookie.get(key);
-		}
-		
-		// Set to NULL means delete
-		if (value === null) {
-			cookie.del(key);
-			return null;
-		}
+	    if ('undefined' === typeof value) {
+		return cookie.get(key);
+	    }
+	    
+	    // Set to NULL means delete
+	    if (value === null) {
+		cookie.del(key);
+		return null;
+	    }
 
-		return cookie.set(key, value, options);		
+	    return cookie.set(key, value, options);		
 	});
-}
+    }
 
 }(this));
 /**
@@ -2148,7 +2163,7 @@ if (JSUS.isNodeJS()) {
                 // Pattern not found.
                 if (idx_start === -1) continue;
 
-                switch(key[0]) {
+                switch(key.charAt(0)) {
 
                 case '%': // Span.
 
@@ -2327,23 +2342,34 @@ if (JSUS.isNodeJS()) {
      * Adds attributes to an HTML element and returns it.
      *
      * Attributes are defined as key-values pairs.
-     * Attributes 'style', and 'label' are ignored.
+     * Attributes 'label' is ignored.
      *
-     * @see DOM.style
      * @see DOM.addLabel
-     *
      */
     DOM.addAttributes2Elem = function(e, a) {
+        var key;
         if (!e || !a) return e;
         if ('object' != typeof a) return e;
-        var specials = ['id', 'label'];
-        for (var key in a) {
+        for (key in a) {
             if (a.hasOwnProperty(key)) {
-                if (!JSUS.in_array(key, specials)) {
-                    e.setAttribute(key,a[key]);
-                } else if (key === 'id') {
+                if (key === 'id') {
                     e.id = a[key];
                 }
+                else if (key === 'class') {
+                    DOM.addClass(e, a[key]);
+                }
+                else if (key === 'style') {
+                    DOM.style(e, a[key]);
+                }
+                else if (key === 'label') {
+                    // Handle the case.
+                    JSUS.log('DOM.addAttributes2Elem: label attribute is not ' +
+                             'supported. Use DOM.addLabel instead.');
+                }
+                else {
+                    e.setAttribute(key, a[key]);
+                }
+
 
                 // TODO: handle special cases
                 // <!--
@@ -2371,12 +2397,15 @@ if (JSUS.isNodeJS()) {
      * a list of key-values pairs as text-value attributes for
      * the option.
      *
+     * @param {HTMLElement} select HTML select element
+     * @param {object} list Options to add to the select element
      */
     DOM.populateSelect = function(select, list) {
+        var key, opt;
         if (!select || !list) return;
-        for (var key in list) {
+        for (key in list) {
             if (list.hasOwnProperty(key)) {
-                var opt = document.createElement('option');
+                opt = document.createElement('option');
                 opt.value = list[key];
                 opt.appendChild(document.createTextNode(key));
                 select.appendChild(opt);
@@ -2389,6 +2418,7 @@ if (JSUS.isNodeJS()) {
      *
      * Removes all children from a node.
      *
+     * @param {HTMLElement} e HTML element.
      */
     DOM.removeChildrenFromNode = function(e) {
 
@@ -2671,7 +2701,10 @@ if (JSUS.isNodeJS()) {
      *
      */
     DOM.getIFrame = function(id, attributes) {
-        var attributes = {'name' : id}; // For Firefox
+        attributes = attributes || {};
+        if (!attributes.name) {
+            attributes.name = id; // For Firefox
+        }
         return this.getElement('iframe', id, attributes);
     };
 
@@ -2777,26 +2810,27 @@ if (JSUS.isNodeJS()) {
      * @see DOM.addBorder
      * @see DOM.style
      */
-    DOM.highlight = function(elem, code) {
+     DOM.highlight = function(elem, code) {
+        var color;
         if (!elem) return;
 
         // default value is ERR
         switch (code) {
         case 'OK':
-            var color =  'green';
+            color =  'green';
             break;
         case 'WARN':
-            var color = 'yellow';
+            color = 'yellow';
             break;
         case 'ERR':
-            var color = 'red';
+            color = 'red';
             break;
         default:
-            if (code[0] === '#') {
-                var color = code;
+            if (code.charAt(0) === '#') {
+                color = code;
             }
             else {
-                var color = 'red';
+                color = 'red';
             }
         }
 
@@ -2825,23 +2859,24 @@ if (JSUS.isNodeJS()) {
      * ### DOM.style
      *
      * Styles an element as an in-line css.
-     * Takes care to add new styles, and not overwriting previuous
-     * attributes.
      *
-     * Returns the element.
+     * Existing style properties are maintained, and new ones added.
      *
-     * @see DOM.setAttribute
+     * @param {HTMLElement} elem The element to style
+     * @param {object} Objects containing the properties to add.
+     * @return {HTMLElement} elem The styled element
      */
     DOM.style = function(elem, properties) {
-        var style, i;
+        var i;
         if (!elem || !properties) return;
         if (!DOM.isElement(elem)) return;
 
-        style = '';
         for (i in properties) {
-            style += i + ': ' + properties[i] + '; ';
-        };
-        return elem.setAttribute('style', style);
+            if (properties.hasOwnProperty(i)) {
+                elem.style[i] = properties[i];
+            }
+        }
+        return elem;
     };
 
     /**
@@ -2885,11 +2920,11 @@ if (JSUS.isNodeJS()) {
         }
         return el;
     };
-    
+
     /**
      * ## DOM.getIFrameDocument
      *
-     * Returns a reference to the document of an iframe object 
+     * Returns a reference to the document of an iframe object
      *
      * @param {HTMLIFrameElement} iframe The iframe object
      * @return {HTMLDocument|undefined} The document of the iframe, or
@@ -2919,53 +2954,98 @@ if (JSUS.isNodeJS()) {
             contentDocument.getElementsByTagName('html')[0];
     };
 
+    /**
+     * ### DOM.getElementsByClassName
+     *
+     * Gets the first available child of an IFrame
+     *
+     * Tries head, body, lastChild and the HTML element
+     *
+     * @param {object} document The document object of a window or iframe
+     * @param {string} className The requested className
+     * @param {string}  nodeName Optional. If set only elements with
+     *   the specified tag name will be searched
+     * @return {array} Array of elements with the requested class name
+     *
+     * @see https://gist.github.com/E01T/6088383
+     */
+    DOM.getElementsByClassName = function(document, className, nodeName) {
+        var result, node, tag, seek, i, rightClass;
+        result = [], tag = nodeName || '*';
+        if (document.evaluate) {
+            seek = '//'+ tag +'[@class="'+ className +'"]';
+            seek = document.evaluate(seek, document, null, 0, null );
+            while ((node = seek.iterateNext())) {
+                result.push(node);
+            }
+        }
+        else {
+            rightClass = new RegExp( '(^| )'+ className +'( |$)' );
+            seek = document.getElementsByTagName(tag);
+            for (i = 0; i < seek.length; i++)
+                if (rightClass.test((node = seek[i]).className )) {
+                    result.push(seek[i]);
+                }
+        }
+        return result;
+    };
+
     JSUS.extend(DOM);
 
 })('undefined' !== typeof JSUS ? JSUS : module.parent.exports.JSUS);
 /**
  * # EVAL
  *
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * Collection of static functions related to the evaluation
  * of strings as javascript commands
  * ---
  */
-
 (function(JSUS) {
 
-function EVAL(){};
+    function EVAL(){};
 
-/**
- * ## EVAL.eval
- *
- * Allows to execute the eval function within a given
- * context.
- *
- * If no context is passed a reference, `this` is used.
- *
- * @param {string} str The command to executes
- * @param {object} context Optional. The context of execution. Defaults, `this`
- * @return {mixed} The return value of the executed commands
- *
- * @see eval
- * @see JSON.parse
- */
-EVAL.eval = function(str, context) {
-    var func;
-    if (!str) return;
-    context = context || this;
-    // Eval must be called indirectly
-    // i.e. eval.call is not possible
-    func = function(str) {
-        // TODO: Filter str
-        return eval(str);
-    }
-    return func.call(context, str);
-};
+    /**
+     * ## EVAL.eval
+     *
+     * Cross-browser eval function with context.
+     *
+     * If no context is passed a reference, `this` is used.
+     *
+     * In old IEs it will use _window.execScript_ instead.
+     *
+     * @param {string} str The command to executes
+     * @param {object} context Optional. Execution context. Defaults, `this`
+     * @return {mixed} The return value of the executed commands
+     *
+     * @see eval
+     * @see execScript
+     * @see JSON.parse
+     */
+    EVAL.eval = function(str, context) {
+        var func;
+        if (!str) return;
+        context = context || this;
+        // Eval must be called indirectly
+        // i.e. eval.call is not possible
+        func = function(str) {
+            // TODO: Filter str.
+            str = '(' + str + ')';
+            if (window && window.execScript) {
+                // Notice: execScript doesn’t return anything.
+                window.execScript('__my_eval__ = ' + str);
+                return __my_eval__;
+            }
+            else {
+                return eval(str);
+            }
+        }
+        return func.call(context, str);
+    };
 
-JSUS.extend(EVAL);
+    JSUS.extend(EVAL);
 
 })('undefined' !== typeof JSUS ? JSUS : module.parent.exports.JSUS);
 /**
@@ -4050,7 +4130,7 @@ JSUS.extend(EVAL);
      * @param {number} b The upper limit
      * @return {array} The randomly shuffled sequence.
      *
-     * @see JSUS.seq
+     * @see RANDOM.seq
      */
     RANDOM.sample = function(a, b) {
         var out;
@@ -4058,6 +4138,220 @@ JSUS.extend(EVAL);
         if (!out) return false;
         return JSUS.shuffle(out);
     };
+
+    /**
+     * ## RANDOM.sample
+     *
+     * Returns a new generator of normally distributed pseudo random numbers
+     *
+     * The generator is independent from RANDOM.nextNormal
+     * 
+     * @return {function} An independent generator 
+     * 
+     * @see RANDOM.nextNormal
+     */
+    RANDOM.getNormalGenerator = function() {
+
+        return (function() {
+
+            var oldMu, oldSigma;    
+            var x2, multiplier, genReady;    
+            
+            return function normal(mu, sigma) {
+                
+                var x1, u1, u2, v1, v2, s;
+                
+                if ('number' !== typeof mu) {
+                    throw new TypeError('nextNormal: mu must be number.');
+                }
+                if ('number' !== typeof sigma) {
+                    throw new TypeError('nextNormal: sigma must be number.');
+                }
+
+                if (mu !== oldMu || sigma !== oldSigma) {
+                    genReady = false;
+                    oldMu = mu;
+                    oldSigma = sigma;
+                }
+
+                if (genReady) {     
+                    genReady = false;
+                    return (sigma * x2) + mu;
+                }
+                
+                u1 = Math.random();
+                u2 = Math.random();
+                
+                // Normalize between -1 and +1.
+                v1 = (2 * u1) - 1;
+                v2 = (2 * u2) - 1; 
+                
+                s = (v1 * v1) + (v2 * v2);
+                
+                // Condition is true on average 1.27 times, 
+                // with variance equal to 0.587.
+                if (s >= 1) {
+                    return normal(mu, sigma);
+                }
+                
+                multiplier = Math.sqrt(-2 * Math.log(s) / s);
+                
+                x1 = v1 * multiplier;
+                x2 = v2 * multiplier;
+                
+                genReady = true;
+                
+                return (sigma * x1) + mu;
+                
+            }
+        })();
+    }
+
+    /**
+     * Generates random numbers with Normal Gaussian distribution.
+     *
+     * User must specify the expected mean, and standard deviation a input 
+     * parameters.
+     *
+     * Implements the Polar Method by Knuth, "The Art Of Computer
+     * Programming", p. 117.
+     * 
+     * @param {number} mu The mean of the distribution
+     * param {number} sigma The standard deviation of the distribution
+     * @return {number} A random number following a Normal Gaussian distribution
+     *
+     * @see RANDOM.getNormalGenerator
+     */
+    RANDOM.nextNormal = RANDOM.getNormalGenerator();
+
+    /**
+     * Generates random numbers with LogNormal distribution.
+     *
+     * User must specify the expected mean, and standard deviation of the
+     * underlying gaussian distribution as input parameters.
+     * 
+     * @param {number} mu The mean of the gaussian distribution
+     * @param {number} sigma The standard deviation of the gaussian distribution
+     * @return {number} A random number following a LogNormal distribution
+     *
+     * @see RANDOM.nextNormal 
+     */
+    RANDOM.nextLogNormal = function(mu, sigma) {
+        if ('number' !== typeof mu) {
+            throw new TypeError('nextLogNormal: mu must be number.');
+        }
+        if ('number' !== typeof sigma) {
+            throw new TypeError('nextLogNormal: sigma must be number.');
+        }
+        return Math.exp(nextNormal(mu, sigma));
+    }
+
+    /**
+     * Generates random numbers with Exponential distribution.
+     *
+     * User must specify the lambda the _rate parameter_ of the distribution.
+     * The expected mean of the distribution is equal to `Math.pow(lamba, -1)`. 
+     * 
+     * @param {number} lambda The rate parameter
+     * @return {number} A random number following an Exponential distribution
+     */
+    RANDOM.nextExponential = function(lambda) {
+        if ('number' !== typeof lambda) {
+            throw new TypeError('nextExponential: lambda must be number.');
+        }
+        if (lambda <= 0) {
+            throw new TypeError('nextExponential: lambda must be greater than 0.');
+        }
+        return - Math.log(1 - Math.random()) / lambda;
+    }
+    
+    /**
+     * Generates random numbers following the Binomial distribution.
+     *
+     * User must specify the probability of success and the number of trials.
+     * 
+     * @param {number} p The probability of success
+     * @param {number} trials The number of trials
+     * @return {number} sum The sum of successes in n trials
+     */
+    RANDOM.nextBinomial = function(p, trials) {
+        var counter, sum;
+
+        if ('number' !== typeof p) {
+            throw new TypeError('nextBinomial: p must be number.');
+        }
+        if ('number' !== typeof trials) {
+            throw new TypeError('nextBinomial: trials must be number.');
+        }
+        if (p < 0 || p > 1) {
+            throw new TypeError('nextBinomial: p must between 0 and 1.');
+        }
+        if (trials < 1) {
+            throw new TypeError('nextBinomial: trials must be greater than 0.');
+        }
+        
+        counter = 0;
+        sum = 0;
+        
+        while(counter < trials){
+	    if (Math.random() < p) {	
+	        sum += 1;
+            }
+	    counter++;
+        }
+	
+        return sum;
+    };
+
+    /**
+     * Generates random numbers following the Gamma distribution.
+     *
+     * This function is experimental and untested. No documentation.
+     *
+     * @experimental
+     */
+    RANDOM.nextGamma = function(alpha, k) {
+        var intK, kDiv, alphaDiv;
+        var u1, u2, u3;
+        var x, i, len, tmp;
+
+        if ('number' !== typeof alpha) {
+            throw new TypeError('nextGamma: alpha must be number.');
+        }
+        if ('number' !== typeof k) {
+            throw new TypeError('nextGamma: k must be number.');
+        }
+        if (alpha < 1) {
+            throw new TypeError('nextGamma: alpha must be greater than 1.');
+        }
+        if (k < 1) {
+            throw new TypeError('nextGamma: k must be greater than 1.');
+        }
+
+        u1 = Math.random();
+        u2 = Math.random();
+        u3 = Math.random();
+
+        intK = Math.floor(k) + 3;
+        kDiv = 1 / k;
+        
+        alphaDiv = 1 / alpha;
+
+        x = 0;
+        for (i = 3 ; ++i < intK ; ) {
+            x += Math.log(Math.random());
+        }
+
+        x *= - alphaDiv; 
+
+        tmp = Math.log(u3) * 
+            (Math.pow(u1, kDiv) /
+             ((Math.pow(u1, kDiv) + Math.pow(u2, 1 / (1 - k)))));
+        
+        tmp *=  - alphaDiv;
+        
+        return x + tmp;
+    }
 
     JSUS.extend(RANDOM);
 
@@ -4355,7 +4649,7 @@ JSUS.extend(TIME);
                     return value;
                 }
                 else if (value.substring(0, len_func) === PARSE.marker_func) {
-                    return eval('('+value.substring(len_prefix)+')');
+                    return JSUS.eval(value.substring(len_prefix));
                 }
                 else if (value.substring(0, len_null) === PARSE.marker_null) {
                     return null;
@@ -7867,28 +8161,23 @@ JSUS.extend(TIME);
     , ('object' === typeof module && 'function' === typeof require) ? module.parent.exports.store || require('shelf.js/build/shelf-fs.js').store : this.store
 );
 /**
- * # nodeGame
- *
- * Social Experiments in the Browser
- *
- * Copyright(c) 2013 Stefano Balietti
+ * # nodeGame: Social Experiments in the Browser
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
- * nodeGame is a free, open source, event-driven javascript framework for on line,
- * multiplayer games in the browser.
+ * nodeGame is a free, open source, event-driven javascript framework,
+ * for on line multiplayer games in the browser.
  */
 (function(exports) {
-
     if ('undefined' !== typeof JSUS) exports.JSUS = JSUS;
     if ('undefined' !== typeof NDDB) exports.NDDB = NDDB;
     if ('undefined' !== typeof store) exports.store = store;
-    exports.support = JSUS.compatibility();        
-    
+    exports.support = JSUS.compatibility();
 })('object' === typeof module ? module.exports : (window.node = {}));
 
 /**
  * # Variables
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * `nodeGame` variables and constants module
@@ -8125,19 +8414,34 @@ JSUS.extend(TIME);
     };
 
     /**
-     * ### node.constants.stageLevels
+     * ### node.constants.windowLevels
      *
-     * Levels associated with the states of the stages of the Game
+     * Levels associated with the loading of the GameWindow object.
+     *
+     * @see GameWindow
+     * @see GameWindow.state
      */
     k.windowLevels = {
         UNINITIALIZED:  0, // GameWindow constructor called
         INITIALIZING:   1, // Executing init.
         INITIALIZED:    5, // Init executed.
         LOADING:       30, // Loading a new Frame.
-        LOADED:        40, // Frame Loaded.
-        LOCKING:       50, // The screen is about to be locked. 
-        LOCKED:        60, // The screen is locked.
-        UNLOCKING:     65  // The screen is about to be unlocked.
+        LOADED:        40  // Frame Loaded.
+    };
+
+    /**
+     * ### node.constants.screenState
+     *
+     * Levels describing whether the user can interact with the screen.
+     *
+     * @see GameWindow.screenState
+     * @see GameWindow.lockFrame
+     */
+    k.screenLevels = {
+        ACTIVE:        1,  // User can interact with screen (if LOADED)
+        UNLOCKING:     -1,  // The screen is about to be unlocked.
+        LOCKING:       -2, // The screen is about to be locked. 
+        LOCKED:        -3  // The screen is locked.
     };
 
     /**
@@ -8180,8 +8484,7 @@ JSUS.extend(TIME);
 
 /**
  * # Stepping Rules
- *
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * Collections of rules to determine whether the game should step.
@@ -8250,8 +8553,7 @@ JSUS.extend(TIME);
 );
 /**
  * # ErrorManager
- *
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * Handles the runtime errors.
@@ -8397,7 +8699,7 @@ JSUS.extend(TIME);
  *
  * Event emitter engine for `nodeGame`
  *
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * Keeps a register of events listeners.
@@ -8541,7 +8843,7 @@ JSUS.extend(TIME);
         ctx = node.game;
 
         // Useful for debugging.
-        if (this.node.conf.events.dumpEvents) {
+        if (this.node.conf.events && this.node.conf.events.dumpEvents) {
             this.node.log('F - ' + this.name + ': ' + type);
         }
 
@@ -9002,7 +9304,7 @@ JSUS.extend(TIME);
 /**
  * # GameStage
  *
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * Representation of the stage of a game:
@@ -9285,8 +9587,7 @@ JSUS.extend(TIME);
 );
 /**
  * # PlayerList
- *
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * Handles a collection of `Player` objects.
@@ -9992,7 +10293,7 @@ JSUS.extend(TIME);
 /**
  * # GameMsg
  *
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * `nodeGame` exchangeable data format.
@@ -10316,8 +10617,7 @@ JSUS.extend(TIME);
 
 /**
  * # Stager
- *
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * `nodeGame` container and builder of the game sequence
@@ -11509,7 +11809,7 @@ JSUS.extend(TIME);
 
 /**
  * # GamePlot
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * `nodeGame` container of game stages functions.
@@ -12324,7 +12624,7 @@ JSUS.extend(TIME);
 /**
  * # GameMsgGenerator
  *
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * `nodeGame` component rensponsible creating messages
@@ -12492,8 +12792,7 @@ JSUS.extend(TIME);
 );
 /**
  * # Socket
- *
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * `nodeGame` component responsible for dispatching events and messages.
@@ -13044,8 +13343,7 @@ JSUS.extend(TIME);
 );
 /**
  * # GameDB
- * 
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed 
  * 
  * ### Provides a simple, lightweight NO-SQL database for nodeGame
@@ -13113,6 +13411,7 @@ JSUS.extend(TIME);
         if (!this.stage) {
             this.hash('stage', function(gb) {
                 if (gb.stage) {
+                    debugger
                     return GameStage.toHash(gb.stage, 'S.s.r');
                 }
             });
@@ -13712,7 +14011,7 @@ JSUS.extend(TIME);
         node = this.node;
 
         if (this.getStateLevel() >= constants.stateLevels.FINISHING) {
-            node.warn('game.gameover called on a finishing game');
+            node.warn('game.gameover called on a finishing game.');
             return;
         }
 
@@ -14519,7 +14818,7 @@ JSUS.extend(TIME);
 /**
  * # GameSession
  *
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * `nodeGame` session manager
@@ -14873,7 +15172,7 @@ JSUS.extend(TIME);
 );
 /**
  * # GroupManager
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * `nodeGame` group manager.
@@ -16281,7 +16580,7 @@ JSUS.extend(TIME);
 /**
  * # RoleMapper
  * 
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed 
  * 
  * `nodeGame` manager of player ids and aliases.
@@ -16309,7 +16608,7 @@ JSUS.extend(TIME);
 
 /**
  * # Timer
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * Timing-related utility functions
@@ -16700,7 +16999,7 @@ JSUS.extend(TIME);
     /**
      * # GameTimer Class
      *
-     * Copyright(c) 2013 Stefano Balietti
+     * Copyright(c) 2014 Stefano Balietti
      * MIT Licensed
      *
      * Creates a controllable timer object for nodeGame.
@@ -17186,7 +17485,7 @@ JSUS.extend(TIME);
 
 /**
  * # nodeGame: Social Experiments in the Browser!
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * `nodeGame` is a free, open source javascript framework for on line,
@@ -17830,8 +18129,7 @@ JSUS.extend(TIME);
 );
 /**
  * # Log
- *
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * `nodeGame` logging module
@@ -17930,8 +18228,7 @@ JSUS.extend(TIME);
 );
 /**
  * # Setup
- *
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * `nodeGame` configuration module
@@ -18081,8 +18378,7 @@ JSUS.extend(TIME);
 
 /**
  * # Alias
- * 
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed 
  * 
  * `nodeGame` aliasing module
@@ -18169,8 +18465,7 @@ JSUS.extend(TIME);
 );
 /**
  * # Connect module
- * 
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed 
  * 
  * `nodeGame` connect module
@@ -18215,8 +18510,7 @@ JSUS.extend(TIME);
 );
 /**
  * # Player related functions
- *
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  * ---
  */
@@ -18267,8 +18561,7 @@ JSUS.extend(TIME);
 );
 /**
  * # NodeGameClient Events Handling  
- *
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * ---
@@ -18395,8 +18688,7 @@ JSUS.extend(TIME);
 
 /**
  * # NodeGameClient: SAY, SET, GET, DONE
- *
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  * ---
  */
@@ -18622,8 +18914,7 @@ JSUS.extend(TIME);
 );
 /**
  * # NodeGameClient Events Handling  
- *
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * ---
@@ -18736,9 +19027,8 @@ JSUS.extend(TIME);
 );
 
 /**
- * # Extra
- * 
- * Copyright(c) 2013 Stefano Balietti
+ * # Extra 
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed 
  * 
  * `nodeGame` extra functions
@@ -18820,8 +19110,7 @@ JSUS.extend(TIME);
 
 /**
  * # NodeGameClient JSON fetching  
- *
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * ---
@@ -18938,7 +19227,7 @@ JSUS.extend(TIME);
 );
 /**
  * # Listeners for incoming messages.
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  * ---
  */
@@ -19268,7 +19557,7 @@ JSUS.extend(TIME);
 
 /**
  * # Listeners for incoming messages.
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  * 
  * Internal listeners are not directly associated to messages,
@@ -19321,7 +19610,7 @@ JSUS.extend(TIME);
 
         function done() {
             node.game.willBeDone = false;
-            node.emit('BEFORE_DONE');
+            node.emit('REALLY_DONE');
             node.game.setStageLevel(stageLevels.DONE);
             // Step forward, if allowed.
             if (node.game.shouldStep()) {
@@ -19335,10 +19624,9 @@ JSUS.extend(TIME);
          * Registers the stageLevel _DONE_ and eventually steps forward.
          *
          * If a DONE handler is defined in the game-plot, it will execute it. 
-         * In case it returns FALSE, the update
-         * process is stopped.
+         * In case it returns FALSE, the update process is stopped.
          *
-         * @emit BEFORE_DONE
+         * @emit REALLY_DONE
          */
         this.events.ng.on('DONE', function() {
             // Execute done handler before updating stage.
@@ -19793,16 +20081,14 @@ JSUS.extend(TIME);
 /**
  * Exposing the node object
  */
-(function () {
-
+(function() {
     var tmp = new window.node.NodeGameClient();
     JSUS.mixin(tmp, window.node)
     window.node = tmp;
-
 })();
 /**
  * # GameWindow
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * GameWindow provides a handy API to interface nodeGame with the
@@ -19837,6 +20123,7 @@ JSUS.extend(TIME);
 
     var constants = node.constants;
     var windowLevels = constants.windowLevels;
+    var screenLevels = constants.screenLevels;
 
     // Allows just one update at the time to the counter of loading frames.
     var lockedUpdate = false;
@@ -19879,11 +20166,18 @@ JSUS.extend(TIME);
     }
 
     function onLoadIE(iframe, cb) {
-        var iframeWin, iframeDoc;
+        var iframeWin;
         iframeWin = iframe.contentWindow;
-        iframeDoc = W.getIFrameDocument(iframe);
+        // We cannot get the iframeDoc here and use it in completed. See below.
 
         function completed(event) {
+            var iframeDoc;
+
+            // IE < 10 gives 'Permission Denied' if trying to access
+            // the iframeDoc from the context of the function above.
+            // We need to re-get it from the DOM.
+            iframeDoc = JSUS.getIFrameDocument(iframe);
+
             // readyState === "complete" works also in oldIE.
             if (event.type === 'load' ||
                 iframeDoc.readyState === 'complete') {
@@ -20035,6 +20329,18 @@ JSUS.extend(TIME);
          */
         this.areLoading = 0;
 
+
+        /**
+         * ### GameWindow.cacheSupported
+         *
+         * Flag that marks whether caching is supported by the browser
+         *
+         * Caching requires to modify the documentElement.innerHTML property
+         * of the iframe document. This property is read-only in IE < 9.
+         */
+        this.cacheSupported = null;
+
+
         /**
          * ### GameWindow.cache
          *
@@ -20097,6 +20403,19 @@ JSUS.extend(TIME);
          */
         this.waitScreen = null;
 
+        /**
+         * ### GamwWindow.screenState
+         *
+         * Levels describing whether the user can interact with the frame.
+         *
+         * The _screen_ represents all the user can see on screen. 
+         * It includes the _frame_ area, but also the _header_.
+         *
+         * @see node.widgets.WaitScreen
+         * @see node.constants.screenLevels
+         */
+        this.screenState = node.constants.screenLevels.ACTIVE;
+
         // Init.
         this.init();
     }
@@ -20147,10 +20466,11 @@ JSUS.extend(TIME);
     GameWindow.prototype.setStateLevel = function(level) {
         if ('string' !== typeof level) {
             throw new TypeError('GameWindow.setStateLevel: ' +
-                                'level must be string');
+                                'level must be string.');
         }
         if ('undefined' === typeof windowLevels[level]) {
-            throw new Error('GameWindow.setStateLevel: unrecognized level.');
+            throw new Error('GameWindow.setStateLevel: unrecognized level: ' +
+                            level + '.');
         }
 
         this.state = windowLevels[level];
@@ -20180,8 +20500,42 @@ JSUS.extend(TIME);
      */
     GameWindow.prototype.isReady = function() {
         return this.state === windowLevels.INITIALIZED ||
-            this.state === windowLevels.LOADED ||
-            this.state === windowLevels.LOCKED;
+            this.state === windowLevels.LOADED;
+    };
+
+    /**
+     * ### GameWindow.setScreenLevel
+     *
+     * Validates and sets window's state level
+     *
+     * @param {string} level The level of the update
+     *
+     * @see constants.screenLevels
+     */
+    GameWindow.prototype.setScreenLevel = function(level) {
+        if ('string' !== typeof level) {
+            throw new TypeError('GameWindow.setScreenLevel: ' +
+                                'level must be string.');
+        }
+        if ('undefined' === typeof screenLevels[level]) {
+            throw new Error('GameWindow.setScreenLevel: unrecognized level: ' +
+                           level + '.');
+        }
+
+        this.screenState = screenLevels[level];
+    };
+
+    /**
+     * ### GameWindow.getScreenLevel
+     *
+     * Returns the current screen level
+     *
+     * @return {number} The screen level
+     *
+     * @see constants.screenLevels
+     */
+    GameWindow.prototype.getScreenLevel = function() {
+        return this.screenState;
     };
 
     /**
@@ -20663,11 +21017,58 @@ JSUS.extend(TIME);
     /**
      * ### GameWindow.preCache
      *
+     * Tests wether preChace is supported by the browser.
+     *
+     * Results are stored in _GameWindow.cacheSupported_.
+     *
+     * @param {function} cb Optional. The function to call once the test if
+     *   finished. It will be called regardless of success or failure.
+     * @param {string} uri Optional. The URI to test. Defaults,  
+     *   '/pages/testpage.htm';
+     *
+     * @see GameWindow.cacheSupported
+     */
+    GameWindow.prototype.preCacheTest = function(cb, uri) {
+        var iframe, iframeName;
+        uri = uri || '/pages/testpage.htm';
+        if ('string' !== typeof uri) {
+            throw new TypeError('GameWindow.precacheTest: uri must string or ' +
+                                'undefined.');
+        }
+        iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+        iframeName = 'preCacheTest';
+        iframe.id = iframeName;
+        iframe.name = iframeName;
+        document.body.appendChild(iframe);
+        iframe.contentWindow.location.replace(uri);
+        onLoad(iframe, function() {
+            try {
+                W.getIFrameDocument(iframe).documentElement.innerHTML = 'a';
+                W.cacheSupported = true;
+            }
+            catch(e) {
+                W.cacheSupported = false;
+            }
+            document.body.removeChild(iframe);
+            if (cb) cb();
+        });
+    };
+
+    /**
+     * ### GameWindow.preCache
+     *
      * Loads the HTML content of the given URI(s) into the cache
+     *
+     * If caching is not supported by the browser, the callback will be
+     * executed anyway. 
      *
      * @param {string|array} uris The URI(s) to cache
      * @param {function} callback Optional. The function to call once the
      *   caching is done
+     *
+     * @see GameWindow.cacheSupported
+     * @see GameWindow.preCacheTest
      */
     GameWindow.prototype.preCache = function(uris, callback) {
         var that;
@@ -20695,6 +21096,20 @@ JSUS.extend(TIME);
         }
 
         that = this;
+
+        // Before proceeding with caching, check if caching is supported.
+        if (this.cacheSupported === null) {
+            this.preCacheTest(function() {
+                that.preCache(uris, callback);
+            });
+            return;
+        }
+        else if (this.cacheSupported === false) {
+            node.warn('GameWindow.preCache: caching is not supported by ' +
+                      'your browser.');
+            if (callback) callback();
+            return;
+        }
 
         // Keep count of loaded URIs:
         loadedCount = 0;
@@ -20857,6 +21272,16 @@ JSUS.extend(TIME);
         this.setStateLevel('LOADING');
         that = this;
 
+        // Save ref to iframe window for later.
+        iframeWindow = iframe.contentWindow;
+        // Query readiness (so we know whether onload is going to be called):
+        iframeDocument = W.getIFrameDocument(iframe);
+        frameReady = iframeDocument.readyState;
+        // ...reduce it to a boolean:
+        frameReady = frameReady === 'interactive' || frameReady === 'complete';
+
+        // Begin loadFrame caching section.
+
         // Default options.
         loadCache = GameWindow.defaults.cacheDefaults.loadCache;
         storeCacheNow = GameWindow.defaults.cacheDefaults.storeCacheNow;
@@ -20896,33 +21321,42 @@ JSUS.extend(TIME);
                 }
             }
         }
-        // Save ref to iframe window for later.
-        iframeWindow = iframe.contentWindow;
-        // Query readiness (so we know whether onload is going to be called):
-        iframeDocument = W.getIFrameDocument(iframe);
-        frameReady = iframeDocument.readyState;
-        // ...reduce it to a boolean:
-        frameReady = frameReady === 'interactive' || frameReady === 'complete';
 
-        // If the last frame requested to be cached on closing, do that:
-        lastURI = this.currentURIs[iframeName];
+        if (this.cacheSupported === null) {            
+            this.preCacheTest(function() {
+                that.loadFrame(uri, func, opts);
+            });
+            return;           
+        }
 
-        if (this.cache.hasOwnProperty(lastURI) &&
+        if (this.cacheSupported === false) {
+            storeCacheNow = false;
+            storeCacheLater = false;
+            loadCache = false;
+        }
+        else {
+            // If the last frame requested to be cached on closing, do that:
+            lastURI = this.currentURIs[iframeName];
+
+            if (this.cache.hasOwnProperty(lastURI) &&
                 this.cache[lastURI].cacheOnClose) {
 
-            frameDocumentElement = iframeDocument.documentElement;
-            this.cache[lastURI].contents = frameDocumentElement.innerHTML;
+                frameDocumentElement = iframeDocument.documentElement;
+                this.cache[lastURI].contents = frameDocumentElement.innerHTML;
+            }
+
+            // Create entry for this URI in cache object
+            // and store cacheOnClose flag:
+            if (!this.cache.hasOwnProperty(uri)) {
+                this.cache[uri] = { contents: null, cacheOnClose: false };
+            }
+            this.cache[uri].cacheOnClose = storeCacheLater;
+
+            // Disable loadCache if contents aren't cached:
+            if (this.cache[uri].contents === null) loadCache = false;
         }
 
-        // Create entry for this URI in cache object
-        // and store cacheOnClose flag:
-        if (!this.cache.hasOwnProperty(uri)) {
-            this.cache[uri] = { contents: null, cacheOnClose: false };
-        }
-        this.cache[uri].cacheOnClose = storeCacheLater;
-
-        // Disable loadCache if contents aren't cached:
-        if (this.cache[uri].contents === null) loadCache = false;
+        // End loadFrame caching section.
 
         // Update frame's currently showing URI:
         this.currentURIs[iframeName] = uri;
@@ -21077,8 +21511,9 @@ JSUS.extend(TIME);
         var scriptNodes, scriptNode;
 
         contentDocument = W.getIFrameDocument(iframe);
-
-        scriptNodes = contentDocument.getElementsByClassName('injectedlib');
+        
+        scriptNodes = W.getElementsByClassName(contentDocument, 'injectedlib', 'script');
+        // scriptNodes = contentDocument.getElementsByClassName('injectedlib');
         for (idx = 0; idx < scriptNodes.length; idx++) {
             scriptNode = scriptNodes[idx];
             scriptNode.parentNode.removeChild(scriptNode);
@@ -21297,12 +21732,14 @@ JSUS.extend(TIME);
 );
 
 /**
- * # GameWindow selector module
- * Copyright(c) 2013 Stefano Balietti
+ * # GameWindow Screen Locker
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
- * Utility functions to create and manipulate meaninful HTML select lists for
- * nodeGame.
+ * Locks / Unlocks the screen.
+ *
+ * The _screen_ represents all the user can see on screen. 
+ * It includes the _frame_ area, but also the _header_.
  *
  * http://www.nodegame.org
  * ---
@@ -21314,68 +21751,67 @@ JSUS.extend(TIME);
     var J = node.JSUS;
 
     var GameWindow = node.GameWindow;
-    var windowLevels = node.constants.windowLevels;
+    var screenLevels = node.constants.screenLevels;
     
     /**
-     * ### GameWindow.lockFrame
+     * ### GameWindow.lockScreen
      *
-     * Locks the frame by opening the waitScreen widget on top
+     * Locks the screen by opening the waitScreen widget on top
      *
      * Requires the waitScreen widget to be loaded.
      *
-     * @param {string} text Optional. The text to be shown in the locked frame
+     * @param {string} text Optional. The text to be shown in the locked screen
      *
      * TODO: check if this can be called in any stage.
      */
-    GameWindow.prototype.lockFrame = function(text) {
+    GameWindow.prototype.lockScreen = function(text) {
         var that;
         that = this;
 
         if (!this.waitScreen) {
-            throw new Error('GameWindow.lockFrame: waitScreen not found.');
+            throw new Error('GameWindow.lockScreen: waitScreen not found.');
         }
         if (text && 'string' !== typeof text) {
-            throw new TypeError('GameWindow.lockFrame: text must be string ' +
+            throw new TypeError('GameWindow.lockScreen: text must be string ' +
                                 'or undefined');
         }
         if (!this.isReady()) {
-            setTimeout(function() { that.lockFrame(text); }, 100);
-            //throw new Error('GameWindow.lockFrame: window not ready.');
+            setTimeout(function() { that.lockScreen(text); }, 100);
         }
-        this.setStateLevel('LOCKING');
+        this.setScreenLevel('LOCKING');
         text = text || 'Screen locked. Please wait...';
         this.waitScreen.lock(text);
-        this.setStateLevel('LOCKED');
+        this.setScreenLevel('LOCKED');
     };
 
     /**
-     * ### GameWindow.unlockFrame
+     * ### GameWindow.unlockScreen
      *
-     * Unlocks the frame by removing the waitScreen widget on top
+     * Unlocks the screen by removing the waitScreen widget on top
      *
      * Requires the waitScreen widget to be loaded.
      */
-    GameWindow.prototype.unlockFrame = function() {
+    GameWindow.prototype.unlockScreen = function() {
         if (!this.waitScreen) {
-            throw new Error('GameWindow.unlockFrame: waitScreen not found.');
+            throw new Error('GameWindow.unlockScreen: waitScreen not found.');
         }
-        if (this.getStateLevel() !== windowLevels.LOCKED) {
-            throw new Error('GameWindow.unlockFrame: frame is not locked.');
+        if (!this.isScreenLocked()) {
+            throw new Error('GameWindow.unlockScreen: screen is not locked.');
         }
-        this.setStateLevel('UNLOCKING');
+        this.setScreenLevel('UNLOCKING');
         this.waitScreen.unlock();
-        this.setStateLevel('LOADED');
+        this.setScreenLevel('ACTIVE');
     };
 
     /**
-     * ### GameWindow.isFrameLocked
+     * ### GameWindow.isScreenLocked
      *
-     * TRUE, if the frame is locked.
+     * TRUE, if the screen is locked.
      *
-     * @see GameWindow.state
+     * @see GameWindow.screenState
      */
-    GameWindow.prototype.isFrameLocked = function() {
-        return this.getStateLevel() === windowLevels.LOCKED;
+    GameWindow.prototype.isScreenLocked = function() {
+        return this.getScreenLevel() !== screenLevels.ACTIVE;
     };
 })(
     // GameWindow works only in the browser environment. The reference
@@ -25864,7 +26300,7 @@ JSUS.extend(TIME);
 })(node);
 /**
  * # Feedback widget for nodeGame
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * Sends a feedback message to the server.
@@ -26796,7 +27232,7 @@ JSUS.extend(TIME);
 })(node);
 /**
  * # Requirements widget for nodeGame
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * Checks a list of requirements and displays the results.
@@ -26820,7 +27256,7 @@ JSUS.extend(TIME);
     
     // ## Meta-data
 
-    Requirements.version = '0.1';
+    Requirements.version = '0.2.0';
     Requirements.description = 'Checks a set of requirements and display the ' +
         'results';
 
@@ -26878,10 +27314,17 @@ JSUS.extend(TIME);
                                     'success-icon.png' : 'delete-icon.png');
             img = document.createElement('img');
             img.src = imgPath;
+
+            // Might be the full exception object.
+            if ('object' === typeof o.content.text) {
+                o.content.text = extractErrorMsg(o.content.text);
+            }
+
             text = document.createTextNode(o.content.text);
             span = document.createElement('span');
             span.className = 'requirement';
             span.appendChild(img);
+            
             span.appendChild(text);
             return span;
         }
@@ -26924,9 +27367,26 @@ JSUS.extend(TIME);
         return that.callbacks[i](update);
     }
 
+    function extractErrorMsg(e) {
+        var errMsg;
+        if (e.msg) {
+            errMsg = e.msg;
+        }
+        else if (e.message) {
+            errMsg = e.message;
+        }
+        else if (e.description) {
+            errMsg.description;
+        }
+        else {
+            errMsg = e.toString();
+        }
+        return errMsg;
+    }
+
     Requirements.prototype.checkRequirements = function(display) {
         var i, len;
-        var errors, cbErrors;
+        var errors, cbErrors, cbName, errMsg;
         if (!this.callbacks.length) {
             throw new Error('Requirements.checkRequirements: no callback ' +
                             'found.');
@@ -26941,11 +27401,16 @@ JSUS.extend(TIME);
                 cbErrors = resultCb(this, i);
             }
             catch(e) {
+                errMsg = extractErrorMsg(e);
                 this.updateStillChecking(-1);
-                errors.push('An exception occurred in requirement ' + 
-                            (this.callbacks[i].name || 'n.' + (i + 1)) +
-                            ': ' + e );
-                
+                if (this.callbacks[i] && this.callbacks[i].name) { 
+                    cbName = this.callbacks[i].name;
+                }
+                else {
+                    cbName = i + 1;
+                }
+                errors.push('An exception occurred in requirement n.' +
+                            cbName + ': ' + errMsg);                            
             }
             if (cbErrors) {
                 this.updateStillChecking(-1);
@@ -27088,7 +27553,8 @@ JSUS.extend(TIME);
         this.root = root;
         
         this.summary = document.createElement('span');
-        this.summary.appendChild(document.createTextNode('Evaluating requirements'));
+        this.summary.appendChild(
+            document.createTextNode('Evaluating requirements'));
         
         this.summaryUpdate = document.createElement('span');
         this.summary.appendChild(this.summaryUpdate);
@@ -27145,6 +27611,11 @@ JSUS.extend(TIME);
             }
         }
         
+        // We need to test node.Stager because it will be used in other tests.
+        if ('undefined' === typeof node.Stager) {
+            errors.push('node.Stager not found.');
+        }
+
         return errors;
     };
 
@@ -27154,30 +27625,41 @@ JSUS.extend(TIME);
         errors = [];
         that = this;
         oldIframe = W.getFrame();
-        oldIframeName = W.getFrameName();
-        oldIframeRoot = W.getFrameRoot();
-        root = W.getIFrameAnyChild(oldIframe || document);
+
+        if (oldIframe) {
+            oldIframeName = W.getFrameName();
+            oldIframeRoot = W.getFrameRoot();
+            root = W.getIFrameAnyChild(oldIframe);
+        }
+        else {
+            root = document.body;
+        }
+
         try {
-            testIframe = W.addIFrame(root, 'testIFrame');
+            testIframe = W.addIFrame(root, 'testIFrame', {
+                style: { display: 'none' } } );
             W.setFrame(testIframe, 'testIframe', root);
-            W.loadFrame('/pages/accessdenied.htm', function() {
+            W.loadFrame('/pages/testpage.htm', function() {
                 var found;
                 found = W.getElementById('root');
                 if (oldIframe) {
                     W.setFrame(oldIframe, oldIframeName, oldIframeRoot);
                 }
                 if (!found) {
-                    errors.push('W.loadFrame failed to load a test frame correctly.');
+                    errors.push('W.loadFrame failed to load a test frame ' +
+                                'correctly.');
                 }
                 root.removeChild(testIframe);
                 result(errors);
             });
         }
         catch(e) {
-            errors.push('W.loadFrame raised an error: ' + e);
+            errors.push('W.loadFrame raised an error: ' + extractErrorMsg(e));
             return errors;
         }        
     };
+
+    
 
     node.widgets.register('Requirements', Requirements);
 
@@ -27379,7 +27861,7 @@ JSUS.extend(TIME);
 })(node);
 /**
  * # StateDisplay widget for nodeGame
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * Display information about the state of a player.
@@ -27473,12 +27955,18 @@ JSUS.extend(TIME);
 
     StateDisplay.prototype.listeners = function() {
 	var that = this;
-
 	node.on('STEP_CALLBACK_EXECUTED', function() {
 	    that.updateAll();
-	});
+        });
     };
 
+    StateDisplay.prototype.destroy = function() {
+        if (this.table) {
+            this.root.removeChild(this.table.table);
+            this.table = null;
+        }
+        // node.off('STEP_CALLBACK_EXECUTED', updateTable);
+    };
 })(node);
 /**
  * # VisualState widget for nodeGame
@@ -27593,7 +28081,7 @@ JSUS.extend(TIME);
 })(node);
 /**
  * # VisualTimer widget for nodeGame
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * Display a timer for the game. Timer can trigger events. 
@@ -27654,8 +28142,6 @@ JSUS.extend(TIME);
         var t;
         
         J.mixout(options, this.options);
-
-        console.log(options);
 
         if (options.hooks) {
             if (!options.hooks instanceof Array) {
@@ -27728,7 +28214,6 @@ JSUS.extend(TIME);
 
     VisualTimer.prototype.start = function() {
         this.updateDisplay();
-        console.log(this.gameTimer);
         this.gameTimer.start();
     };
 
@@ -27751,6 +28236,22 @@ JSUS.extend(TIME);
         this.stop();
         this.timerDiv.innerHTML = '0:0';
     };
+    
+    /**
+     * ## VisualTimer.doTimeUp
+     *
+     * Stops the timer and calls the timeup
+     *
+     * It will call timeup even if the game is paused.
+     *
+     * @see VisualTimer.stop
+     * @see GameTimer.fire
+     */
+    VisualTimer.prototype.doTimeUp = function() {
+        this.stop();
+        this.gameTimer.timeLeft = 0;
+        this.gameTimer.fire(this.gameTimer.timeup);
+    };
 
     VisualTimer.prototype.listeners = function() {
         var that = this;
@@ -27767,7 +28268,7 @@ JSUS.extend(TIME);
             }
         });
 
-        node.on('DONE', function() {
+        node.on('REALLY_DONE', function() {
             that.stop();
             that.timerDiv.className = 'strike';
         });
@@ -27824,7 +28325,7 @@ JSUS.extend(TIME);
 
 /**
  * # WaitScreen widget for nodeGame
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * Display information about the state of a player.
@@ -27846,7 +28347,7 @@ JSUS.extend(TIME);
 
     // ## Meta-data
 
-    WaitScreen.version = '0.6.0';
+    WaitScreen.version = '0.7.0';
     WaitScreen.description = 'Show a standard waiting screen';
 
     function WaitScreen(options) {
@@ -27859,7 +28360,7 @@ JSUS.extend(TIME);
             waiting: options.waitingText ||
                 'Waiting for other players to be done...',
             stepping: options.steppingText ||
-                'Initializing, game will start soon...'
+                'Initializing game step, will be ready soon...'
         };
 
 	this.waitingDiv = null;
@@ -27883,9 +28384,22 @@ JSUS.extend(TIME);
         }
     };
 
+    WaitScreen.prototype.updateText = function(text, append) {
+        append = append || false;
+        if ('string' !== typeof text) {
+            throw new TypeError('WaitScreen.updateText: text must be string.');
+        }
+        if (append) {
+            this.waitingDiv.appendChild(document.createTextNode(text));
+        }
+        else {
+            this.waitingDiv.innerHTML = text;
+        }
+    };
+
     WaitScreen.prototype.append = function(root) {
         // Saves a reference of the widget in GameWindow
-        // that will use it in the GameWindow.lockFrame method.
+        // that will use it in the GameWindow.lockScreen method.
         W.waitScreen = this;
         this.root = root;
 	return root;
@@ -27897,26 +28411,50 @@ JSUS.extend(TIME);
 
     WaitScreen.prototype.listeners = function() {
         var that = this;
-        node.on('BEFORE_DONE', function(text) {
-            that.lock(text || that.text.waiting)
+
+        // was using WaitScreen method before.
+        // now using GameWindow lock / unlock, so that the state level
+        // is updated. Needs some testing.
+
+        node.on('REALLY_DONE', function(text) {
+            text = text || that.text.waiting;
+            if (W.isScreenLocked()) {
+                that.updateText(text);
+            }
+            else {
+                W.lockScreen(text);
+            }
         });
 
         node.on('STEPPING', function(text) {
-            that.unlock(text || that.text.stepping)
+            text = text || that.text.stepping;
+            if (W.isScreenLocked()) {
+                that.updateText(text);
+            }
+            else {
+                W.lockScreen(text);
+            }
+            // was wrong before... Check this.
+            // that.unlock(text || that.text.stepping)
         });
 
         node.on('PLAYING', function() {
-            that.unlock();
+            if (W.isScreenLocked()) {
+                W.unlockScreen();
+            }
         });
 
         node.on('RESUMED', function() {
-            that.unlock();
+            if (W.isScreenLocked()) {
+                W.unlockScreen();
+            }
         });
-
     };
 
     WaitScreen.prototype.destroy = function() {
-        this.unlock();
+        if (W.isScreenLocked()) {
+            this.unlock();
+        }
         if (this.waitingDiv) {
             this.root.removeChild(this.waitingDiv);
         }
