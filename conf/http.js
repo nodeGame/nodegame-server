@@ -1,11 +1,9 @@
 /**
  * # http.js
- *
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * Configuration file for Express server in nodegame-server
- *
  * ---
  */
 module.exports = configure;

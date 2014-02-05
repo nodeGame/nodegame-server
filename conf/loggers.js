@@ -1,9 +1,18 @@
+/**
+ * # loggers.js
+ * Copyright(c) 2014 Stefano Balietti
+ * MIT Licensed
+ *
+ * Configuration file for Winston.js in nodegame-server
+ * ---
+ */
+
 module.exports = configure;
 
 var path = require('path');
 
-function configure (loggers) {
-    
+function configure(loggers){
+
     //	var config = {
     //		levels: {
     //		    silly: 0,
@@ -24,10 +33,10 @@ function configure (loggers) {
     //		    sillyor: 'red'
     //		  }
     //	};
-    
+
     var rootDir = path.resolve(__dirname, '..');
     var logDir = rootDir + '/log/';
-    
+
     loggers.add('servernode', {
 	console: {
 	    level: 'error',
@@ -41,7 +50,7 @@ function configure (loggers) {
 	    maxFiles: 10
 	}
     });
-    
+
     loggers.add('channel', {
 	console: {
 	    level: 'error',
@@ -55,8 +64,8 @@ function configure (loggers) {
 	    maxFiles: 10
 	}
     });
-    
-    
+
+
     loggers.add('messages', {
         console: {
 	    level: 'error',
@@ -68,6 +77,6 @@ function configure (loggers) {
 	    filename: logDir + 'messages'
 	}
     });
-    
+
     return true;
 }
