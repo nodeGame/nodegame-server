@@ -8361,7 +8361,9 @@ JSUS.extend(TIME);
         stop: 'stop',
         restart: 'restart',
         step: 'step',
-        goto_step: 'goto_step'
+        goto_step: 'goto_step',
+        clear_buffer: 'clear_buffer',
+        erase_buffer: 'erase_buffer'
     };
 
     /**
@@ -13147,6 +13149,19 @@ JSUS.extend(TIME);
     };
 
     /**
+     * ### Socket.eraseBuffer
+     *
+     * Removes all messages currently in the buffer
+     *
+     * This operation is not reversible
+     *
+     * @see Socket.clearBuffer
+     */
+    Socket.prototype.eraseBuffer = function() {
+        this.buffer = [];
+    };
+
+    /**
      * ### Socket.startSession
      *
      * Initializes a nodeGame session
@@ -13411,7 +13426,6 @@ JSUS.extend(TIME);
         if (!this.stage) {
             this.hash('stage', function(gb) {
                 if (gb.stage) {
-                    debugger
                     return GameStage.toHash(gb.stage, 'S.s.r');
                 }
             });
@@ -19776,6 +19790,24 @@ JSUS.extend(TIME);
             node.emit('BEFORE_GAMECOMMAND', gcommands.goto_step, step);
             // Conditions checked inside gotoStep.
             node.game.gotoStep(new GameStage(step));
+        });
+
+        /**
+         * ## NODEGAME_GAMECOMMAND: clear_buffer
+         *
+         */
+        this.events.ng.on(CMD + gcommands.clear_buffer, function() {
+            node.emit('BEFORE_GAMECOMMAND', gcommands.clear_buffer);
+            node.socket.clearBuffer();
+        });
+
+        /**
+         * ## NODEGAME_GAMECOMMAND: erase_buffer
+         *
+         */
+        this.events.ng.on(CMD + gcommands.erase_buffer, function() {
+            node.emit('BEFORE_GAMECOMMAND', gcommands.clear_buffer);
+            node.socket.eraseBuffer();
         });
 
         this.internalAdded = true;
