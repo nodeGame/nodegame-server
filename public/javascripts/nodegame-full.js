@@ -1108,162 +1108,162 @@ if (!JSON) {
 
 }(this));
 /**
- * # JSUS: JavaScript UtilS. 
- * Copyright(c) 2013 Stefano Balietti
+ * # JSUS: JavaScript UtilS.
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
- * 
+ *
  * Collection of general purpose javascript functions. JSUS helps!
- * 
+ *
  * See README.md for extra help.
+ * ---
  */
+(function(exports) {
 
-(function (exports) {
-    
     var JSUS = exports.JSUS = {};
-    
-// ## JSUS._classes
-// Reference to all the extensions
+
+    // ## JSUS._classes
+    // Reference to all the extensions
     JSUS._classes = {};
-    
-/**
- * ## JSUS.log
- * 
- * Reference to standard out, by default `console.log`
- * Override to redirect the standard output of all JSUS functions.
- * 
- * @param {string} txt Text to output
- * 
- */
-JSUS.log = function (txt) {
-    console.log(txt);
-};
-    
-/**
- * ## JSUS.extend
- * 
- * Extends JSUS with additional methods and or properties taken 
- * from the object passed as first parameter. 
- * 
- * The first parameter can be an object literal or a function.
- * A reference of the original extending object is stored in 
- * JSUS._classes
- * 
- * If a second parameter is passed, that will be the target of the
- * extension.
- * 
- * @param {object} additional Text to output
- * @param {object|function} target The object to extend
- * @return {object|function} target The extended object
- * 
- * 	@see JSUS.get
- * 
- */
-JSUS.extend = function (additional, target) {        
-    if ('object' !== typeof additional && 'function' !== typeof additional) {
-        return target;
-    }
-    
-    // If we are extending JSUS, store a reference
-    // of the additional object into the hidden
-    // JSUS._classes object;
-    if ('undefined' === typeof target) {
-        target = target || this;
-        if ('function' === typeof additional) {
-            var name = additional.toString();
-            name = name.substr('function '.length);
-            name = name.substr(0, name.indexOf('('));
+
+    /**
+     * ## JSUS.log
+     *
+     * Reference to standard out, by default `console.log`
+     *
+     * Override to redirect the standard output of all JSUS functions.
+     *
+     * @param {string} txt Text to output
+     */
+    JSUS.log = function(txt) {
+        console.log(txt);
+    };
+
+    /**
+     * ## JSUS.extend
+     *
+     * Extends JSUS with additional methods and or properties
+     *
+     * The first parameter can be an object literal or a function.
+     * A reference of the original extending object is stored in
+     * JSUS._classes
+     *
+     * If a second parameter is passed, that will be the target of the
+     * extension.
+     *
+     * @param {object} additional Text to output
+     * @param {object|function} target The object to extend
+     * @return {object|function} target The extended object
+     *
+     * @see JSUS.get
+     */
+    JSUS.extend = function(additional, target) {
+        var name, prop;
+        if ('object' !== typeof additional &&
+            'function' !== typeof additional) {
+            return target;
         }
-        //! must be object
-        else {
-            var name = additional.constructor || additional.__proto__.constructor;
-        }
-        if (name) {
-            this._classes[name] = additional;
-        }
-    }
-    
-    for (var prop in additional) {
-        if (additional.hasOwnProperty(prop)) {
-            if (typeof target[prop] !== 'object') {
-                target[prop] = additional[prop];
-            } else {
-                JSUS.extend(additional[prop], target[prop]);
+
+        // If we are extending JSUS, store a reference
+        // of the additional object into the hidden
+        // JSUS._classes object;
+        if ('undefined' === typeof target) {
+            target = target || this;
+            if ('function' === typeof additional) {
+                name = additional.toString();
+                name = name.substr('function '.length);
+                name = name.substr(0, name.indexOf('('));
+            }
+            // Must be object.
+            else {
+                name = additional.constructor ||
+                    additional.__proto__.constructor;
+            }
+            if (name) {
+                this._classes[name] = additional;
             }
         }
-    }
 
-    // additional is a class (Function)
-    // TODO: this is true also for {}
-    if (additional.prototype) {
-        JSUS.extend(additional.prototype, target.prototype || target);
+        for (prop in additional) {
+            if (additional.hasOwnProperty(prop)) {
+                if (typeof target[prop] !== 'object') {
+                    target[prop] = additional[prop];
+                } else {
+                    JSUS.extend(additional[prop], target[prop]);
+                }
+            }
+        }
+
+        // Additional is a class (Function)
+        // TODO: this is true also for {}
+        if (additional.prototype) {
+            JSUS.extend(additional.prototype, target.prototype || target);
+        };
+
+        return target;
     };
-    
-    return target;
-};
-  
-/**
- * ## JSUS.require
- * 
- * Returns a copy of one / all the objects that have extended the
- * current instance of JSUS.
- * 
- * The first parameter is a string representation of the name of 
- * the requested extending object. If no parameter is passed a copy 
- * of all the extending objects is returned.
- * 
- * @param {string} className The name of the requested JSUS library
- * @return {function|boolean} The copy of the JSUS library, or FALSE if the library does not exist
- * 
- */
-JSUS.require = JSUS.get = function (className) {
-    if ('undefined' === typeof JSUS.clone) {
-        JSUS.log('JSUS.clone not found. Cannot continue.');
-        return false;
+
+    /**
+     * ## JSUS.require
+     *
+     * Returns a copy of one / all the objects extending JSUS.
+     *
+     * The first parameter is a string representation of the name of
+     * the requested extending object. If no parameter is passed a copy
+     * of all the extending objects is returned.
+     *
+     * @param {string} className The name of the requested JSUS library
+     * @return {function|boolean} The copy of the JSUS library, or
+     *   FALSE if the library does not exist
+     */
+    JSUS.require = JSUS.get = function(className) {
+        if ('undefined' === typeof JSUS.clone) {
+            JSUS.log('JSUS.clone not found. Cannot continue.');
+            return false;
+        }
+        if ('undefined' === typeof className) return JSUS.clone(JSUS._classes);
+        if ('undefined' === typeof JSUS._classes[className]) {
+            JSUS.log('Could not find class ' + className);
+            return false;
+        }
+        return JSUS.clone(JSUS._classes[className]);
+    };
+
+    /**
+     * ## JSUS.isNodeJS
+     *
+     * Returns TRUE when executed inside Node.JS environment
+     *
+     * @return {boolean} TRUE when executed inside Node.JS environment
+     */
+    JSUS.isNodeJS = function() {
+	return 'undefined' !== typeof module
+	    && 'undefined' !== typeof module.exports
+	    && 'function' === typeof require;
+    };
+
+    // ## Node.JS includes
+    // if node
+    if (JSUS.isNodeJS()) {
+        require('./lib/compatibility');
+        require('./lib/obj');
+        require('./lib/array');
+        require('./lib/time');
+        require('./lib/eval');
+        require('./lib/dom');
+        require('./lib/random');
+        require('./lib/parse');
+        require('./lib/fs');
     }
-    if ('undefined' === typeof className) return JSUS.clone(JSUS._classes);
-    if ('undefined' === typeof JSUS._classes[className]) {
-        JSUS.log('Could not find class ' + className);
-        return false;
-    }
-    return JSUS.clone(JSUS._classes[className]);
-    //return new JSUS._classes[className]();
-};
+    // end node
 
-/**
- * ## JSUS.isNodeJS
- * 
- * Returns TRUE when executed inside Node.JS environment
- * 
- * @return {boolean} TRUE when executed inside Node.JS environment
- */
-JSUS.isNodeJS = function () {
-	return 'undefined' !== typeof module 
-			&& 'undefined' !== typeof module.exports
-			&& 'function' === typeof require;
-};
-
-// ## Node.JS includes
-// if node
-if (JSUS.isNodeJS()) {
-    require('./lib/compatibility');
-    require('./lib/obj');
-    require('./lib/array');
-    require('./lib/time');
-    require('./lib/eval');
-    require('./lib/dom');
-    require('./lib/random');
-    require('./lib/parse');
-    require('./lib/fs');
-}
-// end node
-    
-})('undefined' !== typeof module && 'undefined' !== typeof module.exports ? module.exports: window);
-
-
+})(
+    'undefined' !== typeof module && 'undefined' !== typeof module.exports ?
+        module.exports: window
+);
 /**
  * # COMPATIBILITY
  *
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * Tests browsers ECMAScript 5 compatibility
@@ -1325,7 +1325,7 @@ if (JSUS.isNodeJS()) {
 })('undefined' !== typeof JSUS ? JSUS : module.parent.exports.JSUS);
 /**
  * # ARRAY
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  * 
  * Collection of static functions to manipulate arrays.
@@ -2041,7 +2041,7 @@ if (JSUS.isNodeJS()) {
 /**
  * # DOM
  *
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * Collection of static functions related to DOM manipulation
@@ -2309,8 +2309,13 @@ if (JSUS.isNodeJS()) {
     /**
      * ### DOM.getElement
      *
-     * Creates a generic HTML element with id and attributes as specified,
-     * and returns it.
+     * Creates a generic HTML element with id and attributes as specified
+     * 
+     * @param {string} elem The name of the tag
+     * @param {string} id Optional. The id of the tag
+     * @param {object} attributes Optional. Object containing attributes for
+     *   the newly created element
+     * @return {HTMLElement} The newly created HTML element
      *
      * @see DOM.addAttributes2Elem
      */
@@ -2325,8 +2330,15 @@ if (JSUS.isNodeJS()) {
     /**
      * ### DOM.addElement
      *
-     * Creates a generic HTML element with id and attributes as specified,
-     * appends it to the root element, and returns it.
+     * Creates and appends a generic HTML element with specified attributes
+     *
+     * @param {string} elem The name of the tag
+     * @param {HTMLElement} root The root element to which the new element will
+     *   be appended
+     * @param {string} id Optional. The id of the tag
+     * @param {object} attributes Optional. Object containing attributes for
+     *   the newly created element
+     * @return {HTMLElement} The newly created HTML element
      *
      * @see DOM.getElement
      * @see DOM.addAttributes2Elem
@@ -2342,9 +2354,17 @@ if (JSUS.isNodeJS()) {
      * Adds attributes to an HTML element and returns it.
      *
      * Attributes are defined as key-values pairs.
-     * Attributes 'label' is ignored.
+     * Attributes 'label' is ignored, attribute 'class' and 'style' are
+     * special and are delegated to special methods.
+     *
+     * @param {HTMLElement} e The element to decorate
+     * @param {object} a Object containing attributes to add to the element
+     *
+     * @return {HTMLElement} e The decorated element
      *
      * @see DOM.addLabel
+     * @see DOM.addClass
+     * @see DOM.style
      */
     DOM.addAttributes2Elem = function(e, a) {
         var key;
@@ -2421,13 +2441,9 @@ if (JSUS.isNodeJS()) {
      * @param {HTMLElement} e HTML element.
      */
     DOM.removeChildrenFromNode = function(e) {
-
-        if (!e) return false;
-
         while (e.hasChildNodes()) {
             e.removeChild(e.firstChild);
         }
-        return true;
     };
 
     /**
@@ -2475,32 +2491,6 @@ if (JSUS.isNodeJS()) {
         return scanDocuments(prefix + '_' + JSUS.randomInt(0, 10000000));
         //return scanDocuments(prefix);
     };
-
-    /**
-     * ### DOM.getBlankPage
-     *
-     * Creates a blank HTML page with the html and body
-     * elements already appended.
-     *
-     */
-    DOM.getBlankPage = function() {
-        var html = document.createElement('html');
-        html.appendChild(document.createElement('body'));
-        return html;
-    };
-
-    //    DOM.findLastElement = function(o) {
-    //        if (!o) return;
-    //
-    //        if (o.lastChild) {
-    //            var e
-    //            JSUS.isElement(e)) return DOM.findLastElement(e);
-    //
-    //            var e = e.previousSibling;
-    //            if (e && JSUS.isElement(e)) return DOM.findLastElement(e);
-    //
-    //        return o;
-    //    };
 
     // ## GET/ADD
 
@@ -3050,7 +3040,7 @@ if (JSUS.isNodeJS()) {
 })('undefined' !== typeof JSUS ? JSUS : module.parent.exports.JSUS);
 /**
  * # JSUS.OBJ
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * Collection of static functions to manipulate javascript objects.
@@ -4069,7 +4059,7 @@ if (JSUS.isNodeJS()) {
 
 /**
  * # RANDOM
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * Collection of static functions related to the generation of
@@ -4359,7 +4349,7 @@ if (JSUS.isNodeJS()) {
 /**
  * # TIME
  *
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * Collection of static functions related to the generation,
@@ -4442,7 +4432,7 @@ JSUS.extend(TIME);
 /**
  * # PARSE
  *
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * Collection of static functions related to parsing strings
@@ -4678,7 +4668,7 @@ JSUS.extend(TIME);
 })('undefined' !== typeof JSUS ? JSUS : module.parent.exports.JSUS);
 /**
  * # NDDB: N-Dimensional Database
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * NDDB is a powerful and versatile object database for node.js and the browser.
@@ -4687,8 +4677,6 @@ JSUS.extend(TIME);
  * ---
  */
 (function(exports, J, store) {
-
-    NDDB.compatibility = J.compatibility();
 
     // Expose constructors
     exports.NDDB = NDDB;
@@ -4763,16 +4751,6 @@ JSUS.extend(TIME);
         // ### nddb_pointer
         // Pointer for iterating along all the elements.
         this.nddb_pointer = 0;
-
-        // ### length
-        // The number of items in the database.
-        if (NDDB.compatibility.getter) {
-            this.__defineGetter__('length',
-                                  function() { return this.db.length; });
-        }
-        else {
-            this.length = null;
-        }
 
         // ### query
         // QueryBuilder obj.
@@ -4961,7 +4939,6 @@ JSUS.extend(TIME);
         // (strict) Not Equals.
         this.filters['!='] = function(d, value, comparator) {
             return function(elem) {
-                debugger
                 if (comparator(elem, value, 0) !== 0) return elem;
             };
         };
@@ -7505,8 +7482,7 @@ JSUS.extend(TIME);
     /**
      * ### NDDB.current
      *
-     * Returns the entry in the database, at which
-     * the iterator is currently pointing
+     * Returns the entry at which the iterator is currently pointing
      *
      * The pointer is *not* updated.
      *
@@ -8080,7 +8056,7 @@ JSUS.extend(TIME);
         if ('undefined' === typeof dbidx) return false;
         o = this.nddb.db[dbidx];
         if ('undefined' === typeof o) return;
-        this.nddb.db.splice(dbidx,1);
+        this.nddb.db.splice(dbidx, 1);
         delete this.resolve[idx];
         this.nddb.emit('remove', o);
         this.nddb._autoUpdate();
@@ -12730,7 +12706,7 @@ JSUS.extend(TIME);
 /**
  * # SocketFactory
  *
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * `nodeGame` component responsible for registering and instantiating
@@ -17270,7 +17246,9 @@ JSUS.extend(TIME);
         }
 
         // Fires the event immediately if time is zero.
-        if (this.options.milliseconds === 0) {
+        // Double check necessary in strict mode.
+        if ('undefined' !== typeof this.options.milliseconds &&
+            this.options.milliseconds === 0) {
             this.fire(this.timeup);
             return;
         }
@@ -17697,7 +17675,7 @@ JSUS.extend(TIME);
          * @param {object} options The configuration object
          */
         this.registerSetup('nodegame', function(options) {
-            var i;
+            var i, setupOptions;
             if (options && 'object' !== typeof options) {
                 throw new TypeError('node.setup.nodegame: options must ' +
                                     'object or undefined.');
@@ -17709,7 +17687,10 @@ JSUS.extend(TIME);
                     if (i !== 'register' &&
                         i !== 'nodegame' &&
                         i !== 'prototype') {
-                        this.conf[i] = this.setup[i].call(this, options[i]);
+                        // Like this browsers do not complain in strict mode.
+                        setupOptions = 'undefined' === typeof options[i] ?
+                            undefined : options[i];
+                        this.conf[i] = this.setup[i].call(this, setupOptions);
                     }
                 }
             }
@@ -17841,36 +17822,6 @@ JSUS.extend(TIME);
 
             return conf;
         });
-
-        /**
-         * ### node.setup.window
-         *
-         * Configure the node.window object, if existing
-         *
-         * TODO: move in GameWindow
-         *
-         * @see GameWindow
-         */
-        this.registerSetup('window', function(conf) {
-            if (!this.window) {
-                this.warn('node.setup.window: window not found, ' +
-                          'are you in a browser?');
-                return;
-            }
-            conf = conf || {};
-            if ('undefined' === typeof conf.promptOnleave) {
-                conf.promptOnleave = false;
-            }
-
-            if ('undefined' === typeof conf.noEscape) {
-                conf.noEscape = true;
-            }
-
-            this.window.init(conf);
-
-            return conf;
-        });
-
 
         /**
          * ### node.setup.game_settings
@@ -18464,11 +18415,11 @@ JSUS.extend(TIME);
             // If set, we use the callback returned by the modifier.
             // Otherwise, we assume the first parameter is the callback.
             if (modifier) {
-                func = modifier.apply(node.game, arguments);
+                func = modifier.apply(that.game, arguments);
             } 
             J.each(events, function(event) {
                 that.on(event, function() {
-                    func.apply(node.game, arguments);
+                    func.apply(that.game, arguments);
                 });
             });
         };
@@ -18497,6 +18448,11 @@ JSUS.extend(TIME);
      *
      * Establishes a connection with a nodeGame server
      *
+     * A callback function can be executed upon connection. However,
+     * sending messages is disabled until a player object is created. This can
+     * be done manually, or automatically upon receiving a SETUP PLAYER message.
+     * Creation of a player emits the event _PLAYER_CREATED_.
+     *
      * @param {string} uri Optional. The uri to connect to.
      * @param {function} cb Optional. A callback to execute as soon as the
      *   connection is established.
@@ -18505,7 +18461,7 @@ JSUS.extend(TIME);
      *
      * @emit SOCKET_CONNECT
      */
-    NGC.prototype.connect = function(uri, cb, socketOptions) {
+    NGC.prototype.connect = function(uri, cb, socketOptions) {        
         if (cb) {
             if ('function' !== typeof cb) {
                 throw new TypeError('node.connect: cb must be function or ' +
@@ -19820,7 +19776,7 @@ JSUS.extend(TIME);
 );
 /**
  * # TriggerManager
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * Manages a collection of trigger functions to be called sequentially
@@ -19990,7 +19946,9 @@ JSUS.extend(TIME);
      */
     TriggerManager.prototype.resetTriggers = function() {
         this.triggers = [];
-        this.initTriggers(this.options.triggers);
+        if ('undefined' !== typeof this.options.triggers) {
+            this.initTriggers(this.options.triggers);
+        }
     };
 
     /**
@@ -20448,6 +20406,42 @@ JSUS.extend(TIME);
          */
         this.screenState = node.constants.screenLevels.ACTIVE;
 
+
+        /**
+         * ### GamwWindow.textOnleave
+         *
+         * Text that displayed to the users on the _onbeforeunload_ event
+         *
+         * By default it is null, that means that it is left to the browser
+         * default.
+         *
+         * Notice: some browser do not support displaying a custom text.
+         *
+         * @see GameWindow.promptOnleave
+         */
+        this.textOnleave = null;
+        
+        /**
+         * ### node.setup.window
+         *
+         * Setup handler for the node.window object
+         *
+         * @see node.setup
+         */
+        node.registerSetup('window', function(conf) {           
+            conf = conf || {};
+            if ('undefined' === typeof conf.promptOnleave) {
+                conf.promptOnleave = false;
+            }
+            if ('undefined' === typeof conf.noEscape) {
+                conf.noEscape = true;
+            }
+
+            this.window.init(conf);
+
+            return conf;
+        });
+
         // Init.
         this.init();
     }
@@ -20470,6 +20464,9 @@ JSUS.extend(TIME);
         options = options || {};
         this.conf = J.merge(GameWindow.defaults, options);
 
+        if (this.conf.textOnleave) {
+            this.textOnleave = this.conf.textOnleave;
+        }
         if (this.conf.promptOnleave) {
             this.promptOnleave();
         }
@@ -21544,7 +21541,11 @@ JSUS.extend(TIME);
 
         contentDocument = W.getIFrameDocument(iframe);
         
-        scriptNodes = W.getElementsByClassName(contentDocument, 'injectedlib', 'script');
+        // Old IEs do not have getElementsByClassName.
+        scriptNodes = W.getElementsByClassName(contentDocument, 'injectedlib',
+                                               'script');
+        
+        // It was. To check.
         // scriptNodes = contentDocument.getElementsByClassName('injectedlib');
         for (idx = 0; idx < scriptNodes.length; idx++) {
             scriptNode = scriptNodes[idx];
@@ -21664,8 +21665,8 @@ JSUS.extend(TIME);
 );
 
 /**
- * # GameWindow event button module
- * Copyright(c) 2013 Stefano Balietti
+ * # GameWindow UI Behavior module
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * Handles default behavior of the browser on certain DOM Events.
@@ -21728,7 +21729,8 @@ JSUS.extend(TIME);
      */
     GameWindow.prototype.promptOnleave = function(windowObj, text) {
         windowObj = windowObj || window;
-        text = ('undefined' === typeof text) ? this.conf.textOnleave : text;
+        text = 'undefined' !== typeof text ? text : this.textOnleave;
+        
         windowObj.onbeforeunload = function(e) {
             e = e || window.event;
             // For IE<8 and Firefox prior to version 4
@@ -21854,7 +21856,7 @@ JSUS.extend(TIME);
 
 /**
  * # GameWindow listeners
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * www.nodegame.org
@@ -21930,7 +21932,7 @@ JSUS.extend(TIME);
 );
 /**
  * # GameWindow selector module
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * Utility functions to create and manipulate meaninful HTML select lists for
@@ -22180,7 +22182,7 @@ JSUS.extend(TIME);
 
 /**
  * # GameWindow extras
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * http://www.nodegame.org
@@ -22510,7 +22512,7 @@ JSUS.extend(TIME);
 
 /**
  * # Canvas class for nodeGame window
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * Creates an HTML canvas that can be manipulated by an api.
@@ -22609,7 +22611,7 @@ JSUS.extend(TIME);
 })(node.window);
 /**
  * # HTMLRenderer
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * Renders javascript objects into HTML following a pipeline
@@ -22852,7 +22854,7 @@ JSUS.extend(TIME);
 );
 /**
  * # List class for nodeGame window
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * Creates an HTML list that can be manipulated by an api. 
@@ -23051,7 +23053,7 @@ JSUS.extend(TIME);
 
 /**
  * # Table class for nodeGame window
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * Creates an HTML table that can be manipulated by an api.
@@ -23629,7 +23631,7 @@ JSUS.extend(TIME);
 );
 /**
  * # Widget
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * Prototype of a widget class.
@@ -23679,9 +23681,8 @@ JSUS.extend(TIME);
     ('undefined' !== typeof node) ? node : module.parent.exports.node
 );
 /**
- * # Widgets
- *
- * Copyright(c) 2013 Stefano Balietti
+ * # Widgetss
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * Helper class to interact with nodeGame widgets.
@@ -23951,7 +23952,7 @@ JSUS.extend(TIME);
 
 /**
  * # Chat widget for nodeGame
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * Creates a simple configurable chat.
@@ -24145,7 +24146,7 @@ JSUS.extend(TIME);
 })(node);
 /**
  * # ChernoffFaces widget for nodeGame
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * Displays multidimensional data in the shape of a Chernoff Face.
@@ -24790,7 +24791,7 @@ JSUS.extend(TIME);
 })(node);
 /**
  * # ChernoffFaces (Simplified version) widget for nodeGame
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * Displays multidimensional data in the shape of a Chernoff Face.
@@ -25444,7 +25445,7 @@ JSUS.extend(TIME);
 })(node);
 /**
  * # Controls widget for nodeGame
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * Creates and manipulates a set of forms.
@@ -25796,7 +25797,7 @@ JSUS.extend(TIME);
 })(node);
 /**
  * # D3 widget for nodeGame
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * Integrates nodeGame with the D3 library to plot a real-time chart. 
@@ -26004,7 +26005,7 @@ JSUS.extend(TIME);
 })(node);
 /**
  * # DataBar widget for nodeGame
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * Creates a form to send DATA packages to other clients / SERVER.
@@ -26075,7 +26076,7 @@ JSUS.extend(TIME);
 
 /**
  * # Dynamic Table widget for nodeGame
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * Extends the GameTable widgets by allowing dynamic reshaping.
@@ -26224,7 +26225,7 @@ JSUS.extend(TIME);
 })(node);
 /**
  * # EventButton widget for nodeGame
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * Creates a clickable button that fires an event.
@@ -26421,7 +26422,7 @@ JSUS.extend(TIME);
 })(node);
 /**
  * # GameBoard widget for nodeGame
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * Displays a table of currently connected players.
@@ -26556,7 +26557,7 @@ JSUS.extend(TIME);
 
 /**
  * # GameSummary widget for nodeGame
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * Shows the configuration options of a game in a box.
@@ -26613,7 +26614,7 @@ JSUS.extend(TIME);
 
 /**
  * # GameTable widget for nodeGame
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * Creates a table that renders in each cell data captured by fired events.
@@ -26774,7 +26775,7 @@ JSUS.extend(TIME);
 
 /**
  * # MoneyTalks widget for nodeGame
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * Displays a box for formatting currency.
@@ -26869,7 +26870,7 @@ JSUS.extend(TIME);
 })(node);
 /**
  * # MsgBar widget for nodeGame
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * Creates a tool for sending messages to other connected clients.
@@ -27035,7 +27036,7 @@ JSUS.extend(TIME);
 })(node);
 /**
  * # NDDBBrowser widget for nodeGame
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * Creates an interface to interact with an NDDB database.
@@ -27072,7 +27073,7 @@ JSUS.extend(TIME);
         TriggerManager: {}
     };
 
-    function NDDBBrowser (options) {
+    function NDDBBrowser(options) {
         this.options = options;
         this.nddb = null;
 
@@ -27147,7 +27148,7 @@ JSUS.extend(TIME);
         function notification(el, text) {
             if (el) {
                 node.emit(id + '_GOT', el);
-                this.writeInfo((this.nddb.nddb_pointer + 1) + '/' + this.nddb.length);
+                this.writeInfo((this.nddb.nddb_pointer + 1) + '/' + this.nddb.size());
             }
             else {
                 this.writeInfo('No element found');
@@ -27188,7 +27189,7 @@ JSUS.extend(TIME);
 })(node);
 /**
  * # NextPreviousState widget for nodeGame
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * Simple widget to step through the stages of the game.
@@ -27698,7 +27699,7 @@ JSUS.extend(TIME);
 })(node);
 /**
  * # ServerInfoDisplay widget for nodeGame
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * Displays information about the server.
@@ -27788,7 +27789,7 @@ JSUS.extend(TIME);
 })(node);
 /**
  * # StateBar widget for nodeGame
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * Provides a simple interface to change the game stages.
@@ -28002,7 +28003,7 @@ JSUS.extend(TIME);
 })(node);
 /**
  * # VisualState widget for nodeGame
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * Shows current, previous and next state.
@@ -28117,7 +28118,7 @@ JSUS.extend(TIME);
  * MIT Licensed
  *
  * Display a timer for the game. Timer can trigger events. 
- * Only for countdown smaller than 1h.'
+ * Only for countdown smaller than 1h.
  * 
  * www.nodegame.org
  * ---
@@ -28141,7 +28142,7 @@ JSUS.extend(TIME);
 
     // ## Meta-data
 
-    VisualTimer.version = '0.3.3';
+    VisualTimer.version = '0.4.0';
     VisualTimer.description = 'Display a timer for the game. Timer can ' +
         'trigger events. Only for countdown smaller than 1h.';
 
@@ -28331,6 +28332,9 @@ JSUS.extend(TIME);
             break;
         case 'object':
             options = inOptions;
+            if ('function' === typeof options.milliseconds) {
+	        options.milliseconds = options.milliseconds.call(node.game);
+	    }
             break;
         case 'function':
             options.milliseconds = inOptions.call(node.game);
@@ -28347,7 +28351,7 @@ JSUS.extend(TIME);
                             'be 0 or undefined.');
         }
 
-        if (!options.timeup) {
+        if ('undefined' === typeof options.timeup) {
             options.timeup = 'DONE';
         }
         return options;
@@ -28495,7 +28499,7 @@ JSUS.extend(TIME);
 })(node);
 /**
  * # Wall widget for nodeGame
- * Copyright(c) 2013 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * Creates a wall where log and other information is added
