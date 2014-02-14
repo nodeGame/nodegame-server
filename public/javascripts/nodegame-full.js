@@ -3023,7 +3023,7 @@ if (!JSON) {
         func = function(str) {
             // TODO: Filter str.
             str = '(' + str + ')';
-            if (window && window.execScript) {
+            if ('undefined' !== typeof window && window.execScript) {
                 // Notice: execScript doesn’t return anything.
                 window.execScript('__my_eval__ = ' + str);
                 return __my_eval__;
@@ -3542,7 +3542,8 @@ if (!JSON) {
      *
      * Copies only non-overlapping properties from obj2 to obj1
      *
-     * Original object is modified
+     * Check only if a property is defined, not its value.
+     * Original object is modified. 
      *
      * @param {object} obj1 The object to which the new properties will be added
      * @param {object} obj2 The mixin-in object
@@ -3553,7 +3554,7 @@ if (!JSON) {
         if (!obj1) return obj2;
         if (!obj2) return obj1;
         for (i in obj2) {
-            if (!obj1[i]) obj1[i] = obj2[i];
+            if ('undefined' === typeof obj1[i]) obj1[i] = obj2[i];
         }
     };
 
@@ -3562,7 +3563,8 @@ if (!JSON) {
      *
      * Copies only overlapping properties from obj2 to obj1
      *
-     * Original object is modified
+     * Check only if a property is defined, not its value.
+     * Original object is modified.
      *
      * @param {object} obj1 The object to which the new properties will be added
      * @param {object} obj2 The mixin-in object
@@ -3573,7 +3575,7 @@ if (!JSON) {
         if (!obj1) return obj2;
         if (!obj2) return obj1;
         for (i in obj2) {
-            if (obj1[i]) obj1[i] = obj2[i];
+            if ('undefined' !== typeof obj1[i]) obj1[i] = obj2[i];
         }
     };
 
@@ -4463,26 +4465,27 @@ JSUS.extend(TIME);
     /**
      * ## PARSE.getQueryString
      *
-     * Parses the current querystring and returns it full or a specific variable.
-     * Return false if the requested variable is not found.
+     * Parses current querystring and returns the requested variable.
+     *
+     * If no variable is specified, returns the full query string.
+     * If requested variable is not found returns false.
      *
      * @param {string} variable Optional. If set, returns only the value
      *    associated with this variable
      *
      * @return {string|boolean} The querystring, or a part of it, or FALSE
+     *
+     * Kudos:
+     * @see http://stackoverflow.com/questions/901115/how-can-i-get-query-string-values-in-javascript
      */
-    PARSE.getQueryString = function(variable) {
-        var query = window.location.search.substring(1);
-        if ('undefined' === typeof variable) return query;
-
-        var vars = query.split("&");
-        for (var i = 0; i < vars.length; i++) {
-            var pair = vars[i].split("=");
-            if (pair[0] === variable) {
-                return unescape(pair[1]);
-            }
-        }
-        return false;
+    PARSE.getQueryString = function(name) {
+        var regex;
+        if ('undefined' === name) return window.location.search;
+        name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+        regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
+        results = regex.exec(location.search);
+        return results == null ? false : 
+            decodeURIComponent(results[1].replace(/\+/g, " "))
     };
 
     /**
@@ -4502,11 +4505,12 @@ JSUS.extend(TIME);
      * @return {array} Tokens in which the string was split
      */
     PARSE.tokenize = function(str, separators, modifiers) {
+        var pattern, regex;
         if (!str) return;
         if (!separators || !separators.length) return [str];
         modifiers = modifiers || {};
 
-        var pattern = '[';
+        pattern = '[';
 
         JSUS.each(separators, function(s) {
             if (s === ' ') s = '\\s';
@@ -4516,7 +4520,7 @@ JSUS.extend(TIME);
 
         pattern += ']+';
 
-        var regex = new RegExp(pattern);
+        regex = new RegExp(pattern);
         return str.split(regex, modifiers.limit);
     };
 
@@ -12439,10 +12443,14 @@ JSUS.extend(TIME);
      * @return {mixed|null} The value of the property if found, NULL otherwise.
      */
     GamePlot.prototype.getProperty = function(gameStage, property) {
-        var stepObj, stageObj;
-        var defaultProps;
+        var stepObj, stageObj, defaultProps;
 
         gameStage = new GameStage(gameStage);
+
+        if ('string' !== typeof property) {
+            throw new TypeError('GamePlot.getProperty: property must be ' +
+                                'string');
+        }
 
         // Look in current step:
         stepObj = this.getStep(gameStage);
@@ -12468,6 +12476,56 @@ JSUS.extend(TIME);
         return null;
     };
 
+    /**
+     * ### GamePlot.updateProperty
+     *
+     * Looks up a property and updates it to the new value
+     *
+     * Looks follows the steps described in _GamePlot.getProperty_.
+     *
+     * @param {GameStage|string} gameStage The GameStage object,
+     *  or its string representation
+     * @param {string} property The name of the property
+     * @param {mixed} value The new value for the property.
+     *
+     * @return {bool} TRUE, if property is found and updated, FALSE otherwise.
+     */
+    GamePlot.prototype.updateProperty = function(gameStage, property, value) {
+        var stepObj, stageObj, defaultProps;
+
+        gameStage = new GameStage(gameStage);
+
+        if ('string' !== typeof property) {
+            throw new TypeError('GamePlot.updateProperty: property must be ' +
+                                'string');
+        }
+
+        // Look in current step:
+        stepObj = this.getStep(gameStage);
+        if (stepObj && stepObj.hasOwnProperty(property)) {
+            stepObj[property] = value;
+            return true;
+        }
+
+        // Look in current stage:
+        stageObj = this.getStage(gameStage);
+        if (stageObj && stageObj.hasOwnProperty(property)) {
+            stageObj[property] = value;
+            return true;
+        }
+
+        // Look in Stager's defaults:
+        if (this.stager) {
+            defaultProps = this.stager.getDefaultProperties();
+            if (defaultProps && defaultProps.hasOwnProperty(property)) {
+                defaultProps[property] = value;
+                return true;
+            }
+        }
+
+        // Not found:
+        return false;
+    };
 
     /**
      * ### GamePlot.isReady
@@ -13891,19 +13949,17 @@ JSUS.extend(TIME);
         node.timer.setTimestamp('start');
 
         if (node.player.placeholder) {
-            throw new node.NodeGameMisconfiguredGameError(
-                'game.start called without a player.');
-        }
-
-        if (this.getStateLevel() >= constants.stateLevels.INITIALIZING) {
-            node.warn('game.start called on a running game.');
-            return false;
+            throw new Error('Game.start: no player defined.');
         }
 
         // Check for the existence of stager contents:
         if (!this.plot.isReady()) {
-            throw new node.NodeGameMisconfiguredGameError(
-                'game.start called, but plot is not ready.');
+            throw new Error('Game.start: plot is not ready.');
+        }
+
+        if (this.getStateLevel() >= constants.stateLevels.INITIALIZING) {
+            node.err('Game.start: game is already running. Call stop first.');
+            return false;
         }
 
         // INIT the game.
@@ -14093,6 +14149,12 @@ JSUS.extend(TIME);
         node.socket.setMsgListener();
         node.timer.setTimestamp('resumed');
         node.emit('RESUMED');
+
+        // Maybe the game was LOADED during the pausing.
+        // In this case the PLAYING event got lost.
+        if (this.shouldEmitPlaying()) {
+            this.node.emit('PLAYING');
+        }
 
         // broadcast?
 
@@ -17918,17 +17980,22 @@ JSUS.extend(TIME);
          *
          * Creates the `node.game.plot` object
          *
-         * @param {object} stagerState Stager state which is passed to `Stager.setState`
-         * @param {string} updateRule Optional. Whether to 'replace' (default) or
-         *  to 'append'.
+         * It can either replace current plot object, or append to it. 
+         * Updates are not possible for the moment.
+         *
+         * TODO: allows updates in plot.
+         *
+         * @param {object} stagerState Stager state which is passed
+         *   to `Stager.setState`
+         * @param {string} updateRule Optional. Accepted: <replace>, <append>.
+         *   Defaults, 'replace'.
          *
          * @see node.game.plot
          * @see Stager.setState
          */
         this.registerSetup('plot', function(stagerState, updateRule) {
             if (!this.game) {
-                this.warn("register('plot') called before node.game was initialized");
-                throw new node.NodeGameMisconfiguredGameError("node.game non-existent");
+                throw new Error("node.setup.plot: node.game not found.");
             }
 
             stagerState = stagerState || {};
@@ -17952,8 +18019,8 @@ JSUS.extend(TIME);
          * Updates the player list in Game
          *
          * @param {PlayerList} playerList The new player list
-         * @param {string} updateRule Optional. Whether to 'replace' (default) or
-         *  to 'append'.
+         * @param {string} updateRule Optional. Accepted: <replace>, <append>.
+         *   Defaults, 'replace'.
          */
         this.registerSetup('plist', function(playerList, updateRule) {
             updatePlayerList.call(this, 'pl', playerList, updateRule);
@@ -17965,8 +18032,8 @@ JSUS.extend(TIME);
          * Updates the monitor list in Game
          *
          * @param {PlayerList} monitorList The new monitor list
-         * @param {string} updateRule Optional. Whether to 'replace' (default) or
-         *  to 'append'.
+         * @param {string} updateRule Optional. Accepted: <replace>, <append>.
+         *   Defaults, 'replace'.
          */
         this.registerSetup('mlist', function(monitorList, updateRule) {
             updatePlayerList.call(this, 'ml', monitorList, updateRule);
@@ -23644,7 +23711,7 @@ JSUS.extend(TIME);
     node.Widget = Widget;
 
     function Widget() {
-	this.root = null;
+        this.root = null;
     }
 
     Widget.prototype.dependencies = {};
@@ -23652,14 +23719,14 @@ JSUS.extend(TIME);
     Widget.prototype.defaults = {};
 
     Widget.prototype.defaults.fieldset = {
-	legend: 'Widget'
+        legend: 'Widget'
     };
 
 
     Widget.prototype.listeners = function() {};
 
     Widget.prototype.getRoot = function() {
-	return this.root;
+        return this.root;
     };
 
     Widget.prototype.getValues = function() {};
@@ -23776,28 +23843,6 @@ JSUS.extend(TIME);
         that = this;
 	options = options || {};
 
-	function createListenerFunction(w, e, l) {
-	    if (!w || !e || !l) return;
-	    w.getRoot()[e] = function() {
-		l.call(w);
-	    };
-	};
-
-	function attachListeners(options, w) {
-	    if (!options || !w) return;
-            var events = ['onclick', 'onfocus', 'onblur', 'onchange', 
-                          'onsubmit', 'onload', 'onunload', 'onmouseover'];
-	    var isEvent = false;
-	    for (var i in options) {
-		if (options.hasOwnProperty(i)) {
-		    isEvent = J.in_array(i, events);
-		    if (isEvent && 'function' === typeof options[i]) {
-			createListenerFunction(w, i, options[i]);
-		    }
-		}
-	    };
-	};
-
 	wProto = J.getNestedValue(w_str, this.widgets);
 	
 	if (!wProto) {
@@ -23852,7 +23897,6 @@ JSUS.extend(TIME);
      */
     Widgets.prototype.append = Widgets.prototype.add = function(w, root,
                                                                 options) {
-        var that;
         if ('string' !== typeof w && 'object' !== typeof w) {
             throw new TypeError('Widgets.append: w must be string or object');
         }
@@ -23865,15 +23909,6 @@ JSUS.extend(TIME);
                                 'undefined.');
         }
         
-        that = this;
-
-        function appendFieldset(root, options, w) {
-            if (!options) return root;
-            var idFieldset = options.id || w.id + '_fieldset';
-            var legend = options.legend || w.legend;
-            return W.addFieldset(root, idFieldset, legend, options.attributes);
-        };
-
         // Init default values.
         root = root || W.getFrameRoot() || document.body;
         options = options || {};
@@ -23885,8 +23920,12 @@ JSUS.extend(TIME);
             w = this.get(w, options);
         }
 
-        // options exists and options.fieldset exist
-        root = appendFieldset(root, options.fieldset || w.defaults.fieldset, w);
+        // If fieldset option is null, no fieldset is added.
+        // If fieldset option is undefined, default options are used.
+        if (options.fieldset !== null) {
+            root = appendFieldset(root, options.fieldset ||
+                                  w.defaults.fieldset, w);
+        }
         w.append(root);
 
         return w;
@@ -23940,6 +23979,41 @@ JSUS.extend(TIME);
         }
         return true;
     };
+
+    
+    // #### Helper functions.
+    
+    function appendFieldset(root, options, w) {
+        var idFieldset, legend;
+        if (!options) return root;
+        idFieldset = options.id || w.id + '_fieldset';
+        legend = options.legend || w.legend;
+        return W.addFieldset(root, idFieldset, legend, options.attributes);
+    };
+
+    function createListenerFunction(w, e, l) {
+	if (!w || !e || !l) return;
+	w.getRoot()[e] = function() {
+	    l.call(w);
+	};
+    };
+
+    function attachListeners(options, w) {
+        var events, isEvent, i;
+	if (!options || !w) return;
+        isEvent = false;
+        events = ['onclick', 'onfocus', 'onblur', 'onchange', 
+                  'onsubmit', 'onload', 'onunload', 'onmouseover'];	
+	for (i in options) {
+	    if (options.hasOwnProperty(i)) {
+		isEvent = J.in_array(i, events);
+		if (isEvent && 'function' === typeof options[i]) {
+		    createListenerFunction(w, i, options[i]);
+		}
+	    }
+	};
+    };
+
 
     //Expose Widgets to the global object
     node.widgets = new Widgets();
@@ -28306,7 +28380,11 @@ JSUS.extend(TIME);
             that.timerDiv.className = 'strike';
         });
 
-        node.on
+    };
+
+    VisualTimer.prototype.destroy = function() {
+        node.timer.destroyTimer(this.gameTimer);
+        this.root.removeChild(this.timerDiv);
     };
 
     /**

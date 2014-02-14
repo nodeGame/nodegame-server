@@ -89,7 +89,7 @@ function configure(servernode) {
             onConnect: true,
 
             // A client enters a new stage;
-	    onStageUpdate: true,
+	    onStageUpdate: false,
 
             // A client changes stageLevel (e.g. INIT, CALLBACK_EXECUTED);
 	    onStageLevelUpdate: false,
@@ -97,7 +97,7 @@ function configure(servernode) {
             // A client is LOADED (this option is needed in combination with
             // the option syncOnLoaded used on the clients). It is much less
             // expensive than setting onStageLevelUpdate = true;
-            onStageLoadedUpdate: true
+            onStageLoadedUpdate: false
 	},
 
         // All messages exchanged between players will be forwarded to the
