@@ -206,7 +206,7 @@ program
         console.log('Building documentation for nodegame-server v.' + version);
         // http://nodejs.org/api.html#_child_processes
         var dockerDir = J.resolveModuleDir('docker');
-        var command = dockerDir + 'docker -i ' + rootDir + ' index.js lib/ -o ' + rootDir + 'docs/';
+        var command = dockerDir + 'docker -i ' + rootDir + ' index.js lib/ -o ' + rootDir + '/docs/';
         var child = exec(command, function (error, stdout, stderr) {
             util.print(stdout);
             util.print(stderr);
