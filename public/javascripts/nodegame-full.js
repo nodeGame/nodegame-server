@@ -356,339 +356,344 @@ if (!JSON) {
 
 /**
  * # Shelf.JS 
- * Copyright 2014 Stefano Balietti
+ * 
+ * Persistent Client-Side Storage @VERSION
+ * 
+ * Copyright 2012 Stefano Balietti
  * GPL licenses.
- *
- * Persistent Client-Side Storage
  * 
  * ---
+ * 
  */
 (function(exports){
-    
-    var version = '0.5';
+	
+var version = '0.3';
 
-    var store = exports.store = function(key, value, options, type) {
+var store = exports.store = function (key, value, options, type) {
 	options = options || {};
 	type = (options.type && options.type in store.types) ? options.type : store.type;
 	if (!type || !store.types[type]) {
-	    store.log("Cannot save/load value. Invalid storage type selected: " + type, 'ERR');
-	    return;
+		store.log("Cannot save/load value. Invalid storage type selected: " + type, 'ERR');
+		return;
 	}
 	store.log('Accessing ' + type + ' storage');
 	
 	return store.types[type](key, value, options);
-    };
+};
 
-    // Adding functions and properties to store
-    ///////////////////////////////////////////
-    store.prefix = "__shelf__";
+// Adding functions and properties to store
+///////////////////////////////////////////
+store.name = "__shelf__";
 
-    store.verbosity = 0;
-    store.types = {};
+store.verbosity = 0;
+store.types = {};
 
 
-    var mainStorageType = "volatile";
+var mainStorageType = "volatile";
 
-    //if Object.defineProperty works...
-    try {	
+//if Object.defineProperty works...
+try {	
 	
 	Object.defineProperty(store, 'type', {
-	    set: function(type){
-		if ('undefined' === typeof store.types[type]) {
-		    store.log('Cannot set store.type to an invalid type: ' + type);
-		    return false;
-		}
-		mainStorageType = type;
-		return type;
-	    },
-	    get: function(){
-		return mainStorageType;
-	    },
-	    configurable: false,
-	    enumerable: true
+		set: function(type){
+			if ('undefined' === typeof store.types[type]) {
+				store.log('Cannot set store.type to an invalid type: ' + type);
+				return false;
+			}
+			mainStorageType = type;
+			return type;
+		},
+		get: function(){
+			return mainStorageType;
+		},
+		configurable: false,
+		enumerable: true
 	});
-    }
-    catch(e) {
+}
+catch(e) {
 	store.type = mainStorageType; // default: memory
-    }
+}
 
-    store.addType = function(type, storage) {
+store.addType = function (type, storage) {
 	store.types[type] = storage;
-	store[type] = function(key, value, options) {
-	    options = options || {};
-	    options.type = type;
-	    return store(key, value, options);
+	store[type] = function (key, value, options) {
+		options = options || {};
+		options.type = type;
+		return store(key, value, options);
 	};
 	
 	if (!store.type || store.type === "volatile") {
-	    store.type = type;
+		store.type = type;
 	}
-    };
+};
 
-    // TODO: create unit test
-    store.onquotaerror = undefined;
-    store.error = function() {	
+// TODO: create unit test
+store.onquotaerror = undefined;
+store.error = function() {	
 	console.log("shelf quota exceeded"); 
 	if ('function' === typeof store.onquotaerror) {
-	    store.onquotaerror(null);
+		store.onquotaerror(null);
 	}
-    };
+};
 
-    store.log = function(text) {
+store.log = function(text) {
 	if (store.verbosity > 0) {
-	    console.log('Shelf v.' + version + ': ' + text);
+		console.log('Shelf v.' + version + ': ' + text);
 	}
 	
-    };
+};
 
-    store.isPersistent = function() {
+store.isPersistent = function() {
 	if (!store.types) return false;
 	if (store.type === "volatile") return false;
 	return true;
-    };
+};
 
-    //if Object.defineProperty works...
-    try {	
+//if Object.defineProperty works...
+try {	
 	Object.defineProperty(store, 'persistent', {
-	    set: function(){},
-	    get: store.isPersistent,
-	    configurable: false
+		set: function(){},
+		get: store.isPersistent,
+		configurable: false
 	});
-    }
-    catch(e) {
+}
+catch(e) {
 	// safe case
 	store.persistent = false;
-    }
+}
 
-    store.decycle = function(o) {
+store.decycle = function(o) {
 	if (JSON && JSON.decycle && 'function' === typeof JSON.decycle) {
-	    o = JSON.decycle(o);
+		o = JSON.decycle(o);
 	}
 	return o;
-    };
+};
     
-    store.retrocycle = function(o) {
+store.retrocycle = function(o) {
 	if (JSON && JSON.retrocycle && 'function' === typeof JSON.retrocycle) {
-	    o = JSON.retrocycle(o);
+		o = JSON.retrocycle(o);
 	}
 	return o;
-    };
+};
 
-    store.stringify = function(o) {
+store.stringify = function(o) {
 	if (!JSON || !JSON.stringify || 'function' !== typeof JSON.stringify) {
-	    throw new Error('JSON.stringify not found. Received non-string value and could not serialize.');
+		throw new Error('JSON.stringify not found. Received non-string value and could not serialize.');
 	}
 	
 	o = store.decycle(o);
 	return JSON.stringify(o);
-    };
+};
 
-    store.parse = function(o) {
+store.parse = function(o) {
 	if ('undefined' === typeof o) return undefined;
 	if (JSON && JSON.parse && 'function' === typeof JSON.parse) {
-	    try {
-		o = JSON.parse(o);
-	    }
-	    catch (e) {
-		store.log('Error while parsing a value: ' + e, 'ERR');
-		store.log(o);
-	    }
+		try {
+			o = JSON.parse(o);
+		}
+		catch (e) {
+			store.log('Error while parsing a value: ' + e, 'ERR');
+			store.log(o);
+		}
 	}
 	
 	o = store.retrocycle(o);
 	return o;
-    };
+};
 
-    // ## In-memory storage
-    // ### fallback for all browsers to enable the API even if we can't persist data
-    (function() {
+// ## In-memory storage
+// ### fallback for all browsers to enable the API even if we can't persist data
+(function() {
 	
 	var memory = {},
-	timeout = {};
+		timeout = {};
 	
 	function copy(obj) {
-	    return store.parse(store.stringify(obj));
+		return store.parse(store.stringify(obj));
 	}
 
 	store.addType("volatile", function(key, value, options) {
-	    
-	    if (!key) {
-		return copy(memory);
-	    }
+		
+		if (!key) {
+			return copy(memory);
+		}
 
-	    if (value === undefined) {
-		return copy(memory[key]);
-	    }
+		if (value === undefined) {
+			return copy(memory[key]);
+		}
 
-	    if (timeout[key]) {
-		clearTimeout(timeout[key]);
-		delete timeout[key];
-	    }
+		if (timeout[key]) {
+			clearTimeout(timeout[key]);
+			delete timeout[key];
+		}
 
-	    if (value === null) {
-		delete memory[key];
-		return null;
-	    }
+		if (value === null) {
+			delete memory[key];
+			return null;
+		}
 
-	    memory[key] = value;
-	    if (options.expires) {
-		timeout[key] = setTimeout(function() {
-		    delete memory[key];
-		    delete timeout[key];
-		}, options.expires);
-	    }
+		memory[key] = value;
+		if (options.expires) {
+			timeout[key] = setTimeout(function() {
+				delete memory[key];
+				delete timeout[key];
+			}, options.expires);
+		}
 
-	    return value;
+		return value;
 	});
-    }());
+}());
 
 }('undefined' !== typeof module && 'undefined' !== typeof module.exports ? module.exports: this));
 /**
  * ## Amplify storage for Shelf.js
  * 
+ * ---
+ * 
  * v. 1.1.0 22.05.2013 a275f32ee7603fbae6607c4e4f37c4d6ada6c3d5
  * 
- * Important! When updating to next Amplify.JS release, remember to change: 
+ * Important! When updating to next Amplify.JS release, remember to change 
  * 
- * - JSON.stringify -> store.stringify to keep support for cyclic objects
- * - JSON.parse -> store.parse (cyclic objects)
- * - store.name -> store.prefix (check)
- * - rprefix -> regex
- * -  "__amplify__" -> store.prefix
- *
- * ---
+ * JSON.stringify -> store.stringify
+ * 
+ * to keep support for ciclyc objects
+ * 
  */
+
 (function(exports) {
 
-    var store = exports.store;	
+var store = exports.store;	
 
-    if (!store) {
-	throw new Error('amplify.shelf.js: shelf.js core not found.');
-    }
+if (!store) {
+	console.log('amplify.shelf.js: shelf.js core not found. Amplify storage not available.');
+	return;
+}
 
-    if ('undefined' === typeof window) {
-	throw new Error('amplify.shelf.js:  window object not found.');
-    }
+if ('undefined' === typeof window) {
+	console.log('amplify.shelf.js: am I running in a browser? Amplify storage not available.');
+	return;
+}
 
-    var regex = new RegExp("^" + store.prefix);
-    function createFromStorageInterface( storageType, storage ) {
+//var rprefix = /^__shelf__/;
+var regex = new RegExp("^" + store.name); 
+function createFromStorageInterface( storageType, storage ) {
 	store.addType( storageType, function( key, value, options ) {
-	    var storedValue, parsed, i, remove,
-	    ret = value,
-	    now = (new Date()).getTime();
+		var storedValue, parsed, i, remove,
+			ret = value,
+			now = (new Date()).getTime();
 
-	    if ( !key ) {
-		ret = {};
-		remove = [];
-		i = 0;
-		try {
-		    // accessing the length property works around a localStorage bug
-		    // in Firefox 4.0 where the keys don't update cross-page
-		    // we assign to key just to avoid Closure Compiler from removing
-		    // the access as "useless code"
-		    // https://bugzilla.mozilla.org/show_bug.cgi?id=662511
-		    key = storage.length;
-
-		    while ( key = storage.key( i++ ) ) {
-			if ( regex.test( key ) ) {
-			    parsed = store.parse( storage.getItem( key ) );
-			    if ( parsed.expires && parsed.expires <= now ) {
-				remove.push( key );
-			    } else {
-				ret[ key.replace( rprefix, "" ) ] = parsed.data;
-			    }
-			}
-		    }
-		    while ( key = remove.pop() ) {
-			storage.removeItem( key );
-		    }
-		} catch ( error ) {}
-		return ret;
-	    }
-
-	    // protect against name collisions with direct storage
-	    key = store.prefix + key;
-
-	    if ( value === undefined ) {
-		storedValue = storage.getItem( key );
-		parsed = storedValue ? store.parse( storedValue ) : { expires: -1 };
-		if ( parsed.expires && parsed.expires <= now ) {
-		    storage.removeItem( key );
-		} else {
-		    return parsed.data;
-		}
-	    } else {
-		if ( value === null ) {
-		    storage.removeItem( key );
-		} else {
-		    parsed = store.stringify({
-			data: value,
-			expires: options.expires ? now + options.expires : null
-		    });
-		    try {
-			storage.setItem( key, parsed );
-			// quota exceeded
-		    } catch( error ) {
-			// expire old data and try again
-			store[ storageType ]();
+		if ( !key ) {
+			ret = {};
+			remove = [];
+			i = 0;
 			try {
-			    storage.setItem( key, parsed );
-			} catch( error ) {
-			    throw store.error();
-			}
-		    }
+				// accessing the length property works around a localStorage bug
+				// in Firefox 4.0 where the keys don't update cross-page
+				// we assign to key just to avoid Closure Compiler from removing
+				// the access as "useless code"
+				// https://bugzilla.mozilla.org/show_bug.cgi?id=662511
+				key = storage.length;
+
+				while ( key = storage.key( i++ ) ) {
+					if ( rprefix.test( key ) ) {
+						parsed = JSON.parse( storage.getItem( key ) );
+						if ( parsed.expires && parsed.expires <= now ) {
+							remove.push( key );
+						} else {
+							ret[ key.replace( rprefix, "" ) ] = parsed.data;
+						}
+					}
+				}
+				while ( key = remove.pop() ) {
+					storage.removeItem( key );
+				}
+			} catch ( error ) {}
+			return ret;
 		}
-	    }
 
-	    return ret;
+		// protect against name collisions with direct storage
+		key = "__amplify__" + key;
+
+		if ( value === undefined ) {
+			storedValue = storage.getItem( key );
+			parsed = storedValue ? JSON.parse( storedValue ) : { expires: -1 };
+			if ( parsed.expires && parsed.expires <= now ) {
+				storage.removeItem( key );
+			} else {
+				return parsed.data;
+			}
+		} else {
+			if ( value === null ) {
+				storage.removeItem( key );
+			} else {
+				parsed = store.stringify({
+					data: value,
+					expires: options.expires ? now + options.expires : null
+				});
+				try {
+					storage.setItem( key, parsed );
+				// quota exceeded
+				} catch( error ) {
+					// expire old data and try again
+					store[ storageType ]();
+					try {
+						storage.setItem( key, parsed );
+					} catch( error ) {
+						throw store.error();
+					}
+				}
+			}
+		}
+
+		return ret;
 	});
-    }
+}
 
-    // localStorage + sessionStorage
-    // IE 8+, Firefox 3.5+, Safari 4+, Chrome 4+, Opera 10.5+, iPhone 2+, Android 2+
-    for ( var webStorageType in { localStorage: 1, sessionStorage: 1 } ) {
+// localStorage + sessionStorage
+// IE 8+, Firefox 3.5+, Safari 4+, Chrome 4+, Opera 10.5+, iPhone 2+, Android 2+
+for ( var webStorageType in { localStorage: 1, sessionStorage: 1 } ) {
 	// try/catch for file protocol in Firefox and Private Browsing in Safari 5
 	try {
-	    // Safari 5 in Private Browsing mode exposes localStorage
-	    // but doesn't allow storing data, so we attempt to store and remove an item.
-	    // This will unfortunately give us a false negative if we're at the limit.
-	    window[ webStorageType ].setItem(store.prefix, "x" );
-	    window[ webStorageType ].removeItem(store.prefix );
-	    createFromStorageInterface( webStorageType, window[ webStorageType ] );
+		// Safari 5 in Private Browsing mode exposes localStorage
+		// but doesn't allow storing data, so we attempt to store and remove an item.
+		// This will unfortunately give us a false negative if we're at the limit.
+		window[ webStorageType ].setItem( "__amplify__", "x" );
+		window[ webStorageType ].removeItem( "__amplify__" );
+		createFromStorageInterface( webStorageType, window[ webStorageType ] );
 	} catch( e ) {}
-    }
+}
 
-    // globalStorage
-    // non-standard: Firefox 2+
-    // https://developer.mozilla.org/en/dom/storage#globalStorage
-    if ( !store.types.localStorage && window.globalStorage ) {
+// globalStorage
+// non-standard: Firefox 2+
+// https://developer.mozilla.org/en/dom/storage#globalStorage
+if ( !store.types.localStorage && window.globalStorage ) {
 	// try/catch for file protocol in Firefox
 	try {
-	    createFromStorageInterface( "globalStorage",
-			                window.globalStorage[ window.location.hostname ] );
-	    // Firefox 2.0 and 3.0 have sessionStorage and globalStorage
-	    // make sure we default to globalStorage
-	    // but don't default to globalStorage in 3.5+ which also has localStorage
-	    if ( store.type === "sessionStorage" ) {
-		store.type = "globalStorage";
-	    }
+		createFromStorageInterface( "globalStorage",
+			window.globalStorage[ window.location.hostname ] );
+		// Firefox 2.0 and 3.0 have sessionStorage and globalStorage
+		// make sure we default to globalStorage
+		// but don't default to globalStorage in 3.5+ which also has localStorage
+		if ( store.type === "sessionStorage" ) {
+			store.type = "globalStorage";
+		}
 	} catch( e ) {}
-    }
+}
 
-    // userData
-    // non-standard: IE 5+
-    // http://msdn.microsoft.com/en-us/library/ms531424(v=vs.85).aspx
-    (function() {
+// userData
+// non-standard: IE 5+
+// http://msdn.microsoft.com/en-us/library/ms531424(v=vs.85).aspx
+(function() {
 	// IE 9 has quirks in userData that are a huge pain
 	// rather than finding a way to detect these quirks
 	// we just don't register userData if we have localStorage
 	if ( store.types.localStorage ) {
-	    return;
+		return;
 	}
 
 	// append to html instead of body so we can do this from the head
 	var div = document.createElement( "div" ),
-	attrKey = store.prefix; // was "amplify" and not __amplify__
+		attrKey = "amplify";
 	div.style.display = "none";
 	document.getElementsByTagName( "head" )[ 0 ].appendChild( div );
 
@@ -697,229 +702,229 @@ if (!JSON) {
 	// surprisingly, even just adding the behavior isn't enough for a failure
 	// so we need to load the data as well
 	try {
-	    div.addBehavior( "#default#userdata" );
-	    div.load( attrKey );
+		div.addBehavior( "#default#userdata" );
+		div.load( attrKey );
 	} catch( e ) {
-	    div.parentNode.removeChild( div );
-	    return;
+		div.parentNode.removeChild( div );
+		return;
 	}
 
 	store.addType( "userData", function( key, value, options ) {
-	    div.load( attrKey );
-	    var attr, parsed, prevValue, i, remove,
-	    ret = value,
-	    now = (new Date()).getTime();
+		div.load( attrKey );
+		var attr, parsed, prevValue, i, remove,
+			ret = value,
+			now = (new Date()).getTime();
 
-	    if ( !key ) {
-		ret = {};
-		remove = [];
-		i = 0;
-		while ( attr = div.XMLDocument.documentElement.attributes[ i++ ] ) {
-		    parsed = store.parse( attr.value );
-		    if ( parsed.expires && parsed.expires <= now ) {
-			remove.push( attr.name );
-		    } else {
-			ret[ attr.name ] = parsed.data;
-		    }
+		if ( !key ) {
+			ret = {};
+			remove = [];
+			i = 0;
+			while ( attr = div.XMLDocument.documentElement.attributes[ i++ ] ) {
+				parsed = JSON.parse( attr.value );
+				if ( parsed.expires && parsed.expires <= now ) {
+					remove.push( attr.name );
+				} else {
+					ret[ attr.name ] = parsed.data;
+				}
+			}
+			while ( key = remove.pop() ) {
+				div.removeAttribute( key );
+			}
+			div.save( attrKey );
+			return ret;
 		}
-		while ( key = remove.pop() ) {
-		    div.removeAttribute( key );
-		}
-		div.save( attrKey );
-		return ret;
-	    }
 
-	    // convert invalid characters to dashes
-	    // http://www.w3.org/TR/REC-xml/#NT-Name
-	    // simplified to assume the starting character is valid
-	    // also removed colon as it is invalid in HTML attribute names
-	    key = key.replace( /[^\-._0-9A-Za-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c-\u200d\u203f\u2040\u2070-\u218f]/g, "-" );
-	    // adjust invalid starting character to deal with our simplified sanitization
-	    key = key.replace( /^-/, "_-" );
+		// convert invalid characters to dashes
+		// http://www.w3.org/TR/REC-xml/#NT-Name
+		// simplified to assume the starting character is valid
+		// also removed colon as it is invalid in HTML attribute names
+		key = key.replace( /[^\-._0-9A-Za-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c-\u200d\u203f\u2040\u2070-\u218f]/g, "-" );
+		// adjust invalid starting character to deal with our simplified sanitization
+		key = key.replace( /^-/, "_-" );
 
-	    if ( value === undefined ) {
-		attr = div.getAttribute( key );
-		parsed = attr ? store.parse( attr ) : { expires: -1 };
-		if ( parsed.expires && parsed.expires <= now ) {
-		    div.removeAttribute( key );
+		if ( value === undefined ) {
+			attr = div.getAttribute( key );
+			parsed = attr ? JSON.parse( attr ) : { expires: -1 };
+			if ( parsed.expires && parsed.expires <= now ) {
+				div.removeAttribute( key );
+			} else {
+				return parsed.data;
+			}
 		} else {
-		    return parsed.data;
-		}
-	    } else {
-		if ( value === null ) {
-		    div.removeAttribute( key );
-		} else {
-		    // we need to get the previous value in case we need to rollback
-		    prevValue = div.getAttribute( key );
-		    parsed = store.stringify({
-			data: value,
-			expires: (options.expires ? (now + options.expires) : null)
-		    });
-		    div.setAttribute( key, parsed );
-		}
-	    }
-
-	    try {
-		div.save( attrKey );
-		// quota exceeded
-	    } catch ( error ) {
-		// roll the value back to the previous value
-		if ( prevValue === null ) {
-		    div.removeAttribute( key );
-		} else {
-		    div.setAttribute( key, prevValue );
+			if ( value === null ) {
+				div.removeAttribute( key );
+			} else {
+				// we need to get the previous value in case we need to rollback
+				prevValue = div.getAttribute( key );
+				parsed = store.stringify({
+					data: value,
+					expires: (options.expires ? (now + options.expires) : null)
+				});
+				div.setAttribute( key, parsed );
+			}
 		}
 
-		// expire old data and try again
-		store.userData();
 		try {
-		    div.setAttribute( key, parsed );
-		    div.save( attrKey );
+			div.save( attrKey );
+		// quota exceeded
 		} catch ( error ) {
-		    // roll the value back to the previous value
-		    if ( prevValue === null ) {
-			div.removeAttribute( key );
-		    } else {
-			div.setAttribute( key, prevValue );
-		    }
-		    throw store.error();
+			// roll the value back to the previous value
+			if ( prevValue === null ) {
+				div.removeAttribute( key );
+			} else {
+				div.setAttribute( key, prevValue );
+			}
+
+			// expire old data and try again
+			store.userData();
+			try {
+				div.setAttribute( key, parsed );
+				div.save( attrKey );
+			} catch ( error ) {
+				// roll the value back to the previous value
+				if ( prevValue === null ) {
+					div.removeAttribute( key );
+				} else {
+					div.setAttribute( key, prevValue );
+				}
+				throw store.error();
+			}
 		}
-	    }
-	    return ret;
+		return ret;
 	});
-    }());
+}());
+
 
 }(this));
+
 /**
  * ## Cookie storage for Shelf.js
- * Copyright 2015 Stefano Balietti
  * 
- * Original library from:
- * See http://code.google.com/p/cookies/
  */
+
 (function(exports) {
 
-    var store = exports.store;
-    
-    if (!store) {
-	throw new Error('cookie.shelf.js: shelf.js core not found.');
-    }
-
-    if ('undefined' === typeof window) {
-	throw new Error('cookie.shelf.js: window object not found.');
-    }
-
-    var cookie = (function() {
+var store = exports.store;
 	
-	var resolveOptions, assembleOptionsString, parseCookies, constructor;
-        var defaultOptions = {
-	    expiresAt: null,
-	    path: '/',
-	    domain:  null,
-	    secure: false
+if (!store) {
+	console.log('cookie.shelf.js: shelf.js core not found. Cookie storage not available.');
+	return;
+}
+
+if ('undefined' === typeof window) {
+	console.log('cookie.shelf.js: am I running in a browser? Cookie storage not available.');
+	return;
+}
+
+var cookie = (function() {
+	
+	var resolveOptions, assembleOptionsString, parseCookies, constructor, defaultOptions = {
+		expiresAt: null,
+		path: '/',
+		domain:  null,
+		secure: false
 	};
 	
 	/**
-	 * resolveOptions - receive an options object and ensure all options
-         * are present and valid, replacing with defaults where necessary
-	 *
-	 * @access private
-	 * @static
-	 * @parameter Object options - optional options to start with
-	 * @return Object complete and valid options object
-	 */
+	* resolveOptions - receive an options object and ensure all options are present and valid, replacing with defaults where necessary
+	*
+	* @access private
+	* @static
+	* @parameter Object options - optional options to start with
+	* @return Object complete and valid options object
+	*/
 	resolveOptions = function(options){
-	    
-	    var returnValue, expireDate;
+		
+		var returnValue, expireDate;
 
-	    if(typeof options !== 'object' || options === null){
-		returnValue = defaultOptions;
-	    }
-	    else {
-		returnValue = {
-		    expiresAt: defaultOptions.expiresAt,
-		    path: defaultOptions.path,
-		    domain: defaultOptions.domain,
-		    secure: defaultOptions.secure
-		};
-
-		if (typeof options.expiresAt === 'object' && options.expiresAt instanceof Date) {
-		    returnValue.expiresAt = options.expiresAt;
+		if(typeof options !== 'object' || options === null){
+			returnValue = defaultOptions;
 		}
-		else if (typeof options.hoursToLive === 'number' && options.hoursToLive !== 0){
-		    expireDate = new Date();
-		    expireDate.setTime(expireDate.getTime() + (options.hoursToLive * 60 * 60 * 1000));
-		    returnValue.expiresAt = expireDate;
+		else {
+			returnValue = {
+				expiresAt: defaultOptions.expiresAt,
+				path: defaultOptions.path,
+				domain: defaultOptions.domain,
+				secure: defaultOptions.secure
+			};
+
+			if (typeof options.expiresAt === 'object' && options.expiresAt instanceof Date) {
+				returnValue.expiresAt = options.expiresAt;
+			}
+			else if (typeof options.hoursToLive === 'number' && options.hoursToLive !== 0){
+				expireDate = new Date();
+				expireDate.setTime(expireDate.getTime() + (options.hoursToLive * 60 * 60 * 1000));
+				returnValue.expiresAt = expireDate;
+			}
+
+			if (typeof options.path === 'string' && options.path !== '') {
+				returnValue.path = options.path;
+			}
+
+			if (typeof options.domain === 'string' && options.domain !== '') {
+				returnValue.domain = options.domain;
+			}
+
+			if (options.secure === true) {
+				returnValue.secure = options.secure;
+			}
 		}
 
-		if (typeof options.path === 'string' && options.path !== '') {
-		    returnValue.path = options.path;
-		}
-
-		if (typeof options.domain === 'string' && options.domain !== '') {
-		    returnValue.domain = options.domain;
-		}
-
-		if (options.secure === true) {
-		    returnValue.secure = options.secure;
-		}
-	    }
-
-	    return returnValue;
+		return returnValue;
 	};
 	
 	/**
-	 * assembleOptionsString - analyze options and assemble appropriate string for setting a cookie with those options
-	 *
-	 * @access private
-	 * @static
-	 * @parameter options OBJECT - optional options to start with
-	 * @return STRING - complete and valid cookie setting options
-	 */
+	* assembleOptionsString - analyze options and assemble appropriate string for setting a cookie with those options
+	*
+	* @access private
+	* @static
+	* @parameter options OBJECT - optional options to start with
+	* @return STRING - complete and valid cookie setting options
+	*/
 	assembleOptionsString = function (options) {
-	    options = resolveOptions(options);
+		options = resolveOptions(options);
 
-	    return (
-		(typeof options.expiresAt === 'object' && options.expiresAt instanceof Date ? '; expires=' + options.expiresAt.toGMTString() : '') +
-		    '; path=' + options.path +
-		    (typeof options.domain === 'string' ? '; domain=' + options.domain : '') +
-		    (options.secure === true ? '; secure' : '')
-	    );
+		return (
+			(typeof options.expiresAt === 'object' && options.expiresAt instanceof Date ? '; expires=' + options.expiresAt.toGMTString() : '') +
+			'; path=' + options.path +
+			(typeof options.domain === 'string' ? '; domain=' + options.domain : '') +
+			(options.secure === true ? '; secure' : '')
+		);
 	};
 	
 	/**
-	 * parseCookies - retrieve document.cookie string and break it into a hash with values decoded and unserialized
-	 *
-	 * @access private
-	 * @static
-	 * @return OBJECT - hash of cookies from document.cookie
-	 */
+	* parseCookies - retrieve document.cookie string and break it into a hash with values decoded and unserialized
+	*
+	* @access private
+	* @static
+	* @return OBJECT - hash of cookies from document.cookie
+	*/
 	parseCookies = function() {
-	    var cookies = {}, i, pair, name, value, separated = document.cookie.split(';'), unparsedValue;
-	    for(i = 0; i < separated.length; i = i + 1){
-		pair = separated[i].split('=');
-		name = pair[0].replace(/^\s*/, '').replace(/\s*$/, '');
+		var cookies = {}, i, pair, name, value, separated = document.cookie.split(';'), unparsedValue;
+		for(i = 0; i < separated.length; i = i + 1){
+			pair = separated[i].split('=');
+			name = pair[0].replace(/^\s*/, '').replace(/\s*$/, '');
 
-		try {
-		    value = decodeURIComponent(pair[1]);
+			try {
+				value = decodeURIComponent(pair[1]);
+			}
+			catch(e1) {
+				value = pair[1];
+			}
+
+//						if (JSON && 'object' === typeof JSON && 'function' === typeof JSON.parse) {
+//							try {
+//								unparsedValue = value;
+//								value = JSON.parse(value);
+//							}
+//							catch (e2) {
+//								value = unparsedValue;
+//							}
+//						}
+
+			cookies[name] = store.parse(value);
 		}
-		catch(e1) {
-		    value = pair[1];
-		}
-
-                //						if (JSON && 'object' === typeof JSON && 'function' === typeof JSON.parse) {
-                //							try {
-                //								unparsedValue = value;
-                //								value = JSON.parse(value);
-                //							}
-                //							catch (e2) {
-                //								value = unparsedValue;
-                //							}
-                //						}
-
-		cookies[name] = store.parse(value);
-	    }
-	    return cookies;
+		return cookies;
 	};
 
 	constructor = function(){};
@@ -933,28 +938,28 @@ if (!JSON) {
 	 * @return Mixed - Value of cookie as set; Null:if only one cookie is requested and is not found; Object:hash of multiple or all cookies (if multiple or all requested);
 	 */
 	constructor.prototype.get = function(cookieName) {
-	    
-	    var returnValue, item, cookies = parseCookies();
+		
+		var returnValue, item, cookies = parseCookies();
 
-	    if(typeof cookieName === 'string') {
-		returnValue = (typeof cookies[cookieName] !== 'undefined') ? cookies[cookieName] : null;
-	    }
-	    else if (typeof cookieName === 'object' && cookieName !== null) {
-		returnValue = {};
-		for (item in cookieName) {
-		    if (typeof cookies[cookieName[item]] !== 'undefined') {
-			returnValue[cookieName[item]] = cookies[cookieName[item]];
-		    }
-		    else {
-			returnValue[cookieName[item]] = null;
-		    }
+		if(typeof cookieName === 'string') {
+			returnValue = (typeof cookies[cookieName] !== 'undefined') ? cookies[cookieName] : null;
 		}
-	    }
-	    else {
-		returnValue = cookies;
-	    }
+		else if (typeof cookieName === 'object' && cookieName !== null) {
+			returnValue = {};
+			for (item in cookieName) {
+				if (typeof cookies[cookieName[item]] !== 'undefined') {
+					returnValue[cookieName[item]] = cookies[cookieName[item]];
+				}
+				else {
+					returnValue[cookieName[item]] = null;
+				}
+			}
+		}
+		else {
+			returnValue = cookies;
+		}
 
-	    return returnValue;
+		return returnValue;
 	};
 	
 	/**
@@ -965,19 +970,19 @@ if (!JSON) {
 	 * @return Mixed - Object:hash of cookies whose names match the RegExp
 	 */
 	constructor.prototype.filter = function (cookieNameRegExp) {
-	    var cookieName, returnValue = {}, cookies = parseCookies();
+		var cookieName, returnValue = {}, cookies = parseCookies();
 
-	    if (typeof cookieNameRegExp === 'string') {
-		cookieNameRegExp = new RegExp(cookieNameRegExp);
-	    }
-
-	    for (cookieName in cookies) {
-		if (cookieName.match(cookieNameRegExp)) {
-		    returnValue[cookieName] = cookies[cookieName];
+		if (typeof cookieNameRegExp === 'string') {
+			cookieNameRegExp = new RegExp(cookieNameRegExp);
 		}
-	    }
 
-	    return returnValue;
+		for (cookieName in cookies) {
+			if (cookieName.match(cookieNameRegExp)) {
+				returnValue[cookieName] = cookies[cookieName];
+			}
+		}
+
+		return returnValue;
 	};
 	
 	/**
@@ -990,31 +995,31 @@ if (!JSON) {
 	 * @return void
 	 */
 	constructor.prototype.set = function(cookieName, value, options){
-	    if (typeof options !== 'object' || options === null) {
-		options = {};
-	    }
+		if (typeof options !== 'object' || options === null) {
+			options = {};
+		}
 
-	    if (typeof value === 'undefined' || value === null) {
-		value = '';
-		options.hoursToLive = -8760;
-	    }
+		if (typeof value === 'undefined' || value === null) {
+			value = '';
+			options.hoursToLive = -8760;
+		}
 
-	    else if (typeof value !== 'string'){
-                //						if(typeof JSON === 'object' && JSON !== null && typeof store.stringify === 'function') {
-                //							
-                //							value = JSON.stringify(value);
-                //						}
-                //						else {
-                //							throw new Error('cookies.set() received non-string value and could not serialize.');
-                //						}
-		
-		value = store.stringify(value);
-	    }
+		else if (typeof value !== 'string'){
+//						if(typeof JSON === 'object' && JSON !== null && typeof store.stringify === 'function') {
+//							
+//							value = JSON.stringify(value);
+//						}
+//						else {
+//							throw new Error('cookies.set() received non-string value and could not serialize.');
+//						}
+			
+			value = store.stringify(value);
+		}
 
 
-	    var optionsString = assembleOptionsString(options);
+		var optionsString = assembleOptionsString(options);
 
-	    document.cookie = cookieName + '=' + encodeURIComponent(value) + optionsString;
+		document.cookie = cookieName + '=' + encodeURIComponent(value) + optionsString;
 	};
 	
 	/**
@@ -1026,24 +1031,24 @@ if (!JSON) {
 	 * @return void
 	 */
 	constructor.prototype.del = function(cookieName, options) {
-	    var allCookies = {}, name;
+		var allCookies = {}, name;
 
-	    if(typeof options !== 'object' || options === null) {
-		options = {};
-	    }
-
-	    if(typeof cookieName === 'boolean' && cookieName === true) {
-		allCookies = this.get();
-	    }
-	    else if(typeof cookieName === 'string') {
-		allCookies[cookieName] = true;
-	    }
-
-	    for(name in allCookies) {
-		if(typeof name === 'string' && name !== '') {
-		    this.set(name, null, options);
+		if(typeof options !== 'object' || options === null) {
+			options = {};
 		}
-	    }
+
+		if(typeof cookieName === 'boolean' && cookieName === true) {
+			allCookies = this.get();
+		}
+		else if(typeof cookieName === 'string') {
+			allCookies[cookieName] = true;
+		}
+
+		for(name in allCookies) {
+			if(typeof name === 'string' && name !== '') {
+				this.set(name, null, options);
+			}
+		}
 	};
 	
 	/**
@@ -1053,16 +1058,16 @@ if (!JSON) {
 	 * @return Boolean
 	 */
 	constructor.prototype.test = function() {
-	    var returnValue = false, testName = 'cT', testValue = 'data';
+		var returnValue = false, testName = 'cT', testValue = 'data';
 
-	    this.set(testName, testValue);
+		this.set(testName, testValue);
 
-	    if(this.get(testName) === testValue) {
-		this.del(testName);
-		returnValue = true;
-	    }
+		if(this.get(testName) === testValue) {
+			this.del(testName);
+			returnValue = true;
+		}
 
-	    return returnValue;
+		return returnValue;
 	};
 	
 	/**
@@ -1073,197 +1078,197 @@ if (!JSON) {
 	 * @return void
 	 */
 	constructor.prototype.setOptions = function(options) {
-	    if(typeof options !== 'object') {
-		options = null;
-	    }
+		if(typeof options !== 'object') {
+			options = null;
+		}
 
-	    defaultOptions = resolveOptions(options);
+		defaultOptions = resolveOptions(options);
 	};
 
 	return new constructor();
-    })();
+})();
 
-    // if cookies are supported by the browser
-    if (cookie.test()) {
+// if cookies are supported by the browser
+if (cookie.test()) {
 
-	store.addType("cookie", function(key, value, options) {
-	    
-	    if ('undefined' === typeof key) {
-		return cookie.get();
-	    }
+	store.addType("cookie", function (key, value, options) {
+		
+		if ('undefined' === typeof key) {
+			return cookie.get();
+		}
 
-	    if ('undefined' === typeof value) {
-		return cookie.get(key);
-	    }
-	    
-	    // Set to NULL means delete
-	    if (value === null) {
-		cookie.del(key);
-		return null;
-	    }
+		if ('undefined' === typeof value) {
+			return cookie.get(key);
+		}
+		
+		// Set to NULL means delete
+		if (value === null) {
+			cookie.del(key);
+			return null;
+		}
 
-	    return cookie.set(key, value, options);		
+		return cookie.set(key, value, options);		
 	});
-    }
+}
 
 }(this));
 /**
- * # JSUS: JavaScript UtilS.
- * Copyright(c) 2014 Stefano Balietti
+ * # JSUS: JavaScript UtilS. 
+ * Copyright(c) 2013 Stefano Balietti
  * MIT Licensed
- *
+ * 
  * Collection of general purpose javascript functions. JSUS helps!
- *
+ * 
  * See README.md for extra help.
- * ---
  */
-(function(exports) {
 
+(function (exports) {
+    
     var JSUS = exports.JSUS = {};
-
-    // ## JSUS._classes
-    // Reference to all the extensions
+    
+// ## JSUS._classes
+// Reference to all the extensions
     JSUS._classes = {};
-
-    /**
-     * ## JSUS.log
-     *
-     * Reference to standard out, by default `console.log`
-     *
-     * Override to redirect the standard output of all JSUS functions.
-     *
-     * @param {string} txt Text to output
-     */
-    JSUS.log = function(txt) {
-        console.log(txt);
-    };
-
-    /**
-     * ## JSUS.extend
-     *
-     * Extends JSUS with additional methods and or properties
-     *
-     * The first parameter can be an object literal or a function.
-     * A reference of the original extending object is stored in
-     * JSUS._classes
-     *
-     * If a second parameter is passed, that will be the target of the
-     * extension.
-     *
-     * @param {object} additional Text to output
-     * @param {object|function} target The object to extend
-     * @return {object|function} target The extended object
-     *
-     * @see JSUS.get
-     */
-    JSUS.extend = function(additional, target) {
-        var name, prop;
-        if ('object' !== typeof additional &&
-            'function' !== typeof additional) {
-            return target;
-        }
-
-        // If we are extending JSUS, store a reference
-        // of the additional object into the hidden
-        // JSUS._classes object;
-        if ('undefined' === typeof target) {
-            target = target || this;
-            if ('function' === typeof additional) {
-                name = additional.toString();
-                name = name.substr('function '.length);
-                name = name.substr(0, name.indexOf('('));
-            }
-            // Must be object.
-            else {
-                name = additional.constructor ||
-                    additional.__proto__.constructor;
-            }
-            if (name) {
-                this._classes[name] = additional;
-            }
-        }
-
-        for (prop in additional) {
-            if (additional.hasOwnProperty(prop)) {
-                if (typeof target[prop] !== 'object') {
-                    target[prop] = additional[prop];
-                } else {
-                    JSUS.extend(additional[prop], target[prop]);
-                }
-            }
-        }
-
-        // Additional is a class (Function)
-        // TODO: this is true also for {}
-        if (additional.prototype) {
-            JSUS.extend(additional.prototype, target.prototype || target);
-        };
-
+    
+/**
+ * ## JSUS.log
+ * 
+ * Reference to standard out, by default `console.log`
+ * Override to redirect the standard output of all JSUS functions.
+ * 
+ * @param {string} txt Text to output
+ * 
+ */
+JSUS.log = function (txt) {
+    console.log(txt);
+};
+    
+/**
+ * ## JSUS.extend
+ * 
+ * Extends JSUS with additional methods and or properties taken 
+ * from the object passed as first parameter. 
+ * 
+ * The first parameter can be an object literal or a function.
+ * A reference of the original extending object is stored in 
+ * JSUS._classes
+ * 
+ * If a second parameter is passed, that will be the target of the
+ * extension.
+ * 
+ * @param {object} additional Text to output
+ * @param {object|function} target The object to extend
+ * @return {object|function} target The extended object
+ * 
+ * 	@see JSUS.get
+ * 
+ */
+JSUS.extend = function (additional, target) {        
+    if ('object' !== typeof additional && 'function' !== typeof additional) {
         return target;
-    };
-
-    /**
-     * ## JSUS.require
-     *
-     * Returns a copy of one / all the objects extending JSUS.
-     *
-     * The first parameter is a string representation of the name of
-     * the requested extending object. If no parameter is passed a copy
-     * of all the extending objects is returned.
-     *
-     * @param {string} className The name of the requested JSUS library
-     * @return {function|boolean} The copy of the JSUS library, or
-     *   FALSE if the library does not exist
-     */
-    JSUS.require = JSUS.get = function(className) {
-        if ('undefined' === typeof JSUS.clone) {
-            JSUS.log('JSUS.clone not found. Cannot continue.');
-            return false;
-        }
-        if ('undefined' === typeof className) return JSUS.clone(JSUS._classes);
-        if ('undefined' === typeof JSUS._classes[className]) {
-            JSUS.log('Could not find class ' + className);
-            return false;
-        }
-        return JSUS.clone(JSUS._classes[className]);
-    };
-
-    /**
-     * ## JSUS.isNodeJS
-     *
-     * Returns TRUE when executed inside Node.JS environment
-     *
-     * @return {boolean} TRUE when executed inside Node.JS environment
-     */
-    JSUS.isNodeJS = function() {
-	return 'undefined' !== typeof module
-	    && 'undefined' !== typeof module.exports
-	    && 'function' === typeof require;
-    };
-
-    // ## Node.JS includes
-    // if node
-    if (JSUS.isNodeJS()) {
-        require('./lib/compatibility');
-        require('./lib/obj');
-        require('./lib/array');
-        require('./lib/time');
-        require('./lib/eval');
-        require('./lib/dom');
-        require('./lib/random');
-        require('./lib/parse');
-        require('./lib/fs');
     }
-    // end node
+    
+    // If we are extending JSUS, store a reference
+    // of the additional object into the hidden
+    // JSUS._classes object;
+    if ('undefined' === typeof target) {
+        target = target || this;
+        if ('function' === typeof additional) {
+            var name = additional.toString();
+            name = name.substr('function '.length);
+            name = name.substr(0, name.indexOf('('));
+        }
+        //! must be object
+        else {
+            var name = additional.constructor || additional.__proto__.constructor;
+        }
+        if (name) {
+            this._classes[name] = additional;
+        }
+    }
+    
+    for (var prop in additional) {
+        if (additional.hasOwnProperty(prop)) {
+            if (typeof target[prop] !== 'object') {
+                target[prop] = additional[prop];
+            } else {
+                JSUS.extend(additional[prop], target[prop]);
+            }
+        }
+    }
 
-})(
-    'undefined' !== typeof module && 'undefined' !== typeof module.exports ?
-        module.exports: window
-);
+    // additional is a class (Function)
+    // TODO: this is true also for {}
+    if (additional.prototype) {
+        JSUS.extend(additional.prototype, target.prototype || target);
+    };
+    
+    return target;
+};
+  
+/**
+ * ## JSUS.require
+ * 
+ * Returns a copy of one / all the objects that have extended the
+ * current instance of JSUS.
+ * 
+ * The first parameter is a string representation of the name of 
+ * the requested extending object. If no parameter is passed a copy 
+ * of all the extending objects is returned.
+ * 
+ * @param {string} className The name of the requested JSUS library
+ * @return {function|boolean} The copy of the JSUS library, or FALSE if the library does not exist
+ * 
+ */
+JSUS.require = JSUS.get = function (className) {
+    if ('undefined' === typeof JSUS.clone) {
+        JSUS.log('JSUS.clone not found. Cannot continue.');
+        return false;
+    }
+    if ('undefined' === typeof className) return JSUS.clone(JSUS._classes);
+    if ('undefined' === typeof JSUS._classes[className]) {
+        JSUS.log('Could not find class ' + className);
+        return false;
+    }
+    return JSUS.clone(JSUS._classes[className]);
+    //return new JSUS._classes[className]();
+};
+
+/**
+ * ## JSUS.isNodeJS
+ * 
+ * Returns TRUE when executed inside Node.JS environment
+ * 
+ * @return {boolean} TRUE when executed inside Node.JS environment
+ */
+JSUS.isNodeJS = function () {
+	return 'undefined' !== typeof module 
+			&& 'undefined' !== typeof module.exports
+			&& 'function' === typeof require;
+};
+
+// ## Node.JS includes
+// if node
+if (JSUS.isNodeJS()) {
+    require('./lib/compatibility');
+    require('./lib/obj');
+    require('./lib/array');
+    require('./lib/time');
+    require('./lib/eval');
+    require('./lib/dom');
+    require('./lib/random');
+    require('./lib/parse');
+    require('./lib/fs');
+}
+// end node
+    
+})('undefined' !== typeof module && 'undefined' !== typeof module.exports ? module.exports: window);
+
+
 /**
  * # COMPATIBILITY
  *
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2013 Stefano Balietti
  * MIT Licensed
  *
  * Tests browsers ECMAScript 5 compatibility
@@ -1325,7 +1330,7 @@ if (!JSON) {
 })('undefined' !== typeof JSUS ? JSUS : module.parent.exports.JSUS);
 /**
  * # ARRAY
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2013 Stefano Balietti
  * MIT Licensed
  * 
  * Collection of static functions to manipulate arrays.
@@ -2041,7 +2046,7 @@ if (!JSON) {
 /**
  * # DOM
  *
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2013 Stefano Balietti
  * MIT Licensed
  *
  * Collection of static functions related to DOM manipulation
@@ -2163,7 +2168,7 @@ if (!JSON) {
                 // Pattern not found.
                 if (idx_start === -1) continue;
 
-                switch(key.charAt(0)) {
+                switch(key[0]) {
 
                 case '%': // Span.
 
@@ -2244,13 +2249,15 @@ if (!JSON) {
      * Returns TRUE if the object is a DOM node
      *
      * @param {mixed} The variable to check
-     * @return {boolean} TRUE, if the the object is a DOM node
+     * @param {boolean} TRUE, if the the object is a DOM node
      */
     DOM.isNode = function(o) {
-        return 'object' === typeof Node ? o instanceof Node :
-            'object' === typeof o &&
-            'number' === typeof o.nodeType &&
-            'string' === typeof o.nodeName;
+        return (
+            typeof Node === "object" ? o instanceof Node :
+                typeof o === "object" &&
+                typeof o.nodeType === "number" &&
+                typeof o.nodeName === "string"
+        );
     };
 
     /**
@@ -2258,15 +2265,16 @@ if (!JSON) {
      *
      * Returns TRUE if the object is a DOM element
      *
-     * Notice: instanceof HTMLElement is not reliable in Safari, even if
-     * the method is defined.
-     *
      * @param {mixed} The variable to check
-     * @return {boolean} TRUE, if the the object is a DOM element
+     * @param {boolean} TRUE, if the the object is a DOM element
      */
     DOM.isElement = function(o) {
-        return 'object' === typeof o && o.nodeType === 1 &&
-            'string' === typeof o.nodeName;
+        return (
+            typeof HTMLElement === "object" ? o instanceof HTMLElement : //DOM2
+            typeof o === "object" &&
+                o.nodeType === 1 &&
+                typeof o.nodeName === "string"
+        );
     };
 
     /**
@@ -2309,13 +2317,8 @@ if (!JSON) {
     /**
      * ### DOM.getElement
      *
-     * Creates a generic HTML element with id and attributes as specified
-     * 
-     * @param {string} elem The name of the tag
-     * @param {string} id Optional. The id of the tag
-     * @param {object} attributes Optional. Object containing attributes for
-     *   the newly created element
-     * @return {HTMLElement} The newly created HTML element
+     * Creates a generic HTML element with id and attributes as specified,
+     * and returns it.
      *
      * @see DOM.addAttributes2Elem
      */
@@ -2330,15 +2333,8 @@ if (!JSON) {
     /**
      * ### DOM.addElement
      *
-     * Creates and appends a generic HTML element with specified attributes
-     *
-     * @param {string} elem The name of the tag
-     * @param {HTMLElement} root The root element to which the new element will
-     *   be appended
-     * @param {string} id Optional. The id of the tag
-     * @param {object} attributes Optional. Object containing attributes for
-     *   the newly created element
-     * @return {HTMLElement} The newly created HTML element
+     * Creates a generic HTML element with id and attributes as specified,
+     * appends it to the root element, and returns it.
      *
      * @see DOM.getElement
      * @see DOM.addAttributes2Elem
@@ -2354,42 +2350,23 @@ if (!JSON) {
      * Adds attributes to an HTML element and returns it.
      *
      * Attributes are defined as key-values pairs.
-     * Attributes 'label' is ignored, attribute 'class' and 'style' are
-     * special and are delegated to special methods.
+     * Attributes 'style', and 'label' are ignored.
      *
-     * @param {HTMLElement} e The element to decorate
-     * @param {object} a Object containing attributes to add to the element
-     *
-     * @return {HTMLElement} e The decorated element
-     *
-     * @see DOM.addLabel
-     * @see DOM.addClass
      * @see DOM.style
+     * @see DOM.addLabel
+     *
      */
     DOM.addAttributes2Elem = function(e, a) {
-        var key;
         if (!e || !a) return e;
         if ('object' != typeof a) return e;
-        for (key in a) {
+        var specials = ['id', 'label'];
+        for (var key in a) {
             if (a.hasOwnProperty(key)) {
-                if (key === 'id') {
+                if (!JSUS.in_array(key, specials)) {
+                    e.setAttribute(key,a[key]);
+                } else if (key === 'id') {
                     e.id = a[key];
                 }
-                else if (key === 'class') {
-                    DOM.addClass(e, a[key]);
-                }
-                else if (key === 'style') {
-                    DOM.style(e, a[key]);
-                }
-                else if (key === 'label') {
-                    // Handle the case.
-                    JSUS.log('DOM.addAttributes2Elem: label attribute is not ' +
-                             'supported. Use DOM.addLabel instead.');
-                }
-                else {
-                    e.setAttribute(key, a[key]);
-                }
-
 
                 // TODO: handle special cases
                 // <!--
@@ -2417,15 +2394,12 @@ if (!JSON) {
      * a list of key-values pairs as text-value attributes for
      * the option.
      *
-     * @param {HTMLElement} select HTML select element
-     * @param {object} list Options to add to the select element
      */
     DOM.populateSelect = function(select, list) {
-        var key, opt;
         if (!select || !list) return;
-        for (key in list) {
+        for (var key in list) {
             if (list.hasOwnProperty(key)) {
-                opt = document.createElement('option');
+                var opt = document.createElement('option');
                 opt.value = list[key];
                 opt.appendChild(document.createTextNode(key));
                 select.appendChild(opt);
@@ -2438,12 +2412,15 @@ if (!JSON) {
      *
      * Removes all children from a node.
      *
-     * @param {HTMLElement} e HTML element.
      */
     DOM.removeChildrenFromNode = function(e) {
+
+        if (!e) return false;
+
         while (e.hasChildNodes()) {
             e.removeChild(e.firstChild);
         }
+        return true;
     };
 
     /**
@@ -2491,6 +2468,32 @@ if (!JSON) {
         return scanDocuments(prefix + '_' + JSUS.randomInt(0, 10000000));
         //return scanDocuments(prefix);
     };
+
+    /**
+     * ### DOM.getBlankPage
+     *
+     * Creates a blank HTML page with the html and body
+     * elements already appended.
+     *
+     */
+    DOM.getBlankPage = function() {
+        var html = document.createElement('html');
+        html.appendChild(document.createElement('body'));
+        return html;
+    };
+
+    //    DOM.findLastElement = function(o) {
+    //        if (!o) return;
+    //
+    //        if (o.lastChild) {
+    //            var e
+    //            JSUS.isElement(e)) return DOM.findLastElement(e);
+    //
+    //            var e = e.previousSibling;
+    //            if (e && JSUS.isElement(e)) return DOM.findLastElement(e);
+    //
+    //        return o;
+    //    };
 
     // ## GET/ADD
 
@@ -2691,10 +2694,7 @@ if (!JSON) {
      *
      */
     DOM.getIFrame = function(id, attributes) {
-        attributes = attributes || {};
-        if (!attributes.name) {
-            attributes.name = id; // For Firefox
-        }
+        var attributes = {'name' : id}; // For Firefox
         return this.getElement('iframe', id, attributes);
     };
 
@@ -2800,27 +2800,26 @@ if (!JSON) {
      * @see DOM.addBorder
      * @see DOM.style
      */
-     DOM.highlight = function(elem, code) {
-        var color;
+    DOM.highlight = function(elem, code) {
         if (!elem) return;
 
         // default value is ERR
         switch (code) {
         case 'OK':
-            color =  'green';
+            var color =  'green';
             break;
         case 'WARN':
-            color = 'yellow';
+            var color = 'yellow';
             break;
         case 'ERR':
-            color = 'red';
+            var color = 'red';
             break;
         default:
-            if (code.charAt(0) === '#') {
-                color = code;
+            if (code[0] === '#') {
+                var color = code;
             }
             else {
-                color = 'red';
+                var color = 'red';
             }
         }
 
@@ -2849,24 +2848,23 @@ if (!JSON) {
      * ### DOM.style
      *
      * Styles an element as an in-line css.
+     * Takes care to add new styles, and not overwriting previuous
+     * attributes.
      *
-     * Existing style properties are maintained, and new ones added.
+     * Returns the element.
      *
-     * @param {HTMLElement} elem The element to style
-     * @param {object} Objects containing the properties to add.
-     * @return {HTMLElement} elem The styled element
+     * @see DOM.setAttribute
      */
     DOM.style = function(elem, properties) {
-        var i;
+        var style, i;
         if (!elem || !properties) return;
         if (!DOM.isElement(elem)) return;
 
+        style = '';
         for (i in properties) {
-            if (properties.hasOwnProperty(i)) {
-                elem.style[i] = properties[i];
-            }
-        }
-        return elem;
+            style += i + ': ' + properties[i] + '; ';
+        };
+        return elem.setAttribute('style', style);
     };
 
     /**
@@ -2910,11 +2908,11 @@ if (!JSON) {
         }
         return el;
     };
-
+    
     /**
      * ## DOM.getIFrameDocument
      *
-     * Returns a reference to the document of an iframe object
+     * Returns a reference to the document of an iframe object 
      *
      * @param {HTMLIFrameElement} iframe The iframe object
      * @return {HTMLDocument|undefined} The document of the iframe, or
@@ -2944,103 +2942,58 @@ if (!JSON) {
             contentDocument.getElementsByTagName('html')[0];
     };
 
-    /**
-     * ### DOM.getElementsByClassName
-     *
-     * Gets the first available child of an IFrame
-     *
-     * Tries head, body, lastChild and the HTML element
-     *
-     * @param {object} document The document object of a window or iframe
-     * @param {string} className The requested className
-     * @param {string}  nodeName Optional. If set only elements with
-     *   the specified tag name will be searched
-     * @return {array} Array of elements with the requested class name
-     *
-     * @see https://gist.github.com/E01T/6088383
-     */
-    DOM.getElementsByClassName = function(document, className, nodeName) {
-        var result, node, tag, seek, i, rightClass;
-        result = [], tag = nodeName || '*';
-        if (document.evaluate) {
-            seek = '//'+ tag +'[@class="'+ className +'"]';
-            seek = document.evaluate(seek, document, null, 0, null );
-            while ((node = seek.iterateNext())) {
-                result.push(node);
-            }
-        }
-        else {
-            rightClass = new RegExp( '(^| )'+ className +'( |$)' );
-            seek = document.getElementsByTagName(tag);
-            for (i = 0; i < seek.length; i++)
-                if (rightClass.test((node = seek[i]).className )) {
-                    result.push(seek[i]);
-                }
-        }
-        return result;
-    };
-
     JSUS.extend(DOM);
 
 })('undefined' !== typeof JSUS ? JSUS : module.parent.exports.JSUS);
 /**
  * # EVAL
  *
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2013 Stefano Balietti
  * MIT Licensed
  *
  * Collection of static functions related to the evaluation
  * of strings as javascript commands
  * ---
  */
+
 (function(JSUS) {
 
-    function EVAL(){};
+function EVAL(){};
 
-    /**
-     * ## EVAL.eval
-     *
-     * Cross-browser eval function with context.
-     *
-     * If no context is passed a reference, `this` is used.
-     *
-     * In old IEs it will use _window.execScript_ instead.
-     *
-     * @param {string} str The command to executes
-     * @param {object} context Optional. Execution context. Defaults, `this`
-     * @return {mixed} The return value of the executed commands
-     *
-     * @see eval
-     * @see execScript
-     * @see JSON.parse
-     */
-    EVAL.eval = function(str, context) {
-        var func;
-        if (!str) return;
-        context = context || this;
-        // Eval must be called indirectly
-        // i.e. eval.call is not possible
-        func = function(str) {
-            // TODO: Filter str.
-            str = '(' + str + ')';
-            if (window && window.execScript) {
-                // Notice: execScript doesn’t return anything.
-                window.execScript('__my_eval__ = ' + str);
-                return __my_eval__;
-            }
-            else {
-                return eval(str);
-            }
-        }
-        return func.call(context, str);
-    };
+/**
+ * ## EVAL.eval
+ *
+ * Allows to execute the eval function within a given
+ * context.
+ *
+ * If no context is passed a reference, `this` is used.
+ *
+ * @param {string} str The command to executes
+ * @param {object} context Optional. The context of execution. Defaults, `this`
+ * @return {mixed} The return value of the executed commands
+ *
+ * @see eval
+ * @see JSON.parse
+ */
+EVAL.eval = function(str, context) {
+    var func;
+    if (!str) return;
+    context = context || this;
+    // Eval must be called indirectly
+    // i.e. eval.call is not possible
+    func = function(str) {
+        // TODO: Filter str
+        return eval(str);
+    }
+    return func.call(context, str);
+};
 
-    JSUS.extend(EVAL);
+JSUS.extend(EVAL);
 
 })('undefined' !== typeof JSUS ? JSUS : module.parent.exports.JSUS);
 /**
  * # JSUS.OBJ
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2013 Stefano Balietti
  * MIT Licensed
  *
  * Collection of static functions to manipulate javascript objects.
@@ -4059,7 +4012,7 @@ if (!JSON) {
 
 /**
  * # RANDOM
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2013 Stefano Balietti
  * MIT Licensed
  *
  * Collection of static functions related to the generation of
@@ -4096,7 +4049,8 @@ if (!JSON) {
     /**
      * ## RANDOM.randomInt
      *
-     * Generates a pseudo-random integer between (a,b] a exclusive, b inclusive
+     * Generates a pseudo-random integer between
+     * (a,b] a exclusive, b inclusive.
      *
      * @param {number} a The lower limit
      * @param {number} b The upper limit
@@ -4109,238 +4063,11 @@ if (!JSON) {
         return Math.floor(RANDOM.random(a, b) + 1);
     };
 
-    /**
-     * ## RANDOM.sample
-     *
-     * Generates a randomly shuffled sequence of numbers in (a,b)
-     *
-     * Both _a_ and _b_ are inclued in the interval.
-     *
-     * @param {number} a The lower limit
-     * @param {number} b The upper limit
-     * @return {array} The randomly shuffled sequence.
-     *
-     * @see RANDOM.seq
-     */
     RANDOM.sample = function(a, b) {
         var out;
         out = JSUS.seq(a,b)
         if (!out) return false;
         return JSUS.shuffle(out);
-    };
-
-    /**
-     * ## RANDOM.sample
-     *
-     * Returns a new generator of normally distributed pseudo random numbers
-     *
-     * The generator is independent from RANDOM.nextNormal
-     * 
-     * @return {function} An independent generator 
-     * 
-     * @see RANDOM.nextNormal
-     */
-    RANDOM.getNormalGenerator = function() {
-
-        return (function() {
-
-            var oldMu, oldSigma;    
-            var x2, multiplier, genReady;    
-            
-            return function normal(mu, sigma) {
-                
-                var x1, u1, u2, v1, v2, s;
-                
-                if ('number' !== typeof mu) {
-                    throw new TypeError('nextNormal: mu must be number.');
-                }
-                if ('number' !== typeof sigma) {
-                    throw new TypeError('nextNormal: sigma must be number.');
-                }
-
-                if (mu !== oldMu || sigma !== oldSigma) {
-                    genReady = false;
-                    oldMu = mu;
-                    oldSigma = sigma;
-                }
-
-                if (genReady) {     
-                    genReady = false;
-                    return (sigma * x2) + mu;
-                }
-                
-                u1 = Math.random();
-                u2 = Math.random();
-                
-                // Normalize between -1 and +1.
-                v1 = (2 * u1) - 1;
-                v2 = (2 * u2) - 1; 
-                
-                s = (v1 * v1) + (v2 * v2);
-                
-                // Condition is true on average 1.27 times, 
-                // with variance equal to 0.587.
-                if (s >= 1) {
-                    return normal(mu, sigma);
-                }
-                
-                multiplier = Math.sqrt(-2 * Math.log(s) / s);
-                
-                x1 = v1 * multiplier;
-                x2 = v2 * multiplier;
-                
-                genReady = true;
-                
-                return (sigma * x1) + mu;
-                
-            }
-        })();
-    }
-
-    /**
-     * Generates random numbers with Normal Gaussian distribution.
-     *
-     * User must specify the expected mean, and standard deviation a input 
-     * parameters.
-     *
-     * Implements the Polar Method by Knuth, "The Art Of Computer
-     * Programming", p. 117.
-     * 
-     * @param {number} mu The mean of the distribution
-     * param {number} sigma The standard deviation of the distribution
-     * @return {number} A random number following a Normal Gaussian distribution
-     *
-     * @see RANDOM.getNormalGenerator
-     */
-    RANDOM.nextNormal = RANDOM.getNormalGenerator();
-
-    /**
-     * Generates random numbers with LogNormal distribution.
-     *
-     * User must specify the expected mean, and standard deviation of the
-     * underlying gaussian distribution as input parameters.
-     * 
-     * @param {number} mu The mean of the gaussian distribution
-     * @param {number} sigma The standard deviation of the gaussian distribution
-     * @return {number} A random number following a LogNormal distribution
-     *
-     * @see RANDOM.nextNormal 
-     */
-    RANDOM.nextLogNormal = function(mu, sigma) {
-        if ('number' !== typeof mu) {
-            throw new TypeError('nextLogNormal: mu must be number.');
-        }
-        if ('number' !== typeof sigma) {
-            throw new TypeError('nextLogNormal: sigma must be number.');
-        }
-        return Math.exp(nextNormal(mu, sigma));
-    }
-
-    /**
-     * Generates random numbers with Exponential distribution.
-     *
-     * User must specify the lambda the _rate parameter_ of the distribution.
-     * The expected mean of the distribution is equal to `Math.pow(lamba, -1)`. 
-     * 
-     * @param {number} lambda The rate parameter
-     * @return {number} A random number following an Exponential distribution
-     */
-    RANDOM.nextExponential = function(lambda) {
-        if ('number' !== typeof lambda) {
-            throw new TypeError('nextExponential: lambda must be number.');
-        }
-        if (lambda <= 0) {
-            throw new TypeError('nextExponential: lambda must be greater than 0.');
-        }
-        return - Math.log(1 - Math.random()) / lambda;
-    }
-    
-    /**
-     * Generates random numbers following the Binomial distribution.
-     *
-     * User must specify the probability of success and the number of trials.
-     * 
-     * @param {number} p The probability of success
-     * @param {number} trials The number of trials
-     * @return {number} sum The sum of successes in n trials
-     */
-    RANDOM.nextBinomial = function(p, trials) {
-        var counter, sum;
-
-        if ('number' !== typeof p) {
-            throw new TypeError('nextBinomial: p must be number.');
-        }
-        if ('number' !== typeof trials) {
-            throw new TypeError('nextBinomial: trials must be number.');
-        }
-        if (p < 0 || p > 1) {
-            throw new TypeError('nextBinomial: p must between 0 and 1.');
-        }
-        if (trials < 1) {
-            throw new TypeError('nextBinomial: trials must be greater than 0.');
-        }
-        
-        counter = 0;
-        sum = 0;
-        
-        while(counter < trials){
-	    if (Math.random() < p) {	
-	        sum += 1;
-            }
-	    counter++;
-        }
-	
-        return sum;
-    };
-
-    /**
-     * Generates random numbers following the Gamma distribution.
-     *
-     * This function is experimental and untested. No documentation.
-     *
-     * @experimental
-     */
-    RANDOM.nextGamma = function(alpha, k) {
-        var intK, kDiv, alphaDiv;
-        var u1, u2, u3;
-        var x, i, len, tmp;
-
-        if ('number' !== typeof alpha) {
-            throw new TypeError('nextGamma: alpha must be number.');
-        }
-        if ('number' !== typeof k) {
-            throw new TypeError('nextGamma: k must be number.');
-        }
-        if (alpha < 1) {
-            throw new TypeError('nextGamma: alpha must be greater than 1.');
-        }
-        if (k < 1) {
-            throw new TypeError('nextGamma: k must be greater than 1.');
-        }
-
-        u1 = Math.random();
-        u2 = Math.random();
-        u3 = Math.random();
-
-        intK = Math.floor(k) + 3;
-        kDiv = 1 / k;
-        
-        alphaDiv = 1 / alpha;
-
-        x = 0;
-        for (i = 3 ; ++i < intK ; ) {
-            x += Math.log(Math.random());
-        }
-
-        x *= - alphaDiv; 
-
-        tmp = Math.log(u3) * 
-            (Math.pow(u1, kDiv) /
-             ((Math.pow(u1, kDiv) + Math.pow(u2, 1 / (1 - k)))));
-        
-        tmp *=  - alphaDiv;
-        
-        return x + tmp;
     }
 
     JSUS.extend(RANDOM);
@@ -4349,7 +4076,7 @@ if (!JSON) {
 /**
  * # TIME
  *
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2013 Stefano Balietti
  * MIT Licensed
  *
  * Collection of static functions related to the generation,
@@ -4432,7 +4159,7 @@ JSUS.extend(TIME);
 /**
  * # PARSE
  *
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2013 Stefano Balietti
  * MIT Licensed
  *
  * Collection of static functions related to parsing strings
@@ -4639,7 +4366,7 @@ JSUS.extend(TIME);
                     return value;
                 }
                 else if (value.substring(0, len_func) === PARSE.marker_func) {
-                    return JSUS.eval(value.substring(len_prefix));
+                    return eval('('+value.substring(len_prefix)+')');
                 }
                 else if (value.substring(0, len_null) === PARSE.marker_null) {
                     return null;
@@ -4668,7 +4395,7 @@ JSUS.extend(TIME);
 })('undefined' !== typeof JSUS ? JSUS : module.parent.exports.JSUS);
 /**
  * # NDDB: N-Dimensional Database
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2013 Stefano Balietti
  * MIT Licensed
  *
  * NDDB is a powerful and versatile object database for node.js and the browser.
@@ -4677,6 +4404,8 @@ JSUS.extend(TIME);
  * ---
  */
 (function(exports, J, store) {
+
+    NDDB.compatibility = J.compatibility();
 
     // Expose constructors
     exports.NDDB = NDDB;
@@ -4751,6 +4480,16 @@ JSUS.extend(TIME);
         // ### nddb_pointer
         // Pointer for iterating along all the elements.
         this.nddb_pointer = 0;
+
+        // ### length
+        // The number of items in the database.
+        if (NDDB.compatibility.getter) {
+            this.__defineGetter__('length',
+                                  function() { return this.db.length; });
+        }
+        else {
+            this.length = null;
+        }
 
         // ### query
         // QueryBuilder obj.
@@ -4939,6 +4678,7 @@ JSUS.extend(TIME);
         // (strict) Not Equals.
         this.filters['!='] = function(d, value, comparator) {
             return function(elem) {
+                debugger
                 if (comparator(elem, value, 0) !== 0) return elem;
             };
         };
@@ -7482,7 +7222,8 @@ JSUS.extend(TIME);
     /**
      * ### NDDB.current
      *
-     * Returns the entry at which the iterator is currently pointing
+     * Returns the entry in the database, at which
+     * the iterator is currently pointing
      *
      * The pointer is *not* updated.
      *
@@ -8056,7 +7797,7 @@ JSUS.extend(TIME);
         if ('undefined' === typeof dbidx) return false;
         o = this.nddb.db[dbidx];
         if ('undefined' === typeof o) return;
-        this.nddb.db.splice(dbidx, 1);
+        this.nddb.db.splice(dbidx,1);
         delete this.resolve[idx];
         this.nddb.emit('remove', o);
         this.nddb._autoUpdate();
@@ -12439,10 +12180,14 @@ JSUS.extend(TIME);
      * @return {mixed|null} The value of the property if found, NULL otherwise.
      */
     GamePlot.prototype.getProperty = function(gameStage, property) {
-        var stepObj, stageObj;
-        var defaultProps;
+        var stepObj, stageObj, defaultProps;
 
         gameStage = new GameStage(gameStage);
+
+        if ('string' !== typeof property) {
+            throw new TypeError('GamePlot.getProperty: property must be ' +
+                                'string');
+        }
 
         // Look in current step:
         stepObj = this.getStep(gameStage);
@@ -12468,6 +12213,56 @@ JSUS.extend(TIME);
         return null;
     };
 
+    /**
+     * ### GamePlot.updateProperty
+     *
+     * Looks up a property and updates it to the new value
+     *
+     * Looks follows the steps described in _GamePlot.getProperty_.
+     *
+     * @param {GameStage|string} gameStage The GameStage object,
+     *  or its string representation
+     * @param {string} property The name of the property
+     * @param {mixed} value The new value for the property.
+     *
+     * @return {bool} TRUE, if property is found and updated, FALSE otherwise.
+     */
+    GamePlot.prototype.updateProperty = function(gameStage, property, value) {
+        var stepObj, stageObj, defaultProps;
+
+        gameStage = new GameStage(gameStage);
+
+        if ('string' !== typeof property) {
+            throw new TypeError('GamePlot.updateProperty: property must be ' +
+                                'string');
+        }
+
+        // Look in current step:
+        stepObj = this.getStep(gameStage);
+        if (stepObj && stepObj.hasOwnProperty(property)) {
+            stepObj[property] = value;
+            return true;
+        }
+
+        // Look in current stage:
+        stageObj = this.getStage(gameStage);
+        if (stageObj && stageObj.hasOwnProperty(property)) {
+            stageObj[property] = value;
+            return true;
+        }
+
+        // Look in Stager's defaults:
+        if (this.stager) {
+            defaultProps = this.stager.getDefaultProperties();
+            if (defaultProps && defaultProps.hasOwnProperty(property)) {
+                defaultProps[property] = value;
+                return true;
+            }
+        }
+
+        // Not found:
+        return false;
+    };
 
     /**
      * ### GamePlot.isReady
@@ -13891,19 +13686,17 @@ JSUS.extend(TIME);
         node.timer.setTimestamp('start');
 
         if (node.player.placeholder) {
-            throw new node.NodeGameMisconfiguredGameError(
-                'game.start called without a player.');
-        }
-
-        if (this.getStateLevel() >= constants.stateLevels.INITIALIZING) {
-            node.warn('game.start called on a running game.');
-            return false;
+            throw new Error('Game.start: no player defined.');
         }
 
         // Check for the existence of stager contents:
         if (!this.plot.isReady()) {
-            throw new node.NodeGameMisconfiguredGameError(
-                'game.start called, but plot is not ready.');
+            throw new Error('Game.start: plot is not ready.');
+        }
+
+        if (this.getStateLevel() >= constants.stateLevels.INITIALIZING) {
+            node.err('Game.start: game is already running. Call stop first.');
+            return false;
         }
 
         // INIT the game.
@@ -14093,6 +13886,12 @@ JSUS.extend(TIME);
         node.socket.setMsgListener();
         node.timer.setTimestamp('resumed');
         node.emit('RESUMED');
+
+        // Maybe the game was LOADED during the pausing.
+        // In this case the PLAYING event got lost.
+        if (this.shouldEmitPlaying()) {
+            this.node.emit('PLAYING');
+        }
 
         // broadcast?
 
@@ -17918,17 +17717,22 @@ JSUS.extend(TIME);
          *
          * Creates the `node.game.plot` object
          *
-         * @param {object} stagerState Stager state which is passed to `Stager.setState`
-         * @param {string} updateRule Optional. Whether to 'replace' (default) or
-         *  to 'append'.
+         * It can either replace current plot object, or append to it. 
+         * Updates are not possible for the moment.
+         *
+         * TODO: allows updates in plot.
+         *
+         * @param {object} stagerState Stager state which is passed
+         *   to `Stager.setState`
+         * @param {string} updateRule Optional. Accepted: <replace>, <append>.
+         *   Defaults, 'replace'.
          *
          * @see node.game.plot
          * @see Stager.setState
          */
         this.registerSetup('plot', function(stagerState, updateRule) {
             if (!this.game) {
-                this.warn("register('plot') called before node.game was initialized");
-                throw new node.NodeGameMisconfiguredGameError("node.game non-existent");
+                throw new Error("node.setup.plot: node.game not found.");
             }
 
             stagerState = stagerState || {};
@@ -17952,8 +17756,8 @@ JSUS.extend(TIME);
          * Updates the player list in Game
          *
          * @param {PlayerList} playerList The new player list
-         * @param {string} updateRule Optional. Whether to 'replace' (default) or
-         *  to 'append'.
+         * @param {string} updateRule Optional. Accepted: <replace>, <append>.
+         *   Defaults, 'replace'.
          */
         this.registerSetup('plist', function(playerList, updateRule) {
             updatePlayerList.call(this, 'pl', playerList, updateRule);
@@ -17965,8 +17769,8 @@ JSUS.extend(TIME);
          * Updates the monitor list in Game
          *
          * @param {PlayerList} monitorList The new monitor list
-         * @param {string} updateRule Optional. Whether to 'replace' (default) or
-         *  to 'append'.
+         * @param {string} updateRule Optional. Accepted: <replace>, <append>.
+         *   Defaults, 'replace'.
          */
         this.registerSetup('mlist', function(monitorList, updateRule) {
             updatePlayerList.call(this, 'ml', monitorList, updateRule);
