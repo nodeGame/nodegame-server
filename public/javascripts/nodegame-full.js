@@ -2276,9 +2276,10 @@ if (!JSON) {
      *
      * @param {Node} parent The parent node
      * @param {array} order Optional. A pre-specified order. Defaults, random
+     * @return {array} The order used to shuffle the nodes.
      */
     DOM.shuffleNodes = function(parent, order) {
-        var i, len;
+        var i, len, idOrder;
         if (!JSUS.isNode(parent)) {
             throw new TypeError('DOM.shuffleNodes: parent must node.');
         }
@@ -2287,23 +2288,28 @@ if (!JSON) {
             return false;
         }
         if (order) {
-            if (!J.isArray(order)) {
+            if (!JSUS.isArray(order)) {
                 throw new TypeError('DOM.shuffleNodes: order must array.');
             }
             if (order.length !== parent.children.length) {
-                throw new Error('DOM.shuffleNodes: order length must match ' +
+                throw new Error('DOM.shuffleNodes: order length must match ' + 
                                 'the number of children nodes.');
             }
         }
-
-        len = parent.children.length;
-
+        
+        len = parent.children.length, idOrder = [];
         if (!order) order = JSUS.sample(0,len);
         for (i = 0 ; i < len; i++) {
-            parent.appendChild(parent.children[order[i]]);
+            idOrder.push(parent.children[order[i]].id);
         }
-
-        return true;
+        // Two fors are necessary to follow the real sequence.
+        // However parent.children is a special object, so the sequence
+        // could be unreliable.
+        for (i = 0 ; i < len; i++) {
+            parent.appendChild(parent.children[idOrder[i]]);
+        }
+        
+        return idOrder;
     };
 
     /**
@@ -4480,7 +4486,7 @@ JSUS.extend(TIME);
      */
     PARSE.getQueryString = function(name) {
         var regex;
-        if ('undefined' === name) return window.location.search;
+        if ('undefined' === typeof name) return window.location.search;
         name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
         regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
         results = regex.exec(location.search);
@@ -5964,22 +5970,35 @@ JSUS.extend(TIME);
      *
      * Indexes an element
      *
+     * Parameter _oldIdx_ is needed if indexing is updating a previously
+     * indexed item. In fact if new index is different, the old one must
+     * be deleted.
+     *
      * @param {object} o The element to index
-     * @param {object} o The position of the element in the database array
+     * @param {number} dbidx The position of the element in the database array
+     * @param {string} oldIdx Optional. The old index name, if any.
      */
-    NDDB.prototype._indexIt = function(o, dbidx) {
+    NDDB.prototype._indexIt = function(o, dbidx, oldIdx) {
         var func, id, index, key;
         if (!o || J.isEmpty(this.__I)) return;
-
+        oldIdx = undefined;
         for (key in this.__I) {
             if (this.__I.hasOwnProperty(key)) {
                 func = this.__I[key];
                 index = func(o);
-
-                if ('undefined' === typeof index) continue;
-
-                if (!this[key]) this[key] = new NDDBIndex(key, this);
-                this[key]._add(index, dbidx);
+                // If the same object has been  previously
+                // added with another index delete the old one.
+                if (index !== oldIdx) {
+                    if ('undefined' !== typeof oldIdx) {
+                        if ('undefined' !== typeof this[key].resolve[oldIdx]) {
+                            delete this[key].resolve[oldIdx];
+                        }
+                    }
+                }
+                if ('undefined' !== typeof index) { 
+                    if (!this[key]) this[key] = new NDDBIndex(key, this);
+                    this[key]._add(index, dbidx);
+                }
             }
         }
     };
@@ -6009,7 +6028,7 @@ JSUS.extend(TIME);
                     settings = this.cloneSettings({V: ''});
                     this[key] = new NDDB(settings);
                 }
-                this[key].insert(o);
+                this[key].insert(o);1
             }
         }
     };
@@ -7429,11 +7448,13 @@ JSUS.extend(TIME);
      * @see JSUS.arrayDiff
      */
     NDDB.prototype.diff = function(nddb) {
-        if (!nddb || !nddb.length) return this;
         if ('object' === typeof nddb) {
             if (nddb instanceof NDDB || nddb instanceof this.constructor) {
                 nddb = nddb.db;
             }
+        }
+        if (!nddb || !nddb.length) {
+            return this.breed([]);
         }
         return this.breed(J.arrayDiff(this.db, nddb));
     };
@@ -7455,11 +7476,13 @@ JSUS.extend(TIME);
      * @see JSUS.arrayIntersect
      */
     NDDB.prototype.intersect = function(nddb) {
-        if (!nddb || !nddb.length) return this;
         if ('object' === typeof nddb) {
             if (nddb instanceof NDDB || nddb instanceof this.constructor) {
-                var nddb = nddb.db;
+                nddb = nddb.db;
             }
+        }
+        if (!nddb || !nddb.length) {
+            return this.breed([]);
         }
         return this.breed(J.arrayIntersect(this.db, nddb));
     };
@@ -8083,7 +8106,7 @@ JSUS.extend(TIME);
      * @see NDDBIndex.get
      * @see NDDBIndex.remove
      */
-        NDDBIndex.prototype.update = function(idx, update) {
+    NDDBIndex.prototype.update = function(idx, update) {
         var o, dbidx, nddb;
         dbidx = this.resolve[idx];
         if ('undefined' === typeof dbidx) return false;
@@ -8094,7 +8117,7 @@ JSUS.extend(TIME);
         // We do indexes separately from the other components of _autoUpdate
         // to avoid looping through all the other elements that are unchanged.
         if (nddb.__update.indexes) {
-            nddb._indexIt(o, dbidx);
+            nddb._indexIt(o, dbidx, idx);
             nddb._hashIt(o);
             nddb._viewIt(o);
         }
@@ -8956,7 +8979,7 @@ JSUS.extend(TIME);
     };
 
     /**
-     * ### EventEmitter.printAll
+     * ### EventEmitter.clear
      *
      * Removes all registered event listeners
      */
@@ -8972,8 +8995,8 @@ JSUS.extend(TIME);
     EventEmitter.prototype.printAll =  function() {
         for (var i in this.events) {
             if (this.events.hasOwnProperty(i)) {
-                console.log(i + ': ' + i.length ? i.length : 1 +
-                            ' listener/s');
+                console.log(i + ': ' + 
+                            (i.length ? i.length : 1 + ' listener/s'));
             }
         }
     };
@@ -12917,6 +12940,30 @@ JSUS.extend(TIME);
          */
         this.url = null;
 
+
+        this.journalOn = false;
+
+        // Experimental
+        this.journal = new parent.NDDB({
+            update: {
+                indexes: true
+            }
+        });
+        this.journal.comparator('stage', parent.GameBit.compareState);
+        
+        if (!this.journal.player) {
+            this.journal.hash('to', function(gb) {
+                return gb.to;
+            });
+        }
+        if (!this.journal.stage) {
+            this.journal.hash('stage', function(gb) {
+                if (gb.stage) {
+                    return parent.GameStage.toHash(gb.stage, 'S.s.r');
+                }
+            });
+        }
+
         /**
          * ### Socket.node
          *
@@ -13279,6 +13326,7 @@ JSUS.extend(TIME);
      * and sent out whenever the connection is available again.
      */
     Socket.prototype.send = function(msg) {
+
         if (!this.isConnected()) {
             this.node.err('Socket.send: cannot send message. No open socket.');
             return false;
@@ -13296,6 +13344,11 @@ JSUS.extend(TIME);
 
         this.socket.send(msg);
         this.node.info('S: ' + msg);
+
+        if (this.journalOn) {
+            this.journal.insert(msg);
+        }
+
         return true;
     };
 
@@ -13317,19 +13370,20 @@ JSUS.extend(TIME);
 /**
  * # SocketIo
  *
- * Copyright(c) 2012 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * Implementation of a remote socket communicating over HTTP
- * through Socket.IO
+ * through Socket.IO.
  *
+ * This file requires that the socket.io library is already loaded before
+ * nodeGame is loaded to work (see closure).
  * ---
- *
  */
+(function(exports, node, io) {
 
-(function (exports, node, io) {
-
-    // TODO io will be undefined in Node.JS because module.parents.exports.io does not exists
+    // TODO io will be undefined in Node.JS because 
+    // module.parents.exports.io does not exists
 
     // ## Global scope
 
@@ -13386,9 +13440,10 @@ JSUS.extend(TIME);
     node.SocketFactory.register('SocketIo', SocketIo);
 
 })(
-    'undefined' != typeof node ? node : module.exports,
-    'undefined' != typeof node ? node : module.parent.exports,
-    'undefined' != typeof io ? io : require('socket.io-client') 
+    'undefined' !== typeof node ? node : module.exports,
+    'undefined' !== typeof node ? node : module.parent.exports,
+    'undefined' !== typeof module && 'undefined' !== typeof require ?
+        require('socket.io-client') : 'undefined' !== typeof io ? io : {}
 );
 /**
  * # GameDB
@@ -18404,8 +18459,7 @@ JSUS.extend(TIME);
   
 })(
     'undefined' != typeof node ? node : module.exports,
-    'undefined' != typeof node ? node : module.parent.exports,
-    'undefined' != typeof io ? io : module.parent.exports.io
+    'undefined' != typeof node ? node : module.parent.exports
 );
 
 /**
@@ -21942,7 +21996,7 @@ JSUS.extend(TIME);
                                 'with id ' + idOrObj);
             }
         }
-        else if (J.isElement(idOrObj)) {
+        else if (JSUS.isElement(idOrObj)) {
             el = idOrObj;
         }
         else {
