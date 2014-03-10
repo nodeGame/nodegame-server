@@ -19041,7 +19041,7 @@ JSUS.extend(TIME);
         if ('string' !== typeof url) {
             throw new TypeError('node.redirect: url must be string.');
         }
-        if ('undefined' === typeof who) {
+        if ('string' !== typeof who) {
             throw new TypeError('node.redirect: who must be string.');
         }
         msg = this.msg.create({
@@ -19320,6 +19320,11 @@ JSUS.extend(TIME);
  * # Listeners for incoming messages.
  * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
+ *
+ * TODO: PRECONNECT events are not handled, just emitted.
+ * Maybe some default support should be given, or some
+ * default handlers provided.
+ *
  * ---
  */
 (function(exports, parent) {
@@ -19372,6 +19377,9 @@ JSUS.extend(TIME);
         node.events.ng.on( IN + say + 'PCONNECT', function(msg) {
             if (!msg.data) return;
             node.game.pl.add(new Player(msg.data));
+            if (node.game.shouldStep()) {
+                node.game.step();
+            }
             node.emit('UPDATED_PLIST');
         });
 
@@ -19385,7 +19393,11 @@ JSUS.extend(TIME);
          */
         node.events.ng.on( IN + say + 'PDISCONNECT', function(msg) {
             if (!msg.data) return;
-            node.game.pl.remove(msg.data.id);           
+            node.game.pl.remove(msg.data.id);
+            debugger
+            if (node.game.shouldStep()) {
+                node.game.step();
+            }
             node.emit('UPDATED_PLIST');
         });
 
