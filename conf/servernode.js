@@ -76,7 +76,7 @@ function configure(servernode) {
 //     verbosity: servernode.verbosity,
 
     // AdminServer default options.
-    player = {
+    admin = {
 
         // A PLAYER_UPDATE / PCONNECT / PDISCONNECT message will be sent to
         // all clients connected to the PlayerServer endpoint when:
