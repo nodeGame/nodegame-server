@@ -2276,10 +2276,9 @@ if (!JSON) {
      *
      * @param {Node} parent The parent node
      * @param {array} order Optional. A pre-specified order. Defaults, random
-     * @return {array} The order used to shuffle the nodes.
      */
     DOM.shuffleNodes = function(parent, order) {
-        var i, len, idOrder;
+        var i, len;
         if (!JSUS.isNode(parent)) {
             throw new TypeError('DOM.shuffleNodes: parent must node.');
         }
@@ -2292,24 +2291,19 @@ if (!JSON) {
                 throw new TypeError('DOM.shuffleNodes: order must array.');
             }
             if (order.length !== parent.children.length) {
-                throw new Error('DOM.shuffleNodes: order length must match ' + 
+                throw new Error('DOM.shuffleNodes: order length must match ' +
                                 'the number of children nodes.');
             }
         }
-        
-        len = parent.children.length, idOrder = [];
+
+        len = parent.children.length;
+
         if (!order) order = JSUS.sample(0,len);
         for (i = 0 ; i < len; i++) {
-            idOrder.push(parent.children[order[i]].id);
+            parent.appendChild(parent.children[order[i]]);
         }
-        // Two fors are necessary to follow the real sequence.
-        // However parent.children is a special object, so the sequence
-        // could be unreliable.
-        for (i = 0 ; i < len; i++) {
-            parent.appendChild(parent.children[idOrder[i]]);
-        }
-        
-        return idOrder;
+
+        return true;
     };
 
     /**
@@ -4486,7 +4480,7 @@ JSUS.extend(TIME);
      */
     PARSE.getQueryString = function(name) {
         var regex;
-        if ('undefined' === typeof name) return window.location.search;
+        if ('undefined' === name) return window.location.search;
         name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
         regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
         results = regex.exec(location.search);
@@ -4682,6 +4676,12 @@ JSUS.extend(TIME);
  * MIT Licensed
  *
  * NDDB is a powerful and versatile object database for node.js and the browser.
+ *
+ * TODO: When using index.update() and the update is suppose to remove the element
+ * from view and hashes, for example becausea property is deleted. index.update()
+ * fails doing so. Should be fixed. At the moment the only solution seems to
+ * reintroduce a global index for all items and to use that to quickly lookup items
+ * in views and hashes.
  *
  * See README.md for help.
  * ---
@@ -5981,7 +5981,7 @@ JSUS.extend(TIME);
     NDDB.prototype._indexIt = function(o, dbidx, oldIdx) {
         var func, id, index, key;
         if (!o || J.isEmpty(this.__I)) return;
-        oldIdx = undefined;
+
         for (key in this.__I) {
             if (this.__I.hasOwnProperty(key)) {
                 func = this.__I[key];
@@ -19320,11 +19320,6 @@ JSUS.extend(TIME);
  * # Listeners for incoming messages.
  * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
- *
- * TODO: PRECONNECT events are not handled, just emitted.
- * Maybe some default support should be given, or some
- * default handlers provided.
- *
  * ---
  */
 (function(exports, parent) {
@@ -19377,9 +19372,6 @@ JSUS.extend(TIME);
         node.events.ng.on( IN + say + 'PCONNECT', function(msg) {
             if (!msg.data) return;
             node.game.pl.add(new Player(msg.data));
-            if (node.game.shouldStep()) {
-                node.game.step();
-            }
             node.emit('UPDATED_PLIST');
         });
 
@@ -19393,11 +19385,7 @@ JSUS.extend(TIME);
          */
         node.events.ng.on( IN + say + 'PDISCONNECT', function(msg) {
             if (!msg.data) return;
-            node.game.pl.remove(msg.data.id);
-            debugger
-            if (node.game.shouldStep()) {
-                node.game.step();
-            }
+            node.game.pl.remove(msg.data.id);           
             node.emit('UPDATED_PLIST');
         });
 
