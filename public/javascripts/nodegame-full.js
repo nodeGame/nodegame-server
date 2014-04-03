@@ -14335,10 +14335,10 @@ JSUS.extend(TIME);
         // Sends start / step command to connected clients if option is on.
         if (this.settings.syncStepping) {
             if (curStep.stage === 0) {
-                node.remoteCommand('start', 'ALL');
+                node.remoteCommand('start', 'ROOM');
             }
             else {
-                node.remoteCommand('goto_step', 'ALL', nextStep);
+                node.remoteCommand('goto_step', 'ROOM', nextStep);
             }
         }
 
@@ -14784,7 +14784,7 @@ JSUS.extend(TIME);
                 target: constants.target.PLAYER_UPDATE,
                 data: update,
                 text: type,
-                to: 'ALL'
+                to: 'ROOM'
             }));
         }
     };
@@ -19055,7 +19055,7 @@ JSUS.extend(TIME);
      *  node.redirect('http://www.google.com');
      *
      * @param {string} url the url of the redirection
-     * @param {string} who A player id or 'ALL'
+     * @param {string} who A player id or any other valid _to_ field
      */
     NGC.prototype.redirect = function(url, who) {
         var msg;
