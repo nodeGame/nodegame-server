@@ -13083,16 +13083,28 @@ JSUS.extend(TIME);
             this.node.info('R: ' + gameMsg);
         }
         catch(e) {
-            return logSecureParseError.call(this, 'malformed msg received',  e);
+            return logSecureParseError.call(this, 'malformed msg received', e);
         }
-
-        if (this.session && gameMsg.session !== this.session) {
-            return logSecureParseError.call(this, 'local session id does not ' +
-                                       'match incoming message session id.');
-        }
-
         return gameMsg;
     };
+
+    /**
+     * ## Socket.validateIncomingMsg
+     *
+     * Checks whether an incoming message is valid.
+     *
+     * Checks that the id of the session is correct.
+     *
+     * @param {object} msg The msg object to check
+     * @return {GameMsg|undefined} gameMsg The parsed msg, or undefined on error.
+     */
+    Socket.prototype.validateIncomingMsg = function(gameMsg) {
+        if (this.session && gameMsg.session !== this.session) {
+            return logSecureParseError.call(this, 'mismatched session in ' +
+                                            'incoming message.');
+        }
+        return gameMsg;
+    }
 
     /**
      * ## Socket.onMessage
@@ -13105,14 +13117,15 @@ JSUS.extend(TIME);
      * This method starts the game session, by creating a player object
      * with the data received by the server.
      *
-     * @param {string} msg The msg string as received by the socket.
+     * @param {GameMsg} msg The game message received and parsed by a socket.
      * 
+     * @see Socket.validateIncomingMsg
      * @see Socket.startSession
      * @see Socket.onMessageFull
      * @see node.createPlayer
      */
     Socket.prototype.onMessage = function(msg) {
-        msg = this.secureParse(msg);
+        msg = this.validateIncomingMsg(msg);
         if (!msg) return;
 
         // Parsing successful.
@@ -13137,23 +13150,24 @@ JSUS.extend(TIME);
      * All parsed messages are either emitted immediately or buffered,
      * if the game is not ready, and the message priority is low.x
      *
-     * @param {string} msg The msg string as received by the socket.
+     * @param {GameMsg} msg The game message received and parsed by a socket.
      * 
+     * @see Socket.validateIncomingMsg
      * @see Socket.onMessage
      * @see Game.isReady
      */
     Socket.prototype.onMessageFull = function(msg) {
-        msg = this.secureParse(msg);
-        if (msg) { // Parsing successful
-            // message with high priority are executed immediately
-            if (msg.priority > 0 || this.node.game.isReady()) {
-                this.node.emit(msg.toInEvent(), msg);
-            }
-            else {
-                this.node.silly('B: ' + msg);
-                this.buffer.push(msg);
-            }
+        msg = this.validateIncomingMsg(msg);
+        if (!msg) return;
+
+        // Message with high priority are executed immediately.
+        if (msg.priority > 0 || this.node.game.isReady()) {
+            this.node.emit(msg.toInEvent(), msg);
         }
+        else {
+            this.node.silly('B: ' + msg);
+            this.buffer.push(msg);
+        }        
     };
 
     /**
@@ -13352,9 +13366,9 @@ JSUS.extend(TIME);
         return true;
     };
 
-    // helping methods
+    // Helper methods.
 
-    var logSecureParseError = function(text, e) {
+    function logSecureParseError(text, e) {
         var error;
         text = text || 'generic error while parsing a game message.';
         error = (e) ? text + ": " + e : text;
@@ -13413,7 +13427,10 @@ JSUS.extend(TIME);
             node.info('socket.io connection open');
             node.socket.onConnect.call(node.socket);
             socket.on('message', function(msg) {
-                node.socket.onMessage(msg);
+                msg = node.socket.secureParse(msg);
+                if (msg) {
+                    node.socket.onMessage(msg);
+                }
             });
         });
 
@@ -18848,7 +18865,7 @@ JSUS.extend(TIME);
      *
      * Sends a GET message to a recipient and listen to the reply
      *
-     * The receiver of a GET message must be implement an internal listener
+     * The receiver of a GET message must be implement an *internal* listener
      * with the same label, and return the value requested. For example,
      *
      * ```javascript
@@ -18875,13 +18892,17 @@ JSUS.extend(TIME);
      * If the socket is not able to send the GET message for any reason, the
      * listener function is never registered.
      *
+     * Important: depending on the server settings, GET messages might 
+     * disclose the real ID of the sender. For this reason, GET messages from
+     * admins to players should be used only if necessary.
+     *
      * @param {string} key The label of the GET message
      * @param {function} cb The callback function to handle the return message
      * @param {string} to Optional. The recipient of the msg. Defaults, SERVER
      * @param {mixed} params Optional. Additional parameters to send along
      * @param {number} timeout Optional. The number of milliseconds after which
-     *    the listener will be removed. If equal -1, the listener will not be
-     *    removed. Defaults, 0.
+     *   the listener will be removed. If equal -1, the listener will not be
+     *   removed. Defaults, 0.
      *
      * @return {boolean} TRUE, if GET message is sent and listener registered
      */
@@ -19320,6 +19341,11 @@ JSUS.extend(TIME);
  * # Listeners for incoming messages.
  * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
+ *
+ * TODO: PRECONNECT events are not handled, just emitted.
+ * Maybe some default support should be given, or some
+ * default handlers provided.
+ *
  * ---
  */
 (function(exports, parent) {
@@ -19372,6 +19398,9 @@ JSUS.extend(TIME);
         node.events.ng.on( IN + say + 'PCONNECT', function(msg) {
             if (!msg.data) return;
             node.game.pl.add(new Player(msg.data));
+            if (node.game.shouldStep()) {
+                node.game.step();
+            }
             node.emit('UPDATED_PLIST');
         });
 
@@ -19385,7 +19414,11 @@ JSUS.extend(TIME);
          */
         node.events.ng.on( IN + say + 'PDISCONNECT', function(msg) {
             if (!msg.data) return;
-            node.game.pl.remove(msg.data.id);           
+            node.game.pl.remove(msg.data.id);
+            debugger
+            if (node.game.shouldStep()) {
+                node.game.step();
+            }
             node.emit('UPDATED_PLIST');
         });
 
@@ -19634,6 +19667,34 @@ JSUS.extend(TIME);
          */
         node.events.ng.on( IN + get + 'SESSION', function(msg) {
             return node.session.get(msg.text);
+        });
+
+        /**
+         * ## in.get.PLOT
+         *
+         * Gets the current plot sequence or the full plot state.
+         *
+         * @see GamePlot
+         * @see Stager
+         */
+        node.events.ng.on( IN + get + 'PLOT', function(msg) {
+            if (!node.game.plot.stager) return null;
+            if (msg.text === 'state') {
+                return node.game.plot.stager.getState();
+            }
+            return node.game.plot.stager.getSequence();            
+        });
+
+        /**
+         * ## in.get.PLIST
+         *
+         * Gets the current _PlayerList_ object
+         *
+         * @see PlayerList
+         * @see node.game.pl
+         */
+        node.events.ng.on( IN + get + 'PLIST', function() {
+            return node.game.pl.db;             
         });
 
         node.incomingAdded = true;
