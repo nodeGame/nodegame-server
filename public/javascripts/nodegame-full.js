@@ -14088,6 +14088,9 @@ JSUS.extend(TIME);
      * GameStage is set to 0.0.0 and srver is notified.
      */
     Game.prototype.stop = function() {
+        var node;
+
+        node = this.node;
         if (this.getStateLevel() <= constants.stateLevels.INITIALIZING) {
             throw new Error('Game.stop: game is not runnning.');
         }
@@ -14101,7 +14104,12 @@ JSUS.extend(TIME);
 
         // Remove loaded frame, if one is found.
         if (node.window && node.window.getFrame()) {
-            node.window.clearFrame();
+            node.window.destroyFrame();
+        }
+
+        // Remove header, if one is found.
+        if (node.window && node.window.getHeader()) {
+            node.window.destroyHeader();
         }
 
         this.memory.clear(true);
@@ -14159,13 +14167,14 @@ JSUS.extend(TIME);
      * @TODO: check with Game.ready
      */
     Game.prototype.pause = function() {
-        var msgHandler;
+        var msgHandler, node;
 
         if (this.paused) {
             throw new Error('Game.pause: called while already paused');
         }
 
-        this.node.emit('PAUSING');
+        node = this.node;
+        node.emit('PAUSING');
 
         this.paused = true;
 
@@ -14175,14 +14184,14 @@ JSUS.extend(TIME);
         msgHandler = this.plot.getProperty(this.getCurrentGameStage(),
                                            'pauseMsgHandler');
         if (msgHandler) {
-            this.node.socket.setMsgListener(function(msg) {
-                msg = this.node.socket.secureParse(msg);
-                msgHandler.call(this.node.game, msg.toInEvent(), msg);
+            node.socket.setMsgListener(function(msg) {
+                msg = node.socket.secureParse(msg);
+                msgHandler.call(node.game, msg.toInEvent(), msg);
             });
         }
 
         node.timer.setTimestamp('paused');
-        this.node.emit('PAUSED');
+        node.emit('PAUSED');
         
         // broadcast?
 
@@ -14274,8 +14283,7 @@ JSUS.extend(TIME);
      * @see Game.execStep
      */
     Game.prototype.step = function() {
-        var curStep, nextStep, node;
-        node = this.node;
+        var curStep, nextStep;
         curStep = this.getCurrentGameStage();
         nextStep = this.plot.next(curStep);
         return this.gotoStep(nextStep);
