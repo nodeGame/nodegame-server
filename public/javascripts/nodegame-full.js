@@ -14122,6 +14122,12 @@ JSUS.extend(TIME);
         // This command is notifying the server.
         this.setCurrentGameStage(new GameStage());
 
+        // Temporary change:
+        delete node.game;
+        node.game = new Game(node);
+        node.game.pl = this.pl;
+        node.game.ml = this.ml;
+
         node.log('game stopped.');
     };
 
