@@ -10321,68 +10321,42 @@ JSUS.extend(TIME);
      *
      * @param {GameMsg} gameMsg The message to clone
      * @return {GameMsg} The cloned messaged
-     *
-     *  @see JSUS.clone
      */
     GameMsg.clone = function(gameMsg) {
         return new GameMsg(gameMsg);
     };
 
-
     /**
      * ## GameMsg constructor
      *
      * Creates an instance of GameMsg
+     *
+     * @param {object} gm Optional. Initial values for the game message fields
      */
     function GameMsg(gm) {
         gm = gm || {};
-
-        // ## Private properties
 
         /**
          * ### GameMsg.id
          *
          * A randomly generated unique id
-         *
-         * @api private
          */
-        var id = gm.id || Math.floor(Math.random()*1000000);
-        if (node.support.defineProperty) {
-            Object.defineProperty(this, 'id', {
-                value: id,
-                enumerable: true
-            });
-        }
-        else {
-            this.id = id;
-        }
+        this.id = 'undefined' === typeof gm.id ?
+            Math.floor(Math.random()*1000000) : gm.id;
 
         /**
          * ### GameMsg.session
          *
          * The session id in which the message was generated
-         *
-         * @api private
          */
-        var session = gm.session;
-        if (node.support.defineProperty) {
-            Object.defineProperty(this, 'session', {
-                value: session,
-                enumerable: true
-            });
-        }
-        else {
-            this.session = session;
-        }
-
-        // ## Public properties
+        this.session = gm.session;
 
         /**
          * ### GameMsg.stage
          *
          * The game-stage in which the message was generated
          *
-         *      @see GameStage
+         * @see GameStage
          */
         this.stage = gm.stage;
 
@@ -10391,7 +10365,7 @@ JSUS.extend(TIME);
          *
          * The action of the message
          *
-         *      @see node.action
+         * @see node.constants.action
          */
         this.action = gm.action;
 
@@ -10400,7 +10374,7 @@ JSUS.extend(TIME);
          *
          * The target of the message
          *
-         *      @see node.target
+         * @see node.constants.target
          */
         this.target = gm.target;
 
@@ -10409,7 +10383,8 @@ JSUS.extend(TIME);
          *
          * The id of the sender of the message
          *
-         *      @see Player.id
+         * @see Player.id
+         * @see node.player.id
          */
         this.from = gm.from;
 
@@ -10418,8 +10393,8 @@ JSUS.extend(TIME);
          *
          * The id of the receiver of the message
          *
-         *      @see Player.id
-         *      @see node.player.id
+         * @see Player.id
+         * @see node.player.id
          */
         this.to = gm.to;
 
@@ -10450,7 +10425,6 @@ JSUS.extend(TIME);
          * Experimental. Disabled for the moment
          *
          * If set, requires ackwnoledgment of delivery
-         *
          */
         this.reliable = gm.reliable;
 
@@ -13100,7 +13074,8 @@ JSUS.extend(TIME);
      */
     Socket.prototype.validateIncomingMsg = function(gameMsg) {
         if (this.session && gameMsg.session !== this.session) {
-            console.log(this.session, gameMsg.session);            
+            console.log(this.session, gameMsg.session);
+            console.log(gameMsg);
             return logSecureParseError.call(this, 'mismatched session in ' +
                                             'incoming message.');
         }
