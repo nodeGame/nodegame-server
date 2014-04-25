@@ -1,5 +1,9 @@
 # nodegame-server change log
 
+# Current
+ - Refactored SocketManager to support inter-channels messages
+ - Refactored SocketIo and SocketDirect
+
 # 0.9
  - Change log of new version starts here.
 
