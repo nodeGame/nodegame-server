@@ -12728,7 +12728,8 @@ JSUS.extend(TIME);
                  msg.target === constants.target.REDIRECT ||
                  msg.target === constants.target.PCONNECT ||
                  msg.target === constants.target.PDISCONNECT ||
-                 msg.target === constants.target.PRECONNECT) {
+                 msg.target === constants.target.PRECONNECT ||
+                 msg.target === constants.target.SETUP) {
 
             priority = 1;
         }
@@ -14005,8 +14006,8 @@ JSUS.extend(TIME);
             throw new Error('Game.start: plot is not ready.');
         }
 
-        if (this.getStateLevel() >= constants.stateLevels.INITIALIZING) {
-            node.err('Game.start: game is already running. Call stop first.');
+        if (!this.isStartable()) {
+            node.err('Game.start: game cannot be started.');
             return false;
         }
 
@@ -14067,8 +14068,8 @@ JSUS.extend(TIME);
         var node;
 
         node = this.node;
-        if (this.getStateLevel() <= constants.stateLevels.INITIALIZING) {
-            throw new Error('Game.stop: game is not runnning.');
+        if (!this.isStoppable()) {
+            throw new Error('Game.stop: game cannot be stopped.');
         }
         // Destroy currently running timers.
         node.timer.destroyAllTimers(true);
@@ -14097,6 +14098,8 @@ JSUS.extend(TIME);
             if (node.window.isScreenLocked()) {
                 node.window.unlockScreen();
             }
+
+            node.window.areLoading = 0;
 
             // Clear all caches.
             node.window.clearCache();
@@ -14161,8 +14164,8 @@ JSUS.extend(TIME);
     Game.prototype.pause = function() {
         var msgHandler, node;
 
-        if (this.paused) {
-            throw new Error('Game.pause: called while already paused');
+        if (!this.isPausable()) {
+            throw new Error('Game.pause: game cannot be paused.');
         }
 
         node = this.node;
@@ -14200,8 +14203,8 @@ JSUS.extend(TIME);
     Game.prototype.resume = function() {
         var msgHandler, node;
 
-        if (!this.paused) {
-            throw new Error('Game.resume: called while not paused');
+        if (!this.isResumable()) {
+            throw new Error('Game.resume: game cannot be resumed.');
         }
         
         node = this.node;
@@ -14309,9 +14312,9 @@ JSUS.extend(TIME);
         var minThreshold, maxThreshold, exactThreshold;
         var minCallback = null, maxCallback = null, exactCallback = null;
 
-        if (this.getStateLevel() < constants.stateLevels.INITIALIZED) {
+        if (!this.isSteppable()) {
             throw new this.node.NodeGameMisconfiguredGameError(
-                'Game.gotoStep: game was not started yet.');
+                'Game.gotoStep: game cannot be stepped.');
         }
 
         if ('string' !== typeof nextStep && 'object' !== typeof nextStep) {
@@ -14899,6 +14902,68 @@ JSUS.extend(TIME);
         // Check if there is a gameWindow obj and whether it is loading
         return node.window ? node.window.isReady() : true;
     };
+
+    /**
+     * ### Game.isStartable
+     *
+     * Returns TRUE if Game.start can be called
+     *
+     * @return {boolean} TRUE if the game can be started.
+     */
+    Game.prototype.isStartable = function() {
+        return this.getStateLevel() < constants.stateLevels.INITIALIZING;
+    };
+
+
+    /**
+     * ### Game.isStoppable
+     *
+     * Returns TRUE if Game.stop can be called
+     *
+     * @return {boolean} TRUE if the game can be stopped.
+     */
+    Game.prototype.isStoppable = function() {
+        return this.getStateLevel() > constants.stateLevels.INITIALIZING;
+    };
+
+
+    /**
+     * ### Game.isPausable
+     *
+     * Returns TRUE if Game.pause can be called
+     *
+     * @return {boolean} TRUE if the game can be paused.
+     */
+    Game.prototype.isPausable = function() {
+        return !this.paused &&
+            this.getStateLevel() > constants.stateLevels.INITIALIZING;
+    };
+
+
+    /**
+     * ### Game.isResumable
+     *
+     * Returns TRUE if Game.resume can be called
+     *
+     * @return {boolean} TRUE if the game can be resumed.
+     */
+    Game.prototype.isResumable = function() {
+        return this.paused &&
+            this.getStateLevel() > constants.stateLevels.INITIALIZING;
+    };
+
+
+    /**
+     * ### Game.isSteppable
+     *
+     * Returns TRUE if Game.step and Game.gotoStep can be called
+     *
+     * @return {boolean} TRUE if the game can be stepped.
+     */
+    Game.prototype.isSteppable = function() {
+        return this.getStateLevel() > constants.stateLevels.INITIALIZING;
+    };
+
 
     /**
      * ### Game.shouldEmitPlaying
@@ -19867,10 +19932,8 @@ JSUS.extend(TIME);
          *
          */
         this.events.ng.on(CMD + gcommands.start, function(options) {
-            if (node.game.getCurrentStep() &&
-                node.game.getCurrentStep().stage !== 0) {
-                node.err('Game already started. ' +
-                         'Use restart if you want to start the game again.');
+            if (!node.game.isStartable()) {
+                node.err('Game cannot be started.');
                 return;
             }
             
@@ -19883,8 +19946,12 @@ JSUS.extend(TIME);
          *
          */
         this.events.ng.on(CMD + gcommands.pause, function(options) {
+            if (!node.game.isPausable()) {
+                node.err('Game cannot be paused.');
+                return;
+            }
+
             node.emit('BEFORE_GAMECOMMAND', gcommands.pause, options);
-            // TODO: check conditions
             node.game.pause();
         });
 
@@ -19893,8 +19960,12 @@ JSUS.extend(TIME);
          *
          */
         this.events.ng.on(CMD + gcommands.resume, function(options) {
+            if (!node.game.isResumable()) {
+                node.err('Game cannot be resumed.');
+                return;
+            }
+
             node.emit('BEFORE_GAMECOMMAND', gcommands.resume, options);
-            // TODO: check conditions.
             node.game.resume();
         });
 
@@ -19903,8 +19974,12 @@ JSUS.extend(TIME);
          *
          */
         this.events.ng.on(CMD + gcommands.step, function(options) {
+            if (!node.game.isSteppable()) {
+                node.err('Game cannot be stepped.');
+                return;
+            }
+
             node.emit('BEFORE_GAMECOMMAND', gcommands.step, options);
-            // TODO: check conditions.
             node.game.step();
         });
 
@@ -19913,8 +19988,12 @@ JSUS.extend(TIME);
          *
          */
         this.events.ng.on(CMD + gcommands.stop, function(options) {
+            if (!node.game.isStoppable()) {
+                node.err('Game cannot be stopped.');
+                return;
+            }
+
             node.emit('BEFORE_GAMECOMMAND', gcommands.stop, options);
-            // Conditions checked inside stop.
             node.game.stop();
         });
 
@@ -19923,8 +20002,12 @@ JSUS.extend(TIME);
          *
          */
         this.events.ng.on(CMD + gcommands.goto_step, function(step) {
+            if (!node.game.isSteppable()) {
+                node.err('Game cannot be stepped.');
+                return;
+            }
+
             node.emit('BEFORE_GAMECOMMAND', gcommands.goto_step, step);
-            // Conditions checked inside gotoStep.
             node.game.gotoStep(new GameStage(step));
         });
 
@@ -19954,6 +20037,7 @@ JSUS.extend(TIME);
     'undefined' != typeof node ? node : module.exports,
     'undefined' != typeof node ? node : module.parent.exports
 );
+
 /**
  * # TriggerManager
  * Copyright(c) 2014 Stefano Balietti
