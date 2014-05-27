@@ -188,13 +188,43 @@ program
 program
     .command('refresh')
     .description('Moves all the .js files from the build directories of the submodules into public/javascript')
-    .action(function(){
-        J.copyFromDir(buildDir_client, buildDir, '.js');
-        J.copyFromDir(buildDir_JSUS, buildDir, '.js');
-        J.copyFromDir(buildDir_NDDB, buildDir, '.js');
-        J.copyFromDir(buildDir_shelf, buildDir, '.js');
-        J.copyFromDir(buildDir_ngWindow, buildDir, '.js');
-        J.copyFromDir(buildDir_ngWidgets, buildDir, '.js');
+    .action(function() {
+        try {
+            J.copyFromDir(buildDir_client, buildDir, '.js');
+        }
+        catch(e) {
+            console.log('make refresh: could not find nodegame-client directory.');
+        }
+        try {            
+            J.copyFromDir(buildDir_ngWindow, buildDir, '.js');
+        }
+        catch(e) {
+            console.log('make refresh: could not find nodegame-window directory.');
+        }
+        try {            
+            J.copyFromDir(buildDir_ngWidgets, buildDir, '.js');
+        }
+        catch(e) {
+            console.log('make refresh: could not find nodegame-widgets directory.');
+        }
+        try {
+            J.copyFromDir(buildDir_JSUS, buildDir, '.js');
+        }
+        catch(e) {
+            console.log('make refresh: could not find JSUS directory.');
+        }
+        try {
+            J.copyFromDir(buildDir_NDDB, buildDir, '.js');
+        }
+        catch(e) {
+            console.log('make refresh: could not find NDDB directory.');
+        }
+        try {
+            J.copyFromDir(buildDir_shelf, buildDir, '.js');
+        }
+        catch(e) {
+            console.log('make refresh: could not find Shelf.js directory.');
+        }
 
         console.log('All javascript files copied to public/javascript/');
     });

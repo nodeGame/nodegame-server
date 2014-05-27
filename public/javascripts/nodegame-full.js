@@ -2276,9 +2276,10 @@ if (!JSON) {
      *
      * @param {Node} parent The parent node
      * @param {array} order Optional. A pre-specified order. Defaults, random
+     * @return {array} The order used to shuffle the nodes.
      */
     DOM.shuffleNodes = function(parent, order) {
-        var i, len;
+        var i, len, idOrder;
         if (!JSUS.isNode(parent)) {
             throw new TypeError('DOM.shuffleNodes: parent must node.');
         }
@@ -2291,19 +2292,24 @@ if (!JSON) {
                 throw new TypeError('DOM.shuffleNodes: order must array.');
             }
             if (order.length !== parent.children.length) {
-                throw new Error('DOM.shuffleNodes: order length must match ' +
+                throw new Error('DOM.shuffleNodes: order length must match ' + 
                                 'the number of children nodes.');
             }
         }
-
-        len = parent.children.length;
-
+        
+        len = parent.children.length, idOrder = [];
         if (!order) order = JSUS.sample(0,len);
         for (i = 0 ; i < len; i++) {
-            parent.appendChild(parent.children[order[i]]);
+            idOrder.push(parent.children[order[i]].id);
         }
-
-        return true;
+        // Two fors are necessary to follow the real sequence.
+        // However parent.children is a special object, so the sequence
+        // could be unreliable.
+        for (i = 0 ; i < len; i++) {
+            parent.appendChild(parent.children[idOrder[i]]);
+        }
+        
+        return idOrder;
     };
 
     /**
@@ -4480,7 +4486,7 @@ JSUS.extend(TIME);
      */
     PARSE.getQueryString = function(name) {
         var regex;
-        if ('undefined' === name) return window.location.search;
+        if ('undefined' === typeof name) return window.location.search;
         name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
         regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
         results = regex.exec(location.search);
@@ -4676,12 +4682,6 @@ JSUS.extend(TIME);
  * MIT Licensed
  *
  * NDDB is a powerful and versatile object database for node.js and the browser.
- *
- * TODO: When using index.update() and the update is suppose to remove the element
- * from view and hashes, for example becausea property is deleted. index.update()
- * fails doing so. Should be fixed. At the moment the only solution seems to
- * reintroduce a global index for all items and to use that to quickly lookup items
- * in views and hashes.
  *
  * See README.md for help.
  * ---
@@ -5981,7 +5981,7 @@ JSUS.extend(TIME);
     NDDB.prototype._indexIt = function(o, dbidx, oldIdx) {
         var func, id, index, key;
         if (!o || J.isEmpty(this.__I)) return;
-
+        oldIdx = undefined;
         for (key in this.__I) {
             if (this.__I.hasOwnProperty(key)) {
                 func = this.__I[key];
@@ -14001,14 +14001,8 @@ JSUS.extend(TIME);
             throw new Error('Game.start: no player defined.');
         }
 
-        // Check for the existence of stager contents:
-        if (!this.plot.isReady()) {
-            throw new Error('Game.start: plot is not ready.');
-        }
-
         if (!this.isStartable()) {
-            node.err('Game.start: game cannot be started.');
-            return false;
+            throw new Error('Game.start: game cannot be started.');
         }
 
         // INIT the game.
@@ -14084,25 +14078,7 @@ JSUS.extend(TIME);
 
         // If a _GameWindow_ object is found, clears it.
         if (node.window) {
-            // Remove loaded frame, if one is found.
-            if (node.window.getFrame()) {
-                node.window.destroyFrame();
-            }
-
-            // Remove header, if one is found.
-            if (node.window.getHeader()) {
-                node.window.destroyHeader();
-            }
-            
-            // Unlock screen, if currently locked.
-            if (node.window.isScreenLocked()) {
-                node.window.unlockScreen();
-            }
-
-            node.window.areLoading = 0;
-
-            // Clear all caches.
-            node.window.clearCache();
+            node.window.reset();
         }
 
         // Update state/stage levels and game stage.
@@ -14911,7 +14887,8 @@ JSUS.extend(TIME);
      * @return {boolean} TRUE if the game can be started.
      */
     Game.prototype.isStartable = function() {
-        return this.getStateLevel() < constants.stateLevels.INITIALIZING;
+        return this.plot.isReady() &&
+            this.getStateLevel() < constants.stateLevels.INITIALIZING;
     };
 
 
@@ -20748,6 +20725,35 @@ JSUS.extend(TIME);
     };
 
     /**
+     * ### GameWindow.reset
+     *
+     * Resets the GameWindow to the initial state
+     *
+     * Clears the frame, header, lock and cache.
+     */
+    GameWindow.prototype.reset = function() {
+        // Remove loaded frame, if one is found.
+        if (this.getFrame()) {
+            this.destroyFrame();
+        }
+
+        // Remove header, if one is found.
+        if (this.getHeader()) {
+            this.destroyHeader();
+        }
+        
+        // Unlock screen, if currently locked.
+        if (this.isScreenLocked()) {
+            this.unlockScreen();
+        }
+
+        this.areLoading = 0;
+
+        // Clear all caches.
+        this.clearCache();
+    };
+
+    /**
      * ### GameWindow.setStateLevel
      *
      * Validates and sets window's state level
@@ -21201,7 +21207,7 @@ JSUS.extend(TIME);
         var header;
         header = this.getHeader();
         if (!header) {
-            throw new Error('GameWindow.clearHeadr: cannot detect header.');
+            throw new Error('GameWindow.clearHeader: cannot detect header.');
         }
         this.headerElement.innerHTML = '';
     };
@@ -22264,7 +22270,7 @@ JSUS.extend(TIME);
     /**
      * ### GameWindow.addStandardRecipients
      *
-     * Adds an ALL and a SERVER option to a specified select element.
+     * Adds valid _to_ recipient options to a specified select element.
      *
      * @param {object} toSelector An HTML `<select>` element
      *
@@ -22278,6 +22284,16 @@ JSUS.extend(TIME);
         opt = document.createElement('option');
         opt.value = 'ALL';
         opt.appendChild(document.createTextNode('ALL'));
+        toSelector.appendChild(opt);
+
+        opt = document.createElement('option');
+        opt.value = 'CHANNEL';
+        opt.appendChild(document.createTextNode('CHANNEL'));
+        toSelector.appendChild(opt);
+
+        opt = document.createElement('option');
+        opt.value = 'ROOM';
+        opt.appendChild(document.createTextNode('ROOM'));
         toSelector.appendChild(opt);
 
         opt = document.createElement('option');
@@ -23932,18 +23948,17 @@ JSUS.extend(TIME);
 
     Widget.prototype.init = function() {};
 
-    Widget.prototype.getRoot = function() {};
-
-    Widget.prototype.listeners = function() {};
-
     Widget.prototype.getAllValues = function() {};
 
     Widget.prototype.highlight = function() {};
+
+    Widget.prototype.destroy = function() {};
 
 })(
     // Widgets works only in the browser environment.
     ('undefined' !== typeof node) ? node : module.parent.exports.node
 );
+
 /**
  * # Widgetss
  * Copyright(c) 2014 Stefano Balietti
@@ -23963,11 +23978,20 @@ JSUS.extend(TIME);
         /**
          * ## Widgets.widgets
          *
-         * Container of currently registered widgets 
+         * Container of currently registered widgets
          *
          * @see Widgets.register
          */
         this.widgets = {};
+
+        /**
+         * ## Widgets.widgets
+         *
+         * Container of appended widget instances
+         *
+         * @see Widgets.append
+         */
+        this.instances = [];
     }
 
     /**
@@ -23976,14 +24000,14 @@ JSUS.extend(TIME);
      * Registers a new widget in the collection
      *
      * A name and a prototype class must be provided. All properties
-     * that are presetn in `node.Widget`, but missing in the prototype
+     * that are present in `node.Widget`, but missing in the prototype
      * are added.
      *
      * Registered widgets can be loaded with Widgets.get or Widgets.append.
      *
-     * @param {string} name The id under which registering the widget
+     * @param {string} name The id under which to register the widget
      * @param {function} w The widget to add
-     * @return {object|boolean} The registered widget, 
+     * @return {object|boolean} The registered widget,
      *   or FALSE if an error occurs
      */
     Widgets.prototype.register = function(name, w) {
@@ -23996,8 +24020,9 @@ JSUS.extend(TIME);
         }
         // Add default properties to widget prototype
         for (i in node.Widget.prototype) {
-            if (!w[i] && !w.prototype[i]
-                && !(w.prototype.__proto__ && w.prototype.__proto__[i])) {
+            if (!w[i] && !w.prototype[i] &&
+                !(w.prototype.__proto__ && w.prototype.__proto__[i])) {
+
                 w.prototype[i] = J.clone(node.Widget.prototype[i]);
             }
         }
@@ -24036,24 +24061,24 @@ JSUS.extend(TIME);
             throw new TypeError('Widgets.get: options must be object or ' +
                                 'undefined.');
         }
-        
+
         that = this;
-	options = options || {};
+        options = options || {};
 
-	wProto = J.getNestedValue(w_str, this.widgets);
-	
-	if (!wProto) {
+        wProto = J.getNestedValue(w_str, this.widgets);
+
+        if (!wProto) {
             throw new Error('Widgets.get: ' + w_str + ' not found.');
-	}
+        }
 
-	node.info('registering ' + wProto.name + ' v.' +  wProto.version);
+        node.info('registering ' + wProto.name + ' v.' +  wProto.version);
 
-	if (!this.checkDependencies(wProto)) {
+        if (!this.checkDependencies(wProto)) {
             throw new Error('Widgets.get: ' + w_str + ' has unmet dependecies.');
         }
 
-	// Add missing properties to the user options
-	J.mixout(options, J.clone(wProto.defaults));
+        // Add missing properties to the user options
+        J.mixout(options, J.clone(wProto.defaults));
 
         widget = new wProto(options);
         // Re-inject defaults
@@ -24065,7 +24090,7 @@ JSUS.extend(TIME);
         // user listeners
         attachListeners(options, widget);
 
-	return widget;
+        return widget;
     };
 
     /**
@@ -24094,8 +24119,10 @@ JSUS.extend(TIME);
      */
     Widgets.prototype.append = Widgets.prototype.add = function(w, root,
                                                                 options) {
+        var div, heading, body;
+
         if ('string' !== typeof w && 'object' !== typeof w) {
-            throw new TypeError('Widgets.append: w must be string or object');
+            throw new TypeError('Widgets.append: w must be string or object.');
         }
         if (root && !J.isElement(root)) {
             throw new TypeError('Widgets.append: root must be HTMLElement ' +
@@ -24105,7 +24132,7 @@ JSUS.extend(TIME);
             throw new TypeError('Widgets.append: options must be object or ' +
                                 'undefined.');
         }
-        
+
         // Init default values.
         root = root || W.getFrameRoot() || document.body;
         options = options || {};
@@ -24117,15 +24144,69 @@ JSUS.extend(TIME);
             w = this.get(w, options);
         }
 
-        // If fieldset option is null, no fieldset is added.
+        // If fieldset option is null, a div is added instead.
         // If fieldset option is undefined, default options are used.
-        if (options.fieldset !== null) {
-            root = appendFieldset(root, options.fieldset ||
-                                  w.defaults.fieldset, w);
+        //if (options.fieldset !== null) {
+        //    root = appendFieldset(root, options.fieldset ||
+        //                          w.defaults.fieldset, w);
+        //}
+        div = appendDiv(root, {
+            attributes: {className: ['ng_widget', 'panel', 'panel-default']}
+        });
+
+        if (options.fieldset) {
+            // Add heading.
+            heading = appendDiv(div, {
+                attributes: {className: 'panel-heading'}
+            });
+
+            heading.innerHTML = options.fieldset.legend || w.legend;
         }
-        w.append(root);
+
+        body = appendDiv(div, {
+            attributes: {className: 'panel-body'}
+        });
+
+        w.append(body);
+
+        // Store widget instance for destruction.
+        this.instances.push(w);
 
         return w;
+    };
+
+    /**
+     * ### Widgets.destroyAll
+     *
+     * Removes all widgets that have been appended with Widgets.append
+     *
+     * Exceptions thrown in the widgets' destroy methods are caught.
+     *
+     * @see Widgets.append
+     */
+    Widgets.prototype.destroyAll = function() {
+        var i, widget, widgetDiv;
+
+        for (i in this.instances) {
+            if (this.instances.hasOwnProperty(i)) {
+                widget = this.instances[i];
+
+                try {
+                    // Remove widget div/fieldset from root:
+                    if (widget.root) {
+                        widgetDiv = widget.root.parentNode;
+                        widgetDiv.parentNode.removeChild(widgetDiv);
+                    }
+
+                    widget.destroy();
+                }
+                catch (e) {
+                    node.warn('Widgets.destroyAll: Error caught. ' + e + '.');
+                }
+            }
+        }
+
+        this.instances = [];
     };
 
     /**
@@ -24148,13 +24229,8 @@ JSUS.extend(TIME);
      * @return {boolean} TRUE, if all dependencies are met
      */
     Widgets.prototype.checkDependencies = function(w, quiet) {
-        var errMsg, parents, d, lib, found, i; 
+        var parents, d, lib, found, i;
         if (!w.dependencies) return true;
-
-        errMsg = function(w, d) {
-            var name = w.name || w.id;// || w.toString();
-            node.log(d + ' not found. ' + name + ' cannot be loaded.', 'ERR');
-        };
 
         parents = [window, node, this.widgets, node.window];
 
@@ -24169,7 +24245,7 @@ JSUS.extend(TIME);
                     }
                 }
                 if (!found) {
-                    if (!quiet) errMsg(w, lib);
+                    if (!quiet) checkDepErrMsg(w, lib);
                     return false;
                 }
             }
@@ -24177,40 +24253,49 @@ JSUS.extend(TIME);
         return true;
     };
 
-    
+
     // #### Helper functions.
-    
-    function appendFieldset(root, options, w) {
-        var idFieldset, legend;
-        if (!options) return root;
-        idFieldset = options.id || w.id + '_fieldset';
-        legend = options.legend || w.legend;
-        return W.addFieldset(root, idFieldset, legend, options.attributes);
-    };
+
+    //function appendFieldset(root, options, w) {
+    //    var idFieldset, legend;
+    //    if (!options) return root;
+    //    idFieldset = options.id || w.id + '_fieldset';
+    //    legend = options.legend || w.legend;
+    //    return W.addFieldset(root, idFieldset, legend, options.attributes);
+    //}
+
+    function appendDiv(root, options) {
+        // TODO: Check every parameter
+        return W.addDiv(root, undefined, options.attributes);
+    }
 
     function createListenerFunction(w, e, l) {
-	if (!w || !e || !l) return;
-	w.getRoot()[e] = function() {
-	    l.call(w);
-	};
-    };
+        if (!w || !e || !l) return;
+        w.getRoot()[e] = function() {
+            l.call(w);
+        };
+    }
 
     function attachListeners(options, w) {
         var events, isEvent, i;
-	if (!options || !w) return;
+        if (!options || !w) return;
         isEvent = false;
-        events = ['onclick', 'onfocus', 'onblur', 'onchange', 
-                  'onsubmit', 'onload', 'onunload', 'onmouseover'];	
-	for (i in options) {
-	    if (options.hasOwnProperty(i)) {
-		isEvent = J.in_array(i, events);
-		if (isEvent && 'function' === typeof options[i]) {
-		    createListenerFunction(w, i, options[i]);
-		}
-	    }
-	};
-    };
+        events = ['onclick', 'onfocus', 'onblur', 'onchange',
+                  'onsubmit', 'onload', 'onunload', 'onmouseover'];
+        for (i in options) {
+            if (options.hasOwnProperty(i)) {
+                isEvent = J.in_array(i, events);
+                if (isEvent && 'function' === typeof options[i]) {
+                    createListenerFunction(w, i, options[i]);
+                }
+            }
+        }
+    }
 
+    function checkDepErrMsg(w, d) {
+        var name = w.name || w.id;// || w.toString();
+        node.err(d + ' not found. ' + name + ' cannot be loaded.');
+    };
 
     //Expose Widgets to the global object
     node.widgets = new Widgets();
@@ -24309,7 +24394,7 @@ JSUS.extend(TIME);
             this.recipient = {value: 'SERVER'};
             break;
         case Chat.modes.MANY_TO_ONE:
-            this.recipient = {value: 'ALL'};
+            this.recipient = {value: 'ROOM'};
             break;
         case Chat.modes.ONE_TO_ONE:
             this.recipient = {value: 'SERVER'};
@@ -24415,6 +24500,7 @@ JSUS.extend(TIME);
     node.widgets.register('Chat', Chat);
 
 })(node);
+
 /**
  * # ChernoffFaces widget for nodeGame
  * Copyright(c) 2014 Stefano Balietti
@@ -27231,7 +27317,7 @@ JSUS.extend(TIME);
             // but we should add a check
 
             var msg = that.parse();
-            node.gsc.send(msg);
+            node.socket.send(msg);
             //console.log(msg.stringify());
         };
         stubButton.onclick = function() {
@@ -27294,8 +27380,8 @@ JSUS.extend(TIME);
         node.window.getElementById(this.id + '_reliable').value = 1;
         node.window.getElementById(this.id + '_priority').value = 0;
 
-        if (node.gsc && node.gsc.session) {
-            node.window.getElementById(this.id + '_session').value = node.gsc.session;
+        if (node.socket && node.socket.session) {
+            node.window.getElementById(this.id + '_session').value = node.socket.session;
         }
 
         node.window.getElementById(this.id + '_state').value = JSON.stringify(node.state);
@@ -27305,6 +27391,7 @@ JSUS.extend(TIME);
     };
 
 })(node);
+
 /**
  * # NDDBBrowser widget for nodeGame
  * Copyright(c) 2014 Stefano Balietti
@@ -27514,7 +27601,7 @@ JSUS.extend(TIME);
 
                 // Update Others
                 stateEvent = node.OUT + node.action.SAY + '.STATE';
-                node.emit(stateEvent, state, 'ALL');
+                node.emit(stateEvent, state, 'ROOM');
             }
             else {
                 node.log('No next/previous state. Not sent', 'ERR');
@@ -27534,6 +27621,7 @@ JSUS.extend(TIME);
     };
 
 })(node);
+
 /**
  * # Requirements widget for nodeGame
  * Copyright(c) 2014 Stefano Balietti
@@ -28142,7 +28230,7 @@ JSUS.extend(TIME);
                 });
 
                 // Self Update
-                if (to === 'ALL') {
+                if (to === 'ROOM') {
                     stateEvent = node.IN + node.action.SAY + '.STATE';
                     stateMsg = node.msg.createSTATE(stateEvent, state);
                     node.emit(stateEvent, stateMsg);
@@ -28163,6 +28251,7 @@ JSUS.extend(TIME);
     };
 
 })(node);
+
 /**
  * # StateDisplay widget for nodeGame
  * Copyright(c) 2014 Stefano Balietti
