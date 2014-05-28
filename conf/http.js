@@ -190,7 +190,7 @@ function configure(app, servernode) {
         }
 
         // Build filepath to file.
-        filepath = gameInfo.dir + '/'  + file;
+        filepath = gameInfo.dir + file;
 
 
         // Send JSON data as JSONP if there is a callback query parameter:
