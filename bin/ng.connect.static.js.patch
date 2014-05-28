@@ -1,0 +1,6 @@
+129c129,131
+<   path = normalize(join(root, path));
+---
+>   //path = normalize(join(root, path));
+>   // Node.js v0.10.20 workaround:
+>   path = normalize(join(root || "", path));
