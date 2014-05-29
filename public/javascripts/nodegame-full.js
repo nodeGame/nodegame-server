@@ -21089,7 +21089,7 @@ JSUS.extend(TIME);
             throw new Error('GameWindow.generateHeader: invalid root element.');
         }
         
-        headerName = headerName || 'gn_header';
+        headerName = headerName || 'ng_header';
 
         if ('string' !== typeof headerName) {
             throw new Error('GameWindow.generateHeader: headerName must be ' +
