@@ -1252,6 +1252,7 @@ if (!JSON) {
         require('./lib/dom');
         require('./lib/random');
         require('./lib/parse');
+        require('./lib/queue');
         require('./lib/fs');
     }
     // end node
@@ -1559,10 +1560,10 @@ if (!JSON) {
      *  @see JSUS.equals
      */
     ARRAY.inArray = ARRAY.in_array = function(needle, haystack) {
-        if (!haystack) return false;
-        
-        var func = JSUS.equals;    
-        for (var i = 0; i < haystack.length; i++) {
+        var func, i, len;
+        if (!haystack) return false;        
+        func = JSUS.equals, len = haystack.length;
+        for (i = 0; i < len; i++) {
             if (func.call(this, needle, haystack[i])) {
                 return true;
             }
@@ -2270,9 +2271,11 @@ if (!JSON) {
     };
 
     /**
-     * ## DOM.shuffleNodes
+     * ### DOM.shuffleNodes
      *
      * Shuffles the children nodes
+     *
+     * All children must have the id attribute.
      *
      * @param {Node} parent The parent node
      * @param {array} order Optional. A pre-specified order. Defaults, random
@@ -2360,8 +2363,8 @@ if (!JSON) {
      * Adds attributes to an HTML element and returns it.
      *
      * Attributes are defined as key-values pairs.
-     * Attributes 'label' is ignored, attribute 'class' and 'style' are
-     * special and are delegated to special methods.
+     * Attributes 'label' is ignored, attribute 'className' ('class') and
+     * 'style' are special and are delegated to special methods.
      *
      * @param {HTMLElement} e The element to decorate
      * @param {object} a Object containing attributes to add to the element
@@ -2381,7 +2384,7 @@ if (!JSON) {
                 if (key === 'id') {
                     e.id = a[key];
                 }
-                else if (key === 'class') {
+                else if (key === 'class' || key === 'className') {
                     DOM.addClass(e, a[key]);
                 }
                 else if (key === 'style') {
@@ -2908,46 +2911,13 @@ if (!JSON) {
     DOM.addClass = function(el, c) {
         if (!el || !c) return;
         if (c instanceof Array) c = c.join(' ');
-        if ('undefined' === typeof el.className) {
+        if (el.className === '' || 'undefined' === typeof el.className) {
             el.className = c;
         }
         else {
             el.className += ' ' + c;
         }
         return el;
-    };
-
-    /**
-     * ## DOM.getIFrameDocument
-     *
-     * Returns a reference to the document of an iframe object
-     *
-     * @param {HTMLIFrameElement} iframe The iframe object
-     * @return {HTMLDocument|undefined} The document of the iframe, or
-     *   undefined if not found.
-     */
-    DOM.getIFrameDocument = function(iframe) {
-        if (!iframe) return;
-        return iframe.contentDocument || iframe.contentWindow.document;
-    };
-
-    /**
-     * ### DOM.getIFrameAnyChild
-     *
-     * Gets the first available child of an IFrame
-     *
-     * Tries head, body, lastChild and the HTML element
-     *
-     * @param {HTMLIFrameElement} iframe The iframe object
-     * @return {HTMLElement|undefined} The child, or undefined if none is found
-     */
-    DOM.getIFrameAnyChild = function(iframe) {
-        var contentDocument;
-        if (!iframe) return;
-        contentDocument = W.getIFrameDocument(iframe);
-        return contentDocument.head || contentDocument.body ||
-            contentDocument.lastChild ||
-            contentDocument.getElementsByTagName('html')[0];
     };
 
     /**
@@ -2986,9 +2956,46 @@ if (!JSON) {
         return result;
     };
 
+    // ## IFRAME
+    
+    /**
+     * ### DOM.getIFrameDocument
+     *
+     * Returns a reference to the document of an iframe object
+     *
+     * @param {HTMLIFrameElement} iframe The iframe object
+     * @return {HTMLDocument|undefined} The document of the iframe, or
+     *   undefined if not found.
+     */
+    DOM.getIFrameDocument = function(iframe) {
+        if (!iframe) return;
+        return iframe.contentDocument || iframe.contentWindow.document;
+    };
+
+    /**
+     * ### DOM.getIFrameAnyChild
+     *
+     * Gets the first available child of an IFrame
+     *
+     * Tries head, body, lastChild and the HTML element
+     *
+     * @param {HTMLIFrameElement} iframe The iframe object
+     * @return {HTMLElement|undefined} The child, or undefined if none is found
+     */
+    DOM.getIFrameAnyChild = function(iframe) {
+        var contentDocument;
+        if (!iframe) return;
+        contentDocument = W.getIFrameDocument(iframe);
+        return contentDocument.head || contentDocument.body ||
+            contentDocument.lastChild ||
+            contentDocument.getElementsByTagName('html')[0];
+    };
+
+
     JSUS.extend(DOM);
 
 })('undefined' !== typeof JSUS ? JSUS : module.parent.exports.JSUS);
+
 /**
  * # EVAL
  *
@@ -4089,12 +4096,13 @@ if (!JSON) {
      * @return {number} A random floating point number in (a,b)
      */
     RANDOM.random = function(a, b) {
+        var c;
         a = ('undefined' === typeof a) ? 0 : a;
         b = ('undefined' === typeof b) ? 0 : b;
         if (a === b) return a;
 
         if (b < a) {
-            var c = a;
+            c = a;
             a = b;
             b = c;
         }
