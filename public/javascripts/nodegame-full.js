@@ -2891,7 +2891,7 @@ if (!JSON) {
     DOM.removeClass = function(el, c) {
         var regexpr, o;
         if (!el || !c) return;
-        regexpr = '/(?:^|\s)' + c + '(?!\S)/';
+        regexpr = new RegExp('(?:^|\\s)' + c + '(?!\\S)');
         o = el.className = el.className.replace( regexpr, '' );
         return el;
     };
@@ -23931,24 +23931,11 @@ JSUS.extend(TIME);
 
     node.Widget = Widget;
 
-    function Widget() {
-        this.root = null;
-    }
+    function Widget() {}
 
     Widget.prototype.dependencies = {};
 
-    Widget.prototype.defaults = {};
-
-    Widget.prototype.defaults.fieldset = {
-        legend: 'Widget'
-    };
-
-
     Widget.prototype.listeners = function() {};
-
-    Widget.prototype.getRoot = function() {
-        return this.root;
-    };
 
     Widget.prototype.getValues = function() {};
 
@@ -23961,6 +23948,61 @@ JSUS.extend(TIME);
     Widget.prototype.highlight = function() {};
 
     Widget.prototype.destroy = function() {};
+
+    Widget.prototype.setTitle = function(title) {
+        if (!this.panelDiv) {
+            throw new Error('Widget.setTitle: panelDiv is missing.');
+        }
+
+        // Remove heading with false-ish argument.
+        if (!title) {
+            if (this.headingDiv) {
+                this.panelDiv.removeChild(this.headingDiv);
+                delete this.headingDiv;
+            }
+        }
+        else {
+            if (!this.headingDiv) {
+                // Add heading.
+                this.headingDiv = W.addDiv(this.panelDiv, undefined,
+                        {className: 'panel-heading'});
+                // Move it to before the body.
+                this.panelDiv.insertBefore(this.headingDiv, this.bodyDiv);
+            }
+
+            // Set title.
+            this.headingDiv.innerHTML = title;
+        }
+    };
+
+    Widget.prototype.setFooter = function(footer) {
+        if (!this.panelDiv) {
+            throw new Error('Widget.setFooter: panelDiv is missing.');
+        }
+
+        // Remove footer with false-ish argument.
+        if (!footer) {
+            if (this.footerDiv) {
+                this.panelDiv.removeChild(this.footerDiv);
+                delete this.footerDiv;
+            }
+        }
+        else {
+            if (!this.footerDiv) {
+                // Add footer.
+                this.footerDiv = W.addDiv(this.panelDiv, undefined,
+                        {className: 'panel-footer'});
+            }
+
+            // Set footer contents.
+            this.footerDiv.innerHTML = footer;
+        }
+    };
+
+    Widget.prototype.setContext = function(context) {
+        W.removeClass(this.panelDiv, 'panel-[a-z]*');
+        W.addClass(this.panelDiv, 'panel-' + context);
+    };
 
 })(
     // Widgets works only in the browser environment.
@@ -24027,13 +24069,7 @@ JSUS.extend(TIME);
             throw new TypeError('Widgets.register: w must be function.');
         }
         // Add default properties to widget prototype
-        for (i in node.Widget.prototype) {
-            if (!w[i] && !w.prototype[i] &&
-                !(w.prototype.__proto__ && w.prototype.__proto__[i])) {
-
-                w.prototype[i] = J.clone(node.Widget.prototype[i]);
-            }
-        }
+        J.mixout(w.prototype, new node.Widget());
         this.widgets[name] = w;
         return this.widgets[name];
     };
@@ -24092,6 +24128,11 @@ JSUS.extend(TIME);
         // Re-inject defaults
         widget.defaults = options;
 
+        widget.title = wProto.title;
+        widget.footer = wProto.footer;
+        widget.className = wProto.className;
+        widget.context = wProto.context;
+
         // Call listeners
         widget.listeners.call(widget);
 
@@ -24127,8 +24168,6 @@ JSUS.extend(TIME);
      */
     Widgets.prototype.append = Widgets.prototype.add = function(w, root,
                                                                 options) {
-        var div, heading, body;
-
         if ('string' !== typeof w && 'object' !== typeof w) {
             throw new TypeError('Widgets.append: w must be string or object.');
         }
@@ -24158,24 +24197,33 @@ JSUS.extend(TIME);
         //    root = appendFieldset(root, options.fieldset ||
         //                          w.defaults.fieldset, w);
         //}
-        div = appendDiv(root, {
-            attributes: {className: ['ng_widget', 'panel', 'panel-default']}
+        w.panelDiv = appendDiv(root, {
+            attributes: {
+                className: ['ng_widget', 'panel', 'panel-default', w.className]
+            }
         });
 
-        if (options.fieldset) {
-            // Add heading.
-            heading = appendDiv(div, {
-                attributes: {className: 'panel-heading'}
-            });
-
-            heading.innerHTML = options.fieldset.legend || w.legend;
+        // Optionally add title.
+        if (w.title) {
+            w.setTitle(w.title);
         }
 
-        body = appendDiv(div, {
+        // Add body.
+        w.bodyDiv = appendDiv(w.panelDiv, {
             attributes: {className: 'panel-body'}
         });
 
-        w.append(body);
+        // Optionally add footer.
+        if (w.footer) {
+            w.setFooter(w.footer);
+        }
+
+        // Optionally set context.
+        if (w.context) {
+            w.setContext(w.context);
+        }
+
+        w.append();
 
         // Store widget instance for destruction.
         this.instances.push(w);
@@ -24193,20 +24241,17 @@ JSUS.extend(TIME);
      * @see Widgets.append
      */
     Widgets.prototype.destroyAll = function() {
-        var i, widget, widgetDiv;
+        var i, widget;
 
         for (i in this.instances) {
             if (this.instances.hasOwnProperty(i)) {
                 widget = this.instances[i];
 
                 try {
-                    // Remove widget div/fieldset from root:
-                    if (widget.root) {
-                        widgetDiv = widget.root.parentNode;
-                        widgetDiv.parentNode.removeChild(widgetDiv);
-                    }
-
                     widget.destroy();
+
+                    // Remove the widget's div from its parent:
+                    widget.panelDiv.parentNode.removeChild(widget.panelDiv);
                 }
                 catch (e) {
                     node.warn('Widgets.destroyAll: Error caught. ' + e + '.');
@@ -24279,7 +24324,7 @@ JSUS.extend(TIME);
 
     function createListenerFunction(w, e, l) {
         if (!w || !e || !l) return;
-        w.getRoot()[e] = function() {
+        w.panelDiv[e] = function() {
             l.call(w);
         };
     }
@@ -24303,7 +24348,7 @@ JSUS.extend(TIME);
     function checkDepErrMsg(w, d) {
         var name = w.name || w.id;// || w.toString();
         node.err(d + ' not found. ' + name + ' cannot be loaded.');
-    };
+    }
 
     //Expose Widgets to the global object
     node.widgets = new Widgets();
@@ -28388,19 +28433,13 @@ JSUS.extend(TIME);
     var JSUS = node.JSUS,
     Table = node.window.Table;
 
-    // ## Defaults
-
-    VisualState.defaults = {};
-    VisualState.defaults.id = 'visualstate';
-    VisualState.defaults.fieldset = {
-        legend: 'State',
-        id: 'visualstate_fieldset'
-    };
-
     // ## Meta-data
 
     VisualState.version = '0.2.1';
     VisualState.description = 'Visually display current, previous and next state of the game.';
+
+    VisualState.title = 'State';
+    VisualState.className = 'visualstate';
 
     // ## Dependencies
 
@@ -28412,20 +28451,14 @@ JSUS.extend(TIME);
     function VisualState(options) {
         this.id = options.id;
 
-        this.root = null;
         this.table = new Table();
     }
 
-    VisualState.prototype.getRoot = function() {
-        return this.root;
-    };
-
-    VisualState.prototype.append = function(root, ids) {
+    VisualState.prototype.append = function() {
         var that = this;
         var PREF = this.id + '_';
-        root.appendChild(this.table.table);
+        this.bodyDiv.appendChild(this.table.table);
         this.writeState();
-        return root;
     };
 
     VisualState.prototype.listeners = function() {
@@ -28480,6 +28513,7 @@ JSUS.extend(TIME);
     };
 
 })(node);
+
 /**
  * # VisualTimer widget for nodeGame
  * Copyright(c) 2014 Stefano Balietti
@@ -28499,20 +28533,14 @@ JSUS.extend(TIME);
 
     var J = node.JSUS;
 
-    // ## Defaults
-
-    VisualTimer.defaults = {};
-    VisualTimer.defaults.id = 'visualtimer';
-    VisualTimer.defaults.fieldset = {
-        legend: 'Time left',
-        id: 'visualtimer_fieldset'
-    };
-
     // ## Meta-data
 
     VisualTimer.version = '0.4.0';
     VisualTimer.description = 'Display a timer for the game. Timer can ' +
         'trigger events. Only for countdown smaller than 1h.';
+
+    VisualTimer.title = 'Time left';
+    VisualTimer.className = 'visualtimer';
 
     // ## Dependencies
 
@@ -28532,9 +28560,6 @@ JSUS.extend(TIME);
         
         // The DIV in which to display the timer.
         this.timerDiv = null;   
-        
-        // The parent element.
-        this.root = null;
 
         this.init(this.options);
     }
@@ -28589,15 +28614,9 @@ JSUS.extend(TIME);
         this.options = options;
     };
 
-    VisualTimer.prototype.getRoot = function() {
-        return this.root;
-    };
-
-    VisualTimer.prototype.append = function(root) {
-        this.root = root;
-        this.timerDiv = node.window.addDiv(root, this.id + '_div');
+    VisualTimer.prototype.append = function() {
+        this.timerDiv = node.window.addDiv(this.bodyDiv, this.id + '_div');
         this.updateDisplay();
-        return root;
     };
 
     VisualTimer.prototype.updateDisplay = function() {
@@ -28678,7 +28697,7 @@ JSUS.extend(TIME);
 
     VisualTimer.prototype.destroy = function() {
         node.timer.destroyTimer(this.gameTimer);
-        this.root.removeChild(this.timerDiv);
+        this.bodyDiv.removeChild(this.timerDiv);
     };
 
     /**
@@ -28864,11 +28883,12 @@ JSUS.extend(TIME);
             this.unlock();
         }
         if (this.waitingDiv) {
-            this.root.removeChild(this.waitingDiv);
+            this.waitingDiv.parentNode.removeChild(this.waitingDiv);
         }
         W.waitScreen = null; 
     };
 })(node);
+
 /**
  * # Wall widget for nodeGame
  * Copyright(c) 2014 Stefano Balietti

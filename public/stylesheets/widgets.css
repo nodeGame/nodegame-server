@@ -1,0 +1,109 @@
+/* 
+   Stylesheet for nodeGame widgets 
+   Copyright(c) 2014 Stefano Balietti
+   MIT Licensed
+   
+   www.nodegame.org
+   ---
+*/
+
+/* .ng_widget {} */
+
+/* Visual Timer */
+
+.visualtimer {
+    float: right;
+    min-width: 100px;
+    width: auto;
+}
+.visualtimer > .panel-body > div {
+    font-size: 40px;
+    text-align: center;
+}
+
+/* Money Talks */
+
+fieldset#moneytalks_fieldset {
+    float: right;
+    width: auto;
+    min-width: 100px;
+}
+
+fieldset#moneytalks_fieldset span#moneytalks_money {
+    font-size: 40px;
+    text-align: center;
+}
+
+fieldset#moneytalks_fieldset span#moneytalks_currency {
+    font-size: 12px;
+    text-align: center;
+}
+
+/* Visual State */
+
+
+.visualstate {
+    float: left;
+    min-width: 300px;
+}
+
+
+/* Chat */
+
+
+#chat_chat {
+    overflow-y: scroll;
+    height: 200px;
+    width: 450px;
+    border: 1px solid #CCC;
+    padding: 5px;
+}
+
+#chat_textarea {
+    height: 100px;
+    width: 400px;
+}
+
+.chat_me {
+    font-weight: bold;
+}
+
+
+/* State Display */
+
+fieldset#statedisplay_fieldset {
+    float: left;
+    width: 300px;
+    padding: 1px 10px;
+}
+
+div#statedisplay_div {
+    width: auto;
+    font-size: 16px;
+}
+
+/* Feedback */
+
+fieldset#feedback_fieldset textarea {
+    padding: 5px;
+    font-size: 16px;
+    width: 98%;
+    height: 300px;
+    border: 1px solid #CCC;
+}
+
+/* Requirements */
+
+.requirements-success {
+  font-weight: bold;
+  color: green;
+  padding-top: 15px;
+  padding-bottom: 15px;
+}
+
+.requirements-fail {
+  font-weight: bold;
+  color: red;
+  padding-top: 15px;
+  padding-bottom: 15px;
+}
