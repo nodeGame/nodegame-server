@@ -20737,9 +20737,21 @@ JSUS.extend(TIME);
      *
      * Resets the GameWindow to the initial state
      *
-     * Clears the frame, header, lock and cache.
+     * Clears the frame, header, lock, widgets and cache.
+     *
+     * @see Widgets.destroyAll
      */
     GameWindow.prototype.reset = function() {
+        // Unlock screen, if currently locked.
+        if (this.isScreenLocked()) {
+            this.unlockScreen();
+        }
+
+        // Remove widgets, if Widgets exists.
+        if (node.widgets) {
+            node.widgets.destroyAll();
+        }
+
         // Remove loaded frame, if one is found.
         if (this.getFrame()) {
             this.destroyFrame();
@@ -20750,11 +20762,6 @@ JSUS.extend(TIME);
             this.destroyHeader();
         }
         
-        // Unlock screen, if currently locked.
-        if (this.isScreenLocked()) {
-            this.unlockScreen();
-        }
-
         this.areLoading = 0;
 
         // Clear all caches.
@@ -21291,7 +21298,7 @@ JSUS.extend(TIME);
             // Add default CSS.
             if (node.conf.host) {
                 this.addCSS(this.getFrameRoot(),
-                            node.conf.host + '/stylesheets/player.css');
+                            node.conf.host + '/stylesheets/nodegame.css');
             }
 
             break;
