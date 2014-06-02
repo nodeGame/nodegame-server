@@ -196,55 +196,59 @@ program
     .option('-C, --clean', 'clean CSS directory')
     .action(function(options) {
         var config, runIt, out, smooshed;
-      
-        // Copy CSS files from submodules.
-        copyCSS();
+        
+        function copyAndBuild() {
+	    // Copy CSS files from submodules.
+            copyCSS(null, function() {
+                // Set output name.
+                out = options.output || "nodegame";
+                if (path.extname(out) === '.css') {
+	            out = path.basename(out, '.css');
+                }
 
-        // Set output name.
-        out = options.output || "nodegame";
-        if (path.extname(out) === '.css') {
-	    out = path.basename(out, '.css');
+                // Configurations for file smooshing.
+                config = {
+	            // VERSION: version,
+
+	            // Use JSHINT to spot code irregularities.
+	            JSHINT_OPTS: {
+	                boss: true,
+	                forin: true,
+	                browser: true,
+	            },
+
+	            CSS: {
+                        // Need the extra slash.
+	                DIST_DIR: '/' + cssDir
+	            }
+                };
+
+                config.CSS[out] = [
+                    cssDir + 'window.css',
+                    cssDir + 'widgets.css'
+                ];
+	        smooshed = smoosh.config(config);
+
+	        // Builds both uncompressed and compressed files.
+	        smooshed.build();
+
+    	        if (options.analyse) {
+    	            smooshed.run(); // runs jshint on full build
+    	            smooshed.analyze(); // analyzes everything
+    	        }
+
+                console.log('All CSS files copied, and ' + out + '.css created.');
+            });
         }
-    
-        // Configurations for file smooshing.
-        config = {
-	    // VERSION: version,
-	
-	    // Use JSHINT to spot code irregularities.
-	    JSHINT_OPTS: {
-	        boss: true,
-	        forin: true,
-	        browser: true,
-	    },
-	    
-	    CSS: {
-                // Need the extra slash.
-	        DIST_DIR: '/' + cssDir
-	    }
-        };
         
-        config.CSS[out] = [
-            cssDir + 'window.css',
-            cssDir + 'widgets.css'
-        ];
-        
-	smooshed = smoosh.config(config);
-
 	// Removes all files from the CSS folder.
 	if (options.clean) {
-	    smooshed.clean();
-	}
-	    
-	// Builds both uncompressed and compressed files.
-	smooshed.build();
-	    
-    	if (options.analyse) {
-    	    smooshed.run(); // runs jshint on full build
-    	    smooshed.analyze(); // analyzes everything
-    	}
-            
-        console.log('All CSS files copied, and ' + out + '.css created.');
-
+	    J.cleanDir(cssDir, '.css', copyAndBuild);
+        }
+        else {
+            copyAndBuild();
+        }
+       
     });
 
 
@@ -266,13 +270,13 @@ program
             catch(e) {
                 console.log('make refresh: could not find nodegame-client directory.');
             }
-            try {            
+            try {
                 J.copyFromDir(buildDir_ngWindow, buildDir, '.js');
             }
             catch(e) {
                 console.log('make refresh: could not find nodegame-window directory.');
             }
-            try {            
+            try {
                 J.copyFromDir(buildDir_ngWidgets, buildDir, '.js');
             }
             catch(e) {
@@ -299,7 +303,7 @@ program
         }
 
         if (options.all || options.css) {
-            copyCSS();            
+            copyCSS();
         }
 
         console.log('All files copied to public/');
@@ -380,18 +384,31 @@ function copyDirTo(inputDir, targetDir) {
     J.copyDirSyncRecursive(inputDir, targetDir);
 }
 
-function copyCSS(options) {
-    try {            
-        J.copyFromDir(ngwindowDir + 'css/', cssDir, '.css');
+function copyCSS(options, cb) {
+    var asyncQueue = new J.getQueue();
+    try {
+        asyncQueue.add('window');
+        J.copyFromDir(ngwindowDir + 'css/', cssDir, '.css', function() {
+            asyncQueue.remove('window');
+        });
     }
     catch(e) {
         console.log('make refresh: could not find nodegame-window css directory.');
+        asyncQueue.remove('window');
     }
-    try {            
-        J.copyFromDir(ngwidgetsDir + 'css/', cssDir, '.css');
+    try {
+        asyncQueue.add('widgets');
+        J.copyFromDir(ngwidgetsDir + 'css/', cssDir, '.css', function() {
+            asyncQueue.remove('widgets');
+        });
     }
     catch(e) {
         console.log('make refresh: could not find nodegame-window css directory.');
+        asyncQueue.remove('widgets');
+    }
+
+    if (cb) {
+        asyncQueue.onReady(cb);
     }
 }
 
