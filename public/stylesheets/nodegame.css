@@ -81,7 +81,7 @@ input[type="range"] {
    Stylesheet for nodeGame widgets 
    Copyright(c) 2014 Stefano Balietti
    MIT Licensed
-   
+
    www.nodegame.org
    ---
 */
@@ -98,6 +98,27 @@ input[type="range"] {
 .visualtimer > .panel-body > div {
     font-size: 40px;
     text-align: center;
+}
+
+
+/* Visual State */
+
+
+.visualstate {
+    float: left;
+    min-width: 300px;
+}
+
+/* State Display */
+
+.statedisplay {
+    float: left;
+    width: 300px;
+}
+
+.statedisplay > .panel-body > div {
+    width: auto;
+    font-size: 16px;
 }
 
 /* Money Talks */
@@ -118,15 +139,6 @@ fieldset#moneytalks_fieldset span#moneytalks_currency {
     text-align: center;
 }
 
-/* Visual State */
-
-
-.visualstate {
-    float: left;
-    min-width: 300px;
-}
-
-
 /* Chat */
 
 
@@ -145,20 +157,6 @@ fieldset#moneytalks_fieldset span#moneytalks_currency {
 
 .chat_me {
     font-weight: bold;
-}
-
-
-/* State Display */
-
-fieldset#statedisplay_fieldset {
-    float: left;
-    width: 300px;
-    padding: 1px 10px;
-}
-
-div#statedisplay_div {
-    width: auto;
-    font-size: 16px;
 }
 
 /* Feedback */
