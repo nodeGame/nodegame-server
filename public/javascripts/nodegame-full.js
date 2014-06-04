@@ -4481,23 +4481,29 @@ JSUS.extend(TIME);
      *
      * Parses current querystring and returns the requested variable.
      *
-     * If no variable is specified, returns the full query string.
+     * If no variable name is specified, returns the full query string.
      * If requested variable is not found returns false.
      *
-     * @param {string} variable Optional. If set, returns only the value
-     *    associated with this variable
+     * @param {string} name Optional. If set, returns only the value
+     *   associated with this variable
+     * @param {string} referer Optional. If set, searches this string
      *
      * @return {string|boolean} The querystring, or a part of it, or FALSE
      *
      * Kudos:
      * @see http://stackoverflow.com/questions/901115/how-can-i-get-query-string-values-in-javascript
      */
-    PARSE.getQueryString = function(name) {
+    PARSE.getQueryString = function(name, referer) {
         var regex;
-        if ('undefined' === typeof name) return window.location.search;
+        if (referer && 'string' !== typeof referer) {
+            throw new TypeError('JSUS.getQueryString: referer must be string ' +
+                                'or undefined.');
+        }
+        referer = referer || window.location.search;
+        if ('undefined' === typeof name) return referer;
         name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
         regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
-        results = regex.exec(location.search);
+        results = regex.exec(referer);
         return results == null ? false : 
             decodeURIComponent(results[1].replace(/\+/g, " "))
     };
@@ -16845,6 +16851,7 @@ JSUS.extend(TIME);
      * the respective events.
      *
      * @param {object} options The options that are given to GameTimer
+     * @return {GameTimer} timer The requested timer
      *
      * @see GameTimer
      */
@@ -17322,10 +17329,15 @@ JSUS.extend(TIME);
      * The configuration object is of the type
      *
      *  var options = {
-     *      milliseconds: 4000, // The length of the interval
-     *      update: 1000, // How often to update the time counter. Defaults to milliseconds
-     *      timeup: 'MY_EVENT', // An event or function to fire when the timer expires
-     *      hooks: [ myFunc, // Array of functions or events to fire at every update
+     *      // The length of the interval.
+     *      milliseconds: 4000,
+     *      // How often to update the time counter. Defaults, milliseconds.
+     *      update: 1000,
+     *      // An event or function to fire when the timer expires.
+     *      timeup: 'MY_EVENT',
+     *      hooks: [
+     *              // Array of functions or events to fire at every update.
+     *              myFunc,
      *              'MY_EVENT_UPDATE',
      *              { hook: myFunc2,
      *                ctx: that, },
@@ -18521,8 +18533,6 @@ JSUS.extend(TIME);
 
         return this.socket.send(msg);
     };
-
-
   
 })(
     'undefined' != typeof node ? node : module.exports,
@@ -20575,7 +20585,7 @@ JSUS.extend(TIME);
          * Flag that marks whether caching is supported by the browser
          *
          * Caching requires to modify the documentElement.innerHTML property
-         * of the iframe document. This property is read-only in IE < 9.
+         * of the iframe document, which is read-only in IE < 9.
          */
         this.cacheSupported = null;
 
@@ -20636,7 +20646,7 @@ JSUS.extend(TIME);
         /**
          * ### GameWindow.waitScreen
          *
-         * Reference to the _WaitScreen_ widget, if one is appended in the page
+         * Reference to the _WaitScreen_ module
          *
          * @see node.widgets.WaitScreen
          */
@@ -20654,7 +20664,6 @@ JSUS.extend(TIME);
          * @see node.constants.screenLevels
          */
         this.screenState = node.constants.screenLevels.ACTIVE;
-
 
         /**
          * ### GamwWindow.textOnleave
@@ -20729,6 +20738,19 @@ JSUS.extend(TIME);
         else if (this.conf.noEscape === false) {
             this.restoreEscape();
         }
+        
+        if (this.conf.waitScreen !== false) {
+            if (this.waitScreen) {
+                this.waitScreen.destroy();
+                this.waitScreen = null;
+            }
+            this.waitScreen = new node.WaitScreen(this.conf.waitScreen);            
+        }
+        else if (this.waitScreen) {
+            this.waitScreen.destroy();
+            this.waitScreen = null;
+        }
+
         this.setStateLevel('INITIALIZED');
     };
 
@@ -20761,7 +20783,7 @@ JSUS.extend(TIME);
         if (this.getHeader()) {
             this.destroyHeader();
         }
-        
+
         this.areLoading = 0;
 
         // Clear all caches.
@@ -21291,9 +21313,6 @@ JSUS.extend(TIME);
             if (!this.getFrame()) {
                 this.generateFrame();
             }
-
-            // Adding the WaitScreen.
-            node.widgets.append('WaitScreen');
 
             // Add default CSS.
             if (node.conf.host) {
@@ -22215,6 +22234,158 @@ JSUS.extend(TIME);
 })(
     'undefined' !== typeof node ? node : undefined
 );
+/**
+ * # WaitScreen for nodeGame Window
+ * Copyright(c) 2014 Stefano Balietti
+ * MIT Licensed
+ *
+ * Covers the screen with a grey layer and displays a message
+ *
+ * www.nodegame.org
+ * ---
+ */
+
+(function(exports, window) {
+
+    "use strict";
+
+    // Append under window.node.
+    exports.WaitScreen = WaitScreen;
+
+    // ## Meta-data
+
+    WaitScreen.version = '0.7.0';
+    WaitScreen.description = 'Show a standard waiting screen';
+
+    // Helper functions
+
+    function event_REALLY_DONE(text) {
+        text = text || W.waitScreen.text.waiting;
+        if (W.isScreenLocked()) {
+            W.waitScreen.updateText(text);
+        }
+        else {
+            W.lockScreen(text);
+        }
+    }
+
+    function event_STEPPING(text) {
+        text = text || W.waitScreen.text.stepping;
+        if (W.isScreenLocked()) {
+            W.waitScreen.updateText(text);
+        }
+        else {
+            W.lockScreen(text);
+        }
+    }
+     
+    function event_PLAYING() {
+        if (W.isScreenLocked()) {
+            W.unlockScreen();
+        }
+    }
+
+    function event_PAUSED(text) {
+        text = text || W.waitScreen.text.paused;
+        W.lockScreen(text);
+    }
+    
+    function event_RESUMED() {
+        if (W.isScreenLocked()) {
+            W.unlockScreen();
+        }
+    }
+
+    /**
+     * ## WaitScreen constructor
+     *
+     * Instantiates a new WaitScreen object 
+     *
+     * @param {object} options Optional. Configuration options.
+     */
+    function WaitScreen(options) {
+        options = options || {};
+	this.id = options.id || 'ng_waitScreen';
+        this.root = options.root || null;
+
+	this.text = {
+            waiting: options.waitingText ||
+                'Waiting for other players to be done...',
+            stepping: options.steppingText ||
+                'Initializing game step, will be ready soon...',
+            paused: options.pausedText ||
+                'Game is paused. Please wait.'
+        };
+        
+	this.waitingDiv = null;
+        this.enable();
+    }
+    
+    WaitScreen.prototype.lock = function(text) {
+        if (!this.waitingDiv) {
+            if (!this.root) {
+                this.root = W.getFrameRoot() || document.body;
+            }
+	    this.waitingDiv = W.addDiv(this.root, this.id);
+	}
+	if (this.waitingDiv.style.display === 'none') {
+	    this.waitingDiv.style.display = '';
+	}
+	this.waitingDiv.innerHTML = text;
+    };
+
+    WaitScreen.prototype.unlock = function() {
+        if (this.waitingDiv) {
+            if (this.waitingDiv.style.display === '') {
+                this.waitingDiv.style.display = 'none';
+            }
+        }
+    };
+
+    WaitScreen.prototype.updateText = function(text, append) {
+        append = append || false;
+        if ('string' !== typeof text) {
+            throw new TypeError('WaitScreen.updateText: text must be string.');
+        }
+        if (append) {
+            this.waitingDiv.appendChild(document.createTextNode(text));
+        }
+        else {
+            this.waitingDiv.innerHTML = text;
+        }
+    };
+
+    WaitScreen.prototype.enable = function(disable) {
+        if (disable === false || disable === null) {
+            node.off('REALLY_DONE', event_REALLY_DONE);
+            node.off('STEPPING', event_STEPPING);
+            node.off('PLAYING', event_PLAYING);
+            node.off('RESUMED', event_PAUSED);
+            node.off('RESUMED', event_RESUMED);
+        }
+        else {
+            node.on('REALLY_DONE', event_REALLY_DONE);
+            node.on('STEPPING', event_STEPPING);
+            node.on('PLAYING', event_PLAYING);
+            node.on('RESUMED', event_PAUSED);
+            node.on('RESUMED', event_RESUMED);
+        }
+    };
+
+    WaitScreen.prototype.destroy = function() {
+        if (W.isScreenLocked()) {
+            this.unlock();
+        }
+        if (this.waitingDiv) {
+            this.waitingDiv.parentNode.removeChild(this.waitingDiv);
+        }
+    };
+
+})(
+    ('undefined' !== typeof node) ? node : module.parent.exports.node,
+    ('undefined' !== typeof window) ? window : module.parent.exports.window
+);
+
 /**
  * # GameWindow selector module
  * Copyright(c) 2014 Stefano Balietti
@@ -28346,8 +28517,8 @@ JSUS.extend(TIME);
     StateDisplay.className = 'statedisplay';
 
     // ## Dependencies
-   
-    StateDisplay.dependencies = {      
+
+    StateDisplay.dependencies = {
         Table: {}
     };
 
@@ -28402,7 +28573,7 @@ JSUS.extend(TIME);
         });
     };
 
-    StateDisplay.prototype.destroy = function() {        
+    StateDisplay.prototype.destroy = function() {
         node.off('STEP_CALLBACK_EXECUTED', StateDisplay.prototype.updateAll);
     };
 })(node);
@@ -28739,145 +28910,6 @@ JSUS.extend(TIME);
         return options;
     }
 
-})(node);
-
-/**
- * # WaitScreen widget for nodeGame
- * Copyright(c) 2014 Stefano Balietti
- * MIT Licensed
- *
- * Display information about the state of a player.
- *
- * www.nodegame.org
- * ---
- */
-(function(node) {
-
-    "use strict";
-
-    node.widgets.register('WaitScreen', WaitScreen);
-
-    // ## Defaults
-
-    WaitScreen.defaults = {};
-    WaitScreen.defaults.id = 'waiting';
-    WaitScreen.defaults.fieldset = false;
-
-    // ## Meta-data
-
-    WaitScreen.version = '0.7.0';
-    WaitScreen.description = 'Show a standard waiting screen';
-
-    function WaitScreen(options) {
-
-	this.id = options.id;
-
-        this.root = null;
-
-	this.text = {
-            waiting: options.waitingText ||
-                'Waiting for other players to be done...',
-            stepping: options.steppingText ||
-                'Initializing game step, will be ready soon...'
-        };
-
-	this.waitingDiv = null;
-    }
-
-    WaitScreen.prototype.lock = function(text) {
-        if (!this.waitingDiv) {
-	    this.waitingDiv = W.addDiv(W.getFrameRoot(), this.id);
-	}
-	if (this.waitingDiv.style.display === 'none') {
-	    this.waitingDiv.style.display = '';
-	}
-	this.waitingDiv.innerHTML = text;
-    };
-
-    WaitScreen.prototype.unlock = function() {
-        if (this.waitingDiv) {
-            if (this.waitingDiv.style.display === '') {
-                this.waitingDiv.style.display = 'none';
-            }
-        }
-    };
-
-    WaitScreen.prototype.updateText = function(text, append) {
-        append = append || false;
-        if ('string' !== typeof text) {
-            throw new TypeError('WaitScreen.updateText: text must be string.');
-        }
-        if (append) {
-            this.waitingDiv.appendChild(document.createTextNode(text));
-        }
-        else {
-            this.waitingDiv.innerHTML = text;
-        }
-    };
-
-    WaitScreen.prototype.append = function(root) {
-        // Saves a reference of the widget in GameWindow
-        // that will use it in the GameWindow.lockScreen method.
-        W.waitScreen = this;
-        this.root = root;
-	return root;
-    };
-
-    WaitScreen.prototype.getRoot = function() {
-	return this.waitingDiv;
-    };
-
-    WaitScreen.prototype.listeners = function() {
-        var that = this;
-
-        // was using WaitScreen method before.
-        // now using GameWindow lock / unlock, so that the state level
-        // is updated. Needs some testing.
-
-        node.on('REALLY_DONE', function(text) {
-            text = text || that.text.waiting;
-            if (W.isScreenLocked()) {
-                that.updateText(text);
-            }
-            else {
-                W.lockScreen(text);
-            }
-        });
-
-        node.on('STEPPING', function(text) {
-            text = text || that.text.stepping;
-            if (W.isScreenLocked()) {
-                that.updateText(text);
-            }
-            else {
-                W.lockScreen(text);
-            }
-            // was wrong before... Check this.
-            // that.unlock(text || that.text.stepping)
-        });
-
-        node.on('PLAYING', function() {
-            if (W.isScreenLocked()) {
-                W.unlockScreen();
-            }
-        });
-
-        node.on('RESUMED', function() {
-            if (W.isScreenLocked()) {
-                W.unlockScreen();
-            }
-        });
-    };
-
-    WaitScreen.prototype.destroy = function() {
-        if (W.isScreenLocked()) {
-            this.unlock();
-        }
-        if (this.waitingDiv) {
-            this.waitingDiv.parentNode.removeChild(this.waitingDiv);
-        }
-        W.waitScreen = null; 
-    };
 })(node);
 
 /**
