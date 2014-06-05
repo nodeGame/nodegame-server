@@ -116,5 +116,11 @@ table#gametable tr td {
 }
 
 
+/*
+ * Monitor widgets
+ */
 
-
+.panel-heading > ol.breadcrumb {
+    margin: 0;
+    padding: 0;
+}

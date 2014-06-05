@@ -5984,35 +5984,22 @@ JSUS.extend(TIME);
      *
      * Indexes an element
      *
-     * Parameter _oldIdx_ is needed if indexing is updating a previously
-     * indexed item. In fact if new index is different, the old one must
-     * be deleted.
-     *
      * @param {object} o The element to index
-     * @param {number} dbidx The position of the element in the database array
-     * @param {string} oldIdx Optional. The old index name, if any.
+     * @param {object} o The position of the element in the database array
      */
-    NDDB.prototype._indexIt = function(o, dbidx, oldIdx) {
+    NDDB.prototype._indexIt = function(o, dbidx) {
         var func, id, index, key;
         if (!o || J.isEmpty(this.__I)) return;
-        oldIdx = undefined;
+
         for (key in this.__I) {
             if (this.__I.hasOwnProperty(key)) {
                 func = this.__I[key];
                 index = func(o);
-                // If the same object has been  previously
-                // added with another index delete the old one.
-                if (index !== oldIdx) {
-                    if ('undefined' !== typeof oldIdx) {
-                        if ('undefined' !== typeof this[key].resolve[oldIdx]) {
-                            delete this[key].resolve[oldIdx];
-                        }
-                    }
-                }
-                if ('undefined' !== typeof index) { 
-                    if (!this[key]) this[key] = new NDDBIndex(key, this);
-                    this[key]._add(index, dbidx);
-                }
+
+                if ('undefined' === typeof index) continue;
+
+                if (!this[key]) this[key] = new NDDBIndex(key, this);
+                this[key]._add(index, dbidx);
             }
         }
     };
@@ -6042,7 +6029,7 @@ JSUS.extend(TIME);
                     settings = this.cloneSettings({V: ''});
                     this[key] = new NDDB(settings);
                 }
-                this[key].insert(o);1
+                this[key].insert(o);
             }
         }
     };
@@ -7462,13 +7449,11 @@ JSUS.extend(TIME);
      * @see JSUS.arrayDiff
      */
     NDDB.prototype.diff = function(nddb) {
+        if (!nddb || !nddb.length) return this;
         if ('object' === typeof nddb) {
             if (nddb instanceof NDDB || nddb instanceof this.constructor) {
                 nddb = nddb.db;
             }
-        }
-        if (!nddb || !nddb.length) {
-            return this.breed([]);
         }
         return this.breed(J.arrayDiff(this.db, nddb));
     };
@@ -7490,13 +7475,11 @@ JSUS.extend(TIME);
      * @see JSUS.arrayIntersect
      */
     NDDB.prototype.intersect = function(nddb) {
+        if (!nddb || !nddb.length) return this;
         if ('object' === typeof nddb) {
             if (nddb instanceof NDDB || nddb instanceof this.constructor) {
-                nddb = nddb.db;
+                var nddb = nddb.db;
             }
-        }
-        if (!nddb || !nddb.length) {
-            return this.breed([]);
         }
         return this.breed(J.arrayIntersect(this.db, nddb));
     };
@@ -8120,7 +8103,7 @@ JSUS.extend(TIME);
      * @see NDDBIndex.get
      * @see NDDBIndex.remove
      */
-    NDDBIndex.prototype.update = function(idx, update) {
+        NDDBIndex.prototype.update = function(idx, update) {
         var o, dbidx, nddb;
         dbidx = this.resolve[idx];
         if ('undefined' === typeof dbidx) return false;
@@ -8131,7 +8114,7 @@ JSUS.extend(TIME);
         // We do indexes separately from the other components of _autoUpdate
         // to avoid looping through all the other elements that are unchanged.
         if (nddb.__update.indexes) {
-            nddb._indexIt(o, dbidx, idx);
+            nddb._indexIt(o, dbidx);
             nddb._hashIt(o);
             nddb._viewIt(o);
         }
@@ -16866,6 +16849,14 @@ JSUS.extend(TIME);
                             ' already existing.');
         }
 
+        // If game is paused add options startPaused, unless user
+        // specified a value in the options object.
+        if (this.node.game.paused) {
+            if ('undefined' === typeof options.startPaused) {
+                options.startPaused = true;
+            }
+        }
+
         // Create the GameTimer:
         gameTimer = new GameTimer(this.node, options);
 
@@ -17280,7 +17271,6 @@ JSUS.extend(TIME);
          * ### GameTimer.updateStart
          *
          * Timestamp of the start of the last update
-         *
          */
         this.updateStart = 0;
 
@@ -17288,9 +17278,8 @@ JSUS.extend(TIME);
          * ### GameTimer.startPaused
          *
          * Whether to enter the pause state when starting
-         *
          */
-        this.startPaused = false;
+        this.startPaused = null;
 
         /**
          * ### GameTimer.timeup
@@ -17362,6 +17351,8 @@ JSUS.extend(TIME);
         this.update = options.update || this.update || this.milliseconds;
         this.timeLeft = this.milliseconds;
         this.timePassed = 0;
+        this.updateStart = 0;
+        this.updateRemaining = 0;
         // Event to be fired when timer expires.
         this.timeup = options.timeup || 'TIMEUP';
         // TODO: update and milliseconds must be multiple now
@@ -17371,6 +17362,10 @@ JSUS.extend(TIME);
                 this.addHook(options.hooks[i]);
             }
         }
+
+        // Set startPaused option. if specified. Defaults, FALSE.        
+        this.startPaused = 'undefined' !== options.startPaused ?
+            options.startPaused : false;
 
         // Only set status to INITIALIZED if all of the state is valid and
         // ready to be used by this.start etc.
@@ -17432,14 +17427,13 @@ JSUS.extend(TIME);
 
         this.status = GameTimer.LOADING;
 
-        // Remember time of start (used by this.pause, so set it before calling
-        // that):
-        this.updateStart = (new Date()).getTime();
-
         if (this.startPaused) {
             this.pause();
             return;
         }
+
+        // Remember time of start (used by this.pause to compute remaining time)
+        this.updateStart = (new Date()).getTime();
 
         // Fires the event immediately if time is zero.
         // Double check necessary in strict mode.
@@ -17496,9 +17490,16 @@ JSUS.extend(TIME);
 
             this.status = GameTimer.PAUSED;
 
-            // Save time of pausing:
-            timestamp = (new Date()).getTime();
-            this.updateRemaining = timestamp - this.updateStart;
+            // Save time of pausing.
+            // If start was never called, or called with startPaused on.
+            if (this.updateStart === 0) {
+                this.updateRemaining = this.update;
+            }
+            else {
+                // Save the difference of time left.
+                timestamp = (new Date()).getTime();
+                this.updateRemaining = timestamp - this.updateStart;
+            }
         }
         else if (this.status === GameTimer.STOPPED) {
             // If the timer was explicitly stopped, we ignore the pause:
@@ -20589,7 +20590,6 @@ JSUS.extend(TIME);
          */
         this.cacheSupported = null;
 
-
         /**
          * ### GameWindow.cache
          *
@@ -20608,7 +20608,7 @@ JSUS.extend(TIME);
          *
          * Currently loaded URIs in the internal frames
          *
-         * Maps frame names (e.g. 'mainframe') to the URIs they are showing.
+         * Maps frame names (e.g. 'ng_mainframe') to the URIs they are showing.
          *
          * @see GameWindow.preCache
          */
@@ -20987,7 +20987,7 @@ JSUS.extend(TIME);
      * @param {Element} root Optional. The HTML element to which the iframe
      *   will be appended. Defaults, this.frameRoot or document.body.
      * @param {string} frameName Optional. The name of the iframe. Defaults,
-     *   'mainframe'.
+     *   'ng_mainframe'.
      * @param {boolean} force Optional. Will create the frame even if an
      *   existing one is found. Defaults, FALSE.
      * @return {IFrameElement} The newly created iframe
@@ -21012,7 +21012,7 @@ JSUS.extend(TIME);
             throw new Error('GameWindow.generateFrame: invalid root element.');
         }
 
-        frameName = frameName || 'mainframe';
+        frameName = frameName || 'ng_mainframe';
 
         if ('string' !== typeof frameName) {
             throw new Error('GameWindow.generateFrame: frameName must be ' +
@@ -22698,13 +22698,18 @@ JSUS.extend(TIME);
      * If no root element is specified, the default screen is used.
      *
      * @param {string|object} text The content to write
-     * @param {Element} root The root element
+     * @param {Element|string} root Optional. The root element or its id
      * @return {string|object} The content written
      *
      * @see GameWindow.writeln
      */
     GameWindow.prototype.write = function(text, root) {
-        root = root || this.getScreen();
+        if ('string' === typeof root) {
+            root = this.getElementById(root);
+        }
+        else if (!root) {
+            root = this.getScreen();
+        }
         if (!root) {
             throw new
                 Error('GameWindow.write: could not determine where to write.');
@@ -22721,13 +22726,18 @@ JSUS.extend(TIME);
      * If no root element is specified, the default screen is used.
      *
      * @param {string|object} text The content to write
-     * @param {Element} root The root element
+     * @param {Element|string} root Optional. The root element or its id
      * @return {string|object} The content written
      *
      * @see GameWindow.write
      */
     GameWindow.prototype.writeln = function(text, root, br) {
-        root = root || this.getScreen();
+        if ('string' === typeof root) {
+            root = this.getElementById(root);
+        }
+        else if (!root) {
+            root = this.getScreen();
+        }
         if (!root) {
             throw new
                 Error('GameWindow.writeln: could not determine where to write.');
@@ -24154,7 +24164,14 @@ JSUS.extend(TIME);
             }
 
             // Set title.
-            this.headingDiv.innerHTML = title;
+            if (W.isElement(title)) {
+                // The given title is an HTML element.
+                this.headingDiv.innerHTML = '';
+                this.headingDiv.appendChild(title);
+            }
+            else {
+                this.headingDiv.innerHTML = title;
+            }
         }
     };
 
@@ -24178,7 +24195,14 @@ JSUS.extend(TIME);
             }
 
             // Set footer contents.
-            this.footerDiv.innerHTML = footer;
+            if (W.isElement(footer)) {
+                // The given footer is an HTML element.
+                this.footerDiv.innerHTML = '';
+                this.footerDiv.appendChild(footer);
+            }
+            else {
+                this.footerDiv.innerHTML = footer;
+            }
         }
     };
 
