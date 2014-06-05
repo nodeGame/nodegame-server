@@ -124,3 +124,7 @@ table#gametable tr td {
     margin: 0;
     padding: 0;
 }
+
+.ng_clickable:hover {
+    cursor: pointer;
+}
