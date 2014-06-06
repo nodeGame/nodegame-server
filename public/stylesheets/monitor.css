@@ -116,5 +116,28 @@ table#gametable tr td {
 }
 
 
+/*
+ * Monitor widgets
+ */
 
+.panel-heading > ol.breadcrumb {
+    margin: 0;
+    padding: 0;
+}
 
+.ng_clickable:hover {
+    cursor: pointer;
+}
+
+table {
+    border-collapse: separate;
+    border-spacing: 10px 0;
+}
+
+th,td {
+    text-align: center;
+}
+
+th:first-child,td:first-child {
+    text-align: left;
+}

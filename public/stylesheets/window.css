@@ -16,11 +16,21 @@ body {
     color: black;
 }
 
-iframe#mainframe{
-    width: 98%;
-    height: 100%;
+iframe#ng_mainframe {
     border: 0;
     padding: 10px;
+}
+
+.ng_mainframe-header-vertical {
+    height: 100%;
+    float: left;
+    width: 88%;
+}
+
+.ng_mainframe-header-horizontal {
+    height: 88%;
+    width: 98%;
+    clear: both;
 }
 
 div#ng_waitScreen {
@@ -42,11 +52,25 @@ div#ng_waitScreen {
 }
 
 div#ng_header {
-    width: 98%;
     padding: 2px 10px;
     color: black;
     border: 0;
     margin: 0;
+}
+
+.ng_header_position-horizontal-t, .ng_header_position-horizontal-b {
+    width: 98%;
+    height: 10%;
+}
+
+.ng_header_position-vertical-r {
+    float: right;
+    width: 10%; 
+}
+
+.ng_header_position-vertical-l {
+    float: left;
+    width: 10%;
 }
 
 canvas {

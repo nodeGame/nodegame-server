@@ -2991,6 +2991,61 @@ if (!JSON) {
             contentDocument.getElementsByTagName('html')[0];
     };
 
+    // ## RIGHT-CLICK
+
+    /**
+     * ## DOM.disableRightClick
+     *
+     * Disables the popup of the context menu by right clicking with the mouse 
+     *
+     * @param {Document} Optional. A target document object. Defaults, document
+     *
+     * @see DOM.enableRightClick
+     */
+    DOM.disableRightClick = function(doc) {
+        doc = doc || document;
+        if (doc.layers) {
+            doc.captureEvents(Event.MOUSEDOWN);
+            doc.onmousedown = function clickNS4(e) {
+                if (doc.layers || doc.getElementById && !doc.all) {
+                    if (e.which == 2 || e.which == 3) {
+                        return false;
+                    }
+                }
+            }
+        }
+        else if (doc.all && !doc.getElementById) {
+            doc.onmousedown = function clickIE4() {
+                if (event.button == 2) {
+                    return false;
+                }
+            }
+        }
+        doc.oncontextmenu = new Function("return false");
+    };
+
+    /**
+     * ## DOM.enableRightClick
+     *
+     * Enables the popup of the context menu by right clicking with the mouse 
+     *
+     * It unregisters the event handlers created by `DOM.disableRightClick` 
+     *
+     * @param {Document} Optional. A target document object. Defaults, document
+     *
+     * @see DOM.disableRightClick
+     */
+    DOM.enableRightClick = function(doc) {
+        doc = doc || document;
+        if (doc.layers) {
+            doc.releaseEvents(Event.MOUSEDOWN);
+            doc.onmousedown = null;
+        }
+        else if (doc.all && !doc.getElementById) {
+            doc.onmousedown = null;
+        }
+        doc.oncontextmenu = null;
+    };
 
     JSUS.extend(DOM);
 
@@ -16866,6 +16921,14 @@ JSUS.extend(TIME);
                             ' already existing.');
         }
 
+        // If game is paused add options startPaused, unless user
+        // specified a value in the options object.
+        if (this.node.game.paused) {
+            if ('undefined' === typeof options.startPaused) {
+                options.startPaused = true;
+            }
+        }
+
         // Create the GameTimer:
         gameTimer = new GameTimer(this.node, options);
 
@@ -17280,7 +17343,6 @@ JSUS.extend(TIME);
          * ### GameTimer.updateStart
          *
          * Timestamp of the start of the last update
-         *
          */
         this.updateStart = 0;
 
@@ -17288,9 +17350,8 @@ JSUS.extend(TIME);
          * ### GameTimer.startPaused
          *
          * Whether to enter the pause state when starting
-         *
          */
-        this.startPaused = false;
+        this.startPaused = null;
 
         /**
          * ### GameTimer.timeup
@@ -17362,6 +17423,8 @@ JSUS.extend(TIME);
         this.update = options.update || this.update || this.milliseconds;
         this.timeLeft = this.milliseconds;
         this.timePassed = 0;
+        this.updateStart = 0;
+        this.updateRemaining = 0;
         // Event to be fired when timer expires.
         this.timeup = options.timeup || 'TIMEUP';
         // TODO: update and milliseconds must be multiple now
@@ -17371,6 +17434,10 @@ JSUS.extend(TIME);
                 this.addHook(options.hooks[i]);
             }
         }
+
+        // Set startPaused option. if specified. Defaults, FALSE.        
+        this.startPaused = 'undefined' !== options.startPaused ?
+            options.startPaused : false;
 
         // Only set status to INITIALIZED if all of the state is valid and
         // ready to be used by this.start etc.
@@ -17432,14 +17499,13 @@ JSUS.extend(TIME);
 
         this.status = GameTimer.LOADING;
 
-        // Remember time of start (used by this.pause, so set it before calling
-        // that):
-        this.updateStart = (new Date()).getTime();
-
         if (this.startPaused) {
             this.pause();
             return;
         }
+
+        // Remember time of start (used by this.pause to compute remaining time)
+        this.updateStart = (new Date()).getTime();
 
         // Fires the event immediately if time is zero.
         // Double check necessary in strict mode.
@@ -17496,9 +17562,16 @@ JSUS.extend(TIME);
 
             this.status = GameTimer.PAUSED;
 
-            // Save time of pausing:
-            timestamp = (new Date()).getTime();
-            this.updateRemaining = timestamp - this.updateStart;
+            // Save time of pausing.
+            // If start was never called, or called with startPaused on.
+            if (this.updateStart === 0) {
+                this.updateRemaining = this.update;
+            }
+            else {
+                // Save the difference of time left.
+                timestamp = (new Date()).getTime();
+                this.updateRemaining = timestamp - this.updateStart;
+            }
         }
         else if (this.status === GameTimer.STOPPED) {
             // If the timer was explicitly stopped, we ignore the pause:
@@ -20402,7 +20475,7 @@ JSUS.extend(TIME);
             iframeWin.removeEventListener('load', completed, false);
             if (cb) {
                 // Some browsers fires onLoad too early.
-                // A small timeout is enough.                
+                // A small timeout is enough.
                 setTimeout(function() { cb(); }, 120);
             }
         }
@@ -20565,6 +20638,24 @@ JSUS.extend(TIME);
         this.headerRoot = null;
 
         /**
+         * ### GameWindow.headerPosition
+         *
+         * The relative position of the header on the screen
+         *
+         * Available positions: 'top', 'bottom', 'left', 'right'
+         *
+         * @see GameWindow.setHeaderPosition
+         */
+        this.headerPosition = null;
+
+        /**
+         * ### GameWindow.defaultHeaderPosition
+         *
+         * The default header position. 'left'.
+         */
+        this.defaultHeaderPosition = 'left';
+
+        /**
          * ### GameWindow.conf
          *
          * Object containing the current configuration
@@ -20589,7 +20680,6 @@ JSUS.extend(TIME);
          */
         this.cacheSupported = null;
 
-
         /**
          * ### GameWindow.cache
          *
@@ -20608,7 +20698,7 @@ JSUS.extend(TIME);
          *
          * Currently loaded URIs in the internal frames
          *
-         * Maps frame names (e.g. 'mainframe') to the URIs they are showing.
+         * Maps frame names (e.g. 'ng_mainframe') to the URIs they are showing.
          *
          * @see GameWindow.preCache
          */
@@ -20657,7 +20747,7 @@ JSUS.extend(TIME);
          *
          * Levels describing whether the user can interact with the frame.
          *
-         * The _screen_ represents all the user can see on screen. 
+         * The _screen_ represents all the user can see on screen.
          * It includes the _frame_ area, but also the _header_.
          *
          * @see node.widgets.WaitScreen
@@ -20678,7 +20768,16 @@ JSUS.extend(TIME);
          * @see GameWindow.promptOnleave
          */
         this.textOnleave = null;
-        
+
+        /**
+         * ### GamwWindow.rightClickDisabled
+         *
+         * TRUE, if the right click context menu is disabled
+         *
+         * @see GameWindow.disableRightClick
+         */
+        this.rightClickDisabled = false;
+
         /**
          * ### node.setup.window
          *
@@ -20686,7 +20785,7 @@ JSUS.extend(TIME);
          *
          * @see node.setup
          */
-        node.registerSetup('window', function(conf) {           
+        node.registerSetup('window', function(conf) {
             conf = conf || {};
             if ('undefined' === typeof conf.promptOnleave) {
                 conf.promptOnleave = false;
@@ -20738,17 +20837,28 @@ JSUS.extend(TIME);
         else if (this.conf.noEscape === false) {
             this.restoreEscape();
         }
-        
+
         if (this.conf.waitScreen !== false) {
             if (this.waitScreen) {
                 this.waitScreen.destroy();
                 this.waitScreen = null;
             }
-            this.waitScreen = new node.WaitScreen(this.conf.waitScreen);            
+            this.waitScreen = new node.WaitScreen(this.conf.waitScreen);
         }
         else if (this.waitScreen) {
             this.waitScreen.destroy();
             this.waitScreen = null;
+        }
+
+        if (this.conf.defaultHeaderPosition) {
+            this.defaultHeaderPosition = this.conf.defaultHeaderPosition;
+        }
+
+        if (this.conf.disableRightClick) {
+            this.disableRightClick()
+        }
+        else if (this.conf.disableRightClick === false) {
+            this.enableRightClick();
         }
 
         this.setStateLevel('INITIALIZED');
@@ -20957,7 +21067,7 @@ JSUS.extend(TIME);
                 null;
         }
         return this.frameDocument;
-            
+
     };
 
     /**
@@ -20965,7 +21075,7 @@ JSUS.extend(TIME);
      *
      * Returns a reference to the root element for the iframe
      *
-     * If none is found tries to retrieve and update it using 
+     * If none is found tries to retrieve and update it using
      * _GameWindow.getFrame()_.
      *
      * @return {Element} The root element in the iframe
@@ -20987,7 +21097,7 @@ JSUS.extend(TIME);
      * @param {Element} root Optional. The HTML element to which the iframe
      *   will be appended. Defaults, this.frameRoot or document.body.
      * @param {string} frameName Optional. The name of the iframe. Defaults,
-     *   'mainframe'.
+     *   'ng_mainframe'.
      * @param {boolean} force Optional. Will create the frame even if an
      *   existing one is found. Defaults, FALSE.
      * @return {IFrameElement} The newly created iframe
@@ -21012,7 +21122,7 @@ JSUS.extend(TIME);
             throw new Error('GameWindow.generateFrame: invalid root element.');
         }
 
-        frameName = frameName || 'mainframe';
+        frameName = frameName || 'ng_mainframe';
 
         if ('string' !== typeof frameName) {
             throw new Error('GameWindow.generateFrame: frameName must be ' +
@@ -21028,7 +21138,13 @@ JSUS.extend(TIME);
         // Method .replace does not add the uri to the history.
         iframe.contentWindow.location.replace('about:blank');
 
-        return this.setFrame(iframe, frameName, root);
+        this.setFrame(iframe, frameName, root);
+
+        if (this.frameElement) {
+            adaptFrame2HeaderPosition(this);
+        }
+
+        return iframe;
     };
 
     /**
@@ -21037,7 +21153,7 @@ JSUS.extend(TIME);
      * Sets the new default frame and update other references
      *
      * @param {IFrameElement} iframe. The new default frame.
-     * @param {string} frameName The name of the iframe. 
+     * @param {string} frameName The name of the iframe.
      * @param {Element} root The HTML element to which the iframe is appended.
      * @return {IFrameElement} The new default iframe
      * @see GameWindow.generateFrame
@@ -21117,30 +21233,98 @@ JSUS.extend(TIME);
 
         if (!force && this.headerElement) {
             throw new Error('GameWindow.generateHeader: a header element is ' +
-                            'already existing. It cannot be duplicated.'); 
+                            'already existing. It cannot be duplicated.');
         }
-        
+
         root = root || document.body || document.lastElementChild;
 
         if (!J.isElement(root)) {
             throw new Error('GameWindow.generateHeader: invalid root element.');
         }
-        
+
         headerName = headerName || 'ng_header';
 
         if ('string' !== typeof headerName) {
             throw new Error('GameWindow.generateHeader: headerName must be ' +
                             'string.');
         }
-        
+
         if (document.getElementById(headerName)) {
             throw new Error('GameWindow.generateHeader: headerName must be ' +
                             'unique.');
         }
-        
+
         header = this.addElement('div', root, headerName);
 
-        return this.setHeader(header, headerName, root);
+        // If generateHeader is called after generateFrame, and the default
+        // header position is not bottom, we need to move the header in front.
+        if (this.frameElement && this.defaultHeaderPosition !== 'bottom') {
+            this.getFrameRoot().insertBefore(header, this.frameElement);
+        }
+
+        this.setHeader(header, headerName, root);
+        this.setHeaderPosition(this.defaultHeaderPosition);
+
+        return header;
+    };
+
+
+    /**
+     * ### GameWindow.setHeaderPosition
+     *
+     * Set header's position on the screen.
+     *
+     * Available positions: 'top', 'bottom', 'left', 'right'.
+     *
+     * Positioning of the frame element is also affected, if existing, or if
+     * added later.
+     *
+     * @see GameWindow.generateHeader
+     * @see GameWindow.headerPosition
+     * @see GameWindow.defaultHeaderPosition
+     * @see adaptFrame2HeaderPosition
+     */
+    GameWindow.prototype.setHeaderPosition = function(position) {
+        var validPositions, pos, oldPos;
+        if ('string' !== typeof position) {
+            throw new TypeError('GameWindow.setHeaderPosition: position ' +
+                                'must be string.');
+        }
+        pos = position.toLowerCase();
+
+        // Do something only if there is a change in the position.
+        if (this.headerPosition === pos) return;
+
+        // Map: position - css class.
+        validPositions = {
+            'top': 'ng_header_position-horizontal-t',
+            'bottom': 'ng_header_position-horizontal-b',
+            'right': 'ng_header_position-vertical-r',
+            'left': 'ng_header_position-vertical-l'
+        };
+
+        if ('undefined' === typeof validPositions[pos]) {
+            node.err('GameWindow.setHeaderPosition: invalid header ' +
+                     'position: ' + pos  + '.');
+            return;
+        }
+        if (!this.headerElement) {
+            throw new Error('GameWindow.setHeaderPosition: headerElement ' +
+                            'not found.');
+        }
+
+        W.removeClass(this.headerElement, 'ng_header_position-[a-z\-]*');
+        W.addClass(this.headerElement, validPositions[pos]);
+
+        oldPos = this.headerPosition;
+
+        // Store the new position in a reference variable 
+        // **before** adaptFrame2HeaderPosition is called
+        this.headerPosition = pos;
+
+        if (this.frameElement) {
+            adaptFrame2HeaderPosition(this, oldPos);
+        }
     };
 
     /**
@@ -21165,11 +21349,11 @@ JSUS.extend(TIME);
         if (!J.isElement(root)) {
             throw new Error('GameWindow.setHeader: invalid root element.');
         }
- 
+
         this.headerElement = header;
         this.headerName = headerName;
         this.headerRoot = root;
-            
+
         return this.headerElement;
     };
 
@@ -21182,12 +21366,12 @@ JSUS.extend(TIME);
      */
     GameWindow.prototype.getHeader = function() {
         if (!this.headerElement) {
-            this.headerElement = this.headerName ? 
+            this.headerElement = this.headerName ?
                 document.getElementById(this.headerName) : null;
         }
         return this.headerElement;
     };
-    
+
     /**
      * ### GameWindow.getHeaderName
      *
@@ -21233,9 +21417,10 @@ JSUS.extend(TIME);
         this.headerElement = null;
         this.headerName = null;
         this.headerRoot = null;
+        this.headerPosition = null;
     };
 
-    /**    
+    /**
      * ### GameWindow.clearHeader
      *
      * Clears the content of the header
@@ -21331,7 +21516,10 @@ JSUS.extend(TIME);
     /**
      * ### GameWindow.initLibs
      *
-     * Specifies the libraries to be loaded automatically in the iframes
+     * Specifies the libraries to be loaded automatically in the iframe
+     *
+     * Multiple calls to _initLibs_ append the new libs to the list.
+     * Deletion must be done manually.
      *
      * This method must be called before any call to GameWindow.loadFrame.
      *
@@ -21343,8 +21531,20 @@ JSUS.extend(TIME);
      *   globalLibs.
      */
     GameWindow.prototype.initLibs = function(globalLibs, frameLibs) {
-        this.globalLibs = globalLibs || [];
-        this.frameLibs = frameLibs || {};
+        if (globalLibs && !J.isArray(globalLibs)) {
+            throw new TypeError('GameWindow.initLibs: globalLibs must be ' +
+                                'array or undefined.');
+        }
+        if (frameLibs && 'object' !== typeof framLibs) {
+            throw new TypeError('GameWindow.initLibs: frameLibs must be ' +
+                                'object or undefined.');
+        }
+        if (!globalLibs && !frameLibs) {
+            throw new Error('GameWindow.initLibs: frameLibs and frameLibs ' +
+                            'cannot be both undefined.');
+        }
+        this.globalLibs = this.globalLibs.concat(globalLibs || []);
+        J.mixin(this.frameLibs, frameLibs);
     };
 
     /**
@@ -21356,7 +21556,7 @@ JSUS.extend(TIME);
      *
      * @param {function} cb Optional. The function to call once the test if
      *   finished. It will be called regardless of success or failure.
-     * @param {string} uri Optional. The URI to test. Defaults,  
+     * @param {string} uri Optional. The URI to test. Defaults,
      *   '/pages/testpage.htm';
      *
      * @see GameWindow.cacheSupported
@@ -21394,7 +21594,7 @@ JSUS.extend(TIME);
      * Loads the HTML content of the given URI(s) into the cache
      *
      * If caching is not supported by the browser, the callback will be
-     * executed anyway. 
+     * executed anyway.
      *
      * @param {string|array} uris The URI(s) to cache
      * @param {function} callback Optional. The function to call once the
@@ -21498,7 +21698,7 @@ JSUS.extend(TIME);
     GameWindow.prototype.clearCache = function() {
         this.cache = {};
     };
-  
+
     /**
      * ### GameWindow.getElementById
      *
@@ -21597,7 +21797,7 @@ JSUS.extend(TIME);
         if (!iframe) {
             throw new Error('GameWindow.loadFrame: no frame found.');
         }
-        
+
         if (!iframeName) {
             throw new Error('GameWindow.loadFrame: frame has no name.');
         }
@@ -21623,7 +21823,7 @@ JSUS.extend(TIME);
         // Caching options.
         if (opts.cache) {
             if (opts.cache.loadMode) {
-                
+
                 if (opts.cache.loadMode === 'reload') {
                     loadCache = false;
                 }
@@ -21655,11 +21855,11 @@ JSUS.extend(TIME);
             }
         }
 
-        if (this.cacheSupported === null) {            
+        if (this.cacheSupported === null) {
             this.preCacheTest(function() {
                 that.loadFrame(uri, func, opts);
             });
-            return;           
+            return;
         }
 
         if (this.cacheSupported === false) {
@@ -21802,14 +22002,18 @@ JSUS.extend(TIME);
             // Load frame from cache:
             iframeDocumentElement.innerHTML = that.cache[uri].contents;
         }
-        
+
         // Update references to frameWindow and frameDocument
         // if this was the frame of the game.
         if (frameName === that.frameName) {
             that.frameWindow = iframe.contentWindow;
             that.frameDocument = that.getIFrameDocument(iframe);
+            // Disable right click in loaded iframe document, if necessary.
+            if (that.rightClickDisabled) {
+                J.disableRightClick(that.frameDocument);
+            }
         }
-        
+
         // (Re-)Inject libraries and reload scripts:
         removeLibraries(iframe);
         if (loadCache) {
@@ -21844,11 +22048,11 @@ JSUS.extend(TIME);
         var scriptNodes, scriptNode;
 
         contentDocument = W.getIFrameDocument(iframe);
-        
+
         // Old IEs do not have getElementsByClassName.
         scriptNodes = W.getElementsByClassName(contentDocument, 'injectedlib',
                                                'script');
-        
+
         // It was. To check.
         // scriptNodes = contentDocument.getElementsByClassName('injectedlib');
         for (idx = 0; idx < scriptNodes.length; idx++) {
@@ -21914,12 +22118,9 @@ JSUS.extend(TIME);
      * @api private
      */
     function injectLibraries(iframe, libs) {
-        var contentDocument;
         var headNode;
         var scriptNode;
         var libIdx, lib;
-
-        contentDocument = W.getIFrameDocument(iframe);
 
         headNode = W.getIFrameAnyChild(iframe);
 
@@ -21943,6 +22144,7 @@ JSUS.extend(TIME);
      * @param {number} update The number to add to the counter
      *
      * @see GameWindow.lockedUpdate
+     *
      * @api private
      */
     function updateAreLoading(that, update) {
@@ -21955,6 +22157,58 @@ JSUS.extend(TIME);
             setTimeout(function() {
                 updateAreLoading.call(that, update);
             }, 300);
+        }
+    }
+
+    /**
+     * ### adaptFrame2HeaderPosition
+     *
+     * Sets a CSS class to the frame element depending on the header position
+     *
+     * The frame element must exists or an error will be thrown.
+     *
+     * @param {GameWindow} W The current GameWindow object
+     * @param {string} W Optional. The previous position of the header
+     *
+     * @api private
+     */
+    function adaptFrame2HeaderPosition(W, oldHeaderPos) {
+        var position;
+        if (!W.frameElement) {
+            throw new Error('adaptFrame2HeaderPosition: frame not found.');
+        }
+
+        // If no header is found, simulate the 'top' position to better
+        // fit the whole screen.
+        position = W.headerPosition || 'top';
+
+        // When we move from bottom to any other configuration, we need
+        // to move the header before the frame.
+        if (oldHeaderPos === 'bottom' && position !== 'bottom') {
+             W.getFrameRoot().insertBefore(W.headerElement, W.frameElement);
+        }
+
+        W.removeClass(W.frameElement, 'ng_mainframe-header-[a-z\-]*');
+        switch(position) {
+        case 'right':
+        case 'left':
+            W.addClass(W.frameElement, 'ng_mainframe-header-vertical');
+            break;
+        case 'top':
+            W.addClass(W.frameElement, 'ng_mainframe-header-horizontal');
+            // There might be no header yet.
+            if (W.headerElement) {
+                W.getFrameRoot().insertBefore(W.headerElement, W.frameElement);
+            }
+            break;
+        case 'bottom':
+            W.addClass(W.frameElement, 'ng_mainframe-header-horizontal');
+            // There might be no header yet.
+            if (W.headerElement) {
+                W.getFrameRoot().insertBefore(W.headerElement,
+                                              W.frameElement.nextSibling);
+            }
+            break;
         }
     }
 
@@ -21983,6 +22237,7 @@ JSUS.extend(TIME);
     "use strict";
 
     var GameWindow = node.GameWindow;
+    var J = node.JSUS;
 
     /**
      * ### GameWindow.noEscape
@@ -22060,6 +22315,38 @@ JSUS.extend(TIME);
     GameWindow.prototype.restoreOnleave = function(windowObj) {
         windowObj = windowObj || window;
         windowObj.onbeforeunload = null;
+    };
+
+    /**
+     * ### GameWindow.disableRightClick
+     *
+     * Disables the right click in the main page and in the iframe, if found 
+     *
+     * @see GameWindow.enableRightClick
+     * @see JSUS.disableRightClick
+     */
+    GameWindow.prototype.disableRightClick = function() {
+        if (this.frameElement) {
+            J.disableRightClick(this.getFrameDocument());
+        }
+        J.disableRightClick(document);
+        this.rightClickDisabled = true;
+    };
+
+    /**
+     * ### GameWindow.enableRightClick
+     *
+     * Enables the right click in the main page and in the iframe, if found 
+     *
+     * @see GameWindow.disableRightClick
+     * @see JSUS.enableRightClick
+     */
+    GameWindow.prototype.enableRightClick = function() {
+        if (this.frameElement) {
+             J.enableRightClick(this.getFrameDocument());
+        }
+        J.enableRightClick(document);
+        this.rightClickDisabled = false;
     };
 
 })(
@@ -22698,13 +22985,18 @@ JSUS.extend(TIME);
      * If no root element is specified, the default screen is used.
      *
      * @param {string|object} text The content to write
-     * @param {Element} root The root element
+     * @param {Element|string} root Optional. The root element or its id
      * @return {string|object} The content written
      *
      * @see GameWindow.writeln
      */
     GameWindow.prototype.write = function(text, root) {
-        root = root || this.getScreen();
+        if ('string' === typeof root) {
+            root = this.getElementById(root);
+        }
+        else if (!root) {
+            root = this.getScreen();
+        }
         if (!root) {
             throw new
                 Error('GameWindow.write: could not determine where to write.');
@@ -22721,13 +23013,18 @@ JSUS.extend(TIME);
      * If no root element is specified, the default screen is used.
      *
      * @param {string|object} text The content to write
-     * @param {Element} root The root element
+     * @param {Element|string} root Optional. The root element or its id
      * @return {string|object} The content written
      *
      * @see GameWindow.write
      */
     GameWindow.prototype.writeln = function(text, root, br) {
-        root = root || this.getScreen();
+        if ('string' === typeof root) {
+            root = this.getElementById(root);
+        }
+        else if (!root) {
+            root = this.getScreen();
+        }
         if (!root) {
             throw new
                 Error('GameWindow.writeln: could not determine where to write.');
@@ -24154,7 +24451,14 @@ JSUS.extend(TIME);
             }
 
             // Set title.
-            this.headingDiv.innerHTML = title;
+            if (W.isElement(title)) {
+                // The given title is an HTML element.
+                this.headingDiv.innerHTML = '';
+                this.headingDiv.appendChild(title);
+            }
+            else {
+                this.headingDiv.innerHTML = title;
+            }
         }
     };
 
@@ -24178,7 +24482,14 @@ JSUS.extend(TIME);
             }
 
             // Set footer contents.
-            this.footerDiv.innerHTML = footer;
+            if (W.isElement(footer)) {
+                // The given footer is an HTML element.
+                this.footerDiv.innerHTML = '';
+                this.footerDiv.appendChild(footer);
+            }
+            else {
+                this.footerDiv.innerHTML = footer;
+            }
         }
     };
 
