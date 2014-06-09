@@ -8797,7 +8797,7 @@ JSUS.extend(TIME);
      * Creates a new instance of EventEmitter
      */
     function EventEmitter(name, node) {
-
+        
         this.node = node;
 
         // ## Public properties
@@ -9052,7 +9052,7 @@ JSUS.extend(TIME);
      *
      * Removes all registered event listeners
      */
-    EventEmitter.prototype.clear =  function() {
+    EventEmitter.prototype.clear = function() {
         this.events = {};
     };
 
@@ -9061,19 +9061,20 @@ JSUS.extend(TIME);
      *
      * Prints to console all the registered functions
      */
-    EventEmitter.prototype.printAll =  function() {
-        for (var i in this.events) {
+    EventEmitter.prototype.printAll = function() {
+        var i, len;
+        for (i in this.events) {
             if (this.events.hasOwnProperty(i)) {
-                console.log(i + ': ' + 
-                            (i.length ? i.length : 1 + ' listener/s'));
+                len = this.events[i].length ? this.events[i].length : 1;
+                console.log(i + ': ' + len + ' listener/s');   
             }
         }
     };
 
-
     /**
-     * # EventEmitterManager
+     * # EventEmitterManager constructor
      *
+     * @param {NodeGameClient} A reference to the node object
      */
     function EventEmitterManager(node) {
 
@@ -9089,18 +9090,36 @@ JSUS.extend(TIME);
         this.createEEGroup('stage', 'stage', 'game');
     };
 
+    // ## EventEmitterManager methods
+
+    /**
+     * ### EventEmitterManager.createEEGroup
+     *
+     * Creates a group of event emitters
+     *
+     * Accepts a variable number of input parameters.
+     *
+     * Adds _global_ methods: emit, on, once, remove, printAll methods to be
+     * applied to every element of the group
+     *
+     * @param {string} groupName
+     * @param {string} The name of the event emitter precendtly created
+     * @return {object} A reference to the event emitter group
+     *
+     * @see EventEmitterManager.createEE
+     */
     EventEmitterManager.prototype.createEEGroup = function(groupName) {
         var i, len, that, args;
         len = arguments.length, that = this;
 
         if (!len) {
-            throw new Error('EEGroup needs a name and valid members');
+            throw new Error('EEGroup needs a name and valid members.');
         }
         if (len === 1) {
-            throw new Error('EEGroup needs at least one member');
+            throw new Error('EEGroup needs at least one member.');
         }
 
-        // Checking if each ee exist
+        // Checking if each ee exist.
         for (i = 1; i < len; i++) {
             if ('string' !== typeof arguments[i]) {
                 throw new TypeError(
@@ -9113,14 +9132,14 @@ JSUS.extend(TIME);
             }
         }
 
-        // copying the args obj into an array;
+        // Copying the args obj into an array.
         args = new Array(len - 1);
         for (i = 1; i < len; i++) {
             args[i - 1] = arguments[i];
         }
 
         switch (len) {
-            // fast cases
+            // Fast cases.
         case 2:
             this[groupName] = this.ee[args[0]];
             break;
@@ -9203,27 +9222,57 @@ JSUS.extend(TIME);
         }
         return this[groupName];
     };
-
-
+ 
+    /**
+     * ### EventEmitterManager.createEE
+     *
+     * Creates and registers an event emitter
+     *
+     * A double reference is added to _this.ee_ and to _this_.
+     *
+     * @param {string} name The name of the event emitter
+     * @return {EventEmitter} A reference to the newly created event emitter
+     *
+     * @see EventEmitter constructor
+     */ 
     EventEmitterManager.prototype.createEE = function(name) {
         this.ee[name] = new EventEmitter(name, this.node);
         this[name] = this.ee[name];
         return this.ee[name];
     };
 
+    /**
+     * ### EventEmitterManager.destroyEE
+     *
+     * Removes an existing event emitter
+     *
+     * @param {string} name The name of the event emitter
+     * @return {boolean} TRUE, on success
+     *
+     * @see EventEmitterManager.createEE
+     *
+     * TODO: the event emitter should be removed by the group
+     */
     EventEmitterManager.prototype.destroyEE = function(name) {
         var ee;
         ee = this.ee[name];
-        if (!ee) {
-            this.node.warn('cannot destroy undefined EventEmitter');
+        if ('string' !== typeof name) {
+            this.node.warn('EventEmitterManager.destroyEE: name must be ' +
+                           'string.');
             return false;
         }
         delete this[name];
         delete this.ee[name];
+        return true;
     };
 
-
+    /**
+     * ### EventEmitterManager.clear
+     *
+     * Removes all registered event listeners from all registered event emitters
+     */
     EventEmitterManager.prototype.clear = function() {
+        var i;
         for (i in this.ee) {
             if (this.ee.hasOwnProperty(i)) {
                 this.ee[i].clear();
@@ -9231,13 +9280,22 @@ JSUS.extend(TIME);
         }
     };
 
-
+    /**
+     * ### EventEmitterManager.emit
+     *
+     * Emits an event on all registered event emitters
+     *
+     * Accepts a variable number of input parameters.
+     *
+     * @param {string} The name of the event
+     * @return {mixed} The values returned by all fired event listeners
+     */
     EventEmitterManager.prototype.emit = function() {
         var i, event, tmpRes, res;
         event = arguments[0];
         if ('string' !== typeof event) {
             throw new TypeError(
-                'EventEmitterManager.emit: event must be string');
+                'EventEmitterManager.emit: event must be string.');
         }
         res = [];
         for (i in this.ee) {
@@ -9251,19 +9309,24 @@ JSUS.extend(TIME);
         return res.length < 2 ? res[0] : res;
     };
 
+    /**
+     * ### EventEmitterManager.remove
+     *
+     * Removes an event / event listener from all registered event emitters 
+     *
+     * @param {string} The name of the event
+     * @param {function} listener Optional A reference of the function to remove
+     */
     EventEmitterManager.prototype.remove = function(event, listener) {
         var i;
-
         if ('string' !== typeof event) {
             throw new TypeError('EventEmitterManager.remove: ' + 
                                 'event must be string.');
         }
-
         if (listener && 'function' !== typeof listener) {
             throw new TypeError('EventEmitterManager.remove: ' + 
                                 'listener must be function.');
         }
-
         for (i in this.ee) {
             if (this.ee.hasOwnProperty(i)) {
                 this.ee[i].remove(event, listener);
@@ -9272,8 +9335,9 @@ JSUS.extend(TIME);
     };
 
     /**
-     * # EventHistory
+     * # EventHistory constructor
      *
+     * TODO: might require updates.
      */
     function EventHistory(node) {
         
@@ -13386,7 +13450,7 @@ JSUS.extend(TIME);
      * and sent out whenever the connection is available again.
      */
     Socket.prototype.send = function(msg) {
-
+        
         if (!this.isConnected()) {
             this.node.err('Socket.send: cannot send message. No open socket.');
             return false;
@@ -22647,14 +22711,14 @@ JSUS.extend(TIME);
             node.off('REALLY_DONE', event_REALLY_DONE);
             node.off('STEPPING', event_STEPPING);
             node.off('PLAYING', event_PLAYING);
-            node.off('RESUMED', event_PAUSED);
+            node.off('PAUSED', event_PAUSED);
             node.off('RESUMED', event_RESUMED);
         }
         else {
             node.on('REALLY_DONE', event_REALLY_DONE);
             node.on('STEPPING', event_STEPPING);
             node.on('PLAYING', event_PLAYING);
-            node.on('RESUMED', event_PAUSED);
+            node.on('PAUSED', event_PAUSED);
             node.on('RESUMED', event_RESUMED);
         }
     };
