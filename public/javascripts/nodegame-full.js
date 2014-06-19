@@ -22595,7 +22595,6 @@ JSUS.extend(TIME);
  * www.nodegame.org
  * ---
  */
-
 (function(exports, window) {
 
     "use strict";
@@ -22610,8 +22609,39 @@ JSUS.extend(TIME);
 
     // Helper functions
 
+    var inputTags, len;
+
+    inputTags = ['button', 'select', 'textarea', 'input'];
+    len = inputTags.length;
+
+    /**
+     * ### lockUnlockedInputs
+     *
+     * Scans a container HTML Element for active input tags and disables them
+     *
+     * Stores a references into W.waitScreen.lockedInputs so that they can
+     * be re-activated later.
+     *
+     * @param {Document|Element} container The target to scan for input tags
+     *  
+     * @api private
+     */
+    function lockUnlockedInputs(container) {
+        var j, i, inputs, nInputs;       
+        for (j = -1; ++j < len; ) {
+            inputs = container.getElementsByTagName(inputTags[j]);
+            nInputs = inputs.length;
+            for (i = -1 ; ++i < nInputs ; ) {
+                if (!inputs[i].disabled) {
+                    inputs[i].disabled = true;
+                    W.waitScreen.lockedInputs.push(inputs[i]);
+                }
+            }
+        }
+    }
+
     function event_REALLY_DONE(text) {
-        text = text || W.waitScreen.text.waiting;
+        text = text || W.waitScreen.defaultTexts.waiting;
         if (W.isScreenLocked()) {
             W.waitScreen.updateText(text);
         }
@@ -22621,7 +22651,7 @@ JSUS.extend(TIME);
     }
 
     function event_STEPPING(text) {
-        text = text || W.waitScreen.text.stepping;
+        text = text || W.waitScreen.defaultTexts.stepping;
         if (W.isScreenLocked()) {
             W.waitScreen.updateText(text);
         }
@@ -22629,7 +22659,7 @@ JSUS.extend(TIME);
             W.lockScreen(text);
         }
     }
-     
+
     function event_PLAYING() {
         if (W.isScreenLocked()) {
             W.unlockScreen();
@@ -22637,29 +22667,86 @@ JSUS.extend(TIME);
     }
 
     function event_PAUSED(text) {
-        text = text || W.waitScreen.text.paused;
-        W.lockScreen(text);
+        text = text || W.waitScreen.defaultTexts.paused;
+        if (W.isScreenLocked()) {
+            W.waitScreen.beforePauseInnerHTML = 
+                W.waitScreen.waitingDiv.innerHTML;
+            W.waitScreen.updateText(text);
+        }
+        else {
+            W.lockScreen(text);
+        }            
     }
-    
+
     function event_RESUMED() {
         if (W.isScreenLocked()) {
-            W.unlockScreen();
+            if (W.waitScreen.beforePauseInnerHTML !== null) {
+                W.waitScreen.updateText(W.waitScreen.beforePauseInnerHTML);
+                W.waitScreen.beforePauseInnerHTML = null;
+            }
+            else {
+                W.unlockScreen();
+            }
         }
     }
 
     /**
      * ## WaitScreen constructor
      *
-     * Instantiates a new WaitScreen object 
+     * Instantiates a new WaitScreen object
      *
      * @param {object} options Optional. Configuration options.
      */
     function WaitScreen(options) {
         options = options || {};
+
+        /**
+         * ### WaitScreen.id
+         *
+         * The id of _waitingDiv_. Defaults, 'ng_waitScreen'
+         *
+         * @see WaitScreen.waitingDiv
+         */
 	this.id = options.id || 'ng_waitScreen';
+
+        /**
+         * ### WaitScreen.root
+         *
+         * Reference to the root element under which _waitingDiv is appended
+         *
+         * @see WaitScreen.waitingDiv
+         */
         this.root = options.root || null;
 
-	this.text = {
+        /**
+         * ### WaitScreen.waitingDiv
+         *
+         * Reference to the HTML Element that actually locks the screen
+         */
+	this.waitingDiv = null;
+
+        /**
+         * ### WaitScreen.beforePauseText
+         *
+         * Flag if the screen should stay locked after a RESUMED event
+         */
+        this.beforePauseInnerHTML = null;
+
+        /**
+         * ### WaitScreen.enabled
+         *
+         * Flag is TRUE if the listeners are registered 
+         *
+         * @see WaitScreen.enable
+         */
+        this.enabled = false;
+
+        /**
+         * ### WaitScreen.text
+         *
+         * Default texts for default events
+         */
+	this.defaultTexts = {
             waiting: options.waitingText ||
                 'Waiting for other players to be done...',
             stepping: options.steppingText ||
@@ -22667,12 +22754,76 @@ JSUS.extend(TIME);
             paused: options.pausedText ||
                 'Game is paused. Please wait.'
         };
-        
-	this.waitingDiv = null;
+
+        /**
+         * ## WaitScreen.lockedInputs
+         *
+         * List of locked inputs by the _lock_ method 
+         *
+         * @see WaitScreen.lock
+         */
+        this.lockedInputs = [];
+
+        // Registers the event listeners.
         this.enable();
     }
-    
+
+    /**
+     * ### WaitScreen.enable
+     *
+     * Register default event listeners
+     */
+    WaitScreen.prototype.enable = function() {
+        if (this.enabled) return;
+        node.on('REALLY_DONE', event_REALLY_DONE);
+        node.on('STEPPING', event_STEPPING);
+        node.on('PLAYING', event_PLAYING);
+        node.on('PAUSED', event_PAUSED);
+        node.on('RESUMED', event_RESUMED);
+        this.enabled = true;
+    };
+
+    /**
+     * ### WaitScreen.disable
+     *
+     * Unregister default event listeners
+     */
+    WaitScreen.prototype.disable = function() {
+        if (!this.enabled) return;
+        node.off('REALLY_DONE', event_REALLY_DONE);
+        node.off('STEPPING', event_STEPPING);
+        node.off('PLAYING', event_PLAYING);
+        node.off('PAUSED', event_PAUSED);
+        node.off('RESUMED', event_RESUMED);
+        this.enabled = false;    
+    };
+
+    /**
+     * ### WaitScreen.lock
+     *
+     * Locks the screen
+     *
+     * Overlays a grey div on top of the page and disables all inputs
+     *
+     * If called on an already locked screen, the previous text is destroyed.
+     * Use `WaitScreen.updateText` to modify an existing text.
+     *
+     * @param {string} text Optional. If set, displays the text on top of the
+     *   grey string
+     *
+     * @see WaitScreen.unlock
+     * @see WaitScren.updateText
+     */
     WaitScreen.prototype.lock = function(text) {
+        var frameDoc;
+        if ('undefined' === typeof document.getElementsByTagName) {
+            node.warn('WaitScreen.lock: cannot lock inputs.');
+        }
+        // Disables all input forms in the page.        
+        lockUnlockedInputs(document);
+        frameDoc = W.getFrameDocument(); 
+        if (frameDoc) lockUnlockedInputs(frameDoc);
+        
         if (!this.waitingDiv) {
             if (!this.root) {
                 this.root = W.getFrameRoot() || document.body;
@@ -22682,17 +22833,41 @@ JSUS.extend(TIME);
 	if (this.waitingDiv.style.display === 'none') {
 	    this.waitingDiv.style.display = '';
 	}
-	this.waitingDiv.innerHTML = text;
+	this.waitingDiv.innerHTML = text;        
     };
 
+    /**
+     * ### WaitScreen.unlock
+     *
+     * Removes the overlayed grey div and re-enables the inputs on the page
+     *
+     * @see WaitScreen.lock
+     */
     WaitScreen.prototype.unlock = function() {
+        var i, len;
         if (this.waitingDiv) {
             if (this.waitingDiv.style.display === '') {
                 this.waitingDiv.style.display = 'none';
             }
         }
+        // Re-enables all input forms in the page.        
+        i = -1, len = this.lockedInputs.length;
+        for ( ; ++i < len ; ) {
+            this.lockedInputs[i].removeAttribute('disabled');            
+        }
+        this.lockedInputs = [];
+
     };
 
+    /**
+     * ### WaitScreen.updateText
+     *
+     * Updates the text displayed on the current waiting div
+     *
+     * @param {string} text The text to be displayed
+     * @param {boolean} append Optional. If TRUE, the text is appended. By
+     *   defaults the old text is replaced.
+     */
     WaitScreen.prototype.updateText = function(text, append) {
         append = append || false;
         if ('string' !== typeof text) {
@@ -22706,23 +22881,13 @@ JSUS.extend(TIME);
         }
     };
 
-    WaitScreen.prototype.enable = function(disable) {
-        if (disable === false || disable === null) {
-            node.off('REALLY_DONE', event_REALLY_DONE);
-            node.off('STEPPING', event_STEPPING);
-            node.off('PLAYING', event_PLAYING);
-            node.off('PAUSED', event_PAUSED);
-            node.off('RESUMED', event_RESUMED);
-        }
-        else {
-            node.on('REALLY_DONE', event_REALLY_DONE);
-            node.on('STEPPING', event_STEPPING);
-            node.on('PLAYING', event_PLAYING);
-            node.on('PAUSED', event_PAUSED);
-            node.on('RESUMED', event_RESUMED);
-        }
-    };
-
+    /**
+     * ### WaitScreen.destroy
+     *
+     * Removes the waiting div from the HTML page and unlocks the screen
+     *
+     * @see WaitScreen.unlock
+     */
     WaitScreen.prototype.destroy = function() {
         if (W.isScreenLocked()) {
             this.unlock();
@@ -22730,13 +22895,14 @@ JSUS.extend(TIME);
         if (this.waitingDiv) {
             this.waitingDiv.parentNode.removeChild(this.waitingDiv);
         }
+        // Removes previously registered listeners.
+        this.disable();
     };
 
 })(
     ('undefined' !== typeof node) ? node : module.parent.exports.node,
     ('undefined' !== typeof window) ? window : module.parent.exports.window
 );
-
 /**
  * # GameWindow selector module
  * Copyright(c) 2014 Stefano Balietti
@@ -23127,54 +23293,52 @@ JSUS.extend(TIME);
      *
      * Enables / disables the input forms
      *
-     * If an id is provided, only children of the element with the specified
-     * id are toggled.
+     * If an id is provided, only input elements that are children
+     * of the element with the specified id are toggled.
      *
-     * If id is given it will use _GameWindow.getFrameDocument()_ to determine the
-     * forms to toggle.
+     * If id is not given, it toggles the input elements on the whole page,
+     * including the frame document, if found.
      *
      * If a state parameter is given, all the input forms will be either
      * disabled or enabled (and not toggled).
      *
-     * @param {string} id The id of the element container of the forms.
-     * @param {boolean} state The state enabled / disabled for the forms.
+     * @param {string} id Optional. The id of the element container
+     *   of the forms. Defaults, the whole page, including the frame document
+     * @param {boolean} disabled Optional. Forces all the inputs to be either
+     *   disabled or enabled (not toggled)
+     * @return {boolean} FALSE, if the method could not be executed
+     *
+     * @see GameWindow.getFrameDocument
+     * @see toggleInputs
      */
-    GameWindow.prototype.toggleInputs = function(id, state) {
-        var container, inputTags, j, len, i, inputs, nInputs;
-
-        if ('undefined' !== typeof id) {
+    GameWindow.prototype.toggleInputs = function(id, disabled) {
+        var container;
+        if (!document.getElementsByTagName) {
+            node.err('GameWindow.toggleInputs: getElementsByTagName not found.');
+            return false;
+        }
+        if (id && 'string' === typeof id) {
+            throw new Error('GameWindow.toggleInputs: id must be string or ' +
+                            'undefined.');
+        }
+        if (id) {
             container = this.getElementById(id);
             if (!container) {
                 throw new Error('GameWindow.toggleInputs: no elements found ' +
                                 'with id ' + id + '.');
             }
+            toggleInputs(disabled, container);
         }
         else {
+            // The whole page.
+            toggleInputs(disabled);
+            // If there is Frame apply it there too.
             container = this.getFrameDocument();
-            if (!container || !container.getElementsByTagName) {
-                // Frame either not existing or not ready. No warning.
-                return;
+            if (container) {
+                toggleInputs(disabled, container);
             }
         }
-
-        inputTags = ['button', 'select', 'textarea', 'input'];
-        len = inputTags.length;
-        for (j = 0; j < len; j++) {
-            inputs = container.getElementsByTagName(inputTags[j]);
-            nInputs = inputs.length;
-            for (i = 0; i < nInputs; i++) {
-                // Set to state, or toggle.
-                if ('undefined' === typeof state) {
-                    state = inputs[i].disabled ? false : true;
-                }
-                if (state) {
-                    inputs[i].disabled = state;
-                }
-                else {
-                    inputs[i].removeAttribute('disabled');
-                }
-            }
-        }
+        return true;
     };
 
     /**
@@ -23322,6 +23486,36 @@ JSUS.extend(TIME);
 
         return root.appendChild(eb);
     };
+
+    // ## Helper Functions
+
+    /**
+     * ## toggleInputs
+     *
+     * @api private 
+     */
+    function toggleInputs(state, container) {
+        var inputTags, j, len, i, inputs, nInputs;
+        container = container || document;
+        inputTags = ['button', 'select', 'textarea', 'input'];
+        len = inputTags.length;
+        for (j = 0; j < len; j++) {
+            inputs = container.getElementsByTagName(inputTags[j]);
+            nInputs = inputs.length;
+            for (i = 0; i < nInputs; i++) {
+                // Set to state, or toggle.
+                if ('undefined' === typeof state) {
+                    state = inputs[i].disabled ? false : true;
+                }
+                if (state) {
+                    inputs[i].disabled = state;
+                }
+                else {
+                    inputs[i].removeAttribute('disabled');
+                }
+            }
+        }
+    }
 
 })(
     // GameWindow works only in the browser environment. The reference
