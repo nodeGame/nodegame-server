@@ -28058,81 +28058,121 @@ JSUS.extend(TIME);
 
     // TODO: Write a proper INIT method
     MsgBar.prototype.init = function() {
-        var that = this;
-        var gm = new GameMsg();
-        var y = 0;
-        for (var i in gm) {
-            if (gm.hasOwnProperty(i)) {
-                var id = this.id + '_' + i;
-                this.table.add(i, 0, y);
-                this.table.add(W.getTextInput(id), 1, y);
-                if (i === 'target') {
-                    this.targetSel = W.getTargetSelector(this.id + '_targets');
-                    this.table.add(this.targetSel, 2, y);
+        var that;
+        that = this;
 
-                    this.targetSel.onchange = function() {
-                        W.getElementById(that.id + '_target').value =
-                            that.targetSel.value;
-                    };
-                }
-                else if (i === 'action') {
-                    this.actionSel = W.getActionSelector(this.id + '_actions');
-                    this.table.add(this.actionSel, 2, y);
-                    this.actionSel.onchange = function() {
-                        W.getElementById(that.id + '_action').value =
-                            that.actionSel.value;
-                    };
-                }
-                else if (i === 'to') {
-                    this.recipient =
-                        W.getRecipientSelector(this.id + 'recipients');
-                    this.table.add(this.recipient, 2, y);
-                    this.recipient.onchange = function() {
-                        W.getElementById(that.id + '_to').value =
-                            that.recipient.value;
-                    };
-                }
-                y++;
-            }
-        }
+        // Create fields.
+
+        // To:
+        this.table.add('to', 0, 0);
+        this.table.add(W.getTextInput(this.id + '_to'), 1, 0);
+        this.recipient =
+            W.getRecipientSelector(this.id + '_recipients');
+        this.table.add(this.recipient, 2, 0);
+        this.recipient.onchange = function() {
+            W.getElementById(that.id + '_to').value =
+                that.recipient.value;
+        };
+
+        // Action:
+        this.table.add('action', 0, 1);
+        this.table.add(W.getTextInput(this.id + '_action'), 1, 1);
+        this.actionSel = W.getActionSelector(this.id + '_actions');
+        this.table.add(this.actionSel, 2, 1);
+        this.actionSel.onchange = function() {
+            W.getElementById(that.id + '_action').value =
+                that.actionSel.value;
+        };
+
+        // Target:
+        this.table.add('target', 0, 2);
+        this.table.add(W.getTextInput(this.id + '_target'), 1, 2);
+        this.targetSel = W.getTargetSelector(this.id + '_targets');
+        this.table.add(this.targetSel, 2, 2);
+        this.targetSel.onchange = function() {
+            W.getElementById(that.id + '_target').value =
+                that.targetSel.value;
+        };
+
+        // Text:
+        this.table.add('text', 0, 3);
+        this.table.add(W.getTextInput(this.id + '_text'), 1, 3);
+
+        // Data:
+        this.table.add('data', 0, 4);
+        this.table.add(W.getTextInput(this.id + '_data'), 1, 4);
+
+
+        // TODO: Hide the following fields.
+        // From:
+        this.table.add('from', 0, 5);
+        this.table.add(W.getTextInput(this.id + '_from'), 1, 5);
+
+        // Priority:
+        this.table.add('priority', 0, 6);
+        this.table.add(W.getTextInput(this.id + '_priority'), 1, 6);
+
+        // Reliable:
+        this.table.add('reliable', 0, 7);
+        this.table.add(W.getTextInput(this.id + '_reliable'), 1, 7);
+
+        // Forward:
+        this.table.add('forward', 0, 8);
+        this.table.add(W.getTextInput(this.id + '_forward'), 1, 8);
+
+        // Session:
+        this.table.add('session', 0, 9);
+        this.table.add(W.getTextInput(this.id + '_session'), 1, 9);
+
+        // Stage:
+        this.table.add('stage', 0, 10);
+        this.table.add(W.getTextInput(this.id + '_stage'), 1, 10);
+
+        // Created:
+        this.table.add('created', 0, 11);
+        this.table.add(W.getTextInput(this.id + '_created'), 1, 11);
+
+        // Id:
+        this.table.add('id', 0, 12);
+        this.table.add(W.getTextInput(this.id + '_id'), 1, 12);
+
+
         this.table.parse();
     };
 
     MsgBar.prototype.append = function() {
+        var sendButton;
+        var that;
 
-        var sendButton = W.addButton(this.bodyDiv);
-        var stubButton = W.addButton(this.bodyDiv, 'stub', 'Add Stub');
-
-        var that = this;
-        sendButton.onclick = function() {
-            // Should be within the range of valid values
-            // but we should add a check
-
-            var msg = that.parse();
-            node.socket.send(msg);
-            //console.log(msg.stringify());
-        };
-        stubButton.onclick = function() {
-            that.addStub();
-        };
+        that = this;
 
         this.bodyDiv.appendChild(this.table.table);
+
+        sendButton = W.addButton(this.bodyDiv);
+        sendButton.onclick = function() {
+            var msg = that.parse();
+
+            if (msg) {
+                node.socket.send(msg);
+                //console.log(msg.stringify());
+            }
+        };
     };
 
     MsgBar.prototype.listeners = function() {
-        var that = this;
-        node.on.plist( function(msg) {
-            W.populateRecipientSelector(that.recipient, msg.data);
-
-        });
     };
 
     MsgBar.prototype.parse = function() {
-        var msg = {};
-        var that = this;
-        var key = null;
-        var value = null;
+        var msg, that, key, value, gameMsg, invalid;
+
+        msg = {};
+        that = this;
+        key = null;
+        value = null;
+        invalid = false;
+
         this.table.forEach( function(e) {
+            if (invalid) return;
 
             if (e.x === 0) {
                 key = e.content;
@@ -28150,31 +28190,37 @@ JSUS.extend(TIME);
                     }
                 }
 
+                if (key === 'to' && 'number' === typeof value) {
+                    value = '' + value;
+                }
+
+                // Validate input.
+                if (key === 'to' &&
+                    ((!JSUS.isArray(value) && 'string' !== typeof value) ||
+                      value.trim() === '')) {
+
+                    alert('Invalid "to" field');
+                    invalid = true;
+                }
+
+                if (key === 'action' && value.trim() === '') {
+                    alert('Missing "action" field');
+                    invalid = true;
+                }
+
+                if (key === 'target' && value.trim() === '') {
+                    alert('Missing "target" field');
+                    invalid = true;
+                }
+
                 msg[key] = value;
             }
         });
-        var gameMsg = new GameMsg(msg);
+
+        if (invalid) return null;
+        gameMsg = node.msg.create(msg);
         node.info(gameMsg, 'MsgBar sent: ');
         return gameMsg;
-    };
-
-    MsgBar.prototype.addStub = function() {
-        W.getElementById(this.id + '_from').value =
-            (node.player) ? node.player.id : 'undefined';
-        W.getElementById(this.id + '_to').value = this.recipient.value;
-        W.getElementById(this.id + '_forward').value = 0;
-        W.getElementById(this.id + '_reliable').value = 1;
-        W.getElementById(this.id + '_priority').value = 0;
-
-        if (node.socket && node.socket.session) {
-            W.getElementById(this.id + '_session').value = node.socket.session;
-        }
-
-        W.getElementById(this.id + '_stage').value =
-            new GameStage(node.player.stage);
-        W.getElementById(this.id + '_action').value = this.actionSel.value;
-        W.getElementById(this.id + '_target').value = this.targetSel.value;
-
     };
 
 })(node);
