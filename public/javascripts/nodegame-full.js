@@ -2994,7 +2994,7 @@ if (!JSON) {
     // ## RIGHT-CLICK
 
     /**
-     * ## DOM.disableRightClick
+     * ### DOM.disableRightClick
      *
      * Disables the popup of the context menu by right clicking with the mouse 
      *
@@ -3025,7 +3025,7 @@ if (!JSON) {
     };
 
     /**
-     * ## DOM.enableRightClick
+     * ### DOM.enableRightClick
      *
      * Enables the popup of the context menu by right clicking with the mouse 
      *
@@ -6039,35 +6039,22 @@ JSUS.extend(TIME);
      *
      * Indexes an element
      *
-     * Parameter _oldIdx_ is needed if indexing is updating a previously
-     * indexed item. In fact if new index is different, the old one must
-     * be deleted.
-     *
      * @param {object} o The element to index
-     * @param {number} dbidx The position of the element in the database array
-     * @param {string} oldIdx Optional. The old index name, if any.
+     * @param {object} o The position of the element in the database array
      */
-    NDDB.prototype._indexIt = function(o, dbidx, oldIdx) {
+    NDDB.prototype._indexIt = function(o, dbidx) {
         var func, id, index, key;
         if (!o || J.isEmpty(this.__I)) return;
-        oldIdx = undefined;
+
         for (key in this.__I) {
             if (this.__I.hasOwnProperty(key)) {
                 func = this.__I[key];
                 index = func(o);
-                // If the same object has been  previously
-                // added with another index delete the old one.
-                if (index !== oldIdx) {
-                    if ('undefined' !== typeof oldIdx) {
-                        if ('undefined' !== typeof this[key].resolve[oldIdx]) {
-                            delete this[key].resolve[oldIdx];
-                        }
-                    }
-                }
-                if ('undefined' !== typeof index) { 
-                    if (!this[key]) this[key] = new NDDBIndex(key, this);
-                    this[key]._add(index, dbidx);
-                }
+
+                if ('undefined' === typeof index) continue;
+
+                if (!this[key]) this[key] = new NDDBIndex(key, this);
+                this[key]._add(index, dbidx);
             }
         }
     };
@@ -6097,7 +6084,7 @@ JSUS.extend(TIME);
                     settings = this.cloneSettings({V: ''});
                     this[key] = new NDDB(settings);
                 }
-                this[key].insert(o);1
+                this[key].insert(o);
             }
         }
     };
@@ -7517,13 +7504,11 @@ JSUS.extend(TIME);
      * @see JSUS.arrayDiff
      */
     NDDB.prototype.diff = function(nddb) {
+        if (!nddb || !nddb.length) return this;
         if ('object' === typeof nddb) {
             if (nddb instanceof NDDB || nddb instanceof this.constructor) {
                 nddb = nddb.db;
             }
-        }
-        if (!nddb || !nddb.length) {
-            return this.breed([]);
         }
         return this.breed(J.arrayDiff(this.db, nddb));
     };
@@ -7545,13 +7530,11 @@ JSUS.extend(TIME);
      * @see JSUS.arrayIntersect
      */
     NDDB.prototype.intersect = function(nddb) {
+        if (!nddb || !nddb.length) return this;
         if ('object' === typeof nddb) {
             if (nddb instanceof NDDB || nddb instanceof this.constructor) {
-                nddb = nddb.db;
+                var nddb = nddb.db;
             }
-        }
-        if (!nddb || !nddb.length) {
-            return this.breed([]);
         }
         return this.breed(J.arrayIntersect(this.db, nddb));
     };
@@ -8175,7 +8158,7 @@ JSUS.extend(TIME);
      * @see NDDBIndex.get
      * @see NDDBIndex.remove
      */
-    NDDBIndex.prototype.update = function(idx, update) {
+        NDDBIndex.prototype.update = function(idx, update) {
         var o, dbidx, nddb;
         dbidx = this.resolve[idx];
         if ('undefined' === typeof dbidx) return false;
@@ -8186,7 +8169,7 @@ JSUS.extend(TIME);
         // We do indexes separately from the other components of _autoUpdate
         // to avoid looping through all the other elements that are unchanged.
         if (nddb.__update.indexes) {
-            nddb._indexIt(o, dbidx, idx);
+            nddb._indexIt(o, dbidx);
             nddb._hashIt(o);
             nddb._viewIt(o);
         }
@@ -13450,7 +13433,7 @@ JSUS.extend(TIME);
      * and sent out whenever the connection is available again.
      */
     Socket.prototype.send = function(msg) {
-        
+
         if (!this.isConnected()) {
             this.node.err('Socket.send: cannot send message. No open socket.');
             return false;
@@ -22595,7 +22578,6 @@ JSUS.extend(TIME);
  * www.nodegame.org
  * ---
  */
-
 (function(exports, window) {
 
     "use strict";
@@ -22610,8 +22592,38 @@ JSUS.extend(TIME);
 
     // Helper functions
 
+    var inputTags, len;
+    inputTags = ['button', 'select', 'textarea', 'input'];
+    len = inputTags.length;
+
+    /**
+     * ### lockUnlockedInputs
+     *
+     * Scans a container HTML Element for active input tags and disables them
+     *
+     * Stores a references into W.waitScreen.lockedInputs so that they can
+     * be re-activated later.
+     *
+     * @param {Document|Element} container The target to scan for input tags
+     *  
+     * @api private
+     */
+    function lockUnlockedInputs(container) {
+        var j, i, inputs, nInputs;       
+        for (j = -1; ++j < len; ) {
+            inputs = container.getElementsByTagName(inputTags[j]);
+            nInputs = inputs.length;
+            for (i = -1 ; ++i < nInputs ; ) {
+                if (!inputs[i].disabled) {
+                    inputs[i].disabled = true;
+                    W.waitScreen.lockedInputs.push(inputs[i]);
+                }
+            }
+        }
+    }
+
     function event_REALLY_DONE(text) {
-        text = text || W.waitScreen.text.waiting;
+        text = text || W.waitScreen.defaultTexts.waiting;
         if (W.isScreenLocked()) {
             W.waitScreen.updateText(text);
         }
@@ -22621,7 +22633,7 @@ JSUS.extend(TIME);
     }
 
     function event_STEPPING(text) {
-        text = text || W.waitScreen.text.stepping;
+        text = text || W.waitScreen.defaultTexts.stepping;
         if (W.isScreenLocked()) {
             W.waitScreen.updateText(text);
         }
@@ -22629,7 +22641,7 @@ JSUS.extend(TIME);
             W.lockScreen(text);
         }
     }
-     
+
     function event_PLAYING() {
         if (W.isScreenLocked()) {
             W.unlockScreen();
@@ -22637,29 +22649,88 @@ JSUS.extend(TIME);
     }
 
     function event_PAUSED(text) {
-        text = text || W.waitScreen.text.paused;
-        W.lockScreen(text);
+        text = text || W.waitScreen.defaultTexts.paused;
+        if (W.isScreenLocked()) {
+            W.waitScreen.beforePauseInnerHTML = 
+                W.waitScreen.waitingDiv.innerHTML;
+            W.waitScreen.updateText(text);
+        }
+        else {
+            W.lockScreen(text);
+        }            
     }
-    
+
     function event_RESUMED() {
         if (W.isScreenLocked()) {
-            W.unlockScreen();
+            if (W.waitScreen.beforePauseInnerHTML !== null) {
+                W.waitScreen.updateText(W.waitScreen.beforePauseInnerHTML);
+                W.waitScreen.beforePauseInnerHTML = null;
+            }
+            else {
+                W.unlockScreen();
+            }
         }
     }
 
     /**
      * ## WaitScreen constructor
      *
-     * Instantiates a new WaitScreen object 
+     * Instantiates a new WaitScreen object
      *
      * @param {object} options Optional. Configuration options.
      */
     function WaitScreen(options) {
         options = options || {};
+
+        /**
+         * ### WaitScreen.id
+         *
+         * The id of _waitingDiv_. Defaults, 'ng_waitScreen'
+         *
+         * @see WaitScreen.waitingDiv
+         */
 	this.id = options.id || 'ng_waitScreen';
+
+        /**
+         * ### WaitScreen.root
+         *
+         * Reference to the root element under which _waitingDiv is appended
+         *
+         * @see WaitScreen.waitingDiv
+         */
         this.root = options.root || null;
 
-	this.text = {
+        /**
+         * ### WaitScreen.waitingDiv
+         *
+         * Reference to the HTML Element that actually locks the screen
+         */
+	this.waitingDiv = null;
+
+        /**
+         * ### WaitScreen.beforePauseText
+         *
+         * Flag if the screen should stay locked after a RESUMED event
+         *
+         * Contains the value of the innerHTML attribute of the waiting div
+         */
+        this.beforePauseInnerHTML = null;
+
+        /**
+         * ### WaitScreen.enabled
+         *
+         * Flag is TRUE if the listeners are registered 
+         *
+         * @see WaitScreen.enable
+         */
+        this.enabled = false;
+
+        /**
+         * ### WaitScreen.text
+         *
+         * Default texts for default events
+         */
+	this.defaultTexts = {
             waiting: options.waitingText ||
                 'Waiting for other players to be done...',
             stepping: options.steppingText ||
@@ -22667,12 +22738,76 @@ JSUS.extend(TIME);
             paused: options.pausedText ||
                 'Game is paused. Please wait.'
         };
-        
-	this.waitingDiv = null;
+
+        /**
+         * ## WaitScreen.lockedInputs
+         *
+         * List of locked inputs by the _lock_ method 
+         *
+         * @see WaitScreen.lock
+         */
+        this.lockedInputs = [];
+
+        // Registers the event listeners.
         this.enable();
     }
-    
+
+    /**
+     * ### WaitScreen.enable
+     *
+     * Register default event listeners
+     */
+    WaitScreen.prototype.enable = function() {
+        if (this.enabled) return;
+        node.on('REALLY_DONE', event_REALLY_DONE);
+        node.on('STEPPING', event_STEPPING);
+        node.on('PLAYING', event_PLAYING);
+        node.on('PAUSED', event_PAUSED);
+        node.on('RESUMED', event_RESUMED);
+        this.enabled = true;
+    };
+
+    /**
+     * ### WaitScreen.disable
+     *
+     * Unregister default event listeners
+     */
+    WaitScreen.prototype.disable = function() {
+        if (!this.enabled) return;
+        node.off('REALLY_DONE', event_REALLY_DONE);
+        node.off('STEPPING', event_STEPPING);
+        node.off('PLAYING', event_PLAYING);
+        node.off('PAUSED', event_PAUSED);
+        node.off('RESUMED', event_RESUMED);
+        this.enabled = false;    
+    };
+
+    /**
+     * ### WaitScreen.lock
+     *
+     * Locks the screen
+     *
+     * Overlays a grey div on top of the page and disables all inputs
+     *
+     * If called on an already locked screen, the previous text is destroyed.
+     * Use `WaitScreen.updateText` to modify an existing text.
+     *
+     * @param {string} text Optional. If set, displays the text on top of the
+     *   grey string
+     *
+     * @see WaitScreen.unlock
+     * @see WaitScren.updateText
+     */
     WaitScreen.prototype.lock = function(text) {
+        var frameDoc;
+        if ('undefined' === typeof document.getElementsByTagName) {
+            node.warn('WaitScreen.lock: cannot lock inputs.');
+        }
+        // Disables all input forms in the page.        
+        lockUnlockedInputs(document);
+        frameDoc = W.getFrameDocument(); 
+        if (frameDoc) lockUnlockedInputs(frameDoc);
+        
         if (!this.waitingDiv) {
             if (!this.root) {
                 this.root = W.getFrameRoot() || document.body;
@@ -22682,17 +22817,40 @@ JSUS.extend(TIME);
 	if (this.waitingDiv.style.display === 'none') {
 	    this.waitingDiv.style.display = '';
 	}
-	this.waitingDiv.innerHTML = text;
+	this.waitingDiv.innerHTML = text;        
     };
 
+    /**
+     * ### WaitScreen.unlock
+     *
+     * Removes the overlayed grey div and re-enables the inputs on the page
+     *
+     * @see WaitScreen.lock
+     */
     WaitScreen.prototype.unlock = function() {
+        var i, len;
         if (this.waitingDiv) {
             if (this.waitingDiv.style.display === '') {
                 this.waitingDiv.style.display = 'none';
             }
         }
+        // Re-enables all previously locked input forms in the page.        
+        i = -1, len = this.lockedInputs.length;
+        for ( ; ++i < len ; ) {
+            this.lockedInputs[i].removeAttribute('disabled');            
+        }
+        this.lockedInputs = [];
     };
 
+    /**
+     * ### WaitScreen.updateText
+     *
+     * Updates the text displayed on the current waiting div
+     *
+     * @param {string} text The text to be displayed
+     * @param {boolean} append Optional. If TRUE, the text is appended. By
+     *   defaults the old text is replaced.
+     */
     WaitScreen.prototype.updateText = function(text, append) {
         append = append || false;
         if ('string' !== typeof text) {
@@ -22706,23 +22864,13 @@ JSUS.extend(TIME);
         }
     };
 
-    WaitScreen.prototype.enable = function(disable) {
-        if (disable === false || disable === null) {
-            node.off('REALLY_DONE', event_REALLY_DONE);
-            node.off('STEPPING', event_STEPPING);
-            node.off('PLAYING', event_PLAYING);
-            node.off('PAUSED', event_PAUSED);
-            node.off('RESUMED', event_RESUMED);
-        }
-        else {
-            node.on('REALLY_DONE', event_REALLY_DONE);
-            node.on('STEPPING', event_STEPPING);
-            node.on('PLAYING', event_PLAYING);
-            node.on('PAUSED', event_PAUSED);
-            node.on('RESUMED', event_RESUMED);
-        }
-    };
-
+    /**
+     * ### WaitScreen.destroy
+     *
+     * Removes the waiting div from the HTML page and unlocks the screen
+     *
+     * @see WaitScreen.unlock
+     */
     WaitScreen.prototype.destroy = function() {
         if (W.isScreenLocked()) {
             this.unlock();
@@ -22730,13 +22878,14 @@ JSUS.extend(TIME);
         if (this.waitingDiv) {
             this.waitingDiv.parentNode.removeChild(this.waitingDiv);
         }
+        // Removes previously registered listeners.
+        this.disable();
     };
 
 })(
     ('undefined' !== typeof node) ? node : module.parent.exports.node,
     ('undefined' !== typeof window) ? window : module.parent.exports.window
 );
-
 /**
  * # GameWindow selector module
  * Copyright(c) 2014 Stefano Balietti
@@ -23127,54 +23276,52 @@ JSUS.extend(TIME);
      *
      * Enables / disables the input forms
      *
-     * If an id is provided, only children of the element with the specified
-     * id are toggled.
+     * If an id is provided, only input elements that are children
+     * of the element with the specified id are toggled.
      *
-     * If id is given it will use _GameWindow.getFrameDocument()_ to determine the
-     * forms to toggle.
+     * If id is not given, it toggles the input elements on the whole page,
+     * including the frame document, if found.
      *
      * If a state parameter is given, all the input forms will be either
      * disabled or enabled (and not toggled).
      *
-     * @param {string} id The id of the element container of the forms.
-     * @param {boolean} state The state enabled / disabled for the forms.
+     * @param {string} id Optional. The id of the element container
+     *   of the forms. Defaults, the whole page, including the frame document
+     * @param {boolean} disabled Optional. Forces all the inputs to be either
+     *   disabled or enabled (not toggled)
+     * @return {boolean} FALSE, if the method could not be executed
+     *
+     * @see GameWindow.getFrameDocument
+     * @see toggleInputs
      */
-    GameWindow.prototype.toggleInputs = function(id, state) {
-        var container, inputTags, j, len, i, inputs, nInputs;
-
-        if ('undefined' !== typeof id) {
+    GameWindow.prototype.toggleInputs = function(id, disabled) {
+        var container;
+        if (!document.getElementsByTagName) {
+            node.err('GameWindow.toggleInputs: getElementsByTagName not found.');
+            return false;
+        }
+        if (id && 'string' === typeof id) {
+            throw new Error('GameWindow.toggleInputs: id must be string or ' +
+                            'undefined.');
+        }
+        if (id) {
             container = this.getElementById(id);
             if (!container) {
                 throw new Error('GameWindow.toggleInputs: no elements found ' +
                                 'with id ' + id + '.');
             }
+            toggleInputs(disabled, container);
         }
         else {
+            // The whole page.
+            toggleInputs(disabled);
+            // If there is Frame apply it there too.
             container = this.getFrameDocument();
-            if (!container || !container.getElementsByTagName) {
-                // Frame either not existing or not ready. No warning.
-                return;
+            if (container) {
+                toggleInputs(disabled, container);
             }
         }
-
-        inputTags = ['button', 'select', 'textarea', 'input'];
-        len = inputTags.length;
-        for (j = 0; j < len; j++) {
-            inputs = container.getElementsByTagName(inputTags[j]);
-            nInputs = inputs.length;
-            for (i = 0; i < nInputs; i++) {
-                // Set to state, or toggle.
-                if ('undefined' === typeof state) {
-                    state = inputs[i].disabled ? false : true;
-                }
-                if (state) {
-                    inputs[i].disabled = state;
-                }
-                else {
-                    inputs[i].removeAttribute('disabled');
-                }
-            }
-        }
+        return true;
     };
 
     /**
@@ -23322,6 +23469,36 @@ JSUS.extend(TIME);
 
         return root.appendChild(eb);
     };
+
+    // ## Helper Functions
+
+    /**
+     * ## toggleInputs
+     *
+     * @api private 
+     */
+    function toggleInputs(state, container) {
+        var inputTags, j, len, i, inputs, nInputs;
+        container = container || document;
+        inputTags = ['button', 'select', 'textarea', 'input'];
+        len = inputTags.length;
+        for (j = 0; j < len; j++) {
+            inputs = container.getElementsByTagName(inputTags[j]);
+            nInputs = inputs.length;
+            for (i = 0; i < nInputs; i++) {
+                // Set to state, or toggle.
+                if ('undefined' === typeof state) {
+                    state = inputs[i].disabled ? false : true;
+                }
+                if (state) {
+                    inputs[i].disabled = state;
+                }
+                else {
+                    inputs[i].removeAttribute('disabled');
+                }
+            }
+        }
+    }
 
 })(
     // GameWindow works only in the browser environment. The reference
@@ -27852,24 +28029,23 @@ JSUS.extend(TIME);
     "use strict";
 
     var GameMsg = node.GameMsg,
-    Table = node.window.Table;
+        GameStage = node.GameStage,
+        JSUS = node.JSUS,
+        Table = W.Table;
 
     node.widgets.register('MsgBar', MsgBar);
-
-    // ## Defaults
-
-    MsgBar.defaults = {};
-    MsgBar.defaults.id = 'msgbar';
-    MsgBar.defaults.fieldset = { legend: 'Send MSG' };
 
     // ## Meta-data
 
     MsgBar.version = '0.5';
     MsgBar.description = 'Send a nodeGame message to players';
 
+    MsgBar.title = 'Send MSG';
+    MsgBar.className = 'msgbar';
+
     function MsgBar(options) {
 
-        this.id = options.id;
+        this.id = options.id || MsgBar.className;
 
         this.recipient = null;
         this.actionSel = null;
@@ -27889,27 +28065,31 @@ JSUS.extend(TIME);
             if (gm.hasOwnProperty(i)) {
                 var id = this.id + '_' + i;
                 this.table.add(i, 0, y);
-                this.table.add(node.window.getTextInput(id), 1, y);
+                this.table.add(W.getTextInput(id), 1, y);
                 if (i === 'target') {
-                    this.targetSel = node.window.getTargetSelector(this.id + '_targets');
+                    this.targetSel = W.getTargetSelector(this.id + '_targets');
                     this.table.add(this.targetSel, 2, y);
 
                     this.targetSel.onchange = function() {
-                        node.window.getElementById(that.id + '_target').value = that.targetSel.value;
+                        W.getElementById(that.id + '_target').value =
+                            that.targetSel.value;
                     };
                 }
                 else if (i === 'action') {
-                    this.actionSel = node.window.getActionSelector(this.id + '_actions');
+                    this.actionSel = W.getActionSelector(this.id + '_actions');
                     this.table.add(this.actionSel, 2, y);
                     this.actionSel.onchange = function() {
-                        node.window.getElementById(that.id + '_action').value = that.actionSel.value;
+                        W.getElementById(that.id + '_action').value =
+                            that.actionSel.value;
                     };
                 }
                 else if (i === 'to') {
-                    this.recipient = node.window.getRecipientSelector(this.id + 'recipients');
+                    this.recipient =
+                        W.getRecipientSelector(this.id + 'recipients');
                     this.table.add(this.recipient, 2, y);
                     this.recipient.onchange = function() {
-                        node.window.getElementById(that.id + '_to').value = that.recipient.value;
+                        W.getElementById(that.id + '_to').value =
+                            that.recipient.value;
                     };
                 }
                 y++;
@@ -27918,10 +28098,10 @@ JSUS.extend(TIME);
         this.table.parse();
     };
 
-    MsgBar.prototype.append = function(root) {
+    MsgBar.prototype.append = function() {
 
-        var sendButton = node.window.addButton(root);
-        var stubButton = node.window.addButton(root, 'stub', 'Add Stub');
+        var sendButton = W.addButton(this.bodyDiv);
+        var stubButton = W.addButton(this.bodyDiv, 'stub', 'Add Stub');
 
         var that = this;
         sendButton.onclick = function() {
@@ -27936,20 +28116,13 @@ JSUS.extend(TIME);
             that.addStub();
         };
 
-        root.appendChild(this.table.table);
-
-        this.root = root;
-        return root;
-    };
-
-    MsgBar.prototype.getRoot = function() {
-        return this.root;
+        this.bodyDiv.appendChild(this.table.table);
     };
 
     MsgBar.prototype.listeners = function() {
         var that = this;
         node.on.plist( function(msg) {
-            node.window.populateRecipientSelector(that.recipient, msg.data);
+            W.populateRecipientSelector(that.recipient, msg.data);
 
         });
     };
@@ -27968,9 +28141,9 @@ JSUS.extend(TIME);
             else if (e.x === 1) {
 
                 value = e.content.value;
-                if (key === 'state' || key === 'data') {
+                if (key === 'stage' || key === 'to' || key === 'data') {
                     try {
-                        value = JSON.parse(e.content.value);
+                        value = JSUS.parse(e.content.value);
                     }
                     catch (ex) {
                         value = e.content.value;
@@ -27986,19 +28159,21 @@ JSUS.extend(TIME);
     };
 
     MsgBar.prototype.addStub = function() {
-        node.window.getElementById(this.id + '_from').value = (node.player) ? node.player.id : 'undefined';
-        node.window.getElementById(this.id + '_to').value = this.recipient.value;
-        node.window.getElementById(this.id + '_forward').value = 0;
-        node.window.getElementById(this.id + '_reliable').value = 1;
-        node.window.getElementById(this.id + '_priority').value = 0;
+        W.getElementById(this.id + '_from').value =
+            (node.player) ? node.player.id : 'undefined';
+        W.getElementById(this.id + '_to').value = this.recipient.value;
+        W.getElementById(this.id + '_forward').value = 0;
+        W.getElementById(this.id + '_reliable').value = 1;
+        W.getElementById(this.id + '_priority').value = 0;
 
         if (node.socket && node.socket.session) {
-            node.window.getElementById(this.id + '_session').value = node.socket.session;
+            W.getElementById(this.id + '_session').value = node.socket.session;
         }
 
-        node.window.getElementById(this.id + '_state').value = JSON.stringify(node.state);
-        node.window.getElementById(this.id + '_action').value = this.actionSel.value;
-        node.window.getElementById(this.id + '_target').value = this.targetSel.value;
+        W.getElementById(this.id + '_stage').value =
+            new GameStage(node.player.stage);
+        W.getElementById(this.id + '_action').value = this.actionSel.value;
+        W.getElementById(this.id + '_target').value = this.targetSel.value;
 
     };
 
