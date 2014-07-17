@@ -22225,9 +22225,11 @@ JSUS.extend(TIME);
 
         W.removeClass(W.frameElement, 'ng_mainframe-header-[a-z\-]*');
         switch(position) {
-        case 'right':
+        case 'right':            
+            W.addClass(W.frameElement, 'ng_mainframe-header-vertical-r');
+            break;
         case 'left':
-            W.addClass(W.frameElement, 'ng_mainframe-header-vertical');
+            W.addClass(W.frameElement, 'ng_mainframe-header-vertical-l');
             break;
         case 'top':
             W.addClass(W.frameElement, 'ng_mainframe-header-horizontal');

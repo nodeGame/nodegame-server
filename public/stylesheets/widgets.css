@@ -27,7 +27,8 @@
 
 .visualstate {
     float: left;
-    min-width: 300px;
+    min-width: 200px;
+    width: auto;
 }
 
 /* State Display */
