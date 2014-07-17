@@ -141,3 +141,7 @@ th,td {
 th:first-child,td:first-child {
     text-align: left;
 }
+
+div.panel.msgbar table tbody tr td:nth-child(3) {
+    text-align: left;
+}
