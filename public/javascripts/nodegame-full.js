@@ -20521,8 +20521,11 @@ JSUS.extend(TIME);
     GameWindow.defaults = {};
 
     // Default settings.
+    GameWindow.defaults.textOnleave = '';
     GameWindow.defaults.promptOnleave = true;
     GameWindow.defaults.noEscape = true;
+    GameWindow.defaults.waitScreen = undefined;
+    GameWindow.defaults.disableRightClick = false;
     GameWindow.defaults.cacheDefaults = {
         loadCache:       true,
         storeCacheNow:   false,
@@ -20820,29 +20823,6 @@ JSUS.extend(TIME);
         this.screenState = node.constants.screenLevels.ACTIVE;
 
         /**
-         * ### GamwWindow.textOnleave
-         *
-         * Text that displayed to the users on the _onbeforeunload_ event
-         *
-         * By default it is null, that means that it is left to the browser
-         * default.
-         *
-         * Notice: some browser do not support displaying a custom text.
-         *
-         * @see GameWindow.promptOnleave
-         */
-        this.textOnleave = null;
-
-        /**
-         * ### GamwWindow.rightClickDisabled
-         *
-         * TRUE, if the right click context menu is disabled
-         *
-         * @see GameWindow.disableRightClick
-         */
-        this.rightClickDisabled = false;
-
-        /**
          * ### node.setup.window
          *
          * Setup handler for the node.window object
@@ -20850,21 +20830,15 @@ JSUS.extend(TIME);
          * @see node.setup
          */
         node.registerSetup('window', function(conf) {
-            conf = conf || {};
-            if ('undefined' === typeof conf.promptOnleave) {
-                conf.promptOnleave = false;
-            }
-            if ('undefined' === typeof conf.noEscape) {
-                conf.noEscape = true;
-            }
-
-            this.window.init(conf);
-
-            return conf;
+            conf = J.merge(W.conf, conf);
+            //if ('object' === typeof conf && !J.isEmpty(conf)) {
+                this.window.init(conf);
+                return conf;
+            //}
         });
 
         // Init.
-        this.init();
+        this.init(GameWindow.defaults);
     }
 
     // ## GameWindow methods
@@ -20883,11 +20857,8 @@ JSUS.extend(TIME);
     GameWindow.prototype.init = function(options) {
         this.setStateLevel('INITIALIZING');
         options = options || {};
-        this.conf = J.merge(GameWindow.defaults, options);
+        this.conf = J.merge(this.conf, options);
 
-        if (this.conf.textOnleave) {
-            this.textOnleave = this.conf.textOnleave;
-        }
         if (this.conf.promptOnleave) {
             this.promptOnleave();
         }
@@ -22073,7 +22044,7 @@ JSUS.extend(TIME);
             that.frameWindow = iframe.contentWindow;
             that.frameDocument = that.getIFrameDocument(iframe);
             // Disable right click in loaded iframe document, if necessary.
-            if (that.rightClickDisabled) {
+            if (that.conf.rightClickDisabled) {
                 J.disableRightClick(that.frameDocument);
             }
         }
@@ -22321,6 +22292,7 @@ JSUS.extend(TIME);
                 return false;
             }
         };
+        this.conf.noEscape = true;
     };
 
     /**
@@ -22336,6 +22308,7 @@ JSUS.extend(TIME);
     GameWindow.prototype.restoreEscape = function(windowObj) {
         windowObj = windowObj || window;
         windowObj.document.onkeydown = null;
+        this.conf.noEscape = false;
     };
 
     /**
@@ -22352,7 +22325,7 @@ JSUS.extend(TIME);
      */
     GameWindow.prototype.promptOnleave = function(windowObj, text) {
         windowObj = windowObj || window;
-        text = 'undefined' !== typeof text ? text : this.textOnleave;
+        text = 'undefined' !== typeof text ? text : this.conf.textOnleave;
         
         windowObj.onbeforeunload = function(e) {
             e = e || window.event;
@@ -22363,6 +22336,8 @@ JSUS.extend(TIME);
             // For Chrome, Safari, IE8+ and Opera 12+
             return text;
         };
+
+        this.conf.promptOnleave = true;
     };
 
     /**
@@ -22379,6 +22354,7 @@ JSUS.extend(TIME);
     GameWindow.prototype.restoreOnleave = function(windowObj) {
         windowObj = windowObj || window;
         windowObj.onbeforeunload = null;
+        this.conf.promptOnleave = false;
     };
 
     /**
@@ -22394,7 +22370,7 @@ JSUS.extend(TIME);
             J.disableRightClick(this.getFrameDocument());
         }
         J.disableRightClick(document);
-        this.rightClickDisabled = true;
+        this.conf.rightClickDisabled = true;
     };
 
     /**
@@ -22410,7 +22386,7 @@ JSUS.extend(TIME);
              J.enableRightClick(this.getFrameDocument());
         }
         J.enableRightClick(document);
-        this.rightClickDisabled = false;
+        this.conf.rightClickDisabled = false;
     };
 
 })(
@@ -22903,6 +22879,7 @@ JSUS.extend(TIME);
     ('undefined' !== typeof node) ? node : module.parent.exports.node,
     ('undefined' !== typeof window) ? window : module.parent.exports.window
 );
+
 /**
  * # GameWindow selector module
  * Copyright(c) 2014 Stefano Balietti
@@ -24131,23 +24108,88 @@ JSUS.extend(TIME);
     }
 
     /**
+     * ## Table.addClass
+     *
+     * Adds a CSS class to each element cell in the table
+     *
+     * @param {string|array} The name of the class/classes.
+     *
+     * return {Table} This instance for chaining.
+     */
+    Table.prototype.addClass = function(className) {
+        if ('string' !== typeof className && !J.isArray(className)) {
+            throw new TypeError('Table.addClass: className must be string or ' +
+                                'array.');
+        }
+        if (J.isArray(className)) {
+            className = className.join(' ');
+        }
+
+        this.each(function(el) {
+            W.addClass(el, className);
+            if (el.HTMLElement) {
+                el.HTMLElement.className = el.className;
+            }
+        });
+
+        return this;
+    };
+
+    /**
+     * ## Table.removeClass
+     *
+     * Removes a CSS class from each element cell in the table
+     *
+     * @param {string|array} The name of the class/classes.
+     *
+     * return {Table} This instance for chaining.
+     */
+    Table.prototype.removeClass = function(className) {
+        var func;
+        if ('string' !== typeof className && !J.isArray(className)) {
+            throw new TypeError('Table.removeClass: className must be string ' +
+                                'or array.');
+        }
+
+        if (J.isArray(className)) {
+            func = function(el, className) {
+                for (var i = 0; i < className.length; i++) {
+                    W.removeClass(el, className[i]);
+                }
+            };
+        }
+        else {
+            func = W.removeClass;
+        }
+
+        this.each(function(el) {
+            func.call(this, el, className);
+            if (el.HTMLElement) {
+                el.HTMLElement.className = el.className;
+            }
+        });
+
+        return this;
+    };
+
+    /**
      * ## addSpecialCells
      *
      * Parses an array of data and returns an array of cells
      *
-     * @param {array} data The array of cells to add
-     * @return {array}
+     * @param {array} data Array containing data to transform into cells
+     * @return {array} out The array of cells
      */
     function addSpecialCells(data) {
         var out, i, len;
         out = [];
-        i = -1, len = data.length;
+        i = -1;
+        len = data.length;
         for ( ; ++i < len ; ) {
             out.push({content: data[i]});
         }
         return out;
-    };
-
+    }
 
     /**
      * ## Table constructor
@@ -24169,16 +24211,16 @@ JSUS.extend(TIME);
 
         NDDB.call(this, options, data);
 
-        if (!this.row) {
-            this.index('row', function(c) {
-                return c.x;
-            });
-        }
-        if (!this.col) {
-            this.index('col', function(c) {
-                return c.y;
-            });
-        }
+        //if (!this.row) {
+        //    this.view('row', function(c) {
+        //        return c.x;
+        //    });
+        //}
+        //if (!this.col) {
+        //    this.view('col', function(c) {
+        //        return c.y;
+        //    });
+        //}
         if (!this.rowcol) {
             this.index('rowcol', function(c) {
                 return c.x + '_' + c.y;
@@ -24315,7 +24357,7 @@ JSUS.extend(TIME);
     /**
      * Table.get
      *
-     * Returns the element at row column (x,y)
+     * Returns the element at row column (row,col)
      *
      * @param {number} row The row number
      * @param {number} col The column number
@@ -24332,10 +24374,10 @@ JSUS.extend(TIME);
         }
 
         if ('undefined' === typeof row) {
-            return this.col.get(col);
+            return this.select('y', '=', col);
         }
         if ('undefined' === typeof col) {
-            return this.row.get(row);
+            return this.select('x', '=', row);
         }
 
         return this.rowcol.get(row + '_' + col);
@@ -24344,24 +24386,20 @@ JSUS.extend(TIME);
     /**
      * Table.getTR
      *
-     * Returns the element at row column (x,y)
+     * Returns a reference to the TR element at row (row)
      *
      * @param {number} row The row number
-     * @param {number} col The column number
      * @return {HTMLElement|boolean} The requested TR object, or FALSE if it
-     * cannot be found.
-     *
-     * @see HTMLRenderer
-     * @see HTMLRenderer.addRenderer
+     *   cannot be found.
      */
     Table.prototype.getTR = function(row) {
         var cell;
         if ('number' !== typeof row) {
             throw new TypeError('Table.getTr: row must be number.');
         }
-
         cell = this.get(row, 0);
         if (!cell) return false;
+        if (!cell.HTMLElement) return false;
         return cell.HTMLElement.parentNode;
     };
 
@@ -24388,7 +24426,7 @@ JSUS.extend(TIME);
      */
     Table.prototype.setLeft = function(left) {
         if (!validateInput('setLeft', left, null, null, true)) return;
-        this.left =  addSpecialCells(left);
+        this.left = addSpecialCells(left);
     };
 
     /**
@@ -24401,7 +24439,7 @@ JSUS.extend(TIME);
      */
     Table.prototype.setFooter = function(footer) {
         if (!validateInput('setFooter', footer, null, null, true)) return;
-        this.footer =  addSpecialCells(footer);
+        this.footer = addSpecialCells(footer);
     };
 
     /**
@@ -24466,7 +24504,8 @@ JSUS.extend(TIME);
         if (!J.isArray(data)) data = [data];
 
         // Loop Dim 1.
-        i = -1, lenI = data.length;
+        i = -1;
+        lenI = data.length;
         for ( ; ++i < lenI ; ) {
 
             if (!J.isArray(data[i])) {
@@ -24475,7 +24514,8 @@ JSUS.extend(TIME);
             }
             else {
                 // Loop Dim 2.
-                j = -1, lenJ = data[i].length;
+                j = -1;
+                lenJ = data[i].length;
                 for ( ; ++j < lenJ ; ) {
                     if (dim === 'x') this.add(data[i][j], x + i, y + j, 'x');
                     else this.add(data[i][j], x + j, y + i, 'y');
@@ -24496,7 +24536,7 @@ JSUS.extend(TIME);
      * @param {object} content The content of the cell or Cell object
      */
     Table.prototype.add = function(content, x, y, dim) {
-        var cell, x, y;
+        var cell;
         if (!validateInput('addData', content, x, y)) return;
         if ((dim && 'string' !== typeof dim) ||
             (dim && 'undefined' === typeof this.pointers[dim])) {
@@ -24621,7 +24661,8 @@ JSUS.extend(TIME);
             if (this.left && this.left.length) {
                 TR.appendChild(document.createElement('th'));
             }
-            i = -1, len = this.header.length;
+            i = -1;
+            len = this.header.length;
             for ( ; ++i < len ; ) {
                 TR.appendChild(this.renderCell(this.header[i], 'th'));
             }
@@ -24644,7 +24685,8 @@ JSUS.extend(TIME);
             old_left = 0;
 
 
-            i = -1, len = this.db.length;
+            i = -1;
+            len = this.db.length;
             for ( ; ++i < len ; ) {
 
                 if (trid !== this.db[i].x) {
@@ -24695,7 +24737,8 @@ JSUS.extend(TIME);
                 TR.appendChild(TD);
             }
 
-            i = -1, len = this.footer.length;
+            i = -1;
+            len = this.footer.length;
             for ( ; ++i < len ; ) {
                 TR.appendChild(this.renderCell(this.footer[i]));
             }
@@ -24787,6 +24830,7 @@ JSUS.extend(TIME);
     ('undefined' !== typeof window) ? window : module.parent.exports.window,
     ('undefined' !== typeof node) ? node : module.parent.exports.node
 );
+
 /**
  * # Widget
  * Copyright(c) 2014 Stefano Balietti
@@ -28206,6 +28250,7 @@ JSUS.extend(TIME);
         this.targetSel = null;
 
         this.table = new Table();
+        this.tableAdvanced = new Table();
 
         this.init();
     }
@@ -28213,103 +28258,92 @@ JSUS.extend(TIME);
     // TODO: Write a proper INIT method
     MsgBar.prototype.init = function() {
         var that;
+        var fields, i, field;
+        var table;
+
         that = this;
 
         // Create fields.
+        // TODO: separate table for fields following 'data'
+        fields = ['to', 'action', 'target', 'text', 'data', 'from', 'priority',
+                  'reliable', 'forward', 'session', 'stage', 'created', 'id'];
 
-        // To:
-        this.table.add('to', 0, 0);
-        this.table.add(W.getTextInput(this.id + '_to'), 0, 1);
-        this.recipient =
-            W.getRecipientSelector(this.id + '_recipients');
-        this.table.add(this.recipient, 0, 2);
-        this.recipient.onchange = function() {
-            W.getElementById(that.id + '_to').value =
-                that.recipient.value;
-        };
+        for (i = 0; i < fields.length; ++i) {
+            field = fields[i];
 
-        // Action:
-        this.table.add('action', 1, 0);
-        this.table.add(W.getTextInput(this.id + '_action'), 1, 1);
-        this.actionSel = W.getActionSelector(this.id + '_actions');
-        this.table.add(this.actionSel, 1, 2);
-        this.actionSel.onchange = function() {
-            W.getElementById(that.id + '_action').value =
-                that.actionSel.value;
-        };
+            // Put TO, ACTION, TARGET, TEXT, DATA in the first table which is
+            // always visible, the other fields in the "advanced" table which
+            // is hidden by default.
+            table = i < 5 ? this.table : this.tableAdvanced;
 
-        // Target:
-        this.table.add('target', 2, 0);
-        this.table.add(W.getTextInput(this.id + '_target'), 2, 1);
-        this.targetSel = W.getTargetSelector(this.id + '_targets');
-        this.table.add(this.targetSel, 2, 2);
-        this.targetSel.onchange = function() {
-            W.getElementById(that.id + '_target').value =
-                that.targetSel.value;
-        };
+            table.add(field, i, 0);
+            table.add(W.getTextInput(this.id + '_' + field, {tabindex: i+1}), i, 1);
 
-        // Text:
-        this.table.add('text', 3, 0);
-        this.table.add(W.getTextInput(this.id + '_text'), 3, 1);
-
-        // Data:
-        this.table.add('data', 4, 0);
-        this.table.add(W.getTextInput(this.id + '_data'), 4, 1);
-
-
-        // TODO: Hide the following fields.
-        // From:
-        this.table.add('from', 5, 0);
-        this.table.add(W.getTextInput(this.id + '_from'), 5, 1);
-
-        // Priority:
-        this.table.add('priority', 6, 0);
-        this.table.add(W.getTextInput(this.id + '_priority'), 6, 1);
-
-        // Reliable:
-        this.table.add('reliable', 7, 0);
-        this.table.add(W.getTextInput(this.id + '_reliable'), 7, 1);
-
-        // Forward:
-        this.table.add('forward', 8, 0);
-        this.table.add(W.getTextInput(this.id + '_forward'), 8, 1);
-
-        // Session:
-        this.table.add('session', 9, 0);
-        this.table.add(W.getTextInput(this.id + '_session'), 9, 1);
-
-        // Stage:
-        this.table.add('stage', 10, 0);
-        this.table.add(W.getTextInput(this.id + '_stage'), 10, 1);
-
-        // Created:
-        this.table.add('created', 11, 0);
-        this.table.add(W.getTextInput(this.id + '_created'), 11, 1);
-
-        // Id:
-        this.table.add('id', 12, 0);
-        this.table.add(W.getTextInput(this.id + '_id'), 12, 1);
-
+            if (field === 'to') {
+                this.recipient =
+                    W.getRecipientSelector(this.id + '_recipients');
+                W.addAttributes2Elem(this.recipient,
+                        {tabindex: fields.length+1});
+                table.add(this.recipient, i, 2);
+                this.recipient.onchange = function() {
+                    W.getElementById(that.id + '_to').value =
+                        that.recipient.value;
+                };
+            }
+            else if (field === 'action') {
+                this.actionSel = W.getActionSelector(this.id + '_actions');
+                W.addAttributes2Elem(this.actionSel,
+                        {tabindex: fields.length+2});
+                table.add(this.actionSel, i, 2);
+                this.actionSel.onchange = function() {
+                    W.getElementById(that.id + '_action').value =
+                        that.actionSel.value;
+                };
+            }
+            else if (field === 'target') {
+                this.targetSel = W.getTargetSelector(this.id + '_targets');
+                W.addAttributes2Elem(this.targetSel,
+                        {tabindex: fields.length+3});
+                table.add(this.targetSel, i, 2);
+                this.targetSel.onchange = function() {
+                    W.getElementById(that.id + '_target').value =
+                        that.targetSel.value;
+                };
+            }
+        }
 
         this.table.parse();
+        this.tableAdvanced.parse();
     };
 
     MsgBar.prototype.append = function() {
+        var advButton;
         var sendButton;
         var that;
 
         that = this;
 
+        // Show table of basic fields.
         this.bodyDiv.appendChild(this.table.table);
 
+        this.bodyDiv.appendChild(this.tableAdvanced.table);
+        this.tableAdvanced.table.style.display = 'none';
+
+        // Show 'Send' button.
         sendButton = W.addButton(this.bodyDiv);
         sendButton.onclick = function() {
             var msg = that.parse();
 
             if (msg) {
                 node.socket.send(msg);
-                //console.log(msg.stringify());
             }
+        };
+
+        // Show a button that expands the table of advanced fields.
+        advButton = W.addButton(this.bodyDiv, undefined, 'Toggle advanced options');
+        advButton.onclick = function() {
+            that.tableAdvanced.table.style.display =
+                that.tableAdvanced.table.style.display === '' ? 'none' : '';
         };
     };
 
@@ -28318,6 +28352,7 @@ JSUS.extend(TIME);
 
     MsgBar.prototype.parse = function() {
         var msg, that, key, value, gameMsg, invalid;
+        var tableFunction;
 
         msg = {};
         that = this;
@@ -28325,14 +28360,14 @@ JSUS.extend(TIME);
         value = null;
         invalid = false;
 
-        this.table.forEach( function(e) {
+        tableFunction = function(e) {
             if (invalid) return;
 
-            if (e.x === 0) {
+            if (e.y === 0) {
                 key = e.content;
                 msg[key] = '';
             }
-            else if (e.x === 1) {
+            else if (e.y === 1) {
 
                 value = e.content.value;
                 if (key === 'stage' || key === 'to' || key === 'data') {
@@ -28369,7 +28404,10 @@ JSUS.extend(TIME);
 
                 msg[key] = value;
             }
-        });
+        };
+
+        this.table.forEach(tableFunction);
+        this.tableAdvanced.forEach(tableFunction);
 
         if (invalid) return null;
         gameMsg = node.msg.create(msg);
@@ -28378,7 +28416,6 @@ JSUS.extend(TIME);
     };
 
 })(node);
-
 /**
  * # NDDBBrowser widget for nodeGame
  * Copyright(c) 2014 Stefano Balietti
@@ -29418,9 +29455,9 @@ JSUS.extend(TIME);
         this.table.addRow(['Current: ', state]);
         this.table.addRow(['Next: ', nx]);
 
-        t = this.table.select('y', '=', 2);
+        t = this.table.selexec('y', '=', 0);
         t.addClass('strong');
-        t.select('x','=',0).addClass('underline');
+        t.selexec('x', '=', 2).addClass('underline');
         this.table.parse();
     };
 
