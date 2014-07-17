@@ -1,4 +1,4 @@
-var ChannelRegistry = require('./ChannelRegistry');
+var ChannelRegistry = require('../lib/ChannelRegistry');
 
 chReg = new ChannelRegistry();
 

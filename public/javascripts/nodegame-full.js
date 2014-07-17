@@ -2909,14 +2909,10 @@ if (!JSON) {
      *   class, or undefined input are misspecified.
      */
     DOM.addClass = function(el, c) {
-        if (!el || !c) return;
+        if (!el) return;
         if (c instanceof Array) c = c.join(' ');
-        if (el.className === '' || 'undefined' === typeof el.className) {
-            el.className = c;
-        }
-        else {
-            el.className += ' ' + c;
-        }
+        else if ('string' !== typeof c) return;
+        el.className = el.className ? el.className + ' ' + c : c;
         return el;
     };
 
@@ -2994,7 +2990,7 @@ if (!JSON) {
     // ## RIGHT-CLICK
 
     /**
-     * ## DOM.disableRightClick
+     * ### DOM.disableRightClick
      *
      * Disables the popup of the context menu by right clicking with the mouse 
      *
@@ -3025,7 +3021,7 @@ if (!JSON) {
     };
 
     /**
-     * ## DOM.enableRightClick
+     * ### DOM.enableRightClick
      *
      * Enables the popup of the context menu by right clicking with the mouse 
      *
@@ -6039,35 +6035,22 @@ JSUS.extend(TIME);
      *
      * Indexes an element
      *
-     * Parameter _oldIdx_ is needed if indexing is updating a previously
-     * indexed item. In fact if new index is different, the old one must
-     * be deleted.
-     *
      * @param {object} o The element to index
-     * @param {number} dbidx The position of the element in the database array
-     * @param {string} oldIdx Optional. The old index name, if any.
+     * @param {object} o The position of the element in the database array
      */
-    NDDB.prototype._indexIt = function(o, dbidx, oldIdx) {
+    NDDB.prototype._indexIt = function(o, dbidx) {
         var func, id, index, key;
         if (!o || J.isEmpty(this.__I)) return;
-        oldIdx = undefined;
+
         for (key in this.__I) {
             if (this.__I.hasOwnProperty(key)) {
                 func = this.__I[key];
                 index = func(o);
-                // If the same object has been  previously
-                // added with another index delete the old one.
-                if (index !== oldIdx) {
-                    if ('undefined' !== typeof oldIdx) {
-                        if ('undefined' !== typeof this[key].resolve[oldIdx]) {
-                            delete this[key].resolve[oldIdx];
-                        }
-                    }
-                }
-                if ('undefined' !== typeof index) { 
-                    if (!this[key]) this[key] = new NDDBIndex(key, this);
-                    this[key]._add(index, dbidx);
-                }
+
+                if ('undefined' === typeof index) continue;
+
+                if (!this[key]) this[key] = new NDDBIndex(key, this);
+                this[key]._add(index, dbidx);
             }
         }
     };
@@ -6097,7 +6080,7 @@ JSUS.extend(TIME);
                     settings = this.cloneSettings({V: ''});
                     this[key] = new NDDB(settings);
                 }
-                this[key].insert(o);1
+                this[key].insert(o);
             }
         }
     };
@@ -7517,13 +7500,11 @@ JSUS.extend(TIME);
      * @see JSUS.arrayDiff
      */
     NDDB.prototype.diff = function(nddb) {
+        if (!nddb || !nddb.length) return this;
         if ('object' === typeof nddb) {
             if (nddb instanceof NDDB || nddb instanceof this.constructor) {
                 nddb = nddb.db;
             }
-        }
-        if (!nddb || !nddb.length) {
-            return this.breed([]);
         }
         return this.breed(J.arrayDiff(this.db, nddb));
     };
@@ -7545,13 +7526,11 @@ JSUS.extend(TIME);
      * @see JSUS.arrayIntersect
      */
     NDDB.prototype.intersect = function(nddb) {
+        if (!nddb || !nddb.length) return this;
         if ('object' === typeof nddb) {
             if (nddb instanceof NDDB || nddb instanceof this.constructor) {
-                nddb = nddb.db;
+                var nddb = nddb.db;
             }
-        }
-        if (!nddb || !nddb.length) {
-            return this.breed([]);
         }
         return this.breed(J.arrayIntersect(this.db, nddb));
     };
@@ -8175,7 +8154,7 @@ JSUS.extend(TIME);
      * @see NDDBIndex.get
      * @see NDDBIndex.remove
      */
-    NDDBIndex.prototype.update = function(idx, update) {
+        NDDBIndex.prototype.update = function(idx, update) {
         var o, dbidx, nddb;
         dbidx = this.resolve[idx];
         if ('undefined' === typeof dbidx) return false;
@@ -8186,7 +8165,7 @@ JSUS.extend(TIME);
         // We do indexes separately from the other components of _autoUpdate
         // to avoid looping through all the other elements that are unchanged.
         if (nddb.__update.indexes) {
-            nddb._indexIt(o, dbidx, idx);
+            nddb._indexIt(o, dbidx);
             nddb._hashIt(o);
             nddb._viewIt(o);
         }
@@ -8993,7 +8972,8 @@ JSUS.extend(TIME);
      *
      * @return Boolean TRUE, if the removal is successful
      */
-    EventEmitter.prototype.remove = function(type, listener) {
+    EventEmitter.prototype.remove = EventEmitter.prototype.off =
+    function(type, listener) {
 
         var listeners, len, i, type, node;
         node = this.node;
@@ -11738,7 +11718,7 @@ JSUS.extend(TIME);
      * `steps` and `stages` properties set to include the given stages.
      * The `sequence` is optionally set to a single `next` block for the stage.
      *
-     * @param {string|array} id Valid stage name(s)
+     * @param {string|array} ids Valid stage name(s)
      * @param {boolean} useSeq Optional. Whether to generate a singleton
      *  sequence.  TRUE by default.
      *
@@ -11753,7 +11733,7 @@ JSUS.extend(TIME);
         var stepIdx, stepId;
         var stageId;
         var stageObj;
-        var idArray, idIdx;
+        var idArray, idIdx, id;
 
         if (ids instanceof Array) {
             idArray = ids;
@@ -18637,7 +18617,7 @@ JSUS.extend(TIME);
      * Accepts any number of extra parameters that are sent as option values.
      *
      * @param {string} property The feature to configure
-     * @param {string} to The id of the remote client to configure
+     * @param {string|array} to The id of the remote client to configure
      *
      * @return{boolean} TRUE, if configuration is successful
      *
@@ -18650,8 +18630,8 @@ JSUS.extend(TIME);
         if ('string' !== typeof 'property') {
             throw new TypeError('node.remoteSetup: property must be string.');
         }
-        if ('string' !== typeof to) {
-            throw new TypeError('node.remoteSetup: to must be string.');
+        if ('string' !== typeof to && !J.isArray(to)) {
+            throw new TypeError('node.remoteSetup: to must be string or array.');
         }
 
         payload = J.stringifyAll(Array.prototype.slice.call(arguments, 2));
@@ -20855,6 +20835,9 @@ JSUS.extend(TIME);
      * @param {object} options Optional. Configuration options
      */
     GameWindow.prototype.init = function(options) {
+        var stageLevels;
+        var stageLevel;
+
         this.setStateLevel('INITIALIZING');
         options = options || {};
         this.conf = J.merge(this.conf, options);
@@ -20879,6 +20862,25 @@ JSUS.extend(TIME);
                 this.waitScreen = null;
             }
             this.waitScreen = new node.WaitScreen(this.conf.waitScreen);
+
+
+            stageLevels = node.constants.stageLevels;
+            stageLevel = node.game.getStageLevel();
+            if (stageLevel !== stageLevels.UNINITIALIZED) {
+                if (node.game.paused) {
+                    this.lockScreen(this.waitScreen.defaultTexts.paused);
+                }
+                else {
+                    if (stageLevel === stageLevels.DONE) {
+                        this.lockScreen(this.waitScreen.defaultTexts.waiting);
+                    }
+                    else if (stageLevel !== stageLevels.PLAYING) {
+                        this.lockScreen(this.waitScreen.defaultTexts.stepping);
+                    }
+                }
+            }
+
+
         }
         else if (this.waitScreen) {
             this.waitScreen.destroy();
@@ -20890,7 +20892,7 @@ JSUS.extend(TIME);
         }
 
         if (this.conf.disableRightClick) {
-            this.disableRightClick()
+            this.disableRightClick();
         }
         else if (this.conf.disableRightClick === false) {
             this.enableRightClick();
@@ -21348,7 +21350,7 @@ JSUS.extend(TIME);
                             'not found.');
         }
 
-        W.removeClass(this.headerElement, 'ng_header_position-[a-z\-]*');
+        W.removeClass(this.headerElement, 'ng_header_position-[a-z-]*');
         W.addClass(this.headerElement, validPositions[pos]);
 
         oldPos = this.headerPosition;
@@ -22223,13 +22225,11 @@ JSUS.extend(TIME);
              W.getFrameRoot().insertBefore(W.headerElement, W.frameElement);
         }
 
-        W.removeClass(W.frameElement, 'ng_mainframe-header-[a-z\-]*');
+        W.removeClass(W.frameElement, 'ng_mainframe-header-[a-z-]*');
         switch(position) {
-        case 'right':            
-            W.addClass(W.frameElement, 'ng_mainframe-header-vertical-r');
-            break;
+        case 'right':
         case 'left':
-            W.addClass(W.frameElement, 'ng_mainframe-header-vertical-l');
+            W.addClass(W.frameElement, 'ng_mainframe-header-vertical');
             break;
         case 'top':
             W.addClass(W.frameElement, 'ng_mainframe-header-horizontal');
@@ -22618,6 +22618,7 @@ JSUS.extend(TIME);
     }
 
     function event_REALLY_DONE(text) {
+console.log('*** REALLY_DONE:', node.game.getStageLevel(), node.game.paused);
         text = text || W.waitScreen.defaultTexts.waiting;
         if (W.isScreenLocked()) {
             W.waitScreen.updateText(text);
@@ -22628,6 +22629,7 @@ JSUS.extend(TIME);
     }
 
     function event_STEPPING(text) {
+console.log('*** STEPPING:', node.game.getStageLevel(), node.game.paused);
         text = text || W.waitScreen.defaultTexts.stepping;
         if (W.isScreenLocked()) {
             W.waitScreen.updateText(text);
@@ -22638,12 +22640,14 @@ JSUS.extend(TIME);
     }
 
     function event_PLAYING() {
+console.log('*** PLAYING:', node.game.getStageLevel(), node.game.paused);
         if (W.isScreenLocked()) {
             W.unlockScreen();
         }
     }
 
     function event_PAUSED(text) {
+console.log('*** PAUSED:', node.game.getStageLevel(), node.game.paused);
         text = text || W.waitScreen.defaultTexts.paused;
         if (W.isScreenLocked()) {
             W.waitScreen.beforePauseInnerHTML = 
@@ -22656,6 +22660,7 @@ JSUS.extend(TIME);
     }
 
     function event_RESUMED() {
+console.log('*** RESUMED:', node.game.getStageLevel(), node.game.paused);
         if (W.isScreenLocked()) {
             if (W.waitScreen.beforePauseInnerHTML !== null) {
                 W.waitScreen.updateText(W.waitScreen.beforePauseInnerHTML);
@@ -22754,11 +22759,11 @@ JSUS.extend(TIME);
      */
     WaitScreen.prototype.enable = function() {
         if (this.enabled) return;
-        node.on('REALLY_DONE', event_REALLY_DONE);
-        node.on('STEPPING', event_STEPPING);
-        node.on('PLAYING', event_PLAYING);
-        node.on('PAUSED', event_PAUSED);
-        node.on('RESUMED', event_RESUMED);
+        node.events.ee.game.on('REALLY_DONE', event_REALLY_DONE);
+        node.events.ee.game.on('STEPPING', event_STEPPING);
+        node.events.ee.game.on('PLAYING', event_PLAYING);
+        node.events.ee.game.on('PAUSED', event_PAUSED);
+        node.events.ee.game.on('RESUMED', event_RESUMED);
         this.enabled = true;
     };
 
@@ -22769,11 +22774,11 @@ JSUS.extend(TIME);
      */
     WaitScreen.prototype.disable = function() {
         if (!this.enabled) return;
-        node.off('REALLY_DONE', event_REALLY_DONE);
-        node.off('STEPPING', event_STEPPING);
-        node.off('PLAYING', event_PLAYING);
-        node.off('PAUSED', event_PAUSED);
-        node.off('RESUMED', event_RESUMED);
+        node.events.ee.game.off('REALLY_DONE', event_REALLY_DONE);
+        node.events.ee.game.off('STEPPING', event_STEPPING);
+        node.events.ee.game.off('PLAYING', event_PLAYING);
+        node.events.ee.game.off('PAUSED', event_PAUSED);
+        node.events.ee.game.off('RESUMED', event_RESUMED);
         this.enabled = false;    
     };
 
@@ -22868,7 +22873,9 @@ JSUS.extend(TIME);
      */
     WaitScreen.prototype.destroy = function() {
         if (W.isScreenLocked()) {
+            W.setScreenLevel('UNLOCKING');
             this.unlock();
+            W.setScreenLevel('ACTIVE');
         }
         if (this.waitingDiv) {
             this.waitingDiv.parentNode.removeChild(this.waitingDiv);
