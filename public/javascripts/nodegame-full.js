@@ -8993,7 +8993,8 @@ JSUS.extend(TIME);
      *
      * @return Boolean TRUE, if the removal is successful
      */
-    EventEmitter.prototype.remove = function(type, listener) {
+    EventEmitter.prototype.remove = EventEmitter.prototype.off =
+    function(type, listener) {
 
         var listeners, len, i, type, node;
         node = this.node;
@@ -11738,7 +11739,7 @@ JSUS.extend(TIME);
      * `steps` and `stages` properties set to include the given stages.
      * The `sequence` is optionally set to a single `next` block for the stage.
      *
-     * @param {string|array} id Valid stage name(s)
+     * @param {string|array} ids Valid stage name(s)
      * @param {boolean} useSeq Optional. Whether to generate a singleton
      *  sequence.  TRUE by default.
      *
@@ -11753,7 +11754,7 @@ JSUS.extend(TIME);
         var stepIdx, stepId;
         var stageId;
         var stageObj;
-        var idArray, idIdx;
+        var idArray, idIdx, id;
 
         if (ids instanceof Array) {
             idArray = ids;
@@ -18637,7 +18638,7 @@ JSUS.extend(TIME);
      * Accepts any number of extra parameters that are sent as option values.
      *
      * @param {string} property The feature to configure
-     * @param {string} to The id of the remote client to configure
+     * @param {string|array} to The id of the remote client to configure
      *
      * @return{boolean} TRUE, if configuration is successful
      *
@@ -18650,8 +18651,8 @@ JSUS.extend(TIME);
         if ('string' !== typeof 'property') {
             throw new TypeError('node.remoteSetup: property must be string.');
         }
-        if ('string' !== typeof to) {
-            throw new TypeError('node.remoteSetup: to must be string.');
+        if ('string' !== typeof to && !J.isArray(to)) {
+            throw new TypeError('node.remoteSetup: to must be string or array.');
         }
 
         payload = J.stringifyAll(Array.prototype.slice.call(arguments, 2));
@@ -20855,6 +20856,9 @@ JSUS.extend(TIME);
      * @param {object} options Optional. Configuration options
      */
     GameWindow.prototype.init = function(options) {
+        var stageLevels;
+        var stageLevel;
+
         this.setStateLevel('INITIALIZING');
         options = options || {};
         this.conf = J.merge(this.conf, options);
@@ -20879,6 +20883,22 @@ JSUS.extend(TIME);
                 this.waitScreen = null;
             }
             this.waitScreen = new node.WaitScreen(this.conf.waitScreen);
+
+            stageLevels = node.constants.stageLevels;
+            stageLevel = node.game.getStageLevel();
+            if (stageLevel !== stageLevels.UNINITIALIZED) {
+                if (node.game.paused) {
+                    this.lockScreen(this.waitScreen.defaultTexts.paused);
+                }
+                else {
+                    if (stageLevel === stageLevels.DONE) {
+                        this.lockScreen(this.waitScreen.defaultTexts.waiting);
+                    }
+                    else if (stageLevel !== stageLevels.PLAYING) {
+                        this.lockScreen(this.waitScreen.defaultTexts.stepping);
+                    }
+                }
+            }
         }
         else if (this.waitScreen) {
             this.waitScreen.destroy();
@@ -20890,7 +20910,7 @@ JSUS.extend(TIME);
         }
 
         if (this.conf.disableRightClick) {
-            this.disableRightClick()
+            this.disableRightClick();
         }
         else if (this.conf.disableRightClick === false) {
             this.enableRightClick();
@@ -21348,7 +21368,7 @@ JSUS.extend(TIME);
                             'not found.');
         }
 
-        W.removeClass(this.headerElement, 'ng_header_position-[a-z\-]*');
+        W.removeClass(this.headerElement, 'ng_header_position-[a-z-]*');
         W.addClass(this.headerElement, validPositions[pos]);
 
         oldPos = this.headerPosition;
@@ -22223,7 +22243,7 @@ JSUS.extend(TIME);
              W.getFrameRoot().insertBefore(W.headerElement, W.frameElement);
         }
 
-        W.removeClass(W.frameElement, 'ng_mainframe-header-[a-z\-]*');
+        W.removeClass(W.frameElement, 'ng_mainframe-header-[a-z-]*');
         switch(position) {
         case 'right':            
             W.addClass(W.frameElement, 'ng_mainframe-header-vertical-r');
@@ -22754,11 +22774,11 @@ JSUS.extend(TIME);
      */
     WaitScreen.prototype.enable = function() {
         if (this.enabled) return;
-        node.on('REALLY_DONE', event_REALLY_DONE);
-        node.on('STEPPING', event_STEPPING);
-        node.on('PLAYING', event_PLAYING);
-        node.on('PAUSED', event_PAUSED);
-        node.on('RESUMED', event_RESUMED);
+        node.events.ee.game.on('REALLY_DONE', event_REALLY_DONE);
+        node.events.ee.game.on('STEPPING', event_STEPPING);
+        node.events.ee.game.on('PLAYING', event_PLAYING);
+        node.events.ee.game.on('PAUSED', event_PAUSED);
+        node.events.ee.game.on('RESUMED', event_RESUMED);
         this.enabled = true;
     };
 
@@ -22769,11 +22789,11 @@ JSUS.extend(TIME);
      */
     WaitScreen.prototype.disable = function() {
         if (!this.enabled) return;
-        node.off('REALLY_DONE', event_REALLY_DONE);
-        node.off('STEPPING', event_STEPPING);
-        node.off('PLAYING', event_PLAYING);
-        node.off('PAUSED', event_PAUSED);
-        node.off('RESUMED', event_RESUMED);
+        node.events.ee.game.off('REALLY_DONE', event_REALLY_DONE);
+        node.events.ee.game.off('STEPPING', event_STEPPING);
+        node.events.ee.game.off('PLAYING', event_PLAYING);
+        node.events.ee.game.off('PAUSED', event_PAUSED);
+        node.events.ee.game.off('RESUMED', event_RESUMED);
         this.enabled = false;    
     };
 
@@ -22868,7 +22888,9 @@ JSUS.extend(TIME);
      */
     WaitScreen.prototype.destroy = function() {
         if (W.isScreenLocked()) {
+            W.setScreenLevel('UNLOCKING');
             this.unlock();
+            W.setScreenLevel('ACTIVE');
         }
         if (this.waitingDiv) {
             this.waitingDiv.parentNode.removeChild(this.waitingDiv);
@@ -28353,69 +28375,87 @@ JSUS.extend(TIME);
     };
 
     MsgBar.prototype.parse = function() {
-        var msg, that, key, value, gameMsg, invalid;
-        var tableFunction;
+        var msg, gameMsg
 
         msg = {};
-        that = this;
-        key = null;
-        value = null;
-        invalid = false;
 
-        tableFunction = function(e) {
-            if (invalid) return;
-
-            if (e.y === 0) {
-                key = e.content;
-                msg[key] = '';
-            }
-            else if (e.y === 1) {
-
-                value = e.content.value;
-                if (key === 'stage' || key === 'to' || key === 'data') {
-                    try {
-                        value = JSUS.parse(e.content.value);
-                    }
-                    catch (ex) {
-                        value = e.content.value;
-                    }
-                }
-
-                if (key === 'to' && 'number' === typeof value) {
-                    value = '' + value;
-                }
-
-                // Validate input.
-                if (key === 'to' &&
-                    ((!JSUS.isArray(value) && 'string' !== typeof value) ||
-                      value.trim() === '')) {
-
-                    alert('Invalid "to" field');
-                    invalid = true;
-                }
-
-                if (key === 'action' && value.trim() === '') {
-                    alert('Missing "action" field');
-                    invalid = true;
-                }
-
-                if (key === 'target' && value.trim() === '') {
-                    alert('Missing "target" field');
-                    invalid = true;
-                }
-
-                msg[key] = value;
-            }
-        };
-
-        this.table.forEach(tableFunction);
-        this.tableAdvanced.forEach(tableFunction);
-
-        if (invalid) return null;
+        this.table.forEach(validateTableMsg, msg);
+        if (msg._invalid) return null;
+        this.tableAdvanced.forEach(validateTableMsg, msg);
+        if (msg._invalid) return null;
+        delete msg._lastKey;
+        delete msg._invalid;
         gameMsg = node.msg.create(msg);
-        node.info(gameMsg, 'MsgBar sent: ');
+        node.info('MsgBar msg created. ' +  gameMsg.toSMS());
         return gameMsg;
     };
+
+    // # Helper Function.
+
+
+    function validateTableMsg(e, msg) {
+        var key, value;
+        if (msg._invalid) return;
+
+        if (e.y === 2) return;
+
+        if (e.y === 0) {
+            // Saving the value of last key.
+            msg._lastKey =  e.content;
+            return;
+        }
+        
+        // Fetching the value of last key.
+        key = msg._lastKey;
+        value = e.content.value;
+
+        if (key === 'stage' || key === 'to' || key === 'data') {
+            try {
+                value = JSUS.parse(e.content.value);
+            }
+            catch (ex) {
+                value = e.content.value;
+            }
+        }
+
+        // Validate input.
+        if (key === 'to') {
+            if ('number' === typeof value) {
+                value = '' + value;
+            }
+
+            if ((!JSUS.isArray(value) && 'string' !== typeof value) ||
+                ('string' === typeof value && value.trim() === '')) {
+
+                alert('Invalid "to" field');
+                msg._invalid = true;
+            }
+        }
+
+        else if (key === 'action') {
+            if (value.trim() === '') {
+                alert('Missing "action" field');
+                msg._invalid = true;
+            }
+            else {
+                value = value.toLowerCase();
+            }
+
+        }
+
+        else if (key === 'target') {
+            if (value.trim() === '') {
+                alert('Missing "target" field');
+                msg._invalid = true;
+            }
+            else {
+                value = value.toUpperCase();
+            }
+        }
+
+        // Assigning the value.
+        msg[key] = value;    
+    }
 
 })(node);
 /**
