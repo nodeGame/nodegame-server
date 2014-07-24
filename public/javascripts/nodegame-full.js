@@ -28259,7 +28259,7 @@ JSUS.extend(TIME);
 
     // ## Meta-data
 
-    MsgBar.version = '0.5';
+    MsgBar.version = '0.6';
     MsgBar.description = 'Send a nodeGame message to players';
 
     MsgBar.title = 'Send MSG';
