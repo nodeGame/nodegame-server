@@ -2909,10 +2909,14 @@ if (!JSON) {
      *   class, or undefined input are misspecified.
      */
     DOM.addClass = function(el, c) {
-        if (!el) return;
+        if (!el || !c) return;
         if (c instanceof Array) c = c.join(' ');
-        else if ('string' !== typeof c) return;
-        el.className = el.className ? el.className + ' ' + c : c;
+        if (el.className === '' || 'undefined' === typeof el.className) {
+            el.className = c;
+        }
+        else {
+            el.className += ' ' + c;
+        }
         return el;
     };
 
@@ -2987,61 +2991,6 @@ if (!JSON) {
             contentDocument.getElementsByTagName('html')[0];
     };
 
-    // ## RIGHT-CLICK
-
-    /**
-     * ### DOM.disableRightClick
-     *
-     * Disables the popup of the context menu by right clicking with the mouse 
-     *
-     * @param {Document} Optional. A target document object. Defaults, document
-     *
-     * @see DOM.enableRightClick
-     */
-    DOM.disableRightClick = function(doc) {
-        doc = doc || document;
-        if (doc.layers) {
-            doc.captureEvents(Event.MOUSEDOWN);
-            doc.onmousedown = function clickNS4(e) {
-                if (doc.layers || doc.getElementById && !doc.all) {
-                    if (e.which == 2 || e.which == 3) {
-                        return false;
-                    }
-                }
-            }
-        }
-        else if (doc.all && !doc.getElementById) {
-            doc.onmousedown = function clickIE4() {
-                if (event.button == 2) {
-                    return false;
-                }
-            }
-        }
-        doc.oncontextmenu = new Function("return false");
-    };
-
-    /**
-     * ### DOM.enableRightClick
-     *
-     * Enables the popup of the context menu by right clicking with the mouse 
-     *
-     * It unregisters the event handlers created by `DOM.disableRightClick` 
-     *
-     * @param {Document} Optional. A target document object. Defaults, document
-     *
-     * @see DOM.disableRightClick
-     */
-    DOM.enableRightClick = function(doc) {
-        doc = doc || document;
-        if (doc.layers) {
-            doc.releaseEvents(Event.MOUSEDOWN);
-            doc.onmousedown = null;
-        }
-        else if (doc.all && !doc.getElementById) {
-            doc.onmousedown = null;
-        }
-        doc.oncontextmenu = null;
-    };
 
     JSUS.extend(DOM);
 
@@ -4532,29 +4481,23 @@ JSUS.extend(TIME);
      *
      * Parses current querystring and returns the requested variable.
      *
-     * If no variable name is specified, returns the full query string.
+     * If no variable is specified, returns the full query string.
      * If requested variable is not found returns false.
      *
-     * @param {string} name Optional. If set, returns only the value
-     *   associated with this variable
-     * @param {string} referer Optional. If set, searches this string
+     * @param {string} variable Optional. If set, returns only the value
+     *    associated with this variable
      *
      * @return {string|boolean} The querystring, or a part of it, or FALSE
      *
      * Kudos:
      * @see http://stackoverflow.com/questions/901115/how-can-i-get-query-string-values-in-javascript
      */
-    PARSE.getQueryString = function(name, referer) {
+    PARSE.getQueryString = function(name) {
         var regex;
-        if (referer && 'string' !== typeof referer) {
-            throw new TypeError('JSUS.getQueryString: referer must be string ' +
-                                'or undefined.');
-        }
-        referer = referer || window.location.search;
-        if ('undefined' === typeof name) return referer;
+        if ('undefined' === typeof name) return window.location.search;
         name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
         regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
-        results = regex.exec(referer);
+        results = regex.exec(location.search);
         return results == null ? false : 
             decodeURIComponent(results[1].replace(/\+/g, " "))
     };
@@ -20501,11 +20444,8 @@ JSUS.extend(TIME);
     GameWindow.defaults = {};
 
     // Default settings.
-    GameWindow.defaults.textOnleave = '';
     GameWindow.defaults.promptOnleave = true;
     GameWindow.defaults.noEscape = true;
-    GameWindow.defaults.waitScreen = undefined;
-    GameWindow.defaults.disableRightClick = false;
     GameWindow.defaults.cacheDefaults = {
         loadCache:       true,
         storeCacheNow:   false,
@@ -20803,6 +20743,29 @@ JSUS.extend(TIME);
         this.screenState = node.constants.screenLevels.ACTIVE;
 
         /**
+         * ### GamwWindow.textOnleave
+         *
+         * Text that displayed to the users on the _onbeforeunload_ event
+         *
+         * By default it is null, that means that it is left to the browser
+         * default.
+         *
+         * Notice: some browser do not support displaying a custom text.
+         *
+         * @see GameWindow.promptOnleave
+         */
+        this.textOnleave = null;
+
+        /**
+         * ### GamwWindow.rightClickDisabled
+         *
+         * TRUE, if the right click context menu is disabled
+         *
+         * @see GameWindow.disableRightClick
+         */
+        this.rightClickDisabled = false;
+
+        /**
          * ### node.setup.window
          *
          * Setup handler for the node.window object
@@ -20810,15 +20773,21 @@ JSUS.extend(TIME);
          * @see node.setup
          */
         node.registerSetup('window', function(conf) {
-            conf = J.merge(W.conf, conf);
-            //if ('object' === typeof conf && !J.isEmpty(conf)) {
-                this.window.init(conf);
-                return conf;
-            //}
+            conf = conf || {};
+            if ('undefined' === typeof conf.promptOnleave) {
+                conf.promptOnleave = false;
+            }
+            if ('undefined' === typeof conf.noEscape) {
+                conf.noEscape = true;
+            }
+
+            this.window.init(conf);
+
+            return conf;
         });
 
         // Init.
-        this.init(GameWindow.defaults);
+        this.init();
     }
 
     // ## GameWindow methods
@@ -20835,13 +20804,13 @@ JSUS.extend(TIME);
      * @param {object} options Optional. Configuration options
      */
     GameWindow.prototype.init = function(options) {
-        var stageLevels;
-        var stageLevel;
-
         this.setStateLevel('INITIALIZING');
         options = options || {};
-        this.conf = J.merge(this.conf, options);
+        this.conf = J.merge(GameWindow.defaults, options);
 
+        if (this.conf.textOnleave) {
+            this.textOnleave = this.conf.textOnleave;
+        }
         if (this.conf.promptOnleave) {
             this.promptOnleave();
         }
@@ -20862,25 +20831,6 @@ JSUS.extend(TIME);
                 this.waitScreen = null;
             }
             this.waitScreen = new node.WaitScreen(this.conf.waitScreen);
-
-
-            stageLevels = node.constants.stageLevels;
-            stageLevel = node.game.getStageLevel();
-            if (stageLevel !== stageLevels.UNINITIALIZED) {
-                if (node.game.paused) {
-                    this.lockScreen(this.waitScreen.defaultTexts.paused);
-                }
-                else {
-                    if (stageLevel === stageLevels.DONE) {
-                        this.lockScreen(this.waitScreen.defaultTexts.waiting);
-                    }
-                    else if (stageLevel !== stageLevels.PLAYING) {
-                        this.lockScreen(this.waitScreen.defaultTexts.stepping);
-                    }
-                }
-            }
-
-
         }
         else if (this.waitScreen) {
             this.waitScreen.destroy();
@@ -20892,7 +20842,7 @@ JSUS.extend(TIME);
         }
 
         if (this.conf.disableRightClick) {
-            this.disableRightClick();
+            this.disableRightClick()
         }
         else if (this.conf.disableRightClick === false) {
             this.enableRightClick();
@@ -21350,7 +21300,7 @@ JSUS.extend(TIME);
                             'not found.');
         }
 
-        W.removeClass(this.headerElement, 'ng_header_position-[a-z-]*');
+        W.removeClass(this.headerElement, 'ng_header_position-[a-z\-]*');
         W.addClass(this.headerElement, validPositions[pos]);
 
         oldPos = this.headerPosition;
@@ -22046,7 +21996,7 @@ JSUS.extend(TIME);
             that.frameWindow = iframe.contentWindow;
             that.frameDocument = that.getIFrameDocument(iframe);
             // Disable right click in loaded iframe document, if necessary.
-            if (that.conf.rightClickDisabled) {
+            if (that.rightClickDisabled) {
                 J.disableRightClick(that.frameDocument);
             }
         }
@@ -22225,7 +22175,7 @@ JSUS.extend(TIME);
              W.getFrameRoot().insertBefore(W.headerElement, W.frameElement);
         }
 
-        W.removeClass(W.frameElement, 'ng_mainframe-header-[a-z-]*');
+        W.removeClass(W.frameElement, 'ng_mainframe-header-[a-z\-]*');
         switch(position) {
         case 'right':
         case 'left':
@@ -22294,7 +22244,6 @@ JSUS.extend(TIME);
                 return false;
             }
         };
-        this.conf.noEscape = true;
     };
 
     /**
@@ -22310,7 +22259,6 @@ JSUS.extend(TIME);
     GameWindow.prototype.restoreEscape = function(windowObj) {
         windowObj = windowObj || window;
         windowObj.document.onkeydown = null;
-        this.conf.noEscape = false;
     };
 
     /**
@@ -22327,7 +22275,7 @@ JSUS.extend(TIME);
      */
     GameWindow.prototype.promptOnleave = function(windowObj, text) {
         windowObj = windowObj || window;
-        text = 'undefined' !== typeof text ? text : this.conf.textOnleave;
+        text = 'undefined' !== typeof text ? text : this.textOnleave;
         
         windowObj.onbeforeunload = function(e) {
             e = e || window.event;
@@ -22338,8 +22286,6 @@ JSUS.extend(TIME);
             // For Chrome, Safari, IE8+ and Opera 12+
             return text;
         };
-
-        this.conf.promptOnleave = true;
     };
 
     /**
@@ -22356,7 +22302,6 @@ JSUS.extend(TIME);
     GameWindow.prototype.restoreOnleave = function(windowObj) {
         windowObj = windowObj || window;
         windowObj.onbeforeunload = null;
-        this.conf.promptOnleave = false;
     };
 
     /**
@@ -22372,7 +22317,7 @@ JSUS.extend(TIME);
             J.disableRightClick(this.getFrameDocument());
         }
         J.disableRightClick(document);
-        this.conf.rightClickDisabled = true;
+        this.rightClickDisabled = true;
     };
 
     /**
@@ -22388,7 +22333,7 @@ JSUS.extend(TIME);
              J.enableRightClick(this.getFrameDocument());
         }
         J.enableRightClick(document);
-        this.conf.rightClickDisabled = false;
+        this.rightClickDisabled = false;
     };
 
 })(
@@ -22618,7 +22563,6 @@ JSUS.extend(TIME);
     }
 
     function event_REALLY_DONE(text) {
-console.log('*** REALLY_DONE:', node.game.getStageLevel(), node.game.paused);
         text = text || W.waitScreen.defaultTexts.waiting;
         if (W.isScreenLocked()) {
             W.waitScreen.updateText(text);
@@ -22629,7 +22573,6 @@ console.log('*** REALLY_DONE:', node.game.getStageLevel(), node.game.paused);
     }
 
     function event_STEPPING(text) {
-console.log('*** STEPPING:', node.game.getStageLevel(), node.game.paused);
         text = text || W.waitScreen.defaultTexts.stepping;
         if (W.isScreenLocked()) {
             W.waitScreen.updateText(text);
@@ -22640,14 +22583,12 @@ console.log('*** STEPPING:', node.game.getStageLevel(), node.game.paused);
     }
 
     function event_PLAYING() {
-console.log('*** PLAYING:', node.game.getStageLevel(), node.game.paused);
         if (W.isScreenLocked()) {
             W.unlockScreen();
         }
     }
 
     function event_PAUSED(text) {
-console.log('*** PAUSED:', node.game.getStageLevel(), node.game.paused);
         text = text || W.waitScreen.defaultTexts.paused;
         if (W.isScreenLocked()) {
             W.waitScreen.beforePauseInnerHTML = 
@@ -22660,7 +22601,6 @@ console.log('*** PAUSED:', node.game.getStageLevel(), node.game.paused);
     }
 
     function event_RESUMED() {
-console.log('*** RESUMED:', node.game.getStageLevel(), node.game.paused);
         if (W.isScreenLocked()) {
             if (W.waitScreen.beforePauseInnerHTML !== null) {
                 W.waitScreen.updateText(W.waitScreen.beforePauseInnerHTML);
@@ -22759,11 +22699,11 @@ console.log('*** RESUMED:', node.game.getStageLevel(), node.game.paused);
      */
     WaitScreen.prototype.enable = function() {
         if (this.enabled) return;
-        node.events.ee.game.on('REALLY_DONE', event_REALLY_DONE);
-        node.events.ee.game.on('STEPPING', event_STEPPING);
-        node.events.ee.game.on('PLAYING', event_PLAYING);
-        node.events.ee.game.on('PAUSED', event_PAUSED);
-        node.events.ee.game.on('RESUMED', event_RESUMED);
+        node.on('REALLY_DONE', event_REALLY_DONE);
+        node.on('STEPPING', event_STEPPING);
+        node.on('PLAYING', event_PLAYING);
+        node.on('PAUSED', event_PAUSED);
+        node.on('RESUMED', event_RESUMED);
         this.enabled = true;
     };
 
@@ -22774,11 +22714,11 @@ console.log('*** RESUMED:', node.game.getStageLevel(), node.game.paused);
      */
     WaitScreen.prototype.disable = function() {
         if (!this.enabled) return;
-        node.events.ee.game.off('REALLY_DONE', event_REALLY_DONE);
-        node.events.ee.game.off('STEPPING', event_STEPPING);
-        node.events.ee.game.off('PLAYING', event_PLAYING);
-        node.events.ee.game.off('PAUSED', event_PAUSED);
-        node.events.ee.game.off('RESUMED', event_RESUMED);
+        node.off('REALLY_DONE', event_REALLY_DONE);
+        node.off('STEPPING', event_STEPPING);
+        node.off('PLAYING', event_PLAYING);
+        node.off('PAUSED', event_PAUSED);
+        node.off('RESUMED', event_RESUMED);
         this.enabled = false;    
     };
 
@@ -22873,9 +22813,7 @@ console.log('*** RESUMED:', node.game.getStageLevel(), node.game.paused);
      */
     WaitScreen.prototype.destroy = function() {
         if (W.isScreenLocked()) {
-            W.setScreenLevel('UNLOCKING');
             this.unlock();
-            W.setScreenLevel('ACTIVE');
         }
         if (this.waitingDiv) {
             this.waitingDiv.parentNode.removeChild(this.waitingDiv);
@@ -22888,7 +22826,6 @@ console.log('*** RESUMED:', node.game.getStageLevel(), node.game.paused);
     ('undefined' !== typeof node) ? node : module.parent.exports.node,
     ('undefined' !== typeof window) ? window : module.parent.exports.window
 );
-
 /**
  * # GameWindow selector module
  * Copyright(c) 2014 Stefano Balietti
@@ -24192,13 +24129,12 @@ console.log('*** RESUMED:', node.game.getStageLevel(), node.game.paused);
     function addSpecialCells(data) {
         var out, i, len;
         out = [];
-        i = -1;
-        len = data.length;
+        i = -1, len = data.length;
         for ( ; ++i < len ; ) {
             out.push({content: data[i]});
         }
         return out;
-    }
+    };
 
     /**
      * ## Table constructor
@@ -24513,8 +24449,7 @@ console.log('*** RESUMED:', node.game.getStageLevel(), node.game.paused);
         if (!J.isArray(data)) data = [data];
 
         // Loop Dim 1.
-        i = -1;
-        lenI = data.length;
+        i = -1, lenI = data.length;
         for ( ; ++i < lenI ; ) {
 
             if (!J.isArray(data[i])) {
@@ -24523,8 +24458,7 @@ console.log('*** RESUMED:', node.game.getStageLevel(), node.game.paused);
             }
             else {
                 // Loop Dim 2.
-                j = -1;
-                lenJ = data[i].length;
+                j = -1, lenJ = data[i].length;
                 for ( ; ++j < lenJ ; ) {
                     if (dim === 'x') this.add(data[i][j], x + i, y + j, 'x');
                     else this.add(data[i][j], x + j, y + i, 'y');
@@ -24545,7 +24479,7 @@ console.log('*** RESUMED:', node.game.getStageLevel(), node.game.paused);
      * @param {object} content The content of the cell or Cell object
      */
     Table.prototype.add = function(content, x, y, dim) {
-        var cell;
+        var cell, x, y;
         if (!validateInput('addData', content, x, y)) return;
         if ((dim && 'string' !== typeof dim) ||
             (dim && 'undefined' === typeof this.pointers[dim])) {
@@ -24670,8 +24604,7 @@ console.log('*** RESUMED:', node.game.getStageLevel(), node.game.paused);
             if (this.left && this.left.length) {
                 TR.appendChild(document.createElement('th'));
             }
-            i = -1;
-            len = this.header.length;
+            i = -1, len = this.header.length;
             for ( ; ++i < len ; ) {
                 TR.appendChild(this.renderCell(this.header[i], 'th'));
             }
@@ -24694,8 +24627,7 @@ console.log('*** RESUMED:', node.game.getStageLevel(), node.game.paused);
             old_left = 0;
 
 
-            i = -1;
-            len = this.db.length;
+            i = -1, len = this.db.length;
             for ( ; ++i < len ; ) {
 
                 if (trid !== this.db[i].x) {
@@ -24746,8 +24678,7 @@ console.log('*** RESUMED:', node.game.getStageLevel(), node.game.paused);
                 TR.appendChild(TD);
             }
 
-            i = -1;
-            len = this.footer.length;
+            i = -1, len = this.footer.length;
             for ( ; ++i < len ; ) {
                 TR.appendChild(this.renderCell(this.footer[i]));
             }
@@ -28244,14 +28175,13 @@ console.log('*** RESUMED:', node.game.getStageLevel(), node.game.paused);
 
     // ## Meta-data
 
-    MsgBar.version = '0.5';
+    MsgBar.version = '0.6';
     MsgBar.description = 'Send a nodeGame message to players';
 
     MsgBar.title = 'Send MSG';
     MsgBar.className = 'msgbar';
 
     function MsgBar(options) {
-
         this.id = options.id || MsgBar.className;
 
         this.recipient = null;
@@ -28360,71 +28290,91 @@ console.log('*** RESUMED:', node.game.getStageLevel(), node.game.paused);
     };
 
     MsgBar.prototype.parse = function() {
-        var msg, that, key, value, gameMsg, invalid;
-        var tableFunction;
+        var msg, gameMsg
 
         msg = {};
-        that = this;
-        key = null;
-        value = null;
-        invalid = false;
 
-        tableFunction = function(e) {
-            if (invalid) return;
-
-            if (e.y === 0) {
-                key = e.content;
-                msg[key] = '';
-            }
-            else if (e.y === 1) {
-
-                value = e.content.value;
-                if (key === 'stage' || key === 'to' || key === 'data') {
-                    try {
-                        value = JSUS.parse(e.content.value);
-                    }
-                    catch (ex) {
-                        value = e.content.value;
-                    }
-                }
-
-                if (key === 'to' && 'number' === typeof value) {
-                    value = '' + value;
-                }
-
-                // Validate input.
-                if (key === 'to' &&
-                    ((!JSUS.isArray(value) && 'string' !== typeof value) ||
-                      value.trim() === '')) {
-
-                    alert('Invalid "to" field');
-                    invalid = true;
-                }
-
-                if (key === 'action' && value.trim() === '') {
-                    alert('Missing "action" field');
-                    invalid = true;
-                }
-
-                if (key === 'target' && value.trim() === '') {
-                    alert('Missing "target" field');
-                    invalid = true;
-                }
-
-                msg[key] = value;
-            }
-        };
-
-        this.table.forEach(tableFunction);
-        this.tableAdvanced.forEach(tableFunction);
-
-        if (invalid) return null;
+        this.table.forEach(validateTableMsg, msg);
+        if (msg._invalid) return null;
+        this.tableAdvanced.forEach(validateTableMsg, msg);
+        if (msg._invalid) return null;
+        delete msg._lastKey;
+        delete msg._invalid;
         gameMsg = node.msg.create(msg);
-        node.info(gameMsg, 'MsgBar sent: ');
+        node.info('MsgBar msg created. ' +  gameMsg.toSMS());
         return gameMsg;
     };
 
+
+    // # Helper Function.
+
+    function validateTableMsg(e, msg) {
+        var key, value;
+
+        if (msg._invalid) return;
+
+        if (e.y === 2) return;
+
+        if (e.y === 0) {
+            // Saving the value of last key.
+            msg._lastKey =  e.content;
+            return;
+        }
+
+        // Fetching the value of last key.
+        key = msg._lastKey;
+        value = e.content.value;
+
+        if (key === 'stage' || key === 'to' || key === 'data') {
+            try {
+                value = JSUS.parse(e.content.value);
+            }
+            catch (ex) {
+                value = e.content.value;
+            }
+        }
+
+        // Validate input.
+        if (key === 'to') {
+            if ('number' === typeof value) {
+                value = '' + value;
+            }
+
+            if ((!JSUS.isArray(value) && 'string' !== typeof value) ||
+                ('string' === typeof value && value.trim() === '')) {
+
+                alert('Invalid "to" field');
+                msg._invalid = true;
+            }
+        }
+
+        else if (key === 'action') {
+            if (value.trim() === '') {
+                alert('Missing "action" field');
+                msg._invalid = true;
+            }
+            else {
+                value = value.toLowerCase();
+            }
+
+        }
+
+        else if (key === 'target') {
+            if (value.trim() === '') {
+                alert('Missing "target" field');
+                msg._invalid = true;
+            }
+            else {
+                value = value.toUpperCase();
+            }
+        }
+
+        // Assigning the value.
+        msg[key] = value;
+    }
+
 })(node);
+
 /**
  * # NDDBBrowser widget for nodeGame
  * Copyright(c) 2014 Stefano Balietti
@@ -29199,88 +29149,63 @@ console.log('*** RESUMED:', node.game.getStageLevel(), node.game.paused);
 
     node.widgets.register('StateBar', StateBar);
 
-    // ## Defaults
-
-    StateBar.defaults = {};
-    StateBar.defaults.id = 'statebar';
-    StateBar.defaults.fieldset = { legend: 'Change Game State' };
-
     // ## Meta-data
 
     StateBar.version = '0.3.2';
-    StateBar.description = 'Provides a simple interface to change the stage of a game.';
+    StateBar.description =
+        'Provides a simple interface to change the stage of a game.';
+
+    StateBar.title = 'Change GameStage';
+    StateBar.className = 'statebar';
 
     function StateBar(options) {
-        this.id = options.id;
+        this.id = options.id || StateBar.className;
         this.recipient = null;
     }
 
-    StateBar.prototype.getRoot = function () {
-        return this.root;
-    };
+    StateBar.prototype.append = function() {
+        var prefix, that;
+        var idButton, idStageField, idRecipientField;
+        var sendButton, stageField, recipientField;
 
-    StateBar.prototype.append = function (root) {
+        prefix = this.id + '_';
 
-        var PREF = this.id + '_';
+        idButton = prefix + 'sendButton';
+        idStageField = prefix + 'stageField';
+        idRecipientField = prefix + 'recipient';
 
-        var idButton = PREF + 'sendButton',
-        idStateSel = PREF + 'stateSel',
-        idRecipient = PREF + 'recipient';
+        this.bodyDiv.appendChild(document.createTextNode('Stage:'));
+        stageField = W.getTextInput(idStageField);
+        this.bodyDiv.appendChild(stageField);
 
-        var sendButton = node.window.addButton(root, idButton);
-        var stateSel = node.window.addStateSelector(root, idStateSel);
-        this.recipient = node.window.addRecipientSelector(root, idRecipient);
+        this.bodyDiv.appendChild(document.createTextNode(' To:'));
+        recipientField = W.getTextInput(idRecipientField);
+        this.bodyDiv.appendChild(recipientField);
 
-        var that = this;
+        sendButton = node.window.addButton(this.bodyDiv, idButton);
 
-        node.on('UPDATED_PLIST', function() {
-            node.window.populateRecipientSelector(that.recipient, node.game.pl);
-        });
+        that = this;
+
+        //node.on('UPDATED_PLIST', function() {
+        //    node.window.populateRecipientSelector(that.recipient, node.game.pl);
+        //});
 
         sendButton.onclick = function() {
+            var to;
+            var stage;
 
             // Should be within the range of valid values
             // but we should add a check
-            var to = that.recipient.value;
+            to = recipientField.value;
 
-            // STATE.STEP:ROUND
-            var parseState = /^(\d+)(?:\.(\d+))?(?::(\d+))?$/;
-
-            var result = parseState.exec(stateSel.value);
-            var state, step, round, stateEvent, stateMsg;
-            if (result !== null) {
-                // Note: not result[0]!
-                state = result[1];
-                step = result[2] || 1;
-                round = result[3] || 1;
-
-                node.log('Parsed State: ' + result.join("|"));
-
-                state = new node.GameStage({
-                    state: state,
-                    step: step,
-                    round: round
-                });
-
-                // Self Update
-                if (to === 'ROOM') {
-                    stateEvent = node.IN + node.action.SAY + '.STATE';
-                    stateMsg = node.msg.createSTATE(stateEvent, state);
-                    node.emit(stateEvent, stateMsg);
-                }
-
-                // Update Others
-                stateEvent = node.OUT + node.action.SAY + '.STATE';
-                node.emit(stateEvent, state, to);
+            try {
+                stage = new node.GameStage(stageField.value);
+                node.remoteCommand('goto_step', to, stage);
             }
-            else {
-                node.err('Not valid state. Not sent.');
-                node.socket.sendTXT('E: not valid state. Not sent');
+            catch (e) {
+                node.err('Invalid stage, not sent: ' + e);
             }
         };
-
-        this.root = root;
-        return root;
     };
 
 })(node);
@@ -29512,13 +29437,43 @@ console.log('*** RESUMED:', node.game.getStageLevel(), node.game.paused);
         this.options.update = ('undefined' === typeof this.options.update) ?
             1000 : this.options.update;
 
-        this.id = options.id;
-
+        /**
+         *  ### gameTimer
+         *  
+         *  The timer which counts down the game time.
+         *
+         *  @see node.timer.createTimer  
+         */
         this.gameTimer = null;
         
-        // The DIV in which to display the timer.
-        this.timerDiv = null;   
-
+        /**
+         *  ### mainBox
+         *  The 'TimerBox' which displays the main timer.
+         *
+         *  @see TimerBox
+         */
+        this.mainBox = null;   
+        
+        /**
+         *  ### waitBox
+         *  The 'TimerBox' which displays the wait timer.
+         *
+         *  @see TimerBox         
+         */
+        this.waitBox = null;
+        
+        /**
+         *  ### activeBox
+         *  The 'TimerBox' in which to display the time.
+         *  
+         *  This variable is always a reference to either 'waitBox' or 
+         *  'mainBox'. 
+         *
+         *  @see TimerBox      
+         */
+        this.activeBox = null;
+        
+        this.isInitialized = false;
         this.init(this.options);
     }
 
@@ -29536,21 +29491,20 @@ console.log('*** RESUMED:', node.game.getStageLevel(), node.game.paused);
             options.hooks = [];
         }
 
-        options.hooks.push({
-            hook: this.updateDisplay,
-            ctx: this
-        });
+        // only push this hook once
+        if (!this.isInitialized) {
+            options.hooks.push({
+                hook: this.updateDisplay,
+                ctx: this
+            });
+        }
 
         if (!this.gameTimer) {
             this.gameTimer = node.timer.createTimer();
         }
-        
+
         this.gameTimer.init(options);
-
-        if (this.timerDiv) {
-            this.timerDiv.className = options.className || '';
-        }
-
+        
         t = this.gameTimer;
         node.session.register('visualtimer', {
             set: function(p) {
@@ -29559,7 +29513,7 @@ console.log('*** RESUMED:', node.game.getStageLevel(), node.game.paused);
             get: function() {
                 return {
                     startPaused: t.startPaused,
-	            status: t.status,
+	                status: t.status,
                     timeLeft: t.timeLeft,
                     timePassed: t.timePassed,
                     update: t.update,
@@ -29568,53 +29522,183 @@ console.log('*** RESUMED:', node.game.getStageLevel(), node.game.paused);
                 };
             }
         });
-        
         this.options = options;
+        
+        if(!this.options.mainBoxOptions) {
+            this.options.mainBoxOptions = {};
+        }
+        if(!this.options.waitBoxOptions) {
+            this.options.waitBoxOptions = {};
+        }
+        
+        J.mixout(this.options.mainBoxOptions,
+                {classNameBody: options.className, hideTitle: true});
+        J.mixout(this.options.waitBoxOptions,
+                {title: 'Max. wait timer', 
+                classNameTitle: 'waitTimerTitle',
+                classNameBody: 'waitTimerBody', hideBox: true});
+                       
+        if (!this.mainBox) {
+            this.mainBox = new TimerBox(this.options.mainBoxOptions);
+        }
+        else {
+            this.mainBox.init(this.options.mainBoxOptions);
+        }
+        if (!this.waitBox) {
+            this.waitBox = new TimerBox(this.options.waitBoxOptions);
+        } 
+        else {
+            this.waitBox.init(this.options.waitBoxOptions);
+        }
+        
+        this.activeBox = options.activeBox || this.mainBox;
+        
+        this.isInitialized = true;
     };
 
     VisualTimer.prototype.append = function() {
-        this.timerDiv = node.window.addDiv(this.bodyDiv, this.id + '_div');
+        this.bodyDiv.appendChild(this.mainBox.boxDiv);
+        this.bodyDiv.appendChild(this.waitBox.boxDiv);
+      
+        this.activeBox = this.mainBox;
         this.updateDisplay();
     };
-
+    /**
+     *  ## VisualTimer.updateDisplay
+     *  Changes 'activeBox' to display current time of 'gameTimer'
+     *
+     *  @see TimerBox.bodyDiv      
+     */
     VisualTimer.prototype.updateDisplay = function() {
         var time, minutes, seconds;
         if (!this.gameTimer.milliseconds || this.gameTimer.milliseconds === 0) {
-            this.timerDiv.innerHTML = '00:00';
+            this.activeBox.bodyDiv.innerHTML = '00:00';
             return;
         }
         time = this.gameTimer.milliseconds - this.gameTimer.timePassed;
         time = J.parseMilliseconds(time);
         minutes = (time[2] < 10) ? '' + '0' + time[2] : time[2];
         seconds = (time[3] < 10) ? '' + '0' + time[3] : time[3];
-        this.timerDiv.innerHTML = minutes + ':' + seconds;
+        this.activeBox.bodyDiv.innerHTML = minutes + ':' + seconds;
     };
 
+    /**
+     *  ## VisualTimer.start
+     *  Starts the timer.
+     *
+     *  @see VisualTimer.updateDisplay
+     *  @see GameTimer.start
+     */
     VisualTimer.prototype.start = function() {
-        this.updateDisplay();
+        this.updateDisplay();        
         this.gameTimer.start();
     };
 
+    /**
+     *  ## VisualTimer.restart
+     *  Restarts the timer with new options
+     *
+     *  @param {object} options Configuration object
+     *
+     *  @see VisualTimer.init
+     *  @see VisualTimer.start
+     *  @see VisualTimer.stop
+     */
     VisualTimer.prototype.restart = function(options) {
+        this.stop();
         this.init(options);
         this.start();
     };
 
+    /**
+     *  ## VisualTimer.stop
+     *  Stops the timer displRay and stores the time left in 'activeBox.timeLeft'
+     *
+     *  @param {object} options Configuration object
+     *
+     *  @see GameTimer.isStopped
+     *  @see GameTimer.stop
+     */
     VisualTimer.prototype.stop = function(options) {
         if (!this.gameTimer.isStopped()) {
+            this.activeBox.timeLeft = this.gameTimer.timeLeft;
             this.gameTimer.stop();
-        }
+        }  
     };
-
-    VisualTimer.prototype.resume = function(options) {
-        this.gameTimer.resume();
-    };
-
-    VisualTimer.prototype.setToZero = function() {
-        this.stop();
-        this.timerDiv.innerHTML = '0:0';
+    /**
+     *  ## VisualTimer.switchActiveBoxTo
+     *  Switches the display of the 'gameTimer' into the 'TimerBox' 'box'.
+     *
+     *  Stores 'gameTimer.timeLeft' into 'activeBox' and then switches
+     *  'activeBox' to reference 'box'.
+     *
+     *  @param {TimerBox} box TimerBox in which to display 'gameTimer' time
+     */
+    VisualTimer.prototype.switchActiveBoxTo = function(box) {
+        this.activeBox.timeLeft = this.gameTimer.timeLeft || 0;
+        this.activeBox = box;
+        this.updateDisplay();
     };
     
+    VisualTimer.prototype.startWaiting = function(options) {
+        if(typeof options === 'undefined') {
+            options = {};
+        }
+        options = J.clone(options);
+        if (typeof options.milliseconds === 'undefined') {
+            options.milliseconds = this.gameTimer.timeLeft;
+        }
+        if(typeof options.mainBoxOptions === 'undefined') {
+            options.mainBoxOptions = {};
+        }
+        if(typeof options.waitBoxOptions === 'undefined') {
+            options.waitBoxOptions = {};
+        }
+        options.mainBoxOptions.classNameBody = 'strike';
+        options.mainBoxOptions.timeLeft = this.gameTimer.timeLeft || 0;
+        options.activeBox = this.waitBox;
+        options.waitBoxOptions.hideBox = false;
+        this.restart(options);
+    };
+    
+    VisualTimer.prototype.startTiming = function(options) {
+        if(typeof options === 'undefined') {
+            options = {};
+        }
+        options = J.clone(options);
+        if(typeof options.mainBoxOptions === 'undefined') {
+            options.mainBoxOptions = {};
+        }
+        if(typeof options.waitBoxOptions === 'undefined') {
+            options.waitBoxOptions = {};
+        }
+        options.activeBox = this.mainBox;
+        options.waitBoxOptions.timeLeft = this.gameTimer.timeLeft || 0;
+        options.waitBoxOptions.hideBox = true;
+        options.mainBoxOptions.classNameBody = '';
+        this.restart(options)
+    };
+    
+    /**
+     *  ## VisualTimer.resume
+     *  Resumes the 'gameTimer'
+     *
+     *  @see GameTimer.resume
+     */
+    VisualTimer.prototype.resume = function() {
+        this.gameTimer.resume();
+    };
+    /**
+     *  ## VisualTimer.setToZero
+     *  stops 'gameTimer' and sets 'activeBox' to display '00:00'
+     *
+     *  @see GameTimer.resume
+     */
+    VisualTimer.prototype.setToZero = function() {
+        this.stop();
+        this.activeBox.bodyDiv.innerHTML = '00:00';
+        this.activeBox.setClassNameBody('strike');
+    };
     /**
      * ## VisualTimer.doTimeUp
      *
@@ -29633,6 +29717,9 @@ console.log('*** RESUMED:', node.game.getStageLevel(), node.game.paused);
 
     VisualTimer.prototype.listeners = function() {
         var that = this;
+        /* On 'PLAYING' the 'mainBox' is switched to, unhidden and unstriked.
+         * the 'waitBox' is hidden. The timer is restarted.
+         */
         node.on('PLAYING', function() {
             var stepObj, timer, options;
             stepObj = node.game.getCurrentStep();
@@ -29640,17 +29727,15 @@ console.log('*** RESUMED:', node.game.getStageLevel(), node.game.paused);
             timer = stepObj.timer;
             if (timer) {
                 options = processOptions(timer, this.options);
-                that.gameTimer.init(options);
-                that.timerDiv.className = '';
-                that.start();
+                that.startTiming(options);
             }
         });
 
         node.on('REALLY_DONE', function() {
-            that.stop();
-            that.timerDiv.className = 'strike';
-        });
-
+            if(!that.gameTimer.isStopped()) {
+                that.startWaiting();   
+            }
+       });
     };
 
     VisualTimer.prototype.destroy = function() {
@@ -29705,6 +29790,80 @@ console.log('*** RESUMED:', node.game.getStageLevel(), node.game.paused);
         }
         return options;
     }
+    
+    function TimerBox(options) {
+        this.boxDiv = null;
+        this.titleDiv = null;
+        this.bodyDiv = null;
+        
+        this.timeLeft = null;
+                
+        this.boxDiv = node.window.getDiv();
+        this.titleDiv = node.window.addDiv(this.boxDiv);
+        this.bodyDiv = node.window.addDiv(this.boxDiv);
+        
+        this.init(options);
+    
+    }
+    
+    TimerBox.prototype.init = function(options) {        
+        if (options) {
+            if (options.hideTitle) {
+                this.hideTitle();
+            }
+            else {
+                this.unhideTitle();
+            }
+            if (options.hideBody) {
+                this.hideBody();
+            }
+            else {
+                this.unhideBody();
+            }
+            if (options.hideBox) {
+                this.hideBox();
+            }   
+            else {
+                this.unhideBox();
+            }
+        }
+
+        this.setTitle(options.title || '');
+        this.setClassNameTitle(options.classNameTitle || '');
+        this.setClassNameBody(options.classNameBody || '');
+        
+        if(options.timeLeft) {
+            this.timeLeft = options.timeLeft;
+        }
+    };
+    
+    TimerBox.prototype.hideBox = function() {
+        this.boxDiv.style.display = 'none';
+    };
+    TimerBox.prototype.unhideBox = function() {
+        this.boxDiv.style.display = '';
+    };
+    TimerBox.prototype.hideTitle = function() {
+        this.titleDiv.style.display = 'none';
+    };
+    TimerBox.prototype.unhideTitle = function() {
+        this.titleDiv.style.display = '';
+    };
+    TimerBox.prototype.hideBody = function() {
+        this.bodyDiv.style.display = 'none';
+    };
+    TimerBox.prototype.unhideBody = function() {
+        this.bodyDiv.style.display = '';
+    };
+    TimerBox.prototype.setTitle = function(title) {
+        this.titleDiv.innerHTML = title;
+    };
+    TimerBox.prototype.setClassNameTitle = function(className) {
+        this.titleDiv.className = className;
+    };
+    TimerBox.prototype.setClassNameBody = function(className) {
+        this.bodyDiv.className = className;
+    };
 
 })(node);
 
