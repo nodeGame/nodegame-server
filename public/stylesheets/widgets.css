@@ -21,6 +21,14 @@
     text-align: center;
 }
 
+.visualtimer > .panel-body > div > div.waitTimerTitle {
+    font-size: 15px;
+}
+
+.visualtimer > .panel-body > div > div.waitTimer {
+    font-size: 20px;
+    text-align: center;
+}
 
 /* Visual State */
 

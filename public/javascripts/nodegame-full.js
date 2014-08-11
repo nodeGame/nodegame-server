@@ -9552,11 +9552,7 @@ JSUS.extend(TIME);
         else if ('number' === typeof gs) {
             if (gs % 1 !== 0) {
                throw new TypeError('GameStage constructor: gs cannot be ' +
-                                   'a non-integer number.'); 
-            }
-            if (gs < 0) {
-                throw new TypeError('GameStage constructor: gs cannot be ' +
-                                    'a negative number.');
+                                   'a non-integer number.');
             }
             this.stage = gs;
             this.step = 1;
@@ -9567,27 +9563,35 @@ JSUS.extend(TIME);
             throw new TypeError('GameStage constructor: gs must be string, ' +
                                 'object, a positive number, or undefined.');
         }
-        
+
         // Final sanity checks.
 
         if ('undefined' === typeof this.stage) {
             throw new Error('GameStage constructor: stage cannot be ' +
-                            'undefined.'); 
+                            'undefined.');
         }
         if ('undefined' === typeof this.step) {
             throw new Error('GameStage constructor: step cannot be ' +
-                            'undefined.'); 
+                            'undefined.');
         }
         if ('undefined' === typeof this.round) {
             throw new Error('GameStage constructor: round cannot be ' +
-                            'undefined.'); 
+                            'undefined.');
         }
-        
+
+        if (('number' === typeof this.stage && this.stage < 0) ||
+            ('number' === typeof this.step  && this.step < 0) ||
+            ('number' === typeof this.round && this.round < 0)) {
+
+            throw new TypeError('GameStage constructor: no field can be ' +
+                                'a negative number.');
+        }
+
         // Either 0.0.0 or no 0 is allowed.
         if (!(this.stage === 0 && this.step === 0 && this.round === 0)) {
             if (this.stage === 0 || this.step === 0 || this.round === 0) {
                 throw new Error('GameStage constructor: non-sensical game ' +
-                                'stage: ' + this.toString()); 
+                                'stage: ' + this.toString());
             }
         }
     }
@@ -9702,7 +9706,7 @@ JSUS.extend(TIME);
                 result = gs1.step - gs2.step;
             }
         }
-        
+
         return result;
     };
 
@@ -9724,6 +9728,7 @@ JSUS.extend(TIME);
     'undefined' != typeof node ? node : module.exports,
     'undefined' != typeof node ? node : module.parent.exports
 );
+
 /**
  * # PlayerList
  * Copyright(c) 2014 Stefano Balietti
@@ -14416,7 +14421,7 @@ JSUS.extend(TIME);
      */
     Game.prototype.gotoStep = function(nextStep) {
         var curStep;
-        var nextStepObj, nextStageObj;
+        var curStageObj, nextStepObj, nextStageObj;
         var ev, node;
         var property, handler;
         var minThreshold, maxThreshold, exactThreshold;
@@ -14475,17 +14480,24 @@ JSUS.extend(TIME);
 
             node.emit('STEPPING');
 
+            // Check for stage/step existence:
+            nextStageObj = this.plot.getStage(nextStep);
+            if (!nextStageObj) return false;
+            nextStepObj = this.plot.getStep(nextStep);
+            if (!nextStepObj) return false;
+
             // stageLevel needs to be changed (silent), otherwise it stays DONE
             // for a short time in the new game stage:
             this.setStageLevel(constants.stageLevels.UNINITIALIZED, true);
             this.setCurrentGameStage(nextStep);
 
-            // If we enter a new stage (including repeating the same stage)
-            // we need to update a few things:
+            // If we enter a new stage we need to update a few things:
             //if (this.plot.stepsToNextStage(curStep) === 1) {
-            if (curStep.stage !== nextStep.stage) {
-                nextStageObj = this.plot.getStage(nextStep);
-                if (!nextStageObj) return false;
+            //if (curStep.stage !== nextStep.stage) {
+            curStageObj = this.plot.getStage(curStep);
+            if (!curStageObj || nextStageObj.id !== curStageObj.id) {
+                //nextStageObj = this.plot.getStage(nextStep);
+                //if (!nextStageObj) return false;
 
                 // Store time:
                 this.node.timer.setTimestamp('stage', (new Date()).getTime());
@@ -14507,9 +14519,6 @@ JSUS.extend(TIME);
                     }
                 }
             }
-
-            nextStepObj = this.plot.getStep(nextStep);
-            if (!nextStepObj) return false;
 
             // Execute the init function of the step, if any:
             if (nextStepObj.hasOwnProperty('init')) {
@@ -16978,7 +16987,7 @@ JSUS.extend(TIME);
     Timer.prototype.createTimer = function(options) {
         var gameTimer, pausedCb, resumedCb;
         options = options || {};
-        options.name = options.name || 
+        options.name = options.name ||
             J.uniqueKey(this.timers, 'timer_' + J.randomInt(0, 10000000));
 
         if (this.timers[options.name]) {
@@ -17017,7 +17026,7 @@ JSUS.extend(TIME);
         // unregistered later:
         gameTimer.timerPausedCallback = pausedCb;
         gameTimer.timerResumedCallback = resumedCb;
-        
+
         // Add a reference into this.timers.
         this.timers[gameTimer.name] = gameTimer;
 
@@ -17042,18 +17051,17 @@ JSUS.extend(TIME);
                                 'found: ' + gameTimer + '.');
             }
             gameTimer = this.timers[gameTimer];
-            
         }
         if ('object' !== typeof gameTimer) {
             throw new Error('node.timer.destroyTimer: gameTimer must be ' +
                             'string or object.');
         }
-        
+
         // Stop timer:
         if (!gameTimer.isStopped()) {
             gameTimer.stop();
         }
-        
+
         // Detach listeners:
         this.node.off('PAUSED', gameTimer.timerPausedCallback);
         this.node.off('RESUMED', gameTimer.timerResumedCallback);
@@ -17103,9 +17111,9 @@ JSUS.extend(TIME);
             };
         }
 
-        tentativeName = emit 
+        tentativeName = emit
             ? 'rndEmit_' + hook + '_' + J.randomInt(0, 1000000)
-            : 'rndExec_' + J.randomInt(0, 1000000);       
+            : 'rndExec_' + J.randomInt(0, 1000000);
 
         // Create and run timer:
         timerObj = this.createTimer({
@@ -17241,19 +17249,19 @@ JSUS.extend(TIME);
         }
 
         timeFrom = this.timestamps[nameFrom];
-        
-        if ('undefined' === typeof timeFrom || timeFrom === null) {            
+
+        if ('undefined' === typeof timeFrom || timeFrom === null) {
             throw new Error('Timer.getTimeDiff: nameFrom does not resolve to ' +
                             'a valid timestamp.');
         }
 
         timeTo = this.timestamps[nameTo];
-        
-        if ('undefined' === typeof timeTo || timeTo === null) {            
+
+        if ('undefined' === typeof timeTo || timeTo === null) {
             throw new Error('Timer.getTimeDiff: nameTo does not resolve to ' +
                             'a valid timestamp.');
         }
-        
+
         return timeTo - timeFrom;
     };
 
@@ -17437,7 +17445,7 @@ JSUS.extend(TIME);
          * @see GameTimer.fire
          */
         this.hooks = [];
-        
+
         // Init!
         this.init();
     }
@@ -17500,7 +17508,7 @@ JSUS.extend(TIME);
             }
         }
 
-        // Set startPaused option. if specified. Defaults, FALSE.        
+        // Set startPaused option. if specified. Defaults, FALSE.
         this.startPaused = 'undefined' !== options.startPaused ?
             options.startPaused : false;
 
@@ -17560,6 +17568,10 @@ JSUS.extend(TIME);
         error = checkInitialized(this);
         if (error !== null) {
             throw new Error('GameTimer.start: ' + error);
+        }
+
+        if (this.isRunning()) {
+            throw new Error('GameTimer.start: timer is already running.');
         }
 
         this.status = GameTimer.LOADING;
@@ -17624,6 +17636,7 @@ JSUS.extend(TIME);
         if (this.isRunning()) {
             clearInterval(this.timerId);
             clearTimeout(this.timerId);
+            this.timerId = null;
 
             this.status = GameTimer.PAUSED;
 
@@ -17695,7 +17708,6 @@ JSUS.extend(TIME);
      * If the timer was paused or running, clear the interval, sets the
      * status property to `GameTimer.STOPPED`, and reset the time passed
      * and time left properties
-     *
      */
     GameTimer.prototype.stop = function() {
         if (this.isStopped()) {
@@ -17704,6 +17716,7 @@ JSUS.extend(TIME);
 
         this.status = GameTimer.STOPPED;
         clearInterval(this.timerId);
+        this.timerId = null;
         this.timePassed = 0;
         this.timeLeft = null;
     };
@@ -17721,6 +17734,9 @@ JSUS.extend(TIME);
      * @see GameTimer.init
      */
     GameTimer.prototype.restart = function(options) {
+        if (!this.isStopped()) {
+            this.stop();
+        }
         this.init(options);
         this.start();
     };
@@ -20135,13 +20151,20 @@ JSUS.extend(TIME);
          *
          */
         this.events.ng.on(CMD + gcommands.goto_step, function(step) {
+            var gs;
+
             if (!node.game.isSteppable()) {
                 node.err('Game cannot be stepped.');
                 return;
             }
 
             node.emit('BEFORE_GAMECOMMAND', gcommands.goto_step, step);
-            node.game.gotoStep(new GameStage(step));
+            gs = new GameStage(step);
+            if (!node.game.plot.getStep(gs)) {
+                node.err('Non-existing game step.');
+                return;
+            }
+            node.game.gotoStep(gs);
         });
 
         /**
@@ -28266,7 +28289,6 @@ JSUS.extend(TIME);
     MsgBar.className = 'msgbar';
 
     function MsgBar(options) {
-
         this.id = options.id || MsgBar.className;
 
         this.recipient = null;
@@ -28390,11 +28412,12 @@ JSUS.extend(TIME);
         return gameMsg;
     };
 
-    // # Helper Function.
 
+    // # Helper Function.
 
     function validateTableMsg(e, msg) {
         var key, value;
+
         if (msg._invalid) return;
 
         if (e.y === 2) return;
@@ -28404,7 +28427,7 @@ JSUS.extend(TIME);
             msg._lastKey =  e.content;
             return;
         }
-        
+
         // Fetching the value of last key.
         key = msg._lastKey;
         value = e.content.value;
@@ -28454,10 +28477,11 @@ JSUS.extend(TIME);
         }
 
         // Assigning the value.
-        msg[key] = value;    
+        msg[key] = value;
     }
 
 })(node);
+
 /**
  * # NDDBBrowser widget for nodeGame
  * Copyright(c) 2014 Stefano Balietti
@@ -29232,88 +29256,63 @@ JSUS.extend(TIME);
 
     node.widgets.register('StateBar', StateBar);
 
-    // ## Defaults
-
-    StateBar.defaults = {};
-    StateBar.defaults.id = 'statebar';
-    StateBar.defaults.fieldset = { legend: 'Change Game State' };
-
     // ## Meta-data
 
     StateBar.version = '0.3.2';
-    StateBar.description = 'Provides a simple interface to change the stage of a game.';
+    StateBar.description =
+        'Provides a simple interface to change the stage of a game.';
+
+    StateBar.title = 'Change GameStage';
+    StateBar.className = 'statebar';
 
     function StateBar(options) {
-        this.id = options.id;
+        this.id = options.id || StateBar.className;
         this.recipient = null;
     }
 
-    StateBar.prototype.getRoot = function () {
-        return this.root;
-    };
+    StateBar.prototype.append = function() {
+        var prefix, that;
+        var idButton, idStageField, idRecipientField;
+        var sendButton, stageField, recipientField;
 
-    StateBar.prototype.append = function (root) {
+        prefix = this.id + '_';
 
-        var PREF = this.id + '_';
+        idButton = prefix + 'sendButton';
+        idStageField = prefix + 'stageField';
+        idRecipientField = prefix + 'recipient';
 
-        var idButton = PREF + 'sendButton',
-        idStateSel = PREF + 'stateSel',
-        idRecipient = PREF + 'recipient';
+        this.bodyDiv.appendChild(document.createTextNode('Stage:'));
+        stageField = W.getTextInput(idStageField);
+        this.bodyDiv.appendChild(stageField);
 
-        var sendButton = node.window.addButton(root, idButton);
-        var stateSel = node.window.addStateSelector(root, idStateSel);
-        this.recipient = node.window.addRecipientSelector(root, idRecipient);
+        this.bodyDiv.appendChild(document.createTextNode(' To:'));
+        recipientField = W.getTextInput(idRecipientField);
+        this.bodyDiv.appendChild(recipientField);
 
-        var that = this;
+        sendButton = node.window.addButton(this.bodyDiv, idButton);
 
-        node.on('UPDATED_PLIST', function() {
-            node.window.populateRecipientSelector(that.recipient, node.game.pl);
-        });
+        that = this;
+
+        //node.on('UPDATED_PLIST', function() {
+        //    node.window.populateRecipientSelector(that.recipient, node.game.pl);
+        //});
 
         sendButton.onclick = function() {
+            var to;
+            var stage;
 
             // Should be within the range of valid values
             // but we should add a check
-            var to = that.recipient.value;
+            to = recipientField.value;
 
-            // STATE.STEP:ROUND
-            var parseState = /^(\d+)(?:\.(\d+))?(?::(\d+))?$/;
-
-            var result = parseState.exec(stateSel.value);
-            var state, step, round, stateEvent, stateMsg;
-            if (result !== null) {
-                // Note: not result[0]!
-                state = result[1];
-                step = result[2] || 1;
-                round = result[3] || 1;
-
-                node.log('Parsed State: ' + result.join("|"));
-
-                state = new node.GameStage({
-                    state: state,
-                    step: step,
-                    round: round
-                });
-
-                // Self Update
-                if (to === 'ROOM') {
-                    stateEvent = node.IN + node.action.SAY + '.STATE';
-                    stateMsg = node.msg.createSTATE(stateEvent, state);
-                    node.emit(stateEvent, stateMsg);
-                }
-
-                // Update Others
-                stateEvent = node.OUT + node.action.SAY + '.STATE';
-                node.emit(stateEvent, state, to);
+            try {
+                stage = new node.GameStage(stageField.value);
+                node.remoteCommand('goto_step', to, stage);
             }
-            else {
-                node.err('Not valid state. Not sent.');
-                node.socket.sendTXT('E: not valid state. Not sent');
+            catch (e) {
+                node.err('Invalid stage, not sent: ' + e);
             }
         };
-
-        this.root = root;
-        return root;
     };
 
 })(node);
@@ -29545,18 +29544,44 @@ JSUS.extend(TIME);
         this.options.update = ('undefined' === typeof this.options.update) ?
             1000 : this.options.update;
 
-        this.id = options.id;
-
+        /**
+         *  ### gameTimer
+         *  
+         *  The timer which counts down the game time.
+         *
+         *  @see node.timer.createTimer  
+         */
         this.gameTimer = null;
         
-        // The DIV in which to display the timer.
-        this.timerDiv = null;   
+        /**
+         *  ### mainBox
+         *  The TimerBox which displays the main timer.
+         *
+         * @see node.TimerBox
+         */
+        this.mainBox = null;   
+        
+        /**
+         *  ### waitDiv
+         *  The DIV in which to display the maximum waiting time left. 
+         */
+        this.waitBox = null;
+        
+        /**
+         *  ### activeBox
+         *  The DIV in which to display the time.
+         *  
+         *  This variable is always a reference to either 'waitDiv' or 
+         *  'timerDiv'. 
+         */
+        this.activeBox = null;
+        
 
         this.init(this.options);
     }
 
     VisualTimer.prototype.init = function(options) {
-        var t;
+        var t, mainBoxOptions, waitBoxOptions;
         
         J.mixout(options, this.options);
 
@@ -29577,13 +29602,9 @@ JSUS.extend(TIME);
         if (!this.gameTimer) {
             this.gameTimer = node.timer.createTimer();
         }
-        
+
         this.gameTimer.init(options);
-
-        if (this.timerDiv) {
-            this.timerDiv.className = options.className || '';
-        }
-
+        
         t = this.gameTimer;
         node.session.register('visualtimer', {
             set: function(p) {
@@ -29592,7 +29613,7 @@ JSUS.extend(TIME);
             get: function() {
                 return {
                     startPaused: t.startPaused,
-	            status: t.status,
+	                status: t.status,
                     timeLeft: t.timeLeft,
                     timePassed: t.timePassed,
                     update: t.update,
@@ -29601,51 +29622,151 @@ JSUS.extend(TIME);
                 };
             }
         });
-        
+                
         this.options = options;
+        
+
+        mainBoxOptions = {classNameBody: options.className, hideTitle: true};
+        waitBoxOptions = {title: 'Max. wait timer', 
+                classNameTitle: 'waitTimerTitle',
+                classNameBody: 'waitTimerBody', hideBox: true};
+                       
+        if (!this.mainBox) {
+            this.mainBox = new TimerBox(mainBoxOptions);
+        }
+        else {
+            this.mainBox.init(mainBoxOptions);
+        }
+        if (!this.waitBox) {
+            this.waitBox = new TimerBox(waitBoxOptions);
+        } 
+        else {
+            this.waitBox.init(waitBoxOptions);
+        }
+        
+        this.activeBox = this.mainBox;
     };
 
     VisualTimer.prototype.append = function() {
-        this.timerDiv = node.window.addDiv(this.bodyDiv, this.id + '_div');
+        this.bodyDiv.appendChild(this.mainBox.boxDiv);
+        this.bodyDiv.appendChild(this.waitBox.boxDiv);
+      
+        this.activeBox = this.mainBox;
         this.updateDisplay();
     };
-
+    /**
+     *  ## VisualTimer.updateDisplay
+     *  Changes 'activeBox' to display current time of 'gameTimer'
+     */
     VisualTimer.prototype.updateDisplay = function() {
+//        debugger
         var time, minutes, seconds;
         if (!this.gameTimer.milliseconds || this.gameTimer.milliseconds === 0) {
-            this.timerDiv.innerHTML = '00:00';
+            this.activeBox.bodyDiv.innerHTML = '00:00';
             return;
         }
         time = this.gameTimer.milliseconds - this.gameTimer.timePassed;
         time = J.parseMilliseconds(time);
         minutes = (time[2] < 10) ? '' + '0' + time[2] : time[2];
         seconds = (time[3] < 10) ? '' + '0' + time[3] : time[3];
-        this.timerDiv.innerHTML = minutes + ':' + seconds;
+        this.activeBox.bodyDiv.innerHTML = minutes + ':' + seconds;
     };
 
+    /**
+     *  ## VisualTimer.start
+     *  Starts the timer and changes the display accordingly.
+     *
+     *  Starts the 'gameTimer', hides 'waitDiv', unstrikes 'timerDiv' and
+     *  sets 'activeBox' as a reference to 'timerDiv'.
+     *
+     *  @see VisualTimer.updateDisplay
+     *  @see GameTimer.start
+     */
     VisualTimer.prototype.start = function() {
         this.updateDisplay();
         this.gameTimer.start();
     };
 
+    /**
+     *  ## VisualTimer.restart
+     *  Restarts the timer with new options
+     *
+     *  @param {object} options Configuration object
+     *
+     *  @see VisualTimer.init
+     *  @see VisualTimer.start
+     */
     VisualTimer.prototype.restart = function(options) {
+        this.stop();
         this.init(options);
         this.start();
     };
 
+    /**
+     *  ## VisualTimer.stop
+     *  Stops the timer display and start displaying max. wait time.
+     *
+     *  Does nothing if 'gameTimer' is stopped.
+     *  Otherwise it updates 'timeLeft' with the current time in 'gameTimer',
+     *  and changes the display according to the options object as follows.
+     *
+     *  If 'options.waitTime' is a _negative_ value, the 'gameTimer' is stopped,
+     *  'VisualTimer.updateDisplay' is called and the function is returned
+     *  If 'options' or 'options.waitTime' is _undefined_, the gameTimer is 
+     *  restarted with the current time left on the clock. 
+     *  Uf 'options.waitTime' is a _positive_ value, then the 'gameTimer' is 
+     *  restarted with that value. 
+     *  After the gameTimer has been restarted, 'waitDiv' is unhidden and 
+     *  'activeBox' is set such that 'VisualTimer.updateDisplay' updates 'waitDiv',
+     *  displaying the max. wait time.
+     *
+     *  @param {object} options Configuration object
+     *
+     *  @see VisualTimer.updateDisplay
+     *  @see GameTimer.isStopped
+     *  @see GameTimer.restart
+     *  @see GameTimer.stop
+     */
     VisualTimer.prototype.stop = function(options) {
         if (!this.gameTimer.isStopped()) {
+            this.activeBox.timeLeft = this.gameTimer.timeLeft;
             this.gameTimer.stop();
+        }  
+    };
+    
+    VisualTimer.prototype.switchActiveBoxTo = function(box,options) {
+        var waitTime;
+        this.activeBox = box;
+        this.activeBox.timeLeft = this.gameTimer.timeLeft || 0;
+        if (typeof options === 'undefined' ||
+                typeof options.waitTime === 'undefined') {
+            waitTime = this.activeBox.timeLeft;
         }
+        else {
+            waitTime = options.waitTime;
+        }
+        if (waitTime > 0) {
+            if (!this.gameTimer.isStopped()){
+            this.gameTimer.stop();}
+            this.gameTimer.restart({milliseconds: waitTime});
+        }
+        this.updateDisplay();
     };
 
-    VisualTimer.prototype.resume = function(options) {
+    /**
+     *  ## VisualTimer.resume
+     *  Resumes the 'gameTimer' and hides 'waitDiv'
+     *
+     *  @see GameTimer.resume
+     */
+    VisualTimer.prototype.resume = function() {
         this.gameTimer.resume();
     };
 
     VisualTimer.prototype.setToZero = function() {
+        debugger
         this.stop();
-        this.timerDiv.innerHTML = '0:0';
+        this.activeBox.bodyDiv.innerHTML = '00:00';
     };
     
     /**
@@ -29659,6 +29780,7 @@ JSUS.extend(TIME);
      * @see GameTimer.fire
      */
     VisualTimer.prototype.doTimeUp = function() {
+        debugger
         this.stop();
         this.gameTimer.timeLeft = 0;
         this.gameTimer.fire(this.gameTimer.timeup);
@@ -29673,17 +29795,21 @@ JSUS.extend(TIME);
             timer = stepObj.timer;
             if (timer) {
                 options = processOptions(timer, this.options);
-                that.gameTimer.init(options);
-                that.timerDiv.className = '';
+                that.stop();
+                that.init(options);
+                that.mainBox.setClassNameBody('');
+                that.switchActiveBoxTo(that.mainBox,-1);
+                that.mainBox.unhideBox();
+                that.waitBox.hideBox();
                 that.start();
             }
         });
 
         node.on('REALLY_DONE', function() {
-            that.stop();
-            that.timerDiv.className = 'strike';
-        });
-
+            that.mainBox.setClassNameBody('strike');
+            that.switchActiveBoxTo(that.waitBox);
+            that.waitBox.unhideBox();
+       });
     };
 
     VisualTimer.prototype.destroy = function() {
@@ -29738,6 +29864,80 @@ JSUS.extend(TIME);
         }
         return options;
     }
+    
+    function TimerBox(options) {
+        this.boxDiv = null;
+        this.titleDiv = null;
+        this.bodyDiv = null;
+        
+        this.timeLeft = null;
+                
+        this.boxDiv = node.window.getDiv();
+        this.titleDiv = node.window.addDiv(this.boxDiv);
+        this.bodyDiv = node.window.addDiv(this.boxDiv);
+        
+        this.init(options);
+    
+    }
+    
+    TimerBox.prototype.init = function(options) {        
+        if (options) {
+            if (options.hideTitle) {
+                this.hideTitle();
+            }
+            else {
+                this.unhideTitle();
+            }
+            if (options.hideBody) {
+                this.hideBody();
+            }
+            else {
+                this.unhideBody();
+            }
+            if (options.hideBox) {
+                this.hideBox();
+            }   
+            else {
+                this.unhideBox();
+            }
+        }
+
+        this.setTitle(options.title || '');
+        this.setClassNameTitle(options.classNameTitle || '');
+        this.setClassNameBody(options.classNameBody || '');
+        
+        if(options.timeLeft) {
+            this.timeLeft = options.timeLeft;
+        }
+    };
+    
+    TimerBox.prototype.hideBox = function() {
+        this.boxDiv.style.display = 'none';
+    };
+    TimerBox.prototype.unhideBox = function() {
+        this.boxDiv.style.display = '';
+    };
+    TimerBox.prototype.hideTitle = function() {
+        this.titleDiv.style.display = 'none';
+    };
+    TimerBox.prototype.unhideTitle = function() {
+        this.titleDiv.style.display = '';
+    };
+    TimerBox.prototype.hideBody = function() {
+        this.bodyDiv.style.display = 'none';
+    };
+    TimerBox.prototype.unhideBody = function() {
+        this.bodyDiv.style.display = '';
+    };
+    TimerBox.prototype.setTitle = function(title) {
+        this.titleDiv.innerHTML = title;
+    };
+    TimerBox.prototype.setClassNameTitle = function(className) {
+        this.titleDiv.className = className;
+    };
+    TimerBox.prototype.setClassNameBody = function(className) {
+        this.bodyDiv.className = className;
+    };
 
 })(node);
 

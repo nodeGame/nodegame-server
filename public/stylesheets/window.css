@@ -16,15 +16,23 @@ body {
     color: black;
 }
 
+/* mainframe */ 
+
 iframe#ng_mainframe {
     border: 0;
     padding: 10px;
 }
 
-.ng_mainframe-header-vertical {
+.ng_mainframe-header-vertical-r {
     height: 100%;
     float: left;
-    width: 88%;
+    width: 86%;
+}
+
+.ng_mainframe-header-vertical-l {
+    height: 100%;
+    float: right;
+    width: 86%;
 }
 
 .ng_mainframe-header-horizontal {
@@ -33,23 +41,7 @@ iframe#ng_mainframe {
     clear: both;
 }
 
-div#ng_waitScreen {
-    z-index: 10000;
-    filter: alpha(opacity=50); /*older IE*/
-    filter:progid:DXImageTransform.Microsoft.Alpha(opacity=50); /* IE */
-    -moz-opacity: .50; /*older Mozilla*/
-    -khtml-opacity: 0.5;   /*older Safari*/
-    opacity: 0.5;   /*supported by current Mozilla, Safari, and Opera*/
-    background-color:#000000;
-    position:fixed; 
-    top:0px; left:0px; width:100%; height:100%; 
-    color:#FFFFFF; 
-    text-align:center; 
-    vertical-align:middle;
-    font-weight: bold;
-    font-size: 30px;
-    padding: 20px;
-}
+/* header */
 
 div#ng_header {
     padding: 2px 10px;
@@ -71,6 +63,24 @@ div#ng_header {
 .ng_header_position-vertical-l {
     float: left;
     width: 10%;
+}
+
+div#ng_waitScreen {
+    z-index: 10000;
+    filter: alpha(opacity=50); /*older IE*/
+    filter:progid:DXImageTransform.Microsoft.Alpha(opacity=50); /* IE */
+    -moz-opacity: .50; /*older Mozilla*/
+    -khtml-opacity: 0.5;   /*older Safari*/
+    opacity: 0.5;   /*supported by current Mozilla, Safari, and Opera*/
+    background-color:#000000;
+    position:fixed; 
+    top:0px; left:0px; width:100%; height:100%; 
+    color:#FFFFFF; 
+    text-align:center; 
+    vertical-align:middle;
+    font-weight: bold;
+    font-size: 30px;
+    padding: 20px;
 }
 
 canvas {
