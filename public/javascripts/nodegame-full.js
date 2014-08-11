@@ -17445,6 +17445,14 @@ JSUS.extend(TIME);
          * @see GameTimer.fire
          */
         this.hooks = [];
+        /**
+         * ### GameTimer.hookNames
+         *
+         * Object containing all names used for the hooks
+         *
+         * @see GameTimer.hooks
+         */
+        this.hookNames = {};
 
         // Init!
         this.init();
@@ -17608,18 +17616,62 @@ JSUS.extend(TIME);
      * Add an hook to the hook list after performing conformity checks.
      * The first parameter hook can be a string, a function, or an object
      * containing an hook property.
+     *
+     * @params {mixed} hook Either the hook to be called or an object containing
+     *  at least the hook to be called and possibly even ctx and name
+     * @params {object} ctx A reference to the context wherein the hook is
+     *  called.
+     * @params {string} name The name of the hook. If not provided, this method
+     *  provides an uniqueKey for the hook
+     *
+     * @returns {mixed} The name of the hook, if it was added; false otherwise.
      */
-    GameTimer.prototype.addHook = function(hook, ctx) {
+    GameTimer.prototype.addHook = function(hook, ctx, name) {
+        var i;
+    
         if (!hook) {
             throw new Error('GameTimer.addHook: missing argument');
         }
-
         ctx = ctx || this.node.game;
         if (hook.hook) {
             ctx = hook.ctx || ctx;
+            if(hook.name) {
+                name = hook.name;
+            }
             hook = hook.hook;
         }
-        this.hooks.push({hook: hook, ctx: ctx});
+        if(!name) {
+            name = JSUS.uniqueKey(this.hookNames,'timerHook');
+        }
+        for (i = 0; i < this.hooks.length; i++) {
+            if (this.hooks[i].name === name) {
+                return false;
+            }
+        }
+        this.hookNames[name] = true;
+        this.hooks.push({hook: hook, ctx: ctx, name: name});
+        return name;
+    };
+    
+    /*
+     * ### GameTimer.removeHook
+     *
+     * Removes a hook given its' name
+     *
+     * @param {string} name Name of the hook to be removed
+     * @return {mixed} the hook if it was removed; false otherwise.
+     */
+    GameTimer.prototype.removeHook = function(name) {
+        var i;
+        if (this.hookNames[name]) {
+            for (i = 0; i < this.hooks.length; i++) {
+                if (this.hooks[i].name === name) {
+                    delete this.hookNames[name];
+                    return this.hooks.splice(i,1);
+                }
+            }     
+        }
+        return false;
     };
 
     /**
@@ -19245,11 +19297,12 @@ JSUS.extend(TIME);
  *
  * ---
  */
-(function(exports, parent) {
+(function(exports, node) {
 
     "use strict";
 
-    var NGC = parent.NodeGameClient;
+    var NGC = node.NodeGameClient;
+    var J = node.JSUS;
     
     /**
      * ### NodeGameClient.redirect
@@ -19303,12 +19356,12 @@ JSUS.extend(TIME);
         if ('string' !== typeof command) {
             throw new TypeError('node.remoteCommand: command must be string.');
         }
-        if (!parent.constants.gamecommands[command]) {
+        if (!node.constants.gamecommands[command]) {
             throw new Error('node.remoteCommand: unknown command: ' +
                             command + '.');
         }
-        if ('string' !== typeof to) {
-            throw new TypeError('node.remoteCommand: to must be string.');
+        if ('string' !== typeof to && !J.isArray(to)) {
+            throw new TypeError('node.remoteCommand: to must be string or array.');
         }
 
         msg = this.msg.create({
@@ -23139,47 +23192,6 @@ JSUS.extend(TIME);
         var targetSelector = this.getTargetSelector(id);
         return root.appendChild(targetSelector);
     };
-
-    /**
-     * ### GameWindow.getStateSelector
-     *
-     * Creates an HTML text input element where a nodeGame state can be inserted
-     *
-     * @param {string} id The id of the element
-     * @return {Element} The newly created element
-     *
-     * @see GameWindow.addActionSelector
-     *
-     * TODO: This method should be improved to automatically
-     *       show all the available states of a game.
-     *
-     * @experimental
-     */
-    GameWindow.prototype.getStateSelector = function(id) {
-        return this.getTextInput(id);
-    };
-
-    /**
-     * ### GameWindow.addStateSelector
-     *
-     * Appends a StateSelector to the specified root element
-     *
-     * @param {Element} root The root element
-     * @param {string} id The id of the element
-     * @return {Element} The newly created element
-     *
-     * @see GameWindow.getActionSelector
-     *
-     * @experimental
-     */
-    GameWindow.prototype.addStateSelector = function(root, id) {
-        var stateSelector;
-
-        if (!root) return;
-        stateSelector = this.getStateSelector(id);
-        return root.appendChild(stateSelector);
-    };
-
 })(
     // GameWindow works only in the browser environment. The reference
     // to the node.js module object is for testing purpose only
@@ -28301,7 +28313,6 @@ JSUS.extend(TIME);
         this.init();
     }
 
-    // TODO: Write a proper INIT method
     MsgBar.prototype.init = function() {
         var that;
         var fields, i, field;
@@ -28310,7 +28321,6 @@ JSUS.extend(TIME);
         that = this;
 
         // Create fields.
-        // TODO: separate table for fields following 'data'
         fields = ['to', 'action', 'target', 'text', 'data', 'from', 'priority',
                   'reliable', 'forward', 'session', 'stage', 'created', 'id'];
 
@@ -28397,7 +28407,7 @@ JSUS.extend(TIME);
     };
 
     MsgBar.prototype.parse = function() {
-        var msg, gameMsg
+        var msg, gameMsg;
 
         msg = {};
 
@@ -29243,8 +29253,6 @@ JSUS.extend(TIME);
  *
  * Provides a simple interface to change the game stages.
  *
- * TODO: needs refactoring
- *
  * www.nodegame.org
  * ---
  */
@@ -29252,13 +29260,11 @@ JSUS.extend(TIME);
 
     "use strict";
 
-    // TODO: Introduce rules for update: other vs self
-
     node.widgets.register('StateBar', StateBar);
 
     // ## Meta-data
 
-    StateBar.version = '0.3.2';
+    StateBar.version = '0.4.0';
     StateBar.description =
         'Provides a simple interface to change the stage of a game.';
 
@@ -29539,8 +29545,21 @@ JSUS.extend(TIME);
         JSUS: {}
     };
 
+    /** 
+     *  ## VisualTimer
+     *
+     *  'VisualTimer' displays and manages a 'GameTimer'
+     *  The options it can take are:
+     
+     *  - any options that can be passed to a 'GameTimer'
+     *  - waitBoxOptions: an option object to be passed to 'TimerBox'
+     *  - mainBoxOptions: an option object to be passed to 'TimerBox'
+     *
+     *  @see TimerBox
+     *  @see GameTimer
+     */
     function VisualTimer(options) {
-        this.options = options;
+        this.options = options || {};
         this.options.update = ('undefined' === typeof this.options.update) ?
             1000 : this.options.update;
 
@@ -29555,34 +29574,64 @@ JSUS.extend(TIME);
         
         /**
          *  ### mainBox
-         *  The TimerBox which displays the main timer.
          *
-         * @see node.TimerBox
+         *  The 'TimerBox' which displays the main timer.
+         *
+         *  @see TimerBox
          */
         this.mainBox = null;   
         
         /**
-         *  ### waitDiv
-         *  The DIV in which to display the maximum waiting time left. 
+         *  ### waitBox
+         *
+         *  The 'TimerBox' which displays the wait timer.
+         *
+         *  @see TimerBox         
          */
         this.waitBox = null;
         
         /**
          *  ### activeBox
-         *  The DIV in which to display the time.
+         *
+         *  The 'TimerBox' in which to display the time.
          *  
-         *  This variable is always a reference to either 'waitDiv' or 
-         *  'timerDiv'. 
+         *  This variable is always a reference to either 'waitBox' or 
+         *  'mainBox'. 
+         *
+         *  @see TimerBox      
          */
         this.activeBox = null;
         
-
+        /**
+         *  ### isInitialized
+         *
+         *  indicates whether the instance has been initializded already   
+         */
+        this.isInitialized = false;
         this.init(this.options);
     }
-
+    
+    /** 
+     *  ## VisualTimer
+     *
+     *  Initializes the instance. When called again, adds options to current
+     *  ones.
+     *
+     *  The options it can take are:
+     *
+     *  - any options that can be passed to a 'GameTimer'
+     *  - waitBoxOptions: an option object to be passed to 'TimerBox'
+     *  - mainBoxOptions: an option object to be passed to 'TimerBox'
+     *
+     *  @see TimerBox
+     *  @see GameTimer
+     */
     VisualTimer.prototype.init = function(options) {
-        var t, mainBoxOptions, waitBoxOptions;
+        var t;
         
+        if (!options) {
+            options = {};
+        }
         J.mixout(options, this.options);
 
         if (options.hooks) {
@@ -29594,10 +29643,14 @@ JSUS.extend(TIME);
             options.hooks = [];
         }
 
-        options.hooks.push({
-            hook: this.updateDisplay,
-            ctx: this
-        });
+        // Only push this hook once.
+        if (!this.isInitialized) {
+            options.hooks.push({
+                hook: this.updateDisplay,
+                ctx: this,
+                name: 'VisualTimer.updateDisplay'
+            });
+        }
 
         if (!this.gameTimer) {
             this.gameTimer = node.timer.createTimer();
@@ -29622,29 +29675,38 @@ JSUS.extend(TIME);
                 };
             }
         });
-                
         this.options = options;
         
-
-        mainBoxOptions = {classNameBody: options.className, hideTitle: true};
-        waitBoxOptions = {title: 'Max. wait timer', 
-                classNameTitle: 'waitTimerTitle',
-                classNameBody: 'waitTimerBody', hideBox: true};
-                       
-        if (!this.mainBox) {
-            this.mainBox = new TimerBox(mainBoxOptions);
+        if(!this.options.mainBoxOptions) {
+            this.options.mainBoxOptions = {};
         }
-        else {
-            this.mainBox.init(mainBoxOptions);
-        }
-        if (!this.waitBox) {
-            this.waitBox = new TimerBox(waitBoxOptions);
-        } 
-        else {
-            this.waitBox.init(waitBoxOptions);
+        if(!this.options.waitBoxOptions) {
+            this.options.waitBoxOptions = {};
         }
         
-        this.activeBox = this.mainBox;
+        J.mixout(this.options.mainBoxOptions,
+                {classNameBody: options.className, hideTitle: true});
+        J.mixout(this.options.waitBoxOptions,
+                {title: 'Max. wait timer', 
+                classNameTitle: 'waitTimerTitle',
+                classNameBody: 'waitTimerBody', hideBox: true});
+                       
+        if (!this.mainBox) {
+            this.mainBox = new TimerBox(this.options.mainBoxOptions);
+        }
+        else {
+            this.mainBox.init(this.options.mainBoxOptions);
+        }
+        if (!this.waitBox) {
+            this.waitBox = new TimerBox(this.options.waitBoxOptions);
+        } 
+        else {
+            this.waitBox.init(this.options.waitBoxOptions);
+        }
+        
+        this.activeBox = options.activeBox || this.mainBox;
+        
+        this.isInitialized = true;
     };
 
     VisualTimer.prototype.append = function() {
@@ -29654,12 +29716,47 @@ JSUS.extend(TIME);
         this.activeBox = this.mainBox;
         this.updateDisplay();
     };
+    
+    /**
+     *  ## VisualTimer.clear
+     *
+     *  Reverts state of 'VisualTimer' to right after constructor call.
+     *
+     *  @param {object} options Configuration object
+     *
+     *  @see node.timer.destroyTimer
+     *  @see VisualTimer.init
+     */
+    VisualTimer.prototype.clear = function(options) {
+        var oldOptions = this.options;
+        if (!options) {
+            options = {};
+        }
+        
+        node.timer.destroyTimer(this.gameTimer);
+                
+        // ----- as in constructor -----
+        this.options = options;
+        this.options.update = ('undefined' === typeof this.options.update) ?
+            1000 : this.options.update;
+        this.gameTimer = null;
+
+        this.activeBox = null;
+        this.isInitialized = false;
+        this.init(this.options);
+        // ----- as in constructor ----
+        
+        return oldOptions;   
+    };
+    
     /**
      *  ## VisualTimer.updateDisplay
+     *
      *  Changes 'activeBox' to display current time of 'gameTimer'
+     *
+     *  @see TimerBox.bodyDiv      
      */
     VisualTimer.prototype.updateDisplay = function() {
-//        debugger
         var time, minutes, seconds;
         if (!this.gameTimer.milliseconds || this.gameTimer.milliseconds === 0) {
             this.activeBox.bodyDiv.innerHTML = '00:00';
@@ -29674,27 +29771,27 @@ JSUS.extend(TIME);
 
     /**
      *  ## VisualTimer.start
-     *  Starts the timer and changes the display accordingly.
      *
-     *  Starts the 'gameTimer', hides 'waitDiv', unstrikes 'timerDiv' and
-     *  sets 'activeBox' as a reference to 'timerDiv'.
+     *  Starts the timer.
      *
      *  @see VisualTimer.updateDisplay
      *  @see GameTimer.start
      */
     VisualTimer.prototype.start = function() {
-        this.updateDisplay();
+        this.updateDisplay();        
         this.gameTimer.start();
     };
 
     /**
      *  ## VisualTimer.restart
+     *
      *  Restarts the timer with new options
      *
      *  @param {object} options Configuration object
      *
      *  @see VisualTimer.init
      *  @see VisualTimer.start
+     *  @see VisualTimer.stop
      */
     VisualTimer.prototype.restart = function(options) {
         this.stop();
@@ -29704,27 +29801,12 @@ JSUS.extend(TIME);
 
     /**
      *  ## VisualTimer.stop
-     *  Stops the timer display and start displaying max. wait time.
      *
-     *  Does nothing if 'gameTimer' is stopped.
-     *  Otherwise it updates 'timeLeft' with the current time in 'gameTimer',
-     *  and changes the display according to the options object as follows.
-     *
-     *  If 'options.waitTime' is a _negative_ value, the 'gameTimer' is stopped,
-     *  'VisualTimer.updateDisplay' is called and the function is returned
-     *  If 'options' or 'options.waitTime' is _undefined_, the gameTimer is 
-     *  restarted with the current time left on the clock. 
-     *  Uf 'options.waitTime' is a _positive_ value, then the 'gameTimer' is 
-     *  restarted with that value. 
-     *  After the gameTimer has been restarted, 'waitDiv' is unhidden and 
-     *  'activeBox' is set such that 'VisualTimer.updateDisplay' updates 'waitDiv',
-     *  displaying the max. wait time.
+     *  Stops the timer display and stores the time left in 'activeBox.timeLeft'
      *
      *  @param {object} options Configuration object
      *
-     *  @see VisualTimer.updateDisplay
      *  @see GameTimer.isStopped
-     *  @see GameTimer.restart
      *  @see GameTimer.stop
      */
     VisualTimer.prototype.stop = function(options) {
@@ -29733,40 +29815,110 @@ JSUS.extend(TIME);
             this.gameTimer.stop();
         }  
     };
-    
-    VisualTimer.prototype.switchActiveBoxTo = function(box,options) {
-        var waitTime;
-        this.activeBox = box;
+    /**
+     *  ## VisualTimer.switchActiveBoxTo
+     *
+     *  Switches the display of the 'gameTimer' into the 'TimerBox' 'box'.
+     *
+     *  Stores 'gameTimer.timeLeft' into 'activeBox' and then switches
+     *  'activeBox' to reference 'box'.
+     *
+     *  @param {TimerBox} box TimerBox in which to display 'gameTimer' time
+     */
+    VisualTimer.prototype.switchActiveBoxTo = function(box) {
         this.activeBox.timeLeft = this.gameTimer.timeLeft || 0;
-        if (typeof options === 'undefined' ||
-                typeof options.waitTime === 'undefined') {
-            waitTime = this.activeBox.timeLeft;
-        }
-        else {
-            waitTime = options.waitTime;
-        }
-        if (waitTime > 0) {
-            if (!this.gameTimer.isStopped()){
-            this.gameTimer.stop();}
-            this.gameTimer.restart({milliseconds: waitTime});
-        }
+        this.activeBox = box;
         this.updateDisplay();
     };
-
+    
+    /**
+      * ## VisualTimer.startWaiting
+      *
+      * Changes the 'VisualTimer' appearance to a max. wait timer
+      *
+      * If options and/or options.milliseconds are undefined, the wait timer
+      * will start with the current time left on the 'gameTimer'. The mainBox
+      * will be striked out, the waitBox set active and unhidden. All other
+      * options are forwarded directly to 'VisualTimer.restart'.
+      *
+      * @param {object} options Configuration object
+      *
+      * @see VisualTimer.restart
+      */
+    VisualTimer.prototype.startWaiting = function(options) {
+        if(typeof options === 'undefined') {
+            options = {};
+        }
+        options = J.clone(options);
+        if (typeof options.milliseconds === 'undefined') {
+            options.milliseconds = this.gameTimer.timeLeft;
+        }
+        if(typeof options.mainBoxOptions === 'undefined') {
+            options.mainBoxOptions = {};
+        }
+        if(typeof options.waitBoxOptions === 'undefined') {
+            options.waitBoxOptions = {};
+        }
+        options.mainBoxOptions.classNameBody = 'strike';
+        options.mainBoxOptions.timeLeft = this.gameTimer.timeLeft || 0;
+        options.activeBox = this.waitBox;
+        options.waitBoxOptions.hideBox = false;
+        this.restart(options);
+    };
+    
+    /**
+      * ## VisualTimer.startTiming
+      *
+      * Changes the 'VisualTimer' appearance to a regular countdown
+      *
+      * The mainBox will be unstriked and set active, the waitBox will be
+      * hidden. All other options are forwarded directly to 
+      * 'VisualTimer.restart'.
+      *
+      * @param {object} options Configuration object
+      *
+      * @see VisualTimer.restart
+      */
+    VisualTimer.prototype.startTiming = function(options) {
+        if(typeof options === 'undefined') {
+            options = {};
+        }
+        options = J.clone(options);
+        if(typeof options.mainBoxOptions === 'undefined') {
+            options.mainBoxOptions = {};
+        }
+        if(typeof options.waitBoxOptions === 'undefined') {
+            options.waitBoxOptions = {};
+        }
+        options.activeBox = this.mainBox;
+        options.waitBoxOptions.timeLeft = this.gameTimer.timeLeft || 0;
+        options.waitBoxOptions.hideBox = true;
+        options.mainBoxOptions.classNameBody = '';
+        this.restart(options)
+    };
+    
     /**
      *  ## VisualTimer.resume
-     *  Resumes the 'gameTimer' and hides 'waitDiv'
+     *
+     *  Resumes the 'gameTimer'
      *
      *  @see GameTimer.resume
      */
     VisualTimer.prototype.resume = function() {
         this.gameTimer.resume();
     };
-
+    
+    /**
+     *  ## VisualTimer.setToZero
+     *
+     *  stops 'gameTimer' and sets 'activeBox' to display '00:00'
+     *
+     *  @see GameTimer.resume
+     */
     VisualTimer.prototype.setToZero = function() {
-        debugger
         this.stop();
         this.activeBox.bodyDiv.innerHTML = '00:00';
+        this.activeBox.setClassNameBody('strike');
     };
     
     /**
@@ -29780,7 +29932,6 @@ JSUS.extend(TIME);
      * @see GameTimer.fire
      */
     VisualTimer.prototype.doTimeUp = function() {
-        debugger
         this.stop();
         this.gameTimer.timeLeft = 0;
         this.gameTimer.fire(this.gameTimer.timeup);
@@ -29788,6 +29939,7 @@ JSUS.extend(TIME);
 
     VisualTimer.prototype.listeners = function() {
         var that = this;
+
         node.on('PLAYING', function() {
             var stepObj, timer, options;
             stepObj = node.game.getCurrentStep();
@@ -29795,26 +29947,21 @@ JSUS.extend(TIME);
             timer = stepObj.timer;
             if (timer) {
                 options = processOptions(timer, this.options);
-                that.stop();
-                that.init(options);
-                that.mainBox.setClassNameBody('');
-                that.switchActiveBoxTo(that.mainBox,-1);
-                that.mainBox.unhideBox();
-                that.waitBox.hideBox();
-                that.start();
+                that.startTiming(options);
             }
         });
 
         node.on('REALLY_DONE', function() {
-            that.mainBox.setClassNameBody('strike');
-            that.switchActiveBoxTo(that.waitBox);
-            that.waitBox.unhideBox();
+            if(!that.gameTimer.isStopped()) {
+                that.startWaiting();   
+            }
        });
     };
 
     VisualTimer.prototype.destroy = function() {
         node.timer.destroyTimer(this.gameTimer);
-        this.bodyDiv.removeChild(this.timerDiv);
+        this.bodyDiv.removeChild(this.mainBox.boxDiv);
+        this.bodyDiv.removeChild(this.waitBox.boxDiv);
     };
 
     /**
@@ -29865,11 +30012,46 @@ JSUS.extend(TIME);
         return options;
     }
     
+    /**
+     *  ## TimerBox
+     *
+     *  'TimerBox' represents a box wherein to display the timer.
+     *  The options it can take are:
+     
+     *  - hideTitle
+     *  - hideBody
+     *  - hideBox
+     *  - title
+     *  - classNameTitle
+     *  - classNameBody
+     *  - timeLeft 
+     */
     function TimerBox(options) {
+        /**
+         *  ### boxDiv
+         *  
+         *  The Div which will contain the title and body Divs
+         */
         this.boxDiv = null;
+        
+        /**
+         *  ### titleDiv
+         *  
+         *  The Div which will contain the title
+         */
         this.titleDiv = null;
+        /**
+         *  ### bodyDiv
+         *  
+         *  The Div which will contain the numbers
+         */
         this.bodyDiv = null;
         
+        /**
+         *  ### timeLeft
+         *  
+         *  Used to store the last value before focus is taken away
+         */
         this.timeLeft = null;
                 
         this.boxDiv = node.window.getDiv();
@@ -29911,30 +30093,75 @@ JSUS.extend(TIME);
         }
     };
     
+    /**
+     * ## hideBox
+     *
+     * hides entire 'TimerBox'
+     */
     TimerBox.prototype.hideBox = function() {
         this.boxDiv.style.display = 'none';
     };
+    /**
+     * ## unhideBox
+     *
+     * hides entire 'TimerBox'
+     */
     TimerBox.prototype.unhideBox = function() {
         this.boxDiv.style.display = '';
     };
+    /**
+     * ## hideTitle
+     *
+     * hides title of 'TimerBox'
+     */
     TimerBox.prototype.hideTitle = function() {
         this.titleDiv.style.display = 'none';
     };
+    /**
+     * ## unhideTitle
+     *
+     * unhides title of 'TimerBox'
+     */
     TimerBox.prototype.unhideTitle = function() {
         this.titleDiv.style.display = '';
     };
+    /**
+     * ## hideBody
+     *
+     * hides body of 'TimerBox'
+     */
     TimerBox.prototype.hideBody = function() {
         this.bodyDiv.style.display = 'none';
     };
+    /**
+     * ## unhideBody
+     *
+     * unhides Body of 'TimerBox'
+     */
     TimerBox.prototype.unhideBody = function() {
         this.bodyDiv.style.display = '';
     };
+    /**
+     * ## setTitle
+     *
+     * sets title of 'TimerBox'
+     */
     TimerBox.prototype.setTitle = function(title) {
         this.titleDiv.innerHTML = title;
     };
+    /**
+     * ## setClassNameTitle
+     *
+     * sets class name of title of 'TimerBox'
+     */
     TimerBox.prototype.setClassNameTitle = function(className) {
         this.titleDiv.className = className;
     };
+    /**
+     * ## setClassNameBody
+     *
+     * sets class name of body of 'TimerBox'
+     */
     TimerBox.prototype.setClassNameBody = function(className) {
         this.bodyDiv.className = className;
     };

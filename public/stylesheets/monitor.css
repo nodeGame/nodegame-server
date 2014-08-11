@@ -145,3 +145,7 @@ th:first-child,td:first-child {
 div.panel.msgbar table tbody tr td:nth-child(3) {
     text-align: left;
 }
+
+ul.nav-tabs {
+  margin-bottom: 10px;
+}
