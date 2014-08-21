@@ -2909,14 +2909,10 @@ if (!JSON) {
      *   class, or undefined input are misspecified.
      */
     DOM.addClass = function(el, c) {
-        if (!el || !c) return;
+        if (!el) return;
         if (c instanceof Array) c = c.join(' ');
-        if (el.className === '' || 'undefined' === typeof el.className) {
-            el.className = c;
-        }
-        else {
-            el.className += ' ' + c;
-        }
+        else if ('string' !== typeof c) return;
+        el.className = el.className ? el.className + ' ' + c : c;
         return el;
     };
 
@@ -2994,7 +2990,7 @@ if (!JSON) {
     // ## RIGHT-CLICK
 
     /**
-     * ## DOM.disableRightClick
+     * ### DOM.disableRightClick
      *
      * Disables the popup of the context menu by right clicking with the mouse 
      *
@@ -3025,7 +3021,7 @@ if (!JSON) {
     };
 
     /**
-     * ## DOM.enableRightClick
+     * ### DOM.enableRightClick
      *
      * Enables the popup of the context menu by right clicking with the mouse 
      *
@@ -6039,35 +6035,22 @@ JSUS.extend(TIME);
      *
      * Indexes an element
      *
-     * Parameter _oldIdx_ is needed if indexing is updating a previously
-     * indexed item. In fact if new index is different, the old one must
-     * be deleted.
-     *
      * @param {object} o The element to index
-     * @param {number} dbidx The position of the element in the database array
-     * @param {string} oldIdx Optional. The old index name, if any.
+     * @param {object} o The position of the element in the database array
      */
-    NDDB.prototype._indexIt = function(o, dbidx, oldIdx) {
+    NDDB.prototype._indexIt = function(o, dbidx) {
         var func, id, index, key;
         if (!o || J.isEmpty(this.__I)) return;
-        oldIdx = undefined;
+
         for (key in this.__I) {
             if (this.__I.hasOwnProperty(key)) {
                 func = this.__I[key];
                 index = func(o);
-                // If the same object has been  previously
-                // added with another index delete the old one.
-                if (index !== oldIdx) {
-                    if ('undefined' !== typeof oldIdx) {
-                        if ('undefined' !== typeof this[key].resolve[oldIdx]) {
-                            delete this[key].resolve[oldIdx];
-                        }
-                    }
-                }
-                if ('undefined' !== typeof index) { 
-                    if (!this[key]) this[key] = new NDDBIndex(key, this);
-                    this[key]._add(index, dbidx);
-                }
+
+                if ('undefined' === typeof index) continue;
+
+                if (!this[key]) this[key] = new NDDBIndex(key, this);
+                this[key]._add(index, dbidx);
             }
         }
     };
@@ -6097,7 +6080,7 @@ JSUS.extend(TIME);
                     settings = this.cloneSettings({V: ''});
                     this[key] = new NDDB(settings);
                 }
-                this[key].insert(o);1
+                this[key].insert(o);
             }
         }
     };
@@ -7517,13 +7500,11 @@ JSUS.extend(TIME);
      * @see JSUS.arrayDiff
      */
     NDDB.prototype.diff = function(nddb) {
+        if (!nddb || !nddb.length) return this;
         if ('object' === typeof nddb) {
             if (nddb instanceof NDDB || nddb instanceof this.constructor) {
                 nddb = nddb.db;
             }
-        }
-        if (!nddb || !nddb.length) {
-            return this.breed([]);
         }
         return this.breed(J.arrayDiff(this.db, nddb));
     };
@@ -7545,13 +7526,11 @@ JSUS.extend(TIME);
      * @see JSUS.arrayIntersect
      */
     NDDB.prototype.intersect = function(nddb) {
+        if (!nddb || !nddb.length) return this;
         if ('object' === typeof nddb) {
             if (nddb instanceof NDDB || nddb instanceof this.constructor) {
-                nddb = nddb.db;
+                var nddb = nddb.db;
             }
-        }
-        if (!nddb || !nddb.length) {
-            return this.breed([]);
         }
         return this.breed(J.arrayIntersect(this.db, nddb));
     };
@@ -8175,7 +8154,7 @@ JSUS.extend(TIME);
      * @see NDDBIndex.get
      * @see NDDBIndex.remove
      */
-    NDDBIndex.prototype.update = function(idx, update) {
+        NDDBIndex.prototype.update = function(idx, update) {
         var o, dbidx, nddb;
         dbidx = this.resolve[idx];
         if ('undefined' === typeof dbidx) return false;
@@ -8186,7 +8165,7 @@ JSUS.extend(TIME);
         // We do indexes separately from the other components of _autoUpdate
         // to avoid looping through all the other elements that are unchanged.
         if (nddb.__update.indexes) {
-            nddb._indexIt(o, dbidx, idx);
+            nddb._indexIt(o, dbidx);
             nddb._hashIt(o);
             nddb._viewIt(o);
         }
