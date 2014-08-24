@@ -111,8 +111,8 @@ input[type="range"] {
     text-decoration: line-through;
 }
 
-/* 
-   Stylesheet for nodeGame widgets 
+/*
+   Stylesheet for nodeGame widgets
    Copyright(c) 2014 Stefano Balietti
    MIT Licensed
 
@@ -129,6 +129,7 @@ input[type="range"] {
     min-width: 100px;
     width: auto;
 }
+
 .visualtimer > .panel-body > div {
     font-size: 40px;
     text-align: center;
@@ -140,6 +141,40 @@ input[type="range"] {
 
 .visualtimer > .panel-body > div > div.waitTimerBody {
     font-size: 20px;
+    text-align: center;
+}
+
+/* Visual Round */
+
+.visualround {
+    float: right;
+    min-width: 100px;
+    width: auto;
+}
+.visualround > .panel-body > div > div.rounddiv {
+    border: 1px solid #CCC;
+    font-size: 40px;
+    text-align: center;
+}
+
+.visualround > .panel-body > div > div.stagediv {
+    border: 1px solid #CCC;
+    font-size: 20px;
+    text-align: center;
+}
+
+.visualround > .panel-body > div > div > .number {
+
+}
+
+.visualround > .panel-body > div > div > span.text {
+    font-size: 40%;
+    text-align: center;
+
+}
+
+.visualround > .panel-body > div > div > div.title {
+    font-size: 50%;
     text-align: center;
 }
 
