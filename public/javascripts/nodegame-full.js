@@ -2909,14 +2909,10 @@ if (!JSON) {
      *   class, or undefined input are misspecified.
      */
     DOM.addClass = function(el, c) {
-        if (!el || !c) return;
+        if (!el) return;
         if (c instanceof Array) c = c.join(' ');
-        if (el.className === '' || 'undefined' === typeof el.className) {
-            el.className = c;
-        }
-        else {
-            el.className += ' ' + c;
-        }
+        else if ('string' !== typeof c) return;
+        el.className = el.className ? el.className + ' ' + c : c;
         return el;
     };
 
@@ -2994,7 +2990,7 @@ if (!JSON) {
     // ## RIGHT-CLICK
 
     /**
-     * ## DOM.disableRightClick
+     * ### DOM.disableRightClick
      *
      * Disables the popup of the context menu by right clicking with the mouse 
      *
@@ -3025,7 +3021,7 @@ if (!JSON) {
     };
 
     /**
-     * ## DOM.enableRightClick
+     * ### DOM.enableRightClick
      *
      * Enables the popup of the context menu by right clicking with the mouse 
      *
@@ -6039,35 +6035,22 @@ JSUS.extend(TIME);
      *
      * Indexes an element
      *
-     * Parameter _oldIdx_ is needed if indexing is updating a previously
-     * indexed item. In fact if new index is different, the old one must
-     * be deleted.
-     *
      * @param {object} o The element to index
-     * @param {number} dbidx The position of the element in the database array
-     * @param {string} oldIdx Optional. The old index name, if any.
+     * @param {object} o The position of the element in the database array
      */
-    NDDB.prototype._indexIt = function(o, dbidx, oldIdx) {
+    NDDB.prototype._indexIt = function(o, dbidx) {
         var func, id, index, key;
         if (!o || J.isEmpty(this.__I)) return;
-        oldIdx = undefined;
+
         for (key in this.__I) {
             if (this.__I.hasOwnProperty(key)) {
                 func = this.__I[key];
                 index = func(o);
-                // If the same object has been  previously
-                // added with another index delete the old one.
-                if (index !== oldIdx) {
-                    if ('undefined' !== typeof oldIdx) {
-                        if ('undefined' !== typeof this[key].resolve[oldIdx]) {
-                            delete this[key].resolve[oldIdx];
-                        }
-                    }
-                }
-                if ('undefined' !== typeof index) { 
-                    if (!this[key]) this[key] = new NDDBIndex(key, this);
-                    this[key]._add(index, dbidx);
-                }
+
+                if ('undefined' === typeof index) continue;
+
+                if (!this[key]) this[key] = new NDDBIndex(key, this);
+                this[key]._add(index, dbidx);
             }
         }
     };
@@ -6097,7 +6080,7 @@ JSUS.extend(TIME);
                     settings = this.cloneSettings({V: ''});
                     this[key] = new NDDB(settings);
                 }
-                this[key].insert(o);1
+                this[key].insert(o);
             }
         }
     };
@@ -7517,13 +7500,11 @@ JSUS.extend(TIME);
      * @see JSUS.arrayDiff
      */
     NDDB.prototype.diff = function(nddb) {
+        if (!nddb || !nddb.length) return this;
         if ('object' === typeof nddb) {
             if (nddb instanceof NDDB || nddb instanceof this.constructor) {
                 nddb = nddb.db;
             }
-        }
-        if (!nddb || !nddb.length) {
-            return this.breed([]);
         }
         return this.breed(J.arrayDiff(this.db, nddb));
     };
@@ -7545,13 +7526,11 @@ JSUS.extend(TIME);
      * @see JSUS.arrayIntersect
      */
     NDDB.prototype.intersect = function(nddb) {
+        if (!nddb || !nddb.length) return this;
         if ('object' === typeof nddb) {
             if (nddb instanceof NDDB || nddb instanceof this.constructor) {
-                nddb = nddb.db;
+                var nddb = nddb.db;
             }
-        }
-        if (!nddb || !nddb.length) {
-            return this.breed([]);
         }
         return this.breed(J.arrayIntersect(this.db, nddb));
     };
@@ -8175,7 +8154,7 @@ JSUS.extend(TIME);
      * @see NDDBIndex.get
      * @see NDDBIndex.remove
      */
-    NDDBIndex.prototype.update = function(idx, update) {
+        NDDBIndex.prototype.update = function(idx, update) {
         var o, dbidx, nddb;
         dbidx = this.resolve[idx];
         if ('undefined' === typeof dbidx) return false;
@@ -8186,7 +8165,7 @@ JSUS.extend(TIME);
         // We do indexes separately from the other components of _autoUpdate
         // to avoid looping through all the other elements that are unchanged.
         if (nddb.__update.indexes) {
-            nddb._indexIt(o, dbidx, idx);
+            nddb._indexIt(o, dbidx);
             nddb._hashIt(o);
             nddb._viewIt(o);
         }
@@ -29411,37 +29390,160 @@ JSUS.extend(TIME);
         node.off('STEP_CALLBACK_EXECUTED', StateDisplay.prototype.updateAll);
     };
 })(node);
+/**
+ * # VisualRound widget for nodeGame
+ * Copyright(c) 2014 Stefano Balietti
+ * MIT Licensed
+ *
+ * Display number of current round and/or stage.
+ * Can also display countdown and total number of rounds and/or stages.
+ *
+ * www.nodegame.org
+ *
+ * ---
+ */
 (function(node) {
+
     "use strict";
-    // TODO DOCUMENTATION
 
     node.widgets.register('VisualRound',VisualRound);
-    VisualRound.title = 'Stage/Round';
-    VisualRound.className = 'visualround';
 
     var J = node.JSUS;
+
+    // ## Meta-data
+
+    VisualRound.version = '0.1.0';
+    VisualRound.description = 'Display number of current round and/or stage.' +
+        'Can also display countdown and total number of rounds and/or stages.';
+
+    VisualRound.title = 'Round and Stage info';
+    VisualRound.className = 'visualround';
+
+    // ## Dependencies
 
     VisualRound.dependencies = {
         GamePlot: {},
         JSUS: {}
     };
 
+    /**
+     * ## VisualRound
+     *
+     * `VisualRound` displays information on the current and total rounds and
+     * stages.
+     *
+     * The options it can take are:
+     *
+     * - `stageOffset`: Stage displayed is the actual stage minus stageOffset.
+     * - `flexibleMode`: Set `true`, if number of rounds and/or stages can
+     *     change dynamically.
+     * - `curStage`: When (re)starting in `flexibleMode`, you can set the current
+     *     stage.
+     * - `curRound`: When (re)starting in `flexibleMode`, you can set the current
+     *     round.
+     * - `totStage`: When (re)starting in `flexibleMode`, you can set the total
+     *     number of stages.
+     * - `totRound`: When (re)starting in `flexibleMode`, you can set the total
+     *     number of rounds.
+     * - `oldStageId`: When (re)starting in `flexibleMode`, you can pass the id
+     *     of the current stage.
+     * - `style`: Array of strings. Determines the display style of the widget.
+     *     Currently available styles are:
+     * - - `COUNT_UP_STAGES`: Display only current stage number.
+     * - - `COUNT_UP_ROUNDS`: Display only current round number.
+     * - - `COUNT_UP_STAGES_TO_TOTAL`: Display current and total stage number.
+     * - - `COUNT_UP_ROUNDS_TO_TOTAL`: Display current and total round number.
+     * - - `COUNT_DOWN_STAGES`: Display number of stages left to play.
+     * - - `COUNT_DOWN_ROUNDS: Display number of rounds left in this stage.
+     *
+     * @see GameStager
+     * @see GamePlot
+     */
     function VisualRound(options) {
         this.options = options || {};
+
+        /**
+         * ### strategy
+         *
+         * Strategy which determines information displayed. Set through
+         * `VisualRound.setStyle` using a string to describe the strategy.
+         *
+         * @see VisualRound.setStyle
+         */
         this.strategy = null;
 
+        /**
+         * ### stager
+         *
+         * `GameStager` object to provide stage and round information.
+         *
+         * @see GameStager
+         */
         this.stager = null;
-        this.gamePlot = null;
-        this.curStage = null;
-        this.totStage = null;
-        this.curRound = null;
-        this.totRound = null;
-        this.stageOffset = null;
-        this.oldStageId = null; // Only needed for flexibleMode.
 
+        /**
+         * ### gamePlot
+         *
+         * `GamePlot` object to provide stage and round information.
+         *
+         * @see GamePlot
+         */
+        this.gamePlot = null;
+
+        /**
+         * ### curStage
+         *
+         * Number of the current stage.
+         */
+        this.curStage = null;
+
+        /**
+         * ### totStage
+         *
+         * Total number of stages. Might be null if in `flexibleMode`.
+         */
+        this.totStage = null;
+
+        /**
+         * ### curRound
+         *
+         * Number of the current round.
+         */
+        this.curRound = null;
+
+        /**
+         * ### totRound
+         *
+         * Total number of rounds. Might be null if in `flexibleMode`.
+         */
+        this.totRound = null;
+
+        /**
+         * ### stageOffset
+         *
+         * Stage displayed is the actual stage minus stageOffset.
+         */
+        this.stageOffset = null;
+
+        /**
+         * ### oldStageId
+         *
+         * Stage id of the previous stage. Needed in `flexibleMode` to count
+         *     rounds.
+         */
+        this.oldStageId = null;
         this.init(this.options);
     }
-
+    /**
+     * ## VisualRound.init
+     *
+     * Initializes the instance. When called again, adds options to current
+     * ones.
+     *
+     * The options it can take are the same as `VisualRound` constructor.
+     *
+     * @see VisualRound
+     */
     VisualRound.prototype.init = function(options) {
         if (!options) {
             options = {};
@@ -29452,9 +29554,9 @@ JSUS.extend(TIME);
 
         this.stageOffset = this.options.stageOffset || 0;
 
-//        this.options.flexibleMode = 1; // TODO Remove debugging statement
         if (this.options.flexibleMode) {
             this.curStage = this.options.curStage || 1;
+            this.curStage -= this.options.stageOffset || 0;
             this.curRound = this.options.curRound || 1;
             this.totStage = this.options.totStage;
             this.totRound = this.options.totRound;
@@ -29472,11 +29574,8 @@ JSUS.extend(TIME);
         this.updateInformation();
 
         if (!this.options.style) {
-            this.initStyle(['COUNT_UP_ROUNDS_TO_TOTAL','COUNT_DOWN_STAGES']);
-//            this.initStyle(['COUNT_UP_STAGES','COUNT_DOWN_STAGES',
-//                    'COUNT_UP_STAGES_TO_TOTAL','COUNT_UP_ROUNDS_TO_TOTAL',
-//                    'COUNT_UP_ROUNDS','COUNT_DOWN_ROUNDS']);
-
+            this.initStyle(['COUNT_UP_ROUNDS_TO_TOTAL',
+                'COUNT_UP_STAGES_TO_TOTAL']);
         }
         else {
             this.initStyle(this.options.style);
@@ -29485,26 +29584,41 @@ JSUS.extend(TIME);
         this.updateDisplay();
     };
 
+     VisualRound.prototype.append = function() {
+        this.activate(this.strategy);
+        this.updateDisplay();
+    };
+
+    /**
+     * ## VisualRound.updateDisplay
+     *
+     * Updates the values displayed by forwarding the call to this.strategy.
+     */
     VisualRound.prototype.updateDisplay = function() {
         if (this.strategy) {
             this.strategy.updateDisplay();
         }
     };
 
-    // we have no strategy and no bodyDiv
+    /**
+     * ## VisualRound.initStyle
+     *
+     * Assignes `this.strategy` to a `CombinedStrategy` based on the array of
+     * style names provided.
+     */
     VisualRound.prototype.initStyle = function(styleNames) {
-        var styleNameIndex, style, strategies;
+        var index, style, strategies;
 
         // Build compound name.
         style = '';
-        for (styleNameIndex in styleNames) {
-            style += styleNames[styleNameIndex] + '&';
+        for (index in styleNames) {
+            style += styleNames[index] + '&';
         }
         style = style.substr(0,style.length -1);
 
         strategies = [];
-        for (styleNameIndex in styleNames) {
-            switch (styleNames[styleNameIndex]) {
+        for (index in styleNames) {
+            switch (styleNames[index]) {
                 case 'COUNT_UP_STAGES_TO_TOTAL':
                     strategies.push(new CountUpStages(this,{toTotal: true}));
                     break;
@@ -29528,18 +29642,22 @@ JSUS.extend(TIME);
         this.strategy = new CombinedStrategy(this, strategies);
     };
 
-    VisualRound.prototype.append = function() {
-        this.activate(this.strategy);
-        this.updateDisplay();
-    };
-
-    // sets a strategy according to Style (translate between strategies and styles)
+    /**
+     * ## VisualRound.setStyle
+     *
+     * If and only if styleNames does not define the same strategy as
+     * `this.strategy`, this function deactivates `this.strategy`,
+     * reassignes `this.strategy` to a `CombinedStrategy` based on the
+     * array of style names provided and activates this new strategy.
+     *
+     * @see VisualRound.init
+     */
     VisualRound.prototype.setStyle = function(styleNames) {
-        var styleNameIndex, style, strategies;
+        var index, style, strategies;
 
         style = '';
-        for (styleNameIndex in styleNames) {
-            style += styleNames[styleNameIndex] + '&';
+        for (index in styleNames) {
+            style += styleNames[index] + '&';
         }
         style = style.substr(0,style.length -1);
 
@@ -29550,11 +29668,25 @@ JSUS.extend(TIME);
         }
     };
 
+    /**
+     * ## VisualRound.getStyle
+     *
+     * Returns name of current style.
+     *
+     * @return {string} Name of current style.
+     */
     VisualRound.prototype.getStyle = function() {
         return this.strategy.name;
     };
 
-
+    /**
+     * ## VisualRound.activate
+     *
+     * Appends the displayDiv of the given strategy to `this.bodyDiv`. Calls
+     * `strategy.activate` if it is defined.
+     *
+     * @param {object} strategy Strategy to activate.
+     */
     VisualRound.prototype.activate = function(strategy) {
         this.bodyDiv.appendChild(strategy.displayDiv);
         if (strategy.activate) {
@@ -29562,6 +29694,14 @@ JSUS.extend(TIME);
         }
     };
 
+    /**
+     * ## VisualRound.deactivate
+     *
+     * Removes the displayDiv of the given strategy from `this.bodyDiv`. Calls
+     * `strategy.deactivate` if it is defined.
+     *
+     * @param {object} strategy Strategy to deactivate.
+     */
     VisualRound.prototype.deactivate = function(strategy) {
         this.bodyDiv.removeChild(strategy.displayDiv);
         if (strategy.deactivate) {
@@ -29576,25 +29716,38 @@ JSUS.extend(TIME);
             that.updateInformation();
         });
 
-        // Game over and init?
+        // TODO: Game over and init?
     };
 
+    /**
+     * ## VisualRound.updateInformation
+     *
+     * Updates information about rounds and stages and updates the display.
+     *
+     * Updates curRound, curStage, totRound, totStage, oldStageId and calls
+     * `VisualRound.updateDisplay`.
+     *
+     * @see VisualRound.updateDisplay
+     */
     VisualRound.prototype.updateInformation = function() {
         var idseq, stage;
-
         stage = this.gamePlot.getStage(node.player.stage);
+
         // Flexible mode
         if (this.options.flexibleMode) {
-            if (stage && stage.id === this.oldStageId) {
-                this.curRound += 1;
-            }
-            else if (stage && stage.id) {
-                this.curRound = 1;
-                this.curStage += 1;
+            if (stage) {
+                if (stage.id === this.oldStageId) {
+                    this.curRound += 1;
+                }
+                else if (stage.id) {
+                    this.curRound = 1;
+                    this.curStage += 1;
+                }
+                this.oldStageId = stage.id;
             }
         }
 
-        // For normal mode
+        // Normal mode
         else {
             // Extracts only id attribute from array of objects
             idseq = this.stager.sequence.map(function(obj){return obj.id;});
@@ -29611,33 +29764,181 @@ JSUS.extend(TIME);
                 this.curStage = 1;
                 this.totRound = 1;
             }
+            this.totStage -= this.stageOffset;
+            this.curStage -= this.stageOffset;
         }
-        this.totStage -= this.stageOffset;
-        this.curStage -= this.stageOffset;
         this.updateDisplay();
-        if (stage) {
-            this.oldStageId = stage.id;
-        }
     };
 
+   /**
+     * # EmptyStrategy Class
+     *
+     * Copyright(c) 2014 Stefano Balietti
+     * MIT Licensed
+     *
+     * Defines a strategy for the `VisualRound` which displays nothing.
+     *
+     * ---
+     */
+
+    /**
+     * ## EmptyStrategy
+     *
+     * Display strategy which contains the bare minumum. Displays nothing.
+     *
+     * @param {VisualRound} visualRound The `VisualRound` object to which the
+     *     strategy belongs
+     * @param {object} options The options taken.
+     *
+     * @see VisualRound
+     */
+    function EmptyStrategy(visualRound, options) {
+         /**
+         * ### name
+         *
+         * The name of the strategy also refered to as the name of the style
+         */
+        this.name = 'EMPTY';
+        this.options = options || {};
+
+        /**
+         * ### visualRound
+         *
+         * The `VisualRound` object to which the strategy belongs.
+         *
+         * @see VisualRound
+         */
+        this.visualRound = visualRound;
+
+        /**
+         * ### displayDiv
+         *
+         * The DIV in which the information is displayed.
+         */
+        this.displayDiv = null;
+
+        this.init(this.options);
+    }
+    /**
+     * ## EmptyStrategy.init
+     *
+     * Initializes instance.
+     *
+     * @param {object} options The options taken.
+     *
+     * @see EmptyStrategy.updateDisplay
+     */
+    EmptyStrategy.prototype.init = function(options) {
+        this.displayDiv = node.window.getDiv();
+        this.displayDiv.className = 'rounddiv';
+
+        this.updateDisplay();
+    }
+
+    /**
+     * ## EmptyStrategy.updateDisplay
+     *
+     * Does nothing.
+     *
+     * @see VisualRound.updateDisplay
+     */
+    EmptyStrategy.prototype.updateDisplay = function() {
+    };
+
+   /**
+     * # CountUpStages Class
+     *
+     * Copyright(c) 2014 Stefano Balietti
+     * MIT Licensed
+     *
+     * Defines a strategy for the `VisualRound` which displays the current
+     * and possibly the total number of stages.
+     *
+     * ---
+     */
+
+    /**
+     * ## CountUpStages
+     *
+     * Display strategy which displays the current and possibly the total
+     * number of stages.
+     *
+     * @param {VisualRound} visualRound The `VisualRound` object to which the
+     *     strategy belongs
+     * @param {object} options The options taken. If `options.toTotal == true`,
+     *     then the total number of stages is displayed.
+     *
+     * @see VisualRound
+     */
     function CountUpStages(visualRound, options) {
         this.options = options || {};
+        /**
+         * ### name
+         *
+         * The name of the strategy also refered to as the name of the style
+         */
+        this.name = 'COUNT_UP_STAGES';
         if (this.options.toTotal) {
-            this.name = 'COUNT_UP_STAGES_TO_TOTAL';
+            this.name += '_TO_TOTAL';
         }
-        else {
-            this.name = 'COUNT_UP_STAGES';
-        }
+
+        /**
+         * ### visualRound
+         *
+         * The `VisualRound` object to which the strategy belongs.
+         *
+         * @see VisualRound
+         */
         this.visualRound = visualRound;
+
+        /**
+         * ### displayDiv
+         *
+         * The DIV in which the information is displayed.
+         */
         this.displayDiv = null;
+
+        /**
+         * ### curStageNumber
+         *
+         * The span in which the current stage number is displayed.
+         */
         this.curStageNumber = null;
+
+        /**
+         * ### totStageNumber
+         *
+         * The element in which the total stage number is displayed.
+         */
         this.totStageNumber = null;
+
+        /**
+         * ### displayDiv
+         *
+         * The DIV in which the title is displayed.
+         */
         this.titleDiv = null;
+
+        /**
+         * ### displayDiv
+         *
+         * The span in which the text ` of ` is displayed.
+         */
         this.textDiv = null;
 
         this.init(this.options);
     }
 
+    /**
+     * ## CountUpStages.init
+     *
+     * Initializes instance.
+     *
+     * @param {object} options The options taken. If `options.toTotal == true`,
+     *     then the total number of stages is displayed.
+     *
+     * @see CountUpStages.updateDisplay
+     */
     CountUpStages.prototype.init = function(options) {
         this.displayDiv = node.window.getDiv();
         this.displayDiv.className = 'stagediv';
@@ -29667,6 +29968,14 @@ JSUS.extend(TIME);
         this.updateDisplay();
     };
 
+    /**
+     * ## CountUpStages.updateDisplay
+     *
+     * Updates the content of `curStageNumber` and `totStageNumber` according
+     * to `visualRound`
+     *
+     * @see VisualRound.updateDisplay
+     */
     CountUpStages.prototype.updateDisplay = function() {
         this.curStageNumber.innerHTML = this.visualRound.curStage;
         if (this.options.toTotal) {
@@ -29674,17 +29983,80 @@ JSUS.extend(TIME);
         }
     };
 
+   /**
+     * # CountDownStages Class
+     *
+     * Copyright(c) 2014 Stefano Balietti
+     * MIT Licensed
+     *
+     * Defines a strategy for the `VisualRound` which displays the remaining
+     * number of stages.
+     *
+     * ---
+     */
+
+    /**
+     * ## CountDownStages
+     *
+     * Display strategy which displays the remaining number of stages.
+     *
+     * @param {VisualRound} visualRound The `VisualRound` object to which the
+     *     strategy belongs
+     * @param {object} options The options taken.
+     *
+     * @see VisualRound
+     */
     function CountDownStages(visualRound, options) {
+        /**
+         * ### name
+         *
+         * The name of the strategy also refered to as the name of the style
+         */
         this.name = 'COUNT_DOWN_STAGES';
         this.options = options || {};
+
+        /**
+         * ### visualRound
+         *
+         * The `VisualRound` object to which the strategy belongs.
+         *
+         * @see VisualRound
+         */
         this.visualRound = visualRound;
+
+        /**
+         * ### displayDiv
+         *
+         * The DIV in which the information is displayed.
+         */
         this.displayDiv = null;
+
+        /**
+         * ### stagesLeft
+         *
+         * The DIV in which the number stages left is displayed.
+         */
         this.stagesLeft = null;
+
+        /**
+         * ### displayDiv
+         *
+         * The DIV in which the title is displayed.
+         */
         this.titleDiv = null;
 
         this.init(this.options);
     }
 
+    /**
+     * ## CountDownStages.init
+     *
+     * Initializes instance.
+     *
+     * @param {object} options The options taken.
+     *
+     * @see CountDownStages.updateDisplay
+     */
     CountDownStages.prototype.init = function(options) {
         this.displayDiv = node.window.getDiv();
         this.displayDiv.className = 'stagediv';
@@ -29699,6 +30071,13 @@ JSUS.extend(TIME);
         this.updateDisplay();
     };
 
+    /**
+     * ## CountDownStages.updateDisplay
+     *
+     * Updates the content of `stagesLeft` according to `visualRound`.
+     *
+     * @see VisualRound.updateDisplay
+     */
     CountDownStages.prototype.updateDisplay = function() {
         if (this.visualRound.totStage === this.visualRound.curStage) {
             this.stagesLeft.innerHTML = 0;
@@ -29708,23 +30087,100 @@ JSUS.extend(TIME);
                 (this.visualRound.totStage - this.visualRound.curStage) || '?';
     };
 
+   /**
+     * # CountUpRounds Class
+     *
+     * Copyright(c) 2014 Stefano Balietti
+     * MIT Licensed
+     *
+     * Defines a strategy for the `VisualRound` which displays the current
+     * and possibly the total number of rounds.
+     *
+     * ---
+     */
+
+    /**
+     * ## CountUpRounds
+     *
+     * Display strategy which displays the current and possibly the total
+     * number of rounds.
+     *
+     * @param {VisualRound} visualRound The `VisualRound` object to which the
+     *     strategy belongs
+     * @param {object} options The options taken. If `options.toTotal == true`,
+     *     then the total number of rounds is displayed.
+     *
+     * @see VisualRound
+     */
     function CountUpRounds(visualRound, options) {
-    this.options = options || {};
+        this.options = options || {};
+        /**
+         * ### name
+         *
+         * The name of the strategy also refered to as the name of the style
+         */
+        this.name = 'COUNT_UP_ROUNDS';
         if (this.options.toTotal) {
-            this.name = 'COUNT_UP_ROUNDS_TO_TOTAL';
+            this.name += '_TO_TOTAL';
         }
-        else {
-            this.name = 'COUNT_UP_ROUNDS';
-        }
+
+        /**
+         * ### visualRound
+         *
+         * The `VisualRound` object to which the strategy belongs.
+         *
+         * @see VisualRound
+         */
         this.visualRound = visualRound;
+
+        /**
+         * ### displayDiv
+         *
+         * The DIV in which the information is displayed.
+         */
         this.displayDiv = null;
+
+        /**
+         * ### curRoundNumber
+         *
+         * The span in which the current round number is displayed.
+         */
         this.curRoundNumber = null;
+
+        /**
+         * ### totRoundNumber
+         *
+         * The element in which the total round number is displayed.
+         */
         this.totRoundNumber = null;
+
+        /**
+         * ### displayDiv
+         *
+         * The DIV in which the title is displayed.
+         */
+        this.titleDiv = null;
+
+        /**
+         * ### displayDiv
+         *
+         * The span in which the text ` of ` is displayed.
+         */
         this.textDiv = null;
 
         this.init(this.options);
     }
 
+    /**
+     * ## CountUpRounds.init
+     *
+     * Initializes instance.
+     *
+     * @param {object} options The options taken. If `options.toTotal == true`,
+     *     then the total number of rounds is displayed.
+     *
+     * @see CountUpRounds.updateDisplay
+     */
     CountUpRounds.prototype.init = function(options) {
         this.displayDiv = node.window.getDiv();
         this.displayDiv.className = 'rounddiv';
@@ -29754,6 +30210,14 @@ JSUS.extend(TIME);
         this.updateDisplay();
     };
 
+    /**
+     * ## CountUpRounds.updateDisplay
+     *
+     * Updates the content of `curRoundNumber` and `totRoundNumber` according
+     * to `visualRound`
+     *
+     * @see VisualRound.updateDisplay
+     */
     CountUpRounds.prototype.updateDisplay = function() {
         this.curRoundNumber.innerHTML = this.visualRound.curRound;
         if (this.options.toTotal) {
@@ -29762,17 +30226,80 @@ JSUS.extend(TIME);
     };
 
 
+   /**
+     * # CountDownRounds Class
+     *
+     * Copyright(c) 2014 Stefano Balietti
+     * MIT Licensed
+     *
+     * Defines a strategy for the `VisualRound` which displays the remaining
+     * number of rounds.
+     *
+     * ---
+     */
+
+    /**
+     * ## CountDownRounds
+     *
+     * Display strategy which displays the remaining number of rounds.
+     *
+     * @param {VisualRound} visualRound The `VisualRound` object to which the
+     *     strategy belongs
+     * @param {object} options The options taken.
+     *
+     * @see VisualRound
+     */
     function CountDownRounds(visualRound, options) {
+         /**
+         * ### name
+         *
+         * The name of the strategy also refered to as the name of the style
+         */
         this.name = 'COUNT_DOWN_ROUNDS';
         this.options = options || {};
+
+        /**
+         * ### visualRound
+         *
+         * The `VisualRound` object to which the strategy belongs.
+         *
+         * @see VisualRound
+         */
         this.visualRound = visualRound;
+
+        /**
+         * ### displayDiv
+         *
+         * The DIV in which the information is displayed.
+         */
         this.displayDiv = null;
+
+        /**
+         * ### roundsLeft
+         *
+         * The DIV in which the number rounds left is displayed.
+         */
         this.roundsLeft = null;
+
+        /**
+         * ### displayDiv
+         *
+         * The DIV in which the title is displayed.
+         */
         this.titleDiv = null;
 
         this.init(this.options);
     }
 
+    /**
+     * ## CountDownRounds.init
+     *
+     * Initializes instance.
+     *
+     * @param {object} options The options taken.
+     *
+     * @see CountDownRounds.updateDisplay
+     */
     CountDownRounds.prototype.init = function(options) {
         this.displayDiv = node.window.getDiv();
         this.displayDiv.className = 'rounddiv';
@@ -29787,6 +30314,13 @@ JSUS.extend(TIME);
         this.updateDisplay();
     };
 
+    /**
+     * ## CountDownRounds.updateDisplay
+     *
+     * Updates the content of `roundsLeft` according to `visualRound`.
+     *
+     * @see VisualRound.updateDisplay
+     */
     CountDownRounds.prototype.updateDisplay = function() {
         if (this.visualRound.totRound === this.visualRound.curRound) {
             this.roundsLeft.innerHTML = 0;
@@ -29796,29 +30330,103 @@ JSUS.extend(TIME);
                 (this.visualRound.totRound - this.visualRound.curRound) || '?';
     };
 
+   /**
+     * # CombinedStrategy Class
+     *
+     * Copyright(c) 2014 Stefano Balietti
+     * MIT Licensed
+     *
+     * Defines a strategy for the `VisualRound` which displays the information
+     * according to multiple strategies.
+     *
+     * ---
+     */
+
+    /**
+     * ## CombinedStrategy
+     *
+     * Display strategy which combines multiple other display strategies.
+     *
+     * @param {VisualRound} visualRound The `VisualRound` object to which the
+     *     strategy belongs
+     * @param {array} strategies Array of strategies to be used in combination.
+     * @param {object} options The options taken.
+     *
+     * @see VisualRound
+     */
     function CombinedStrategy(visualRound, strategies, options) {
-        var strategyIndex;
+        var index;
+
+        /**
+         * ### name
+         *
+         * The name of the strategy also refered to as the name of the style
+         */
         this.name = '';
-        for (strategyIndex in strategies) {
-            this.name += strategies[strategyIndex].name + '&';
+        for (index in strategies) {
+            this.name += strategies[index].name + '&';
         }
         this.name = this.name.substr(0,this.name.length -1);
 
         this.options = options || {};
+
+        /**
+         * ### visualRound
+         *
+         * The `VisualRound` object to which the strategy belongs.
+         *
+         * @see VisualRound
+         */
         this.visualRound = visualRound;
+
+         /**
+         * ### strategies
+         *
+         * The array of strategies to be used in combination.
+         */
         this.strategies = strategies;
 
-        this.displayDiv = node.window.getDiv();
+        /**
+         * ### displayDiv
+         *
+         * The DIV in which the information is displayed.
+         */
+        this.displayDiv = null;
 
-        for (strategyIndex in strategies) {
-            this.displayDiv.appendChild(this.strategies[strategyIndex].displayDiv);
-        }
+        this.init(options);
     }
 
+    /**
+     * ## CombinedStrategy.init
+     *
+     * Initializes instance.
+     *
+     * @param {object} options The options taken.
+     *
+     * @see CombinedStrategy.updateDisplay
+     */
+     CombinedStrategy.prototype.init = function(options) {
+        var index;
+        this.displayDiv = node.window.getDiv();
+
+        for (index in this.strategies) {
+            this.displayDiv.appendChild(this.strategies[index].displayDiv);
+        }
+
+        this.updateDisplay();
+    }
+
+    /**
+     * ## CombinedStrategy.updateDisplay
+     *
+     * Calls `updateDisplay` for all strategies in the combination.
+     *
+     * @see VisualRound.updateDisplay
+     */
     CombinedStrategy.prototype.updateDisplay = function() {
-        var strategyIndex;
-        for (strategyIndex in this.strategies) {
-            this.strategies[strategyIndex].updateDisplay();
+        var index;
+        for (index in this.strategies) {
+            this.strategies[index].updateDisplay();
         }
     };
 
@@ -29932,6 +30540,7 @@ JSUS.extend(TIME);
  * Only for countdown smaller than 1h.
  *
  * www.nodegame.org
+ *
  * ---
  */
 (function(node) {
@@ -29959,17 +30568,19 @@ JSUS.extend(TIME);
     };
 
     /**
-     *  ## VisualTimer
+     * ## VisualTimer
      *
-     *  'VisualTimer' displays and manages a 'GameTimer'
-     *  The options it can take are:
-
-     *  - any options that can be passed to a 'GameTimer'
-     *  - waitBoxOptions: an option object to be passed to 'TimerBox'
-     *  - mainBoxOptions: an option object to be passed to 'TimerBox'
+     * `VisualTimer` displays and manages a `GameTimer`
      *
-     *  @see TimerBox
-     *  @see GameTimer
+     * @param {object} options The options taken.
+     * The options it can take are:
+     *
+     * - any options that can be passed to a `GameTimer`
+     * - waitBoxOptions: an option object to be passed to `TimerBox`
+     * - mainBoxOptions: an option object to be passed to `TimerBox`
+     *
+     * @see TimerBox
+     * @see GameTimer
      */
     function VisualTimer(options) {
         this.options = options || {};
@@ -29977,67 +30588,67 @@ JSUS.extend(TIME);
             1000 : this.options.update;
 
         /**
-         *  ### gameTimer
+         * ### gameTimer
          *
-         *  The timer which counts down the game time.
+         * The timer which counts down the game time.
          *
-         *  @see node.timer.createTimer
+         * @see node.timer.createTimer
          */
         this.gameTimer = null;
 
         /**
-         *  ### mainBox
+         * ### mainBox
          *
-         *  The 'TimerBox' which displays the main timer.
+         * The `TimerBox` which displays the main timer.
          *
-         *  @see TimerBox
+         * @see TimerBox
          */
         this.mainBox = null;
 
         /**
-         *  ### waitBox
+         * ### waitBox
          *
-         *  The 'TimerBox' which displays the wait timer.
+         * The `TimerBox` which displays the wait timer.
          *
-         *  @see TimerBox
+         * @see TimerBox
          */
         this.waitBox = null;
 
         /**
-         *  ### activeBox
+         * ### activeBox
          *
-         *  The 'TimerBox' in which to display the time.
+         * The `TimerBox` in which to display the time.
          *
-         *  This variable is always a reference to either 'waitBox' or
-         *  'mainBox'.
+         * This variable is always a reference to either `waitBox` or
+         * `mainBox`.
          *
-         *  @see TimerBox
+         * @see TimerBox
          */
         this.activeBox = null;
 
         /**
-         *  ### isInitialized
+         * ### isInitialized
          *
-         *  indicates whether the instance has been initializded already
+         * indicates whether the instance has been initializded already
          */
         this.isInitialized = false;
         this.init(this.options);
     }
 
     /**
-     *  ## VisualTimer
+     * ## VisualTimer.init
      *
-     *  Initializes the instance. When called again, adds options to current
-     *  ones.
+     * Initializes the instance. When called again, adds options to current
+     * ones.
      *
-     *  The options it can take are:
+     * The options it can take are:
      *
-     *  - any options that can be passed to a 'GameTimer'
-     *  - waitBoxOptions: an option object to be passed to 'TimerBox'
-     *  - mainBoxOptions: an option object to be passed to 'TimerBox'
+     * - any options that can be passed to a `GameTimer`
+     * - waitBoxOptions: an option object to be passed to `TimerBox`
+     * - mainBoxOptions: an option object to be passed to `TimerBox`
      *
-     *  @see TimerBox
-     *  @see GameTimer
+     * @see TimerBox
+     * @see GameTimer
      */
     VisualTimer.prototype.init = function(options) {
         var t;
@@ -30131,14 +30742,16 @@ JSUS.extend(TIME);
     };
 
     /**
-     *  ## VisualTimer.clear
+     * ## VisualTimer.clear
      *
-     *  Reverts state of 'VisualTimer' to right after constructor call.
+     * Reverts state of `VisualTimer` to right after constructor call.
      *
-     *  @param {object} options Configuration object
+     * @param {object} options Configuration object
      *
-     *  @see node.timer.destroyTimer
-     *  @see VisualTimer.init
+     * @return {object} Old options.
+     *
+     * @see node.timer.destroyTimer
+     * @see VisualTimer.init
      */
     VisualTimer.prototype.clear = function(options) {
         var oldOptions = this.options;
@@ -30163,11 +30776,11 @@ JSUS.extend(TIME);
     };
 
     /**
-     *  ## VisualTimer.updateDisplay
+     * ## VisualTimer.updateDisplay
      *
-     *  Changes 'activeBox' to display current time of 'gameTimer'
+     * Changes `activeBox` to display current time of `gameTimer`
      *
-     *  @see TimerBox.bodyDiv
+     * @see TimerBox.bodyDiv
      */
     VisualTimer.prototype.updateDisplay = function() {
         var time, minutes, seconds;
@@ -30183,12 +30796,12 @@ JSUS.extend(TIME);
     };
 
     /**
-     *  ## VisualTimer.start
+     * ## VisualTimer.start
      *
-     *  Starts the timer.
+     * Starts the timer.
      *
-     *  @see VisualTimer.updateDisplay
-     *  @see GameTimer.start
+     * @see VisualTimer.updateDisplay
+     * @see GameTimer.start
      */
     VisualTimer.prototype.start = function() {
         this.updateDisplay();
@@ -30196,15 +30809,15 @@ JSUS.extend(TIME);
     };
 
     /**
-     *  ## VisualTimer.restart
+     * ## VisualTimer.restart
      *
-     *  Restarts the timer with new options
+     * Restarts the timer with new options
      *
-     *  @param {object} options Configuration object
+     * @param {object} options Configuration object
      *
-     *  @see VisualTimer.init
-     *  @see VisualTimer.start
-     *  @see VisualTimer.stop
+     * @see VisualTimer.init
+     * @see VisualTimer.start
+     * @see VisualTimer.stop
      */
     VisualTimer.prototype.restart = function(options) {
         this.stop();
@@ -30213,14 +30826,14 @@ JSUS.extend(TIME);
     };
 
     /**
-     *  ## VisualTimer.stop
+     * ## VisualTimer.stop
      *
-     *  Stops the timer display and stores the time left in 'activeBox.timeLeft'
+     * Stops the timer display and stores the time left in `activeBox.timeLeft`
      *
-     *  @param {object} options Configuration object
+     * @param {object} options Configuration object
      *
-     *  @see GameTimer.isStopped
-     *  @see GameTimer.stop
+     * @see GameTimer.isStopped
+     * @see GameTimer.stop
      */
     VisualTimer.prototype.stop = function(options) {
         if (!this.gameTimer.isStopped()) {
@@ -30229,14 +30842,14 @@ JSUS.extend(TIME);
         }
     };
     /**
-     *  ## VisualTimer.switchActiveBoxTo
+     * ## VisualTimer.switchActiveBoxTo
      *
-     *  Switches the display of the 'gameTimer' into the 'TimerBox' 'box'.
+     * Switches the display of the `gameTimer` into the `TimerBox` `box`.
      *
-     *  Stores 'gameTimer.timeLeft' into 'activeBox' and then switches
-     *  'activeBox' to reference 'box'.
+     * Stores `gameTimer.timeLeft` into `activeBox` and then switches
+     * `activeBox` to reference `box`.
      *
-     *  @param {TimerBox} box TimerBox in which to display 'gameTimer' time
+     * @param {TimerBox} box TimerBox in which to display `gameTimer` time
      */
     VisualTimer.prototype.switchActiveBoxTo = function(box) {
         this.activeBox.timeLeft = this.gameTimer.timeLeft || 0;
@@ -30247,12 +30860,12 @@ JSUS.extend(TIME);
     /**
       * ## VisualTimer.startWaiting
       *
-      * Changes the 'VisualTimer' appearance to a max. wait timer
+      * Changes the `VisualTimer` appearance to a max. wait timer
       *
       * If options and/or options.milliseconds are undefined, the wait timer
-      * will start with the current time left on the 'gameTimer'. The mainBox
+      * will start with the current time left on the `gameTimer`. The mainBox
       * will be striked out, the waitBox set active and unhidden. All other
-      * options are forwarded directly to 'VisualTimer.restart'.
+      * options are forwarded directly to `VisualTimer.restart`.
       *
       * @param {object} options Configuration object
       *
@@ -30282,11 +30895,11 @@ JSUS.extend(TIME);
     /**
       * ## VisualTimer.startTiming
       *
-      * Changes the 'VisualTimer' appearance to a regular countdown
+      * Changes the `VisualTimer` appearance to a regular countdown
       *
       * The mainBox will be unstriked and set active, the waitBox will be
       * hidden. All other options are forwarded directly to
-      * 'VisualTimer.restart'.
+      * `VisualTimer.restart`.
       *
       * @param {object} options Configuration object
       *
@@ -30311,22 +30924,22 @@ JSUS.extend(TIME);
     };
 
     /**
-     *  ## VisualTimer.resume
+     * ## VisualTimer.resume
      *
-     *  Resumes the 'gameTimer'
+     * Resumes the `gameTimer`
      *
-     *  @see GameTimer.resume
+     * @see GameTimer.resume
      */
     VisualTimer.prototype.resume = function() {
         this.gameTimer.resume();
     };
 
     /**
-     *  ## VisualTimer.setToZero
+     * ## VisualTimer.setToZero
      *
-     *  stops 'gameTimer' and sets 'activeBox' to display '00:00'
+     * stops `gameTimer` and sets `activeBox` to display `00:00`
      *
-     *  @see GameTimer.resume
+     * @see GameTimer.resume
      */
     VisualTimer.prototype.setToZero = function() {
         this.stop();
@@ -30425,45 +31038,56 @@ JSUS.extend(TIME);
         return options;
     }
 
-    /**
-     *  ## TimerBox
+   /**
+     * # TimerBox Class
      *
-     *  'TimerBox' represents a box wherein to display the timer.
-     *  The options it can take are:
+     * Copyright(c) 2014 Stefano Balietti
+     * MIT Licensed
+     *
+     * Represents a box wherin to display a `VisualTimer`.
+     *
+     * ---
+     */
 
-     *  - hideTitle
-     *  - hideBody
-     *  - hideBox
-     *  - title
-     *  - classNameTitle
-     *  - classNameBody
-     *  - timeLeft
+    /**
+     * ## TimerBox
+     *
+     * `TimerBox` represents a box wherein to display the timer.
+     * The options it can take are:
+
+     * - `hideTitle`
+     * - `hideBody`
+     * - `hideBox`
+     * - `title`
+     * - `classNameTitle`
+     * - `classNameBody`
+     * - `timeLeft`
      */
     function TimerBox(options) {
         /**
-         *  ### boxDiv
+         * ### boxDiv
          *
-         *  The Div which will contain the title and body Divs
+         * The Div which will contain the title and body Divs
          */
         this.boxDiv = null;
 
         /**
-         *  ### titleDiv
+         * ### titleDiv
          *
-         *  The Div which will contain the title
+         * The Div which will contain the title
          */
         this.titleDiv = null;
         /**
-         *  ### bodyDiv
+         * ### bodyDiv
          *
-         *  The Div which will contain the numbers
+         * The Div which will contain the numbers
          */
         this.bodyDiv = null;
 
         /**
-         *  ### timeLeft
+         * ### timeLeft
          *
-         *  Used to store the last value before focus is taken away
+         * Used to store the last value before focus is taken away
          */
         this.timeLeft = null;
 
@@ -30509,7 +31133,7 @@ JSUS.extend(TIME);
     /**
      * ## TimerBox.hideBox
      *
-     * hides entire 'TimerBox'
+     * hides entire `TimerBox`
      */
     TimerBox.prototype.hideBox = function() {
         this.boxDiv.style.display = 'none';
@@ -30518,7 +31142,7 @@ JSUS.extend(TIME);
     /**
      * ## TimerBox.unhideBox
      *
-     * hides entire 'TimerBox'
+     * hides entire `TimerBox`
      */
     TimerBox.prototype.unhideBox = function() {
         this.boxDiv.style.display = '';
@@ -30527,7 +31151,7 @@ JSUS.extend(TIME);
     /**
      * ## TimerBox.hideTitle
      *
-     * hides title of 'TimerBox'
+     * hides title of `TimerBox`
      */
     TimerBox.prototype.hideTitle = function() {
         this.titleDiv.style.display = 'none';
@@ -30536,7 +31160,7 @@ JSUS.extend(TIME);
     /**
      * ## TimerBox.unhideTitle
      *
-     * unhides title of 'TimerBox'
+     * unhides title of `TimerBox`
      */
     TimerBox.prototype.unhideTitle = function() {
         this.titleDiv.style.display = '';
@@ -30545,7 +31169,7 @@ JSUS.extend(TIME);
     /**
      * ## TimerBox.hideBody
      *
-     * hides body of 'TimerBox'
+     * hides body of `TimerBox`
      */
     TimerBox.prototype.hideBody = function() {
         this.bodyDiv.style.display = 'none';
@@ -30554,7 +31178,7 @@ JSUS.extend(TIME);
     /**
      * ## TimerBox.unhideBody
      *
-     * unhides Body of 'TimerBox'
+     * unhides Body of `TimerBox`
      */
     TimerBox.prototype.unhideBody = function() {
         this.bodyDiv.style.display = '';
@@ -30563,7 +31187,7 @@ JSUS.extend(TIME);
     /**
      * ## TimerBox.setTitle
      *
-     * sets title of 'TimerBox'
+     * sets title of `TimerBox`
      */
     TimerBox.prototype.setTitle = function(title) {
         this.titleDiv.innerHTML = title;
@@ -30572,7 +31196,7 @@ JSUS.extend(TIME);
     /**
      * ## TimerBox.setClassNameTitle
      *
-     * sets class name of title of 'TimerBox'
+     * sets class name of title of `TimerBox`
      */
     TimerBox.prototype.setClassNameTitle = function(className) {
         this.titleDiv.className = className;
@@ -30581,7 +31205,7 @@ JSUS.extend(TIME);
     /**
      * ## TimerBox.setClassNameBody
      *
-     * sets class name of body of 'TimerBox'
+     * sets class name of body of `TimerBox`
      */
     TimerBox.prototype.setClassNameBody = function(className) {
         this.bodyDiv.className = className;
