@@ -18577,6 +18577,7 @@ JSUS.extend(TIME);
     'undefined' != typeof node ? node : module.exports,
     'undefined' != typeof node ? node : module.parent.exports
 );
+
 /**
  * # Setup
  * Copyright(c) 2014 Stefano Balietti
@@ -24982,7 +24983,7 @@ JSUS.extend(TIME);
 );
 
 /**
- * # Widgetss
+ * # Widgets
  * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
@@ -29395,24 +29396,24 @@ JSUS.extend(TIME);
  * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
- * Display number of current round and/or stage.
- * Can also display countdown and total number of rounds and/or stages.
+ * Display information about rounds and/or stage in the game.
+ * Accepts different visualization options (e.g. countdown, etc.).
+ * See `VisualRound` constructor for a list of all available options.
  *
  * www.nodegame.org
- *
  * ---
  */
 (function(node) {
 
     "use strict";
 
-    node.widgets.register('VisualRound',VisualRound);
+    node.widgets.register('VisualRound', VisualRound);
 
     var J = node.JSUS;
 
     // ## Meta-data
 
-    VisualRound.version = '0.1.0';
+    VisualRound.version = '0.2.0';
     VisualRound.description = 'Display number of current round and/or stage.' +
         'Can also display countdown and total number of rounds and/or stages.';
 
@@ -29427,129 +29428,126 @@ JSUS.extend(TIME);
     };
 
     /**
-     * ## VisualRound
+     * ## VisualRound constructor
      *
-     * `VisualRound` displays information on the current and total rounds and
-     * stages.
+     * Displays information on the current and total rounds and stages
      *
-     * @param {object} options The options taken.
+     * @param {object} options Optional. Configuration options
+     *
      * The options it can take are:
      *
      * - `stageOffset`: Stage displayed is the actual stage minus stageOffset.
      * - `flexibleMode`: Set `true`, if number of rounds and/or stages can
      *     change dynamically.
-     * - `curStage`: When (re)starting in `flexibleMode`, you can set the current
-     *     stage.
-     * - `curRound`: When (re)starting in `flexibleMode`, you can set the current
-     *     round.
-     * - `totStage`: When (re)starting in `flexibleMode`, you can set the total
+     * - `curStage`: When (re)starting in `flexibleMode`, sets the current stage
+     * - `curRound`: When (re)starting in `flexibleMode`, sets the current round
+     * - `totStage`: When (re)starting in `flexibleMode`, sets the total
      *     number of stages.
-     * - `totRound`: When (re)starting in `flexibleMode`, you can set the total
+     * - `totRound`: When (re)starting in `flexibleMode`, sets the total
      *     number of rounds.
-     * - `oldStageId`: When (re)starting in `flexibleMode`, you can pass the id
-     *     of the current stage.
-     * - `style`: Array of strings. Determines the display style of the widget.
-     *     Currently available styles are:
-     * - - `COUNT_UP_STAGES`: Display only current stage number.
-     * - - `COUNT_UP_ROUNDS`: Display only current round number.
-     * - - `COUNT_UP_STAGES_TO_TOTAL`: Display current and total stage number.
-     * - - `COUNT_UP_ROUNDS_TO_TOTAL`: Display current and total round number.
-     * - - `COUNT_DOWN_STAGES`: Display number of stages left to play.
-     * - - `COUNT_DOWN_ROUNDS: Display number of rounds left in this stage.
+     * - `oldStageId`: When (re)starting in `flexibleMode`, sets the id of
+     *     the current stage.
+     * - `displayModeNames`: Array of strings which determines the display style
+     *     of the widget.
      *
+     * @see VisualRound.setDisplayMode
      * @see GameStager
      * @see GamePlot
      */
     function VisualRound(options) {
-        this.options = options || {};
+        this.options = options;
 
         /**
-         * ### strategy
+         * ### VisualRound.displayMode
          *
-         * Strategy which determines information displayed. Set through
-         * `VisualRound.setStyle` using a string to describe the strategy.
+         * Object which determines what information is displayed
          *
-         * @see VisualRound.setStyle
+         * Set through `VisualRound.setDisplayMode` using a string to describe
+         * the displayMode.
+         *
+         * @see VisualRound.setDisplayMode
          */
-        this.strategy = null;
+        this.displayMode = null;
 
         /**
-         * ### stager
+         * ### VisualRound.stager
          *
-         * `GameStager` object to provide stage and round information.
+         * Reference to a `GameStager` object providing stage and round info
          *
          * @see GameStager
          */
         this.stager = null;
 
         /**
-         * ### gamePlot
+         * ### VisualRound.gamePlot
          *
-         * `GamePlot` object to provide stage and round information.
+         * `GamePlot` object to provide stage and round information
          *
          * @see GamePlot
          */
         this.gamePlot = null;
 
         /**
-         * ### curStage
+         * ### VisualRound.curStage
          *
-         * Number of the current stage.
+         * Number of the current stage
          */
         this.curStage = null;
 
         /**
-         * ### totStage
+         * ### VisualRound.totStage
          *
-         * Total number of stages. Might be null if in `flexibleMode`.
+         * Total number of stages. Might be null if in `flexibleMode`
          */
         this.totStage = null;
 
         /**
-         * ### curRound
+         * ### VisualRound.curRound
          *
-         * Number of the current round.
+         * Number of the current round
          */
         this.curRound = null;
 
         /**
-         * ### totRound
+         * ### VisualRound.totRound
          *
-         * Total number of rounds. Might be null if in `flexibleMode`.
+         * Total number of rounds. Might be null if in `flexibleMode`
          */
         this.totRound = null;
 
         /**
-         * ### stageOffset
+         * ### VisualRound.stageOffset
          *
-         * Stage displayed is the actual stage minus stageOffset.
+         * Stage displayed is the actual stage minus stageOffset
          */
         this.stageOffset = null;
 
         /**
-         * ### oldStageId
+         * ### VisualRound.oldStageId
          *
-         * Stage id of the previous stage. Needed in `flexibleMode` to count
-         *     rounds.
+         * Stage id of the previous stage
+         *
+         * Needed in `flexibleMode` to count rounds.
          */
         this.oldStageId = null;
+
         this.init(this.options);
     }
+
     /**
      * ## VisualRound.init
      *
-     * Initializes the instance. When called again, adds options to current
-     * ones.
+     * Initializes the instance
      *
-     * The options it can take are the same as `VisualRound` constructor.
+     * If called on running instance, options are mixed-in into current
+     * settings. See `VisualRound` constructor for which options are allowed.
      *
-     * @param {object} options The options taken.
-     * @see VisualRound
+     * @param {object} options Optional. Configuration options
+     *
+     * @see VisualRound constructor
      */
     VisualRound.prototype.init = function(options) {
-        if (!options) {
-            options = {};
-        }
+        options = options || {};
 
         J.mixout(options, this.options);
         this.options = options;
@@ -29575,142 +29573,160 @@ JSUS.extend(TIME);
 
         this.updateInformation();
 
-        if (!this.options.style) {
-            this.initStyle(['COUNT_UP_ROUNDS_TO_TOTAL',
+        if (!this.options.displayModeNames) {
+            this.setDisplayMode(['COUNT_UP_ROUNDS_TO_TOTAL',
                 'COUNT_UP_STAGES_TO_TOTAL']);
         }
         else {
-            this.initStyle(this.options.style);
+            this.setDisplayMode(this.options.displayModeNames);
         }
 
         this.updateDisplay();
     };
 
-     VisualRound.prototype.append = function() {
-        this.activate(this.strategy);
+    VisualRound.prototype.append = function() {
+        this.activate(this.displayMode);
         this.updateDisplay();
     };
 
     /**
      * ## VisualRound.updateDisplay
      *
-     * Updates the values displayed by forwarding the call to this.strategy.
+     * Updates the values displayed by forwarding the call to displayMode obj
+     *
+     * @see VisualRound.displayMode
      */
     VisualRound.prototype.updateDisplay = function() {
-        if (this.strategy) {
-            this.strategy.updateDisplay();
+        if (this.displayMode) {
+            this.displayMode.updateDisplay();
         }
     };
 
     /**
-     * ## VisualRound.initStyle
+     * ## VisualRound.setDisplayMode
      *
-     * Assignes `this.strategy` to a `CombinedStrategy` based on the array of
-     * style names provided.
+     * Sets the `VisualRound.displayMode` value
      *
-     * @param {array} styleNames Array of strings representing the names.
+     * Multiple displayModes are allowed, and will be merged together into a
+     * `CompoundDisplayMode` object. The old `displayMode` is deactivated and
+     * the new one is activated.
+     *
+     * The following strings are valid display names:
+     *
+     * - `COUNT_UP_STAGES`: Display only current stage number.
+     * - `COUNT_UP_ROUNDS`: Display only current round number.
+     * - `COUNT_UP_STAGES_TO_TOTAL`: Display current and total stage number.
+     * - `COUNT_UP_ROUNDS_TO_TOTAL`: Display current and total round number.
+     * - `COUNT_DOWN_STAGES`: Display number of stages left to play.
+     * - `COUNT_DOWN_ROUNDS: Display number of rounds left in this stage.
+     *
+     * @param {array} displayModeNames Array of strings representing the names.
+     *
+     * @see VisualRound.displayMode
+     * @see CompoundDisplayMode
+     * @see VisualRound.init
      */
-    VisualRound.prototype.initStyle = function(styleNames) {
-        var index, style, strategies;
+    VisualRound.prototype.setDisplayMode = function(displayModeNames) {
+        var index, compoundDisplayModeName, compoundDisplayMode, displayModes;
+
+        // Validation of input parameter.
+        if (!J.isArray(displayModeNames)) {
+            throw TypeError;
+        }
 
         // Build compound name.
-        style = '';
-        for (index in styleNames) {
-            style += styleNames[index] + '&';
+        compoundDisplayModeName = '';
+        for (index in displayModeNames) {
+            compoundDisplayModeName += displayModeNames[index] + '&';
         }
-        style = style.substr(0,style.length -1);
 
-        strategies = [];
-        for (index in styleNames) {
-            switch (styleNames[index]) {
+        // Remove trailing '&'.
+        compoundDisplayModeName = compoundDisplayModeName.substr(0,
+            compoundDisplayModeName, compoundDisplayModeName.length -1);
+
+        if (this.displayMode) {
+            if (compoundDisplayModeName !== this.displayMode.name) {
+                this.deactivate(this.displayMode);
+            }
+            else {
+                return;
+            }
+        }
+
+        // Build `CompoundDisplayMode`.
+        displayModes = [];
+        for (index in displayModeNames) {
+            switch (displayModeNames[index]) {
                 case 'COUNT_UP_STAGES_TO_TOTAL':
-                    strategies.push(new CountUpStages(this,{toTotal: true}));
+                    displayModes.push(new CountUpStages(this, {toTotal: true}));
                     break;
                 case 'COUNT_UP_STAGES':
-                    strategies.push(new CountUpStages(this));
+                    displayModes.push(new CountUpStages(this));
                     break;
                 case 'COUNT_DOWN_STAGES':
-                    strategies.push(new CountDownStages(this));
+                    displayModes.push(new CountDownStages(this));
                     break;
                 case 'COUNT_UP_ROUNDS_TO_TOTAL':
-                    strategies.push(new CountUpRounds(this,{toTotal: true}));
+                    displayModes.push(new CountUpRounds(this, {toTotal: true}));
                     break;
                 case 'COUNT_UP_ROUNDS':
-                    strategies.push(new CountUpRounds(this));
+                    displayModes.push(new CountUpRounds(this));
                     break;
                 case 'COUNT_DOWN_ROUNDS':
-                    strategies.push(new CountDownRounds(this));
+                    displayModes.push(new CountDownRounds(this));
                     break;
             }
         }
-        this.strategy = new CombinedStrategy(this, strategies);
+        this.displayMode = new CompoundDisplayMode(this, displayModes);
+        this.activate(this.displayMode);
     };
 
     /**
-     * ## VisualRound.setStyle
+     * ## VisualRound.getDisplayMode
      *
-     * If and only if styleNames does not define the same strategy as
-     * `this.strategy`, this function deactivates `this.strategy`,
-     * reassignes `this.strategy` to a `CombinedStrategy` based on the
-     * array of style names provided and activates this new strategy.
+     * Returns name of the current displayMode
      *
-     * @param {array} styleNames Array of strings representing the names.
-     * @see VisualRound.init
+     * @return {string} Name of the current displayMode.
      */
-    VisualRound.prototype.setStyle = function(styleNames) {
-        var index, style, strategies;
-
-        style = '';
-        for (index in styleNames) {
-            style += styleNames[index] + '&';
-        }
-        style = style.substr(0,style.length -1);
-
-        if (style !== this.strategy.name) {
-            this.deactivate(this.strategy);
-            this.initStyle(styleNames);
-            this.activate(this.strategy);
-        }
-    };
-
-    /**
-     * ## VisualRound.getStyle
-     *
-     * Returns name of current style.
-     *
-     * @return {string} Name of current style.
-     */
-    VisualRound.prototype.getStyle = function() {
-        return this.strategy.name;
+    VisualRound.prototype.getDisplayModeName = function() {
+        return this.displayMode.name;
     };
 
     /**
      * ## VisualRound.activate
      *
-     * Appends the displayDiv of the given strategy to `this.bodyDiv`. Calls
-     * `strategy.activate` if it is defined.
+     * Appends the displayDiv of the given displayMode to `this.bodyDiv`
      *
-     * @param {object} strategy Strategy to activate.
+     * Calls `displayMode.activate`, if one is defined.
+     *
+     * @param {object} displayMode DisplayMode to activate.
+     *
+     * @see VisualRound.deactivate
      */
-    VisualRound.prototype.activate = function(strategy) {
-        this.bodyDiv.appendChild(strategy.displayDiv);
-        if (strategy.activate) {
-            strategy.activate();
+    VisualRound.prototype.activate = function(displayMode) {
+        if (this.bodyDiv) {
+            this.bodyDiv.appendChild(displayMode.displayDiv);
+        }
+        if (displayMode.activate) {
+            displayMode.activate();
         }
     };
 
     /**
      * ## VisualRound.deactivate
      *
-     * Removes the displayDiv of the given strategy from `this.bodyDiv`. Calls
-     * `strategy.deactivate` if it is defined.
+     * Removes the displayDiv of the given displayMode from `this.bodyDiv`
      *
-     * @param {object} strategy Strategy to deactivate.
+     * Calls `displayMode.deactivate` if it is defined.
+     *
+     * @param {object} displayMode DisplayMode to deactivate.
+     *
+     * @see VisualRound.activate
      */
-    VisualRound.prototype.deactivate = function(strategy) {
-        this.bodyDiv.removeChild(strategy.displayDiv);
-        if (strategy.deactivate) {
-            strategy.deactivate();
+    VisualRound.prototype.deactivate = function(displayMode) {
+        this.bodyDiv.removeChild(displayMode.displayDiv);
+        if (displayMode.deactivate) {
+            displayMode.deactivate();
         }
     };
 
@@ -29727,10 +29743,10 @@ JSUS.extend(TIME);
     /**
      * ## VisualRound.updateInformation
      *
-     * Updates information about rounds and stages and updates the display.
+     * Updates information about rounds and stages and updates the display
      *
-     * Updates curRound, curStage, totRound, totStage, oldStageId and calls
-     * `VisualRound.updateDisplay`.
+     * Updates `curRound`, `curStage`, `totRound`, `totStage`, `oldStageId` and
+     * calls `VisualRound.updateDisplay`.
      *
      * @see VisualRound.updateDisplay
      */
@@ -29738,7 +29754,7 @@ JSUS.extend(TIME);
         var idseq, stage;
         stage = this.gamePlot.getStage(node.player.stage);
 
-        // Flexible mode
+        // Flexible mode.
         if (this.options.flexibleMode) {
             if (stage) {
                 if (stage.id === this.oldStageId) {
@@ -29752,12 +29768,12 @@ JSUS.extend(TIME);
             }
         }
 
-        // Normal mode
+        // Normal mode.
         else {
-            // Extracts only id attribute from array of objects
-            idseq = this.stager.sequence.map(function(obj){return obj.id;});
+            // Extracts only id attribute from array of objects.
+            idseq = J.map(this.stager.sequence, function(obj){return obj.id;});
 
-            // Every round has an identifier
+            // Every round has an identifier.
             this.totStage = idseq.filter(function(obj){return obj;}).length;
             this.curRound = node.player.stage.round;
 
@@ -29776,158 +29792,163 @@ JSUS.extend(TIME);
     };
 
    /**
-     * # EmptyStrategy Class
+     * # EmptyDisplayMode Class
      *
      * Copyright(c) 2014 Stefano Balietti
      * MIT Licensed
      *
-     * Defines a strategy for the `VisualRound` which displays nothing.
+     * Defines a displayMode for the `VisualRound` which displays nothing.
      *
      * ---
      */
 
     /**
-     * ## EmptyStrategy
+     * ## EmptyDisplayMode constructor
      *
-     * Display strategy which contains the bare minumum. Displays nothing.
+     * Display a displayMode which contains the bare minumum (nothing)
      *
      * @param {VisualRound} visualRound The `VisualRound` object to which the
-     *     strategy belongs
-     * @param {object} options The options taken.
+     *     displayMode belongs
+     * @param {object} options Optional. Configuration options
      *
      * @see VisualRound
      */
-    function EmptyStrategy(visualRound, options) {
-         /**
-         * ### name
+    function EmptyDisplayMode(visualRound, options) {
+
+        /**
+         * ### EmptyDisplayMode.name
          *
-         * The name of the strategy also refered to as the name of the style
+         * The name of the displayMode
          */
         this.name = 'EMPTY';
         this.options = options || {};
 
         /**
-         * ### visualRound
+         * ### EmptyDisplayMode.visualRound
          *
-         * The `VisualRound` object to which the strategy belongs.
+         * The `VisualRound` object to which the displayMode belongs
          *
          * @see VisualRound
          */
         this.visualRound = visualRound;
 
         /**
-         * ### displayDiv
+         * ### EmptyDisplayMode.displayDiv
          *
-         * The DIV in which the information is displayed.
+         * The DIV in which the information is displayed
          */
         this.displayDiv = null;
 
         this.init(this.options);
     }
+
     /**
-     * ## EmptyStrategy.init
+     * ## EmptyDisplayMode.init
      *
-     * Initializes instance.
+     * Initializes the instance
      *
-     * @param {object} options The options taken.
+     * @param {object} options The options taken
      *
-     * @see EmptyStrategy.updateDisplay
+     * @see EmptyDisplayMode.updateDisplay
      */
-    EmptyStrategy.prototype.init = function(options) {
+    EmptyDisplayMode.prototype.init = function(options) {
         this.displayDiv = node.window.getDiv();
         this.displayDiv.className = 'rounddiv';
 
         this.updateDisplay();
-    }
+    };
 
     /**
-     * ## EmptyStrategy.updateDisplay
+     * ## EmptyDisplayMode.updateDisplay
      *
-     * Does nothing.
+     * Does nothing
      *
      * @see VisualRound.updateDisplay
      */
-    EmptyStrategy.prototype.updateDisplay = function() {
-    };
+    EmptyDisplayMode.prototype.updateDisplay = function() {};
 
-   /**
+    /**
      * # CountUpStages Class
      *
      * Copyright(c) 2014 Stefano Balietti
      * MIT Licensed
      *
-     * Defines a strategy for the `VisualRound` which displays the current
-     * and possibly the total number of stages.
+     * Defines a displayMode for the `VisualRound` which displays the current
+     * and, possibly, the total number of stages.
      *
      * ---
      */
 
     /**
-     * ## CountUpStages
+     * ## CountUpStages constructor
      *
-     * Display strategy which displays the current and possibly the total
-     * number of stages.
+     * DisplayMode which displays the current number of stages
+     *
+     * Can be constructed to furthermore display the total number of stages.
      *
      * @param {VisualRound} visualRound The `VisualRound` object to which the
-     *     strategy belongs
-     * @param {object} options The options taken. If `options.toTotal == true`,
-     *     then the total number of stages is displayed.
+     *      displayMode belongs.
+     * @param {object} options Optional. Configuration options.
+     *      If `options.toTotal == true`, then the total number of stages is
+     *      displayed.
      *
      * @see VisualRound
      */
     function CountUpStages(visualRound, options) {
         this.options = options || {};
+
         /**
-         * ### name
+         * ### CountUpStages.name
          *
-         * The name of the strategy also refered to as the name of the style
+         * The name of the displayMode
          */
         this.name = 'COUNT_UP_STAGES';
+
         if (this.options.toTotal) {
             this.name += '_TO_TOTAL';
         }
 
         /**
-         * ### visualRound
+         * ### CountUpStages.visualRound
          *
-         * The `VisualRound` object to which the strategy belongs.
+         * The `VisualRound` object to which the displayMode belongs
          *
          * @see VisualRound
          */
         this.visualRound = visualRound;
 
         /**
-         * ### displayDiv
+         * ### CountUpStages.displayDiv
          *
-         * The DIV in which the information is displayed.
+         * The DIV in which the information is displayed
          */
         this.displayDiv = null;
 
         /**
-         * ### curStageNumber
+         * ### CountUpStages.curStageNumber
          *
-         * The span in which the current stage number is displayed.
+         * The span in which the current stage number is displayed
          */
         this.curStageNumber = null;
 
         /**
-         * ### totStageNumber
+         * ### CountUpStages.totStageNumber
          *
-         * The element in which the total stage number is displayed.
+         * The element in which the total stage number is displayed
          */
         this.totStageNumber = null;
 
         /**
-         * ### displayDiv
+         * ### CountUpStages.displayDiv
          *
-         * The DIV in which the title is displayed.
+         * The DIV in which the title is displayed
          */
         this.titleDiv = null;
 
         /**
-         * ### displayDiv
+         * ### CountUpStages.displayDiv
          *
-         * The span in which the text ` of ` is displayed.
+         * The span in which the text ` of ` is displayed
          */
         this.textDiv = null;
 
@@ -29937,10 +29958,11 @@ JSUS.extend(TIME);
     /**
      * ## CountUpStages.init
      *
-     * Initializes instance.
+     * Initializes the instance
      *
-     * @param {object} options The options taken. If `options.toTotal == true`,
-     *     then the total number of stages is displayed.
+     * @param {object} options Optional. Configuration options.
+     *      If `options.toTotal == true`, then the total number of stages is
+     *      displayed.
      *
      * @see CountUpStages.updateDisplay
      */
@@ -29948,25 +29970,27 @@ JSUS.extend(TIME);
         this.displayDiv = node.window.getDiv();
         this.displayDiv.className = 'stagediv';
 
-        this.titleDiv = node.window.addElement('div',this.displayDiv);
+        this.titleDiv = node.window.addElement('div', this.displayDiv);
         this.titleDiv.className = 'title';
         this.titleDiv.innerHTML = 'Stage:';
 
         if (this.options.toTotal) {
-            this.curStageNumber = node.window.addElement('span',this.displayDiv);
+            this.curStageNumber = node.window.addElement('span',
+                this.displayDiv);
             this.curStageNumber.className = 'number';
         }
         else {
-        this.curStageNumber = node.window.addDiv(this.displayDiv);
-        this.curStageNumber.className = 'number';
+            this.curStageNumber = node.window.addDiv(this.displayDiv);
+            this.curStageNumber.className = 'number';
         }
 
         if (this.options.toTotal) {
-            this.textDiv = node.window.addElement('span',this.displayDiv);
+            this.textDiv = node.window.addElement('span', this.displayDiv);
             this.textDiv.className = 'text';
             this.textDiv.innerHTML = ' of ';
 
-            this.totStageNumber = node.window.addElement('span',this.displayDiv);
+            this.totStageNumber = node.window.addElement('span',
+                this.displayDiv);
             this.totStageNumber.className = 'number';
         }
 
@@ -29976,8 +30000,9 @@ JSUS.extend(TIME);
     /**
      * ## CountUpStages.updateDisplay
      *
-     * Updates the content of `curStageNumber` and `totStageNumber` according
-     * to `visualRound`
+     * Updates the content of `curStageNumber` and `totStageNumber`
+     *
+     * Values are updated according to the state of `visualRound`.
      *
      * @see VisualRound.updateDisplay
      */
@@ -29994,59 +30019,60 @@ JSUS.extend(TIME);
      * Copyright(c) 2014 Stefano Balietti
      * MIT Licensed
      *
-     * Defines a strategy for the `VisualRound` which displays the remaining
+     * Defines a displayMode for the `VisualRound` which displays the remaining
      * number of stages.
      *
      * ---
      */
 
     /**
-     * ## CountDownStages
+     * ## CountDownStages constructor
      *
-     * Display strategy which displays the remaining number of stages.
+     * Display mode which displays the remaining number of stages
      *
      * @param {VisualRound} visualRound The `VisualRound` object to which the
-     *     strategy belongs
-     * @param {object} options The options taken.
+     *     displayMode belongs.
+     * @param {object} options Optional. Configuration options
      *
      * @see VisualRound
      */
     function CountDownStages(visualRound, options) {
+
         /**
-         * ### name
+         * ### CountDownStages.name
          *
-         * The name of the strategy also refered to as the name of the style
+         * The name of the displayMode
          */
         this.name = 'COUNT_DOWN_STAGES';
         this.options = options || {};
 
         /**
-         * ### visualRound
+         * ### CountDownStages.visualRound
          *
-         * The `VisualRound` object to which the strategy belongs.
+         * The `VisualRound` object to which the displayMode belongs
          *
          * @see VisualRound
          */
         this.visualRound = visualRound;
 
         /**
-         * ### displayDiv
+         * ### CountDownStages.displayDiv
          *
-         * The DIV in which the information is displayed.
+         * The DIV in which the information is displayed
          */
         this.displayDiv = null;
 
         /**
-         * ### stagesLeft
+         * ### CountDownStages.stagesLeft
          *
-         * The DIV in which the number stages left is displayed.
+         * The DIV in which the number stages left is displayed
          */
         this.stagesLeft = null;
 
         /**
-         * ### displayDiv
+         * ### CountDownStages.displayDiv
          *
-         * The DIV in which the title is displayed.
+         * The DIV in which the title is displayed
          */
         this.titleDiv = null;
 
@@ -30056,9 +30082,9 @@ JSUS.extend(TIME);
     /**
      * ## CountDownStages.init
      *
-     * Initializes instance.
+     * Initializes the instance
      *
-     * @param {object} options The options taken.
+     * @param {object} options Optional. Configuration options
      *
      * @see CountDownStages.updateDisplay
      */
@@ -30079,7 +30105,7 @@ JSUS.extend(TIME);
     /**
      * ## CountDownStages.updateDisplay
      *
-     * Updates the content of `stagesLeft` according to `visualRound`.
+     * Updates the content of `stagesLeft` according to `visualRound`
      *
      * @see VisualRound.updateDisplay
      */
@@ -30098,78 +30124,82 @@ JSUS.extend(TIME);
      * Copyright(c) 2014 Stefano Balietti
      * MIT Licensed
      *
-     * Defines a strategy for the `VisualRound` which displays the current
+     * Defines a displayMode for the `VisualRound` which displays the current
      * and possibly the total number of rounds.
      *
      * ---
      */
 
     /**
-     * ## CountUpRounds
+     * ## CountUpRounds constructor
      *
-     * Display strategy which displays the current and possibly the total
-     * number of rounds.
+     * Display mode which displays the current number of rounds.
+     *
+     * Can be constructed to furthermore display the total number of stages.
      *
      * @param {VisualRound} visualRound The `VisualRound` object to which the
-     *     strategy belongs
-     * @param {object} options The options taken. If `options.toTotal == true`,
-     *     then the total number of rounds is displayed.
+     *     displayMode belongs.
+     * @param {object} options Optional. Configuration options.
+     *      If `options.toTotal == true`, then the total number of rounds is
+     *      displayed.
      *
      * @see VisualRound
      */
     function CountUpRounds(visualRound, options) {
         this.options = options || {};
+
         /**
-         * ### name
+         * ### CountUpRounds.name
          *
-         * The name of the strategy also refered to as the name of the style
+         * The name of the displayMode
          */
         this.name = 'COUNT_UP_ROUNDS';
+
         if (this.options.toTotal) {
             this.name += '_TO_TOTAL';
         }
 
         /**
-         * ### visualRound
+         * CountUpRounds.visualRound
          *
-         * The `VisualRound` object to which the strategy belongs.
+         * The `VisualRound` object to which the displayMode belongs
          *
          * @see VisualRound
          */
         this.visualRound = visualRound;
 
         /**
-         * ### displayDiv
+         * CountUpRounds.displayDiv
          *
-         * The DIV in which the information is displayed.
+         * The DIV in which the information is displayed
          */
         this.displayDiv = null;
 
         /**
-         * ### curRoundNumber
+         * CountUpRounds.curRoundNumber
          *
-         * The span in which the current round number is displayed.
+         * The span in which the current round number is displayed
          */
         this.curRoundNumber = null;
 
         /**
-         * ### totRoundNumber
+         * CountUpRounds.totRoundNumber
          *
-         * The element in which the total round number is displayed.
+         * The element in which the total round number is displayed
          */
         this.totRoundNumber = null;
 
         /**
-         * ### displayDiv
+         * CountUpRounds.displayDiv
          *
-         * The DIV in which the title is displayed.
+         * The DIV in which the title is displayed
          */
         this.titleDiv = null;
 
         /**
-         * ### displayDiv
+         * CountUpRounds.displayDiv
          *
-         * The span in which the text ` of ` is displayed.
+         * The span in which the text ` of ` is displayed
          */
         this.textDiv = null;
 
@@ -30179,10 +30209,11 @@ JSUS.extend(TIME);
     /**
      * ## CountUpRounds.init
      *
-     * Initializes instance.
+     * Initializes the instance
      *
-     * @param {object} options The options taken. If `options.toTotal == true`,
-     *     then the total number of rounds is displayed.
+     * @param {object} options Optional. Configuration options.
+     *      If `options.toTotal == true`, then the total number of rounds is
+     *      displayed.
      *
      * @see CountUpRounds.updateDisplay
      */
@@ -30190,25 +30221,27 @@ JSUS.extend(TIME);
         this.displayDiv = node.window.getDiv();
         this.displayDiv.className = 'rounddiv';
 
-        this.titleDiv = node.window.addElement('div',this.displayDiv);
+        this.titleDiv = node.window.addElement('div', this.displayDiv);
         this.titleDiv.className = 'title';
         this.titleDiv.innerHTML = 'Round:';
 
         if (this.options.toTotal) {
-            this.curRoundNumber = node.window.addElement('span',this.displayDiv);
+            this.curRoundNumber = node.window.addElement('span',
+                this.displayDiv);
             this.curRoundNumber.className = 'number';
         }
         else {
-        this.curRoundNumber = node.window.addDiv(this.displayDiv);
-        this.curRoundNumber.className = 'number';
+            this.curRoundNumber = node.window.addDiv(this.displayDiv);
+            this.curRoundNumber.className = 'number';
         }
 
         if (this.options.toTotal) {
-            this.textDiv = node.window.addElement('span',this.displayDiv);
+            this.textDiv = node.window.addElement('span', this.displayDiv);
             this.textDiv.className = 'text';
             this.textDiv.innerHTML = ' of ';
 
-            this.totRoundNumber = node.window.addElement('span',this.displayDiv);
+            this.totRoundNumber = node.window.addElement('span',
+                this.displayDiv);
             this.totRoundNumber.className = 'number';
         }
 
@@ -30218,8 +30251,9 @@ JSUS.extend(TIME);
     /**
      * ## CountUpRounds.updateDisplay
      *
-     * Updates the content of `curRoundNumber` and `totRoundNumber` according
-     * to `visualRound`
+     * Updates the content of `curRoundNumber` and `totRoundNumber`
+     *
+     * Values are updated according to the state of `visualRound`.
      *
      * @see VisualRound.updateDisplay
      */
@@ -30237,59 +30271,60 @@ JSUS.extend(TIME);
      * Copyright(c) 2014 Stefano Balietti
      * MIT Licensed
      *
-     * Defines a strategy for the `VisualRound` which displays the remaining
+     * Defines a displayMode for the `VisualRound` which displays the remaining
      * number of rounds.
      *
      * ---
      */
 
     /**
-     * ## CountDownRounds
+     * ## CountDownRounds constructor
      *
-     * Display strategy which displays the remaining number of rounds.
+     * Display mode which displays the remaining number of rounds.
      *
      * @param {VisualRound} visualRound The `VisualRound` object to which the
-     *     strategy belongs
-     * @param {object} options The options taken.
+     *     displayMode belongs
+     * @param {object} options Optional. Configuration options
      *
      * @see VisualRound
      */
     function CountDownRounds(visualRound, options) {
-         /**
-         * ### name
+
+        /**
+         * ### CountDownRounds.name
          *
-         * The name of the strategy also refered to as the name of the style
+         * The name of the displayMode
          */
         this.name = 'COUNT_DOWN_ROUNDS';
         this.options = options || {};
 
         /**
-         * ### visualRound
+         * ### CountDownRounds.visualRound
          *
-         * The `VisualRound` object to which the strategy belongs.
+         * The `VisualRound` object to which the displayMode belongs
          *
          * @see VisualRound
          */
         this.visualRound = visualRound;
 
         /**
-         * ### displayDiv
+         * ### CountDownRounds.displayDiv
          *
-         * The DIV in which the information is displayed.
+         * The DIV in which the information is displayed
          */
         this.displayDiv = null;
 
         /**
-         * ### roundsLeft
+         * ### CountDownRounds.roundsLeft
          *
-         * The DIV in which the number rounds left is displayed.
+         * The DIV in which the number rounds left is displayed
          */
         this.roundsLeft = null;
 
         /**
-         * ### displayDiv
+         * ### CountDownRounds.displayDiv
          *
-         * The DIV in which the title is displayed.
+         * The DIV in which the title is displayed
          */
         this.titleDiv = null;
 
@@ -30299,9 +30334,9 @@ JSUS.extend(TIME);
     /**
      * ## CountDownRounds.init
      *
-     * Initializes instance.
+     * Initializes the instance
      *
-     * @param {object} options The options taken.
+     * @param {object} options Optional. Configuration options
      *
      * @see CountDownRounds.updateDisplay
      */
@@ -30322,7 +30357,7 @@ JSUS.extend(TIME);
     /**
      * ## CountDownRounds.updateDisplay
      *
-     * Updates the content of `roundsLeft` according to `visualRound`.
+     * Updates the content of `roundsLeft` according to `visualRound`
      *
      * @see VisualRound.updateDisplay
      */
@@ -30335,66 +30370,69 @@ JSUS.extend(TIME);
                 (this.visualRound.totRound - this.visualRound.curRound) || '?';
     };
 
-   /**
-     * # CombinedStrategy Class
+    /**
+     * # CompoundDisplayMode Class
      *
      * Copyright(c) 2014 Stefano Balietti
      * MIT Licensed
      *
-     * Defines a strategy for the `VisualRound` which displays the information
-     * according to multiple strategies.
+     * Defines a displayMode for the `VisualRound` which displays the
+     * information according to multiple displayModes.
      *
      * ---
      */
 
     /**
-     * ## CombinedStrategy
+     * ## CompoundDisplayMode
      *
-     * Display strategy which combines multiple other display strategies.
+     * Display mode which combines multiple other display displayModes
      *
      * @param {VisualRound} visualRound The `VisualRound` object to which the
-     *     strategy belongs
-     * @param {array} strategies Array of strategies to be used in combination.
-     * @param {object} options The options taken.
+     *     displayMode belongs.
+     * @param {array} displayModes Array of displayModes to be used in
+     *      combination.
+     * @param {object} options Optional. Configuration options
      *
      * @see VisualRound
      */
-    function CombinedStrategy(visualRound, strategies, options) {
+    function CompoundDisplayMode(visualRound, displayModes, options) {
         var index;
 
         /**
-         * ### name
+         * ### CompoundDisplayMode.name
          *
-         * The name of the strategy also refered to as the name of the style
+         * The name of the displayMode
          */
         this.name = '';
-        for (index in strategies) {
-            this.name += strategies[index].name + '&';
+
+        for (index in displayModes) {
+            this.name += displayModes[index].name + '&';
         }
-        this.name = this.name.substr(0,this.name.length -1);
+
+        this.name = this.name.substr(0, this.name.length -1);
 
         this.options = options || {};
 
         /**
-         * ### visualRound
+         * ### CompoundDisplayMode.visualRound
          *
-         * The `VisualRound` object to which the strategy belongs.
+         * The `VisualRound` object to which the displayMode belongs
          *
          * @see VisualRound
          */
         this.visualRound = visualRound;
 
          /**
-         * ### strategies
+         * ### CompoundDisplayMode.displayModes
          *
-         * The array of strategies to be used in combination.
+         * The array of displayModes to be used in combination
          */
-        this.strategies = strategies;
+        this.displayModes = displayModes;
 
         /**
-         * ### displayDiv
+         * ### CompoundDisplayMode.displayDiv
          *
-         * The DIV in which the information is displayed.
+         * The DIV in which the information is displayed
          */
         this.displayDiv = null;
 
@@ -30402,36 +30440,54 @@ JSUS.extend(TIME);
     }
 
     /**
-     * ## CombinedStrategy.init
+     * ## CompoundDisplayMode.init
      *
-     * Initializes instance.
+     * Initializes the instance
      *
-     * @param {object} options The options taken.
+     * @param {object} options Optional. Configuration options
      *
-     * @see CombinedStrategy.updateDisplay
+     * @see CompoundDisplayMode.updateDisplay
      */
-     CombinedStrategy.prototype.init = function(options) {
+     CompoundDisplayMode.prototype.init = function(options) {
         var index;
         this.displayDiv = node.window.getDiv();
 
-        for (index in this.strategies) {
-            this.displayDiv.appendChild(this.strategies[index].displayDiv);
+        for (index in this.displayModes) {
+            this.displayDiv.appendChild(this.displayModes[index].displayDiv);
         }
 
         this.updateDisplay();
-    }
+     };
 
     /**
-     * ## CombinedStrategy.updateDisplay
+     * ## CompoundDisplayMode.updateDisplay
      *
-     * Calls `updateDisplay` for all strategies in the combination.
+     * Calls `updateDisplay` for all displayModes in the combination
      *
      * @see VisualRound.updateDisplay
      */
-    CombinedStrategy.prototype.updateDisplay = function() {
+    CompoundDisplayMode.prototype.updateDisplay = function() {
         var index;
-        for (index in this.strategies) {
-            this.strategies[index].updateDisplay();
+        for (index in this.displayModes) {
+            this.displayModes[index].updateDisplay();
+        }
+    };
+
+    CompoundDisplayMode.prototype.activate = function() {
+        var index;
+        for (index in this.displayModes) {
+            if (this.displayModes[index].activate) {
+                this.displayModes[index].activate();
+            }
+        }
+    };
+
+    CompoundDisplayMode.prototype.deactivate = function() {
+        var index;
+        for (index in this.displayModes) {
+            if (this.displayModes[index].deactivate) {
+                this.displayMode[index].deactivate();
+            }
         }
     };
 
@@ -30577,7 +30633,7 @@ JSUS.extend(TIME);
      *
      * `VisualTimer` displays and manages a `GameTimer`
      *
-     * @param {object} options The options taken.
+     * @param @param {object} options Optional. Configuration options
      * The options it can take are:
      *
      * - any options that can be passed to a `GameTimer`
@@ -30652,7 +30708,7 @@ JSUS.extend(TIME);
      * - waitBoxOptions: an option object to be passed to `TimerBox`
      * - mainBoxOptions: an option object to be passed to `TimerBox`
      *
-     * @param {object} options The options taken.
+     * @param @param {object} options Optional. Configuration options
      * @see TimerBox
      * @see GameTimer
      */
@@ -31060,7 +31116,7 @@ JSUS.extend(TIME);
      *
      * `TimerBox` represents a box wherein to display the timer.
      *
-     * @param {object} options The options taken.
+     * @param @param {object} options Optional. Configuration options
      * The options it can take are:
      *
      * - `hideTitle`

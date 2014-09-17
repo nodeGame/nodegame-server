@@ -47,7 +47,7 @@ function configure(app, servernode) {
     }
 
     function sendFromPublic(type, req, res) {
-        var path;
+        var path, i;
         if (!req.params.file) return;
         if (req.params.file.lastIndexOf('\/') === (req.params.file.length-1)) {
             req.params.file = req.params.file.substring(0,req.params.file.length-1);
@@ -165,6 +165,7 @@ function configure(app, servernode) {
         sendFromPublic('pages', req, res);
     });
 
+
     // Serves game files or default game index file: index.htm.
     app.get('/:game/*', function(req, res) {
         var gameInfo, filepath, file;
@@ -192,6 +193,15 @@ function configure(app, servernode) {
         // Build filepath to file.
         filepath = gameInfo.dir + file;
 
+        // TODO: GAMEHOOKS
+        if (app.gameHooks) {
+            for (i = 0; i < app.gameHooks.length; ++i) {
+                if (app.gameHooks[i].file === file) {
+                    app.gameHooks[i].callback(req, res);
+                    return;
+                }
+            }
+        }
 
         // Send JSON data as JSONP if there is a callback query parameter:
         if (file.match(/\.json$/) && req.query.callback) {
@@ -225,9 +235,9 @@ function configure(app, servernode) {
     app.configure(function(){
         app.set('views', rootDir + '/views');
         app.set('view engine', 'jade');
+        app.set('view options',{layout: false});
         app.use(express.static(rootDir + '/public'));
     });
 
     return true;
 }
-
