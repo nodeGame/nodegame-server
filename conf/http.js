@@ -165,10 +165,10 @@ function configure(app, servernode) {
         sendFromPublic('pages', req, res);
     });
 
-
     // Serves game files or default game index file: index.htm.
     app.get('/:game/*', function(req, res) {
-        var gameInfo, filepath, file, jadeTemplate, jsonContext;
+        var gameInfo, filepath, file, jadeTemplate, jsonContext, langPath,
+            pageName;
 
         gameInfo = verifyGameRequest(req, res);
         if (!gameInfo) return;
@@ -232,18 +232,24 @@ function configure(app, servernode) {
             // If the file does not exist, build it from templates.
             if(!fs.existsSync(filepath)) {
 
-                // Assing jadeTemplate to 'html/template/page.jade'.
-                jadeTemplate = file.replace(/^html\/[^\/]*/,'html/templates');
-                jadeTemplate = jadeTemplate.replace('.html','.jade');
-                jadeTemplate = gameInfo.dir + jadeTemplate;
+                langPath = file.split('/')[1] + '/';
+                pageName = file.split('/')[2].split('.')[0];
 
-                // Assing jsonContext to 'html/context/lang/page.json'.
-                jsonContext = file.replace(/^html/,'html/context');
-                jsonContext = jsonContext.replace('.html','.json');
-                jsonContext = gameInfo.dir + jsonContext;
+                jadeTemplate = gameInfo.dir + 'html/templates/' + pageName +
+                    '.jade';
+
+                jsonContext = gameInfo.dir + 'html/context/' + langPath +
+                    pageName + '.json';
 
                 // Parsing jsonContext into locals.
                 jsonContext = JSON.parse(fs.readFileSync(jsonContext));
+
+                // Make the language specific directory `html/lang` if it does
+                // not exist.
+                if(!fs.existsSync(gameInfo.dir + 'html/' + langPath)){
+                    fs.mkdir(gameInfo.dir + 'html/' + langPath);
+                }
+
 
                 // Render template and store it in filepath.
                 console.log('Creating: ' + filepath);

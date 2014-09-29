@@ -28182,6 +28182,8 @@ JSUS.extend(TIME);
 
         this.availableLanguages = null;
         this.displayDiv = null;
+        this.formDiv = null;
+        this.textDiv = null;
 
         this.currentLanguageIndex = null;
         this.languagePath = null;
@@ -28195,10 +28197,17 @@ JSUS.extend(TIME);
 
         this.updateAvalaibleLanguages(options);
 
-        this.setLanguage('shortName','en');
 
         this.displayDiv = node.window.getDiv();
-        this.updateDisplay();
+        this.formDiv = node.window.getDiv();
+        this.formDiv.innerHTML = '<form action="">' +
+            '<input type="radio" name="lang" value="en" onClick="node.game.lang.setLanguage(0)">English' + '<br>' +
+            '<input type="radio" name="lang" value="de" onClick="node.game.lang.setLanguage(1)">Deutsch' + '</form>';
+        this.textDiv = node.window.getDiv();
+        this.displayDiv.appendChild(this.formDiv);
+        this.displayDiv.appendChild(this.textDiv);
+
+        this.setLanguage('shortName','en');
     };
 
     LanguageSelector.prototype.append = function() {
@@ -28221,6 +28230,11 @@ JSUS.extend(TIME);
         // Set `langPath`.
         this.languagePath =
             this.availableLanguages[this.currentLanguageIndex].shortName + '/';
+
+        this.updateDisplay();
+
+        // Reload current page
+
     };
 
     LanguageSelector.prototype.updateAvalaibleLanguages = function(options) {
@@ -28248,8 +28262,8 @@ JSUS.extend(TIME);
     };
 
     LanguageSelector.prototype.updateDisplay = function() {
-        this.displayDiv.innerHTML = this.availableLanguages[
-            this.currentLanguageIndex].nativeName;
+        this.textDiv.innerHTML = '<strong>' + this.availableLanguages[
+            this.currentLanguageIndex].nativeName + '</strong>';
     };
 
 })(node);
