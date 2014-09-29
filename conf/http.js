@@ -168,7 +168,7 @@ function configure(app, servernode) {
 
     // Serves game files or default game index file: index.htm.
     app.get('/:game/*', function(req, res) {
-        var gameInfo, filepath, file;
+        var gameInfo, filepath, file, jadeTemplate, jsonContext;
 
         gameInfo = verifyGameRequest(req, res);
         if (!gameInfo) return;
@@ -193,7 +193,7 @@ function configure(app, servernode) {
         // Build filepath to file.
         filepath = gameInfo.dir + file;
 
-        // TODO: GAMEHOOKS
+        // Executes callback if one has been defined for this file.
         if (app.gameHooks) {
             for (i = 0; i < app.gameHooks.length; ++i) {
                 if (app.gameHooks[i].file === file) {
@@ -221,6 +221,43 @@ function configure(app, servernode) {
             });
 
             return;
+        }
+
+        // Instantiate templates, if needed and available.
+        // `html/templates/page.html` holds the template and
+        // `html/context/lang/page.html` holds the context to instantiate
+        // the page to store in `html/lang/page.html`.
+        if(/^html\/[^\/]*\/[^\/]*\.html$/.test(file)) {
+
+            // If the file does not exist, build it from templates.
+            if(!fs.existsSync(filepath)) {
+
+                // Assing jadeTemplate to 'html/template/page.jade'.
+                jadeTemplate = file.replace(/^html\/[^\/]*/,'html/templates');
+                jadeTemplate = jadeTemplate.replace('.html','.jade');
+                jadeTemplate = gameInfo.dir + jadeTemplate;
+
+                // Assing jsonContext to 'html/context/lang/page.json'.
+                jsonContext = file.replace(/^html/,'html/context');
+                jsonContext = jsonContext.replace('.html','.json');
+                jsonContext = gameInfo.dir + jsonContext;
+
+                // Parsing jsonContext into locals.
+                jsonContext = JSON.parse(fs.readFileSync(jsonContext));
+
+                // Render template and store it in filepath.
+                console.log('Creating: ' + filepath);
+                res.render( jadeTemplate,
+                            jsonContext,
+                            function(err, html) {
+                                if(err) {
+                                    console.log(err);
+                                }
+                                else {
+                                    fs.writeFileSync(filepath,html);
+                                }
+                });
+            }
         }
 
         // Send file (if it is a directory it is not sent).

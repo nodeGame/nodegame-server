@@ -122,6 +122,13 @@ input[type="range"] {
 
 /* .ng_widget {} */
 
+/* Language Selector */
+.languageselector {
+    float: right;
+    min-width: 100px;
+    width: auto;
+}
+
 /* Visual Timer */
 
 .visualtimer {
