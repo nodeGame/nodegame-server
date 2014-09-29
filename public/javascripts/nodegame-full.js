@@ -28197,7 +28197,7 @@ JSUS.extend(TIME);
 
         this.updateAvalaibleLanguages(options);
 
-
+        // Display initialization.
         this.displayDiv = node.window.getDiv();
         this.formDiv = node.window.getDiv();
         this.formDiv.innerHTML = '<form action="">' +
@@ -28239,6 +28239,7 @@ JSUS.extend(TIME);
 
     LanguageSelector.prototype.updateAvalaibleLanguages = function(options) {
         // TODO: Do this really!
+
         this.availableLanguages = [
                 {
                     name: 'English',
