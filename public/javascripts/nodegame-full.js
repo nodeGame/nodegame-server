@@ -14093,11 +14093,12 @@ JSUS.extend(TIME);
         this.exactPlayerCbCalled = false;
 
         this.availableLanguages = [];
-        this.languageLoaded = 0;
+        this.languageLoaded = false;
         var that = this;
         this.onLanguageLoaded = function() {
-            that.languageLoaded = 1;
+            that.languageLoaded = true;
         }
+        this.currentLanguageIndex = 0;
 
     }
 
@@ -14118,15 +14119,15 @@ JSUS.extend(TIME);
             that = this;
         node = this.node;
 
-        // TODO: Find better way to figure out whether on server or client?
-        if (typeof document !== 'undefined') {
-            node.getJSON('languages.json',
-                function(languages) {
-                    that.availableLanguages = languages;
-                    that.onLanguageLoaded();
-                }
-            );
-        }
+//        // TODO: Find better way to figure out whether on server or client?
+//        if (typeof document !== 'undefined') {
+//            node.getJSON('languages.json',
+//                function(languages) {
+//                    that.availableLanguages = languages;
+//                    that.onLanguageLoaded();
+//                }
+//            );
+//        }
 
         if (options && 'object' !== typeof options) {
             throw new TypeError('Game.start: options must be object or ' +
@@ -28209,7 +28210,7 @@ JSUS.extend(TIME);
         this.buttonLabels = [];
         this.buttons = [];
 
-        this.currentLanguageIndex = null;
+        this.currentLanguageIndex = game.currentLanguageIndex;
         this.languagePath = null;
 
         this.init(this.options);
@@ -28224,15 +28225,16 @@ JSUS.extend(TIME);
         // Display initialization.
         this.displayForm = node.window.getElement('form','radioButtonForm');
 
-        if (game.languageLoaded) { debugger
-            this.languageInit(this.options);
-        }
-        else { debugger
-            game.onLanguageLoaded = function() {
-                game.languageLoaded = true;
-                that.languageInit(this.options);
-            };
-        }
+        this.languageInit(this.options);
+//        if (game.languageLoaded) { debugger
+//            this.languageInit(this.options);
+//        }
+//        else { debugger
+//            game.onLanguageLoaded = function() {
+//                game.languageLoaded = true;
+//                that.languageInit(this.options);
+//            };
+//        }
     };
 
     LanguageSelector.prototype.languageInit = function(options) {
@@ -28274,7 +28276,7 @@ JSUS.extend(TIME);
                 function(obj){return obj[property];}).indexOf(value));
             return;
         }
-        debugger
+
         // Uncheck current language button and change className of label.
         if (this.currentLanguageIndex !== null &&
             this.currentLanguageIndex !== arguments[0] ) {
