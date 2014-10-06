@@ -28181,9 +28181,9 @@ JSUS.extend(TIME);
         this.options = options;
 
         this.availableLanguages = null;
-        this.displayDiv = null;
-        this.formDiv = null;
-        this.textDiv = null;
+        this.displayForm = null;
+        this.buttonLabels = [];
+        this.buttons = [];
 
         this.currentLanguageIndex = null;
         this.languagePath = null;
@@ -28192,79 +28192,113 @@ JSUS.extend(TIME);
     }
 
     LanguageSelector.prototype.init = function(options) {
+        var i = 0;
+
         J.mixout(options, this.options);
         this.options = options;
 
         this.updateAvalaibleLanguages(options);
 
         // Display initialization.
-        this.displayDiv = node.window.getDiv();
-        this.formDiv = node.window.getDiv();
-        this.formDiv.innerHTML = '<form action="">' +
-            '<input type="radio" name="lang" value="en" onClick="node.game.lang.setLanguage(0)">English' + '<br>' +
-            '<input type="radio" name="lang" value="de" onClick="node.game.lang.setLanguage(1)">Deutsch' + '</form>';
-        this.textDiv = node.window.getDiv();
-        this.displayDiv.appendChild(this.formDiv);
-        this.displayDiv.appendChild(this.textDiv);
+        this.displayForm = node.window.getElement('form','radioButtonForm');
+
+        debugger
+        for(i = 0; i < this.availableLanguages.length; ++i) {
+
+            this.buttonLabels[i] = node.window.getElement('label', 'label' + i,
+                { for: 'radioButton' + i });
+
+            this.buttons[i] = node.window.getElement('input',
+                'radioButton' + i, {
+                    type: 'radio',
+                    name: 'languageButton',
+                    value: this.availableLanguages[i].name,
+                    onClick: 'node.game.lang.setLanguage('+ i + ')'
+                }
+            );
+            this.buttonLabels[i].appendChild(this.buttons[i]);
+            this.buttonLabels[i].appendChild(
+                document.createTextNode(this.availableLanguages[i].nativeName));
+            node.window.addElement('br', this.buttonLabels[i]);
+            this.buttonLabels[i].className = 'unselectedButtonLabel';
+            this.displayForm.appendChild(this.buttonLabels[i]);
+        }
 
         this.setLanguage('shortName','en');
     };
 
     LanguageSelector.prototype.append = function() {
-        this.bodyDiv.appendChild(this.displayDiv);
+        this.bodyDiv.appendChild(this.displayForm);
     };
 
     LanguageSelector.prototype.setLanguage = function(property, value) {
-        var listProperty;
 
         // If only one argument is provided we assume it to be the index
-        if (arguments.length == 1) {
-            this.currentLanguageIndex = arguments[0];
+        if (arguments.length == 2) {
+            this.setLanguage(J.map(this.availableLanguages,
+                function(obj){return obj[property];}).indexOf(value));
+            return;
         }
-        else {
-            listProperty = J.map(this.availableLanguages,
-                 function(obj){return obj[property];});
-            this.currentLanguageIndex = listProperty.indexOf(value);
+
+        // Uncheck current language button and change className of label.
+        if (this.currentLanguageIndex !== null &&
+            this.currentLanguageIndex !== arguments[0] ) {
+            this.buttons[this.currentLanguageIndex].checked = 'unchecked';
+            this.buttonLabels[this.currentLanguageIndex].className =
+                'unselectedButtonLabel';
         }
+
+        // Set current language index.
+        this.currentLanguageIndex = arguments[0];
+
+        // Check language button and change className of label.
+        this.buttons[this.currentLanguageIndex].checked = 'checked';
+        this.buttonLabels[this.currentLanguageIndex].className =
+            'selectedButtonLabel';
 
         // Set `langPath`.
         this.languagePath =
             this.availableLanguages[this.currentLanguageIndex].shortName + '/';
 
-        this.updateDisplay();
-
-        // Reload current page
+        // Reload current page (only document inside iframe)
+        // TODO
 
     };
 
     LanguageSelector.prototype.updateAvalaibleLanguages = function(options) {
-        // TODO: Do this really!
+        var that = this;
 
-        this.availableLanguages = [
-                {
-                    name: 'English',
-                    nativeName: 'English',
-                    shortName: 'en',
-                    flag: ''
-                },
-                {
-                    name: 'German',
-                    nativeName: 'Deutsch',
-                    shortName: 'de',
-                    flag: ''
-                },
-                {
-                    name: 'French',
-                    nativeName: 'Français',
-                    shortName: 'fr',
-                    flag: ''
-                }
+        // TODO:Synchronize
+        node.getJSON('languages.json',
+            function(languages) {
+                that.availableLanguages2 = languages; debugger
+            }
+        );
+
+
+
+        this.availableLanguages =
+        [
+           {
+        name: "English",
+        "nativeName": "English",
+        "shortName": "en",
+        "flag": ""
+    },
+    {
+        "name": "German",
+        "nativeName": "Deutsch",
+        "shortName": "de",
+        "flag": ""
+    },
+    {
+        "name": "French",
+        "nativeName": "Français",
+        "shortName": "fr",
+        "flag": ""
+    }
         ];
-    };
-
-    LanguageSelector.prototype.updateDisplay = function() {
-        this.textDiv.innerHTML = '<strong>' + this.availableLanguages[
-            this.currentLanguageIndex].nativeName + '</strong>';
+        debugger;
     };
 
 })(node);
