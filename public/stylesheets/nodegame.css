@@ -129,6 +129,17 @@ input[type="range"] {
     width: auto;
 }
 
+
+.languageselector > .panel-body > form > label {
+    width: 100px;
+    float: right;
+    font-size: 20px;
+    font-weight: normal;
+}
+
+.languageselector > .panel-body > form > label.selectedButtonLabel {
+    font-weight: bold;
+}
 /* Visual Timer */
 
 .visualtimer {

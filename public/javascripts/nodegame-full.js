@@ -13908,7 +13908,7 @@ JSUS.extend(TIME);
 (function(exports, parent) {
 
     "use strict";
-    
+
     // ## Global scope
 
     // Exposing Game constructor
@@ -13918,7 +13918,9 @@ JSUS.extend(TIME);
     GameDB = parent.GameDB,
     GamePlot = parent.GamePlot,
     PlayerList = parent.PlayerList,
+    Languages = parent.Languages,
     Stager = parent.Stager;
+
 
     var constants = parent.constants;
 
@@ -14070,7 +14072,7 @@ JSUS.extend(TIME);
          *
          * TRUE, if DONE was emitted during the execution of the step callback
          *
-         * If already TRUE, when PLAYING is emitted the game will try to step 
+         * If already TRUE, when PLAYING is emitted the game will try to step
          * immediately.
          *
          * @see Game.pause
@@ -14110,6 +14112,15 @@ JSUS.extend(TIME);
          * @see Game.gotoStep
          */
         this.exactPlayerCbCalled = false;
+
+        this.availableLanguages = [];
+        this.languageLoaded = false;
+        var that = this;
+        this.onLanguageLoaded = function() {
+            that.languageLoaded = true;
+        }
+        this.currentLanguageIndex = 0;
+
     }
 
     // ## Game methods
@@ -14125,8 +14136,20 @@ JSUS.extend(TIME);
      * just for change of state after the game has started
      */
     Game.prototype.start = function(options) {
-        var onInit, node, startStage;
+        var onInit, node, startStage, timeout,
+            that = this;
         node = this.node;
+
+//        // TODO: Find better way to figure out whether on server or client?
+//        if (typeof document !== 'undefined') {
+//            node.getJSON('languages.json',
+//                function(languages) {
+//                    that.availableLanguages = languages;
+//                    that.onLanguageLoaded();
+//                }
+//            );
+//        }
+
         if (options && 'object' !== typeof options) {
             throw new TypeError('Game.start: options must be object or ' +
                                 'undefined.');
@@ -14162,7 +14185,7 @@ JSUS.extend(TIME);
         this.setCurrentGameStage(startStage, true);
 
         node.log('game started.');
-        
+
         if (options.step !== false) {
             this.step();
         }
@@ -14206,7 +14229,7 @@ JSUS.extend(TIME);
         }
         // Destroy currently running timers.
         node.timer.destroyAllTimers(true);
- 
+
         // Remove all events registered during the game.
         node.events.ee.game.clear();
         node.events.ee.stage.clear();
@@ -14302,7 +14325,7 @@ JSUS.extend(TIME);
 
         node.timer.setTimestamp('paused');
         node.emit('PAUSED');
-        
+
         // broadcast?
 
         node.log('game paused.');
@@ -14321,13 +14344,13 @@ JSUS.extend(TIME);
         if (!this.isResumable()) {
             throw new Error('Game.resume: game cannot be resumed.');
         }
-        
+
         node = this.node;
 
         node.emit('RESUMING');
 
         this.paused = false;
-        
+
         // If the Stager defines an appropriate handler, give it the messages
         // that were buffered during the pause.
         // Otherwise, emit the buffered messages normally.
@@ -14368,7 +14391,7 @@ JSUS.extend(TIME);
         if (!this.checkPlistSize()) {
             return;
         }
-        
+
         stepRule = this.plot.getStepRule(this.getCurrentGameStage());
 
         if ('function' !== typeof stepRule) {
@@ -14436,7 +14459,7 @@ JSUS.extend(TIME);
             throw new TypeError('Game.gotoStep: nextStep must be ' +
                                'an object or a string.');
         }
-        
+
         curStep = this.getCurrentGameStage();
         node = this.node;
 
@@ -14467,7 +14490,7 @@ JSUS.extend(TIME);
                 if (node.socket.shouldClearBuffer()) {
                     node.socket.clearBuffer();
                 }
-                
+
                 node.emit('GAME_OVER');
                 return null;
             }
@@ -14698,7 +14721,7 @@ JSUS.extend(TIME);
         cb = stage.cb;
 
         this.setStageLevel(constants.stageLevels.EXECUTING_CALLBACK);
-        
+
         // Execute custom callback. Can throw errors.
         res = cb.call(node.game);
         if (res === false) {
@@ -14706,9 +14729,9 @@ JSUS.extend(TIME);
             node.err('A non fatal error occurred while executing ' +
                      'the callback of stage ' + this.getCurrentGameStage());
         }
-        
+
         this.setStageLevel(constants.stageLevels.CALLBACK_EXECUTED);
-        node.emit('STEP_CALLBACK_EXECUTED');    
+        node.emit('STEP_CALLBACK_EXECUTED');
         // Internal listeners will check whether we need to emit PLAYING.
         return res;
     };
@@ -14716,7 +14739,7 @@ JSUS.extend(TIME);
     /**
      * ### Game.getCurrentStep
      *
-     * Returns the object representing the current game step. 
+     * Returns the object representing the current game step.
      *
      * @return {object} The game-step as defined in the stager.
      *
@@ -14730,7 +14753,7 @@ JSUS.extend(TIME);
     /**
      * ### Game.getCurrentGameStage
      *
-     * Return the GameStage that is currently being executed. 
+     * Return the GameStage that is currently being executed.
      *
      * The return value is a reference to node.player.stage.
      *
@@ -14740,11 +14763,11 @@ JSUS.extend(TIME);
     Game.prototype.getCurrentGameStage = function() {
         return this.node.player.stage;
     };
-    
+
     /**
      * ### Game.setCurrentGameStage
      *
-     * Sets the current game stage, and optionally notifies the server 
+     * Sets the current game stage, and optionally notifies the server
      *
      * The value is actually stored in `node.player.stage`.
      *
@@ -14793,7 +14816,7 @@ JSUS.extend(TIME);
     /**
      * ### Game.setStateLevel
      *
-     * Sets the current game state level, and optionally notifies the server 
+     * Sets the current game state level, and optionally notifies the server
      *
      * The value is actually stored in `node.player.stateLevel`.
      *
@@ -14833,7 +14856,7 @@ JSUS.extend(TIME);
      * and it is of the type INITIALIZED, CALLBACK_EXECUTED, etc.
      * The return value is a reference to `node.player.stageLevel`.
      *
-     * @return {number} The level of the stage execution. 
+     * @return {number} The level of the stage execution.
      * @see node.player.stageLevel
      * @see node.constants.stageLevels
      */
@@ -14844,7 +14867,7 @@ JSUS.extend(TIME);
     /**
      * ### Game.setStageLevel
      *
-     * Sets the current game stage level, and optionally notifies the server 
+     * Sets the current game stage level, and optionally notifies the server
      *
      * The value is actually stored in `node.player.stageLevel`.
      *
@@ -14876,11 +14899,11 @@ JSUS.extend(TIME);
         }
         node.player.stageLevel = stageLevel;
     };
-    
+
     /**
      * ### Game.publishUpdate
      *
-     * Sends out a PLAYER_UPDATE message, if conditions are met. 
+     * Sends out a PLAYER_UPDATE message, if conditions are met.
      *
      * Type is a property of the `node.player` object.
      *
@@ -14900,7 +14923,7 @@ JSUS.extend(TIME);
                 'Game.publishUpdate: unknown update type (' + type + ')');
         }
         node = this.node;
-       
+
         if (this.shouldPublishUpdate(type, update)) {
             node.socket.send(node.msg.create({
                 target: constants.target.PLAYER_UPDATE,
@@ -14944,7 +14967,7 @@ JSUS.extend(TIME);
             return false;
         }
         if (this.plot.getProperty(this.getCurrentGameStage(), 'syncOnLoaded')) {
-            if (type === 'stageLevel' && 
+            if (type === 'stageLevel' &&
                 value.stageLevel === stageLevels.LOADED) {
                 return true;
             }
@@ -15113,7 +15136,7 @@ JSUS.extend(TIME);
         curGameStage = this.getCurrentGameStage();
         if (!this.isReady()) return false;
         if (!this.checkPlistSize()) return false;
-        
+
         syncOnLoaded = this.plot.getProperty(curGameStage, 'syncOnLoaded');
         if (!syncOnLoaded) return true;
         return node.game.pl.isStepLoaded(curGameStage);
@@ -28181,7 +28204,8 @@ JSUS.extend(TIME);
 
     node.widgets.register('LanguageSelector', LanguageSelector);
 
-    var J = node.JSUS;
+    var J = node.JSUS,
+        game = node.game;
 
     // ## Meta-data
 
@@ -28194,97 +28218,117 @@ JSUS.extend(TIME);
     // ## Dependencies
 
     LanguageSelector.dependencies = {
-        JSUS: {}
+        JSUS: {},
+        Game: {}
     };
 
     function LanguageSelector(options) {
         this.options = options;
 
-        this.availableLanguages = null;
-        this.displayDiv = null;
-        this.formDiv = null;
-        this.textDiv = null;
+        this.availableLanguages = game.availableLanguages;
+        this.displayForm = null;
+        this.buttonLabels = [];
+        this.buttons = [];
 
-        this.currentLanguageIndex = null;
+        this.currentLanguageIndex = game.currentLanguageIndex;
         this.languagePath = null;
 
         this.init(this.options);
     }
 
     LanguageSelector.prototype.init = function(options) {
+        var that = this;
+
         J.mixout(options, this.options);
         this.options = options;
 
-        this.updateAvalaibleLanguages(options);
-
         // Display initialization.
-        this.displayDiv = node.window.getDiv();
-        this.formDiv = node.window.getDiv();
-        this.formDiv.innerHTML = '<form action="">' +
-            '<input type="radio" name="lang" value="en" onClick="node.game.lang.setLanguage(0)">English' + '<br>' +
-            '<input type="radio" name="lang" value="de" onClick="node.game.lang.setLanguage(1)">Deutsch' + '</form>';
-        this.textDiv = node.window.getDiv();
-        this.displayDiv.appendChild(this.formDiv);
-        this.displayDiv.appendChild(this.textDiv);
+        this.displayForm = node.window.getElement('form','radioButtonForm');
+
+        this.languageInit(this.options);
+//        if (game.languageLoaded) { debugger
+//            this.languageInit(this.options);
+//        }
+//        else { debugger
+//            game.onLanguageLoaded = function() {
+//                game.languageLoaded = true;
+//                that.languageInit(this.options);
+//            };
+//        }
+    };
+
+    LanguageSelector.prototype.languageInit = function(options) {
+        var i = 0;
+
+        for(i = 0; i < this.availableLanguages.length; ++i) {
+
+            this.buttonLabels[i] = node.window.getElement('label', 'label' + i,
+                { for: 'radioButton' + i });
+
+            this.buttons[i] = node.window.getElement('input',
+                'radioButton' + i, {
+                    type: 'radio',
+                    name: 'languageButton',
+                    value: this.availableLanguages[i].name,
+                    onClick: 'node.game.lang.setLanguage('+ i + ')'
+                }
+            );
+            this.buttonLabels[i].appendChild(this.buttons[i]);
+            this.buttonLabels[i].appendChild(
+                document.createTextNode(this.availableLanguages[i].nativeName));
+            node.window.addElement('br', this.buttonLabels[i]);
+            this.buttonLabels[i].className = 'unselectedButtonLabel';
+            this.displayForm.appendChild(this.buttonLabels[i]);
+        }
 
         this.setLanguage('shortName','en');
     };
 
     LanguageSelector.prototype.append = function() {
-        this.bodyDiv.appendChild(this.displayDiv);
+        this.bodyDiv.appendChild(this.displayForm);
     };
 
     LanguageSelector.prototype.setLanguage = function(property, value) {
-        var listProperty;
 
         // If only one argument is provided we assume it to be the index
-        if (arguments.length == 1) {
-            this.currentLanguageIndex = arguments[0];
+        if (arguments.length == 2) {
+            this.setLanguage(J.map(this.availableLanguages,
+                function(obj){return obj[property];}).indexOf(value));
+            return;
         }
-        else {
-            listProperty = J.map(this.availableLanguages,
-                 function(obj){return obj[property];});
-            this.currentLanguageIndex = listProperty.indexOf(value);
+
+        // Uncheck current language button and change className of label.
+        if (this.currentLanguageIndex !== null &&
+            this.currentLanguageIndex !== arguments[0] ) {
+            this.buttons[this.currentLanguageIndex].checked = 'unchecked';
+            this.buttonLabels[this.currentLanguageIndex].className =
+                'unselectedButtonLabel';
         }
+
+        // Set current language index.
+        this.currentLanguageIndex = arguments[0];
+
+        // Check language button and change className of label.
+        this.buttons[this.currentLanguageIndex].checked = 'checked';
+        this.buttonLabels[this.currentLanguageIndex].className =
+            'selectedButtonLabel';
 
         // Set `langPath`.
         this.languagePath =
             this.availableLanguages[this.currentLanguageIndex].shortName + '/';
 
-        this.updateDisplay();
-
-        // Reload current page
+        // Reload current page (only document inside iframe)
+        // TODO
 
     };
 
     LanguageSelector.prototype.updateAvalaibleLanguages = function(options) {
-        // TODO: Do this really!
+        var that = this;
 
-        this.availableLanguages = [
-                {
-                    name: 'English',
-                    nativeName: 'English',
-                    shortName: 'en',
-                    flag: ''
-                },
-                {
-                    name: 'German',
-                    nativeName: 'Deutsch',
-                    shortName: 'de',
-                    flag: ''
-                },
-                {
-                    name: 'French',
-                    nativeName: 'Français',
-                    shortName: 'fr',
-                    flag: ''
-                }
-        ];
-    };
-
-    LanguageSelector.prototype.updateDisplay = function() {
-        this.textDiv.innerHTML = '<strong>' + this.availableLanguages[
-            this.currentLanguageIndex].nativeName + '</strong>';
+        node.getJSON('languages.json', function(languages) {
+                that.availableLanguages = languages;
+            }
+        );
     };
 
 })(node);
