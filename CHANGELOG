@@ -1,6 +1,9 @@
 # nodegame-server change log
 
-# Current
+# Current (0.9.1+)
+ - Added a copy of patched static.js in bin/ for windows install
+
+# 0.9.1
  - Refactored SocketManager to support inter-channels messages
  - Refactored SocketIo and SocketDirect
 
