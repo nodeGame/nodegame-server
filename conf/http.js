@@ -242,27 +242,30 @@ function configure(app, servernode) {
                     pageName + '.json';
 
                 // Parsing jsonContext into locals.
+                //TODO: If not caching the the pages manually, cache the context
+                // files once loaded!
                 jsonContext = JSON.parse(fs.readFileSync(jsonContext));
 
                 // Make the language specific directory `html/lang` if it does
                 // not exist.
-                if(!fs.existsSync(gameInfo.dir + 'html/' + langPath)){
-                    fs.mkdir(gameInfo.dir + 'html/' + langPath);
-                }
+//                if(!fs.existsSync(gameInfo.dir + 'html/' + langPath)){
+//                    fs.mkdir(gameInfo.dir + 'html/' + langPath);
+//                }
 
 
                 // Render template and store it in filepath.
-                console.log('Creating: ' + filepath);
-                res.render( jadeTemplate,
-                            jsonContext,
-                            function(err, html) {
-                                if(err) {
-                                    console.log(err);
-                                }
-                                else {
-                                    fs.writeFileSync(filepath,html);
-                                }
-                });
+//                res.render( jadeTemplate,
+//                            jsonContext,
+//                            function(err, html) {
+//                                if(err) {
+//                                    console.log(err);
+//                                }
+//                                else {
+//                                    fs.writeFileSync(filepath,html);
+//                                }
+//                });
+                res.render(jadeTemplate, jsonContext);
+                return;
             }
         }
 

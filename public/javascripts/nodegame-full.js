@@ -14093,11 +14093,7 @@ JSUS.extend(TIME);
         this.exactPlayerCbCalled = false;
 
         this.availableLanguages = [];
-        this.languageLoaded = false;
-        var that = this;
-        this.onLanguageLoaded = function() {
-            that.languageLoaded = true;
-        }
+
         this.currentLanguageIndex = 0;
 
     }
@@ -14115,19 +14111,9 @@ JSUS.extend(TIME);
      * just for change of state after the game has started
      */
     Game.prototype.start = function(options) {
-        var onInit, node, startStage, timeout,
-            that = this;
-        node = this.node;
+        var onInit, node, startStage;
 
-//        // TODO: Find better way to figure out whether on server or client?
-//        if (typeof document !== 'undefined') {
-//            node.getJSON('languages.json',
-//                function(languages) {
-//                    that.availableLanguages = languages;
-//                    that.onLanguageLoaded();
-//                }
-//            );
-//        }
+        node = this.node;
 
         if (options && 'object' !== typeof options) {
             throw new TypeError('Game.start: options must be object or ' +
@@ -28217,7 +28203,8 @@ JSUS.extend(TIME);
     }
 
     LanguageSelector.prototype.init = function(options) {
-        var that = this;
+        var that = this,
+            i = 0;
 
         J.mixout(options, this.options);
         this.options = options;
@@ -28225,21 +28212,8 @@ JSUS.extend(TIME);
         // Display initialization.
         this.displayForm = node.window.getElement('form','radioButtonForm');
 
-        this.languageInit(this.options);
-//        if (game.languageLoaded) { debugger
-//            this.languageInit(this.options);
-//        }
-//        else { debugger
-//            game.onLanguageLoaded = function() {
-//                game.languageLoaded = true;
-//                that.languageInit(this.options);
-//            };
-//        }
-    };
-
-    LanguageSelector.prototype.languageInit = function(options) {
-        var i = 0;
-
+        this.languagePath = 'en/';
+        return;
         for(i = 0; i < this.availableLanguages.length; ++i) {
 
             this.buttonLabels[i] = node.window.getElement('label', 'label' + i,
@@ -28296,9 +28270,6 @@ JSUS.extend(TIME);
         // Set `langPath`.
         this.languagePath =
             this.availableLanguages[this.currentLanguageIndex].shortName + '/';
-
-        // Reload current page (only document inside iframe)
-        // TODO
 
     };
 
