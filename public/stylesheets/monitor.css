@@ -146,6 +146,17 @@ div.panel.msgbar table tbody tr td:nth-child(3) {
     text-align: left;
 }
 
+div.panel.commandbuttons {
+  width: 500px;
+  float: left;
+  margin-right: 10px;
+}
+
+div.panel.msgbar {
+  width: 500px;
+  float: left;
+}
+
 ul.nav-tabs {
   margin-bottom: 10px;
 }
