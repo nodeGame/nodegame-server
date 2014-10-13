@@ -8372,7 +8372,7 @@ JSUS.extend(TIME);
     k.target.REDIRECT = 'REDIRECT';
 
     // #### target.LANG
-    // Request language information
+    // Requests language information
     k.target.LANG = 'LANG';
 
     // #### target.SETUP
@@ -10383,7 +10383,7 @@ JSUS.extend(TIME);
          *
          * The current language used by the playerName
          *
-         * Default language is English with the default path `en/`
+         * Default language is English with the default path `en/`.
          */
         this.lang = {
             name: 'English',
@@ -18490,7 +18490,7 @@ JSUS.extend(TIME);
         });
 
         // ### node.on.lang
-        // Gets language information
+        // Gets language information.
         this.alias('lang','in.say.LANG');
 
 
@@ -28183,7 +28183,20 @@ JSUS.extend(TIME);
 
 })(node);
 
-(function(node) {
+/**
+ * # VisualRound widget for nodeGame
+ * Copyright(c) 2014 Stefano Balietti
+ * MIT Licensed
+ *
+ * Display information about rounds and/or stage in the game.
+ * Accepts different visualization options (e.g. countdown, etc.).
+ * See `VisualRound` constructor for a list of all available options.
+ *
+ * www.nodegame.org
+ * ---
+ */
+ (function(node) {
+
     "use strict";
 
     node.widgets.register('LanguageSelector', LanguageSelector);
@@ -28196,7 +28209,7 @@ JSUS.extend(TIME);
     LanguageSelector.version = '0.2.0';
     LanguageSelector.description = 'Display information about the current ' +
         'language and allow to change language.';
-    LanguageSelector.title = 'Language'; // change at runtime?
+    LanguageSelector.title = 'Language';
     LanguageSelector.className = 'languageselector';
 
     // ## Dependencies
@@ -28206,32 +28219,92 @@ JSUS.extend(TIME);
         Game: {}
     };
 
+    /**
+     * ## LanguageSelector constructor
+     *
+     * Manages the setting and display of the language used
+     *
+     * @param {object} options Optional. Configuration options
+     *
+     * @see Player.lang
+     */
     function LanguageSelector(options) {
-        this.options = options;
-
-        this.availableLanguages = null;
-        this.currentLanguageIndex = null;
-
-        this.displayForm = null;
-        this.buttonLabels = [];
-        this.buttons = [];
-        this.loadingDiv = null;
-        this.languagesLoaded = false;
-
-
-        this.onLangCallback = null;
-        this.onLangCallbackExtension = null;
-
-        this.init(this.options);
-    }
-
-    LanguageSelector.prototype.init = function(options) {
         var that = this;
 
-        J.mixout(options, this.options);
         this.options = options;
 
-        // Get language info.
+        /**
+         * ### LanguageSelector.availableLanguages
+         *
+         * Array containing an object per availble language
+         *
+         * The language object contains at least the following properties:
+         *
+         * - `name`: Name of the language in English.
+         * - `nativeName`: Native name of the language
+         * - `shortName`: An abbreviation for the language, also determines the
+         *  path to the context files for this language.
+         *
+         * @see Player.lang
+         */
+        this.availableLanguages = null;
+
+        /**
+         * ### LanguageSelector.currentLanguageIndex
+         *
+         * A numeral indicating the position of the currently used language
+         *
+         * @see LanguageSelector.availableLanguages
+         */
+        this.currentLanguageIndex = null;
+
+        /**
+         * ### LanguageSelector.displayForm
+         *
+         * The form in which the widget displays the language information
+         */
+        this.displayForm = null;
+
+        /**
+         * ### LanguageSelector.buttonLabels
+         *
+         * Array containing the labels for the language selection buttons
+         */
+        this.buttonLabels = [];
+
+        /**
+         * ### LanguageSelector.buttons
+         *
+         * Array containing the buttons for the language selection
+         */
+        this.buttons = [];
+
+        /**
+         * ### LanguageSelector.loadingDiv
+         *
+         * Div displaying information on whether the languages have been loaded
+         */
+        this.loadingDiv = null;
+
+        /**
+         * ### LanguageSelector.languagesLoaded
+         *
+         * Flag indicating whether languages have been loaded from server
+         */
+        this.languagesLoaded = false;
+
+        /**
+         * ### LanguageSelector.onLangCallback
+         *
+         * Function to be called when languages have been loaded
+         *
+         * Initializes form displaying the information as well as the buttons
+         * and their labels. Initializes language to English.
+         * Forwards to `LanguageSelector.onLangCallbackExtension` at the very
+         * end.
+         *
+         * @see LanguageSelector.setLanguage
+         */
         this.onLangCallback = function(msg) {
             var i = 0;
 
@@ -28270,6 +28343,32 @@ JSUS.extend(TIME);
             }
         };
 
+        /**
+         * ### LanguageSelector.onLangCallbackExtension
+         *
+         * Extension point to `LanguageSelector.onLangCallback`
+         *
+         * @see LanguageSelector.onLangCallback
+         */
+        this.onLangCallbackExtension = null;
+
+        this.init(this.options);
+    }
+
+    /**
+     * ## LanguageSelector.init
+     *
+     * Initializes the widget
+     *
+     * @see LanguageSelector.onLangCallback
+     */
+    LanguageSelector.prototype.init = function(options) {
+        var that = this;
+
+        J.mixout(options, this.options);
+        this.options = options;
+
+        // Register listener.
         node.on.lang(this.onLangCallback);
 
         // Display initialization.
@@ -28278,16 +28377,25 @@ JSUS.extend(TIME);
         this.loadingDiv.innerHTML = 'Loading language information...';
 
 //        this.updateAvalaibleLanguages();
-
     };
 
     LanguageSelector.prototype.append = function() {
         this.bodyDiv.appendChild(this.displayForm);
     };
 
+    /**
+     * ## LanguageSelector.setLanguage
+     *
+     * Sets language and updates view and `Player.lang`
+     *
+     * @param property Indicates which language property to use as identifier.
+     * @param value Indicates which language to select. If no value is provided,
+     *  property is assumed to represent the index of the language.
+     *
+     */
     LanguageSelector.prototype.setLanguage = function(property, value) {
 
-        // If only one argument is provided we assume it to be the index
+        // If only one argument is provided, assume it to be the index
         if (arguments.length == 2) {
             this.setLanguage(J.map(this.availableLanguages,
                 function(obj){return obj[property];}).indexOf(value));
@@ -28315,6 +28423,11 @@ JSUS.extend(TIME);
         node.player.lang.path = node.player.lang.shortName + '/';
     };
 
+    /**
+     * ## LanguageSelector.updateAvalaibleLanguages
+     *
+     * Updates available languages asynchronously
+     */
     LanguageSelector.prototype.updateAvalaibleLanguages = function(options) {
         if (options) {
             if (options.callback) {
