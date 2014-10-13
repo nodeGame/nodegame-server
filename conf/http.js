@@ -249,6 +249,9 @@ function configure(app, servernode) {
                     jsonContext = JSON.parse(fs.readFileSync(contextPath));
                     app.contextCache[contextPath] = jsonContext;
                 }
+                else {
+                    jsonContext = app.contextCache[contextPath];
+                }
 
                 res.render(jadeTemplate, jsonContext);
                 return;
