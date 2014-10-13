@@ -12,14 +12,12 @@
 /* Language Selector */
 .languageselector {
     float: right;
-    min-width: 100px;
-    width: auto;
+    width: 150px;
+
 }
 
 
 .languageselector > .panel-body > form > label {
-    width: 100px;
-    float: right;
     font-size: 20px;
     font-weight: normal;
 }
