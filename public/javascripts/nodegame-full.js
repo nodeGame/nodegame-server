@@ -28316,6 +28316,11 @@ JSUS.extend(TIME);
     };
 
     LanguageSelector.prototype.updateAvalaibleLanguages = function(options) {
+        if (options) {
+            if (options.callback) {
+                this.onLangCallbackExtension = options.callback;
+            }
+        }
         node.socket.send(node.msg.create({
             target: "LANG",
             to: "SERVER",
