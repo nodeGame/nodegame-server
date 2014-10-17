@@ -14106,6 +14106,7 @@ JSUS.extend(TIME);
     Game.prototype.start = function(options) {
         var onInit, node, startStage;
         node = this.node;
+if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC IN GAME');
         if (options && 'object' !== typeof options) {
             throw new TypeError('Game.start: options must be object or ' +
                                 'undefined.');
@@ -14432,7 +14433,7 @@ JSUS.extend(TIME);
         // Sends start / step command to connected clients if option is on.
         if (this.settings.syncStepping) {
             if (curStep.stage === 0) {
-                node.remoteCommand('start', 'ROOM');
+                //node.remoteCommand('start', 'ROOM');
             }
             else {
                 node.remoteCommand('goto_step', 'ROOM', nextStep);
@@ -14801,6 +14802,7 @@ JSUS.extend(TIME);
             }
         }
         node.player.stateLevel = stateLevel;
+if (node.nodename === 'lgc100') console.log('*** NEW:', node.player.stateLevel, node.player.stageLevel);
     };
 
     /**
@@ -14854,6 +14856,7 @@ JSUS.extend(TIME);
             }
         }
         node.player.stageLevel = stageLevel;
+if (node.nodename === 'lgc100') console.log('*** NEW:', node.player.stateLevel, node.player.stageLevel);
     };
     
     /**
@@ -20122,6 +20125,7 @@ JSUS.extend(TIME);
          *
          */
         this.events.ng.on(CMD + gcommands.start, function(options) {
+if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC');
             if (!node.game.isStartable()) {
                 node.err('Game cannot be started.');
                 return;
