@@ -28188,9 +28188,7 @@ JSUS.extend(TIME);
  * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
- * Display information about rounds and/or stage in the game.
- * Accepts different visualization options (e.g. countdown, etc.).
- * See `VisualRound` constructor for a list of all available options.
+ * Manages and displays information about languages available and selected.
  *
  * www.nodegame.org
  * ---
@@ -28208,7 +28206,7 @@ JSUS.extend(TIME);
 
     LanguageSelector.version = '0.2.0';
     LanguageSelector.description = 'Display information about the current ' +
-        'language and allow to change language.';
+        'language and allows to change language.';
     LanguageSelector.title = 'Language';
     LanguageSelector.className = 'languageselector';
 
@@ -28308,6 +28306,10 @@ JSUS.extend(TIME);
         this.onLangCallback = function(msg) {
             var i = 0;
 
+            if (that.languagesLoaded) {
+                return;
+            }
+
             // Initialize widget.
             that.availableLanguages = msg.data;
             for (i = 0; i < msg.data.length; ++i) {
@@ -28376,7 +28378,7 @@ JSUS.extend(TIME);
         this.loadingDiv = node.window.addDiv(this.displayForm);
         this.loadingDiv.innerHTML = 'Loading language information...';
 
-//        this.updateAvalaibleLanguages();
+        this.updateAvalaibleLanguages();
     };
 
     LanguageSelector.prototype.append = function() {
