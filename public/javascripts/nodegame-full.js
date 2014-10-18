@@ -6035,35 +6035,22 @@ JSUS.extend(TIME);
      *
      * Indexes an element
      *
-     * Parameter _oldIdx_ is needed if indexing is updating a previously
-     * indexed item. In fact if new index is different, the old one must
-     * be deleted.
-     *
      * @param {object} o The element to index
-     * @param {number} dbidx The position of the element in the database array
-     * @param {string} oldIdx Optional. The old index name, if any.
+     * @param {object} o The position of the element in the database array
      */
-    NDDB.prototype._indexIt = function(o, dbidx, oldIdx) {
+    NDDB.prototype._indexIt = function(o, dbidx) {
         var func, id, index, key;
         if (!o || J.isEmpty(this.__I)) return;
-        oldIdx = undefined;
+
         for (key in this.__I) {
             if (this.__I.hasOwnProperty(key)) {
                 func = this.__I[key];
                 index = func(o);
-                // If the same object has been  previously
-                // added with another index delete the old one.
-                if (index !== oldIdx) {
-                    if ('undefined' !== typeof oldIdx) {
-                        if ('undefined' !== typeof this[key].resolve[oldIdx]) {
-                            delete this[key].resolve[oldIdx];
-                        }
-                    }
-                }
-                if ('undefined' !== typeof index) { 
-                    if (!this[key]) this[key] = new NDDBIndex(key, this);
-                    this[key]._add(index, dbidx);
-                }
+
+                if ('undefined' === typeof index) continue;
+
+                if (!this[key]) this[key] = new NDDBIndex(key, this);
+                this[key]._add(index, dbidx);
             }
         }
     };
@@ -6093,7 +6080,7 @@ JSUS.extend(TIME);
                     settings = this.cloneSettings({V: ''});
                     this[key] = new NDDB(settings);
                 }
-                this[key].insert(o);1
+                this[key].insert(o);
             }
         }
     };
@@ -7513,13 +7500,11 @@ JSUS.extend(TIME);
      * @see JSUS.arrayDiff
      */
     NDDB.prototype.diff = function(nddb) {
+        if (!nddb || !nddb.length) return this;
         if ('object' === typeof nddb) {
             if (nddb instanceof NDDB || nddb instanceof this.constructor) {
                 nddb = nddb.db;
             }
-        }
-        if (!nddb || !nddb.length) {
-            return this.breed([]);
         }
         return this.breed(J.arrayDiff(this.db, nddb));
     };
@@ -7541,13 +7526,11 @@ JSUS.extend(TIME);
      * @see JSUS.arrayIntersect
      */
     NDDB.prototype.intersect = function(nddb) {
+        if (!nddb || !nddb.length) return this;
         if ('object' === typeof nddb) {
             if (nddb instanceof NDDB || nddb instanceof this.constructor) {
-                nddb = nddb.db;
+                var nddb = nddb.db;
             }
-        }
-        if (!nddb || !nddb.length) {
-            return this.breed([]);
         }
         return this.breed(J.arrayIntersect(this.db, nddb));
     };
@@ -8171,7 +8154,7 @@ JSUS.extend(TIME);
      * @see NDDBIndex.get
      * @see NDDBIndex.remove
      */
-    NDDBIndex.prototype.update = function(idx, update) {
+        NDDBIndex.prototype.update = function(idx, update) {
         var o, dbidx, nddb;
         dbidx = this.resolve[idx];
         if ('undefined' === typeof dbidx) return false;
@@ -8182,7 +8165,7 @@ JSUS.extend(TIME);
         // We do indexes separately from the other components of _autoUpdate
         // to avoid looping through all the other elements that are unchanged.
         if (nddb.__update.indexes) {
-            nddb._indexIt(o, dbidx, idx);
+            nddb._indexIt(o, dbidx);
             nddb._hashIt(o);
             nddb._viewIt(o);
         }
@@ -8388,6 +8371,10 @@ JSUS.extend(TIME);
     // Redirects a client to a new uri
     k.target.REDIRECT = 'REDIRECT';
 
+    // #### target.LANG
+    // Requests language information
+    k.target.LANG = 'LANG';
+
     // #### target.SETUP
     // Asks a client update its configuration
     k.target.SETUP = 'SETUP';
@@ -8403,7 +8390,7 @@ JSUS.extend(TIME);
     // #### target.ALERT
     // Displays an alert message in the receiving client (if in the browser)
     k.target.ALERT = 'ALERT';
-    
+
 
     //#### not used targets (for future development)
 
@@ -8510,7 +8497,7 @@ JSUS.extend(TIME);
     k.screenLevels = {
         ACTIVE:        1,  // User can interact with screen (if LOADED)
         UNLOCKING:     -1,  // The screen is about to be unlocked.
-        LOCKING:       -2, // The screen is about to be locked. 
+        LOCKING:       -2, // The screen is about to be locked.
         LOCKED:        -3  // The screen is locked.
     };
 
@@ -9810,7 +9797,7 @@ JSUS.extend(TIME);
      */
     function PlayerList(options, db) {
         options = options || {};
-        
+
         options.name = options.name || 'plist';
 
         // Updates indexes on the fly.
@@ -9818,14 +9805,14 @@ JSUS.extend(TIME);
         if ('undefined' === typeof options.update.indexes) {
             options.update.indexes = true;
         }
-   
+
         // The internal counter that will be used to assing the `count`
         // property to each inserted player.
         this.pcounter = 0;
 
         // Invoking NDDB constructor.
         NDDB.call(this, options);
-        
+
         // We check if the index are not existing already because
         // it could be that the constructor is called by the breed function
         // and in such case we would duplicate them.
@@ -9834,9 +9821,9 @@ JSUS.extend(TIME);
                 return p.id;
             });
         }
-      
+
         // Importing initial items
-        // (should not be done in constructor of NDDB) 
+        // (should not be done in constructor of NDDB)
         if (db) this.importDB(db);
 
         // Assigns a global comparator function.
@@ -10008,7 +9995,7 @@ JSUS.extend(TIME);
         // This creates some problems with the _autoUpdate...to be investigated.
         this.id.update(id, update);
 
-        
+
     };
 
     /**
@@ -10052,7 +10039,7 @@ JSUS.extend(TIME);
      * Players at other steps are ignored.
 
      // TODO UPDATE DOC
-     
+
      *
      * If no player is found at the desired step, it returns TRUE.
      *
@@ -10063,22 +10050,22 @@ JSUS.extend(TIME);
     PlayerList.prototype.isStepLoaded = function(gameStage) {
         return this.arePlayersSync(gameStage, stageLevels.LOADED, 'EXACT');
     };
-    
+
     /**
      * ## PlayerList.arePlayersSync
      *
-     * Verifies that all players in the same stage are at the same stageLevel. 
+     * Verifies that all players in the same stage are at the same stageLevel.
      *
      * Players at other game steps are ignored, unless the `upTo` parameter is
      * set. In this case, if players are found in earlier game steps, the method
      * will return false. Players at later game steps will still be ignored.
      *
      // TODO UPDATE DOC
-     
+
      strict: same stage, step, round, stageLevel
      stage: same stage
-     stage_up_to: 
-     
+     stage_up_to:
+
      players in other stages - ignore - false
 
      * @param {GameStage} gameStage The GameStage of reference
@@ -10097,7 +10084,7 @@ JSUS.extend(TIME);
             throw new TypeError('PlayerList.arePlayersSync: stagelevel must ' +
                                 'be number or undefined.');
         }
-        
+
         type = type || 'EXACT';
         if ('string' !== typeof type) {
             throw new TypeError('PlayerList.arePlayersSync: type must be ' +
@@ -10108,7 +10095,7 @@ JSUS.extend(TIME);
             throw new Error('PlayerList.arePlayersSync: unknown type: ' +
                             type + '.');
         }
-        
+
         checkOutliers = 'undefined' === typeof checkOutliers ?
             true : checkOutliers;
 
@@ -10121,16 +10108,16 @@ JSUS.extend(TIME);
             throw new Error('PlayerList.arePlayersSync: incompatible options:' +
                             ' type=EXACT and checkOutliers=FALSE.');
         }
-        
+
         // Cast the gameStage to object.
         gameStage = new GameStage(gameStage);
 
         len = this.db.length;
         for (i = 0; i < len; i++) {
             p = this.db[i];
-            
+
             switch(type) {
-            
+
             case 'EXACT':
                 // Players in same stage, step and round.
                 cmp = GameStage.compare(gameStage, p.stage);
@@ -10142,11 +10129,11 @@ JSUS.extend(TIME);
                     outlier = true;
                 }
                 break;
-                
-             case 'STAGE_UPTO':                
+
+             case 'STAGE_UPTO':
                 // Players in current stage up to the reference step.
                 cmp = GameStage.compare(gameStage, p.stage);
-                
+
                 // Player in another stage or in later step
                 if (gameStage.stage !== p.stage.stage || cmp < 0) {
                     outlier = true;
@@ -10158,10 +10145,10 @@ JSUS.extend(TIME);
                 }
                 break;
             }
-            
+
             // If outliers are not allowed returns false if one was found.
             if (checkOutliers && outlier) return false;
-            
+
             // If the stageLevel check is required let's do it!
             if ('undefined' !== typeof stageLevel &&
                 p.stageLevel !== stageLevel) {
@@ -10391,7 +10378,20 @@ JSUS.extend(TIME);
          */
         this.stateLevel = player.stateLevel || stateLevels.UNINITIALIZED;
 
-        
+        /**
+         * ### Player.lang
+         *
+         * The current language used by the playerName
+         *
+         * Default language is English with the default path `en/`.
+         */
+        this.lang = {
+            name: 'English',
+            shortName: 'en',
+            nativeName: 'English',
+            path: 'en/'
+        };
+
         /**
          * ## Extra properties
          *
@@ -10612,7 +10612,7 @@ JSUS.extend(TIME);
         line += this.session + SPT;
         line += this.action + SPT;
 
-        line += this.target ? 
+        line += this.target ?
             this.target.length < 6  ?
             this.target + SPT + TAB : this.target + SPT : UNKNOWN;
         line += this.from ?
@@ -10630,8 +10630,8 @@ JSUS.extend(TIME);
         }
         else {
             tmp = this.text.toString();
-            
-            if (tmp.length > 12) { 
+
+            if (tmp.length > 12) {
                 line += DLM + tmp.substr(0,9) + "..." + DLM + SPT;
             }
             else if (tmp.length < 6) {
@@ -10650,7 +10650,7 @@ JSUS.extend(TIME);
         }
         else {
             tmp = this.data.toString();
-            if (tmp.length > 12) { 
+            if (tmp.length > 12) {
                 line += DLM + tmp.substr(0,9) + "..." + DLM + SPT;
             }
             else if (tmp.length < 9) {
@@ -14106,6 +14106,10 @@ JSUS.extend(TIME);
          * @see Game.gotoStep
          */
         this.exactPlayerCbCalled = false;
+<<<<<<< HEAD
+=======
+
+>>>>>>> 46a224433eeddf608c4ebc5093c5920e4cbf0509
     }
 
     // ## Game methods
@@ -14122,7 +14126,13 @@ JSUS.extend(TIME);
      */
     Game.prototype.start = function(options) {
         var onInit, node, startStage;
+<<<<<<< HEAD
         node = this.node;
+=======
+
+        node = this.node;
+
+>>>>>>> 46a224433eeddf608c4ebc5093c5920e4cbf0509
         if (options && 'object' !== typeof options) {
             throw new TypeError('Game.start: options must be object or ' +
                                 'undefined.');
@@ -17905,12 +17915,12 @@ JSUS.extend(TIME);
     /**
      * ## NodeGameClient constructor
      *
-     * Creates a new NodeGameClient object
-     */       
+     * Creates a new NodeGameClient object.
+     */
     function NodeGameClient() {
-        
+
         var that = this;
-        
+
         /**
          * ### node.verbosity_levels
          *
@@ -17958,7 +17968,7 @@ JSUS.extend(TIME);
         /**
          * ### node.errorManager
          *
-         * Catches run-time errors
+         * Catches run-time errors.
          *
          * In debug mode errors are re-thrown.
          */
@@ -18067,7 +18077,7 @@ JSUS.extend(TIME);
          *
          * Matches the keys of the configuration objects with the name
          * of the registered functions and executes them.
-         * If no match is found, the configuration function will set 
+         * If no match is found, the configuration function will set
          * the default values.
          *
          * @param {object} options The configuration object
@@ -18286,12 +18296,12 @@ JSUS.extend(TIME);
             if (timer.options) {
                 timer.init(data.options);
             }
-            
+
             switch (timer.action) {
             case 'start':
                 timer.start();
                 break;
-            case 'stop': 
+            case 'stop':
                 timer.stop();
                 break;
             case 'restart':
@@ -18303,7 +18313,7 @@ JSUS.extend(TIME);
             case 'resume':
                 timer.resume();
             }
-            
+
             // Last configured timer options.
             return {
                 name: name,
@@ -18316,7 +18326,7 @@ JSUS.extend(TIME);
          *
          * Creates the `node.game.plot` object
          *
-         * It can either replace current plot object, or append to it. 
+         * It can either replace current plot object, or append to it.
          * Updates are not possible for the moment.
          *
          * TODO: allows updates in plot.
@@ -18485,6 +18495,11 @@ JSUS.extend(TIME);
             };
         });
 
+        // ### node.on.lang
+        // Gets language information.
+        this.alias('lang','in.say.LANG');
+
+
         // LISTENERS.
         this.addDefaultIncomingListeners();
         this.addDefaultInternalListeners();
@@ -18495,6 +18510,7 @@ JSUS.extend(TIME);
     'undefined' != typeof node ? node : module.exports
  ,  'undefined' != typeof node ? node : module.parent.exports
 );
+
 /**
  * # Log
  * Copyright(c) 2014 Stefano Balietti
@@ -18594,6 +18610,7 @@ JSUS.extend(TIME);
     'undefined' != typeof node ? node : module.exports,
     'undefined' != typeof node ? node : module.parent.exports
 );
+
 /**
  * # Setup
  * Copyright(c) 2014 Stefano Balietti
@@ -28172,7 +28189,18 @@ JSUS.extend(TIME);
 
 })(node);
 
-(function(node) {
+/**
+ * # VisualRound widget for nodeGame
+ * Copyright(c) 2014 Stefano Balietti
+ * MIT Licensed
+ *
+ * Manages and displays information about languages available and selected.
+ *
+ * www.nodegame.org
+ * ---
+ */
+ (function(node) {
+
     "use strict";
 
     node.widgets.register('LanguageSelector', LanguageSelector);
@@ -28182,10 +28210,10 @@ JSUS.extend(TIME);
 
     // ## Meta-data
 
-    LanguageSelector.version = '0.1.0';
+    LanguageSelector.version = '0.2.0';
     LanguageSelector.description = 'Display information about the current ' +
-        'language and allow to change language.';
-    LanguageSelector.title = 'Language'; // change at runtime?
+        'language and allows to change language.';
+    LanguageSelector.title = 'Language';
     LanguageSelector.className = 'languageselector';
 
     // ## Dependencies
@@ -28195,75 +28223,187 @@ JSUS.extend(TIME);
         Game: {}
     };
 
+    /**
+     * ## LanguageSelector constructor
+     *
+     * Manages the setting and display of the language used
+     *
+     * @param {object} options Optional. Configuration options
+     *
+     * @see Player.lang
+     */
     function LanguageSelector(options) {
+        var that = this;
+
         this.options = options;
 
-        this.availableLanguages = game.availableLanguages;
+        /**
+         * ### LanguageSelector.availableLanguages
+         *
+         * Array containing an object per availble language
+         *
+         * The language object contains at least the following properties:
+         *
+         * - `name`: Name of the language in English.
+         * - `nativeName`: Native name of the language
+         * - `shortName`: An abbreviation for the language, also determines the
+         *  path to the context files for this language.
+         *
+         * @see Player.lang
+         */
+        this.availableLanguages = null;
+
+        /**
+         * ### LanguageSelector.currentLanguageIndex
+         *
+         * A numeral indicating the position of the currently used language
+         *
+         * @see LanguageSelector.availableLanguages
+         */
+        this.currentLanguageIndex = null;
+
+        /**
+         * ### LanguageSelector.displayForm
+         *
+         * The form in which the widget displays the language information
+         */
         this.displayForm = null;
+
+        /**
+         * ### LanguageSelector.buttonLabels
+         *
+         * Array containing the labels for the language selection buttons
+         */
         this.buttonLabels = [];
+
+        /**
+         * ### LanguageSelector.buttons
+         *
+         * Array containing the buttons for the language selection
+         */
         this.buttons = [];
 
-        this.currentLanguageIndex = game.currentLanguageIndex;
-        this.languagePath = null;
+        /**
+         * ### LanguageSelector.loadingDiv
+         *
+         * Div displaying information on whether the languages have been loaded
+         */
+        this.loadingDiv = null;
+
+        /**
+         * ### LanguageSelector.languagesLoaded
+         *
+         * Flag indicating whether languages have been loaded from server
+         */
+        this.languagesLoaded = false;
+
+        /**
+         * ### LanguageSelector.onLangCallback
+         *
+         * Function to be called when languages have been loaded
+         *
+         * Initializes form displaying the information as well as the buttons
+         * and their labels. Initializes language to English.
+         * Forwards to `LanguageSelector.onLangCallbackExtension` at the very
+         * end.
+         *
+         * @see LanguageSelector.setLanguage
+         */
+        this.onLangCallback = function(msg) {
+            var i = 0;
+
+            if (that.languagesLoaded) {
+                return;
+            }
+
+            // Initialize widget.
+            that.availableLanguages = msg.data;
+            for (i = 0; i < msg.data.length; ++i) {
+
+                that.buttonLabels[i] = node.window.getElement('label', 'label' +
+                    i, { for: 'radioButton' + i });
+
+                that.buttons[i] = node.window.getElement('input',
+                    'radioButton' + i, {
+                        type: 'radio',
+                        name: 'languageButton',
+                        value: msg.data[i].name,
+                        onClick: 'node.game.lang.setLanguage('+ i + ')'
+                    }
+                );
+                that.buttonLabels[i].appendChild(that.buttons[i]);
+                that.buttonLabels[i].appendChild(
+                    document.createTextNode(msg.data[i].nativeName));
+                node.window.addElement('br', that.buttonLabels[i]);
+                that.buttonLabels[i].className = 'unselectedButtonLabel';
+                that.displayForm.appendChild(that.buttonLabels[i]);
+            }
+
+            that.loadingDiv.style.display = 'none';
+            that.languagesLoaded = true;
+
+            // Initialize to English.
+            that.setLanguage('shortName','en');
+
+            // Extension point.
+            if (that.onLangCallbackExtension) {
+                that.onLangCallbackExtension(msg);
+            }
+        };
+
+        /**
+         * ### LanguageSelector.onLangCallbackExtension
+         *
+         * Extension point to `LanguageSelector.onLangCallback`
+         *
+         * @see LanguageSelector.onLangCallback
+         */
+        this.onLangCallbackExtension = null;
 
         this.init(this.options);
     }
 
+    /**
+     * ## LanguageSelector.init
+     *
+     * Initializes the widget
+     *
+     * @see LanguageSelector.onLangCallback
+     */
     LanguageSelector.prototype.init = function(options) {
         var that = this;
 
         J.mixout(options, this.options);
         this.options = options;
 
+        // Register listener.
+        node.on.lang(this.onLangCallback);
+
         // Display initialization.
         this.displayForm = node.window.getElement('form','radioButtonForm');
+        this.loadingDiv = node.window.addDiv(this.displayForm);
+        this.loadingDiv.innerHTML = 'Loading language information...';
 
-        this.languageInit(this.options);
-//        if (game.languageLoaded) { debugger
-//            this.languageInit(this.options);
-//        }
-//        else { debugger
-//            game.onLanguageLoaded = function() {
-//                game.languageLoaded = true;
-//                that.languageInit(this.options);
-//            };
-//        }
-    };
-
-    LanguageSelector.prototype.languageInit = function(options) {
-        var i = 0;
-
-        for(i = 0; i < this.availableLanguages.length; ++i) {
-
-            this.buttonLabels[i] = node.window.getElement('label', 'label' + i,
-                { for: 'radioButton' + i });
-
-            this.buttons[i] = node.window.getElement('input',
-                'radioButton' + i, {
-                    type: 'radio',
-                    name: 'languageButton',
-                    value: this.availableLanguages[i].name,
-                    onClick: 'node.game.lang.setLanguage('+ i + ')'
-                }
-            );
-            this.buttonLabels[i].appendChild(this.buttons[i]);
-            this.buttonLabels[i].appendChild(
-                document.createTextNode(this.availableLanguages[i].nativeName));
-            node.window.addElement('br', this.buttonLabels[i]);
-            this.buttonLabels[i].className = 'unselectedButtonLabel';
-            this.displayForm.appendChild(this.buttonLabels[i]);
-        }
-
-        this.setLanguage('shortName','en');
+        this.updateAvalaibleLanguages();
     };
 
     LanguageSelector.prototype.append = function() {
         this.bodyDiv.appendChild(this.displayForm);
     };
 
+    /**
+     * ## LanguageSelector.setLanguage
+     *
+     * Sets language and updates view and `Player.lang`
+     *
+     * @param property Indicates which language property to use as identifier.
+     * @param value Indicates which language to select. If no value is provided,
+     *  property is assumed to represent the index of the language.
+     *
+     */
     LanguageSelector.prototype.setLanguage = function(property, value) {
 
-        // If only one argument is provided we assume it to be the index
+        // If only one argument is provided, assume it to be the index
         if (arguments.length == 2) {
             this.setLanguage(J.map(this.availableLanguages,
                 function(obj){return obj[property];}).indexOf(value));
@@ -28286,22 +28426,27 @@ JSUS.extend(TIME);
         this.buttonLabels[this.currentLanguageIndex].className =
             'selectedButtonLabel';
 
-        // Set `langPath`.
-        this.languagePath =
-            this.availableLanguages[this.currentLanguageIndex].shortName + '/';
-
-        // Reload current page (only document inside iframe)
-        // TODO
-
+        // Update node.player
+        node.player.lang = this.availableLanguages[this.currentLanguageIndex];
+        node.player.lang.path = node.player.lang.shortName + '/';
     };
 
+    /**
+     * ## LanguageSelector.updateAvalaibleLanguages
+     *
+     * Updates available languages asynchronously
+     */
     LanguageSelector.prototype.updateAvalaibleLanguages = function(options) {
-        var that = this;
-
-        node.getJSON('languages.json', function(languages) {
-                that.availableLanguages = languages;
+        if (options) {
+            if (options.callback) {
+                this.onLangCallbackExtension = options.callback;
             }
-        );
+        }
+        node.socket.send(node.msg.create({
+            target: "LANG",
+            to: "SERVER",
+            action: "get"}
+        ));
     };
 
 })(node);

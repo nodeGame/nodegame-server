@@ -98,6 +98,9 @@ function configure(app, servernode) {
     //    })
     //
 
+    // Object to cache loaded context files.
+    app.contextCache = {};
+
     app.use(express.cookieParser());
 
     app.configure('development', function(){
@@ -167,8 +170,8 @@ function configure(app, servernode) {
 
     // Serves game files or default game index file: index.htm.
     app.get('/:game/*', function(req, res) {
-        var gameInfo, filepath, file, jadeTemplate, jsonContext, langPath,
-            pageName;
+        var gameInfo, filepath, file;
+        var jadeTemplate, jsonContext, contextPath, langPath, pageName;
 
         gameInfo = verifyGameRequest(req, res);
         if (!gameInfo) return;
@@ -224,9 +227,9 @@ function configure(app, servernode) {
         }
 
         // Instantiate templates, if needed and available.
-        // `html/templates/page.html` holds the template and
-        // `html/context/lang/page.html` holds the context to instantiate
-        // the page to store in `html/lang/page.html`.
+        // `html/templates/page.jade` holds the template and
+        // `html/context/lang/page.json` holds the context to instantiate
+        // the page requested by `html/lang/page.html`.
         if(/^html\/[^\/]*\/[^\/]*\.html$/.test(file)) {
 
             // If the file does not exist, build it from templates.
@@ -238,31 +241,20 @@ function configure(app, servernode) {
                 jadeTemplate = gameInfo.dir + 'html/templates/' + pageName +
                     '.jade';
 
-                jsonContext = gameInfo.dir + 'html/context/' + langPath +
+                contextPath = gameInfo.dir + 'html/context/' + langPath +
                     pageName + '.json';
 
-                // Parsing jsonContext into locals.
-                jsonContext = JSON.parse(fs.readFileSync(jsonContext));
-
-                // Make the language specific directory `html/lang` if it does
-                // not exist.
-                if(!fs.existsSync(gameInfo.dir + 'html/' + langPath)){
-                    fs.mkdir(gameInfo.dir + 'html/' + langPath);
+                // If the JSON file hasn't been parsed before, parse it.
+                if (!app.contextCache[contextPath]) {
+                    jsonContext = JSON.parse(fs.readFileSync(contextPath));
+                    app.contextCache[contextPath] = jsonContext;
+                }
+                else {
+                    jsonContext = app.contextCache[contextPath];
                 }
 
-
-                // Render template and store it in filepath.
-                console.log('Creating: ' + filepath);
-                res.render( jadeTemplate,
-                            jsonContext,
-                            function(err, html) {
-                                if(err) {
-                                    console.log(err);
-                                }
-                                else {
-                                    fs.writeFileSync(filepath,html);
-                                }
-                });
+                res.render(jadeTemplate, jsonContext);
+                return;
             }
         }
 
