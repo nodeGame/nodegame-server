@@ -2909,14 +2909,10 @@ if (!JSON) {
      *   class, or undefined input are misspecified.
      */
     DOM.addClass = function(el, c) {
-        if (!el || !c) return;
+        if (!el) return;
         if (c instanceof Array) c = c.join(' ');
-        if (el.className === '' || 'undefined' === typeof el.className) {
-            el.className = c;
-        }
-        else {
-            el.className += ' ' + c;
-        }
+        else if ('string' !== typeof c) return;
+        el.className = el.className ? el.className + ' ' + c : c;
         return el;
     };
 
@@ -2994,7 +2990,7 @@ if (!JSON) {
     // ## RIGHT-CLICK
 
     /**
-     * ## DOM.disableRightClick
+     * ### DOM.disableRightClick
      *
      * Disables the popup of the context menu by right clicking with the mouse 
      *
@@ -3025,7 +3021,7 @@ if (!JSON) {
     };
 
     /**
-     * ## DOM.enableRightClick
+     * ### DOM.enableRightClick
      *
      * Enables the popup of the context menu by right clicking with the mouse 
      *
@@ -13908,7 +13904,7 @@ JSUS.extend(TIME);
 (function(exports, parent) {
 
     "use strict";
-
+    
     // ## Global scope
 
     // Exposing Game constructor
@@ -13918,9 +13914,7 @@ JSUS.extend(TIME);
     GameDB = parent.GameDB,
     GamePlot = parent.GamePlot,
     PlayerList = parent.PlayerList,
-    Languages = parent.Languages,
     Stager = parent.Stager;
-
 
     var constants = parent.constants;
 
@@ -14072,7 +14066,7 @@ JSUS.extend(TIME);
          *
          * TRUE, if DONE was emitted during the execution of the step callback
          *
-         * If already TRUE, when PLAYING is emitted the game will try to step
+         * If already TRUE, when PLAYING is emitted the game will try to step 
          * immediately.
          *
          * @see Game.pause
@@ -14112,15 +14106,6 @@ JSUS.extend(TIME);
          * @see Game.gotoStep
          */
         this.exactPlayerCbCalled = false;
-
-        this.availableLanguages = [];
-        this.languageLoaded = false;
-        var that = this;
-        this.onLanguageLoaded = function() {
-            that.languageLoaded = true;
-        }
-        this.currentLanguageIndex = 0;
-
     }
 
     // ## Game methods
@@ -14136,20 +14121,8 @@ JSUS.extend(TIME);
      * just for change of state after the game has started
      */
     Game.prototype.start = function(options) {
-        var onInit, node, startStage, timeout,
-            that = this;
+        var onInit, node, startStage;
         node = this.node;
-
-//        // TODO: Find better way to figure out whether on server or client?
-//        if (typeof document !== 'undefined') {
-//            node.getJSON('languages.json',
-//                function(languages) {
-//                    that.availableLanguages = languages;
-//                    that.onLanguageLoaded();
-//                }
-//            );
-//        }
-
         if (options && 'object' !== typeof options) {
             throw new TypeError('Game.start: options must be object or ' +
                                 'undefined.');
@@ -14185,7 +14158,7 @@ JSUS.extend(TIME);
         this.setCurrentGameStage(startStage, true);
 
         node.log('game started.');
-
+        
         if (options.step !== false) {
             this.step();
         }
@@ -14229,7 +14202,7 @@ JSUS.extend(TIME);
         }
         // Destroy currently running timers.
         node.timer.destroyAllTimers(true);
-
+ 
         // Remove all events registered during the game.
         node.events.ee.game.clear();
         node.events.ee.stage.clear();
@@ -14325,7 +14298,7 @@ JSUS.extend(TIME);
 
         node.timer.setTimestamp('paused');
         node.emit('PAUSED');
-
+        
         // broadcast?
 
         node.log('game paused.');
@@ -14344,13 +14317,13 @@ JSUS.extend(TIME);
         if (!this.isResumable()) {
             throw new Error('Game.resume: game cannot be resumed.');
         }
-
+        
         node = this.node;
 
         node.emit('RESUMING');
 
         this.paused = false;
-
+        
         // If the Stager defines an appropriate handler, give it the messages
         // that were buffered during the pause.
         // Otherwise, emit the buffered messages normally.
@@ -14391,7 +14364,7 @@ JSUS.extend(TIME);
         if (!this.checkPlistSize()) {
             return;
         }
-
+        
         stepRule = this.plot.getStepRule(this.getCurrentGameStage());
 
         if ('function' !== typeof stepRule) {
@@ -14459,7 +14432,7 @@ JSUS.extend(TIME);
             throw new TypeError('Game.gotoStep: nextStep must be ' +
                                'an object or a string.');
         }
-
+        
         curStep = this.getCurrentGameStage();
         node = this.node;
 
@@ -14490,7 +14463,7 @@ JSUS.extend(TIME);
                 if (node.socket.shouldClearBuffer()) {
                     node.socket.clearBuffer();
                 }
-
+                
                 node.emit('GAME_OVER');
                 return null;
             }
@@ -14721,7 +14694,7 @@ JSUS.extend(TIME);
         cb = stage.cb;
 
         this.setStageLevel(constants.stageLevels.EXECUTING_CALLBACK);
-
+        
         // Execute custom callback. Can throw errors.
         res = cb.call(node.game);
         if (res === false) {
@@ -14729,9 +14702,9 @@ JSUS.extend(TIME);
             node.err('A non fatal error occurred while executing ' +
                      'the callback of stage ' + this.getCurrentGameStage());
         }
-
+        
         this.setStageLevel(constants.stageLevels.CALLBACK_EXECUTED);
-        node.emit('STEP_CALLBACK_EXECUTED');
+        node.emit('STEP_CALLBACK_EXECUTED');    
         // Internal listeners will check whether we need to emit PLAYING.
         return res;
     };
@@ -14739,7 +14712,7 @@ JSUS.extend(TIME);
     /**
      * ### Game.getCurrentStep
      *
-     * Returns the object representing the current game step.
+     * Returns the object representing the current game step. 
      *
      * @return {object} The game-step as defined in the stager.
      *
@@ -14753,7 +14726,7 @@ JSUS.extend(TIME);
     /**
      * ### Game.getCurrentGameStage
      *
-     * Return the GameStage that is currently being executed.
+     * Return the GameStage that is currently being executed. 
      *
      * The return value is a reference to node.player.stage.
      *
@@ -14763,11 +14736,11 @@ JSUS.extend(TIME);
     Game.prototype.getCurrentGameStage = function() {
         return this.node.player.stage;
     };
-
+    
     /**
      * ### Game.setCurrentGameStage
      *
-     * Sets the current game stage, and optionally notifies the server
+     * Sets the current game stage, and optionally notifies the server 
      *
      * The value is actually stored in `node.player.stage`.
      *
@@ -14816,7 +14789,7 @@ JSUS.extend(TIME);
     /**
      * ### Game.setStateLevel
      *
-     * Sets the current game state level, and optionally notifies the server
+     * Sets the current game state level, and optionally notifies the server 
      *
      * The value is actually stored in `node.player.stateLevel`.
      *
@@ -14856,7 +14829,7 @@ JSUS.extend(TIME);
      * and it is of the type INITIALIZED, CALLBACK_EXECUTED, etc.
      * The return value is a reference to `node.player.stageLevel`.
      *
-     * @return {number} The level of the stage execution.
+     * @return {number} The level of the stage execution. 
      * @see node.player.stageLevel
      * @see node.constants.stageLevels
      */
@@ -14867,7 +14840,7 @@ JSUS.extend(TIME);
     /**
      * ### Game.setStageLevel
      *
-     * Sets the current game stage level, and optionally notifies the server
+     * Sets the current game stage level, and optionally notifies the server 
      *
      * The value is actually stored in `node.player.stageLevel`.
      *
@@ -14899,11 +14872,11 @@ JSUS.extend(TIME);
         }
         node.player.stageLevel = stageLevel;
     };
-
+    
     /**
      * ### Game.publishUpdate
      *
-     * Sends out a PLAYER_UPDATE message, if conditions are met.
+     * Sends out a PLAYER_UPDATE message, if conditions are met. 
      *
      * Type is a property of the `node.player` object.
      *
@@ -14923,7 +14896,7 @@ JSUS.extend(TIME);
                 'Game.publishUpdate: unknown update type (' + type + ')');
         }
         node = this.node;
-
+       
         if (this.shouldPublishUpdate(type, update)) {
             node.socket.send(node.msg.create({
                 target: constants.target.PLAYER_UPDATE,
@@ -14967,7 +14940,7 @@ JSUS.extend(TIME);
             return false;
         }
         if (this.plot.getProperty(this.getCurrentGameStage(), 'syncOnLoaded')) {
-            if (type === 'stageLevel' &&
+            if (type === 'stageLevel' && 
                 value.stageLevel === stageLevels.LOADED) {
                 return true;
             }
@@ -15136,7 +15109,7 @@ JSUS.extend(TIME);
         curGameStage = this.getCurrentGameStage();
         if (!this.isReady()) return false;
         if (!this.checkPlistSize()) return false;
-
+        
         syncOnLoaded = this.plot.getProperty(curGameStage, 'syncOnLoaded');
         if (!syncOnLoaded) return true;
         return node.game.pl.isStepLoaded(curGameStage);
