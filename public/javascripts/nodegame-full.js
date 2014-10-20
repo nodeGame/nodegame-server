@@ -6035,22 +6035,35 @@ JSUS.extend(TIME);
      *
      * Indexes an element
      *
+     * Parameter _oldIdx_ is needed if indexing is updating a previously
+     * indexed item. In fact if new index is different, the old one must
+     * be deleted.
+     *
      * @param {object} o The element to index
-     * @param {object} o The position of the element in the database array
+     * @param {number} dbidx The position of the element in the database array
+     * @param {string} oldIdx Optional. The old index name, if any.
      */
-    NDDB.prototype._indexIt = function(o, dbidx) {
+    NDDB.prototype._indexIt = function(o, dbidx, oldIdx) {
         var func, id, index, key;
         if (!o || J.isEmpty(this.__I)) return;
-
+        oldIdx = undefined;
         for (key in this.__I) {
             if (this.__I.hasOwnProperty(key)) {
                 func = this.__I[key];
                 index = func(o);
-
-                if ('undefined' === typeof index) continue;
-
-                if (!this[key]) this[key] = new NDDBIndex(key, this);
-                this[key]._add(index, dbidx);
+                // If the same object has been  previously
+                // added with another index delete the old one.
+                if (index !== oldIdx) {
+                    if ('undefined' !== typeof oldIdx) {
+                        if ('undefined' !== typeof this[key].resolve[oldIdx]) {
+                            delete this[key].resolve[oldIdx];
+                        }
+                    }
+                }
+                if ('undefined' !== typeof index) { 
+                    if (!this[key]) this[key] = new NDDBIndex(key, this);
+                    this[key]._add(index, dbidx);
+                }
             }
         }
     };
@@ -6080,7 +6093,7 @@ JSUS.extend(TIME);
                     settings = this.cloneSettings({V: ''});
                     this[key] = new NDDB(settings);
                 }
-                this[key].insert(o);
+                this[key].insert(o);1
             }
         }
     };
@@ -7500,11 +7513,13 @@ JSUS.extend(TIME);
      * @see JSUS.arrayDiff
      */
     NDDB.prototype.diff = function(nddb) {
-        if (!nddb || !nddb.length) return this;
         if ('object' === typeof nddb) {
             if (nddb instanceof NDDB || nddb instanceof this.constructor) {
                 nddb = nddb.db;
             }
+        }
+        if (!nddb || !nddb.length) {
+            return this.breed([]);
         }
         return this.breed(J.arrayDiff(this.db, nddb));
     };
@@ -7526,11 +7541,13 @@ JSUS.extend(TIME);
      * @see JSUS.arrayIntersect
      */
     NDDB.prototype.intersect = function(nddb) {
-        if (!nddb || !nddb.length) return this;
         if ('object' === typeof nddb) {
             if (nddb instanceof NDDB || nddb instanceof this.constructor) {
-                var nddb = nddb.db;
+                nddb = nddb.db;
             }
+        }
+        if (!nddb || !nddb.length) {
+            return this.breed([]);
         }
         return this.breed(J.arrayIntersect(this.db, nddb));
     };
@@ -8154,7 +8171,7 @@ JSUS.extend(TIME);
      * @see NDDBIndex.get
      * @see NDDBIndex.remove
      */
-        NDDBIndex.prototype.update = function(idx, update) {
+    NDDBIndex.prototype.update = function(idx, update) {
         var o, dbidx, nddb;
         dbidx = this.resolve[idx];
         if ('undefined' === typeof dbidx) return false;
@@ -8165,7 +8182,7 @@ JSUS.extend(TIME);
         // We do indexes separately from the other components of _autoUpdate
         // to avoid looping through all the other elements that are unchanged.
         if (nddb.__update.indexes) {
-            nddb._indexIt(o, dbidx);
+            nddb._indexIt(o, dbidx, idx);
             nddb._hashIt(o);
             nddb._viewIt(o);
         }
@@ -13904,7 +13921,7 @@ JSUS.extend(TIME);
 (function(exports, parent) {
 
     "use strict";
-    
+
     // ## Global scope
 
     // Exposing Game constructor
@@ -13915,6 +13932,7 @@ JSUS.extend(TIME);
     GamePlot = parent.GamePlot,
     PlayerList = parent.PlayerList,
     Stager = parent.Stager;
+
 
     var constants = parent.constants;
 
@@ -14066,7 +14084,7 @@ JSUS.extend(TIME);
          *
          * TRUE, if DONE was emitted during the execution of the step callback
          *
-         * If already TRUE, when PLAYING is emitted the game will try to step 
+         * If already TRUE, when PLAYING is emitted the game will try to step
          * immediately.
          *
          * @see Game.pause
@@ -14106,10 +14124,7 @@ JSUS.extend(TIME);
          * @see Game.gotoStep
          */
         this.exactPlayerCbCalled = false;
-<<<<<<< HEAD
-=======
 
->>>>>>> 46a224433eeddf608c4ebc5093c5920e4cbf0509
     }
 
     // ## Game methods
@@ -14126,13 +14141,9 @@ JSUS.extend(TIME);
      */
     Game.prototype.start = function(options) {
         var onInit, node, startStage;
-<<<<<<< HEAD
-        node = this.node;
-=======
 
         node = this.node;
 
->>>>>>> 46a224433eeddf608c4ebc5093c5920e4cbf0509
         if (options && 'object' !== typeof options) {
             throw new TypeError('Game.start: options must be object or ' +
                                 'undefined.');
@@ -14168,7 +14179,7 @@ JSUS.extend(TIME);
         this.setCurrentGameStage(startStage, true);
 
         node.log('game started.');
-        
+
         if (options.step !== false) {
             this.step();
         }
@@ -14212,7 +14223,7 @@ JSUS.extend(TIME);
         }
         // Destroy currently running timers.
         node.timer.destroyAllTimers(true);
- 
+
         // Remove all events registered during the game.
         node.events.ee.game.clear();
         node.events.ee.stage.clear();
@@ -14308,7 +14319,7 @@ JSUS.extend(TIME);
 
         node.timer.setTimestamp('paused');
         node.emit('PAUSED');
-        
+
         // broadcast?
 
         node.log('game paused.');
@@ -14327,13 +14338,13 @@ JSUS.extend(TIME);
         if (!this.isResumable()) {
             throw new Error('Game.resume: game cannot be resumed.');
         }
-        
+
         node = this.node;
 
         node.emit('RESUMING');
 
         this.paused = false;
-        
+
         // If the Stager defines an appropriate handler, give it the messages
         // that were buffered during the pause.
         // Otherwise, emit the buffered messages normally.
@@ -14374,7 +14385,7 @@ JSUS.extend(TIME);
         if (!this.checkPlistSize()) {
             return;
         }
-        
+
         stepRule = this.plot.getStepRule(this.getCurrentGameStage());
 
         if ('function' !== typeof stepRule) {
@@ -14442,7 +14453,7 @@ JSUS.extend(TIME);
             throw new TypeError('Game.gotoStep: nextStep must be ' +
                                'an object or a string.');
         }
-        
+
         curStep = this.getCurrentGameStage();
         node = this.node;
 
@@ -14473,7 +14484,7 @@ JSUS.extend(TIME);
                 if (node.socket.shouldClearBuffer()) {
                     node.socket.clearBuffer();
                 }
-                
+
                 node.emit('GAME_OVER');
                 return null;
             }
@@ -14704,7 +14715,7 @@ JSUS.extend(TIME);
         cb = stage.cb;
 
         this.setStageLevel(constants.stageLevels.EXECUTING_CALLBACK);
-        
+
         // Execute custom callback. Can throw errors.
         res = cb.call(node.game);
         if (res === false) {
@@ -14712,9 +14723,9 @@ JSUS.extend(TIME);
             node.err('A non fatal error occurred while executing ' +
                      'the callback of stage ' + this.getCurrentGameStage());
         }
-        
+
         this.setStageLevel(constants.stageLevels.CALLBACK_EXECUTED);
-        node.emit('STEP_CALLBACK_EXECUTED');    
+        node.emit('STEP_CALLBACK_EXECUTED');
         // Internal listeners will check whether we need to emit PLAYING.
         return res;
     };
@@ -14722,7 +14733,7 @@ JSUS.extend(TIME);
     /**
      * ### Game.getCurrentStep
      *
-     * Returns the object representing the current game step. 
+     * Returns the object representing the current game step.
      *
      * @return {object} The game-step as defined in the stager.
      *
@@ -14736,7 +14747,7 @@ JSUS.extend(TIME);
     /**
      * ### Game.getCurrentGameStage
      *
-     * Return the GameStage that is currently being executed. 
+     * Return the GameStage that is currently being executed.
      *
      * The return value is a reference to node.player.stage.
      *
@@ -14746,11 +14757,11 @@ JSUS.extend(TIME);
     Game.prototype.getCurrentGameStage = function() {
         return this.node.player.stage;
     };
-    
+
     /**
      * ### Game.setCurrentGameStage
      *
-     * Sets the current game stage, and optionally notifies the server 
+     * Sets the current game stage, and optionally notifies the server
      *
      * The value is actually stored in `node.player.stage`.
      *
@@ -14799,7 +14810,7 @@ JSUS.extend(TIME);
     /**
      * ### Game.setStateLevel
      *
-     * Sets the current game state level, and optionally notifies the server 
+     * Sets the current game state level, and optionally notifies the server
      *
      * The value is actually stored in `node.player.stateLevel`.
      *
@@ -14839,7 +14850,7 @@ JSUS.extend(TIME);
      * and it is of the type INITIALIZED, CALLBACK_EXECUTED, etc.
      * The return value is a reference to `node.player.stageLevel`.
      *
-     * @return {number} The level of the stage execution. 
+     * @return {number} The level of the stage execution.
      * @see node.player.stageLevel
      * @see node.constants.stageLevels
      */
@@ -14850,7 +14861,7 @@ JSUS.extend(TIME);
     /**
      * ### Game.setStageLevel
      *
-     * Sets the current game stage level, and optionally notifies the server 
+     * Sets the current game stage level, and optionally notifies the server
      *
      * The value is actually stored in `node.player.stageLevel`.
      *
@@ -14882,11 +14893,11 @@ JSUS.extend(TIME);
         }
         node.player.stageLevel = stageLevel;
     };
-    
+
     /**
      * ### Game.publishUpdate
      *
-     * Sends out a PLAYER_UPDATE message, if conditions are met. 
+     * Sends out a PLAYER_UPDATE message, if conditions are met.
      *
      * Type is a property of the `node.player` object.
      *
@@ -14906,7 +14917,7 @@ JSUS.extend(TIME);
                 'Game.publishUpdate: unknown update type (' + type + ')');
         }
         node = this.node;
-       
+
         if (this.shouldPublishUpdate(type, update)) {
             node.socket.send(node.msg.create({
                 target: constants.target.PLAYER_UPDATE,
@@ -14950,7 +14961,7 @@ JSUS.extend(TIME);
             return false;
         }
         if (this.plot.getProperty(this.getCurrentGameStage(), 'syncOnLoaded')) {
-            if (type === 'stageLevel' && 
+            if (type === 'stageLevel' &&
                 value.stageLevel === stageLevels.LOADED) {
                 return true;
             }
@@ -15119,7 +15130,7 @@ JSUS.extend(TIME);
         curGameStage = this.getCurrentGameStage();
         if (!this.isReady()) return false;
         if (!this.checkPlistSize()) return false;
-        
+
         syncOnLoaded = this.plot.getProperty(curGameStage, 'syncOnLoaded');
         if (!syncOnLoaded) return true;
         return node.game.pl.isStepLoaded(curGameStage);

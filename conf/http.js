@@ -230,10 +230,9 @@ function configure(app, servernode) {
         // `html/templates/page.jade` holds the template and
         // `html/context/lang/page.json` holds the context to instantiate
         // the page requested by `html/lang/page.html`.
-        if(/^html\/[^\/]*\/[^\/]*\.html$/.test(file)) {
-
+        if (/^html\/[^\/]*\/[^\/]*\.html$/.test(file)) {
             // If the file does not exist, build it from templates.
-            if(!fs.existsSync(filepath)) {
+            if (!fs.existsSync(filepath)) {
 
                 langPath = file.split('/')[1] + '/';
                 pageName = file.split('/')[2].split('.')[0];
