@@ -9045,7 +9045,8 @@ JSUS.extend(TIME);
         var i, len;
         for (i in this.events) {
             if (this.events.hasOwnProperty(i)) {
-                len = this.events[i].length ? this.events[i].length : 1;
+                len = ('function' === typeof this.events[i]) ?
+                    1 : this.events[i].length;
                 console.log(i + ': ' + len + ' listener/s');   
             }
         }
@@ -9280,6 +9281,7 @@ JSUS.extend(TIME);
         res = [];
         for (i in this.ee) {
             if (this.ee.hasOwnProperty(i)) {
+//if (arguments[1] && (arguments[0] === 'in.say.DATA' && (arguments[1].text === 'BIDDER' || arguments[1].text === 'RESPONDENT'))) debugger;
                 tmpRes = this.ee[i].emit.apply(this.ee[i], arguments);
                 if (tmpRes) res.push(tmpRes);
             }
@@ -13120,6 +13122,7 @@ JSUS.extend(TIME);
         this.url = uri;
         this.node.log('connecting to ' + humanReadableUri + '.');
 
+        this.connected = true;
         this.socket.connect(uri,'undefined' !== typeof options ?
                             options : this.user_options);
     };
@@ -13894,10 +13897,10 @@ JSUS.extend(TIME);
     exports.Game = Game;
 
     var GameStage = parent.GameStage,
-    GameDB = parent.GameDB,
-    GamePlot = parent.GamePlot,
-    PlayerList = parent.PlayerList,
-    Stager = parent.Stager;
+        GameDB = parent.GameDB,
+        GamePlot = parent.GamePlot,
+        PlayerList = parent.PlayerList,
+        Stager = parent.Stager;
 
     var constants = parent.constants;
 
@@ -14106,7 +14109,6 @@ JSUS.extend(TIME);
     Game.prototype.start = function(options) {
         var onInit, node, startStage;
         node = this.node;
-if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC IN GAME');
         if (options && 'object' !== typeof options) {
             throw new TypeError('Game.start: options must be object or ' +
                                 'undefined.');
@@ -14433,7 +14435,7 @@ if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC IN GAME');
         // Sends start / step command to connected clients if option is on.
         if (this.settings.syncStepping) {
             if (curStep.stage === 0) {
-                //node.remoteCommand('start', 'ROOM');
+                node.remoteCommand('start', 'ROOM');
             }
             else {
                 node.remoteCommand('goto_step', 'ROOM', nextStep);
@@ -14795,14 +14797,13 @@ if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC IN GAME');
         }
         // Important: First publish, then actually update.
         if (!silent) {
-            if (this.getStateLevel !== stateLevel) {
+            if (this.getStateLevel() !== stateLevel) {
                 this.publishUpdate('stateLevel', {
                     stateLevel: stateLevel
                 });
             }
         }
         node.player.stateLevel = stateLevel;
-if (node.nodename === 'lgc100') console.log('*** NEW:', node.player.stateLevel, node.player.stageLevel);
     };
 
     /**
@@ -14845,18 +14846,33 @@ if (node.nodename === 'lgc100') console.log('*** NEW:', node.player.stateLevel, 
             throw new node.NodeGameMisconfiguredGameError(
                 'setStageLevel called with invalid parameter: ' + stageLevel);
         }
-        // console.log(stageLevel);
+
+        // DEBUG
+        //if (node.nodename === 'bot2000') console.log('\n[[', node.player.stageLevel, '->', stageLevel, this.getCurrentGameStage());
+
         // Important: First publish, then actually update.
         if (!silent) {
             // Publish only if the update is different than current value.
+
             if (this.getStageLevel() !== stageLevel) {
+                //if (node.nodename === 'bot2000' && stageLevel === 100) {
+                //    // DEBUG
+                //    console.log('  PUBLISHING STAGE');
+                //}
+
                 this.publishUpdate('stageLevel', {
                     stageLevel: stageLevel
                 });
             }
+            //else if (node.nodename === 'bot2000' && stageLevel === 100) {
+            //    // DEBUG
+            //    console.log('  NOT PUBLISHING STAGE');
+            //}
         }
         node.player.stageLevel = stageLevel;
-if (node.nodename === 'lgc100') console.log('*** NEW:', node.player.stateLevel, node.player.stageLevel);
+
+        // DEBUG
+        //if (node.nodename === 'bot2000') console.log(']]\n');
     };
     
     /**
@@ -14884,12 +14900,15 @@ if (node.nodename === 'lgc100') console.log('*** NEW:', node.player.stateLevel, 
         node = this.node;
        
         if (this.shouldPublishUpdate(type, update)) {
-            node.socket.send(node.msg.create({
-                target: constants.target.PLAYER_UPDATE,
-                data: update,
-                text: type,
-                to: 'ROOM'
-            }));
+            // Make sending asynchronous in case socket is a SocketDirect.
+            setTimeout(function() {
+                node.socket.send(node.msg.create({
+                    target: constants.target.PLAYER_UPDATE,
+                    data: update,
+                    text: type,
+                    to: 'ROOM'
+                }));
+            }, 0);
         }
     };
 
@@ -18408,11 +18427,74 @@ if (node.nodename === 'lgc100') console.log('*** NEW:', node.player.stateLevel, 
         }
 
 
-        // ALIAS
+        /**
+         * ### NodeGameClient.on
+         *
+         * Registers an event listener
+         *
+         * Listeners registered before a game is started, e.g. in
+         * the init function of the game object, will stay valid
+         * throughout the game. Listeners registered after the game
+         * is started will be removed after the game has advanced
+         * to its next stage.
+         *
+         * @param {string} event The name of the event
+         * @param {function} listener The callback function
+         */
+        this.on = function(event, listener) {
+            var ee;
+            ee = this.getCurrentEventEmitter();
+            ee.on(event, listener);
+        };
+
+        /**
+         * ### NodeGameClient.once
+         *
+         * Registers an event listener that will be removed
+         * after its first invocation
+         *
+         * @param {string} event The name of the event
+         * @param {function} listener The callback function
+         *
+         * @see NodeGameClient.on
+         * @see NodeGameClient.off
+         */
+        this.once = function(event, listener) {
+            var ee, cbRemove;
+            // This function will remove the event listener
+            // and itself.
+            cbRemove = function() {
+                ee.remove(event, listener);
+                ee.remove(event, cbRemove);
+            };
+            ee = this.getCurrentEventEmitter();
+            ee.on(event, listener);
+            ee.on(event, cbRemove);
+        };
+
+        /**
+         * ### NodeGameClient.off
+         *
+         * Deregisters one or multiple event listeners
+         *
+         * @param {string} event The name of the event
+         * @param {function} listener The callback function
+         *
+         * @see NodeGameClient.on
+         * @see NodeGameClient.EventEmitter.remove
+         */
+        this.off = function(event, func) {
+            return this.events.remove(event, func);
+        };
+
+
+        // ADD ALIASES
+
+        // TODO: move aliases into a separate method, like addDefaultIncomingListeners
 
         // ### node.on.txt
         this.alias('txt', 'in.say.TXT');
-
+        
         // ### node.on.data
         this.alias('data', ['in.say.DATA', 'in.set.DATA'], function(text, cb) {
             return function(msg) {
@@ -18490,6 +18572,7 @@ if (node.nodename === 'lgc100') console.log('*** NEW:', node.player.stateLevel, 
     'undefined' != typeof node ? node : module.exports
  ,  'undefined' != typeof node ? node : module.parent.exports
 );
+
 /**
  * # Log
  * Copyright(c) 2014 Stefano Balietti
@@ -18762,9 +18845,9 @@ if (node.nodename === 'lgc100') console.log('*** NEW:', node.player.stateLevel, 
      * 
      * Creates event listeners aliases
      * 
-     * This method creates a new property to the `node.on` object named
-     * after the alias. The alias can be used as a shortcut to register
-     * to new listeners on the given events.
+     * This method creates a new property to the `node.on` and `node.once` 
+     * functions named after the alias. The alias can be used as a shortcut
+     * to register to new listeners on the given events.
      * 
      * 
      * ```javascript
@@ -18779,6 +18862,7 @@ if (node.nodename === 'lgc100') console.log('*** NEW:', node.player.stateLevel, 
      *   });
      * 
      * 	node.on.data('myLabel', function(){ ... };
+     * 	node.once.data('myLabel', function(){ ... };
      * ```	
      * 
      * @param {string} alias The name of alias
@@ -18806,7 +18890,8 @@ if (node.nodename === 'lgc100') console.log('*** NEW:', node.player.stateLevel, 
 
         that = this;
         if (!J.isArray(events)) events = [events];
-        that.on[alias] = function(func) {
+
+        this.on[alias] = function(func) {
             // If set, we use the callback returned by the modifier.
             // Otherwise, we assume the first parameter is the callback.
             if (modifier) {
@@ -18814,6 +18899,19 @@ if (node.nodename === 'lgc100') console.log('*** NEW:', node.player.stateLevel, 
             } 
             J.each(events, function(event) {
                 that.on(event, function() {
+                    func.apply(that.game, arguments);
+                });
+            });
+        };
+
+        this.once[alias] = function(func) {
+            // If set, we use the callback returned by the modifier.
+            // Otherwise, we assume the first parameter is the callback.
+            if (modifier) {
+                func = modifier.apply(that.game, arguments);
+            } 
+            J.each(events, function(event) {
+                that.once(event, function() {
                     func.apply(that.game, arguments);
                 });
             });
@@ -18924,6 +19022,7 @@ if (node.nodename === 'lgc100') console.log('*** NEW:', node.player.stateLevel, 
     'undefined' != typeof node ? node : module.exports,
     'undefined' != typeof node ? node : module.parent.exports
 );
+
 /**
  * # NodeGameClient Events Handling  
  * Copyright(c) 2014 Stefano Balietti
@@ -18981,76 +19080,74 @@ if (node.nodename === 'lgc100') console.log('*** NEW:', node.player.stateLevel, 
      *
      * @see EventEmitterManager.emit
      */
-    NGC.prototype.emit = function () {
+    NGC.prototype.emit = function() {
         return this.events.emit.apply(this.events, arguments);
     };
 
-    /**
-     * ### NodeGameClient.on
-     *
-     * Registers an event listener
-     *
-     * Listeners registered before a game is started, e.g. in
-     * the init function of the game object, will stay valid
-     * throughout the game. Listeners registered after the game
-     * is started will be removed after the game has advanced
-     * to its next stage.
-     *
-     * @param {string} event The name of the event
-     * @param {function} listener The callback function
-     */
-    NGC.prototype.on = function (event, listener) {
-        var ee;
-        ee = this.getCurrentEventEmitter();
-        ee.on(event, listener);
-    };
-
-    /**
-     * ### NodeGameClient.once
-     *
-     * Registers an event listener that will be removed
-     * after its first invocation
-     *
-     * @param {string} event The name of the event
-     * @param {function} listener The callback function
-     *
-     * @see NodeGameClient.on
-     * @see NodeGameClient.off
-     */
-    NGC.prototype.once = function (event, listener) {
-        var ee, cbRemove;
-        // This function will remove the event listener
-        // and itself.
-        cbRemove = function() {
-            ee.remove(event, listener);
-            ee.remove(event, cbRemove);
-        };
-        ee = this.getCurrentEventEmitter();
-        ee.on(event, listener);
-        ee.on(event, cbRemove);
-    };
-
-    /**
-     * ### NodeGameClient.off
-     *
-     * Deregisters one or multiple event listeners
-     *
-     * @param {string} event The name of the event
-     * @param {function} listener The callback function
-     *
-     * @see NodeGameClient.on
-     * @see NodeGameClient.EventEmitter.remove
-     */
-    NGC.prototype.off  = function (event, func) {
-        return this.events.remove(event, func);
-    };
-
+//     /**
+//      * ### NodeGameClient.on
+//      *
+//      * Registers an event listener
+//      *
+//      * Listeners registered before a game is started, e.g. in
+//      * the init function of the game object, will stay valid
+//      * throughout the game. Listeners registered after the game
+//      * is started will be removed after the game has advanced
+//      * to its next stage.
+//      *
+//      * @param {string} event The name of the event
+//      * @param {function} listener The callback function
+//      */
+//     NGC.prototype.on = function(event, listener) {
+//         var ee;
+//         ee = this.getCurrentEventEmitter();
+//         ee.on(event, listener);
+//     };
+// 
+//     /**
+//      * ### NodeGameClient.once
+//      *
+//      * Registers an event listener that will be removed
+//      * after its first invocation
+//      *
+//      * @param {string} event The name of the event
+//      * @param {function} listener The callback function
+//      *
+//      * @see NodeGameClient.on
+//      * @see NodeGameClient.off
+//      */
+//     NGC.prototype.once = function(event, listener) {
+//         var ee, cbRemove;
+//         // This function will remove the event listener
+//         // and itself.
+//         cbRemove = function() {
+//             ee.remove(event, listener);
+//             ee.remove(event, cbRemove);
+//         };
+//         ee = this.getCurrentEventEmitter();
+//         ee.on(event, listener);
+//         ee.on(event, cbRemove);
+//     };
+// 
+//     /**
+//      * ### NodeGameClient.off
+//      *
+//      * Deregisters one or multiple event listeners
+//      *
+//      * @param {string} event The name of the event
+//      * @param {function} listener The callback function
+//      *
+//      * @see NodeGameClient.on
+//      * @see NodeGameClient.EventEmitter.remove
+//      */
+//     NGC.prototype.off  = function(event, func) {
+//         return this.events.remove(event, func);
+//     };
 
 })(
     'undefined' != typeof node ? node : module.exports,
     'undefined' != typeof node ? node : module.parent.exports
 );
-
 /**
  * # NodeGameClient: SAY, SET, GET, DONE
  * Copyright(c) 2014 Stefano Balietti
