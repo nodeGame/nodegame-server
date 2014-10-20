@@ -98,9 +98,6 @@ function configure(app, servernode) {
     //    })
     //
 
-    // Object to cache loaded context files.
-    app.contextCache = {};
-
     app.use(express.cookieParser());
 
     app.configure('development', function(){
@@ -230,7 +227,7 @@ function configure(app, servernode) {
         // `html/templates/page.jade` holds the template and
         // `html/context/lang/page.json` holds the context to instantiate
         // the page requested by `html/lang/page.html`.
-        if (/^html\/[^\/]*\/[^\/]*\.html$/.test(file)) {
+        if (/^html\/[^\/]*\/[^\/]*\.html?$/.test(file)) {
             // If the file does not exist, build it from templates.
             if (!fs.existsSync(filepath)) {
 
@@ -243,14 +240,8 @@ function configure(app, servernode) {
                 contextPath = gameInfo.dir + 'html/context/' + langPath +
                     pageName + '.json';
 
-                // If the JSON file hasn't been parsed before, parse it.
-                if (!app.contextCache[contextPath]) {
-                    jsonContext = JSON.parse(fs.readFileSync(contextPath));
-                    app.contextCache[contextPath] = jsonContext;
-                }
-                else {
-                    jsonContext = app.contextCache[contextPath];
-                }
+                jsonContext = require(contextPath);
+
 
                 res.render(jadeTemplate, jsonContext);
                 return;

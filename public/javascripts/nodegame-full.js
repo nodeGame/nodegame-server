@@ -6035,35 +6035,22 @@ JSUS.extend(TIME);
      *
      * Indexes an element
      *
-     * Parameter _oldIdx_ is needed if indexing is updating a previously
-     * indexed item. In fact if new index is different, the old one must
-     * be deleted.
-     *
      * @param {object} o The element to index
-     * @param {number} dbidx The position of the element in the database array
-     * @param {string} oldIdx Optional. The old index name, if any.
+     * @param {object} o The position of the element in the database array
      */
-    NDDB.prototype._indexIt = function(o, dbidx, oldIdx) {
+    NDDB.prototype._indexIt = function(o, dbidx) {
         var func, id, index, key;
         if (!o || J.isEmpty(this.__I)) return;
-        oldIdx = undefined;
+
         for (key in this.__I) {
             if (this.__I.hasOwnProperty(key)) {
                 func = this.__I[key];
                 index = func(o);
-                // If the same object has been  previously
-                // added with another index delete the old one.
-                if (index !== oldIdx) {
-                    if ('undefined' !== typeof oldIdx) {
-                        if ('undefined' !== typeof this[key].resolve[oldIdx]) {
-                            delete this[key].resolve[oldIdx];
-                        }
-                    }
-                }
-                if ('undefined' !== typeof index) { 
-                    if (!this[key]) this[key] = new NDDBIndex(key, this);
-                    this[key]._add(index, dbidx);
-                }
+
+                if ('undefined' === typeof index) continue;
+
+                if (!this[key]) this[key] = new NDDBIndex(key, this);
+                this[key]._add(index, dbidx);
             }
         }
     };
@@ -6093,7 +6080,7 @@ JSUS.extend(TIME);
                     settings = this.cloneSettings({V: ''});
                     this[key] = new NDDB(settings);
                 }
-                this[key].insert(o);1
+                this[key].insert(o);
             }
         }
     };
@@ -7513,13 +7500,11 @@ JSUS.extend(TIME);
      * @see JSUS.arrayDiff
      */
     NDDB.prototype.diff = function(nddb) {
+        if (!nddb || !nddb.length) return this;
         if ('object' === typeof nddb) {
             if (nddb instanceof NDDB || nddb instanceof this.constructor) {
                 nddb = nddb.db;
             }
-        }
-        if (!nddb || !nddb.length) {
-            return this.breed([]);
         }
         return this.breed(J.arrayDiff(this.db, nddb));
     };
@@ -7541,13 +7526,11 @@ JSUS.extend(TIME);
      * @see JSUS.arrayIntersect
      */
     NDDB.prototype.intersect = function(nddb) {
+        if (!nddb || !nddb.length) return this;
         if ('object' === typeof nddb) {
             if (nddb instanceof NDDB || nddb instanceof this.constructor) {
-                nddb = nddb.db;
+                var nddb = nddb.db;
             }
-        }
-        if (!nddb || !nddb.length) {
-            return this.breed([]);
         }
         return this.breed(J.arrayIntersect(this.db, nddb));
     };
@@ -8171,7 +8154,7 @@ JSUS.extend(TIME);
      * @see NDDBIndex.get
      * @see NDDBIndex.remove
      */
-    NDDBIndex.prototype.update = function(idx, update) {
+        NDDBIndex.prototype.update = function(idx, update) {
         var o, dbidx, nddb;
         dbidx = this.resolve[idx];
         if ('undefined' === typeof dbidx) return false;
@@ -8182,7 +8165,7 @@ JSUS.extend(TIME);
         // We do indexes separately from the other components of _autoUpdate
         // to avoid looping through all the other elements that are unchanged.
         if (nddb.__update.indexes) {
-            nddb._indexIt(o, dbidx, idx);
+            nddb._indexIt(o, dbidx);
             nddb._hashIt(o);
             nddb._viewIt(o);
         }
@@ -10253,6 +10236,8 @@ JSUS.extend(TIME);
      * Some of the properties are `private` and can never be changed
      * after an instance of a Player has been created. Defaults one are:
      *
+     * TODO: update DOC.
+     *
      *  `sid`: The Socket.io session id associated to the player
      *  `id`: The nodeGame session id associate to the player
      *  `count`: The id of the player within a PlayerList object
@@ -10261,6 +10246,7 @@ JSUS.extend(TIME);
      *
      * Others properties are public and can be changed during the game.
      *
+     *  `lang`: the language chosen by player (default English)
      *  `name`: An alphanumeric name associated to the player
      *  `stage`: The current stage of the player as relative to a game
      *  `ip`: The ip address of the player
@@ -10398,7 +10384,7 @@ JSUS.extend(TIME);
         /**
          * ### Player.lang
          *
-         * The current language used by the playerName
+         * The current language used by the player
          *
          * Default language is English with the default path `en/`.
          */
@@ -10438,7 +10424,8 @@ JSUS.extend(TIME);
      * @return {string} The string representation of a player
      */
     Player.prototype.toString = function() {
-        return (this.name || '' ) + ' (' + this.id + ') ' + new GameStage(this.stage);
+        return (this.name || '' ) + ' (' + this.id + ') ' +
+            new GameStage(this.stage);
     };
 
     // ## Closure
@@ -10446,7 +10433,6 @@ JSUS.extend(TIME);
     'undefined' != typeof node ? node : module.exports
  ,  'undefined' != typeof node ? node : module.parent.exports
 );
-
 /**
  * # GameMsg
  *
@@ -13932,7 +13918,6 @@ JSUS.extend(TIME);
     GamePlot = parent.GamePlot,
     PlayerList = parent.PlayerList,
     Stager = parent.Stager;
-
 
     var constants = parent.constants;
 
@@ -28201,7 +28186,7 @@ JSUS.extend(TIME);
 })(node);
 
 /**
- * # VisualRound widget for nodeGame
+ * # LanguageSelector widget for nodeGame
  * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
@@ -28221,7 +28206,7 @@ JSUS.extend(TIME);
 
     // ## Meta-data
 
-    LanguageSelector.version = '0.2.0';
+    LanguageSelector.version = '0.3.0';
     LanguageSelector.description = 'Display information about the current ' +
         'language and allows to change language.';
     LanguageSelector.title = 'Language';
@@ -28231,7 +28216,6 @@ JSUS.extend(TIME);
 
     LanguageSelector.dependencies = {
         JSUS: {},
-        Game: {}
     };
 
     /**
@@ -28251,7 +28235,7 @@ JSUS.extend(TIME);
         /**
          * ### LanguageSelector.availableLanguages
          *
-         * Array containing an object per availble language
+         * Object containing an object per availble language.
          *
          * The language object contains at least the following properties:
          *
@@ -28260,18 +28244,33 @@ JSUS.extend(TIME);
          * - `shortName`: An abbreviation for the language, also determines the
          *  path to the context files for this language.
          *
+         * The key for each language object is its `shortName`.
+         *
          * @see Player.lang
          */
-        this.availableLanguages = null;
+        this.availableLanguages = {
+            en: {
+                name: 'English',
+                nativeName: 'English',
+                shortName: 'en'
+            }
+        };
 
         /**
          * ### LanguageSelector.currentLanguageIndex
          *
-         * A numeral indicating the position of the currently used language
+         * A reference to the currently used language
          *
          * @see LanguageSelector.availableLanguages
          */
-        this.currentLanguageIndex = null;
+        this.currentLanguage = null;
+
+        /**
+         * ### LanguageSelector.buttonListLength
+         *
+         * Specifies maximum number of radio buttons used in selection tool
+         */
+        this.buttonListLength = null;
 
         /**
          * ### LanguageSelector.displayForm
@@ -28281,18 +28280,18 @@ JSUS.extend(TIME);
         this.displayForm = null;
 
         /**
-         * ### LanguageSelector.buttonLabels
+         * ### LanguageSelector.optionsLabel
          *
-         * Array containing the labels for the language selection buttons
+         * Array containing the labels for the language selection optionsDisplay
          */
-        this.buttonLabels = [];
+        this.optionsLabel = {};
 
         /**
-         * ### LanguageSelector.buttons
+         * ### LanguageSelector.optionsDisplay
          *
-         * Array containing the buttons for the language selection
+         * Array containing the optionsDisplay for the language selection
          */
-        this.buttons = [];
+        this.optionsDisplay = {};
 
         /**
          * ### LanguageSelector.loadingDiv
@@ -28308,12 +28307,14 @@ JSUS.extend(TIME);
          */
         this.languagesLoaded = false;
 
+        this.usingButtons = null;
+
         /**
          * ### LanguageSelector.onLangCallback
          *
          * Function to be called when languages have been loaded
          *
-         * Initializes form displaying the information as well as the buttons
+         * Initializes form displaying the information as well as the optionsDisplay
          * and their labels. Initializes language to English.
          * Forwards to `LanguageSelector.onLangCallbackExtension` at the very
          * end.
@@ -28321,44 +28322,82 @@ JSUS.extend(TIME);
          * @see LanguageSelector.setLanguage
          */
         this.onLangCallback = function(msg) {
-            var i = 0;
+            var language;
 
-            if (that.languagesLoaded) {
-                return;
+            // Clear display.
+            while (that.displayForm.firstChild) {
+                that.displayForm.removeChild(that.displayForm.firstChild);
             }
 
             // Initialize widget.
             that.availableLanguages = msg.data;
-            for (i = 0; i < msg.data.length; ++i) {
+            if (that.usingButtons) {
 
-                that.buttonLabels[i] = node.window.getElement('label', 'label' +
-                    i, { for: 'radioButton' + i });
+                // Creates labled buttons.
+                for (language in msg.data) {
+                    if (msg.data.hasOwnProperty(language)) {
+                        that.optionsLabel[language] = node.window.getElement('label',
+                            language + 'Label', { for: language + 'RadioButton' });
 
-                that.buttons[i] = node.window.getElement('input',
-                    'radioButton' + i, {
-                        type: 'radio',
-                        name: 'languageButton',
-                        value: msg.data[i].name,
-                        onClick: 'node.game.lang.setLanguage('+ i + ')'
+                        that.optionsDisplay[language] = node.window.getElement('input',
+                            language + 'RadioButton', {
+                                type: 'radio',
+                                name: 'languageButton',
+                                value: msg.data[language].name,
+                            }
+                        );
+
+                        that.optionsDisplay[language].onclick =
+                            makeSetLanguageOnClick(language);
+
+                        that.optionsLabel[language].appendChild(
+                            that.optionsDisplay[language]);
+                        that.optionsLabel[language].appendChild(
+                            document.createTextNode(
+                                msg.data[language].nativeName));
+                        node.window.addElement('br', that.displayForm);
+                        that.optionsLabel[language].className =
+                            'unselectedButtonLabel';
+                        that.displayForm.appendChild(that.optionsLabel[language]);
+
                     }
-                );
-                that.buttonLabels[i].appendChild(that.buttons[i]);
-                that.buttonLabels[i].appendChild(
-                    document.createTextNode(msg.data[i].nativeName));
-                node.window.addElement('br', that.buttonLabels[i]);
-                that.buttonLabels[i].className = 'unselectedButtonLabel';
-                that.displayForm.appendChild(that.buttonLabels[i]);
+                }
+            }
+            else {
+
+                that.displaySelection = node.window.getElement('select',
+                    'selectLanguage');
+                for (language in msg.data) {
+                    that.optionsLabel[language] =
+                        document.createTextNode(msg.data[language].nativeName);
+                    that.optionsDisplay[language] = node.window.getElement('option',
+                        language + 'Option', { value: language });
+                    that.optionsDisplay[language].appendChild(that.optionsLabel[language]);
+                    that.displaySelection.appendChild(that.optionsDisplay[language]);
+
+                }
+                that.displayForm.appendChild(that.displaySelection);
+                that.displayForm.onchange = function() {
+                    that.setLanguage(that.displaySelection.value);
+                };
             }
 
             that.loadingDiv.style.display = 'none';
             that.languagesLoaded = true;
 
             // Initialize to English.
-            that.setLanguage('shortName','en');
+            that.setLanguage('en');
 
             // Extension point.
             if (that.onLangCallbackExtension) {
                 that.onLangCallbackExtension(msg);
+                that.onLangCallbackExtension = null;
+            }
+
+            function makeSetLanguageOnClick(langName) {
+                return function() {
+                    that.setLanguage(langName);
+                };
             }
         };
 
@@ -28387,15 +28426,17 @@ JSUS.extend(TIME);
         J.mixout(options, this.options);
         this.options = options;
 
+        this.usingButtons = this.options.usingButtons || true;
+
         // Register listener.
         node.on.lang(this.onLangCallback);
 
         // Display initialization.
-        this.displayForm = node.window.getElement('form','radioButtonForm');
+        this.displayForm = node.window.getElement('form', 'radioButtonForm');
         this.loadingDiv = node.window.addDiv(this.displayForm);
         this.loadingDiv.innerHTML = 'Loading language information...';
 
-        this.updateAvalaibleLanguages();
+        this.loadLanguages();
     };
 
     LanguageSelector.prototype.append = function() {
@@ -28412,33 +28453,37 @@ JSUS.extend(TIME);
      *  property is assumed to represent the index of the language.
      *
      */
-    LanguageSelector.prototype.setLanguage = function(property, value) {
+    LanguageSelector.prototype.setLanguage = function(langName) {
 
-        // If only one argument is provided, assume it to be the index
-        if (arguments.length == 2) {
-            this.setLanguage(J.map(this.availableLanguages,
-                function(obj){return obj[property];}).indexOf(value));
-            return;
-        }
+        if (this.usingButtons) {
 
-        // Uncheck current language button and change className of label.
-        if (this.currentLanguageIndex !== null &&
-            this.currentLanguageIndex !== arguments[0] ) {
-            this.buttons[this.currentLanguageIndex].checked = 'unchecked';
-            this.buttonLabels[this.currentLanguageIndex].className =
-                'unselectedButtonLabel';
+            // Uncheck current language button and change className of label.
+            if (this.currentLanguage !== null &&
+                this.currentLanguage !== this.availableLanguages[langName] ) {
+
+                this.optionsDisplay[this.currentLanguage].checked =
+                    'unchecked';
+                this.optionsLabel[this.currentLanguage].className =
+                    'unselectedButtonLabel';
+            }
         }
 
         // Set current language index.
-        this.currentLanguageIndex = arguments[0];
+        this.currentLanguage = langName;
 
-        // Check language button and change className of label.
-        this.buttons[this.currentLanguageIndex].checked = 'checked';
-        this.buttonLabels[this.currentLanguageIndex].className =
-            'selectedButtonLabel';
+        if (this.usingButtons) {
 
-        // Update node.player
-        node.player.lang = this.availableLanguages[this.currentLanguageIndex];
+            // Check language button and change className of label.
+            this.optionsDisplay[this.currentLanguage].checked = 'checked';
+            this.optionsLabel[this.currentLanguage].className =
+                'selectedButtonLabel';
+        }
+        else {
+            this.displaySelection.value = this.currentLanguage;
+        }
+
+        // Update node.player.
+        node.player.lang = this.availableLanguages[this.currentLanguage];
         node.player.lang.path = node.player.lang.shortName + '/';
     };
 
@@ -28448,16 +28493,33 @@ JSUS.extend(TIME);
      * Updates available languages asynchronously
      */
     LanguageSelector.prototype.updateAvalaibleLanguages = function(options) {
-        if (options) {
-            if (options.callback) {
-                this.onLangCallbackExtension = options.callback;
-            }
+        if (options && options.callback) {
+            this.onLangCallbackExtension = options.callback;
         }
         node.socket.send(node.msg.create({
             target: "LANG",
             to: "SERVER",
             action: "get"}
         ));
+    };
+
+    /**
+     * ## LanguageSelector.loadLanguages
+     *
+     * Loads languages once from server
+     *
+     * @see LanguageSelector.updateAvalaibleLanguages
+     */
+    LanguageSelector.prototype.loadLanguages = function(options) {
+        if(!this.languagesLoaded) {
+            this.updateAvalaibleLanguages(options);
+        }
+        else {
+            if (options && options.callback) {
+                options.callback();
+            }
+
+        }
     };
 
 })(node);
@@ -29943,7 +30005,9 @@ JSUS.extend(TIME);
         // Build compound name.
         compoundDisplayModeName = '';
         for (index in displayModeNames) {
-            compoundDisplayModeName += displayModeNames[index] + '&';
+            if (displayModeNames.hasOwnProperty(index)) {
+                compoundDisplayModeName += displayModeNames[index] + '&';
+            }
         }
 
         // Remove trailing '&'.
@@ -29962,25 +30026,29 @@ JSUS.extend(TIME);
         // Build `CompoundDisplayMode`.
         displayModes = [];
         for (index in displayModeNames) {
-            switch (displayModeNames[index]) {
-                case 'COUNT_UP_STAGES_TO_TOTAL':
-                    displayModes.push(new CountUpStages(this, {toTotal: true}));
-                    break;
-                case 'COUNT_UP_STAGES':
-                    displayModes.push(new CountUpStages(this));
-                    break;
-                case 'COUNT_DOWN_STAGES':
-                    displayModes.push(new CountDownStages(this));
-                    break;
-                case 'COUNT_UP_ROUNDS_TO_TOTAL':
-                    displayModes.push(new CountUpRounds(this, {toTotal: true}));
-                    break;
-                case 'COUNT_UP_ROUNDS':
-                    displayModes.push(new CountUpRounds(this));
-                    break;
-                case 'COUNT_DOWN_ROUNDS':
-                    displayModes.push(new CountDownRounds(this));
-                    break;
+            if (displayModeNames.hasOwnProperty(index)) {
+                switch (displayModeNames[index]) {
+                    case 'COUNT_UP_STAGES_TO_TOTAL':
+                        displayModes.push(new CountUpStages(this,
+                            {toTotal: true}));
+                        break;
+                    case 'COUNT_UP_STAGES':
+                        displayModes.push(new CountUpStages(this));
+                        break;
+                    case 'COUNT_DOWN_STAGES':
+                        displayModes.push(new CountDownStages(this));
+                        break;
+                    case 'COUNT_UP_ROUNDS_TO_TOTAL':
+                        displayModes.push(new CountUpRounds(this,
+                            {toTotal: true}));
+                        break;
+                    case 'COUNT_UP_ROUNDS':
+                        displayModes.push(new CountUpRounds(this));
+                        break;
+                    case 'COUNT_DOWN_ROUNDS':
+                        displayModes.push(new CountDownRounds(this));
+                        break;
+                }
             }
         }
         this.displayMode = new CompoundDisplayMode(this, displayModes);
@@ -30712,7 +30780,9 @@ JSUS.extend(TIME);
         this.name = '';
 
         for (index in displayModes) {
-            this.name += displayModes[index].name + '&';
+            if (displayModes.hasOwnProperty(index)) {
+                this.name += displayModes[index].name + '&';
+            }
         }
 
         this.name = this.name.substr(0, this.name.length -1);
@@ -30759,7 +30829,10 @@ JSUS.extend(TIME);
         this.displayDiv = node.window.getDiv();
 
         for (index in this.displayModes) {
-            this.displayDiv.appendChild(this.displayModes[index].displayDiv);
+            if (this.displayModes.hasOwnProperty(index)) {
+                this.displayDiv.appendChild(
+                    this.displayModes[index].displayDiv);
+            }
         }
 
         this.updateDisplay();
@@ -30775,15 +30848,19 @@ JSUS.extend(TIME);
     CompoundDisplayMode.prototype.updateDisplay = function() {
         var index;
         for (index in this.displayModes) {
-            this.displayModes[index].updateDisplay();
+            if (this.displayModes.hasOwnProperty(index)) {
+                this.displayModes[index].updateDisplay();
+            }
         }
     };
 
     CompoundDisplayMode.prototype.activate = function() {
         var index;
         for (index in this.displayModes) {
-            if (this.displayModes[index].activate) {
-                this.displayModes[index].activate();
+            if (this.displayModes.hasOwnProperty(index)) {
+                if (this.displayModes[index].activate) {
+                    this.displayModes[index].activate();
+                }
             }
         }
     };
@@ -30791,8 +30868,10 @@ JSUS.extend(TIME);
     CompoundDisplayMode.prototype.deactivate = function() {
         var index;
         for (index in this.displayModes) {
-            if (this.displayModes[index].deactivate) {
-                this.displayMode[index].deactivate();
+            if (this.displayModes.hasOwnProperty(index)) {
+                if (this.displayModes[index].deactivate) {
+                    this.displayMode[index].deactivate();
+                }
             }
         }
     };

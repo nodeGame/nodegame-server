@@ -124,11 +124,10 @@ input[type="range"] {
 
 /* Language Selector */
 .languageselector {
-    float: right;
-    width: 150px;
+    float: center;
+    width: 160px;
 
 }
-
 
 .languageselector > .panel-body > form > label {
     font-size: 20px;
@@ -168,13 +167,11 @@ input[type="range"] {
     width: auto;
 }
 .visualround > .panel-body > div > div.rounddiv {
-    border: 1px solid #CCC;
     font-size: 40px;
     text-align: center;
 }
 
 .visualround > .panel-body > div > div.stagediv {
-    border: 1px solid #CCC;
     font-size: 20px;
     text-align: center;
 }
