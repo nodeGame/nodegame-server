@@ -12990,7 +12990,7 @@ JSUS.extend(TIME);
         this.session = null;
 
         /**
-         * ### Socket.user_options
+         * ### Socket.userOptions
          *
          * Contains the options that will be passed to the `connect` method
          *
@@ -12998,14 +12998,7 @@ JSUS.extend(TIME);
          *
          * @see node.setup
          */
-        this.user_options = {};
-
-        /**
-         * ### Socket.connected
-         *
-         * Boolean flag, TRUE if socket is connected to server
-         */
-        this.user_options = {};
+        this.userOptions = {};
 
         /**
          * ### Socket.socket
@@ -13080,7 +13073,7 @@ JSUS.extend(TIME);
         options = options ? J.clone(options) : {};
         type = options.type;
         delete options.type;
-        this.user_options = options;
+        this.userOptions = options;
         if (type) {
             this.setSocketType(type, options);
         }
@@ -13122,9 +13115,8 @@ JSUS.extend(TIME);
         this.url = uri;
         this.node.log('connecting to ' + humanReadableUri + '.');
 
-        this.connected = true;
         this.socket.connect(uri,'undefined' !== typeof options ?
-                            options : this.user_options);
+                            options : this.userOptions);
     };
 
     /**
@@ -14900,15 +14892,12 @@ JSUS.extend(TIME);
         node = this.node;
        
         if (this.shouldPublishUpdate(type, update)) {
-            // Make sending asynchronous in case socket is a SocketDirect.
-            setTimeout(function() {
-                node.socket.send(node.msg.create({
-                    target: constants.target.PLAYER_UPDATE,
-                    data: update,
-                    text: type,
-                    to: 'ROOM'
-                }));
-            }, 0);
+            node.socket.send(node.msg.create({
+                target: constants.target.PLAYER_UPDATE,
+                data: update,
+                text: type,
+                to: 'ROOM'
+            }));
         }
     };
 
