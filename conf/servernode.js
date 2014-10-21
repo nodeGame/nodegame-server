@@ -26,11 +26,11 @@ function configure(servernode) {
     }
 
     // TODO: check
-    //	servernode.log.msg = false;
-    //	servernode.log.sys = false;
-    //	servernode.log.folder = rootDir + '/log/';
-    //	
-    //	servernode.mail = false; // experimental   
+    //        servernode.log.msg = false;
+    //        servernode.log.sys = false;
+    //        servernode.log.folder = rootDir + '/log/';
+    //        
+    //        servernode.mail = false; // experimental   
 
     // The name of the server.
     servernode.name = "nodeGame server";
@@ -48,11 +48,11 @@ function configure(servernode) {
     if (process && process.env.PORT) {
         // If app is running on a cloud service (e.g. Heroku)
         // then the assigned port has to be used.
-	servernode.port = process.env.PORT; 
+        servernode.port = process.env.PORT; 
     } 
     else {
         // Port of the HTTP server and the Socket.IO app.
-	servernode.port = '8080'; 
+        servernode.port = '8080'; 
     }
     
     // The maximum number of channels allowed. 0 means unlimited.
@@ -80,22 +80,22 @@ function configure(servernode) {
 
         // A PLAYER_UPDATE / PCONNECT / PDISCONNECT message will be sent to
         // all clients connected to the PlayerServer endpoint when:
-	notify: {
+        notify: {
 
-	    // A new authorized client connects;
+            // A new authorized client connects;
             onConnect: true,
 
             // A client enters a new stage;
-	    onStageUpdate: false,
+            onStageUpdate: false,
 
             // A client changes stageLevel (e.g. INIT, CALLBACK_EXECUTED);
-	    onStageLevelUpdate: false,
+            onStageLevelUpdate: false,
 
             // A client is LOADED (this option is needed in combination with
             // the option syncOnLoaded used on the clients). It is much less
             // expensive than setting onStageLevelUpdate = true;
             onStageLoadedUpdate: false
-	},
+        },
 
         // Restricts the available recipient options.
         canSendTo: {  
@@ -124,7 +124,7 @@ function configure(servernode) {
             
 //        // All messages exchanged between players will be forwarded to the
 //        // clients connected to the admin endpoint (ignores the _to_ field).
-//	forwardAllMessages: true,
+//        forwardAllMessages: true,
 //
 //        // If TRUE, players can invoke GET commands on admins.
 //        // TODO: rename in a more generic way, or distinguish get from admins
@@ -138,22 +138,22 @@ function configure(servernode) {
         
         // A PLAYER_UPDATE / PCONNECT / PDISCONNECT message will be sent to
         // all clients connected to the PlayerServer endpoint when:
-	notify: {
+        notify: {
 
-	    // A new authorized client connects;
+            // A new authorized client connects;
             onConnect: true,
 
             // A client enters a new stage;
-	    onStageUpdate: false,
+            onStageUpdate: false,
 
             // A client changes stageLevel (e.g. INIT, CALLBACK_EXECUTED);
-	    onStageLevelUpdate: false,
+            onStageLevelUpdate: false,
 
             // A client is LOADED (this option is needed in combination with
             // the option syncOnLoaded used on the clients). It is much less
             // expensive than setting onStageLevelUpdate = true;
             onStageLoadedUpdate: false
-	},
+        },
 
         // Restricts the available recipient options.
         canSendTo: {  
@@ -180,22 +180,26 @@ function configure(servernode) {
             
         // All messages exchanged between players will be forwarded to the
         // clients connected to the admin endpoint (ignores the _to_ field).
-	forwardAllMessages: true,
+        forwardAllMessages: true,
 
         // If TRUE, players can invoke GET commands on admins.
         // TODO: rename in a more generic way, or distinguish get from admins
         // and get from players.
-        getFromAdmins: false
+        getFromAdmins: false,
+
+        // Allow setting data (e.g. startingRoom, client type) in the query
+        // data of a SocketIO connection.
+        sioQuery: true
     };
 
     // Defaults option for a channel.
     servernode.defaults.channel = {
         // Common options.
         // Which sockets will be enabled.
-	sockets: {
-	    sio: true,
-	    direct: true
-	},
+        sockets: {
+            sio: true,
+            direct: true
+        },
         accessDeniedUrl: '/pages/accessdenied.htm',
         // Admin and Player server specific options.
         // Can overwrite common ones.
