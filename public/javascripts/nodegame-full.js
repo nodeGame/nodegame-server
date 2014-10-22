@@ -18931,17 +18931,38 @@ JSUS.extend(TIME);
         player.stateLevel = this.player.stateLevel;
         player.stageLevel = this.player.stageLevel;
 
-        
+
         this.player = player;
         this.emit('PLAYER_CREATED', this.player);
 
         return this.player;
     };
 
+    /**
+     * ### NodeGameClient.setLanguage
+     *
+     * Sets the language for a playerList
+     *
+     * @param {object} language Object describing language. Needs shortName property.
+     *
+     * @emit LANGUAGE_SET
+     */
+    NGC.prototype.setLanguage = function(language) {
+        if (language && language.shortName) {
+            this.player.lang = language;
+            this.player.lang.path = language.shortName + '/';
+            this.emit('LANGUAGE_SET');
+        }
+        else {
+            throw new TypeError('Requires arguments[0].shortName');
+        }
+    };
+
 })(
     'undefined' != typeof node ? node : module.exports,
     'undefined' != typeof node ? node : module.parent.exports
 );
+
 /**
  * # NodeGameClient Events Handling  
  * Copyright(c) 2014 Stefano Balietti
@@ -19756,11 +19777,11 @@ JSUS.extend(TIME);
         /**
          * ## in.get.DATA
          *
-         * Emits the content 
+         * Emits the content
          */
         node.events.ng.on( IN + get + 'DATA', function(msg) {
             var res;
-            
+
             if ('string' !== typeof msg.text || msg.text === '') {
                 node.warn('node.in.get.DATA: invalid / missing event name.');
                 return;
@@ -19800,8 +19821,8 @@ JSUS.extend(TIME);
          * @emit UPDATED_PLIST
          * @see Game.pl
          */
-        node.events.ng.on( IN + say + 'PLAYER_UPDATE', function(msg) {            
-            node.game.pl.updatePlayer(msg.from, msg.data);           
+        node.events.ng.on( IN + say + 'PLAYER_UPDATE', function(msg) {
+            node.game.pl.updatePlayer(msg.from, msg.data);
             node.emit('UPDATED_PLIST');
             if (node.game.shouldStep()) {
                 node.game.step();
@@ -19957,7 +19978,7 @@ JSUS.extend(TIME);
             if (msg.text === 'state') {
                 return node.game.plot.stager.getState();
             }
-            return node.game.plot.stager.getSequence();            
+            return node.game.plot.stager.getSequence();
         });
 
         /**
@@ -19969,7 +19990,30 @@ JSUS.extend(TIME);
          * @see node.game.pl
          */
         node.events.ng.on( IN + get + 'PLIST', function() {
-            return node.game.pl.db;             
+            return node.game.pl.db;
+        });
+
+        /**
+         * ## in.get.LANG
+         *
+         * Gets the currently used language
+         *
+         * @see node.player.lang
+         */
+        node.events.ng.on( IN + get + 'LANG', function() {
+            return node.player.lang;
+        });
+
+        /**
+         * ## in.set.LANG
+         *
+         * Sets the currently used language
+         *
+         * @see NodeGameClient.setLanguage
+         * @see node.player.lang
+         */
+        node.events.ng.on( IN + set + 'LANG', function(msg) {
+            node.setLanguage(msg.data);
         });
 
         node.incomingAdded = true;
@@ -28319,6 +28363,8 @@ JSUS.extend(TIME);
          * Forwards to `LanguageSelector.onLangCallbackExtension` at the very
          * end.
          *
+         * @param {object} msg GameMsg
+         *
          * @see LanguageSelector.setLanguage
          */
         this.onLangCallback = function(msg) {
@@ -28418,6 +28464,8 @@ JSUS.extend(TIME);
      *
      * Initializes the widget
      *
+     * @param {object} options Optional. Configuration options
+     *
      * @see LanguageSelector.onLangCallback
      */
     LanguageSelector.prototype.init = function(options) {
@@ -28446,12 +28494,11 @@ JSUS.extend(TIME);
     /**
      * ## LanguageSelector.setLanguage
      *
-     * Sets language and updates view and `Player.lang`
+     * Sets language and updates view
      *
-     * @param property Indicates which language property to use as identifier.
-     * @param value Indicates which language to select. If no value is provided,
-     *  property is assumed to represent the index of the language.
+     * @param {string} langName shortName of language to be set.
      *
+     * @see NodeGameClient.setLanguage
      */
     LanguageSelector.prototype.setLanguage = function(langName) {
 
@@ -28483,14 +28530,15 @@ JSUS.extend(TIME);
         }
 
         // Update node.player.
-        node.player.lang = this.availableLanguages[this.currentLanguage];
-        node.player.lang.path = node.player.lang.shortName + '/';
+        node.setLanguage(this.availableLanguages[this.currentLanguage]);
     };
 
     /**
      * ## LanguageSelector.updateAvalaibleLanguages
      *
      * Updates available languages asynchronously
+     *
+     * @param {object} options Optional. Configuration options
      */
     LanguageSelector.prototype.updateAvalaibleLanguages = function(options) {
         if (options && options.callback) {
@@ -28507,6 +28555,8 @@ JSUS.extend(TIME);
      * ## LanguageSelector.loadLanguages
      *
      * Loads languages once from server
+     *
+     * @param {object} options Optional. Configuration options
      *
      * @see LanguageSelector.updateAvalaibleLanguages
      */
