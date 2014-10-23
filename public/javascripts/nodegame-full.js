@@ -18943,19 +18943,22 @@ JSUS.extend(TIME);
      *
      * Sets the language for a playerList
      *
-     * @param {object} language Object describing language. Needs shortName property.
+     * @param {object} language Object describing language.
+     *   Needs shortName property.
      *
      * @emit LANGUAGE_SET
      */
     NGC.prototype.setLanguage = function(language) {
-        if (language && language.shortName) {
-            this.player.lang = language;
-            this.player.lang.path = language.shortName + '/';
-            this.emit('LANGUAGE_SET');
+        if ('object' !== typeof language) {
+            throw new TypeError('node.setLanguage: language must be object.');
         }
-        else {
-            throw new TypeError('Requires arguments[0].shortName');
+        if ('string' !== typeof language.shortName) {
+            throw new TypeError(
+                'node.setLanguage: language.shortName must be string');
         }
+        this.player.lang = language;
+        this.player.lang.path = language.shortName + '/';
+        this.emit('LANGUAGE_SET');
     };
 
 })(

@@ -26,6 +26,9 @@ nodemailer = require('nodemailer');
  */
 function configure(app, servernode) {
     var rootDir;
+    var pageExistCache = {};
+
+
     rootDir = servernode.rootDir;
 
     function verifyGameRequest(req, res) {
@@ -58,6 +61,31 @@ function configure(app, servernode) {
         // Send file.
         res.sendfile(path);
     }
+
+    // TODO: COMMENT
+    function createAndServe(langPath, pageName, file,
+            gameInfo, contextPath, res) {
+            var jadeTemplate, jsonContext;
+
+            langPath = file.split('/')[1] + '/';
+            pageName = file.split('/')[2].split('.')[0];
+
+            jadeTemplate = gameInfo.dir + 'view/templates/' + pageName +
+                '.jade';
+
+            contextPath = gameInfo.dir + 'view/context/' + langPath +
+                pageName + '.json';
+            try {
+                jsonContext = require(contextPath);
+            }
+            catch (e) {
+                // redirect to 'page not found'
+                res.sendfile(gameInfo.dir + 'public/notFound.html'); //TODO: INSERT PROPER FILE
+                return;
+
+            }
+            res.render(jadeTemplate, jsonContext);
+        }
 
     //    var cookieSessions = function(name) {
     //        return function(req, res, next) {
@@ -190,6 +218,8 @@ function configure(app, servernode) {
             }
         }
 
+        file = 'public/' + file;
+
         // Build filepath to file.
         filepath = gameInfo.dir + file;
 
@@ -226,24 +256,26 @@ function configure(app, servernode) {
         // Instantiate templates, if needed and available.
         // `html/templates/page.jade` holds the template and
         // `html/context/lang/page.json` holds the context to instantiate
-        // the page requested by `html/lang/page.html`.
-        if (/^html\/[^\/]*\/[^\/]*\.html?$/.test(file)) {
-            // If the file does not exist, build it from templates.
-            if (!fs.existsSync(filepath)) {
-
-                langPath = file.split('/')[1] + '/';
-                pageName = file.split('/')[2].split('.')[0];
-
-                jadeTemplate = gameInfo.dir + 'html/templates/' + pageName +
-                    '.jade';
-
-                contextPath = gameInfo.dir + 'html/context/' + langPath +
-                    pageName + '.json';
-
-                jsonContext = require(contextPath);
-
-
-                res.render(jadeTemplate, jsonContext);
+        // the page requested by `html/lang/page*`.
+        if (file.match(/^[^\/]*\/.*$/)) {
+            // Check whether existance of page has been assertained before.
+            if ('undefined' === typeof pageExistCache[filepath]) {
+                fs.exists(filepath, function(exists) {
+                    pageExistCache[filepath] = exists;
+                    if (exists) {
+                        res.sendfile(filepath);
+                    }
+                    else {
+                        createAndServe(langPath, pageName, file, gameInfo,
+                            contextPath, res);
+                    }
+                });
+                return;
+            }
+            // If it is known that page doesn't exist, render it from template.
+            if (!pageExistCache[filepath]) {
+                createAndServe(langPath, pageName, file, gameInfo, contextPath,
+                    res);
                 return;
             }
         }
@@ -251,6 +283,7 @@ function configure(app, servernode) {
         // Send file (if it is a directory it is not sent).
         //res.sendfile(path.basename(filepath), {root: path.dirname(filepath)});
         res.sendfile(filepath);
+
     });
 
     app.get('/:game', function(req, res) {
