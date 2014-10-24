@@ -11939,7 +11939,7 @@ JSUS.extend(TIME);
      *
      * Takes a sequence object created with Stager.
      *
-     * If the Stager parameter has an empty sequence, flexibile mode is assumed
+     * If the Stager parameter has an empty sequence, flexible mode is assumed
      * (used by e.g. GamePlot.next).
      *
      * @param {Stager} stager Optional. The Stager object.
