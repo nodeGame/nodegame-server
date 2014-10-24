@@ -131,6 +131,9 @@ function configure(servernode) {
 //        // and get from players.
 //        getFromAdmins: false,
 
+        // Allow setting data (e.g. startingRoom, client type) in the query
+        // data of a SocketIO connection.
+        sioQuery: true
     };
 
     // PlayerServer default options.
@@ -187,8 +190,7 @@ function configure(servernode) {
         // and get from players.
         getFromAdmins: false,
 
-        // Allow setting data (e.g. startingRoom, client type) in the query
-        // data of a SocketIO connection.
+        // See above, in admin defaults.
         sioQuery: true
     };
 
