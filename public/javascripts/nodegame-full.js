@@ -14839,32 +14839,17 @@ JSUS.extend(TIME);
                 'setStageLevel called with invalid parameter: ' + stageLevel);
         }
 
-        // DEBUG
-        //if (node.nodename === 'bot2000') console.log('\n[[', node.player.stageLevel, '->', stageLevel, this.getCurrentGameStage());
-
         // Important: First publish, then actually update.
         if (!silent) {
             // Publish only if the update is different than current value.
 
             if (this.getStageLevel() !== stageLevel) {
-                //if (node.nodename === 'bot2000' && stageLevel === 100) {
-                //    // DEBUG
-                //    console.log('  PUBLISHING STAGE');
-                //}
-
                 this.publishUpdate('stageLevel', {
                     stageLevel: stageLevel
                 });
             }
-            //else if (node.nodename === 'bot2000' && stageLevel === 100) {
-            //    // DEBUG
-            //    console.log('  NOT PUBLISHING STAGE');
-            //}
         }
         node.player.stageLevel = stageLevel;
-
-        // DEBUG
-        //if (node.nodename === 'bot2000') console.log(']]\n');
     };
     
     /**
