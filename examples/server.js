@@ -4,7 +4,7 @@
  * MIT Licensed
  *
  * Start File for nodeGame server with conf.
- * 
+ *
  * Last update 05/02/2014
  */
 
@@ -14,31 +14,31 @@ var path = require('path');
 var ServerNode = require('nodegame-server').ServerNode;
 
 var options = {
-	
-	// defines an additional configuration directory	
+
+	// defines an additional configuration directory
     confDir: './conf',
-    
-    // configures the ServerNode instance 
+
+    // configures the ServerNode instance
     servernode: function(servernode) {
     	servernode.verbosity = 10;
     	servernode.gamesDirs.push('./games');
     	return true;
     },
-    
+
     // configure the logging system
     loggers: function(loggers) {
         // See winston configuration README
         // https://github.com/flatiron/winston/blob/master/README.md
         return true;
     },
-    
+
     // configure the HTTP server
     http: function(http) {
     	// See express web server configuration api
     	// http://expressjs.com/api.html
     	return true;
     },
-    
+
     // configure the Socket.io server
     sio: function(sio) {
     	// See Socket.io configuration wiki
@@ -59,7 +59,7 @@ var ultimatum = sn.addChannel({
     verbosity: 100,
     // If TRUE, players can invoke GET commands on admins.
     getFromAdmins: true,
-    // Unauthorized clients will be redirected here. 
+    // Unauthorized clients will be redirected here.
     // (defaults: "/pages/accessdenied.htm")
     accessDeniedUrl: '/ultimatum/unauth.htm'
 });

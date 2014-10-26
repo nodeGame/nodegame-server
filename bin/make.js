@@ -196,7 +196,7 @@ program
     .option('-C, --clean', 'clean CSS directory')
     .action(function(options) {
         var config, runIt, out, smooshed;
-        
+
         function copyAndBuild() {
 	    // Copy CSS files from submodules.
             copyCSS(null, function() {
@@ -240,7 +240,7 @@ program
                 console.log('All CSS files copied, and ' + out + '.css created.');
             });
         }
-        
+
 	// Removes all files from the CSS folder.
 	if (options.clean) {
 	    J.cleanDir(cssDir, '.css', copyAndBuild);
@@ -248,7 +248,7 @@ program
         else {
             copyAndBuild();
         }
-       
+
     });
 
 

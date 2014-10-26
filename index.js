@@ -1,10 +1,10 @@
 /**
- * # nodeGame-server 
+ * # nodeGame-server
  * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
- * 
+ *
  * Server component for nodeGame
- * 
+ *
  * http://www.nodegame.org
  * ---
  */

@@ -16,7 +16,7 @@ module.exports = configure;
 var path = require('path');
 
 function configure(servernode) {
-    
+
     var rootDir, player, admin;
     rootDir = servernode.rootDir;
 
@@ -29,49 +29,49 @@ function configure(servernode) {
     //	servernode.log.msg = false;
     //	servernode.log.sys = false;
     //	servernode.log.folder = rootDir + '/log/';
-    //	
-    //	servernode.mail = false; // experimental   
+    //
+    //	servernode.mail = false; // experimental
 
     // The name of the server.
     servernode.name = "nodeGame server";
 
     // Default games directory.
     servernode.defaultGamesDir = rootDir + '/games/';
-    
+
     // Array of games directories. They will be scanned sequentially
     // at loading time, and every subfolder containing a package.json
     // file will be added as a new game.
     // Important: games found in folders down in lower positions of the
     // array can override games defined before.
     servernode.gamesDirs = [servernode.defaultGamesDir];
-    
+
     if (process && process.env.PORT) {
         // If app is running on a cloud service (e.g. Heroku)
         // then the assigned port has to be used.
-	servernode.port = process.env.PORT; 
-    } 
+	servernode.port = process.env.PORT;
+    }
     else {
         // Port of the HTTP server and the Socket.IO app.
-	servernode.port = '8080'; 
+	servernode.port = '8080';
     }
-    
+
     // The maximum number of channels allowed. 0 means unlimited.
     servernode.maxChannels = 0;
-    
+
     // The maximum number of listeners allowed. 0 means unlimited.
     // Every channel defines 1 or more game servers, and each defines
     // a certain number of Node.JS listeners.
     servernode.maxListeners = 0;
-    
+
 
 // These options were inside the channel object, but actually not used.
 //
 //     // The HTTP port of the channel.
 //     port: servernode.port,
-// 
+//
 //     // The log level.
 //     log: servernode.log,
-//     
+//
 //     // The verbosity level of the channel.
 //     verbosity: servernode.verbosity,
 
@@ -98,8 +98,8 @@ function configure(servernode) {
 	},
 
         // Restricts the available recipient options.
-        canSendTo: {  
-            
+        canSendTo: {
+
             // ALL
             all: true,
 
@@ -121,7 +121,7 @@ function configure(servernode) {
         maxMsgRecipients: 1000,
 
 // Commented for the moment.
-            
+
 //        // All messages exchanged between players will be forwarded to the
 //        // clients connected to the admin endpoint (ignores the _to_ field).
 //	forwardAllMessages: true,
@@ -135,7 +135,7 @@ function configure(servernode) {
 
     // PlayerServer default options.
     player = {
-        
+
         // A PLAYER_UPDATE / PCONNECT / PDISCONNECT message will be sent to
         // all clients connected to the PlayerServer endpoint when:
 	notify: {
@@ -156,8 +156,8 @@ function configure(servernode) {
 	},
 
         // Restricts the available recipient options.
-        canSendTo: {  
-            
+        canSendTo: {
+
             // ALL
             all: false,
 
@@ -177,7 +177,7 @@ function configure(servernode) {
         // If the recipient of a _gameMsg_ is an array, it can contain at most
         // _maxMsgRecipients_ elements.
         maxMsgRecipients: 0,
-            
+
         // All messages exchanged between players will be forwarded to the
         // clients connected to the admin endpoint (ignores the _to_ field).
 	forwardAllMessages: true,
@@ -202,7 +202,7 @@ function configure(servernode) {
         player: player,
         admin: admin
     };
-    
+
     // Returns TRUE to signal successful configuration of the server.
     return true;
 }

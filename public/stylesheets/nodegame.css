@@ -1,8 +1,8 @@
-/* 
+/*
    Stylesheet for nodeGame window
    Copyright(c) 2014 Stefano Balietti
    MIT Licensed
-   
+
    www.nodegame.org
    ---
 */
@@ -16,7 +16,7 @@ body {
     color: black;
 }
 
-/* mainframe */ 
+/* mainframe */
 
 iframe#ng_mainframe {
     border: 0;
@@ -57,7 +57,7 @@ div#ng_header {
 
 .ng_header_position-vertical-r {
     float: right;
-    width: 10%; 
+    width: 10%;
 }
 
 .ng_header_position-vertical-l {
@@ -73,10 +73,10 @@ div#ng_waitScreen {
     -khtml-opacity: 0.5;   /*older Safari*/
     opacity: 0.5;   /*supported by current Mozilla, Safari, and Opera*/
     background-color:#000000;
-    position:fixed; 
-    top:0px; left:0px; width:100%; height:100%; 
-    color:#FFFFFF; 
-    text-align:center; 
+    position:fixed;
+    top:0px; left:0px; width:100%; height:100%;
+    color:#FFFFFF;
+    text-align:center;
     vertical-align:middle;
     font-weight: bold;
     font-size: 30px;
