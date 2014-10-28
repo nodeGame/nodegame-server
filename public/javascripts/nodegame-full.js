@@ -1261,6 +1261,7 @@ if (!JSON) {
     'undefined' !== typeof module && 'undefined' !== typeof module.exports ?
         module.exports: window
 );
+
 /**
  * # COMPATIBILITY
  *
@@ -1324,90 +1325,91 @@ if (!JSON) {
     JSUS.extend(COMPATIBILITY);
 
 })('undefined' !== typeof JSUS ? JSUS : module.parent.exports.JSUS);
+
 /**
  * # ARRAY
  * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
- * 
+ *
  * Collection of static functions to manipulate arrays.
  */
 (function(JSUS) {
-    
+
     function ARRAY(){};
 
     /**
      * ## ARRAY.filter
-     * 
+     *
      * Add the filter method to ARRAY objects in case the method is not
-     * supported natively. 
-     * 
+     * supported natively.
+     *
      * @see https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/ARRAY/filter
      */
-    if (!Array.prototype.filter) {  
-        Array.prototype.filter = function(fun /*, thisp */) {  
-            "use strict";  
-            if (this === void 0 || this === null) throw new TypeError();  
+    if (!Array.prototype.filter) {
+        Array.prototype.filter = function(fun /*, thisp */) {
+            "use strict";
+            if (this === void 0 || this === null) throw new TypeError();
 
-            var t = Object(this);  
-            var len = t.length >>> 0;  
-            if (typeof fun !== "function") throw new TypeError();  
-            
-            var res = [];  
-            var thisp = arguments[1];  
-            for (var i = 0; i < len; i++) {  
-                if (i in t) {  
-                    var val = t[i]; // in case fun mutates this  
-                    if (fun.call(thisp, val, i, t)) { 
-                        res.push(val);  
+            var t = Object(this);
+            var len = t.length >>> 0;
+            if (typeof fun !== "function") throw new TypeError();
+
+            var res = [];
+            var thisp = arguments[1];
+            for (var i = 0; i < len; i++) {
+                if (i in t) {
+                    var val = t[i]; // in case fun mutates this
+                    if (fun.call(thisp, val, i, t)) {
+                        res.push(val);
                     }
                 }
-            }     
-            return res;  
+            }
+            return res;
         };
     }
 
     /**
      * ## ARRAY.isArray
-     * 
+     *
      * Returns TRUE if a variable is an Array
-     * 
-     * This method is exactly the same as `Array.isArray`, 
-     * but it works on a larger share of browsers. 
-     * 
+     *
+     * This method is exactly the same as `Array.isArray`,
+     * but it works on a larger share of browsers.
+     *
      * @param {object} o The variable to check.
      * @see Array.isArray
      */
     ARRAY.isArray = function(o) {
         if (!o) return false;
-        return Object.prototype.toString.call(o) === '[object Array]';  
+        return Object.prototype.toString.call(o) === '[object Array]';
     };
 
     /**
      * ## ARRAY.seq
-     * 
+     *
      * Returns an array of sequential numbers from start to end
-     * 
+     *
      * If start > end the series goes backward.
-     * 
+     *
      * The distance between two subsequent numbers can be controlled
      * by the increment parameter.
-     * 
+     *
      * When increment is not a divider of Abs(start - end), end will
      * be missing from the series.
-     * 
+     *
      * A callback function to apply to each element of the sequence
      * can be passed as fourth parameter.
-     *  
+     *
      * Returns FALSE, in case parameters are incorrectly specified
-     * 
+     *
      * @param {number} start The first element of the sequence
      * @param {number} end The last element of the sequence
-     * @param {number} increment Optional. The increment between two 
+     * @param {number} increment Optional. The increment between two
      *   subsequents element of the sequence
-     * @param {Function} func Optional. A callback function that can modify 
+     * @param {Function} func Optional. A callback function that can modify
      *   each number of the sequence before returning it
-     *  
-     * @return {array} out The final sequence 
+     *
+     * @return {array} out The final sequence
      */
     ARRAY.seq = function(start, end, increment, func) {
         var i;
@@ -1416,18 +1418,18 @@ if (!JSON) {
         if ('number' !== typeof end) return false;
         if (end === Infinity) return false;
         if (start === end) return [start];
-        
+
         if (increment === 0) return false;
         if (!JSUS.in_array(typeof increment, ['undefined', 'number'])) {
             return false;
         }
-        
+
         increment = increment || 1;
         func = func || function(e) {return e;};
-        
+
         i = start,
         out = [];
-        
+
         if (start < end) {
             while (i <= end) {
                 out.push(func(i));
@@ -1440,28 +1442,28 @@ if (!JSON) {
                 i = i - increment;
             }
         }
-        
+
         return out;
     };
 
     /**
      * ## ARRAY.each
-     * 
+     *
      * Executes a callback on each element of the array
-     * 
+     *
      * If an error occurs returns FALSE.
-     * 
+     *
      * @param {array} array The array to loop in
      * @param {Function} func The callback for each element in the array
      * @param {object} context Optional. The context of execution of the
      *   callback. Defaults ARRAY.each
-     * 
+     *
      * @return {Boolean} TRUE, if execution was successful
      */
     ARRAY.each = function(array, func, context) {
         if ('object' !== typeof array) return false;
         if (!func) return false;
-        
+
         context = context || this;
         var i, len = array.length;
         for (i = 0 ; i < len; i++) {
@@ -1472,13 +1474,13 @@ if (!JSON) {
 
     /**
      * ## ARRAY.map
-     * 
+     *
      * Applies a callback function to each element in the db, store
      * the results in an array and returns it
-     * 
-     * Any number of additional parameters can be passed after the 
+     *
+     * Any number of additional parameters can be passed after the
      * callback function
-     * 
+     *
      * @return {array} out The result of the mapping execution
      * @see ARRAY.each
      */
@@ -1487,7 +1489,7 @@ if (!JSON) {
         var args = Array.prototype.slice.call(arguments),
         array = args.shift(),
         func = args[0];
-        
+
         if (!ARRAY.isArray(array)) {
             JSUS.log('ARRAY.map() the first argument must be an array. ' +
                      'Found: ' + array);
@@ -1507,24 +1509,24 @@ if (!JSON) {
 
     /**
      * ## ARRAY.removeElement
-     * 
+     *
      * Removes an element from the the array, and returns it
-     * 
-     * For objects, deep equality comparison is performed 
+     *
+     * For objects, deep equality comparison is performed
      * through JSUS.equals.
-     * 
+     *
      * If no element is removed returns FALSE.
-     * 
+     *
      * @param {mixed} needle The element to search in the array
      * @param {array} haystack The array to search in
-     * 
+     *
      * @return {mixed} The element that was removed, FALSE if none was removed
      * @see JSUS.equals
      */
     ARRAY.removeElement = function(needle, haystack) {
         var func, i;
         if ('undefined' === typeof needle || !haystack) return false;
-        
+
         if ('object' === typeof needle) {
             func = JSUS.equals;
         }
@@ -1533,7 +1535,7 @@ if (!JSON) {
                 return (a === b);
             }
         }
-        
+
         for (i = 0; i < haystack.length; i++) {
             if (func(needle, haystack[i])){
                 return haystack.splice(i,1);
@@ -1543,25 +1545,25 @@ if (!JSON) {
     };
 
     /**
-     * ## ARRAY.inArray 
-     * 
+     * ## ARRAY.inArray
+     *
      * Returns TRUE if the element is contained in the array,
      * FALSE otherwise
-     * 
-     * For objects, deep equality comparison is performed 
+     *
+     * For objects, deep equality comparison is performed
      * through JSUS.equals.
-     * 
+     *
      * Alias ARRAY.in_array (deprecated)
-     * 
+     *
      * @param {mixed} needle The element to search in the array
      * @param {array} haystack The array to search in
      * @return {Boolean} TRUE, if the element is contained in the array
-     * 
+     *
      *  @see JSUS.equals
      */
     ARRAY.inArray = ARRAY.in_array = function(needle, haystack) {
         var func, i, len;
-        if (!haystack) return false;        
+        if (!haystack) return false;
         func = JSUS.equals, len = haystack.length;
         for (i = 0; i < len; i++) {
             if (func.call(this, needle, haystack[i])) {
@@ -1574,88 +1576,88 @@ if (!JSON) {
 
     /**
      * ## ARRAY.getNGroups
-     * 
+     *
      * Returns an array of N array containing the same number of elements
      * If the length of the array and the desired number of elements per group
      * are not multiple, the last group could have less elements
-     * 
+     *
      * The original array is not modified.
-     *  
+     *
      *  @see ARRAY.getGroupsSizeN
      *  @see ARRAY.generateCombinations
      *  @see ARRAY.matchN
-     *  
+     *
      * @param {array} array The array to split in subgroups
      * @param {number} N The number of subgroups
      * @return {array} Array containing N groups
-     */ 
+     */
     ARRAY.getNGroups = function(array, N) {
         return ARRAY.getGroupsSizeN(array, Math.floor(array.length / N));
     };
 
     /**
      * ## ARRAY.getGroupsSizeN
-     * 
+     *
      * Returns an array of array containing N elements each
      * The last group could have less elements
-     * 
+     *
      * @param {array} array The array to split in subgroups
      * @param {number} N The number of elements in each subgroup
      * @return {array} Array containing groups of size N
-     * 
+     *
      * @see ARRAY.getNGroups
      * @see ARRAY.generateCombinations
      * @see ARRAY.matchN
-     */ 
+     */
     ARRAY.getGroupsSizeN = function(array, N) {
-        
+
         var copy = array.slice(0);
         var len = copy.length;
         var originalLen = copy.length;
         var result = [];
-        
+
         // Init values for the loop algorithm.
         var i, idx;
         var group = [], count = 0;
         for (i=0; i < originalLen; i++) {
-            
+
             // Get a random idx between 0 and array length.
             idx = Math.floor(Math.random()*len);
-            
+
             // Prepare the array container for the elements of a new group.
             if (count >= N) {
                 result.push(group);
                 count = 0;
                 group = [];
             }
-            
+
             // Insert element in the group.
             group.push(copy[idx]);
-            
+
             // Update.
             copy.splice(idx,1);
             len = copy.length;
             count++;
         }
-        
+
         // Add any remaining element.
         if (group.length > 0) {
             result.push(group);
         }
-        
+
         return result;
     };
 
     /**
      * ## ARRAY._latinSquare
-     * 
+     *
      * Generate a random Latin Square of size S
-     * 
-     * If N is defined, it returns "Latin Rectangle" (SxN) 
-     * 
-     * A parameter controls for self-match, i.e. whether the symbol "i" 
+     *
+     * If N is defined, it returns "Latin Rectangle" (SxN)
+     *
+     * A parameter controls for self-match, i.e. whether the symbol "i"
      * is found or not in in column "i".
-     * 
+     *
      * @api private
      * @param {number} S The number of rows
      * @param {number} Optional. N The number of columns. Defaults N = S
@@ -1671,23 +1673,23 @@ if (!JSON) {
         for (var i=0; i< S; i++) {
             seq[i] = i;
         }
-        
+
         var idx = null;
-        
+
         var start = 0;
         var limit = S;
         var extracted = [];
         if (!self) {
             limit = S-1;
         }
-        
+
         for (i=0; i < N; i++) {
             do {
                 idx = JSUS.randomInt(start,limit);
             }
             while (JSUS.in_array(idx, extracted));
             extracted.push(idx);
-            
+
             if (idx == 1) {
                 latin[i] = seq.slice(idx);
                 latin[i].push(0);
@@ -1695,19 +1697,19 @@ if (!JSON) {
             else {
                 latin[i] = seq.slice(idx).concat(seq.slice(0,(idx)));
             }
-            
+
         }
-        
+
         return latin;
     };
 
     /**
      * ## ARRAY.latinSquare
-     * 
+     *
      * Generate a random Latin Square of size S
-     * 
-     * If N is defined, it returns "Latin Rectangle" (SxN) 
-     * 
+     *
+     * If N is defined, it returns "Latin Rectangle" (SxN)
+     *
      * @param {number} S The number of rows
      * @param {number} Optional. N The number of columns. Defaults N = S
      * @return {array} The resulting latin square (or rectangle)
@@ -1716,18 +1718,18 @@ if (!JSON) {
         if (!N) N = S;
         if (!S || S < 0 || (N < 0)) return false;
         if (N > S) N = S;
-        
+
         return ARRAY._latinSquare(S, N, true);
     };
 
     /**
      * ## ARRAY.latinSquareNoSelf
-     * 
-     * Generate a random Latin Square of size Sx(S-1), where 
+     *
+     * Generate a random Latin Square of size Sx(S-1), where
      * in each column "i", the symbol "i" is not found
-     * 
+     *
      * If N < S, it returns a "Latin Rectangle" (SxN)
-     * 
+     *
      * @param {number} S The number of rows
      * @param {number} Optional. N The number of columns. Defaults N = S-1
      * @return {array} The resulting latin square (or rectangle)
@@ -1736,20 +1738,20 @@ if (!JSON) {
         if (!N) N = S-1;
         if (!S || S < 0 || (N < 0)) return false;
         if (N > S) N = S-1;
-        
+
         return ARRAY._latinSquare(S, N, false);
     }
 
 
     /**
      * ## ARRAY.generateCombinations
-     * 
-     * Generates all distinct combinations of exactly r elements each 
-     *  
+     *
+     * Generates all distinct combinations of exactly r elements each
+     *
      * @param {array} array The array from which the combinations are extracted
      * @param {number} r The number of elements in each combination
      * @return {array} The total sets of combinations
-     *  
+     *
      * @see ARRAY.getGroupSizeN
      * @see ARRAY.getNGroups
      * @see ARRAY.matchN
@@ -1772,27 +1774,27 @@ if (!JSON) {
             indices[i] += 1;
             for (var j = i + 1; j < r; j++) indices[j] = indices[i] + j - i;
         }
-        return values(indices, array); 
+        return values(indices, array);
     };
 
     /**
      * ## ARRAY.matchN
-     * 
+     *
      * Match each element of the array with N random others
-     * 
+     *
      * If strict is equal to true, elements cannot be matched multiple times.
-     * 
-     * *Important*: this method has a bug / feature. If the strict parameter 
+     *
+     * *Important*: this method has a bug / feature. If the strict parameter
      * is set, the last elements could remain without match, because all the
      * other have been already used. Another recombination would be able
      * to match all the elements instead.
-     * 
+     *
      * @param {array} array The array in which operate the matching
      * @param {number} N The number of matches per element
      * @param {Boolean} strict Optional. If TRUE, matched elements cannot be
-     *   repeated. Defaults, FALSE 
+     *   repeated. Defaults, FALSE
      * @return {array} result The results of the matching
-     * 
+     *
      * @see ARRAY.getGroupSizeN
      * @see ARRAY.getNGroups
      * @see ARRAY.generateCombinations
@@ -1801,7 +1803,7 @@ if (!JSON) {
         var result, i, copy, group;
         if (!array) return;
         if (!N) return array;
-        
+
         result = [],
         len = array.length,
         found = [];
@@ -1818,7 +1820,7 @@ if (!JSON) {
             // Re-add the current element.
             group.splice(0,0,array[i]);
             result.push(group);
-            
+
             // Update.
             group = [];
         }
@@ -1827,12 +1829,12 @@ if (!JSON) {
 
     /**
      * ## ARRAY.rep
-     * 
+     *
      * Appends an array to itself a number of times and return a new array
-     * 
+     *
      * The original array is not modified.
-     * 
-     * @param {array} array the array to repeat 
+     *
+     * @param {array} array the array to repeat
      * @param {number} times The number of times the array must be appended
      *   to itself
      * @return {array} A copy of the original array appended to itself
@@ -1845,7 +1847,7 @@ if (!JSON) {
             JSUS.log('times must be greater or equal 1', 'ERR');
             return;
         }
-        
+
         i = 1, result = array.slice(0);
         for (; i < times; i++) {
             result = result.concat(array);
@@ -1855,31 +1857,31 @@ if (!JSON) {
 
     /**
      * ## ARRAY.stretch
-     * 
+     *
      * Repeats each element of the array N times
-     * 
-     * N can be specified as an integer or as an array. In the former case all 
+     *
+     * N can be specified as an integer or as an array. In the former case all
      * the elements are repeat the same number of times. In the latter, each
      * element can be repeated a custom number of times. If the length of the
      * `times` array differs from that of the array to stretch a recycle rule
      * is applied.
-     * 
+     *
      * The original array is not modified.
-     * 
+     *
      * E.g.:
-     * 
+     *
      * ```js
      *  var foo = [1,2,3];
-     * 
+     *
      *  ARRAY.stretch(foo, 2); // [1, 1, 2, 2, 3, 3]
-     * 
+     *
      *  ARRAY.stretch(foo, [1,2,3]); // [1, 2, 2, 3, 3, 3];
      *
      *  ARRAY.stretch(foo, [2,1]); // [1, 1, 2, 3, 3];
      * ```
-     * 
+     *
      * @param {array} array the array to strech
-     * @param {number|array} times The number of times each element 
+     * @param {number|array} times The number of times each element
      *   must be repeated
      * @return {array} A stretched copy of the original array
      */
@@ -1894,7 +1896,7 @@ if (!JSON) {
             }
             times = ARRAY.rep([times], array.length);
         }
-        
+
         result = [];
         for (i = 0; i < array.length; i++) {
             repeat = times[(i % times.length)];
@@ -1908,11 +1910,11 @@ if (!JSON) {
 
     /**
      * ## ARRAY.arrayIntersect
-     * 
+     *
      * Computes the intersection between two arrays
-     * 
+     *
      * Arrays can contain both primitive types and objects.
-     * 
+     *
      * @param {array} a1 The first array
      * @param {array} a2 The second array
      * @return {array} All the values of the first array that are found
@@ -1923,17 +1925,17 @@ if (!JSON) {
             return JSUS.in_array(i, a2);
         });
     };
-    
+
     /**
      * ## ARRAY.arrayDiff
-     * 
+     *
      * Performs a diff between two arrays
-     * 
+     *
      * Arrays can contain both primitive types and objects.
-     * 
+     *
      * @param {array} a1 The first array
      * @param {array} a2 The second array
-     * @return {array} All the values of the first array that are not 
+     * @return {array} All the values of the first array that are not
      *   found in the second one
      */
     ARRAY.arrayDiff = function(a1, a2) {
@@ -1944,14 +1946,14 @@ if (!JSON) {
 
     /**
      * ## ARRAY.shuffle
-     * 
+     *
      * Shuffles the elements of the array using the Fischer algorithm
-     * 
+     *
      * The original array is not modified, and a copy is returned.
-     * 
+     *
      * @param {array} shuffle The array to shuffle
      * @return {array} copy The shuffled array
-     * 
+     *
      * @see http://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle
      */
     ARRAY.shuffle = function(array) {
@@ -1970,35 +1972,35 @@ if (!JSON) {
 
     /**
      * ## ARRAY.getNRandom
-     * 
+     *
      * Select N random elements from the array and returns them
-     * 
+     *
      * @param {array} array The array from which extracts random elements
      * @paran {number} N The number of random elements to extract
      * @return {array} An new array with N elements randomly chosen
      */
     ARRAY.getNRandom = function(array, N) {
         return ARRAY.shuffle(array).slice(0,N);
-    };                           
-    
+    };
+
     /**
      * ## ARRAY.distinct
-     * 
+     *
      * Removes all duplicates entries from an array and returns a copy of it
-     * 
+     *
      * Does not modify original array.
-     * 
+     *
      * Comparison is done with `JSUS.equals`.
-     * 
+     *
      * @param {array} array The array from which eliminates duplicates
      * @return {array} out A copy of the array without duplicates
-     * 
+     *
      * @see JSUS.equals
      */
     ARRAY.distinct = function(array) {
         var out = [];
         if (!array) return out;
-        
+
         ARRAY.each(array, function(e) {
             if (!ARRAY.in_array(e, out)) {
                 out.push(e);
@@ -2009,9 +2011,9 @@ if (!JSON) {
 
     /**
      * ## ARRAY.transpose
-     * 
+     *
      * Transposes a given 2D array.
-     * 
+     *
      * The original array is not modified, and a new copy is
      * returned.
      *
@@ -2019,26 +2021,27 @@ if (!JSON) {
      * @return {array} The Transposed Array
      */
     ARRAY.transpose = function(array) {
-        if (!array) return;  
-        
+        if (!array) return;
+
         // Calculate width and height
-        var w, h, i, j, t = []; 
+        var w, h, i, j, t = [];
         w = array.length || 0;
         h = (ARRAY.isArray(array[0])) ? array[0].length : 0;
         if (w === 0 || h === 0) return t;
-        
+
         for ( i = 0; i < h; i++) {
             t[i] = [];
-            for ( j = 0; j < w; j++) {     
+            for ( j = 0; j < w; j++) {
                 t[i][j] = array[j][i];
             }
-        } 
+        }
         return t;
     };
 
     JSUS.extend(ARRAY);
-    
+
 })('undefined' !== typeof JSUS ? JSUS : module.parent.exports.JSUS);
+
 /**
  * # DOM
  *
@@ -2295,11 +2298,11 @@ if (!JSON) {
                 throw new TypeError('DOM.shuffleNodes: order must array.');
             }
             if (order.length !== parent.children.length) {
-                throw new Error('DOM.shuffleNodes: order length must match ' + 
+                throw new Error('DOM.shuffleNodes: order length must match ' +
                                 'the number of children nodes.');
             }
         }
-        
+
         len = parent.children.length, idOrder = [];
         if (!order) order = JSUS.sample(0,len);
         for (i = 0 ; i < len; i++) {
@@ -2311,7 +2314,7 @@ if (!JSON) {
         for (i = 0 ; i < len; i++) {
             parent.appendChild(parent.children[idOrder[i]]);
         }
-        
+
         return idOrder;
     };
 
@@ -2319,7 +2322,7 @@ if (!JSON) {
      * ### DOM.getElement
      *
      * Creates a generic HTML element with id and attributes as specified
-     * 
+     *
      * @param {string} elem The name of the tag
      * @param {string} id Optional. The id of the tag
      * @param {object} attributes Optional. Object containing attributes for
@@ -2953,7 +2956,7 @@ if (!JSON) {
     };
 
     // ## IFRAME
-    
+
     /**
      * ### DOM.getIFrameDocument
      *
@@ -2992,7 +2995,7 @@ if (!JSON) {
     /**
      * ### DOM.disableRightClick
      *
-     * Disables the popup of the context menu by right clicking with the mouse 
+     * Disables the popup of the context menu by right clicking with the mouse
      *
      * @param {Document} Optional. A target document object. Defaults, document
      *
@@ -3023,9 +3026,9 @@ if (!JSON) {
     /**
      * ### DOM.enableRightClick
      *
-     * Enables the popup of the context menu by right clicking with the mouse 
+     * Enables the popup of the context menu by right clicking with the mouse
      *
-     * It unregisters the event handlers created by `DOM.disableRightClick` 
+     * It unregisters the event handlers created by `DOM.disableRightClick`
      *
      * @param {Document} Optional. A target document object. Defaults, document
      *
@@ -3102,6 +3105,7 @@ if (!JSON) {
     JSUS.extend(EVAL);
 
 })('undefined' !== typeof JSUS ? JSUS : module.parent.exports.JSUS);
+
 /**
  * # JSUS.OBJ
  * Copyright(c) 2014 Stefano Balietti
@@ -3607,7 +3611,7 @@ if (!JSON) {
      * Copies only non-overlapping properties from obj2 to obj1
      *
      * Check only if a property is defined, not its value.
-     * Original object is modified. 
+     * Original object is modified.
      *
      * @param {object} obj1 The object to which the new properties will be added
      * @param {object} obj2 The mixin-in object
@@ -4202,22 +4206,22 @@ if (!JSON) {
      * Returns a new generator of normally distributed pseudo random numbers
      *
      * The generator is independent from RANDOM.nextNormal
-     * 
-     * @return {function} An independent generator 
-     * 
+     *
+     * @return {function} An independent generator
+     *
      * @see RANDOM.nextNormal
      */
     RANDOM.getNormalGenerator = function() {
 
         return (function() {
 
-            var oldMu, oldSigma;    
-            var x2, multiplier, genReady;    
-            
+            var oldMu, oldSigma;
+            var x2, multiplier, genReady;
+
             return function normal(mu, sigma) {
-                
+
                 var x1, u1, u2, v1, v2, s;
-                
+
                 if ('number' !== typeof mu) {
                     throw new TypeError('nextNormal: mu must be number.');
                 }
@@ -4231,35 +4235,35 @@ if (!JSON) {
                     oldSigma = sigma;
                 }
 
-                if (genReady) {     
+                if (genReady) {
                     genReady = false;
                     return (sigma * x2) + mu;
                 }
-                
+
                 u1 = Math.random();
                 u2 = Math.random();
-                
+
                 // Normalize between -1 and +1.
                 v1 = (2 * u1) - 1;
-                v2 = (2 * u2) - 1; 
-                
+                v2 = (2 * u2) - 1;
+
                 s = (v1 * v1) + (v2 * v2);
-                
-                // Condition is true on average 1.27 times, 
+
+                // Condition is true on average 1.27 times,
                 // with variance equal to 0.587.
                 if (s >= 1) {
                     return normal(mu, sigma);
                 }
-                
+
                 multiplier = Math.sqrt(-2 * Math.log(s) / s);
-                
+
                 x1 = v1 * multiplier;
                 x2 = v2 * multiplier;
-                
+
                 genReady = true;
-                
+
                 return (sigma * x1) + mu;
-                
+
             }
         })();
     }
@@ -4267,12 +4271,12 @@ if (!JSON) {
     /**
      * Generates random numbers with Normal Gaussian distribution.
      *
-     * User must specify the expected mean, and standard deviation a input 
+     * User must specify the expected mean, and standard deviation a input
      * parameters.
      *
      * Implements the Polar Method by Knuth, "The Art Of Computer
      * Programming", p. 117.
-     * 
+     *
      * @param {number} mu The mean of the distribution
      * param {number} sigma The standard deviation of the distribution
      * @return {number} A random number following a Normal Gaussian distribution
@@ -4286,12 +4290,12 @@ if (!JSON) {
      *
      * User must specify the expected mean, and standard deviation of the
      * underlying gaussian distribution as input parameters.
-     * 
+     *
      * @param {number} mu The mean of the gaussian distribution
      * @param {number} sigma The standard deviation of the gaussian distribution
      * @return {number} A random number following a LogNormal distribution
      *
-     * @see RANDOM.nextNormal 
+     * @see RANDOM.nextNormal
      */
     RANDOM.nextLogNormal = function(mu, sigma) {
         if ('number' !== typeof mu) {
@@ -4307,8 +4311,8 @@ if (!JSON) {
      * Generates random numbers with Exponential distribution.
      *
      * User must specify the lambda the _rate parameter_ of the distribution.
-     * The expected mean of the distribution is equal to `Math.pow(lamba, -1)`. 
-     * 
+     * The expected mean of the distribution is equal to `Math.pow(lamba, -1)`.
+     *
      * @param {number} lambda The rate parameter
      * @return {number} A random number following an Exponential distribution
      */
@@ -4321,12 +4325,12 @@ if (!JSON) {
         }
         return - Math.log(1 - Math.random()) / lambda;
     }
-    
+
     /**
      * Generates random numbers following the Binomial distribution.
      *
      * User must specify the probability of success and the number of trials.
-     * 
+     *
      * @param {number} p The probability of success
      * @param {number} trials The number of trials
      * @return {number} sum The sum of successes in n trials
@@ -4346,17 +4350,17 @@ if (!JSON) {
         if (trials < 1) {
             throw new TypeError('nextBinomial: trials must be greater than 0.');
         }
-        
+
         counter = 0;
         sum = 0;
-        
+
         while(counter < trials){
-	    if (Math.random() < p) {	
+	    if (Math.random() < p) {
 	        sum += 1;
             }
 	    counter++;
         }
-	
+
         return sum;
     };
 
@@ -4391,7 +4395,7 @@ if (!JSON) {
 
         intK = Math.floor(k) + 3;
         kDiv = 1 / k;
-        
+
         alphaDiv = 1 / alpha;
 
         x = 0;
@@ -4399,20 +4403,21 @@ if (!JSON) {
             x += Math.log(Math.random());
         }
 
-        x *= - alphaDiv; 
+        x *= - alphaDiv;
 
-        tmp = Math.log(u3) * 
+        tmp = Math.log(u3) *
             (Math.pow(u1, kDiv) /
              ((Math.pow(u1, kDiv) + Math.pow(u2, 1 / (1 - k)))));
-        
+
         tmp *=  - alphaDiv;
-        
+
         return x + tmp;
     }
 
     JSUS.extend(RANDOM);
 
 })('undefined' !== typeof JSUS ? JSUS : module.parent.exports.JSUS);
+
 /**
  * # TIME
  *
@@ -4496,6 +4501,7 @@ TIME.parseMilliseconds = function (ms) {
 JSUS.extend(TIME);
 
 })('undefined' !== typeof JSUS ? JSUS : module.parent.exports.JSUS);
+
 /**
  * # PARSE
  *
@@ -4555,7 +4561,7 @@ JSUS.extend(TIME);
         name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
         regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
         results = regex.exec(referer);
-        return results == null ? false : 
+        return results == null ? false :
             decodeURIComponent(results[1].replace(/\+/g, " "))
     };
 
@@ -4565,12 +4571,12 @@ JSUS.extend(TIME);
      * Splits a string in tokens that users can specified as input parameter.
      * Additional options can be specified with the modifiers parameter
      *
-     * - limit: An integer that specifies the number of split items 
+     * - limit: An integer that specifies the number of split items
      *     after the split limit will not be included in the array
      *
      * @param {string} str The string to split
      * @param {array} separators Array containing the separators words
-     * @param {object} modifiers Optional. Configuration options 
+     * @param {object} modifiers Optional. Configuration options
      *   for the tokenizing
      *
      * @return {array} Tokens in which the string was split
@@ -4741,6 +4747,7 @@ JSUS.extend(TIME);
     JSUS.extend(PARSE);
 
 })('undefined' !== typeof JSUS ? JSUS : module.parent.exports.JSUS);
+
 /**
  * # NDDB: N-Dimensional Database
  * Copyright(c) 2014 Stefano Balietti
@@ -9281,7 +9288,6 @@ JSUS.extend(TIME);
         res = [];
         for (i in this.ee) {
             if (this.ee.hasOwnProperty(i)) {
-//if (arguments[1] && (arguments[0] === 'in.say.DATA' && (arguments[1].text === 'BIDDER' || arguments[1].text === 'RESPONDENT'))) debugger;
                 tmpRes = this.ee[i].emit.apply(this.ee[i], arguments);
                 if (tmpRes) res.push(tmpRes);
             }
@@ -19725,6 +19731,7 @@ JSUS.extend(TIME);
          * @see Game.pl
          */
         node.events.ng.on( IN + say + 'PCONNECT', function(msg) {
+console.log('** PCONNECT **', msg.from, msg.data);
             if (!msg.data) return;
             node.game.pl.add(new Player(msg.data));
             if (node.game.shouldStep()) {
@@ -19929,6 +19936,7 @@ JSUS.extend(TIME);
             feature = msg.text,
             payload = 'string' === typeof msg.data ?
                 J.parse(msg.data) : msg.data;
+if (msg.text === 'plist') console.log('*********', payload);
 
             if (!payload) {
                 node.err('node.on.in.say.SETUP: error while parsing ' +
@@ -20196,7 +20204,6 @@ JSUS.extend(TIME);
          *
          */
         this.events.ng.on(CMD + gcommands.start, function(options) {
-if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC');
             if (!node.game.isStartable()) {
                 node.err('Game cannot be started.');
                 return;
@@ -21512,7 +21519,7 @@ if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC');
 
         oldPos = this.headerPosition;
 
-        // Store the new position in a reference variable 
+        // Store the new position in a reference variable
         // **before** adaptFrame2HeaderPosition is called
         this.headerPosition = pos;
 
@@ -22384,7 +22391,7 @@ if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC');
 
         W.removeClass(W.frameElement, 'ng_mainframe-header-[a-z-]*');
         switch(position) {
-        case 'right':            
+        case 'right':
             W.addClass(W.frameElement, 'ng_mainframe-header-vertical-r');
             break;
         case 'left':
@@ -22487,7 +22494,7 @@ if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC');
     GameWindow.prototype.promptOnleave = function(windowObj, text) {
         windowObj = windowObj || window;
         text = 'undefined' !== typeof text ? text : this.conf.textOnleave;
-        
+
         windowObj.onbeforeunload = function(e) {
             e = e || window.event;
             // For IE<8 and Firefox prior to version 4
@@ -22521,7 +22528,7 @@ if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC');
     /**
      * ### GameWindow.disableRightClick
      *
-     * Disables the right click in the main page and in the iframe, if found 
+     * Disables the right click in the main page and in the iframe, if found
      *
      * @see GameWindow.enableRightClick
      * @see JSUS.disableRightClick
@@ -22537,7 +22544,7 @@ if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC');
     /**
      * ### GameWindow.enableRightClick
      *
-     * Enables the right click in the main page and in the iframe, if found 
+     * Enables the right click in the main page and in the iframe, if found
      *
      * @see GameWindow.disableRightClick
      * @see JSUS.enableRightClick
@@ -22564,7 +22571,7 @@ if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC');
  *
  * Locks / Unlocks the screen.
  *
- * The _screen_ represents all the user can see on screen. 
+ * The _screen_ represents all the user can see on screen.
  * It includes the _frame_ area, but also the _header_.
  *
  * http://www.nodegame.org
@@ -22578,7 +22585,7 @@ if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC');
 
     var GameWindow = node.GameWindow;
     var screenLevels = node.constants.screenLevels;
-    
+
     /**
      * ### GameWindow.lockScreen
      *
@@ -22693,7 +22700,7 @@ if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC');
 
     node.on('TOGGLE', function(idOrObj) {
         var el = getElement(idOrObj, 'GameWindow.on.TOGGLE');
-        
+
         if (el.style.display === 'none') {
             el.style.display = '';
         }
@@ -22706,19 +22713,19 @@ if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC');
     node.on('INPUT_DISABLE', function(id) {
         W.toggleInputs(id, true);
     });
-    
+
     // Disable all the input forms found within a given id element.
     node.on('INPUT_ENABLE', function(id) {
         W.toggleInputs(id, false);
     });
-    
+
     // Disable all the input forms found within a given id element.
     node.on('INPUT_TOGGLE', function(id) {
         W.toggleInputs(id);
     });
-    
+
     node.log('node-window: listeners added.');
-    
+
 })(
     'undefined' !== typeof node ? node : undefined
 );
@@ -22759,11 +22766,11 @@ if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC');
      * be re-activated later.
      *
      * @param {Document|Element} container The target to scan for input tags
-     *  
+     *
      * @api private
      */
     function lockUnlockedInputs(container) {
-        var j, i, inputs, nInputs;       
+        var j, i, inputs, nInputs;
         for (j = -1; ++j < len; ) {
             inputs = container.getElementsByTagName(inputTags[j]);
             nInputs = inputs.length;
@@ -22805,13 +22812,13 @@ if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC');
     function event_PAUSED(text) {
         text = text || W.waitScreen.defaultTexts.paused;
         if (W.isScreenLocked()) {
-            W.waitScreen.beforePauseInnerHTML = 
+            W.waitScreen.beforePauseInnerHTML =
                 W.waitScreen.waitingDiv.innerHTML;
             W.waitScreen.updateText(text);
         }
         else {
             W.lockScreen(text);
-        }            
+        }
     }
 
     function event_RESUMED() {
@@ -22873,7 +22880,7 @@ if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC');
         /**
          * ### WaitScreen.enabled
          *
-         * Flag is TRUE if the listeners are registered 
+         * Flag is TRUE if the listeners are registered
          *
          * @see WaitScreen.enable
          */
@@ -22896,7 +22903,7 @@ if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC');
         /**
          * ## WaitScreen.lockedInputs
          *
-         * List of locked inputs by the _lock_ method 
+         * List of locked inputs by the _lock_ method
          *
          * @see WaitScreen.lock
          */
@@ -22933,7 +22940,7 @@ if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC');
         node.events.ee.game.off('PLAYING', event_PLAYING);
         node.events.ee.game.off('PAUSED', event_PAUSED);
         node.events.ee.game.off('RESUMED', event_RESUMED);
-        this.enabled = false;    
+        this.enabled = false;
     };
 
     /**
@@ -22957,11 +22964,11 @@ if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC');
         if ('undefined' === typeof document.getElementsByTagName) {
             node.warn('WaitScreen.lock: cannot lock inputs.');
         }
-        // Disables all input forms in the page.        
+        // Disables all input forms in the page.
         lockUnlockedInputs(document);
-        frameDoc = W.getFrameDocument(); 
+        frameDoc = W.getFrameDocument();
         if (frameDoc) lockUnlockedInputs(frameDoc);
-        
+
         if (!this.waitingDiv) {
             if (!this.root) {
                 this.root = W.getFrameRoot() || document.body;
@@ -22971,7 +22978,7 @@ if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC');
 	if (this.waitingDiv.style.display === 'none') {
 	    this.waitingDiv.style.display = '';
 	}
-	this.waitingDiv.innerHTML = text;        
+	this.waitingDiv.innerHTML = text;
     };
 
     /**
@@ -22988,10 +22995,10 @@ if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC');
                 this.waitingDiv.style.display = 'none';
             }
         }
-        // Re-enables all previously locked input forms in the page.        
+        // Re-enables all previously locked input forms in the page.
         i = -1, len = this.lockedInputs.length;
         for ( ; ++i < len ; ) {
-            this.lockedInputs[i].removeAttribute('disabled');            
+            this.lockedInputs[i].removeAttribute('disabled');
         }
         this.lockedInputs = [];
     };
@@ -23057,7 +23064,7 @@ if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC');
 (function(window, node) {
 
     "use strict";
-    
+
     var J = node.JSUS;
     var constants = node.constants;
     var GameWindow = node.GameWindow;
@@ -23278,7 +23285,7 @@ if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC');
 
     var J = node.JSUS;
     var DOM = J.get('DOM');
-    
+
     /**
      * ### GameWindow.getScreen
      *
@@ -23542,7 +23549,7 @@ if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC');
      */
     GameWindow.prototype.getEventButton =
     function(event, text, id, attributes) {
-    
+
         var b;
         if ('string' !== typeof event) {
             throw new TypeError('GameWindow.getEventButton: event must ' +
@@ -23591,7 +23598,7 @@ if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC');
     /**
      * ## toggleInputs
      *
-     * @api private 
+     * @api private
      */
     function toggleInputs(state, container) {
         var inputTags, j, len, i, inputs, nInputs;
@@ -23866,7 +23873,7 @@ if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC');
 
         this.tm.addTrigger(function(el) {
             if (!el) return;
-            if (el.content && el.content.parse 
+            if (el.content && el.content.parse
                 && 'function' === typeof el.content.parse) {
                 var html = el.content.parse();
                 if (JSUS.isElement(html) || JSUS.isNode(html)) {
@@ -23976,7 +23983,7 @@ if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC');
  * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
- * Creates an HTML list that can be manipulated by an api. 
+ * Creates an HTML list that can be manipulated by an api.
  *
  * www.nodegame.org
  * ---
@@ -23984,49 +23991,49 @@ if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC');
 (function(exports, node) {
 
     "use strict";
-    
+
     var JSUS = node.JSUS;
     var NDDB = node.NDDB;
 
     var HTMLRenderer = node.window.HTMLRenderer;
     var Entity = node.window.HTMLRenderer.Entity;
-    
+
     exports.List = List;
-    
+
     List.prototype = new NDDB();
-    List.prototype.constructor = List;  
-    
+    List.prototype.constructor = List;
+
     function List(options, data) {
         options = options || {};
         this.options = options;
-        
-        NDDB.call(this, options, data); 
-        
+
+        NDDB.call(this, options, data);
+
         this.id = options.id || 'list_' + Math.round(Math.random() * 1000);
-        
+
         this.DL = null;
         this.auto_update = this.options.auto_update || false;
-        this.htmlRenderer = null; 
+        this.htmlRenderer = null;
         this.lifo = false;
-        
+
         this.init(this.options);
     }
-    
+
     // TODO: improve init
     List.prototype.init = function(options) {
         options = options || this.options;
-        
+
         this.FIRST_LEVEL = options.first_level || 'dl';
         this.SECOND_LEVEL = options.second_level || 'dt';
         this.THIRD_LEVEL = options.third_level || 'dd';
-        
+
         this.last_dt = 0;
         this.last_dd = 0;
         this.auto_update = ('undefined' !== typeof options.auto_update) ? options.auto_update
             : this.auto_update;
-        
+
         var lifo = this.lifo = ('undefined' !== typeof options.lifo) ? options.lifo : this.lifo;
-        
+
         this.globalCompare = function(o1, o2) {
             if (!o1 && !o2) return 0;
             if (!o2) return 1;
@@ -24050,9 +24057,9 @@ if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC');
                 if (o1.nddbid > o2.nddbid) return -1;
             }
             return 0;
-        }; 
-        
-        
+        };
+
+
         this.DL = options.list || document.createElement(this.FIRST_LEVEL);
         this.DL.id = options.id || this.id;
         if (options.className) {
@@ -24061,12 +24068,12 @@ if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC');
         if (this.options.title) {
             this.DL.appendChild(document.createTextNode(options.title));
         }
-        
+
         // was
         //this.htmlRenderer = new HTMLRenderer({renderers: options.renderer});
         this.htmlRenderer = new HTMLRenderer(options.render);
     };
-    
+
     List.prototype._add = function(node) {
         if (!node) return;
         //              console.log('about to add node');
@@ -24076,16 +24083,16 @@ if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC');
             this.parse();
         }
     };
-    
+
     List.prototype.addDT = function(elem, dt) {
         if ('undefined' === typeof elem) return;
         this.last_dt++;
-        dt = ('undefined' !== typeof dt) ? dt: this.last_dt;  
+        dt = ('undefined' !== typeof dt) ? dt: this.last_dt;
         this.last_dd = 0;
         var node = new Node({dt: dt, content: elem});
         return this._add(node);
     };
-    
+
     List.prototype.addDD = function(elem, dt, dd) {
         if ('undefined' === typeof elem) return;
         dt = ('undefined' !== typeof dt) ? dt: this.last_dt;
@@ -24093,12 +24100,12 @@ if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC');
         var node = new Node({dt: dt, dd: dd, content: elem});
         return this._add(node);
     };
-    
+
     List.prototype.parse = function() {
         this.sort();
         var old_dt = null;
         var old_dd = null;
-        
+
         var appendDT = function() {
             var node = document.createElement(this.SECOND_LEVEL);
             this.DL.appendChild(node);
@@ -24106,7 +24113,7 @@ if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC');
             old_dt = node;
             return node;
         };
-        
+
         var appendDD = function() {
             var node = document.createElement(this.THIRD_LEVEL);
             //                  if (old_dd) {
@@ -24121,7 +24128,7 @@ if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC');
             //                  old_dt = node;
             return node;
         };
-        
+
         // Reparse all every time
         // TODO: improve this
         if (this.DL) {
@@ -24132,7 +24139,7 @@ if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC');
                 this.DL.appendChild(document.createTextNode(this.options.title));
             }
         }
-        
+
         for (var i=0; i<this.db.length; i++) {
             var el = this.db[i];
             var node;
@@ -24144,19 +24151,19 @@ if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC');
                 node = appendDD.call(this);
             }
             var content = this.htmlRenderer.render(el);
-            node.appendChild(content);          
-        }        
+            node.appendChild(content);
+        }
         return this.DL;
     };
-    
+
     List.prototype.getRoot = function() {
         return this.DL;
     };
-    
+
     // Cell Class
     Node.prototype = new Entity();
     Node.prototype.constructor = Node;
-    
+
     function Node (node) {
         Entity.call(this, node);
         this.dt = ('undefined' !== typeof node.dt) ? node.dt : null;
@@ -24164,9 +24171,9 @@ if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC');
             this.dd = node.dd;
         }
     }
-    
+
 })(
-    ('undefined' !== typeof node) ? (('undefined' !== typeof node.window) ? node.window : node) : module.parent.exports, 
+    ('undefined' !== typeof node) ? (('undefined' !== typeof node.window) ? node.window : node) : module.parent.exports,
     ('undefined' !== typeof node) ? node : module.parent.exports
 );
 
@@ -27266,7 +27273,7 @@ if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC');
  * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
- * Integrates nodeGame with the D3 library to plot a real-time chart. 
+ * Integrates nodeGame with the D3 library to plot a real-time chart.
  *
  * www.nodegame.org
  * ---
@@ -27274,105 +27281,105 @@ if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC');
 (function(node) {
 
     "use strict";
-        
+
     node.widgets.register('D3', D3);
     node.widgets.register('D3ts', D3ts);
-    
+
     D3.prototype.__proto__ = node.Widget.prototype;
     D3.prototype.constructor = D3;
 
     // ## Defaults
-    
+
     D3.defaults = {};
     D3.defaults.id = 'D3';
     D3.defaults.fieldset = {
 	legend: 'D3 plot'
     };
 
-    
+
     // ## Meta-data
-    
+
     D3.version = '0.1';
     D3.description = 'Real time plots for nodeGame with d3.js';
-    
+
     // ## Dependencies
-    
+
     D3.dependencies = {
-	d3: {},	
+	d3: {},
 	JSUS: {}
     };
-    
+
     function D3 (options) {
 	this.id = options.id || D3.id;
 	this.event = options.event || 'D3';
 	this.svg = null;
-	
+
 	var that = this;
 	node.on(this.event, function(value) {
-	    that.tick.call(that, value); 
+	    that.tick.call(that, value);
 	});
     }
-    
+
     D3.prototype.append = function(root) {
 	this.root = root;
 	this.svg = d3.select(root).append("svg");
 	return root;
     };
-    
+
     D3.prototype.tick = function() {};
-    
+
     // # D3ts
-    
-    
+
+
     // ## Meta-data
-    
+
     D3ts.id = 'D3ts';
     D3ts.version = '0.1';
     D3ts.description = 'Time series plot for nodeGame with d3.js';
-    
-    // ## Dependencies	
+
+    // ## Dependencies
     D3ts.dependencies = {
-	D3: {},	
+	D3: {},
 	JSUS: {}
     };
-    
+
     D3ts.prototype.__proto__ = D3.prototype;
     D3ts.prototype.constructor = D3ts;
-    
+
     D3ts.defaults = {};
-    
+
     D3ts.defaults.width = 400;
     D3ts.defaults.height = 200;
-    
+
     D3ts.defaults.margin = {
-    	top: 10, 
-    	right: 10, 
-    	bottom: 20, 
-    	left: 40 
+    	top: 10,
+    	right: 10,
+    	bottom: 20,
+    	left: 40
     };
-    
+
     D3ts.defaults.domain = {
 	x: [0, 10],
 	y: [0, 1]
     };
-    
+
     D3ts.defaults.range = {
     	x: [0, D3ts.defaults.width],
     	y: [D3ts.defaults.height, 0]
     };
-    
+
     function D3ts (options) {
 	D3.call(this, options);
-	
-	
+
+
 	var o = this.options = JSUS.merge(D3ts.defaults, options);
-	
+
 	var n = this.n = o.n;
-	
+
 	this.data = [0];
-	
+
 	this.margin = o.margin;
-	
+
 	var width = this.width = o.width - this.margin.left - this.margin.right;
 	var height = this.height = o.height - this.margin.top - this.margin.bottom;
 
@@ -27390,18 +27397,18 @@ if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC');
 	    .x(function(d, i) { return x(i); })
 	    .y(function(d, i) { return y(d); });
     }
-    
+
     D3ts.prototype.init = function(options) {
 	//D3.init.call(this, options);
-	
+
 	console.log('init!');
 	var x = this.x,
 	y = this.y,
 	height = this.height,
 	width = this.width,
 	margin = this.margin;
-	
-	
+
+
 	// Create the SVG and place it in the middle
 	this.svg.attr("width", width + margin.left + margin.right)
 	    .attr("height", height + margin.top + margin.bottom)
@@ -27432,20 +27439,20 @@ if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC');
 	    .append("path")
 	    .data([this.data])
 	    .attr("class", "line")
-	    .attr("d", this.line);		
+	    .attr("d", this.line);
     };
-    
+
     D3ts.prototype.tick = function(value) {
 	this.alreadyInit = this.alreadyInit || false;
 	if (!this.alreadyInit) {
 	    this.init();
 	    this.alreadyInit = true;
 	}
-	
+
 	var x = this.x;
-	
+
 	console.log('tick!');
-	
+
 	// push a new data point onto the back
 	this.data.push(value);
 
@@ -27456,18 +27463,18 @@ if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC');
 
 	// pop the old data point off the front
 	if (this.data.length > this.n) {
-	    
+
 	    this.path
 	  	.transition()
 	  	.duration(500)
 	  	.ease("linear")
 	  	.attr("transform", "translate(" + x(-1) + ")");
-	    
+
 	    this.data.shift();
-	    
+
 	}
     };
-    
+
 })(node);
 /**
  * # DataBar widget for nodeGame
@@ -27817,10 +27824,10 @@ if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC');
 
     Feedback.defaults = {};
     Feedback.defaults.id = 'feedback';
-    Feedback.defaults.fieldset = { 
+    Feedback.defaults.fieldset = {
         legend: 'Feedback'
     };
-    
+
     // ## Meta-data
 
     Feedback.version = '0.1';
@@ -27897,70 +27904,70 @@ if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC');
  * ---
  */
 (function(node) {
-   
+
     "use strict";
- 
+
     node.widgets.register('GameBoard', GameBoard);
-    
+
     var PlayerList = node.PlayerList;
 
-    // ## Defaults	
-    
+    // ## Defaults
+
     GameBoard.defaults = {};
     GameBoard.defaults.id = 'gboard';
     GameBoard.defaults.fieldset = {
 	legend: 'Game Board'
     };
-    
+
     // ## Meta-data
-    
+
     GameBoard.version = '0.4.0';
     GameBoard.description = 'Offer a visual representation of the state of all players in the game.';
-    
+
     function GameBoard(options) {
-	
+
 	this.id = options.id || GameBoard.defaults.id;
 	this.status_id = this.id + '_statusbar';
-	
+
 	this.board = null;
 	this.status = null;
 	this.root = null;
-	
+
     }
-    
+
     GameBoard.prototype.append = function(root) {
 	this.root = root;
 	this.status = node.window.addDiv(root, this.status_id);
 	this.board = node.window.addDiv(root, this.id);
-	
+
 	this.updateBoard(node.game.pl);
-		
+
 	return root;
     };
-    
+
     GameBoard.prototype.listeners = function() {
-	var that = this;		
+	var that = this;
 	node.on('UPDATED_PLIST', function() {
 	    that.updateBoard(node.game.pl);
 	});
-	
+
     };
-    
+
     GameBoard.prototype.printLine = function(p) {
 
 	var line, levels, level;
         levels = node.constants.stageLevels;
 
-        line = '[' + (p.name || p.id) + "]> \t"; 
-	line += '(' +  p.stage.round + ') ' + p.stage.stage + '.' + p.stage.step; 
+        line = '[' + (p.name || p.id) + "]> \t";
+	line += '(' +  p.stage.round + ') ' + p.stage.stage + '.' + p.stage.step;
 	line += ' ';
-	
+
 	switch (p.stageLevel) {
 
 	case levels.UNINITIALIZED:
 	    level = 'uninit.';
 	    break;
-	    
+
 	case levels.INITIALIZING:
 	    level = 'init...';
 	    break;
@@ -27971,54 +27978,54 @@ if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC');
 
 	case levels.LOADING:
 	    level = 'loading';
-	    break;	    
+	    break;
 
 	case levels.LOADED:
 	    level = 'loaded';
 	    break;
-	    
+
 	case levels.PLAYING:
 	    level = 'playing';
 	    break;
 	case levels.DONE:
 	    level = 'done';
 	    break;
-		
+
 	default:
 	    level = p.stageLevel;
-	    break;		
+	    break;
 	}
 
 	return line + '(' + level + ')';
     };
-    
+
     GameBoard.prototype.printSeparator = function(p) {
 	return W.getElement('hr', null, {style: 'color: #CCC;'});
     };
-    
-    
+
+
     GameBoard.prototype.updateBoard = function(pl) {
 	var player, separator;
         var that = this;
-	
+
 	this.status.innerHTML = 'Updating...';
-	
+
 	if (pl.size()) {
 	    that.board.innerHTML = '';
 	    pl.forEach( function(p) {
 		player = that.printLine(p);
-		
+
 		W.write(player, that.board);
-		
+
 		separator = that.printSeparator(p);
 		W.write(separator, that.board);
 	    });
 	}
-	
-	
+
+
 	this.status.innerHTML = 'Connected players: ' + node.game.pl.length;
     };
-    
+
 })(node);
 
 /**
@@ -28038,33 +28045,33 @@ if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC');
     node.widgets.register('GameSummary', GameSummary);
 
     // ## Defaults
-    
+
     GameSummary.defaults = {};
     GameSummary.defaults.id = 'gamesummary';
     GameSummary.defaults.fieldset = { legend: 'Game Summary' };
-    
+
     // ## Meta-data
-    
+
     GameSummary.version = '0.3';
     GameSummary.description = 'Show the general configuration options of the game.';
-    
+
     function GameSummary(options) {
 	this.summaryDiv = null;
     }
-    
+
     GameSummary.prototype.append = function(root) {
 	this.root = root;
 	this.summaryDiv = node.window.addDiv(root);
 	this.writeSummary();
 	return root;
     };
-    
+
     GameSummary.prototype.writeSummary = function(idState, idSummary) {
 	var gName = document.createTextNode('Name: ' + node.game.metadata.name),
 	gDescr = document.createTextNode('Descr: ' + node.game.metadata.description),
 	gMinP = document.createTextNode('Min Pl.: ' + node.game.minPlayers),
 	gMaxP = document.createTextNode('Max Pl.: ' + node.game.maxPlayers);
-	
+
 	this.summaryDiv.appendChild(gName);
 	this.summaryDiv.appendChild(document.createElement('br'));
 	this.summaryDiv.appendChild(gDescr);
@@ -28072,7 +28079,7 @@ if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC');
 	this.summaryDiv.appendChild(gMinP);
 	this.summaryDiv.appendChild(document.createElement('br'));
 	this.summaryDiv.appendChild(gMaxP);
-	
+
 	node.window.addDiv(this.root, this.summaryDiv, idSummary);
     };
 
@@ -28805,10 +28812,10 @@ if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC');
 
     Requirements.defaults = {};
     Requirements.defaults.id = 'requirements';
-    Requirements.defaults.fieldset = { 
+    Requirements.defaults.fieldset = {
         legend: 'Requirements'
     };
-    
+
     // ## Meta-data
 
     Requirements.version = '0.2.0';
@@ -28855,7 +28862,7 @@ if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC');
         this.sayResults = options.sayResults || false;
         // The label of the SAY message that will be sent to the server.
         this.sayResultsLabel = options.sayResultLabel || 'requirements';
-        // Callback to add properties to the result object to send to the server. 
+        // Callback to add properties to the result object to send to the server.
         this.addToResults = options.addToResults || null;
 
         // Callbacks to be executed at the end of all tests.
@@ -28865,7 +28872,7 @@ if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC');
 
         function renderResult(o) {
             var imgPath, img, span, text;
-            imgPath = '/images/' + (o.content.success ? 
+            imgPath = '/images/' + (o.content.success ?
                                     'success-icon.png' : 'delete-icon.png');
             img = document.createElement('img');
             img.src = imgPath;
@@ -28879,11 +28886,11 @@ if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC');
             span = document.createElement('span');
             span.className = 'requirement';
             span.appendChild(img);
-            
+
             span.appendChild(text);
             return span;
         }
-        
+
         // TODO: simplify render syntax.
         this.list = new W.List({
             render: {
@@ -28958,21 +28965,21 @@ if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC');
             catch(e) {
                 errMsg = extractErrorMsg(e);
                 this.updateStillChecking(-1);
-                if (this.callbacks[i] && this.callbacks[i].name) { 
+                if (this.callbacks[i] && this.callbacks[i].name) {
                     cbName = this.callbacks[i].name;
                 }
                 else {
                     cbName = i + 1;
                 }
                 errors.push('An exception occurred in requirement n.' +
-                            cbName + ': ' + errMsg);                            
+                            cbName + ': ' + errMsg);
             }
             if (cbErrors) {
                 this.updateStillChecking(-1);
                 errors = errors.concat(cbErrors);
             }
         }
-        
+
         if (this.withTimeout) {
             this.addTimeout();
         }
@@ -28980,14 +28987,14 @@ if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC');
         if ('undefined' === typeof display ? true : false) {
             this.displayResults(errors);
         }
-        
+
         if (this.isCheckingFinished()) {
             this.checkingFinished();
         }
-        
+
         return errors;
     };
-       
+
     Requirements.prototype.addTimeout = function() {
         var that = this;
         var errStr = 'One or more function is taking too long. This is ' +
@@ -29021,8 +29028,8 @@ if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC');
         this.summaryUpdate.innerHTML = ' (' +  remaining + ' / ' + total + ')';
     };
 
-            
-    Requirements.prototype.isCheckingFinished = function() {  
+
+    Requirements.prototype.isCheckingFinished = function() {
         return this.stillChecking <= 0;
     };
 
@@ -29042,7 +29049,7 @@ if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC');
             };
 
             if (this.addToResults) {
-                J.mixin(results, this.addToResults()); 
+                J.mixin(results, this.addToResults());
             }
             node.say(this.sayResultsLabel, 'SERVER', results);
         }
@@ -29050,7 +29057,7 @@ if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC');
         if (this.onComplete) {
             this.onComplete();
         }
-        
+
         if (this.hasFailed) {
             if (this.onFail) {
                 this.onFail();
@@ -29063,12 +29070,12 @@ if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC');
 
     Requirements.prototype.displayResults = function(results) {
         var i, len;
-        
+
         if (!this.list) {
             throw new Error('Requirements.displayResults: list not found. ' +
                             'Have you called .append() first?');
         }
-        
+
         if (!J.isArray(results)) {
             throw new TypeError('Requirements.displayResults: results must ' +
                                 'be array.');
@@ -29106,20 +29113,20 @@ if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC');
 
     Requirements.prototype.append = function(root) {
         this.root = root;
-        
+
         this.summary = document.createElement('span');
         this.summary.appendChild(
             document.createTextNode('Evaluating requirements'));
-        
+
         this.summaryUpdate = document.createElement('span');
         this.summary.appendChild(this.summaryUpdate);
-        
+
         this.dots = W.getLoadingDots();
 
         this.summary.appendChild(this.dots.span);
-        
+
         root.appendChild(this.summary);
-        
+
         root.appendChild(this.list.getRoot());
         return root;
     };
@@ -29135,27 +29142,27 @@ if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC');
     Requirements.prototype.nodeGameRequirements = function(result) {
         var errors, db;
         errors = [];
-   
+
         if ('undefined' === typeof NDDB) {
             errors.push('NDDB not found.');
         }
-        
+
         if ('undefined' === typeof JSUS) {
             errors.push('JSUS not found.');
         }
-        
+
         if ('undefined' === typeof node.window) {
             errors.push('node.window not found.');
         }
-        
+
         if ('undefined' === typeof W) {
             errors.push('W not found.');
         }
-        
+
         if ('undefined' === typeof node.widgets) {
             errors.push('node.widgets not found.');
         }
-        
+
         if ('undefined' !== typeof NDDB) {
             try {
                 db = new NDDB();
@@ -29165,7 +29172,7 @@ if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC');
                             e.message);
             }
         }
-        
+
         // We need to test node.Stager because it will be used in other tests.
         if ('undefined' === typeof node.Stager) {
             errors.push('node.Stager not found.');
@@ -29211,10 +29218,10 @@ if (node.nodename === 'lgc100') console.log('*** STARTING LOGIC');
         catch(e) {
             errors.push('W.loadFrame raised an error: ' + extractErrorMsg(e));
             return errors;
-        }        
+        }
     };
 
-    
+
 
     node.widgets.register('Requirements', Requirements);
 
