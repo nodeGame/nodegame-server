@@ -19731,7 +19731,6 @@ JSUS.extend(TIME);
          * @see Game.pl
          */
         node.events.ng.on( IN + say + 'PCONNECT', function(msg) {
-console.log('** PCONNECT **', msg.from, msg.data);
             if (!msg.data) return;
             node.game.pl.add(new Player(msg.data));
             if (node.game.shouldStep()) {
@@ -19936,7 +19935,6 @@ console.log('** PCONNECT **', msg.from, msg.data);
             feature = msg.text,
             payload = 'string' === typeof msg.data ?
                 J.parse(msg.data) : msg.data;
-if (msg.text === 'plist') console.log('*********', payload);
 
             if (!payload) {
                 node.err('node.on.in.say.SETUP: error while parsing ' +
