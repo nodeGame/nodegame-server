@@ -28,7 +28,7 @@
   ,   "JSUS": ">= 0.9.0"
   ,   "NDDB": ">= 0.9.8"
   ,   "shelf.js": ">= 0.3.7"
-  ,   "winston": "0.6.2"
+  ,   "winston": "0.8.0"
   ,   "phantomjs": ">= 1.9.7"
     }
   , "devDependencies": {

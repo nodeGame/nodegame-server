@@ -65,7 +65,6 @@ function configure(loggers){
         }
     });
 
-
     loggers.add('messages', {
         console: {
             level: 'error',
@@ -75,6 +74,18 @@ function configure(loggers){
             level: 'silly',
             timestamp: true,
             filename: logDir + 'messages'
+        }
+    });
+
+    loggers.add('clients', {
+        console: {
+            level: 'error',
+            colorize: true,
+        },
+        file: {
+            level: 'silly',
+            timestamp: true,
+            filename: logDir + 'clients'
         }
     });
 
