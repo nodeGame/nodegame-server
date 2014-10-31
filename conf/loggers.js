@@ -11,7 +11,7 @@ module.exports = configure;
 
 var path = require('path');
 
-function configure(loggers){
+function configure(loggers, logDir) {
 
     //        var config = {
     //                levels: {
@@ -33,9 +33,6 @@ function configure(loggers){
     //                    sillyor: 'red'
     //                  }
     //        };
-
-    var rootDir = path.resolve(__dirname, '..');
-    var logDir = rootDir + '/log/';
 
     loggers.add('servernode', {
         console: {
