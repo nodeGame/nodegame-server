@@ -8258,13 +8258,13 @@ JSUS.extend(TIME);
      * ALWAYS, ERR, WARN, INFO, DEBUG
      */
     k.verbosity_levels = {
-        ALWAYS: -(Number.MIN_VALUE + 1),
-        ERR: -1,
-        WARN: 0,
-        INFO: 1,
-        SILLY: 10,
-        DEBUG: 100,
-        NEVER: Number.MIN_VALUE - 1
+        ALWAYS: -Number.MAX_VALUE,
+        error: -1,
+        warn: 0,
+        info: 1,
+        silly: 10,
+        debug: 100,
+        NEVER: Number.MAX_VALUE
     };
 
     // TODO: do we need these defaults ?
@@ -8277,7 +8277,7 @@ JSUS.extend(TIME);
      *  Defaults, only errors are displayed.
      *
      */
-    k.verbosity = k.verbosity_levels.WARN;
+    k.verbosity = k.verbosity_levels.warn;
 
     /**
      * ### node.constants.remoteVerbosity
@@ -8286,7 +8286,7 @@ JSUS.extend(TIME);
      *
      *  Defaults, only errors are displayed.
      */
-    k.remoteVerbosity = k.verbosity_levels.WARN;
+    k.remoteVerbosity = k.verbosity_levels.warn;
 
     /**
      * ### node.constants.actions
@@ -9356,7 +9356,7 @@ JSUS.extend(TIME);
         var hash, db, remit, node;
         node = this.node;
         if (!this.history.count()) {
-            node.log('no event history was found to remit', 'WARN');
+            node.warn('no event history was found to remit');
             return false;
         }
 
@@ -17894,7 +17894,8 @@ JSUS.extend(TIME);
         Timer = parent.Timer,
         Player = parent.Player,
         GameSession = parent.GameSession,
-        J = parent.JSUS;
+        J = parent.JSUS,
+        constants = parent.constants;
 
     /**
      * ## NodeGameClient constructor
@@ -17904,21 +17905,6 @@ JSUS.extend(TIME);
     function NodeGameClient() {
         
         var that = this;
-        
-        /**
-         * ### node.verbosity_levels
-         *
-         * ALWAYS, ERR, WARN, INFO, DEBUG
-         */
-        this.verbosity_levels = {
-            ALWAYS: -(Number.MIN_VALUE + 1),
-            ERR: -1,
-            WARN: 0,
-            INFO: 1,
-            SILLY: 10,
-            DEBUG: 100,
-            NEVER: Number.MIN_VALUE - 1
-        };
 
         /**
          * ### node.verbosity
@@ -17927,7 +17913,7 @@ JSUS.extend(TIME);
          *
          * Defaults, only errors are displayed.
          */
-        this.verbosity = this.verbosity_levels.WARN;
+        this.verbosity = constants.verbosity_levels.warn;
 
         /**
          * ### node.nodename
@@ -17947,7 +17933,7 @@ JSUS.extend(TIME);
          *
          * @experimental
          */
-        this.remoteVerbosity = this.verbosity_levels.WARN;
+        this.remoteVerbosity = constants.verbosity_levels.warn;
 
         /**
          * ### node.errorManager
@@ -18143,7 +18129,12 @@ JSUS.extend(TIME);
          * Sets the verbosity level for nodegame
          */
         this.registerSetup('verbosity', function(level) {
-            if ('undefined' !== typeof level) {
+            if ('string' === typeof level &&
+                constants.verbosity_levels.hasOwnProperty(level)) {
+
+                this.verbosity = constants.verbosity_levels[level];
+            }
+            else if ('number' === typeof level) {
                 this.verbosity = level;
             }
             return level;
@@ -18580,22 +18571,22 @@ JSUS.extend(TIME);
      * smaller than `this.remoteVerbosity`.
      *
      * @param {string} txt The text to output
-     * @param {string|number} level Optional. The verbosity level of this log. Defaults, level = 0
-     * @param {string} prefix Optional. A text to display at the beginning of the log entry. Defaults 'ng> '
+     * @param {string|number} level Optional. The verbosity level of this log.
+     *   Default: 'warn'
+     * @param {string} prefix Optional. A text to display at the beginning of
+     *   the log entry. Default: 'ng> '
      *
      */
     NGC.prototype.log = function(txt, level, prefix) {
         if ('undefined' === typeof txt) return false;
 
-        level  = level || 0;
+        level  = level || 'warn';
         prefix = ('undefined' === typeof prefix) ? this.nodename + '> ' : prefix;
 
-        if ('string' === typeof level) {
-            level = this.verbosity_levels[level];
-        }
-        if (this.verbosity > level) {
+        if (this.verbosity >= constants.verbosity_levels[level]) {
             console.log(prefix + txt);
         }
+
         // if (this.remoteVerbosity > level) {
         //     var remoteMsg = this.msg.create({
         //         target: this.target.LOG,
@@ -18615,7 +18606,7 @@ JSUS.extend(TIME);
      */
     NGC.prototype.info = function(txt, prefix) {
         prefix = this.nodename + (prefix ? '|' + prefix : '') + '> info - ';
-        this.log(txt, this.verbosity_levels.INFO, prefix);
+        this.log(txt, 'info', prefix);
     };
 
     /**
@@ -18625,7 +18616,7 @@ JSUS.extend(TIME);
      */
     NGC.prototype.warn = function(txt, prefix) {
         prefix = this.nodename + (prefix ? '|' + prefix : '') + '> warn - ';
-        this.log(txt, this.verbosity_levels.WARN, prefix);
+        this.log(txt, 'warn', prefix);
     };
 
     /**
@@ -18635,7 +18626,7 @@ JSUS.extend(TIME);
      */
     NGC.prototype.err = function(txt, prefix) {
         prefix = this.nodename + (prefix ? '|' + prefix : '') + '> error - ';
-        this.log(txt, this.verbosity_levels.ERR, prefix);
+        this.log(txt, 'error', prefix);
     };
 
     /**
@@ -18645,13 +18636,14 @@ JSUS.extend(TIME);
      */
     NGC.prototype.silly = function(txt, prefix) {
         prefix = this.nodename + (prefix ? '|' + prefix : '') + '> silly - ';
-        this.log(txt, this.verbosity_levels.SILLY, prefix);
+        this.log(txt, 'silly', prefix);
     };
 
 })(
     'undefined' != typeof node ? node : module.exports,
     'undefined' != typeof node ? node : module.parent.exports
 );
+
 /**
  * # Setup
  * Copyright(c) 2014 Stefano Balietti
