@@ -64,67 +64,28 @@ function configure(app, servernode) {
 
     // TODO: COMMENT
     function createAndServe(langPath, pageName, file,
-            gameInfo, contextPath, res) {
-            var jadeTemplate, jsonContext;
+                            gameInfo, contextPath, res) {
+        var jadeTemplate, jsonContext;
 
-            langPath = file.split('/')[1] + '/';
-            pageName = file.split('/')[2].split('.')[0];
+        langPath = file.split('/')[1] + '/';
+        pageName = file.split('/')[2].split('.')[0];
 
-            jadeTemplate = gameInfo.dir + 'view/templates/' + pageName +
-                '.jade';
+        jadeTemplate = gameInfo.dir + 'view/templates/' + pageName +
+            '.jade';
 
-            contextPath = gameInfo.dir + 'view/context/' + langPath +
-                pageName + '.json';
-            try {
-                jsonContext = require(contextPath);
-            }
-            catch (e) {
-                // redirect to 'page not found'
-                res.sendfile(gameInfo.dir + 'public/notFound.html'); //TODO: INSERT PROPER FILE
-                return;
-
-            }
-            res.render(jadeTemplate, jsonContext);
+        contextPath = gameInfo.dir + 'view/context/' + langPath +
+            pageName + '.json';
+        try {
+            jsonContext = require(contextPath);
         }
+        catch (e) {
+            // redirect to 'page not found'
+            res.sendfile(gameInfo.dir + 'public/notFound.html'); //TODO: INSERT PROPER FILE
+            return;
 
-    //    var cookieSessions = function(name) {
-    //        return function(req, res, next) {
-    //            req.session = req.signedCookies[name] || {};
-    //
-    //            res.on('header', function(){
-    //                res.signedCookie(name, req.session, { signed: true });
-    //            });
-    //
-    //            next();
-    //        }
-    //    }
-    //
-
-    //    app.get('/count', function(req, res){
-    //        req.session.count = req.session.count || 0;
-    //        var n = req.session.count++;
-    //        res.send('viewed ' + n + ' times\n');
-    //    })
-    //
-
-    //    app.use(express.cookieParser());
-    //    app.use(express.session({secret: 'This is a secret'}));
-    //    app.use(app.router);
-    //app.set('strict routing', false);
-
-    //    app.get('/cookie/:name', function(req, res) {
-    //        // res.cookie('name', 'value', {expires: new Date() + 90000000, maxAge: 90000000000});
-    //        //res.cookie('name', req.params.name)
-    //        req.session.name = req.params.name;
-    //        res.send('<p>To see who you are go <a href="/name">here</a></p>');
-    //    })
-    //
-    //    app.get('/name', function(req, res) {
-    //        res.send('<p>You are ' + req.session.name + '</p>');
-    ////        res.clearCookie('name');
-    ////        res.send('<p>You are ' + req.cookies.name + '</p>');
-    //    })
-    //
+        }
+        res.render(jadeTemplate, jsonContext);
+    }
 
     app.use(express.cookieParser());
 
@@ -252,7 +213,7 @@ function configure(app, servernode) {
 
             return;
         }
-
+        debugger
         // Instantiate templates, if needed and available.
         // `html/templates/page.jade` holds the template and
         // `html/context/lang/page.json` holds the context to instantiate
