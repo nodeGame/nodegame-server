@@ -91,11 +91,12 @@ function configure(app, servernode) {
     function renderTemplate(res, gameName, templatePath, contextPath, 
                             gameCacheContext) {
         var context;
-        debugger
+
         context = gameCacheContext[gameName][contextPath];
 
         if (context) {
             // TODO can modify context.
+            console.log('----------------------------------!!!!!!!!');
             res.render(templatePath, context);
             return;
         }
@@ -114,6 +115,8 @@ function configure(app, servernode) {
                 }
                 gameCacheContext[gameName][contextPath] = context;
             }
+            debugger
+            console.log('----------------------------------!!!!!!!!2');
             // Render anyway, with or without context.
             res.render(templatePath, context);
         });        
@@ -264,11 +267,32 @@ function configure(app, servernode) {
                 });
                 return;
             }
-            debugger
+
             // Check if it a template.
             basename = file.substr(0, file.lastIndexOf('.'));
-            templatePath = gameInfo.dir + 'views/templates/' + 
-                basename + '.jade';
+
+
+
+
+            // conlangPath = file.split('/')[1] + '/';
+            //pageName = ;
+
+            // Instantiate templates, if needed and available.
+            // `html/templates/page.jade` holds the template and
+            // `html/context/lang/page.json` holds the context to instantiate
+            // the page requested by `html/lang/page*`.
+            
+
+            // TODO: Matches too much: xx/xx/xx/xx/xx/
+            if (basename.match(/^[^\/]*\/.*$/)) {
+                templatePath = gameInfo.dir + 'views/templates/' +
+                    basename.split('/')[1] + '.jade';
+            }
+            else {
+                templatePath = gameInfo.dir + 'views/templates/' + 
+                    basename + '.jade';
+            }
+
             contextPath = gameInfo.dir + 'views/contexts/' + 
                 basename + '.json';
             
@@ -285,7 +309,6 @@ function configure(app, servernode) {
             else if ('undefined' === typeof gameCacheTemplate[gameName][templatePath]) {
 
                 fs.exists(templatePath, function(exists) {
-                    debugger
                     if (!exists) {
                         gameCacheTemplate[gameName][templatePath] = false;
                         res.sendfile(gameInfo.dir + 'public/notFound.html');
@@ -301,33 +324,7 @@ function configure(app, servernode) {
         return;
 
 
-
-        // Instantiate templates, if needed and available.
-        // `html/templates/page.jade` holds the template and
-        // `html/context/lang/page.json` holds the context to instantiate
-        // the page requested by `html/lang/page*`.
-        if (file.match(/^[^\/]*\/.*$/)) {
-            // Check whether existance of page has been assertained before.
-            if ('undefined' === typeof gameCachePublic[filePath]) {
-                fs.exists(filePath, function(exists) {
-                    gameCachePublic[filePath] = exists;
-                    if (exists) {
-                        res.sendfile(filePath);
-                    }
-                    else {
-                        createAndServe(langPath, pageName, file, gameInfo,
-                            contextPath, res);
-                    }
-                });
-                return;
-            }
-            // If it is known that page doesn't exist, render it from template.
-            if (!gameCachePublic[filePath]) {
-                createAndServe(langPath, pageName, file, gameInfo, contextPath,
-                    res);
-                return;
-            }
-        }
+ 
 
         // Send file (if it is a directory it is not sent).
         //res.sendfile(path.basename(filePath), {root: path.dirname(filePath)});
