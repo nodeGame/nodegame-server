@@ -214,6 +214,7 @@ function configure(app, servernode) {
             return;
         }
         debugger
+
         // Instantiate templates, if needed and available.
         // `html/templates/page.jade` holds the template and
         // `html/context/lang/page.json` holds the context to instantiate
