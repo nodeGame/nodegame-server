@@ -1,5 +1,8 @@
 # nodegame-server change log
 
+# 0.9.3
+ - Added log directory to index. Necessary to run immediately after npm install
+
 # 0.9.2
  - Fixed reconnection issue when client was not marked connected before trying to update it
  - Added a copy of patched static.js in bin/ for windows install
