@@ -116,7 +116,7 @@ function configure(app, servernode) {
                 gameCacheContext[gameName][contextPath] = context;
             }
             debugger
-            console.log('----------------------------------!!!!!!!!2');
+
             // Render anyway, with or without context.
             res.render(templatePath, context);
         });        
