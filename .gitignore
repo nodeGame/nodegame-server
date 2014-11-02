@@ -11,7 +11,13 @@ npm-debug.log
 
 *.swp
 
-log
+log/servernode
+log/channels
+log/channel
+log/messages
+log/clients
+log/client
+
 docs/
 
 *.geany
