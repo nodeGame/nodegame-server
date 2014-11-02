@@ -355,16 +355,16 @@ if (!JSON) {
 }());
 
 /**
- * # Shelf.JS
+ * # Shelf.JS 
  * Copyright 2014 Stefano Balietti
  * GPL licenses.
  *
  * Persistent Client-Side Storage
- *
+ * 
  * ---
  */
 (function(exports){
-
+    
     var version = '0.5';
 
     var store = exports.store = function(key, value, options, type) {
@@ -375,7 +375,7 @@ if (!JSON) {
 	    return;
 	}
 	store.log('Accessing ' + type + ' storage');
-
+	
 	return store.types[type](key, value, options);
     };
 
@@ -390,8 +390,8 @@ if (!JSON) {
     var mainStorageType = "volatile";
 
     //if Object.defineProperty works...
-    try {
-
+    try {	
+	
 	Object.defineProperty(store, 'type', {
 	    set: function(type){
 		if ('undefined' === typeof store.types[type]) {
@@ -419,7 +419,7 @@ if (!JSON) {
 	    options.type = type;
 	    return store(key, value, options);
 	};
-
+	
 	if (!store.type || store.type === "volatile") {
 	    store.type = type;
 	}
@@ -427,8 +427,8 @@ if (!JSON) {
 
     // TODO: create unit test
     store.onquotaerror = undefined;
-    store.error = function() {
-	console.log("shelf quota exceeded");
+    store.error = function() {	
+	console.log("shelf quota exceeded"); 
 	if ('function' === typeof store.onquotaerror) {
 	    store.onquotaerror(null);
 	}
@@ -438,7 +438,7 @@ if (!JSON) {
 	if (store.verbosity > 0) {
 	    console.log('Shelf v.' + version + ': ' + text);
 	}
-
+	
     };
 
     store.isPersistent = function() {
@@ -448,7 +448,7 @@ if (!JSON) {
     };
 
     //if Object.defineProperty works...
-    try {
+    try {	
 	Object.defineProperty(store, 'persistent', {
 	    set: function(){},
 	    get: store.isPersistent,
@@ -466,7 +466,7 @@ if (!JSON) {
 	}
 	return o;
     };
-
+    
     store.retrocycle = function(o) {
 	if (JSON && JSON.retrocycle && 'function' === typeof JSON.retrocycle) {
 	    o = JSON.retrocycle(o);
@@ -478,7 +478,7 @@ if (!JSON) {
 	if (!JSON || !JSON.stringify || 'function' !== typeof JSON.stringify) {
 	    throw new Error('JSON.stringify not found. Received non-string value and could not serialize.');
 	}
-
+	
 	o = store.decycle(o);
 	return JSON.stringify(o);
     };
@@ -494,7 +494,7 @@ if (!JSON) {
 		store.log(o);
 	    }
 	}
-
+	
 	o = store.retrocycle(o);
 	return o;
     };
@@ -502,16 +502,16 @@ if (!JSON) {
     // ## In-memory storage
     // ### fallback for all browsers to enable the API even if we can't persist data
     (function() {
-
+	
 	var memory = {},
 	timeout = {};
-
+	
 	function copy(obj) {
 	    return store.parse(store.stringify(obj));
 	}
 
 	store.addType("volatile", function(key, value, options) {
-
+	    
 	    if (!key) {
 		return copy(memory);
 	    }
@@ -545,11 +545,11 @@ if (!JSON) {
 }('undefined' !== typeof module && 'undefined' !== typeof module.exports ? module.exports: this));
 /**
  * ## Amplify storage for Shelf.js
- *
+ * 
  * v. 1.1.0 22.05.2013 a275f32ee7603fbae6607c4e4f37c4d6ada6c3d5
- *
- * Important! When updating to next Amplify.JS release, remember to change:
- *
+ * 
+ * Important! When updating to next Amplify.JS release, remember to change: 
+ * 
  * - JSON.stringify -> store.stringify to keep support for cyclic objects
  * - JSON.parse -> store.parse (cyclic objects)
  * - store.name -> store.prefix (check)
@@ -560,7 +560,7 @@ if (!JSON) {
  */
 (function(exports) {
 
-    var store = exports.store;
+    var store = exports.store;	
 
     if (!store) {
 	throw new Error('amplify.shelf.js: shelf.js core not found.');
@@ -793,14 +793,14 @@ if (!JSON) {
 /**
  * ## Cookie storage for Shelf.js
  * Copyright 2015 Stefano Balietti
- *
+ * 
  * Original library from:
  * See http://code.google.com/p/cookies/
  */
 (function(exports) {
 
     var store = exports.store;
-
+    
     if (!store) {
 	throw new Error('cookie.shelf.js: shelf.js core not found.');
     }
@@ -810,7 +810,7 @@ if (!JSON) {
     }
 
     var cookie = (function() {
-
+	
 	var resolveOptions, assembleOptionsString, parseCookies, constructor;
         var defaultOptions = {
 	    expiresAt: null,
@@ -818,7 +818,7 @@ if (!JSON) {
 	    domain:  null,
 	    secure: false
 	};
-
+	
 	/**
 	 * resolveOptions - receive an options object and ensure all options
          * are present and valid, replacing with defaults where necessary
@@ -829,7 +829,7 @@ if (!JSON) {
 	 * @return Object complete and valid options object
 	 */
 	resolveOptions = function(options){
-
+	    
 	    var returnValue, expireDate;
 
 	    if(typeof options !== 'object' || options === null){
@@ -867,7 +867,7 @@ if (!JSON) {
 
 	    return returnValue;
 	};
-
+	
 	/**
 	 * assembleOptionsString - analyze options and assemble appropriate string for setting a cookie with those options
 	 *
@@ -886,7 +886,7 @@ if (!JSON) {
 		    (options.secure === true ? '; secure' : '')
 	    );
 	};
-
+	
 	/**
 	 * parseCookies - retrieve document.cookie string and break it into a hash with values decoded and unserialized
 	 *
@@ -924,7 +924,7 @@ if (!JSON) {
 
 	constructor = function(){};
 
-
+	
 	/**
 	 * get - get one, several, or all cookies
 	 *
@@ -933,7 +933,7 @@ if (!JSON) {
 	 * @return Mixed - Value of cookie as set; Null:if only one cookie is requested and is not found; Object:hash of multiple or all cookies (if multiple or all requested);
 	 */
 	constructor.prototype.get = function(cookieName) {
-
+	    
 	    var returnValue, item, cookies = parseCookies();
 
 	    if(typeof cookieName === 'string') {
@@ -956,7 +956,7 @@ if (!JSON) {
 
 	    return returnValue;
 	};
-
+	
 	/**
 	 * filter - get array of cookies whose names match the provided RegExp
 	 *
@@ -979,7 +979,7 @@ if (!JSON) {
 
 	    return returnValue;
 	};
-
+	
 	/**
 	 * set - set or delete a cookie with desired options
 	 *
@@ -1001,13 +1001,13 @@ if (!JSON) {
 
 	    else if (typeof value !== 'string'){
                 //						if(typeof JSON === 'object' && JSON !== null && typeof store.stringify === 'function') {
-                //
+                //							
                 //							value = JSON.stringify(value);
                 //						}
                 //						else {
                 //							throw new Error('cookies.set() received non-string value and could not serialize.');
                 //						}
-
+		
 		value = store.stringify(value);
 	    }
 
@@ -1016,7 +1016,7 @@ if (!JSON) {
 
 	    document.cookie = cookieName + '=' + encodeURIComponent(value) + optionsString;
 	};
-
+	
 	/**
 	 * del - delete a cookie (domain and path options must match those with which the cookie was set; this is really an alias for set() with parameters simplified for this use)
 	 *
@@ -1045,7 +1045,7 @@ if (!JSON) {
 		}
 	    }
 	};
-
+	
 	/**
 	 * test - test whether the browser is accepting cookies
 	 *
@@ -1064,7 +1064,7 @@ if (!JSON) {
 
 	    return returnValue;
 	};
-
+	
 	/**
 	 * setOptions - set default options for calls to cookie methods
 	 *
@@ -1087,7 +1087,7 @@ if (!JSON) {
     if (cookie.test()) {
 
 	store.addType("cookie", function(key, value, options) {
-
+	    
 	    if ('undefined' === typeof key) {
 		return cookie.get();
 	    }
@@ -1095,14 +1095,14 @@ if (!JSON) {
 	    if ('undefined' === typeof value) {
 		return cookie.get(key);
 	    }
-
+	    
 	    // Set to NULL means delete
 	    if (value === null) {
 		cookie.del(key);
 		return null;
 	    }
 
-	    return cookie.set(key, value, options);
+	    return cookie.set(key, value, options);		
 	});
     }
 
@@ -1328,86 +1328,86 @@ if (!JSON) {
  * # ARRAY
  * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
- *
+ * 
  * Collection of static functions to manipulate arrays.
  */
 (function(JSUS) {
-
+    
     function ARRAY(){};
 
     /**
      * ## ARRAY.filter
-     *
+     * 
      * Add the filter method to ARRAY objects in case the method is not
-     * supported natively.
-     *
+     * supported natively. 
+     * 
      * @see https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/ARRAY/filter
      */
-    if (!Array.prototype.filter) {
-        Array.prototype.filter = function(fun /*, thisp */) {
-            "use strict";
-            if (this === void 0 || this === null) throw new TypeError();
+    if (!Array.prototype.filter) {  
+        Array.prototype.filter = function(fun /*, thisp */) {  
+            "use strict";  
+            if (this === void 0 || this === null) throw new TypeError();  
 
-            var t = Object(this);
-            var len = t.length >>> 0;
-            if (typeof fun !== "function") throw new TypeError();
-
-            var res = [];
-            var thisp = arguments[1];
-            for (var i = 0; i < len; i++) {
-                if (i in t) {
-                    var val = t[i]; // in case fun mutates this
-                    if (fun.call(thisp, val, i, t)) {
-                        res.push(val);
+            var t = Object(this);  
+            var len = t.length >>> 0;  
+            if (typeof fun !== "function") throw new TypeError();  
+            
+            var res = [];  
+            var thisp = arguments[1];  
+            for (var i = 0; i < len; i++) {  
+                if (i in t) {  
+                    var val = t[i]; // in case fun mutates this  
+                    if (fun.call(thisp, val, i, t)) { 
+                        res.push(val);  
                     }
                 }
-            }
-            return res;
+            }     
+            return res;  
         };
     }
 
     /**
      * ## ARRAY.isArray
-     *
+     * 
      * Returns TRUE if a variable is an Array
-     *
-     * This method is exactly the same as `Array.isArray`,
-     * but it works on a larger share of browsers.
-     *
+     * 
+     * This method is exactly the same as `Array.isArray`, 
+     * but it works on a larger share of browsers. 
+     * 
      * @param {object} o The variable to check.
      * @see Array.isArray
      */
     ARRAY.isArray = function(o) {
         if (!o) return false;
-        return Object.prototype.toString.call(o) === '[object Array]';
+        return Object.prototype.toString.call(o) === '[object Array]';  
     };
 
     /**
      * ## ARRAY.seq
-     *
+     * 
      * Returns an array of sequential numbers from start to end
-     *
+     * 
      * If start > end the series goes backward.
-     *
+     * 
      * The distance between two subsequent numbers can be controlled
      * by the increment parameter.
-     *
+     * 
      * When increment is not a divider of Abs(start - end), end will
      * be missing from the series.
-     *
+     * 
      * A callback function to apply to each element of the sequence
      * can be passed as fourth parameter.
-     *
+     *  
      * Returns FALSE, in case parameters are incorrectly specified
-     *
+     * 
      * @param {number} start The first element of the sequence
      * @param {number} end The last element of the sequence
-     * @param {number} increment Optional. The increment between two
+     * @param {number} increment Optional. The increment between two 
      *   subsequents element of the sequence
-     * @param {Function} func Optional. A callback function that can modify
+     * @param {Function} func Optional. A callback function that can modify 
      *   each number of the sequence before returning it
-     *
-     * @return {array} out The final sequence
+     *  
+     * @return {array} out The final sequence 
      */
     ARRAY.seq = function(start, end, increment, func) {
         var i;
@@ -1416,18 +1416,18 @@ if (!JSON) {
         if ('number' !== typeof end) return false;
         if (end === Infinity) return false;
         if (start === end) return [start];
-
+        
         if (increment === 0) return false;
         if (!JSUS.in_array(typeof increment, ['undefined', 'number'])) {
             return false;
         }
-
+        
         increment = increment || 1;
         func = func || function(e) {return e;};
-
+        
         i = start,
         out = [];
-
+        
         if (start < end) {
             while (i <= end) {
                 out.push(func(i));
@@ -1440,28 +1440,28 @@ if (!JSON) {
                 i = i - increment;
             }
         }
-
+        
         return out;
     };
 
     /**
      * ## ARRAY.each
-     *
+     * 
      * Executes a callback on each element of the array
-     *
+     * 
      * If an error occurs returns FALSE.
-     *
+     * 
      * @param {array} array The array to loop in
      * @param {Function} func The callback for each element in the array
      * @param {object} context Optional. The context of execution of the
      *   callback. Defaults ARRAY.each
-     *
+     * 
      * @return {Boolean} TRUE, if execution was successful
      */
     ARRAY.each = function(array, func, context) {
         if ('object' !== typeof array) return false;
         if (!func) return false;
-
+        
         context = context || this;
         var i, len = array.length;
         for (i = 0 ; i < len; i++) {
@@ -1472,13 +1472,13 @@ if (!JSON) {
 
     /**
      * ## ARRAY.map
-     *
+     * 
      * Applies a callback function to each element in the db, store
      * the results in an array and returns it
-     *
-     * Any number of additional parameters can be passed after the
+     * 
+     * Any number of additional parameters can be passed after the 
      * callback function
-     *
+     * 
      * @return {array} out The result of the mapping execution
      * @see ARRAY.each
      */
@@ -1487,7 +1487,7 @@ if (!JSON) {
         var args = Array.prototype.slice.call(arguments),
         array = args.shift(),
         func = args[0];
-
+        
         if (!ARRAY.isArray(array)) {
             JSUS.log('ARRAY.map() the first argument must be an array. ' +
                      'Found: ' + array);
@@ -1507,24 +1507,24 @@ if (!JSON) {
 
     /**
      * ## ARRAY.removeElement
-     *
+     * 
      * Removes an element from the the array, and returns it
-     *
-     * For objects, deep equality comparison is performed
+     * 
+     * For objects, deep equality comparison is performed 
      * through JSUS.equals.
-     *
+     * 
      * If no element is removed returns FALSE.
-     *
+     * 
      * @param {mixed} needle The element to search in the array
      * @param {array} haystack The array to search in
-     *
+     * 
      * @return {mixed} The element that was removed, FALSE if none was removed
      * @see JSUS.equals
      */
     ARRAY.removeElement = function(needle, haystack) {
         var func, i;
         if ('undefined' === typeof needle || !haystack) return false;
-
+        
         if ('object' === typeof needle) {
             func = JSUS.equals;
         }
@@ -1533,7 +1533,7 @@ if (!JSON) {
                 return (a === b);
             }
         }
-
+        
         for (i = 0; i < haystack.length; i++) {
             if (func(needle, haystack[i])){
                 return haystack.splice(i,1);
@@ -1543,25 +1543,25 @@ if (!JSON) {
     };
 
     /**
-     * ## ARRAY.inArray
-     *
+     * ## ARRAY.inArray 
+     * 
      * Returns TRUE if the element is contained in the array,
      * FALSE otherwise
-     *
-     * For objects, deep equality comparison is performed
+     * 
+     * For objects, deep equality comparison is performed 
      * through JSUS.equals.
-     *
+     * 
      * Alias ARRAY.in_array (deprecated)
-     *
+     * 
      * @param {mixed} needle The element to search in the array
      * @param {array} haystack The array to search in
      * @return {Boolean} TRUE, if the element is contained in the array
-     *
+     * 
      *  @see JSUS.equals
      */
     ARRAY.inArray = ARRAY.in_array = function(needle, haystack) {
         var func, i, len;
-        if (!haystack) return false;
+        if (!haystack) return false;        
         func = JSUS.equals, len = haystack.length;
         for (i = 0; i < len; i++) {
             if (func.call(this, needle, haystack[i])) {
@@ -1574,88 +1574,88 @@ if (!JSON) {
 
     /**
      * ## ARRAY.getNGroups
-     *
+     * 
      * Returns an array of N array containing the same number of elements
      * If the length of the array and the desired number of elements per group
      * are not multiple, the last group could have less elements
-     *
+     * 
      * The original array is not modified.
-     *
+     *  
      *  @see ARRAY.getGroupsSizeN
      *  @see ARRAY.generateCombinations
      *  @see ARRAY.matchN
-     *
+     *  
      * @param {array} array The array to split in subgroups
      * @param {number} N The number of subgroups
      * @return {array} Array containing N groups
-     */
+     */ 
     ARRAY.getNGroups = function(array, N) {
         return ARRAY.getGroupsSizeN(array, Math.floor(array.length / N));
     };
 
     /**
      * ## ARRAY.getGroupsSizeN
-     *
+     * 
      * Returns an array of array containing N elements each
      * The last group could have less elements
-     *
+     * 
      * @param {array} array The array to split in subgroups
      * @param {number} N The number of elements in each subgroup
      * @return {array} Array containing groups of size N
-     *
+     * 
      * @see ARRAY.getNGroups
      * @see ARRAY.generateCombinations
      * @see ARRAY.matchN
-     */
+     */ 
     ARRAY.getGroupsSizeN = function(array, N) {
-
+        
         var copy = array.slice(0);
         var len = copy.length;
         var originalLen = copy.length;
         var result = [];
-
+        
         // Init values for the loop algorithm.
         var i, idx;
         var group = [], count = 0;
         for (i=0; i < originalLen; i++) {
-
+            
             // Get a random idx between 0 and array length.
             idx = Math.floor(Math.random()*len);
-
+            
             // Prepare the array container for the elements of a new group.
             if (count >= N) {
                 result.push(group);
                 count = 0;
                 group = [];
             }
-
+            
             // Insert element in the group.
             group.push(copy[idx]);
-
+            
             // Update.
             copy.splice(idx,1);
             len = copy.length;
             count++;
         }
-
+        
         // Add any remaining element.
         if (group.length > 0) {
             result.push(group);
         }
-
+        
         return result;
     };
 
     /**
      * ## ARRAY._latinSquare
-     *
+     * 
      * Generate a random Latin Square of size S
-     *
-     * If N is defined, it returns "Latin Rectangle" (SxN)
-     *
-     * A parameter controls for self-match, i.e. whether the symbol "i"
+     * 
+     * If N is defined, it returns "Latin Rectangle" (SxN) 
+     * 
+     * A parameter controls for self-match, i.e. whether the symbol "i" 
      * is found or not in in column "i".
-     *
+     * 
      * @api private
      * @param {number} S The number of rows
      * @param {number} Optional. N The number of columns. Defaults N = S
@@ -1671,23 +1671,23 @@ if (!JSON) {
         for (var i=0; i< S; i++) {
             seq[i] = i;
         }
-
+        
         var idx = null;
-
+        
         var start = 0;
         var limit = S;
         var extracted = [];
         if (!self) {
             limit = S-1;
         }
-
+        
         for (i=0; i < N; i++) {
             do {
                 idx = JSUS.randomInt(start,limit);
             }
             while (JSUS.in_array(idx, extracted));
             extracted.push(idx);
-
+            
             if (idx == 1) {
                 latin[i] = seq.slice(idx);
                 latin[i].push(0);
@@ -1695,19 +1695,19 @@ if (!JSON) {
             else {
                 latin[i] = seq.slice(idx).concat(seq.slice(0,(idx)));
             }
-
+            
         }
-
+        
         return latin;
     };
 
     /**
      * ## ARRAY.latinSquare
-     *
+     * 
      * Generate a random Latin Square of size S
-     *
-     * If N is defined, it returns "Latin Rectangle" (SxN)
-     *
+     * 
+     * If N is defined, it returns "Latin Rectangle" (SxN) 
+     * 
      * @param {number} S The number of rows
      * @param {number} Optional. N The number of columns. Defaults N = S
      * @return {array} The resulting latin square (or rectangle)
@@ -1716,18 +1716,18 @@ if (!JSON) {
         if (!N) N = S;
         if (!S || S < 0 || (N < 0)) return false;
         if (N > S) N = S;
-
+        
         return ARRAY._latinSquare(S, N, true);
     };
 
     /**
      * ## ARRAY.latinSquareNoSelf
-     *
-     * Generate a random Latin Square of size Sx(S-1), where
+     * 
+     * Generate a random Latin Square of size Sx(S-1), where 
      * in each column "i", the symbol "i" is not found
-     *
+     * 
      * If N < S, it returns a "Latin Rectangle" (SxN)
-     *
+     * 
      * @param {number} S The number of rows
      * @param {number} Optional. N The number of columns. Defaults N = S-1
      * @return {array} The resulting latin square (or rectangle)
@@ -1736,20 +1736,20 @@ if (!JSON) {
         if (!N) N = S-1;
         if (!S || S < 0 || (N < 0)) return false;
         if (N > S) N = S-1;
-
+        
         return ARRAY._latinSquare(S, N, false);
     }
 
 
     /**
      * ## ARRAY.generateCombinations
-     *
-     * Generates all distinct combinations of exactly r elements each
-     *
+     * 
+     * Generates all distinct combinations of exactly r elements each 
+     *  
      * @param {array} array The array from which the combinations are extracted
      * @param {number} r The number of elements in each combination
      * @return {array} The total sets of combinations
-     *
+     *  
      * @see ARRAY.getGroupSizeN
      * @see ARRAY.getNGroups
      * @see ARRAY.matchN
@@ -1772,27 +1772,27 @@ if (!JSON) {
             indices[i] += 1;
             for (var j = i + 1; j < r; j++) indices[j] = indices[i] + j - i;
         }
-        return values(indices, array);
+        return values(indices, array); 
     };
 
     /**
      * ## ARRAY.matchN
-     *
+     * 
      * Match each element of the array with N random others
-     *
+     * 
      * If strict is equal to true, elements cannot be matched multiple times.
-     *
-     * *Important*: this method has a bug / feature. If the strict parameter
+     * 
+     * *Important*: this method has a bug / feature. If the strict parameter 
      * is set, the last elements could remain without match, because all the
      * other have been already used. Another recombination would be able
      * to match all the elements instead.
-     *
+     * 
      * @param {array} array The array in which operate the matching
      * @param {number} N The number of matches per element
      * @param {Boolean} strict Optional. If TRUE, matched elements cannot be
-     *   repeated. Defaults, FALSE
+     *   repeated. Defaults, FALSE 
      * @return {array} result The results of the matching
-     *
+     * 
      * @see ARRAY.getGroupSizeN
      * @see ARRAY.getNGroups
      * @see ARRAY.generateCombinations
@@ -1801,7 +1801,7 @@ if (!JSON) {
         var result, i, copy, group;
         if (!array) return;
         if (!N) return array;
-
+        
         result = [],
         len = array.length,
         found = [];
@@ -1818,7 +1818,7 @@ if (!JSON) {
             // Re-add the current element.
             group.splice(0,0,array[i]);
             result.push(group);
-
+            
             // Update.
             group = [];
         }
@@ -1827,12 +1827,12 @@ if (!JSON) {
 
     /**
      * ## ARRAY.rep
-     *
+     * 
      * Appends an array to itself a number of times and return a new array
-     *
+     * 
      * The original array is not modified.
-     *
-     * @param {array} array the array to repeat
+     * 
+     * @param {array} array the array to repeat 
      * @param {number} times The number of times the array must be appended
      *   to itself
      * @return {array} A copy of the original array appended to itself
@@ -1845,7 +1845,7 @@ if (!JSON) {
             JSUS.log('times must be greater or equal 1', 'ERR');
             return;
         }
-
+        
         i = 1, result = array.slice(0);
         for (; i < times; i++) {
             result = result.concat(array);
@@ -1855,31 +1855,31 @@ if (!JSON) {
 
     /**
      * ## ARRAY.stretch
-     *
+     * 
      * Repeats each element of the array N times
-     *
-     * N can be specified as an integer or as an array. In the former case all
+     * 
+     * N can be specified as an integer or as an array. In the former case all 
      * the elements are repeat the same number of times. In the latter, each
      * element can be repeated a custom number of times. If the length of the
      * `times` array differs from that of the array to stretch a recycle rule
      * is applied.
-     *
+     * 
      * The original array is not modified.
-     *
+     * 
      * E.g.:
-     *
+     * 
      * ```js
      *  var foo = [1,2,3];
-     *
+     * 
      *  ARRAY.stretch(foo, 2); // [1, 1, 2, 2, 3, 3]
-     *
+     * 
      *  ARRAY.stretch(foo, [1,2,3]); // [1, 2, 2, 3, 3, 3];
      *
      *  ARRAY.stretch(foo, [2,1]); // [1, 1, 2, 3, 3];
      * ```
-     *
+     * 
      * @param {array} array the array to strech
-     * @param {number|array} times The number of times each element
+     * @param {number|array} times The number of times each element 
      *   must be repeated
      * @return {array} A stretched copy of the original array
      */
@@ -1894,7 +1894,7 @@ if (!JSON) {
             }
             times = ARRAY.rep([times], array.length);
         }
-
+        
         result = [];
         for (i = 0; i < array.length; i++) {
             repeat = times[(i % times.length)];
@@ -1908,11 +1908,11 @@ if (!JSON) {
 
     /**
      * ## ARRAY.arrayIntersect
-     *
+     * 
      * Computes the intersection between two arrays
-     *
+     * 
      * Arrays can contain both primitive types and objects.
-     *
+     * 
      * @param {array} a1 The first array
      * @param {array} a2 The second array
      * @return {array} All the values of the first array that are found
@@ -1923,17 +1923,17 @@ if (!JSON) {
             return JSUS.in_array(i, a2);
         });
     };
-
+    
     /**
      * ## ARRAY.arrayDiff
-     *
+     * 
      * Performs a diff between two arrays
-     *
+     * 
      * Arrays can contain both primitive types and objects.
-     *
+     * 
      * @param {array} a1 The first array
      * @param {array} a2 The second array
-     * @return {array} All the values of the first array that are not
+     * @return {array} All the values of the first array that are not 
      *   found in the second one
      */
     ARRAY.arrayDiff = function(a1, a2) {
@@ -1944,14 +1944,14 @@ if (!JSON) {
 
     /**
      * ## ARRAY.shuffle
-     *
+     * 
      * Shuffles the elements of the array using the Fischer algorithm
-     *
+     * 
      * The original array is not modified, and a copy is returned.
-     *
+     * 
      * @param {array} shuffle The array to shuffle
      * @return {array} copy The shuffled array
-     *
+     * 
      * @see http://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle
      */
     ARRAY.shuffle = function(array) {
@@ -1970,35 +1970,35 @@ if (!JSON) {
 
     /**
      * ## ARRAY.getNRandom
-     *
+     * 
      * Select N random elements from the array and returns them
-     *
+     * 
      * @param {array} array The array from which extracts random elements
      * @paran {number} N The number of random elements to extract
      * @return {array} An new array with N elements randomly chosen
      */
     ARRAY.getNRandom = function(array, N) {
         return ARRAY.shuffle(array).slice(0,N);
-    };
-
+    };                           
+    
     /**
      * ## ARRAY.distinct
-     *
+     * 
      * Removes all duplicates entries from an array and returns a copy of it
-     *
+     * 
      * Does not modify original array.
-     *
+     * 
      * Comparison is done with `JSUS.equals`.
-     *
+     * 
      * @param {array} array The array from which eliminates duplicates
      * @return {array} out A copy of the array without duplicates
-     *
+     * 
      * @see JSUS.equals
      */
     ARRAY.distinct = function(array) {
         var out = [];
         if (!array) return out;
-
+        
         ARRAY.each(array, function(e) {
             if (!ARRAY.in_array(e, out)) {
                 out.push(e);
@@ -2009,9 +2009,9 @@ if (!JSON) {
 
     /**
      * ## ARRAY.transpose
-     *
+     * 
      * Transposes a given 2D array.
-     *
+     * 
      * The original array is not modified, and a new copy is
      * returned.
      *
@@ -2019,25 +2019,25 @@ if (!JSON) {
      * @return {array} The Transposed Array
      */
     ARRAY.transpose = function(array) {
-        if (!array) return;
-
+        if (!array) return;  
+        
         // Calculate width and height
-        var w, h, i, j, t = [];
+        var w, h, i, j, t = []; 
         w = array.length || 0;
         h = (ARRAY.isArray(array[0])) ? array[0].length : 0;
         if (w === 0 || h === 0) return t;
-
+        
         for ( i = 0; i < h; i++) {
             t[i] = [];
-            for ( j = 0; j < w; j++) {
+            for ( j = 0; j < w; j++) {     
                 t[i][j] = array[j][i];
             }
-        }
+        } 
         return t;
     };
 
     JSUS.extend(ARRAY);
-
+    
 })('undefined' !== typeof JSUS ? JSUS : module.parent.exports.JSUS);
 /**
  * # DOM
@@ -2295,11 +2295,11 @@ if (!JSON) {
                 throw new TypeError('DOM.shuffleNodes: order must array.');
             }
             if (order.length !== parent.children.length) {
-                throw new Error('DOM.shuffleNodes: order length must match ' +
+                throw new Error('DOM.shuffleNodes: order length must match ' + 
                                 'the number of children nodes.');
             }
         }
-
+        
         len = parent.children.length, idOrder = [];
         if (!order) order = JSUS.sample(0,len);
         for (i = 0 ; i < len; i++) {
@@ -2311,7 +2311,7 @@ if (!JSON) {
         for (i = 0 ; i < len; i++) {
             parent.appendChild(parent.children[idOrder[i]]);
         }
-
+        
         return idOrder;
     };
 
@@ -2319,7 +2319,7 @@ if (!JSON) {
      * ### DOM.getElement
      *
      * Creates a generic HTML element with id and attributes as specified
-     *
+     * 
      * @param {string} elem The name of the tag
      * @param {string} id Optional. The id of the tag
      * @param {object} attributes Optional. Object containing attributes for
@@ -2953,7 +2953,7 @@ if (!JSON) {
     };
 
     // ## IFRAME
-
+    
     /**
      * ### DOM.getIFrameDocument
      *
@@ -2992,7 +2992,7 @@ if (!JSON) {
     /**
      * ### DOM.disableRightClick
      *
-     * Disables the popup of the context menu by right clicking with the mouse
+     * Disables the popup of the context menu by right clicking with the mouse 
      *
      * @param {Document} Optional. A target document object. Defaults, document
      *
@@ -3023,9 +3023,9 @@ if (!JSON) {
     /**
      * ### DOM.enableRightClick
      *
-     * Enables the popup of the context menu by right clicking with the mouse
+     * Enables the popup of the context menu by right clicking with the mouse 
      *
-     * It unregisters the event handlers created by `DOM.disableRightClick`
+     * It unregisters the event handlers created by `DOM.disableRightClick` 
      *
      * @param {Document} Optional. A target document object. Defaults, document
      *
@@ -3607,7 +3607,7 @@ if (!JSON) {
      * Copies only non-overlapping properties from obj2 to obj1
      *
      * Check only if a property is defined, not its value.
-     * Original object is modified.
+     * Original object is modified. 
      *
      * @param {object} obj1 The object to which the new properties will be added
      * @param {object} obj2 The mixin-in object
@@ -4202,22 +4202,22 @@ if (!JSON) {
      * Returns a new generator of normally distributed pseudo random numbers
      *
      * The generator is independent from RANDOM.nextNormal
-     *
-     * @return {function} An independent generator
-     *
+     * 
+     * @return {function} An independent generator 
+     * 
      * @see RANDOM.nextNormal
      */
     RANDOM.getNormalGenerator = function() {
 
         return (function() {
 
-            var oldMu, oldSigma;
-            var x2, multiplier, genReady;
-
+            var oldMu, oldSigma;    
+            var x2, multiplier, genReady;    
+            
             return function normal(mu, sigma) {
-
+                
                 var x1, u1, u2, v1, v2, s;
-
+                
                 if ('number' !== typeof mu) {
                     throw new TypeError('nextNormal: mu must be number.');
                 }
@@ -4231,35 +4231,35 @@ if (!JSON) {
                     oldSigma = sigma;
                 }
 
-                if (genReady) {
+                if (genReady) {     
                     genReady = false;
                     return (sigma * x2) + mu;
                 }
-
+                
                 u1 = Math.random();
                 u2 = Math.random();
-
+                
                 // Normalize between -1 and +1.
                 v1 = (2 * u1) - 1;
-                v2 = (2 * u2) - 1;
-
+                v2 = (2 * u2) - 1; 
+                
                 s = (v1 * v1) + (v2 * v2);
-
-                // Condition is true on average 1.27 times,
+                
+                // Condition is true on average 1.27 times, 
                 // with variance equal to 0.587.
                 if (s >= 1) {
                     return normal(mu, sigma);
                 }
-
+                
                 multiplier = Math.sqrt(-2 * Math.log(s) / s);
-
+                
                 x1 = v1 * multiplier;
                 x2 = v2 * multiplier;
-
+                
                 genReady = true;
-
+                
                 return (sigma * x1) + mu;
-
+                
             }
         })();
     }
@@ -4267,12 +4267,12 @@ if (!JSON) {
     /**
      * Generates random numbers with Normal Gaussian distribution.
      *
-     * User must specify the expected mean, and standard deviation a input
+     * User must specify the expected mean, and standard deviation a input 
      * parameters.
      *
      * Implements the Polar Method by Knuth, "The Art Of Computer
      * Programming", p. 117.
-     *
+     * 
      * @param {number} mu The mean of the distribution
      * param {number} sigma The standard deviation of the distribution
      * @return {number} A random number following a Normal Gaussian distribution
@@ -4286,12 +4286,12 @@ if (!JSON) {
      *
      * User must specify the expected mean, and standard deviation of the
      * underlying gaussian distribution as input parameters.
-     *
+     * 
      * @param {number} mu The mean of the gaussian distribution
      * @param {number} sigma The standard deviation of the gaussian distribution
      * @return {number} A random number following a LogNormal distribution
      *
-     * @see RANDOM.nextNormal
+     * @see RANDOM.nextNormal 
      */
     RANDOM.nextLogNormal = function(mu, sigma) {
         if ('number' !== typeof mu) {
@@ -4307,8 +4307,8 @@ if (!JSON) {
      * Generates random numbers with Exponential distribution.
      *
      * User must specify the lambda the _rate parameter_ of the distribution.
-     * The expected mean of the distribution is equal to `Math.pow(lamba, -1)`.
-     *
+     * The expected mean of the distribution is equal to `Math.pow(lamba, -1)`. 
+     * 
      * @param {number} lambda The rate parameter
      * @return {number} A random number following an Exponential distribution
      */
@@ -4321,12 +4321,12 @@ if (!JSON) {
         }
         return - Math.log(1 - Math.random()) / lambda;
     }
-
+    
     /**
      * Generates random numbers following the Binomial distribution.
      *
      * User must specify the probability of success and the number of trials.
-     *
+     * 
      * @param {number} p The probability of success
      * @param {number} trials The number of trials
      * @return {number} sum The sum of successes in n trials
@@ -4346,17 +4346,17 @@ if (!JSON) {
         if (trials < 1) {
             throw new TypeError('nextBinomial: trials must be greater than 0.');
         }
-
+        
         counter = 0;
         sum = 0;
-
+        
         while(counter < trials){
-	    if (Math.random() < p) {
+	    if (Math.random() < p) {	
 	        sum += 1;
             }
 	    counter++;
         }
-
+	
         return sum;
     };
 
@@ -4391,7 +4391,7 @@ if (!JSON) {
 
         intK = Math.floor(k) + 3;
         kDiv = 1 / k;
-
+        
         alphaDiv = 1 / alpha;
 
         x = 0;
@@ -4399,14 +4399,14 @@ if (!JSON) {
             x += Math.log(Math.random());
         }
 
-        x *= - alphaDiv;
+        x *= - alphaDiv; 
 
-        tmp = Math.log(u3) *
+        tmp = Math.log(u3) * 
             (Math.pow(u1, kDiv) /
              ((Math.pow(u1, kDiv) + Math.pow(u2, 1 / (1 - k)))));
-
+        
         tmp *=  - alphaDiv;
-
+        
         return x + tmp;
     }
 
@@ -4555,7 +4555,7 @@ JSUS.extend(TIME);
         name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
         regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
         results = regex.exec(referer);
-        return results == null ? false :
+        return results == null ? false : 
             decodeURIComponent(results[1].replace(/\+/g, " "))
     };
 
@@ -4565,12 +4565,12 @@ JSUS.extend(TIME);
      * Splits a string in tokens that users can specified as input parameter.
      * Additional options can be specified with the modifiers parameter
      *
-     * - limit: An integer that specifies the number of split items
+     * - limit: An integer that specifies the number of split items 
      *     after the split limit will not be included in the array
      *
      * @param {string} str The string to split
      * @param {array} separators Array containing the separators words
-     * @param {object} modifiers Optional. Configuration options
+     * @param {object} modifiers Optional. Configuration options 
      *   for the tokenizing
      *
      * @return {array} Tokens in which the string was split
@@ -5205,7 +5205,7 @@ JSUS.extend(TIME);
             RegExp.escape = function(str) {
                 return str.replace(/([.*+?^=!:${}()|[\]\/\\])/g, '\\$1');
             };
-
+            
             regex = RegExp.escape(value);
             regex = regex.replace(/%/g, '.*').replace(/_/g, '.');
             regex = new RegExp('^' + regex + '$', sensitive);
@@ -5222,12 +5222,12 @@ JSUS.extend(TIME);
                         }
                     }
                 };
-            }
+            } 
             else if (d === '*') {
                 return function(elem) {
                     var d;
                     for (d in elem) {
-                        if ('undefined' !== typeof elem[d]) {
+                        if ('undefined' !== typeof elem[d]) { 
                             if (regex.test(elem[d])) {
                                 return elem;
                             }
@@ -5237,7 +5237,7 @@ JSUS.extend(TIME);
             }
             else {
                 return function(elem) {
-                    if ('undefined' !== typeof elem[d]) {
+                    if ('undefined' !== typeof elem[d]) { 
                         if (regex.test(elem[d])) {
                             return elem;
                         }
@@ -5246,15 +5246,15 @@ JSUS.extend(TIME);
             }
         }
 
-        // Like operator (Case Sensitive).
+        // Like operator (Case Sensitive). 
         this.filters['LIKE'] = function likeOperator(d, value, comparator) {
             return generalLike(d, value, comparator);
         };
-
-        // Like operator (Case Insensitive).
+    
+        // Like operator (Case Insensitive). 
         this.filters['iLIKE'] = function likeOperatorI(d, value, comparator) {
             return generalLike(d, value, comparator, 'i');
-        };
+        };            
 
     };
 
@@ -5570,7 +5570,7 @@ JSUS.extend(TIME);
 
         // Cloning.
         options = J.clone(options);
-
+        
         // Removing unwanted options.
         for (i in leaveOut) {
             if (leaveOut.hasOwnProperty(i)) {
@@ -6020,7 +6020,7 @@ JSUS.extend(TIME);
                 this._viewIt(o);
             };
         }
-
+ 
         // Reset current indexes.
         this.resetIndexes({h: h, v: v, i: i});
 
@@ -6035,22 +6035,35 @@ JSUS.extend(TIME);
      *
      * Indexes an element
      *
+     * Parameter _oldIdx_ is needed if indexing is updating a previously
+     * indexed item. In fact if new index is different, the old one must
+     * be deleted.
+     *
      * @param {object} o The element to index
-     * @param {object} o The position of the element in the database array
+     * @param {number} dbidx The position of the element in the database array
+     * @param {string} oldIdx Optional. The old index name, if any.
      */
-    NDDB.prototype._indexIt = function(o, dbidx) {
+    NDDB.prototype._indexIt = function(o, dbidx, oldIdx) {
         var func, id, index, key;
         if (!o || J.isEmpty(this.__I)) return;
-
+        oldIdx = undefined;
         for (key in this.__I) {
             if (this.__I.hasOwnProperty(key)) {
                 func = this.__I[key];
                 index = func(o);
-
-                if ('undefined' === typeof index) continue;
-
-                if (!this[key]) this[key] = new NDDBIndex(key, this);
-                this[key]._add(index, dbidx);
+                // If the same object has been  previously
+                // added with another index delete the old one.
+                if (index !== oldIdx) {
+                    if ('undefined' !== typeof oldIdx) {
+                        if ('undefined' !== typeof this[key].resolve[oldIdx]) {
+                            delete this[key].resolve[oldIdx];
+                        }
+                    }
+                }
+                if ('undefined' !== typeof index) { 
+                    if (!this[key]) this[key] = new NDDBIndex(key, this);
+                    this[key]._add(index, dbidx);
+                }
             }
         }
     };
@@ -6080,7 +6093,7 @@ JSUS.extend(TIME);
                     settings = this.cloneSettings({V: ''});
                     this[key] = new NDDB(settings);
                 }
-                this[key].insert(o);
+                this[key].insert(o);1
             }
         }
     };
@@ -6203,8 +6216,8 @@ JSUS.extend(TIME);
     function queryError(text, d, op, value) {
         var miss, err;
         miss = '(?)';
-        err = this._getConstrName() + '._analyzeQuery: ' + text +
-            '. Malformed query: ' + d || miss + ' ' + op || miss +
+        err = this._getConstrName() + '._analyzeQuery: ' + text + 
+            '. Malformed query: ' + d || miss + ' ' + op || miss + 
             ' ' + value || miss + '.';
         throw new Error(err);
     }
@@ -6246,7 +6259,7 @@ JSUS.extend(TIME);
             if (J.in_array(op,['><', '<>', 'in', '!in'])) {
 
                 if (!(value instanceof Array)) {
-                    errText = 'range-queries need an array as third parameter';
+                    errText = 'range-queries need an array as third parameter';                        
                     queryError.call(this, errText, d, op, value);
                 }
                 if (op === '<>' || op === '><') {
@@ -7500,11 +7513,13 @@ JSUS.extend(TIME);
      * @see JSUS.arrayDiff
      */
     NDDB.prototype.diff = function(nddb) {
-        if (!nddb || !nddb.length) return this;
         if ('object' === typeof nddb) {
             if (nddb instanceof NDDB || nddb instanceof this.constructor) {
                 nddb = nddb.db;
             }
+        }
+        if (!nddb || !nddb.length) {
+            return this.breed([]);
         }
         return this.breed(J.arrayDiff(this.db, nddb));
     };
@@ -7526,11 +7541,13 @@ JSUS.extend(TIME);
      * @see JSUS.arrayIntersect
      */
     NDDB.prototype.intersect = function(nddb) {
-        if (!nddb || !nddb.length) return this;
         if ('object' === typeof nddb) {
             if (nddb instanceof NDDB || nddb instanceof this.constructor) {
-                var nddb = nddb.db;
+                nddb = nddb.db;
             }
+        }
+        if (!nddb || !nddb.length) {
+            return this.breed([]);
         }
         return this.breed(J.arrayIntersect(this.db, nddb));
     };
@@ -8154,7 +8171,7 @@ JSUS.extend(TIME);
      * @see NDDBIndex.get
      * @see NDDBIndex.remove
      */
-        NDDBIndex.prototype.update = function(idx, update) {
+    NDDBIndex.prototype.update = function(idx, update) {
         var o, dbidx, nddb;
         dbidx = this.resolve[idx];
         if ('undefined' === typeof dbidx) return false;
@@ -8165,7 +8182,7 @@ JSUS.extend(TIME);
         // We do indexes separately from the other components of _autoUpdate
         // to avoid looping through all the other elements that are unchanged.
         if (nddb.__update.indexes) {
-            nddb._indexIt(o, dbidx);
+            nddb._indexIt(o, dbidx, idx);
             nddb._hashIt(o);
             nddb._viewIt(o);
         }
@@ -8604,6 +8621,7 @@ JSUS.extend(TIME);
     'undefined' != typeof node ? node : module.exports
   , 'undefined' != typeof node ? node : module.parent.exports
 );
+
 /**
  * # ErrorManager
  * Copyright(c) 2014 Stefano Balietti
@@ -8747,6 +8765,7 @@ JSUS.extend(TIME);
     'undefined' != typeof node ? node : module.exports,
     'undefined' != typeof node ? node : module.parent.exports
 );
+
 /**
  * # EventEmitter
  *
@@ -10728,6 +10747,7 @@ JSUS.extend(TIME);
     exports.Stager = Stager;
 
     var stepRules = parent.stepRules;
+    var J = parent.JSUS;
 
     /**
      * ## Stager constructor
@@ -10741,11 +10761,21 @@ JSUS.extend(TIME);
      */
     function Stager(stateObj) {
         if (stateObj) {
+            if ('object' !== typeof stateObj) {
+                throw new TypeError('Stager: stateObj must be object.');
+            }
             this.setState(stateObj);
         }
         else {
             this.clear();
         }
+
+        /**
+         * ## Stager.log
+         *
+         * Default stdout output. Override to redirect.
+         */
+        this.log = console.log;
     }
 
     // ## Stager methods
@@ -10905,8 +10935,8 @@ JSUS.extend(TIME);
      * The callback given here is used to determine the next stage.
      *
      * @param {function|null} func The decider callback. It should return the
-     *  name of the next stage, 'NODEGAME_GAMEOVER' to end the game or FALSE for
-     *  sequence end. NULL can be given to signify non-existence.
+     *   name of the next stage, 'NODEGAME_GAMEOVER' to end the game or FALSE
+     *   for sequence end. NULL can be given to signify non-existence.
      *
      * @return {boolean} TRUE on success, FALSE on error
      */
@@ -11048,7 +11078,6 @@ JSUS.extend(TIME);
         if (!defaultProperties || 'object' !== typeof defaultProperties) {
             throw new Error('Stager.setDefaultProperties: ' +
                             'expecting an object as parameter.');
-            return false;
         }
 
         this.defaultProperties = defaultProperties;
@@ -11085,7 +11114,6 @@ JSUS.extend(TIME);
         if (func !== null && 'function' !== typeof func) {
             throw new Error('Stager.setOnInit: ' +
                             'expecting a function as parameter.');
-            return false;
         }
 
         this.onInit = func;
@@ -11122,7 +11150,6 @@ JSUS.extend(TIME);
         if (func !== null && 'function' !== typeof func) {
             throw new Error('Stager.setOnGameover: ' +
                             'expecting a function as parameter.');
-            return false;
         }
 
         this.onGameover = func;
@@ -11134,8 +11161,6 @@ JSUS.extend(TIME);
      *
      * Alias for `setOnGameover`
      *
-     * A rescue net in case of human error.
-     *
      * @see Stager.setOnGameover
      */
     Stager.prototype.setOnGameOver = Stager.prototype.setOnGameover;
@@ -11145,8 +11170,7 @@ JSUS.extend(TIME);
      *
      * Gets onGameover function
      *
-     * @return {function|null} The onGameover function.
-     *  NULL signifies non-existence.
+     * @return {function|null} The onGameover function, or NULL if none is found
      *
      * @see Stager.onGameover
      */
@@ -11167,12 +11191,11 @@ JSUS.extend(TIME);
      *
      * @param {object} step A valid step object. Shallowly copied.
      *
-     * @return {boolean} TRUE on success, FALSE on error
+     * @return {boolean} TRUE on success
      */
     Stager.prototype.addStep = function(step) {
         if (!this.checkStepValidity(step)) {
             throw new Error('Stager.addStep: invalid step received.');
-            return false;
         }
 
         this.steps[step.id] = step;
@@ -11202,27 +11225,101 @@ JSUS.extend(TIME);
      * @see Stager.addStep
      */
     Stager.prototype.addStage = function(stage) {
-        var rc;
+        var res;
 
         // Handle wrapped steps:
         if (this.checkStepValidity(stage)) {
-            if (!this.addStep(stage)) return false;
-            if (!this.addStage({
+            res = this.addStep(stage)
+            if (!res) return false;
+            res = this.addStage({
                 id: stage.id,
                 steps: [ stage.id ]
-            })) return false;
-
+            });
+            if (!res) return false;
             return true;
         }
 
-        rc = this.checkStageValidity(stage);
-        if (rc !== null) {
-            throw new Error('Stager.addStage: invalid stage received - ' + rc);
-            return false;
+        res = this.checkStageValidity(stage);
+        if (res !== null) {
+            throw new Error('Stager.addStage: invalid stage received - ' + res);
         }
 
-        this.stages[stage.id] = stage;
+        if (!this.stages.hasOwnProperty(stage.id)) {
+            this.stages[stage.id] = stage;
+        }
+        else {
+            this.extendStage(stage);
+        }
+
         return true;
+    };
+
+    /**
+     * ### Stager.extendStep
+     *
+     * Extends existing step
+     *
+     * Extends an existing game step object. The extension object must have at
+     * least an id field that matches an already existing step.
+     *
+     * If a valid object is provided, the fields of the new object are merged
+     * into the existing object (done via JSUS.mixin). Note that this overwrites
+     * already existing fields if the new object redefines them.
+     *
+     * @param {object} step This object must have an 'id' field that matches an
+     *                      existing step.
+     *
+     * @see Stager.addStep
+     */
+    Stager.prototype.extendStep = function(step) {
+        if (!step || 'object' !== typeof step) {
+            throw new Error('Stager.extendStep: "step" must be object');
+        }
+
+        if ('string' !== typeof step.id) {
+            throw new Error('Stager.extendStep: "step.id" must be a string');
+        }
+
+        if (!this.steps[step.id]) {
+            throw new Error('Stager.extendStep: ' + step.id +
+                            ' does not name an existing step');
+        }
+
+        J.mixin(this.steps[step.id], step);
+    };
+
+    /**
+     * ### Stager.extendStage
+     *
+     * Extends existing stage
+     *
+     * Extends an existing game stage object. The extension object must have at
+     * least an id field that matches an already existing stage.
+     *
+     * If a valid object is provided, the fields of the new object are merged
+     * into the existing object (done via JSUS.mixin). Note that this overwrites
+     * already existing fields if the new object redefines them.
+     *
+     * @param {object} stage This object must have an 'id' field that matches an
+     *                       existing stage.
+     *
+     * @see Stager.addStage
+     */
+    Stager.prototype.extendStage = function(stage) {
+        if (!stage || 'object' !== typeof stage) {
+            throw new Error('Stager.extendStage: "stage" must be object');
+        }
+
+        if ('string' !== typeof stage.id) {
+            throw new Error('Stager.extendStage: "stage.id" must be a string');
+        }
+
+        if (!this.stages[stage.id]) {
+            throw new Error('Stager.extendStage: ' + stage.id +
+                            ' does not name an existing stage');
+        }
+
+        J.mixin(this.stages[stage.id], stage);
     };
 
     /**
@@ -11267,11 +11364,10 @@ JSUS.extend(TIME);
      * @see Stager.addStage
      */
     Stager.prototype.next = function(id) {
-        var stageName = this.handleAlias(id);
+        var stageName = handleAlias(this, id);
 
         if (stageName === null) {
             throw new Error('Stager.next: invalid stage name received.');
-            return null;
         }
 
         this.sequence.push({
@@ -11296,17 +11392,15 @@ JSUS.extend(TIME);
      * @see Stager.next
      */
     Stager.prototype.repeat = function(id, nRepeats) {
-        var stageName = this.handleAlias(id);
+        var stageName = handleAlias(this, id);
 
         if (stageName === null) {
             throw new Error('Stager.repeat: received invalid stage name.');
-            return null;
         }
 
         if ('number' !== typeof nRepeats) {
             throw new Error('Stager.repeat: ' +
                             'received invalid number of repetitions.');
-            return null;
         }
 
         this.sequence.push({
@@ -11317,34 +11411,6 @@ JSUS.extend(TIME);
 
         return this;
     };
-
-
-    function addLoop(that, type, id, func) {
-        var stageName = that.handleAlias(id);
-
-        if (stageName === null) {
-            throw new Error('Stager.' + type +
-                            ': received invalid stage name.');
-            return null;
-        }
-
-        if ('undefined' === typeof func) {
-            func = function() { return true; };
-        }
-
-        if ('function' !== typeof func) {
-            throw new Error('Stager.' + type + ': received invalid callback.');
-            return null;
-        }
-
-        that.sequence.push({
-            type: type,
-            id: stageName,
-            cb: func
-        });
-
-        return that;
-    }
 
 
     /**
@@ -11444,7 +11510,6 @@ JSUS.extend(TIME);
                     default:
                         throw new Error('Stager.getSequence: ' +
                                         'unknown sequence object type.');
-                        return null;
                     }
                 }
             }
@@ -11491,7 +11556,6 @@ JSUS.extend(TIME);
                     default:
                         throw new Error('Stager.getSequence: ' +
                                         'unknown sequence object type.');
-                        return null;
                     }
                 }
             }
@@ -11503,7 +11567,6 @@ JSUS.extend(TIME);
 
         default:
             throw new Error('Stager.getSequence: invalid format.');
-            return null;
         }
 
         return result;
@@ -11689,18 +11752,18 @@ JSUS.extend(TIME);
     /**
      * ### Stager.getState
      *
-     * Returns the internal state of the Stager
+     * Returns a copy of the internal state of the Stager
      *
      * Fields of returned object:
      * steps, stages, sequence, generalNextFunction, nextFunctions,
      * defaultStepRule, defaultGlobals, defaultProperties, onInit, onGameover.
      *
-     * @return {object} The Stager's state
+     * @return {object} Clone of the Stager's state
      *
      * @see Stager.setState
      */
     Stager.prototype.getState = function() {
-        return {
+        return J.clone({
             steps:               this.steps,
             stages:              this.stages,
             sequence:            this.sequence,
@@ -11711,7 +11774,7 @@ JSUS.extend(TIME);
             defaultProperties:   this.defaultProperties,
             onInit:              this.onInit,
             onGameover:          this.onGameover
-        };
+        });
     };
 
     /**
@@ -11789,6 +11852,31 @@ JSUS.extend(TIME);
 
     // ## Stager private methods
 
+    function addLoop(that, type, id, func) {
+        var stageName = handleAlias(that, id);
+
+        if (stageName === null) {
+            throw new Error('Stager.' + type +
+                            ': received invalid stage name.');
+        }
+
+        if ('undefined' === typeof func) {
+            func = function() { return true; };
+        }
+
+        if ('function' !== typeof func) {
+            throw new Error('Stager.' + type + ': received invalid callback.');
+        }
+
+        that.sequence.push({
+            type: type,
+            id: stageName,
+            cb: func
+        });
+
+        return that;
+    }
+
     /**
      * ### Stager.checkStepValidity
      *
@@ -11855,17 +11943,25 @@ JSUS.extend(TIME);
      * alias, if existent.
      * Checks whether parameter is valid and unique.
      *
+     * @param {object} that Reference to Stager object
      * @param {string} nameAndAlias The stage-name string
      *
-     * @return {string|null} NULL on error,
-     *  the alias part of the parameter if it exists,
+     * @return {string} the alias part of the parameter if it exists,
      *  the stageID part otherwise
      *
      * @see Stager.next
      *
      * @api private
      */
-    Stager.prototype.handleAlias = function(nameAndAlias) {
+    function handleAlias(that, nameAndAlias) {
+        if ('object' !== typeof that) {
+            throw new Error('Stager.handleAlias: "that" must be an object.');
+        }
+
+        if ('string' !== typeof nameAndAlias) {
+            throw new Error('Stager.handleAlias: ' +
+                            '"nameAndAlias" must be string.');
+        }
         var tokens = nameAndAlias.split(' AS ');
         var id = tokens[0].trim();
         var alias = tokens[1] ? tokens[1].trim() : undefined;
@@ -11873,25 +11969,30 @@ JSUS.extend(TIME);
         var seqIdx;
 
         // Check ID validity:
-        if (!this.stages[id]) {
-            throw new Error('Stager.handleAlias: ' +
-                            'received nonexistent stage id.');
-            return null;
+        if (!that.stages[id]) {
+            that.addStage({
+                id: id,
+                cb: function() {
+                    console.log(id);
+                },
+            });
+            console.log('Stager.handleAlias: ' +
+                'received nonexistent stage id \'' + id + '\', ' +
+                'implemented default logic.');
         }
 
         // Check uniqueness:
-        for (seqIdx in this.sequence) {
-            if (this.sequence.hasOwnProperty(seqIdx) &&
-                this.sequence[seqIdx].id === stageName) {
+        for (seqIdx in that.sequence) {
+            if (that.sequence.hasOwnProperty(seqIdx) &&
+                that.sequence[seqIdx].id === stageName) {
                 throw new Error('Stager.handleAlias: ' +
                                 'received non-unique stage name.');
-                return null;
             }
         }
 
         // Add alias:
         if (alias) {
-            this.stages[alias] = this.stages[id];
+            that.stages[alias] = that.stages[id];
             return alias;
         }
 
@@ -11946,6 +12047,12 @@ JSUS.extend(TIME);
      */
     function GamePlot(stager) {
         this.init(stager);
+
+        /**
+         * ## GamePlot.log
+         *
+         * Default stdout output. Override to redirect.
+         */
         this.log = console.log;
     }
 
@@ -11971,6 +12078,23 @@ JSUS.extend(TIME);
         else {
             this.stager = null;
         }
+    };
+
+    /**
+     * ### GamePlot.setDefaultLog
+     *
+     * Sets the default stdout function for game plot and stager (if any)
+     *
+     * @param {function} log The logging function
+     *
+     * @see Stager.log
+     */
+    GamePlot.prototype.setDefaultLog = function(log) {
+        if ('function' !== typeof log) {
+            throw new TypeError('GamePlot.setDefaultLog: log must be function.');
+        }
+        this.log = log;
+        if (this.stager) this.stager.log = this.log;
     };
 
     /**
@@ -12539,6 +12663,44 @@ JSUS.extend(TIME);
     };
 
     /**
+     * ### GamePlot.getGlobal
+     *
+     * Looks up and build the _globals_ object for the specified game stage
+     *
+     * Globals properties are mixed in at each level (defaults, stage, step)
+     * to form the complete set of globals available for the specified 
+     * game stage.
+     *
+     * @param {GameStage|string} gameStage The GameStage object,
+     *  or its string representation
+     *
+     * @return {object} The _globals_ object for the specified  game stage
+     */
+    GamePlot.prototype.getGlobals = function(gameStage) {
+        var stepstage, globals;
+        if ('string' !== typeof gameStage && 'object' !== typeof gameStage) {
+            throw new TypeError('GamePlot.getGlobals: gameStage must be ' +
+                                'string or object.');
+        }
+        globals = {};
+        // No stager found, no globals!
+        if (!this.stager) return globals;
+
+        // Look in Stager's defaults:
+        J.mixin(globals, this.stager.getDefaultGlobals());
+        
+        // Look in current stage:
+        stepstage = this.getStage(gameStage);
+        if (stepstage) J.mixin(globals, stepstage.globals);
+        
+        // Look in current step:
+        stepstage = this.getStep(gameStage);
+        if (stepstage) J.mixin(globals, stepstage.globals);
+
+        return globals;
+    };
+
+    /**
      * ### GamePlot.getProperty
      *
      * Looks up the value of a property
@@ -12942,6 +13104,7 @@ JSUS.extend(TIME);
 })(
     'undefined' != typeof node ? node : module.exports
 );
+
 /**
  * # Socket
  * Copyright(c) 2014 Stefano Balietti
@@ -13557,6 +13720,7 @@ JSUS.extend(TIME);
     'undefined' !== typeof module && 'undefined' !== typeof require ?
         require('socket.io-client') : 'undefined' !== typeof io ? io : {}
 );
+
 /**
  * # GameDB
  * Copyright(c) 2014 Stefano Balietti
@@ -13876,6 +14040,7 @@ JSUS.extend(TIME);
     'undefined' != typeof node ? node : module.exports,
     'undefined' != typeof node ? node : module.parent.exports
 );
+
 /**
  * # Game
  * Copyright(c) 2014 Stefano Balietti
@@ -14014,7 +14179,13 @@ JSUS.extend(TIME);
          *
          * @see GamePlot
          */
-        this.plot = new GamePlot(new Stager(settings.stages), node);
+        this.plot = new GamePlot(new Stager(settings.stages));
+
+        // Overriding stdout for game plot and stager.
+        this.plot.setDefaultLog(function() {
+            // Must use apply, else will be executed in the wrong context.
+            node.log.apply(node, arguments);
+        });
 
         /**
          * ### Game.checkPlistSize
@@ -14089,6 +14260,20 @@ JSUS.extend(TIME);
          * @see Game.gotoStep
          */
         this.exactPlayerCbCalled = false;
+
+        /**
+         * ### Game.globals
+         *
+         * Object pointing to the current step _globals_ properties
+         *
+         * Whenever a new step is executed the _globals_ properties of
+         * the step are copied here. The _globals_ properties of the previous
+         * stage are deleted.
+         *
+         * @see GamePlot
+         * @see Stager
+         */
+        this.globals = {};
     }
 
     // ## Game methods
@@ -14220,6 +14405,8 @@ JSUS.extend(TIME);
      * Ends the game
      *
      * Calls the gameover function, sets levels.
+     *
+     * TODO: should it set the game stage to 0.0.0 again ?
      */
     Game.prototype.gameover = function() {
         var onGameover, node;
@@ -14379,7 +14566,7 @@ JSUS.extend(TIME);
     };
 
     /**
-     * ## Game.gotoStep
+     * ### Game.gotoStep
      *
      * Updates the current game step to toStep and executes it.
      *
@@ -14508,6 +14695,9 @@ JSUS.extend(TIME);
 
             this.setStateLevel(constants.stateLevels.PLAYING_STEP);
             this.setStageLevel(constants.stageLevels.INITIALIZED);
+
+            // Updating the globals object.
+            this.globals = this.plot.getGlobals(nextStep);
 
             // Add min/max/exactPlayers listeners for the step.
             // The fields must be of the form
@@ -14652,7 +14842,7 @@ JSUS.extend(TIME);
             }
 
         }
-        return this.execStep(this.getCurrentStep());
+        return this.execStep(this.getCurrentStepObj());
     };
 
     /**
@@ -14693,17 +14883,77 @@ JSUS.extend(TIME);
     };
 
     /**
-     * ### Game.getCurrentStep
+     * ### Game.getCurrentStepObj
      *
      * Returns the object representing the current game step.
+     *
+     * The returning object includes all the properties, such as:
+     * _id_, _cb_, _timer_, etc.
      *
      * @return {object} The game-step as defined in the stager.
      *
      * @see Stager
      * @see GamePlot
      */
-    Game.prototype.getCurrentStep = function() {
+    Game.prototype.getCurrentStepObj = function() {
         return this.plot.getStep(this.getCurrentGameStage());
+    };
+
+     /**
+     * ### Game.getCurrentStep
+     *
+     * Alias for Game.prototype.getCurrentStepObj
+     *
+     * @deprecated
+     */
+    Game.prototype.getCurrentStep = Game.prototype.getCurrentStepObj;
+
+    /**
+     * ### Game.getCurrentStepProperty
+     *
+     * Returns the object representing the current game step.
+     *
+     * The returning object includes all the properties, such as:
+     * _id_, _cb_, _timer_, etc.
+     *
+     * @return {object} The game-step as defined in the stager.
+     *
+     * @see Stager
+     * @see GamePlot
+     */
+    Game.prototype.getCurrentStepProperty = function(propertyName) {
+        var step;
+        if ('string' !== typeof propertyName) {
+            throw new TypeError('Game.getCurrentStepProperty: propertyName ' +
+                                'must be string');
+        }
+        step = this.plot.getStep(this.getCurrentGameStage());
+        return 'undefined' === typeof step[propertyName] ?
+            null : step[propertyName];
+    };
+
+    /**
+     * ### Game.getCurrentStep
+     *
+     * Returns the object representing the current game step.
+     *
+     * The returning object includes all the properties, such as:
+     * _id_, _cb_, _timer_, etc.
+     *
+     * @return {object} The game-step as defined in the stager.
+     *
+     * @see Stager
+     * @see GamePlot
+     */
+    Game.prototype.getCurrentStepProperty = function(propertyName) {
+        var step;
+        if ('string' !== typeof propertyName) {
+            throw new TypeError('Game.getCurrentStepProperty: propertyName ' +
+                                'must be string');
+        }
+        step = this.plot.getStep(this.getCurrentGameStage());
+        return 'undefined' === typeof step[propertyName] ?
+            null : step[propertyName];
     };
 
     /**
@@ -15097,6 +15347,7 @@ JSUS.extend(TIME);
         if (!syncOnLoaded) return true;
         return node.game.pl.isStepLoaded(curGameStage);
     };
+
     // ## Closure
 })(
     'undefined' != typeof node ? node : module.exports,
@@ -15458,6 +15709,7 @@ JSUS.extend(TIME);
     'undefined' != typeof node ? node : module.exports,
     'undefined' != typeof node ? node : module.parent.exports
 );
+
 /**
  * # GroupManager
  * Copyright(c) 2014 Stefano Balietti
@@ -16865,6 +17117,7 @@ JSUS.extend(TIME);
     'undefined' != typeof node ? node : module.exports,
     'undefined' != typeof node ? node : module.parent.exports
 );
+
 /**
  * # RoleMapper
  *
@@ -18487,6 +18740,7 @@ JSUS.extend(TIME);
     'undefined' != typeof node ? node : module.exports
  ,  'undefined' != typeof node ? node : module.parent.exports
 );
+
 /**
  * # Log
  * Copyright(c) 2014 Stefano Balietti
@@ -18586,6 +18840,7 @@ JSUS.extend(TIME);
     'undefined' != typeof node ? node : module.exports,
     'undefined' != typeof node ? node : module.parent.exports
 );
+
 /**
  * # Setup
  * Copyright(c) 2014 Stefano Balietti
@@ -18820,6 +19075,7 @@ JSUS.extend(TIME);
     'undefined' != typeof node ? node : module.exports,
     'undefined' != typeof node ? node : module.parent.exports
 );
+
 /**
  * # Connect module
  * Copyright(c) 2014 Stefano Balietti
@@ -18870,6 +19126,7 @@ JSUS.extend(TIME);
     'undefined' != typeof node ? node : module.exports,
     'undefined' != typeof node ? node : module.parent.exports
 );
+
 /**
  * # Player related functions
  * Copyright(c) 2014 Stefano Balietti
@@ -18921,6 +19178,7 @@ JSUS.extend(TIME);
     'undefined' != typeof node ? node : module.exports,
     'undefined' != typeof node ? node : module.parent.exports
 );
+
 /**
  * # NodeGameClient Events Handling
  * Copyright(c) 2014 Stefano Balietti
@@ -19278,6 +19536,7 @@ JSUS.extend(TIME);
     'undefined' != typeof node ? node : module.exports,
     'undefined' != typeof node ? node : module.parent.exports
 );
+
 /**
  * # NodeGameClient Events Handling
  * Copyright(c) 2014 Stefano Balietti
@@ -19592,6 +19851,7 @@ JSUS.extend(TIME);
     'undefined' != typeof node ? node : module.exports,
     'undefined' != typeof node ? node : module.parent.exports
 );
+
 /**
  * # Listeners for incoming messages.
  * Copyright(c) 2014 Stefano Balietti
@@ -20529,6 +20789,7 @@ JSUS.extend(TIME);
     ('undefined' !== typeof node) ? node : module.exports
     , ('undefined' !== typeof node) ? node : module.parent.exports
 );
+
 /**
  * Exposing the node object
  */
@@ -20537,6 +20798,7 @@ JSUS.extend(TIME);
     JSUS.mixin(tmp, window.node)
     window.node = tmp;
 })();
+
 /**
  * # GameWindow
  * Copyright(c) 2014 Stefano Balietti
@@ -21437,7 +21699,7 @@ JSUS.extend(TIME);
 
         oldPos = this.headerPosition;
 
-        // Store the new position in a reference variable
+        // Store the new position in a reference variable 
         // **before** adaptFrame2HeaderPosition is called
         this.headerPosition = pos;
 
@@ -22309,7 +22571,7 @@ JSUS.extend(TIME);
 
         W.removeClass(W.frameElement, 'ng_mainframe-header-[a-z-]*');
         switch(position) {
-        case 'right':
+        case 'right':            
             W.addClass(W.frameElement, 'ng_mainframe-header-vertical-r');
             break;
         case 'left':
@@ -22412,7 +22674,7 @@ JSUS.extend(TIME);
     GameWindow.prototype.promptOnleave = function(windowObj, text) {
         windowObj = windowObj || window;
         text = 'undefined' !== typeof text ? text : this.conf.textOnleave;
-
+        
         windowObj.onbeforeunload = function(e) {
             e = e || window.event;
             // For IE<8 and Firefox prior to version 4
@@ -22446,7 +22708,7 @@ JSUS.extend(TIME);
     /**
      * ### GameWindow.disableRightClick
      *
-     * Disables the right click in the main page and in the iframe, if found
+     * Disables the right click in the main page and in the iframe, if found 
      *
      * @see GameWindow.enableRightClick
      * @see JSUS.disableRightClick
@@ -22462,7 +22724,7 @@ JSUS.extend(TIME);
     /**
      * ### GameWindow.enableRightClick
      *
-     * Enables the right click in the main page and in the iframe, if found
+     * Enables the right click in the main page and in the iframe, if found 
      *
      * @see GameWindow.disableRightClick
      * @see JSUS.enableRightClick
@@ -22489,7 +22751,7 @@ JSUS.extend(TIME);
  *
  * Locks / Unlocks the screen.
  *
- * The _screen_ represents all the user can see on screen.
+ * The _screen_ represents all the user can see on screen. 
  * It includes the _frame_ area, but also the _header_.
  *
  * http://www.nodegame.org
@@ -22503,7 +22765,7 @@ JSUS.extend(TIME);
 
     var GameWindow = node.GameWindow;
     var screenLevels = node.constants.screenLevels;
-
+    
     /**
      * ### GameWindow.lockScreen
      *
@@ -22618,7 +22880,7 @@ JSUS.extend(TIME);
 
     node.on('TOGGLE', function(idOrObj) {
         var el = getElement(idOrObj, 'GameWindow.on.TOGGLE');
-
+        
         if (el.style.display === 'none') {
             el.style.display = '';
         }
@@ -22631,19 +22893,19 @@ JSUS.extend(TIME);
     node.on('INPUT_DISABLE', function(id) {
         W.toggleInputs(id, true);
     });
-
+    
     // Disable all the input forms found within a given id element.
     node.on('INPUT_ENABLE', function(id) {
         W.toggleInputs(id, false);
     });
-
+    
     // Disable all the input forms found within a given id element.
     node.on('INPUT_TOGGLE', function(id) {
         W.toggleInputs(id);
     });
-
+    
     node.log('node-window: listeners added.');
-
+    
 })(
     'undefined' !== typeof node ? node : undefined
 );
@@ -22684,11 +22946,11 @@ JSUS.extend(TIME);
      * be re-activated later.
      *
      * @param {Document|Element} container The target to scan for input tags
-     *
+     *  
      * @api private
      */
     function lockUnlockedInputs(container) {
-        var j, i, inputs, nInputs;
+        var j, i, inputs, nInputs;       
         for (j = -1; ++j < len; ) {
             inputs = container.getElementsByTagName(inputTags[j]);
             nInputs = inputs.length;
@@ -22730,13 +22992,13 @@ JSUS.extend(TIME);
     function event_PAUSED(text) {
         text = text || W.waitScreen.defaultTexts.paused;
         if (W.isScreenLocked()) {
-            W.waitScreen.beforePauseInnerHTML =
+            W.waitScreen.beforePauseInnerHTML = 
                 W.waitScreen.waitingDiv.innerHTML;
             W.waitScreen.updateText(text);
         }
         else {
             W.lockScreen(text);
-        }
+        }            
     }
 
     function event_RESUMED() {
@@ -22798,7 +23060,7 @@ JSUS.extend(TIME);
         /**
          * ### WaitScreen.enabled
          *
-         * Flag is TRUE if the listeners are registered
+         * Flag is TRUE if the listeners are registered 
          *
          * @see WaitScreen.enable
          */
@@ -22821,7 +23083,7 @@ JSUS.extend(TIME);
         /**
          * ## WaitScreen.lockedInputs
          *
-         * List of locked inputs by the _lock_ method
+         * List of locked inputs by the _lock_ method 
          *
          * @see WaitScreen.lock
          */
@@ -22858,7 +23120,7 @@ JSUS.extend(TIME);
         node.events.ee.game.off('PLAYING', event_PLAYING);
         node.events.ee.game.off('PAUSED', event_PAUSED);
         node.events.ee.game.off('RESUMED', event_RESUMED);
-        this.enabled = false;
+        this.enabled = false;    
     };
 
     /**
@@ -22882,11 +23144,11 @@ JSUS.extend(TIME);
         if ('undefined' === typeof document.getElementsByTagName) {
             node.warn('WaitScreen.lock: cannot lock inputs.');
         }
-        // Disables all input forms in the page.
+        // Disables all input forms in the page.        
         lockUnlockedInputs(document);
-        frameDoc = W.getFrameDocument();
+        frameDoc = W.getFrameDocument(); 
         if (frameDoc) lockUnlockedInputs(frameDoc);
-
+        
         if (!this.waitingDiv) {
             if (!this.root) {
                 this.root = W.getFrameRoot() || document.body;
@@ -22896,7 +23158,7 @@ JSUS.extend(TIME);
 	if (this.waitingDiv.style.display === 'none') {
 	    this.waitingDiv.style.display = '';
 	}
-	this.waitingDiv.innerHTML = text;
+	this.waitingDiv.innerHTML = text;        
     };
 
     /**
@@ -22913,10 +23175,10 @@ JSUS.extend(TIME);
                 this.waitingDiv.style.display = 'none';
             }
         }
-        // Re-enables all previously locked input forms in the page.
+        // Re-enables all previously locked input forms in the page.        
         i = -1, len = this.lockedInputs.length;
         for ( ; ++i < len ; ) {
-            this.lockedInputs[i].removeAttribute('disabled');
+            this.lockedInputs[i].removeAttribute('disabled');            
         }
         this.lockedInputs = [];
     };
@@ -22982,7 +23244,7 @@ JSUS.extend(TIME);
 (function(window, node) {
 
     "use strict";
-
+    
     var J = node.JSUS;
     var constants = node.constants;
     var GameWindow = node.GameWindow;
@@ -23203,7 +23465,7 @@ JSUS.extend(TIME);
 
     var J = node.JSUS;
     var DOM = J.get('DOM');
-
+    
     /**
      * ### GameWindow.getScreen
      *
@@ -23467,7 +23729,7 @@ JSUS.extend(TIME);
      */
     GameWindow.prototype.getEventButton =
     function(event, text, id, attributes) {
-
+    
         var b;
         if ('string' !== typeof event) {
             throw new TypeError('GameWindow.getEventButton: event must ' +
@@ -23516,7 +23778,7 @@ JSUS.extend(TIME);
     /**
      * ## toggleInputs
      *
-     * @api private
+     * @api private 
      */
     function toggleInputs(state, container) {
         var inputTags, j, len, i, inputs, nInputs;
@@ -23791,7 +24053,7 @@ JSUS.extend(TIME);
 
         this.tm.addTrigger(function(el) {
             if (!el) return;
-            if (el.content && el.content.parse
+            if (el.content && el.content.parse 
                 && 'function' === typeof el.content.parse) {
                 var html = el.content.parse();
                 if (JSUS.isElement(html) || JSUS.isNode(html)) {
@@ -23901,7 +24163,7 @@ JSUS.extend(TIME);
  * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
- * Creates an HTML list that can be manipulated by an api.
+ * Creates an HTML list that can be manipulated by an api. 
  *
  * www.nodegame.org
  * ---
@@ -23909,49 +24171,49 @@ JSUS.extend(TIME);
 (function(exports, node) {
 
     "use strict";
-
+    
     var JSUS = node.JSUS;
     var NDDB = node.NDDB;
 
     var HTMLRenderer = node.window.HTMLRenderer;
     var Entity = node.window.HTMLRenderer.Entity;
-
+    
     exports.List = List;
-
+    
     List.prototype = new NDDB();
-    List.prototype.constructor = List;
-
+    List.prototype.constructor = List;  
+    
     function List(options, data) {
         options = options || {};
         this.options = options;
-
-        NDDB.call(this, options, data);
-
+        
+        NDDB.call(this, options, data); 
+        
         this.id = options.id || 'list_' + Math.round(Math.random() * 1000);
-
+        
         this.DL = null;
         this.auto_update = this.options.auto_update || false;
-        this.htmlRenderer = null;
+        this.htmlRenderer = null; 
         this.lifo = false;
-
+        
         this.init(this.options);
     }
-
+    
     // TODO: improve init
     List.prototype.init = function(options) {
         options = options || this.options;
-
+        
         this.FIRST_LEVEL = options.first_level || 'dl';
         this.SECOND_LEVEL = options.second_level || 'dt';
         this.THIRD_LEVEL = options.third_level || 'dd';
-
+        
         this.last_dt = 0;
         this.last_dd = 0;
         this.auto_update = ('undefined' !== typeof options.auto_update) ? options.auto_update
             : this.auto_update;
-
+        
         var lifo = this.lifo = ('undefined' !== typeof options.lifo) ? options.lifo : this.lifo;
-
+        
         this.globalCompare = function(o1, o2) {
             if (!o1 && !o2) return 0;
             if (!o2) return 1;
@@ -23975,9 +24237,9 @@ JSUS.extend(TIME);
                 if (o1.nddbid > o2.nddbid) return -1;
             }
             return 0;
-        };
-
-
+        }; 
+        
+        
         this.DL = options.list || document.createElement(this.FIRST_LEVEL);
         this.DL.id = options.id || this.id;
         if (options.className) {
@@ -23986,12 +24248,12 @@ JSUS.extend(TIME);
         if (this.options.title) {
             this.DL.appendChild(document.createTextNode(options.title));
         }
-
+        
         // was
         //this.htmlRenderer = new HTMLRenderer({renderers: options.renderer});
         this.htmlRenderer = new HTMLRenderer(options.render);
     };
-
+    
     List.prototype._add = function(node) {
         if (!node) return;
         //              console.log('about to add node');
@@ -24001,16 +24263,16 @@ JSUS.extend(TIME);
             this.parse();
         }
     };
-
+    
     List.prototype.addDT = function(elem, dt) {
         if ('undefined' === typeof elem) return;
         this.last_dt++;
-        dt = ('undefined' !== typeof dt) ? dt: this.last_dt;
+        dt = ('undefined' !== typeof dt) ? dt: this.last_dt;  
         this.last_dd = 0;
         var node = new Node({dt: dt, content: elem});
         return this._add(node);
     };
-
+    
     List.prototype.addDD = function(elem, dt, dd) {
         if ('undefined' === typeof elem) return;
         dt = ('undefined' !== typeof dt) ? dt: this.last_dt;
@@ -24018,12 +24280,12 @@ JSUS.extend(TIME);
         var node = new Node({dt: dt, dd: dd, content: elem});
         return this._add(node);
     };
-
+    
     List.prototype.parse = function() {
         this.sort();
         var old_dt = null;
         var old_dd = null;
-
+        
         var appendDT = function() {
             var node = document.createElement(this.SECOND_LEVEL);
             this.DL.appendChild(node);
@@ -24031,7 +24293,7 @@ JSUS.extend(TIME);
             old_dt = node;
             return node;
         };
-
+        
         var appendDD = function() {
             var node = document.createElement(this.THIRD_LEVEL);
             //                  if (old_dd) {
@@ -24046,7 +24308,7 @@ JSUS.extend(TIME);
             //                  old_dt = node;
             return node;
         };
-
+        
         // Reparse all every time
         // TODO: improve this
         if (this.DL) {
@@ -24057,7 +24319,7 @@ JSUS.extend(TIME);
                 this.DL.appendChild(document.createTextNode(this.options.title));
             }
         }
-
+        
         for (var i=0; i<this.db.length; i++) {
             var el = this.db[i];
             var node;
@@ -24069,19 +24331,19 @@ JSUS.extend(TIME);
                 node = appendDD.call(this);
             }
             var content = this.htmlRenderer.render(el);
-            node.appendChild(content);
-        }
+            node.appendChild(content);          
+        }        
         return this.DL;
     };
-
+    
     List.prototype.getRoot = function() {
         return this.DL;
     };
-
+    
     // Cell Class
     Node.prototype = new Entity();
     Node.prototype.constructor = Node;
-
+    
     function Node (node) {
         Entity.call(this, node);
         this.dt = ('undefined' !== typeof node.dt) ? node.dt : null;
@@ -24089,9 +24351,9 @@ JSUS.extend(TIME);
             this.dd = node.dd;
         }
     }
-
+    
 })(
-    ('undefined' !== typeof node) ? (('undefined' !== typeof node.window) ? node.window : node) : module.parent.exports,
+    ('undefined' !== typeof node) ? (('undefined' !== typeof node.window) ? node.window : node) : module.parent.exports, 
     ('undefined' !== typeof node) ? node : module.parent.exports
 );
 
@@ -27191,7 +27453,7 @@ JSUS.extend(TIME);
  * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
- * Integrates nodeGame with the D3 library to plot a real-time chart.
+ * Integrates nodeGame with the D3 library to plot a real-time chart. 
  *
  * www.nodegame.org
  * ---
@@ -27199,105 +27461,105 @@ JSUS.extend(TIME);
 (function(node) {
 
     "use strict";
-
+        
     node.widgets.register('D3', D3);
     node.widgets.register('D3ts', D3ts);
-
+    
     D3.prototype.__proto__ = node.Widget.prototype;
     D3.prototype.constructor = D3;
 
     // ## Defaults
-
+    
     D3.defaults = {};
     D3.defaults.id = 'D3';
     D3.defaults.fieldset = {
 	legend: 'D3 plot'
     };
 
-
+    
     // ## Meta-data
-
+    
     D3.version = '0.1';
     D3.description = 'Real time plots for nodeGame with d3.js';
-
+    
     // ## Dependencies
-
+    
     D3.dependencies = {
-	d3: {},
+	d3: {},	
 	JSUS: {}
     };
-
+    
     function D3 (options) {
 	this.id = options.id || D3.id;
 	this.event = options.event || 'D3';
 	this.svg = null;
-
+	
 	var that = this;
 	node.on(this.event, function(value) {
-	    that.tick.call(that, value);
+	    that.tick.call(that, value); 
 	});
     }
-
+    
     D3.prototype.append = function(root) {
 	this.root = root;
 	this.svg = d3.select(root).append("svg");
 	return root;
     };
-
+    
     D3.prototype.tick = function() {};
-
+    
     // # D3ts
-
-
+    
+    
     // ## Meta-data
-
+    
     D3ts.id = 'D3ts';
     D3ts.version = '0.1';
     D3ts.description = 'Time series plot for nodeGame with d3.js';
-
-    // ## Dependencies
+    
+    // ## Dependencies	
     D3ts.dependencies = {
-	D3: {},
+	D3: {},	
 	JSUS: {}
     };
-
+    
     D3ts.prototype.__proto__ = D3.prototype;
     D3ts.prototype.constructor = D3ts;
-
+    
     D3ts.defaults = {};
-
+    
     D3ts.defaults.width = 400;
     D3ts.defaults.height = 200;
-
+    
     D3ts.defaults.margin = {
-    	top: 10,
-    	right: 10,
-    	bottom: 20,
-    	left: 40
+    	top: 10, 
+    	right: 10, 
+    	bottom: 20, 
+    	left: 40 
     };
-
+    
     D3ts.defaults.domain = {
 	x: [0, 10],
 	y: [0, 1]
     };
-
+    
     D3ts.defaults.range = {
     	x: [0, D3ts.defaults.width],
     	y: [D3ts.defaults.height, 0]
     };
-
+    
     function D3ts (options) {
 	D3.call(this, options);
-
-
+	
+	
 	var o = this.options = JSUS.merge(D3ts.defaults, options);
-
+	
 	var n = this.n = o.n;
-
+	
 	this.data = [0];
-
+	
 	this.margin = o.margin;
-
+	
 	var width = this.width = o.width - this.margin.left - this.margin.right;
 	var height = this.height = o.height - this.margin.top - this.margin.bottom;
 
@@ -27315,18 +27577,18 @@ JSUS.extend(TIME);
 	    .x(function(d, i) { return x(i); })
 	    .y(function(d, i) { return y(d); });
     }
-
+    
     D3ts.prototype.init = function(options) {
 	//D3.init.call(this, options);
-
+	
 	console.log('init!');
 	var x = this.x,
 	y = this.y,
 	height = this.height,
 	width = this.width,
 	margin = this.margin;
-
-
+	
+	
 	// Create the SVG and place it in the middle
 	this.svg.attr("width", width + margin.left + margin.right)
 	    .attr("height", height + margin.top + margin.bottom)
@@ -27357,20 +27619,20 @@ JSUS.extend(TIME);
 	    .append("path")
 	    .data([this.data])
 	    .attr("class", "line")
-	    .attr("d", this.line);
+	    .attr("d", this.line);		
     };
-
+    
     D3ts.prototype.tick = function(value) {
 	this.alreadyInit = this.alreadyInit || false;
 	if (!this.alreadyInit) {
 	    this.init();
 	    this.alreadyInit = true;
 	}
-
+	
 	var x = this.x;
-
+	
 	console.log('tick!');
-
+	
 	// push a new data point onto the back
 	this.data.push(value);
 
@@ -27381,18 +27643,18 @@ JSUS.extend(TIME);
 
 	// pop the old data point off the front
 	if (this.data.length > this.n) {
-
+	    
 	    this.path
 	  	.transition()
 	  	.duration(500)
 	  	.ease("linear")
 	  	.attr("transform", "translate(" + x(-1) + ")");
-
+	    
 	    this.data.shift();
-
+	    
 	}
     };
-
+    
 })(node);
 /**
  * # DataBar widget for nodeGame
@@ -27742,10 +28004,10 @@ JSUS.extend(TIME);
 
     Feedback.defaults = {};
     Feedback.defaults.id = 'feedback';
-    Feedback.defaults.fieldset = {
+    Feedback.defaults.fieldset = { 
         legend: 'Feedback'
     };
-
+    
     // ## Meta-data
 
     Feedback.version = '0.1';
@@ -27822,70 +28084,70 @@ JSUS.extend(TIME);
  * ---
  */
 (function(node) {
-
+   
     "use strict";
-
+ 
     node.widgets.register('GameBoard', GameBoard);
-
+    
     var PlayerList = node.PlayerList;
 
-    // ## Defaults
-
+    // ## Defaults	
+    
     GameBoard.defaults = {};
     GameBoard.defaults.id = 'gboard';
     GameBoard.defaults.fieldset = {
 	legend: 'Game Board'
     };
-
+    
     // ## Meta-data
-
+    
     GameBoard.version = '0.4.0';
     GameBoard.description = 'Offer a visual representation of the state of all players in the game.';
-
+    
     function GameBoard(options) {
-
+	
 	this.id = options.id || GameBoard.defaults.id;
 	this.status_id = this.id + '_statusbar';
-
+	
 	this.board = null;
 	this.status = null;
 	this.root = null;
-
+	
     }
-
+    
     GameBoard.prototype.append = function(root) {
 	this.root = root;
 	this.status = node.window.addDiv(root, this.status_id);
 	this.board = node.window.addDiv(root, this.id);
-
+	
 	this.updateBoard(node.game.pl);
-
+		
 	return root;
     };
-
+    
     GameBoard.prototype.listeners = function() {
-	var that = this;
+	var that = this;		
 	node.on('UPDATED_PLIST', function() {
 	    that.updateBoard(node.game.pl);
 	});
-
+	
     };
-
+    
     GameBoard.prototype.printLine = function(p) {
 
 	var line, levels, level;
         levels = node.constants.stageLevels;
 
-        line = '[' + (p.name || p.id) + "]> \t";
-	line += '(' +  p.stage.round + ') ' + p.stage.stage + '.' + p.stage.step;
+        line = '[' + (p.name || p.id) + "]> \t"; 
+	line += '(' +  p.stage.round + ') ' + p.stage.stage + '.' + p.stage.step; 
 	line += ' ';
-
+	
 	switch (p.stageLevel) {
 
 	case levels.UNINITIALIZED:
 	    level = 'uninit.';
 	    break;
-
+	    
 	case levels.INITIALIZING:
 	    level = 'init...';
 	    break;
@@ -27896,54 +28158,54 @@ JSUS.extend(TIME);
 
 	case levels.LOADING:
 	    level = 'loading';
-	    break;
+	    break;	    
 
 	case levels.LOADED:
 	    level = 'loaded';
 	    break;
-
+	    
 	case levels.PLAYING:
 	    level = 'playing';
 	    break;
 	case levels.DONE:
 	    level = 'done';
 	    break;
-
+		
 	default:
 	    level = p.stageLevel;
-	    break;
+	    break;		
 	}
 
 	return line + '(' + level + ')';
     };
-
+    
     GameBoard.prototype.printSeparator = function(p) {
 	return W.getElement('hr', null, {style: 'color: #CCC;'});
     };
-
-
+    
+    
     GameBoard.prototype.updateBoard = function(pl) {
 	var player, separator;
         var that = this;
-
+	
 	this.status.innerHTML = 'Updating...';
-
+	
 	if (pl.size()) {
 	    that.board.innerHTML = '';
 	    pl.forEach( function(p) {
 		player = that.printLine(p);
-
+		
 		W.write(player, that.board);
-
+		
 		separator = that.printSeparator(p);
 		W.write(separator, that.board);
 	    });
 	}
-
-
+	
+	
 	this.status.innerHTML = 'Connected players: ' + node.game.pl.length;
     };
-
+    
 })(node);
 
 /**
@@ -27963,33 +28225,33 @@ JSUS.extend(TIME);
     node.widgets.register('GameSummary', GameSummary);
 
     // ## Defaults
-
+    
     GameSummary.defaults = {};
     GameSummary.defaults.id = 'gamesummary';
     GameSummary.defaults.fieldset = { legend: 'Game Summary' };
-
+    
     // ## Meta-data
-
+    
     GameSummary.version = '0.3';
     GameSummary.description = 'Show the general configuration options of the game.';
-
+    
     function GameSummary(options) {
 	this.summaryDiv = null;
     }
-
+    
     GameSummary.prototype.append = function(root) {
 	this.root = root;
 	this.summaryDiv = node.window.addDiv(root);
 	this.writeSummary();
 	return root;
     };
-
+    
     GameSummary.prototype.writeSummary = function(idState, idSummary) {
 	var gName = document.createTextNode('Name: ' + node.game.metadata.name),
 	gDescr = document.createTextNode('Descr: ' + node.game.metadata.description),
 	gMinP = document.createTextNode('Min Pl.: ' + node.game.minPlayers),
 	gMaxP = document.createTextNode('Max Pl.: ' + node.game.maxPlayers);
-
+	
 	this.summaryDiv.appendChild(gName);
 	this.summaryDiv.appendChild(document.createElement('br'));
 	this.summaryDiv.appendChild(gDescr);
@@ -27997,7 +28259,7 @@ JSUS.extend(TIME);
 	this.summaryDiv.appendChild(gMinP);
 	this.summaryDiv.appendChild(document.createElement('br'));
 	this.summaryDiv.appendChild(gMaxP);
-
+	
 	node.window.addDiv(this.root, this.summaryDiv, idSummary);
     };
 
@@ -28160,6 +28422,351 @@ JSUS.extend(TIME);
     GameTable.prototype.y2State = function(y) {
         if (!y) return false;
         return node.game.plot.jumpTo(new GameStage(),y);
+    };
+
+})(node);
+
+/**
+ * # LanguageSelector widget for nodeGame
+ * Copyright(c) 2014 Stefano Balietti
+ * MIT Licensed
+ *
+ * Manages and displays information about languages available and selected.
+ *
+ * www.nodegame.org
+ * ---
+ */
+ (function(node) {
+
+    "use strict";
+
+    node.widgets.register('LanguageSelector', LanguageSelector);
+
+    var J = node.JSUS,
+        game = node.game;
+
+    // ## Meta-data
+
+    LanguageSelector.version = '0.3.0';
+    LanguageSelector.description = 'Display information about the current ' +
+        'language and allows to change language.';
+    LanguageSelector.title = 'Language';
+    LanguageSelector.className = 'languageselector';
+
+    // ## Dependencies
+
+    LanguageSelector.dependencies = {
+        JSUS: {},
+    };
+
+    /**
+     * ## LanguageSelector constructor
+     *
+     * Manages the setting and display of the language used
+     *
+     * @param {object} options Optional. Configuration options
+     *
+     * @see Player.lang
+     */
+    function LanguageSelector(options) {
+        var that = this;
+
+        this.options = options;
+
+        /**
+         * ### LanguageSelector.availableLanguages
+         *
+         * Object containing an object per availble language.
+         *
+         * The language object contains at least the following properties:
+         *
+         * - `name`: Name of the language in English.
+         * - `nativeName`: Native name of the language
+         * - `shortName`: An abbreviation for the language, also determines the
+         *  path to the context files for this language.
+         *
+         * The key for each language object is its `shortName`.
+         *
+         * @see Player.lang
+         */
+        this.availableLanguages = {
+            en: {
+                name: 'English',
+                nativeName: 'English',
+                shortName: 'en'
+            }
+        };
+
+        /**
+         * ### LanguageSelector.currentLanguageIndex
+         *
+         * A reference to the currently used language
+         *
+         * @see LanguageSelector.availableLanguages
+         */
+        this.currentLanguage = null;
+
+        /**
+         * ### LanguageSelector.buttonListLength
+         *
+         * Specifies maximum number of radio buttons used in selection tool
+         */
+        this.buttonListLength = null;
+
+        /**
+         * ### LanguageSelector.displayForm
+         *
+         * The form in which the widget displays the language information
+         */
+        this.displayForm = null;
+
+        /**
+         * ### LanguageSelector.optionsLabel
+         *
+         * Array containing the labels for the language selection optionsDisplay
+         */
+        this.optionsLabel = {};
+
+        /**
+         * ### LanguageSelector.optionsDisplay
+         *
+         * Array containing the optionsDisplay for the language selection
+         */
+        this.optionsDisplay = {};
+
+        /**
+         * ### LanguageSelector.loadingDiv
+         *
+         * Div displaying information on whether the languages have been loaded
+         */
+        this.loadingDiv = null;
+
+        /**
+         * ### LanguageSelector.languagesLoaded
+         *
+         * Flag indicating whether languages have been loaded from server
+         */
+        this.languagesLoaded = false;
+
+        this.usingButtons = null;
+
+        /**
+         * ### LanguageSelector.onLangCallback
+         *
+         * Function to be called when languages have been loaded
+         *
+         * Initializes form displaying the information as well as the optionsDisplay
+         * and their labels. Initializes language to English.
+         * Forwards to `LanguageSelector.onLangCallbackExtension` at the very
+         * end.
+         *
+         * @param {object} msg GameMsg
+         *
+         * @see LanguageSelector.setLanguage
+         */
+        this.onLangCallback = function(msg) {
+            var language;
+
+            // Clear display.
+            while (that.displayForm.firstChild) {
+                that.displayForm.removeChild(that.displayForm.firstChild);
+            }
+
+            // Initialize widget.
+            that.availableLanguages = msg.data;
+            if (that.usingButtons) {
+
+                // Creates labled buttons.
+                for (language in msg.data) {
+                    if (msg.data.hasOwnProperty(language)) {
+                        that.optionsLabel[language] = node.window.getElement('label',
+                            language + 'Label', { for: language + 'RadioButton' });
+
+                        that.optionsDisplay[language] = node.window.getElement('input',
+                            language + 'RadioButton', {
+                                type: 'radio',
+                                name: 'languageButton',
+                                value: msg.data[language].name,
+                            }
+                        );
+
+                        that.optionsDisplay[language].onclick =
+                            makeSetLanguageOnClick(language);
+
+                        that.optionsLabel[language].appendChild(
+                            that.optionsDisplay[language]);
+                        that.optionsLabel[language].appendChild(
+                            document.createTextNode(
+                                msg.data[language].nativeName));
+                        node.window.addElement('br', that.displayForm);
+                        that.optionsLabel[language].className =
+                            'unselectedButtonLabel';
+                        that.displayForm.appendChild(that.optionsLabel[language]);
+
+                    }
+                }
+            }
+            else {
+
+                that.displaySelection = node.window.getElement('select',
+                    'selectLanguage');
+                for (language in msg.data) {
+                    that.optionsLabel[language] =
+                        document.createTextNode(msg.data[language].nativeName);
+                    that.optionsDisplay[language] = node.window.getElement('option',
+                        language + 'Option', { value: language });
+                    that.optionsDisplay[language].appendChild(that.optionsLabel[language]);
+                    that.displaySelection.appendChild(that.optionsDisplay[language]);
+
+                }
+                that.displayForm.appendChild(that.displaySelection);
+                that.displayForm.onchange = function() {
+                    that.setLanguage(that.displaySelection.value);
+                };
+            }
+
+            that.loadingDiv.style.display = 'none';
+            that.languagesLoaded = true;
+
+            // Initialize to English.
+            that.setLanguage('en');
+
+            // Extension point.
+            if (that.onLangCallbackExtension) {
+                that.onLangCallbackExtension(msg);
+                that.onLangCallbackExtension = null;
+            }
+
+            function makeSetLanguageOnClick(langName) {
+                return function() {
+                    that.setLanguage(langName);
+                };
+            }
+        };
+
+        /**
+         * ### LanguageSelector.onLangCallbackExtension
+         *
+         * Extension point to `LanguageSelector.onLangCallback`
+         *
+         * @see LanguageSelector.onLangCallback
+         */
+        this.onLangCallbackExtension = null;
+
+        this.init(this.options);
+    }
+
+    /**
+     * ## LanguageSelector.init
+     *
+     * Initializes the widget
+     *
+     * @param {object} options Optional. Configuration options
+     *
+     * @see LanguageSelector.onLangCallback
+     */
+    LanguageSelector.prototype.init = function(options) {
+        var that = this;
+
+        J.mixout(options, this.options);
+        this.options = options;
+
+        this.usingButtons = this.options.usingButtons || true;
+
+        // Register listener.
+        node.on.lang(this.onLangCallback);
+
+        // Display initialization.
+        this.displayForm = node.window.getElement('form', 'radioButtonForm');
+        this.loadingDiv = node.window.addDiv(this.displayForm);
+        this.loadingDiv.innerHTML = 'Loading language information...';
+
+        this.loadLanguages();
+    };
+
+    LanguageSelector.prototype.append = function() {
+        this.bodyDiv.appendChild(this.displayForm);
+    };
+
+    /**
+     * ## LanguageSelector.setLanguage
+     *
+     * Sets language and updates view
+     *
+     * @param {string} langName shortName of language to be set.
+     *
+     * @see NodeGameClient.setLanguage
+     */
+    LanguageSelector.prototype.setLanguage = function(langName) {
+
+        if (this.usingButtons) {
+
+            // Uncheck current language button and change className of label.
+            if (this.currentLanguage !== null &&
+                this.currentLanguage !== this.availableLanguages[langName] ) {
+
+                this.optionsDisplay[this.currentLanguage].checked =
+                    'unchecked';
+                this.optionsLabel[this.currentLanguage].className =
+                    'unselectedButtonLabel';
+            }
+        }
+
+        // Set current language index.
+        this.currentLanguage = langName;
+
+        if (this.usingButtons) {
+
+            // Check language button and change className of label.
+            this.optionsDisplay[this.currentLanguage].checked = 'checked';
+            this.optionsLabel[this.currentLanguage].className =
+                'selectedButtonLabel';
+        }
+        else {
+            this.displaySelection.value = this.currentLanguage;
+        }
+
+        // Update node.player.
+        node.setLanguage(this.availableLanguages[this.currentLanguage]);
+    };
+
+    /**
+     * ## LanguageSelector.updateAvalaibleLanguages
+     *
+     * Updates available languages asynchronously
+     *
+     * @param {object} options Optional. Configuration options
+     */
+    LanguageSelector.prototype.updateAvalaibleLanguages = function(options) {
+        if (options && options.callback) {
+            this.onLangCallbackExtension = options.callback;
+        }
+        node.socket.send(node.msg.create({
+            target: "LANG",
+            to: "SERVER",
+            action: "get"}
+        ));
+    };
+
+    /**
+     * ## LanguageSelector.loadLanguages
+     *
+     * Loads languages once from server
+     *
+     * @param {object} options Optional. Configuration options
+     *
+     * @see LanguageSelector.updateAvalaibleLanguages
+     */
+    LanguageSelector.prototype.loadLanguages = function(options) {
+        if(!this.languagesLoaded) {
+            this.updateAvalaibleLanguages(options);
+        }
+        else {
+            if (options && options.callback) {
+                options.callback();
+            }
+
+        }
     };
 
 })(node);
@@ -28730,10 +29337,10 @@ JSUS.extend(TIME);
 
     Requirements.defaults = {};
     Requirements.defaults.id = 'requirements';
-    Requirements.defaults.fieldset = {
+    Requirements.defaults.fieldset = { 
         legend: 'Requirements'
     };
-
+    
     // ## Meta-data
 
     Requirements.version = '0.2.0';
@@ -28780,7 +29387,7 @@ JSUS.extend(TIME);
         this.sayResults = options.sayResults || false;
         // The label of the SAY message that will be sent to the server.
         this.sayResultsLabel = options.sayResultLabel || 'requirements';
-        // Callback to add properties to the result object to send to the server.
+        // Callback to add properties to the result object to send to the server. 
         this.addToResults = options.addToResults || null;
 
         // Callbacks to be executed at the end of all tests.
@@ -28790,7 +29397,7 @@ JSUS.extend(TIME);
 
         function renderResult(o) {
             var imgPath, img, span, text;
-            imgPath = '/images/' + (o.content.success ?
+            imgPath = '/images/' + (o.content.success ? 
                                     'success-icon.png' : 'delete-icon.png');
             img = document.createElement('img');
             img.src = imgPath;
@@ -28804,11 +29411,11 @@ JSUS.extend(TIME);
             span = document.createElement('span');
             span.className = 'requirement';
             span.appendChild(img);
-
+            
             span.appendChild(text);
             return span;
         }
-
+        
         // TODO: simplify render syntax.
         this.list = new W.List({
             render: {
@@ -28883,21 +29490,21 @@ JSUS.extend(TIME);
             catch(e) {
                 errMsg = extractErrorMsg(e);
                 this.updateStillChecking(-1);
-                if (this.callbacks[i] && this.callbacks[i].name) {
+                if (this.callbacks[i] && this.callbacks[i].name) { 
                     cbName = this.callbacks[i].name;
                 }
                 else {
                     cbName = i + 1;
                 }
                 errors.push('An exception occurred in requirement n.' +
-                            cbName + ': ' + errMsg);
+                            cbName + ': ' + errMsg);                            
             }
             if (cbErrors) {
                 this.updateStillChecking(-1);
                 errors = errors.concat(cbErrors);
             }
         }
-
+        
         if (this.withTimeout) {
             this.addTimeout();
         }
@@ -28905,14 +29512,14 @@ JSUS.extend(TIME);
         if ('undefined' === typeof display ? true : false) {
             this.displayResults(errors);
         }
-
+        
         if (this.isCheckingFinished()) {
             this.checkingFinished();
         }
-
+        
         return errors;
     };
-
+       
     Requirements.prototype.addTimeout = function() {
         var that = this;
         var errStr = 'One or more function is taking too long. This is ' +
@@ -28946,8 +29553,8 @@ JSUS.extend(TIME);
         this.summaryUpdate.innerHTML = ' (' +  remaining + ' / ' + total + ')';
     };
 
-
-    Requirements.prototype.isCheckingFinished = function() {
+            
+    Requirements.prototype.isCheckingFinished = function() {  
         return this.stillChecking <= 0;
     };
 
@@ -28967,7 +29574,7 @@ JSUS.extend(TIME);
             };
 
             if (this.addToResults) {
-                J.mixin(results, this.addToResults());
+                J.mixin(results, this.addToResults()); 
             }
             node.say(this.sayResultsLabel, 'SERVER', results);
         }
@@ -28975,7 +29582,7 @@ JSUS.extend(TIME);
         if (this.onComplete) {
             this.onComplete();
         }
-
+        
         if (this.hasFailed) {
             if (this.onFail) {
                 this.onFail();
@@ -28988,12 +29595,12 @@ JSUS.extend(TIME);
 
     Requirements.prototype.displayResults = function(results) {
         var i, len;
-
+        
         if (!this.list) {
             throw new Error('Requirements.displayResults: list not found. ' +
                             'Have you called .append() first?');
         }
-
+        
         if (!J.isArray(results)) {
             throw new TypeError('Requirements.displayResults: results must ' +
                                 'be array.');
@@ -29031,20 +29638,20 @@ JSUS.extend(TIME);
 
     Requirements.prototype.append = function(root) {
         this.root = root;
-
+        
         this.summary = document.createElement('span');
         this.summary.appendChild(
             document.createTextNode('Evaluating requirements'));
-
+        
         this.summaryUpdate = document.createElement('span');
         this.summary.appendChild(this.summaryUpdate);
-
+        
         this.dots = W.getLoadingDots();
 
         this.summary.appendChild(this.dots.span);
-
+        
         root.appendChild(this.summary);
-
+        
         root.appendChild(this.list.getRoot());
         return root;
     };
@@ -29060,27 +29667,27 @@ JSUS.extend(TIME);
     Requirements.prototype.nodeGameRequirements = function(result) {
         var errors, db;
         errors = [];
-
+   
         if ('undefined' === typeof NDDB) {
             errors.push('NDDB not found.');
         }
-
+        
         if ('undefined' === typeof JSUS) {
             errors.push('JSUS not found.');
         }
-
+        
         if ('undefined' === typeof node.window) {
             errors.push('node.window not found.');
         }
-
+        
         if ('undefined' === typeof W) {
             errors.push('W not found.');
         }
-
+        
         if ('undefined' === typeof node.widgets) {
             errors.push('node.widgets not found.');
         }
-
+        
         if ('undefined' !== typeof NDDB) {
             try {
                 db = new NDDB();
@@ -29090,7 +29697,7 @@ JSUS.extend(TIME);
                             e.message);
             }
         }
-
+        
         // We need to test node.Stager because it will be used in other tests.
         if ('undefined' === typeof node.Stager) {
             errors.push('node.Stager not found.');
@@ -29136,10 +29743,10 @@ JSUS.extend(TIME);
         catch(e) {
             errors.push('W.loadFrame raised an error: ' + extractErrorMsg(e));
             return errors;
-        }
+        }        
     };
 
-
+    
 
     node.widgets.register('Requirements', Requirements);
 
@@ -29645,7 +30252,9 @@ JSUS.extend(TIME);
         // Build compound name.
         compoundDisplayModeName = '';
         for (index in displayModeNames) {
-            compoundDisplayModeName += displayModeNames[index] + '&';
+            if (displayModeNames.hasOwnProperty(index)) {
+                compoundDisplayModeName += displayModeNames[index] + '&';
+            }
         }
 
         // Remove trailing '&'.
@@ -29664,25 +30273,29 @@ JSUS.extend(TIME);
         // Build `CompoundDisplayMode`.
         displayModes = [];
         for (index in displayModeNames) {
-            switch (displayModeNames[index]) {
-                case 'COUNT_UP_STAGES_TO_TOTAL':
-                    displayModes.push(new CountUpStages(this, {toTotal: true}));
-                    break;
-                case 'COUNT_UP_STAGES':
-                    displayModes.push(new CountUpStages(this));
-                    break;
-                case 'COUNT_DOWN_STAGES':
-                    displayModes.push(new CountDownStages(this));
-                    break;
-                case 'COUNT_UP_ROUNDS_TO_TOTAL':
-                    displayModes.push(new CountUpRounds(this, {toTotal: true}));
-                    break;
-                case 'COUNT_UP_ROUNDS':
-                    displayModes.push(new CountUpRounds(this));
-                    break;
-                case 'COUNT_DOWN_ROUNDS':
-                    displayModes.push(new CountDownRounds(this));
-                    break;
+            if (displayModeNames.hasOwnProperty(index)) {
+                switch (displayModeNames[index]) {
+                    case 'COUNT_UP_STAGES_TO_TOTAL':
+                        displayModes.push(new CountUpStages(this,
+                            {toTotal: true}));
+                        break;
+                    case 'COUNT_UP_STAGES':
+                        displayModes.push(new CountUpStages(this));
+                        break;
+                    case 'COUNT_DOWN_STAGES':
+                        displayModes.push(new CountDownStages(this));
+                        break;
+                    case 'COUNT_UP_ROUNDS_TO_TOTAL':
+                        displayModes.push(new CountUpRounds(this,
+                            {toTotal: true}));
+                        break;
+                    case 'COUNT_UP_ROUNDS':
+                        displayModes.push(new CountUpRounds(this));
+                        break;
+                    case 'COUNT_DOWN_ROUNDS':
+                        displayModes.push(new CountDownRounds(this));
+                        break;
+                }
             }
         }
         this.displayMode = new CompoundDisplayMode(this, displayModes);
@@ -30414,7 +31027,9 @@ JSUS.extend(TIME);
         this.name = '';
 
         for (index in displayModes) {
-            this.name += displayModes[index].name + '&';
+            if (displayModes.hasOwnProperty(index)) {
+                this.name += displayModes[index].name + '&';
+            }
         }
 
         this.name = this.name.substr(0, this.name.length -1);
@@ -30461,7 +31076,10 @@ JSUS.extend(TIME);
         this.displayDiv = node.window.getDiv();
 
         for (index in this.displayModes) {
-            this.displayDiv.appendChild(this.displayModes[index].displayDiv);
+            if (this.displayModes.hasOwnProperty(index)) {
+                this.displayDiv.appendChild(
+                    this.displayModes[index].displayDiv);
+            }
         }
 
         this.updateDisplay();
@@ -30477,15 +31095,19 @@ JSUS.extend(TIME);
     CompoundDisplayMode.prototype.updateDisplay = function() {
         var index;
         for (index in this.displayModes) {
-            this.displayModes[index].updateDisplay();
+            if (this.displayModes.hasOwnProperty(index)) {
+                this.displayModes[index].updateDisplay();
+            }
         }
     };
 
     CompoundDisplayMode.prototype.activate = function() {
         var index;
         for (index in this.displayModes) {
-            if (this.displayModes[index].activate) {
-                this.displayModes[index].activate();
+            if (this.displayModes.hasOwnProperty(index)) {
+                if (this.displayModes[index].activate) {
+                    this.displayModes[index].activate();
+                }
             }
         }
     };
@@ -30493,8 +31115,10 @@ JSUS.extend(TIME);
     CompoundDisplayMode.prototype.deactivate = function() {
         var index;
         for (index in this.displayModes) {
-            if (this.displayModes[index].deactivate) {
-                this.displayMode[index].deactivate();
+            if (this.displayModes.hasOwnProperty(index)) {
+                if (this.displayModes[index].deactivate) {
+                    this.displayMode[index].deactivate();
+                }
             }
         }
     };
