@@ -9,6 +9,21 @@
 
 /* .ng_widget {} */
 
+/* Language Selector */
+.languageselector {
+    float: center;
+    width: 160px;
+
+}
+
+.languageselector > .panel-body > form > label {
+    font-size: 20px;
+    font-weight: normal;
+}
+
+.languageselector > .panel-body > form > label.selectedButtonLabel {
+    font-weight: bold;
+}
 /* Visual Timer */
 
 .visualtimer {
@@ -39,13 +54,11 @@
     width: auto;
 }
 .visualround > .panel-body > div > div.rounddiv {
-    border: 1px solid #CCC;
     font-size: 40px;
     text-align: center;
 }
 
 .visualround > .panel-body > div > div.stagediv {
-    border: 1px solid #CCC;
     font-size: 20px;
     text-align: center;
 }

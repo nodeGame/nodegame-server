@@ -4,7 +4,7 @@
  * MIT Licensed
  *
  * Shims of methods required by nodeGame, but missing in old IE browsers
- *
+ * 
  * ---
  */
 
@@ -8388,6 +8388,10 @@ JSUS.extend(TIME);
     // Redirects a client to a new uri
     k.target.REDIRECT = 'REDIRECT';
 
+    // #### target.LANG
+    // Requests language information
+    k.target.LANG = 'LANG';
+
     // #### target.SETUP
     // Asks a client update its configuration
     k.target.SETUP = 'SETUP';
@@ -8565,7 +8569,7 @@ JSUS.extend(TIME);
     "use strict";
 
     exports.stepRules = {};
-
+    
     // Renaming parent to node, so that functions can be executed
     // context-less in the browser too.
     var node = parent;
@@ -8621,7 +8625,6 @@ JSUS.extend(TIME);
     'undefined' != typeof node ? node : module.exports
   , 'undefined' != typeof node ? node : module.parent.exports
 );
-
 /**
  * # ErrorManager
  * Copyright(c) 2014 Stefano Balietti
@@ -8647,26 +8650,26 @@ JSUS.extend(TIME);
     /**
      * ## ErrorManager
      *
-     * Creates a new instance of ErrorManager
+     * Creates a new instance of ErrorManager 
      *
      * @param {NodeGameClient} node Reference to the active node object.
      */
     function ErrorManager(node) {
-
+        
         /**
          * ## ErrorManager.lastError
          *
-         * Reference to the last error occurred.
+         * Reference to the last error occurred. 
          */
         this.lastError = null;
 
         this.init(node);
     }
-
+    
     /**
      * ## ErrorManager.init
      *
-     * Starts catching run-time errors
+     * Starts catching run-time errors 
      *
      * @param {NodeGameClient} node Reference to the active node object.
      */
@@ -8765,7 +8768,6 @@ JSUS.extend(TIME);
     'undefined' != typeof node ? node : module.exports,
     'undefined' != typeof node ? node : module.parent.exports
 );
-
 /**
  * # EventEmitter
  *
@@ -8795,7 +8797,7 @@ JSUS.extend(TIME);
      * Creates a new instance of EventEmitter
      */
     function EventEmitter(name, node) {
-
+        
         this.node = node;
 
         // ## Public properties
@@ -8843,7 +8845,7 @@ JSUS.extend(TIME);
         }
 
         if (!this.events[type]) {
-            // Optimize the case of one listener.
+            // Optimize the case of one listener. 
             // Don't need the extra array object.
             this.events[type] = listener;
         }
@@ -8856,7 +8858,7 @@ JSUS.extend(TIME);
             this.events[type] = [this.events[type], listener];
         }
 
-        this.node.silly('ee.' + this.name + ' added listener: ' +
+        this.node.silly('ee.' + this.name + ' added listener: ' + 
                         type + ' ' + listener);
     };
 
@@ -8969,7 +8971,7 @@ JSUS.extend(TIME);
         }
 
         // Log the event into node.history object, if present.
-        if (node.conf && node.conf.events
+        if (node.conf && node.conf.events 
             && node.conf.events.history) {
             this.history.insert({
                 stage: node.game.getCurrentGameStage(),
@@ -8986,7 +8988,7 @@ JSUS.extend(TIME);
      * Deregisters one or multiple event listeners
      *
      * @param {string} type The event name
-     * @param {function} listener Optional. The specific function
+     * @param {function} listener Optional. The specific function 
      *   to deregister
      *
      * @return Boolean TRUE, if the removal is successful
@@ -9034,14 +9036,14 @@ JSUS.extend(TIME);
             for (i = 0; i < len; i++) {
                 if (listeners[i] == listener) {
                     listeners.splice(i, 1);
-                    node.silly('ee.' + this.name + ' removed ' +
+                    node.silly('ee.' + this.name + ' removed ' + 
                                'listener: ' + type + ' ' + listener);
                     return true;
                 }
             }
         }
 
-        node.warn('EventEmitter.remove (' + this.name + '): no ' +
+        node.warn('EventEmitter.remove (' + this.name + '): no ' + 
                   'listener-match found for event ' + type);
         return false;
     };
@@ -9065,7 +9067,7 @@ JSUS.extend(TIME);
         for (i in this.events) {
             if (this.events.hasOwnProperty(i)) {
                 len = this.events[i].length ? this.events[i].length : 1;
-                console.log(i + ': ' + len + ' listener/s');
+                console.log(i + ': ' + len + ' listener/s');   
             }
         }
     };
@@ -9221,7 +9223,7 @@ JSUS.extend(TIME);
         }
         return this[groupName];
     };
-
+ 
     /**
      * ### EventEmitterManager.createEE
      *
@@ -9233,7 +9235,7 @@ JSUS.extend(TIME);
      * @return {EventEmitter} A reference to the newly created event emitter
      *
      * @see EventEmitter constructor
-     */
+     */ 
     EventEmitterManager.prototype.createEE = function(name) {
         this.ee[name] = new EventEmitter(name, this.node);
         this[name] = this.ee[name];
@@ -9311,7 +9313,7 @@ JSUS.extend(TIME);
     /**
      * ### EventEmitterManager.remove
      *
-     * Removes an event / event listener from all registered event emitters
+     * Removes an event / event listener from all registered event emitters 
      *
      * @param {string} The name of the event
      * @param {function} listener Optional A reference of the function to remove
@@ -9319,11 +9321,11 @@ JSUS.extend(TIME);
     EventEmitterManager.prototype.remove = function(event, listener) {
         var i;
         if ('string' !== typeof event) {
-            throw new TypeError('EventEmitterManager.remove: ' +
+            throw new TypeError('EventEmitterManager.remove: ' + 
                                 'event must be string.');
         }
         if (listener && 'function' !== typeof listener) {
-            throw new TypeError('EventEmitterManager.remove: ' +
+            throw new TypeError('EventEmitterManager.remove: ' + 
                                 'listener must be function.');
         }
         for (i in this.ee) {
@@ -9339,7 +9341,7 @@ JSUS.extend(TIME);
      * TODO: might require updates.
      */
     function EventHistory(node) {
-
+        
         this.node = node;
 
         /**
@@ -9356,7 +9358,7 @@ JSUS.extend(TIME);
         this.history.h('stage', function(e) {
             var stage;
             if (!e) return;
-            stage = 'object' === typeof e.stage ?
+            stage = 'object' === typeof e.stage ? 
                 e.stage : this.node.game.stage;
             return node.GameStage.toHash(stage, 'S.s.r');
         });
@@ -10251,6 +10253,8 @@ JSUS.extend(TIME);
      * Some of the properties are `private` and can never be changed
      * after an instance of a Player has been created. Defaults one are:
      *
+     * TODO: update DOC.
+     *
      *  `sid`: The Socket.io session id associated to the player
      *  `id`: The nodeGame session id associate to the player
      *  `count`: The id of the player within a PlayerList object
@@ -10259,6 +10263,7 @@ JSUS.extend(TIME);
      *
      * Others properties are public and can be changed during the game.
      *
+     *  `lang`: the language chosen by player (default English)
      *  `name`: An alphanumeric name associated to the player
      *  `stage`: The current stage of the player as relative to a game
      *  `ip`: The ip address of the player
@@ -10393,6 +10398,19 @@ JSUS.extend(TIME);
          */
         this.stateLevel = player.stateLevel || stateLevels.UNINITIALIZED;
 
+        /**
+         * ### Player.lang
+         *
+         * The current language used by the player
+         *
+         * Default language is English with the default path `en/`.
+         */
+        this.lang = {
+            name: 'English',
+            shortName: 'en',
+            nativeName: 'English',
+            path: 'en/'
+        };
 
         /**
          * ## Extra properties
@@ -10423,7 +10441,8 @@ JSUS.extend(TIME);
      * @return {string} The string representation of a player
      */
     Player.prototype.toString = function() {
-        return (this.name || '' ) + ' (' + this.id + ') ' + new GameStage(this.stage);
+        return (this.name || '' ) + ' (' + this.id + ') ' +
+            new GameStage(this.stage);
     };
 
     // ## Closure
@@ -10431,7 +10450,6 @@ JSUS.extend(TIME);
     'undefined' != typeof node ? node : module.exports
  ,  'undefined' != typeof node ? node : module.parent.exports
 );
-
 /**
  * # GameMsg
  *
@@ -10747,7 +10765,6 @@ JSUS.extend(TIME);
     exports.Stager = Stager;
 
     var stepRules = parent.stepRules;
-    var J = parent.JSUS;
 
     /**
      * ## Stager constructor
@@ -10761,21 +10778,11 @@ JSUS.extend(TIME);
      */
     function Stager(stateObj) {
         if (stateObj) {
-            if ('object' !== typeof stateObj) {
-                throw new TypeError('Stager: stateObj must be object.');
-            }
             this.setState(stateObj);
         }
         else {
             this.clear();
         }
-
-        /**
-         * ## Stager.log
-         *
-         * Default stdout output. Override to redirect.
-         */
-        this.log = console.log;
     }
 
     // ## Stager methods
@@ -10935,8 +10942,8 @@ JSUS.extend(TIME);
      * The callback given here is used to determine the next stage.
      *
      * @param {function|null} func The decider callback. It should return the
-     *   name of the next stage, 'NODEGAME_GAMEOVER' to end the game or FALSE
-     *   for sequence end. NULL can be given to signify non-existence.
+     *  name of the next stage, 'NODEGAME_GAMEOVER' to end the game or FALSE for
+     *  sequence end. NULL can be given to signify non-existence.
      *
      * @return {boolean} TRUE on success, FALSE on error
      */
@@ -11078,6 +11085,7 @@ JSUS.extend(TIME);
         if (!defaultProperties || 'object' !== typeof defaultProperties) {
             throw new Error('Stager.setDefaultProperties: ' +
                             'expecting an object as parameter.');
+            return false;
         }
 
         this.defaultProperties = defaultProperties;
@@ -11114,6 +11122,7 @@ JSUS.extend(TIME);
         if (func !== null && 'function' !== typeof func) {
             throw new Error('Stager.setOnInit: ' +
                             'expecting a function as parameter.');
+            return false;
         }
 
         this.onInit = func;
@@ -11150,6 +11159,7 @@ JSUS.extend(TIME);
         if (func !== null && 'function' !== typeof func) {
             throw new Error('Stager.setOnGameover: ' +
                             'expecting a function as parameter.');
+            return false;
         }
 
         this.onGameover = func;
@@ -11161,6 +11171,8 @@ JSUS.extend(TIME);
      *
      * Alias for `setOnGameover`
      *
+     * A rescue net in case of human error.
+     *
      * @see Stager.setOnGameover
      */
     Stager.prototype.setOnGameOver = Stager.prototype.setOnGameover;
@@ -11170,7 +11182,8 @@ JSUS.extend(TIME);
      *
      * Gets onGameover function
      *
-     * @return {function|null} The onGameover function, or NULL if none is found
+     * @return {function|null} The onGameover function.
+     *  NULL signifies non-existence.
      *
      * @see Stager.onGameover
      */
@@ -11191,11 +11204,12 @@ JSUS.extend(TIME);
      *
      * @param {object} step A valid step object. Shallowly copied.
      *
-     * @return {boolean} TRUE on success
+     * @return {boolean} TRUE on success, FALSE on error
      */
     Stager.prototype.addStep = function(step) {
         if (!this.checkStepValidity(step)) {
             throw new Error('Stager.addStep: invalid step received.');
+            return false;
         }
 
         this.steps[step.id] = step;
@@ -11225,101 +11239,27 @@ JSUS.extend(TIME);
      * @see Stager.addStep
      */
     Stager.prototype.addStage = function(stage) {
-        var res;
+        var rc;
 
         // Handle wrapped steps:
         if (this.checkStepValidity(stage)) {
-            res = this.addStep(stage)
-            if (!res) return false;
-            res = this.addStage({
+            if (!this.addStep(stage)) return false;
+            if (!this.addStage({
                 id: stage.id,
                 steps: [ stage.id ]
-            });
-            if (!res) return false;
+            })) return false;
+
             return true;
         }
 
-        res = this.checkStageValidity(stage);
-        if (res !== null) {
-            throw new Error('Stager.addStage: invalid stage received - ' + res);
+        rc = this.checkStageValidity(stage);
+        if (rc !== null) {
+            throw new Error('Stager.addStage: invalid stage received - ' + rc);
+            return false;
         }
 
-        if (!this.stages.hasOwnProperty(stage.id)) {
-            this.stages[stage.id] = stage;
-        }
-        else {
-            this.extendStage(stage);
-        }
-
+        this.stages[stage.id] = stage;
         return true;
-    };
-
-    /**
-     * ### Stager.extendStep
-     *
-     * Extends existing step
-     *
-     * Extends an existing game step object. The extension object must have at
-     * least an id field that matches an already existing step.
-     *
-     * If a valid object is provided, the fields of the new object are merged
-     * into the existing object (done via JSUS.mixin). Note that this overwrites
-     * already existing fields if the new object redefines them.
-     *
-     * @param {object} step This object must have an 'id' field that matches an
-     *                      existing step.
-     *
-     * @see Stager.addStep
-     */
-    Stager.prototype.extendStep = function(step) {
-        if (!step || 'object' !== typeof step) {
-            throw new Error('Stager.extendStep: "step" must be object');
-        }
-
-        if ('string' !== typeof step.id) {
-            throw new Error('Stager.extendStep: "step.id" must be a string');
-        }
-
-        if (!this.steps[step.id]) {
-            throw new Error('Stager.extendStep: ' + step.id +
-                            ' does not name an existing step');
-        }
-
-        J.mixin(this.steps[step.id], step);
-    };
-
-    /**
-     * ### Stager.extendStage
-     *
-     * Extends existing stage
-     *
-     * Extends an existing game stage object. The extension object must have at
-     * least an id field that matches an already existing stage.
-     *
-     * If a valid object is provided, the fields of the new object are merged
-     * into the existing object (done via JSUS.mixin). Note that this overwrites
-     * already existing fields if the new object redefines them.
-     *
-     * @param {object} stage This object must have an 'id' field that matches an
-     *                       existing stage.
-     *
-     * @see Stager.addStage
-     */
-    Stager.prototype.extendStage = function(stage) {
-        if (!stage || 'object' !== typeof stage) {
-            throw new Error('Stager.extendStage: "stage" must be object');
-        }
-
-        if ('string' !== typeof stage.id) {
-            throw new Error('Stager.extendStage: "stage.id" must be a string');
-        }
-
-        if (!this.stages[stage.id]) {
-            throw new Error('Stager.extendStage: ' + stage.id +
-                            ' does not name an existing stage');
-        }
-
-        J.mixin(this.stages[stage.id], stage);
     };
 
     /**
@@ -11364,10 +11304,11 @@ JSUS.extend(TIME);
      * @see Stager.addStage
      */
     Stager.prototype.next = function(id) {
-        var stageName = handleAlias(this, id);
+        var stageName = this.handleAlias(id);
 
         if (stageName === null) {
             throw new Error('Stager.next: invalid stage name received.');
+            return null;
         }
 
         this.sequence.push({
@@ -11392,15 +11333,17 @@ JSUS.extend(TIME);
      * @see Stager.next
      */
     Stager.prototype.repeat = function(id, nRepeats) {
-        var stageName = handleAlias(this, id);
+        var stageName = this.handleAlias(id);
 
         if (stageName === null) {
             throw new Error('Stager.repeat: received invalid stage name.');
+            return null;
         }
 
         if ('number' !== typeof nRepeats) {
             throw new Error('Stager.repeat: ' +
                             'received invalid number of repetitions.');
+            return null;
         }
 
         this.sequence.push({
@@ -11411,6 +11354,34 @@ JSUS.extend(TIME);
 
         return this;
     };
+
+
+    function addLoop(that, type, id, func) {
+        var stageName = that.handleAlias(id);
+
+        if (stageName === null) {
+            throw new Error('Stager.' + type +
+                            ': received invalid stage name.');
+            return null;
+        }
+
+        if ('undefined' === typeof func) {
+            func = function() { return true; };
+        }
+
+        if ('function' !== typeof func) {
+            throw new Error('Stager.' + type + ': received invalid callback.');
+            return null;
+        }
+
+        that.sequence.push({
+            type: type,
+            id: stageName,
+            cb: func
+        });
+
+        return that;
+    }
 
 
     /**
@@ -11510,6 +11481,7 @@ JSUS.extend(TIME);
                     default:
                         throw new Error('Stager.getSequence: ' +
                                         'unknown sequence object type.');
+                        return null;
                     }
                 }
             }
@@ -11556,6 +11528,7 @@ JSUS.extend(TIME);
                     default:
                         throw new Error('Stager.getSequence: ' +
                                         'unknown sequence object type.');
+                        return null;
                     }
                 }
             }
@@ -11567,6 +11540,7 @@ JSUS.extend(TIME);
 
         default:
             throw new Error('Stager.getSequence: invalid format.');
+            return null;
         }
 
         return result;
@@ -11752,18 +11726,18 @@ JSUS.extend(TIME);
     /**
      * ### Stager.getState
      *
-     * Returns a copy of the internal state of the Stager
+     * Returns the internal state of the Stager
      *
      * Fields of returned object:
      * steps, stages, sequence, generalNextFunction, nextFunctions,
      * defaultStepRule, defaultGlobals, defaultProperties, onInit, onGameover.
      *
-     * @return {object} Clone of the Stager's state
+     * @return {object} The Stager's state
      *
      * @see Stager.setState
      */
     Stager.prototype.getState = function() {
-        return J.clone({
+        return {
             steps:               this.steps,
             stages:              this.stages,
             sequence:            this.sequence,
@@ -11774,7 +11748,7 @@ JSUS.extend(TIME);
             defaultProperties:   this.defaultProperties,
             onInit:              this.onInit,
             onGameover:          this.onGameover
-        });
+        };
     };
 
     /**
@@ -11852,31 +11826,6 @@ JSUS.extend(TIME);
 
     // ## Stager private methods
 
-    function addLoop(that, type, id, func) {
-        var stageName = handleAlias(that, id);
-
-        if (stageName === null) {
-            throw new Error('Stager.' + type +
-                            ': received invalid stage name.');
-        }
-
-        if ('undefined' === typeof func) {
-            func = function() { return true; };
-        }
-
-        if ('function' !== typeof func) {
-            throw new Error('Stager.' + type + ': received invalid callback.');
-        }
-
-        that.sequence.push({
-            type: type,
-            id: stageName,
-            cb: func
-        });
-
-        return that;
-    }
-
     /**
      * ### Stager.checkStepValidity
      *
@@ -11943,25 +11892,17 @@ JSUS.extend(TIME);
      * alias, if existent.
      * Checks whether parameter is valid and unique.
      *
-     * @param {object} that Reference to Stager object
      * @param {string} nameAndAlias The stage-name string
      *
-     * @return {string} the alias part of the parameter if it exists,
+     * @return {string|null} NULL on error,
+     *  the alias part of the parameter if it exists,
      *  the stageID part otherwise
      *
      * @see Stager.next
      *
      * @api private
      */
-    function handleAlias(that, nameAndAlias) {
-        if ('object' !== typeof that) {
-            throw new Error('Stager.handleAlias: "that" must be an object.');
-        }
-
-        if ('string' !== typeof nameAndAlias) {
-            throw new Error('Stager.handleAlias: ' +
-                            '"nameAndAlias" must be string.');
-        }
+    Stager.prototype.handleAlias = function(nameAndAlias) {
         var tokens = nameAndAlias.split(' AS ');
         var id = tokens[0].trim();
         var alias = tokens[1] ? tokens[1].trim() : undefined;
@@ -11969,30 +11910,25 @@ JSUS.extend(TIME);
         var seqIdx;
 
         // Check ID validity:
-        if (!that.stages[id]) {
-            that.addStage({
-                id: id,
-                cb: function() {
-                    console.log(id);
-                },
-            });
-            console.log('Stager.handleAlias: ' +
-                'received nonexistent stage id \'' + id + '\', ' +
-                'implemented default logic.');
+        if (!this.stages[id]) {
+            throw new Error('Stager.handleAlias: ' +
+                            'received nonexistent stage id.');
+            return null;
         }
 
         // Check uniqueness:
-        for (seqIdx in that.sequence) {
-            if (that.sequence.hasOwnProperty(seqIdx) &&
-                that.sequence[seqIdx].id === stageName) {
+        for (seqIdx in this.sequence) {
+            if (this.sequence.hasOwnProperty(seqIdx) &&
+                this.sequence[seqIdx].id === stageName) {
                 throw new Error('Stager.handleAlias: ' +
                                 'received non-unique stage name.');
+                return null;
             }
         }
 
         // Add alias:
         if (alias) {
-            that.stages[alias] = that.stages[id];
+            this.stages[alias] = this.stages[id];
             return alias;
         }
 
@@ -12047,12 +11983,6 @@ JSUS.extend(TIME);
      */
     function GamePlot(stager) {
         this.init(stager);
-
-        /**
-         * ## GamePlot.log
-         *
-         * Default stdout output. Override to redirect.
-         */
         this.log = console.log;
     }
 
@@ -12078,23 +12008,6 @@ JSUS.extend(TIME);
         else {
             this.stager = null;
         }
-    };
-
-    /**
-     * ### GamePlot.setDefaultLog
-     *
-     * Sets the default stdout function for game plot and stager (if any)
-     *
-     * @param {function} log The logging function
-     *
-     * @see Stager.log
-     */
-    GamePlot.prototype.setDefaultLog = function(log) {
-        if ('function' !== typeof log) {
-            throw new TypeError('GamePlot.setDefaultLog: log must be function.');
-        }
-        this.log = log;
-        if (this.stager) this.stager.log = this.log;
     };
 
     /**
@@ -12663,44 +12576,6 @@ JSUS.extend(TIME);
     };
 
     /**
-     * ### GamePlot.getGlobal
-     *
-     * Looks up and build the _globals_ object for the specified game stage
-     *
-     * Globals properties are mixed in at each level (defaults, stage, step)
-     * to form the complete set of globals available for the specified 
-     * game stage.
-     *
-     * @param {GameStage|string} gameStage The GameStage object,
-     *  or its string representation
-     *
-     * @return {object} The _globals_ object for the specified  game stage
-     */
-    GamePlot.prototype.getGlobals = function(gameStage) {
-        var stepstage, globals;
-        if ('string' !== typeof gameStage && 'object' !== typeof gameStage) {
-            throw new TypeError('GamePlot.getGlobals: gameStage must be ' +
-                                'string or object.');
-        }
-        globals = {};
-        // No stager found, no globals!
-        if (!this.stager) return globals;
-
-        // Look in Stager's defaults:
-        J.mixin(globals, this.stager.getDefaultGlobals());
-        
-        // Look in current stage:
-        stepstage = this.getStage(gameStage);
-        if (stepstage) J.mixin(globals, stepstage.globals);
-        
-        // Look in current step:
-        stepstage = this.getStep(gameStage);
-        if (stepstage) J.mixin(globals, stepstage.globals);
-
-        return globals;
-    };
-
-    /**
      * ### GamePlot.getProperty
      *
      * Looks up the value of a property
@@ -13104,7 +12979,6 @@ JSUS.extend(TIME);
 })(
     'undefined' != typeof node ? node : module.exports
 );
-
 /**
  * # Socket
  * Copyright(c) 2014 Stefano Balietti
@@ -13191,7 +13065,7 @@ JSUS.extend(TIME);
          *
          * The url to which the socket is connected
          *
-         * It might not be meaningful for all types of sockets. For example,
+         * It might not be meaningful for all types of sockets. For example, 
          * in case of SocketDirect, it is not an real url.
          */
         this.url = null;
@@ -13206,7 +13080,7 @@ JSUS.extend(TIME);
             }
         });
         this.journal.comparator('stage', parent.GameBit.compareState);
-
+        
         if (!this.journal.player) {
             this.journal.hash('to', function(gb) {
                 return gb.to;
@@ -13231,7 +13105,7 @@ JSUS.extend(TIME);
     /**
      * ## Socket.setup
      *
-     * Configure the socket.
+     * Configure the socket. 
      *
      * @param {object} options Optional. Configuration options.
      * @see node.setup.socket
@@ -13376,7 +13250,7 @@ JSUS.extend(TIME);
      * with the data received by the server.
      *
      * @param {GameMsg} msg The game message received and parsed by a socket.
-     *
+     * 
      * @see Socket.validateIncomingMsg
      * @see Socket.startSession
      * @see Socket.onMessageFull
@@ -13396,7 +13270,7 @@ JSUS.extend(TIME);
 
             // This will emit PLAYER_CREATED
             this.startSession(msg);
-            // Functions listening to these events can be executed before HI.
+            // Functions listening to these events can be executed before HI. 
         }
     };
 
@@ -13409,7 +13283,7 @@ JSUS.extend(TIME);
      * if the game is not ready, and the message priority is low.x
      *
      * @param {GameMsg} msg The game message received and parsed by a socket.
-     *
+     * 
      * @see Socket.validateIncomingMsg
      * @see Socket.onMessage
      * @see Game.isReady
@@ -13425,7 +13299,7 @@ JSUS.extend(TIME);
         else {
             this.node.silly('B: ' + msg);
             this.buffer.push(msg);
-        }
+        }        
     };
 
     /**
@@ -13479,7 +13353,7 @@ JSUS.extend(TIME);
     Socket.prototype.clearBuffer = function(msgHandler) {
         var nelem, msg, i;
         var funcCtx, func;
-
+       
         if (msgHandler) {
             funcCtx = this.node.game;
             func = msgHandler;
@@ -13537,7 +13411,7 @@ JSUS.extend(TIME);
 
         if (this.node.store.cookie) {
             this.node.store.cookie('session', this.session);
-
+            
             // Do not store player cookie if client failed authorization.
             // Note: if a client is trying to open multiple connections
             // and this is not allowed by the authorization function
@@ -13598,7 +13472,7 @@ JSUS.extend(TIME);
      * and sent out whenever the connection is available again.
      */
     Socket.prototype.send = function(msg) {
-
+        
         if (!this.isConnected()) {
             this.node.err('Socket.send: cannot send message. No open socket.');
             return false;
@@ -13654,7 +13528,7 @@ JSUS.extend(TIME);
  */
 (function(exports, node, io) {
 
-    // TODO io will be undefined in Node.JS because
+    // TODO io will be undefined in Node.JS because 
     // module.parents.exports.io does not exists
 
     // ## Global scope
@@ -13720,24 +13594,23 @@ JSUS.extend(TIME);
     'undefined' !== typeof module && 'undefined' !== typeof require ?
         require('socket.io-client') : 'undefined' !== typeof io ? io : {}
 );
-
 /**
  * # GameDB
  * Copyright(c) 2014 Stefano Balietti
- * MIT Licensed
- *
+ * MIT Licensed 
+ * 
  * ### Provides a simple, lightweight NO-SQL database for nodeGame
- *
+ * 
  * Entries are stored as GameBit messages.
- *
+ * 
  * It automatically creates three indexes.
- *
+ * 
  * 1. by player,
  * 2. by stage,
  * 3. by key.
- *
+ * 
  * Uses GameStage.compare to compare the stage property of each entry.
- *
+ * 
  * @see GameBit
  * @see GameStage.compare
  * ---
@@ -13746,12 +13619,12 @@ JSUS.extend(TIME);
 
     "use strict";
 
-    // ## Global scope
+    // ## Global scope  
     var JSUS = parent.JSUS,
     NDDB = parent.NDDB,
     GameStage = parent.GameStage;
 
-    // Inheriting from NDDB
+    // Inheriting from NDDB     
     GameDB.prototype = new NDDB();
     GameDB.prototype.constructor = GameDB;
 
@@ -13761,13 +13634,13 @@ JSUS.extend(TIME);
     exports.GameBit = GameBit;
 
     /**
-     * ## GameDB constructor
+     * ## GameDB constructor 
      *
      * Creates an instance of GameDB
-     *
+     * 
      * @param {object} options Optional. A configuration object
      * @param {array} db Optional. An initial array of items
-     *
+     * 
      * @see NDDB constructor
      */
     function GameDB(options, db) {
@@ -13778,11 +13651,11 @@ JSUS.extend(TIME);
 
         // Auto build indexes by default.
         options.update.indexes = true;
-
+        
         NDDB.call(this, options, db);
-
+        
         this.comparator('stage', GameBit.compareState);
-
+        
         if (!this.player) {
             this.hash('player', function(gb) {
                 return gb.player;
@@ -13794,7 +13667,7 @@ JSUS.extend(TIME);
                     return GameStage.toHash(gb.stage, 'S.s.r');
                 }
             });
-        }
+        }  
         if (!this.key) {
             this.hash('key', function(gb) {
                 return gb.key;
@@ -13821,19 +13694,19 @@ JSUS.extend(TIME);
         }
         this.node = node;
     }
-
+    
     /**
      * ### GameDB.add
-     *
+     * 
      * Creates a GameBit and adds it to the database
-     *
+     * 
      * @param {string} key An alphanumeric id for the entry
      * @param {mixed} value Optional. The value to store
      * @param {Player} player Optional. The player associated to the entry
      * @param {GameStage} player Optional. The stage associated to the entry
-     *
+     * 
      * @return {boolean} TRUE, if insertion was successful
-     *
+     * 
      * @see GameBit
      */
     GameDB.prototype.add = function(key, value, player, stage) {
@@ -13841,7 +13714,7 @@ JSUS.extend(TIME);
         if ('string' !== typeof key) {
             throw new TypeError('GameDB.add: key must be string.');
         }
-
+        
         if (this.node) {
             if ('undefined' === typeof player) {
                 player = this.node.player;
@@ -13851,7 +13724,7 @@ JSUS.extend(TIME);
             }
         }
         gb = new GameBit({
-            player: player,
+            player: player, 
             key: key,
             value: value,
             stage: stage
@@ -13862,23 +13735,23 @@ JSUS.extend(TIME);
 
     /**
      * # GameBit
-     *
+     * 
      * Container of relevant information for the game
-     *
+     *  
      * A GameBit unit always contains the following properties:
-     *
+     * 
      * - stage GameStage
      * - player Player
-     * - key
+     * - key 
      * - value
-     * - time
+     * - time 
      */
 
     // ## GameBit methods
 
     /**
      * ### GameBit constructor
-     *
+     * 
      * Creates a new instance of GameBit
      */
     function GameBit(options) {
@@ -13891,34 +13764,34 @@ JSUS.extend(TIME);
 
     /**
      * ### GameBit.toString
-     *
+     * 
      * Returns a string representation of the instance of GameBit
-     *
+     * 
      * @return {string} string representation of the instance of GameBit
      */
     GameBit.prototype.toString = function() {
-        return this.player + ', ' + GameStage.stringify(this.stage) +
+        return this.player + ', ' + GameStage.stringify(this.stage) + 
             ', ' + this.key + ', ' + this.value;
     };
 
-    /**
+    /** 
      * ### GameBit.equals (static)
-     *
+     * 
      * Compares two GameBit objects
-     *
+     * 
      * Returns TRUE if the attributes of `player`, `stage`, and `key`
-     * are identical.
-     *
-     * If the strict parameter is set, also the `value` property
+     * are identical. 
+     *  
+     * If the strict parameter is set, also the `value` property 
      * is used for comparison
-     *
+     *  
      * @param {GameBit} gb1 The first game-bit to compare
      * @param {GameBit} gb2 The second game-bit to compare
-     * @param {boolean} strict Optional. If TRUE, compares also the
+     * @param {boolean} strict Optional. If TRUE, compares also the 
      *  `value` property
-     *
+     * 
      * @return {boolean} TRUE, if the two objects are equals
-     *
+     * 
      * @see GameBit.comparePlayer
      * @see GameBit.compareState
      * @see GameBit.compareKey
@@ -13932,23 +13805,23 @@ JSUS.extend(TIME);
         if (GameBit.compareKey(gb1, gb2) !== 0) return false;
         if (strict &&
             gb1.value && GameBit.compareValue(gb1, gb2) !== 0) return false;
-        return true;
+        return true;    
     };
 
     /**
      * ### GameBit.comparePlayer (static)
-     *
+     * 
      * Sort two game-bits by player numerical id
-     *
+     * 
      * Returns a numerical id that can assume the following values
-     *
-     * - `-1`: the player id of the second game-bit is larger
+     * 
+     * - `-1`: the player id of the second game-bit is larger 
      * - `1`: the player id of the first game-bit is larger
      * - `0`: the two gamebits belong to the same player
-     *
+     * 
      * @param {GameBit} gb1 The first game-bit to compare
      * @param {GameBit} gb2 The second game-bit to compare
-     *
+     * 
      * @return {number} The result of the comparison
      */
     GameBit.comparePlayer = function(gb1, gb2) {
@@ -13962,16 +13835,16 @@ JSUS.extend(TIME);
 
     /**
      * ### GameBit.compareState (static)
-     *
+     * 
      * Sort two game-bits by their stage property
-     *
+     * 
      * GameStage.compare is used for comparison
-     *
+     * 
      * @param {GameBit} gb1 The first game-bit to compare
      * @param {GameBit} gb2 The second game-bit to compare
-     *
+     * 
      * @return {number} The result of the comparison
-     *
+     * 
      *  @see GameStage.compare
      */
     GameBit.compareState = function(gb1, gb2) {
@@ -13980,18 +13853,18 @@ JSUS.extend(TIME);
 
     /**
      * ### GameBit.compareKey (static)
-     *
-     *  Sort two game-bits by their key property
-     *
+     * 
+     *  Sort two game-bits by their key property 
+     * 
      * Returns a numerical id that can assume the following values
-     *
-     * - `-1`: the key of the first game-bit comes first alphabetically
-     * - `1`: the key of the second game-bit comes first alphabetically
+     * 
+     * - `-1`: the key of the first game-bit comes first alphabetically  
+     * - `1`: the key of the second game-bit comes first alphabetically 
      * - `0`: the two gamebits have the same key
-     *
+     * 
      * @param {GameBit} gb1 The first game-bit to compare
      * @param {GameBit} gb2 The second game-bit to compare
-     *
+     * 
      * @return {number} The result of the comparison
      */
     GameBit.compareKey = function(gb1, gb2) {
@@ -14005,26 +13878,26 @@ JSUS.extend(TIME);
 
     /**
      * ### GameBit.compareValue (static)
-     *
+     *  
      * Sorts two game-bits by their value property
-     *
-     * Uses JSUS.equals for equality. If they differs,
+     * 
+     * Uses JSUS.equals for equality. If they differs, 
      * further comparison is performed, but results will be inaccurate
-     * for objects.
-     *
+     * for objects. 
+     * 
      * Returns a numerical id that can assume the following values
-     *
+     * 
      * - `-1`: the value of the first game-bit comes first alphabetically or
      *    numerically
      * - `1`: the value of the second game-bit comes first alphabetically or
-     *   numerically
+     *   numerically 
      * - `0`: the two gamebits have identical value properties
-     *
+     * 
      * @param {GameBit} gb1 The first game-bit to compare
      * @param {GameBit} gb2 The second game-bit to compare
-     *
+     * 
      * @return {number} The result of the comparison
-     *
+     * 
      * @see JSUS.equals
      */
     GameBit.compareValue = function(gb1, gb2) {
@@ -14034,13 +13907,12 @@ JSUS.extend(TIME);
         if (JSUS.equals(gb1.value, gb2.value)) return 0;
         if (gb1.value > gb2.value) return 1;
         return -1;
-    };
+    };  
 
 })(
     'undefined' != typeof node ? node : module.exports,
     'undefined' != typeof node ? node : module.parent.exports
 );
-
 /**
  * # Game
  * Copyright(c) 2014 Stefano Balietti
@@ -14179,13 +14051,7 @@ JSUS.extend(TIME);
          *
          * @see GamePlot
          */
-        this.plot = new GamePlot(new Stager(settings.stages));
-
-        // Overriding stdout for game plot and stager.
-        this.plot.setDefaultLog(function() {
-            // Must use apply, else will be executed in the wrong context.
-            node.log.apply(node, arguments);
-        });
+        this.plot = new GamePlot(new Stager(settings.stages), node);
 
         /**
          * ### Game.checkPlistSize
@@ -14261,19 +14127,6 @@ JSUS.extend(TIME);
          */
         this.exactPlayerCbCalled = false;
 
-        /**
-         * ### Game.globals
-         *
-         * Object pointing to the current step _globals_ properties
-         *
-         * Whenever a new step is executed the _globals_ properties of
-         * the step are copied here. The _globals_ properties of the previous
-         * stage are deleted.
-         *
-         * @see GamePlot
-         * @see Stager
-         */
-        this.globals = {};
     }
 
     // ## Game methods
@@ -14290,7 +14143,9 @@ JSUS.extend(TIME);
      */
     Game.prototype.start = function(options) {
         var onInit, node, startStage;
+
         node = this.node;
+
         if (options && 'object' !== typeof options) {
             throw new TypeError('Game.start: options must be object or ' +
                                 'undefined.');
@@ -14405,8 +14260,6 @@ JSUS.extend(TIME);
      * Ends the game
      *
      * Calls the gameover function, sets levels.
-     *
-     * TODO: should it set the game stage to 0.0.0 again ?
      */
     Game.prototype.gameover = function() {
         var onGameover, node;
@@ -14566,7 +14419,7 @@ JSUS.extend(TIME);
     };
 
     /**
-     * ### Game.gotoStep
+     * ## Game.gotoStep
      *
      * Updates the current game step to toStep and executes it.
      *
@@ -14695,9 +14548,6 @@ JSUS.extend(TIME);
 
             this.setStateLevel(constants.stateLevels.PLAYING_STEP);
             this.setStageLevel(constants.stageLevels.INITIALIZED);
-
-            // Updating the globals object.
-            this.globals = this.plot.getGlobals(nextStep);
 
             // Add min/max/exactPlayers listeners for the step.
             // The fields must be of the form
@@ -14842,7 +14692,7 @@ JSUS.extend(TIME);
             }
 
         }
-        return this.execStep(this.getCurrentStepObj());
+        return this.execStep(this.getCurrentStep());
     };
 
     /**
@@ -14883,77 +14733,17 @@ JSUS.extend(TIME);
     };
 
     /**
-     * ### Game.getCurrentStepObj
+     * ### Game.getCurrentStep
      *
      * Returns the object representing the current game step.
-     *
-     * The returning object includes all the properties, such as:
-     * _id_, _cb_, _timer_, etc.
      *
      * @return {object} The game-step as defined in the stager.
      *
      * @see Stager
      * @see GamePlot
      */
-    Game.prototype.getCurrentStepObj = function() {
+    Game.prototype.getCurrentStep = function() {
         return this.plot.getStep(this.getCurrentGameStage());
-    };
-
-     /**
-     * ### Game.getCurrentStep
-     *
-     * Alias for Game.prototype.getCurrentStepObj
-     *
-     * @deprecated
-     */
-    Game.prototype.getCurrentStep = Game.prototype.getCurrentStepObj;
-
-    /**
-     * ### Game.getCurrentStepProperty
-     *
-     * Returns the object representing the current game step.
-     *
-     * The returning object includes all the properties, such as:
-     * _id_, _cb_, _timer_, etc.
-     *
-     * @return {object} The game-step as defined in the stager.
-     *
-     * @see Stager
-     * @see GamePlot
-     */
-    Game.prototype.getCurrentStepProperty = function(propertyName) {
-        var step;
-        if ('string' !== typeof propertyName) {
-            throw new TypeError('Game.getCurrentStepProperty: propertyName ' +
-                                'must be string');
-        }
-        step = this.plot.getStep(this.getCurrentGameStage());
-        return 'undefined' === typeof step[propertyName] ?
-            null : step[propertyName];
-    };
-
-    /**
-     * ### Game.getCurrentStep
-     *
-     * Returns the object representing the current game step.
-     *
-     * The returning object includes all the properties, such as:
-     * _id_, _cb_, _timer_, etc.
-     *
-     * @return {object} The game-step as defined in the stager.
-     *
-     * @see Stager
-     * @see GamePlot
-     */
-    Game.prototype.getCurrentStepProperty = function(propertyName) {
-        var step;
-        if ('string' !== typeof propertyName) {
-            throw new TypeError('Game.getCurrentStepProperty: propertyName ' +
-                                'must be string');
-        }
-        step = this.plot.getStep(this.getCurrentGameStage());
-        return 'undefined' === typeof step[propertyName] ?
-            null : step[propertyName];
     };
 
     /**
@@ -15347,7 +15137,6 @@ JSUS.extend(TIME);
         if (!syncOnLoaded) return true;
         return node.game.pl.isStepLoaded(curGameStage);
     };
-
     // ## Closure
 })(
     'undefined' != typeof node ? node : module.exports,
@@ -15387,7 +15176,7 @@ JSUS.extend(TIME);
      *
      * Creates a new instance of GameSession
      *
-     * @param {NodeGameClient} node A reference to the node object.
+     * @param {NodeGameClient} node A reference to the node object. 
      */
     function GameSession(node) {
         SessionManager.call(this);
@@ -15425,7 +15214,7 @@ JSUS.extend(TIME);
                 node.events.history.history.importDB(value);
             },
             get: function() {
-                return node.events.history ?
+                return node.events.history ? 
                     node.events.history.history.fetch() : null;
             }
         });
@@ -15480,9 +15269,9 @@ JSUS.extend(TIME);
      * ## Session Manager constructor
      *
      * Creates a new session manager.
-     */
+     */ 
     function SessionManager() {
-
+        
         /**
          * ## SessionManager.session
          *
@@ -15551,12 +15340,12 @@ JSUS.extend(TIME);
 
         this.session[path] = {
 
-            get: (conf && conf.get) ?
+            get: (conf && conf.get) ? 
                 conf.get : function() {
                     return J.getNestedValue(path, node);
                 },
 
-            set: (conf && conf.set) ?
+            set: (conf && conf.set) ? 
                 conf.set : function(value) {
                     J.setNestedValue(path, value, node);
                 }
@@ -15568,13 +15357,13 @@ JSUS.extend(TIME);
     /**
      * ## SessionManager.unregister
      *
-     * Unegister a variable from session
+     * Unegister a variable from session 
      *
      * @param {string} path A string containing a path to a variable previously
      *   registered.
      *
      * @see SessionManager.register
-     */
+     */   
     SessionManager.prototype.unregister = function(path) {
         if ('string' !== typeof path) {
             throw new TypeError('SessionManager.unregister: path must be ' +
@@ -15589,18 +15378,18 @@ JSUS.extend(TIME);
         delete this.session[path];
         return true;
     };
-
+    
     /**
      * ## SessionManager.clear
      *
      * Unegister all registered session variables
      *
      * @see SessionManager.unregister
-     */
+     */ 
     SessionManager.prototype.clear = function() {
         this.session = {};
     };
-
+    
     /**
      * ## SessionManager.get
      *
@@ -15610,7 +15399,7 @@ JSUS.extend(TIME);
      *   undefined to return all values
      *
      * @see SessionManager.register
-     */
+     */ 
     SessionManager.prototype.get = function(path) {
         var session = {};
         // Returns one variable.
@@ -15642,7 +15431,7 @@ JSUS.extend(TIME);
      *
      * @see SessionManager.register
      * @see SessionManager.unregister
-     */
+     */ 
     SessionManager.prototype.isRegistered = function(path) {
         if ('string' !== typeof path) {
             throw new TypeError('SessionManager.isRegistered: path must be ' +
@@ -15654,7 +15443,7 @@ JSUS.extend(TIME);
     /**
      * ## SessionManager.serialize
      *
-     * Returns an object containing that can be to restore the session
+     * Returns an object containing that can be to restore the session 
      *
      * The serialized session is an object containing _getter_, _setter_, and
      * current value of each of the registered session variables.
@@ -15676,11 +15465,11 @@ JSUS.extend(TIME);
         }
         return session;
     };
-
+    
     /**
      * ## SessionManager.restore
      *
-     * Restore a previously serialized session object
+     * Restore a previously serialized session object  
      *
      * @param {object} session A serialized session object
      * @param {boolean} register Optional. If TRUE, every path is also
@@ -15709,7 +15498,6 @@ JSUS.extend(TIME);
     'undefined' != typeof node ? node : module.exports,
     'undefined' != typeof node ? node : module.parent.exports
 );
-
 /**
  * # GroupManager
  * Copyright(c) 2014 Stefano Balietti
@@ -15750,7 +15538,7 @@ JSUS.extend(TIME);
          * might create problems with advanced matching features.
          */
         this.elements = [];
-
+        
         /**
          * ## GroupManager.groups
          *
@@ -15776,14 +15564,14 @@ JSUS.extend(TIME);
          * For example, when a matching function is used across multiple
          * game stages, it can use this space to store information.
          *
-         * This object will be cleared when changing matching algorithm.
+         * This object will be cleared when changing matching algorithm. 
          */
         this.scratch = {};
 
         /**
          * ## GroupManager.matchFunctions
          *
-         * Objects literals with all available matching functions
+         * Objects literals with all available matching functions 
          *
          * @see GroupManager.addDefaultMatchFunctions
          * @see GroupManager.addMatchFunction
@@ -15793,7 +15581,7 @@ JSUS.extend(TIME);
         /**
          * ## GroupManager.lastMatchType
          *
-         * The last type of matching run.
+         * The last type of matching run. 
          *
          * @see GroupManager.match
          */
@@ -15950,7 +15738,7 @@ JSUS.extend(TIME);
     /**
      * ## GroupManager.addMatchFunction
      *
-     * Adds a new matching function to the set of available ones
+     * Adds a new matching function to the set of available ones 
      *
      * New matching functions can be called with the _match_ method.
      *
@@ -15985,9 +15773,9 @@ JSUS.extend(TIME);
     /**
      * ## GroupManager.match
      *
-     * Performs a match, given the current _groups_ and _elements_ objects
+     * Performs a match, given the current _groups_ and _elements_ objects 
      *
-     * It stores the type of matching in the variable _lastMatchType_. If it
+     * It stores the type of matching in the variable _lastMatchType_. If it 
      * is different from previous matching type, the _scratch_ object is
      * cleared.
      *
@@ -16005,7 +15793,7 @@ JSUS.extend(TIME);
         if (!this.matchFunctions[type]) {
             throw new Error('node.group.match: unknown match type: ' + type +
                             '.');
-        }
+        }        
         if (this.lastMatchType && this.lastMatchType !== type) {
             // Clearing scratch.
             this.scratch = {};
@@ -16026,7 +15814,7 @@ JSUS.extend(TIME);
         this.matchFunctions['RANDOM'] = function() {
             var i, len, order, nGroups;
             var g, elem;
-
+            
             nGroups = this.groups.size();
 
             if (!nGroups) {
@@ -16081,7 +15869,7 @@ JSUS.extend(TIME);
             members = g.getMembers();
             array ? out.push(members) : out[g.name] = members;
         }
-        return out;
+        return out;            
     };
 
     /**
@@ -16095,7 +15883,7 @@ JSUS.extend(TIME);
     GroupManager.prototype.getGroups = function() {
         return this.groups.db;
     };
-
+    
     /**
      * ## GroupManager.getGroupsNames
      *
@@ -16124,7 +15912,7 @@ JSUS.extend(TIME);
     // Group.match returns an array of length N, where N is the length of _elements_.
     // The t-th position in the matched array is the match for t-th element in the _elements_ array.
     // The matching is done trying to follow the preference in the pool.
-
+    
 
     exports.RMatcher = RMatcher;
     exports.Group = Group;
@@ -16370,7 +16158,7 @@ JSUS.extend(TIME);
         /**
          * ## Group.name
          *
-         * The name of the group
+         * The name of the group 
          *
          * Must be unique amongst groups
          */
@@ -16398,7 +16186,7 @@ JSUS.extend(TIME);
          *
          * @see Group.elements
          * @see Group.matched
-         */
+         */           
         this.pool = [];
 
         /**
@@ -16431,7 +16219,7 @@ JSUS.extend(TIME);
         /**
          * ## Group.matches
          *
-         * Summary of matching results
+         * Summary of matching results 
          *
          */
         this.matches = {
@@ -16456,7 +16244,7 @@ JSUS.extend(TIME);
          * If TRUE, a group member cannot be matched with himself.
          */
         this.noSelf = true;
-
+        
         /**
          * ## Group.shuffle
          *
@@ -16467,7 +16255,7 @@ JSUS.extend(TIME);
         /**
          * ## Group.stretch
          *
-         * If TRUE,  each element in the pool will be replicated
+         * If TRUE,  each element in the pool will be replicated 
          * as many times as the _rowLimit_ variable.
          */
         this.stretch = true;
@@ -16479,7 +16267,7 @@ JSUS.extend(TIME);
     /**
      * ## Group.init
      *
-     * Mixes in default and user options
+     * Mixes in default and user options 
      *
      * @param {object} options User options
      */
@@ -16512,7 +16300,7 @@ JSUS.extend(TIME);
     /**
      * ## Group.setElements
      *
-     * Sets the elements of the group
+     * Sets the elements of the group 
      *
      * Updates the number of requested matches, and creates a new matched
      * array for each element.
@@ -16543,7 +16331,7 @@ JSUS.extend(TIME);
     /**
      * ## Group.addMember
      *
-     * Adds a single member to the group
+     * Adds a single member to the group 
      *
      * @param {mixed} member The member to add
      */
@@ -16563,14 +16351,14 @@ JSUS.extend(TIME);
     /**
      * ## Group.setPool
      *
-     * Sets the pool of the group
+     * Sets the pool of the group 
      *
      * A pool can contain external elements not included in the _elements_.
      *
      * If the _stretch_ option is on, each element in the pool will be copied
      * and added as many times as the _rowLimit_ variable.
      *
-     * If the _shuffle_ option is on, all elements of the pool (also those
+     * If the _shuffle_ option is on, all elements of the pool (also those 
      * created by the _stretch_ options, will be randomly shuffled.
      *
      * Notice: the pool is cloned, cyclic references in the pool object
@@ -16603,7 +16391,7 @@ JSUS.extend(TIME);
     /**
      * ## Group.getMembers
      *
-     * Returns the members of the group
+     * Returns the members of the group 
      *
      * @return {array} The elements of the group
      */
@@ -16617,12 +16405,12 @@ JSUS.extend(TIME);
      * Returns TRUE, if an element has the requisite to enter a row-match
      *
      * To be eligible of a row match, the element must:
-     *
+     * 
      * - not be already present in the row,
      * - be different from the row index (if the _noSelf_ option is on).
      *
      * This function is the same as _canAdd_, but does not consider row limit.
-     *
+     * 
      * @param {number} x The element to add
      * @param {number} row The row index
      * @return {boolean} TRUE, if the element can be added
@@ -16637,7 +16425,7 @@ JSUS.extend(TIME);
     /**
      * ## Group.canAdd
      *
-     * Returns TRUE, if an element can be added to a row
+     * Returns TRUE, if an element can be added to a row 
      *
      * An element can be added if the number of elements in the row is less
      * than the _rowLimit_ property, and if _canSwitchIn_ returns TRUE.
@@ -16719,7 +16507,7 @@ JSUS.extend(TIME);
      *
      * Returns TRUE if an element can be inserted in a row (even a complete one)
      *
-     * If a row is complete one of the elements already matched will be
+     * If a row is complete one of the elements already matched will be 
      * added to a row with empty slots.
      *
      * @param {number} x The element to add
@@ -16728,8 +16516,8 @@ JSUS.extend(TIME);
      */
     Group.prototype.switchItInRow = function(x, toRow, fromRow) {
         var i, switched;
-
-        if (this.canSwitchIn(x, toRow)) {
+        
+        if (this.canSwitchIn(x, toRow)) {        
             // Check if we can insert any element of 'toRow' in 'fromRow'.
             for (i = 0 ; i < this.matched[toRow].length; i++) {
                 switched = this.matched[toRow][i];
@@ -16749,7 +16537,7 @@ JSUS.extend(TIME);
      * Adds an element to a row and updates the matched count
      *
      * @param {number} x The element to add
-     * @param {number} toRow The row to which the element will be added
+     * @param {number} toRow The row to which the element will be added 
      */
     Group.prototype.addToRow = function(x, row) {
         this.matched[row].push(x);
@@ -16785,7 +16573,7 @@ JSUS.extend(TIME);
         }
         return added;
     };
-
+    
     /**
      * ## Group.matchBatch
      *
@@ -16804,7 +16592,7 @@ JSUS.extend(TIME);
         var leftOver, i;
         leftOver = [];
         for (i = 0 ; i < pool.length ; i++) {
-            if (this.matches.done || !this.addIt(pool[i])) {
+            if (this.matches.done || !this.addIt(pool[i])) {      
                 leftOver.push(pool[i]);
             }
         }
@@ -16816,7 +16604,7 @@ JSUS.extend(TIME);
      *
      * Matches each group member with elements from the a pool
      *
-     * @param {array} pool A pool of preferences for the
+     * @param {array} pool A pool of preferences for the  
      */
     Group.prototype.match = function(pool) {
         var i, leftOver;
@@ -17117,19 +16905,18 @@ JSUS.extend(TIME);
     'undefined' != typeof node ? node : module.exports,
     'undefined' != typeof node ? node : module.parent.exports
 );
-
 /**
  * # RoleMapper
- *
+ * 
  * Copyright(c) 2014 Stefano Balietti
- * MIT Licensed
- *
+ * MIT Licensed 
+ * 
  * `nodeGame` manager of player ids and aliases.
  * @experimental
  * ---
  */
 (function(exports, parent) {
-
+    
     "use strict";
 
     // ## Global scope
@@ -17827,8 +17614,7 @@ JSUS.extend(TIME);
         // Fires the event immediately if time is zero.
         // Double check necessary in strict mode.
         if ('undefined' !== typeof this.options.milliseconds &&
-                this.options.milliseconds === 0) {
-            this.stop();
+            this.options.milliseconds === 0) {
             this.fire(this.timeup);
             return;
         }
@@ -17861,7 +17647,7 @@ JSUS.extend(TIME);
      */
     GameTimer.prototype.addHook = function(hook, ctx, name) {
         var i;
-
+    
         if (!hook) {
             throw new Error('GameTimer.addHook: missing argument');
         }
@@ -17885,7 +17671,7 @@ JSUS.extend(TIME);
         this.hooks.push({hook: hook, ctx: ctx, name: name});
         return name;
     };
-
+    
     /*
      * ### GameTimer.removeHook
      *
@@ -17902,7 +17688,7 @@ JSUS.extend(TIME);
                     delete this.hookNames[name];
                     return this.hooks.splice(i,1);
                 }
-            }
+            }     
         }
         return false;
     };
@@ -17933,8 +17719,7 @@ JSUS.extend(TIME);
             else {
                 // Save the difference of time left.
                 timestamp = (new Date()).getTime();
-                this.updateRemaining =
-                    this.update - (timestamp - this.updateStart);
+                this.updateRemaining = timestamp - this.updateStart;
             }
         }
         else if (this.status === GameTimer.STOPPED) {
@@ -17981,13 +17766,7 @@ JSUS.extend(TIME);
         // Run rest of this "update" interval:
         this.timerId = setTimeout(function() {
             if (updateCallback(that)) {
-                // start() needs the timer to not be running.
-                that.status = GameTimer.INITIALIZED;
-
                 that.start();
-
-                // start() sets status to LOADING, so change it back to RUNNING.
-                that.status = GameTimer.RUNNING;
             }
         }, this.updateRemaining);
     };
@@ -18008,7 +17787,6 @@ JSUS.extend(TIME);
 
         this.status = GameTimer.STOPPED;
         clearInterval(this.timerId);
-        clearTimeout(this.timerId);
         this.timerId = null;
         this.timePassed = 0;
         this.timeLeft = null;
@@ -18150,7 +17928,7 @@ JSUS.extend(TIME);
     /**
      * ## NodeGameClient constructor
      *
-     * Creates a new NodeGameClient object
+     * Creates a new NodeGameClient object.
      */
     function NodeGameClient() {
 
@@ -18203,7 +17981,7 @@ JSUS.extend(TIME);
         /**
          * ### node.errorManager
          *
-         * Catches run-time errors
+         * Catches run-time errors.
          *
          * In debug mode errors are re-thrown.
          */
@@ -18358,8 +18136,8 @@ JSUS.extend(TIME);
          *
          * Sets the uri of the host
          *
-         * If no value is passed, it will try to set the host from the window object
-         * in the browser enviroment.
+         * If no value is passed, it will try to set the host from
+         * the window object in the browser enviroment.
          */
         this.registerSetup('host', function(host) {
             var tokens;
@@ -18473,8 +18251,10 @@ JSUS.extend(TIME);
          */
         this.registerSetup('game_settings', function(settings) {
             if (!this.game) {
-                this.warn("register('game_settings') called before node.game was initialized");
-                throw new node.NodeGameMisconfiguredGameError("node.game non-existent");
+                this.warn('setup("game_settings") called before ' +
+                          'node.game was initialized.');
+                throw new node.NodeGameMisconfiguredGameError(
+                    "node.game non-existent");
             }
 
             if (settings) {
@@ -18491,8 +18271,10 @@ JSUS.extend(TIME);
          */
         this.registerSetup('game_metadata', function(metadata) {
             if (!this.game) {
-                this.warn("register('game_metadata') called before node.game was initialized");
-                throw new node.NodeGameMisconfiguredGameError("node.game non-existent");
+                this.warn('setup("game_metadata") called before ' +
+                          'node.game was initialized');
+                throw new node.NodeGameMisconfiguredGameError(
+                    "node.game non-existent");
             }
 
             if (metadata) {
@@ -18620,25 +18402,42 @@ JSUS.extend(TIME);
             updatePlayerList.call(this, 'ml', monitorList, updateRule);
         });
 
+        /**
+         * ### this.setup.lang
+         *
+         * Sets the default language
+         *
+         * @param {object} The language object to set as default.
+         */
+        this.registerSetup('lang', function(language) {
+            if (!language) return null;
+            return this.setLanguage(language);            
+        });
+
         // Utility for setup.plist and setup.mlist:
         function updatePlayerList(dstListName, srcList, updateRule) {
             var dstList;
 
             if (!this.game) {
-                this.warn('updatePlayerList called before node.game was initialized');
-                throw new this.NodeGameMisconfiguredGameError('node.game non-existent');
+                this.warn('updatePlayerList called before ' +
+                          'node.game was initialized.');
+                throw new this.NodeGameMisconfiguredGameError(
+                    'node.game non-existent.');
             }
 
             if (dstListName === 'pl')      dstList = this.game.pl;
             else if (dstListName === 'ml') dstList = this.game.ml;
             else {
-                this.warn('updatePlayerList called with invalid dstListName');
-                throw new this.NodeGameMisconfiguredGameError("invalid dstListName");
+                this.warn('updatePlayerList called with invalid dstListName.');
+                throw new this.NodeGameMisconfiguredGameError(
+                    "invalid dstListName.");
             }
 
             if (!dstList) {
-                this.warn('updatePlayerList called before node.game was initialized');
-                throw new this.NodeGameMisconfiguredGameError('dstList non-existent');
+                this.warn('updatePlayerList called before ' +
+                          'node.game was initialized.');
+                throw new this.NodeGameMisconfiguredGameError(
+                    'dstList non-existent.');
             }
 
             if (srcList) {
@@ -18647,7 +18446,7 @@ JSUS.extend(TIME);
                 }
                 else if (updateRule !== 'append') {
                     throw new this.NodeGameMisconfiguredGameError(
-                        "register('plist') got invalid updateRule");
+                        "setup('plist') got invalid updateRule.");
                 }
 
                 // automatic cast from Object to Player
@@ -18729,6 +18528,11 @@ JSUS.extend(TIME);
                 }
             };
         });
+
+        // ### node.on.lang
+        // Gets language information.
+        this.alias('lang','in.say.LANG');
+
 
         // LISTENERS.
         this.addDefaultIncomingListeners();
@@ -18908,7 +18712,7 @@ JSUS.extend(TIME);
             throw new Error('node.setup: no such property to configure: '
                             + property + '.');
         }
-
+        
         // Setup the property using rest of arguments:
         res = func.apply(this, Array.prototype.slice.call(arguments, 1));
 
@@ -18982,7 +18786,7 @@ JSUS.extend(TIME);
 
         return this.socket.send(msg);
     };
-
+  
 })(
     'undefined' != typeof node ? node : module.exports,
     'undefined' != typeof node ? node : module.parent.exports
@@ -18991,17 +18795,17 @@ JSUS.extend(TIME);
 /**
  * # Alias
  * Copyright(c) 2014 Stefano Balietti
- * MIT Licensed
- *
+ * MIT Licensed 
+ * 
  * `nodeGame` aliasing module
  * ---
  */
 (function(exports, node) {
-
+    
     "use strict";
-
+    
     // ## Global scope
-
+    
     var GameMsg = node.GameMsg,
     Player = node.Player,
     GameMsgGenerator = node.GameMsgGenerator,
@@ -19011,14 +18815,14 @@ JSUS.extend(TIME);
 
     /**
      * ### node.alias
-     *
+     * 
      * Creates event listeners aliases
-     *
+     * 
      * This method creates a new property to the `node.on` object named
      * after the alias. The alias can be used as a shortcut to register
      * to new listeners on the given events.
-     *
-     *
+     * 
+     * 
      * ```javascript
      *   // The node.on.data alias example with modifier function
      *   // only DATA msg with the right label will be fired.
@@ -19029,17 +18833,17 @@ JSUS.extend(TIME);
      *           }
      *       };
      *   });
-     *
+     * 
      * 	node.on.data('myLabel', function(){ ... };
-     * ```
-     *
+     * ```	
+     * 
      * @param {string} alias The name of alias
-     * @param {string|array} events The event/s under which the listeners
+     * @param {string|array} events The event/s under which the listeners 
      *   will be registered
      * @param {function} modifier Optional. A function that makes a closure
      *   around its own input parameters, and returns a function that will
      *   actually be invoked when the aliased event is fired.
-     */
+     */	
     NGC.prototype.alias = function(alias, events, modifier) {
 	var that, func;
         if ('string' !== typeof alias) {
@@ -19063,7 +18867,7 @@ JSUS.extend(TIME);
             // Otherwise, we assume the first parameter is the callback.
             if (modifier) {
                 func = modifier.apply(that.game, arguments);
-            }
+            } 
             J.each(events, function(event) {
                 that.on(event, function() {
                     func.apply(that.game, arguments);
@@ -19075,18 +18879,17 @@ JSUS.extend(TIME);
     'undefined' != typeof node ? node : module.exports,
     'undefined' != typeof node ? node : module.parent.exports
 );
-
 /**
  * # Connect module
  * Copyright(c) 2014 Stefano Balietti
- * MIT Licensed
- *
+ * MIT Licensed 
+ * 
  * `nodeGame` connect module
  * TODO: integrate in main NGC file ?
  * ---
  */
 (function(exports, parent) {
-
+    
     "use strict";
 
     var NGC = parent.NodeGameClient;
@@ -19109,7 +18912,7 @@ JSUS.extend(TIME);
      *
      * @emit SOCKET_CONNECT
      */
-    NGC.prototype.connect = function(uri, cb, socketOptions) {
+    NGC.prototype.connect = function(uri, cb, socketOptions) {        
         if (cb) {
             if ('function' !== typeof cb) {
                 throw new TypeError('node.connect: cb must be function or ' +
@@ -19126,7 +18929,6 @@ JSUS.extend(TIME);
     'undefined' != typeof node ? node : module.exports,
     'undefined' != typeof node ? node : module.parent.exports
 );
-
 /**
  * # Player related functions
  * Copyright(c) 2014 Stefano Balietti
@@ -19147,6 +18949,7 @@ JSUS.extend(TIME);
      * Creates player object and places it in node.player
      *
      * @param {object} A player object with a valid id property
+     * @return {object} The player object
      *
      * @see node.setup.player
      * @emit PLAYER_CREATED
@@ -19174,13 +18977,40 @@ JSUS.extend(TIME);
         return this.player;
     };
 
+    /**
+     * ### NodeGameClient.setLanguage
+     *
+     * Sets the language for a playerList
+     *
+     * @param {object} language Object describing language.
+     *   Needs shortName property.
+     * @return {object} The language object
+     *
+     * @see node.setup.lang
+     * @emit LANGUAGE_SET
+     */
+    NGC.prototype.setLanguage = function(language) {
+        if ('object' !== typeof language) {
+            throw new TypeError('node.setLanguage: language must be object.');
+        }
+        if ('string' !== typeof language.shortName) {
+            throw new TypeError(
+                'node.setLanguage: language.shortName must be string.');
+        }
+        this.player.lang = language;
+        this.player.lang.path = language.shortName + '/';
+        this.emit('LANGUAGE_SET');
+
+        return this.player.lang;
+    };
+
 })(
     'undefined' != typeof node ? node : module.exports,
     'undefined' != typeof node ? node : module.parent.exports
 );
 
 /**
- * # NodeGameClient Events Handling
+ * # NodeGameClient Events Handling  
  * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
@@ -19192,9 +19022,9 @@ JSUS.extend(TIME);
     "use strict";
 
     var NGC = parent.NodeGameClient;
-
+    
     var GameStage = parent.GameStage;
-
+    
     /**
      * ### NodeGameClient.getCurrentEventEmitter
      *
@@ -19404,7 +19234,7 @@ JSUS.extend(TIME);
      * If the socket is not able to send the GET message for any reason, the
      * listener function is never registered.
      *
-     * Important: depending on the server settings, GET messages might
+     * Important: depending on the server settings, GET messages might 
      * disclose the real ID of the sender. For this reason, GET messages from
      * admins to players should be used only if necessary.
      *
@@ -19421,7 +19251,7 @@ JSUS.extend(TIME);
     NGC.prototype.get = function(key, cb, to, params, timeout) {
         var msg, g, ee;
         var that, res;
-
+        
         if ('string' !== typeof key) {
             throw new TypeError('node.get: key must be string.');
         }
@@ -19460,14 +19290,14 @@ JSUS.extend(TIME);
             text: key,
             data: params
         });
-
+        
         // TODO: check potential timing issues. Is it safe to send the GET
         // message before registering the relate listener? (for now yes)
         res = this.socket.send(msg);
-
+        
         if (res) {
             ee = this.getCurrentEventEmitter();
-
+            
             that = this;
 
             // Listener function. If a timeout is not set, the listener
@@ -19478,9 +19308,9 @@ JSUS.extend(TIME);
                     if (!timeout) ee.remove('in.say.DATA', g);
                 }
             };
-
+            
             ee.on('in.say.DATA', g);
-
+            
             // If a timeout is set the listener is removed independently,
             // of its execution after the timeout is fired.
             // If timeout === -1, the listener is never removed.
@@ -19536,9 +19366,8 @@ JSUS.extend(TIME);
     'undefined' != typeof node ? node : module.exports,
     'undefined' != typeof node ? node : module.parent.exports
 );
-
 /**
- * # NodeGameClient Events Handling
+ * # NodeGameClient Events Handling  
  * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
@@ -19550,7 +19379,7 @@ JSUS.extend(TIME);
 
     var NGC = node.NodeGameClient;
     var J = node.JSUS;
-
+    
     /**
      * ### NodeGameClient.redirect
      *
@@ -19653,21 +19482,21 @@ JSUS.extend(TIME);
 );
 
 /**
- * # Extra
+ * # Extra 
  * Copyright(c) 2014 Stefano Balietti
- * MIT Licensed
- *
+ * MIT Licensed 
+ * 
  * `nodeGame` extra functions
  * ---
  */
 (function(exports, parent) {
-
+    
     "use strict";
 
     var NGC = parent.NodeGameClient
-
+    
     //## Extra
-
+    
     /**
      * ### node.env
      *
@@ -19702,7 +19531,7 @@ JSUS.extend(TIME);
 
         envValue = this.env[env];
         // Executes the function conditionally to _envValue_.
-        if (func && envValue) {
+        if (func && envValue) {            
             ctx = ctx || node;
             params = params || [];
             func.apply(ctx, params);
@@ -19727,7 +19556,7 @@ JSUS.extend(TIME);
         }
     };
 
-
+    
 
 })(
     'undefined' != typeof node ? node : module.exports,
@@ -19735,7 +19564,7 @@ JSUS.extend(TIME);
 );
 
 /**
- * # NodeGameClient JSON fetching
+ * # NodeGameClient JSON fetching  
  * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
@@ -19851,7 +19680,6 @@ JSUS.extend(TIME);
     'undefined' != typeof node ? node : module.exports,
     'undefined' != typeof node ? node : module.parent.exports
 );
-
 /**
  * # Listeners for incoming messages.
  * Copyright(c) 2014 Stefano Balietti
@@ -19995,7 +19823,13 @@ JSUS.extend(TIME);
         /**
          * ## in.get.DATA
          *
-         * Emits the content
+         * Re-emits the incoming message, and replies back to the sender
+         * 
+         * Does the following operations:
+         * 
+         * - Validates the msg.text field
+         * - Emits a get.<msg.text> event
+         * - Replies to the sender with with the return values of the emit call
          */
         node.events.ng.on( IN + get + 'DATA', function(msg) {
             var res;
@@ -20004,7 +19838,7 @@ JSUS.extend(TIME);
                 node.warn('node.in.get.DATA: invalid / missing event name.');
                 return;
             }
-            res = node.emit(msg.text, msg);
+            res = node.emit(get + msg.text, msg);
             if (!J.isEmpty(res)) {
                 node.say(msg.text, msg.from, res);
             }
@@ -20211,6 +20045,33 @@ JSUS.extend(TIME);
             return node.game.pl.db;
         });
 
+        /**
+         * ## in.get.LANG | get.LANG
+         *
+         * Gets the currently used language
+         *
+         * @see node.player.lang
+         */
+        node.events.ng.on( IN + get + 'LANG', function() {
+            return node.player.lang;
+        });
+
+        node.events.ng.on( get + 'LANG', function() {
+            return node.player.lang;
+        });
+
+        /**
+         * ## in.set.LANG
+         *
+         * Sets the currently used language
+         *
+         * @see NodeGameClient.setLanguage
+         * @see node.player.lang
+         */
+        node.events.ng.on( IN + set + 'LANG', function(msg) {
+            node.setLanguage(msg.data);
+        });
+
         node.incomingAdded = true;
         node.silly('incoming listeners added');
         return true;
@@ -20225,7 +20086,7 @@ JSUS.extend(TIME);
  * # Listeners for incoming messages.
  * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
- *
+ * 
  * Internal listeners are not directly associated to messages,
  * but they are usually responding to internal nodeGame events,
  * such as progressing in the loading chain, or finishing a game stage.
@@ -20289,7 +20150,7 @@ JSUS.extend(TIME);
          *
          * Registers the stageLevel _DONE_ and eventually steps forward.
          *
-         * If a DONE handler is defined in the game-plot, it will execute it.
+         * If a DONE handler is defined in the game-plot, it will execute it. 
          * In case it returns FALSE, the update process is stopped.
          *
          * @emit REALLY_DONE
@@ -20303,7 +20164,7 @@ JSUS.extend(TIME);
 
             if (doneCb) ok = doneCb.apply(node.game, arguments);
             if (!ok) return;
-
+                   
             stageLevel = node.game.getStageLevel();
 
             if (stageLevel >= stageLevels.PLAYING) {
@@ -20369,12 +20230,12 @@ JSUS.extend(TIME);
             node.timer.setTimestamp(node.game.getCurrentGameStage().toString(),
                                     currentTime);
             node.timer.setTimestamp('step', currentTime);
-
+            
             // DONE was previously emitted, we just execute done handler.
             if (node.game.willBeDone) {
                 done();
             }
-
+            
         });
 
         /**
@@ -20386,7 +20247,7 @@ JSUS.extend(TIME);
                 node.err('Game cannot be started.');
                 return;
             }
-
+            
             node.emit('BEFORE_GAMECOMMAND', gcommands.start, options);
             node.game.start(options);
         });
@@ -20571,7 +20432,7 @@ JSUS.extend(TIME);
 
     // ## TriggerManager methods
 
-
+    
     /**
      * ### TriggerManager.size
      *
@@ -20600,7 +20461,7 @@ JSUS.extend(TIME);
      */
     TriggerManager.prototype.init = function(options) {
         if (options && 'object' !== typeof options) {
-            throw new TypeError('TriggerManager.init: options must be ' +
+            throw new TypeError('TriggerManager.init: options must be ' + 
                                 'object or undefined.');
         }
 
@@ -20610,11 +20471,11 @@ JSUS.extend(TIME);
             }
             this.options = options;
         }
-
+        
         this.resetTriggers();
     };
 
-
+   
     /**
      * ### TriggerManager.setReturnAt
      *
@@ -20637,13 +20498,13 @@ JSUS.extend(TIME);
         }
         this.returnAt = returnAt;
     };
-
+        
     /**
      * ### TriggerManager.initTriggers
      *
      * Adds a collection of trigger functions to the trigger array
      *
-     * @param {function|array} triggers An array of trigger functions
+     * @param {function|array} triggers An array of trigger functions 
      *   or a single function.
      */
     TriggerManager.prototype.initTriggers = function(triggers) {
@@ -20684,7 +20545,7 @@ JSUS.extend(TIME);
      */
     TriggerManager.prototype.clear = function(clear) {
         if (!clear) {
-            node.warn('Do you really want to clear the current ' +
+            node.warn('Do you really want to clear the current ' + 
                       'TriggerManager obj? Please use clear(true)');
             return false;
         }
@@ -20789,7 +20650,6 @@ JSUS.extend(TIME);
     ('undefined' !== typeof node) ? node : module.exports
     , ('undefined' !== typeof node) ? node : module.parent.exports
 );
-
 /**
  * Exposing the node object
  */
@@ -20798,7 +20658,6 @@ JSUS.extend(TIME);
     JSUS.mixin(tmp, window.node)
     window.node = tmp;
 })();
-
 /**
  * # GameWindow
  * Copyright(c) 2014 Stefano Balietti
@@ -28447,7 +28306,7 @@ JSUS.extend(TIME);
 
     // ## Meta-data
 
-    LanguageSelector.version = '0.3.0';
+    LanguageSelector.version = '0.3.1';
     LanguageSelector.description = 'Display information about the current ' +
         'language and allows to change language.';
     LanguageSelector.title = 'Language';
@@ -28456,7 +28315,7 @@ JSUS.extend(TIME);
     // ## Dependencies
 
     LanguageSelector.dependencies = {
-        JSUS: {},
+        JSUS: {}
     };
 
     /**
@@ -28555,8 +28414,9 @@ JSUS.extend(TIME);
          *
          * Function to be called when languages have been loaded
          *
-         * Initializes form displaying the information as well as the optionsDisplay
-         * and their labels. Initializes language to English.
+         * Initializes form displaying the information as well
+         * as the optionsDisplay and their labels.
+         * Initializes language to English.
          * Forwards to `LanguageSelector.onLangCallbackExtension` at the very
          * end.
          *
@@ -28579,10 +28439,12 @@ JSUS.extend(TIME);
                 // Creates labled buttons.
                 for (language in msg.data) {
                     if (msg.data.hasOwnProperty(language)) {
-                        that.optionsLabel[language] = node.window.getElement('label',
-                            language + 'Label', { for: language + 'RadioButton' });
+                        that.optionsLabel[language] = W.getElement('label',
+                            language + 'Label', {
+                                'for': language + 'RadioButton'
+                            });
 
-                        that.optionsDisplay[language] = node.window.getElement('input',
+                        that.optionsDisplay[language] = W.getElement('input',
                             language + 'RadioButton', {
                                 type: 'radio',
                                 name: 'languageButton',
@@ -28744,8 +28606,8 @@ JSUS.extend(TIME);
         node.socket.send(node.msg.create({
             target: "LANG",
             to: "SERVER",
-            action: "get"}
-        ));
+            action: "get"
+        }));
     };
 
     /**
@@ -29337,13 +29199,13 @@ JSUS.extend(TIME);
 
     Requirements.defaults = {};
     Requirements.defaults.id = 'requirements';
-    Requirements.defaults.fieldset = { 
+    Requirements.defaults.fieldset = {
         legend: 'Requirements'
     };
-    
+
     // ## Meta-data
 
-    Requirements.version = '0.2.0';
+    Requirements.version = '0.5.0';
     Requirements.description = 'Checks a set of requirements and display the ' +
         'results';
 
@@ -29354,11 +29216,16 @@ JSUS.extend(TIME);
         List: {}
     };
 
+    /**
+     * ## Requirements.
+     *
+     * Instantiates a new Requirements object
+     *
+     * @param {object} options
+     */
     function Requirements(options) {
         // The id of the widget.
         this.id = options.id || Requirements.id;
-        // The root element under which the widget will appended.
-        this.root = null;
         // Array of all test callbacks.
         this.callbacks = [];
         // Number of tests still pending.
@@ -29387,7 +29254,7 @@ JSUS.extend(TIME);
         this.sayResults = options.sayResults || false;
         // The label of the SAY message that will be sent to the server.
         this.sayResultsLabel = options.sayResultLabel || 'requirements';
-        // Callback to add properties to the result object to send to the server. 
+        // Callback to add properties to the result object to send to the server.
         this.addToResults = options.addToResults || null;
 
         // Callbacks to be executed at the end of all tests.
@@ -29397,7 +29264,7 @@ JSUS.extend(TIME);
 
         function renderResult(o) {
             var imgPath, img, span, text;
-            imgPath = '/images/' + (o.content.success ? 
+            imgPath = '/images/' + (o.content.success ?
                                     'success-icon.png' : 'delete-icon.png');
             img = document.createElement('img');
             img.src = imgPath;
@@ -29411,11 +29278,11 @@ JSUS.extend(TIME);
             span = document.createElement('span');
             span.className = 'requirement';
             span.appendChild(img);
-            
+
             span.appendChild(text);
             return span;
         }
-        
+
         // TODO: simplify render syntax.
         this.list = new W.List({
             render: {
@@ -29425,6 +29292,23 @@ JSUS.extend(TIME);
         });
     }
 
+    /**
+     * ## Requirements.addRequirements
+     *
+     * Adds any number of callbacks checking the requirements
+     *
+     * Callbacks can be asynchronous or synchronous.
+     *
+     * An asynchronous callback must call the `results` function
+     * passed as input parameter to communicate the outcome of the test.
+     *
+     * A synchronous callback must return the value immediately.
+     *
+     * In both cases the return is an array, where every item is an
+     * error message. Empty array means test passed.
+     *
+     * @see this.callbacks
+     */
     Requirements.prototype.addRequirements = function() {
         var i, len;
         i = -1, len = arguments.length;
@@ -29437,40 +29321,22 @@ JSUS.extend(TIME);
         }
     };
 
-    function resultCb(that, i) {
-        var update = function(result) {
-            that.updateStillChecking(-1);
-            if (result) {
-                if (!J.isArray(result)) {
-                    throw new Error('Requirements.checkRequirements: ' +
-                                    'result must be array or undefined.');
-                }
-                that.displayResults(result);
-            }
-            if (that.isCheckingFinished()) {
-                that.checkingFinished();
-            }
-        };
-        return that.callbacks[i](update);
-    }
-
-    function extractErrorMsg(e) {
-        var errMsg;
-        if (e.msg) {
-            errMsg = e.msg;
-        }
-        else if (e.message) {
-            errMsg = e.message;
-        }
-        else if (e.description) {
-            errMsg.description;
-        }
-        else {
-            errMsg = e.toString();
-        }
-        return errMsg;
-    }
-
+    /**
+     * ## Requirements.checkRequirements
+     *
+     * Asynchrounsly or synchrounsly checks all registered callbacks
+     *
+     * Can add a timeout for the max execution time of the callbacks, if the
+     * corresponding option is set.
+     *
+     * Results are displayed conditionally
+     *
+     * @param {boolean} display If TRUE, results are displayed.
+     * @return {errors} The array containing the errors
+     *
+     * @see this.withTimeout
+     * @see this.callbacks
+     */
     Requirements.prototype.checkRequirements = function(display) {
         var i, len;
         var errors, cbErrors, cbName, errMsg;
@@ -29490,21 +29356,21 @@ JSUS.extend(TIME);
             catch(e) {
                 errMsg = extractErrorMsg(e);
                 this.updateStillChecking(-1);
-                if (this.callbacks[i] && this.callbacks[i].name) { 
+                if (this.callbacks[i] && this.callbacks[i].name) {
                     cbName = this.callbacks[i].name;
                 }
                 else {
                     cbName = i + 1;
                 }
                 errors.push('An exception occurred in requirement n.' +
-                            cbName + ': ' + errMsg);                            
+                            cbName + ': ' + errMsg);
             }
             if (cbErrors) {
                 this.updateStillChecking(-1);
                 errors = errors.concat(cbErrors);
             }
         }
-        
+
         if (this.withTimeout) {
             this.addTimeout();
         }
@@ -29512,14 +29378,25 @@ JSUS.extend(TIME);
         if ('undefined' === typeof display ? true : false) {
             this.displayResults(errors);
         }
-        
+
         if (this.isCheckingFinished()) {
             this.checkingFinished();
         }
-        
+
         return errors;
     };
-       
+
+    /**
+     * ## Requirements.addTimeout
+     *
+     * Starts a timeout for the max execution time of the callbacks
+     *
+     * Upon time out results are checked, and eventually displayed.
+     *
+     * @see this.stillCheckings
+     * @see this.withTimeout
+     * @see this.callbacks
+     */
     Requirements.prototype.addTimeout = function() {
         var that = this;
         var errStr = 'One or more function is taking too long. This is ' +
@@ -29536,6 +29413,15 @@ JSUS.extend(TIME);
         }, this.timeoutTime);
     };
 
+    /**
+     * ## Requirements.clearTimeout
+     *
+     * Clears the timeout for the max execution time of the callbacks
+     *
+     * @see this.timeoutId
+     * @see this.stillCheckings
+     * @see this.callbacks
+     */
     Requirements.prototype.clearTimeout = function() {
         if (this.timeoutId) {
             clearTimeout(this.timeoutId);
@@ -29543,6 +29429,20 @@ JSUS.extend(TIME);
         }
     };
 
+    /**
+     * ## Requirements.updateStillChecking
+     *
+     * Updates the number of callbacks still running on the display
+     *
+     * @param {number} The number of callbacks still running, or an increment
+     *   as compared to the current value
+     * @param {boolean} absolute TRUE, if `update` is to be interpreted as an
+     *   absolute value
+     *
+     * @see this.summaryUpdate
+     * @see this.stillCheckings
+     * @see this.callbacks
+     */
     Requirements.prototype.updateStillChecking = function(update, absolute) {
         var total, remaining;
 
@@ -29553,11 +29453,33 @@ JSUS.extend(TIME);
         this.summaryUpdate.innerHTML = ' (' +  remaining + ' / ' + total + ')';
     };
 
-            
-    Requirements.prototype.isCheckingFinished = function() {  
+    /**
+     * ## Requirements.isCheckingFinished
+     *
+     * Returns TRUE, if all callbacks have returned
+     *
+     * @see this.stillCheckings
+     * @see this.callbacks
+     */
+    Requirements.prototype.isCheckingFinished = function() {
         return this.stillChecking <= 0;
     };
 
+    /**
+     * ## Requirements.CheckingFinished
+     *
+     * Cleans up timer and dots, and executes final callbacks accordingly
+     *
+     * First, executes the `onComplete` callback in any case. Then if no
+     * errors have been raised executes the `onSuccess` callback, otherwise
+     * the `onFail` callback.
+     *
+     * @see this.onComplete
+     * @see this.onSuccess
+     * @see this.onFail
+     * @see this.stillCheckings
+     * @see this.callbacks
+     */
     Requirements.prototype.checkingFinished = function() {
         var results;
 
@@ -29574,7 +29496,7 @@ JSUS.extend(TIME);
             };
 
             if (this.addToResults) {
-                J.mixin(results, this.addToResults()); 
+                J.mixin(results, this.addToResults());
             }
             node.say(this.sayResultsLabel, 'SERVER', results);
         }
@@ -29582,25 +29504,42 @@ JSUS.extend(TIME);
         if (this.onComplete) {
             this.onComplete();
         }
-        
+
         if (this.hasFailed) {
-            if (this.onFail) {
-                this.onFail();
-            }
+            if (this.onFail) this.onFail();
         }
         else if (this.onSuccess) {
             this.onSuccess();
         }
     };
 
+    /**
+     * ## Requirements.displayResults
+     *
+     * Displays the results of the callbacks on the screen
+     *
+     * Creates a new item in the list of results for every error found
+     * in the results array.
+     *
+     * If no error was raised, the results array should be empty.
+     *
+     * @param {array} results The array containing the return values of all
+     *   the callbacks
+     *
+     * @see this.onComplete
+     * @see this.onSuccess
+     * @see this.onFail
+     * @see this.stillCheckings
+     * @see this.callbacks
+     */
     Requirements.prototype.displayResults = function(results) {
         var i, len;
-        
+
         if (!this.list) {
             throw new Error('Requirements.displayResults: list not found. ' +
                             'Have you called .append() first?');
         }
-        
+
         if (!J.isArray(results)) {
             throw new TypeError('Requirements.displayResults: results must ' +
                                 'be array.');
@@ -29636,58 +29575,59 @@ JSUS.extend(TIME);
         this.list.parse();
     };
 
-    Requirements.prototype.append = function(root) {
-        this.root = root;
-        
+    Requirements.prototype.append = function() {
         this.summary = document.createElement('span');
         this.summary.appendChild(
             document.createTextNode('Evaluating requirements'));
-        
+
         this.summaryUpdate = document.createElement('span');
         this.summary.appendChild(this.summaryUpdate);
-        
+
         this.dots = W.getLoadingDots();
 
         this.summary.appendChild(this.dots.span);
-        
-        root.appendChild(this.summary);
-        
-        root.appendChild(this.list.getRoot());
-        return root;
+
+        this.bodyDiv.appendChild(this.summary);
+
+        this.bodyDiv.appendChild(this.list.getRoot());
     };
 
-    Requirements.prototype.getRoot = function() {
-        return this.root;
-    };
+    Requirements.prototype.listeners = function() {};
 
-    Requirements.prototype.listeners = function() {
-        var that = this;
-    };
+    // ## Default Requirement Functions
 
+    /**
+     * ## Requirements.nodeGameRequirements
+     *
+     * Checks whether the basic dependencies of nodeGame are satisfied
+     *
+     * @param {function} The asynchronous result function
+     * @return {array} errors Array of synchronous errors
+     */
     Requirements.prototype.nodeGameRequirements = function(result) {
         var errors, db;
         errors = [];
-   
+
         if ('undefined' === typeof NDDB) {
             errors.push('NDDB not found.');
         }
-        
+
         if ('undefined' === typeof JSUS) {
             errors.push('JSUS not found.');
         }
-        
+
         if ('undefined' === typeof node.window) {
             errors.push('node.window not found.');
         }
-        
+
         if ('undefined' === typeof W) {
             errors.push('W not found.');
         }
-        
+
         if ('undefined' === typeof node.widgets) {
             errors.push('node.widgets not found.');
         }
-        
+
         if ('undefined' !== typeof NDDB) {
             try {
                 db = new NDDB();
@@ -29697,7 +29637,7 @@ JSUS.extend(TIME);
                             e.message);
             }
         }
-        
+
         // We need to test node.Stager because it will be used in other tests.
         if ('undefined' === typeof node.Stager) {
             errors.push('node.Stager not found.');
@@ -29706,6 +29646,16 @@ JSUS.extend(TIME);
         return errors;
     };
 
+    /**
+     * ## Requirements.loadFrameTest
+     *
+     * Checks whether the iframe can be created and used
+     *
+     * Requires an active connection.
+     *
+     * @param {function} The asynchronous result function
+     * @return {array} errors Array of synchronous errors
+     */
     Requirements.prototype.loadFrameTest = function(result) {
         var errors, that, testIframe, root;
         var oldIframe, oldIframeName, oldIframeRoot;
@@ -29743,14 +29693,49 @@ JSUS.extend(TIME);
         catch(e) {
             errors.push('W.loadFrame raised an error: ' + extractErrorMsg(e));
             return errors;
-        }        
+        }
     };
 
-    
+    // ## Helper methods
+
+    function resultCb(that, i) {
+        var update = function(result) {
+            that.updateStillChecking(-1);
+            if (result) {
+                if (!J.isArray(result)) {
+                    throw new Error('Requirements.checkRequirements: ' +
+                                    'result must be array or undefined.');
+                }
+                that.displayResults(result);
+            }
+            if (that.isCheckingFinished()) {
+                that.checkingFinished();
+            }
+        };
+        return that.callbacks[i](update);
+    }
+
+    function extractErrorMsg(e) {
+        var errMsg;
+        if (e.msg) {
+            errMsg = e.msg;
+        }
+        else if (e.message) {
+            errMsg = e.message;
+        }
+        else if (e.description) {
+            errMsg.description;
+        }
+        else {
+            errMsg = e.toString();
+        }
+        return errMsg;
+    }
 
     node.widgets.register('Requirements', Requirements);
 
 })(node);
+
 /**
  * # ServerInfoDisplay widget for nodeGame
  * Copyright(c) 2014 Stefano Balietti
