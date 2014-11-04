@@ -21812,7 +21812,7 @@ JSUS.extend(TIME);
 
         oldPos = this.headerPosition;
 
-        // Store the new position in a reference variable 
+        // Store the new position in a reference variable
         // **before** adaptFrame2HeaderPosition is called
         this.headerPosition = pos;
 
@@ -22684,7 +22684,7 @@ JSUS.extend(TIME);
 
         W.removeClass(W.frameElement, 'ng_mainframe-header-[a-z-]*');
         switch(position) {
-        case 'right':            
+        case 'right':
             W.addClass(W.frameElement, 'ng_mainframe-header-vertical-r');
             break;
         case 'left':
@@ -22787,7 +22787,7 @@ JSUS.extend(TIME);
     GameWindow.prototype.promptOnleave = function(windowObj, text) {
         windowObj = windowObj || window;
         text = 'undefined' !== typeof text ? text : this.conf.textOnleave;
-        
+
         windowObj.onbeforeunload = function(e) {
             e = e || window.event;
             // For IE<8 and Firefox prior to version 4
@@ -22821,7 +22821,7 @@ JSUS.extend(TIME);
     /**
      * ### GameWindow.disableRightClick
      *
-     * Disables the right click in the main page and in the iframe, if found 
+     * Disables the right click in the main page and in the iframe, if found
      *
      * @see GameWindow.enableRightClick
      * @see JSUS.disableRightClick
@@ -22837,7 +22837,7 @@ JSUS.extend(TIME);
     /**
      * ### GameWindow.enableRightClick
      *
-     * Enables the right click in the main page and in the iframe, if found 
+     * Enables the right click in the main page and in the iframe, if found
      *
      * @see GameWindow.disableRightClick
      * @see JSUS.enableRightClick
@@ -22864,7 +22864,7 @@ JSUS.extend(TIME);
  *
  * Locks / Unlocks the screen.
  *
- * The _screen_ represents all the user can see on screen. 
+ * The _screen_ represents all the user can see on screen.
  * It includes the _frame_ area, but also the _header_.
  *
  * http://www.nodegame.org
@@ -22878,7 +22878,7 @@ JSUS.extend(TIME);
 
     var GameWindow = node.GameWindow;
     var screenLevels = node.constants.screenLevels;
-    
+
     /**
      * ### GameWindow.lockScreen
      *
@@ -22993,7 +22993,7 @@ JSUS.extend(TIME);
 
     node.on('TOGGLE', function(idOrObj) {
         var el = getElement(idOrObj, 'GameWindow.on.TOGGLE');
-        
+
         if (el.style.display === 'none') {
             el.style.display = '';
         }
@@ -23006,19 +23006,19 @@ JSUS.extend(TIME);
     node.on('INPUT_DISABLE', function(id) {
         W.toggleInputs(id, true);
     });
-    
+
     // Disable all the input forms found within a given id element.
     node.on('INPUT_ENABLE', function(id) {
         W.toggleInputs(id, false);
     });
-    
+
     // Disable all the input forms found within a given id element.
     node.on('INPUT_TOGGLE', function(id) {
         W.toggleInputs(id);
     });
-    
+
     node.log('node-window: listeners added.');
-    
+
 })(
     'undefined' !== typeof node ? node : undefined
 );
@@ -23059,11 +23059,11 @@ JSUS.extend(TIME);
      * be re-activated later.
      *
      * @param {Document|Element} container The target to scan for input tags
-     *  
+     *
      * @api private
      */
     function lockUnlockedInputs(container) {
-        var j, i, inputs, nInputs;       
+        var j, i, inputs, nInputs;
         for (j = -1; ++j < len; ) {
             inputs = container.getElementsByTagName(inputTags[j]);
             nInputs = inputs.length;
@@ -23105,13 +23105,13 @@ JSUS.extend(TIME);
     function event_PAUSED(text) {
         text = text || W.waitScreen.defaultTexts.paused;
         if (W.isScreenLocked()) {
-            W.waitScreen.beforePauseInnerHTML = 
+            W.waitScreen.beforePauseInnerHTML =
                 W.waitScreen.waitingDiv.innerHTML;
             W.waitScreen.updateText(text);
         }
         else {
             W.lockScreen(text);
-        }            
+        }
     }
 
     function event_RESUMED() {
@@ -23173,7 +23173,7 @@ JSUS.extend(TIME);
         /**
          * ### WaitScreen.enabled
          *
-         * Flag is TRUE if the listeners are registered 
+         * Flag is TRUE if the listeners are registered
          *
          * @see WaitScreen.enable
          */
@@ -23196,7 +23196,7 @@ JSUS.extend(TIME);
         /**
          * ## WaitScreen.lockedInputs
          *
-         * List of locked inputs by the _lock_ method 
+         * List of locked inputs by the _lock_ method
          *
          * @see WaitScreen.lock
          */
@@ -23233,7 +23233,7 @@ JSUS.extend(TIME);
         node.events.ee.game.off('PLAYING', event_PLAYING);
         node.events.ee.game.off('PAUSED', event_PAUSED);
         node.events.ee.game.off('RESUMED', event_RESUMED);
-        this.enabled = false;    
+        this.enabled = false;
     };
 
     /**
@@ -23257,11 +23257,11 @@ JSUS.extend(TIME);
         if ('undefined' === typeof document.getElementsByTagName) {
             node.warn('WaitScreen.lock: cannot lock inputs.');
         }
-        // Disables all input forms in the page.        
+        // Disables all input forms in the page.
         lockUnlockedInputs(document);
-        frameDoc = W.getFrameDocument(); 
+        frameDoc = W.getFrameDocument();
         if (frameDoc) lockUnlockedInputs(frameDoc);
-        
+
         if (!this.waitingDiv) {
             if (!this.root) {
                 this.root = W.getFrameRoot() || document.body;
@@ -23271,7 +23271,7 @@ JSUS.extend(TIME);
 	if (this.waitingDiv.style.display === 'none') {
 	    this.waitingDiv.style.display = '';
 	}
-	this.waitingDiv.innerHTML = text;        
+	this.waitingDiv.innerHTML = text;
     };
 
     /**
@@ -23288,10 +23288,10 @@ JSUS.extend(TIME);
                 this.waitingDiv.style.display = 'none';
             }
         }
-        // Re-enables all previously locked input forms in the page.        
+        // Re-enables all previously locked input forms in the page.
         i = -1, len = this.lockedInputs.length;
         for ( ; ++i < len ; ) {
-            this.lockedInputs[i].removeAttribute('disabled');            
+            this.lockedInputs[i].removeAttribute('disabled');
         }
         this.lockedInputs = [];
     };
@@ -23357,7 +23357,7 @@ JSUS.extend(TIME);
 (function(window, node) {
 
     "use strict";
-    
+
     var J = node.JSUS;
     var constants = node.constants;
     var GameWindow = node.GameWindow;
@@ -23578,7 +23578,7 @@ JSUS.extend(TIME);
 
     var J = node.JSUS;
     var DOM = J.get('DOM');
-    
+
     /**
      * ### GameWindow.getScreen
      *
@@ -23842,7 +23842,7 @@ JSUS.extend(TIME);
      */
     GameWindow.prototype.getEventButton =
     function(event, text, id, attributes) {
-    
+
         var b;
         if ('string' !== typeof event) {
             throw new TypeError('GameWindow.getEventButton: event must ' +
@@ -23891,7 +23891,7 @@ JSUS.extend(TIME);
     /**
      * ## toggleInputs
      *
-     * @api private 
+     * @api private
      */
     function toggleInputs(state, container) {
         var inputTags, j, len, i, inputs, nInputs;
@@ -24166,7 +24166,7 @@ JSUS.extend(TIME);
 
         this.tm.addTrigger(function(el) {
             if (!el) return;
-            if (el.content && el.content.parse 
+            if (el.content && el.content.parse
                 && 'function' === typeof el.content.parse) {
                 var html = el.content.parse();
                 if (JSUS.isElement(html) || JSUS.isNode(html)) {
@@ -24276,7 +24276,7 @@ JSUS.extend(TIME);
  * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
- * Creates an HTML list that can be manipulated by an api. 
+ * Creates an HTML list that can be manipulated by an api.
  *
  * www.nodegame.org
  * ---
@@ -24284,49 +24284,49 @@ JSUS.extend(TIME);
 (function(exports, node) {
 
     "use strict";
-    
+
     var JSUS = node.JSUS;
     var NDDB = node.NDDB;
 
     var HTMLRenderer = node.window.HTMLRenderer;
     var Entity = node.window.HTMLRenderer.Entity;
-    
+
     exports.List = List;
-    
+
     List.prototype = new NDDB();
-    List.prototype.constructor = List;  
-    
+    List.prototype.constructor = List;
+
     function List(options, data) {
         options = options || {};
         this.options = options;
-        
-        NDDB.call(this, options, data); 
-        
+
+        NDDB.call(this, options, data);
+
         this.id = options.id || 'list_' + Math.round(Math.random() * 1000);
-        
+
         this.DL = null;
         this.auto_update = this.options.auto_update || false;
-        this.htmlRenderer = null; 
+        this.htmlRenderer = null;
         this.lifo = false;
-        
+
         this.init(this.options);
     }
-    
+
     // TODO: improve init
     List.prototype.init = function(options) {
         options = options || this.options;
-        
+
         this.FIRST_LEVEL = options.first_level || 'dl';
         this.SECOND_LEVEL = options.second_level || 'dt';
         this.THIRD_LEVEL = options.third_level || 'dd';
-        
+
         this.last_dt = 0;
         this.last_dd = 0;
         this.auto_update = ('undefined' !== typeof options.auto_update) ? options.auto_update
             : this.auto_update;
-        
+
         var lifo = this.lifo = ('undefined' !== typeof options.lifo) ? options.lifo : this.lifo;
-        
+
         this.globalCompare = function(o1, o2) {
             if (!o1 && !o2) return 0;
             if (!o2) return 1;
@@ -24350,9 +24350,9 @@ JSUS.extend(TIME);
                 if (o1.nddbid > o2.nddbid) return -1;
             }
             return 0;
-        }; 
-        
-        
+        };
+
+
         this.DL = options.list || document.createElement(this.FIRST_LEVEL);
         this.DL.id = options.id || this.id;
         if (options.className) {
@@ -24361,12 +24361,12 @@ JSUS.extend(TIME);
         if (this.options.title) {
             this.DL.appendChild(document.createTextNode(options.title));
         }
-        
+
         // was
         //this.htmlRenderer = new HTMLRenderer({renderers: options.renderer});
         this.htmlRenderer = new HTMLRenderer(options.render);
     };
-    
+
     List.prototype._add = function(node) {
         if (!node) return;
         //              console.log('about to add node');
@@ -24376,16 +24376,16 @@ JSUS.extend(TIME);
             this.parse();
         }
     };
-    
+
     List.prototype.addDT = function(elem, dt) {
         if ('undefined' === typeof elem) return;
         this.last_dt++;
-        dt = ('undefined' !== typeof dt) ? dt: this.last_dt;  
+        dt = ('undefined' !== typeof dt) ? dt: this.last_dt;
         this.last_dd = 0;
         var node = new Node({dt: dt, content: elem});
         return this._add(node);
     };
-    
+
     List.prototype.addDD = function(elem, dt, dd) {
         if ('undefined' === typeof elem) return;
         dt = ('undefined' !== typeof dt) ? dt: this.last_dt;
@@ -24393,12 +24393,12 @@ JSUS.extend(TIME);
         var node = new Node({dt: dt, dd: dd, content: elem});
         return this._add(node);
     };
-    
+
     List.prototype.parse = function() {
         this.sort();
         var old_dt = null;
         var old_dd = null;
-        
+
         var appendDT = function() {
             var node = document.createElement(this.SECOND_LEVEL);
             this.DL.appendChild(node);
@@ -24406,7 +24406,7 @@ JSUS.extend(TIME);
             old_dt = node;
             return node;
         };
-        
+
         var appendDD = function() {
             var node = document.createElement(this.THIRD_LEVEL);
             //                  if (old_dd) {
@@ -24421,7 +24421,7 @@ JSUS.extend(TIME);
             //                  old_dt = node;
             return node;
         };
-        
+
         // Reparse all every time
         // TODO: improve this
         if (this.DL) {
@@ -24432,7 +24432,7 @@ JSUS.extend(TIME);
                 this.DL.appendChild(document.createTextNode(this.options.title));
             }
         }
-        
+
         for (var i=0; i<this.db.length; i++) {
             var el = this.db[i];
             var node;
@@ -24444,19 +24444,19 @@ JSUS.extend(TIME);
                 node = appendDD.call(this);
             }
             var content = this.htmlRenderer.render(el);
-            node.appendChild(content);          
-        }        
+            node.appendChild(content);
+        }
         return this.DL;
     };
-    
+
     List.prototype.getRoot = function() {
         return this.DL;
     };
-    
+
     // Cell Class
     Node.prototype = new Entity();
     Node.prototype.constructor = Node;
-    
+
     function Node (node) {
         Entity.call(this, node);
         this.dt = ('undefined' !== typeof node.dt) ? node.dt : null;
@@ -24464,9 +24464,9 @@ JSUS.extend(TIME);
             this.dd = node.dd;
         }
     }
-    
+
 })(
-    ('undefined' !== typeof node) ? (('undefined' !== typeof node.window) ? node.window : node) : module.parent.exports, 
+    ('undefined' !== typeof node) ? (('undefined' !== typeof node.window) ? node.window : node) : module.parent.exports,
     ('undefined' !== typeof node) ? node : module.parent.exports
 );
 
@@ -27566,7 +27566,7 @@ JSUS.extend(TIME);
  * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
- * Integrates nodeGame with the D3 library to plot a real-time chart. 
+ * Integrates nodeGame with the D3 library to plot a real-time chart.
  *
  * www.nodegame.org
  * ---
@@ -27574,105 +27574,105 @@ JSUS.extend(TIME);
 (function(node) {
 
     "use strict";
-        
+
     node.widgets.register('D3', D3);
     node.widgets.register('D3ts', D3ts);
-    
+
     D3.prototype.__proto__ = node.Widget.prototype;
     D3.prototype.constructor = D3;
 
     // ## Defaults
-    
+
     D3.defaults = {};
     D3.defaults.id = 'D3';
     D3.defaults.fieldset = {
 	legend: 'D3 plot'
     };
 
-    
+
     // ## Meta-data
-    
+
     D3.version = '0.1';
     D3.description = 'Real time plots for nodeGame with d3.js';
-    
+
     // ## Dependencies
-    
+
     D3.dependencies = {
-	d3: {},	
+	d3: {},
 	JSUS: {}
     };
-    
+
     function D3 (options) {
 	this.id = options.id || D3.id;
 	this.event = options.event || 'D3';
 	this.svg = null;
-	
+
 	var that = this;
 	node.on(this.event, function(value) {
-	    that.tick.call(that, value); 
+	    that.tick.call(that, value);
 	});
     }
-    
+
     D3.prototype.append = function(root) {
 	this.root = root;
 	this.svg = d3.select(root).append("svg");
 	return root;
     };
-    
+
     D3.prototype.tick = function() {};
-    
+
     // # D3ts
-    
-    
+
+
     // ## Meta-data
-    
+
     D3ts.id = 'D3ts';
     D3ts.version = '0.1';
     D3ts.description = 'Time series plot for nodeGame with d3.js';
-    
-    // ## Dependencies	
+
+    // ## Dependencies
     D3ts.dependencies = {
-	D3: {},	
+	D3: {},
 	JSUS: {}
     };
-    
+
     D3ts.prototype.__proto__ = D3.prototype;
     D3ts.prototype.constructor = D3ts;
-    
+
     D3ts.defaults = {};
-    
+
     D3ts.defaults.width = 400;
     D3ts.defaults.height = 200;
-    
+
     D3ts.defaults.margin = {
-    	top: 10, 
-    	right: 10, 
-    	bottom: 20, 
-    	left: 40 
+    	top: 10,
+    	right: 10,
+    	bottom: 20,
+    	left: 40
     };
-    
+
     D3ts.defaults.domain = {
 	x: [0, 10],
 	y: [0, 1]
     };
-    
+
     D3ts.defaults.range = {
     	x: [0, D3ts.defaults.width],
     	y: [D3ts.defaults.height, 0]
     };
-    
+
     function D3ts (options) {
 	D3.call(this, options);
-	
-	
+
+
 	var o = this.options = JSUS.merge(D3ts.defaults, options);
-	
+
 	var n = this.n = o.n;
-	
+
 	this.data = [0];
-	
+
 	this.margin = o.margin;
-	
+
 	var width = this.width = o.width - this.margin.left - this.margin.right;
 	var height = this.height = o.height - this.margin.top - this.margin.bottom;
 
@@ -27690,18 +27690,18 @@ JSUS.extend(TIME);
 	    .x(function(d, i) { return x(i); })
 	    .y(function(d, i) { return y(d); });
     }
-    
+
     D3ts.prototype.init = function(options) {
 	//D3.init.call(this, options);
-	
+
 	console.log('init!');
 	var x = this.x,
 	y = this.y,
 	height = this.height,
 	width = this.width,
 	margin = this.margin;
-	
-	
+
+
 	// Create the SVG and place it in the middle
 	this.svg.attr("width", width + margin.left + margin.right)
 	    .attr("height", height + margin.top + margin.bottom)
@@ -27732,20 +27732,20 @@ JSUS.extend(TIME);
 	    .append("path")
 	    .data([this.data])
 	    .attr("class", "line")
-	    .attr("d", this.line);		
+	    .attr("d", this.line);
     };
-    
+
     D3ts.prototype.tick = function(value) {
 	this.alreadyInit = this.alreadyInit || false;
 	if (!this.alreadyInit) {
 	    this.init();
 	    this.alreadyInit = true;
 	}
-	
+
 	var x = this.x;
-	
+
 	console.log('tick!');
-	
+
 	// push a new data point onto the back
 	this.data.push(value);
 
@@ -27756,18 +27756,18 @@ JSUS.extend(TIME);
 
 	// pop the old data point off the front
 	if (this.data.length > this.n) {
-	    
+
 	    this.path
 	  	.transition()
 	  	.duration(500)
 	  	.ease("linear")
 	  	.attr("transform", "translate(" + x(-1) + ")");
-	    
+
 	    this.data.shift();
-	    
+
 	}
     };
-    
+
 })(node);
 /**
  * # DataBar widget for nodeGame
@@ -28117,10 +28117,10 @@ JSUS.extend(TIME);
 
     Feedback.defaults = {};
     Feedback.defaults.id = 'feedback';
-    Feedback.defaults.fieldset = { 
+    Feedback.defaults.fieldset = {
         legend: 'Feedback'
     };
-    
+
     // ## Meta-data
 
     Feedback.version = '0.1';
@@ -28197,70 +28197,70 @@ JSUS.extend(TIME);
  * ---
  */
 (function(node) {
-   
+
     "use strict";
- 
+
     node.widgets.register('GameBoard', GameBoard);
-    
+
     var PlayerList = node.PlayerList;
 
-    // ## Defaults	
-    
+    // ## Defaults
+
     GameBoard.defaults = {};
     GameBoard.defaults.id = 'gboard';
     GameBoard.defaults.fieldset = {
 	legend: 'Game Board'
     };
-    
+
     // ## Meta-data
-    
+
     GameBoard.version = '0.4.0';
     GameBoard.description = 'Offer a visual representation of the state of all players in the game.';
-    
+
     function GameBoard(options) {
-	
+
 	this.id = options.id || GameBoard.defaults.id;
 	this.status_id = this.id + '_statusbar';
-	
+
 	this.board = null;
 	this.status = null;
 	this.root = null;
-	
+
     }
-    
+
     GameBoard.prototype.append = function(root) {
 	this.root = root;
 	this.status = node.window.addDiv(root, this.status_id);
 	this.board = node.window.addDiv(root, this.id);
-	
+
 	this.updateBoard(node.game.pl);
-		
+
 	return root;
     };
-    
+
     GameBoard.prototype.listeners = function() {
-	var that = this;		
+	var that = this;
 	node.on('UPDATED_PLIST', function() {
 	    that.updateBoard(node.game.pl);
 	});
-	
+
     };
-    
+
     GameBoard.prototype.printLine = function(p) {
 
 	var line, levels, level;
         levels = node.constants.stageLevels;
 
-        line = '[' + (p.name || p.id) + "]> \t"; 
-	line += '(' +  p.stage.round + ') ' + p.stage.stage + '.' + p.stage.step; 
+        line = '[' + (p.name || p.id) + "]> \t";
+	line += '(' +  p.stage.round + ') ' + p.stage.stage + '.' + p.stage.step;
 	line += ' ';
-	
+
 	switch (p.stageLevel) {
 
 	case levels.UNINITIALIZED:
 	    level = 'uninit.';
 	    break;
-	    
+
 	case levels.INITIALIZING:
 	    level = 'init...';
 	    break;
@@ -28271,54 +28271,54 @@ JSUS.extend(TIME);
 
 	case levels.LOADING:
 	    level = 'loading';
-	    break;	    
+	    break;
 
 	case levels.LOADED:
 	    level = 'loaded';
 	    break;
-	    
+
 	case levels.PLAYING:
 	    level = 'playing';
 	    break;
 	case levels.DONE:
 	    level = 'done';
 	    break;
-		
+
 	default:
 	    level = p.stageLevel;
-	    break;		
+	    break;
 	}
 
 	return line + '(' + level + ')';
     };
-    
+
     GameBoard.prototype.printSeparator = function(p) {
 	return W.getElement('hr', null, {style: 'color: #CCC;'});
     };
-    
-    
+
+
     GameBoard.prototype.updateBoard = function(pl) {
 	var player, separator;
         var that = this;
-	
+
 	this.status.innerHTML = 'Updating...';
-	
+
 	if (pl.size()) {
 	    that.board.innerHTML = '';
 	    pl.forEach( function(p) {
 		player = that.printLine(p);
-		
+
 		W.write(player, that.board);
-		
+
 		separator = that.printSeparator(p);
 		W.write(separator, that.board);
 	    });
 	}
-	
-	
+
+
 	this.status.innerHTML = 'Connected players: ' + node.game.pl.length;
     };
-    
+
 })(node);
 
 /**
@@ -28338,33 +28338,33 @@ JSUS.extend(TIME);
     node.widgets.register('GameSummary', GameSummary);
 
     // ## Defaults
-    
+
     GameSummary.defaults = {};
     GameSummary.defaults.id = 'gamesummary';
     GameSummary.defaults.fieldset = { legend: 'Game Summary' };
-    
+
     // ## Meta-data
-    
+
     GameSummary.version = '0.3';
     GameSummary.description = 'Show the general configuration options of the game.';
-    
+
     function GameSummary(options) {
 	this.summaryDiv = null;
     }
-    
+
     GameSummary.prototype.append = function(root) {
 	this.root = root;
 	this.summaryDiv = node.window.addDiv(root);
 	this.writeSummary();
 	return root;
     };
-    
+
     GameSummary.prototype.writeSummary = function(idState, idSummary) {
 	var gName = document.createTextNode('Name: ' + node.game.metadata.name),
 	gDescr = document.createTextNode('Descr: ' + node.game.metadata.description),
 	gMinP = document.createTextNode('Min Pl.: ' + node.game.minPlayers),
 	gMaxP = document.createTextNode('Max Pl.: ' + node.game.maxPlayers);
-	
+
 	this.summaryDiv.appendChild(gName);
 	this.summaryDiv.appendChild(document.createElement('br'));
 	this.summaryDiv.appendChild(gDescr);
@@ -28372,7 +28372,7 @@ JSUS.extend(TIME);
 	this.summaryDiv.appendChild(gMinP);
 	this.summaryDiv.appendChild(document.createElement('br'));
 	this.summaryDiv.appendChild(gMaxP);
-	
+
 	node.window.addDiv(this.root, this.summaryDiv, idSummary);
     };
 
@@ -29640,6 +29640,7 @@ JSUS.extend(TIME);
         return errors;
     };
 
+<<<<<<< HEAD
     /**
      * ## Requirements.addTimeout
      *
@@ -29651,6 +29652,8 @@ JSUS.extend(TIME);
      * @see this.withTimeout
      * @see this.callbacks
      */
+=======
+>>>>>>> 71c4d7e84ae14a6fcb1c2a4e00d2c14caf69b17a
     Requirements.prototype.addTimeout = function() {
         var that = this;
         var errStr = 'One or more function is taking too long. This is ' +
@@ -29707,6 +29710,7 @@ JSUS.extend(TIME);
         this.summaryUpdate.innerHTML = ' (' +  remaining + ' / ' + total + ')';
     };
 
+<<<<<<< HEAD
     /**
      * ## Requirements.isCheckingFinished
      *
@@ -29715,6 +29719,9 @@ JSUS.extend(TIME);
      * @see this.stillCheckings
      * @see this.callbacks
      */
+=======
+
+>>>>>>> 71c4d7e84ae14a6fcb1c2a4e00d2c14caf69b17a
     Requirements.prototype.isCheckingFinished = function() {
         return this.stillChecking <= 0;
     };
@@ -29829,7 +29836,13 @@ JSUS.extend(TIME);
         this.list.parse();
     };
 
+<<<<<<< HEAD
     Requirements.prototype.append = function() {
+=======
+    Requirements.prototype.append = function(root) {
+        this.root = root;
+
+>>>>>>> 71c4d7e84ae14a6fcb1c2a4e00d2c14caf69b17a
         this.summary = document.createElement('span');
         this.summary.appendChild(
             document.createTextNode('Evaluating requirements'));
@@ -29840,6 +29853,15 @@ JSUS.extend(TIME);
         this.dots = W.getLoadingDots();
 
         this.summary.appendChild(this.dots.span);
+<<<<<<< HEAD
+=======
+
+        root.appendChild(this.summary);
+
+        root.appendChild(this.list.getRoot());
+        return root;
+    };
+>>>>>>> 71c4d7e84ae14a6fcb1c2a4e00d2c14caf69b17a
 
         this.bodyDiv.appendChild(this.summary);
 
@@ -29950,6 +29972,7 @@ JSUS.extend(TIME);
         }
     };
 
+<<<<<<< HEAD
     // ## Helper methods
 
     function resultCb(that, i) {
@@ -29985,6 +30008,9 @@ JSUS.extend(TIME);
         }
         return errMsg;
     }
+=======
+
+>>>>>>> 71c4d7e84ae14a6fcb1c2a4e00d2c14caf69b17a
 
     node.widgets.register('Requirements', Requirements);
 
