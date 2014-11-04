@@ -42,7 +42,7 @@ function configure(loggers, logDir) {
         file: {
             level: 'error',
             timestamp: true,
-            filename: logDir + 'servernode',
+            filename: logDir + 'servernode.log',
             maxsize: 1000000,
             maxFiles: 10
         }
@@ -56,7 +56,7 @@ function configure(loggers, logDir) {
         file: {
             level: 'error',
             timestamp: true,
-            filename: logDir + 'channel',
+            filename: logDir + 'channels.log',
             maxsize: 1000000,
             maxFiles: 10
         }
@@ -70,7 +70,7 @@ function configure(loggers, logDir) {
         file: {
             level: 'silly',
             timestamp: true,
-            filename: logDir + 'messages'
+            filename: logDir + 'messages.log'
         }
     });
 
@@ -82,7 +82,7 @@ function configure(loggers, logDir) {
         file: {
             level: 'silly',
             timestamp: true,
-            filename: logDir + 'clients'
+            filename: logDir + 'clients.log'
         }
     });
 
