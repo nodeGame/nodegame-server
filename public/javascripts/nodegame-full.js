@@ -14909,12 +14909,9 @@ JSUS.extend(TIME);
      * ### Game.getCurrentStepObj
      *
      * Returns the object representing the current game step.
-<<<<<<< HEAD
      *
      * The returning object includes all the properties, such as:
      * _id_, _cb_, _timer_, etc.
-=======
->>>>>>> jadeIntegration
      *
      * @return {object} The game-step as defined in the stager.
      *
@@ -26555,6 +26552,7 @@ JSUS.extend(TIME);
     };
 
 })(node);
+
 /**
  * # ChernoffFaces (Simplified version) widget for nodeGame
  * Copyright(c) 2014 Stefano Balietti
@@ -27209,6 +27207,7 @@ JSUS.extend(TIME);
     };
 
 })(node);
+
 /**
  * # Controls widget for nodeGame
  * Copyright(c) 2014 Stefano Balietti
@@ -27561,6 +27560,7 @@ JSUS.extend(TIME);
     };
 
 })(node);
+
 /**
  * # D3 widget for nodeGame
  * Copyright(c) 2014 Stefano Balietti
@@ -27769,6 +27769,7 @@ JSUS.extend(TIME);
     };
 
 })(node);
+
 /**
  * # DataBar widget for nodeGame
  * Copyright(c) 2014 Stefano Balietti
@@ -27989,6 +27990,7 @@ JSUS.extend(TIME);
     DynamicTable.prototype.listeners = function() {};
 
 })(node);
+
 /**
  * # EventButton widget for nodeGame
  * Copyright(c) 2014 Stefano Balietti
@@ -28097,6 +28099,7 @@ JSUS.extend(TIME);
     }
 
 })(node);
+
 /**
  * # Feedback widget for nodeGame
  * Copyright(c) 2014 Stefano Balietti
@@ -28186,6 +28189,7 @@ JSUS.extend(TIME);
     node.widgets.register('Feedback', Feedback);
 
 })(node);
+
 /**
  * # GameBoard widget for nodeGame
  * Copyright(c) 2014 Stefano Balietti
@@ -28982,6 +28986,7 @@ JSUS.extend(TIME);
     };
 
 })(node);
+
 /**
  * # MsgBar widget for nodeGame
  * Copyright(c) 2014 Stefano Balietti
@@ -29356,6 +29361,7 @@ JSUS.extend(TIME);
     };
 
 })(node);
+
 /**
  * # NextPreviousState widget for nodeGame
  * Copyright(c) 2014 Stefano Balietti
@@ -29415,7 +29421,7 @@ JSUS.extend(TIME);
                 node.emit(stateEvent, state, 'ROOM');
             }
             else {
-                node.log('No next/previous state. Not sent', 'ERR');
+                node.err('No next/previous state. Not sent');
             }
         };
 
@@ -29640,7 +29646,6 @@ JSUS.extend(TIME);
         return errors;
     };
 
-<<<<<<< HEAD
     /**
      * ## Requirements.addTimeout
      *
@@ -29652,8 +29657,6 @@ JSUS.extend(TIME);
      * @see this.withTimeout
      * @see this.callbacks
      */
-=======
->>>>>>> 71c4d7e84ae14a6fcb1c2a4e00d2c14caf69b17a
     Requirements.prototype.addTimeout = function() {
         var that = this;
         var errStr = 'One or more function is taking too long. This is ' +
@@ -29710,7 +29713,6 @@ JSUS.extend(TIME);
         this.summaryUpdate.innerHTML = ' (' +  remaining + ' / ' + total + ')';
     };
 
-<<<<<<< HEAD
     /**
      * ## Requirements.isCheckingFinished
      *
@@ -29719,9 +29721,6 @@ JSUS.extend(TIME);
      * @see this.stillCheckings
      * @see this.callbacks
      */
-=======
-
->>>>>>> 71c4d7e84ae14a6fcb1c2a4e00d2c14caf69b17a
     Requirements.prototype.isCheckingFinished = function() {
         return this.stillChecking <= 0;
     };
@@ -29836,13 +29835,8 @@ JSUS.extend(TIME);
         this.list.parse();
     };
 
-<<<<<<< HEAD
     Requirements.prototype.append = function() {
-=======
-    Requirements.prototype.append = function(root) {
-        this.root = root;
 
->>>>>>> 71c4d7e84ae14a6fcb1c2a4e00d2c14caf69b17a
         this.summary = document.createElement('span');
         this.summary.appendChild(
             document.createTextNode('Evaluating requirements'));
@@ -29853,15 +29847,6 @@ JSUS.extend(TIME);
         this.dots = W.getLoadingDots();
 
         this.summary.appendChild(this.dots.span);
-<<<<<<< HEAD
-=======
-
-        root.appendChild(this.summary);
-
-        root.appendChild(this.list.getRoot());
-        return root;
-    };
->>>>>>> 71c4d7e84ae14a6fcb1c2a4e00d2c14caf69b17a
 
         this.bodyDiv.appendChild(this.summary);
 
@@ -29972,7 +29957,6 @@ JSUS.extend(TIME);
         }
     };
 
-<<<<<<< HEAD
     // ## Helper methods
 
     function resultCb(that, i) {
@@ -30008,9 +29992,6 @@ JSUS.extend(TIME);
         }
         return errMsg;
     }
-=======
-
->>>>>>> 71c4d7e84ae14a6fcb1c2a4e00d2c14caf69b17a
 
     node.widgets.register('Requirements', Requirements);
 
@@ -30106,6 +30087,7 @@ JSUS.extend(TIME);
     };
 
 })(node);
+
 /**
  * # StateBar widget for nodeGame
  * Copyright(c) 2014 Stefano Balietti
@@ -30271,6 +30253,7 @@ JSUS.extend(TIME);
         node.off('STEP_CALLBACK_EXECUTED', StateDisplay.prototype.updateAll);
     };
 })(node);
+
 /**
  * # VisualRound widget for nodeGame
  * Copyright(c) 2014 Stefano Balietti
