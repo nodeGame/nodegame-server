@@ -26,11 +26,10 @@ nodemailer = require('nodemailer');
  */
 function configure(app, servernode) {
     var rootDir;
-    var gameCachePublic = {};
-    var gameCacheTemplate = {};
-    var gameCacheContext = {};
+    var pager;
 
     rootDir = servernode.rootDir;
+    pager = servernode.pager;
 
     function verifyGameRequest(req, res) {
         var gameInfo;
@@ -51,52 +50,29 @@ function configure(app, servernode) {
     }
 
     function sendFromPublic(type, req, res) {
-        var path, i;
-        if (!req.params.file) return;
-        if (req.params.file.lastIndexOf('\/') === (req.params.file.length-1)) {
-            req.params.file = req.params.file.substring(0,req.params.file.length-1);
+        var path, i, file;
+        file = req.params.file;
+        if (!file) return;
+        if (file.lastIndexOf('\/') === (file.length - 1)) {
+            file = file.substring(0, file.length - 1);
         }
 
         // Build path to file.
-        path = rootDir + '/public/' + type + '/' + req.params.file;
+        path = rootDir + '/public/' + type + '/' + file;
         // Send file.
         res.sendfile(path);
     }
 
-    // TODO: COMMENT
-    function createAndServe(langPath, pageName, file,
-                            gameInfo, contextPath, res) {
-        var jadeTemplate, jsonContext;
+    function renderTemplate(req, res, gameName, templatePath, contextPath, 
+                            gameSettings) {
+        var context, cb;
 
-        langPath = file.split('/')[1] + '/';
-        pageName = file.split('/')[2].split('.')[0];
-
-        jadeTemplate = gameInfo.dir + 'view/templates/' + pageName +
-            '.jade';
-
-        contextPath = gameInfo.dir + 'view/context/' + langPath +
-            pageName + '.json';
-        try {
-            jsonContext = require(contextPath);
-        }
-        catch (e) {
-            // redirect to 'page not found'
-            res.sendfile(gameInfo.dir + 'public/notFound.html'); //TODO: INSERT PROPER FILE
-            return;
-
-        }
-        res.render(jadeTemplate, jsonContext);
-    }
-
-    function renderTemplate(res, gameName, templatePath, contextPath, 
-                            gameCacheContext) {
-        var context;
-
-        context = gameCacheContext[gameName][contextPath];
+        // Context is retrieved from cache, 
+        // and can be modified by user-defined callbacks.
+        context = pager.getContext(gameName, contextPath, gameSettings,
+                                   req.headers);
 
         if (context) {
-            // TODO can modify context.
-            console.log('----------------------------------!!!!!!!!');
             res.render(templatePath, context);
             return;
         }
@@ -104,18 +80,22 @@ function configure(app, servernode) {
         fs.exists(contextPath, function(exists) {
             if (exists) {
                 try {
-                    context = require(contextPath);
+                    cb = require(contextPath);
+                    if ('function' !== typeof cb) {
+                        throw new TypeError('ContextCallback must be function.');
+                    }
                 }
                 catch(e) {
+                    servernode.logger.error('Error loading context file: ' +
+                                            contextPath + ' ' + e);
                     // TODO: Log error.
-                    // TODO: Mark file as non-existig ?
-                    // TODO: INSERT PROPER FILE.
-                    res.sendfile(gameInfo.dir + 'public/notFound.html');
+                    // TODO: Mark file as non-existing ?
+                    res.send('File not Found', 404);
                     return;
                 }
-                gameCacheContext[gameName][contextPath] = context;
+                pager.cacheContextCallback(gameName, contextPath, cb);
+                context = cb(gameSettings, req.headers);
             }
-            debugger
 
             // Render anyway, with or without context.
             res.render(templatePath, context);
@@ -191,7 +171,7 @@ function configure(app, servernode) {
 
     // Serves game files or default game index file: index.htm.
     app.get('/:game/*', function(req, res) {
-        var gameName, gameInfo, filePath, file;
+        var gameName, gameInfo, gameSettings, filePath, file;
         var jadeTemplate, jsonContext, contextPath, langPath, pageName;
 
         gameInfo = verifyGameRequest(req, res);
@@ -200,10 +180,7 @@ function configure(app, servernode) {
         gameName = req.params.game;
         file = req.params[0];
 
-        // TODO: place in a proper place.
-        if (!gameCachePublic[gameName]) gameCachePublic[gameName] = {};
-        if (!gameCacheTemplate[gameName]) gameCacheTemplate[gameName] = {};
-        if (!gameCacheContext[gameName]) gameCacheContext[gameName] = {};
+        gameSettings = gameInfo.treatments;
 
         if ('' === file || 'undefined' === typeof file) {
             file = 'index.htm';
@@ -213,21 +190,9 @@ function configure(app, servernode) {
             // Error: ENOTDIR in fetching the file.
             file = file.substring(0, file.length-1);
         }
-
-        // TODO: fix this.
-        // Executes callback if one has been defined for this file.
-        if (app.gameHooks) {
-            for (i = 0; i < app.gameHooks.length; ++i) {
-                if (app.gameHooks[i].file === file) {
-                    app.gameHooks[i].callback(req, res);
-                    return;
-                }
-            }
-        }
         
         // Build filePath to file in public directory.
         filePath = gameInfo.dir + 'public/' + file;
-        console.log(file);
 
         // TODO: move after refactoring.
         // Send JSON data as JSONP if there is a callback query parameter:
@@ -250,19 +215,23 @@ function configure(app, servernode) {
             return;
         }
 
-        // If file is in public/ serve it immediately (cached by Express).
-        if (gameCachePublic[gameName] && gameCachePublic[gameName][file]) {
+        // If file was served already from public/ serve it
+        // immediately (cached by Express).
+        if (pager.inPublic(gameName, file)) {
             // Send file (if it is a directory it is not sent).
             res.sendfile(filePath);
             return;
         }
 
-        // If exists in 'public/', cache it and serve it.
+        // Checks if exists in 'public/' or as view.
         fs.exists(filePath, function(exists) {
-            var basename, templatePath, contextPath, context;
+            var basename, templatePath, templateFound,  contextPath, context;
+
+            // Exists in public, cache it, serve it.
             if (exists) {
                 fs.readFile(filePath, 'utf8', function(err, data) {
-                    gameCachePublic[gameName][file] = true;
+                    // Mark existing.
+                    pager.inPublic(gameName, file, true);
                     res.sendfile(filePath);
                 });
                 return;
@@ -271,19 +240,12 @@ function configure(app, servernode) {
             // Check if it a template.
             basename = file.substr(0, file.lastIndexOf('.'));
 
-
-
-
-            // conlangPath = file.split('/')[1] + '/';
-            //pageName = ;
-
-            // Instantiate templates, if needed and available.
+            // Instantiate templates, if available.
             // `html/templates/page.jade` holds the template and
-            // `html/context/lang/page.json` holds the context to instantiate
-            // the page requested by `html/lang/page*`.
-            
+            // `html/contexts/xx/xx/page.js` holds the context callback
+            // to instantiate the page requested by `xx/xx/page*`.
 
-            // TODO: Matches too much: xx/xx/xx/xx/xx/
+            // Matches: xx/xx/xx/xx/xx/
             if (basename.match(/^[^\/]*\/.*$/)) {
                 templatePath = gameInfo.dir + 'views/templates/' +
                     basename.split('/')[1] + '.jade';
@@ -294,42 +256,35 @@ function configure(app, servernode) {
             }
 
             contextPath = gameInfo.dir + 'views/contexts/' + 
-                basename + '.json';
+                basename + '.js';
             
+            // Info about previous requests to the template file.
+            templateFound = pager.inTemplates(gameName, templatePath);
+
             // Template not existing.
-            if (gameCacheTemplate[gameName][templatePath] === false) {
-                res.sendfile(gameInfo.dir + 'public/notFound.html');
+            if (templateFound === false) {
+                res.send('File not Found', 404);
             }
             // Template existing, render it.
-            else if (gameCacheTemplate[gameName][templatePath] === true) {
-                renderTemplate(res, gameName, templatePath, contextPath, 
-                               gameCacheContext);
+            else if (templateFound === true) {
+                renderTemplate(req, res, gameName, templatePath, contextPath, 
+                               gameSettings);
             }
             // Do not know if exists or not, check and render it.
-            else if ('undefined' === typeof gameCacheTemplate[gameName][templatePath]) {
+            else {
 
                 fs.exists(templatePath, function(exists) {
                     if (!exists) {
-                        gameCacheTemplate[gameName][templatePath] = false;
-                        res.sendfile(gameInfo.dir + 'public/notFound.html');
+                        pager.inTemplates(gameName, templatePath, false);
+                        res.send('File not Found', 404);
                         return;
                     }
-                    gameCacheTemplate[gameName][templatePath] = true;
-                    renderTemplate(res, gameName, templatePath, contextPath, 
-                                   gameCacheContext);
+                    pager.inTemplates(gameName, templatePath, true);
+                    renderTemplate(req, res, gameName, templatePath, 
+                                   contextPath, gameSettings);
                 });
             }
         });
-
-        return;
-
-
- 
-
-        // Send file (if it is a directory it is not sent).
-        //res.sendfile(path.basename(filePath), {root: path.dirname(filePath)});
-        res.sendfile(filePath);
-
     });
 
     app.get('/:game', function(req, res) {
