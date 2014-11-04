@@ -63,11 +63,11 @@ function configure(app, servernode) {
         res.sendfile(path);
     }
 
-    function renderTemplate(req, res, gameName, templatePath, contextPath, 
+    function renderTemplate(req, res, gameName, templatePath, contextPath,
                             gameSettings) {
         var context, cb;
 
-        // Context is retrieved from cache, 
+        // Context is retrieved from cache,
         // and can be modified by user-defined callbacks.
         context = pager.getContext(gameName, contextPath, gameSettings,
                                    req.headers);
@@ -76,7 +76,7 @@ function configure(app, servernode) {
             res.render(templatePath, context);
             return;
         }
-            
+
         fs.exists(contextPath, function(exists) {
             if (exists) {
                 try {
@@ -96,10 +96,9 @@ function configure(app, servernode) {
                 pager.cacheContextCallback(gameName, contextPath, cb);
                 context = cb(gameSettings, req.headers);
             }
-
             // Render anyway, with or without context.
             res.render(templatePath, context);
-        });        
+        });
     }
 
     app.use(express.cookieParser());
@@ -185,12 +184,12 @@ function configure(app, servernode) {
         if ('' === file || 'undefined' === typeof file) {
             file = 'index.htm';
         }
-        else if (file.lastIndexOf('\/') === (file.length-1)) {
+        else if (file.lastIndexOf('\/') === (file.length - 1)) {
             // Removing the trailing slash because it creates:
             // Error: ENOTDIR in fetching the file.
-            file = file.substring(0, file.length-1);
+            file = file.substring(0, file.length - 1);
         }
-        
+
         // Build filePath to file in public directory.
         filePath = gameInfo.dir + 'public/' + file;
 
@@ -251,13 +250,13 @@ function configure(app, servernode) {
                     basename.split('/')[1] + '.jade';
             }
             else {
-                templatePath = gameInfo.dir + 'views/templates/' + 
+                templatePath = gameInfo.dir + 'views/templates/' +
                     basename + '.jade';
             }
 
-            contextPath = gameInfo.dir + 'views/contexts/' + 
+            contextPath = gameInfo.dir + 'views/contexts/' +
                 basename + '.js';
-            
+
             // Info about previous requests to the template file.
             templateFound = pager.inTemplates(gameName, templatePath);
 
@@ -267,7 +266,7 @@ function configure(app, servernode) {
             }
             // Template existing, render it.
             else if (templateFound === true) {
-                renderTemplate(req, res, gameName, templatePath, contextPath, 
+                renderTemplate(req, res, gameName, templatePath, contextPath,
                                gameSettings);
             }
             // Do not know if exists or not, check and render it.
@@ -280,7 +279,7 @@ function configure(app, servernode) {
                         return;
                     }
                     pager.inTemplates(gameName, templatePath, true);
-                    renderTemplate(req, res, gameName, templatePath, 
+                    renderTemplate(req, res, gameName, templatePath,
                                    contextPath, gameSettings);
                 });
             }
@@ -294,7 +293,7 @@ function configure(app, servernode) {
     app.configure(function(){
         app.set('views', rootDir + '/views');
         app.set('view engine', 'jade');
-        app.set('view options',{layout: false});
+        app.set('view options', {layout: false});
         app.use(express.static(rootDir + '/public'));
     });
 
