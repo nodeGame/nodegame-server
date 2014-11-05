@@ -1,5 +1,12 @@
 # nodegame-server change log
 
+# 0.9.5
+ - Full Bot connect api
+ - Phantomjs connect bot
+ - Client types loaded from game.settings
+ - Socket Direct messaging is asynchronous
+ - Load Auth Directory
+
 # 0.9.4
  - Better integration with Jade template language
  - Support for internationalization
