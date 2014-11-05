@@ -80,22 +80,22 @@ function configure(servernode) {
 
         // A PLAYER_UPDATE / PCONNECT / PDISCONNECT message will be sent to
         // all clients connected to the PlayerServer endpoint when:
-	notify: {
+        notify: {
 
-	    // A new authorized client connects;
+            // A new authorized client connects;
             onConnect: true,
 
             // A client enters a new stage;
-	    onStageUpdate: false,
+            onStageUpdate: false,
 
             // A client changes stageLevel (e.g. INIT, CALLBACK_EXECUTED);
-	    onStageLevelUpdate: false,
+            onStageLevelUpdate: false,
 
             // A client is LOADED (this option is needed in combination with
             // the option syncOnLoaded used on the clients). It is much less
             // expensive than setting onStageLevelUpdate = true;
             onStageLoadedUpdate: false
-	},
+        },
 
         // Restricts the available recipient options.
         canSendTo: {
@@ -124,13 +124,16 @@ function configure(servernode) {
 
 //        // All messages exchanged between players will be forwarded to the
 //        // clients connected to the admin endpoint (ignores the _to_ field).
-//	forwardAllMessages: true,
+//        forwardAllMessages: true,
 //
 //        // If TRUE, players can invoke GET commands on admins.
 //        // TODO: rename in a more generic way, or distinguish get from admins
 //        // and get from players.
 //        getFromAdmins: false,
 
+        // Allow setting data (e.g. startingRoom, client type) in the query
+        // data of a SocketIO connection.
+        sioQuery: true
     };
 
     // PlayerServer default options.
@@ -138,22 +141,22 @@ function configure(servernode) {
 
         // A PLAYER_UPDATE / PCONNECT / PDISCONNECT message will be sent to
         // all clients connected to the PlayerServer endpoint when:
-	notify: {
+        notify: {
 
-	    // A new authorized client connects;
+            // A new authorized client connects;
             onConnect: true,
 
             // A client enters a new stage;
-	    onStageUpdate: false,
+            onStageUpdate: false,
 
             // A client changes stageLevel (e.g. INIT, CALLBACK_EXECUTED);
-	    onStageLevelUpdate: false,
+            onStageLevelUpdate: false,
 
             // A client is LOADED (this option is needed in combination with
             // the option syncOnLoaded used on the clients). It is much less
             // expensive than setting onStageLevelUpdate = true;
             onStageLoadedUpdate: false
-	},
+        },
 
         // Restricts the available recipient options.
         canSendTo: {
@@ -180,22 +183,25 @@ function configure(servernode) {
 
         // All messages exchanged between players will be forwarded to the
         // clients connected to the admin endpoint (ignores the _to_ field).
-	forwardAllMessages: true,
+        forwardAllMessages: true,
 
         // If TRUE, players can invoke GET commands on admins.
         // TODO: rename in a more generic way, or distinguish get from admins
         // and get from players.
-        getFromAdmins: false
+        getFromAdmins: false,
+
+        // See above, in admin defaults.
+        sioQuery: true
     };
 
     // Defaults option for a channel.
     servernode.defaults.channel = {
         // Common options.
         // Which sockets will be enabled.
-	sockets: {
-	    sio: true,
-	    direct: true
-	},
+        sockets: {
+            sio: true,
+            direct: true
+        },
         accessDeniedUrl: '/pages/accessdenied.htm',
         // Admin and Player server specific options.
         // Can overwrite common ones.
