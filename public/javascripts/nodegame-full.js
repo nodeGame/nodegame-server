@@ -14420,11 +14420,11 @@ JSUS.extend(TIME);
         node = this.node;
 
         if (this.getStateLevel() >= constants.stateLevels.FINISHING) {
-            node.warn('game.gameover called on a finishing game.');
+            node.warn('Game.gameover called on a finishing game.');
             return;
         }
 
-        node.emit('GAMEOVER');
+        node.emit('GAME_ALMOST_OVER');
 
         // Call gameover callback, if it exists:
         if (this.plot && this.plot.stager) {
@@ -14438,6 +14438,7 @@ JSUS.extend(TIME);
 
         this.setStateLevel(constants.stateLevels.GAMEOVER);
         this.setStageLevel(constants.stageLevels.DONE);
+        node.emit('GAME_OVER');
 
         node.log('game over.');
     };
@@ -14528,18 +14529,25 @@ JSUS.extend(TIME);
     /**
      * ### Game.shouldStep
      *
-     * Execute the next stage / step, if allowed
+     * Checks if the next step can be executed
      *
-     * @return {boolean|null} FALSE, if the execution encounters an error
-     *   NULL, if stepping is disallowed
+     * Checks the number of players required.
+     * If the game has been initialized and is not in GAME_OVER, then
+     * evaluates the stepRule function for the current step and returns
+     * its result.
+     *
+     * @return {boolean} TRUE, if stepping is allowed;
+     *   FALSE, if stepping is not allowed
      *
      * @see Game.step
+     * @see Game.checkPlistSize
+     * @see stepRules
      */
     Game.prototype.shouldStep = function() {
         var stepRule;
 
-        if (!this.checkPlistSize()) {
-            return;
+        if (!this.checkPlistSize() || !this.isSteppable()) {
+            return false;
         }
 
         stepRule = this.plot.getStepRule(this.getCurrentGameStage());
@@ -14607,7 +14615,7 @@ JSUS.extend(TIME);
 
         if ('string' !== typeof nextStep && 'object' !== typeof nextStep) {
             throw new TypeError('Game.gotoStep: nextStep must be ' +
-                               'an object or a string.');
+                                'an object or a string.');
         }
 
         curStep = this.getCurrentGameStage();
@@ -14640,8 +14648,6 @@ JSUS.extend(TIME);
                 if (node.socket.shouldClearBuffer()) {
                     node.socket.clearBuffer();
                 }
-
-                node.emit('GAME_OVER');
                 return null;
             }
 
@@ -15316,7 +15322,11 @@ JSUS.extend(TIME);
      * @return {boolean} TRUE if the game can be stepped.
      */
     Game.prototype.isSteppable = function() {
-        return this.getStateLevel() > constants.stateLevels.INITIALIZING;
+        var stateLevel;
+        stateLevel = this.getStateLevel();
+
+        return stateLevel > constants.stateLevels.INITIALIZING &&
+               stateLevel < constants.stateLevels.FINISHING;
     };
 
 
@@ -20423,8 +20433,8 @@ JSUS.extend(TIME);
 
         function done() {
             node.game.willBeDone = false;
-            node.emit('REALLY_DONE');
             node.game.setStageLevel(stageLevels.DONE);
+            node.emit('REALLY_DONE');
             // Step forward, if allowed.
             if (node.game.shouldStep()) {
                 node.game.step();
@@ -20599,20 +20609,20 @@ JSUS.extend(TIME);
          *
          */
         this.events.ng.on(CMD + gcommands.goto_step, function(step) {
-            var gs;
-
             if (!node.game.isSteppable()) {
                 node.err('Game cannot be stepped.');
                 return;
             }
 
             node.emit('BEFORE_GAMECOMMAND', gcommands.goto_step, step);
-            gs = new GameStage(step);
-            if (!node.game.plot.getStep(gs)) {
-                node.err('Non-existing game step.');
-                return;
+            if (step !== parent.GamePlot.GAMEOVER) {
+                step = new GameStage(step);
+                if (!node.game.plot.getStep(step)) {
+                    node.err('Non-existing game step.');
+                    return;
+                }
             }
-            node.game.gotoStep(gs);
+            node.game.gotoStep(step);
         });
 
         /**
@@ -22292,6 +22302,8 @@ JSUS.extend(TIME);
      *
      * Warning: Security policies may block this method if the content is
      * coming from another domain.
+     * Notice: If called multiple times within the same stage/step, it will
+     * the `VisualTimer` widget to reload the timer.
      *
      * @param {string} uri The uri to load
      * @param {function} func Optional. The function to call once the DOM is
@@ -23056,6 +23068,7 @@ JSUS.extend(TIME);
 })(
     'undefined' !== typeof node ? node : undefined
 );
+
 /**
  * # WaitScreen for nodeGame Window
  * Copyright(c) 2014 Stefano Balietti
@@ -23112,11 +23125,13 @@ JSUS.extend(TIME);
 
     function event_REALLY_DONE(text) {
         text = text || W.waitScreen.defaultTexts.waiting;
-        if (W.isScreenLocked()) {
-            W.waitScreen.updateText(text);
-        }
-        else {
-            W.lockScreen(text);
+        if (!node.game.shouldStep()) {
+            if (W.isScreenLocked()) {
+                W.waitScreen.updateText(text);
+            }
+            else {
+                W.lockScreen(text);
+            }
         }
     }
 
@@ -24063,6 +24078,7 @@ JSUS.extend(TIME);
     };
 
 })(node.window);
+
 /**
  * # HTMLRenderer
  * Copyright(c) 2014 Stefano Balietti
@@ -24305,6 +24321,7 @@ JSUS.extend(TIME);
     ('undefined' !== typeof window) ? window : module.parent.exports.window,
     ('undefined' !== typeof node) ? node : module.parent.exports.node
 );
+
 /**
  * # List class for nodeGame window
  * Copyright(c) 2014 Stefano Balietti
