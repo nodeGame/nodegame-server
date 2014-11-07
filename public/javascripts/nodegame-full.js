@@ -1261,6 +1261,7 @@ if (!JSON) {
     'undefined' !== typeof module && 'undefined' !== typeof module.exports ?
         module.exports: window
 );
+
 /**
  * # COMPATIBILITY
  *
@@ -1324,90 +1325,91 @@ if (!JSON) {
     JSUS.extend(COMPATIBILITY);
 
 })('undefined' !== typeof JSUS ? JSUS : module.parent.exports.JSUS);
+
 /**
  * # ARRAY
  * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
- * 
+ *
  * Collection of static functions to manipulate arrays.
  */
 (function(JSUS) {
-    
+
     function ARRAY(){};
 
     /**
      * ## ARRAY.filter
-     * 
+     *
      * Add the filter method to ARRAY objects in case the method is not
-     * supported natively. 
-     * 
+     * supported natively.
+     *
      * @see https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/ARRAY/filter
      */
-    if (!Array.prototype.filter) {  
-        Array.prototype.filter = function(fun /*, thisp */) {  
-            "use strict";  
-            if (this === void 0 || this === null) throw new TypeError();  
+    if (!Array.prototype.filter) {
+        Array.prototype.filter = function(fun /*, thisp */) {
+            "use strict";
+            if (this === void 0 || this === null) throw new TypeError();
 
-            var t = Object(this);  
-            var len = t.length >>> 0;  
-            if (typeof fun !== "function") throw new TypeError();  
-            
-            var res = [];  
-            var thisp = arguments[1];  
-            for (var i = 0; i < len; i++) {  
-                if (i in t) {  
-                    var val = t[i]; // in case fun mutates this  
-                    if (fun.call(thisp, val, i, t)) { 
-                        res.push(val);  
+            var t = Object(this);
+            var len = t.length >>> 0;
+            if (typeof fun !== "function") throw new TypeError();
+
+            var res = [];
+            var thisp = arguments[1];
+            for (var i = 0; i < len; i++) {
+                if (i in t) {
+                    var val = t[i]; // in case fun mutates this
+                    if (fun.call(thisp, val, i, t)) {
+                        res.push(val);
                     }
                 }
-            }     
-            return res;  
+            }
+            return res;
         };
     }
 
     /**
      * ## ARRAY.isArray
-     * 
+     *
      * Returns TRUE if a variable is an Array
-     * 
-     * This method is exactly the same as `Array.isArray`, 
-     * but it works on a larger share of browsers. 
-     * 
+     *
+     * This method is exactly the same as `Array.isArray`,
+     * but it works on a larger share of browsers.
+     *
      * @param {object} o The variable to check.
      * @see Array.isArray
      */
     ARRAY.isArray = function(o) {
         if (!o) return false;
-        return Object.prototype.toString.call(o) === '[object Array]';  
+        return Object.prototype.toString.call(o) === '[object Array]';
     };
 
     /**
      * ## ARRAY.seq
-     * 
+     *
      * Returns an array of sequential numbers from start to end
-     * 
+     *
      * If start > end the series goes backward.
-     * 
+     *
      * The distance between two subsequent numbers can be controlled
      * by the increment parameter.
-     * 
+     *
      * When increment is not a divider of Abs(start - end), end will
      * be missing from the series.
-     * 
+     *
      * A callback function to apply to each element of the sequence
      * can be passed as fourth parameter.
-     *  
+     *
      * Returns FALSE, in case parameters are incorrectly specified
-     * 
+     *
      * @param {number} start The first element of the sequence
      * @param {number} end The last element of the sequence
-     * @param {number} increment Optional. The increment between two 
+     * @param {number} increment Optional. The increment between two
      *   subsequents element of the sequence
-     * @param {Function} func Optional. A callback function that can modify 
+     * @param {Function} func Optional. A callback function that can modify
      *   each number of the sequence before returning it
-     *  
-     * @return {array} out The final sequence 
+     *
+     * @return {array} out The final sequence
      */
     ARRAY.seq = function(start, end, increment, func) {
         var i;
@@ -1416,18 +1418,18 @@ if (!JSON) {
         if ('number' !== typeof end) return false;
         if (end === Infinity) return false;
         if (start === end) return [start];
-        
+
         if (increment === 0) return false;
         if (!JSUS.in_array(typeof increment, ['undefined', 'number'])) {
             return false;
         }
-        
+
         increment = increment || 1;
         func = func || function(e) {return e;};
-        
+
         i = start,
         out = [];
-        
+
         if (start < end) {
             while (i <= end) {
                 out.push(func(i));
@@ -1440,28 +1442,28 @@ if (!JSON) {
                 i = i - increment;
             }
         }
-        
+
         return out;
     };
 
     /**
      * ## ARRAY.each
-     * 
+     *
      * Executes a callback on each element of the array
-     * 
+     *
      * If an error occurs returns FALSE.
-     * 
+     *
      * @param {array} array The array to loop in
      * @param {Function} func The callback for each element in the array
      * @param {object} context Optional. The context of execution of the
      *   callback. Defaults ARRAY.each
-     * 
+     *
      * @return {Boolean} TRUE, if execution was successful
      */
     ARRAY.each = function(array, func, context) {
         if ('object' !== typeof array) return false;
         if (!func) return false;
-        
+
         context = context || this;
         var i, len = array.length;
         for (i = 0 ; i < len; i++) {
@@ -1472,13 +1474,13 @@ if (!JSON) {
 
     /**
      * ## ARRAY.map
-     * 
+     *
      * Applies a callback function to each element in the db, store
      * the results in an array and returns it
-     * 
-     * Any number of additional parameters can be passed after the 
+     *
+     * Any number of additional parameters can be passed after the
      * callback function
-     * 
+     *
      * @return {array} out The result of the mapping execution
      * @see ARRAY.each
      */
@@ -1487,7 +1489,7 @@ if (!JSON) {
         var args = Array.prototype.slice.call(arguments),
         array = args.shift(),
         func = args[0];
-        
+
         if (!ARRAY.isArray(array)) {
             JSUS.log('ARRAY.map() the first argument must be an array. ' +
                      'Found: ' + array);
@@ -1507,24 +1509,24 @@ if (!JSON) {
 
     /**
      * ## ARRAY.removeElement
-     * 
+     *
      * Removes an element from the the array, and returns it
-     * 
-     * For objects, deep equality comparison is performed 
+     *
+     * For objects, deep equality comparison is performed
      * through JSUS.equals.
-     * 
+     *
      * If no element is removed returns FALSE.
-     * 
+     *
      * @param {mixed} needle The element to search in the array
      * @param {array} haystack The array to search in
-     * 
+     *
      * @return {mixed} The element that was removed, FALSE if none was removed
      * @see JSUS.equals
      */
     ARRAY.removeElement = function(needle, haystack) {
         var func, i;
         if ('undefined' === typeof needle || !haystack) return false;
-        
+
         if ('object' === typeof needle) {
             func = JSUS.equals;
         }
@@ -1533,7 +1535,7 @@ if (!JSON) {
                 return (a === b);
             }
         }
-        
+
         for (i = 0; i < haystack.length; i++) {
             if (func(needle, haystack[i])){
                 return haystack.splice(i,1);
@@ -1543,25 +1545,25 @@ if (!JSON) {
     };
 
     /**
-     * ## ARRAY.inArray 
-     * 
+     * ## ARRAY.inArray
+     *
      * Returns TRUE if the element is contained in the array,
      * FALSE otherwise
-     * 
-     * For objects, deep equality comparison is performed 
+     *
+     * For objects, deep equality comparison is performed
      * through JSUS.equals.
-     * 
+     *
      * Alias ARRAY.in_array (deprecated)
-     * 
+     *
      * @param {mixed} needle The element to search in the array
      * @param {array} haystack The array to search in
      * @return {Boolean} TRUE, if the element is contained in the array
-     * 
+     *
      *  @see JSUS.equals
      */
     ARRAY.inArray = ARRAY.in_array = function(needle, haystack) {
         var func, i, len;
-        if (!haystack) return false;        
+        if (!haystack) return false;
         func = JSUS.equals, len = haystack.length;
         for (i = 0; i < len; i++) {
             if (func.call(this, needle, haystack[i])) {
@@ -1574,88 +1576,88 @@ if (!JSON) {
 
     /**
      * ## ARRAY.getNGroups
-     * 
+     *
      * Returns an array of N array containing the same number of elements
      * If the length of the array and the desired number of elements per group
      * are not multiple, the last group could have less elements
-     * 
+     *
      * The original array is not modified.
-     *  
+     *
      *  @see ARRAY.getGroupsSizeN
      *  @see ARRAY.generateCombinations
      *  @see ARRAY.matchN
-     *  
+     *
      * @param {array} array The array to split in subgroups
      * @param {number} N The number of subgroups
      * @return {array} Array containing N groups
-     */ 
+     */
     ARRAY.getNGroups = function(array, N) {
         return ARRAY.getGroupsSizeN(array, Math.floor(array.length / N));
     };
 
     /**
      * ## ARRAY.getGroupsSizeN
-     * 
+     *
      * Returns an array of array containing N elements each
      * The last group could have less elements
-     * 
+     *
      * @param {array} array The array to split in subgroups
      * @param {number} N The number of elements in each subgroup
      * @return {array} Array containing groups of size N
-     * 
+     *
      * @see ARRAY.getNGroups
      * @see ARRAY.generateCombinations
      * @see ARRAY.matchN
-     */ 
+     */
     ARRAY.getGroupsSizeN = function(array, N) {
-        
+
         var copy = array.slice(0);
         var len = copy.length;
         var originalLen = copy.length;
         var result = [];
-        
+
         // Init values for the loop algorithm.
         var i, idx;
         var group = [], count = 0;
         for (i=0; i < originalLen; i++) {
-            
+
             // Get a random idx between 0 and array length.
             idx = Math.floor(Math.random()*len);
-            
+
             // Prepare the array container for the elements of a new group.
             if (count >= N) {
                 result.push(group);
                 count = 0;
                 group = [];
             }
-            
+
             // Insert element in the group.
             group.push(copy[idx]);
-            
+
             // Update.
             copy.splice(idx,1);
             len = copy.length;
             count++;
         }
-        
+
         // Add any remaining element.
         if (group.length > 0) {
             result.push(group);
         }
-        
+
         return result;
     };
 
     /**
      * ## ARRAY._latinSquare
-     * 
+     *
      * Generate a random Latin Square of size S
-     * 
-     * If N is defined, it returns "Latin Rectangle" (SxN) 
-     * 
-     * A parameter controls for self-match, i.e. whether the symbol "i" 
+     *
+     * If N is defined, it returns "Latin Rectangle" (SxN)
+     *
+     * A parameter controls for self-match, i.e. whether the symbol "i"
      * is found or not in in column "i".
-     * 
+     *
      * @api private
      * @param {number} S The number of rows
      * @param {number} Optional. N The number of columns. Defaults N = S
@@ -1671,23 +1673,23 @@ if (!JSON) {
         for (var i=0; i< S; i++) {
             seq[i] = i;
         }
-        
+
         var idx = null;
-        
+
         var start = 0;
         var limit = S;
         var extracted = [];
         if (!self) {
             limit = S-1;
         }
-        
+
         for (i=0; i < N; i++) {
             do {
                 idx = JSUS.randomInt(start,limit);
             }
             while (JSUS.in_array(idx, extracted));
             extracted.push(idx);
-            
+
             if (idx == 1) {
                 latin[i] = seq.slice(idx);
                 latin[i].push(0);
@@ -1695,19 +1697,19 @@ if (!JSON) {
             else {
                 latin[i] = seq.slice(idx).concat(seq.slice(0,(idx)));
             }
-            
+
         }
-        
+
         return latin;
     };
 
     /**
      * ## ARRAY.latinSquare
-     * 
+     *
      * Generate a random Latin Square of size S
-     * 
-     * If N is defined, it returns "Latin Rectangle" (SxN) 
-     * 
+     *
+     * If N is defined, it returns "Latin Rectangle" (SxN)
+     *
      * @param {number} S The number of rows
      * @param {number} Optional. N The number of columns. Defaults N = S
      * @return {array} The resulting latin square (or rectangle)
@@ -1716,18 +1718,18 @@ if (!JSON) {
         if (!N) N = S;
         if (!S || S < 0 || (N < 0)) return false;
         if (N > S) N = S;
-        
+
         return ARRAY._latinSquare(S, N, true);
     };
 
     /**
      * ## ARRAY.latinSquareNoSelf
-     * 
-     * Generate a random Latin Square of size Sx(S-1), where 
+     *
+     * Generate a random Latin Square of size Sx(S-1), where
      * in each column "i", the symbol "i" is not found
-     * 
+     *
      * If N < S, it returns a "Latin Rectangle" (SxN)
-     * 
+     *
      * @param {number} S The number of rows
      * @param {number} Optional. N The number of columns. Defaults N = S-1
      * @return {array} The resulting latin square (or rectangle)
@@ -1736,20 +1738,20 @@ if (!JSON) {
         if (!N) N = S-1;
         if (!S || S < 0 || (N < 0)) return false;
         if (N > S) N = S-1;
-        
+
         return ARRAY._latinSquare(S, N, false);
     }
 
 
     /**
      * ## ARRAY.generateCombinations
-     * 
-     * Generates all distinct combinations of exactly r elements each 
-     *  
+     *
+     * Generates all distinct combinations of exactly r elements each
+     *
      * @param {array} array The array from which the combinations are extracted
      * @param {number} r The number of elements in each combination
      * @return {array} The total sets of combinations
-     *  
+     *
      * @see ARRAY.getGroupSizeN
      * @see ARRAY.getNGroups
      * @see ARRAY.matchN
@@ -1772,27 +1774,27 @@ if (!JSON) {
             indices[i] += 1;
             for (var j = i + 1; j < r; j++) indices[j] = indices[i] + j - i;
         }
-        return values(indices, array); 
+        return values(indices, array);
     };
 
     /**
      * ## ARRAY.matchN
-     * 
+     *
      * Match each element of the array with N random others
-     * 
+     *
      * If strict is equal to true, elements cannot be matched multiple times.
-     * 
-     * *Important*: this method has a bug / feature. If the strict parameter 
+     *
+     * *Important*: this method has a bug / feature. If the strict parameter
      * is set, the last elements could remain without match, because all the
      * other have been already used. Another recombination would be able
      * to match all the elements instead.
-     * 
+     *
      * @param {array} array The array in which operate the matching
      * @param {number} N The number of matches per element
      * @param {Boolean} strict Optional. If TRUE, matched elements cannot be
-     *   repeated. Defaults, FALSE 
+     *   repeated. Defaults, FALSE
      * @return {array} result The results of the matching
-     * 
+     *
      * @see ARRAY.getGroupSizeN
      * @see ARRAY.getNGroups
      * @see ARRAY.generateCombinations
@@ -1801,7 +1803,7 @@ if (!JSON) {
         var result, i, copy, group;
         if (!array) return;
         if (!N) return array;
-        
+
         result = [],
         len = array.length,
         found = [];
@@ -1818,7 +1820,7 @@ if (!JSON) {
             // Re-add the current element.
             group.splice(0,0,array[i]);
             result.push(group);
-            
+
             // Update.
             group = [];
         }
@@ -1827,12 +1829,12 @@ if (!JSON) {
 
     /**
      * ## ARRAY.rep
-     * 
+     *
      * Appends an array to itself a number of times and return a new array
-     * 
+     *
      * The original array is not modified.
-     * 
-     * @param {array} array the array to repeat 
+     *
+     * @param {array} array the array to repeat
      * @param {number} times The number of times the array must be appended
      *   to itself
      * @return {array} A copy of the original array appended to itself
@@ -1845,7 +1847,7 @@ if (!JSON) {
             JSUS.log('times must be greater or equal 1', 'ERR');
             return;
         }
-        
+
         i = 1, result = array.slice(0);
         for (; i < times; i++) {
             result = result.concat(array);
@@ -1855,31 +1857,31 @@ if (!JSON) {
 
     /**
      * ## ARRAY.stretch
-     * 
+     *
      * Repeats each element of the array N times
-     * 
-     * N can be specified as an integer or as an array. In the former case all 
+     *
+     * N can be specified as an integer or as an array. In the former case all
      * the elements are repeat the same number of times. In the latter, each
      * element can be repeated a custom number of times. If the length of the
      * `times` array differs from that of the array to stretch a recycle rule
      * is applied.
-     * 
+     *
      * The original array is not modified.
-     * 
+     *
      * E.g.:
-     * 
+     *
      * ```js
      *  var foo = [1,2,3];
-     * 
+     *
      *  ARRAY.stretch(foo, 2); // [1, 1, 2, 2, 3, 3]
-     * 
+     *
      *  ARRAY.stretch(foo, [1,2,3]); // [1, 2, 2, 3, 3, 3];
      *
      *  ARRAY.stretch(foo, [2,1]); // [1, 1, 2, 3, 3];
      * ```
-     * 
+     *
      * @param {array} array the array to strech
-     * @param {number|array} times The number of times each element 
+     * @param {number|array} times The number of times each element
      *   must be repeated
      * @return {array} A stretched copy of the original array
      */
@@ -1894,7 +1896,7 @@ if (!JSON) {
             }
             times = ARRAY.rep([times], array.length);
         }
-        
+
         result = [];
         for (i = 0; i < array.length; i++) {
             repeat = times[(i % times.length)];
@@ -1908,11 +1910,11 @@ if (!JSON) {
 
     /**
      * ## ARRAY.arrayIntersect
-     * 
+     *
      * Computes the intersection between two arrays
-     * 
+     *
      * Arrays can contain both primitive types and objects.
-     * 
+     *
      * @param {array} a1 The first array
      * @param {array} a2 The second array
      * @return {array} All the values of the first array that are found
@@ -1923,17 +1925,17 @@ if (!JSON) {
             return JSUS.in_array(i, a2);
         });
     };
-    
+
     /**
      * ## ARRAY.arrayDiff
-     * 
+     *
      * Performs a diff between two arrays
-     * 
+     *
      * Arrays can contain both primitive types and objects.
-     * 
+     *
      * @param {array} a1 The first array
      * @param {array} a2 The second array
-     * @return {array} All the values of the first array that are not 
+     * @return {array} All the values of the first array that are not
      *   found in the second one
      */
     ARRAY.arrayDiff = function(a1, a2) {
@@ -1944,14 +1946,14 @@ if (!JSON) {
 
     /**
      * ## ARRAY.shuffle
-     * 
+     *
      * Shuffles the elements of the array using the Fischer algorithm
-     * 
+     *
      * The original array is not modified, and a copy is returned.
-     * 
+     *
      * @param {array} shuffle The array to shuffle
      * @return {array} copy The shuffled array
-     * 
+     *
      * @see http://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle
      */
     ARRAY.shuffle = function(array) {
@@ -1970,35 +1972,35 @@ if (!JSON) {
 
     /**
      * ## ARRAY.getNRandom
-     * 
+     *
      * Select N random elements from the array and returns them
-     * 
+     *
      * @param {array} array The array from which extracts random elements
      * @paran {number} N The number of random elements to extract
      * @return {array} An new array with N elements randomly chosen
      */
     ARRAY.getNRandom = function(array, N) {
         return ARRAY.shuffle(array).slice(0,N);
-    };                           
-    
+    };
+
     /**
      * ## ARRAY.distinct
-     * 
+     *
      * Removes all duplicates entries from an array and returns a copy of it
-     * 
+     *
      * Does not modify original array.
-     * 
+     *
      * Comparison is done with `JSUS.equals`.
-     * 
+     *
      * @param {array} array The array from which eliminates duplicates
      * @return {array} out A copy of the array without duplicates
-     * 
+     *
      * @see JSUS.equals
      */
     ARRAY.distinct = function(array) {
         var out = [];
         if (!array) return out;
-        
+
         ARRAY.each(array, function(e) {
             if (!ARRAY.in_array(e, out)) {
                 out.push(e);
@@ -2009,9 +2011,9 @@ if (!JSON) {
 
     /**
      * ## ARRAY.transpose
-     * 
+     *
      * Transposes a given 2D array.
-     * 
+     *
      * The original array is not modified, and a new copy is
      * returned.
      *
@@ -2019,26 +2021,27 @@ if (!JSON) {
      * @return {array} The Transposed Array
      */
     ARRAY.transpose = function(array) {
-        if (!array) return;  
-        
+        if (!array) return;
+
         // Calculate width and height
-        var w, h, i, j, t = []; 
+        var w, h, i, j, t = [];
         w = array.length || 0;
         h = (ARRAY.isArray(array[0])) ? array[0].length : 0;
         if (w === 0 || h === 0) return t;
-        
+
         for ( i = 0; i < h; i++) {
             t[i] = [];
-            for ( j = 0; j < w; j++) {     
+            for ( j = 0; j < w; j++) {
                 t[i][j] = array[j][i];
             }
-        } 
+        }
         return t;
     };
 
     JSUS.extend(ARRAY);
-    
+
 })('undefined' !== typeof JSUS ? JSUS : module.parent.exports.JSUS);
+
 /**
  * # DOM
  *
@@ -2295,11 +2298,11 @@ if (!JSON) {
                 throw new TypeError('DOM.shuffleNodes: order must array.');
             }
             if (order.length !== parent.children.length) {
-                throw new Error('DOM.shuffleNodes: order length must match ' + 
+                throw new Error('DOM.shuffleNodes: order length must match ' +
                                 'the number of children nodes.');
             }
         }
-        
+
         len = parent.children.length, idOrder = [];
         if (!order) order = JSUS.sample(0,len);
         for (i = 0 ; i < len; i++) {
@@ -2311,7 +2314,7 @@ if (!JSON) {
         for (i = 0 ; i < len; i++) {
             parent.appendChild(parent.children[idOrder[i]]);
         }
-        
+
         return idOrder;
     };
 
@@ -2319,7 +2322,7 @@ if (!JSON) {
      * ### DOM.getElement
      *
      * Creates a generic HTML element with id and attributes as specified
-     * 
+     *
      * @param {string} elem The name of the tag
      * @param {string} id Optional. The id of the tag
      * @param {object} attributes Optional. Object containing attributes for
@@ -2953,7 +2956,7 @@ if (!JSON) {
     };
 
     // ## IFRAME
-    
+
     /**
      * ### DOM.getIFrameDocument
      *
@@ -2992,7 +2995,7 @@ if (!JSON) {
     /**
      * ### DOM.disableRightClick
      *
-     * Disables the popup of the context menu by right clicking with the mouse 
+     * Disables the popup of the context menu by right clicking with the mouse
      *
      * @param {Document} Optional. A target document object. Defaults, document
      *
@@ -3023,9 +3026,9 @@ if (!JSON) {
     /**
      * ### DOM.enableRightClick
      *
-     * Enables the popup of the context menu by right clicking with the mouse 
+     * Enables the popup of the context menu by right clicking with the mouse
      *
-     * It unregisters the event handlers created by `DOM.disableRightClick` 
+     * It unregisters the event handlers created by `DOM.disableRightClick`
      *
      * @param {Document} Optional. A target document object. Defaults, document
      *
@@ -3102,6 +3105,7 @@ if (!JSON) {
     JSUS.extend(EVAL);
 
 })('undefined' !== typeof JSUS ? JSUS : module.parent.exports.JSUS);
+
 /**
  * # JSUS.OBJ
  * Copyright(c) 2014 Stefano Balietti
@@ -3607,7 +3611,7 @@ if (!JSON) {
      * Copies only non-overlapping properties from obj2 to obj1
      *
      * Check only if a property is defined, not its value.
-     * Original object is modified. 
+     * Original object is modified.
      *
      * @param {object} obj1 The object to which the new properties will be added
      * @param {object} obj2 The mixin-in object
@@ -4202,22 +4206,22 @@ if (!JSON) {
      * Returns a new generator of normally distributed pseudo random numbers
      *
      * The generator is independent from RANDOM.nextNormal
-     * 
-     * @return {function} An independent generator 
-     * 
+     *
+     * @return {function} An independent generator
+     *
      * @see RANDOM.nextNormal
      */
     RANDOM.getNormalGenerator = function() {
 
         return (function() {
 
-            var oldMu, oldSigma;    
-            var x2, multiplier, genReady;    
-            
+            var oldMu, oldSigma;
+            var x2, multiplier, genReady;
+
             return function normal(mu, sigma) {
-                
+
                 var x1, u1, u2, v1, v2, s;
-                
+
                 if ('number' !== typeof mu) {
                     throw new TypeError('nextNormal: mu must be number.');
                 }
@@ -4231,35 +4235,35 @@ if (!JSON) {
                     oldSigma = sigma;
                 }
 
-                if (genReady) {     
+                if (genReady) {
                     genReady = false;
                     return (sigma * x2) + mu;
                 }
-                
+
                 u1 = Math.random();
                 u2 = Math.random();
-                
+
                 // Normalize between -1 and +1.
                 v1 = (2 * u1) - 1;
-                v2 = (2 * u2) - 1; 
-                
+                v2 = (2 * u2) - 1;
+
                 s = (v1 * v1) + (v2 * v2);
-                
-                // Condition is true on average 1.27 times, 
+
+                // Condition is true on average 1.27 times,
                 // with variance equal to 0.587.
                 if (s >= 1) {
                     return normal(mu, sigma);
                 }
-                
+
                 multiplier = Math.sqrt(-2 * Math.log(s) / s);
-                
+
                 x1 = v1 * multiplier;
                 x2 = v2 * multiplier;
-                
+
                 genReady = true;
-                
+
                 return (sigma * x1) + mu;
-                
+
             }
         })();
     }
@@ -4267,12 +4271,12 @@ if (!JSON) {
     /**
      * Generates random numbers with Normal Gaussian distribution.
      *
-     * User must specify the expected mean, and standard deviation a input 
+     * User must specify the expected mean, and standard deviation a input
      * parameters.
      *
      * Implements the Polar Method by Knuth, "The Art Of Computer
      * Programming", p. 117.
-     * 
+     *
      * @param {number} mu The mean of the distribution
      * param {number} sigma The standard deviation of the distribution
      * @return {number} A random number following a Normal Gaussian distribution
@@ -4286,12 +4290,12 @@ if (!JSON) {
      *
      * User must specify the expected mean, and standard deviation of the
      * underlying gaussian distribution as input parameters.
-     * 
+     *
      * @param {number} mu The mean of the gaussian distribution
      * @param {number} sigma The standard deviation of the gaussian distribution
      * @return {number} A random number following a LogNormal distribution
      *
-     * @see RANDOM.nextNormal 
+     * @see RANDOM.nextNormal
      */
     RANDOM.nextLogNormal = function(mu, sigma) {
         if ('number' !== typeof mu) {
@@ -4307,8 +4311,8 @@ if (!JSON) {
      * Generates random numbers with Exponential distribution.
      *
      * User must specify the lambda the _rate parameter_ of the distribution.
-     * The expected mean of the distribution is equal to `Math.pow(lamba, -1)`. 
-     * 
+     * The expected mean of the distribution is equal to `Math.pow(lamba, -1)`.
+     *
      * @param {number} lambda The rate parameter
      * @return {number} A random number following an Exponential distribution
      */
@@ -4321,12 +4325,12 @@ if (!JSON) {
         }
         return - Math.log(1 - Math.random()) / lambda;
     }
-    
+
     /**
      * Generates random numbers following the Binomial distribution.
      *
      * User must specify the probability of success and the number of trials.
-     * 
+     *
      * @param {number} p The probability of success
      * @param {number} trials The number of trials
      * @return {number} sum The sum of successes in n trials
@@ -4346,17 +4350,17 @@ if (!JSON) {
         if (trials < 1) {
             throw new TypeError('nextBinomial: trials must be greater than 0.');
         }
-        
+
         counter = 0;
         sum = 0;
-        
+
         while(counter < trials){
-	    if (Math.random() < p) {	
+	    if (Math.random() < p) {
 	        sum += 1;
             }
 	    counter++;
         }
-	
+
         return sum;
     };
 
@@ -4391,7 +4395,7 @@ if (!JSON) {
 
         intK = Math.floor(k) + 3;
         kDiv = 1 / k;
-        
+
         alphaDiv = 1 / alpha;
 
         x = 0;
@@ -4399,20 +4403,21 @@ if (!JSON) {
             x += Math.log(Math.random());
         }
 
-        x *= - alphaDiv; 
+        x *= - alphaDiv;
 
-        tmp = Math.log(u3) * 
+        tmp = Math.log(u3) *
             (Math.pow(u1, kDiv) /
              ((Math.pow(u1, kDiv) + Math.pow(u2, 1 / (1 - k)))));
-        
+
         tmp *=  - alphaDiv;
-        
+
         return x + tmp;
     }
 
     JSUS.extend(RANDOM);
 
 })('undefined' !== typeof JSUS ? JSUS : module.parent.exports.JSUS);
+
 /**
  * # TIME
  *
@@ -4496,6 +4501,7 @@ TIME.parseMilliseconds = function (ms) {
 JSUS.extend(TIME);
 
 })('undefined' !== typeof JSUS ? JSUS : module.parent.exports.JSUS);
+
 /**
  * # PARSE
  *
@@ -4555,7 +4561,7 @@ JSUS.extend(TIME);
         name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
         regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
         results = regex.exec(referer);
-        return results == null ? false : 
+        return results == null ? false :
             decodeURIComponent(results[1].replace(/\+/g, " "))
     };
 
@@ -4565,12 +4571,12 @@ JSUS.extend(TIME);
      * Splits a string in tokens that users can specified as input parameter.
      * Additional options can be specified with the modifiers parameter
      *
-     * - limit: An integer that specifies the number of split items 
+     * - limit: An integer that specifies the number of split items
      *     after the split limit will not be included in the array
      *
      * @param {string} str The string to split
      * @param {array} separators Array containing the separators words
-     * @param {object} modifiers Optional. Configuration options 
+     * @param {object} modifiers Optional. Configuration options
      *   for the tokenizing
      *
      * @return {array} Tokens in which the string was split
@@ -4741,6 +4747,7 @@ JSUS.extend(TIME);
     JSUS.extend(PARSE);
 
 })('undefined' !== typeof JSUS ? JSUS : module.parent.exports.JSUS);
+
 /**
  * # NDDB: N-Dimensional Database
  * Copyright(c) 2014 Stefano Balietti
@@ -6035,35 +6042,22 @@ JSUS.extend(TIME);
      *
      * Indexes an element
      *
-     * Parameter _oldIdx_ is needed if indexing is updating a previously
-     * indexed item. In fact if new index is different, the old one must
-     * be deleted.
-     *
      * @param {object} o The element to index
-     * @param {number} dbidx The position of the element in the database array
-     * @param {string} oldIdx Optional. The old index name, if any.
+     * @param {object} o The position of the element in the database array
      */
-    NDDB.prototype._indexIt = function(o, dbidx, oldIdx) {
+    NDDB.prototype._indexIt = function(o, dbidx) {
         var func, id, index, key;
         if (!o || J.isEmpty(this.__I)) return;
-        oldIdx = undefined;
+
         for (key in this.__I) {
             if (this.__I.hasOwnProperty(key)) {
                 func = this.__I[key];
                 index = func(o);
-                // If the same object has been  previously
-                // added with another index delete the old one.
-                if (index !== oldIdx) {
-                    if ('undefined' !== typeof oldIdx) {
-                        if ('undefined' !== typeof this[key].resolve[oldIdx]) {
-                            delete this[key].resolve[oldIdx];
-                        }
-                    }
-                }
-                if ('undefined' !== typeof index) { 
-                    if (!this[key]) this[key] = new NDDBIndex(key, this);
-                    this[key]._add(index, dbidx);
-                }
+
+                if ('undefined' === typeof index) continue;
+
+                if (!this[key]) this[key] = new NDDBIndex(key, this);
+                this[key]._add(index, dbidx);
             }
         }
     };
@@ -6093,7 +6087,7 @@ JSUS.extend(TIME);
                     settings = this.cloneSettings({V: ''});
                     this[key] = new NDDB(settings);
                 }
-                this[key].insert(o);1
+                this[key].insert(o);
             }
         }
     };
@@ -7513,13 +7507,11 @@ JSUS.extend(TIME);
      * @see JSUS.arrayDiff
      */
     NDDB.prototype.diff = function(nddb) {
+        if (!nddb || !nddb.length) return this;
         if ('object' === typeof nddb) {
             if (nddb instanceof NDDB || nddb instanceof this.constructor) {
                 nddb = nddb.db;
             }
-        }
-        if (!nddb || !nddb.length) {
-            return this.breed([]);
         }
         return this.breed(J.arrayDiff(this.db, nddb));
     };
@@ -7541,13 +7533,11 @@ JSUS.extend(TIME);
      * @see JSUS.arrayIntersect
      */
     NDDB.prototype.intersect = function(nddb) {
+        if (!nddb || !nddb.length) return this;
         if ('object' === typeof nddb) {
             if (nddb instanceof NDDB || nddb instanceof this.constructor) {
-                nddb = nddb.db;
+                var nddb = nddb.db;
             }
-        }
-        if (!nddb || !nddb.length) {
-            return this.breed([]);
         }
         return this.breed(J.arrayIntersect(this.db, nddb));
     };
@@ -8171,7 +8161,7 @@ JSUS.extend(TIME);
      * @see NDDBIndex.get
      * @see NDDBIndex.remove
      */
-    NDDBIndex.prototype.update = function(idx, update) {
+        NDDBIndex.prototype.update = function(idx, update) {
         var o, dbidx, nddb;
         dbidx = this.resolve[idx];
         if ('undefined' === typeof dbidx) return false;
@@ -8182,7 +8172,7 @@ JSUS.extend(TIME);
         // We do indexes separately from the other components of _autoUpdate
         // to avoid looping through all the other elements that are unchanged.
         if (nddb.__update.indexes) {
-            nddb._indexIt(o, dbidx, idx);
+            nddb._indexIt(o, dbidx);
             nddb._hashIt(o);
             nddb._viewIt(o);
         }
@@ -19192,7 +19182,6 @@ JSUS.extend(TIME);
  * MIT Licensed
  *
  * `nodeGame` connect module
- * TODO: integrate in main NGC file ?
  * ---
  */
 (function(exports, parent) {
@@ -19206,29 +19195,17 @@ JSUS.extend(TIME);
      *
      * Establishes a connection with a nodeGame server
      *
-     * A callback function can be executed upon connection. However,
-     * sending messages is disabled until a player object is created. This can
-     * be done manually, or automatically upon receiving a SETUP PLAYER message.
-     * Creation of a player emits the event _PLAYER_CREATED_.
+     * Events related to the connection include _SOCKET_CONNECT_ and
+     * _PLAYER_CREATED_.
      *
      * @param {string} uri Optional. The uri to connect to.
-     * @param {function} cb Optional. A callback to execute as soon as the
-     *   connection is established.
      * @param {object} socketOptions Optional. A configuration object for
      *   the socket connect method.
      *
      * @emit SOCKET_CONNECT
+     * @emit PLAYER_CREATED
      */
-    NGC.prototype.connect = function(uri, cb, socketOptions) {
-        if (cb) {
-            if ('function' !== typeof cb) {
-                throw new TypeError('node.connect: cb must be function or ' +
-                                    'undefined');
-            }
-            this.once('SOCKET_CONNECT', function() {
-                cb();
-            });
-        }
+    NGC.prototype.connect = function(uri, socketOptions) {
         this.socket.connect(uri, socketOptions);
     };
 
