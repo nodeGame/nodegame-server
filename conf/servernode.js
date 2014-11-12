@@ -147,10 +147,10 @@ function configure(servernode) {
             onConnect: true,
 
             // A client enters a new stage;
-            onStageUpdate: true,
+            onStageUpdate: false,
 
             // A client changes stageLevel (e.g. INIT, CALLBACK_EXECUTED);
-            onStageLevelUpdate: true,
+            onStageLevelUpdate: false,
 
             // A client is LOADED (this option is needed in combination with
             // the option syncOnLoaded used on the clients). It is much less
