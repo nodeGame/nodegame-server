@@ -1,0 +1,8 @@
+/* Allows the iframe to stretch to 100% of the page height */
+
+body {
+    margin:0;
+    padding:0;
+}
+html { height: 95%;}
+body { height: 98%; width: 90%; margin: auto; }

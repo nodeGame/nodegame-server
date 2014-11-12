@@ -1,0 +1,162 @@
+/*
+ * Game Socket Default CSS
+ */
+
+body {
+	margin: 5px;
+	padding: 5px;
+}
+
+input, button, select, textarea {
+	padding: 5px;
+	margin: 2px;
+	border: 1px solid #CCC;
+	font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
+}
+
+fieldset {
+	float: left;
+	padding-top: 5px;
+	margin: 5px;
+	font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
+}
+
+page,body {
+	padding: 5px;
+}
+
+#status-bar {
+	width: 100%;
+	height: 50px;
+	margin-bottom: 10px;
+	border-bottom: 1px solid #CCC;
+	padding: 5px;
+	font-family: Verdana;
+	color: black;
+  overflow: auto;
+}
+
+
+#wall {
+  width: auto;
+  height: 200px;
+  /*margin-bottom: 10px;
+  border: 1px solid #CCC;*/
+  padding: 5px;
+  font-family: Verdana;
+	font-size: 11px;
+  color: black;
+  overflow: auto;
+}
+
+#sendButton {
+ //float: left;
+ height: 30px;
+ border: 1px solid black;
+ font-family: Arial;
+ font-size: 14px;
+ margin-right: 5px
+}
+
+#inputMessage {
+ //float: right;
+ width: 300px ;
+ height: 30px;
+ border: 1px solid black;
+ font-family: Arial;
+ font-size: 14px;
+}
+
+
+div#gameboard {
+  width: 300px;
+  height: 130px;
+  border: 1px solid black;
+  padding: 5px;
+  margin: 5px;
+}
+
+fieldset#wall_fieldset, fieldset#gb_fieldset {
+  width: 500px;
+  height: 300px;
+  padding: 5px;
+  margin: 5px;
+}
+
+fieldset#chat_fieldset {
+	width: 500px;
+  height: 400px;
+  padding: 5px;
+  margin: 5px;
+}
+
+#chat_chat {
+	overflow-y: scroll;
+	height: 200px;
+	width: 450px;
+	border: 1px solid #CCC;
+	padding: 5px;
+}
+
+#chat_textarea {
+  height: 100px;
+  width: 400px;
+}
+
+.chat_me {
+  font-weight: bold;
+}
+
+table#gametable {
+	border: 1px solid #CCC;
+}
+
+table#gametable tr td {
+  border: 1px solid #CCC;
+}
+
+
+/*
+ * Monitor widgets
+ */
+
+.panel-heading > ol.breadcrumb {
+    margin: 0;
+    padding: 0;
+}
+
+.ng_clickable:hover {
+    cursor: pointer;
+}
+
+table {
+    border-collapse: separate;
+    border-spacing: 10px 0;
+}
+
+th,td {
+    text-align: center;
+}
+
+th:first-child,td:first-child {
+    text-align: left;
+}
+
+div.panel.msgbar table tbody tr td:nth-child(3) {
+    text-align: left;
+}
+
+div.panel.commandbuttons {
+  width: 500px;
+  float: left;
+  margin-right: 10px;
+}
+
+div.panel.msgbar {
+  width: 500px;
+  float: left;
+}
+
+ul.nav-tabs {
+  margin-bottom: 10px;
+}

@@ -2212,10 +2212,21 @@ calling GameRoom.setupGame before the node object is stored.</p>
 
   </div>
   <div class="body"><p>Create a PhantomJS player connected to the server</p>
-
-<p>TODO: Add extra query string parameters</p>
   </div>
   <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">queryString</span>
+      <span class="dox_type">string</span>
+      <span>Optional. String of query parameters to append
+  to the URL. Default: '?clientType=autoplay'.</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">phantomjsArgs</span>
+      <span class="dox_type">array</span>
+      <span>Optional. Array of strings to give to PhantomJS
+  as command line arguments.</span>
+    </div>
     <div class="dox_tag_title">Returns</div>
     <div class="dox_tag_detail">
       <span class="dox_tag_name"></span>
@@ -2226,7 +2237,7 @@ calling GameRoom.setupGame before the node object is stored.</p>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-<span class="nx">ServerChannel</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">connectPhantom</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+<span class="nx">ServerChannel</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">connectPhantom</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">queryString</span><span class="p">,</span> <span class="nx">phantomjsArgs</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">serverdir</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">url</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">phantomjs</span><span class="p">;</span>
@@ -2241,16 +2252,72 @@ calling GameRoom.setupGame before the node object is stored.</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-84" id="section-84">&#182;</a>
 </div>
+<p>Check inputs.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">queryString</span> <span class="o">&amp;&amp;</span>
+        <span class="s1">&#39;string&#39;</span>    <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">queryString</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerChannel.connectPhantom: &#39;</span> <span class="o">+</span>
+                <span class="s1">&#39;queryString must be string or undefined.&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="nx">queryString</span> <span class="o">=</span> <span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">queryString</span> <span class="o">?</span>
+        <span class="s1">&#39;?clientType=autoplay&#39;</span> <span class="o">:</span> <span class="nx">queryString</span><span class="p">;</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">phantomjsArgs</span> <span class="o">&amp;&amp;</span>
+        <span class="o">!</span><span class="nx">J</span><span class="p">.</span><span class="nx">isArray</span><span class="p">(</span><span class="nx">phantomjsArgs</span><span class="p">))</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerChannel.connectPhantom: &#39;</span> <span class="o">+</span>
+                <span class="s1">&#39;phantomjsArgs must be array or undefined.&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="nx">phantomjsArgs</span> <span class="o">=</span> <span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">phantomjsArgs</span> <span class="o">?</span>  <span class="p">[]</span> <span class="o">:</span> <span class="nx">phantomjsArgs</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-85" id="section-85">&#182;</a>
+</div>
 <p>Launch a phantomjs process with a connection to the server.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-86" id="section-86">&#182;</a>
+</div>
+<p>Set up the arguments to phantomjs.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="nx">serverdir</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">rootDir</span><span class="p">;</span>
     <span class="nx">url</span> <span class="o">=</span> <span class="s1">&#39;http://localhost:&#39;</span> <span class="o">+</span> <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">port</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="k">this</span><span class="p">.</span><span class="nx">name</span> <span class="o">+</span>
-        <span class="s1">&#39;/?clientType=autoplay&#39;</span><span class="p">;</span>
-    <span class="nx">logger</span> <span class="o">=</span> <span class="nx">Logger</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;clients&#39;</span><span class="p">,</span> <span class="p">{</span><span class="nx">name</span><span class="o">:</span> <span class="s1">&#39;phantomjs&#39;</span><span class="p">});</span>
+        <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">queryString</span><span class="p">;</span>
+    <span class="nx">phantomjsArgs</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">serverdir</span> <span class="o">+</span> <span class="s1">&#39;/phantomjs/openurl.js&#39;</span><span class="p">);</span>
+    <span class="nx">phantomjsArgs</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">url</span><span class="p">);</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-87" id="section-87">&#182;</a>
+</div>
+<p>Spawn the process, listen on its stdout.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
     <span class="nx">phantomjs</span> <span class="o">=</span> <span class="nx">spawn</span><span class="p">(</span><span class="nx">serverdir</span> <span class="o">+</span> <span class="s1">&#39;/node_modules/phantomjs/bin/phantomjs&#39;</span><span class="p">,</span>
-        <span class="p">[</span><span class="nx">serverdir</span> <span class="o">+</span> <span class="s1">&#39;/phantomjs/openurl.js&#39;</span><span class="p">,</span> <span class="nx">url</span><span class="p">]);</span>
+        <span class="nx">phantomjsArgs</span><span class="p">);</span>
     <span class="nx">phantomjs</span><span class="p">.</span><span class="nx">stdout</span><span class="p">.</span><span class="nx">setEncoding</span><span class="p">(</span><span class="s1">&#39;utf8&#39;</span><span class="p">);</span>
+    <span class="nx">logger</span> <span class="o">=</span> <span class="nx">Logger</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;clients&#39;</span><span class="p">,</span> <span class="p">{</span><span class="nx">name</span><span class="o">:</span> <span class="s1">&#39;phantomjs&#39;</span><span class="p">});</span>
     <span class="nx">phantomjs</span><span class="p">.</span><span class="nx">stdout</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">text</span><span class="p">)</span> <span class="p">{</span>
         <span class="nx">logger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">text</span><span class="p">);</span>
     <span class="p">});</span>
@@ -2267,7 +2334,7 @@ calling GameRoom.setupGame before the node object is stored.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-85" id="section-85">&#182;</a>
+  <a class="pilcrow" href="#section-88" id="section-88">&#182;</a>
 </div>
 <p>TODO: finish this method. Should destroy all game rooms. clear all players?,
       keep the waiting room</p>
@@ -2287,7 +2354,7 @@ calling GameRoom.setupGame before the node object is stored.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-86" id="section-86">&#182;</a>
+  <a class="pilcrow" href="#section-89" id="section-89">&#182;</a>
 </div>
 <p>Remove clients from registry, game rooms and disconnect them.
    this.registry.clients.each(function(c) {
@@ -2324,7 +2391,7 @@ calling GameRoom.setupGame before the node object is stored.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-87" id="section-87">&#182;</a>
+  <a class="pilcrow" href="#section-90" id="section-90">&#182;</a>
 </div>
 <p>Remove clients from registry, game rooms and disconnect them.</p>
         </td>
@@ -2345,7 +2412,7 @@ calling GameRoom.setupGame before the node object is stored.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-88" id="section-88">&#182;</a>
+  <a class="pilcrow" href="#section-91" id="section-91">&#182;</a>
 </div>
 <p>Destroy empty game rooms.</p>
         </td>
@@ -2366,7 +2433,7 @@ calling GameRoom.setupGame before the node object is stored.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-89" id="section-89">&#182;</a>
+  <a class="pilcrow" href="#section-92" id="section-92">&#182;</a>
 </div>
 <p>Create a brang new Registry.
 this.registry = new ChannelRegistry({ name: this.name });</p>

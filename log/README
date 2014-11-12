@@ -1,0 +1,1 @@
+Servernode default log dir. Can be changed in ServerNode configuration by setting logDir = /your/log/dir
