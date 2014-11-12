@@ -1,0 +1,2443 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>SocketManager.js</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <link rel="stylesheet" media="all" href="../doc-style.css" />
+  <script src="../doc-filelist.js"></script>
+  <script>
+    var relativeDir = "../", thisFile = "lib/SocketManager.js", defaultSidebar = true;
+  </script>
+  <script src="../doc-script.js"></script>
+</head>
+<body>
+  <div id="sidebar_wrapper">
+    <div id="sidebar_switch">
+      <span class="tree">Files</span>
+      <span class="headings">Headings</span>
+    </div>
+    <div id="tree"></div>
+    <div id="headings">
+      <div class="heading h1">
+        <a href="#socketmanager">SocketManager</a>
+      </div>
+      <div class="heading h2">
+        <a href="#found%20in%20the%20from%20field.">found in the from field.</a>
+      </div>
+      <div class="heading h2">
+        <a href="#socketmanager%20constructor">SocketManager constructor</a>
+      </div>
+      <div class="heading h3">
+        <a href="#socketmanager.server">SocketManager.server</a>
+      </div>
+      <div class="heading h3">
+        <a href="#socketmanager.sockets">SocketManager.sockets</a>
+      </div>
+      <div class="heading h3">
+        <a href="#socketmanager.clients">SocketManager.clients</a>
+      </div>
+      <div class="heading h2">
+        <a href="#methods">METHODS</a>
+      </div>
+      <div class="heading h3">
+        <a href="#socketmanager.send">SocketManager.send</a>
+      </div>
+      <div class="heading h3">
+        <a href="#socketmanager.send2all">SocketManager.send2all</a>
+      </div>
+      <div class="heading h3">
+        <a href="#socketmanager.send2allplayers">SocketManager.send2allPlayers</a>
+      </div>
+      <div class="heading h3">
+        <a href="#socketmanager.send2ownchannel">SocketManager.send2ownChannel</a>
+      </div>
+      <div class="heading h3">
+        <a href="#socketmanager.send2channel">SocketManager.send2channel</a>
+      </div>
+      <div class="heading h3">
+        <a href="#socketmanager.send2channelplayers">SocketManager.send2channelPlayers</a>
+      </div>
+      <div class="heading h3">
+        <a href="#socketmanager.send2ownroom">SocketManager.send2ownRoom</a>
+      </div>
+      <div class="heading h3">
+        <a href="#socketmanager.send2room">SocketManager.send2room</a>
+      </div>
+      <div class="heading h3">
+        <a href="#socketmanager.send2roomadmins">SocketManager.send2roomAdmins</a>
+      </div>
+      <div class="heading h3">
+        <a href="#socketmanager.send2roomplayers">SocketManager.send2roomPlayers</a>
+      </div>
+      <div class="heading h3">
+        <a href="#socketmanager.send2group">SocketManager.send2group</a>
+      </div>
+      <div class="heading h3">
+        <a href="#socketmanager.send2client">SocketManager.send2client</a>
+      </div>
+      <div class="heading h3">
+        <a href="#socketmanager.broadcast">SocketManager.broadcast</a>
+      </div>
+      <div class="heading h3">
+        <a href="#socketmanager.broadcast2all">SocketManager.broadcast2all</a>
+      </div>
+      <div class="heading h3">
+        <a href="#socketmanager.broadcast2ownchannel">SocketManager.broadcast2ownChannel</a>
+      </div>
+      <div class="heading h3">
+        <a href="#socketmanager.broadcast2channel">SocketManager.broadcast2channel</a>
+      </div>
+      <div class="heading h3">
+        <a href="#socketmanager.broadcast2ownroom">SocketManager.broadcast2ownRoom</a>
+      </div>
+      <div class="heading h3">
+        <a href="#socketmanager.broadcast2room">SocketManager.broadcast2room</a>
+      </div>
+      <div class="heading h3">
+        <a href="#socketmanager.broadcast2group">SocketManager.broadcast2group</a>
+      </div>
+      <div class="heading h3">
+        <a href="#socketmanager.resolveclientandsocket">SocketManager.resolveClientAndSocket</a>
+      </div>
+      <div class="heading h2">
+        <a href="#socketmanager.lookuproom">SocketManager.lookupRoom</a>
+      </div>
+    </div>
+  </div>
+  <div id="sidebar-toggle"></div>
+  <div id="container"><div class="background highlight"></div>
+<table cellpadding="0" cellspacing="0">
+  <tbody>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="socketmanager">
+  <h1>
+    <a href="#socketmanager" name="socketmanager" class="pilcrow">&#182;</a>
+    SocketManager
+  </h1>
+</div>
+
+
+<p>Copyright(c) 2014 Stefano Balietti
+MIT Licensed</p>
+  </div>
+  <div class="body"><p>SocketManager: a register of all open sockets.</p>
+
+<p>Exposes method to send and broadcast messages to a specific recipient, or
+groups of recipients.</p>
+
+<p>Send: delivers a message to all recipients.
+Broadcast: delivers a message to all recipients, except the sender.</p>
+
+<p>When the method contains the word <em>Own</em>, e.g. send2OwnRoom, the <em>from</em> field
+of the game message is evaluated to determine the group of recipients. It
+might be outside of the local channel, and in this case the message is
+delivered only if the settings allow it.</p>
+
+<p>Important:</p>
+
+<p>If a message is sent across channels (if the server configuration allows it)
+the message is then obfuscated by calling GameMsgGenerator.obfuscate from
+the PlayerServer object of the sending channel.
+Obfuscatating the message is necessary so that the message session field
+matches the session id of the clients connected to each channel.
+Player and Admin server in the same channel share the same session id.</p>
+
+<p>Some methods accept a separate FROM parameter, because sometimes the message
+is obfuscated and sender (for broadcasting or room-detecting) cannot be</p>
+
+
+<div class="pilwrap" id="found%20in%20the%20from%20field.">
+  <h2>
+    <a href="#found%20in%20the%20from%20field." name="found%20in%20the%20from%20field." class="pilcrow">&#182;</a>
+    found in the <em>from</em> field.
+  </h2>
+</div>
+
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre><span class="s2">&quot;use strict&quot;</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-2" id="section-2">&#182;</a>
+</div>
+<p>Global scope</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
+<span class="nx">module</span><span class="p">.</span><span class="nx">exports</span> <span class="o">=</span> <span class="nx">SocketManager</span><span class="p">;</span>
+
+<span class="kd">var</span> <span class="nx">ngc</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;nodegame-client&#39;</span><span class="p">);</span>
+<span class="kd">var</span> <span class="nx">PlayerList</span> <span class="o">=</span> <span class="nx">ngc</span><span class="p">.</span><span class="nx">PlayerList</span><span class="p">;</span>
+<span class="kd">var</span> <span class="nx">NDDB</span> <span class="o">=</span> <span class="nx">ngc</span><span class="p">.</span><span class="nx">NDDB</span><span class="p">;</span>
+<span class="kd">var</span> <span class="nx">J</span> <span class="o">=</span> <span class="nx">ngc</span><span class="p">.</span><span class="nx">JSUS</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="socketmanager%20constructor">
+  <h2>
+    <a href="#socketmanager%20constructor" name="socketmanager%20constructor" class="pilcrow">&#182;</a>
+    SocketManager constructor
+  </h2>
+</div>
+
+  </div>
+  <div class="body"><p>Creates an instance of SocketManager</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">server</span>
+      <span class="dox_type">GameServer</span>
+      <span>A GameServer instance</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="kd">function</span> <span class="nx">SocketManager</span><span class="p">(</span><span class="nx">server</span><span class="p">)</span> <span class="p">{</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="socketmanager.server">
+  <h3>
+    <a href="#socketmanager.server" name="socketmanager.server" class="pilcrow">&#182;</a>
+    SocketManager.server
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Cyclic ref to the GameServer object containing this instance</p>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">this</span><span class="p">.</span><span class="nx">server</span> <span class="o">=</span> <span class="nx">server</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="socketmanager.sockets">
+  <h3>
+    <a href="#socketmanager.sockets" name="socketmanager.sockets" class="pilcrow">&#182;</a>
+    SocketManager.sockets
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>List of available sockets</p>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">this</span><span class="p">.</span><span class="nx">sockets</span> <span class="o">=</span> <span class="p">{};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="socketmanager.clients">
+  <h3>
+    <a href="#socketmanager.clients" name="socketmanager.clients" class="pilcrow">&#182;</a>
+    SocketManager.clients
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Maps a client ID to a socket obj (e.g. Direct or SIO)</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">SocketManager.sockets
+</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">this</span><span class="p">.</span><span class="nx">clients</span> <span class="o">=</span> <span class="p">{};</span>
+
+
+    <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span> <span class="o">=</span> <span class="nx">server</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">;</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">msgLogger</span> <span class="o">=</span> <span class="nx">server</span><span class="p">.</span><span class="nx">msgLogger</span><span class="p">;</span>
+<span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap" id="methods">
+  <h2>
+    <a href="#methods" name="methods" class="pilcrow">&#182;</a>
+    METHODS
+  </h2>
+</div>
+
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-8" id="section-8">&#182;</a>
+</div>
+<div class="dox">
+  <div class="summary"><p>SocketManager.registerSocket</p>
+  </div>
+  <div class="body"><p>Registers a new type of socket</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">name</span>
+      <span class="dox_type">string</span>
+      <span>The name of the socket</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">socket</span>
+      <span class="dox_type">object</span>
+      <span>The connection socket</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">SocketManager</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">registerSocket</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">socket</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">sockets</span><span class="p">[</span><span class="nx">socket</span><span class="p">.</span><span class="nx">name</span><span class="p">]</span> <span class="o">=</span> <span class="nx">socket</span><span class="p">;</span>
+<span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-9" id="section-9">&#182;</a>
+</div>
+<div class="dox">
+  <div class="summary"><p>SocketManager.registerClient</p>
+  </div>
+  <div class="body"><p>Matches a client to a socket</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">client</span>
+      <span>{string} The id of the client</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">socket</span>
+      <span>{object} The socket through which the client is connected</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">SocketManager</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">registerClient</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">client</span><span class="p">,</span> <span class="nx">socket</span><span class="p">)</span> <span class="p">{</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-10" id="section-10">&#182;</a>
+</div>
+<p>TODO: Add unregisterClient</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">this</span><span class="p">.</span><span class="nx">clients</span><span class="p">[</span><span class="nx">client</span><span class="p">]</span> <span class="o">=</span> <span class="nx">socket</span><span class="p">;</span>
+<span class="p">};</span>
+
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="socketmanager.send">
+  <h3>
+    <a href="#socketmanager.send" name="socketmanager.send" class="pilcrow">&#182;</a>
+    SocketManager.send
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>General call to send a game message</p>
+
+<p>The method will examin the <em>to</em> field and rely on specific functions.</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">gameMsg</span>
+      <span class="dox_type">GameMsg</span>
+      <span>The game message to send</span>
+    </div>
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">boolean</span>
+      <span>FALSE, if an error occurs</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">SocketManager.send2all</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">SocketManager.send2channel</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">SocketManager.send2room</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">SocketManager.send2client
+</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">SocketManager</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">send</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">toObj</span><span class="p">;</span>
+
+    <span class="k">switch</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">.</span><span class="nx">to</span><span class="p">)</span> <span class="p">{</span>
+
+    <span class="k">case</span> <span class="s1">&#39;ALL&#39;</span><span class="o">:</span>
+        <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">send2all</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">);</span>
+
+    <span class="k">case</span> <span class="s1">&#39;CHANNEL&#39;</span><span class="o">:</span>
+        <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">send2ownChannel</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">);</span>
+
+    <span class="k">case</span> <span class="s1">&#39;ROOM&#39;</span><span class="o">:</span>
+        <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">send2ownRoom</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">);</span>
+
+    <span class="k">case</span> <span class="s1">&#39;CHANNEL_X&#39;</span><span class="o">:</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">send2channel</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">_to</span><span class="p">);</span>
+
+        <span class="cm">/* falls through */</span>
+    <span class="k">case</span> <span class="s1">&#39;ROOM_X&#39;</span><span class="o">:</span>
+        <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">send2room</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">_to</span><span class="p">);</span>
+
+    <span class="k">default</span><span class="o">:</span>
+        <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">send2client</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">);</span>
+    <span class="p">}</span>
+
+<span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="socketmanager.send2all">
+  <h3>
+    <a href="#socketmanager.send2all" name="socketmanager.send2all" class="pilcrow">&#182;</a>
+    SocketManager.send2all
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Broadcast a message to all clients in all game rooms in all channels.</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">gameMsg</span>
+      <span class="dox_type">GameMsg</span>
+      <span>The game message to send</span>
+    </div>
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">boolean</span>
+      <span>FALSE, if at least one error occurs</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">SocketManager</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">send2all</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">channels</span><span class="p">,</span> <span class="nx">channelName</span><span class="p">,</span> <span class="nx">channel</span><span class="p">,</span> <span class="nx">res</span><span class="p">;</span>
+
+    <span class="nx">res</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+    <span class="nx">channels</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">server</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">channels</span><span class="p">;</span>
+
+    <span class="k">for</span> <span class="p">(</span><span class="nx">channelName</span> <span class="k">in</span> <span class="nx">channels</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">channels</span><span class="p">.</span><span class="nx">hasOwnProperty</span><span class="p">(</span><span class="nx">channelName</span><span class="p">))</span> <span class="p">{</span>
+            <span class="nx">channel</span> <span class="o">=</span> <span class="nx">channels</span><span class="p">[</span><span class="nx">channelName</span><span class="p">];</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-13" id="section-13">&#182;</a>
+</div>
+<p>Obfuscate.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+            <span class="k">if</span> <span class="p">(</span><span class="nx">channel</span><span class="p">.</span><span class="nx">session</span> <span class="o">!==</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">session</span><span class="p">)</span> <span class="p">{</span>
+                <span class="nx">gameMsg</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">msg</span><span class="p">.</span><span class="nx">obfuscate</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">);</span>
+            <span class="p">}</span>
+            <span class="nx">res</span> <span class="o">=</span> <span class="nx">res</span> <span class="o">&amp;&amp;</span> <span class="k">this</span><span class="p">.</span><span class="nx">send2channel</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">channels</span><span class="p">[</span><span class="nx">channelName</span><span class="p">]);</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;SocketManager.send2all: error/s occurred.&#39;</span><span class="p">,</span>
+                           <span class="s1">&#39;error&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="nx">res</span><span class="p">;</span>
+<span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="socketmanager.send2allplayers">
+  <h3>
+    <a href="#socketmanager.send2allplayers" name="socketmanager.send2allplayers" class="pilcrow">&#182;</a>
+    SocketManager.send2allPlayers
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Broadcast a message to all clients in all game rooms in all channels.</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">gameMsg</span>
+      <span class="dox_type">GameMsg</span>
+      <span>The game message to send</span>
+    </div>
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">boolean</span>
+      <span>FALSE, if at least one error occurs</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">SocketManager</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">send2allPlayers</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">channels</span><span class="p">,</span> <span class="nx">channelName</span><span class="p">,</span> <span class="nx">channel</span><span class="p">,</span> <span class="nx">res</span><span class="p">;</span>
+
+    <span class="nx">res</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+    <span class="nx">channels</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">server</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">channels</span><span class="p">;</span>
+
+    <span class="k">for</span> <span class="p">(</span><span class="nx">channelName</span> <span class="k">in</span> <span class="nx">channels</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">channels</span><span class="p">.</span><span class="nx">hasOwnProperty</span><span class="p">(</span><span class="nx">channelName</span><span class="p">))</span> <span class="p">{</span>
+            <span class="nx">channel</span> <span class="o">=</span> <span class="nx">channels</span><span class="p">[</span><span class="nx">channelName</span><span class="p">];</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-15" id="section-15">&#182;</a>
+</div>
+<p>Obfuscate.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+            <span class="k">if</span> <span class="p">(</span><span class="nx">channel</span><span class="p">.</span><span class="nx">session</span> <span class="o">!==</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">session</span><span class="p">)</span> <span class="p">{</span>
+                <span class="nx">gameMsg</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">msg</span><span class="p">.</span><span class="nx">obfuscate</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">);</span>
+            <span class="p">}</span>
+            <span class="nx">res</span> <span class="o">=</span> <span class="nx">res</span> <span class="o">&amp;&amp;</span> <span class="k">this</span><span class="p">.</span><span class="nx">send2channelPlayers</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">channel</span><span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;SocketManager.send2allPlayers: error/s occurred.&#39;</span><span class="p">,</span>
+                           <span class="s1">&#39;error&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="nx">res</span><span class="p">;</span>
+<span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="socketmanager.send2ownchannel">
+  <h3>
+    <a href="#socketmanager.send2ownchannel" name="socketmanager.send2ownchannel" class="pilcrow">&#182;</a>
+    SocketManager.send2ownChannel
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Sends a game message to all clients in the channel of the sender</p>
+
+<p>The sender is taken from the 'from' field of the game message, or it
+can be specified as a second parameter.</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">gameMsg</span>
+      <span class="dox_type">GameMsg</span>
+      <span>The game message to send</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">from</span>
+      <span class="dox_type">string</span>
+      <span>Optional. The id or alias of the sender. Defaults,
+  the value of the field gameMsg.from</span>
+    </div>
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">boolean</span>
+      <span>FALSE is an error occurs</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">SocketManager</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">send2ownChannel</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">from</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">channel</span><span class="p">,</span> <span class="nx">fromRoom</span><span class="p">;</span>
+
+    <span class="nx">from</span> <span class="o">=</span> <span class="nx">from</span> <span class="o">||</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">from</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-17" id="section-17">&#182;</a>
+</div>
+<p>Case 1. Channel was correctly detected before (msg received from server).</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">_channelName</span> <span class="o">&amp;&amp;</span>
+        <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">_channelName</span> <span class="o">===</span> <span class="k">this</span><span class="p">.</span><span class="nx">server</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">name</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">channel</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">server</span><span class="p">.</span><span class="nx">channel</span><span class="p">;</span>
+    <span class="p">}</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-18" id="section-18">&#182;</a>
+</div>
+<p>Case 2. Channel was not found before (msg created inside the server).</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">else</span> <span class="p">{</span>
+        <span class="nx">fromRoom</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">lookupRoom</span><span class="p">(</span><span class="nx">from</span><span class="p">);</span>
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">fromRoom</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;SocketManager.send2ownChannel: Sender (ID: &#39;</span> <span class="o">+</span>
+                            <span class="nx">from</span> <span class="o">+</span> <span class="s1">&#39;) is not in any room.&#39;</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="nx">channel</span> <span class="o">=</span> <span class="nx">fromRoom</span><span class="p">.</span><span class="nx">channel</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">send2channel</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">channel</span><span class="p">);</span>
+<span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="socketmanager.send2channel">
+  <h3>
+    <a href="#socketmanager.send2channel" name="socketmanager.send2channel" class="pilcrow">&#182;</a>
+    SocketManager.send2channel
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Sends a game message to all clients in all game rooms of a given channel</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">gameMsg</span>
+      <span class="dox_type">GameMsg</span>
+      <span>The game message to send</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">channel</span>
+      <span class="dox_type">ServerChannel</span>
+      <span>The channel object</span>
+    </div>
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">boolean</span>
+      <span>FALSE is an error occurs</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">SocketManager</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">send2channel</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">channel</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">res</span><span class="p">;</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-20" id="section-20">&#182;</a>
+</div>
+<p>Obfuscate.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">channel</span><span class="p">.</span><span class="nx">session</span> <span class="o">!==</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">session</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">gameMsg</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">msg</span><span class="p">.</span><span class="nx">obfuscate</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="nx">res</span> <span class="o">=</span> <span class="nx">send2AllClientsInGameServer</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">admin</span><span class="p">);</span>
+    <span class="nx">res</span> <span class="o">=</span> <span class="nx">res</span> <span class="o">&amp;&amp;</span> <span class="nx">send2AllClientsInGameServer</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">player</span><span class="p">);</span>
+    <span class="k">return</span> <span class="nx">res</span><span class="p">;</span>
+<span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="socketmanager.send2channelplayers">
+  <h3>
+    <a href="#socketmanager.send2channelplayers" name="socketmanager.send2channelplayers" class="pilcrow">&#182;</a>
+    SocketManager.send2channelPlayers
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Sends a game message to all clients in all game rooms of a given channel</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">gameMsg</span>
+      <span class="dox_type">GameMsg</span>
+      <span>The game message to send</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">channel</span>
+      <span class="dox_type">ServerChannel</span>
+      <span>The channel object</span>
+    </div>
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">boolean</span>
+      <span>FALSE is an error occurs</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">SocketManager.send2roomPlayers
+</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">SocketManager</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">send2channelPlayers</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">channel</span><span class="p">)</span> <span class="p">{</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-22" id="section-22">&#182;</a>
+</div>
+<p>Obfuscate.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">channel</span><span class="p">.</span><span class="nx">session</span> <span class="o">!==</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">session</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">gameMsg</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">msg</span><span class="p">.</span><span class="nx">obfuscate</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="nx">send2AllClientsInGameServer</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">player</span><span class="p">);</span>
+<span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="socketmanager.send2ownroom">
+  <h3>
+    <a href="#socketmanager.send2ownroom" name="socketmanager.send2ownroom" class="pilcrow">&#182;</a>
+    SocketManager.send2ownRoom
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Sends a game message to all clients in the room of the sender</p>
+
+<p>The sender is taken from the 'from' field of the game message, or it
+can be specified as a second parameter.</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">gameMsg</span>
+      <span class="dox_type">GameMsg</span>
+      <span>The game message to send</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">from</span>
+      <span class="dox_type">string</span>
+      <span>Optional. The id or alias of the sender. Defaults,
+   the value of the field gameMsg.from</span>
+    </div>
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">boolean</span>
+      <span>FALSE is an error occurs</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">SocketManager</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">send2ownRoom</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">from</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">registry</span><span class="p">,</span> <span class="nx">fromRoomName</span><span class="p">,</span> <span class="nx">fromRoom</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">ownChannel</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">channels</span><span class="p">,</span> <span class="nx">channelName</span><span class="p">,</span> <span class="nx">channel</span><span class="p">;</span>
+
+    <span class="nx">from</span> <span class="o">=</span> <span class="nx">from</span> <span class="o">||</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">from</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-24" id="section-24">&#182;</a>
+</div>
+<p>Case 1. Room was correctly detected before (msg received from server).</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">_roomName</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">fromRoom</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">server</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">[</span><span class="nx">gameMsg</span><span class="p">.</span><span class="nx">_roomName</span><span class="p">];</span>
+    <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-25" id="section-25">&#182;</a>
+</div>
+<p>Case 2. Room was not found before (msg created inside the server).</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">fromRoom</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">fromRoom</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">lookupRoom</span><span class="p">(</span><span class="nx">from</span><span class="p">);</span>
+    <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-26" id="section-26">&#182;</a>
+</div>
+<p>Room not found.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">fromRoom</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;SocketManager.send2ownRoom: Sender (ID: &#39;</span> <span class="o">+</span>
+                           <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">from</span> <span class="o">+</span> <span class="s1">&#39;) is not in any room.&#39;</span><span class="p">);</span>
+        <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">send2room</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">fromRoom</span><span class="p">);</span>
+<span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="socketmanager.send2room">
+  <h3>
+    <a href="#socketmanager.send2room" name="socketmanager.send2room" class="pilcrow">&#182;</a>
+    SocketManager.send2room
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Sends a game message to all clients in the same room</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">gameMsg</span>
+      <span class="dox_type">GameMsg</span>
+      <span>The game message to send</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">room</span>
+      <span class="dox_type">GameRoom</span>
+      <span>The room object</span>
+    </div>
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">boolean</span>
+      <span>FALSE is an error occurs</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">SocketManager</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">send2room</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">room</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">ids</span><span class="p">;</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-28" id="section-28">&#182;</a>
+</div>
+<p>Obfuscate.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">room</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">session</span> <span class="o">!==</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">session</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">gameMsg</span> <span class="o">=</span> <span class="nx">room</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">msg</span><span class="p">.</span><span class="nx">obfuscate</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="nx">ids</span> <span class="o">=</span> <span class="nx">room</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">id</span><span class="p">.</span><span class="nx">getAllKeys</span><span class="p">();</span>
+    <span class="nx">res</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">send2group</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">ids</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;SocketManager.send2room: an error occurred &#39;</span> <span class="o">+</span>
+                           <span class="s1">&#39;for room &#39;</span> <span class="o">+</span> <span class="nx">room</span><span class="p">.</span><span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="nx">res</span><span class="p">;</span>
+<span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="socketmanager.send2roomadmins">
+  <h3>
+    <a href="#socketmanager.send2roomadmins" name="socketmanager.send2roomadmins" class="pilcrow">&#182;</a>
+    SocketManager.send2roomAdmins
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Sends a game message to all admins in the same room</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">gameMsg</span>
+      <span class="dox_type">GameMsg</span>
+      <span>The game message to send</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">room</span>
+      <span class="dox_type">GameRoom</span>
+      <span>The room object</span>
+    </div>
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">boolean</span>
+      <span>FALSE is an error occurs</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">SocketManager</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">send2roomAdmins</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">room</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">ids</span><span class="p">;</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-30" id="section-30">&#182;</a>
+</div>
+<p>Obfuscate.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">room</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">session</span> <span class="o">!==</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">session</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">gameMsg</span> <span class="o">=</span> <span class="nx">room</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">msg</span><span class="p">.</span><span class="nx">obfuscate</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="nx">ids</span> <span class="o">=</span> <span class="nx">room</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">admin</span><span class="p">.</span><span class="nx">fetchValues</span><span class="p">(</span><span class="s1">&#39;id&#39;</span><span class="p">).</span><span class="nx">id</span><span class="p">;</span>
+    <span class="nx">res</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">send2group</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">ids</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;SocketManager.send2roomAdmins: an error has &#39;</span> <span class="o">+</span>
+                           <span class="s1">&#39;occurred for room &#39;</span> <span class="o">+</span> <span class="nx">room</span><span class="p">.</span><span class="nx">name</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="nx">res</span><span class="p">;</span>
+<span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="socketmanager.send2roomplayers">
+  <h3>
+    <a href="#socketmanager.send2roomplayers" name="socketmanager.send2roomplayers" class="pilcrow">&#182;</a>
+    SocketManager.send2roomPlayers
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Sends a game message to all players in the same room</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">gameMsg</span>
+      <span class="dox_type">GameMsg</span>
+      <span>The game message to send</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">room</span>
+      <span class="dox_type">GameRoom</span>
+      <span>The room object</span>
+    </div>
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">boolean</span>
+      <span>FALSE is an error occurs</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">SocketManager</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">send2roomPlayers</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">room</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">ids</span><span class="p">;</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-32" id="section-32">&#182;</a>
+</div>
+<p>Obfuscate.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">room</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">session</span> <span class="o">!==</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">session</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">gameMsg</span> <span class="o">=</span> <span class="nx">room</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">msg</span><span class="p">.</span><span class="nx">obfuscate</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="nx">ids</span> <span class="o">=</span> <span class="nx">room</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">fetchValues</span><span class="p">(</span><span class="s1">&#39;id&#39;</span><span class="p">).</span><span class="nx">id</span><span class="p">;</span>
+    <span class="nx">res</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">send2group</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">ids</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;SocketManager.send2roomPlayers: an error has &#39;</span> <span class="o">+</span>
+                           <span class="s1">&#39;occurred for room &#39;</span> <span class="o">+</span> <span class="nx">room</span><span class="p">.</span><span class="nx">name</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="nx">res</span><span class="p">;</span>
+<span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="socketmanager.send2group">
+  <h3>
+    <a href="#socketmanager.send2group" name="socketmanager.send2group" class="pilcrow">&#182;</a>
+    SocketManager.send2group
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Sends a game message to a group of clients</p>
+
+<p>The methods works regardless of the socket or room the clients belong to.</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">gameMsg</span>
+      <span class="dox_type">GameMsg</span>
+      <span>The game message to send</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">The</span>
+      <span class="dox_type">array</span>
+      <span class="dox_type">PlayerList</span>
+      <span class="dox_type">NDDB</span>
+      <span>recipients of the message</span>
+    </div>
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">boolean</span>
+      <span>TRUE on success</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">SocketManager</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">send2group</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">group</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">i</span><span class="p">,</span> <span class="nx">len</span><span class="p">;</span>
+    <span class="nx">res</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="nx">group</span> <span class="k">instanceof</span> <span class="nx">PlayerList</span> <span class="o">||</span> <span class="nx">group</span> <span class="k">instanceof</span> <span class="nx">NDDB</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">group</span> <span class="o">=</span> <span class="nx">group</span><span class="p">.</span><span class="nx">fetchValues</span><span class="p">(</span><span class="s1">&#39;id&#39;</span><span class="p">).</span><span class="nx">id</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">J</span><span class="p">.</span><span class="nx">isArray</span><span class="p">(</span><span class="nx">group</span><span class="p">))</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;SocketManager.send2group: group must be array &#39;</span> <span class="o">+</span>
+                            <span class="s1">&#39;or instance of PlayerList/NDDB.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="nx">i</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+    <span class="nx">len</span> <span class="o">=</span> <span class="nx">group</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span>
+    <span class="k">for</span> <span class="p">(</span> <span class="p">;</span> <span class="o">++</span><span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">len</span> <span class="p">;</span> <span class="p">)</span> <span class="p">{</span>
+        <span class="nx">res</span> <span class="o">=</span> <span class="nx">res</span> <span class="o">&amp;&amp;</span> <span class="k">this</span><span class="p">.</span><span class="nx">send2client</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">group</span><span class="p">[</span><span class="nx">i</span><span class="p">]);</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;SocketManager.send2group: an error has &#39;</span> <span class="o">+</span>
+                           <span class="s1">&#39;occurred.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="nx">res</span><span class="p">;</span>
+<span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="socketmanager.send2client">
+  <h3>
+    <a href="#socketmanager.send2client" name="socketmanager.send2client" class="pilcrow">&#182;</a>
+    SocketManager.send2client
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Low level primitive to send a game message</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">gameMsg</span>
+      <span class="dox_type">GameMsg</span>
+      <span>The game message to send</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">to</span>
+      <span class="dox_type">string</span>
+      <span>Optional. The recipient of the message.</span>
+    </div>
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">boolean</span>
+      <span>FALSE, if an error occurs</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">SocketManager</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">send2client</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">to</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">originalTo</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">resolvedInfo</span><span class="p">,</span> <span class="nx">socket</span><span class="p">,</span> <span class="nx">receiverSid</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">errMsg</span><span class="p">;</span>
+
+    <span class="kd">var</span> <span class="nx">channels</span><span class="p">,</span> <span class="nx">channelName</span><span class="p">,</span> <span class="nx">ownChannelName</span><span class="p">,</span> <span class="nx">socketManager</span><span class="p">;</span>
+
+    <span class="nx">originalTo</span> <span class="o">=</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">to</span><span class="p">;</span>
+    <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">to</span> <span class="o">=</span> <span class="nx">to</span> <span class="o">||</span> <span class="nx">originalTo</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-35" id="section-35">&#182;</a>
+</div>
+<p>Looks into the local registry first, and then into the registry of
+other channels, if the server is allowed to do so.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">resolvedInfo</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">resolveClientAndSocket</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">);</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">resolvedInfo</span><span class="p">.</span><span class="nx">success</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">to</span> <span class="o">=</span> <span class="nx">originalTo</span><span class="p">;</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;SocketManager.send2client: Msg not sent. &#39;</span> <span class="o">+</span>
+                           <span class="nx">resolvedInfo</span><span class="p">.</span><span class="nx">errMsg</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
+        <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
+    <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-36" id="section-36">&#182;</a>
+</div>
+<p>Obfuscate.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">resolvedInfo</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">session</span> <span class="o">!==</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">session</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">gameMsg</span> <span class="o">=</span> <span class="nx">resolvedInfo</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">msg</span><span class="p">.</span><span class="nx">obfuscate</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="nx">socket</span> <span class="o">=</span> <span class="nx">resolvedInfo</span><span class="p">.</span><span class="nx">socket</span><span class="p">;</span>
+    <span class="nx">receiverSid</span> <span class="o">=</span> <span class="nx">resolvedInfo</span><span class="p">.</span><span class="nx">sid</span><span class="p">;</span>
+    <span class="nx">res</span> <span class="o">=</span> <span class="nx">socket</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">receiverSid</span><span class="p">);</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">errMsg</span> <span class="o">=</span> <span class="s1">&#39;SocketManager.send2client: An error occurred while sending &#39;</span> <span class="o">+</span>
+            <span class="s1">&#39;a message to &#39;</span> <span class="o">+</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">to</span> <span class="o">+</span> <span class="s1">&#39; (cid: &#39;</span> <span class="o">+</span> <span class="nx">resolvedInfo</span><span class="p">.</span><span class="nx">cid</span> <span class="o">+</span>
+            <span class="s1">&#39;, sid: &#39;</span> <span class="o">+</span> <span class="nx">receiverSid</span> <span class="o">+</span> <span class="s1">&#39;)&#39;</span><span class="p">;</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">errMsg</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">to</span> <span class="o">=</span> <span class="nx">originalTo</span><span class="p">;</span>
+    <span class="k">return</span> <span class="nx">res</span><span class="p">;</span>
+<span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-37" id="section-37">&#182;</a>
+</div>
+<p>Broadcast methods.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="socketmanager.broadcast">
+  <h3>
+    <a href="#socketmanager.broadcast" name="socketmanager.broadcast" class="pilcrow">&#182;</a>
+    SocketManager.broadcast
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Sends a game message to all clients in the same room except the sender</p>
+
+<p>The sender is taken from the 'from' field of the game message,
+or it can be specified as a second parameter.</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">gameMsg</span>
+      <span class="dox_type">GameMsg</span>
+      <span>The game message to send</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">from</span>
+      <span class="dox_type">string</span>
+      <span>Optional. The id or alias of the sender. Defaults,
+   the value of the field gameMsg.from</span>
+    </div>
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">boolean</span>
+      <span>FALSE is an error occurs</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">SocketManager</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">broadcast</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">from</span><span class="p">)</span> <span class="p">{</span>
+
+    <span class="k">switch</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">.</span><span class="nx">to</span><span class="p">)</span> <span class="p">{</span>
+
+    <span class="k">case</span> <span class="s1">&#39;ALL&#39;</span><span class="o">:</span>
+        <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">broadcast2all</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">from</span><span class="p">);</span>
+
+    <span class="k">case</span> <span class="s1">&#39;CHANNEL&#39;</span><span class="o">:</span>
+        <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">broadcast2ownChannel</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">from</span><span class="p">);</span>
+
+    <span class="k">case</span> <span class="s1">&#39;ROOM&#39;</span><span class="o">:</span>
+        <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">broadcast2ownRoom</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">from</span><span class="p">);</span>
+
+    <span class="k">case</span> <span class="s1">&#39;CHANNEL_X&#39;</span><span class="o">:</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">broadcast2channel</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">_to</span><span class="p">,</span> <span class="nx">from</span><span class="p">);</span>
+
+        <span class="cm">/* falls through */</span>
+    <span class="k">case</span> <span class="s1">&#39;ROOM_X&#39;</span><span class="o">:</span>
+        <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">broadcast2room</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">_to</span><span class="p">,</span> <span class="nx">from</span><span class="p">);</span>
+
+    <span class="k">default</span><span class="o">:</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;SocketManager.broadcast: unrecognized to: &#39;</span> <span class="o">+</span>
+                        <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">to</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="socketmanager.broadcast2all">
+  <h3>
+    <a href="#socketmanager.broadcast2all" name="socketmanager.broadcast2all" class="pilcrow">&#182;</a>
+    SocketManager.broadcast2all
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Broadcast a message to all clients in all game rooms in all channels.</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">gameMsg</span>
+      <span class="dox_type">GameMsg</span>
+      <span>The game message to broadcast</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">from</span>
+      <span class="dox_type">string</span>
+      <span>Optional. The id or alias of the sender. Defaults,
+   the value of the field gameMsg.from</span>
+    </div>
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">boolean</span>
+      <span>FALSE, if at least one error occurs</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">SocketManager</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">broadcast2all</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">from</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">ownChannelName</span><span class="p">,</span> <span class="nx">channels</span><span class="p">,</span> <span class="nx">channelName</span><span class="p">,</span> <span class="nx">channel</span><span class="p">,</span> <span class="nx">res</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">fromRoom</span><span class="p">;</span>
+    <span class="nx">from</span> <span class="o">=</span> <span class="nx">from</span> <span class="o">||</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">from</span><span class="p">;</span>
+
+    <span class="nx">res</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+    <span class="nx">channels</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">server</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">channels</span><span class="p">;</span>
+
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-40" id="section-40">&#182;</a>
+</div>
+<p>Case 1. Channel was correctly detected before (msg received from server).</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">_channelName</span> <span class="o">&amp;&amp;</span>
+        <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">_channelName</span> <span class="o">===</span> <span class="k">this</span><span class="p">.</span><span class="nx">server</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">name</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">channel</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">server</span><span class="p">.</span><span class="nx">channel</span><span class="p">;</span>
+    <span class="p">}</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-41" id="section-41">&#182;</a>
+</div>
+<p>Case 2. Channel was not found before (msg created inside the server).</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">else</span> <span class="p">{</span>
+        <span class="nx">fromRoom</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">lookupRoom</span><span class="p">(</span><span class="nx">from</span><span class="p">);</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">fromRoom</span><span class="p">)</span> <span class="nx">channel</span> <span class="o">=</span> <span class="nx">fromRoom</span><span class="p">.</span><span class="nx">channel</span><span class="p">;</span>
+    <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-42" id="section-42">&#182;</a>
+</div>
+<p>Sender is not in any channel, send to all.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">channel</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">send2all</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="nx">ownChannelName</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">name</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-43" id="section-43">&#182;</a>
+</div>
+<p>Broadcast to own channel first.
+This method will remove the .<em>channelName and .</em>sid properties.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">this</span><span class="p">.</span><span class="nx">broadcast2channel</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">channel</span><span class="p">,</span> <span class="nx">from</span><span class="p">);</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-44" id="section-44">&#182;</a>
+</div>
+<p>Sends to all other channels then.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">for</span> <span class="p">(</span><span class="nx">channelName</span> <span class="k">in</span> <span class="nx">channels</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">channelName</span> <span class="o">!==</span> <span class="nx">ownChannelName</span> <span class="o">&amp;&amp;</span>
+            <span class="nx">channels</span><span class="p">.</span><span class="nx">hasOwnProperty</span><span class="p">(</span><span class="nx">channelName</span><span class="p">))</span> <span class="p">{</span>
+
+            <span class="nx">channel</span> <span class="o">=</span> <span class="nx">channels</span><span class="p">[</span><span class="nx">channelName</span><span class="p">];</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-45" id="section-45">&#182;</a>
+</div>
+<p>Obfuscate.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+            <span class="nx">gameMsg</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">msg</span><span class="p">.</span><span class="nx">obfuscate</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">);</span>
+
+            <span class="nx">res</span> <span class="o">=</span> <span class="nx">res</span> <span class="o">&amp;&amp;</span> <span class="k">this</span><span class="p">.</span><span class="nx">send2channel</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">channel</span><span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;SocketManager.broadcast2all: error/s occurred.&#39;</span><span class="p">,</span>
+                           <span class="s1">&#39;error&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="nx">res</span><span class="p">;</span>
+<span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="socketmanager.broadcast2ownchannel">
+  <h3>
+    <a href="#socketmanager.broadcast2ownchannel" name="socketmanager.broadcast2ownchannel" class="pilcrow">&#182;</a>
+    SocketManager.broadcast2ownChannel
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Broadcast a game message in the channel of the sender</p>
+
+<p>The sender is taken from the 'from' field of the game message, or it
+can be specified as a second parameter.</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">gameMsg</span>
+      <span class="dox_type">GameMsg</span>
+      <span>The game message to send</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">from</span>
+      <span class="dox_type">string</span>
+      <span>Optional. The id or alias of the sender. Defaults,
+  the value of the field gameMsg.from</span>
+    </div>
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">boolean</span>
+      <span>FALSE is an error occurs</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">SocketManager</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">broadcast2ownChannel</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">from</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">channel</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">fromRoom</span><span class="p">;</span>
+
+    <span class="nx">from</span> <span class="o">=</span> <span class="nx">from</span> <span class="o">||</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">from</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-47" id="section-47">&#182;</a>
+</div>
+<p>Case 1. Channel was correctly detected before (msg received from server).</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">_channelName</span> <span class="o">&amp;&amp;</span>
+        <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">_channelName</span> <span class="o">===</span> <span class="k">this</span><span class="p">.</span><span class="nx">server</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">name</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">channel</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">server</span><span class="p">.</span><span class="nx">channel</span><span class="p">;</span>
+    <span class="p">}</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-48" id="section-48">&#182;</a>
+</div>
+<p>Case 2. Channel was not found before (msg created inside the server).</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">else</span> <span class="p">{</span>
+        <span class="nx">fromRoom</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">lookupRoom</span><span class="p">(</span><span class="nx">from</span><span class="p">);</span>
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">fromRoom</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;SocketManager.send2ownChannel: Sender (ID: &#39;</span> <span class="o">+</span>
+                               <span class="nx">from</span> <span class="o">+</span> <span class="s1">&#39;) is not in any room.&#39;</span><span class="p">);</span>
+            <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="nx">channel</span> <span class="o">=</span> <span class="nx">fromRoom</span><span class="p">.</span><span class="nx">channel</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">broadcast2channel</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">channel</span><span class="p">,</span> <span class="nx">from</span><span class="p">);</span>
+<span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="socketmanager.broadcast2channel">
+  <h3>
+    <a href="#socketmanager.broadcast2channel" name="socketmanager.broadcast2channel" class="pilcrow">&#182;</a>
+    SocketManager.broadcast2channel
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Sends a game message to all clients in all game rooms of a given channel</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">gameMsg</span>
+      <span class="dox_type">GameMsg</span>
+      <span>The game message to send</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">channel</span>
+      <span class="dox_type">ServerChannel</span>
+      <span>The channel object</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">from</span>
+      <span class="dox_type">string</span>
+      <span>Optional. The id or alias of the sender. Defaults,
+   the value of the field gameMsg.from</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">Optional,</span>
+      <span class="dox_type">string</span>
+      <span>if set modifies the <em>from</em> field of the message</span>
+    </div>
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">boolean</span>
+      <span>FALSE is an error occurs</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">SocketManager</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">broadcast2channel</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">channel</span><span class="p">,</span> <span class="nx">from</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">resolvedInfo</span><span class="p">,</span> <span class="nx">globalLookUp</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">sid</span><span class="p">;</span>
+    <span class="nx">from</span> <span class="o">=</span> <span class="nx">from</span> <span class="o">||</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">from</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-50" id="section-50">&#182;</a>
+</div>
+<p>We need to determine if the sender is in this channel. If so, we use
+broadcast, if not we use the send method.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-51" id="section-51">&#182;</a>
+</div>
+<p>Case 1. Message was created by the server, and SID must be checked.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">_sid</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">globalLookUp</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+        <span class="nx">resolvedInfo</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">admin</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">resolveClientAndSocket</span><span class="p">(</span>
+                <span class="nx">from</span><span class="p">,</span> <span class="nx">globalLookUp</span><span class="p">);</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-52" id="section-52">&#182;</a>
+</div>
+<p>Sender is not in the same channel. We can use the send method.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">resolvedInfo</span><span class="p">.</span><span class="nx">success</span><span class="p">)</span> <span class="p">{</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-53" id="section-53">&#182;</a>
+</div>
+<p>Obfuscate.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+            <span class="k">if</span> <span class="p">(</span><span class="nx">resolvedInfo</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">session</span> <span class="o">!==</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">session</span><span class="p">)</span> <span class="p">{</span>
+                <span class="nx">gameMsg</span> <span class="o">=</span> <span class="nx">resolvedInfo</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">msg</span><span class="p">.</span><span class="nx">obfuscate</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">);</span>
+            <span class="p">}</span>
+            <span class="nx">res</span> <span class="o">=</span> <span class="nx">send2AllClientsInGameServer</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">admin</span><span class="p">);</span>
+            <span class="nx">res</span> <span class="o">=</span> <span class="nx">res</span> <span class="o">&amp;&amp;</span> <span class="nx">send2AllClientsInGameServer</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">player</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="k">else</span> <span class="p">{</span>
+            <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">_sid</span> <span class="o">=</span> <span class="nx">resolvedInfo</span><span class="p">.</span><span class="nx">sid</span><span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-54" id="section-54">&#182;</a>
+</div>
+<p>Case 2. Message was received by server, and SID already detected,
+or sender was found in this channel.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">_sid</span><span class="p">)</span> <span class="p">{</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-55" id="section-55">&#182;</a>
+</div>
+<p>Make a copy of sid, because it will be deleted by the socket.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="nx">sid</span> <span class="o">=</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">_sid</span><span class="p">;</span>
+        <span class="nx">res</span> <span class="o">=</span> <span class="nx">broadcast2AllClientsInGameServer</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">admin</span><span class="p">,</span> <span class="nx">sid</span><span class="p">);</span>
+        <span class="nx">res</span> <span class="o">=</span> <span class="nx">res</span> <span class="o">&amp;&amp;</span> <span class="nx">broadcast2AllClientsInGameServer</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">player</span><span class="p">,</span>
+                                                      <span class="nx">sid</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span>
+                <span class="s1">&#39;SocketManager.broadcast2channel: error/s occurred &#39;</span> <span class="o">+</span>
+                <span class="s1">&#39;for channel: &#39;</span> <span class="o">+</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="nx">res</span><span class="p">;</span>
+<span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="socketmanager.broadcast2ownroom">
+  <h3>
+    <a href="#socketmanager.broadcast2ownroom" name="socketmanager.broadcast2ownroom" class="pilcrow">&#182;</a>
+    SocketManager.broadcast2ownRoom
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Sends a game message to all clients in the same room except the sender</p>
+
+<p>The sender is taken from the 'from' field of the game message,
+or it can be specified as a second parameter.</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">gameMsg</span>
+      <span class="dox_type">GameMsg</span>
+      <span>The game message to send</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">from</span>
+      <span class="dox_type">string</span>
+      <span>Optional. The id or alias of the sender. Defaults,
+  the value of the field gameMsg.from</span>
+    </div>
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">boolean</span>
+      <span>FALSE is an error occurs</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">SocketManager</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">broadcast2ownRoom</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">from</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">registry</span><span class="p">,</span> <span class="nx">fromRoomName</span><span class="p">,</span> <span class="nx">fromRoom</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">ownChannel</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">channels</span><span class="p">,</span> <span class="nx">channelName</span><span class="p">,</span> <span class="nx">channel</span><span class="p">;</span>
+
+    <span class="nx">from</span> <span class="o">=</span> <span class="nx">from</span> <span class="o">||</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">from</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-57" id="section-57">&#182;</a>
+</div>
+<p>Case 1. Room was correctly detected before (msg received from server).</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">_roomName</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">fromRoom</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">server</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">[</span><span class="nx">gameMsg</span><span class="p">.</span><span class="nx">_roomName</span><span class="p">];</span>
+    <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-58" id="section-58">&#182;</a>
+</div>
+<p>Case 2. Room was not found before (msg created inside the server).</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">fromRoom</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">fromRoom</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">lookupRoom</span><span class="p">(</span><span class="nx">from</span><span class="p">);</span>
+    <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-59" id="section-59">&#182;</a>
+</div>
+<p>Room not found.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">fromRoom</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;SocketManager.send2ownRoom: Sender (ID: &#39;</span> <span class="o">+</span>
+                           <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">from</span> <span class="o">+</span> <span class="s1">&#39;) is not in any room.&#39;</span><span class="p">);</span>
+        <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">broadcast2room</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">fromRoom</span><span class="p">,</span> <span class="nx">from</span><span class="p">);</span>
+<span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="socketmanager.broadcast2room">
+  <h3>
+    <a href="#socketmanager.broadcast2room" name="socketmanager.broadcast2room" class="pilcrow">&#182;</a>
+    SocketManager.broadcast2room
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Sends a game message to all clients in the same room except the sender</p>
+
+<p>The sender is taken from the 'from' field of the game message,
+or it can be specified as a second parameter.</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">gameMsg</span>
+      <span class="dox_type">GameMsg</span>
+      <span>The game message to send</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">room</span>
+      <span class="dox_type">GameRoom</span>
+      <span>The room in which to broadcast</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">resolvedFrom</span>
+      <span class="dox_type">string</span>
+      <span>The id of the sender.</span>
+    </div>
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">boolean</span>
+      <span>FALSE is an error occurs</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">SocketManager</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">broadcast2room</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">room</span><span class="p">,</span> <span class="nx">resolvedFrom</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">originalTo</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">toClients</span><span class="p">;</span>
+
+    <span class="nx">originalTo</span> <span class="o">=</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">to</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-61" id="section-61">&#182;</a>
+</div>
+<p>Find all clients connected to game room.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">toClients</span> <span class="o">=</span> <span class="nx">room</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">id</span><span class="p">.</span><span class="nx">getAllKeys</span><span class="p">();</span>
+
+    <span class="nx">res</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">broadcast2group</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">toClients</span><span class="p">,</span> <span class="nx">resolvedFrom</span><span class="p">);</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;SocketManager.broadcast2room: an error has &#39;</span> <span class="o">+</span>
+                           <span class="s1">&#39;occurred for room &#39;</span> <span class="o">+</span> <span class="nx">room</span><span class="p">.</span><span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-62" id="section-62">&#182;</a>
+</div>
+<p>The original <em>from</em> field of the gameMsg must be re-set
+to avoid that a wrong reuse of the msg in the callee</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">to</span> <span class="o">=</span> <span class="nx">originalTo</span><span class="p">;</span>
+
+    <span class="k">return</span> <span class="nx">res</span><span class="p">;</span>
+<span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="socketmanager.broadcast2group">
+  <h3>
+    <a href="#socketmanager.broadcast2group" name="socketmanager.broadcast2group" class="pilcrow">&#182;</a>
+    SocketManager.broadcast2group
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Broadcasts a game message to a group of clients</p>
+
+<p>The methods works regardless of the socket or room the clients
+belong to.</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">gameMsg</span>
+      <span class="dox_type">GameMsg</span>
+      <span>The game message to send</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">The</span>
+      <span class="dox_type">array</span>
+      <span class="dox_type">PlayerList</span>
+      <span class="dox_type">NDDB</span>
+      <span>recipients of the message</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">resolvedFrom</span>
+      <span class="dox_type">string</span>
+      <span>Optional. The id or alias of the sender.
+  Defaults, the value of the field gameMsg.from</span>
+    </div>
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">boolean</span>
+      <span>TRUE on success</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">SocketManager</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">broadcast2group</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span>
+        <span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">group</span><span class="p">,</span> <span class="nx">resolvedFrom</span><span class="p">)</span> <span class="p">{</span>
+
+    <span class="kd">var</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">i</span><span class="p">,</span> <span class="nx">len</span><span class="p">,</span> <span class="nx">from</span><span class="p">;</span>
+    <span class="nx">res</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+
+    <span class="nx">from</span> <span class="o">=</span> <span class="nx">resolvedFrom</span> <span class="o">||</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">from</span><span class="p">;</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="nx">group</span> <span class="k">instanceof</span> <span class="nx">PlayerList</span> <span class="o">||</span> <span class="nx">group</span> <span class="k">instanceof</span> <span class="nx">NDDB</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">group</span> <span class="o">=</span> <span class="nx">group</span><span class="p">.</span><span class="nx">fetchValues</span><span class="p">(</span><span class="s1">&#39;id&#39;</span><span class="p">).</span><span class="nx">id</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">J</span><span class="p">.</span><span class="nx">isArray</span><span class="p">(</span><span class="nx">group</span><span class="p">))</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;SocketManager.broadcast2group: group must be &#39;</span> <span class="o">+</span>
+                            <span class="s1">&#39;array or instance of PlayerList/NDDB.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="nx">i</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+    <span class="nx">len</span> <span class="o">=</span> <span class="nx">group</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span>
+    <span class="k">for</span> <span class="p">(</span> <span class="p">;</span> <span class="o">++</span><span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">len</span> <span class="p">;</span> <span class="p">)</span> <span class="p">{</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-64" id="section-64">&#182;</a>
+</div>
+<p>Do not send the msg to sender as well.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">group</span><span class="p">[</span><span class="nx">i</span><span class="p">]</span> <span class="o">!==</span> <span class="nx">from</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">res</span> <span class="o">=</span> <span class="nx">res</span> <span class="o">&amp;&amp;</span> <span class="k">this</span><span class="p">.</span><span class="nx">send2client</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">group</span><span class="p">[</span><span class="nx">i</span><span class="p">]);</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;SocketManager.broadcast2group: an error has &#39;</span> <span class="o">+</span>
+                           <span class="s1">&#39;occurred.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="nx">res</span><span class="p">;</span>
+<span class="p">};</span>
+
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-65" id="section-65">&#182;</a>
+</div>
+<p>Helper methods.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="socketmanager.resolveclientandsocket">
+  <h3>
+    <a href="#socketmanager.resolveclientandsocket" name="socketmanager.resolveclientandsocket" class="pilcrow">&#182;</a>
+    SocketManager.resolveClientAndSocket
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Retrieves the socket, and sid of the recipient of a GameMsg</p>
+
+<p>Returns an object with the following properties:</p>
+
+<ul>
+<li>channel: the ServerChannel object
+<ul><li>socket: the Socket object</li>
+<li>sid: the id of the recipient within the socket</li>
+<li>cid: the client id of the recipient within the channel</li>
+<li>success: boolean flag, TRUE if resolving is successful</li>
+<li>errMsg: set if an error occurs</li></ul></li>
+</ul>
+
+<p>If server is allowed to do so, and the recipient is not found in the
+local registry, it will look into the registry of other channels.</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">gameMsg</span>
+      <span class="dox_type">GameMsg</span>
+      <span>The game message to analyze</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">glovalLookUp</span>
+      <span class="dox_type">boolean</span>
+      <span>If defined, overwrites settings:
+  <code>this.server.channel.servernode.channels</code>.</span>
+    </div>
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">object</span>
+      <span>An object containing the result of the
+  resolving process</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">SocketManager</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">resolveClientAndSocket</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span>
+        <span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">globalLookUp</span><span class="p">)</span> <span class="p">{</span>
+
+    <span class="kd">var</span> <span class="nx">to</span><span class="p">,</span> <span class="nx">socket</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">resolvedTo</span><span class="p">,</span> <span class="nx">registry</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">receiverObj</span><span class="p">,</span> <span class="nx">receiverSid</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">ownChannel</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">channels</span><span class="p">,</span> <span class="nx">channelName</span><span class="p">,</span> <span class="nx">channel</span><span class="p">;</span>
+
+    <span class="nx">globalLookUp</span> <span class="o">=</span> <span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">globalLookUp</span> <span class="o">?</span>
+        <span class="nx">globalLookUp</span> <span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">server</span><span class="p">.</span><span class="nx">options</span><span class="p">.</span><span class="nx">canSendTo</span><span class="p">.</span><span class="nx">anyChannel</span><span class="p">;</span>
+
+    <span class="nx">ownChannel</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">server</span><span class="p">.</span><span class="nx">channel</span><span class="p">;</span>
+    <span class="nx">to</span> <span class="o">=</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">to</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-67" id="section-67">&#182;</a>
+</div>
+<p>TODO: move somewhere in the wiki
+Game aliases are global associations with a client id that are valid
+throughout the whole game, while room-aliases are valid only within a
+specific room. When a client leaves that room the room alias is deleted.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-68" id="section-68">&#182;</a>
+</div>
+<p>Matches the 'to' (GameMsg.to) field with a client ID.
+The 'to' field can be already a client ID, or a game-alias or a
+room-alias. In case of a room-alias, uses 'from' (GameMsg.from) field
+to locate the room. Can return null if the lookup fails.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
+    <span class="nx">registry</span> <span class="o">=</span> <span class="nx">ownChannel</span><span class="p">.</span><span class="nx">registry</span><span class="p">;</span>
+    <span class="nx">resolvedTo</span> <span class="o">=</span> <span class="nx">registry</span><span class="p">.</span><span class="nx">lookupClient</span><span class="p">(</span><span class="nx">to</span><span class="p">,</span>
+                                       <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">_room</span> <span class="o">||</span>
+                                       <span class="nx">registry</span><span class="p">.</span><span class="nx">getClientRoom</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">.</span><span class="nx">from</span><span class="p">));</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-69" id="section-69">&#182;</a>
+</div>
+<p>Get the socket object first from current channel.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">socket</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">clients</span><span class="p">[</span><span class="nx">resolvedTo</span><span class="p">]</span> <span class="o">||</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">server</span><span class="p">.</span><span class="nx">partner</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">clients</span><span class="p">[</span><span class="nx">resolvedTo</span><span class="p">];</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="nx">socket</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">channel</span> <span class="o">=</span> <span class="nx">ownChannel</span><span class="p">;</span>
+    <span class="p">}</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-70" id="section-70">&#182;</a>
+</div>
+<p>If server can send to other channels as well, look for
+recipient information in all channels.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">globalLookUp</span><span class="p">)</span> <span class="p">{</span>
+
+        <span class="nx">channels</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">server</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">channels</span><span class="p">;</span>
+        <span class="k">for</span> <span class="p">(</span><span class="nx">channelName</span> <span class="k">in</span> <span class="nx">channels</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nx">channelName</span> <span class="o">!==</span> <span class="nx">ownChannel</span><span class="p">.</span><span class="nx">name</span> <span class="o">&amp;&amp;</span>
+                <span class="nx">channels</span><span class="p">.</span><span class="nx">hasOwnProperty</span><span class="p">(</span><span class="nx">channelName</span><span class="p">))</span> <span class="p">{</span>
+
+                <span class="nx">channel</span> <span class="o">=</span> <span class="nx">channels</span><span class="p">[</span><span class="nx">channelName</span><span class="p">];</span>
+
+                <span class="nx">registry</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">registry</span><span class="p">;</span>
+                <span class="nx">resolvedTo</span> <span class="o">=</span> <span class="nx">registry</span><span class="p">.</span><span class="nx">lookupClient</span><span class="p">(</span><span class="nx">to</span><span class="p">,</span>
+                                                   <span class="nx">registry</span><span class="p">.</span><span class="nx">getClientRoom</span><span class="p">(</span><span class="nx">to</span><span class="p">));</span>
+
+                <span class="nx">socket</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">clients</span><span class="p">[</span><span class="nx">resolvedTo</span><span class="p">]</span> <span class="o">||</span>
+                    <span class="nx">channel</span><span class="p">.</span><span class="nx">admin</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">clients</span><span class="p">[</span><span class="nx">resolvedTo</span><span class="p">];</span>
+
+                <span class="k">if</span> <span class="p">(</span><span class="nx">socket</span><span class="p">)</span> <span class="k">break</span><span class="p">;</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-71" id="section-71">&#182;</a>
+</div>
+<p>If socket object for to field is not found, return an error message.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">socket</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="nx">success</span><span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
+            <span class="nx">errMsg</span><span class="o">:</span> <span class="s1">&#39;Could not find socket for recipient: &#39;</span> <span class="o">+</span> <span class="nx">to</span> <span class="o">+</span>
+                <span class="s1">&#39; (last resolved as: &#39;</span> <span class="o">+</span> <span class="nx">resolvedTo</span> <span class="o">+</span> <span class="s1">&#39;)&#39;</span>
+        <span class="p">};</span>
+    <span class="p">}</span>
+
+    <span class="nx">receiverObj</span> <span class="o">=</span> <span class="nx">registry</span><span class="p">.</span><span class="nx">getClients</span><span class="p">()[</span><span class="nx">resolvedTo</span><span class="p">];</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">receiverObj</span><span class="p">)</span> <span class="p">{</span>
+         <span class="k">return</span> <span class="p">{</span>
+            <span class="nx">success</span><span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
+            <span class="nx">errMsg</span><span class="o">:</span> <span class="s1">&#39;Could not resolve the client id to a socket id&#39;</span>
+         <span class="p">};</span>
+    <span class="p">}</span>
+
+    <span class="nx">receiverSid</span> <span class="o">=</span> <span class="nx">receiverObj</span><span class="p">.</span><span class="nx">sid</span><span class="p">;</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">receiverSid</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="nx">success</span><span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
+            <span class="nx">errMsg</span><span class="o">:</span> <span class="s1">&#39;Player object has no socket id.&#39;</span>
+        <span class="p">};</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="nx">success</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+        <span class="nx">sid</span><span class="o">:</span> <span class="nx">receiverSid</span><span class="p">,</span>
+        <span class="nx">cid</span><span class="o">:</span> <span class="nx">resolvedTo</span><span class="p">,</span>
+        <span class="nx">socket</span><span class="o">:</span> <span class="nx">socket</span><span class="p">,</span>
+        <span class="nx">channel</span><span class="o">:</span> <span class="nx">channel</span>
+    <span class="p">};</span>
+<span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="socketmanager.lookuproom">
+  <h2>
+    <a href="#socketmanager.lookuproom" name="socketmanager.lookuproom" class="pilcrow">&#182;</a>
+    SocketManager.lookupRoom
+  </h2>
+</div>
+
+  </div>
+  <div class="body"><p>Tries to resolve a client id to an existing room</p>
+
+<p>Looks in the registry of other channels as well, if the client id is not
+found in the local registry, and if the server is allowed to do so.</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">clientId</span>
+      <span class="dox_type">string</span>
+      <span>The id or alias of a client to resolve</span>
+    </div>
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">GameRoom</span>
+      <span>room The resolved GameRoom object</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">ChannelRegistry.lookupClient
+</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">SocketManager</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">lookupRoom</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">clientId</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">registry</span><span class="p">,</span> <span class="nx">roomName</span><span class="p">,</span> <span class="nx">room</span><span class="p">,</span> <span class="nx">resolvedId</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">ownChannel</span><span class="p">,</span> <span class="nx">channels</span><span class="p">,</span> <span class="nx">channelName</span><span class="p">,</span> <span class="nx">channel</span><span class="p">;</span>
+
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-73" id="section-73">&#182;</a>
+</div>
+<p>Look first inside own channel.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">ownChannel</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">server</span><span class="p">.</span><span class="nx">channel</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-74" id="section-74">&#182;</a>
+</div>
+<p>Checks if clientId is an alias, and returns the real id.
+If it is not an alias, it still needs to be found
+in the registry, otherwise it returns NULL.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">registry</span> <span class="o">=</span> <span class="nx">ownChannel</span><span class="p">.</span><span class="nx">registry</span><span class="p">;</span>
+    <span class="nx">resolvedId</span> <span class="o">=</span> <span class="nx">registry</span><span class="p">.</span><span class="nx">lookupClient</span><span class="p">(</span><span class="nx">clientId</span><span class="p">);</span>
+    <span class="nx">roomName</span> <span class="o">=</span> <span class="nx">registry</span><span class="p">.</span><span class="nx">getClientRoom</span><span class="p">(</span><span class="nx">resolvedId</span><span class="p">);</span>
+    <span class="nx">room</span> <span class="o">=</span> <span class="nx">ownChannel</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">[</span><span class="nx">roomName</span><span class="p">];</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">room</span> <span class="o">&amp;&amp;</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-75" id="section-75">&#182;</a>
+</div>
+<p>If server can send to other channels as well, look for
+recipient information in all channels.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="k">this</span><span class="p">.</span><span class="nx">server</span><span class="p">.</span><span class="nx">options</span><span class="p">.</span><span class="nx">canSendTo</span><span class="p">.</span><span class="nx">anyChannel</span><span class="p">)</span> <span class="p">{</span>
+
+        <span class="nx">channels</span> <span class="o">=</span> <span class="nx">ownChannel</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">channels</span><span class="p">;</span>
+        <span class="k">for</span> <span class="p">(</span><span class="nx">channelName</span> <span class="k">in</span> <span class="nx">channels</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nx">channelName</span> <span class="o">!==</span> <span class="nx">ownChannel</span><span class="p">.</span><span class="nx">name</span> <span class="o">&amp;&amp;</span>
+                <span class="nx">channels</span><span class="p">.</span><span class="nx">hasOwnProperty</span><span class="p">(</span><span class="nx">channelName</span><span class="p">))</span> <span class="p">{</span>
+
+                <span class="nx">channel</span> <span class="o">=</span> <span class="nx">channels</span><span class="p">[</span><span class="nx">channelName</span><span class="p">];</span>
+                <span class="nx">registry</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">registry</span><span class="p">;</span>
+
+                <span class="nx">resolvedId</span> <span class="o">=</span> <span class="nx">registry</span><span class="p">.</span><span class="nx">lookupClient</span><span class="p">(</span>
+                        <span class="nx">clientId</span><span class="p">,</span> <span class="nx">registry</span><span class="p">.</span><span class="nx">getClientRoom</span><span class="p">(</span><span class="nx">clientId</span><span class="p">));</span>
+
+                <span class="nx">roomName</span> <span class="o">=</span> <span class="nx">registry</span><span class="p">.</span><span class="nx">getClientRoom</span><span class="p">(</span><span class="nx">resolvedId</span><span class="p">);</span>
+                <span class="nx">room</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">[</span><span class="nx">roomName</span><span class="p">];</span>
+
+                <span class="k">if</span> <span class="p">(</span><span class="nx">room</span><span class="p">)</span> <span class="k">break</span><span class="p">;</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="nx">room</span> <span class="o">||</span> <span class="kc">null</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="kd">function</span> <span class="nx">send2AllClientsInGameServer</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">server</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">i</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">sockets</span><span class="p">,</span> <span class="nx">smoothExec</span><span class="p">;</span>
+    <span class="nx">smoothExec</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+    <span class="nx">sockets</span> <span class="o">=</span> <span class="nx">server</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">sockets</span><span class="p">;</span>
+    <span class="k">for</span> <span class="p">(</span><span class="nx">i</span> <span class="k">in</span> <span class="nx">sockets</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">sockets</span><span class="p">.</span><span class="nx">hasOwnProperty</span><span class="p">(</span><span class="nx">i</span><span class="p">))</span> <span class="p">{</span>
+            <span class="nx">res</span> <span class="o">=</span> <span class="nx">sockets</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">send</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="s1">&#39;ALL&#39;</span><span class="p">);</span>
+            <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
+                <span class="nx">server</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;SocketManager.send2channel: An error &#39;</span> <span class="o">+</span>
+                                     <span class="s1">&#39;occurred in channel &#39;</span> <span class="o">+</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">name</span> <span class="o">+</span>
+                                     <span class="s1">&#39;, &#39;</span> <span class="o">+</span> <span class="nx">server</span><span class="p">.</span><span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39; server, and &#39;</span> <span class="o">+</span>
+                                     <span class="s1">&#39;socket: &#39;</span> <span class="o">+</span> <span class="nx">i</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
+                <span class="nx">smoothExec</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="nx">smoothExec</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kd">function</span> <span class="nx">broadcast2AllClientsInGameServer</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">server</span><span class="p">,</span> <span class="nx">sid</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">i</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">sockets</span><span class="p">,</span> <span class="nx">smoothExec</span><span class="p">;</span>
+    <span class="nx">smoothExec</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+    <span class="nx">sockets</span> <span class="o">=</span> <span class="nx">server</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">sockets</span><span class="p">;</span>
+    <span class="k">for</span> <span class="p">(</span><span class="nx">i</span> <span class="k">in</span> <span class="nx">sockets</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">sockets</span><span class="p">.</span><span class="nx">hasOwnProperty</span><span class="p">(</span><span class="nx">i</span><span class="p">))</span> <span class="p">{</span>
+            <span class="nx">res</span> <span class="o">=</span> <span class="nx">sockets</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">send</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">sid</span><span class="p">,</span> <span class="kc">true</span><span class="p">);</span>
+            <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
+                <span class="nx">server</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;SocketManager.send2channel: An error &#39;</span> <span class="o">+</span>
+                                     <span class="s1">&#39;occurred in channel &#39;</span> <span class="o">+</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">name</span> <span class="o">+</span>
+                                     <span class="s1">&#39;, &#39;</span> <span class="o">+</span> <span class="nx">server</span><span class="p">.</span><span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39; server, and &#39;</span> <span class="o">+</span>
+                                     <span class="s1">&#39;socket: &#39;</span> <span class="o">+</span> <span class="nx">i</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
+                <span class="nx">smoothExec</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="nx">smoothExec</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+        </td>
+      </tr>
+  </tbody>
+</table>
+  </div>
+</body>
+</html>
