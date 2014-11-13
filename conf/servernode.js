@@ -63,18 +63,6 @@ function configure(servernode) {
     // a certain number of Node.JS listeners.
     servernode.maxListeners = 0;
 
-
-// These options were inside the channel object, but actually not used.
-//
-//     // The HTTP port of the channel.
-//     port: servernode.port,
-//
-//     // The log level.
-//     log: servernode.log,
-//
-//     // The verbosity level of the channel.
-//     verbosity: servernode.verbosity,
-
     // AdminServer default options.
     admin = {
 
