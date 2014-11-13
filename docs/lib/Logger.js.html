@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Logger.js</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <link rel="stylesheet" media="all" href="../doc-style.css" />
+  <script src="../doc-filelist.js"></script>
+  <script>
+    var relativeDir = "../", thisFile = "lib/Logger.js", defaultSidebar = true;
+  </script>
+  <script src="../doc-script.js"></script>
+</head>
+<body>
+  <div id="sidebar_wrapper">
+    <div id="sidebar_switch">
+      <span class="tree">Files</span>
+      <span class="headings">Headings</span>
+    </div>
+    <div id="tree"></div>
+    <div id="headings">
+      <div class="heading h1">
+        <a href="#logger">Logger</a>
+      </div>
+      <div class="heading h2">
+        <a href="#global%20scope">Global scope</a>
+      </div>
+      <div class="heading h2">
+        <a href="#logger%20constructor">Logger constructor</a>
+      </div>
+      <div class="heading h2">
+        <a href="#logger%20methods">Logger methods</a>
+      </div>
+      <div class="heading h3">
+        <a href="#logger.log">Logger.log</a>
+      </div>
+    </div>
+  </div>
+  <div id="sidebar-toggle"></div>
+  <div id="container"><div class="background highlight"></div>
+<table cellpadding="0" cellspacing="0">
+  <tbody>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="logger">
+  <h1>
+    <a href="#logger" name="logger" class="pilcrow">&#182;</a>
+    Logger
+  </h1>
+</div>
+
+
+<p>Copyright(c) 2014 Stefano Balietti
+MIT Licensed</p>
+  </div>
+  <div class="body"><p>Handles the log stream to file and to stdout</p>
+
+<hr />
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre><span class="s2">&quot;use strict&quot;</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap" id="global%20scope">
+  <h2>
+    <a href="#global%20scope" name="global%20scope" class="pilcrow">&#182;</a>
+    Global scope
+  </h2>
+</div>
+
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
+<span class="kd">var</span> <span class="nx">util</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;util&#39;</span><span class="p">),</span>
+<span class="nx">fs</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;fs&#39;</span><span class="p">),</span>
+<span class="nx">path</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;path&#39;</span><span class="p">),</span>
+<span class="nx">winston</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;winston&#39;</span><span class="p">);</span>
+
+<span class="kd">var</span> <span class="nx">J</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;JSUS&#39;</span><span class="p">).</span><span class="nx">JSUS</span><span class="p">;</span>
+
+<span class="nx">module</span><span class="p">.</span><span class="nx">exports</span> <span class="o">=</span> <span class="nx">LoggerManager</span><span class="p">;</span>
+
+<span class="kd">function</span> <span class="nx">LoggerManager</span><span class="p">()</span> <span class="p">{}</span>
+
+<span class="nx">LoggerManager</span><span class="p">.</span><span class="nx">get</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">logger</span><span class="p">,</span> <span class="nx">options</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="k">new</span> <span class="nx">Logger</span><span class="p">(</span><span class="nx">logger</span><span class="p">,</span> <span class="nx">options</span><span class="p">);</span>
+<span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="logger%20constructor">
+  <h2>
+    <a href="#logger%20constructor" name="logger%20constructor" class="pilcrow">&#182;</a>
+    Logger constructor
+  </h2>
+</div>
+
+  </div>
+  <div class="body"><p>Creates an instance of Logger</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">options</span>
+      <span class="dox_type">object</span>
+      <span>The configuration options for the SeverLog</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="kd">function</span> <span class="nx">Logger</span><span class="p">(</span><span class="nx">logger</span><span class="p">,</span> <span class="nx">options</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">options</span> <span class="o">=</span> <span class="nx">options</span> <span class="o">||</span> <span class="p">{};</span>
+
+    <span class="k">this</span><span class="p">.</span><span class="nx">logger</span> <span class="o">=</span> <span class="nx">winston</span><span class="p">.</span><span class="nx">loggers</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="nx">logger</span><span class="p">);</span>
+
+    <span class="k">this</span><span class="p">.</span><span class="nx">name</span> <span class="o">=</span> <span class="nx">options</span><span class="p">.</span><span class="nx">name</span><span class="p">;</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">level</span> <span class="o">=</span> <span class="nx">options</span><span class="p">.</span><span class="nx">level</span> <span class="o">||</span> <span class="s1">&#39;silly&#39;</span><span class="p">;</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">verbosity</span> <span class="o">=</span> <span class="nx">options</span><span class="p">.</span><span class="nx">verbosity</span> <span class="o">||</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap" id="logger%20methods">
+  <h2>
+    <a href="#logger%20methods" name="logger%20methods" class="pilcrow">&#182;</a>
+    Logger methods
+  </h2>
+</div>
+
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="logger.log">
+  <h3>
+    <a href="#logger.log" name="logger.log" class="pilcrow">&#182;</a>
+    Logger.log
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Logs a string to stdout and / or to file depending on configuration</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">text</span>
+      <span class="dox_type">string</span>
+      <span>The string to log</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">level</span>
+      <span class="dox_type">string</span>
+      <span class="dox_type">Number</span>
+      <span>The log level for this log</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">Logger</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">log</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">text</span><span class="p">,</span> <span class="nx">level</span><span class="p">)</span> <span class="p">{</span>
+
+    <span class="nx">level</span> <span class="o">=</span> <span class="nx">level</span> <span class="o">||</span> <span class="s1">&#39;info&#39;</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-6" id="section-6">&#182;</a>
+</div>
+<p>if ('string' === typeof level) {
+    level = ServerLog.verbosity_levels[level];
+}</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
+    <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">name</span><span class="p">)</span> <span class="p">{</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-7" id="section-7">&#182;</a>
+</div>
+<p>this.logger.log(level, this.name, text);</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+      <span class="k">this</span><span class="p">.</span><span class="nx">logger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">level</span><span class="p">,</span> <span class="nx">text</span><span class="p">,</span> <span class="p">{</span><span class="nx">name</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">name</span><span class="p">});</span>
+    <span class="p">}</span>
+    <span class="k">else</span> <span class="p">{</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">logger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">level</span><span class="p">,</span> <span class="nx">text</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+
+
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-8" id="section-8">&#182;</a>
+</div>
+<p>/**</p>
+
+<div class="dox">
+  <div class="summary"><p>/   ### ServerLog.checkLogDir
+//*
+//* Creates the log directory if not existing
+//*
+//  </p>
+  </div>
+  <div class="body">
+  </div>
+</div>
+
+<p>ServerLog.prototype.checkLogDir = function() {
+// skip warning for node 8
+if ('undefined' !== typeof fs.existsSync) {
+    if (!fs.existsSync(this.logdir)) {
+        fs.mkdirSync(this.logdir, 0755);
+    }
+}
+else if (!path.existsSync(this.logdir)) {
+    fs.mkdirSync(this.logdir, 0755);
+}
+};</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-9" id="section-9">&#182;</a>
+</div>
+<p>/**</p>
+
+<div class="dox">
+  <div class="summary"><p>/   ### ServerLog.console
+//*
+//* Fancifies the output to console
+//*
+//* @param {object|string} data The text to log
+//* @param {string} type A flag that determines the color of the output
+//  </p>
+  </div>
+  <div class="body">
+  </div>
+</div>
+
+<p>ServerLog.prototype.console = function(data, type){</p>
+
+<p>var ATT = '0;32m'; // green text;</p>
+
+<p>switch (type) {</p>
+
+
+<div class="highlight"><pre><code><span class="k">case</span> <span class="s1">&#39;ERR&#39;</span><span class="o">:</span>
+    <span class="nx">ATT</span> <span class="o">=</span> <span class="s1">&#39;0;31m&#39;</span><span class="p">;</span> <span class="c1">// red text;</span>
+    <span class="k">break</span><span class="p">;</span>
+
+<span class="k">case</span> <span class="s1">&#39;WARN&#39;</span><span class="o">:</span>
+    <span class="nx">ATT</span> <span class="o">=</span> <span class="s1">&#39;0;37m&#39;</span><span class="p">;</span> <span class="c1">// gray text;</span>
+    <span class="k">break</span><span class="p">;</span>
+</code></pre></div>
+
+
+
+<p>}</p>
+
+<p>util.log("\033[" + ATT + this.name + '\t' + data.toString() + "\033[0m");
+};</p>
+
+<p>/**
+* ### ServerLog.close
+*
+* Closes open output streams
+*/
+ServerLog.prototype.close = function() {
+if (this.logSysStream) this.logSysStream.close();
+if (this.logMsgStream) this.logMsgStream.close();
+};</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+</pre></div>
+        </td>
+      </tr>
+  </tbody>
+</table>
+  </div>
+</body>
+</html>

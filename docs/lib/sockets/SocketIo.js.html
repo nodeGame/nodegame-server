@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>SocketIo.js</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <link rel="stylesheet" media="all" href="../../doc-style.css" />
+  <script src="../../doc-filelist.js"></script>
+  <script>
+    var relativeDir = "../../", thisFile = "lib/sockets/SocketIo.js", defaultSidebar = true;
+  </script>
+  <script src="../../doc-script.js"></script>
+</head>
+<body>
+  <div id="sidebar_wrapper">
+    <div id="sidebar_switch">
+      <span class="tree">Files</span>
+      <span class="headings">Headings</span>
+    </div>
+    <div id="tree"></div>
+    <div id="headings">
+      <div class="heading h1">
+        <a href="#socketio">SocketIo</a>
+      </div>
+      <div class="heading h2">
+        <a href="#handles%20network%20connections%20through%20socket.io">Handles network connections through Socket.IO</a>
+      </div>
+      <div class="heading h2">
+        <a href="#socketio%20constructor">SocketIo constructor</a>
+      </div>
+      <div class="heading h2">
+        <a href="#socketio.name">SocketIo.name</a>
+      </div>
+      <div class="heading h2">
+        <a href="#socket.gameserver">Socket.gameServer</a>
+      </div>
+      <div class="heading h2">
+        <a href="#socket.sio">Socket.sio</a>
+      </div>
+      <div class="heading h2">
+        <a href="#socketio.channel">SocketIo.channel</a>
+      </div>
+      <div class="heading h2">
+        <a href="#socketio.sidprefix">SocketIo.sidPrefix</a>
+      </div>
+      <div class="heading h2">
+        <a href="#methods">METHODS</a>
+      </div>
+      <div class="heading h2">
+        <a href="#socketio.attachlisteners">SocketIo.attachListeners</a>
+      </div>
+      <div class="heading h2">
+        <a href="#socketio.disconnect">SocketIo.disconnect</a>
+      </div>
+      <div class="heading h2">
+        <a href="#socketio.send">SocketIo.send</a>
+      </div>
+    </div>
+  </div>
+  <div id="sidebar-toggle"></div>
+  <div id="container"><div class="background highlight"></div>
+<table cellpadding="0" cellspacing="0">
+  <tbody>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="socketio">
+  <h1>
+    <a href="#socketio" name="socketio" class="pilcrow">&#182;</a>
+    SocketIo
+  </h1>
+</div>
+
+
+<p>Copyright(c) 2014 Stefano Balietti
+MIT Licensed</p>
+  </div>
+  <div class="body">
+<div class="pilwrap" id="handles%20network%20connections%20through%20socket.io">
+  <h2>
+    <a href="#handles%20network%20connections%20through%20socket.io" name="handles%20network%20connections%20through%20socket.io" class="pilcrow">&#182;</a>
+    Handles network connections through Socket.IO
+  </h2>
+</div>
+
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre><span class="s2">&quot;use strict&quot;</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-2" id="section-2">&#182;</a>
+</div>
+<p>Global scope</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
+<span class="nx">module</span><span class="p">.</span><span class="nx">exports</span> <span class="o">=</span> <span class="nx">SocketIo</span><span class="p">;</span>
+
+<span class="kd">var</span> <span class="nx">GameMsg</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;nodegame-client&#39;</span><span class="p">).</span><span class="nx">GameMsg</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="socketio%20constructor">
+  <h2>
+    <a href="#socketio%20constructor" name="socketio%20constructor" class="pilcrow">&#182;</a>
+    SocketIo constructor
+  </h2>
+</div>
+
+  </div>
+  <div class="body"><p>Creates an instance of SocketIo</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">server</span>
+      <span class="dox_type">GameServer</span>
+      <span>A GameServer instance</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">GameServer
+</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="kd">function</span> <span class="nx">SocketIo</span><span class="p">(</span><span class="nx">gameServer</span><span class="p">)</span> <span class="p">{</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="socketio.name">
+  <h2>
+    <a href="#socketio.name" name="socketio.name" class="pilcrow">&#182;</a>
+    SocketIo.name
+  </h2>
+</div>
+
+  </div>
+  <div class="body"><p>The name of the socket.</p>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">this</span><span class="p">.</span><span class="nx">name</span> <span class="o">=</span> <span class="s1">&#39;sio&#39;</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="socket.gameserver">
+  <h2>
+    <a href="#socket.gameserver" name="socket.gameserver" class="pilcrow">&#182;</a>
+    Socket.gameServer
+  </h2>
+</div>
+
+  </div>
+  <div class="body"><p>Reference to the game server in which the socket is created.</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">GameServer
+</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">this</span><span class="p">.</span><span class="nx">gameServer</span> <span class="o">=</span> <span class="nx">gameServer</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="socket.sio">
+  <h2>
+    <a href="#socket.sio" name="socket.sio" class="pilcrow">&#182;</a>
+    Socket.sio
+  </h2>
+</div>
+
+  </div>
+  <div class="body"><p>Reference to the Socket.IO app of the game server</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">GameServer
+</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">this</span><span class="p">.</span><span class="nx">sio</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">gameServer</span><span class="p">.</span><span class="nx">sio</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="socketio.channel">
+  <h2>
+    <a href="#socketio.channel" name="socketio.channel" class="pilcrow">&#182;</a>
+    SocketIo.channel
+  </h2>
+</div>
+
+  </div>
+  <div class="body"><p>The Socket.IO internal channel</p>
+
+<p>Notice: do not confound with ServerChannel
+TODO: rename.</p>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">this</span><span class="p">.</span><span class="nx">channel</span> <span class="o">=</span> <span class="kc">null</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="socketio.sidprefix">
+  <h2>
+    <a href="#socketio.sidprefix" name="socketio.sidprefix" class="pilcrow">&#182;</a>
+    SocketIo.sidPrefix
+  </h2>
+</div>
+
+  </div>
+  <div class="body"><p>The prefix to be added to the id of every client connected to the socket</p>
+
+<p>Must have exactly 2 characters and be unique for every socket.</p>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">this</span><span class="p">.</span><span class="nx">sidPrefix</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">gameServer</span><span class="p">.</span><span class="nx">ADMIN_SERVER</span> <span class="o">?</span> <span class="s1">&#39;SA&#39;</span> <span class="o">:</span> <span class="s1">&#39;SP&#39;</span><span class="p">;</span>
+<span class="p">}</span>
+
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap" id="methods">
+  <h2>
+    <a href="#methods" name="methods" class="pilcrow">&#182;</a>
+    METHODS
+  </h2>
+</div>
+
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="socketio.attachlisteners">
+  <h2>
+    <a href="#socketio.attachlisteners" name="socketio.attachlisteners" class="pilcrow">&#182;</a>
+    SocketIo.attachListeners
+  </h2>
+</div>
+
+  </div>
+  <div class="body"><p>Activates the socket to accepts incoming connections</p>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">SocketIo</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">attachListeners</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">that</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">channel</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">sio</span><span class="p">.</span><span class="nx">of</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">gameServer</span><span class="p">.</span><span class="nx">endpoint</span><span class="p">).</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;connection&#39;</span><span class="p">,</span>
+        <span class="kd">function</span><span class="p">(</span><span class="nx">socket</span><span class="p">)</span> <span class="p">{</span>
+            <span class="kd">var</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">prefixedSid</span><span class="p">;</span>
+            <span class="kd">var</span> <span class="nx">startingRoom</span><span class="p">,</span> <span class="nx">clientType</span><span class="p">;</span>
+
+            <span class="nx">prefixedSid</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">sidPrefix</span> <span class="o">+</span> <span class="nx">socket</span><span class="p">.</span><span class="nx">id</span><span class="p">;</span>
+
+            <span class="k">if</span> <span class="p">(</span><span class="nx">that</span><span class="p">.</span><span class="nx">gameServer</span><span class="p">.</span><span class="nx">options</span><span class="p">.</span><span class="nx">sioQuery</span> <span class="o">&amp;&amp;</span> <span class="nx">socket</span><span class="p">.</span><span class="nx">handshake</span><span class="p">.</span><span class="nx">query</span><span class="p">)</span> <span class="p">{</span>
+                <span class="nx">startingRoom</span> <span class="o">=</span> <span class="nx">socket</span><span class="p">.</span><span class="nx">handshake</span><span class="p">.</span><span class="nx">query</span><span class="p">.</span><span class="nx">startingRoom</span><span class="p">;</span>
+                <span class="nx">clientType</span> <span class="o">=</span> <span class="nx">socket</span><span class="p">.</span><span class="nx">handshake</span><span class="p">.</span><span class="nx">query</span><span class="p">.</span><span class="nx">clientType</span><span class="p">;</span>
+            <span class="p">}</span>
+
+            <span class="nx">res</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">gameServer</span><span class="p">.</span><span class="nx">onConnect</span><span class="p">(</span><span class="nx">prefixedSid</span><span class="p">,</span> <span class="nx">that</span><span class="p">,</span>
+                <span class="nx">socket</span><span class="p">.</span><span class="nx">handshake</span><span class="p">.</span><span class="nx">headers</span><span class="p">,</span> <span class="nx">clientType</span><span class="p">,</span> <span class="nx">startingRoom</span><span class="p">);</span>
+
+            <span class="k">if</span> <span class="p">(</span><span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
+                <span class="nx">socket</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;message&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">msg</span><span class="p">)</span> <span class="p">{</span>
+                    <span class="nx">that</span><span class="p">.</span><span class="nx">gameServer</span><span class="p">.</span><span class="nx">onMessage</span><span class="p">(</span><span class="nx">msg</span><span class="p">);</span>
+                <span class="p">});</span>
+                <span class="nx">socket</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;disconnect&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+                    <span class="nx">that</span><span class="p">.</span><span class="nx">gameServer</span><span class="p">.</span><span class="nx">onDisconnect</span><span class="p">(</span><span class="nx">prefixedSid</span><span class="p">,</span> <span class="nx">socket</span><span class="p">);</span>
+                <span class="p">});</span>
+            <span class="p">}</span>
+        <span class="p">});</span>
+
+    <span class="k">this</span><span class="p">.</span><span class="nx">sio</span><span class="p">.</span><span class="nx">sockets</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s2">&quot;shutdown&quot;</span><span class="p">,</span> <span class="nx">that</span><span class="p">.</span><span class="nx">gameServer</span><span class="p">.</span><span class="nx">onShutdown</span><span class="p">);</span>
+<span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="socketio.disconnect">
+  <h2>
+    <a href="#socketio.disconnect" name="socketio.disconnect" class="pilcrow">&#182;</a>
+    SocketIo.disconnect
+  </h2>
+</div>
+
+  </div>
+  <div class="body"><p>Disconnects the client registered under the specified socket id</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">sid</span>
+      <span class="dox_type">string</span>
+      <span>The socket id of the client to disconnect</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">SocketIo</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">disconnect</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">sid</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">socket</span><span class="p">,</span> <span class="nx">strippedSid</span><span class="p">;</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-12" id="section-12">&#182;</a>
+</div>
+<p>Remove socket name from sid (exactly 2 characters, see constructor):</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">strippedSid</span> <span class="o">=</span> <span class="nx">sid</span><span class="p">.</span><span class="nx">slice</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>
+    <span class="nx">socket</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">sio</span><span class="p">.</span><span class="nx">sockets</span><span class="p">.</span><span class="nx">sockets</span><span class="p">[</span><span class="nx">strippedSid</span><span class="p">];</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">socket</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;SocketIo.disconnect: &#39;</span> <span class="o">+</span>
+                        <span class="s1">&#39;socket not found for sid &quot;&#39;</span> <span class="o">+</span> <span class="nx">sid</span> <span class="o">+</span> <span class="s1">&#39;&quot;.&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="nx">socket</span><span class="p">.</span><span class="nx">disconnect</span><span class="p">();</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">gameServer</span><span class="p">.</span><span class="nx">onDisconnect</span><span class="p">(</span><span class="nx">sid</span><span class="p">,</span> <span class="nx">socket</span><span class="p">);</span>
+<span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="socketio.send">
+  <h2>
+    <a href="#socketio.send" name="socketio.send" class="pilcrow">&#182;</a>
+    SocketIo.send
+  </h2>
+</div>
+
+  </div>
+  <div class="body"><p>Sends a game message to the client registered under the specified socket id</p>
+
+<p>The <em>to</em> field of the game message is usually different from the <em>sid</em> and
+it is not used to locate the client.</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">gameMsg</span>
+      <span class="dox_type">GameMsg</span>
+      <span>The game message</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">sid</span>
+      <span class="dox_type">string</span>
+      <span>The socket id of the receiver</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">broadcast</span>
+      <span class="dox_type">boolean</span>
+      <span>If TRUE, the message will not be sent to
+  the client with sid = sid. Defaults, FALSE</span>
+    </div>
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">boolean</span>
+      <span>TRUE, on success</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">SocketIo</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">send</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">sid</span><span class="p">,</span> <span class="nx">broadcast</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">msg</span><span class="p">,</span> <span class="nx">client</span><span class="p">,</span> <span class="nx">rel</span><span class="p">,</span> <span class="nx">strippedSid</span><span class="p">,</span> <span class="nx">clientSid</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">sysLogger</span><span class="p">,</span> <span class="nx">msgLogger</span><span class="p">;</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="nx">sid</span> <span class="o">===</span> <span class="s1">&#39;SERVER&#39;</span> <span class="o">||</span> <span class="nx">sid</span> <span class="o">===</span> <span class="kc">null</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;SocketIo.send: Trying to send msg to &#39;</span> <span class="o">+</span>
+                      <span class="s1">&#39;nobody: &#39;</span> <span class="o">+</span> <span class="nx">sid</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
+        <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="nx">broadcast</span> <span class="o">=</span> <span class="nx">broadcast</span> <span class="o">||</span> <span class="kc">false</span><span class="p">;</span>
+
+    <span class="nx">sysLogger</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">gameServer</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">;</span>
+    <span class="nx">msgLogger</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">gameServer</span><span class="p">.</span><span class="nx">msgLogger</span><span class="p">;</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="nx">sid</span> <span class="o">===</span> <span class="s1">&#39;ALL&#39;</span> <span class="o">&amp;&amp;</span> <span class="nx">broadcast</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;SocketIo.send: Incompatible options: broadcast = true &#39;</span> <span class="o">+</span>
+                      <span class="s1">&#39;and sid = ALL&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
+        <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
+    <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-14" id="section-14">&#182;</a>
+</div>
+<p>Cleanup msg, if necessary.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">gameMsg</span><span class="p">.</span><span class="nx">_to</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">gameMsg</span><span class="p">.</span><span class="nx">_originalTo</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;SocketIo.send: _to field found, but no _originalTo &#39;</span><span class="p">,</span>
+                          <span class="s1">&#39;error&#39;</span><span class="p">);</span>
+            <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">to</span> <span class="o">=</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">_orginalTo</span><span class="p">;</span>
+        <span class="k">delete</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">_to</span><span class="p">;</span>
+        <span class="k">delete</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">_originalTo</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="nx">gameMsg</span><span class="p">.</span><span class="nx">_sid</span><span class="p">)</span> <span class="k">delete</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">_sid</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">gameMsg</span><span class="p">.</span><span class="nx">_channelName</span><span class="p">)</span> <span class="k">delete</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">_channelName</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">gameMsg</span><span class="p">.</span><span class="nx">_roomName</span><span class="p">)</span> <span class="k">delete</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">_roomName</span><span class="p">;</span>
+
+    <span class="nx">rel</span> <span class="o">=</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">reliable</span><span class="p">;</span>
+    <span class="nx">msg</span> <span class="o">=</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">stringify</span><span class="p">();</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-15" id="section-15">&#182;</a>
+</div>
+<p>Send to ALL.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">sid</span> <span class="o">===</span> <span class="s1">&#39;ALL&#39;</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">rel</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">json</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="nx">msg</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="k">else</span> <span class="p">{</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="kr">volatile</span><span class="p">.</span><span class="nx">json</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="nx">msg</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Msg &#39;</span> <span class="o">+</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">toSMS</span><span class="p">()</span> <span class="o">+</span> <span class="s1">&#39; sent to ALL&#39;</span><span class="p">);</span>
+        <span class="nx">msgLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">);</span>
+    <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-16" id="section-16">&#182;</a>
+</div>
+<p>Either send to a specific client(1), or to ALL but a specific client(2).</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">else</span> <span class="p">{</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-17" id="section-17">&#182;</a>
+</div>
+<p>Remove socket name from sid (exactly 2 characters, see constructor):</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="nx">strippedSid</span> <span class="o">=</span> <span class="nx">sid</span><span class="p">.</span><span class="nx">slice</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-18" id="section-18">&#182;</a>
+</div>
+<p>(1)</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">broadcast</span><span class="p">)</span> <span class="p">{</span>
+
+            <span class="nx">client</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">sockets</span><span class="p">[</span><span class="nx">strippedSid</span><span class="p">];</span>
+
+            <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">client</span><span class="p">)</span> <span class="p">{</span>
+                <span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;SocketIo.send: Msg not sent. Unexisting &#39;</span> <span class="o">+</span>
+                              <span class="s1">&#39;recipient sid: &#39;</span> <span class="o">+</span> <span class="nx">strippedSid</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
+                <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
+            <span class="p">}</span>
+
+            <span class="k">if</span> <span class="p">(</span><span class="nx">rel</span><span class="p">)</span> <span class="p">{</span>
+                <span class="nx">client</span><span class="p">.</span><span class="nx">json</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="nx">msg</span><span class="p">);</span>
+            <span class="p">}</span>
+            <span class="k">else</span> <span class="p">{</span>
+                <span class="nx">client</span><span class="p">.</span><span class="kr">volatile</span><span class="p">.</span><span class="nx">json</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="nx">msg</span><span class="p">);</span>
+            <span class="p">}</span>
+            <span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Msg &#39;</span> <span class="o">+</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">toSMS</span><span class="p">()</span> <span class="o">+</span> <span class="s1">&#39; sent to sid &#39;</span> <span class="o">+</span>
+                          <span class="nx">strippedSid</span><span class="p">);</span>
+            <span class="nx">msgLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">);</span>
+
+        <span class="p">}</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-19" id="section-19">&#182;</a>
+</div>
+<p>(2)</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="k">else</span> <span class="p">{</span>
+
+            <span class="k">for</span> <span class="p">(</span><span class="nx">clientSid</span> <span class="k">in</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">sockets</span><span class="p">)</span> <span class="p">{</span>
+                <span class="k">if</span> <span class="p">(</span><span class="nx">strippedSid</span> <span class="o">===</span> <span class="nx">clientSid</span><span class="p">)</span> <span class="k">continue</span><span class="p">;</span>
+
+                <span class="nx">client</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">sockets</span><span class="p">[</span><span class="nx">clientSid</span><span class="p">];</span>
+                <span class="k">if</span> <span class="p">(</span><span class="nx">rel</span><span class="p">)</span> <span class="p">{</span>
+                    <span class="nx">client</span><span class="p">.</span><span class="nx">json</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="nx">msg</span><span class="p">);</span>
+                <span class="p">}</span>
+                <span class="k">else</span> <span class="p">{</span>
+                    <span class="nx">client</span><span class="p">.</span><span class="kr">volatile</span><span class="p">.</span><span class="nx">json</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="nx">msg</span><span class="p">);</span>
+                <span class="p">}</span>
+                <span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Msg &#39;</span> <span class="o">+</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">toSMS</span><span class="p">()</span> <span class="o">+</span> <span class="s1">&#39; sent to sid &#39;</span> <span class="o">+</span>
+                              <span class="nx">clientSid</span><span class="p">);</span>
+                <span class="nx">msgLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">);</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="kc">true</span><span class="p">;</span>
+<span class="p">};</span>
+</pre></div>
+        </td>
+      </tr>
+  </tbody>
+</table>
+  </div>
+</body>
+</html>
