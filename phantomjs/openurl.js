@@ -18,7 +18,8 @@ page.onConsoleMessage = function(msg) {
 page.open(url, function() {
     setTimeout(function() {
         page.evaluate(function() {
-            node.on('GAME_OVER', function() { console.log('PHANTOMJS EXITING'); });
+            node.events.ee.ng.on(
+                'GAME_OVER', function() { console.log('PHANTOMJS EXITING'); });
         });
     }, 1000);
 });
