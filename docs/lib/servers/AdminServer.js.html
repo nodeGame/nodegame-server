@@ -744,13 +744,7 @@ Admins decides what to do with it.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="k">this</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;SERVERCOMMAND_STARTBOT&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">data</span><span class="p">,</span> <span class="nx">from</span><span class="p">)</span> <span class="p">{</span>
-        <span class="kd">var</span> <span class="nx">queryString</span><span class="p">,</span> <span class="nx">phantomjsArgs</span><span class="p">;</span>
-
-        <span class="k">if</span> <span class="p">(</span><span class="nx">data</span><span class="p">)</span> <span class="p">{</span>
-            <span class="nx">queryString</span> <span class="o">=</span> <span class="nx">data</span><span class="p">.</span><span class="nx">queryString</span><span class="p">;</span>
-            <span class="nx">phantomjsArgs</span> <span class="o">=</span> <span class="nx">data</span><span class="p">.</span><span class="nx">phantomjsArgs</span><span class="p">;</span>
-        <span class="p">}</span>
-        <span class="nx">that</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">connectPhantom</span><span class="p">(</span><span class="nx">queryString</span><span class="p">,</span> <span class="nx">phantomjsArgs</span><span class="p">);</span>
+        <span class="nx">that</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">connectPhantom</span><span class="p">(</span><span class="nx">data</span><span class="p">);</span>
     <span class="p">});</span>
 
 

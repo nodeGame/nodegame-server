@@ -1188,16 +1188,6 @@ the conf parameter.</p>
 parent.
 The room is only destroyed if it's empty or if a valid substitute room is
 given to move the players to.</p>
-
-<p>The <code>options</code> parameter can contain any of the following fields:
- - substituteRoomName (string): Name of the room to move the players to.
-     If unspecified, the room is deleted only if there are no players in it
-     or if the <code>ignorePlayers</code> flag is true.
- - ignoreRunningGame (boolean): Delete the room even if the contained game
-     hasn't finished. Default: FALSE.
- - ignorePlayers (boolean): Delete the room even if there are players inside
-     of it. Players will be moved to the parent room or the waiting room if
-     there is no parent. Default: FALSE.</p>
   </div>
   <div class="details">
     <div class="dox_tag_title">Params</div>
@@ -1210,10 +1200,20 @@ given to move the players to.</p>
       <span class="dox_tag_name">options</span>
       <span class="dox_type">object</span>
       <span>Optional. Additional parameters.
- - substituteRoomName Optional. Name of the room to move
-   the players to.
-   If null, then the room will not be deleted if it has players.
-   Default: null</span>
+
+<ul>
+<li>substituteRoomName (string):
+Optional. Name of the room to move the players to.
+If null, then the room will not be deleted if it has players unless
+<code>ignorePlayers</code> is true. Default: null</li>
+<li>ignoreRunningGame (boolean):
+Optional. Delete the room even if the contained game hasn't finished.
+Default: FALSE</li>
+<li>ignorePlayers (boolean):
+Optional. Delete the room even if there are players inside of it.
+Players will be moved to the parent room or the waiting room if there is
+no parent. Default: FALSE</li>
+</ul></span>
     </div>
     <div class="dox_tag_title">Returns</div>
     <div class="dox_tag_detail">
@@ -1939,20 +1939,20 @@ modules.</p>
       <span>Bot options with the following fields:
 
 <ul>
-<li>clientType (string)
- Optional. Client type of the bot. Default: 'bot'.</li>
-<li>room (GameRoom)
- The game room in which to put the bot initially.</li>
-<li>loadGame (boolean)
- Optional. Whether to load a game file. The remaining fields are only
- used if this is TRUE. Default: TRUE.</li>
-<li>botPath (string)
- Optional. Relative path to the game file. Default: Value in the
- game settings for the given treatment and client type.</li>
-<li>gameName (string)
- Optional. Name of the game. Default: room.gameName.</li>
-<li>treatmentName (string)
- Optional. Name of the treatment. Default: room.treatmentName.</li>
+<li>clientType (string):
+Optional. Client type of the bot. Default: 'bot'</li>
+<li>room (GameRoom):
+The game room in which to put the bot initially</li>
+<li>loadGame (boolean):
+Optional. Whether to load a game file. The remaining fields are only
+used if this is TRUE. Default: TRUE</li>
+<li>botPath (string):
+Optional. Relative path to the game file. Default: Value in the
+game settings for the given treatment and client type</li>
+<li>gameName (string):
+Optional. Name of the game. Default: room.gameName</li>
+<li>treatmentName (string):
+Optional. Name of the treatment. Default: room.treatmentName</li>
 </ul></span>
     </div>
     <div class="dox_tag_detail">
@@ -2224,16 +2224,26 @@ calling GameRoom.setupGame before the node object is stored.</p>
   <div class="details">
     <div class="dox_tag_title">Params</div>
     <div class="dox_tag_detail">
-      <span class="dox_tag_name">queryString</span>
-      <span class="dox_type">string</span>
-      <span>Optional. String of query parameters to append
-  to the URL. Default: '?clientType=autoplay'.</span>
-    </div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name">phantomjsArgs</span>
-      <span class="dox_type">array</span>
-      <span>Optional. Array of strings to give to PhantomJS
-  as command line arguments.</span>
+      <span class="dox_tag_name">options</span>
+      <span class="dox_type">object</span>
+      <span>Optional. Connection options with thes fields:
+
+<ul>
+<li>port (number):
+Optional. Port to connect to. Default: this.servernode.port</li>
+<li>gameName (string):
+Optional. Game to connect to. Uses the channel name by default. If all
+games have names different from the channel name, this is invalid.
+Default: this.name</li>
+<li>filePath (string):
+Optional. URL suffix for a relative file path, without leading slash.
+A trailing slash is required if this is a directory</li>
+<li>queryString (string):
+Optional. String of query parameters to append
+to the URL. Default: '?clientType=autoplay'</li>
+<li>phantomjsArgs (array):
+Optional. Array of strings to give PhantomJS as command line arguments</li>
+</ul></span>
     </div>
     <div class="dox_tag_title">Returns</div>
     <div class="dox_tag_detail">
@@ -2245,7 +2255,8 @@ calling GameRoom.setupGame before the node object is stored.</p>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-<span class="nx">ServerChannel</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">connectPhantom</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">queryString</span><span class="p">,</span> <span class="nx">phantomjsArgs</span><span class="p">)</span> <span class="p">{</span>
+<span class="nx">ServerChannel</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">connectPhantom</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">options</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">port</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">filePath</span><span class="p">,</span> <span class="nx">queryString</span><span class="p">,</span> <span class="nx">phantomjsArgs</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">serverdir</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">url</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">phantomjs</span><span class="p">;</span>
@@ -2264,6 +2275,34 @@ calling GameRoom.setupGame before the node object is stored.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
 
+    <span class="nx">options</span> <span class="o">=</span> <span class="nx">options</span> <span class="o">||</span> <span class="p">{};</span>
+
+    <span class="nx">port</span> <span class="o">=</span> <span class="nx">options</span><span class="p">.</span><span class="nx">port</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">port</span> <span class="o">&amp;&amp;</span>
+        <span class="s1">&#39;number&#39;</span>    <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">port</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerChannel.connectPhantom: &#39;</span> <span class="o">+</span>
+                <span class="s1">&#39;port must be number or undefined.&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="nx">port</span> <span class="o">=</span> <span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">port</span> <span class="o">?</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">port</span> <span class="o">:</span> <span class="nx">port</span><span class="p">;</span>
+
+    <span class="nx">gameName</span> <span class="o">=</span> <span class="nx">options</span><span class="p">.</span><span class="nx">gameName</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">gameName</span> <span class="o">&amp;&amp;</span>
+        <span class="s1">&#39;string&#39;</span>    <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">gameName</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerChannel.connectPhantom: &#39;</span> <span class="o">+</span>
+                <span class="s1">&#39;gameName must be string or undefined.&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="nx">gameName</span> <span class="o">=</span> <span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">gameName</span> <span class="o">?</span> <span class="k">this</span><span class="p">.</span><span class="nx">name</span> <span class="o">:</span> <span class="nx">gameName</span><span class="p">;</span>
+
+    <span class="nx">filePath</span> <span class="o">=</span> <span class="nx">options</span><span class="p">.</span><span class="nx">filePath</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">filePath</span> <span class="o">&amp;&amp;</span>
+        <span class="s1">&#39;string&#39;</span>    <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">filePath</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerChannel.connectPhantom: &#39;</span> <span class="o">+</span>
+                <span class="s1">&#39;filePath must be string or undefined.&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="nx">filePath</span> <span class="o">=</span> <span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">filePath</span> <span class="o">?</span> <span class="s1">&#39;&#39;</span> <span class="o">:</span> <span class="nx">filePath</span><span class="p">;</span>
+
+    <span class="nx">queryString</span> <span class="o">=</span> <span class="nx">options</span><span class="p">.</span><span class="nx">queryString</span><span class="p">;</span>
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">queryString</span> <span class="o">&amp;&amp;</span>
         <span class="s1">&#39;string&#39;</span>    <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">queryString</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerChannel.connectPhantom: &#39;</span> <span class="o">+</span>
@@ -2272,6 +2311,7 @@ calling GameRoom.setupGame before the node object is stored.</p>
     <span class="nx">queryString</span> <span class="o">=</span> <span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">queryString</span> <span class="o">?</span>
         <span class="s1">&#39;?clientType=autoplay&#39;</span> <span class="o">:</span> <span class="nx">queryString</span><span class="p">;</span>
 
+    <span class="nx">phantomjsArgs</span> <span class="o">=</span> <span class="nx">options</span><span class="p">.</span><span class="nx">phantomjsArgs</span><span class="p">;</span>
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">phantomjsArgs</span> <span class="o">&amp;&amp;</span>
         <span class="o">!</span><span class="nx">J</span><span class="p">.</span><span class="nx">isArray</span><span class="p">(</span><span class="nx">phantomjsArgs</span><span class="p">))</span> <span class="p">{</span>
         <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerChannel.connectPhantom: &#39;</span> <span class="o">+</span>
@@ -2305,8 +2345,8 @@ calling GameRoom.setupGame before the node object is stored.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="nx">serverdir</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">rootDir</span><span class="p">;</span>
-    <span class="nx">url</span> <span class="o">=</span> <span class="s1">&#39;http://localhost:&#39;</span> <span class="o">+</span> <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">port</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="k">this</span><span class="p">.</span><span class="nx">name</span> <span class="o">+</span>
-        <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">queryString</span><span class="p">;</span>
+    <span class="nx">url</span> <span class="o">=</span> <span class="s1">&#39;http://localhost:&#39;</span> <span class="o">+</span> <span class="nx">port</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span>
+          <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">filePath</span> <span class="o">+</span> <span class="nx">queryString</span><span class="p">;</span>
     <span class="nx">phantomjsArgs</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">serverdir</span> <span class="o">+</span> <span class="s1">&#39;/phantomjs/openurl.js&#39;</span><span class="p">);</span>
     <span class="nx">phantomjsArgs</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">url</span><span class="p">);</span>
 
@@ -2443,7 +2483,7 @@ calling GameRoom.setupGame before the node object is stored.</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-92" id="section-92">&#182;</a>
 </div>
-<p>Create a brang new Registry.
+<p>Create a brand new Registry.
 this.registry = new ChannelRegistry({ name: this.name });</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>

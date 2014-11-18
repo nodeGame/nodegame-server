@@ -2089,17 +2089,6 @@ belong to.</p>
   </div>
   <div class="body"><p>Retrieves the socket, and sid of the recipient of a GameMsg</p>
 
-<p>Returns an object with the following properties:</p>
-
-<ul>
-<li>channel: the ServerChannel object
-<ul><li>socket: the Socket object</li>
-<li>sid: the id of the recipient within the socket</li>
-<li>cid: the client id of the recipient within the channel</li>
-<li>success: boolean flag, TRUE if resolving is successful</li>
-<li>errMsg: set if an error occurs</li></ul></li>
-</ul>
-
 <p>If server is allowed to do so, and the recipient is not found in the
 local registry, it will look into the registry of other channels.</p>
   </div>
@@ -2121,7 +2110,16 @@ local registry, it will look into the registry of other channels.</p>
       <span class="dox_tag_name"></span>
       <span class="dox_type">object</span>
       <span>An object containing the result of the
-  resolving process</span>
+  resolving process with the following fields:
+
+<ul>
+<li>channel: the ServerChannel object</li>
+<li>socket: the Socket object</li>
+<li>sid: the id of the recipient within the socket</li>
+<li>cid: the client id of the recipient within the channel</li>
+<li>success: boolean flag, TRUE if resolving is successful</li>
+<li>errMsg: set if an error occurs</li>
+</ul></span>
     </div>
   </div>
 </div>
