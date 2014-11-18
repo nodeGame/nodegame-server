@@ -22,21 +22,18 @@
         <a href="#adminserver">AdminServer</a>
       </div>
       <div class="heading h2">
-        <a href="#set%20messages%20are%20ignored">SET messages are ignored</a>
-      </div>
-      <div class="heading h2">
         <a href="#global%20scope">Global scope</a>
       </div>
       <div class="heading h2">
-        <a href="#adminserver%20constructor">AdminServer Constructor</a>
+        <a href="#adminserver%20constructor">AdminServer constructor</a>
       </div>
       <div class="heading h2">
-        <a href="#methods">METHODS</a>
+        <a href="#adminserver%20methods">AdminServer methods</a>
       </div>
-      <div class="heading h2">
+      <div class="heading h3">
         <a href="#adminserver.generateinfo">AdminServer.generateInfo</a>
       </div>
-      <div class="heading h2">
+      <div class="heading h3">
         <a href="#adminserver.attachcustomlisteners">AdminServer.attachCustomListeners</a>
       </div>
       <div class="heading h3">
@@ -75,7 +72,7 @@
       <div class="heading h3">
         <a href="#get.servercommand_roomcommand">get.SERVERCOMMAND_ROOMCOMMAND</a>
       </div>
-      <div class="heading h2">
+      <div class="heading h3">
         <a href="#get.servercommand_startbot">get.SERVERCOMMAND_STARTBOT</a>
       </div>
       <div class="heading h3">
@@ -96,10 +93,10 @@
       <div class="heading h3">
         <a href="#say.player_update">say.PLAYER_UPDATE</a>
       </div>
-      <div class="heading h2">
+      <div class="heading h3">
         <a href="#adminserver.standardadminmsg">AdminServer.standardAdminMsg</a>
       </div>
-      <div class="heading h2">
+      <div class="heading h3">
         <a href="#adminserver.standardadmin2playermsg">AdminServer.standardAdmin2PlayerMsg</a>
       </div>
     </div>
@@ -122,20 +119,13 @@
 <p>Copyright(c) 2014 Stefano Balietti
 MIT Licensed</p>
   </div>
-  <div class="body"><p>GameServer for the administrators endpoint.</p>
+  <div class="body"><p>GameServer for the administrators endpoint</p>
 
 <p>Inherits from <code>GameServer</code> and attaches special listeners.</p>
 
 <p>AdminServer removes the real client id of admin clients.</p>
 
-
-<div class="pilwrap" id="set%20messages%20are%20ignored">
-  <h2>
-    <a href="#set%20messages%20are%20ignored" name="set%20messages%20are%20ignored" class="pilcrow">&#182;</a>
-    SET messages are ignored
-  </h2>
-</div>
-
+<p>SET messages are ignored.</p>
   </div>
 </div>
         </td>
@@ -186,7 +176,7 @@ MIT Licensed</p>
 <div class="pilwrap" id="adminserver%20constructor">
   <h2>
     <a href="#adminserver%20constructor" name="adminserver%20constructor" class="pilcrow">&#182;</a>
-    AdminServer Constructor
+    AdminServer constructor
   </h2>
 </div>
 
@@ -215,10 +205,10 @@ MIT Licensed</p>
       </tr>
       <tr>
         <td class="docs">
-<div class="pilwrap" id="methods">
+<div class="pilwrap" id="adminserver%20methods">
   <h2>
-    <a href="#methods" name="methods" class="pilcrow">&#182;</a>
-    METHODS
+    <a href="#adminserver%20methods" name="adminserver%20methods" class="pilcrow">&#182;</a>
+    AdminServer methods
   </h2>
 </div>
 
@@ -233,10 +223,10 @@ MIT Licensed</p>
         <td class="docs"><div class="dox">
   <div class="summary">
 <div class="pilwrap" id="adminserver.generateinfo">
-  <h2>
+  <h3>
     <a href="#adminserver.generateinfo" name="adminserver.generateinfo" class="pilcrow">&#182;</a>
     AdminServer.generateInfo
-  </h2>
+  </h3>
 </div>
 
   </div>
@@ -271,10 +261,10 @@ players, and admin connected), about the state of the GameServer</p>
         <td class="docs"><div class="dox">
   <div class="summary">
 <div class="pilwrap" id="adminserver.attachcustomlisteners">
-  <h2>
+  <h3>
     <a href="#adminserver.attachcustomlisteners" name="adminserver.attachcustomlisteners" class="pilcrow">&#182;</a>
     AdminServer.attachCustomListeners
-  </h2>
+  </h3>
 </div>
 
   </div>
@@ -733,10 +723,10 @@ Admins decides what to do with it.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap" id="get.servercommand_startbot">
-  <h2>
+  <h3>
     <a href="#get.servercommand_startbot" name="get.servercommand_startbot" class="pilcrow">&#182;</a>
     get.SERVERCOMMAND_STARTBOT
-  </h2>
+  </h3>
 </div>
 
 
@@ -744,13 +734,7 @@ Admins decides what to do with it.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="k">this</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;SERVERCOMMAND_STARTBOT&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">data</span><span class="p">,</span> <span class="nx">from</span><span class="p">)</span> <span class="p">{</span>
-        <span class="kd">var</span> <span class="nx">queryString</span><span class="p">,</span> <span class="nx">phantomjsArgs</span><span class="p">;</span>
-
-        <span class="k">if</span> <span class="p">(</span><span class="nx">data</span><span class="p">)</span> <span class="p">{</span>
-            <span class="nx">queryString</span> <span class="o">=</span> <span class="nx">data</span><span class="p">.</span><span class="nx">queryString</span><span class="p">;</span>
-            <span class="nx">phantomjsArgs</span> <span class="o">=</span> <span class="nx">data</span><span class="p">.</span><span class="nx">phantomjsArgs</span><span class="p">;</span>
-        <span class="p">}</span>
-        <span class="nx">that</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">connectPhantom</span><span class="p">(</span><span class="nx">queryString</span><span class="p">,</span> <span class="nx">phantomjsArgs</span><span class="p">);</span>
+        <span class="nx">that</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">connectPhantom</span><span class="p">(</span><span class="nx">data</span><span class="p">);</span>
     <span class="p">});</span>
 
 
@@ -1231,10 +1215,10 @@ Important: the ID is not obfuscated.</p>
         <td class="docs"><div class="dox">
   <div class="summary">
 <div class="pilwrap" id="adminserver.standardadminmsg">
-  <h2>
+  <h3>
     <a href="#adminserver.standardadminmsg" name="adminserver.standardadminmsg" class="pilcrow">&#182;</a>
     AdminServer.standardAdminMsg
-  </h2>
+  </h3>
 </div>
 
   </div>
@@ -1352,10 +1336,10 @@ the client-id of the recipient.</p>
         <td class="docs"><div class="dox">
   <div class="summary">
 <div class="pilwrap" id="adminserver.standardadmin2playermsg">
-  <h2>
+  <h3>
     <a href="#adminserver.standardadmin2playermsg" name="adminserver.standardadmin2playermsg" class="pilcrow">&#182;</a>
     AdminServer.standardAdmin2PlayerMsg
-  </h2>
+  </h3>
 </div>
 
   </div>

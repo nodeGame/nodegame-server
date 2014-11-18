@@ -22,9 +22,6 @@
         <a href="#socketmanager">SocketManager</a>
       </div>
       <div class="heading h2">
-        <a href="#found%20in%20the%20from%20field.">found in the from field.</a>
-      </div>
-      <div class="heading h2">
         <a href="#socketmanager%20constructor">SocketManager constructor</a>
       </div>
       <div class="heading h3">
@@ -37,7 +34,7 @@
         <a href="#socketmanager.clients">SocketManager.clients</a>
       </div>
       <div class="heading h2">
-        <a href="#methods">METHODS</a>
+        <a href="#socketmanager%20methods">SocketManager methods</a>
       </div>
       <div class="heading h3">
         <a href="#socketmanager.send">SocketManager.send</a>
@@ -99,7 +96,7 @@
       <div class="heading h3">
         <a href="#socketmanager.resolveclientandsocket">SocketManager.resolveClientAndSocket</a>
       </div>
-      <div class="heading h2">
+      <div class="heading h3">
         <a href="#socketmanager.lookuproom">SocketManager.lookupRoom</a>
       </div>
     </div>
@@ -122,7 +119,7 @@
 <p>Copyright(c) 2014 Stefano Balietti
 MIT Licensed</p>
   </div>
-  <div class="body"><p>SocketManager: a register of all open sockets.</p>
+  <div class="body"><p>A register of all open sockets</p>
 
 <p>Exposes method to send and broadcast messages to a specific recipient, or
 groups of recipients.</p>
@@ -145,16 +142,8 @@ matches the session id of the clients connected to each channel.
 Player and Admin server in the same channel share the same session id.</p>
 
 <p>Some methods accept a separate FROM parameter, because sometimes the message
-is obfuscated and sender (for broadcasting or room-detecting) cannot be</p>
-
-
-<div class="pilwrap" id="found%20in%20the%20from%20field.">
-  <h2>
-    <a href="#found%20in%20the%20from%20field." name="found%20in%20the%20from%20field." class="pilcrow">&#182;</a>
-    found in the <em>from</em> field.
-  </h2>
-</div>
-
+is obfuscated and sender (for broadcasting or room-detecting) cannot be
+found in the <em>from</em> field.</p>
   </div>
 </div>
         </td>
@@ -294,10 +283,10 @@ is obfuscated and sender (for broadcasting or room-detecting) cannot be</p>
       </tr>
       <tr>
         <td class="docs">
-<div class="pilwrap" id="methods">
+<div class="pilwrap" id="socketmanager%20methods">
   <h2>
-    <a href="#methods" name="methods" class="pilcrow">&#182;</a>
-    METHODS
+    <a href="#socketmanager%20methods" name="socketmanager%20methods" class="pilcrow">&#182;</a>
+    SocketManager methods
   </h2>
 </div>
 
@@ -1289,7 +1278,7 @@ other channels, if the server is allowed to do so.</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-37" id="section-37">&#182;</a>
 </div>
-<p>Broadcast methods.</p>
+<p>Broadcast methods</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
 
@@ -2089,17 +2078,6 @@ belong to.</p>
   </div>
   <div class="body"><p>Retrieves the socket, and sid of the recipient of a GameMsg</p>
 
-<p>Returns an object with the following properties:</p>
-
-<ul>
-<li>channel: the ServerChannel object
-<ul><li>socket: the Socket object</li>
-<li>sid: the id of the recipient within the socket</li>
-<li>cid: the client id of the recipient within the channel</li>
-<li>success: boolean flag, TRUE if resolving is successful</li>
-<li>errMsg: set if an error occurs</li></ul></li>
-</ul>
-
 <p>If server is allowed to do so, and the recipient is not found in the
 local registry, it will look into the registry of other channels.</p>
   </div>
@@ -2121,7 +2099,16 @@ local registry, it will look into the registry of other channels.</p>
       <span class="dox_tag_name"></span>
       <span class="dox_type">object</span>
       <span>An object containing the result of the
-  resolving process</span>
+  resolving process with the following fields:
+
+<ul>
+<li>channel: the ServerChannel object</li>
+<li>socket: the Socket object</li>
+<li>sid: the id of the recipient within the socket</li>
+<li>cid: the client id of the recipient within the channel</li>
+<li>success: boolean flag, TRUE if resolving is successful</li>
+<li>errMsg: set if an error occurs</li>
+</ul></span>
     </div>
   </div>
 </div>
@@ -2286,10 +2273,10 @@ recipient information in all channels.</p>
         <td class="docs"><div class="dox">
   <div class="summary">
 <div class="pilwrap" id="socketmanager.lookuproom">
-  <h2>
+  <h3>
     <a href="#socketmanager.lookuproom" name="socketmanager.lookuproom" class="pilcrow">&#182;</a>
     SocketManager.lookupRoom
-  </h2>
+  </h3>
 </div>
 
   </div>

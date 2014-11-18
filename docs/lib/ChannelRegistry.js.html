@@ -22,13 +22,13 @@
         <a href="#channelregistry">ChannelRegistry</a>
       </div>
       <div class="heading h2">
-        <a href="#container%20for%20clients%2C%20rooms%20and%20aliases">Container for clients, rooms and aliases</a>
-      </div>
-      <div class="heading h2">
         <a href="#global%20scope">Global scope</a>
       </div>
       <div class="heading h2">
         <a href="#channelregistry%20constructor">ChannelRegistry constructor</a>
+      </div>
+      <div class="heading h3">
+        <a href="#channelregistry.channelname">ChannelRegistry.channelName</a>
       </div>
       <div class="heading h3">
         <a href="#channelregistry.clients">ChannelRegistry.clients</a>
@@ -152,14 +152,7 @@
 <p>Copyright(c) 2014 Stefano Balietti
 MIT Licensed</p>
   </div>
-  <div class="body">
-<div class="pilwrap" id="container%20for%20clients%2C%20rooms%20and%20aliases">
-  <h2>
-    <a href="#container%20for%20clients%2C%20rooms%20and%20aliases" name="container%20for%20clients%2C%20rooms%20and%20aliases" class="pilcrow">&#182;</a>
-    Container for clients, rooms and aliases
-  </h2>
-</div>
-
+  <div class="body"><p>Container for clients, rooms and aliases</p>
   </div>
 </div>
         </td>
@@ -205,11 +198,50 @@ MIT Licensed</p>
   </div>
   <div class="body"><p>Creates a new instance of ChannelRegistry</p>
   </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">options</span>
+      <span class="dox_type">object</span>
+      <span>Object containing the following options:
+
+<ul>
+<li>channelName (string): Name of the channel</li>
+</ul></span>
+    </div>
+  </div>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="kd">function</span> <span class="nx">ChannelRegistry</span><span class="p">(</span><span class="nx">options</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">options</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ChannelRegistry: options must be object.&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">options</span><span class="p">.</span><span class="nx">channelName</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ChannelRegistry: &#39;</span> <span class="o">+</span>
+                            <span class="s1">&#39;options.channelName must be string.&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
 
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="channelregistry.channelname">
+  <h3>
+    <a href="#channelregistry.channelname" name="channelregistry.channelname" class="pilcrow">&#182;</a>
+    ChannelRegistry.channelName
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Name of the channel</p>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
     <span class="k">this</span><span class="p">.</span><span class="nx">channelName</span> <span class="o">=</span> <span class="nx">options</span><span class="p">.</span><span class="nx">channelName</span><span class="p">;</span>
 
 
@@ -462,7 +494,7 @@ MIT Licensed</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-11" id="section-11">&#182;</a>
+  <a class="pilcrow" href="#section-12" id="section-12">&#182;</a>
 </div>
 <p>TODO this must be changed to support different types of DB.</p>
         </td>
@@ -524,7 +556,7 @@ MIT Licensed</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-13" id="section-13">&#182;</a>
+  <a class="pilcrow" href="#section-14" id="section-14">&#182;</a>
 </div>
 <p>Remove client from all the rooms to trigger removing
 room aliases to client ID:</p>
@@ -539,7 +571,7 @@ room aliases to client ID:</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-14" id="section-14">&#182;</a>
+  <a class="pilcrow" href="#section-15" id="section-15">&#182;</a>
 </div>
 <p>Remove game aliases to ID:</p>
         </td>
@@ -558,7 +590,7 @@ room aliases to client ID:</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-15" id="section-15">&#182;</a>
+  <a class="pilcrow" href="#section-16" id="section-16">&#182;</a>
 </div>
 <p>Remove room stack:</p>
         </td>
@@ -572,7 +604,7 @@ room aliases to client ID:</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-16" id="section-16">&#182;</a>
+  <a class="pilcrow" href="#section-17" id="section-17">&#182;</a>
 </div>
 <p>Remove client from PlayerList:</p>
         </td>
@@ -644,7 +676,7 @@ from the old room.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-18" id="section-18">&#182;</a>
+  <a class="pilcrow" href="#section-19" id="section-19">&#182;</a>
 </div>
 <p>Remove all room aliases to the client's ID:</p>
         </td>
@@ -713,7 +745,7 @@ from the old room.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-20" id="section-20">&#182;</a>
+  <a class="pilcrow" href="#section-21" id="section-21">&#182;</a>
 </div>
 <p>Remove all room aliases to the client's ID:</p>
         </td>
@@ -730,7 +762,7 @@ from the old room.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-21" id="section-21">&#182;</a>
+  <a class="pilcrow" href="#section-22" id="section-22">&#182;</a>
 </div>
 <p>Try to pop the client's stack:</p>
         </td>
@@ -834,7 +866,7 @@ maybe we can merge / use the updateClient method and markDisconnected</span>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-24" id="section-24">&#182;</a>
+  <a class="pilcrow" href="#section-25" id="section-25">&#182;</a>
 </div>
 <p>Update the PlayerList:</p>
         </td>
@@ -886,7 +918,7 @@ maybe we can merge / use the updateClient method</span>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-26" id="section-26">&#182;</a>
+  <a class="pilcrow" href="#section-27" id="section-27">&#182;</a>
 </div>
 <p>TODO: this fails because the client is disconnected. Maybe we don't
 need to lookup in this cases;
@@ -901,7 +933,7 @@ clientId = this.lookupClient(client);</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-27" id="section-27">&#182;</a>
+  <a class="pilcrow" href="#section-28" id="section-28">&#182;</a>
 </div>
 <p>clientName = client + ' (resolved to "' + clientId + '")';
 throw new Error('ChannelRegistry.markConnected: invalid client ' +
@@ -919,7 +951,7 @@ throw new Error('ChannelRegistry.markConnected: invalid client ' +
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-28" id="section-28">&#182;</a>
+  <a class="pilcrow" href="#section-29" id="section-29">&#182;</a>
 </div>
 <p>Update the PlayerList:</p>
         </td>
@@ -1536,7 +1568,7 @@ the alias will fail then.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-47" id="section-47">&#182;</a>
+  <a class="pilcrow" href="#section-48" id="section-48">&#182;</a>
 </div>
 <p>Delete that alias:</p>
         </td>
@@ -1694,7 +1726,7 @@ Returns NULL if not found or infinite loop detected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-51" id="section-51">&#182;</a>
+  <a class="pilcrow" href="#section-52" id="section-52">&#182;</a>
 </div>
 <p>Avoid alias loop:</p>
         </td>
@@ -1709,7 +1741,7 @@ Returns NULL if not found or infinite loop detected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-52" id="section-52">&#182;</a>
+  <a class="pilcrow" href="#section-53" id="section-53">&#182;</a>
 </div>
 <p>Check aliases in given room:</p>
         </td>
@@ -1728,7 +1760,7 @@ Returns NULL if not found or infinite loop detected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-53" id="section-53">&#182;</a>
+  <a class="pilcrow" href="#section-54" id="section-54">&#182;</a>
 </div>
 <p>Check if ID exists and is connected:</p>
         </td>
@@ -1744,7 +1776,7 @@ Returns NULL if not found or infinite loop detected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-54" id="section-54">&#182;</a>
+  <a class="pilcrow" href="#section-55" id="section-55">&#182;</a>
 </div>
 <p>Check game aliases:</p>
         </td>
@@ -1761,7 +1793,7 @@ Returns NULL if not found or infinite loop detected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-55" id="section-55">&#182;</a>
+  <a class="pilcrow" href="#section-56" id="section-56">&#182;</a>
 </div>
 <p>Client wasn't found:</p>
         </td>
