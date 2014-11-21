@@ -4,7 +4,6 @@
  * MIT Licensed
  *
  * Configuration file for Socket.io server in nodegame-server
- * ---
  */
 module.exports = configure;
 

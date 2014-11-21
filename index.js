@@ -6,7 +6,6 @@
  * Server component for nodeGame
  *
  * http://www.nodegame.org
- * ---
  */
 exports.ServerNode = require('./lib/ServerNode.js');
 
@@ -14,6 +13,3 @@ exports.ServerNode = require('./lib/ServerNode.js');
 exports.express = require('express');
 exports.winston = require('winston');
 exports.sio = require('socket.io');
-
-
-

@@ -9,7 +9,6 @@
  * @see ServerNode
  *
  * http://www.nodegame.org
- * ---
  */
 module.exports = configure;
 

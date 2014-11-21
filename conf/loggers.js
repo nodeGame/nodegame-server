@@ -4,7 +4,6 @@
  * MIT Licensed
  *
  * Configuration file for Winston.js in nodegame-server
- * ---
  */
 
 module.exports = configure;
