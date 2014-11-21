@@ -197,10 +197,10 @@ Else returns the value, TRUE if previously found, FALSE, otherwise.</p>
       <span>The path to the file in <code>/public/</code></span>
     </div>
     <div class="dox_tag_detail">
-      <span class="dox_tag_name">The</span>
+      <span class="dox_tag_name">found</span>
       <span class="dox_type">boolean</span>
       <span class="dox_type">undefined</span>
-      <span>state of</span>
+      <span>The state</span>
     </div>
     <div class="dox_tag_title">Returns</div>
     <div class="dox_tag_detail">
@@ -255,10 +255,10 @@ Else returns the value, TRUE if previously found, FALSE, otherwise.</p>
       <span>The path to the file in <code>/public/</code></span>
     </div>
     <div class="dox_tag_detail">
-      <span class="dox_tag_name">The</span>
+      <span class="dox_tag_name">found</span>
       <span class="dox_type">boolean</span>
       <span class="dox_type">undefined</span>
-      <span>state of</span>
+      <span>The state</span>
     </div>
     <div class="dox_tag_title">Returns</div>
     <div class="dox_tag_detail">
@@ -273,7 +273,9 @@ Else returns the value, TRUE if previously found, FALSE, otherwise.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">PageManager</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">inTemplates</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">gameName</span><span class="p">,</span> <span class="nx">path</span><span class="p">,</span> <span class="nx">found</span><span class="p">)</span> <span class="p">{</span>
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">found</span><span class="p">)</span> <span class="k">return</span> <span class="nx">games</span><span class="p">[</span><span class="nx">gameName</span><span class="p">].</span><span class="nx">cacheTemplate</span><span class="p">[</span><span class="nx">path</span><span class="p">];</span>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">found</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="nx">games</span><span class="p">[</span><span class="nx">gameName</span><span class="p">].</span><span class="nx">cacheTemplate</span><span class="p">[</span><span class="nx">path</span><span class="p">];</span>
+    <span class="p">}</span>
     <span class="nx">games</span><span class="p">[</span><span class="nx">gameName</span><span class="p">].</span><span class="nx">cacheTemplate</span><span class="p">[</span><span class="nx">path</span><span class="p">]</span> <span class="o">=</span> <span class="nx">found</span><span class="p">;</span>
     <span class="k">return</span> <span class="nx">found</span><span class="p">;</span>
 <span class="p">};</span>

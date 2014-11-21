@@ -186,10 +186,10 @@ MIT Licensed</p>
 
 
 <p>Configuration object governing message passing between players.
-By default, players are <em>not</em> notified of the activities of other players,
-such as (connection, disconnection, entering a new stage). By changing
-the value of the properties of this object it is possible to send out
-notifications of the following types:</p>
+By default, players are <em>not</em> notified of the activities of other
+players, such as (connection, disconnection, entering a new stage). By
+changing the value of the properties of this object it is possible to
+send out notifications of the following types:</p>
 
 <ul>
 <li>onConnect: sends PCONNECT, and PDISCONNECT</li>
@@ -216,7 +216,7 @@ a stage: from LOADING to DONE)</li>
 
 
 <p>If TRUE all DATA and TXT messages (regardless to the recipient)
-will be forwarded to the admins. Defaults, FALSE.</p>
+will be forwarded to the admins. Default: FALSE</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="k">this</span><span class="p">.</span><span class="nx">forwardAll</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">options</span><span class="p">.</span><span class="nx">forwardAllMessages</span> <span class="o">||</span> <span class="kc">false</span><span class="p">;</span>
@@ -236,7 +236,7 @@ will be forwarded to the admins. Defaults, FALSE.</p>
 
 
 <p>If TRUE players will be able to send GET messages to admins and get
-back the result. Defaults, FALSE.</p>
+back the result. Default: FALSE</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="k">this</span><span class="p">.</span><span class="nx">getFromAdmins</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">options</span><span class="p">.</span><span class="nx">getFromAdmins</span> <span class="o">||</span> <span class="kc">false</span><span class="p">;</span>
