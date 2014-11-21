@@ -703,9 +703,10 @@ directories.</p>
   <div class="details">
     <div class="dox_tag_title">Params</div>
     <div class="dox_tag_detail">
-      <span class="dox_tag_name">Optional.</span>
+      <span class="dox_tag_name">options</span>
       <span class="dox_type">object</span>
-      <span>Additional options passed overriding defaults.</span>
+      <span>Optional. Additional options passed overriding
+  defaults</span>
     </div>
     <div class="dox_tag_title">See</div>
     <div class="dox_tag_detail">
@@ -1525,10 +1526,12 @@ package.json files.</p>
   <a class="pilcrow" href="#section-59" id="section-59">&#182;</a>
 </div>
 <p>Adding the public directory of the game to the static directories
-<a href='http://stackoverflow.com/questions/5973432/setting-up-two-different-static-directories-in-node-js-express-framework'>http://stackoverflow.com/questions/5973432/setting-up-two-different-static-directories-in-node-js-express-framework</a></p>
+<a href='http://stackoverflow.com/questions/5973432/'>http://stackoverflow.com/questions/5973432/</a>
+ setting-up-two-different-static-directories-in-node-js-express-framework</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">http</span><span class="p">.</span><span class="nx">use</span><span class="p">(</span><span class="nx">gameInfo</span><span class="p">.</span><span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39;/public&#39;</span><span class="p">,</span> <span class="nx">express</span><span class="p">.</span><span class="kr">static</span><span class="p">(</span><span class="nx">gameDir</span> <span class="o">+</span> <span class="s1">&#39;public&#39;</span><span class="p">));</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">http</span><span class="p">.</span><span class="nx">use</span><span class="p">(</span><span class="nx">gameInfo</span><span class="p">.</span><span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39;/public&#39;</span><span class="p">,</span>
+                  <span class="nx">express</span><span class="p">.</span><span class="kr">static</span><span class="p">(</span><span class="nx">gameDir</span> <span class="o">+</span> <span class="s1">&#39;public&#39;</span><span class="p">));</span>
 
 
 </pre></div>
@@ -1849,8 +1852,9 @@ TODO: views.js file is not loaded anymore because all context are dynamics.</spa
      <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">exists</span><span class="p">)</span> <span class="k">return</span><span class="p">;</span>
      <span class="nx">cb</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="nx">viewsFile</span><span class="p">);</span>
      <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;function&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">cb</span><span class="p">)</span> <span class="p">{</span>
-         <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerNode.loadViewsFile: views.js did not &#39;</span> <span class="o">+</span>
-                             <span class="s1">&#39;return a valid function. Dir: &#39;</span> <span class="o">+</span> <span class="nx">directory</span><span class="p">);</span>
+         <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerNode.loadViewsFile: &#39;</span> <span class="o">+</span>
+             <span class="s1">&#39;views.js did not &#39;</span> <span class="o">+</span>
+             <span class="s1">&#39;return a valid function. Dir: &#39;</span> <span class="o">+</span> <span class="nx">directory</span><span class="p">);</span>
      <span class="p">}</span>
      <span class="c1">// Execute views function in a sandboxed enviroment.</span>
      <span class="c1">// A game cannot modify other games settings.</span>
@@ -2153,9 +2157,9 @@ return TRUE if configuration is successful.</p>
   <div class="details">
     <div class="dox_tag_title">Params</div>
     <div class="dox_tag_detail">
-      <span class="dox_tag_name">The</span>
+      <span class="dox_tag_name">func</span>
       <span class="dox_type">function</span>
-      <span>function that will configure the ServerNode</span>
+      <span>The function that will configure the ServerNode</span>
     </div>
     <div class="dox_tag_title">Returns</div>
     <div class="dox_tag_detail">
@@ -2213,13 +2217,13 @@ and they will not scanned again, unless the force flag is set to TRUE.</p>
       <span class="dox_tag_name">object</span>
       <span class="dox_type">mask</span>
       <span>Optional. An object defining which configuration
-  files are allowed to be loaded. Defaults, all files are loaded.</span>
+  files are allowed to be loaded. Default: all files are loaded</span>
     </div>
     <div class="dox_tag_detail">
-      <span class="dox_tag_name">Optional.</span>
-      <span class="dox_type">force</span>
-      <span>Force to rescan a directory even if this was
-   already loaded. Defaults, FALSE.</span>
+      <span class="dox_tag_name">force</span>
+      <span class="dox_type">boolean</span>
+      <span>Optional. Force to rescan a directory even if this was
+   already loaded. Default: FALSE</span>
     </div>
     <div class="dox_tag_title">See</div>
     <div class="dox_tag_detail">
@@ -2453,7 +2457,9 @@ care of passing the right parameters to it.</p>
     <span class="p">});</span>
 <span class="p">};</span>
 
-<span class="nx">ServerNode</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">getChannelSandbox</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">gameName</span><span class="p">,</span> <span class="nx">method</span><span class="p">,</span> <span class="nx">methodName</span><span class="p">)</span> <span class="p">{</span>
+<span class="nx">ServerNode</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">getChannelSandbox</span> <span class="o">=</span>
+        <span class="kd">function</span><span class="p">(</span><span class="nx">gameName</span><span class="p">,</span> <span class="nx">method</span><span class="p">,</span> <span class="nx">methodName</span><span class="p">)</span> <span class="p">{</span>
+
     <span class="kd">var</span> <span class="nx">that</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
 
     <span class="k">return</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
@@ -2813,11 +2819,6 @@ Auth callback can modify the authorization only of those.</p>
       <span class="dox_type">string</span>
       <span>The version number to parse</span>
     </div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name">An</span>
-      <span class="dox_type">object</span>
-      <span>object emulating a <em>GameStage</em></span>
-    </div>
     <div class="dox_tag_title">See</div>
     <div class="dox_tag_detail">
       <span class="dox_type">GameStage constructor
@@ -2862,9 +2863,9 @@ Auth callback can modify the authorization only of those.</p>
   <div class="details">
     <div class="dox_tag_title">Params</div>
     <div class="dox_tag_detail">
-      <span class="dox_tag_name">The</span>
+      <span class="dox_tag_name">req</span>
       <span class="dox_type">mixed</span>
-      <span>game requirements from <code>package.json</code></span>
+      <span>The game requirements from <code>package.json</code></span>
     </div>
     <div class="dox_tag_title">Returns</div>
     <div class="dox_tag_detail">

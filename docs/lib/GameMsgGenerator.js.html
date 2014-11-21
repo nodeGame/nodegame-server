@@ -203,7 +203,8 @@ as input parameter.</p>
     <span class="p">}</span>
 
     <span class="k">return</span> <span class="k">new</span> <span class="nx">GameMsg</span><span class="p">({</span>
-        <span class="nx">session</span><span class="o">:</span> <span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">session</span> <span class="o">?</span>  <span class="nx">msg</span><span class="p">.</span><span class="nx">session</span> <span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">session</span><span class="p">,</span>
+        <span class="nx">session</span><span class="o">:</span>
+            <span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">session</span> <span class="o">?</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">session</span> <span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">session</span><span class="p">,</span>
         <span class="nx">stage</span><span class="o">:</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">stage</span> <span class="o">||</span> <span class="k">this</span><span class="p">.</span><span class="nx">stage</span><span class="p">,</span>
         <span class="nx">action</span><span class="o">:</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">action</span> <span class="o">||</span> <span class="nx">constants</span><span class="p">.</span><span class="nx">action</span><span class="p">.</span><span class="nx">SAY</span><span class="p">,</span>
         <span class="nx">target</span><span class="o">:</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">target</span> <span class="o">||</span> <span class="nx">constants</span><span class="p">.</span><span class="nx">target</span><span class="p">.</span><span class="nx">DATA</span><span class="p">,</span>
@@ -237,9 +238,9 @@ of a game message with default settings</p>
   <div class="details">
     <div class="dox_tag_title">Params</div>
     <div class="dox_tag_detail">
-      <span class="dox_tag_name">A</span>
+      <span class="dox_tag_name">msg</span>
       <span class="dox_type">GameMsg</span>
-      <span>game message</span>
+      <span>The game message</span>
     </div>
     <div class="dox_tag_title">Returns</div>
     <div class="dox_tag_detail">
