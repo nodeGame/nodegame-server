@@ -8589,6 +8589,7 @@ JSUS.extend(TIME);
     // Player waits that all the clients have terminated the
     // current step before going to the next
     exports.stepRules.SYNC_STEP = function(stage, myStageLevel, pl, game) {
+        debugger
         return myStageLevel === node.constants.stageLevels.DONE &&
             pl.isStepDone(stage);
     };
@@ -13185,7 +13186,14 @@ JSUS.extend(TIME);
 
     var action = parent.action;
 
-    function Socket(node, options) {
+    /**
+     * ## Socket constructor
+     *
+     * Creates a new instance of Socket
+     *
+     * @param {NodeGameClient} node Reference to the node instance
+     */
+    function Socket(node) {
 
         // ## Private properties
 
@@ -13263,6 +13271,8 @@ JSUS.extend(TIME);
          */
         this.url = null;
 
+        // Experimental Journal.
+        // TODO: check if we need it.
 
         this.journalOn = false;
 
@@ -13286,6 +13296,7 @@ JSUS.extend(TIME);
                 }
             });
         }
+        // End Experimental Code.
 
         /**
          * ### Socket.node
@@ -13371,7 +13382,7 @@ JSUS.extend(TIME);
         }
         this.connecting = true;
         this.url = uri;
-        this.node.log('connecting to ' + humanReadableUri + '.');        
+        this.node.log('connecting to ' + humanReadableUri + '.');
         this.socket.connect(uri, options || this.userOptions);
     };
 
@@ -13388,7 +13399,7 @@ JSUS.extend(TIME);
     /**
      * ### Socket.onConnect
      *
-     * Handler for connections to the server.
+     * Handler for connections to the server
      *
      * @emit SOCKET_CONNECT
      */
@@ -13402,7 +13413,7 @@ JSUS.extend(TIME);
     /**
      * ### Socket.onDisconnect
      *
-     * Handler for disconnections from the server.
+     * Handler for disconnections from the server
      *
      * Clears the player and monitor lists.
      *
@@ -13419,6 +13430,7 @@ JSUS.extend(TIME);
         this.node.game.pl.clear(true);
         this.node.game.ml.clear(true);
 
+        console.log('AAAAAAAAAA');
         this.node.log('socket closed.');
     };
 
@@ -13465,7 +13477,7 @@ JSUS.extend(TIME);
     /**
      * ### Socket.onMessage
      *
-     * Initial handler for incoming messages from the server.
+     * Initial handler for incoming messages from the server
      *
      * This handler will be replaced by the FULL handler, upon receiving
      * a HI message from the server.
@@ -13501,7 +13513,7 @@ JSUS.extend(TIME);
     /**
      * ### Socket.onMessageFull
      *
-     * Full handler for incoming messages from the server.
+     * Full handler for incoming messages from the server
      *
      * All parsed messages are either emitted immediately or buffered,
      * if the game is not ready, and the message priority is low.x
@@ -13682,7 +13694,7 @@ JSUS.extend(TIME);
     /**
      * ### Socket.send
      *
-     * Pushes a message into the socket.
+     * Pushes a message into the socket
      *
      * The msg is actually received by the client itself as well.
      *
@@ -13764,11 +13776,42 @@ JSUS.extend(TIME);
 
     exports.SocketIo = SocketIo;
 
-    function SocketIo(node, options) {
+    /**
+     * ## SocketIo constructor
+     *
+     * Creates a new instance of SocketIo
+     *
+     * @param {NodeGameClient} node Reference to the node instance
+     */
+    function SocketIo(node) {
+
+        // ## Private properties
+
+        /**
+         * ### SocketIo.node
+         *
+         * Reference to the node object.
+         */
         this.node = node;
+
+        /**
+         * ### Socket.socket
+         *
+         * Reference to the actual socket-io socket created on connection
+         */
         this.socket = null;
     }
 
+    /**
+     * ### SocketIo.connect
+     *
+     * Establishes a socket-io connection with a server
+     *
+     * Sets the on: 'connect', 'message', 'disconnect' event listeners.
+     *
+     * @param {string} url The address of the server channel
+     * @param {object} options Optional. Configuration options
+     */
     SocketIo.prototype.connect = function(url, options) {
         var node, socket;
         node = this.node;
@@ -13800,19 +13843,38 @@ JSUS.extend(TIME);
         this.socket = socket;
 
         return true;
-
     };
 
+    /**
+     * ### SocketIo.disconnect
+     *
+     * Triggers the disconnection from a server
+     */
     SocketIo.prototype.disconnect = function() {
         this.socket.disconnect();
     };
 
+    /**
+     * ### SocketIo.isConnected
+     *
+     * Returns TRUE, if currently connected
+     */
     SocketIo.prototype.isConnected = function() {
         return this.socket &&
             this.socket.socket &&
             this.socket.socket.connected;
     };
 
+    /**
+     * ### SocketIo.send
+     *
+     * Stringifies and send a message through the socket-io socket
+     *
+     * @param {object} msg Object implementing a stringiy method. Usually,
+     *    a game message.
+     *
+     * @see GameMessage
+     */
     SocketIo.prototype.send = function(msg) {
         this.socket.send(msg.stringify());
     };
@@ -14389,7 +14451,12 @@ JSUS.extend(TIME);
      * Calls the init function, and steps.
      *
      * Important: it does not use `Game.publishUpdate` because that is
-     * just for change of state after the game has started
+     * just for change of state after the game has started.
+     *
+     * @param {object} options Optional. Configuration object. Fields:
+     *
+     *   - step: true/false. If false, jus call the init function, and
+     *     does not enter the first step. Default, TRUE.
      */
     Game.prototype.start = function(options) {
         var onInit, node, startStage;
@@ -21837,10 +21904,15 @@ JSUS.extend(TIME);
         if (!iframe) {
             throw new Error('GameWindow.clearFrame: cannot detect frame.');
         }
+
         frameName = iframe.name || iframe.id;
         iframe.onload = null;
+
         // Method .replace does not add the uri to the history.
-        iframe.contentWindow.location.replace('about:blank');
+        //iframe.contentWindow.location.replace('about:blank');
+
+        this.getFrameDocument().documentElement.innerHTML = '';
+
         this.frameElement = iframe;
         this.frameWindow = window.frames[frameName];
         this.frameDocument = W.getIFrameDocument(iframe);
@@ -22403,7 +22475,7 @@ JSUS.extend(TIME);
      * Warning: Security policies may block this method if the content is
      * coming from another domain.
      * Notice: If called multiple times within the same stage/step, it will
-     * the `VisualTimer` widget to reload the timer.
+     * cause the `VisualTimer` widget to reload the timer.
      *
      * @param {string} uri The uri to load
      * @param {function} func Optional. The function to call once the DOM is
@@ -22555,7 +22627,7 @@ JSUS.extend(TIME);
             // would be cleared once the iframe becomes ready.  In that case,
             // iframe.onload handles the filling of the contents.
             if (frameReady) {
-                // Handles chaching.
+                // Handles caching.
                 handleFrameLoad(this, uri, iframe, iframeName, loadCache,
                                 storeCacheNow);
 
@@ -22747,8 +22819,7 @@ JSUS.extend(TIME);
      *
      * Injects scripts into the iframe
      *
-     * First removes all old injected script tags.
-     * Then injects `<script class="injectedlib" src="...">` lines into given
+     * Inserts `<script class="injectedlib" src="...">` lines into given
      * iframe object, one for every given library.
      *
      * @param {HTMLIFrameElement} iframe The target iframe
@@ -22808,7 +22879,8 @@ JSUS.extend(TIME);
      * The frame element must exists or an error will be thrown.
      *
      * @param {GameWindow} W The current GameWindow object
-     * @param {string} W Optional. The previous position of the header
+     * @param {string} oldHeaderPos Optional. The previous position of the
+     *   header
      *
      * @api private
      */
