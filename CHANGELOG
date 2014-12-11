@@ -1,5 +1,10 @@
 # nodegame-server change log
 
+# 0.9.7
+ - Added more options to control Phantom JS bots
+ - Fixed disconnections on Game Over of Phantom JS bots
+ - Documentation fixes
+
 # 0.9.6
  - Added docs to index
  - ConnectBot and ConnectPhantom
