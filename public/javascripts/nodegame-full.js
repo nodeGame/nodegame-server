@@ -355,16 +355,16 @@ if (!JSON) {
 }());
 
 /**
- * # Shelf.JS 
+ * # Shelf.JS
  * Copyright 2014 Stefano Balietti
  * GPL licenses.
  *
  * Persistent Client-Side Storage
- * 
+ *
  * ---
  */
 (function(exports){
-    
+
     var version = '0.5';
 
     var store = exports.store = function(key, value, options, type) {
@@ -375,7 +375,7 @@ if (!JSON) {
 	    return;
 	}
 	store.log('Accessing ' + type + ' storage');
-	
+
 	return store.types[type](key, value, options);
     };
 
@@ -390,8 +390,8 @@ if (!JSON) {
     var mainStorageType = "volatile";
 
     //if Object.defineProperty works...
-    try {	
-	
+    try {
+
 	Object.defineProperty(store, 'type', {
 	    set: function(type){
 		if ('undefined' === typeof store.types[type]) {
@@ -419,7 +419,7 @@ if (!JSON) {
 	    options.type = type;
 	    return store(key, value, options);
 	};
-	
+
 	if (!store.type || store.type === "volatile") {
 	    store.type = type;
 	}
@@ -427,8 +427,8 @@ if (!JSON) {
 
     // TODO: create unit test
     store.onquotaerror = undefined;
-    store.error = function() {	
-	console.log("shelf quota exceeded"); 
+    store.error = function() {
+	console.log("shelf quota exceeded");
 	if ('function' === typeof store.onquotaerror) {
 	    store.onquotaerror(null);
 	}
@@ -438,7 +438,7 @@ if (!JSON) {
 	if (store.verbosity > 0) {
 	    console.log('Shelf v.' + version + ': ' + text);
 	}
-	
+
     };
 
     store.isPersistent = function() {
@@ -448,7 +448,7 @@ if (!JSON) {
     };
 
     //if Object.defineProperty works...
-    try {	
+    try {
 	Object.defineProperty(store, 'persistent', {
 	    set: function(){},
 	    get: store.isPersistent,
@@ -466,7 +466,7 @@ if (!JSON) {
 	}
 	return o;
     };
-    
+
     store.retrocycle = function(o) {
 	if (JSON && JSON.retrocycle && 'function' === typeof JSON.retrocycle) {
 	    o = JSON.retrocycle(o);
@@ -478,7 +478,7 @@ if (!JSON) {
 	if (!JSON || !JSON.stringify || 'function' !== typeof JSON.stringify) {
 	    throw new Error('JSON.stringify not found. Received non-string value and could not serialize.');
 	}
-	
+
 	o = store.decycle(o);
 	return JSON.stringify(o);
     };
@@ -494,7 +494,7 @@ if (!JSON) {
 		store.log(o);
 	    }
 	}
-	
+
 	o = store.retrocycle(o);
 	return o;
     };
@@ -502,16 +502,16 @@ if (!JSON) {
     // ## In-memory storage
     // ### fallback for all browsers to enable the API even if we can't persist data
     (function() {
-	
+
 	var memory = {},
 	timeout = {};
-	
+
 	function copy(obj) {
 	    return store.parse(store.stringify(obj));
 	}
 
 	store.addType("volatile", function(key, value, options) {
-	    
+
 	    if (!key) {
 		return copy(memory);
 	    }
@@ -545,11 +545,11 @@ if (!JSON) {
 }('undefined' !== typeof module && 'undefined' !== typeof module.exports ? module.exports: this));
 /**
  * ## Amplify storage for Shelf.js
- * 
+ *
  * v. 1.1.0 22.05.2013 a275f32ee7603fbae6607c4e4f37c4d6ada6c3d5
- * 
- * Important! When updating to next Amplify.JS release, remember to change: 
- * 
+ *
+ * Important! When updating to next Amplify.JS release, remember to change:
+ *
  * - JSON.stringify -> store.stringify to keep support for cyclic objects
  * - JSON.parse -> store.parse (cyclic objects)
  * - store.name -> store.prefix (check)
@@ -560,7 +560,7 @@ if (!JSON) {
  */
 (function(exports) {
 
-    var store = exports.store;	
+    var store = exports.store;
 
     if (!store) {
 	throw new Error('amplify.shelf.js: shelf.js core not found.');
@@ -793,14 +793,14 @@ if (!JSON) {
 /**
  * ## Cookie storage for Shelf.js
  * Copyright 2015 Stefano Balietti
- * 
+ *
  * Original library from:
  * See http://code.google.com/p/cookies/
  */
 (function(exports) {
 
     var store = exports.store;
-    
+
     if (!store) {
 	throw new Error('cookie.shelf.js: shelf.js core not found.');
     }
@@ -810,7 +810,7 @@ if (!JSON) {
     }
 
     var cookie = (function() {
-	
+
 	var resolveOptions, assembleOptionsString, parseCookies, constructor;
         var defaultOptions = {
 	    expiresAt: null,
@@ -818,7 +818,7 @@ if (!JSON) {
 	    domain:  null,
 	    secure: false
 	};
-	
+
 	/**
 	 * resolveOptions - receive an options object and ensure all options
          * are present and valid, replacing with defaults where necessary
@@ -829,7 +829,7 @@ if (!JSON) {
 	 * @return Object complete and valid options object
 	 */
 	resolveOptions = function(options){
-	    
+
 	    var returnValue, expireDate;
 
 	    if(typeof options !== 'object' || options === null){
@@ -867,7 +867,7 @@ if (!JSON) {
 
 	    return returnValue;
 	};
-	
+
 	/**
 	 * assembleOptionsString - analyze options and assemble appropriate string for setting a cookie with those options
 	 *
@@ -886,7 +886,7 @@ if (!JSON) {
 		    (options.secure === true ? '; secure' : '')
 	    );
 	};
-	
+
 	/**
 	 * parseCookies - retrieve document.cookie string and break it into a hash with values decoded and unserialized
 	 *
@@ -924,7 +924,7 @@ if (!JSON) {
 
 	constructor = function(){};
 
-	
+
 	/**
 	 * get - get one, several, or all cookies
 	 *
@@ -933,7 +933,7 @@ if (!JSON) {
 	 * @return Mixed - Value of cookie as set; Null:if only one cookie is requested and is not found; Object:hash of multiple or all cookies (if multiple or all requested);
 	 */
 	constructor.prototype.get = function(cookieName) {
-	    
+
 	    var returnValue, item, cookies = parseCookies();
 
 	    if(typeof cookieName === 'string') {
@@ -956,7 +956,7 @@ if (!JSON) {
 
 	    return returnValue;
 	};
-	
+
 	/**
 	 * filter - get array of cookies whose names match the provided RegExp
 	 *
@@ -979,7 +979,7 @@ if (!JSON) {
 
 	    return returnValue;
 	};
-	
+
 	/**
 	 * set - set or delete a cookie with desired options
 	 *
@@ -1001,13 +1001,13 @@ if (!JSON) {
 
 	    else if (typeof value !== 'string'){
                 //						if(typeof JSON === 'object' && JSON !== null && typeof store.stringify === 'function') {
-                //							
+                //
                 //							value = JSON.stringify(value);
                 //						}
                 //						else {
                 //							throw new Error('cookies.set() received non-string value and could not serialize.');
                 //						}
-		
+
 		value = store.stringify(value);
 	    }
 
@@ -1016,7 +1016,7 @@ if (!JSON) {
 
 	    document.cookie = cookieName + '=' + encodeURIComponent(value) + optionsString;
 	};
-	
+
 	/**
 	 * del - delete a cookie (domain and path options must match those with which the cookie was set; this is really an alias for set() with parameters simplified for this use)
 	 *
@@ -1045,7 +1045,7 @@ if (!JSON) {
 		}
 	    }
 	};
-	
+
 	/**
 	 * test - test whether the browser is accepting cookies
 	 *
@@ -1064,7 +1064,7 @@ if (!JSON) {
 
 	    return returnValue;
 	};
-	
+
 	/**
 	 * setOptions - set default options for calls to cookie methods
 	 *
@@ -1087,7 +1087,7 @@ if (!JSON) {
     if (cookie.test()) {
 
 	store.addType("cookie", function(key, value, options) {
-	    
+
 	    if ('undefined' === typeof key) {
 		return cookie.get();
 	    }
@@ -1095,18 +1095,19 @@ if (!JSON) {
 	    if ('undefined' === typeof value) {
 		return cookie.get(key);
 	    }
-	    
+
 	    // Set to NULL means delete
 	    if (value === null) {
 		cookie.del(key);
 		return null;
 	    }
 
-	    return cookie.set(key, value, options);		
+	    return cookie.set(key, value, options);
 	});
     }
 
 }(this));
+
 /**
  * # JSUS: JavaScript UtilS.
  * Copyright(c) 2014 Stefano Balietti
@@ -1261,6 +1262,7 @@ if (!JSON) {
     'undefined' !== typeof module && 'undefined' !== typeof module.exports ?
         module.exports: window
 );
+
 /**
  * # COMPATIBILITY
  *
@@ -1270,11 +1272,10 @@ if (!JSON) {
  * Tests browsers ECMAScript 5 compatibility
  *
  * For more information see http://kangax.github.com/es5-compat-table/
- * ---
  */
 (function(JSUS) {
 
-    function COMPATIBILITY() {};
+    function COMPATIBILITY() {}
 
     /**
      * ## COMPATIBILITY.compatibility
@@ -1293,7 +1294,7 @@ if (!JSON) {
         var support = {};
 
         try {
-            Object.defineProperty({}, "a", {enumerable: false, value: 1})
+            Object.defineProperty({}, "a", {enumerable: false, value: 1});
             support.defineProperty = true;
         }
         catch(e) {
@@ -1301,7 +1302,7 @@ if (!JSON) {
         }
 
         try {
-            eval('({ get x(){ return 1 } }).x === 1')
+            eval('({ get x(){ return 1 } }).x === 1');
             support.setter = true;
         }
         catch(err) {
@@ -1324,90 +1325,93 @@ if (!JSON) {
     JSUS.extend(COMPATIBILITY);
 
 })('undefined' !== typeof JSUS ? JSUS : module.parent.exports.JSUS);
+
 /**
  * # ARRAY
+ *
  * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
- * 
- * Collection of static functions to manipulate arrays.
+ *
+ * Collection of static functions to manipulate arrays
  */
 (function(JSUS) {
-    
-    function ARRAY(){};
+
+    function ARRAY() {}
 
     /**
      * ## ARRAY.filter
-     * 
+     *
      * Add the filter method to ARRAY objects in case the method is not
-     * supported natively. 
-     * 
-     * @see https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/ARRAY/filter
+     * supported natively.
+     *
+     * @see https://developer.mozilla.org/en/JavaScript/Reference/
+     *              Global_Objects/ARRAY/filter
      */
-    if (!Array.prototype.filter) {  
-        Array.prototype.filter = function(fun /*, thisp */) {  
-            "use strict";  
-            if (this === void 0 || this === null) throw new TypeError();  
+    if (!Array.prototype.filter) {
+        Array.prototype.filter = function(fun /*, thisp */) {
+            "use strict";
+            if (this === void 0 || this === null) throw new TypeError();
 
-            var t = Object(this);  
-            var len = t.length >>> 0;  
-            if (typeof fun !== "function") throw new TypeError();  
-            
-            var res = [];  
-            var thisp = arguments[1];  
-            for (var i = 0; i < len; i++) {  
-                if (i in t) {  
-                    var val = t[i]; // in case fun mutates this  
-                    if (fun.call(thisp, val, i, t)) { 
-                        res.push(val);  
+            var t = Object(this);
+            var len = t.length >>> 0;
+            if (typeof fun !== "function") throw new TypeError();
+
+            var res = [];
+            var thisp = arguments[1];
+            for (var i = 0; i < len; i++) {
+                if (i in t) {
+                    var val = t[i]; // in case fun mutates this
+                    if (fun.call(thisp, val, i, t)) {
+                        res.push(val);
                     }
                 }
-            }     
-            return res;  
+            }
+            return res;
         };
     }
 
     /**
      * ## ARRAY.isArray
-     * 
+     *
      * Returns TRUE if a variable is an Array
-     * 
-     * This method is exactly the same as `Array.isArray`, 
-     * but it works on a larger share of browsers. 
-     * 
+     *
+     * This method is exactly the same as `Array.isArray`,
+     * but it works on a larger share of browsers.
+     *
      * @param {object} o The variable to check.
      * @see Array.isArray
      */
     ARRAY.isArray = function(o) {
         if (!o) return false;
-        return Object.prototype.toString.call(o) === '[object Array]';  
+        return Object.prototype.toString.call(o) === '[object Array]';
     };
 
     /**
      * ## ARRAY.seq
-     * 
+     *
      * Returns an array of sequential numbers from start to end
-     * 
+     *
      * If start > end the series goes backward.
-     * 
+     *
      * The distance between two subsequent numbers can be controlled
      * by the increment parameter.
-     * 
+     *
      * When increment is not a divider of Abs(start - end), end will
      * be missing from the series.
-     * 
+     *
      * A callback function to apply to each element of the sequence
      * can be passed as fourth parameter.
-     *  
+     *
      * Returns FALSE, in case parameters are incorrectly specified
-     * 
+     *
      * @param {number} start The first element of the sequence
      * @param {number} end The last element of the sequence
-     * @param {number} increment Optional. The increment between two 
+     * @param {number} increment Optional. The increment between two
      *   subsequents element of the sequence
-     * @param {Function} func Optional. A callback function that can modify 
+     * @param {Function} func Optional. A callback function that can modify
      *   each number of the sequence before returning it
-     *  
-     * @return {array} out The final sequence 
+     *
+     * @return {array} The final sequence
      */
     ARRAY.seq = function(start, end, increment, func) {
         var i;
@@ -1416,18 +1420,18 @@ if (!JSON) {
         if ('number' !== typeof end) return false;
         if (end === Infinity) return false;
         if (start === end) return [start];
-        
+
         if (increment === 0) return false;
         if (!JSUS.in_array(typeof increment, ['undefined', 'number'])) {
             return false;
         }
-        
+
         increment = increment || 1;
         func = func || function(e) {return e;};
-        
-        i = start,
+
+        i = start;
         out = [];
-        
+
         if (start < end) {
             while (i <= end) {
                 out.push(func(i));
@@ -1440,28 +1444,28 @@ if (!JSON) {
                 i = i - increment;
             }
         }
-        
+
         return out;
     };
 
     /**
      * ## ARRAY.each
-     * 
+     *
      * Executes a callback on each element of the array
-     * 
+     *
      * If an error occurs returns FALSE.
-     * 
+     *
      * @param {array} array The array to loop in
      * @param {Function} func The callback for each element in the array
      * @param {object} context Optional. The context of execution of the
      *   callback. Defaults ARRAY.each
-     * 
-     * @return {Boolean} TRUE, if execution was successful
+     *
+     * @return {boolean} TRUE, if execution was successful
      */
     ARRAY.each = function(array, func, context) {
         if ('object' !== typeof array) return false;
         if (!func) return false;
-        
+
         context = context || this;
         var i, len = array.length;
         for (i = 0 ; i < len; i++) {
@@ -1472,14 +1476,14 @@ if (!JSON) {
 
     /**
      * ## ARRAY.map
-     * 
+     *
      * Applies a callback function to each element in the db, store
      * the results in an array and returns it
-     * 
-     * Any number of additional parameters can be passed after the 
+     *
+     * Any number of additional parameters can be passed after the
      * callback function
-     * 
-     * @return {array} out The result of the mapping execution
+     *
+     * @return {array} The result of the mapping execution
      * @see ARRAY.each
      */
     ARRAY.map = function() {
@@ -1487,15 +1491,14 @@ if (!JSON) {
         var args = Array.prototype.slice.call(arguments),
         array = args.shift(),
         func = args[0];
-        
+
         if (!ARRAY.isArray(array)) {
             JSUS.log('ARRAY.map() the first argument must be an array. ' +
                      'Found: ' + array);
             return;
         }
 
-        var out = [],
-        o = undefined;
+        var out = [], o;
         for (var i = 0; i < array.length; i++) {
             args[0] = array[i];
             o = func.apply(this, args);
@@ -1507,33 +1510,33 @@ if (!JSON) {
 
     /**
      * ## ARRAY.removeElement
-     * 
+     *
      * Removes an element from the the array, and returns it
-     * 
-     * For objects, deep equality comparison is performed 
+     *
+     * For objects, deep equality comparison is performed
      * through JSUS.equals.
-     * 
+     *
      * If no element is removed returns FALSE.
-     * 
+     *
      * @param {mixed} needle The element to search in the array
      * @param {array} haystack The array to search in
-     * 
+     *
      * @return {mixed} The element that was removed, FALSE if none was removed
      * @see JSUS.equals
      */
     ARRAY.removeElement = function(needle, haystack) {
         var func, i;
         if ('undefined' === typeof needle || !haystack) return false;
-        
+
         if ('object' === typeof needle) {
             func = JSUS.equals;
         }
         else {
             func = function(a,b) {
                 return (a === b);
-            }
+            };
         }
-        
+
         for (i = 0; i < haystack.length; i++) {
             if (func(needle, haystack[i])){
                 return haystack.splice(i,1);
@@ -1543,26 +1546,28 @@ if (!JSON) {
     };
 
     /**
-     * ## ARRAY.inArray 
-     * 
+     * ## ARRAY.inArray
+     *
      * Returns TRUE if the element is contained in the array,
      * FALSE otherwise
-     * 
-     * For objects, deep equality comparison is performed 
+     *
+     * For objects, deep equality comparison is performed
      * through JSUS.equals.
-     * 
+     *
      * Alias ARRAY.in_array (deprecated)
-     * 
+     *
      * @param {mixed} needle The element to search in the array
      * @param {array} haystack The array to search in
-     * @return {Boolean} TRUE, if the element is contained in the array
-     * 
+     *
+     * @return {boolean} TRUE, if the element is contained in the array
+     *
      *  @see JSUS.equals
      */
     ARRAY.inArray = ARRAY.in_array = function(needle, haystack) {
         var func, i, len;
-        if (!haystack) return false;        
-        func = JSUS.equals, len = haystack.length;
+        if (!haystack) return false;
+        func = JSUS.equals;
+        len = haystack.length;
         for (i = 0; i < len; i++) {
             if (func.call(this, needle, haystack[i])) {
                 return true;
@@ -1574,92 +1579,95 @@ if (!JSON) {
 
     /**
      * ## ARRAY.getNGroups
-     * 
+     *
      * Returns an array of N array containing the same number of elements
      * If the length of the array and the desired number of elements per group
      * are not multiple, the last group could have less elements
-     * 
+     *
      * The original array is not modified.
-     *  
+     *
      *  @see ARRAY.getGroupsSizeN
      *  @see ARRAY.generateCombinations
      *  @see ARRAY.matchN
-     *  
+     *
      * @param {array} array The array to split in subgroups
      * @param {number} N The number of subgroups
+     *
      * @return {array} Array containing N groups
-     */ 
+     */
     ARRAY.getNGroups = function(array, N) {
         return ARRAY.getGroupsSizeN(array, Math.floor(array.length / N));
     };
 
     /**
      * ## ARRAY.getGroupsSizeN
-     * 
+     *
      * Returns an array of array containing N elements each
      * The last group could have less elements
-     * 
+     *
      * @param {array} array The array to split in subgroups
      * @param {number} N The number of elements in each subgroup
+     *
      * @return {array} Array containing groups of size N
-     * 
+     *
      * @see ARRAY.getNGroups
      * @see ARRAY.generateCombinations
      * @see ARRAY.matchN
-     */ 
+     */
     ARRAY.getGroupsSizeN = function(array, N) {
-        
+
         var copy = array.slice(0);
         var len = copy.length;
         var originalLen = copy.length;
         var result = [];
-        
+
         // Init values for the loop algorithm.
         var i, idx;
         var group = [], count = 0;
         for (i=0; i < originalLen; i++) {
-            
+
             // Get a random idx between 0 and array length.
             idx = Math.floor(Math.random()*len);
-            
+
             // Prepare the array container for the elements of a new group.
             if (count >= N) {
                 result.push(group);
                 count = 0;
                 group = [];
             }
-            
+
             // Insert element in the group.
             group.push(copy[idx]);
-            
+
             // Update.
             copy.splice(idx,1);
             len = copy.length;
             count++;
         }
-        
+
         // Add any remaining element.
         if (group.length > 0) {
             result.push(group);
         }
-        
+
         return result;
     };
 
     /**
      * ## ARRAY._latinSquare
-     * 
+     *
      * Generate a random Latin Square of size S
-     * 
-     * If N is defined, it returns "Latin Rectangle" (SxN) 
-     * 
-     * A parameter controls for self-match, i.e. whether the symbol "i" 
+     *
+     * If N is defined, it returns "Latin Rectangle" (SxN)
+     *
+     * A parameter controls for self-match, i.e. whether the symbol "i"
      * is found or not in in column "i".
-     * 
+     *
      * @api private
      * @param {number} S The number of rows
      * @param {number} Optional. N The number of columns. Defaults N = S
      * @param {boolean} Optional. If TRUE self-match is allowed. Defaults TRUE
+     *
      * @return {array} The resulting latin square (or rectangle)
      */
     ARRAY._latinSquare = function(S, N, self) {
@@ -1671,23 +1679,23 @@ if (!JSON) {
         for (var i=0; i< S; i++) {
             seq[i] = i;
         }
-        
+
         var idx = null;
-        
+
         var start = 0;
         var limit = S;
         var extracted = [];
         if (!self) {
             limit = S-1;
         }
-        
+
         for (i=0; i < N; i++) {
             do {
                 idx = JSUS.randomInt(start,limit);
             }
             while (JSUS.in_array(idx, extracted));
             extracted.push(idx);
-            
+
             if (idx == 1) {
                 latin[i] = seq.slice(idx);
                 latin[i].push(0);
@@ -1695,66 +1703,70 @@ if (!JSON) {
             else {
                 latin[i] = seq.slice(idx).concat(seq.slice(0,(idx)));
             }
-            
+
         }
-        
+
         return latin;
     };
 
     /**
      * ## ARRAY.latinSquare
-     * 
+     *
      * Generate a random Latin Square of size S
-     * 
-     * If N is defined, it returns "Latin Rectangle" (SxN) 
-     * 
+     *
+     * If N is defined, it returns "Latin Rectangle" (SxN)
+     *
      * @param {number} S The number of rows
      * @param {number} Optional. N The number of columns. Defaults N = S
+     *
      * @return {array} The resulting latin square (or rectangle)
      */
     ARRAY.latinSquare = function(S, N) {
         if (!N) N = S;
         if (!S || S < 0 || (N < 0)) return false;
         if (N > S) N = S;
-        
+
         return ARRAY._latinSquare(S, N, true);
     };
 
     /**
      * ## ARRAY.latinSquareNoSelf
-     * 
-     * Generate a random Latin Square of size Sx(S-1), where 
+     *
+     * Generate a random Latin Square of size Sx(S-1), where
      * in each column "i", the symbol "i" is not found
-     * 
+     *
      * If N < S, it returns a "Latin Rectangle" (SxN)
-     * 
+     *
      * @param {number} S The number of rows
      * @param {number} Optional. N The number of columns. Defaults N = S-1
+     *
      * @return {array} The resulting latin square (or rectangle)
      */
     ARRAY.latinSquareNoSelf = function(S, N) {
         if (!N) N = S-1;
         if (!S || S < 0 || (N < 0)) return false;
         if (N > S) N = S-1;
-        
+
         return ARRAY._latinSquare(S, N, false);
-    }
+    };
 
 
     /**
      * ## ARRAY.generateCombinations
-     * 
-     * Generates all distinct combinations of exactly r elements each 
-     *  
+     *
+     * Generates all distinct combinations of exactly r elements each
+     *
      * @param {array} array The array from which the combinations are extracted
      * @param {number} r The number of elements in each combination
+     *
      * @return {array} The total sets of combinations
-     *  
+     *
      * @see ARRAY.getGroupSizeN
      * @see ARRAY.getNGroups
      * @see ARRAY.matchN
      */
     ARRAY.generateCombinations = function(array, r) {
+        var i, j;
         function values(i, a) {
             var ret = [];
             for (var j = 0; j < i.length; j++) ret.push(a[i[j]]);
@@ -1762,37 +1774,38 @@ if (!JSON) {
         }
         var n = array.length;
         var indices = [];
-        for (var i = 0; i < r; i++) indices.push(i);
+        for (i = 0; i < r; i++) indices.push(i);
         var final = [];
-        for (var i = n - r; i < n; i++) final.push(i);
+        for (i = n - r; i < n; i++) final.push(i);
         while (!JSUS.equals(indices, final)) {
             callback(values(indices, array));
-            var i = r - 1;
+            i = r - 1;
             while (indices[i] == n - r + i) i -= 1;
             indices[i] += 1;
-            for (var j = i + 1; j < r; j++) indices[j] = indices[i] + j - i;
+            for (j = i + 1; j < r; j++) indices[j] = indices[i] + j - i;
         }
-        return values(indices, array); 
+        return values(indices, array);
     };
 
     /**
      * ## ARRAY.matchN
-     * 
+     *
      * Match each element of the array with N random others
-     * 
+     *
      * If strict is equal to true, elements cannot be matched multiple times.
-     * 
-     * *Important*: this method has a bug / feature. If the strict parameter 
+     *
+     * *Important*: this method has a bug / feature. If the strict parameter
      * is set, the last elements could remain without match, because all the
      * other have been already used. Another recombination would be able
      * to match all the elements instead.
-     * 
+     *
      * @param {array} array The array in which operate the matching
      * @param {number} N The number of matches per element
-     * @param {Boolean} strict Optional. If TRUE, matched elements cannot be
-     *   repeated. Defaults, FALSE 
-     * @return {array} result The results of the matching
-     * 
+     * @param {boolean} strict Optional. If TRUE, matched elements cannot be
+     *   repeated. Defaults, FALSE
+     *
+     * @return {array} The results of the matching
+     *
      * @see ARRAY.getGroupSizeN
      * @see ARRAY.getNGroups
      * @see ARRAY.generateCombinations
@@ -1801,9 +1814,9 @@ if (!JSON) {
         var result, i, copy, group;
         if (!array) return;
         if (!N) return array;
-        
-        result = [],
-        len = array.length,
+
+        result = [];
+        len = array.length;
         found = [];
         for (i = 0 ; i < len ; i++) {
             // Recreate the array.
@@ -1818,7 +1831,7 @@ if (!JSON) {
             // Re-add the current element.
             group.splice(0,0,array[i]);
             result.push(group);
-            
+
             // Update.
             group = [];
         }
@@ -1827,14 +1840,15 @@ if (!JSON) {
 
     /**
      * ## ARRAY.rep
-     * 
+     *
      * Appends an array to itself a number of times and return a new array
-     * 
+     *
      * The original array is not modified.
-     * 
-     * @param {array} array the array to repeat 
+     *
+     * @param {array} array the array to repeat
      * @param {number} times The number of times the array must be appended
      *   to itself
+     *
      * @return {array} A copy of the original array appended to itself
      */
     ARRAY.rep = function(array, times) {
@@ -1845,8 +1859,9 @@ if (!JSON) {
             JSUS.log('times must be greater or equal 1', 'ERR');
             return;
         }
-        
-        i = 1, result = array.slice(0);
+
+        i = 1;
+        result = array.slice(0);
         for (; i < times; i++) {
             result = result.concat(array);
         }
@@ -1855,31 +1870,31 @@ if (!JSON) {
 
     /**
      * ## ARRAY.stretch
-     * 
+     *
      * Repeats each element of the array N times
-     * 
-     * N can be specified as an integer or as an array. In the former case all 
+     *
+     * N can be specified as an integer or as an array. In the former case all
      * the elements are repeat the same number of times. In the latter, each
      * element can be repeated a custom number of times. If the length of the
      * `times` array differs from that of the array to stretch a recycle rule
      * is applied.
-     * 
+     *
      * The original array is not modified.
-     * 
+     *
      * E.g.:
-     * 
+     *
      * ```js
      *  var foo = [1,2,3];
-     * 
+     *
      *  ARRAY.stretch(foo, 2); // [1, 1, 2, 2, 3, 3]
-     * 
+     *
      *  ARRAY.stretch(foo, [1,2,3]); // [1, 2, 2, 3, 3, 3];
      *
      *  ARRAY.stretch(foo, [2,1]); // [1, 1, 2, 3, 3];
      * ```
-     * 
+     *
      * @param {array} array the array to strech
-     * @param {number|array} times The number of times each element 
+     * @param {number|array} times The number of times each element
      *   must be repeated
      * @return {array} A stretched copy of the original array
      */
@@ -1894,7 +1909,7 @@ if (!JSON) {
             }
             times = ARRAY.rep([times], array.length);
         }
-        
+
         result = [];
         for (i = 0; i < array.length; i++) {
             repeat = times[(i % times.length)];
@@ -1908,11 +1923,11 @@ if (!JSON) {
 
     /**
      * ## ARRAY.arrayIntersect
-     * 
+     *
      * Computes the intersection between two arrays
-     * 
+     *
      * Arrays can contain both primitive types and objects.
-     * 
+     *
      * @param {array} a1 The first array
      * @param {array} a2 The second array
      * @return {array} All the values of the first array that are found
@@ -1923,17 +1938,17 @@ if (!JSON) {
             return JSUS.in_array(i, a2);
         });
     };
-    
+
     /**
      * ## ARRAY.arrayDiff
-     * 
+     *
      * Performs a diff between two arrays
-     * 
+     *
      * Arrays can contain both primitive types and objects.
-     * 
+     *
      * @param {array} a1 The first array
      * @param {array} a2 The second array
-     * @return {array} All the values of the first array that are not 
+     * @return {array} All the values of the first array that are not
      *   found in the second one
      */
     ARRAY.arrayDiff = function(a1, a2) {
@@ -1944,14 +1959,15 @@ if (!JSON) {
 
     /**
      * ## ARRAY.shuffle
-     * 
+     *
      * Shuffles the elements of the array using the Fischer algorithm
-     * 
+     *
      * The original array is not modified, and a copy is returned.
-     * 
+     *
      * @param {array} shuffle The array to shuffle
+     *
      * @return {array} copy The shuffled array
-     * 
+     *
      * @see http://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle
      */
     ARRAY.shuffle = function(array) {
@@ -1970,35 +1986,37 @@ if (!JSON) {
 
     /**
      * ## ARRAY.getNRandom
-     * 
+     *
      * Select N random elements from the array and returns them
-     * 
+     *
      * @param {array} array The array from which extracts random elements
      * @paran {number} N The number of random elements to extract
+     *
      * @return {array} An new array with N elements randomly chosen
      */
     ARRAY.getNRandom = function(array, N) {
         return ARRAY.shuffle(array).slice(0,N);
-    };                           
-    
+    };
+
     /**
      * ## ARRAY.distinct
-     * 
+     *
      * Removes all duplicates entries from an array and returns a copy of it
-     * 
+     *
      * Does not modify original array.
-     * 
+     *
      * Comparison is done with `JSUS.equals`.
-     * 
+     *
      * @param {array} array The array from which eliminates duplicates
-     * @return {array} out A copy of the array without duplicates
-     * 
+     *
+     * @return {array} A copy of the array without duplicates
+     *
      * @see JSUS.equals
      */
     ARRAY.distinct = function(array) {
         var out = [];
         if (!array) return out;
-        
+
         ARRAY.each(array, function(e) {
             if (!ARRAY.in_array(e, out)) {
                 out.push(e);
@@ -2009,36 +2027,38 @@ if (!JSON) {
 
     /**
      * ## ARRAY.transpose
-     * 
+     *
      * Transposes a given 2D array.
-     * 
+     *
      * The original array is not modified, and a new copy is
      * returned.
      *
      * @param {array} array The array to transpose
+     *
      * @return {array} The Transposed Array
      */
     ARRAY.transpose = function(array) {
-        if (!array) return;  
-        
+        if (!array) return;
+
         // Calculate width and height
-        var w, h, i, j, t = []; 
+        var w, h, i, j, t = [];
         w = array.length || 0;
         h = (ARRAY.isArray(array[0])) ? array[0].length : 0;
         if (w === 0 || h === 0) return t;
-        
+
         for ( i = 0; i < h; i++) {
             t[i] = [];
-            for ( j = 0; j < w; j++) {     
+            for ( j = 0; j < w; j++) {
                 t[i][j] = array[j][i];
             }
-        } 
+        }
         return t;
     };
 
     JSUS.extend(ARRAY);
-    
+
 })('undefined' !== typeof JSUS ? JSUS : module.parent.exports.JSUS);
+
 /**
  * # DOM
  *
@@ -2067,11 +2087,10 @@ if (!JSON) {
  *
  * Only the methods which do not follow the above-mentioned syntax
  * will receive further explanation.
- * ---
  */
 (function(JSUS) {
 
-    function DOM() {};
+    function DOM() {}
 
     // ## GENERAL
 
@@ -2135,11 +2154,12 @@ if (!JSON) {
      * ```
      *
      * @param {string} string A text to transform
-     * @param {object} args Optional. An object containing string transformations
+     * @param {object} args Optional. An object containing string
+     *   transformations
      * @param {Element} root Optional. An HTML element to which append the
      *    string. Defaults, a new _span_ element
      *
-     * @return {Element} root The root element.
+     * @return {Element} The root element.
      */
     DOM.sprintf = function(string, args, root) {
 
@@ -2237,7 +2257,7 @@ if (!JSON) {
         }
 
         return root;
-    }
+    };
 
     /**
      * ### DOM.isNode
@@ -2245,6 +2265,7 @@ if (!JSON) {
      * Returns TRUE if the object is a DOM node
      *
      * @param {mixed} The variable to check
+     *
      * @return {boolean} TRUE, if the the object is a DOM node
      */
     DOM.isNode = function(o) {
@@ -2263,6 +2284,7 @@ if (!JSON) {
      * the method is defined.
      *
      * @param {mixed} The variable to check
+     *
      * @return {boolean} TRUE, if the the object is a DOM element
      */
     DOM.isElement = function(o) {
@@ -2279,7 +2301,8 @@ if (!JSON) {
      *
      * @param {Node} parent The parent node
      * @param {array} order Optional. A pre-specified order. Defaults, random
-     * @return {array} The order used to shuffle the nodes.
+     *
+     * @return {array} The order used to shuffle the nodes
      */
     DOM.shuffleNodes = function(parent, order) {
         var i, len, idOrder;
@@ -2295,12 +2318,13 @@ if (!JSON) {
                 throw new TypeError('DOM.shuffleNodes: order must array.');
             }
             if (order.length !== parent.children.length) {
-                throw new Error('DOM.shuffleNodes: order length must match ' + 
+                throw new Error('DOM.shuffleNodes: order length must match ' +
                                 'the number of children nodes.');
             }
         }
-        
-        len = parent.children.length, idOrder = [];
+
+        len = parent.children.length;
+        idOrder = [];
         if (!order) order = JSUS.sample(0,len);
         for (i = 0 ; i < len; i++) {
             idOrder.push(parent.children[order[i]].id);
@@ -2311,7 +2335,7 @@ if (!JSON) {
         for (i = 0 ; i < len; i++) {
             parent.appendChild(parent.children[idOrder[i]]);
         }
-        
+
         return idOrder;
     };
 
@@ -2319,11 +2343,12 @@ if (!JSON) {
      * ### DOM.getElement
      *
      * Creates a generic HTML element with id and attributes as specified
-     * 
+     *
      * @param {string} elem The name of the tag
      * @param {string} id Optional. The id of the tag
      * @param {object} attributes Optional. Object containing attributes for
      *   the newly created element
+     *
      * @return {HTMLElement} The newly created HTML element
      *
      * @see DOM.addAttributes2Elem
@@ -2347,6 +2372,7 @@ if (!JSON) {
      * @param {string} id Optional. The id of the tag
      * @param {object} attributes Optional. Object containing attributes for
      *   the newly created element
+     *
      * @return {HTMLElement} The newly created HTML element
      *
      * @see DOM.getElement
@@ -2369,7 +2395,7 @@ if (!JSON) {
      * @param {HTMLElement} e The element to decorate
      * @param {object} a Object containing attributes to add to the element
      *
-     * @return {HTMLElement} e The decorated element
+     * @return {HTMLElement} The decorated element
      *
      * @see DOM.addLabel
      * @see DOM.addClass
@@ -2402,16 +2428,18 @@ if (!JSON) {
 
                 // TODO: handle special cases
                 // <!--
-                //                else {
+                //else {
                 //
-                //                    // If there is no parent node, the legend cannot be created
-                //                    if (!e.parentNode) {
-                //                        node.log('Cannot add label: no parent element found', 'ERR');
-                //                        continue;
-                //                    }
+                //    // If there is no parent node,
+                //    // the legend cannot be created
+                //    if (!e.parentNode) {
+                //        node.log('Cannot add label: ' +
+                //                 'no parent element found', 'ERR');
+                //        continue;
+                //    }
                 //
-                //                    this.addLabel(e.parentNode, e, a[key]);
-                //                }
+                //    this.addLabel(e.parentNode, e, a[key]);
+                //}
                 // -->
             }
         }
@@ -2494,7 +2522,7 @@ if (!JSON) {
                 }
             }
             return id;
-        };
+        }
 
 
         return scanDocuments(prefix + '_' + JSUS.randomInt(0, 10000000));
@@ -2754,7 +2782,7 @@ if (!JSON) {
      *
      */
     DOM.addCSS = function(root, css, id, attributes) {
-        var root = root || document.head || document.body || document;
+        root = root || document.head || document.body || document;
         if (!root) return false;
 
         attributes = attributes || {};
@@ -2772,7 +2800,7 @@ if (!JSON) {
      *
      */
     DOM.addJS = function(root, js, id, attributes) {
-        var root = root || document.head || document.body || document;
+        root = root || document.head || document.body || document;
         if (!root) return false;
 
         attributes = attributes || {};
@@ -2863,7 +2891,8 @@ if (!JSON) {
      *
      * @param {HTMLElement} elem The element to style
      * @param {object} Objects containing the properties to add.
-     * @return {HTMLElement} elem The styled element
+     *
+     * @return {HTMLElement} The styled element
      */
     DOM.style = function(elem, properties) {
         var i;
@@ -2885,8 +2914,9 @@ if (!JSON) {
      *
      * @param {HTMLElement} el An HTML element
      * @param {string} c The name of a CSS class already in the element
-     * @return {HTMLElement|undefined} el The HTML element with the removed
-     *   class, or undefined input are misspecified.
+     *
+     * @return {HTMLElement|undefined} The HTML element with the removed
+     *   class, or undefined if the inputs are misspecified
      */
     DOM.removeClass = function(el, c) {
         var regexpr, o;
@@ -2905,8 +2935,9 @@ if (!JSON) {
      *
      * @param {HTMLElement} el An HTML element
      * @param {string|array} c The name/s of CSS class/es
-     * @return {HTMLElement|undefined} el The HTML element with the additional
-     *   class, or undefined input are misspecified.
+     *
+     * @return {HTMLElement|undefined} The HTML element with the additional
+     *   class, or undefined if the inputs are misspecified
      */
     DOM.addClass = function(el, c) {
         if (!el) return;
@@ -2927,13 +2958,15 @@ if (!JSON) {
      * @param {string} className The requested className
      * @param {string}  nodeName Optional. If set only elements with
      *   the specified tag name will be searched
+     *
      * @return {array} Array of elements with the requested class name
      *
      * @see https://gist.github.com/E01T/6088383
      */
     DOM.getElementsByClassName = function(document, className, nodeName) {
         var result, node, tag, seek, i, rightClass;
-        result = [], tag = nodeName || '*';
+        result = [];
+        tag = nodeName || '*';
         if (document.evaluate) {
             seek = '//'+ tag +'[@class="'+ className +'"]';
             seek = document.evaluate(seek, document, null, 0, null );
@@ -2953,13 +2986,14 @@ if (!JSON) {
     };
 
     // ## IFRAME
-    
+
     /**
      * ### DOM.getIFrameDocument
      *
      * Returns a reference to the document of an iframe object
      *
      * @param {HTMLIFrameElement} iframe The iframe object
+     *
      * @return {HTMLDocument|undefined} The document of the iframe, or
      *   undefined if not found.
      */
@@ -2976,6 +3010,7 @@ if (!JSON) {
      * Tries head, body, lastChild and the HTML element
      *
      * @param {HTMLIFrameElement} iframe The iframe object
+     *
      * @return {HTMLElement|undefined} The child, or undefined if none is found
      */
     DOM.getIFrameAnyChild = function(iframe) {
@@ -2992,7 +3027,7 @@ if (!JSON) {
     /**
      * ### DOM.disableRightClick
      *
-     * Disables the popup of the context menu by right clicking with the mouse 
+     * Disables the popup of the context menu by right clicking with the mouse
      *
      * @param {Document} Optional. A target document object. Defaults, document
      *
@@ -3008,14 +3043,14 @@ if (!JSON) {
                         return false;
                     }
                 }
-            }
+            };
         }
         else if (doc.all && !doc.getElementById) {
             doc.onmousedown = function clickIE4() {
                 if (event.button == 2) {
                     return false;
                 }
-            }
+            };
         }
         doc.oncontextmenu = new Function("return false");
     };
@@ -3023,9 +3058,9 @@ if (!JSON) {
     /**
      * ### DOM.enableRightClick
      *
-     * Enables the popup of the context menu by right clicking with the mouse 
+     * Enables the popup of the context menu by right clicking with the mouse
      *
-     * It unregisters the event handlers created by `DOM.disableRightClick` 
+     * It unregisters the event handlers created by `DOM.disableRightClick`
      *
      * @param {Document} Optional. A target document object. Defaults, document
      *
@@ -3054,12 +3089,11 @@ if (!JSON) {
  * MIT Licensed
  *
  * Collection of static functions related to the evaluation
- * of strings as javascript commands
- * ---
+ * of strings as JavaScript commands
  */
 (function(JSUS) {
 
-    function EVAL(){};
+    function EVAL() {}
 
     /**
      * ## EVAL.eval
@@ -3072,6 +3106,7 @@ if (!JSON) {
      *
      * @param {string} str The command to executes
      * @param {object} context Optional. Execution context. Defaults, `this`
+     *
      * @return {mixed} The return value of the executed commands
      *
      * @see eval
@@ -3095,24 +3130,25 @@ if (!JSON) {
             else {
                 return eval(str);
             }
-        }
+        };
         return func.call(context, str);
     };
 
     JSUS.extend(EVAL);
 
 })('undefined' !== typeof JSUS ? JSUS : module.parent.exports.JSUS);
+
 /**
- * # JSUS.OBJ
+ * # OBJ
+ *
  * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
- * Collection of static functions to manipulate javascript objects.
- * ---
+ * Collection of static functions to manipulate JavaScript objects
  */
 (function(JSUS) {
 
-    function OBJ(){};
+    function OBJ() {}
 
     var compatibility = null;
 
@@ -3139,7 +3175,8 @@ if (!JSON) {
      *
      * @param {object} o1 The first object
      * @param {object} o2 The second object
-     * @return {boolean} TRUE if the objects are deeply equal.
+     *
+     * @return {boolean} TRUE if the objects are deeply equal
      */
     OBJ.equals = function(o1, o2) {
         var type1, type2, primitives, p;
@@ -3160,7 +3197,7 @@ if (!JSON) {
         }
 
         // Check whether arguments are not objects
-        primitives = {number: '', string: '', boolean: ''}
+        primitives = {number: '', string: '', boolean: ''};
         if (type1 in primitives) {
             return o1 === o2;
         }
@@ -3181,6 +3218,7 @@ if (!JSON) {
                 case 'function':
                     if (o1[p].toString() !== o2[p].toString()) return false;
 
+                    /* falls through */
                 default:
                     if (!OBJ.equals(o1[p], o2[p])) return false;
                 }
@@ -3209,6 +3247,7 @@ if (!JSON) {
      * Does not check properties of the prototype chain.
      *
      * @param {object} o The object to check
+     *
      * @return {boolean} TRUE, if the object has no properties
      */
     OBJ.isEmpty = function(o) {
@@ -3231,6 +3270,7 @@ if (!JSON) {
      * Prototype chain properties are excluded.
      *
      * @param {object} obj The object to check
+     *
      * @return {number} The number of properties in the object
      */
     OBJ.size = OBJ.getListSize = function(obj) {
@@ -3262,6 +3302,7 @@ if (!JSON) {
      *   Defaults, FALSE
      * @param {number} level Optional. The level of recursion.
      *   Defaults, undefined
+     *
      * @return {array} The converted object
      */
     OBJ._obj2Array = function(obj, keyed, level, cur_level) {
@@ -3305,6 +3346,7 @@ if (!JSON) {
      * @param {object} obj The object to convert in array
      * @param {number} level Optional. The level of recursion. Defaults,
      *   undefined
+     *
      * @return {array} The converted object
      *
      * @see OBJ._obj2Array
@@ -3325,12 +3367,45 @@ if (!JSON) {
      * @param {object} obj The object to convert in array
      * @param {number} level Optional. The level of recursion. Defaults,
      *   undefined
+     *
      * @return {array} The converted object
      *
      * @see OBJ.obj2Array
      */
     OBJ.obj2KeyedArray = OBJ.obj2KeyArray = function(obj, level) {
         return OBJ._obj2Array(obj, true, level);
+    };
+
+    /**
+     * ## OBJ.obj2QueryString
+     *
+     * Creates a querystring with the key-value pairs of the given object.
+     *
+     * @param {object} obj The object to convert
+     *
+     * @return {string} The created querystring
+     *
+     * Kudos:
+     * @see http://stackoverflow.com/a/1714899/3347292
+     */
+    OBJ.obj2QueryString = function(obj) {
+        var str;
+        var key;
+
+        if ('object' !== typeof obj) {
+            throw new TypeError(
+                    'JSUS.objectToQueryString: obj must be object.');
+        }
+
+        str = [];
+        for (key in obj) {
+            if (obj.hasOwnProperty(key)) {
+                str.push(encodeURIComponent(key) + '=' +
+                         encodeURIComponent(obj[key]));
+            }
+        }
+
+        return '?' + str.join('&');
     };
 
     /**
@@ -3344,6 +3419,7 @@ if (!JSON) {
      *
      * @param {object} obj The object from which extract the keys
      * @param {number} level Optional. The level of recursion. Defaults 0
+     *
      * @return {array} The array containing the extracted keys
      *
      * @see Object.keys
@@ -3381,7 +3457,8 @@ if (!JSON) {
      * ```
      *
      * @param {object} obj The object to implode
-     * @return {array} result The array containig all the imploded properties
+     *
+     * @return {array} The array containing all the imploded properties
      */
     OBJ.implode = OBJ.implodeObj = function(obj) {
         var result, key, o;
@@ -3408,7 +3485,8 @@ if (!JSON) {
      * Primitive types and special values are returned as they are.
      *
      * @param {object} obj The object to clone
-     * @return {object} clone The clone of the object
+     *
+     * @return {object} The clone of the object
      */
     OBJ.clone = function(obj) {
         var clone, i, value;
@@ -3416,8 +3494,7 @@ if (!JSON) {
         if ('number' === typeof obj) return obj;
         if ('string' === typeof obj) return obj;
         if ('boolean' === typeof obj) return obj;
-        if (obj === NaN) return obj;
-        if (obj === Infinity) return obj;
+        // NaN and +-Infinity are numbers, so no check is necessary.
 
         if ('function' === typeof obj) {
             //          clone = obj;
@@ -3432,13 +3509,15 @@ if (!JSON) {
         for (i in obj) {
             // TODO: index i is being updated, so apply is called on the
             // last element, instead of the correct one.
-            //          if ('function' === typeof obj[i]) {
-            //                  value = function() { return obj[i].apply(clone, arguments); };
-            //          }
+            //if ('function' === typeof obj[i]) {
+            //    value = function() { return obj[i].apply(clone, arguments); };
+            //}
             // It is not NULL and it is an object
             if (obj[i] && 'object' === typeof obj[i]) {
                 // Is an array.
-                if (Object.prototype.toString.call(obj[i]) === '[object Array]') {
+                if (Object.prototype.toString.call(obj[i]) ===
+                    '[object Array]') {
+
                     value = obj[i].slice(0);
                 }
                 // Is an object.
@@ -3500,7 +3579,8 @@ if (!JSON) {
      *
      * @param {object} obj1 The object where the merge will take place
      * @param {object} obj2 The merging object
-     * @return {object} clone The joined object
+     *
+     * @return {object} The joined object
      *
      * @see OBJ.merge
      */
@@ -3543,7 +3623,8 @@ if (!JSON) {
      *
      * @param {object} obj1 The object where the merge will take place
      * @param {object} obj2 The merging object
-     * @return {object} clone The merged object
+     *
+     * @return {object} The merged object
      *
      * @see OBJ.join
      * @see OBJ.mergeOnKey
@@ -3565,7 +3646,9 @@ if (!JSON) {
                     // a non-object, we need to cast the
                     // type of obj1
                     if ('object' !== typeof clone[i]) {
-                        if (Object.prototype.toString.call(obj2[i]) === '[object Array]') {
+                        if (Object.prototype.toString.call(obj2[i]) ===
+                            '[object Array]') {
+
                             clone[i] = [];
                         }
                         else {
@@ -3607,7 +3690,7 @@ if (!JSON) {
      * Copies only non-overlapping properties from obj2 to obj1
      *
      * Check only if a property is defined, not its value.
-     * Original object is modified. 
+     * Original object is modified.
      *
      * @param {object} obj1 The object to which the new properties will be added
      * @param {object} obj2 The mixin-in object
@@ -3658,7 +3741,8 @@ if (!JSON) {
      * @param {object} obj2 The merging object
      * @param {string} key The name of property under which the second object
      *   will be merged
-     * @return {object} clone The merged object
+     *
+     * @return {object} The merged object
      *
      * @see OBJ.merge
      */
@@ -3691,12 +3775,13 @@ if (!JSON) {
      *
      * @param {object} o The object to dissect
      * @param {string|array} select The selection of properties to extract
-     * @return {object} out The subobject with the properties from the parent
+     *
+     * @return {object} The subobject with the properties from the parent
      *
      * @see OBJ.getNestedValue
      */
     OBJ.subobj = function(o, select) {
-        var out, i, key
+        var out, i, key;
         if (!o) return false;
         out = {};
         if (!select) return out;
@@ -3726,7 +3811,8 @@ if (!JSON) {
      *
      * @param {object} o The object to dissect
      * @param {string|array} remove The selection of properties to remove
-     * @return {object} out The subobject with the properties from the parent
+     *
+     * @return {object} The subobject with the properties from the parent
      *
      * @see OBJ.getNestedValue
      */
@@ -3762,7 +3848,8 @@ if (!JSON) {
      *
      * @param {string} str The path to the value
      * @param {mixed} value The value to set
-     * @return {object|boolean} obj The modified object, or FALSE if error
+     *
+     * @return {object|boolean} The modified object, or FALSE if error
      *   occurrs
      *
      * @see OBJ.getNestedValue
@@ -3804,6 +3891,7 @@ if (!JSON) {
      *
      * @param {string} str The path to the value
      * @param {object} obj The object from which extract the value
+     *
      * @return {mixed} The extracted value
      *
      * @see OBJ.setNestedValue
@@ -3874,6 +3962,7 @@ if (!JSON) {
      *
      * @param {string} str The path of the (nested) property
      * @param {object} obj The object to test
+     *
      * @return {boolean} TRUE, if the (nested) property exists
      */
     OBJ.hasOwnNestedProperty = function(str, obj) {
@@ -3922,6 +4011,7 @@ if (!JSON) {
      *
      * @param {object} o The object to split
      * @param {sting} key The name of the property to split
+     *
      * @return {object} A copy of the object with split values
      */
     OBJ.split = function(o, key) {
@@ -3969,6 +4059,7 @@ if (!JSON) {
      * ```
      * @param {array} keys The names of the keys to add to the object
      * @param {array} values The values to associate to the keys
+     *
      * @return {object} A new object with keys and values melted together
      */
     OBJ.melt = function(keys, values) {
@@ -3996,7 +4087,8 @@ if (!JSON) {
      * @param {number} stop Optional. The number of tries before giving up
      *   searching for a unique key name. Defaults, 1000000.
      *
-     * @return {string|undefined} The unique key name, or undefined if it was not found
+     * @return {string|undefined} The unique key name, or undefined if it was
+     *   not found
      */
     OBJ.uniqueKey = function(obj, prefixName, stop) {
         var name;
@@ -4048,7 +4140,8 @@ if (!JSON) {
      *   taken as the set of properties to augment
      */
     OBJ.augment = function(obj1, obj2, keys) {
-        var i, k, keys = keys || OBJ.keys(obj1);
+        var i, k;
+        keys = keys || OBJ.keys(obj1);
 
         for (i = 0 ; i < keys.length; i++) {
             k = keys[i];
@@ -4093,7 +4186,8 @@ if (!JSON) {
      *
      * @param {object} o1 The first object
      * @param {object} o2 The second object
-     * @return {object} clone The object aggregating the results
+     *
+     * @return {object} The object aggregating the results
      *
      */
     OBJ.pairwiseWalk = function(o1, o2, cb) {
@@ -4125,16 +4219,16 @@ if (!JSON) {
 
 /**
  * # RANDOM
+ *
  * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * Collection of static functions related to the generation of
- * pseudo-random numbers.
- * ---
+ * pseudo-random numbers
  */
 (function(JSUS) {
 
-    function RANDOM(){};
+    function RANDOM() {}
 
     /**
      * ## RANDOM.random
@@ -4144,6 +4238,7 @@ if (!JSON) {
      *
      * @param {number} a The lower limit
      * @param {number} b The upper limit
+     *
      * @return {number} A random floating point number in (a,b)
      */
     RANDOM.random = function(a, b) {
@@ -4157,7 +4252,7 @@ if (!JSON) {
             a = b;
             b = c;
         }
-        return (Math.random() * (b - a)) + a
+        return (Math.random() * (b - a)) + a;
     };
 
     /**
@@ -4167,6 +4262,7 @@ if (!JSON) {
      *
      * @param {number} a The lower limit
      * @param {number} b The upper limit
+     *
      * @return {number} A random integer in (a,b]
      *
      * @see RANDOM.random
@@ -4185,13 +4281,14 @@ if (!JSON) {
      *
      * @param {number} a The lower limit
      * @param {number} b The upper limit
+     *
      * @return {array} The randomly shuffled sequence.
      *
      * @see RANDOM.seq
      */
     RANDOM.sample = function(a, b) {
         var out;
-        out = JSUS.seq(a,b)
+        out = JSUS.seq(a,b);
         if (!out) return false;
         return JSUS.shuffle(out);
     };
@@ -4202,22 +4299,22 @@ if (!JSON) {
      * Returns a new generator of normally distributed pseudo random numbers
      *
      * The generator is independent from RANDOM.nextNormal
-     * 
-     * @return {function} An independent generator 
-     * 
+     *
+     * @return {function} An independent generator
+     *
      * @see RANDOM.nextNormal
      */
     RANDOM.getNormalGenerator = function() {
 
         return (function() {
 
-            var oldMu, oldSigma;    
-            var x2, multiplier, genReady;    
-            
+            var oldMu, oldSigma;
+            var x2, multiplier, genReady;
+
             return function normal(mu, sigma) {
-                
+
                 var x1, u1, u2, v1, v2, s;
-                
+
                 if ('number' !== typeof mu) {
                     throw new TypeError('nextNormal: mu must be number.');
                 }
@@ -4231,50 +4328,51 @@ if (!JSON) {
                     oldSigma = sigma;
                 }
 
-                if (genReady) {     
+                if (genReady) {
                     genReady = false;
                     return (sigma * x2) + mu;
                 }
-                
+
                 u1 = Math.random();
                 u2 = Math.random();
-                
+
                 // Normalize between -1 and +1.
                 v1 = (2 * u1) - 1;
-                v2 = (2 * u2) - 1; 
-                
+                v2 = (2 * u2) - 1;
+
                 s = (v1 * v1) + (v2 * v2);
-                
-                // Condition is true on average 1.27 times, 
+
+                // Condition is true on average 1.27 times,
                 // with variance equal to 0.587.
                 if (s >= 1) {
                     return normal(mu, sigma);
                 }
-                
+
                 multiplier = Math.sqrt(-2 * Math.log(s) / s);
-                
+
                 x1 = v1 * multiplier;
                 x2 = v2 * multiplier;
-                
+
                 genReady = true;
-                
+
                 return (sigma * x1) + mu;
-                
-            }
+
+            };
         })();
-    }
+    };
 
     /**
      * Generates random numbers with Normal Gaussian distribution.
      *
-     * User must specify the expected mean, and standard deviation a input 
+     * User must specify the expected mean, and standard deviation a input
      * parameters.
      *
      * Implements the Polar Method by Knuth, "The Art Of Computer
      * Programming", p. 117.
-     * 
+     *
      * @param {number} mu The mean of the distribution
      * param {number} sigma The standard deviation of the distribution
+     *
      * @return {number} A random number following a Normal Gaussian distribution
      *
      * @see RANDOM.getNormalGenerator
@@ -4286,12 +4384,13 @@ if (!JSON) {
      *
      * User must specify the expected mean, and standard deviation of the
      * underlying gaussian distribution as input parameters.
-     * 
+     *
      * @param {number} mu The mean of the gaussian distribution
      * @param {number} sigma The standard deviation of the gaussian distribution
+     *
      * @return {number} A random number following a LogNormal distribution
      *
-     * @see RANDOM.nextNormal 
+     * @see RANDOM.nextNormal
      */
     RANDOM.nextLogNormal = function(mu, sigma) {
         if ('number' !== typeof mu) {
@@ -4301,15 +4400,16 @@ if (!JSON) {
             throw new TypeError('nextLogNormal: sigma must be number.');
         }
         return Math.exp(nextNormal(mu, sigma));
-    }
+    };
 
     /**
      * Generates random numbers with Exponential distribution.
      *
      * User must specify the lambda the _rate parameter_ of the distribution.
-     * The expected mean of the distribution is equal to `Math.pow(lamba, -1)`. 
-     * 
+     * The expected mean of the distribution is equal to `Math.pow(lamba, -1)`.
+     *
      * @param {number} lambda The rate parameter
+     *
      * @return {number} A random number following an Exponential distribution
      */
     RANDOM.nextExponential = function(lambda) {
@@ -4317,19 +4417,21 @@ if (!JSON) {
             throw new TypeError('nextExponential: lambda must be number.');
         }
         if (lambda <= 0) {
-            throw new TypeError('nextExponential: lambda must be greater than 0.');
+            throw new TypeError('nextExponential: ' +
+                                'lambda must be greater than 0.');
         }
         return - Math.log(1 - Math.random()) / lambda;
-    }
-    
+    };
+
     /**
      * Generates random numbers following the Binomial distribution.
      *
      * User must specify the probability of success and the number of trials.
-     * 
+     *
      * @param {number} p The probability of success
      * @param {number} trials The number of trials
-     * @return {number} sum The sum of successes in n trials
+     *
+     * @return {number} The sum of successes in n trials
      */
     RANDOM.nextBinomial = function(p, trials) {
         var counter, sum;
@@ -4346,17 +4448,17 @@ if (!JSON) {
         if (trials < 1) {
             throw new TypeError('nextBinomial: trials must be greater than 0.');
         }
-        
+
         counter = 0;
         sum = 0;
-        
+
         while(counter < trials){
-	    if (Math.random() < p) {	
-	        sum += 1;
+            if (Math.random() < p) {
+                sum += 1;
             }
-	    counter++;
+            counter++;
         }
-	
+
         return sum;
     };
 
@@ -4391,7 +4493,7 @@ if (!JSON) {
 
         intK = Math.floor(k) + 3;
         kDiv = 1 / k;
-        
+
         alphaDiv = 1 / alpha;
 
         x = 0;
@@ -4399,20 +4501,21 @@ if (!JSON) {
             x += Math.log(Math.random());
         }
 
-        x *= - alphaDiv; 
+        x *= - alphaDiv;
 
-        tmp = Math.log(u3) * 
+        tmp = Math.log(u3) *
             (Math.pow(u1, kDiv) /
              ((Math.pow(u1, kDiv) + Math.pow(u2, 1 / (1 - k)))));
-        
+
         tmp *=  - alphaDiv;
-        
+
         return x + tmp;
-    }
+    };
 
     JSUS.extend(RANDOM);
 
 })('undefined' !== typeof JSUS ? JSUS : module.parent.exports.JSUS);
+
 /**
  * # TIME
  *
@@ -4420,82 +4523,78 @@ if (!JSON) {
  * MIT Licensed
  *
  * Collection of static functions related to the generation,
- * manipulation, and formatting of time strings in javascript
- * ---
+ * manipulation, and formatting of time strings in JavaScript
  */
 (function (JSUS) {
 
-function TIME() {};
+    function TIME() {}
 
-/**
- * ## TIME.getDate
- *
- * Returns a string representation of the current date
- * and time formatted as follows:
- *
- * dd-mm-yyyy hh:mm:ss milliseconds
- *
- * @return {string} date Formatted time string hh:mm:ss
- */
-TIME.getDate = TIME.getFullDate = function() {
-    var d = new Date();
-    var date = d.getUTCDate() + '-' + (d.getUTCMonth()+1) + '-' +
-        d.getUTCFullYear() + ' ' + d.getHours() + ':' + d.getMinutes() +
-        ':' + d.getSeconds() + ' ' + d.getMilliseconds();
+    /**
+     * ## TIME.getDate
+     *
+     * Returns a string representation of the current date
+     * and time formatted as follows:
+     *
+     * YYYY-MM-DDTHH:mm:ss.sssZ
+     *
+     * @return {string} Formatted time string YYYY-MM-DDTHH:mm:ss.sssZ
+     */
+    TIME.getDate = TIME.getFullDate = function() {
+        return new Date().toISOString();
+    };
 
-    return date;
-};
+    /**
+     * ## TIME.getTime
+     *
+     * Returns a string representation of the current time
+     * formatted as follows:
+     *
+     * hh:mm:ss
+     *
+     * @return {string} Formatted time string hh:mm:ss
+     */
+    TIME.getTime = function() {
+        var d = new Date();
+        var time = d.getHours() + ':' + d.getMinutes() + ':' + d.getSeconds();
 
-/**
- * ## TIME.getTime
- *
- * Returns a string representation of the current time
- * formatted as follows:
- *
- * hh:mm:ss
- *
- * @return {string} time Formatted time string hh:mm:ss
- */
-TIME.getTime = function() {
-    var d = new Date();
-    var time = d.getHours() + ':' + d.getMinutes() + ':' + d.getSeconds();
+        return time;
+    };
 
-    return time;
-};
+    /**
+     * ## TIME.parseMilliseconds
+     *
+     * Parses an integer number representing milliseconds,
+     * and returns an array of days, hours, minutes and seconds
+     *
+     * @param {number} ms Integer representing milliseconds
+     *
+     * @return {array} Milleconds parsed in days, hours, minutes, and seconds
+     */
+    TIME.parseMilliseconds = function (ms) {
+        if ('number' !== typeof ms) return;
 
-/**
- * ## TIME.parseMilliseconds
- *
- * Parses an integer number representing milliseconds,
- * and returns an array of days, hours, minutes and seconds
- *
- * @param {number} ms Integer representing milliseconds
- * @return {array} result Milleconds parsed in days, hours, minutes, and seconds
- */
-TIME.parseMilliseconds = function (ms) {
-    if ('number' !== typeof ms) return;
+        var result = [];
+        var x = ms / 1000;
+        result[4] = x;
+        var seconds = x % 60;
+        result[3] = Math.floor(seconds);
+        x = x / 60;
+        var minutes = x % 60;
+        result[2] = Math.floor(minutes);
+        x = x / 60;
+        var hours = x % 24;
+        result[1] = Math.floor(hours);
+        x = x / 24;
+        var days = x;
+        result[1] = Math.floor(days);
 
-    var result = [];
-    var x = ms / 1000;
-    result[4] = x;
-    var seconds = x % 60;
-    result[3] = Math.floor(seconds);
-    var x = x /60;
-    var minutes = x % 60;
-    result[2] = Math.floor(minutes);
-    var x = x / 60;
-    var hours = x % 24;
-    result[1] = Math.floor(hours);
-    var x = x / 24;
-    var days = x;
-    result[1] = Math.floor(days);
+        return result;
+    };
 
-    return result;
-};
-
-JSUS.extend(TIME);
+    JSUS.extend(TIME);
 
 })('undefined' !== typeof JSUS ? JSUS : module.parent.exports.JSUS);
+
 /**
  * # PARSE
  *
@@ -4503,11 +4602,10 @@ JSUS.extend(TIME);
  * MIT Licensed
  *
  * Collection of static functions related to parsing strings
- * ---
  */
 (function(JSUS) {
 
-    function PARSE(){};
+    function PARSE() {}
 
     /**
      * ## PARSE.stringify_prefix
@@ -4542,7 +4640,7 @@ JSUS.extend(TIME);
      * @return {string|boolean} The querystring, or a part of it, or FALSE
      *
      * Kudos:
-     * @see http://stackoverflow.com/questions/901115/how-can-i-get-query-string-values-in-javascript
+     * @see http://stackoverflow.com/q/901115/3347292
      */
     PARSE.getQueryString = function(name, referer) {
         var regex;
@@ -4553,10 +4651,10 @@ JSUS.extend(TIME);
         referer = referer || window.location.search;
         if ('undefined' === typeof name) return referer;
         name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
-        regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
+        regex = new RegExp("[\\?&]" + name + "=([^&#]*)");
         results = regex.exec(referer);
-        return results == null ? false : 
-            decodeURIComponent(results[1].replace(/\+/g, " "))
+        return results === null ? false :
+            decodeURIComponent(results[1].replace(/\+/g, " "));
     };
 
     /**
@@ -4565,12 +4663,12 @@ JSUS.extend(TIME);
      * Splits a string in tokens that users can specified as input parameter.
      * Additional options can be specified with the modifiers parameter
      *
-     * - limit: An integer that specifies the number of split items 
+     * - limit: An integer that specifies the number of split items
      *     after the split limit will not be included in the array
      *
      * @param {string} str The string to split
      * @param {array} separators Array containing the separators words
-     * @param {object} modifiers Optional. Configuration options 
+     * @param {object} modifiers Optional. Configuration options
      *   for the tokenizing
      *
      * @return {array} Tokens in which the string was split
@@ -4615,17 +4713,19 @@ JSUS.extend(TIME);
      * @see PARSE.stringify_prefix
      */
     PARSE.stringify = function(o, spaces) {
-        return JSON.stringify(o, function(key, value){
+        return JSON.stringify(o, function(key, value) {
             var type = typeof value;
             if ('function' === type) {
-                return PARSE.stringify_prefix + value.toString()
+                return PARSE.stringify_prefix + value.toString();
             }
 
             if ('undefined' === type) return PARSE.marker_und;
             if (value === null) return PARSE.marker_null;
             if ('number' === type && isNaN(value)) return PARSE.marker_nan;
-            if (value == Number.POSITIVE_INFINITY) return PARSE.marker_inf;
-            if (value == Number.NEGATIVE_INFINITY) return PARSE.marker_minus_inf;
+            if (value === Number.POSITIVE_INFINITY) return PARSE.marker_inf;
+            if (value === Number.NEGATIVE_INFINITY) {
+                return PARSE.marker_minus_inf;
+            }
 
             return value;
 
@@ -4678,12 +4778,12 @@ JSUS.extend(TIME);
     PARSE.parse = function(str) {
 
         var len_prefix = PARSE.stringify_prefix.length,
-        len_func = PARSE.marker_func.length,
-        len_null = PARSE.marker_null.length,
-        len_und = PARSE.marker_und.length,
-        len_nan = PARSE.marker_nan.length,
-        len_inf = PARSE.marker_inf.length,
-        len_inf = PARSE.marker_minus_inf.length;
+            len_func = PARSE.marker_func.length,
+            len_null = PARSE.marker_null.length,
+            len_und = PARSE.marker_und.length,
+            len_nan = PARSE.marker_nan.length,
+            len_inf = PARSE.marker_inf.length,
+            len_minus_inf = PARSE.marker_minus_inf.length;
 
 
         var o = JSON.parse(str);
@@ -4729,24 +4829,33 @@ JSUS.extend(TIME);
                 else if (value.substring(0, len_inf) === PARSE.marker_inf) {
                     return Infinity;
                 }
-                else if (value.substring(0, len_inf) === PARSE.marker_minus_inf) {
+                else if (value.substring(0, len_minus_inf) ===
+                         PARSE.marker_minus_inf) {
+
                     return -Infinity;
                 }
 
             }
             return value;
-        };
-    }
+        }
+    };
 
     JSUS.extend(PARSE);
 
 })('undefined' !== typeof JSUS ? JSUS : module.parent.exports.JSUS);
+
 /**
  * # NDDB: N-Dimensional Database
  * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * NDDB is a powerful and versatile object database for node.js and the browser.
+ *
+ * TODO: When using index.update() and the update is suppose to remove the element
+ * from view and hashes, for example becausea property is deleted. index.update()
+ * fails doing so. Should be fixed. At the moment the only solution seems to
+ * reintroduce a global index for all items and to use that to quickly lookup items
+ * in views and hashes.
  *
  * See README.md for help.
  * ---
@@ -5146,6 +5255,7 @@ JSUS.extend(TIME);
         this.filters['in'] = function(d, value, comparator) {
             if ('object' === typeof d) {
                 return function(elem) {
+                    debugger
                     var i, len;
                     len = value.length;
                     for (i = 0; i < len; i++) {
@@ -5205,7 +5315,7 @@ JSUS.extend(TIME);
             RegExp.escape = function(str) {
                 return str.replace(/([.*+?^=!:${}()|[\]\/\\])/g, '\\$1');
             };
-            
+
             regex = RegExp.escape(value);
             regex = regex.replace(/%/g, '.*').replace(/_/g, '.');
             regex = new RegExp('^' + regex + '$', sensitive);
@@ -5222,12 +5332,12 @@ JSUS.extend(TIME);
                         }
                     }
                 };
-            } 
+            }
             else if (d === '*') {
                 return function(elem) {
                     var d;
                     for (d in elem) {
-                        if ('undefined' !== typeof elem[d]) { 
+                        if ('undefined' !== typeof elem[d]) {
                             if (regex.test(elem[d])) {
                                 return elem;
                             }
@@ -5237,7 +5347,7 @@ JSUS.extend(TIME);
             }
             else {
                 return function(elem) {
-                    if ('undefined' !== typeof elem[d]) { 
+                    if ('undefined' !== typeof elem[d]) {
                         if (regex.test(elem[d])) {
                             return elem;
                         }
@@ -5246,15 +5356,15 @@ JSUS.extend(TIME);
             }
         }
 
-        // Like operator (Case Sensitive). 
+        // Like operator (Case Sensitive).
         this.filters['LIKE'] = function likeOperator(d, value, comparator) {
             return generalLike(d, value, comparator);
         };
-    
-        // Like operator (Case Insensitive). 
+
+        // Like operator (Case Insensitive).
         this.filters['iLIKE'] = function likeOperatorI(d, value, comparator) {
             return generalLike(d, value, comparator, 'i');
-        };            
+        };
 
     };
 
@@ -5570,7 +5680,7 @@ JSUS.extend(TIME);
 
         // Cloning.
         options = J.clone(options);
-        
+
         // Removing unwanted options.
         for (i in leaveOut) {
             if (leaveOut.hasOwnProperty(i)) {
@@ -6020,7 +6130,7 @@ JSUS.extend(TIME);
                 this._viewIt(o);
             };
         }
- 
+
         // Reset current indexes.
         this.resetIndexes({h: h, v: v, i: i});
 
@@ -6046,7 +6156,7 @@ JSUS.extend(TIME);
     NDDB.prototype._indexIt = function(o, dbidx, oldIdx) {
         var func, id, index, key;
         if (!o || J.isEmpty(this.__I)) return;
-        oldIdx = undefined;
+
         for (key in this.__I) {
             if (this.__I.hasOwnProperty(key)) {
                 func = this.__I[key];
@@ -6060,7 +6170,7 @@ JSUS.extend(TIME);
                         }
                     }
                 }
-                if ('undefined' !== typeof index) { 
+                if ('undefined' !== typeof index) {
                     if (!this[key]) this[key] = new NDDBIndex(key, this);
                     this[key]._add(index, dbidx);
                 }
@@ -6216,8 +6326,8 @@ JSUS.extend(TIME);
     function queryError(text, d, op, value) {
         var miss, err;
         miss = '(?)';
-        err = this._getConstrName() + '._analyzeQuery: ' + text + 
-            '. Malformed query: ' + d || miss + ' ' + op || miss + 
+        err = this._getConstrName() + '._analyzeQuery: ' + text +
+            '. Malformed query: ' + d || miss + ' ' + op || miss +
             ' ' + value || miss + '.';
         throw new Error(err);
     }
@@ -6259,7 +6369,7 @@ JSUS.extend(TIME);
             if (J.in_array(op,['><', '<>', 'in', '!in'])) {
 
                 if (!(value instanceof Array)) {
-                    errText = 'range-queries need an array as third parameter';                        
+                    errText = 'range-queries need an array as third parameter';
                     queryError.call(this, errText, d, op, value);
                 }
                 if (op === '<>' || op === '><') {
@@ -6508,11 +6618,13 @@ JSUS.extend(TIME);
      * @see NDDB.last
      */
     NDDB.prototype.limit = function(limit) {
-        limit = limit || 0;
+        var db;
+        if ('number' !== typeof limit) {
+            throw new TypeError(this._getConstrName() +
+                                '.limit: limit must be number.');
+        }
         if (limit === 0) return this.breed();
-        var db = (limit > 0) ? this.db.slice(0, limit) :
-            this.db.slice(limit);
-
+        db = (limit > 0) ? this.db.slice(0, limit) : this.db.slice(limit);
         return this.breed(db);
     };
 
@@ -6864,12 +6976,10 @@ JSUS.extend(TIME);
 
                     if ('undefined' !== typeof key) {
                         if (comparator(foreign_key, key)) {
-                            // Inject the matched obj into the
-                            // reference one
+                            // Inject the matched obj into the reference one.
                             o = J.clone(this.db[i]);
-                            o2 = (select) ?
-                                J.subobj(this.db[j], select)
-                                : this.db[j];
+                            o2 = select ?
+                                J.subobj(this.db[j], select) : this.db[j];
                             o[pos] = o2;
                             out.push(o);
                         }
@@ -8228,6 +8338,7 @@ JSUS.extend(TIME);
     , 'undefined' !== typeof JSUS ? JSUS : module.parent.exports.JSUS || require('JSUS').JSUS
     , ('object' === typeof module && 'function' === typeof require) ? module.parent.exports.store || require('shelf.js/build/shelf-fs.js').store : this.store
 );
+
 /**
  * # nodeGame: Social Experiments in the Browser
  * Copyright(c) 2014 Stefano Balietti
@@ -31705,6 +31816,11 @@ JSUS.extend(TIME);
         this.options = options || {};
         this.options.update = ('undefined' === typeof this.options.update) ?
             1000 : this.options.update;
+        this.options.stopOnDone = ('undefined' ===
+            typeof this.options.stopOnDone) ? true : this.options.stopOnDone;
+        this.options.startOnPlaying = ('undefined' ===
+            typeof this.options.startOnPlaying) ?
+            true : this.options.startOnPlaying;
 
         /**
          * ### VisualTimer.gameTimer
@@ -31982,7 +32098,7 @@ JSUS.extend(TIME);
     /**
       * ### VisualTimer.startWaiting
       *
-      * Changes the `VisualTimer` appearance to a max. wait timer
+      * Stops the timer and changes the appearance to a max. wait timer
       *
       * If options and/or options.milliseconds are undefined, the wait timer
       * will start with the current time left on the `gameTimer`. The mainBox
@@ -32017,7 +32133,7 @@ JSUS.extend(TIME);
     /**
       * ### VisualTimer.startTiming
       *
-      * Changes the `VisualTimer` appearance to a regular countdown
+      * Starts the timer and changes appearance to a regular countdown
       *
       * The mainBox will be unstriked and set active, the waitBox will be
       * hidden. All other options are forwarded directly to
@@ -32090,18 +32206,22 @@ JSUS.extend(TIME);
 
         node.on('PLAYING', function() {
             var stepObj, timer, options;
-            stepObj = node.game.getCurrentStep();
-            if (!stepObj) return;
-            timer = stepObj.timer;
-            if (timer) {
-                options = processOptions(timer, this.options);
-                that.startTiming(options);
+            if (that.options.startOnPlaying) {
+                stepObj = node.game.getCurrentStep();
+                if (!stepObj) return;
+                timer = stepObj.timer;
+                if (timer) {
+                    options = processOptions(timer, this.options);
+                    that.startTiming(options);
+                }
             }
         });
 
         node.on('REALLY_DONE', function() {
-            if (!that.gameTimer.isStopped()) {
-                that.startWaiting();
+            if (that.options.stopOnDone) {
+                if (!that.gameTimer.isStopped()) {
+                    that.startWaiting();
+                }
             }
        });
     };
