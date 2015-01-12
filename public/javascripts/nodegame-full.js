@@ -26547,9 +26547,10 @@ if (!JSON) {
         this.init(options)
     }
 
+    // ## Chat methods
 
     /**
-     * ## Chat.init
+     * ### Chat.init
      *
      * Initializes the widget
      *
@@ -28132,8 +28133,10 @@ if (!JSON) {
         //return node.window.getTextInput(id, attributes);
     };
 
+    // ## Controls methods
+
     /**
-     * ## Controls.init
+     * ### Controls.init
      *
      * Initializes the widget
      *
@@ -28169,7 +28172,7 @@ if (!JSON) {
     };
 
     /**
-     * ## Controls.append
+     * ### Controls.append
      *
      * Appends the widget to `this.bodyDiv`
      *
@@ -28204,7 +28207,7 @@ if (!JSON) {
     };
 
     /**
-     * ## Controls.populate
+     * ### Controls.populate
      *
      * Adds features to the list.
      *
@@ -28290,9 +28293,7 @@ if (!JSON) {
         return node.window.highlight(this.listRoot, code);
     };
 
-    /**
-     * ## Sub-classes
-     */
+    // ## Sub-classes
 
     /**
      * ### Slider
@@ -28326,7 +28327,7 @@ if (!JSON) {
     };
 
     /**
-     * jQuerySlider
+     * ### jQuerySlider
      */
      node.widgets.register('jQuerySliderControls', jQuerySliderControls);
 
@@ -28366,7 +28367,7 @@ if (!JSON) {
     };
 
     /**
-     * Radio
+     * ### RadioControls
      */
 
     node.widgets.register('RadioControls', RadioControls);
@@ -28698,38 +28699,45 @@ if (!JSON) {
 
     node.widgets.register('DataBar', DataBar);
 
-    // ## Defaults
-    DataBar.defaults = {};
-    DataBar.defaults.id = 'databar';
-    DataBar.defaults.fieldset = {
-        legend: 'Send DATA to players'
-    };
-
     // ## Meta-data
-    DataBar.version = '0.4';
+
+    DataBar.version = '0.4.1';
     DataBar.description =
         'Adds a input field to send DATA messages to the players';
 
-    function DataBar(options) {
+    DataBar.title = 'DataBar';
+    DataBar.className = 'databar';
+
+
+    /**
+     * ## DataBar constructor
+     *
+     * Instantiates a new DataBar object
+     */
+    function DataBar() {
         this.bar = null;
-        this.root = null;
         this.recipient = null;
     }
 
-    DataBar.prototype.append = function(root) {
+    // ## DataBar methods
+
+     /**
+     * ## DataBar.append
+     *
+     * Appends widget to `this.bodyDiv`
+     */
+    DataBar.prototype.append = function() {
 
         var sendButton, textInput, dataInput;
-
-        sendButton = W.addButton(root);
-        //W.writeln('Text');
-        textInput = W.addTextInput(root, 'data-bar-text');
-        W.addLabel(root, textInput, undefined, 'Text');
-        W.writeln('Data');
-        dataInput = W.addTextInput(root, 'data-bar-data');
-
-        this.recipient = W.addRecipientSelector(root);
-
         var that = this;
+
+        sendButton = W.addButton(this.bodyDiv);
+        textInput = W.addTextInput(this.bodyDiv, 'data-bar-text');
+        W.addLabel(this.bodyDiv, textInput, undefined, 'Text');
+        W.writeln('Data');
+        dataInput = W.addTextInput(this.bodyDiv, 'data-bar-data');
+
+        this.recipient = W.addRecipientSelector(this.bodyDiv);
 
         sendButton.onclick = function() {
             var to, data, text;
@@ -28746,9 +28754,6 @@ if (!JSON) {
         node.on('UPDATED_PLIST', function() {
             node.window.populateRecipientSelector(that.recipient, node.game.pl);
         });
-
-        return root;
-
     };
 
 })(node);
@@ -28960,8 +28965,10 @@ if (!JSON) {
         this.submit = null;
     }
 
+    // ## Feedback methods
+
     /**
-     * ## Feedback.append
+     * ### Feedback.append
      *
      * Appends widget to this.bodyDiv
      */
@@ -29052,8 +29059,10 @@ if (!JSON) {
         this.status = null;
     }
 
+    // ## GameBoard methods
+
     /**
-     * ## GameBoard.append
+     * ### GameBoard.append
      *
      * Appends widget to `this.bodyDiv` and updates the board
      *
@@ -29074,7 +29083,7 @@ if (!JSON) {
     };
 
     /**
-     * ## GameBoard.updateBoard
+     * ### GameBoard.updateBoard
      *
      * Updates the information on the game board
      *
@@ -29100,8 +29109,10 @@ if (!JSON) {
         this.status.innerHTML = 'Connected players: ' + node.game.pl.length;
     };
 
+    // ## Helper methods
+
      /**
-     * ## printLine
+     * ### printLine
      *
      * Returns a `String` describing the player passed in
      *
@@ -29204,8 +29215,11 @@ if (!JSON) {
          */
         this.summaryDiv = null;
     }
+
+    // ## GameSummary methods
+
     /**
-     * ## GameSummary.append
+     * ### GameSummary.append
      *
      * Appends the widget to `this.bodyDiv` and calls `this.writeSummary`
      *
@@ -29217,7 +29231,7 @@ if (!JSON) {
     };
 
     /**
-     * ## GameSummary.writeSummary
+     * ### GameSummary.writeSummary
      *
      * Writes a summary of the game configuration into `this.summaryDiv`
      */
@@ -29416,10 +29430,10 @@ if (!JSON) {
 
     "use strict";
 
-    node.widgets.register('LanguageSelector', LanguageSelector);
-
     var J = node.JSUS,
         game = node.game;
+
+    node.widgets.register('LanguageSelector', LanguageSelector);
 
     // ## Meta-data
 
@@ -29834,8 +29848,10 @@ if (!JSON) {
         this.init(options);
     }
 
+    // ## MoneyTalks methods
+
     /**
-     * ## MoneyTalks.init
+     * ### MoneyTalks.init
      *
      * Initializes the widget
      *
@@ -29875,7 +29891,7 @@ if (!JSON) {
     };
 
     /**
-     * ## MoneyTalks.update
+     * ### MoneyTalks.update
      *
      * Updates the contents of this.money and this.spanMoney according to amount
      */
@@ -30366,19 +30382,16 @@ if (!JSON) {
 
     var J = node.JSUS;
 
-    // ## Defaults
-
-    Requirements.defaults = {};
-    Requirements.defaults.id = 'requirements';
-    Requirements.defaults.fieldset = {
-        legend: 'Requirements'
-    };
+    node.widgets.register('Requirements', Requirements);
 
     // ## Meta-data
 
-    Requirements.version = '0.5.0';
+    Requirements.version = '0.5.1';
     Requirements.description = 'Checks a set of requirements and display the ' +
         'results';
+
+    Requirements.title = 'Requirements';
+    Requirements.className = 'requirements';
 
     // ## Dependencies
 
@@ -30395,44 +30408,132 @@ if (!JSON) {
      * @param {object} options
      */
     function Requirements(options) {
-        // The id of the widget.
-        this.id = options.id || Requirements.id;
-        // Array of all test callbacks.
+        /**
+         * ### Requirements.callbacks
+         *
+         * Array of all test callbacks
+         */
         this.callbacks = [];
-        // Number of tests still pending.
+
+        /**
+         * ### Requirements.stillChecking
+         *
+         * Number of tests still pending
+         */
         this.stillChecking = 0;
-        // If TRUE, a maximum timeout to the execution of ALL tests is set.
+
+        /**
+         * ### Requirements.withTimeout
+         *
+         * If TRUE, a maximum timeout to the execution of ALL tests is set
+         */
         this.withTimeout = options.withTimeout || true;
-        // The time in milliseconds for the timeout to expire.
+
+        /**
+         * ### Requirements.timeoutTime
+         *
+         * The time in milliseconds for the timeout to expire
+         */
         this.timeoutTime = options.timeoutTime || 10000;
-        // The id of the timeout, if created.
+
+        /**
+         * ### Requirements.timeoutId
+         *
+         * The id of the timeout, if created
+         */
         this.timeoutId = null;
 
-        // Span summarizing the status of the tests.
+        /**
+         * ### Requirements.summary
+         *
+         * Span summarizing the status of the tests
+         */
         this.summary = null;
-        // Span counting how many tests have been completed.
+
+        /**
+         * ### Requirements.summaryUpdate
+         *
+         * Span counting how many tests have been completed
+         */
         this.summaryUpdate = null;
-        // Looping dots to give the user the feeling of code execution.
+
+        /**
+         * ### Requirements.dots
+         *
+         * Looping dots to give the user the feeling of code execution
+         */
         this.dots = null;
 
-        // TRUE if at least one test has failed.
+        /**
+         * ### Requirements.hasFailed
+         *
+         * TRUE if at least one test has failed
+         */
         this.hasFailed = false;
 
-        // The outcomes of all tests.
+        /**
+         * ### Requirements.results
+         *
+         * The outcomes of all tests
+         */
         this.results = [];
 
-        // If true, the final result of the tests will be sent to the server.
+        /**
+         * ### Requirements.sayResult
+         *
+         * If true, the final result of the tests will be sent to the server
+         */
         this.sayResults = options.sayResults || false;
-        // The label of the SAY message that will be sent to the server.
+
+        /**
+         * ### Requirements.sayResultLabel
+         *
+         * The label of the SAY message that will be sent to the server
+         */
         this.sayResultsLabel = options.sayResultLabel || 'requirements';
-        // Callback to add properties to the result object to send to the
-        // server.
+
+        /**
+         * ### Requirements.addToResults
+         *
+         *  Callback to add properties to result object sent to server
+         */
         this.addToResults = options.addToResults || null;
 
-        // Callbacks to be executed at the end of all tests.
+        /**
+         * ### Requirements.onComplete
+         *
+         * Callback to be executed at the end of all tests
+         */
         this.onComplete = null;
+
+        /**
+         * ### Requirements.onSuccess
+         *
+         * Callback to be executed at the end of all tests
+         */
         this.onSuccess = null;
+
+        /**
+         * ### Requirements.onFail
+         *
+         * Callback to be executed at the end of all tests
+         */
         this.onFail = null;
+
+        /**
+         * ### Requirements.list
+         *
+         * `List` to render the results
+         *
+         * @see nodegame-server/List
+         */
+        // TODO: simplify render syntax.
+        this.list = new W.List({
+            render: {
+                pipeline: renderResult,
+                returnAt: 'first'
+            }
+        });
 
         function renderResult(o) {
             var imgPath, img, span, text;
@@ -30454,14 +30555,6 @@ if (!JSON) {
             span.appendChild(text);
             return span;
         }
-
-        // TODO: simplify render syntax.
-        this.list = new W.List({
-            render: {
-                pipeline: renderResult,
-                returnAt: 'first'
-            }
-        });
     }
 
     // ## Requirements methods
@@ -30910,8 +31003,6 @@ if (!JSON) {
         return errMsg;
     }
 
-    node.widgets.register('Requirements', Requirements);
-
 })(node);
 
 /**
@@ -30929,36 +31020,58 @@ if (!JSON) {
 
     node.widgets.register('ServerInfoDisplay', ServerInfoDisplay);
 
-    // ## Defaults
-
-    ServerInfoDisplay.defaults = {};
-    ServerInfoDisplay.defaults.id = 'serverinfodisplay';
-    ServerInfoDisplay.defaults.fieldset = {
-        legend: 'Server Info',
-        id: 'serverinfo_fieldset'
-    };
-
     // ## Meta-data
 
-    ServerInfoDisplay.version = '0.4';
+    ServerInfoDisplay.version = '0.4.1';
+    ServerInfoDisplay.description = 'Displays information about the server.'
 
-    function ServerInfoDisplay(options) {
-        this.id = options.id;
+    ServerInfoDisplay.title = 'Server Info';
+    ServerInfoDisplay.className = 'serverinfodisplay';
 
-        this.root = null;
+    /**
+     * ## ServerInfoDisplay constructor
+     *
+     * `ServerInfoDisplay` shows information about the server
+     */
+    function ServerInfoDisplay() {
+        /**
+         * ### ServerInfoDisplay.div
+         *
+         * The DIV wherein to display the information
+         */
         this.div = document.createElement('div');
+
+        /**
+         * ### ServerInfoDisplay.table
+         *
+         * The table holding the information
+         */
         this.table = null; //new node.window.Table();
+
+        /**
+         * ### ServerInfoDisplay.button
+         *
+         * The button TODO
+         */
         this.button = null;
+
     }
 
-    ServerInfoDisplay.prototype.init = function(options) {
+    // ## ServerInfoDisplay methods
+
+    /**
+     * ### ServerInfoDisplay.init
+     *
+     * Initializes the widget
+     */
+    ServerInfoDisplay.prototype.init = function() {
         var that = this;
         if (!this.div) {
             this.div = document.createElement('div');
         }
         this.div.innerHTML = 'Waiting for the reply from Server...';
         if (!this.table) {
-            this.table = new node.window.Table(options);
+            this.table = new node.window.Table();
         }
         this.table.clear(true);
         this.button = document.createElement('button');
@@ -30967,16 +31080,21 @@ if (!JSON) {
         this.button.onclick = function(){
             that.getInfo();
         };
-        this.root.appendChild(this.button);
+        this.bodyDiv.appendChild(this.button);
         this.getInfo();
     };
 
-    ServerInfoDisplay.prototype.append = function(root) {
-        this.root = root;
-        root.appendChild(this.div);
-        return root;
+    ServerInfoDisplay.prototype.append = function() {
+        this.bodyDiv.appendChild(this.div);
     };
 
+    /**
+     * ### ServerInfoDisplay.getInfo
+     *
+     * Updates current info
+     *
+     * @see ServerInfoDisplay.processInfo
+     */
     ServerInfoDisplay.prototype.getInfo = function() {
         var that = this;
         node.get('INFO', function(info) {
@@ -30985,6 +31103,11 @@ if (!JSON) {
         });
     };
 
+    /**
+     * ### ServerInfoDisplay.processInfo
+     *
+     * Processes incoming server info and displays it in `this.table`
+     */
     ServerInfoDisplay.prototype.processInfo = function(info) {
         this.table.clear(true);
         for (var key in info) {
@@ -31028,17 +31151,27 @@ if (!JSON) {
     StateBar.title = 'Change GameStage';
     StateBar.className = 'statebar';
 
-    function StateBar(options) {
-        this.id = options.id || StateBar.className;
-        this.recipient = null;
+
+    /**
+     * ## StateBar constructor
+     *
+     * `StateBar` provides a simple interface to change game stages
+     */
+    function StateBar() {
+        //this.recipient = null;
     }
 
+    /**
+     * ### StateBar.append
+     *
+     * Appends widget to `this.bodyDiv`
+     */
     StateBar.prototype.append = function() {
-        var prefix, that;
+        var prefix, that = this;
         var idButton, idStageField, idRecipientField;
         var sendButton, stageField, recipientField;
 
-        prefix = this.id + '_';
+        prefix = StateBar.className + '_';
 
         idButton = prefix + 'sendButton';
         idStageField = prefix + 'stageField';
@@ -31053,8 +31186,6 @@ if (!JSON) {
         this.bodyDiv.appendChild(recipientField);
 
         sendButton = node.window.addButton(this.bodyDiv, idButton);
-
-        that = this;
 
         //node.on('UPDATED_PLIST', function() {
         //    node.window.populateRecipientSelector(
@@ -31113,11 +31244,32 @@ if (!JSON) {
         Table: {}
     };
 
-    function StateDisplay(options) {
-        this.id = options.id;
+
+    /**
+     * ## StateDisplay constructor
+     *
+     * `StateDisplay` displays information about the state of a player
+     */
+    function StateDisplay() {
+        /**
+         * ### StateDisplay.table
+         *
+         * The `Table` which holds the information
+         *
+         * @See nodegame-window/Table
+         */
         this.table = new Table();
     }
 
+    // ## StateDisplay methods
+
+    /**
+     * ### StateDisplay.append
+     *
+     * Appends widget to `this.bodyDiv` and calls `this.updateAll`
+     *
+     * @see StateDisplay.updateAll
+     */
     StateDisplay.prototype.append = function() {
         var that, checkPlayerName;
         that = this;
@@ -31130,6 +31282,11 @@ if (!JSON) {
         this.bodyDiv.appendChild(this.table.table);
     };
 
+    /**
+     * ### StateDisplay.updateAll
+     *
+     * Updates information in `this.table`
+     */
     StateDisplay.prototype.updateAll = function() {
         var stage, stageNo, stageId, playerId, tmp, miss;
         miss = '-';
@@ -32296,7 +32453,7 @@ if (!JSON) {
  * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
- * Shows current, previous and next state.
+ * Shows current, previous and next stage.
  *
  * www.nodegame.org
  */
@@ -32313,9 +32470,9 @@ if (!JSON) {
 
     VisualStage.version = '0.2.2';
     VisualStage.description =
-        'Visually display current, previous and next state of the game.';
+        'Visually display current, previous and next stage of the game.';
 
-    VisualStage.title = 'State';
+    VisualStage.title = 'Stage';
     VisualStage.className = 'visualstage';
 
     // ## Dependencies
@@ -32328,45 +32485,47 @@ if (!JSON) {
     /**
      * ## VisualStage constructor
      *
-     * `VisualStage` displays current, previous and next state of the game
+     * `VisualStage` displays current, previous and next stage of the game
      */
     function VisualStage() {
         this.table = new Table();
     }
 
+    // ## VisualStage methods
+
     /**
-     * ## VisualStage.append
+     * ### VisualStage.append
      *
-     * Appends widget to `this.bodyDiv` and writes the state
+     * Appends widget to `this.bodyDiv` and writes the stage
      *
-     * @see VisualStage.writeState
+     * @see VisualStage.writeStage
      */
     VisualStage.prototype.append = function() {
         this.bodyDiv.appendChild(this.table.table);
-        this.writeState();
+        this.writeStage();
     };
 
     VisualStage.prototype.listeners = function() {
         var that = this;
 
         node.on('STEP_CALLBACK_EXECUTED', function() {
-            that.writeState();
+            that.writeStage();
         });
         // Game over and init?
     };
 
     /**
-     * ## VisualStage.writeState
+     * ### VisualStage.writeStage
      *
-     * Writes the current, previous and next state into `this.table`
+     * Writes the current, previous and next stage into `this.table`
      */
-    VisualStage.prototype.writeState = function() {
-        var miss, state, pr, nx, tmp;
+    VisualStage.prototype.writeStage = function() {
+        var miss, stage, pr, nx, tmp;
         var curStep, nextStep, prevStep;
         var t;
 
         miss = '-';
-        state = 'Uninitialized';
+        stage = 'Uninitialized';
         pr = miss;
         nx = miss;
 
@@ -32374,7 +32533,7 @@ if (!JSON) {
 
         if (curStep) {
             tmp = node.game.plot.getStep(curStep);
-            state = tmp ? tmp.id : miss;
+            stage = tmp ? tmp.id : miss;
 
             prevStep = node.game.plot.previous(curStep);
             if (prevStep) {
@@ -32392,7 +32551,7 @@ if (!JSON) {
         this.table.clear(true);
 
         this.table.addRow(['Previous: ', pr]);
-        this.table.addRow(['Current: ', state]);
+        this.table.addRow(['Current: ', stage]);
         this.table.addRow(['Next: ', nx]);
 
         t = this.table.selexec('y', '=', 0);
