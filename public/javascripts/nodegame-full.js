@@ -26451,7 +26451,7 @@ if (!JSON) {
 
     };
 
-     /**
+    /**
      * ## Chat constructor
      *
      * `Chat` is a simple configurable chat
@@ -29018,43 +29018,52 @@ if (!JSON) {
 
     "use strict";
 
-    node.widgets.register('GameBoard', GameBoard);
-
     var PlayerList = node.PlayerList;
 
-    // ## Defaults
-
-    GameBoard.defaults = {};
-    GameBoard.defaults.id = 'gboard';
-    GameBoard.defaults.fieldset = {
-        legend: 'Game Board'
-    };
+    node.widgets.register('GameBoard', GameBoard);
 
     // ## Meta-data
 
-    GameBoard.version = '0.4.0';
+    GameBoard.version = '0.4.1';
     GameBoard.description = 'Offer a visual representation of the state of ' +
                             'all players in the game.';
 
+    GameBoard.title = 'Game Board';
+    GameBoard.className = 'gameboard';
+
+    /**
+     * ## GameBoard constructor
+     *
+     * `GameBoard` shows the currently connected players
+     */
     function GameBoard(options) {
-
-        this.id = options.id || GameBoard.defaults.id;
-        this.status_id = this.id + '_statusbar';
-
+        /**
+         * ### GameBoard.board
+         *
+         * The DIV wherein to display the players
+         */
         this.board = null;
-        this.status = null;
-        this.root = null;
 
+        /**
+         * ### GameBoard.status
+         *
+         * The DIV wherein to display the status of the game board
+         */
+        this.status = null;
     }
 
-    GameBoard.prototype.append = function(root) {
-        this.root = root;
-        this.status = node.window.addDiv(root, this.status_id);
-        this.board = node.window.addDiv(root, this.id);
+    /**
+     * ## GameBoard.append
+     *
+     * Appends widget to `this.bodyDiv` and updates the board
+     *
+     * @see GameBoard.updateBoard
+     */
+    GameBoard.prototype.append = function() {
+        this.status = node.window.addDiv(this.bodyDiv, 'gboard_status');
+        this.board = node.window.addDiv(this.bodyDiv, 'gboard');
 
         this.updateBoard(node.game.pl);
-
-        return root;
     };
 
     GameBoard.prototype.listeners = function() {
@@ -29062,10 +29071,49 @@ if (!JSON) {
         node.on('UPDATED_PLIST', function() {
             that.updateBoard(node.game.pl);
         });
-
     };
 
-    GameBoard.prototype.printLine = function(p) {
+    /**
+     * ## GameBoard.updateBoard
+     *
+     * Updates the information on the game board
+     *
+     * @see printLine
+     */
+    GameBoard.prototype.updateBoard = function(pl) {
+        var player, separator;
+        var that = this;
+
+        this.status.innerHTML = 'Updating...';
+
+        if (pl.size()) {
+            that.board.innerHTML = '';
+            pl.forEach( function(p) {
+                player = printLine(p);
+
+                W.write(player, that.board);
+
+                separator = printSeparator();
+                W.write(separator, that.board);
+            });
+        }
+        this.status.innerHTML = 'Connected players: ' + node.game.pl.length;
+    };
+
+     /**
+     * ## printLine
+     *
+     * Returns a `String` describing the player passed in
+     *
+     * @param {Player} `p`. Player object which will be passed in by a call to
+     * `node.game.pl.forEach`.
+     *
+     * @return {String} A string describing the `Player` `p`.
+     *
+     * @see GameBoard.updateBoard
+     * @see nodegame-client/Player
+     */
+    function printLine(p) {
 
         var line, levels, level;
         levels = node.constants.stageLevels;
@@ -29110,34 +29158,11 @@ if (!JSON) {
         }
 
         return line + '(' + level + ')';
-    };
+    }
 
-    GameBoard.prototype.printSeparator = function(p) {
+    function printSeparator() {
         return W.getElement('hr', null, {style: 'color: #CCC;'});
-    };
-
-
-    GameBoard.prototype.updateBoard = function(pl) {
-        var player, separator;
-        var that = this;
-
-        this.status.innerHTML = 'Updating...';
-
-        if (pl.size()) {
-            that.board.innerHTML = '';
-            pl.forEach( function(p) {
-                player = that.printLine(p);
-
-                W.write(player, that.board);
-
-                separator = that.printSeparator(p);
-                W.write(separator, that.board);
-            });
-        }
-
-
-        this.status.innerHTML = 'Connected players: ' + node.game.pl.length;
-    };
+    }
 
 })(node);
 
@@ -29156,29 +29181,46 @@ if (!JSON) {
 
     node.widgets.register('GameSummary', GameSummary);
 
-    // ## Defaults
-
-    GameSummary.defaults = {};
-    GameSummary.defaults.id = 'gamesummary';
-    GameSummary.defaults.fieldset = { legend: 'Game Summary' };
-
     // ## Meta-data
 
-    GameSummary.version = '0.3';
+    GameSummary.version = '0.3.1';
     GameSummary.description =
         'Show the general configuration options of the game.';
 
-    function GameSummary(options) {
+    GameSummary.title = 'Game Summary';
+    GameSummary.className = 'gamesummary';
+
+
+    /**
+     * ## GameSummary constructor
+     *
+     * `GameSummary` shows the configuration options of the game in a box
+     */
+    function GameSummary() {
+        /**
+         * ### GameSummary.summaryDiv
+         *
+         * The DIV in which to display the information
+         */
         this.summaryDiv = null;
     }
-
-    GameSummary.prototype.append = function(root) {
-        this.root = root;
-        this.summaryDiv = node.window.addDiv(root);
+    /**
+     * ## GameSummary.append
+     *
+     * Appends the widget to `this.bodyDiv` and calls `this.writeSummary`
+     *
+     * @see GameSummary.writeSummary
+     */
+    GameSummary.prototype.append = function() {
+        this.summaryDiv = node.window.addDiv(this.bodyDiv);
         this.writeSummary();
-        return root;
     };
 
+    /**
+     * ## GameSummary.writeSummary
+     *
+     * Writes a summary of the game configuration into `this.summaryDiv`
+     */
     GameSummary.prototype.writeSummary = function(idState, idSummary) {
         var gName = document.createTextNode('Name: ' + node.game.metadata.name),
         gDescr = document.createTextNode(
@@ -29194,7 +29236,7 @@ if (!JSON) {
         this.summaryDiv.appendChild(document.createElement('br'));
         this.summaryDiv.appendChild(gMaxP);
 
-        node.window.addDiv(this.root, this.summaryDiv, idSummary);
+        node.window.addDiv(this.bodyDiv, this.summaryDiv, idSummary);
     };
 
 })(node);
@@ -32250,7 +32292,7 @@ if (!JSON) {
 })(node);
 
 /**
- * # VisualState
+ * # VisualStage
  * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
@@ -32262,50 +32304,63 @@ if (!JSON) {
 
     "use strict";
 
-    node.widgets.register('VisualState', VisualState);
+    var JSUS = node.JSUS;
+    var Table = node.window.Table;
 
-    var JSUS = node.JSUS,
-    Table = node.window.Table;
+    node.widgets.register('VisualStage', VisualStage);
 
     // ## Meta-data
 
-    VisualState.version = '0.2.1';
-    VisualState.description =
+    VisualStage.version = '0.2.2';
+    VisualStage.description =
         'Visually display current, previous and next state of the game.';
 
-    VisualState.title = 'State';
-    VisualState.className = 'visualstate';
+    VisualStage.title = 'State';
+    VisualStage.className = 'visualstage';
 
     // ## Dependencies
 
-    VisualState.dependencies = {
+    VisualStage.dependencies = {
         JSUS: {},
         Table: {}
     };
 
-    function VisualState(options) {
-        this.id = options.id;
+    /**
+     * ## VisualStage constructor
+     *
+     * `VisualStage` displays current, previous and next state of the game
+     */
+    function VisualStage() {
         this.table = new Table();
     }
 
-    VisualState.prototype.append = function() {
-        var that = this;
-        var PREF = this.id + '_';
+    /**
+     * ## VisualStage.append
+     *
+     * Appends widget to `this.bodyDiv` and writes the state
+     *
+     * @see VisualStage.writeState
+     */
+    VisualStage.prototype.append = function() {
         this.bodyDiv.appendChild(this.table.table);
         this.writeState();
     };
 
-    VisualState.prototype.listeners = function() {
+    VisualStage.prototype.listeners = function() {
         var that = this;
 
         node.on('STEP_CALLBACK_EXECUTED', function() {
             that.writeState();
         });
-
         // Game over and init?
     };
 
-    VisualState.prototype.writeState = function() {
+    /**
+     * ## VisualStage.writeState
+     *
+     * Writes the current, previous and next state into `this.table`
+     */
+    VisualStage.prototype.writeState = function() {
         var miss, state, pr, nx, tmp;
         var curStep, nextStep, prevStep;
         var t;
