@@ -2239,6 +2239,114 @@ if (!JSON) {
         return root;
     }
 
+    DOM.sprintf = function(string, args, root) {
+
+        var text, textNode, span, idx_start, idx_finish, idx_replace, idxs;
+        var spans, key, i, returnElement;
+
+        // If no formatting arguments are provided, just create a string
+        // and inserted into a span tag. If a root element is provided, add it.
+        if (!args) {
+            returnElement = document.createElement('span');
+            returnElement.appendChild(document.createTextNode(string));
+            return root ? root.appendChild(returnElement) : returnElement;
+        }
+
+        root = root || document.createElement('span');
+        spans = {}, strongs = {}, emphs = {};
+
+        // Transform arguments before inserting them.
+        for (key in args) {
+            if (args.hasOwnProperty(key)) {
+
+                // Pattern not found.
+                if (idx_start === -1) continue;
+
+                switch(key.charAt(0)) {
+
+                case '%': // Span/Strong/Emph .
+
+                    idx_start = string.indexOf(key);
+                    idx_replace = idx_start + key.length;
+                    idx_finish = string.indexOf(key, idx_replace);
+
+                    if (idx_finish === -1) {
+                        JSUS.log('Error. Could not find closing key: ' + key);
+                        continue;
+                    }
+
+                    // Can be strong, emph or a generic span.          
+                    spans[idx_start] = key;                    
+
+                    break;
+
+                case '@': // Replace and sanitize.
+                    string = string.replace(key, escape(args[key]));
+                    break;
+
+                case '!': // Replace and not sanitize.
+                    string = string.replace(key, args[key]);
+                    break;
+
+                default:
+                    JSUS.log('Identifier not in [!,@,%]: ' + key[0]);
+
+                }
+            }
+        }
+
+        // No span to creates.
+        if (!JSUS.size(spans)) {
+            return root.appendChild(document.createTextNode(string));
+        }
+
+        // Re-assamble the string.
+
+        idxs = JSUS.keys(spans).sort(function(a, b){ return a - b; });
+        idx_finish = 0;
+        for (i = 0; i < idxs.length; i++) {
+
+            // Add span.
+            key = spans[idxs[i]];
+            idx_start = string.indexOf(key);
+
+            // Add fragments of string.
+            if (idx_finish !== idx_start-1) {
+                root.appendChild(document.createTextNode(
+                    string.substring(idx_finish, idx_start)));
+            }
+
+            idx_replace = idx_start + key.length;
+            idx_finish = string.indexOf(key, idx_replace);
+
+            if (key === '%strong') {
+                span = document.createElement('strong');
+            }
+            else if  (key === '%em') {
+                span = document.createElement('em');
+            }
+            else {
+                span = JSUS.getElement('span', null, args[key]);
+            }
+
+            text = string.substring(idx_replace, idx_finish);
+
+            span.appendChild(document.createTextNode(text));
+
+            root.appendChild(span);
+            idx_finish = idx_finish + key.length;
+        }
+
+        // Add the final part of the string.
+        if (idx_finish !== string.length) {
+            root.appendChild(document.createTextNode(
+                string.substring(idx_finish)));
+        }
+
+        return root;
+    };
+
+
     /**
      * ### DOM.isNode
      *
@@ -20709,7 +20817,7 @@ JSUS.extend(TIME);
         });
 
         /**
-         * ## NODEGAME_GAMECMD: pause
+         * ## NODEGAME_GAMECOMMAND: pause
          *
          */
         this.events.ng.on(CMD + gcommands.pause, function(options) {
