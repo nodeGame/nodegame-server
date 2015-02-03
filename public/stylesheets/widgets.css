@@ -81,7 +81,7 @@
 /* Visual State */
 
 
-.visualstate {
+.visualstage {
     float: left;
     min-width: 200px;
     width: auto;
@@ -101,18 +101,18 @@
 
 /* Money Talks */
 
-fieldset#moneytalks_fieldset {
+.moneytalks {
     float: right;
     width: auto;
     min-width: 100px;
 }
 
-fieldset#moneytalks_fieldset span#moneytalks_money {
+.moneytalks > .panel-body > span.moneytalksmoney {
     font-size: 40px;
     text-align: center;
 }
 
-fieldset#moneytalks_fieldset span#moneytalks_currency {
+.moneytalks > .panel-body > span.moneytalkscurrency {
     font-size: 12px;
     text-align: center;
 }
@@ -120,7 +120,7 @@ fieldset#moneytalks_fieldset span#moneytalks_currency {
 /* Chat */
 
 
-#chat_chat {
+.chat {
     overflow-y: scroll;
     height: 200px;
     width: 450px;
@@ -128,7 +128,7 @@ fieldset#moneytalks_fieldset span#moneytalks_currency {
     padding: 5px;
 }
 
-#chat_textarea {
+.chat > .panel-body > textarea {
     height: 100px;
     width: 400px;
 }
@@ -138,8 +138,7 @@ fieldset#moneytalks_fieldset span#moneytalks_currency {
 }
 
 /* Feedback */
-
-fieldset#feedback_fieldset textarea {
+.feedback > .panel-body > textarea {
     padding: 5px;
     font-size: 16px;
     width: 98%;
