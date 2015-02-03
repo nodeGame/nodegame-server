@@ -31,6 +31,9 @@
         <a href="#pagemanager.addgame">PageManager.addGame</a>
       </div>
       <div class="heading h3">
+        <a href="#pagemanager.createalias">PageManager.createAlias</a>
+      </div>
+      <div class="heading h3">
         <a href="#pagemanager.inpublic">PageManager.inPublic</a>
       </div>
       <div class="heading h3">
@@ -160,6 +163,53 @@ MIT Licensed</p>
         <span class="nx">cacheContext</span><span class="o">:</span> <span class="p">{},</span>
         <span class="nx">contextCallbacks</span><span class="o">:</span> <span class="p">{}</span>
     <span class="p">};</span>
+<span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="pagemanager.createalias">
+  <h3>
+    <a href="#pagemanager.createalias" name="pagemanager.createalias" class="pilcrow">&#182;</a>
+    PageManager.createAlias
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Creates an alias for a cached game.</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">alias</span>
+      <span class="dox_type">string</span>
+      <span>The name of the alias</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">gameName</span>
+      <span class="dox_type">string</span>
+      <span>The name of the game</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">PageManager</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">createAlias</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">alias</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">alias</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;PageManager.createAlias: alias must be string.&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">gameName</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;PageManager.createAlias: gameName must be string.&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">games</span><span class="p">[</span><span class="nx">gameName</span><span class="p">])</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;PageManager.createAlias: &#39;</span> <span class="o">+</span>
+                        <span class="s1">&#39;game not found: &#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="nx">games</span><span class="p">[</span><span class="nx">alias</span><span class="p">]</span> <span class="o">=</span> <span class="nx">games</span><span class="p">[</span><span class="nx">gameName</span><span class="p">];</span>
 <span class="p">};</span>
 
 

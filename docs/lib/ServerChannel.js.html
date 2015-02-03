@@ -72,6 +72,9 @@
       <div class="heading h3">
         <a href="#serverchannel.bots">ServerChannel.bots</a>
       </div>
+      <div class="heading h3">
+        <a href="#serverchannel.phantoms">ServerChannel.phantoms</a>
+      </div>
       <div class="heading h2">
         <a href="#serverchannel%20methods">ServerChannel methods</a>
       </div>
@@ -640,7 +643,7 @@ game rooms with a default name.</p>
 </div>
 
   </div>
-  <div class="body"><p>node instances of bots inside the channel</p>
+  <div class="body"><p>node instances of bots inside the channel, indexed by Client ID</p>
   </div>
 </div>
         </td>
@@ -652,9 +655,31 @@ game rooms with a default name.</p>
         </td>
       </tr>
       <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="serverchannel.phantoms">
+  <h3>
+    <a href="#serverchannel.phantoms" name="serverchannel.phantoms" class="pilcrow">&#182;</a>
+    ServerChannel.phantoms
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Spawn phantomjs processes, indexed by PID</p>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">this</span><span class="p">.</span><span class="nx">phantoms</span> <span class="o">=</span> <span class="p">{};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-20" id="section-20">&#182;</a>
+  <a class="pilcrow" href="#section-21" id="section-21">&#182;</a>
 </div>
 <p>Creating the AdminServer and PlayerServer.</p>
         </td>
@@ -725,7 +750,7 @@ game rooms with a default name.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-23" id="section-23">&#182;</a>
+  <a class="pilcrow" href="#section-24" id="section-24">&#182;</a>
 </div>
 <p>Enforce a name.</p>
         </td>
@@ -740,7 +765,7 @@ game rooms with a default name.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-24" id="section-24">&#182;</a>
+  <a class="pilcrow" href="#section-25" id="section-25">&#182;</a>
 </div>
 <p>Actually creates the servers.</p>
         </td>
@@ -755,7 +780,7 @@ game rooms with a default name.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-25" id="section-25">&#182;</a>
+  <a class="pilcrow" href="#section-26" id="section-26">&#182;</a>
 </div>
 <p>The two servers are aware of each other.</p>
         </td>
@@ -862,7 +887,7 @@ the conf parameter.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-28" id="section-28">&#182;</a>
+  <a class="pilcrow" href="#section-29" id="section-29">&#182;</a>
 </div>
 <p>Checking if the limit in the number of game rooms has been hit.</p>
         </td>
@@ -885,7 +910,7 @@ the conf parameter.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-29" id="section-29">&#182;</a>
+  <a class="pilcrow" href="#section-30" id="section-30">&#182;</a>
 </div>
 <p>Generate default name if none given:</p>
         </td>
@@ -898,7 +923,7 @@ the conf parameter.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-30" id="section-30">&#182;</a>
+  <a class="pilcrow" href="#section-31" id="section-31">&#182;</a>
 </div>
 <p>Try 'room1', 'room2', ..., 'room999':</p>
         </td>
@@ -916,7 +941,7 @@ the conf parameter.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-31" id="section-31">&#182;</a>
+  <a class="pilcrow" href="#section-32" id="section-32">&#182;</a>
 </div>
 <p>Check for name availibility:</p>
         </td>
@@ -933,7 +958,7 @@ the conf parameter.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-32" id="section-32">&#182;</a>
+  <a class="pilcrow" href="#section-33" id="section-33">&#182;</a>
 </div>
 <p>Check for parent existence:</p>
         </td>
@@ -955,7 +980,7 @@ the conf parameter.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-33" id="section-33">&#182;</a>
+  <a class="pilcrow" href="#section-34" id="section-34">&#182;</a>
 </div>
 <p>Adding a reference to this channel.</p>
         </td>
@@ -969,7 +994,7 @@ the conf parameter.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-34" id="section-34">&#182;</a>
+  <a class="pilcrow" href="#section-35" id="section-35">&#182;</a>
 </div>
 <p>Construct room (the players will be moved into it explicitly):</p>
         </td>
@@ -983,7 +1008,7 @@ the conf parameter.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-35" id="section-35">&#182;</a>
+  <a class="pilcrow" href="#section-36" id="section-36">&#182;</a>
 </div>
 <p>Setting group = name if none is defined.</p>
         </td>
@@ -1000,7 +1025,7 @@ the conf parameter.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-36" id="section-36">&#182;</a>
+  <a class="pilcrow" href="#section-37" id="section-37">&#182;</a>
 </div>
 <p>Add to parent:</p>
         </td>
@@ -1016,7 +1041,7 @@ the conf parameter.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-37" id="section-37">&#182;</a>
+  <a class="pilcrow" href="#section-38" id="section-38">&#182;</a>
 </div>
 <p>Register room:</p>
         </td>
@@ -1030,7 +1055,7 @@ the conf parameter.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-38" id="section-38">&#182;</a>
+  <a class="pilcrow" href="#section-39" id="section-39">&#182;</a>
 </div>
 <p>Move players into the room:</p>
         </td>
@@ -1115,7 +1140,7 @@ the conf parameter.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-40" id="section-40">&#182;</a>
+  <a class="pilcrow" href="#section-41" id="section-41">&#182;</a>
 </div>
 <p>Adding a reference to this channel.</p>
         </td>
@@ -1129,7 +1154,7 @@ the conf parameter.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-41" id="section-41">&#182;</a>
+  <a class="pilcrow" href="#section-42" id="section-42">&#182;</a>
 </div>
 <p>Construct room (the players will be moved into it explicitly):</p>
         </td>
@@ -1143,7 +1168,7 @@ the conf parameter.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-42" id="section-42">&#182;</a>
+  <a class="pilcrow" href="#section-43" id="section-43">&#182;</a>
 </div>
 <p>Register room:</p>
         </td>
@@ -1236,7 +1261,7 @@ no parent. Default: FALSE</li>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-44" id="section-44">&#182;</a>
+  <a class="pilcrow" href="#section-45" id="section-45">&#182;</a>
 </div>
 <p>Get parameters:</p>
         </td>
@@ -1259,7 +1284,7 @@ no parent. Default: FALSE</li>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-45" id="section-45">&#182;</a>
+  <a class="pilcrow" href="#section-46" id="section-46">&#182;</a>
 </div>
 <p>Check whether the game in the room is still running:
 TODO: test this</p>
@@ -1278,7 +1303,7 @@ TODO: test this</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-46" id="section-46">&#182;</a>
+  <a class="pilcrow" href="#section-47" id="section-47">&#182;</a>
 </div>
 <p>Find out where to move the remaining players:</p>
         </td>
@@ -1291,7 +1316,7 @@ TODO: test this</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-47" id="section-47">&#182;</a>
+  <a class="pilcrow" href="#section-48" id="section-48">&#182;</a>
 </div>
 <p>TODO: Check whether there are any <em>players</em> (non-admins) left</p>
         </td>
@@ -1310,7 +1335,7 @@ TODO: test this</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-48" id="section-48">&#182;</a>
+  <a class="pilcrow" href="#section-49" id="section-49">&#182;</a>
 </div>
 <p>Move players to parent or waiting room:</p>
         </td>
@@ -1338,7 +1363,7 @@ TODO: test this</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-49" id="section-49">&#182;</a>
+  <a class="pilcrow" href="#section-50" id="section-50">&#182;</a>
 </div>
 <p>Move players into substitute room and remove admins:</p>
         </td>
@@ -1353,7 +1378,7 @@ TODO: test this</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-50" id="section-50">&#182;</a>
+  <a class="pilcrow" href="#section-51" id="section-51">&#182;</a>
 </div>
 <p>Move player:</p>
         </td>
@@ -1368,7 +1393,7 @@ TODO: test this</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-51" id="section-51">&#182;</a>
+  <a class="pilcrow" href="#section-52" id="section-52">&#182;</a>
 </div>
 <p>Disconnect admin:
 TODO: test this</p>
@@ -1388,7 +1413,7 @@ TODO: test this</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-52" id="section-52">&#182;</a>
+  <a class="pilcrow" href="#section-53" id="section-53">&#182;</a>
 </div>
 <p>Remove from parent's list of children:</p>
         </td>
@@ -1408,7 +1433,7 @@ TODO: test this</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-53" id="section-53">&#182;</a>
+  <a class="pilcrow" href="#section-54" id="section-54">&#182;</a>
 </div>
 <p>Give orphan rooms to their grandparent:</p>
         </td>
@@ -1424,7 +1449,7 @@ TODO: test this</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-54" id="section-54">&#182;</a>
+  <a class="pilcrow" href="#section-55" id="section-55">&#182;</a>
 </div>
 <p>Tell child:</p>
         </td>
@@ -1438,7 +1463,7 @@ TODO: test this</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-55" id="section-55">&#182;</a>
+  <a class="pilcrow" href="#section-56" id="section-56">&#182;</a>
 </div>
 <p>Tell parent:</p>
         </td>
@@ -1456,7 +1481,7 @@ TODO: test this</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-56" id="section-56">&#182;</a>
+  <a class="pilcrow" href="#section-57" id="section-57">&#182;</a>
 </div>
 <p>Remove room references.</p>
         </td>
@@ -1522,7 +1547,7 @@ Updates the ChannelRegistry.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-58" id="section-58">&#182;</a>
+  <a class="pilcrow" href="#section-59" id="section-59">&#182;</a>
 </div>
 <p>Check for existence of fromRoom:</p>
         </td>
@@ -1539,7 +1564,7 @@ Updates the ChannelRegistry.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-59" id="section-59">&#182;</a>
+  <a class="pilcrow" href="#section-60" id="section-60">&#182;</a>
 </div>
 <p>Check for existence of toRoom:</p>
         </td>
@@ -1556,7 +1581,7 @@ Updates the ChannelRegistry.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-60" id="section-60">&#182;</a>
+  <a class="pilcrow" href="#section-61" id="section-61">&#182;</a>
 </div>
 <p>Delete player from old room:</p>
         </td>
@@ -1577,7 +1602,7 @@ Updates the ChannelRegistry.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-61" id="section-61">&#182;</a>
+  <a class="pilcrow" href="#section-62" id="section-62">&#182;</a>
 </div>
 <p>Add player to new room:</p>
         </td>
@@ -1592,7 +1617,7 @@ Updates the ChannelRegistry.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-62" id="section-62">&#182;</a>
+  <a class="pilcrow" href="#section-63" id="section-63">&#182;</a>
 </div>
 <p>Update ChannelRegistry:</p>
         </td>
@@ -1606,7 +1631,7 @@ Updates the ChannelRegistry.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-63" id="section-63">&#182;</a>
+  <a class="pilcrow" href="#section-64" id="section-64">&#182;</a>
 </div>
 <p>Send updated PLISTs to all involved players.
 It is important that the following code executes <em>after</em> the player has
@@ -1630,7 +1655,7 @@ been registered in the new room.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-64" id="section-64">&#182;</a>
+  <a class="pilcrow" href="#section-65" id="section-65">&#182;</a>
 </div>
 <p>Notify all the  players that a new one just connected</p>
         </td>
@@ -1645,7 +1670,7 @@ been registered in the new room.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-65" id="section-65">&#182;</a>
+  <a class="pilcrow" href="#section-66" id="section-66">&#182;</a>
 </div>
 <p>Send the list of connected players to the new player</p>
         </td>
@@ -1666,7 +1691,7 @@ been registered in the new room.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-66" id="section-66">&#182;</a>
+  <a class="pilcrow" href="#section-67" id="section-67">&#182;</a>
 </div>
 <p>"Disconnect" moving player from old room</p>
         </td>
@@ -1754,7 +1779,7 @@ first room, or reconnecting players in their last room.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-68" id="section-68">&#182;</a>
+  <a class="pilcrow" href="#section-69" id="section-69">&#182;</a>
 </div>
 <p>Player must not be found already in any room.</p>
         </td>
@@ -1773,7 +1798,7 @@ first room, or reconnecting players in their last room.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-69" id="section-69">&#182;</a>
+  <a class="pilcrow" href="#section-70" id="section-70">&#182;</a>
 </div>
 <p>Add player to room.</p>
         </td>
@@ -1787,7 +1812,7 @@ first room, or reconnecting players in their last room.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-70" id="section-70">&#182;</a>
+  <a class="pilcrow" href="#section-71" id="section-71">&#182;</a>
 </div>
 <p>Adds a new room in the room stack in Channel Registry unless the client
 is reconnecting, in which case the new room is the same as the old one.</p>
@@ -1981,7 +2006,7 @@ Optional. Name of the treatment. Default: room.treatmentName</li>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-74" id="section-74">&#182;</a>
+  <a class="pilcrow" href="#section-75" id="section-75">&#182;</a>
 </div>
 <p>Check inputs.</p>
         </td>
@@ -2038,7 +2063,7 @@ Optional. Name of the treatment. Default: room.treatmentName</li>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-75" id="section-75">&#182;</a>
+  <a class="pilcrow" href="#section-76" id="section-76">&#182;</a>
 </div>
 <p>Create the bot.</p>
         </td>
@@ -2074,7 +2099,7 @@ Optional. Name of the treatment. Default: room.treatmentName</li>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-76" id="section-76">&#182;</a>
+  <a class="pilcrow" href="#section-77" id="section-77">&#182;</a>
 </div>
 <p>If not given, look up the path of the given type.</p>
         </td>
@@ -2087,7 +2112,7 @@ Optional. Name of the treatment. Default: room.treatmentName</li>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-77" id="section-77">&#182;</a>
+  <a class="pilcrow" href="#section-78" id="section-78">&#182;</a>
 </div>
 <p>Prepend the path to the game directory.</p>
         </td>
@@ -2109,7 +2134,7 @@ Optional. Name of the treatment. Default: room.treatmentName</li>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-78" id="section-78">&#182;</a>
+  <a class="pilcrow" href="#section-79" id="section-79">&#182;</a>
 </div>
 <p>Require bot.</p>
         </td>
@@ -2128,7 +2153,7 @@ Optional. Name of the treatment. Default: room.treatmentName</li>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-79" id="section-79">&#182;</a>
+  <a class="pilcrow" href="#section-80" id="section-80">&#182;</a>
 </div>
 <p>Mixin-in nodeGame options.</p>
         </td>
@@ -2144,7 +2169,7 @@ Optional. Name of the treatment. Default: room.treatmentName</li>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-80" id="section-80">&#182;</a>
+  <a class="pilcrow" href="#section-81" id="section-81">&#182;</a>
 </div>
 <p>Setup must be called before connect.</p>
         </td>
@@ -2159,7 +2184,7 @@ Optional. Name of the treatment. Default: room.treatmentName</li>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-81" id="section-81">&#182;</a>
+  <a class="pilcrow" href="#section-82" id="section-82">&#182;</a>
 </div>
 <p>This code needs to run as soon as the clientId is generated to avoid
 calling GameRoom.setupGame before the node object is stored.</p>
@@ -2176,7 +2201,7 @@ calling GameRoom.setupGame before the node object is stored.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-82" id="section-82">&#182;</a>
+  <a class="pilcrow" href="#section-83" id="section-83">&#182;</a>
 </div>
 <p>Connect bot to server.</p>
         </td>
@@ -2240,6 +2265,11 @@ Optional. Array of strings to give PhantomJS as command line arguments</li>
       <span class="dox_type">ChildProcess</span>
       <span>Handle to the PhantomJS process</span>
     </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">ServerChannel.killAllPhantoms
+</span>
+    </div>
   </div>
 </div>
         </td>
@@ -2248,7 +2278,7 @@ Optional. Array of strings to give PhantomJS as command line arguments</li>
     <span class="kd">var</span> <span class="nx">port</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">filePath</span><span class="p">,</span> <span class="nx">queryString</span><span class="p">,</span> <span class="nx">phantomjsArgs</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">serverdir</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">url</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">phantomjs</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">phantomjs</span><span class="p">,</span> <span class="nx">phPath</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">logger</span><span class="p">;</span>
 
 
@@ -2258,7 +2288,7 @@ Optional. Array of strings to give PhantomJS as command line arguments</li>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-84" id="section-84">&#182;</a>
+  <a class="pilcrow" href="#section-85" id="section-85">&#182;</a>
 </div>
 <p>Check inputs.</p>
         </td>
@@ -2315,7 +2345,7 @@ Optional. Array of strings to give PhantomJS as command line arguments</li>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-85" id="section-85">&#182;</a>
+  <a class="pilcrow" href="#section-86" id="section-86">&#182;</a>
 </div>
 <p>Launch a phantomjs process with a connection to the server.</p>
         </td>
@@ -2328,7 +2358,7 @@ Optional. Array of strings to give PhantomJS as command line arguments</li>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-86" id="section-86">&#182;</a>
+  <a class="pilcrow" href="#section-87" id="section-87">&#182;</a>
 </div>
 <p>Set up the arguments to phantomjs.</p>
         </td>
@@ -2346,23 +2376,59 @@ Optional. Array of strings to give PhantomJS as command line arguments</li>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-87" id="section-87">&#182;</a>
+  <a class="pilcrow" href="#section-88" id="section-88">&#182;</a>
 </div>
-<p>Spawn the process, listen on its stdout.</p>
+<p>Do not call /phantomjs/bin/phantomjs to avoid double spawn.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="nx">phantomjs</span> <span class="o">=</span> <span class="nx">spawn</span><span class="p">(</span><span class="nx">serverdir</span> <span class="o">+</span> <span class="s1">&#39;/node_modules/phantomjs/bin/phantomjs&#39;</span><span class="p">,</span>
-        <span class="nx">phantomjsArgs</span><span class="p">);</span>
+    <span class="nx">phPath</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="nx">serverdir</span> <span class="o">+</span> <span class="s1">&#39;/node_modules/phantomjs/lib/phantomjs&#39;</span><span class="p">).</span><span class="nx">path</span><span class="p">;</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-89" id="section-89">&#182;</a>
+</div>
+<p>Spawn.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">phantomjs</span> <span class="o">=</span> <span class="nx">spawn</span><span class="p">(</span><span class="nx">phPath</span><span class="p">,</span> <span class="nx">phantomjsArgs</span><span class="p">);</span>
+
     <span class="nx">phantomjs</span><span class="p">.</span><span class="nx">stdout</span><span class="p">.</span><span class="nx">setEncoding</span><span class="p">(</span><span class="s1">&#39;utf8&#39;</span><span class="p">);</span>
     <span class="nx">logger</span> <span class="o">=</span> <span class="nx">Logger</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;clients&#39;</span><span class="p">,</span> <span class="p">{</span><span class="nx">name</span><span class="o">:</span> <span class="s1">&#39;phantomjs&#39;</span><span class="p">});</span>
+    
     <span class="nx">phantomjs</span><span class="p">.</span><span class="nx">stdout</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">text</span><span class="p">)</span> <span class="p">{</span>
         <span class="nx">logger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">text</span><span class="p">);</span>
     <span class="p">});</span>
+    
+    <span class="nx">phantomjs</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;exit&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">code</span><span class="p">){</span>
 
-    <span class="k">return</span> <span class="nx">phantomjs</span><span class="p">;</span>
-<span class="p">};</span>
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-90" id="section-90">&#182;</a>
+</div>
+<p>Wait few ms for error to be printed.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="nx">setTimeout</span><span class="p">(</span><span class="kd">function</span><span class="p">(){</span>
+            <span class="nx">process</span><span class="p">.</span><span class="nx">exit</span><span class="p">(</span><span class="nx">code</span><span class="p">)</span>
+        <span class="p">},</span> <span class="mi">20</span><span class="p">)</span>
+    <span class="p">});</span>
 
+    <span class="nx">phantomjs</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;error&#39;</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">console</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="s1">&#39;Error executing phantom at&#39;</span><span class="p">,</span> <span class="nx">binPath</span><span class="p">)</span>
+        <span class="nx">console</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="nx">err</span><span class="p">.</span><span class="nx">stack</span><span class="p">)</span>
+    <span class="p">})</span>
 
+    <span class="nx">process</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;SIGTERM&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+        <span class="nx">phantomjs</span><span class="p">.</span><span class="nx">kill</span><span class="p">(</span><span class="s1">&#39;SIGTERM&#39;</span><span class="p">)</span>
+    <span class="p">})</span>
 
 
 </pre></div>
@@ -2371,7 +2437,52 @@ Optional. Array of strings to give PhantomJS as command line arguments</li>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-88" id="section-88">&#182;</a>
+  <a class="pilcrow" href="#section-91" id="section-91">&#182;</a>
+</div>
+<p>Add to the global collection.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">this</span><span class="p">.</span><span class="nx">phantoms</span><span class="p">[</span><span class="nx">phantomjs</span><span class="p">.</span><span class="nx">pid</span><span class="p">]</span> <span class="o">=</span> <span class="nx">phantomjs</span><span class="p">;</span>
+    <span class="k">return</span> <span class="nx">phantomjs</span><span class="p">;</span>
+<span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-92" id="section-92">&#182;</a>
+</div>
+<p>Maybe we do not need this api.
+/**
+ * ### ServerChannel.killPhantom
+ *
+ * Sends a SIGHUP signal to all active PhantomJS processes
+ *
+ * @see ServerChannel.connectPhantom
+ */
+ServerChannel.prototype.killAllPhantoms = function() {
+    var phantom;
+    for (phantom in this.phantoms) {
+        if (this.phantoms.hasOwnProperty(phantom)) {
+            console.log('killing ', phantom);
+            process.kill(phantom, 'SIGHUP');
+        }
+    }
+};</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-93" id="section-93">&#182;</a>
 </div>
 <p>TODO: finish this method. Should destroy all game rooms. clear all players?,
       keep the waiting room</p>
@@ -2391,7 +2502,7 @@ Optional. Array of strings to give PhantomJS as command line arguments</li>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-89" id="section-89">&#182;</a>
+  <a class="pilcrow" href="#section-94" id="section-94">&#182;</a>
 </div>
 <p>Remove clients from registry, game rooms and disconnect them.
    this.registry.clients.each(function(c) {
@@ -2428,7 +2539,7 @@ Optional. Array of strings to give PhantomJS as command line arguments</li>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-90" id="section-90">&#182;</a>
+  <a class="pilcrow" href="#section-95" id="section-95">&#182;</a>
 </div>
 <p>Remove clients from registry, game rooms and disconnect them.</p>
         </td>
@@ -2449,7 +2560,7 @@ Optional. Array of strings to give PhantomJS as command line arguments</li>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-91" id="section-91">&#182;</a>
+  <a class="pilcrow" href="#section-96" id="section-96">&#182;</a>
 </div>
 <p>Destroy empty game rooms.</p>
         </td>
@@ -2470,7 +2581,7 @@ Optional. Array of strings to give PhantomJS as command line arguments</li>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-92" id="section-92">&#182;</a>
+  <a class="pilcrow" href="#section-97" id="section-97">&#182;</a>
 </div>
 <p>Create a brand new Registry.
 this.registry = new ChannelRegistry({ name: this.name });</p>
