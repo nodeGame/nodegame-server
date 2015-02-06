@@ -81,7 +81,7 @@ function configure(app, servernode) {
                 try {
                     cb = require(contextPath);
                     if ('function' !== typeof cb) {
-                        throw new TypeError('ContextCallback must be '
+                        throw new TypeError('ContextCallback must be ' +
                                             'function.');
                     }
                 }
