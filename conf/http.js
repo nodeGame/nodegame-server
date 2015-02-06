@@ -81,7 +81,8 @@ function configure(app, servernode) {
                 try {
                     cb = require(contextPath);
                     if ('function' !== typeof cb) {
-                        throw new TypeError('ContextCallback must be function.');
+                        throw new TypeError('ContextCallback must be '
+                                            'function.');
                     }
                 }
                 catch(e) {
@@ -103,7 +104,10 @@ function configure(app, servernode) {
     app.use(express.cookieParser());
 
     app.configure('development', function(){
-        app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
+        app.use(express.errorHandler({
+            dumpExceptions: true,
+            showStack: true
+        }));
     });
 
     app.configure('production', function(){
@@ -223,7 +227,7 @@ function configure(app, servernode) {
 
         // Checks if exists in 'public/' or as view.
         fs.exists(filePath, function(exists) {
-            var basename, templatePath, templateFound,  contextPath, context;
+            var basename, templatePath, templateFound, contextPath, context;
 
             // Exists in public, cache it, serve it.
             if (exists) {

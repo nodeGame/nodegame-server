@@ -203,7 +203,8 @@ MIT Licensed</p>
         <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;PageManager.createAlias: alias must be string.&#39;</span><span class="p">);</span>
     <span class="p">}</span>
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">gameName</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;PageManager.createAlias: gameName must be string.&#39;</span><span class="p">);</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;PageManager.createAlias: &#39;</span> <span class="o">+</span>
+                            <span class="s1">&#39;gameName must be string.&#39;</span><span class="p">);</span>
     <span class="p">}</span>
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">games</span><span class="p">[</span><span class="nx">gameName</span><span class="p">])</span> <span class="p">{</span>
         <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;PageManager.createAlias: &#39;</span> <span class="o">+</span>
