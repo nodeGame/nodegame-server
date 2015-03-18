@@ -1,5 +1,9 @@
 # nodegame-server change log
 
+# 0.9.10
+ - Treatments are correctly built.
+ - IP address is passed to auth function.
+
 # 0.9.9
  - Incorrect Build
 
