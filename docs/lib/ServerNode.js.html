@@ -75,7 +75,7 @@
       <div class="heading h3">
         <a href="#servernode.logdir">ServerNode.logDir</a>
       </div>
-      <div class="heading h2">
+      <div class="heading h3">
         <a href="#servernode.lasterror">ServerNode.lastError</a>
       </div>
       <div class="heading h2">
@@ -666,10 +666,10 @@ directories.</p>
         <td class="docs"><div class="dox">
   <div class="summary">
 <div class="pilwrap" id="servernode.lasterror">
-  <h2>
+  <h3>
     <a href="#servernode.lasterror" name="servernode.lasterror" class="pilcrow">&#182;</a>
     ServerNode.lastError
-  </h2>
+  </h3>
 </div>
 
   </div>
@@ -747,6 +747,8 @@ directories.</p>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">ServerNode</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">init</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">options</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">that</span><span class="p">;</span>
+
+    <span class="nx">that</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
 
     <span class="nx">process</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;uncaughtException&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span>
         <span class="nx">that</span><span class="p">.</span><span class="nx">logger</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="s1">&#39;ServerNode caught an exception: &#39;</span> <span class="o">+</span> <span class="nx">err</span><span class="p">);</span>
@@ -856,7 +858,6 @@ the the output is nicely formatted.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="k">this</span><span class="p">.</span><span class="nx">logger</span><span class="p">.</span><span class="nx">info</span><span class="p">(</span><span class="s1">&#39;ServerNode.init: starting error manager.&#39;</span><span class="p">);</span>
-    <span class="nx">that</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
 
 
 </pre></div>
@@ -2125,11 +2126,10 @@ TODO: views.js file is not loaded anymore because all context are dynamics.</spa
         <span class="nx">treatments</span> <span class="o">=</span> <span class="nx">gameSettingsObj</span><span class="p">.</span><span class="nx">treatments</span><span class="p">;</span>
         <span class="k">delete</span> <span class="nx">gameSettingsObj</span><span class="p">.</span><span class="nx">treatments</span><span class="p">;</span>
         <span class="nx">out</span><span class="p">.</span><span class="nx">standard</span> <span class="o">=</span> <span class="nx">J</span><span class="p">.</span><span class="nx">clone</span><span class="p">(</span><span class="nx">gameSettingsObj</span><span class="p">);</span>
-
         <span class="k">for</span> <span class="p">(</span><span class="nx">t</span> <span class="k">in</span> <span class="nx">treatments</span><span class="p">)</span> <span class="p">{</span>
             <span class="k">if</span> <span class="p">(</span><span class="nx">treatments</span><span class="p">.</span><span class="nx">hasOwnProperty</span><span class="p">(</span><span class="nx">t</span><span class="p">))</span> <span class="p">{</span>
                 <span class="nx">tmp</span> <span class="o">=</span> <span class="nx">J</span><span class="p">.</span><span class="nx">clone</span><span class="p">(</span><span class="nx">gameSettingsObj</span><span class="p">);</span>
-                <span class="nx">J</span><span class="p">.</span><span class="nx">mixout</span><span class="p">(</span><span class="nx">tmp</span><span class="p">,</span> <span class="nx">treatments</span><span class="p">[</span><span class="nx">t</span><span class="p">]);</span>
+                <span class="nx">J</span><span class="p">.</span><span class="nx">mixin</span><span class="p">(</span><span class="nx">tmp</span><span class="p">,</span> <span class="nx">treatments</span><span class="p">[</span><span class="nx">t</span><span class="p">]);</span>
                 <span class="nx">out</span><span class="p">[</span><span class="nx">t</span><span class="p">]</span> <span class="o">=</span> <span class="nx">tmp</span><span class="p">;</span>
                 <span class="nx">out</span><span class="p">[</span><span class="nx">t</span><span class="p">].</span><span class="nx">name</span> <span class="o">=</span> <span class="nx">t</span><span class="p">;</span>
             <span class="p">}</span>

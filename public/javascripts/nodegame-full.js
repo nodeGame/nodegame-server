@@ -2103,15 +2103,20 @@ if (!JSON) {
     /**
      * ### DOM.write
      *
-     * Write a text, or append an HTML element or node, into the
-     * the root element.
+     * Write a text, or append an HTML element or node, into a root element
+     *
+     * @param {Element} root The HTML element where to write into
+     * @param {mixed} text The text to write. Default, an ampty string
+     *
+     * @return {TextNode} The text node inserted in the root element
      *
      * @see DOM.writeln
      */
     DOM.write = function(root, text) {
+        var content;
         if (!root) return;
-        if (!text) return;
-        var content = (!JSUS.isNode(text) || !JSUS.isElement(text)) ?
+        if ('undefined' === typeof text) text = "";
+        content = (!JSUS.isNode(text) || !JSUS.isElement(text)) ?
             document.createTextNode(text) : text;
         root.appendChild(content);
         return content;
@@ -2120,8 +2125,15 @@ if (!JSON) {
     /**
      * ### DOM.writeln
      *
-     * Write a text, or append an HTML element or node, into the
-     * the root element and adds a break immediately after.
+     * Write a text and a break into a root element
+     *
+     * Default break element is <br> tag
+     *
+     * @param {Element} root The HTML element where to write into
+     * @param {mixed} text The text to write. Default, an ampty string
+     * @param {string} rc the name of the tag to use as a break element
+     *
+     * @return {TextNode} The text node inserted in the root element
      *
      * @see DOM.write
      * @see DOM.addBreak
@@ -2311,19 +2323,24 @@ if (!JSON) {
     };
 
     /**
-     * ### DOM.shuffleNodes
+     * ### DOM.shuffleElements
      *
-     * Shuffles the children nodes
+     * Shuffles the children element nodes
      *
      * All children must have the id attribute.
+     *
+     * Notice the difference between Elements and Nodes:
+     *
+     * http://stackoverflow.com/questions/7935689/
+     * what-is-the-difference-between-children-and-childnodes-in-javascript
      *
      * @param {Node} parent The parent node
      * @param {array} order Optional. A pre-specified order. Defaults, random
      *
      * @return {array} The order used to shuffle the nodes
      */
-    DOM.shuffleNodes = function(parent, order) {
-        var i, len, idOrder;
+    DOM.shuffleElements = function(parent, order) {
+        var i, len, idOrder, children, child;
         if (!JSUS.isNode(parent)) {
             throw new TypeError('DOM.shuffleNodes: parent must node.');
         }
@@ -2341,21 +2358,44 @@ if (!JSON) {
             }
         }
 
-        len = parent.children.length;
+        // DOM4 compliant browsers.
+        children = parent.children;
+
+        //https://developer.mozilla.org/en/DOM/Element.children
+        //[IE lt 9] IE < 9
+        if ('undefined' === typeof children) {
+            child = this.firstChild;
+            while (child) {
+                if (child.nodeType == 1) children.push(child);
+                child = child.nextSibling;
+            }
+        }
+
+        len = children.length;
         idOrder = [];
-        if (!order) order = JSUS.sample(0,len);
+        if (!order) order = JSUS.sample(0, (len-1));
         for (i = 0 ; i < len; i++) {
-            idOrder.push(parent.children[order[i]].id);
+            idOrder.push(children[order[i]].id);
         }
         // Two fors are necessary to follow the real sequence.
         // However parent.children is a special object, so the sequence
         // could be unreliable.
         for (i = 0 ; i < len; i++) {
-            parent.appendChild(parent.children[idOrder[i]]);
+            parent.appendChild(children[idOrder[i]]);
         }
 
         return idOrder;
     };
+
+    /**
+     * ### DOM.shuffleNodes
+     *
+     * It actually shuffles Elements.
+     *
+     * @deprecated
+     */
+    DOM.shuffleNodes = DOM.shuffleElements;
+
 
     /**
      * ### DOM.getElement
@@ -10518,6 +10558,10 @@ if (!JSON) {
          * The connection status of the client
          */
         this.disconnected = !!player.disconnected;
+
+
+        this.removed = !!player.removed;
+
 
         // ## Player public properties
 

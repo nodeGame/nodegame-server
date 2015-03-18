@@ -2280,6 +2280,9 @@ Optional. Array of strings to give PhantomJS as command line arguments</li>
     <span class="kd">var</span> <span class="nx">url</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">phantomjs</span><span class="p">,</span> <span class="nx">phPath</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">logger</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">that</span><span class="p">;</span>
+
+    <span class="nx">that</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
 
 
 </pre></div>
@@ -2403,7 +2406,7 @@ Optional. Array of strings to give PhantomJS as command line arguments</li>
         <span class="nx">logger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">text</span><span class="p">);</span>
     <span class="p">});</span>
     
-    <span class="nx">phantomjs</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;exit&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">code</span><span class="p">){</span>
+    <span class="nx">phantomjs</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;exit&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">code</span><span class="p">)</span> <span class="p">{</span>
 
 </pre></div>
         </td>
@@ -2416,19 +2419,20 @@ Optional. Array of strings to give PhantomJS as command line arguments</li>
 <p>Wait few ms for error to be printed.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-        <span class="nx">setTimeout</span><span class="p">(</span><span class="kd">function</span><span class="p">(){</span>
-            <span class="nx">process</span><span class="p">.</span><span class="nx">exit</span><span class="p">(</span><span class="nx">code</span><span class="p">)</span>
-        <span class="p">},</span> <span class="mi">20</span><span class="p">)</span>
+        <span class="nx">setTimeout</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+            <span class="nx">logger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;PhantomJS (PID &#39;</span> <span class="o">+</span> <span class="nx">phantomjs</span><span class="p">.</span><span class="nx">pid</span> <span class="o">+</span> <span class="s1">&#39;) exited&#39;</span><span class="p">);</span>
+            <span class="k">delete</span> <span class="nx">that</span><span class="p">.</span><span class="nx">phantoms</span><span class="p">[</span><span class="nx">phantomjs</span><span class="p">.</span><span class="nx">pid</span><span class="p">];</span>
+        <span class="p">},</span> <span class="mi">20</span><span class="p">);</span>
     <span class="p">});</span>
 
-    <span class="nx">phantomjs</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;error&#39;</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nx">console</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="s1">&#39;Error executing phantom at&#39;</span><span class="p">,</span> <span class="nx">binPath</span><span class="p">)</span>
-        <span class="nx">console</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="nx">err</span><span class="p">.</span><span class="nx">stack</span><span class="p">)</span>
-    <span class="p">})</span>
+    <span class="nx">phantomjs</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;error&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">console</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="s1">&#39;Error executing phantom at&#39;</span><span class="p">,</span> <span class="nx">phPath</span><span class="p">);</span>
+        <span class="nx">console</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="nx">err</span><span class="p">.</span><span class="nx">stack</span><span class="p">);</span>
+    <span class="p">});</span>
 
     <span class="nx">process</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;SIGTERM&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
-        <span class="nx">phantomjs</span><span class="p">.</span><span class="nx">kill</span><span class="p">(</span><span class="s1">&#39;SIGTERM&#39;</span><span class="p">)</span>
-    <span class="p">})</span>
+        <span class="nx">phantomjs</span><span class="p">.</span><span class="nx">kill</span><span class="p">(</span><span class="s1">&#39;SIGTERM&#39;</span><span class="p">);</span>
+    <span class="p">});</span>
 
 
 </pre></div>
