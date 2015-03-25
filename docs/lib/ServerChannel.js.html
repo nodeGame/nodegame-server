@@ -1661,7 +1661,7 @@ been registered in the new room.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
         <span class="nx">pConnectMsg</span><span class="p">.</span><span class="nx">data</span> <span class="o">=</span> <span class="p">{</span><span class="nx">id</span><span class="o">:</span> <span class="nx">playerObj</span><span class="p">.</span><span class="nx">id</span><span class="p">};</span>
-        <span class="k">this</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">broadcast2room</span><span class="p">(</span><span class="nx">pConnectMsg</span><span class="p">,</span> <span class="nx">toRoomObj</span><span class="p">,</span> <span class="nx">playerId</span><span class="p">);</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">broadcast2room</span><span class="p">(</span><span class="nx">pConnectMsg</span><span class="p">,</span> <span class="nx">toRoomObj</span><span class="p">,</span> <span class="nx">playerId</span><span class="p">);</span>
 
 
 </pre></div>
@@ -1676,7 +1676,7 @@ been registered in the new room.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
         <span class="nx">filteredPlayers</span> <span class="o">=</span> <span class="nx">oldPlayerList</span><span class="p">.</span><span class="nx">fetchSubObj</span><span class="p">(</span><span class="s1">&#39;id&#39;</span><span class="p">);</span>
-        <span class="k">this</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">msg</span><span class="p">.</span><span class="nx">create</span><span class="p">({</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">msg</span><span class="p">.</span><span class="nx">create</span><span class="p">({</span>
             <span class="nx">target</span><span class="o">:</span> <span class="s1">&#39;SETUP&#39;</span><span class="p">,</span>
             <span class="nx">to</span><span class="o">:</span>     <span class="nx">playerId</span><span class="p">,</span>
             <span class="nx">text</span><span class="o">:</span>   <span class="s1">&#39;plist&#39;</span><span class="p">,</span>
@@ -1697,14 +1697,14 @@ been registered in the new room.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
         <span class="nx">pDisconnectMsg</span><span class="p">.</span><span class="nx">data</span> <span class="o">=</span> <span class="p">{</span><span class="nx">id</span><span class="o">:</span> <span class="nx">playerObj</span><span class="p">.</span><span class="nx">id</span><span class="p">};</span>
-        <span class="k">this</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">broadcast2room</span><span class="p">(</span><span class="nx">pDisconnectMsg</span><span class="p">,</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">broadcast2room</span><span class="p">(</span><span class="nx">pDisconnectMsg</span><span class="p">,</span>
                                           <span class="k">this</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">[</span><span class="nx">fromRoom</span><span class="p">],</span> <span class="nx">playerId</span><span class="p">);</span>
     <span class="p">}</span>
     <span class="k">else</span> <span class="p">{</span>
         <span class="nx">pConnectMsg</span><span class="p">.</span><span class="nx">data</span> <span class="o">=</span> <span class="nx">playerObj</span><span class="p">;</span>
-        <span class="k">this</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">send2roomAdmins</span><span class="p">(</span><span class="nx">pConnectMsg</span><span class="p">,</span> <span class="nx">toRoomObj</span><span class="p">);</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">send2roomAdmins</span><span class="p">(</span><span class="nx">pConnectMsg</span><span class="p">,</span> <span class="nx">toRoomObj</span><span class="p">);</span>
         <span class="nx">pDisconnectMsg</span><span class="p">.</span><span class="nx">data</span> <span class="o">=</span> <span class="nx">playerObj</span><span class="p">;</span>
-        <span class="k">this</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">send2roomAdmins</span><span class="p">(</span><span class="nx">pDisconnectMsg</span><span class="p">,</span> <span class="nx">toRoomObj</span><span class="p">);</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">send2roomAdmins</span><span class="p">(</span><span class="nx">pDisconnectMsg</span><span class="p">,</span> <span class="nx">toRoomObj</span><span class="p">);</span>
     <span class="p">}</span>
 
     <span class="k">return</span> <span class="kc">true</span><span class="p">;</span>
@@ -2070,7 +2070,7 @@ Optional. Name of the treatment. Default: room.treatmentName</li>
         <td class="code highlight"><div class="highlight"><pre>
 
     <span class="nx">node</span> <span class="o">=</span> <span class="nx">ngc</span><span class="p">.</span><span class="nx">getClient</span><span class="p">();</span>
- 
+
     <span class="nx">node</span><span class="p">.</span><span class="nx">log</span> <span class="o">=</span> <span class="nx">options</span><span class="p">.</span><span class="nx">logger</span> <span class="o">||</span> <span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
         <span class="kd">var</span> <span class="nx">logger</span> <span class="o">=</span> <span class="nx">Logger</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;clients&#39;</span><span class="p">,</span> <span class="p">{</span><span class="nx">name</span><span class="o">:</span> <span class="nx">clientType</span><span class="p">});</span>
         <span class="k">return</span> <span class="kd">function</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">lvl</span><span class="p">)</span> <span class="p">{</span> <span class="nx">logger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">lvl</span><span class="p">);</span> <span class="p">};</span>
@@ -2207,7 +2207,7 @@ calling GameRoom.setupGame before the node object is stored.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="nx">node</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">setSocketType</span><span class="p">(</span><span class="s1">&#39;SocketDirect&#39;</span><span class="p">,</span> <span class="p">{</span>
-        <span class="nx">socket</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">sockets</span><span class="p">.</span><span class="nx">direct</span>
+        <span class="nx">socket</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">sockets</span><span class="p">.</span><span class="nx">direct</span>
     <span class="p">});</span>
 
     <span class="nx">node</span><span class="p">.</span><span class="nx">connect</span><span class="p">(</span><span class="kc">null</span><span class="p">,</span> <span class="p">{</span>
@@ -2401,11 +2401,11 @@ Optional. Array of strings to give PhantomJS as command line arguments</li>
 
     <span class="nx">phantomjs</span><span class="p">.</span><span class="nx">stdout</span><span class="p">.</span><span class="nx">setEncoding</span><span class="p">(</span><span class="s1">&#39;utf8&#39;</span><span class="p">);</span>
     <span class="nx">logger</span> <span class="o">=</span> <span class="nx">Logger</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;clients&#39;</span><span class="p">,</span> <span class="p">{</span><span class="nx">name</span><span class="o">:</span> <span class="s1">&#39;phantomjs&#39;</span><span class="p">});</span>
-    
+
     <span class="nx">phantomjs</span><span class="p">.</span><span class="nx">stdout</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">text</span><span class="p">)</span> <span class="p">{</span>
         <span class="nx">logger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">text</span><span class="p">);</span>
     <span class="p">});</span>
-    
+
     <span class="nx">phantomjs</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;exit&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">code</span><span class="p">)</span> <span class="p">{</span>
 
 </pre></div>
@@ -2421,6 +2421,12 @@ Optional. Array of strings to give PhantomJS as command line arguments</li>
         <td class="code highlight"><div class="highlight"><pre>
         <span class="nx">setTimeout</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
             <span class="nx">logger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;PhantomJS (PID &#39;</span> <span class="o">+</span> <span class="nx">phantomjs</span><span class="p">.</span><span class="nx">pid</span> <span class="o">+</span> <span class="s1">&#39;) exited&#39;</span><span class="p">);</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nx">code</span> <span class="o">!==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+                <span class="kd">var</span> <span class="nx">msg</span> <span class="o">=</span> <span class="s1">&#39;PhantomJS received non-zero exit code: &#39;</span> <span class="o">+</span> <span class="nx">arguments</span><span class="p">;</span>
+                <span class="nx">logger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">msg</span><span class="p">);</span>
+                <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">msg</span><span class="p">);</span>
+            <span class="p">}</span>
+
             <span class="k">delete</span> <span class="nx">that</span><span class="p">.</span><span class="nx">phantoms</span><span class="p">[</span><span class="nx">phantomjs</span><span class="p">.</span><span class="nx">pid</span><span class="p">];</span>
         <span class="p">},</span> <span class="mi">20</span><span class="p">);</span>
     <span class="p">});</span>
@@ -2428,10 +2434,6 @@ Optional. Array of strings to give PhantomJS as command line arguments</li>
     <span class="nx">phantomjs</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;error&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span>
         <span class="nx">console</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="s1">&#39;Error executing phantom at&#39;</span><span class="p">,</span> <span class="nx">phPath</span><span class="p">);</span>
         <span class="nx">console</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="nx">err</span><span class="p">.</span><span class="nx">stack</span><span class="p">);</span>
-    <span class="p">});</span>
-
-    <span class="nx">process</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;SIGTERM&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
-        <span class="nx">phantomjs</span><span class="p">.</span><span class="nx">kill</span><span class="p">(</span><span class="s1">&#39;SIGTERM&#39;</span><span class="p">);</span>
     <span class="p">});</span>
 
 

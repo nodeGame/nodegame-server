@@ -180,142 +180,19 @@ MIT Licensed</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">Logger</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">log</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">text</span><span class="p">,</span> <span class="nx">level</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">text</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">text</span> <span class="o">=</span> <span class="nx">JSON</span><span class="p">.</span><span class="nx">stringify</span><span class="p">(</span><span class="nx">text</span><span class="p">);</span>
+    <span class="p">}</span>
 
     <span class="nx">level</span> <span class="o">=</span> <span class="nx">level</span> <span class="o">||</span> <span class="s1">&#39;info&#39;</span><span class="p">;</span>
 
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-6" id="section-6">&#182;</a>
-</div>
-<p>if ('string' === typeof level) {
-    level = ServerLog.verbosity_levels[level];
-}</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-
     <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">name</span><span class="p">)</span> <span class="p">{</span>
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-7" id="section-7">&#182;</a>
-</div>
-<p>this.logger.log(level, this.name, text);</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-      <span class="k">this</span><span class="p">.</span><span class="nx">logger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">level</span><span class="p">,</span> <span class="nx">text</span><span class="p">,</span> <span class="p">{</span><span class="nx">name</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">name</span><span class="p">});</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">logger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">level</span><span class="p">,</span> <span class="nx">text</span><span class="p">,</span> <span class="p">{</span><span class="nx">name</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">name</span><span class="p">});</span>
     <span class="p">}</span>
     <span class="k">else</span> <span class="p">{</span>
         <span class="k">this</span><span class="p">.</span><span class="nx">logger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">level</span><span class="p">,</span> <span class="nx">text</span><span class="p">);</span>
     <span class="p">}</span>
 <span class="p">};</span>
-
-
-
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-8" id="section-8">&#182;</a>
-</div>
-<p>/**</p>
-
-<div class="dox">
-  <div class="summary"><p>/   ### ServerLog.checkLogDir
-//*
-//* Creates the log directory if not existing
-//*
-//  </p>
-  </div>
-  <div class="body">
-  </div>
-</div>
-
-<p>ServerLog.prototype.checkLogDir = function() {
-// skip warning for node 8
-if ('undefined' !== typeof fs.existsSync) {
-    if (!fs.existsSync(this.logdir)) {
-        fs.mkdirSync(this.logdir, 0755);
-    }
-}
-else if (!path.existsSync(this.logdir)) {
-    fs.mkdirSync(this.logdir, 0755);
-}
-};</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-9" id="section-9">&#182;</a>
-</div>
-<p>/**</p>
-
-<div class="dox">
-  <div class="summary"><p>/   ### ServerLog.console
-//*
-//* Fancifies the output to console
-//*
-//* @param {object|string} data The text to log
-//* @param {string} type A flag that determines the color of the output
-//  </p>
-  </div>
-  <div class="body">
-  </div>
-</div>
-
-<p>ServerLog.prototype.console = function(data, type){</p>
-
-<p>var ATT = '0;32m'; // green text;</p>
-
-<p>switch (type) {</p>
-
-
-<div class="highlight"><pre><code><span class="k">case</span> <span class="s">&#39;ERR&#39;</span><span class="p">:</span>
-    <span class="n">ATT</span> <span class="o">=</span> <span class="s">&#39;0;31m&#39;</span><span class="p">;</span> <span class="sr">//</span> <span class="n">red</span> <span class="n">text</span><span class="p">;</span>
-    <span class="n">break</span><span class="p">;</span>
-
-<span class="k">case</span> <span class="s">&#39;WARN&#39;</span><span class="p">:</span>
-    <span class="n">ATT</span> <span class="o">=</span> <span class="s">&#39;0;37m&#39;</span><span class="p">;</span> <span class="sr">//</span> <span class="n">gray</span> <span class="n">text</span><span class="p">;</span>
-    <span class="n">break</span><span class="p">;</span>
-</code></pre></div>
-
-
-
-<p>}</p>
-
-<p>util.log("\033[" + ATT + this.name + '\t' + data.toString() + "\033[0m");
-};</p>
-
-<p>/**
-* ### ServerLog.close
-*
-* Closes open output streams
-*/
-ServerLog.prototype.close = function() {
-if (this.logSysStream) this.logSysStream.close();
-if (this.logMsgStream) this.logMsgStream.close();
-};</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
 </pre></div>
         </td>
       </tr>

@@ -376,7 +376,7 @@ setup allows it.</p>
             <span class="nx">pConnectMsg</span><span class="p">.</span><span class="nx">data</span> <span class="o">=</span> <span class="p">{</span>
                 <span class="nx">id</span><span class="o">:</span>  <span class="nx">clientId</span>
             <span class="p">};</span>
-            <span class="nx">that</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">broadcast2group</span><span class="p">(</span><span class="nx">pConnectMsg</span><span class="p">,</span> <span class="nx">oldPlayers</span><span class="p">);</span>
+            <span class="nx">that</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">broadcast2group</span><span class="p">(</span><span class="nx">pConnectMsg</span><span class="p">,</span> <span class="nx">oldPlayers</span><span class="p">);</span>
 
 
 </pre></div>
@@ -391,7 +391,7 @@ setup allows it.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
             <span class="nx">filteredPlayers</span> <span class="o">=</span> <span class="nx">oldPlayers</span><span class="p">.</span><span class="nx">fetchSubObj</span><span class="p">(</span><span class="s1">&#39;id&#39;</span><span class="p">);</span>
-            <span class="nx">that</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">send2client</span><span class="p">(</span><span class="nx">that</span><span class="p">.</span><span class="nx">msg</span><span class="p">.</span><span class="nx">create</span><span class="p">({</span>
+            <span class="nx">that</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">send2client</span><span class="p">(</span><span class="nx">that</span><span class="p">.</span><span class="nx">msg</span><span class="p">.</span><span class="nx">create</span><span class="p">({</span>
                 <span class="nx">target</span><span class="o">:</span> <span class="s1">&#39;SETUP&#39;</span><span class="p">,</span>
                 <span class="nx">to</span><span class="o">:</span>     <span class="nx">clientId</span><span class="p">,</span>
                 <span class="nx">text</span><span class="o">:</span>   <span class="s1">&#39;plist&#39;</span><span class="p">,</span>
@@ -411,7 +411,7 @@ setup allows it.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
         <span class="nx">pConnectMsg</span><span class="p">.</span><span class="nx">data</span> <span class="o">=</span> <span class="nx">clientObj</span><span class="p">;</span>
-        <span class="nx">that</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">send2group</span><span class="p">(</span><span class="nx">pConnectMsg</span><span class="p">,</span> <span class="nx">admins</span><span class="p">);</span>
+        <span class="nx">that</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">send2group</span><span class="p">(</span><span class="nx">pConnectMsg</span><span class="p">,</span> <span class="nx">admins</span><span class="p">);</span>
     <span class="p">});</span>
 
 
@@ -484,7 +484,7 @@ Admins decides what to do with it.</p>
 <p>Notifies the monitors that a new player connected.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-        <span class="nx">that</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">send2group</span><span class="p">(</span><span class="nx">pConnectMsg</span><span class="p">,</span> <span class="nx">admins</span><span class="p">);</span>
+        <span class="nx">that</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">send2group</span><span class="p">(</span><span class="nx">pConnectMsg</span><span class="p">,</span> <span class="nx">admins</span><span class="p">);</span>
     <span class="p">});</span>
 
 
@@ -555,7 +555,7 @@ Admins decides what to do with it.</p>
             <span class="k">return</span><span class="p">;</span>
         <span class="p">}</span>
 
-        <span class="nx">that</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">send2roomAdmins</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">room</span><span class="p">);</span>
+        <span class="nx">that</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">send2roomAdmins</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">room</span><span class="p">);</span>
     <span class="p">});</span>
 
 
@@ -595,7 +595,7 @@ Admins decides what to do with it.</p>
               <span class="p">(</span><span class="nx">that</span><span class="p">.</span><span class="nx">notify</span><span class="p">.</span><span class="nx">onStageLoadedUpdate</span> <span class="o">&amp;&amp;</span>
                <span class="nx">msg</span><span class="p">.</span><span class="nx">data</span><span class="p">.</span><span class="nx">stageLevel</span> <span class="o">===</span> <span class="nx">ngc</span><span class="p">.</span><span class="nx">constants</span><span class="p">.</span><span class="nx">stageLevels</span><span class="p">.</span><span class="nx">LOADED</span><span class="p">))))</span> <span class="p">{</span>
 
-            <span class="nx">that</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">broadcast2ownRoom</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">from</span><span class="p">);</span>
+            <span class="nx">that</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">broadcast2ownRoom</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">from</span><span class="p">);</span>
         <span class="p">}</span>
         <span class="k">else</span> <span class="p">{</span>
             <span class="nx">roomName</span> <span class="o">=</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">_roomName</span> <span class="o">||</span> <span class="nx">that</span><span class="p">.</span><span class="nx">registry</span><span class="p">.</span><span class="nx">getClientRoom</span><span class="p">(</span><span class="nx">msg</span><span class="p">.</span><span class="nx">from</span><span class="p">);</span>
@@ -607,7 +607,7 @@ Admins decides what to do with it.</p>
                 <span class="k">return</span><span class="p">;</span>
             <span class="p">}</span>
 
-            <span class="nx">that</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">send2roomAdmins</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">room</span><span class="p">);</span>
+            <span class="nx">that</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">send2roomAdmins</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">room</span><span class="p">);</span>
         <span class="p">}</span>
     <span class="p">});</span>
 
@@ -653,10 +653,10 @@ Admins decides what to do with it.</p>
         <span class="p">}</span>
 
         <span class="k">if</span> <span class="p">(</span><span class="nx">that</span><span class="p">.</span><span class="nx">notify</span><span class="p">.</span><span class="nx">onStageUpdate</span><span class="p">)</span> <span class="p">{</span>
-            <span class="nx">that</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">broadcast2room</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">room</span><span class="p">,</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">from</span><span class="p">);</span>
+            <span class="nx">that</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">broadcast2room</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">room</span><span class="p">,</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">from</span><span class="p">);</span>
         <span class="p">}</span>
         <span class="k">else</span> <span class="p">{</span>
-            <span class="nx">that</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">send2roomAdmins</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">room</span><span class="p">);</span>
+            <span class="nx">that</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">send2roomAdmins</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">room</span><span class="p">);</span>
         <span class="p">}</span>
     <span class="p">});</span>
 
@@ -702,10 +702,10 @@ Admins decides what to do with it.</p>
         <span class="p">}</span>
 
         <span class="k">if</span> <span class="p">(</span><span class="nx">that</span><span class="p">.</span><span class="nx">notify</span><span class="p">.</span><span class="nx">onStageUpdate</span><span class="p">)</span> <span class="p">{</span>
-            <span class="nx">that</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">broadcast2room</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">room</span><span class="p">,</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">from</span><span class="p">);</span>
+            <span class="nx">that</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">broadcast2room</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">room</span><span class="p">,</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">from</span><span class="p">);</span>
         <span class="p">}</span>
         <span class="k">else</span> <span class="p">{</span>
-            <span class="nx">that</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">send2roomAdmins</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">room</span><span class="p">);</span>
+            <span class="nx">that</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">send2roomAdmins</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">room</span><span class="p">);</span>
         <span class="p">}</span>
     <span class="p">});</span>
 
@@ -745,7 +745,7 @@ It ignores ALL, CHANNEL, CHANNEL_X, ROOM_X recipients.</p>
 
         <span class="k">if</span> <span class="p">(</span><span class="nx">msg</span><span class="p">.</span><span class="nx">to</span> <span class="o">===</span> <span class="s1">&#39;ROOM&#39;</span><span class="p">)</span> <span class="p">{</span>
             <span class="k">if</span> <span class="p">(</span><span class="nx">that</span><span class="p">.</span><span class="nx">getFromAdmins</span><span class="p">)</span> <span class="p">{</span>
-                <span class="nx">that</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">broadcast2ownRoom</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">from</span><span class="p">);</span>
+                <span class="nx">that</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">broadcast2ownRoom</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">from</span><span class="p">);</span>
             <span class="p">}</span>
             <span class="k">else</span> <span class="p">{</span>
                 <span class="nx">roomName</span> <span class="o">=</span>
@@ -762,7 +762,7 @@ It ignores ALL, CHANNEL, CHANNEL_X, ROOM_X recipients.</p>
                 <span class="nx">oldPlayers</span> <span class="o">=</span> <span class="nx">players</span><span class="p">.</span><span class="nx">breed</span><span class="p">();</span>
                 <span class="nx">players</span><span class="p">.</span><span class="nx">id</span><span class="p">.</span><span class="nx">remove</span><span class="p">(</span><span class="nx">msg</span><span class="p">.</span><span class="nx">from</span><span class="p">);</span>
 
-                <span class="nx">that</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">send2group</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">oldPlayers</span><span class="p">);</span>
+                <span class="nx">that</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">send2group</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">oldPlayers</span><span class="p">);</span>
             <span class="p">}</span>
         <span class="p">}</span>
 
@@ -778,7 +778,7 @@ It ignores ALL, CHANNEL, CHANNEL_X, ROOM_X recipients.</p>
                 <span class="k">return</span><span class="p">;</span>
             <span class="p">}</span>
 
-            <span class="nx">that</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">send2roomAdmins</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">room</span><span class="p">);</span>
+            <span class="nx">that</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">send2roomAdmins</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">room</span><span class="p">);</span>
         <span class="p">}</span>
 
         <span class="k">else</span> <span class="p">{</span>
@@ -794,7 +794,7 @@ It ignores ALL, CHANNEL, CHANNEL_X, ROOM_X recipients.</p>
 <p>Msg to a specific client (might be in another room).</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-            <span class="nx">that</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">send2client</span><span class="p">(</span><span class="nx">msg</span><span class="p">);</span>
+            <span class="nx">that</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">send2client</span><span class="p">(</span><span class="nx">msg</span><span class="p">);</span>
         <span class="p">}</span>
 
     <span class="p">});</span>
@@ -831,10 +831,10 @@ It ignores ALL, CHANNEL, CHANNEL_X, ROOM_X recipients.</p>
             <span class="nx">data</span><span class="o">:</span> <span class="nx">player</span>
         <span class="p">});</span>
         <span class="k">if</span> <span class="p">(</span><span class="nx">that</span><span class="p">.</span><span class="nx">notify</span><span class="p">.</span><span class="nx">onConnect</span><span class="p">)</span> <span class="p">{</span>
-            <span class="nx">that</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">send2room</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">room</span><span class="p">);</span>
+            <span class="nx">that</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">send2room</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">room</span><span class="p">);</span>
         <span class="p">}</span>
         <span class="k">else</span> <span class="p">{</span>
-            <span class="nx">that</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">send2roomAdmins</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">room</span><span class="p">);</span>
+            <span class="nx">that</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">send2roomAdmins</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">room</span><span class="p">);</span>
         <span class="p">}</span>
     <span class="p">});</span>
 
@@ -916,19 +916,19 @@ the client-id of the recipient.</p>
     <span class="kd">var</span> <span class="nx">roomName</span><span class="p">,</span> <span class="nx">room</span><span class="p">,</span> <span class="nx">channel</span><span class="p">;</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="nx">msg</span><span class="p">.</span><span class="nx">to</span> <span class="o">===</span> <span class="s1">&#39;ALL&#39;</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">this</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">broadcast2all</span><span class="p">(</span><span class="nx">msg</span><span class="p">);</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">broadcast2all</span><span class="p">(</span><span class="nx">msg</span><span class="p">);</span>
     <span class="p">}</span>
     <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">msg</span><span class="p">.</span><span class="nx">to</span> <span class="o">===</span> <span class="s1">&#39;CHANNEL&#39;</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">this</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">broadcast2ownChannel</span><span class="p">(</span><span class="nx">msg</span><span class="p">);</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">broadcast2ownChannel</span><span class="p">(</span><span class="nx">msg</span><span class="p">);</span>
     <span class="p">}</span>
     <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">msg</span><span class="p">.</span><span class="nx">to</span> <span class="o">===</span> <span class="s1">&#39;ROOM&#39;</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">this</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">broadcast2ownRoom</span><span class="p">(</span><span class="nx">msg</span><span class="p">);</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">broadcast2ownRoom</span><span class="p">(</span><span class="nx">msg</span><span class="p">);</span>
     <span class="p">}</span>
     <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">msg</span><span class="p">.</span><span class="nx">to</span> <span class="o">===</span> <span class="s1">&#39;CHANNEL_X&#39;</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">this</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">broadcast2channel</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">_to</span><span class="p">);</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">broadcast2channel</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">_to</span><span class="p">);</span>
     <span class="p">}</span>
     <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">msg</span><span class="p">.</span><span class="nx">to</span> <span class="o">===</span> <span class="s1">&#39;ROOM_X&#39;</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">this</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">broadcast2room</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">_to</span><span class="p">);</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">broadcast2room</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">_to</span><span class="p">);</span>
     <span class="p">}</span>
     <span class="k">else</span> <span class="p">{</span>
         <span class="k">if</span> <span class="p">(</span><span class="nx">msg</span><span class="p">.</span><span class="nx">to</span> <span class="o">===</span> <span class="s1">&#39;SERVER&#39;</span> <span class="o">||</span> <span class="k">this</span><span class="p">.</span><span class="nx">forwardAll</span><span class="p">)</span> <span class="p">{</span>
@@ -954,7 +954,7 @@ the client-id of the recipient.</p>
                 <span class="k">return</span><span class="p">;</span>
             <span class="p">}</span>
 
-            <span class="k">this</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">send2roomAdmins</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">room</span><span class="p">);</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">send2roomAdmins</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">room</span><span class="p">);</span>
         <span class="p">}</span>
 
         <span class="k">if</span> <span class="p">(</span><span class="nx">msg</span><span class="p">.</span><span class="nx">to</span> <span class="o">!==</span> <span class="s1">&#39;SERVER&#39;</span><span class="p">)</span> <span class="p">{</span>
@@ -970,7 +970,7 @@ the client-id of the recipient.</p>
 <p>Send to receiving player:</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-            <span class="k">this</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">send2client</span><span class="p">(</span><span class="nx">msg</span><span class="p">);</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">send2client</span><span class="p">(</span><span class="nx">msg</span><span class="p">);</span>
         <span class="p">}</span>
     <span class="p">}</span>
 <span class="p">};</span>

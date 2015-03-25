@@ -538,7 +538,7 @@ that inherits this class: <code>AdminServer</code>, and <code>PlayerServer</code
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">socket</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">SocketManager</span><span class="p">(</span><span class="k">this</span><span class="p">);</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">socketManager</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">SocketManager</span><span class="p">(</span><span class="k">this</span><span class="p">);</span>
 
 
 </pre></div>
@@ -791,7 +791,7 @@ that inherits this class: <code>AdminServer</code>, and <code>PlayerServer</code
         <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">options</span><span class="p">.</span><span class="nx">sockets</span><span class="p">.</span><span class="nx">sio</span><span class="p">)</span> <span class="p">{</span>
             <span class="nx">sio</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">SocketIo</span><span class="p">(</span><span class="k">this</span><span class="p">);</span>
             <span class="nx">sio</span><span class="p">.</span><span class="nx">attachListeners</span><span class="p">();</span>
-            <span class="k">this</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">registerSocket</span><span class="p">(</span><span class="nx">sio</span><span class="p">);</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">registerSocket</span><span class="p">(</span><span class="nx">sio</span><span class="p">);</span>
             <span class="nx">socket_count</span><span class="o">++</span><span class="p">;</span>
         <span class="p">}</span>
 
@@ -808,7 +808,7 @@ that inherits this class: <code>AdminServer</code>, and <code>PlayerServer</code
         <td class="code highlight"><div class="highlight"><pre>
         <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">options</span><span class="p">.</span><span class="nx">sockets</span><span class="p">.</span><span class="nx">direct</span><span class="p">)</span> <span class="p">{</span>
             <span class="nx">direct</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">SocketDirect</span><span class="p">(</span><span class="k">this</span><span class="p">);</span>
-            <span class="k">this</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">registerSocket</span><span class="p">(</span><span class="nx">direct</span><span class="p">);</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">registerSocket</span><span class="p">(</span><span class="nx">direct</span><span class="p">);</span>
             <span class="nx">socket_count</span><span class="o">++</span><span class="p">;</span>
         <span class="p">}</span>
 
@@ -1629,7 +1629,7 @@ otherwise the welcomeClient will fail.</p>
                 <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">ADMIN_SERVER</span> <span class="o">?</span> <span class="s1">&#39;admin&#39;</span> <span class="o">:</span> <span class="s1">&#39;player&#39;</span> <span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;: &#39;</span> <span class="o">+</span>
                 <span class="nx">clientId</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
 
-        <span class="k">this</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">msg</span><span class="p">.</span><span class="nx">create</span><span class="p">({</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">msg</span><span class="p">.</span><span class="nx">create</span><span class="p">({</span>
             <span class="nx">target</span><span class="o">:</span> <span class="nx">ngc</span><span class="p">.</span><span class="nx">constants</span><span class="p">.</span><span class="nx">target</span><span class="p">.</span><span class="nx">ALERT</span><span class="p">,</span>
             <span class="nx">to</span><span class="o">:</span> <span class="nx">clientId</span><span class="p">,</span>
             <span class="nx">text</span><span class="o">:</span> <span class="s1">&#39;The game room you are looking for is not &#39;</span> <span class="o">+</span>
@@ -1684,7 +1684,7 @@ otherwise the welcomeClient will fail.</p>
 <p>Officially register the client in the socket manager.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">registerClient</span><span class="p">(</span><span class="nx">clientId</span><span class="p">,</span> <span class="nx">socketObj</span><span class="p">);</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">registerClient</span><span class="p">(</span><span class="nx">clientId</span><span class="p">,</span> <span class="nx">socketObj</span><span class="p">);</span>
 
 
 </pre></div>
@@ -1984,7 +1984,7 @@ anymore, a new id will be issued.</p>
 <p>Officially register the client in the socket manager.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">registerClient</span><span class="p">(</span><span class="nx">clientId</span><span class="p">,</span> <span class="nx">socketObj</span><span class="p">);</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">registerClient</span><span class="p">(</span><span class="nx">clientId</span><span class="p">,</span> <span class="nx">socketObj</span><span class="p">);</span>
 
 
 </pre></div>
@@ -2044,7 +2044,7 @@ This is probably a duplicated connection. Not allowed for the moment.</p>
   <a class="pilcrow" href="#section-75" id="section-75">&#182;</a>
 </div>
 
-<div class="highlight"><pre><code>    <span class="n">this</span><span class="o">.</span><span class="nb">socket</span><span class="o">.</span><span class="nb">send</span><span class="p">(</span><span class="n">this</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">create</span><span class="p">({</span>
+<div class="highlight"><pre><code>    <span class="n">this</span><span class="o">.</span><span class="n">socketManager</span><span class="o">.</span><span class="nb">send</span><span class="p">(</span><span class="n">this</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">create</span><span class="p">({</span>
         <span class="n">target:</span> <span class="n">ngc</span><span class="o">.</span><span class="n">constants</span><span class="o">.</span><span class="n">target</span><span class="o">.</span><span class="n">ALERT</span><span class="p">,</span>
         <span class="n">to:</span> <span class="n">clientId</span><span class="p">,</span>
         <span class="n">text:</span> <span class="s">&#39;An invalid session cookie has been found. &#39;</span> <span class="o">+</span>
@@ -2111,7 +2111,7 @@ This is probably a duplicated connection. Not allowed for the moment.</p>
     <span class="kd">var</span> <span class="nx">connStr</span><span class="p">;</span>
     <span class="nx">connStr</span> <span class="o">=</span> <span class="s2">&quot;Welcome &lt;&quot;</span> <span class="o">+</span> <span class="nx">clientId</span> <span class="o">+</span> <span class="s2">&quot;&gt;&quot;</span><span class="p">;</span>
     <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">connStr</span><span class="p">);</span>
-    <span class="k">this</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">msg</span><span class="p">.</span><span class="nx">create</span><span class="p">({</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">msg</span><span class="p">.</span><span class="nx">create</span><span class="p">({</span>
         <span class="nx">target</span><span class="o">:</span> <span class="s1">&#39;HI&#39;</span><span class="p">,</span>
         <span class="nx">to</span><span class="o">:</span> <span class="nx">clientId</span><span class="p">,</span>
         <span class="nx">data</span><span class="o">:</span> <span class="p">{</span>
@@ -2719,7 +2719,7 @@ It sends the object of language objects for the game back to the client.</p>
                 <span class="nx">data</span><span class="o">:</span> <span class="nx">that</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">info</span><span class="p">.</span><span class="nx">games</span><span class="p">[</span><span class="nx">room</span><span class="p">.</span><span class="nx">gameName</span><span class="p">].</span><span class="nx">languages</span>
             <span class="p">});</span>
 
-            <span class="nx">that</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">send2client</span><span class="p">(</span><span class="nx">response</span><span class="p">);</span>
+            <span class="nx">that</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">send2client</span><span class="p">(</span><span class="nx">response</span><span class="p">);</span>
         <span class="p">}</span>
     <span class="p">});</span>
 <span class="p">};</span>

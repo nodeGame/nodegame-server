@@ -898,6 +898,22 @@ the the output is nicely formatted.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
 
+    <span class="nx">process</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;SIGTERM&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+        <span class="kd">var</span> <span class="nx">chanIdx</span><span class="p">,</span> <span class="nx">pjsIdx</span>
+        <span class="kd">var</span> <span class="nx">chan</span><span class="p">,</span> <span class="nx">pjs</span><span class="p">;</span>
+        <span class="k">for</span> <span class="p">(</span><span class="nx">chanIdx</span> <span class="k">in</span> <span class="nx">that</span><span class="p">.</span><span class="nx">channels</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nx">that</span><span class="p">.</span><span class="nx">channels</span><span class="p">.</span><span class="nx">hasOwnProperty</span><span class="p">(</span><span class="nx">chanIdx</span><span class="p">))</span> <span class="p">{</span>
+                <span class="nx">chan</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">channels</span><span class="p">[</span><span class="nx">chanIdx</span><span class="p">];</span>
+                <span class="k">for</span> <span class="p">(</span><span class="nx">pjsIdx</span> <span class="k">in</span> <span class="nx">chan</span><span class="p">.</span><span class="nx">phantoms</span><span class="p">)</span> <span class="p">{</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="nx">chan</span><span class="p">.</span><span class="nx">phantoms</span><span class="p">.</span><span class="nx">hasOwnProperty</span><span class="p">(</span><span class="nx">pjsIdx</span><span class="p">))</span> <span class="p">{</span>
+                        <span class="nx">pjs</span> <span class="o">=</span> <span class="nx">chan</span><span class="p">.</span><span class="nx">phantoms</span><span class="p">[</span><span class="nx">pjsIdx</span><span class="p">];</span>
+                        <span class="nx">pjs</span><span class="p">.</span><span class="nx">kill</span><span class="p">(</span><span class="s1">&#39;SIGTERM&#39;</span><span class="p">);</span>
+                    <span class="p">}</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">});</span>
+
 
 </pre></div>
         </td>

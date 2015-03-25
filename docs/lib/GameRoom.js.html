@@ -1009,7 +1009,7 @@ passed in the constructor and be already connected.</p>
         <td class="code highlight"><div class="highlight"><pre>
         <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">node</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">isConnected</span><span class="p">())</span> <span class="p">{</span>
             <span class="nx">node</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">setSocketType</span><span class="p">(</span><span class="s1">&#39;SocketDirect&#39;</span><span class="p">,</span> <span class="p">{</span>
-                <span class="nx">socket</span><span class="o">:</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">admin</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">sockets</span><span class="p">.</span><span class="nx">direct</span>
+                <span class="nx">socket</span><span class="o">:</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">admin</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">sockets</span><span class="p">.</span><span class="nx">direct</span>
             <span class="p">});</span>
             <span class="nx">node</span><span class="p">.</span><span class="nx">connect</span><span class="p">(</span><span class="kc">null</span><span class="p">,</span> <span class="p">{</span>
                 <span class="nx">startingRoom</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">name</span><span class="p">,</span>
