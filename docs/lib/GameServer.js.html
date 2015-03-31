@@ -1132,6 +1132,19 @@ it detects the client's disconnection.</p>
     <span class="nx">roomName</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">registry</span><span class="p">.</span><span class="nx">getClientRoom</span><span class="p">(</span><span class="nx">client</span><span class="p">.</span><span class="nx">id</span><span class="p">);</span>
     <span class="nx">room</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">[</span><span class="nx">roomName</span><span class="p">];</span>
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">room</span><span class="p">)</span> <span class="p">{</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-36" id="section-36">&#182;</a>
+</div>
+<p>This can happen with transports different from websockets.
+They can trigger another disconnect event after first disconnect.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
         <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span>
                 <span class="s1">&#39;GameServer.onDisconnect: Could not determine room for &#39;</span> <span class="o">+</span>
                 <span class="s1">&#39;disconnecting &#39;</span> <span class="o">+</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">ADMIN_SERVER</span> <span class="o">?</span> <span class="s1">&#39;admin&#39;</span> <span class="o">:</span> <span class="s1">&#39;player&#39;</span><span class="p">)</span> <span class="o">+</span>
@@ -1149,7 +1162,7 @@ it detects the client's disconnection.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-36" id="section-36">&#182;</a>
+  <a class="pilcrow" href="#section-37" id="section-37">&#182;</a>
 </div>
 <p>Emit so that it can be handled different by Admin and Player Server.</p>
         </td>
@@ -1181,7 +1194,7 @@ it detects the client's disconnection.</p>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">GameServer</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">onShutdown</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
     <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;GameServer is shutting down.&quot;</span><span class="p">);</span>
-    
+
 
 </pre></div>
         </td>
@@ -1189,7 +1202,7 @@ it detects the client's disconnection.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-38" id="section-38">&#182;</a>
+  <a class="pilcrow" href="#section-39" id="section-39">&#182;</a>
 </div>
 <p>TODO save state to disk</p>
         </td>
@@ -1302,7 +1315,7 @@ it detects the client's disconnection.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-41" id="section-41">&#182;</a>
+  <a class="pilcrow" href="#section-42" id="section-42">&#182;</a>
 </div>
 <p>Kudos to:
 <a href='http://commandlinefanatic.com/cgi-bin/showarticle.cgi?article=art013'>http://commandlinefanatic.com/cgi-bin/showarticle.cgi?article=art013</a></p>
@@ -1330,7 +1343,7 @@ it detects the client's disconnection.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-42" id="section-42">&#182;</a>
+  <a class="pilcrow" href="#section-43" id="section-43">&#182;</a>
 </div>
 <p>Get default clientType.</p>
         </td>
@@ -1347,7 +1360,7 @@ it detects the client's disconnection.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-43" id="section-43">&#182;</a>
+  <a class="pilcrow" href="#section-44" id="section-44">&#182;</a>
 </div>
 <p>Authorization check, if an authorization function is defined.</p>
         </td>
@@ -1367,7 +1380,7 @@ it detects the client's disconnection.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-44" id="section-44">&#182;</a>
+  <a class="pilcrow" href="#section-45" id="section-45">&#182;</a>
 </div>
 <p>Warns and disconnect client if auth failed.</p>
         </td>
@@ -1384,7 +1397,7 @@ it detects the client's disconnection.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-45" id="section-45">&#182;</a>
+  <a class="pilcrow" href="#section-46" id="section-46">&#182;</a>
 </div>
 <p>If session cookie matches current session id, and a player cookie is
 found, then it is likely that the player is reconnecting. Notice that
@@ -1409,7 +1422,7 @@ the following cases can happen too:
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-46" id="section-46">&#182;</a>
+  <a class="pilcrow" href="#section-47" id="section-47">&#182;</a>
 </div>
 <p>If reconnection failed, it will be treated as a new connection.</p>
         </td>
@@ -1425,7 +1438,7 @@ the following cases can happen too:
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-47" id="section-47">&#182;</a>
+  <a class="pilcrow" href="#section-48" id="section-48">&#182;</a>
 </div>
 <p>New connection.</p>
         </td>
@@ -1438,7 +1451,7 @@ the following cases can happen too:
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-48" id="section-48">&#182;</a>
+  <a class="pilcrow" href="#section-49" id="section-49">&#182;</a>
 </div>
 <p>New connection can internally call the reconnection routine, if it
 detects that the client was reconnecting (for instance, by looking
@@ -1457,7 +1470,7 @@ at other cookies, or at the headers).</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-49" id="section-49">&#182;</a>
+  <a class="pilcrow" href="#section-50" id="section-50">&#182;</a>
 </div>
 <p>In case of failure, dispose of the client.</p>
         </td>
@@ -1470,7 +1483,7 @@ at other cookies, or at the headers).</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-50" id="section-50">&#182;</a>
+  <a class="pilcrow" href="#section-51" id="section-51">&#182;</a>
 </div>
 <p>Warns and disconnect client if auth failed.</p>
         </td>
@@ -1554,7 +1567,7 @@ at other cookies, or at the headers).</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-52" id="section-52">&#182;</a>
+  <a class="pilcrow" href="#section-53" id="section-53">&#182;</a>
 </div>
 <p>clientId must be already marked as disconnected.</p>
         </td>
@@ -1571,13 +1584,60 @@ at other cookies, or at the headers).</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-53" id="section-53">&#182;</a>
+  <a class="pilcrow" href="#section-54" id="section-54">&#182;</a>
 </div>
-<p>The client will be treated as a new connection, but a
+<p>TODO: check if it was marked as connected.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-55" id="section-55">&#182;</a>
+</div>
+<p>TODO: Ste: Mark disconnected and try to resume the connection.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="kd">var</span> <span class="nx">gameMsg</span> <span class="o">=</span> <span class="p">{</span><span class="nx">to</span><span class="o">:</span> <span class="nx">clientId</span><span class="p">};</span> <span class="c1">// needs a game msg. TODO: update.</span>
+        <span class="kd">var</span> <span class="nx">globalLookup</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+        <span class="kd">var</span> <span class="nx">oldInfo</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">resolveClientAndSocket</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span>
+                                                                <span class="nx">globalLookup</span><span class="p">);</span>
+
+
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">oldInfo</span><span class="p">.</span><span class="nx">success</span><span class="p">)</span> <span class="p">{</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-56" id="section-56">&#182;</a>
+</div>
+<p>TODO: check what to do here.
+The client will be treated as a new connection, but a
 warning will be sent.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-        <span class="k">return</span> <span class="nx">GameServer</span><span class="p">.</span><span class="nx">codes</span><span class="p">.</span><span class="nx">DUPLICATED_CLIENT_ID</span><span class="p">;</span>
+            <span class="k">return</span> <span class="nx">GameServer</span><span class="p">.</span><span class="nx">codes</span><span class="p">.</span><span class="nx">DUPLICATED_CLIENT_ID</span><span class="p">;</span>
+        <span class="p">}</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-57" id="section-57">&#182;</a>
+</div>
+<p>Force disconnection from old socket.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="k">this</span><span class="p">.</span><span class="nx">onDisconnect</span><span class="p">(</span><span class="nx">oldInfo</span><span class="p">.</span><span class="nx">sid</span><span class="p">,</span> <span class="nx">oldInfo</span><span class="p">.</span><span class="nx">socket</span><span class="p">);</span>
     <span class="p">}</span>
 
 
@@ -1587,7 +1647,7 @@ warning will be sent.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-54" id="section-54">&#182;</a>
+  <a class="pilcrow" href="#section-58" id="section-58">&#182;</a>
 </div>
 <p>Mark the client connected (necessary to do updates).</p>
         </td>
@@ -1601,7 +1661,7 @@ warning will be sent.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-55" id="section-55">&#182;</a>
+  <a class="pilcrow" href="#section-59" id="section-59">&#182;</a>
 </div>
 <p>Updates the socket id of the client in the registry,
 otherwise the welcomeClient will fail.</p>
@@ -1618,7 +1678,7 @@ otherwise the welcomeClient will fail.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-56" id="section-56">&#182;</a>
+  <a class="pilcrow" href="#section-60" id="section-60">&#182;</a>
 </div>
 <p>The old room must be still existing.</p>
         </td>
@@ -1647,7 +1707,7 @@ otherwise the welcomeClient will fail.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-57" id="section-57">&#182;</a>
+  <a class="pilcrow" href="#section-61" id="section-61">&#182;</a>
 </div>
 <p>All checks passed. Approved reconnection.</p>
         </td>
@@ -1660,7 +1720,7 @@ otherwise the welcomeClient will fail.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-58" id="section-58">&#182;</a>
+  <a class="pilcrow" href="#section-62" id="section-62">&#182;</a>
 </div>
 <p>Creating one client object.</p>
         </td>
@@ -1679,7 +1739,7 @@ otherwise the welcomeClient will fail.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-59" id="section-59">&#182;</a>
+  <a class="pilcrow" href="#section-63" id="section-63">&#182;</a>
 </div>
 <p>Officially register the client in the socket manager.</p>
         </td>
@@ -1693,7 +1753,7 @@ otherwise the welcomeClient will fail.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-60" id="section-60">&#182;</a>
+  <a class="pilcrow" href="#section-64" id="section-64">&#182;</a>
 </div>
 <p>Placing the player in the returning room.</p>
         </td>
@@ -1709,7 +1769,7 @@ otherwise the welcomeClient will fail.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-61" id="section-61">&#182;</a>
+  <a class="pilcrow" href="#section-65" id="section-65">&#182;</a>
 </div>
 <p>Notify the client of its ID.</p>
         </td>
@@ -1723,7 +1783,7 @@ otherwise the welcomeClient will fail.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-62" id="section-62">&#182;</a>
+  <a class="pilcrow" href="#section-66" id="section-66">&#182;</a>
 </div>
 <p>Let Admin and Player Server handle the new connection.</p>
         </td>
@@ -1732,7 +1792,6 @@ otherwise the welcomeClient will fail.</p>
 
     <span class="k">return</span> <span class="nx">GameServer</span><span class="p">.</span><span class="nx">codes</span><span class="p">.</span><span class="nx">OPERATION_OK</span><span class="p">;</span>
 <span class="p">};</span>
-
 
 
 </pre></div>
@@ -1829,7 +1888,7 @@ is already existing, then <code>handleReconnectingClient</code> is called.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-64" id="section-64">&#182;</a>
+  <a class="pilcrow" href="#section-68" id="section-68">&#182;</a>
 </div>
 <p>A new ID can be generated automatically, or through a custom cb.</p>
         </td>
@@ -1851,7 +1910,7 @@ is already existing, then <code>handleReconnectingClient</code> is called.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-65" id="section-65">&#182;</a>
+  <a class="pilcrow" href="#section-69" id="section-69">&#182;</a>
 </div>
 <p>If clientId is not string (for a failure or because the custom
 id generator function did no accept the connection) the connection
@@ -1873,7 +1932,7 @@ is disposed, exactly as it was not authorized.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-66" id="section-66">&#182;</a>
+  <a class="pilcrow" href="#section-70" id="section-70">&#182;</a>
 </div>
 <p>If the authorization function returned an id that actually
 already exists we need to try to handle as a reconnection.
@@ -1905,7 +1964,7 @@ anymore, a new id will be issued.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-67" id="section-67">&#182;</a>
+  <a class="pilcrow" href="#section-71" id="section-71">&#182;</a>
 </div>
 <p>clientId will be reset below.</p>
         </td>
@@ -1925,7 +1984,7 @@ anymore, a new id will be issued.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-68" id="section-68">&#182;</a>
+  <a class="pilcrow" href="#section-72" id="section-72">&#182;</a>
 </div>
 <p>Duplicated code from above.</p>
         </td>
@@ -1946,7 +2005,7 @@ anymore, a new id will be issued.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-69" id="section-69">&#182;</a>
+  <a class="pilcrow" href="#section-73" id="section-73">&#182;</a>
 </div>
 <p>Creating one client object.</p>
         </td>
@@ -1965,7 +2024,7 @@ anymore, a new id will be issued.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-70" id="section-70">&#182;</a>
+  <a class="pilcrow" href="#section-74" id="section-74">&#182;</a>
 </div>
 <p>Adds the client to the registry.</p>
         </td>
@@ -1979,7 +2038,7 @@ anymore, a new id will be issued.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-71" id="section-71">&#182;</a>
+  <a class="pilcrow" href="#section-75" id="section-75">&#182;</a>
 </div>
 <p>Officially register the client in the socket manager.</p>
         </td>
@@ -1993,7 +2052,7 @@ anymore, a new id will be issued.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-72" id="section-72">&#182;</a>
+  <a class="pilcrow" href="#section-76" id="section-76">&#182;</a>
 </div>
 <p>Put the connecting client in the waiting room or the startingRoom.</p>
         </td>
@@ -2010,7 +2069,7 @@ anymore, a new id will be issued.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-73" id="section-73">&#182;</a>
+  <a class="pilcrow" href="#section-77" id="section-77">&#182;</a>
 </div>
 <p>Notify the client of its ID.</p>
         </td>
@@ -2025,7 +2084,7 @@ anymore, a new id will be issued.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-74" id="section-74">&#182;</a>
+  <a class="pilcrow" href="#section-78" id="section-78">&#182;</a>
 </div>
 <p>TODO: remove comments
 TODO: in some cases it could be allowed. And in any case
@@ -2041,7 +2100,7 @@ This is probably a duplicated connection. Not allowed for the moment.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-75" id="section-75">&#182;</a>
+  <a class="pilcrow" href="#section-79" id="section-79">&#182;</a>
 </div>
 
 <div class="highlight"><pre><code>    <span class="n">this</span><span class="o">.</span><span class="n">socketManager</span><span class="o">.</span><span class="nb">send</span><span class="p">(</span><span class="n">this</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">create</span><span class="p">({</span>
@@ -2064,7 +2123,7 @@ This is probably a duplicated connection. Not allowed for the moment.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-76" id="section-76">&#182;</a>
+  <a class="pilcrow" href="#section-80" id="section-80">&#182;</a>
 </div>
 <p>Let each Admin and Player Server registering the new connection.</p>
         </td>
@@ -2173,7 +2232,7 @@ This is probably a duplicated connection. Not allowed for the moment.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-79" id="section-79">&#182;</a>
+  <a class="pilcrow" href="#section-83" id="section-83">&#182;</a>
 </div>
 <p>We need to send an HI message in any case because otherwise
 the client will discard the messages.</p>
@@ -2195,7 +2254,7 @@ the client will discard the messages.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-80" id="section-80">&#182;</a>
+  <a class="pilcrow" href="#section-84" id="section-84">&#182;</a>
 </div>
 <p>Redirects the client.</p>
         </td>
@@ -2392,7 +2451,7 @@ field.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-85" id="section-85">&#182;</a>
+  <a class="pilcrow" href="#section-89" id="section-89">&#182;</a>
 </div>
 <p>TODO: avoid cascading and use else if instead.</p>
         </td>
@@ -2432,7 +2491,7 @@ field.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-86" id="section-86">&#182;</a>
+  <a class="pilcrow" href="#section-90" id="section-90">&#182;</a>
 </div>
 <p>Extract channel name from <em>to</em> field.</p>
         </td>
@@ -2445,7 +2504,7 @@ field.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-87" id="section-87">&#182;</a>
+  <a class="pilcrow" href="#section-91" id="section-91">&#182;</a>
 </div>
 <p>Fetch channel object.</p>
         </td>
@@ -2465,7 +2524,7 @@ field.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-88" id="section-88">&#182;</a>
+  <a class="pilcrow" href="#section-92" id="section-92">&#182;</a>
 </div>
 <p>Encapsulate validated channel data in the message.</p>
         </td>
@@ -2490,7 +2549,7 @@ field.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-89" id="section-89">&#182;</a>
+  <a class="pilcrow" href="#section-93" id="section-93">&#182;</a>
 </div>
 <p>Extract room id from <em>to</em> field.</p>
         </td>
@@ -2503,7 +2562,7 @@ field.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-90" id="section-90">&#182;</a>
+  <a class="pilcrow" href="#section-94" id="section-94">&#182;</a>
 </div>
 <p>Fetch channel object.</p>
         </td>
@@ -2524,7 +2583,7 @@ field.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-91" id="section-91">&#182;</a>
+  <a class="pilcrow" href="#section-95" id="section-95">&#182;</a>
 </div>
 <p>Encapsulate validated channel data in the message.</p>
         </td>
@@ -2540,7 +2599,7 @@ field.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-92" id="section-92">&#182;</a>
+  <a class="pilcrow" href="#section-96" id="section-96">&#182;</a>
 </div>
 <p>Otherwise it's either SERVER (always allowed) or a client ID, which
 will be checked at a later point.</p>
@@ -2697,7 +2756,7 @@ It sends the object of language objects for the game back to the client.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-96" id="section-96">&#182;</a>
+  <a class="pilcrow" href="#section-100" id="section-100">&#182;</a>
 </div>
 <p>Get the room of the player to infer the game.</p>
         </td>
