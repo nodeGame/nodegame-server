@@ -3,6 +3,7 @@
 # 0.9.10
  - Treatments are correctly built.
  - IP address is passed to auth function.
+ - HandleReconnection method in GameServer forces disconnection of previously connected clients if a reconnection with the same client id is found. This can happen with non-WebSockets connections.
 
 # 0.9.9
  - Incorrect Build
