@@ -25,11 +25,11 @@ function configure(servernode) {
     }
 
     // TODO: check
-    //	servernode.log.msg = false;
-    //	servernode.log.sys = false;
-    //	servernode.log.folder = rootDir + '/log/';
+    //  servernode.log.msg = false;
+    //  servernode.log.sys = false;
+    //  servernode.log.folder = rootDir + '/log/';
     //
-    //	servernode.mail = false; // experimental
+    //  servernode.mail = false; // experimental
 
     // The name of the server.
     servernode.name = "nodeGame server";
@@ -47,11 +47,11 @@ function configure(servernode) {
     if (process && process.env.PORT) {
         // If app is running on a cloud service (e.g. Heroku)
         // then the assigned port has to be used.
-	servernode.port = process.env.PORT;
+        servernode.port = process.env.PORT;
     }
     else {
         // Port of the HTTP server and the Socket.IO app.
-	servernode.port = '8080';
+        servernode.port = '8080';
     }
 
     // The maximum number of channels allowed. 0 means unlimited.
@@ -120,7 +120,12 @@ function configure(servernode) {
 
         // Allow setting data (e.g. startingRoom, client type) in the query
         // data of a SocketIO connection.
-        sioQuery: true
+        sioQuery: true,
+
+        // Enable reconnections.
+        // If TRUE, clients will be matched with previous game history based on
+        // the clientId found in their cookies.
+        enableReconnections: true
     };
 
     // PlayerServer default options.
@@ -178,7 +183,10 @@ function configure(servernode) {
         getFromAdmins: false,
 
         // See above, in admin defaults.
-        sioQuery: true
+        sioQuery: true,
+
+        // See above, in the admin defaults.
+        enableReconnections: true
     };
 
     // Defaults option for a channel.

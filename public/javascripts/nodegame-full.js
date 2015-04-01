@@ -2181,10 +2181,9 @@ if (!Array.prototype.indexOf) {
      */
     DOM.write = function(root, text) {
         var content;
-        if (!root) return;
-        if ('undefined' === typeof text) text = "";
-        content = (!JSUS.isNode(text) || !JSUS.isElement(text)) ?
-            document.createTextNode(text) : text;
+        if ('undefined' === typeof text || text === null) text = "";
+        if (JSUS.isNode(text) || JSUS.isElement(text)) content = text;
+        else content = document.createTextNode(text);
         root.appendChild(content);
         return content;
     };
@@ -2206,9 +2205,10 @@ if (!Array.prototype.indexOf) {
      * @see DOM.addBreak
      */
     DOM.writeln = function(root, text, rc) {
-        if (!root) return;
-        var br = this.addBreak(root, rc);
-        return (text) ? DOM.write(root, text) : br;
+        var content;
+        content = DOM.write(root, text);
+        this.addBreak(root, rc);
+        return content;
     };
 
     /**
@@ -2366,8 +2366,8 @@ if (!Array.prototype.indexOf) {
      * @return {boolean} TRUE, if the the object is a DOM node
      */
     DOM.isNode = function(o) {
+        if ('object' !== typeof o) return false;
         return 'object' === typeof Node ? o instanceof Node :
-            'object' === typeof o &&
             'number' === typeof o.nodeType &&
             'string' === typeof o.nodeName;
     };
@@ -10568,11 +10568,11 @@ if (!Array.prototype.indexOf) {
      * If no parameter is passed, all the properties of the GameStage
      * object are set to 0
      *
-     * @param {object|string|number} gs Optional. The game stage
+     * @param {object|string|number} gameStage Optional. The game stage
      *
      * @see GameStage.defaults.hash
      */
-    function GameStage(gs) {
+    function GameStage(gameStage) {
         var tokens, stageNum, stepNum, roundNum;
 
         // ## Public properties
@@ -10599,8 +10599,8 @@ if (!Array.prototype.indexOf) {
         this.round = 0;
 
         // String.
-        if ('string' === typeof gs) {
-            tokens = gs.split('.');
+        if ('string' === typeof gameStage) {
+            tokens = gameStage.split('.');
             stageNum = parseInt(tokens[0], 10);
             stepNum  = parseInt(tokens[1], 10);
             roundNum = parseInt(tokens[2], 10);
@@ -10622,25 +10622,28 @@ if (!Array.prototype.indexOf) {
             }
         }
         // Not null object.
-        else if (gs && 'object' === typeof gs) {
-            this.stage = gs.stage;
-            this.step = 'undefined' !== typeof gs.step ? gs.step : 1;
-            this.round = 'undefined' !== typeof gs.round ? gs.round : 1;
+        else if (gameStage && 'object' === typeof gameStage) {
+            this.stage = gameStage.stage;
+            this.step = 'undefined' !== typeof gameStage.step ?
+                gameStage.step : 1;
+            this.round = 'undefined' !== typeof gameStage.round ?
+                gameStage.round : 1;
         }
         // Number.
-        else if ('number' === typeof gs) {
-            if (gs % 1 !== 0) {
-               throw new TypeError('GameStage constructor: gs cannot be ' +
-                                   'a non-integer number.');
+        else if ('number' === typeof gameStage) {
+            if (gameStage % 1 !== 0) {
+               throw new TypeError('GameStage constructor: gameStage ' +
+                                   'cannot be a non-integer number.');
             }
-            this.stage = gs;
+            this.stage = gameStage;
             this.step = 1;
             this.round = 1;
         }
         // Defaults or error.
-        else if (gs !== null && 'undefined' !== typeof gs) {
-            throw new TypeError('GameStage constructor: gs must be string, ' +
-                                'object, a positive number, or undefined.');
+        else if (gameStage !== null && 'undefined' !== typeof gameStage) {
+            throw new TypeError('GameStage constructor: gameStage must be ' +
+                                'string, object, a positive number, or ' +
+                                'undefined.');
         }
 
         // Final sanity checks.
@@ -10816,6 +10819,10 @@ if (!Array.prototype.indexOf) {
  * MIT Licensed
  *
  * Handles a collection of `Player` objects
+ *
+ * Offers methods to update, search and retrieve players.
+ *
+ * It extends the NDDB class.
  */
 (function(exports, parent) {
 
@@ -10840,28 +10847,11 @@ if (!Array.prototype.indexOf) {
     PlayerList.prototype = new NDDB();
     PlayerList.prototype.constructor = PlayerList;
 
-    /**
-     * ### PlayerList.array2Groups (static)
-     *
-     * Transforms an array of array (of players) into an
-     * array of PlayerList instances and returns it.
-     *
-     * The original array is modified.
-     *
-     * @param {array} array The array to transform
-     *
-     * @return {array} array The array of `PlayerList` objects
-     */
-    PlayerList.array2Groups = function (array) {
-        if (!array) return;
-        for (var i = 0; i < array.length; i++) {
-            array[i] = new PlayerList({}, array[i]);
-        };
-        return array;
-    };
+    // Sync types used by PlayerList.arePlayersSync
+    var syncTypes;
 
     /**
-     * ### PlayerList.comparePlayers
+     * ## PlayerList.comparePlayers
      *
      * Comparator functions between two players
      *
@@ -10937,13 +10927,16 @@ if (!Array.prototype.indexOf) {
      *
      * Overrides NDDB.importDB
      *
-     * @param {array} pl The array of player to import at once
+     * @param {array} db The array of player to import at once
      */
-    PlayerList.prototype.importDB = function(pl) {
-        var i;
-        if (!pl) return;
-        for (i = 0; i < pl.length; i++) {
-            this.add(pl[i]);
+    PlayerList.prototype.importDB = function(db) {
+        var i, len;
+        if (!J.isArray(db)) {
+            throw new TypeError('PlayerList.importDB: db must be array.');
+        }
+        i = -1, len = db.length;
+        for ( ; ++i < len ; ) {
+            this.add(db[i]);
         }
     };
 
@@ -10960,42 +10953,82 @@ if (!Array.prototype.indexOf) {
      * the internal `pcounter` variable is incremented.
      *
      * @param {Player} player The player object to add to the database
+     *
      * @return {player} The inserted player
      */
     PlayerList.prototype.add = function(player) {
         if (!(player instanceof Player)) {
-            if (!player || 'string' !== typeof player.id) {
-                throw new NodeGameRuntimeError(
-                        'PlayerList.add: player.id must be string.');
+            if ('object' !== typeof player) {
+                throw new TypeError('PlayerList.add: player must be object.');
+            }
+            if ('string' !== typeof player.id) {
+                throw new TypeError('PlayerList.add: ' +
+                                    'player.id must be string.');
             }
             player = new Player(player);
         }
 
         if (this.exist(player.id)) {
-            throw new NodeGameRuntimeError(
-                'PlayerList.add: player already exists (id ' + player.id + ')');
+            throw new Error('PlayerList.add: player already exististing: ' +
+                            player.id + '.');
         }
         this.insert(player);
         player.count = this.pcounter;
         this.pcounter++;
-
         return player;
     };
+
+// NEW GET AND REMOVE (no errors are thrown)
+
+//     /**
+//      * ### PlayerList.get
+//      *
+//      * Retrieves a player with the given id
+//      *
+//      * @param {number} id The client id of the player to retrieve
+//      *
+//      * @return {Player} The player with the speficied id
+//      */
+//     PlayerList.prototype.get = function(id) {
+//         if ('string' !== typeof id) {
+//             throw new TypeError('PlayerList.get: id must be string.');
+//         }
+//         return this.id.get(id);
+//     };
+//
+//     /**
+//      * ### PlayerList.remove
+//      *
+//      * Removes the player with the given id
+//      *
+//      * Notice: this operation cannot be undone
+//      *
+//      * @param {number} id The id of the player to remove
+//      *
+//      * @return {object} The removed player object
+//      */
+//     PlayerList.prototype.remove = function(id) {
+//         if ('string' !== typeof id) {
+//             throw new TypeError('PlayerList.remove: id must be string.');
+//         }
+//         return this.id.remove(id);
+//     };
+
+// OLD GET AND REMOVE: throw errors
 
     /**
      * ### PlayerList.get
      *
      * Retrieves a player with the given id
      *
-     * @param {number} id The client id of the player to retrieve
-     *
+     * @param {number} id The id of the player to retrieve
      * @return {Player} The player with the speficied id
      */
     PlayerList.prototype.get = function(id) {
         var player;
-        if ('string' !== typeof id) {
+        if ('undefined' === typeof id) {
             throw new NodeGameRuntimeError(
-                    'PlayerList.get: id must be string.');
+                    'PlayerList.get: id was not given');
 
         }
         player = this.id.get(id);
@@ -11039,6 +11072,7 @@ if (!Array.prototype.indexOf) {
      * Checks whether a player with the given id already exists
      *
      * @param {string} id The id of the player
+     *
      * @return {boolean} TRUE, if a player with the specified id is found
      */
     PlayerList.prototype.exist = function(id) {
@@ -11051,6 +11085,7 @@ if (!Array.prototype.indexOf) {
      * Clears the PlayerList and rebuilds the indexes
      *
      * @param {boolean} confirm Must be TRUE to actually clear the list
+     *
      * @return {boolean} TRUE, if a player with the specified id is found
      */
     PlayerList.prototype.clear = function(confirm) {
@@ -11065,19 +11100,15 @@ if (!Array.prototype.indexOf) {
      *
      * @param {number} id The id of the player
      * @param {object} playerState An update with fields to update in the player
+     *
      * @return {object} The updated player object
      */
     PlayerList.prototype.updatePlayer = function(id, update) {
-        //var player;
+        var player;
         if ('string' !== typeof id) {
             throw new TypeError(
                 'PlayerList.updatePlayer: id must be string.');
         }
-        if (!this.exist(id)) {
-            throw new NodeGameRuntimeError(
-                'PlayerList.updatePlayer: Player not found (id ' + id + ')');
-        }
-
         if ('object' !== typeof update) {
             throw new TypeError(
                 'PlayerList.updatePlayer: update must be object.');
@@ -11088,13 +11119,12 @@ if (!Array.prototype.indexOf) {
                             'the player id.');
         }
 
-        // var player = this.id.get(id);
-        // J.mixin(player, update);
-        // return player;
-        // This creates some problems with the _autoUpdate...to be investigated.
-        this.id.update(id, update);
+        player = this.id.update(id, update);
 
-
+        if (!player) {
+            throw new Error(
+                'PlayerList.updatePlayer: player not found: ' + id + '.');
+        }
     };
 
     /**
@@ -11107,18 +11137,17 @@ if (!Array.prototype.indexOf) {
      *
      * `node.constants.stageLevels.DONE`.
      *
-
-     // TODO UPDATE DOC
-
-     * Players at other steps are ignored.
+     * By default, players at other steps are ignored.
      *
      * If no player is found at the desired step, it returns TRUE
      *
      * @param {GameStage} gameStage The GameStage of reference
-     * @param {boolean} upTo Optional. If TRUE, all players in the stage up
-     *   to the given step are checked. Default: FALSE
+     * @param {string} type Optional. The type of checking. Default 'EXACT'
+     * @param {boolean} checkOutliers Optional. If TRUE, players at other
+     *   steps are also checked. Default FALSE
      *
      * @return {boolean} TRUE, if all checked players have terminated the stage
+     *
      * @see PlayerList.arePlayersSync
      */
     PlayerList.prototype.isStepDone = function(gameStage, type, checkOutliers) {
@@ -11136,15 +11165,14 @@ if (!Array.prototype.indexOf) {
      *
      * `node.constants.stageLevels.LOADED`.
      *
-     * Players at other steps are ignored.
-
-     // TODO UPDATE DOC
-
+     * By default, players at other steps are ignored.
      *
      * If no player is found at the desired step, it returns TRUE.
      *
      * @param {GameStage} gameStage The GameStage of reference
+     *
      * @return {boolean} TRUE, if all checked players have loaded the stage
+     *
      * @see PlayerList.arePlayersSync
      */
     PlayerList.prototype.isStepLoaded = function(gameStage) {
@@ -11156,18 +11184,22 @@ if (!Array.prototype.indexOf) {
      *
      * Verifies that all players in the same stage are at the same stageLevel
      *
-     * Players at other game steps are ignored, unless the `upTo` parameter is
-     * set. In this case, if players are found in earlier game steps, the method
-     * will return false. Players at later game steps will still be ignored.
+     * Players at other game steps are ignored, unless the
+     * `checkOutliers` parameter is set. In this case, if players are
+     * found in earlier game steps, the method will return
+     * false. Players at later game steps will still be ignored.
      *
-     // TODO UPDATE DOC
-
-     strict: same stage, step, round, stageLevel
-     stage: same stage
-     stage_up_to:
-
-     players in other stages - ignore - false
-
+     * The `type` parameter can assume one of the following values:
+     *
+     *  - 'EXACT': same stage, step, round
+     *  - 'STAGE': same stage, but different steps and rounds are accepted
+     *  - 'STAGE_UPTO': up to the same stage is ok
+     *
+     * Finally, if `stageLevel` is set, it even checks for the stageLevel,
+     * for example: PLAYING, DONE, etc.
+     *
+     * TODO: see the checkOutliers param, if it is needed after all.
+     *
      * @param {GameStage} gameStage The GameStage of reference
      * @param {number} stageLevel The stageLevel of reference
      * @param {string} type Optional. Flag to say what players will be checked
@@ -11179,14 +11211,14 @@ if (!Array.prototype.indexOf) {
     PlayerList.prototype.arePlayersSync = function(gameStage, stageLevel, type,
                                                    checkOutliers) {
 
-        var p, i, len, cmp, types, outlier;
+        var p, i, len, cmp, outlier;
 
-        if (!gameStage) {
-            throw new TypeError('PlayerList.arePlayersSync: ' +
-                                'invalid gameStage.');
-        }
+        // Cast the gameStage to object. It can throw errors.
+        gameStage = new GameStage(gameStage);
+
         if ('undefined' !== typeof stageLevel &&
-            'number' !== typeof stageLevel) {
+            'number'    !== typeof stageLevel) {
+
             throw new TypeError('PlayerList.arePlayersSync: stagelevel must ' +
                                 'be number or undefined.');
         }
@@ -11194,10 +11226,10 @@ if (!Array.prototype.indexOf) {
         type = type || 'EXACT';
         if ('string' !== typeof type) {
             throw new TypeError('PlayerList.arePlayersSync: type must be ' +
-                                ' string or undefined.');
+                                'string or undefined.');
         }
-        types = {STAGE: '', STAGE_UPTO: '', EXACT: ''};
-        if ('undefined' === typeof types[type]) {
+
+        if ('undefined' === typeof syncTypes[type]) {
             throw new Error('PlayerList.arePlayersSync: unknown type: ' +
                             type + '.');
         }
@@ -11206,8 +11238,8 @@ if (!Array.prototype.indexOf) {
             true : checkOutliers;
 
         if ('boolean' !== typeof checkOutliers) {
-            throw new TypeError('PlayerList.arePlayersSync: checkOutliers' +
-                                ' must be boolean or undefined.');
+            throw new TypeError('PlayerList.arePlayersSync: checkOutliers ' +
+                                'must be boolean or undefined.');
         }
 
         if (!checkOutliers && type === 'EXACT') {
@@ -11215,11 +11247,9 @@ if (!Array.prototype.indexOf) {
                             ' type=EXACT and checkOutliers=FALSE.');
         }
 
-        // Cast the gameStage to object.
-        gameStage = new GameStage(gameStage);
+        i = -1, len = this.db.length;
+        for ( ; ++i < len ; ) {
 
-        len = this.db.length;
-        for (i = 0; i < len; i++) {
             p = this.db[i];
 
             switch(type) {
@@ -11275,7 +11305,7 @@ if (!Array.prototype.indexOf) {
      */
     PlayerList.prototype.toString = function(eol) {
         var out = '', EOL = eol || '\n', stage;
-        this.forEach(function(p) {
+        this.each(function(p) {
             out += p.id + ': ' + p.name;
             stage = new GameStage(p.stage);
             out += ': ' + stage + EOL;
@@ -11295,8 +11325,12 @@ if (!Array.prototype.indexOf) {
      * @see JSUS.getNGroups
      */
     PlayerList.prototype.getNGroups = function(N) {
-        if (!N) return;
-        var groups = J.getNGroups(this.db, N);
+        var groups;
+        if ('number' !== typeof N || isNaN(N) || N < 1) {
+            throw new TypeError('PlayerList.getNGroups: N must be a number ' +
+                                '> 0: ' + N + '.');
+        }
+        groups = J.getNGroups(this.db, N);
         return PlayerList.array2Groups(groups);
     };
 
@@ -11312,8 +11346,12 @@ if (!Array.prototype.indexOf) {
      * @see JSUS.getGroupsSizeN
      */
     PlayerList.prototype.getGroupsSizeN = function(N) {
-        if (!N) return;
-        var groups = J.getGroupsSizeN(this.db, N);
+        var groups;
+        if ('number' !== typeof N || isNaN(N) || N < 1) {
+            throw new TypeError('PlayerList.getNGroups: N must be a number ' +
+                                '> 0: ' + N + '.');
+        }
+        groups = J.getGroupsSizeN(this.db, N);
         return PlayerList.array2Groups(groups);
     };
 
@@ -11327,25 +11365,47 @@ if (!Array.prototype.indexOf) {
      * @return {Player|array} A single player object or an array of
      */
     PlayerList.prototype.getRandom = function(N) {
-        if (!N) N = 1;
-        if (N < 1) {
-            throw new NodeGameRuntimeError(
-                    'PlayerList.getRandom: N must be an integer >= 1');
+        var shuffled;
+        if ('undefined' === typeof N) N = 1;
+        if ('number' !== typeof N || isNaN(N) || N < 1) {
+            throw new TypeError('PlayerList.getRandom: N must be a number ' +
+                                '> 0 or undefined: ' + N + '.');
         }
-        this.shuffle();
-        return N === 1 ? this.first() : this.limit(N).fetch();
+        shuffled = this.shuffle();
+        return N === 1 ? shuffled.first() : shuffled.limit(N).fetch();
     };
+
+
+    // ## Helper Methods and Objects
+
+    /**
+     * ### array2Groups
+     *
+     * Transforms an array of array (of players) into an
+     * array of PlayerList instances and returns it.
+     *
+     * The original array is modified.
+     *
+     * @param {array} array The array to transform
+     *
+     * @return {array} array The array of `PlayerList` objects
+     */
+    function array2Groups(array) {
+        var i, len, settings;
+        settings = this.cloneSettings();
+        i = -1, len = array.length;
+        for ( ; ++i < len ; ) {
+            array[i] = new PlayerList(settings, array[i]);
+        };
+        return array;
+    };
+
+    syncTypes = {STAGE: '', STAGE_UPTO: '', EXACT: ''};
 
     /**
      * # Player
      *
-     * A Player object is a wrapper object for a number of properties
-     * to associate to a player during the game.
-     *
-     * Some of the properties are `private` and can never be changed
-     * after an instance of a Player has been created. Defaults one are:
-     *
-     * TODO: update DOC.
+     * Wrapper for a number of properties for players
      *
      *  `sid`: The Socket.io session id associated to the player
      *  `id`: The nodeGame session id associate to the player
@@ -11382,12 +11442,13 @@ if (!Array.prototype.indexOf) {
         var key;
 
         if ('object' !== typeof player) {
-            throw new TypeError('Player constructor: player must be ' +
-                                'an object.');
+            throw new TypeError('Player constructor: player must be object.');
         }
-        if (!player.id) {
-            throw new TypeError('Player constructor: missing id property.');
+        if ('string' !== typeof player.id) {
+            throw new TypeError('Player constructor: id must be string.');
         }
+
+        // ## Default properties
 
         /**
          * ### Player.id
@@ -11411,14 +11472,14 @@ if (!Array.prototype.indexOf) {
          *
          * The group to which the player belongs
          */
-        this.group = null;
+        this.group = player.group || null;
 
         /**
          * ### Player.role
          *
          * The role of the player
          */
-        this.role = null;
+        this.role = player.role || null;
 
         /**
          * ### Player.count
@@ -11427,7 +11488,7 @@ if (!Array.prototype.indexOf) {
          *
          * @see PlayerList
          */
-        this.count = player.count;
+        this.count = 'undefined' === typeof player.count ? null : player.count;
 
         /**
          * ### Player.admin
@@ -11450,14 +11511,14 @@ if (!Array.prototype.indexOf) {
          *
          * Note: this can change in mobile networks
          */
-        this.ip = player.ip;
+        this.ip = player.ip || null;
 
         /**
          * ### Player.name
          *
          * An alphanumeric name associated with the player
          */
-        this.name = player.name;
+        this.name = player.name || null;
 
         /**
          * ### Player.stage
@@ -11503,8 +11564,6 @@ if (!Array.prototype.indexOf) {
 
         /**
          * ## Extra properties
-         *
-         * Non-default properties are all added as private
          *
          * For security reasons, they cannot be of type function, and they
          * cannot overwrite any previously defined variable
