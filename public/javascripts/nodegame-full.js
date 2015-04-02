@@ -9438,10 +9438,14 @@ if (!Array.prototype.indexOf) {
         CALLBACK_EXECUTED:   40, // Stage callback executed.
         LOADED:              45, // Both GameWindow loaded and cb executed.
         PLAYING:             50, // Player playing.
-        PAUSING:             55,  // to be removed
-        PAUSED:              60,  // to be removed
-        RESUMING:            65,
-        RESUMED:             70,
+        PAUSING:             55, // TODO: to be removed?
+        PAUSED:              60, // TODO: to be removed?
+        RESUMING:            65, // TODO: to be removed?
+        RESUMED:             70, // TODO: to be removed?
+
+        GETTING_DONE:        90, // Done is being called,
+                                 // and the step rule evaluated.
+
         DONE:                100 // Player completed the stage
     };
 
@@ -14193,7 +14197,7 @@ if (!Array.prototype.indexOf) {
         }
         else {
             gameStage = node.game ?
-                node.game.getCurrentGameStage(): new GameStage('0.0.0');
+                node.game.getCurrentGameStage() : new GameStage('0.0.0');
         }
 
         if ('undefined' !== typeof msg.priority) {
@@ -15388,8 +15392,8 @@ if (!Array.prototype.indexOf) {
         settings = settings || {};
 
         // This updates are never published.
-        this.setStateLevel(constants.stateLevels.UNINITIALIZED, true);
-        this.setStageLevel(constants.stageLevels.UNINITIALIZED, true);
+        this.setStateLevel(constants.stateLevels.UNINITIALIZED, 'S');
+        this.setStageLevel(constants.stageLevels.UNINITIALIZED, 'S');
 
         // ## Private properties
 
@@ -15509,8 +15513,8 @@ if (!Array.prototype.indexOf) {
         this.checkPlistSize = function() { return true; };
 
         // Setting to stage 0.0.0 and starting.
-        this.setCurrentGameStage(new GameStage(), true);
-        this.setStateLevel(constants.stateLevels.STARTING, true);
+        this.setCurrentGameStage(new GameStage(), 'S');
+        this.setStateLevel(constants.stateLevels.STARTING, 'S');
 
         /**
          * ### Game.paused
@@ -15609,18 +15613,17 @@ if (!Array.prototype.indexOf) {
             throw new TypeError('Game.start: options must be object or ' +
                                 'undefined.');
         }
-        options = options || {};
-
-        // Store time:
-        node.timer.setTimestamp('start');
-
         if (node.player.placeholder) {
             throw new Error('Game.start: no player defined.');
         }
-
         if (!this.isStartable()) {
             throw new Error('Game.start: game cannot be started.');
         }
+
+        // Store time.
+        node.timer.setTimestamp('start');
+
+        options = options || {};
 
         // Starts from beginning (default) or from a predefined stage
         // This options is useful when a player reconnets.
@@ -15638,7 +15641,7 @@ if (!Array.prototype.indexOf) {
         }
         this.setStateLevel(constants.stateLevels.INITIALIZED);
 
-        this.setCurrentGameStage(startStage, true);
+        this.setCurrentGameStage(startStage, 'S');
 
         node.log('game started.');
 
@@ -15674,7 +15677,7 @@ if (!Array.prototype.indexOf) {
      * object by any of the previous game callbacks, they will not be removed.
      * TODO: avoid pollution of the game object.
      *
-     * GameStage is set to 0.0.0 and srver is notified.
+     * GameStage is set to 0.0.0 and server is notified.
      */
     Game.prototype.stop = function() {
         var node;
@@ -15700,8 +15703,8 @@ if (!Array.prototype.indexOf) {
         }
 
         // Update state/stage levels and game stage.
-        this.setStateLevel(constants.stateLevels.STARTING, true);
-        this.setStageLevel(constants.stageLevels.UNINITIALIZED, true);
+        this.setStateLevel(constants.stateLevels.STARTING, 'S');
+        this.setStageLevel(constants.stageLevels.UNINITIALIZED, 'S');
         // This command is notifying the server.
         this.setCurrentGameStage(new GameStage());
 
@@ -15754,11 +15757,14 @@ if (!Array.prototype.indexOf) {
     /**
      * ### Game.pause
      *
-     * Experimental. Sets the game to pause
+     * Sets the game to pause
      *
-     * TODO: check with Game.ready
+     * @param {string} param Optional. A parameter to pass along the
+     *   emitted events PAUSING and PAUSED.
+     *
+     * @see Game.resume
      */
-    Game.prototype.pause = function() {
+    Game.prototype.pause = function(param) {
         var msgHandler, node;
 
         if (!this.isPausable()) {
@@ -15766,7 +15772,7 @@ if (!Array.prototype.indexOf) {
         }
 
         node = this.node;
-        node.emit('PAUSING');
+        node.emit('PAUSING', param);
 
         this.paused = true;
 
@@ -15783,9 +15789,9 @@ if (!Array.prototype.indexOf) {
         }
 
         node.timer.setTimestamp('paused');
-        node.emit('PAUSED');
+        node.emit('PAUSED', param);
 
-        // broadcast?
+        // TODO: broadcast?
 
         node.log('game paused.');
     };
@@ -15793,11 +15799,14 @@ if (!Array.prototype.indexOf) {
     /**
      * ### Game.resume
      *
-     * Experimental. Resumes the game from a pause
+     * Resumes the game from pause
      *
-     * TODO: check with Game.ready
+     * @param {string} param Optional. A parameter to pass along the
+     *   emitted events RESUMING and RESUMED.
+     *
+     * @see Game.pause
      */
-    Game.prototype.resume = function() {
+    Game.prototype.resume = function(param) {
         var msgHandler, node;
 
         if (!this.isResumable()) {
@@ -15806,7 +15815,7 @@ if (!Array.prototype.indexOf) {
 
         node = this.node;
 
-        node.emit('RESUMING');
+        node.emit('RESUMING', param);
 
         this.paused = false;
 
@@ -15821,15 +15830,15 @@ if (!Array.prototype.indexOf) {
         // Reset the Socket's message handler to the default:
         node.socket.setMsgListener();
         node.timer.setTimestamp('resumed');
-        node.emit('RESUMED');
+        node.emit('RESUMED', param);
+
+        // TODO: broadcast?
 
         // Maybe the game was LOADED during the pausing.
         // In this case the PLAYING event got lost.
         if (this.shouldEmitPlaying()) {
             this.node.emit('PLAYING');
         }
-
-        // broadcast?
 
         node.log('game resumed.');
     };
@@ -15844,6 +15853,9 @@ if (!Array.prototype.indexOf) {
      * evaluates the stepRule function for the current step and returns
      * its result.
      *
+     * @param {number} stageLevel Optional. If set, it is used instead
+     *   of `Game.getStageLevel()`
+     *
      * @return {boolean} TRUE, if stepping is allowed;
      *   FALSE, if stepping is not allowed
      *
@@ -15851,7 +15863,7 @@ if (!Array.prototype.indexOf) {
      * @see Game.checkPlistSize
      * @see stepRules
      */
-    Game.prototype.shouldStep = function() {
+    Game.prototype.shouldStep = function(stageLevel) {
         var stepRule;
 
         if (!this.checkPlistSize() || !this.isSteppable()) {
@@ -15865,8 +15877,9 @@ if (!Array.prototype.indexOf) {
                 'Game.shouldStep: stepRule is not a function.');
         }
 
-        return stepRule(this.getCurrentGameStage(), this.getStageLevel(),
-                        this.pl, this);
+        stageLevel = stageLevel || this.getStageLevel();
+
+        return stepRule(this.getCurrentGameStage(), stageLevel, this.pl, this);
     };
 
     /**
@@ -15975,7 +15988,7 @@ if (!Array.prototype.indexOf) {
 
             // stageLevel needs to be changed (silent), otherwise it stays DONE
             // for a short time in the new game stage:
-            this.setStageLevel(constants.stageLevels.UNINITIALIZED, true);
+            this.setStageLevel(constants.stageLevels.UNINITIALIZED, 'S');
             this.setCurrentGameStage(nextStep);
 
             // If we enter a new stage we need to update a few things:
@@ -16292,32 +16305,38 @@ if (!Array.prototype.indexOf) {
     /**
      * ### Game.setCurrentGameStage
      *
-     * Sets the current game stage, and optionally notifies the server
+     * Sets the current game stage and notifies the server
      *
-     * The value is actually stored in `node.player.stage`.
+     * Stores the value of current game stage in `node.player.stage`.
      *
-     * Game stages can be objects, or strings like '1.1.1'.
+     * By default, it does not send the update to the server if the
+     * new stage is the same as the previous one. However, it is
+     * possible to override this behavior with specyfing a second
+     * parameter `mod`.
      *
      * @param {string|GameStage} gameStage The value of the update.
-     * @param {boolean} silent If TRUE, no notification is sent.
+     *   For example, an object, or a string like '1.1.1'.
+     * @param {string} mod Optional. A string modifiying the default
+     *   behavior ('F' = force, 'S' = silent').
      *
      * @see Game.publishUpdate
      */
-    Game.prototype.setCurrentGameStage = function(gameStage, silent) {
+    Game.prototype.setCurrentGameStage = function(gameStage, mod) {
         gameStage = new GameStage(gameStage);
-        // Update is never sent if the value has not changed.
-        if (!silent) {
-            if (GameStage.compare(this.getCurrentGameStage(), gameStage) !== 0) {
-                // Important: First publish, then actually update.
-                // The stage level, must also be sent in the published update,
-                // otherwise we could have a mismatch in the remote
-                // representation of the stage + stageLevel of the client.
-                this.publishUpdate('stage', {
-                    stage: gameStage,
-                    stageLevel: this.getStageLevel()
-                });
-            }
+        if (mod === 'F' ||
+            (!mod && GameStage.compare(this.getCurrentGameStage(),
+                                       gameStage) !== 0)) {
+
+            // Important: First publish, then actually update.
+            // The stage level, must also be sent in the published update,
+            // otherwise we could have a mismatch in the remote
+            // representation of the stage + stageLevel of the client.
+            this.publishUpdate('stage', {
+                stage: gameStage,
+                stageLevel: this.getStageLevel()
+            });
         }
+
         this.node.player.stage = gameStage;
     };
 
@@ -16348,13 +16367,19 @@ if (!Array.prototype.indexOf) {
      * Stage levels are defined in `node.constants.stageLevels`, for example:
      * STAGE_INIT, PLAYING_STEP, GAMEOVER, etc.
      *
+     * By default, it does not send the update to the server if the
+     * new state level is the same as the previous one. However, it is
+     * possible to override this behavior with specyfing a second
+     * parameter `mod`.
+     *
      * @param {number} stateLevel The value of the update.
-     * @param {boolean} silent If TRUE, no notification is sent.
+     * @param {string} mod Optional. A string modifiying the default
+     *   behavior ('F' = force, 'S' = silent').
      *
      * @see Game.publishUpdate
      * @see node.constants.stageLevels
      */
-    Game.prototype.setStateLevel = function(stateLevel, silent) {
+    Game.prototype.setStateLevel = function(stateLevel, mod) {
         var node;
         node = this.node;
         if ('number' !== typeof stateLevel) {
@@ -16362,12 +16387,10 @@ if (!Array.prototype.indexOf) {
                 'setStateLevel called with invalid parameter: ' + stateLevel);
         }
         // Important: First publish, then actually update.
-        if (!silent) {
-            if (this.getStateLevel() !== stateLevel) {
-                this.publishUpdate('stateLevel', {
-                    stateLevel: stateLevel
-                });
-            }
+        if (mod === 'F' || (!mod && this.getStateLevel() !== stateLevel)) {
+            this.publishUpdate('stateLevel', {
+                stateLevel: stateLevel
+            });
         }
         node.player.stateLevel = stateLevel;
     };
@@ -16399,29 +16422,30 @@ if (!Array.prototype.indexOf) {
      * Stage levels are defined in `node.constants.stageLevels`, for example:
      * PLAYING, DONE, etc.
      *
+     * By default, it does not send the update to the server if the
+     * new state level is the same as the previous one. However, it is
+     * possible to override this behavior with specyfing a second
+     * parameter `mod`.
+     *
      * @param {string|GameStage} gameStage The value of the update.
-     * @param {boolean} silent If TRUE, no notification is sent.
+     * @param {string} mod Optional. A string modifiying the default
+     *   behavior ('F' = force, 'S' = silent').
      *
      * @see Game.publishUpdate
      * @see node.constants.stageLevels
      */
-    Game.prototype.setStageLevel = function(stageLevel, silent) {
+    Game.prototype.setStageLevel = function(stageLevel, mod) {
         var node;
         node = this.node;
         if ('number' !== typeof stageLevel) {
             throw new node.NodeGameMisconfiguredGameError(
                 'setStageLevel called with invalid parameter: ' + stageLevel);
         }
-
         // Important: First publish, then actually update.
-        if (!silent) {
-            // Publish only if the update is different than current value.
-
-            if (this.getStageLevel() !== stageLevel) {
-                this.publishUpdate('stageLevel', {
-                    stageLevel: stageLevel
-                });
-            }
+        if (mod === 'F' || (!mod && this.getStageLevel() !== stageLevel)) {
+            this.publishUpdate('stageLevel', {
+                stageLevel: stageLevel
+            });
         }
         node.player.stageLevel = stageLevel;
     };
@@ -16442,9 +16466,12 @@ if (!Array.prototype.indexOf) {
     Game.prototype.publishUpdate = function(type, update) {
         var node;
         if ('string' !== typeof type) {
-            throw new TypeError('Game.PublishUpdate: type must be string.');
+            throw new TypeError('Game.publishUpdate: type must be string.');
         }
-        if (type !== 'stage' && type !== 'stageLevel' && type !== 'stateLevel') {
+        if (type !== 'stage' &&
+            type !== 'stageLevel' &&
+            type !== 'stateLevel') {
+
             throw new Error(
                 'Game.publishUpdate: unknown update type (' + type + ')');
         }
@@ -16475,6 +16502,7 @@ if (!Array.prototype.indexOf) {
      * @param {string} type The type of update:
      *   'stateLevel', 'stageLevel', 'gameStage'.
      * @param {mixed} value Optional. The actual update to be sent
+     *
      * @return {boolean} TRUE, if the update should be sent
      */
     Game.prototype.shouldPublishUpdate = function(type, value) {
@@ -16563,6 +16591,7 @@ if (!Array.prototype.indexOf) {
             case constants.stageLevels.CALLBACK_EXECUTED:
             case constants.stageLevels.PAUSING:
             case constants.stageLevels.RESUMING:
+            case constants.stageLevels.GETTING_DONE:
                 return false;
             }
             break;
@@ -20238,7 +20267,7 @@ if (!Array.prototype.indexOf) {
         if ('undefined' === typeof txt) return false;
 
         level  = level || 'warn';
-        prefix = ('undefined' === typeof prefix) ? this.nodename + '> ' : prefix;
+        prefix = 'undefined' === typeof prefix ? this.nodename + '> ' : prefix;
 
         if (this.verbosity >= constants.verbosity_levels[level]) {
             console.log(prefix + txt);
@@ -20287,9 +20316,9 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
-     * ### NodeGameClient.debug
+     * ### NodeGameClient.silly
      *
-     * Logs a DEBUG message
+     * Logs a SILLY message
      */
     NGC.prototype.silly = function(txt, prefix) {
         prefix = this.nodename + (prefix ? '|' + prefix : '') + '> silly - ';
@@ -20686,34 +20715,60 @@ if (!Array.prototype.indexOf) {
 
     var GameStage = parent.GameStage;
 
+    var STAGE = parent.constants.stageLevels.UNINITIALIZED;
+    var STATE = parent.constants.stageLevels.INITIALIZED;
+
     /**
      * ### NodeGameClient.getCurrentEventEmitter
      *
-     * Returns the last active event emitter obj
+     * Returns the currently active event emitter
      *
-     * TODO: finish the method
+     * The following event emitters are active:
      *
-     * TODO: add proper doc
+     *  - NodeGame (ng): before a game is created or started.
+     *    Events registered here never deleted.
      *
-     * @return {EventEmitter} The current event emitter obj
+     *  - Game (game): during the initialization of a game
+     *    Events registered here are deleted when a new game
+     *    is created.
+     *
+     *  - Stage (stage): during the initialization of a stage.
+     *    Events registered here are deleted when entering a
+     *    new stage.
+     *
+     *  - Step (step): during the initialization of a step.
+     *    Events registered here are deleted when entering a
+     *    new step.
+     *
+     * @return {EventEmitter} The current event emitter
+     *
+     * @see EventEmitter
+     * @see EventEmitterManager
      */
     NGC.prototype.getCurrentEventEmitter = function() {
-        // NodeGame default listeners
-        if (!this.game || !this.game.getCurrentGameStage()) {
-            return this.events.ee.ng;
-        }
+        var gameStage, stageLevel, stateLevel;
 
-        // It is a game init function
-        if ((GameStage.compare(this.game.getCurrentGameStage(), new GameStage()) === 0 )) {
+        // NodeGame default listeners
+        if (!this.game) return this.events.ee.ng;
+        gameStage = this.game.getCurrentGameStage()
+        if (!gameStage) return this.events.ee.ng;
+
+        // Game listeners.
+        if ((GameStage.compare(gameStage, new GameStage()) === 0 )) {
             return this.events.ee.game;
         }
 
-        // TODO return the stage ee
+        // Stage listeners.
+        if (gameStage.step === 1 && gameStage.round === 1) {
+            if (this.game.getStageLevel() === STAGE &&
+                this.game.getStateLevel() === STATE) {
 
-        // It is a game step function
-        else {
-            return this.events.ee.step;
+                return this.events.ee.stage;
+            }
         }
+
+        // Step listeners.
+        return this.events.ee.step;
     };
 
     /**
@@ -20730,66 +20785,6 @@ if (!Array.prototype.indexOf) {
     NGC.prototype.emit = function() {
         return this.events.emit.apply(this.events, arguments);
     };
-
-//     /**
-//      * ### NodeGameClient.on
-//      *
-//      * Registers an event listener
-//      *
-//      * Listeners registered before a game is started, e.g. in
-//      * the init function of the game object, will stay valid
-//      * throughout the game. Listeners registered after the game
-//      * is started will be removed after the game has advanced
-//      * to its next stage.
-//      *
-//      * @param {string} event The name of the event
-//      * @param {function} listener The callback function
-//      */
-//     NGC.prototype.on = function(event, listener) {
-//         var ee;
-//         ee = this.getCurrentEventEmitter();
-//         ee.on(event, listener);
-//     };
-//
-//     /**
-//      * ### NodeGameClient.once
-//      *
-//      * Registers an event listener that will be removed
-//      * after its first invocation
-//      *
-//      * @param {string} event The name of the event
-//      * @param {function} listener The callback function
-//      *
-//      * @see NodeGameClient.on
-//      * @see NodeGameClient.off
-//      */
-//     NGC.prototype.once = function(event, listener) {
-//         var ee, cbRemove;
-//         // This function will remove the event listener
-//         // and itself.
-//         cbRemove = function() {
-//             ee.remove(event, listener);
-//             ee.remove(event, cbRemove);
-//         };
-//         ee = this.getCurrentEventEmitter();
-//         ee.on(event, listener);
-//         ee.on(event, cbRemove);
-//     };
-//
-//     /**
-//      * ### NodeGameClient.off
-//      *
-//      * Deregisters one or multiple event listeners
-//      *
-//      * @param {string} event The name of the event
-//      * @param {function} listener The callback function
-//      *
-//      * @see NodeGameClient.on
-//      * @see NodeGameClient.EventEmitter.remove
-//      */
-//     NGC.prototype.off  = function(event, func) {
-//         return this.events.remove(event, func);
-//     };
 
 })(
     'undefined' != typeof node ? node : module.exports,
@@ -21843,13 +21838,18 @@ if (!Array.prototype.indexOf) {
         }
 
         function done() {
+            var res;
+            // No incoming messages should be emitted before
+            // evaluating the step rule and definitely setting
+            // the stageLevel to DONE, otherwise the stage of
+            // other clients could change in between.
+            node.game.setStageLevel(stageLevels.GETTING_DONE);
             node.game.willBeDone = false;
-            node.game.setStageLevel(stageLevels.DONE);
             node.emit('REALLY_DONE');
+            res = node.game.shouldStep(stageLevels.DONE);
+            node.game.setStageLevel(stageLevels.DONE);
             // Step forward, if allowed.
-            if (node.game.shouldStep()) {
-                node.game.step();
-            }
+            if (res) node.game.step();
         }
 
         /**
@@ -21970,7 +21970,7 @@ if (!Array.prototype.indexOf) {
             }
 
             node.emit('BEFORE_GAMECOMMAND', gcommands.pause, options);
-            node.game.pause();
+            node.game.pause(options);
         });
 
         /**
@@ -21984,7 +21984,7 @@ if (!Array.prototype.indexOf) {
             }
 
             node.emit('BEFORE_GAMECOMMAND', gcommands.resume, options);
-            node.game.resume();
+            node.game.resume(options);
         });
 
         /**
