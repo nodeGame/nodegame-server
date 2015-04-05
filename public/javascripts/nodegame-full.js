@@ -3119,12 +3119,13 @@ if (!Array.prototype.indexOf) {
      *
      * @param {HTMLIFrameElement} iframe The iframe object
      *
-     * @return {HTMLDocument|undefined} The document of the iframe, or
-     *   undefined if not found.
+     * @return {HTMLDocument|null} The document of the iframe, or
+     *   null if not found.
      */
     DOM.getIFrameDocument = function(iframe) {
-        if (!iframe) return;
-        return iframe.contentDocument || iframe.contentWindow.document;
+        if (!iframe) return null;
+        return iframe.contentDocument ||
+            iframe.contentWindow ? iframe.contentWindow.document : null;
     };
 
     /**
@@ -4360,7 +4361,6 @@ if (!Array.prototype.indexOf) {
      * @param {object} o2 The second object
      *
      * @return {object} The object aggregating the results
-     *
      */
     OBJ.pairwiseWalk = function(o1, o2, cb) {
         var i, out;
@@ -4379,6 +4379,42 @@ if (!Array.prototype.indexOf) {
             if (o2.hasOwnProperty(i)) {
                 if ('undefined' === typeof out[i]) {
                     out[i] = cb(undefined, o2[i]);
+                }
+            }
+        }
+        return out;
+    };
+
+    /**
+     * ## OBJ.getKeyByValue
+     *
+     * Returns the key/s associated with a specific value
+     *
+     * Uses OBJ.equals so it can perform complicated comparisons of
+     * the value of the keys.
+     *
+     * Properties of the prototype are not skipped.
+     *
+     * @param {object} obj The object to search
+     * @param {mixed} value The value to match
+     * @param {boolean} allKeys Optional. If TRUE, all keys with the
+     *   specific value are returned. Default FALSE
+     *
+     * @return {object} The object aggregating the results
+     *
+     * @see OBJ.equals
+     */
+    OBJ.getKeyByValue = function(obj, value, allKeys) {
+        var key, out;
+        if ('object' !== typeof obj) {
+            throw new TypeError('OBJ.getKeyByValue: obj must be object.');
+        }
+        if (allKeys) out = [];
+        for (key in obj) {
+            if (obj.hasOwnProperty(key) ) {
+                if (OBJ.equals(value, obj[key])) {
+                    if (!allKeys) return key;
+                    else out.push(key);
                 }
             }
         }
@@ -9410,7 +9446,7 @@ if (!Array.prototype.indexOf) {
     /**
      * ### node.constants.stateLevels
      *
-     * Levels associated with the states of the Game
+     * Levels associated with the states of the nodeGame engine.
      */
     k.stateLevels = {
         UNINITIALIZED:  0,  // creating the game object
@@ -9420,7 +9456,7 @@ if (!Array.prototype.indexOf) {
         STAGE_INIT:    10,  // calling stage's init
         STEP_INIT:     20,  // calling step's init
         PLAYING_STEP:  30,  // executing step
-        FINISHING:     40,  // calling game's gameover
+        FINISHING:     70,  // calling game's gameover
         GAMEOVER:     100,  // game complete
         RUNTIME_ERROR: -1
     };
@@ -9428,20 +9464,38 @@ if (!Array.prototype.indexOf) {
     /**
      * ### node.constants.stageLevels
      *
-     * Levels associated with the states of the stages of the Game
+     * Levels associated with the states of the stages of a game.
      */
     k.stageLevels = {
+
         UNINITIALIZED:       0,  // Constructor called.
+
         INITIALIZING:        1,  // Executing init.
+
         INITIALIZED:         5,  // Init executed.
+
+        LOADING_FRAME:       20, // A frame is being loaded (only in browser).
+
+        FRAME_LOADED:        25, // The frame has been loaded (only in browser).
+
         EXECUTING_CALLBACK:  30, // Executing the stage callback.
+
         CALLBACK_EXECUTED:   40, // Stage callback executed.
+
         LOADED:              45, // Both GameWindow loaded and cb executed.
+
         PLAYING:             50, // Player playing.
+
         PAUSING:             55, // TODO: to be removed?
+
         PAUSED:              60, // TODO: to be removed?
+
         RESUMING:            65, // TODO: to be removed?
+
         RESUMED:             70, // TODO: to be removed?
+
+        DONE_CALLED:         80, // Done is called,
+                                 // will be asynchronously evaluated.
 
         GETTING_DONE:        90, // Done is being called,
                                  // and the step rule evaluated.
@@ -10045,7 +10099,7 @@ if (!Array.prototype.indexOf) {
             return true;
         }
 
-        node.warn('EventEmitter.remove (' + this.name + '): requested' +
+        node.warn('EventEmitter.remove (' + this.name + '): requested ' +
                   'listener was not found for event ' + type + '.');
         return false;
     };
@@ -16200,6 +16254,8 @@ if (!Array.prototype.indexOf) {
 
         this.setStageLevel(constants.stageLevels.EXECUTING_CALLBACK);
 
+        var AA = 'AA';
+
         // Execute custom callback. Can throw errors.
         res = cb.call(node.game);
         if (res === false) {
@@ -16596,8 +16652,11 @@ if (!Array.prototype.indexOf) {
             }
             break;
         }
+        return true;
+        // TODO: update doc.
+        // TODO: Ste was like this.
         // Check if there is a gameWindow obj and whether it is loading
-        return node.window ? node.window.isReady() : true;
+        //return node.window ? node.window.isReady() : true;
     };
 
     /**
@@ -20802,6 +20861,8 @@ if (!Array.prototype.indexOf) {
 
     var NGC = parent.NodeGameClient;
 
+    var DONE_CALLED = parent.constants.stageLevels.DONE_CALLED;
+
     /**
      * ### NodeGameClient.say
      *
@@ -21004,43 +21065,123 @@ if (!Array.prototype.indexOf) {
         return res;
     };
 
+// OLD DONE
+
+//     /**
+//      * ### NodeGameClient.done
+//      *
+//      * Emits a DONE event
+//      *
+//      * A DONE event signals that the player has completed
+//      * a game step. After a DONE event the step rules are
+//      * evaluated.
+//      *
+//      * Accepts any number of input parameters that will be
+//      * passed to `emit`.
+//      *
+//      * @see NodeGameClient.emit
+//      * @emits DONE
+//      */
+//     NGC.prototype.done = function() {
+//         var args, len;
+//         switch(arguments.length) {
+//
+//         case 0:
+//             this.emit('DONE');
+//             break;
+//         case 1:
+//             this.emit('DONE', arguments[0]);
+//             break;
+//         case 2:
+//             this.emit('DONE', arguments[0], arguments[1]);
+//             break;
+//         default:
+//
+//             len = arguments.length;
+//             args = new Array(len - 1);
+//             for (i = 1; i < len; i++) {
+//                 args[i - 1] = arguments[i];
+//             }
+//             this.emit.apply('DONE', args);
+//         }
+//     };
+
+
     /**
      * ### NodeGameClient.done
      *
-     * Emits a DONE event
+     * Asynchrounously emits a DONE event (if authorized)
      *
-     * A DONE event signals that the player has completed
-     * a game step. After a DONE event the step rules are
-     * evaluated.
+     * A DONE event signals that the player has completed a game step.
      *
-     * Accepts any number of input parameters that will be
-     * passed to `emit`.
+     * After a DONE event, the `done` handler of the stage/step is
+     * evaluated, and if successful, the step rules are evaluated, and
+     * eventually the client will move forward in the game.
+     *
+     * This method cannot be called again until the DONE event is
+     * emitted and evaluated. Then, two scenarios are possible:
+     *
+     *   - The `done` handler returns FALSE, and the procedure is
+     *     aborted. `node.done()` can be called immediately after.
+     *
+     *   - The `done` handler returns TRUE, and the client prepares to
+     *     to step. Until the next step is executed (might need to
+     *     wait for other players as well), `node.done()` cannot be
+     *     called again.
+     *
+     * If `node.done()` is called during an unauthorized state, an
+     * error message will be logged and the function returns FALSE.
+     *
+     * Technical note. The done event needs to be asynchronous because
+     * it can be triggered by the callback of a load frame, and in
+     * this case it must be emitted last.
+     *
+     * All input parameters are passed along to `node.emit`.
+     *
+     * @return {boolean} TRUE, if the method is authorized
      *
      * @see NodeGameClient.emit
      * @emits DONE
      */
     NGC.prototype.done = function() {
-        var args, len;
-        switch(arguments.length) {
+        var that, len, args;
+
+        if (this.game.getStageLevel() >= DONE_CALLED) {
+            node.err('node.done: done already called in this step.');
+            return false;
+        }
+        this.game.setStageLevel(DONE_CALLED);
+
+        len = arguments.length;
+        that = this;
+        // The arguments object must not be passed or leaked anywhere.
+        // Therefore, we recreate an args array here. We have a different
+        // timeout in a different branch for optimization.
+        switch(len) {
 
         case 0:
-            this.emit('DONE');
+            setTimeout(function() { that.events.emit('DONE'); });
             break;
         case 1:
-            this.emit('DONE', arguments[0]);
+            setTimeout(function() { that.events.emit('DONE', arguments[0]); });
             break;
         case 2:
-            this.emit('DONE', arguments[0], arguments[1]);
+            setTimeout(function() {
+                that.events.emit('DONE', arguments[0], arguments[1]);
+            });
             break;
         default:
-
-            len = arguments.length;
-            args = new Array(len - 1);
+            args = new Array(len+1);
+            args[0] = 'DONE';
             for (i = 1; i < len; i++) {
-                args[i - 1] = arguments[i];
+                args[i+1] = arguments[i];
             }
-            this.emit.apply('DONE', args);
+            setTimeout(function() {
+                that.events.emit.apply(that.events, args);
+            }, 0);
         }
+
+        return true;
     };
 
 })(
@@ -21857,23 +21998,29 @@ if (!Array.prototype.indexOf) {
          *
          * Registers the stageLevel _DONE_ and eventually steps forward.
          *
-         * If a DONE handler is defined in the game-plot, it will execute it.
-         * In case it returns FALSE, the update process is stopped.
+         * If a DONE handler is defined in the game-plot, it executes it.
+         * In case the handler returns FALSE, the process is stopped.
          *
          * @emit REALLY_DONE
          */
         this.events.ng.on('DONE', function() {
             // Execute done handler before updating stage.
             var ok, doneCb, stageLevel;
-            ok = true;
+
+            // Evaluating `done` callback if any.
             doneCb = node.game.plot.getProperty(node.game.getCurrentGameStage(),
                                                 'done');
-
-            if (doneCb) ok = doneCb.apply(node.game, arguments);
-            if (!ok) return;
+            if (doneCb) {
+                ok = doneCb.apply(node.game, arguments);
+                if (!ok) {
+                    // Should revert state. But state was lost...
+                    return;
+                }
+            }
 
             stageLevel = node.game.getStageLevel();
 
+            // TODO check >=.
             if (stageLevel >= stageLevels.PLAYING) {
                 done();
             }
@@ -21902,7 +22049,7 @@ if (!Array.prototype.indexOf) {
         this.events.ng.on('WINDOW_LOADED', function() {
             var stageLevel;
             stageLevel = node.game.getStageLevel();
-            if (stageLevel >= stageLevels.CALLBACK_EXECUTED) {
+            if (stageLevel === stageLevels.CALLBACK_EXECUTED) {
                 node.emit('LOADED');
             }
         });
@@ -22404,6 +22551,10 @@ if (!Array.prototype.indexOf) {
     var windowLevels = constants.windowLevels;
     var screenLevels = constants.screenLevels;
 
+    var CB_EXECUTED = constants.stageLevels.CALLBACK_EXECUTED;
+
+    var WIN_LOADING = windowLevels.LOADING;
+
     // Allows just one update at the time to the counter of loading frames.
     var lockedUpdate = false;
 
@@ -22686,13 +22837,13 @@ if (!Array.prototype.indexOf) {
         this.frameLibs = {};
 
         /**
-         * ### GameWindow.state
+         * ### GameWindow.stateLevel
          *
          * The window's state level
          *
          * @see constants.windowLevels
          */
-        this.state = null;
+        this.stateLevel = null;
 
         /**
          * ### GameWindow.waitScreen
@@ -22805,7 +22956,7 @@ if (!Array.prototype.indexOf) {
             }
             this.waitScreen = new node.WaitScreen(this.conf.waitScreen);
 
-            stageLevels = node.constants.stageLevels;
+            stageLevels = constants.stageLevels;
             stageLevel = node.game.getStageLevel();
             if (stageLevel !== stageLevels.UNINITIALIZED) {
                 if (node.game.paused) {
@@ -22899,7 +23050,7 @@ if (!Array.prototype.indexOf) {
                             level + '.');
         }
 
-        this.state = windowLevels[level];
+        this.stateLevel = windowLevels[level];
     };
 
     /**
@@ -22912,21 +23063,21 @@ if (!Array.prototype.indexOf) {
      * @see constants.windowLevels
      */
     GameWindow.prototype.getStateLevel = function() {
-        return this.state;
+        return this.stateLevel;
     };
 
     /**
      * ### GameWindow.isReady
      *
-     * Returns whether the GameWindow is ready
+     * Returns TRUE if the GameWindow is ready
      *
-     * Returns TRUE if the state is either INITIALIZED or LOADED or LOCKED.
+     * The window is ready if its state is either INITIALIZED or LOADED.
      *
-     * @return {boolean} Whether the window is ready
+     * @return {boolean} TRUE if the window is ready
      */
     GameWindow.prototype.isReady = function() {
-        return this.state === windowLevels.INITIALIZED ||
-            this.state === windowLevels.LOADED;
+        return this.stateLevel === windowLevels.LOADED ||
+            this.stateLevel === windowLevels.INITIALIZED;
     };
 
     /**
@@ -22999,9 +23150,9 @@ if (!Array.prototype.indexOf) {
      */
     GameWindow.prototype.getFrameName = function() {
         var iframe;
-        if (!this.frameName) {
+        if (!this.frameName || this.stateLevel === WIN_LOADING) {
             iframe = this.getFrame();
-            this.frameName = iframe ?iframe.name || iframe.id : null;
+            this.frameName = iframe ? iframe.name || iframe.id : null;
         }
         return this.frameName;
     };
@@ -23020,7 +23171,7 @@ if (!Array.prototype.indexOf) {
      */
     GameWindow.prototype.getFrameWindow = function() {
         var iframe;
-        if (!this.frameWindow) {
+        if (!this.frameWindow || this.stateLevel === WIN_LOADING) {
             iframe = this.getFrame();
             this.frameWindow = iframe ? iframe.contentWindow : null;
         }
@@ -23041,7 +23192,7 @@ if (!Array.prototype.indexOf) {
      */
     GameWindow.prototype.getFrameDocument = function() {
         var iframe;
-        if (!this.frameDocument) {
+        if (!this.frameDocument || this.stateLevel === WIN_LOADING) {
             iframe = this.getFrame();
             this.frameDocument = iframe ? this.getIFrameDocument(iframe) :
                 null;
@@ -23173,7 +23324,7 @@ if (!Array.prototype.indexOf) {
      */
     GameWindow.prototype.destroyFrame = function() {
         this.clearFrame();
-        this.frameRoot.removeChild(this.frameElement);
+        if (this.frameRoot) this.frameRoot.removeChild(this.frameElement);
         this.frameElement = null;
         this.frameWindow = null;
         this.frameDocument = null;
@@ -23965,23 +24116,28 @@ if (!Array.prototype.indexOf) {
      * @param {function} func Optional. A callback function
      *
      * @see updateAreLoading
+     *
+     * @emit FRAME_LOADED
+     * @emit LOADED
      */
     GameWindow.prototype.updateLoadFrameState = function(func) {
-        if (func) {
-            func.call(node.game);
-        }
+        var loaded, stageLevel;
+        loaded = updateAreLoading(this, -1);
+        if (loaded) this.setStateLevel('LOADED');
+        if (func) func.call(node.game);
 
-        updateAreLoading(this, -1);
+        // ng event emitter is not used.
+        node.events.game.emit('FRAME_LOADED');
+        node.events.stage.emit('FRAME_LOADED');
+        node.events.step.emit('FRAME_LOADED');
 
-        if (this.areLoading === 0) {
-            this.setStateLevel('LOADED');
-            node.emit('WINDOW_LOADED');
-            // The listener will take care of emitting PLAYING,
-            // if all conditions are met.
+        if (loaded) {
+            stageLevel = node.game.getStageLevel();
+            if (stageLevel === CB_EXECUTED) node.emit('LOADED');
         }
         else {
-            node.silly('GameWindow.updateLoadFrameState: ' + this.areLoading +
-                       ' loadFrame processes open.');
+            node.silly('game-window: ' + this.areLoading + ' frames ' +
+                       'still loading.');
         }
     };
 
@@ -24187,9 +24343,7 @@ if (!Array.prototype.indexOf) {
     /**
      * ### updateAreLoading
      *
-     * Updates the counter of loading frames in a secure way
-     *
-     * Ensure atomicity of the operation by using the _lockedUpdate_ semaphore.
+     * Updates the counter of loading frames
      *
      * @param {GameWindow} that A reference to the GameWindow instance
      * @param {number} update The number to add to the counter
@@ -24199,16 +24353,8 @@ if (!Array.prototype.indexOf) {
      * @api private
      */
     function updateAreLoading(that, update) {
-        if (!lockedUpdate) {
-            lockedUpdate = true;
-            that.areLoading = that.areLoading + update;
-            lockedUpdate = false;
-        }
-        else {
-            setTimeout(function() {
-                updateAreLoading.call(that, update);
-            }, 300);
-        }
+        that.areLoading = that.areLoading + update;
+        return that.areLoading === 0;
     }
 
     /**
@@ -29772,6 +29918,8 @@ if (!Array.prototype.indexOf) {
 
     "use strict";
 
+    var J = node.JSUS;
+
     var Table = node.window.Table,
     GameStage = node.GameStage;
 
@@ -29779,11 +29927,11 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    DebugInfo.version = '0.5.0';
-    DebugInfo.description = 'Display basic info about player\'s status.';
+    DebugInfo.version = '0.6.0';
+    DebugInfo.description = 'Display basic info a client\'s status.';
 
-    DebugInfo.title = 'State Display';
-    DebugInfo.className = 'statedisplay';
+    DebugInfo.title = 'Debug Info';
+    DebugInfo.className = 'debuginfo';
 
     // ## Dependencies
 
@@ -29835,16 +29983,16 @@ if (!Array.prototype.indexOf) {
      * Updates information in `this.table`
      */
     DebugInfo.prototype.updateAll = function() {
-        var stage, stageNo, stageId, playerId, tmp, miss;
+        var stage, stageNo, stageId, playerId;
+        var stageLevel, stateLevel, winLevel;
+        var errMsg, connected;
+        var tmp, miss;
+
         miss = '-';
 
         stageId = miss;
         stageNo = miss;
         playerId = miss;
-
-        if (node.player.id) {
-            playerId = node.player.id;
-        }
 
         stage = node.game.getCurrentGameStage();
         if (stage) {
@@ -29853,23 +30001,62 @@ if (!Array.prototype.indexOf) {
             stageNo = stage.toString();
         }
 
+        stageLevel = J.getKeyByValue(node.constants.stageLevels,
+                                     node.game.getStageLevel())
+
+        stateLevel = J.getKeyByValue(node.constants.stateLevels,
+                                     node.game.getStateLevel())
+
+        winLevel = J.getKeyByValue(node.constants.windowLevels,
+                                   W.getStateLevel())
+
+
+        errMsg = node.errorManager.lastErr || miss;
+
+        connected = node.socket.connected ? 'yes' : 'no';
+
         this.table.clear(true);
+        this.table.addRow(['Connected: ', connected]);
+        this.table.addRow(['Player Id: ', node.player.id]);
         this.table.addRow(['Stage  No: ', stageNo]);
         this.table.addRow(['Stage  Id: ', stageId]);
-        this.table.addRow(['Player Id: ', playerId]);
+        this.table.addRow(['Stage Lvl: ', stageLevel]);
+        this.table.addRow(['State Lvl: ', stateLevel]);
+        this.table.addRow(['Win   Lvl: ', winLevel]);
+        this.table.addRow(['Win Loads: ', W.areLoading]);
+        this.table.addRow(['Last  Err: ', errMsg]);
+
         this.table.parse();
 
     };
 
     DebugInfo.prototype.listeners = function() {
-        var that = this;
-        node.on('STEP_CALLBACK_EXECUTED', function() {
+        var that, ee;
+
+        that = this;
+
+        ee = node.getCurrentEventEmitter();
+
+        ee.on('STEP_CALLBACK_EXECUTED', function() {
             that.updateAll();
         });
+
+        ee.on('SOCKET_CONNECTED', function() {
+            that.updateAll();
+        });
+
+        ee.on('SOCKET_DICONNECTED', function() {
+            that.updateAll();
+        });
+
+        // TODO Write more listeners. Separate functions. Get event emitter.
+
     };
 
     DebugInfo.prototype.destroy = function() {
         node.off('STEP_CALLBACK_EXECUTED', DebugInfo.prototype.updateAll);
+        // TODO proper cleanup.
+
     };
 
 })(node);
@@ -32153,14 +32340,20 @@ if (!Array.prototype.indexOf) {
             W.loadFrame('/pages/testpage.htm', function() {
                 var found;
                 found = W.getElementById('root');
-                if (oldIframe) {
-                    W.setFrame(oldIframe, oldIframeName, oldIframeRoot);
-                }
                 if (!found) {
                     errors.push('W.loadFrame failed to load a test frame ' +
                                 'correctly.');
                 }
                 root.removeChild(testIframe);
+                if (oldIframe) {
+                    W.setFrame(oldIframe, oldIframeName, oldIframeRoot);
+                }
+                else {
+                    W.frameElement = null;
+                    W.frameWindow = null;
+                    W.frameDocument = null;
+                    W.frameRoot = null;
+                }
                 result(errors);
             });
         }
