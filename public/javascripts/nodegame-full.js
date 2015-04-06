@@ -9824,12 +9824,16 @@ if (!Array.prototype.indexOf) {
      * Creates a new instance of EventEmitter
      */
     function EventEmitter(name, node) {
+        if ('string' !== typeof name) {
+            throw new TypeError('EventEmitter constructor: ' +
+                                'name must be string.');
+        }
 
         this.node = node;
 
         // ## Public properties
 
-        this.name = 'undefined' !== typeof name ? name : 'EE';
+        this.name = name;
 
         /**
          * ### EventEmitter.listeners
@@ -9853,12 +9857,9 @@ if (!Array.prototype.indexOf) {
     // ## EventEmitter methods
 
     /**
-     * ### EventEmitter.add
+     * ### EventEmitter.on
      *
-     * Registers a global listener for an event
-     *
-     * Listeners registered with this method are valid for the
-     * whole length of the game
+     * Registers a callback function for an event (event listener)
      *
      * @param {string} type The event name
      * @param {function} listener The function to emit
@@ -9885,8 +9886,7 @@ if (!Array.prototype.indexOf) {
             this.events[type] = [this.events[type], listener];
         }
 
-        this.node.silly('ee.' + this.name + ' added listener: ' +
-                        type + ' ' + listener);
+        this.node.silly(this.name + '.on: added: ' + type + ' ' + listener);
     };
 
     /**
@@ -9901,10 +9901,10 @@ if (!Array.prototype.indexOf) {
      * @see EventEmitter.off
      */
     EventEmitter.prototype.once = function(type, listener) {
-        var node = this.node;
+        var that = this;
         function g() {
-            this.remove(type, g);
-            listener.apply(node.game, arguments);
+            that.remove(type, g);
+            listener.apply(that.node.game, arguments);
         }
         this.on(type, g);
     };
@@ -9914,18 +9914,13 @@ if (!Array.prototype.indexOf) {
      *
      * Fires all the listeners associated with an event
      *
-     * The first parameter be the name of the event as _string_,
+     * The first parameter is the name of the event as _string_,
      * followed by any number of parameters that will be passed to the
-     * handler callback.
+     * callback.
      *
-     * Return values of each callback are aggregated and returned as an
-     * array. If the array contains less than 2 elements, the only element
-     * or _undefined_ is returned instead.
-     *
-     * Technical notice: classic EventEmitter classes do not return any value.
-     * Returning a value creates an overhead when multiple listeners are
-     * registered under the same event, and an array needs to be managed.
-     * Such overhead is anyway very small, and can be neglected (for now).
+     * Return values of each callback are aggregated and returned as
+     * an array. If the array contains less than 2 elements, only
+     * element or _undefined_ is returned.
      *
      * @return {mixed} The return value of the callback/s
      */
@@ -10009,7 +10004,50 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
-     * ### EventEmitter.remove
+     * ### EventEmitter.emitAsync
+     *
+     * Fires all the listeners associated with an event asynchronously
+     *
+     * Unlike normal emit, it does not return a value.
+     *
+     * @see EventEmitter.emit
+     */
+    EventEmitter.prototype.emitAsync = function() {
+        var that, len, args, i;
+        var arg1, arg2, arg3;
+        len = arguments.length;
+        if (!len) return;
+
+        that = this;
+
+        // The arguments object must not be passed or leaked anywhere.
+        // Therefore, we recreate an args array here. We have a different
+        // timeout in a different branch for optimization.
+        switch(len) {
+
+        case 1:
+            arg1 = arguments[0];
+            setTimeout(function() { that.emit(arg1); }, 0);
+            break;
+        case 2:
+            arg1 = arguments[0], arg2 = arguments[1];
+            setTimeout(function() { that.emit(arg1, arg2); }, 0);
+            break;
+        case 3:
+            arg1 = arguments[0], arg2 = arguments[1], arg3 = arguments[2];
+            setTimeout(function() { that.emit(arg1, arg2, arg3); }, 0);
+            break;
+        default:
+            args = new Array(len);
+            for (i = -1 ; ++i < len ; ) {
+                args[i] = arguments[i];
+            }
+            setTimeout(function() { that.emit.apply(that, args); }, 0);
+        }
+    };
+
+    /**
+     * ### EventEmitter.off || remove
      *
      * Deregisters one or multiple event listeners
      *
@@ -10146,13 +10184,15 @@ if (!Array.prototype.indexOf) {
         this.node = node;
 
         this.ee = {};
+
         this.createEE('ng');
         this.createEE('game');
         this.createEE('stage');
         this.createEE('step');
 
-        this.createEEGroup('game', 'step', 'stage', 'game');
-        this.createEEGroup('stage', 'stage', 'game');
+        // Groups disabled for the moment.
+        // this.createEEGroup('game', 'step', 'stage', 'game');
+        // this.createEEGroup('stage', 'stage', 'game');
     };
 
     // ## EventEmitterManager methods
@@ -10173,6 +10213,8 @@ if (!Array.prototype.indexOf) {
      * @return {object} A reference to the event emitter group
      *
      * @see EventEmitterManager.createEE
+     *
+     * TODO: check if this code is still valid.
      */
     EventEmitterManager.prototype.createEEGroup = function(groupName) {
         var i, len, that, args;
@@ -10358,24 +10400,131 @@ if (!Array.prototype.indexOf) {
      * @param {string} eventName The name of the event
      *
      * @return {mixed} The values returned by all fired event listeners
+     *
+     * @see EventEmitterManager.emit
      */
     EventEmitterManager.prototype.emit = function(eventName) {
-        var i, tmpRes, res;
+        var i, tmpRes, res, args, len, ees;
 
         if ('string' !== typeof eventName) {
             throw new TypeError(
                 'EventEmitterManager.emit: eventName must be string.');
         }
         res = [];
-        for (i in this.ee) {
-            if (this.ee.hasOwnProperty(i)) {
-                tmpRes = this.ee[i].emit.apply(this.ee[i], arguments);
-                if (tmpRes) res.push(tmpRes);
+
+        len = arguments.length;
+
+        // The scope might `node` if this method is invoked from `node.emit`.
+        ees = this.ee || this.events.ee;
+
+        // The arguments object must not be passed or leaked anywhere.
+        switch(len) {
+
+        case 1:
+            tmpRes = ees.ng.emit(eventName);
+            if (tmpRes) res.push(tmpRes);
+            tmpRes = ees.game.emit(eventName);
+            if (tmpRes) res.push(tmpRes);
+            tmpRes = ees.stage.emit(eventName);
+            if (tmpRes) res.push(tmpRes);
+            tmpRes = ees.step.emit(eventName);
+            if (tmpRes) res.push(tmpRes);
+            break;
+        case 2:
+            tmpRes = ees.ng.emit(eventName, arguments[1]);
+            if (tmpRes) res.push(tmpRes);
+            tmpRes = ees.game.emit(eventName, arguments[1]);
+            if (tmpRes) res.push(tmpRes);
+            tmpRes = ees.stage.emit(eventName, arguments[1]);
+            if (tmpRes) res.push(tmpRes);
+            tmpRes = ees.step.emit(eventName, arguments[1]);
+            if (tmpRes) res.push(tmpRes);
+            break;
+        case 3:
+            tmpRes = ees.ng.emit(eventName, arguments[1], arguments[2]);
+            if (tmpRes) res.push(tmpRes);
+            tmpRes = ees.game.emit(eventName, arguments[1], arguments[2]);
+            if (tmpRes) res.push(tmpRes);
+            tmpRes = ees.stage.emit(eventName, arguments[1], arguments[2]);
+            if (tmpRes) res.push(tmpRes);
+            tmpRes = ees.step.emit(eventName, arguments[1], arguments[2]);
+            if (tmpRes) res.push(tmpRes);
+            break;
+        default:
+            args = new Array(len);
+            for (i = -1 ; ++i < len ; ) {
+                args[i] = arguments[i];
             }
+            tmpRes = ees.ng.emit.apply(ees.ng, args);
+            if (tmpRes) res.push(tmpRes);
+            tmpRes = ees.game.emit.apply(ees.game, args);
+            if (tmpRes) res.push(tmpRes);
+            tmpRes = ees.stage.emit.apply(ees.stage, args);
+            if (tmpRes) res.push(tmpRes);
+            tmpRes = ees.step.emit.apply(ees.step, args);
+            if (tmpRes) res.push(tmpRes);
         }
+
         // If there are less than 2 elements, unpack the array.
         // res[0] is either undefined or some value.
         return res.length < 2 ? res[0] : res;
+    };
+
+    /**
+     * ### EventEmitterManager.emitAsync
+     *
+     * Emits an event on all registered event emitters asynchrounsly
+     *
+     * Accepts a variable number of input parameters.
+     *
+     * @param {string} eventName The name of the event
+     *
+     * @see EventEmitterManager.emit
+     */
+    EventEmitterManager.prototype.emitAsync = function(eventName) {
+        var i, len, args, ees;
+
+        if ('string' !== typeof eventName) {
+            throw new TypeError(
+                'EventEmitterManager.emit: eventName must be string.');
+        }
+
+        len = arguments.length;
+
+        // The scope might `node` if this method is invoked from `node.emit`.
+        ees = this.ee || this.events.ee;
+
+        // The arguments object must not be passed or leaked anywhere.
+        switch(len) {
+
+        case 1:
+            ees.ng.emitAsync(eventName);
+            ees.game.emitAsync(eventName);
+            ees.stage.emitAsync(eventName);
+            ees.step.emitAsync(eventName);
+            break;
+        case 2:
+            ees.ng.emitAsync(eventName, arguments[1]);
+            ees.game.emitAsync(eventName, arguments[1]);
+            ees.stage.emitAsync(eventName, arguments[1]);
+            ees.step.emitAsync(eventName, arguments[1]);
+            break;
+        case 3:
+            ees.ng.emitAsync(eventName, arguments[1], arguments[2]);
+            ees.game.emitAsync(eventName, arguments[1], arguments[2]);
+            ees.stage.emitAsync(eventName, arguments[1], arguments[2]);
+            ees.step.emitAsync(eventName, arguments[1], arguments[2]);
+            break;
+        default:
+            args = new Array(len);
+            for (i = -1 ; ++i < len ; ) {
+                args[i] = arguments[i];
+            }
+            ees.ng.emitAsync.apply(ees.ng, args);
+            ees.game.emitAsync.apply(ees.game, args);
+            ees.stage.emitAsync.apply(ees.stage, args);
+            ees.step.emitAsync.apply(ees.step, args);
+        }
     };
 
     /**
@@ -15583,13 +15732,13 @@ if (!Array.prototype.indexOf) {
         /**
          * ### Game.willBeDone
          *
-         * TRUE, if DONE was emitted during the execution of the step callback
+         * TRUE, if DONE was emitted and evaluated successfully
          *
-         * If already TRUE, when PLAYING is emitted the game will try to step
+         * If TRUE, when PLAYING is emitted the game will try to step
          * immediately.
          *
-         * @see Game.pause
-         * @see Game.resume
+         * @see NodeGameClient.done
+         * @see Game.doneCalled
          */
         this.willBeDone = false;
 
@@ -16254,8 +16403,6 @@ if (!Array.prototype.indexOf) {
 
         this.setStageLevel(constants.stageLevels.EXECUTING_CALLBACK);
 
-        var AA = 'AA';
-
         // Execute custom callback. Can throw errors.
         res = cb.call(node.game);
         if (res === false) {
@@ -16608,21 +16755,15 @@ if (!Array.prototype.indexOf) {
     /**
      * ### Game.isReady
      *
-     * Returns TRUE if the nodeGame engine is fully loaded
+     * Returns TRUE if a game is set and interactive
      *
-     * As soon as the nodegame-client library is loaded
-     * `node.game.state` is equal to 0.0.0. In this situation the
-     * game will be considered READY unless the nodegame-window
-     * says otherwise
+     * A game is ready unless a stage or step is currently being
+     * loaded or DONE procedure has been started, i.e. between the
+     * stage levels: PLAYING and GETTING_DONE.
      *
-     * During stepping between functions in the game-plot
-     * the flag is temporarily turned to FALSE, and all events
-     * are queued and fired only after nodeGame is ready to
-     * handle them again.
+     * If a game is paused, it is also NOT ready.
      *
-     * If the browser does not support the method object setters,
-     * this property is disabled, and Game.isReady() should be used
-     * instead.
+     * @see node.constants.stageLevels
      */
     Game.prototype.isReady = function() {
         var node, stageLevel, stateLevel;
@@ -16653,10 +16794,6 @@ if (!Array.prototype.indexOf) {
             break;
         }
         return true;
-        // TODO: update doc.
-        // TODO: Ste was like this.
-        // Check if there is a gameWindow obj and whether it is loading
-        //return node.window ? node.window.isReady() : true;
     };
 
     /**
@@ -20135,6 +20272,32 @@ if (!Array.prototype.indexOf) {
         }
 
         /**
+         * ### NodeGameClient.emit
+         *
+         * Emits an event locally on all registered event handlers
+         *
+         * The first parameter be the name of the event as _string_,
+         * followed by any number of parameters that will be passed to the
+         * handler callback.
+         *
+         * @see NodeGameClient.emitAsync
+         * @see EventEmitterManager.emit
+         */
+        this.emit = this.events.emit;
+
+        /**
+         * ### NodeGameClient.emitAsync
+         *
+         * Emits an event locally on all registered event handlers
+         *
+         * Unlike normal emit, it does not return a value.
+         *
+         * @see NodeGameClient.emit
+         * @see EventEmitterManager.emitSync
+         */
+        this.emitAsync = this.events.emitAsync;
+
+        /**
          * ### NodeGameClient.on
          *
          * Registers an event listener on the active event emitter
@@ -20161,8 +20324,7 @@ if (!Array.prototype.indexOf) {
         /**
          * ### NodeGameClient.once
          *
-         * Registers an event listener that will be removed
-         * after its first invocation
+         * Registers an event listener that will be removed after its first call
          *
          * @param {string} event The name of the event
          * @param {function} listener The callback function
@@ -20171,15 +20333,9 @@ if (!Array.prototype.indexOf) {
          * @see NodeGameClient.off
          */
         this.once = function(event, listener) {
-            var ee, cbRemove;
+            var ee;
             ee = this.getCurrentEventEmitter();
-            ee.on(event, listener);
-            // This function will remove the event listener and itself.
-            cbRemove = function() {
-                ee.remove(event, listener);
-                ee.remove(event, cbRemove);
-            };
-            ee.on(event, cbRemove);
+            ee.once(event, listener);
         };
 
         /**
@@ -20830,21 +20986,6 @@ if (!Array.prototype.indexOf) {
         return this.events.ee.step;
     };
 
-    /**
-     * ### NodeGameClient.emit
-     *
-     * Emits an event locally on all registered event handlers
-     *
-     * The first parameter be the name of the event as _string_,
-     * followed by any number of parameters that will be passed to the
-     * handler callback.
-     *
-     * @see EventEmitterManager.emit
-     */
-    NGC.prototype.emit = function() {
-        return this.events.emit.apply(this.events, arguments);
-    };
-
 })(
     'undefined' != typeof node ? node : module.exports,
     'undefined' != typeof node ? node : module.parent.exports
@@ -20861,7 +21002,7 @@ if (!Array.prototype.indexOf) {
 
     var NGC = parent.NodeGameClient;
 
-    var DONE_CALLED = parent.constants.stageLevels.DONE_CALLED;
+    var GETTING_DONE = parent.constants.stageLevels.GETTING_DONE;
 
     /**
      * ### NodeGameClient.say
@@ -21144,13 +21285,25 @@ if (!Array.prototype.indexOf) {
      * @emits DONE
      */
     NGC.prototype.done = function() {
-        var that, len, args;
+        var that, game, doneCb, len, args, i;
+        var arg1, arg2;
 
-        if (this.game.getStageLevel() >= DONE_CALLED) {
+        game = this.game;
+
+        if (game.willBeDone || game.getStageLevel() >= GETTING_DONE) {
             node.err('node.done: done already called in this step.');
             return false;
         }
-        this.game.setStageLevel(DONE_CALLED);
+
+        // Evaluating `done` callback if any.
+        doneCb = game.plot.getProperty(game.getCurrentGameStage(), 'done');
+
+        // TODO optimize
+        if (doneCb && !doneCb.apply(game, arguments)) {
+            if (!ok) return;
+        }
+
+        game.willBeDone = true;
 
         len = arguments.length;
         that = this;
@@ -21160,15 +21313,15 @@ if (!Array.prototype.indexOf) {
         switch(len) {
 
         case 0:
-            setTimeout(function() { that.events.emit('DONE'); });
+            setTimeout(function() { that.events.emit('DONE'); }, 0);
             break;
         case 1:
-            setTimeout(function() { that.events.emit('DONE', arguments[0]); });
+            arg1 = arguments[0];
+            setTimeout(function() { that.events.emit('DONE', arg1); }, 0);
             break;
         case 2:
-            setTimeout(function() {
-                that.events.emit('DONE', arguments[0], arguments[1]);
-            });
+            arg1 = arguments[0], arg2 = arguments[1];
+            setTimeout(function() { that.events.emit('DONE', arg1, arg2); }, 0);
             break;
         default:
             args = new Array(len+1);
@@ -22005,18 +22158,7 @@ if (!Array.prototype.indexOf) {
          */
         this.events.ng.on('DONE', function() {
             // Execute done handler before updating stage.
-            var ok, doneCb, stageLevel;
-
-            // Evaluating `done` callback if any.
-            doneCb = node.game.plot.getProperty(node.game.getCurrentGameStage(),
-                                                'done');
-            if (doneCb) {
-                ok = doneCb.apply(node.game, arguments);
-                if (!ok) {
-                    // Should revert state. But state was lost...
-                    return;
-                }
-            }
+            var stageLevel;
 
             stageLevel = node.game.getStageLevel();
 
@@ -22041,18 +22183,18 @@ if (!Array.prototype.indexOf) {
             }
         });
 
-        /**
-         * ## WINDOW_LOADED
-         *
-         * @emit LOADED
-         */
-        this.events.ng.on('WINDOW_LOADED', function() {
-            var stageLevel;
-            stageLevel = node.game.getStageLevel();
-            if (stageLevel === stageLevels.CALLBACK_EXECUTED) {
-                node.emit('LOADED');
-            }
-        });
+//         /**
+//          * ## WINDOW_LOADED
+//          *
+//          * @emit LOADED
+//          */
+//         this.events.ng.on('WINDOW_LOADED', function() {
+//             var stageLevel;
+//             stageLevel = node.game.getStageLevel();
+//             if (stageLevel === stageLevels.CALLBACK_EXECUTED) {
+//                 node.emit('LOADED');
+//             }
+//         });
 
         /**
          * ## LOADED
