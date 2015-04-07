@@ -1,5 +1,8 @@
 # nodegame-server change log
 
+# 0.9.11
+ - Callback to decorate client objects. The callback is loaded from the auth file.
+
 # 0.9.10
  - Treatments are correctly built.
  - IP address is passed to auth function.
