@@ -20462,6 +20462,7 @@ if (!Array.prototype.indexOf) {
     var constants = parent.constants;
 
     var LOG = constants.target.LOG
+    var UNDEFINED_PLAYER = constants.UNDEFINED_PLAYER;
 
     /**
      * ### NodeGameClient.log
@@ -20481,7 +20482,7 @@ if (!Array.prototype.indexOf) {
      *   the log entry. Default: 'ng> '
      */
     NGC.prototype.log = function(txt, level, prefix) {
-        var numLevel;
+        var numLevel, hash
         if ('undefined' === typeof txt) return;
 
         level  = level || 'warn';
@@ -20493,12 +20494,20 @@ if (!Array.prototype.indexOf) {
             console.log(prefix + txt);
         }
         if (this.remoteVerbosity >= numLevel) {
-            this.socket.send(this.msg.create({
-                target: LOG,
-                text: level,
-                data: txt,
-                to: 'SERVER'
-            }));
+            // We need to avoid creating errors here,
+            // otherwise we enter an infinite loop.
+            if (this.socket.isConnected() &&
+                this.player.id !== UNDEFINED_PLAYER) {
+
+                if (this.lastLog !== txt) {
+                    this.socket.send(this.msg.create({
+                        target: LOG,
+                        text: level,
+                        data: txt,
+                        to: 'SERVER'
+                    }));
+                }
+            }
         }
     };
 
