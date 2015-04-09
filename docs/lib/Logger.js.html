@@ -25,6 +25,12 @@
         <a href="#global%20scope">Global scope</a>
       </div>
       <div class="heading h2">
+        <a href="#loggermanager%20constructor">LoggerManager constructor</a>
+      </div>
+      <div class="heading h2">
+        <a href="#loggermanager.get">LoggerManager.get</a>
+      </div>
+      <div class="heading h2">
         <a href="#logger%20constructor">Logger constructor</a>
       </div>
       <div class="heading h2">
@@ -50,7 +56,7 @@
 </div>
 
 
-<p>Copyright(c) 2014 Stefano Balietti
+<p>Copyright(c) 2015 Stefano Balietti
 MIT Licensed</p>
   </div>
   <div class="body"><p>Handles the log stream to file and to stdout</p>
@@ -84,8 +90,75 @@ MIT Licensed</p>
 
 <span class="nx">module</span><span class="p">.</span><span class="nx">exports</span> <span class="o">=</span> <span class="nx">LoggerManager</span><span class="p">;</span>
 
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="loggermanager%20constructor">
+  <h2>
+    <a href="#loggermanager%20constructor" name="loggermanager%20constructor" class="pilcrow">&#182;</a>
+    LoggerManager constructor
+  </h2>
+</div>
+
+  </div>
+  <div class="body"><p>Creates an instance of LoggerManager</p>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
 <span class="kd">function</span> <span class="nx">LoggerManager</span><span class="p">()</span> <span class="p">{}</span>
 
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="loggermanager.get">
+  <h2>
+    <a href="#loggermanager.get" name="loggermanager.get" class="pilcrow">&#182;</a>
+    LoggerManager.get
+  </h2>
+</div>
+
+  </div>
+  <div class="body"><p>Returns a new Logger object with given name and options</p>
+
+<p>Available loggers: 'server', 'channel', 'clients', 'messages'.</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">logger</span>
+      <span class="dox_type">string</span>
+      <span>The name of the logger, e.g. 'channel'</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">options</span>
+      <span class="dox_type">object</span>
+      <span>Optional. Configuration option. An important
+  options is the name of the logger, which will be added to every log entry</span>
+    </div>
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">Logger</span>
+      <span>The logger object</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">Logger
+</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">LoggerManager</span><span class="p">.</span><span class="nx">get</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">logger</span><span class="p">,</span> <span class="nx">options</span><span class="p">)</span> <span class="p">{</span>
     <span class="k">return</span> <span class="k">new</span> <span class="nx">Logger</span><span class="p">(</span><span class="nx">logger</span><span class="p">,</span> <span class="nx">options</span><span class="p">);</span>
 <span class="p">};</span>
@@ -112,7 +185,7 @@ MIT Licensed</p>
     <div class="dox_tag_detail">
       <span class="dox_tag_name">options</span>
       <span class="dox_type">object</span>
-      <span>The configuration options for the SeverLog</span>
+      <span>The configuration options for the Logger</span>
     </div>
   </div>
 </div>

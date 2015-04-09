@@ -9402,10 +9402,12 @@ if (!Array.prototype.indexOf) {
     // Displays an alert message in the receiving client (if in the browser)
     k.target.ALERT = 'ALERT';
 
+    // #### target.LOG
+    // A generic log message used to send info to the server
+    // @see node.constants.remoteVerbosity
+    k.target.LOG = 'LOG';
 
     //#### not used targets (for future development)
-
-    k.target.LOG = 'LOG';     // A log entry
 
 
     k.target.JOIN = 'JOIN';   // Asks a client to join another channel
@@ -9702,8 +9704,6 @@ if (!Array.prototype.indexOf) {
                 msg = url + ' ' + linenumber + ': ' + msg;
                 that.lastError = msg;
                 node.err(msg);
-                // TODO: Implement this properly.
-                // node.set('ERROR', msg);
                 return !node.debug;
             };
         }
@@ -20449,7 +20449,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Log
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * `nodeGame` logging module
@@ -20461,6 +20461,8 @@ if (!Array.prototype.indexOf) {
     var NGC = parent.NodeGameClient;
     var constants = parent.constants;
 
+    var LOG = constants.target.LOG
+
     /**
      * ### NodeGameClient.log
      *
@@ -20469,7 +20471,7 @@ if (!Array.prototype.indexOf) {
      * Logs entries are displayed to the console if their level is
      * smaller than `this.verbosity`.
      *
-     * TODO: Logs entries are forwarded to the server if their level is
+     * Logs entries are forwarded to the server if their level is
      * smaller than `this.remoteVerbosity`.
      *
      * @param {string} txt The text to output
@@ -20479,25 +20481,25 @@ if (!Array.prototype.indexOf) {
      *   the log entry. Default: 'ng> '
      */
     NGC.prototype.log = function(txt, level, prefix) {
-        if ('undefined' === typeof txt) return false;
+        var numLevel;
+        if ('undefined' === typeof txt) return;
 
         level  = level || 'warn';
         prefix = 'undefined' === typeof prefix ? this.nodename + '> ' : prefix;
 
-        if (this.verbosity >= constants.verbosity_levels[level]) {
+        numLevel = constants.verbosity_levels[level];
+
+        if (this.verbosity >= numLevel) {
             console.log(prefix + txt);
         }
-
-        // if (this.remoteVerbosity > level) {
-        //     var remoteMsg = this.msg.create({
-        //         target: this.target.LOG,
-        //         text: level,
-        //         data: txt,
-        //         to: 'SERVER'
-        //     });
-        //     console.log(txt)
-        //     this.socket.send(remoteMsg);
-        // }
+        if (this.remoteVerbosity >= numLevel) {
+            this.socket.send(this.msg.create({
+                target: LOG,
+                text: level,
+                data: txt,
+                to: 'SERVER'
+            }));
+        }
     };
 
     /**
