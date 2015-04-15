@@ -2,6 +2,7 @@
 
 # 0.9.11
  - Callback to decorate client objects. The callback is loaded from the auth file.
+ - Treatments are not deleted from required settints file.
 
 # 0.9.10
  - Treatments are correctly built.
