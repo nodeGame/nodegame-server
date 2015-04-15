@@ -830,6 +830,7 @@ It ignores ALL, CHANNEL, CHANNEL_X, ROOM_X recipients.</p>
             <span class="nx">to</span><span class="o">:</span> <span class="s1">&#39;ALL&#39;</span><span class="p">,</span>
             <span class="nx">data</span><span class="o">:</span> <span class="nx">player</span>
         <span class="p">});</span>
+<span class="kr">debugger</span>
         <span class="k">if</span> <span class="p">(</span><span class="nx">that</span><span class="p">.</span><span class="nx">notify</span><span class="p">.</span><span class="nx">onConnect</span><span class="p">)</span> <span class="p">{</span>
             <span class="nx">that</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">send2room</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">room</span><span class="p">);</span>
         <span class="p">}</span>
@@ -855,7 +856,7 @@ It ignores ALL, CHANNEL, CHANNEL_X, ROOM_X recipients.</p>
 <p>Listens on server shutdown</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">sio</span><span class="p">.</span><span class="nx">sockets</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s2">&quot;shutdown&quot;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">message</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">sio</span><span class="p">.</span><span class="nx">sockets</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;shutdown&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">message</span><span class="p">)</span> <span class="p">{</span>
         <span class="nx">sys</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Player server &#39;</span> <span class="o">+</span> <span class="nx">that</span><span class="p">.</span><span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39; is shutting down&#39;</span><span class="p">);</span>
 
 </pre></div>
@@ -866,7 +867,7 @@ It ignores ALL, CHANNEL, CHANNEL_X, ROOM_X recipients.</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-31" id="section-31">&#182;</a>
 </div>
-<p>TODO save the state to disk</p>
+<p>TODO save the state to disk.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="p">});</span>

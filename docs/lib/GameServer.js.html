@@ -1141,7 +1141,7 @@ it detects the client's disconnection.</p>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">GameServer</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">onDisconnect</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">sid</span><span class="p">,</span> <span class="nx">socket</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">client</span><span class="p">,</span> <span class="nx">roomName</span><span class="p">,</span> <span class="nx">room</span><span class="p">,</span> <span class="nx">res</span><span class="p">;</span>
-
+<span class="kr">debugger</span>
     <span class="nx">client</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">registry</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">sid</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="nx">sid</span><span class="p">);</span>
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">client</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameServer.onDisconnect: client has invalid sid.&#39;</span><span class="p">);</span>
@@ -1462,7 +1462,8 @@ should be aware of the issue.</li></ul></li>
         <td class="code highlight"><div class="highlight"><pre>
         <span class="k">if</span> <span class="p">(</span><span class="nx">cookies</span><span class="p">.</span><span class="nx">session</span> <span class="o">===</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">session</span> <span class="o">&amp;&amp;</span> <span class="nx">cookies</span><span class="p">.</span><span class="nx">player</span><span class="p">)</span> <span class="p">{</span>
             <span class="nx">res</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">handleReconnectingClient</span><span class="p">(</span><span class="nx">cookies</span><span class="p">.</span><span class="nx">player</span><span class="p">,</span> <span class="nx">socketId</span><span class="p">,</span>
-                                                <span class="nx">socketObj</span><span class="p">,</span> <span class="nx">clientType</span><span class="p">);</span>
+                                                <span class="nx">socketObj</span><span class="p">,</span> <span class="nx">clientType</span><span class="p">,</span>
+                                                <span class="nx">cookies</span><span class="p">,</span> <span class="nx">headers</span><span class="p">);</span>
 
 
 </pre></div>
@@ -1586,6 +1587,16 @@ at other cookies, or at the headers).</p>
       <span class="dox_type">string</span>
       <span>The type of the client (player, bot, etc.)</span>
     </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">headers</span>
+      <span class="dox_type">object</span>
+      <span>Optional. The connection headers passed by the Socket</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">cookies</span>
+      <span class="dox_type">object</span>
+      <span>Optional. An object containing the cookies, if any</span>
+    </div>
     <div class="dox_tag_title">Returns</div>
     <div class="dox_tag_detail">
       <span class="dox_tag_name"></span>
@@ -1602,7 +1613,7 @@ at other cookies, or at the headers).</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">GameServer</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">handleReconnectingClient</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span>
-    <span class="nx">clientId</span><span class="p">,</span> <span class="nx">socketId</span><span class="p">,</span> <span class="nx">socketObj</span><span class="p">,</span> <span class="nx">clientType</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">clientId</span><span class="p">,</span> <span class="nx">socketId</span><span class="p">,</span> <span class="nx">socketObj</span><span class="p">,</span> <span class="nx">clientType</span><span class="p">,</span> <span class="nx">cookies</span><span class="p">,</span> <span class="nx">headers</span><span class="p">)</span> <span class="p">{</span>
 
     <span class="kd">var</span> <span class="nx">sys</span><span class="p">,</span> <span class="nx">client</span><span class="p">,</span> <span class="nx">returningRoom</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">clientObj</span><span class="p">,</span> <span class="nx">decorClientObj</span><span class="p">;</span>
@@ -1814,7 +1825,8 @@ otherwise the welcomeClient will fail.</p>
 </div>
 <p>Here the clientObj can be altered by a user-defined callback.
 This part is repeated for connecting and reconnecting, if a change
-is made here, it should be ported there too.</p>
+is made here, it should be ported there too.
+There are actually minor differences on the parameters passed.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">decorateClientObj</span><span class="p">)</span> <span class="p">{</span>
@@ -1839,10 +1851,10 @@ is made here, it should be ported there too.</p>
         <span class="k">this</span><span class="p">.</span><span class="nx">decorateClientObj</span><span class="p">(</span><span class="nx">decorClientObj</span><span class="p">,</span> <span class="p">{</span>
             <span class="nx">headers</span><span class="o">:</span> <span class="nx">headers</span><span class="p">,</span>
             <span class="nx">cookies</span><span class="o">:</span> <span class="nx">cookies</span><span class="p">,</span>
-            <span class="nx">validSessionCookie</span><span class="o">:</span> <span class="o">!</span><span class="nx">invalidSessionCookie</span><span class="p">,</span>
+            <span class="nx">validSessionCookie</span><span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
             <span class="nx">socketObj</span><span class="o">:</span> <span class="nx">socketObj</span><span class="p">,</span>
             <span class="nx">socketId</span><span class="o">:</span> <span class="nx">socketId</span><span class="p">,</span>
-            <span class="nx">room</span><span class="o">:</span> <span class="nx">startingRoom</span>
+            <span class="nx">room</span><span class="o">:</span> <span class="nx">returningRoom</span>
         <span class="p">});</span>
 
 </pre></div>
