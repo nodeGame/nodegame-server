@@ -1,0 +1,31 @@
+language: node_js
+node_js:
+  - 0.10
+
+before_install:
+# Get installer script.
+  - cd bin
+  - wget https://github.com/nodeGame/nodegame/raw/master/bin/install-nodegame-for-module.sh
+  - chmod a+x install-nodegame-for-module.sh
+  - cd ..
+
+install:
+# Share node_modules with nodeGame.
+  - mkdir -p nodegame node_modules
+  - ln -s ../node_modules nodegame/node_modules
+  - ln -s .. node_modules/nodegame-server
+  - bin/install-nodegame-for-module.sh -g "nodegame-window nodegame-widgets JSUS NDDB shelf.js nodegame-client descil-mturk nodegame-db nodegame-mongodb"
+  - npm install
+# Patch express connect.
+  - patch node_modules/express/node_modules/connect/lib/middleware/static.js < bin/ng.connect.static.js.patch
+# Rebuild js files.
+  - node bin/make.js build-client -a -o nodegame-full
+
+script:
+# Add nodegame-server tests here.
+
+# Test Ultimatum game.
+  - cd nodegame/games
+  - git clone https://github.com/nodeGame/ultimatum.git
+  - cd ultimatum
+  - ./bin/run-standalone-test.sh
