@@ -1618,6 +1618,8 @@ at other cookies, or at the headers).</p>
     <span class="kd">var</span> <span class="nx">sys</span><span class="p">,</span> <span class="nx">client</span><span class="p">,</span> <span class="nx">returningRoom</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">clientObj</span><span class="p">,</span> <span class="nx">decorClientObj</span><span class="p">;</span>
 
+    <span class="kd">var</span> <span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">globalLookup</span><span class="p">,</span> <span class="nx">oldInfo</span><span class="p">;</span>
+
     <span class="nx">sys</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">;</span>
 
 
@@ -1664,7 +1666,9 @@ but it will trigger the desired reaction: a new connection.</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-57" id="section-57">&#182;</a>
 </div>
-<p>clientId must be already marked as disconnected.</p>
+<p>It can happen that when the client disconnected the previous time,
+its disconnection was not registered by the server (can happen
+with ajax). We do it here.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">client</span><span class="p">.</span><span class="nx">disconnected</span><span class="p">)</span> <span class="p">{</span>
@@ -1684,10 +1688,10 @@ but it will trigger the desired reaction: a new connection.</p>
 <p>TODO: Ste: Mark disconnected and try to resume the connection.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-        <span class="kd">var</span> <span class="nx">gameMsg</span> <span class="o">=</span> <span class="p">{</span><span class="nx">to</span><span class="o">:</span> <span class="nx">clientId</span><span class="p">};</span> <span class="c1">// needs a game msg. TODO: update.</span>
-        <span class="kd">var</span> <span class="nx">globalLookup</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
-        <span class="kd">var</span> <span class="nx">oldInfo</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">resolveClientAndSocket</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span>
-                                                                <span class="nx">globalLookup</span><span class="p">);</span>
+        <span class="nx">gameMsg</span> <span class="o">=</span> <span class="p">{</span><span class="nx">to</span><span class="o">:</span> <span class="nx">clientId</span><span class="p">};</span> <span class="c1">// needs a game msg. TODO: update.</span>
+        <span class="nx">globalLookup</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+        <span class="nx">oldInfo</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">resolveClientAndSocket</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span>
+                                                            <span class="nx">globalLookup</span><span class="p">);</span>
 
 
         <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">oldInfo</span><span class="p">.</span><span class="nx">success</span><span class="p">)</span> <span class="p">{</span>
