@@ -392,7 +392,19 @@ This might change in different versions of Socket.IO</p>
     <span class="p">}</span>
 
     <span class="nx">socket</span><span class="p">.</span><span class="nx">disconnect</span><span class="p">();</span>
-    <span class="k">this</span><span class="p">.</span><span class="nx">gameServer</span><span class="p">.</span><span class="nx">onDisconnect</span><span class="p">(</span><span class="nx">sid</span><span class="p">,</span> <span class="nx">socket</span><span class="p">);</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-14" id="section-14">&#182;</a>
+</div>
+<p>This is already triggered by the method above.
+this.gameServer.onDisconnect(sid, socket);</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
 <span class="p">};</span>
 
 
@@ -471,7 +483,7 @@ it is not used to locate the client.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-15" id="section-15">&#182;</a>
+  <a class="pilcrow" href="#section-16" id="section-16">&#182;</a>
 </div>
 <p>Cleanup msg, if necessary.</p>
         </td>
@@ -501,7 +513,7 @@ it is not used to locate the client.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-16" id="section-16">&#182;</a>
+  <a class="pilcrow" href="#section-17" id="section-17">&#182;</a>
 </div>
 <p>Send to ALL.</p>
         </td>
@@ -524,7 +536,7 @@ it is not used to locate the client.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-17" id="section-17">&#182;</a>
+  <a class="pilcrow" href="#section-18" id="section-18">&#182;</a>
 </div>
 <p>Either send to a specific client(1), or to ALL but a specific client(2).</p>
         </td>
@@ -537,7 +549,7 @@ it is not used to locate the client.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-18" id="section-18">&#182;</a>
+  <a class="pilcrow" href="#section-19" id="section-19">&#182;</a>
 </div>
 <p>Remove socket name from sid (exactly 2 characters, see constructor):</p>
         </td>
@@ -551,7 +563,7 @@ it is not used to locate the client.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-19" id="section-19">&#182;</a>
+  <a class="pilcrow" href="#section-20" id="section-20">&#182;</a>
 </div>
 <p>(1)</p>
         </td>
@@ -584,7 +596,7 @@ it is not used to locate the client.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-20" id="section-20">&#182;</a>
+  <a class="pilcrow" href="#section-21" id="section-21">&#182;</a>
 </div>
 <p>(2)</p>
         </td>
