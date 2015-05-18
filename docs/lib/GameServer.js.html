@@ -1480,6 +1480,11 @@ should be aware of the issue.</li></ul></li>
             <span class="nx">newConnection</span> <span class="o">=</span> <span class="nx">res</span> <span class="o">!==</span> <span class="nx">GameServer</span><span class="p">.</span><span class="nx">codes</span><span class="p">.</span><span class="nx">OPERATION_OK</span><span class="p">;</span>
             <span class="nx">invalidSessionCookie</span> <span class="o">=</span>
                 <span class="nx">res</span> <span class="o">===</span> <span class="nx">GameServer</span><span class="p">.</span><span class="nx">codes</span><span class="p">.</span><span class="nx">DUPLICATED_CLIENT_ID</span><span class="p">;</span>
+
+            <span class="k">if</span> <span class="p">(</span><span class="nx">invalidSessionCookie</span><span class="p">)</span> <span class="p">{</span>
+                <span class="k">this</span><span class="p">.</span><span class="nx">disposeUnauthorizedClient</span><span class="p">(</span><span class="nx">socketId</span><span class="p">,</span> <span class="nx">socketObj</span><span class="p">);</span>
+                <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
+            <span class="p">}</span>
         <span class="p">}</span>
     <span class="p">}</span>
 
