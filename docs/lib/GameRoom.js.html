@@ -855,6 +855,7 @@ options are merged before requiring the logic or client file.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">GameRoom</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">setupGame</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">mixinConf</span><span class="p">,</span> <span class="nx">doLogic</span><span class="p">,</span> <span class="nx">clientList</span><span class="p">,</span> <span class="nx">force</span><span class="p">)</span> <span class="p">{</span>
+
     <span class="kd">var</span> <span class="nx">game</span><span class="p">,</span> <span class="nx">botGame</span><span class="p">,</span> <span class="nx">channel</span><span class="p">,</span> <span class="nx">node</span><span class="p">,</span> <span class="nx">gameNode</span><span class="p">,</span> <span class="nx">that</span><span class="p">,</span> <span class="nx">settings</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">i</span><span class="p">,</span> <span class="nx">clientId</span><span class="p">,</span> <span class="nx">clientObj</span><span class="p">,</span> <span class="nx">type</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">rc</span><span class="p">;</span>
@@ -909,7 +910,7 @@ options are merged before requiring the logic or client file.</p>
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">doLogic</span><span class="p">)</span>    <span class="nx">doLogic</span>    <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">clientList</span><span class="p">)</span> <span class="nx">clientList</span> <span class="o">=</span> <span class="s1">&#39;players&#39;</span><span class="p">;</span>
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">force</span><span class="p">)</span>      <span class="nx">force</span>      <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
-
+<span class="kr">debugger</span>
     <span class="nx">settings</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">treatments</span><span class="p">[</span><span class="k">this</span><span class="p">.</span><span class="nx">treatmentName</span><span class="p">];</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">runtimeConf</span><span class="p">)</span> <span class="p">{</span>
