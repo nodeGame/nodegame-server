@@ -939,11 +939,11 @@ options are merged before requiring the logic or client file.</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-32" id="section-32">&#182;</a>
 </div>
-<p>Require Logic.</p>
+<p>Instantiates Logic.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-        <span class="nx">game</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">gamePaths</span><span class="p">.</span><span class="nx">logic</span><span class="p">)(</span>
-                <span class="nx">node</span><span class="p">,</span> <span class="nx">channel</span><span class="p">,</span> <span class="k">this</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">treatmentName</span><span class="p">,</span> <span class="nx">settings</span><span class="p">);</span>
+        <span class="nx">game</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">gamePaths</span><span class="p">.</span><span class="nx">logic</span><span class="p">(</span><span class="nx">node</span><span class="p">,</span> <span class="nx">channel</span><span class="p">,</span> <span class="k">this</span><span class="p">,</span>
+                                    <span class="k">this</span><span class="p">.</span><span class="nx">treatmentName</span><span class="p">,</span> <span class="nx">settings</span><span class="p">);</span>
 
         <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">game</span><span class="p">)</span> <span class="p">{</span>
             <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameRoom.setupGame: room &#39;</span> <span class="o">+</span> <span class="k">this</span><span class="p">.</span><span class="nx">name</span> <span class="o">+</span>
@@ -1110,7 +1110,7 @@ passed in the constructor and be already connected.</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-41" id="section-41">&#182;</a>
 </div>
-<p>Require the game.</p>
+<p>Instantiates the game.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
             <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">gamePaths</span><span class="p">.</span><span class="nx">hasOwnProperty</span><span class="p">(</span><span class="nx">type</span><span class="p">))</span> <span class="p">{</span>
@@ -1118,8 +1118,9 @@ passed in the constructor and be already connected.</p>
                         <span class="s2">&quot;client type &#39;&quot;</span> <span class="o">+</span> <span class="nx">type</span> <span class="o">+</span> <span class="s2">&quot;&#39;.&quot;</span><span class="p">);</span>
             <span class="p">}</span>
             <span class="nx">gameNode</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">bots</span><span class="p">[</span><span class="nx">clientId</span><span class="p">];</span>
-            <span class="nx">game</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">gamePaths</span><span class="p">[</span><span class="nx">type</span><span class="p">])(</span>
-                    <span class="k">this</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">treatmentName</span><span class="p">,</span> <span class="nx">settings</span><span class="p">,</span> <span class="nx">gameNode</span><span class="p">);</span>
+            <span class="nx">game</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">gamePaths</span><span class="p">[</span><span class="nx">type</span><span class="p">](</span><span class="k">this</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">treatmentName</span><span class="p">,</span>
+                                        <span class="nx">settings</span><span class="p">,</span> <span class="nx">gameNode</span><span class="p">);</span>
+
             <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">game</span><span class="p">)</span> <span class="p">{</span>
                 <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameRoom.setupGame: room &#39;</span> <span class="o">+</span> <span class="k">this</span><span class="p">.</span><span class="nx">name</span> <span class="o">+</span>
                         <span class="s1">&#39;. playerPath did not return a valid game object.&#39;</span><span class="p">);</span>
