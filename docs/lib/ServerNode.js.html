@@ -100,6 +100,9 @@
         <a href="#servernode.creategamealias">ServerNode.createGameAlias</a>
       </div>
       <div class="heading h3">
+        <a href="#servernode.loadclienttypes">ServerNode.loadClientTypes</a>
+      </div>
+      <div class="heading h3">
         <a href="#servernode.loadchannelsfile">ServerNode.loadChannelsFile</a>
       </div>
       <div class="heading h3">
@@ -1329,6 +1332,8 @@ package.json files.</p>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">ServerNode</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">addGameDir</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">gameDir</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">game</span><span class="p">,</span> <span class="nx">gameSettings</span><span class="p">,</span> <span class="nx">gamePath</span><span class="p">,</span> <span class="nx">gameSettingsPath</span><span class="p">,</span> <span class="nx">gameSettingsObj</span><span class="p">,</span> <span class="nx">res</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">clientTypes</span><span class="p">;</span>
+
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">gameDir</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerNode.addGameDir: gameDir must be string.&#39;</span><span class="p">);</span>
     <span class="p">}</span>
@@ -1389,6 +1394,11 @@ package.json files.</p>
         <td class="code highlight"><div class="highlight"><pre>
         <span class="k">return</span><span class="p">;</span>
     <span class="p">}</span>
+
+    <span class="nx">clientTypes</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">loadClientTypes</span><span class="p">(</span><span class="nx">gameDir</span><span class="p">);</span>
+
+    <span class="nx">gameSettings</span><span class="p">.</span><span class="nx">gamePaths</span> <span class="o">=</span> <span class="nx">clientTypes</span><span class="p">;</span>
+
     <span class="nx">gameSettings</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">parseGameSettings</span><span class="p">(</span><span class="nx">gameSettings</span><span class="p">);</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">gameSettings</span><span class="p">)</span> <span class="p">{</span>
@@ -1529,62 +1539,6 @@ package.json files.</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-59" id="section-59">&#182;</a>
 </div>
-<p>Require all specified game files for each treatment.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">for</span> <span class="p">(</span><span class="nx">t</span> <span class="k">in</span> <span class="nx">treatments</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">if</span> <span class="p">(</span><span class="nx">treatments</span><span class="p">.</span><span class="nx">hasOwnProperty</span><span class="p">(</span><span class="nx">t</span><span class="p">))</span> <span class="p">{</span>
-            <span class="nx">treatment</span> <span class="o">=</span> <span class="nx">treatments</span><span class="p">[</span><span class="nx">t</span><span class="p">];</span>
-
-
-            <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">treatment</span><span class="p">.</span><span class="nx">gamePaths</span><span class="p">)</span> <span class="p">{</span>
-                <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;ServerNode.addGame: gamePaths must be &#39;</span> <span class="o">+</span>
-                                <span class="s1">&#39;object. Game: &#39;</span> <span class="o">+</span> <span class="nx">gameInfo</span><span class="p">.</span><span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39;. &#39;</span> <span class="o">+</span>
-                                <span class="s1">&#39;Treatment: &#39;</span> <span class="o">+</span> <span class="nx">t</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
-            <span class="p">}</span>
-
-            <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">treatment</span><span class="p">.</span><span class="nx">gamePaths</span><span class="p">.</span><span class="nx">logic</span><span class="p">)</span> <span class="p">{</span>
-                <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;ServerNode.addGame: gamePaths.logic must &#39;</span> <span class="o">+</span>
-                                <span class="s1">&#39;be string. Game: &#39;</span> <span class="o">+</span> <span class="nx">gameInfo</span><span class="p">.</span><span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39;. &#39;</span> <span class="o">+</span>
-                                <span class="s1">&#39;Treatment: &#39;</span> <span class="o">+</span> <span class="nx">t</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
-            <span class="p">}</span>
-
-            <span class="k">for</span> <span class="p">(</span><span class="nx">gameType</span> <span class="k">in</span> <span class="nx">treatment</span><span class="p">.</span><span class="nx">gamePaths</span><span class="p">)</span> <span class="p">{</span>
-                <span class="k">if</span> <span class="p">(</span><span class="nx">treatment</span><span class="p">.</span><span class="nx">gamePaths</span><span class="p">.</span><span class="nx">hasOwnProperty</span><span class="p">(</span><span class="nx">gameType</span><span class="p">))</span> <span class="p">{</span>
-                    <span class="nx">gamePath</span> <span class="o">=</span> <span class="nx">treatment</span><span class="p">.</span><span class="nx">gamePaths</span><span class="p">[</span><span class="nx">gameType</span><span class="p">];</span>
-
-
-                    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">gamePath</span><span class="p">)</span> <span class="p">{</span>
-                        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerNode.addGame: &#39;</span> <span class="o">+</span>
-                                            <span class="s1">&#39;game &#39;</span> <span class="o">+</span> <span class="nx">gameInfo</span><span class="p">.</span><span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39; &#39;</span> <span class="o">+</span>
-                                            <span class="s1">&#39;treatment &#39;</span> <span class="o">+</span> <span class="nx">t</span> <span class="o">+</span> <span class="s1">&#39;: &#39;</span> <span class="o">+</span> <span class="nx">gameType</span> <span class="o">+</span>
-                                            <span class="s1">&#39; path must be string.&#39;</span><span class="p">);</span>
-                    <span class="p">}</span>
-
-                    <span class="nx">gamePath</span> <span class="o">=</span> <span class="nx">gameDir</span> <span class="o">+</span> <span class="s1">&#39;server/&#39;</span> <span class="o">+</span> <span class="nx">gamePath</span><span class="p">;</span>
-                    <span class="k">try</span> <span class="p">{</span>
-                        <span class="nx">game</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="nx">gamePath</span><span class="p">);</span>
-                    <span class="p">}</span>
-                    <span class="k">catch</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
-                        <span class="k">this</span><span class="p">.</span><span class="nx">logger</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="s1">&#39;ServerNode.addGame: cannot read &#39;</span> <span class="o">+</span>
-                                          <span class="nx">gamePath</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
-                        <span class="k">throw</span> <span class="nx">e</span><span class="p">;</span>
-                    <span class="p">}</span>
-                    <span class="nx">treatment</span><span class="p">.</span><span class="nx">gamePaths</span><span class="p">[</span><span class="nx">gameType</span><span class="p">]</span> <span class="o">=</span> <span class="nx">gamePath</span><span class="p">;</span>
-                <span class="p">}</span>
-            <span class="p">}</span>
-        <span class="p">}</span>
-    <span class="p">}</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-60" id="section-60">&#182;</a>
-</div>
 <p>Building language object.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
@@ -1597,7 +1551,7 @@ package.json files.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-61" id="section-61">&#182;</a>
+  <a class="pilcrow" href="#section-60" id="section-60">&#182;</a>
 </div>
 <p>Adding game info to global info object.</p>
         </td>
@@ -1617,7 +1571,7 @@ package.json files.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-62" id="section-62">&#182;</a>
+  <a class="pilcrow" href="#section-61" id="section-61">&#182;</a>
 </div>
 <p>Adding the public directory of the game to the static directories
 <a href='http://stackoverflow.com/questions/5973432/'>http://stackoverflow.com/questions/5973432/</a>
@@ -1634,7 +1588,7 @@ package.json files.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-63" id="section-63">&#182;</a>
+  <a class="pilcrow" href="#section-62" id="section-62">&#182;</a>
 </div>
 <p>Tries to load Channels file from game directory.</p>
         </td>
@@ -1648,7 +1602,7 @@ package.json files.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-64" id="section-64">&#182;</a>
+  <a class="pilcrow" href="#section-63" id="section-63">&#182;</a>
 </div>
 <p>Loading Auth dir, if any.</p>
         </td>
@@ -1662,7 +1616,7 @@ package.json files.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-65" id="section-65">&#182;</a>
+  <a class="pilcrow" href="#section-64" id="section-64">&#182;</a>
 </div>
 <p>Tries to load Views file from game directory.</p>
         </td>
@@ -1676,7 +1630,7 @@ package.json files.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-66" id="section-66">&#182;</a>
+  <a class="pilcrow" href="#section-65" id="section-65">&#182;</a>
 </div>
 <p>Adding game alias.</p>
         </td>
@@ -1692,7 +1646,7 @@ package.json files.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-67" id="section-67">&#182;</a>
+  <a class="pilcrow" href="#section-66" id="section-66">&#182;</a>
 </div>
 <p>Done.</p>
         </td>
@@ -1789,6 +1743,170 @@ package.json files.</p>
       <tr>
         <td class="docs"><div class="dox">
   <div class="summary">
+<div class="pilwrap" id="servernode.loadclienttypes">
+  <h3>
+    <a href="#servernode.loadclienttypes" name="servernode.loadclienttypes" class="pilcrow">&#182;</a>
+    ServerNode.loadClientTypes
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Loads client types from <em>game/client_types</em> directory</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">directory</span>
+      <span class="dox_type">string</span>
+      <span>The path of the game directory</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">ServerNode.addGame
+</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">ServerNode</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">loadClientTypes</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">directory</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">clientTypesDir</span><span class="p">,</span> <span class="nx">gamePaths</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">clientType</span><span class="p">,</span> <span class="nx">clientTypes</span><span class="p">,</span> <span class="nx">clientTypePath</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">i</span><span class="p">,</span> <span class="nx">len</span><span class="p">;</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">directory</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerNode.loadClientTypes: directory must be &#39;</span> <span class="o">+</span>
+                            <span class="s1">&#39;string.&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="nx">clientTypesDir</span> <span class="o">=</span> <span class="nx">directory</span> <span class="o">+</span> <span class="s1">&#39;game/client_types/&#39;</span><span class="p">;</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">J</span><span class="p">.</span><span class="nx">existsSync</span><span class="p">(</span><span class="nx">clientTypesDir</span><span class="p">))</span> <span class="p">{</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">logger</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="s1">&#39;ServerNode.loadClientTypes: game directory not &#39;</span> <span class="o">+</span>
+                          <span class="s1">&#39;found: &#39;</span> <span class="o">+</span> <span class="nx">dir</span><span class="p">);</span>
+        <span class="k">return</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="nx">clientTypes</span> <span class="o">=</span> <span class="nx">fs</span><span class="p">.</span><span class="nx">readdirSync</span><span class="p">(</span><span class="nx">clientTypesDir</span><span class="p">);</span>
+
+    <span class="nx">gamePaths</span> <span class="o">=</span> <span class="p">{};</span>
+
+    <span class="nx">i</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="nx">len</span> <span class="o">=</span> <span class="nx">clientTypes</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span>
+    <span class="k">for</span> <span class="p">(</span> <span class="p">;</span> <span class="o">++</span><span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">len</span> <span class="p">;</span> <span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">path</span><span class="p">.</span><span class="nx">extname</span><span class="p">(</span><span class="nx">clientTypes</span><span class="p">[</span><span class="nx">i</span><span class="p">])</span> <span class="o">===</span> <span class="s1">&#39;.js&#39;</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">clientTypePath</span> <span class="o">=</span> <span class="nx">clientTypesDir</span> <span class="o">+</span> <span class="nx">clientTypes</span><span class="p">[</span><span class="nx">i</span><span class="p">];</span>
+            <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">fs</span><span class="p">.</span><span class="nx">statSync</span><span class="p">(</span><span class="nx">clientTypePath</span><span class="p">).</span><span class="nx">isDirectory</span><span class="p">())</span> <span class="p">{</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-69" id="section-69">&#182;</a>
+</div>
+<p>TODO: require.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+                <span class="nx">gamePaths</span><span class="p">[</span><span class="nx">clientTypes</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">3</span><span class="p">)]</span> <span class="o">=</span> <span class="nx">clientTypePath</span><span class="p">;</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="nx">gamePaths</span><span class="p">;</span>
+
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-70" id="section-70">&#182;</a>
+</div>
+<p>Was in addGame. It sets the correct paths to client types. Not needed
+at the moment.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-71" id="section-71">&#182;</a>
+</div>
+
+<div class="highlight"><pre><code><span class="sr">//</span> <span class="n">Require</span> <span class="n">all</span> <span class="n">specified</span> <span class="n">game</span> <span class="n">files</span> <span class="k">for</span> <span class="nb">each</span> <span class="n">treatment</span><span class="o">.</span>
+<span class="k">for</span> <span class="p">(</span><span class="n">t</span> <span class="n">in</span> <span class="n">treatments</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">treatments</span><span class="o">.</span><span class="n">hasOwnProperty</span><span class="p">(</span><span class="n">t</span><span class="p">))</span> <span class="p">{</span>
+        <span class="n">treatment</span> <span class="o">=</span> <span class="n">treatments</span><span class="p">[</span><span class="n">t</span><span class="p">];</span>
+
+
+        <span class="k">if</span> <span class="p">(</span><span class="s">&#39;object&#39;</span> <span class="o">!==</span> <span class="n">typeof</span> <span class="n">treatment</span><span class="o">.</span><span class="n">gamePaths</span><span class="p">)</span> <span class="p">{</span>
+            <span class="n">throw</span> <span class="k">new</span> <span class="n">Error</span><span class="p">(</span><span class="s">&#39;ServerNode.addGame: gamePaths must be &#39;</span> <span class="o">+</span>
+                            <span class="s">&#39;object. Game: &#39;</span> <span class="o">+</span> <span class="n">gameInfo</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s">&#39;. &#39;</span> <span class="o">+</span>
+                            <span class="s">&#39;Treatment: &#39;</span> <span class="o">+</span> <span class="n">t</span> <span class="o">+</span> <span class="s">&#39;.&#39;</span><span class="p">);</span>
+        <span class="p">}</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="s">&#39;string&#39;</span> <span class="o">!==</span> <span class="n">typeof</span> <span class="n">treatment</span><span class="o">.</span><span class="n">gamePaths</span><span class="o">.</span><span class="n">logic</span><span class="p">)</span> <span class="p">{</span>
+            <span class="n">throw</span> <span class="k">new</span> <span class="n">Error</span><span class="p">(</span><span class="s">&#39;ServerNode.addGame: gamePaths.logic must &#39;</span> <span class="o">+</span>
+                            <span class="s">&#39;be string. Game: &#39;</span> <span class="o">+</span> <span class="n">gameInfo</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s">&#39;. &#39;</span> <span class="o">+</span>
+                            <span class="s">&#39;Treatment: &#39;</span> <span class="o">+</span> <span class="n">t</span> <span class="o">+</span> <span class="s">&#39;.&#39;</span><span class="p">);</span>
+        <span class="p">}</span>
+
+        <span class="k">for</span> <span class="p">(</span><span class="n">gameType</span> <span class="n">in</span> <span class="n">treatment</span><span class="o">.</span><span class="n">gamePaths</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">treatment</span><span class="o">.</span><span class="n">gamePaths</span><span class="o">.</span><span class="n">hasOwnProperty</span><span class="p">(</span><span class="n">gameType</span><span class="p">))</span> <span class="p">{</span>
+                <span class="n">gamePath</span> <span class="o">=</span> <span class="n">treatment</span><span class="o">.</span><span class="n">gamePaths</span><span class="p">[</span><span class="n">gameType</span><span class="p">];</span>
+
+
+                <span class="k">if</span> <span class="p">(</span><span class="s">&#39;string&#39;</span> <span class="o">!==</span> <span class="n">typeof</span> <span class="n">gamePath</span><span class="p">)</span> <span class="p">{</span>
+                    <span class="n">throw</span> <span class="k">new</span> <span class="n">TypeError</span><span class="p">(</span><span class="s">&#39;ServerNode.addGame: &#39;</span> <span class="o">+</span>
+                                        <span class="s">&#39;game &#39;</span> <span class="o">+</span> <span class="n">gameInfo</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s">&#39; &#39;</span> <span class="o">+</span>
+                                        <span class="s">&#39;treatment &#39;</span> <span class="o">+</span> <span class="n">t</span> <span class="o">+</span> <span class="s">&#39;: &#39;</span> <span class="o">+</span>
+</code></pre></div>
+
+
+
+<p>gameType +
+                                            ' path must be string.');
+                    }</p>
+
+
+<div class="highlight"><pre><code>                <span class="n">gamePath</span> <span class="o">=</span> <span class="n">gameDir</span> <span class="o">+</span> <span class="s">&#39;server/&#39;</span> <span class="o">+</span> <span class="n">gamePath</span><span class="p">;</span>
+                <span class="n">try</span> <span class="p">{</span>
+                    <span class="n">game</span> <span class="o">=</span> <span class="nb">require</span><span class="p">(</span><span class="n">gamePath</span><span class="p">);</span>
+                <span class="p">}</span>
+                <span class="n">catch</span><span class="p">(</span><span class="n">e</span><span class="p">)</span> <span class="p">{</span>
+                    <span class="n">this</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&#39;ServerNode.addGame: &#39;</span> <span class="o">+</span>
+</code></pre></div>
+
+
+
+<p>cannot read ' +
+                                          gamePath + '.');
+                        throw e;
+                    }
+                    treatment.gamePaths[gameType] = gamePath;
+                }
+            }
+        }
+    }</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
+<span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
 <div class="pilwrap" id="servernode.loadchannelsfile">
   <h3>
     <a href="#servernode.loadchannelsfile" name="servernode.loadchannelsfile" class="pilcrow">&#182;</a>
@@ -1860,7 +1978,7 @@ automatically add a waiting room to the channel.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-70" id="section-70">&#182;</a>
+  <a class="pilcrow" href="#section-73" id="section-73">&#182;</a>
 </div>
 <p>Validate,</p>
         </td>
@@ -1895,7 +2013,7 @@ automatically add a waiting room to the channel.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-71" id="section-71">&#182;</a>
+  <a class="pilcrow" href="#section-74" id="section-74">&#182;</a>
 </div>
 <p>Add the list of channels created by the game.</p>
         </td>
@@ -1911,7 +2029,7 @@ automatically add a waiting room to the channel.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-72" id="section-72">&#182;</a>
+  <a class="pilcrow" href="#section-75" id="section-75">&#182;</a>
 </div>
 <p>We prepend the baseDir parameter, if any.
 If logicPath is not string we let the WaitingRoom
@@ -1995,7 +2113,7 @@ TODO: views.js file is not loaded anymore because all context are dynamics.</spa
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-74" id="section-74">&#182;</a>
+  <a class="pilcrow" href="#section-77" id="section-77">&#182;</a>
 </div>
 <p>Prepare data structure for game.</p>
         </td>
@@ -2009,7 +2127,7 @@ TODO: views.js file is not loaded anymore because all context are dynamics.</spa
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-75" id="section-75">&#182;</a>
+  <a class="pilcrow" href="#section-78" id="section-78">&#182;</a>
 </div>
 <p>TODO: see if still needed (broken now).</p>
 
@@ -2080,6 +2198,18 @@ TODO: views.js file is not loaded anymore because all context are dynamics.</spa
     <span class="nx">langPaths</span> <span class="o">=</span> <span class="nx">fs</span><span class="p">.</span><span class="nx">readdirSync</span><span class="p">(</span><span class="nx">ctxPath</span><span class="p">);</span>
 
     <span class="nx">languages</span> <span class="o">=</span> <span class="p">{};</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-80" id="section-80">&#182;</a>
+</div>
+<p>TODO: Use for loop, not for in.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
     <span class="k">for</span> <span class="p">(</span><span class="nx">pathIndex</span> <span class="k">in</span> <span class="nx">langPaths</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">if</span> <span class="p">(</span><span class="nx">langPaths</span><span class="p">.</span><span class="nx">hasOwnProperty</span><span class="p">(</span><span class="nx">pathIndex</span><span class="p">))</span> <span class="p">{</span>
             <span class="nx">languageObject</span> <span class="o">=</span> <span class="p">{};</span>
@@ -2165,7 +2295,7 @@ TODO: views.js file is not loaded anymore because all context are dynamics.</spa
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-78" id="section-78">&#182;</a>
+  <a class="pilcrow" href="#section-82" id="section-82">&#182;</a>
 </div>
 <p>Add standard name.</p>
         </td>
@@ -2558,7 +2688,7 @@ that passes the correct objects to the configurator function.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-85" id="section-85">&#182;</a>
+  <a class="pilcrow" href="#section-89" id="section-89">&#182;</a>
 </div>
 <p>Requiring configuration function (can throw errors).</p>
         </td>
@@ -2577,7 +2707,7 @@ that passes the correct objects to the configurator function.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-86" id="section-86">&#182;</a>
+  <a class="pilcrow" href="#section-90" id="section-90">&#182;</a>
 </div>
 <p>The configuration function is called internally by <em>cb</em> that takes
 care of passing the right parameters to it.</p>
@@ -2765,7 +2895,7 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-89" id="section-89">&#182;</a>
+  <a class="pilcrow" href="#section-93" id="section-93">&#182;</a>
 </div>
 <p>Channels defined by a game with the channels.js file.
 Auth callback can modify the authorization only of those.</p>
@@ -2780,7 +2910,7 @@ Auth callback can modify the authorization only of those.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-90" id="section-90">&#182;</a>
+  <a class="pilcrow" href="#section-94" id="section-94">&#182;</a>
 </div>
 <p>1 Auth for all servers of all channels.</p>
         </td>
@@ -2801,7 +2931,7 @@ Auth callback can modify the authorization only of those.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-91" id="section-91">&#182;</a>
+  <a class="pilcrow" href="#section-95" id="section-95">&#182;</a>
 </div>
 <p>1 Auth for one channel, 1 or both servers</p>
         </td>
@@ -2819,7 +2949,7 @@ Auth callback can modify the authorization only of those.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-92" id="section-92">&#182;</a>
+  <a class="pilcrow" href="#section-96" id="section-96">&#182;</a>
 </div>
 <p>Retrieve the channel name.</p>
         </td>
@@ -2833,7 +2963,7 @@ Auth callback can modify the authorization only of those.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-93" id="section-93">&#182;</a>
+  <a class="pilcrow" href="#section-97" id="section-97">&#182;</a>
 </div>
 <p>Check if the channel belongs to the game.</p>
         </td>
@@ -2851,7 +2981,7 @@ Auth callback can modify the authorization only of those.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-94" id="section-94">&#182;</a>
+  <a class="pilcrow" href="#section-98" id="section-98">&#182;</a>
 </div>
 <p>Retrieve the channel object.</p>
         </td>
@@ -2865,7 +2995,7 @@ Auth callback can modify the authorization only of those.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-95" id="section-95">&#182;</a>
+  <a class="pilcrow" href="#section-99" id="section-99">&#182;</a>
 </div>
 <p>1 Auth for a specific channel.</p>
         </td>
@@ -2881,7 +3011,7 @@ Auth callback can modify the authorization only of those.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-96" id="section-96">&#182;</a>
+  <a class="pilcrow" href="#section-100" id="section-100">&#182;</a>
 </div>
 <p>1 Auth for a specific server of a specific channel.</p>
         </td>
@@ -3166,7 +3296,7 @@ Auth callback can modify the authorization only of those.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-103" id="section-103">&#182;</a>
+  <a class="pilcrow" href="#section-107" id="section-107">&#182;</a>
 </div>
 <ul>
 <li>skips the check.</li>
@@ -3182,7 +3312,7 @@ Auth callback can modify the authorization only of those.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-104" id="section-104">&#182;</a>
+  <a class="pilcrow" href="#section-108" id="section-108">&#182;</a>
 </div>
 <p>Trick: we compare version numbers using the GameStage class.</p>
         </td>
