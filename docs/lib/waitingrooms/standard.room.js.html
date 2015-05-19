@@ -46,7 +46,7 @@ in each client, move them in a separate gaming room, and start the game.</p>
   </div>
 </div>
         </td>
-        <td class="code highlight"><div class="highlight"><pre><span class="nx">module</span><span class="p">.</span><span class="nx">exports</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">settings</span><span class="p">,</span> <span class="nx">node</span><span class="p">,</span> <span class="nx">channel</span><span class="p">,</span> <span class="nx">gameRoom</span><span class="p">)</span> <span class="p">{</span>
+        <td class="code highlight"><div class="highlight"><pre><span class="nx">module</span><span class="p">.</span><span class="nx">exports</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">settings</span><span class="p">,</span> <span class="nx">node</span><span class="p">,</span> <span class="nx">channel</span><span class="p">,</span> <span class="nx">waitRoom</span><span class="p">)</span> <span class="p">{</span>
 
 
 </pre></div>
@@ -56,22 +56,6 @@ in each client, move them in a separate gaming room, and start the game.</p>
         <td class="docs">
 <div class="pilwrap">
   <a class="pilcrow" href="#section-2" id="section-2">&#182;</a>
-</div>
-<p>function logger() {
-       var logger = Logger.get('clients', {name: clientType});
-       return function(msg, lvl) { logger.log(msg, lvl); };
-   })();</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-3" id="section-3">&#182;</a>
 </div>
 <p>Load the code database.</p>
         </td>
@@ -87,7 +71,7 @@ in each client, move them in a separate gaming room, and start the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-4" id="section-4">&#182;</a>
+  <a class="pilcrow" href="#section-3" id="section-3">&#182;</a>
 </div>
 <p>Game Room counter.
 TODO: do we need it global ?</p>
@@ -100,7 +84,7 @@ TODO: do we need it global ?</p>
 
     <span class="kd">var</span> <span class="nx">MAX_WAIT_TIME</span> <span class="o">=</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">MAX_WAIT_TIME</span><span class="p">;</span>
 
-    <span class="kd">var</span> <span class="nx">treatments</span> <span class="o">=</span> <span class="nb">Object</span><span class="p">.</span><span class="nx">keys</span><span class="p">(</span><span class="nx">settings</span><span class="p">.</span><span class="nx">treatments</span><span class="p">);</span>
+    <span class="kd">var</span> <span class="nx">treatments</span> <span class="o">=</span> <span class="nb">Object</span><span class="p">.</span><span class="nx">keys</span><span class="p">(</span><span class="nx">channel</span><span class="p">.</span><span class="nx">gameInfo</span><span class="p">.</span><span class="nx">treatments</span><span class="p">);</span>
     <span class="kd">var</span> <span class="nx">tLen</span> <span class="o">=</span> <span class="nx">treatments</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span>
 
 
@@ -110,7 +94,7 @@ TODO: do we need it global ?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-5" id="section-5">&#182;</a>
+  <a class="pilcrow" href="#section-4" id="section-4">&#182;</a>
 </div>
 <p>Keep timeouts for all 4 players.</p>
         </td>
@@ -128,13 +112,13 @@ TODO: do we need it global ?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-6" id="section-6">&#182;</a>
+  <a class="pilcrow" href="#section-5" id="section-5">&#182;</a>
 </div>
 <p>decideTreatment: check if string, or use it.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="kd">function</span> <span class="nx">decideTreatment</span><span class="p">(</span><span class="nx">t</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">if</span> <span class="p">(</span><span class="nx">t</span> <span class="o">===</span> <span class="s2">&quot;rotate&quot;</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">t</span> <span class="o">===</span> <span class="s2">&quot;treatment_rotate&quot;</span><span class="p">)</span> <span class="p">{</span>
             <span class="k">return</span> <span class="nx">treatmentName</span> <span class="o">=</span> <span class="nx">treatments</span><span class="p">[(</span><span class="nx">counter</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="nx">tLen</span><span class="p">];</span>
         <span class="p">}</span>
         <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">t</span><span class="p">)</span> <span class="p">{</span>
@@ -152,7 +136,7 @@ TODO: do we need it global ?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-7" id="section-7">&#182;</a>
+  <a class="pilcrow" href="#section-6" id="section-6">&#182;</a>
 </div>
 <p>var code = dk.codes.id.get(playerID);</p>
         </td>
@@ -174,7 +158,7 @@ TODO: do we need it global ?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-8" id="section-8">&#182;</a>
+  <a class="pilcrow" href="#section-7" id="section-7">&#182;</a>
 </div>
 <p>dk.checkOut(code.AccessCode, code.ExitCode, 0.0, function(
 err, response, body) {</p>
@@ -203,7 +187,7 @@ err, response, body) {</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-9" id="section-9">&#182;</a>
+  <a class="pilcrow" href="#section-8" id="section-8">&#182;</a>
 </div>
 <p>for (i = 0; i &lt; channel.waitingRoom.clients.player.size(); i++) {
     if (channel.waitingRoom.clients.player.db[i].id ==
@@ -253,7 +237,7 @@ playerID) {</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-10" id="section-10">&#182;</a>
+  <a class="pilcrow" href="#section-9" id="section-9">&#182;</a>
 </div>
 <p>Send currently connected players to reconnecting one.</p>
         </td>
@@ -267,7 +251,7 @@ playerID) {</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-11" id="section-11">&#182;</a>
+  <a class="pilcrow" href="#section-10" id="section-10">&#182;</a>
 </div>
 <p>TODO: this sends a bit too much.</p>
         </td>
@@ -289,7 +273,7 @@ playerID) {</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-12" id="section-12">&#182;</a>
+  <a class="pilcrow" href="#section-11" id="section-11">&#182;</a>
 </div>
 <p>Clear timeout in any case.</p>
         </td>
@@ -303,7 +287,7 @@ playerID) {</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-13" id="section-13">&#182;</a>
+  <a class="pilcrow" href="#section-12" id="section-12">&#182;</a>
 </div>
 <p>Client really disconnected (not moved into another game room).</p>
         </td>
@@ -316,7 +300,7 @@ playerID) {</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-14" id="section-14">&#182;</a>
+  <a class="pilcrow" href="#section-13" id="section-13">&#182;</a>
 </div>
 <p>Free up the code.
 dk.markValid(p.id);</p>
@@ -345,7 +329,7 @@ dk.markValid(p.id);</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-15" id="section-15">&#182;</a>
+  <a class="pilcrow" href="#section-14" id="section-14">&#182;</a>
 </div>
 <p>Check-in.
 code = dk.codes.id.get(p.id);
@@ -361,7 +345,7 @@ dk.markInvalid(p.id);</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-16" id="section-16">&#182;</a>
+  <a class="pilcrow" href="#section-15" id="section-15">&#182;</a>
 </div>
 <p>channel.sysLogger.log('-----------Player connected ' + p.id);</p>
         </td>
@@ -376,7 +360,7 @@ dk.markInvalid(p.id);</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-17" id="section-17">&#182;</a>
+  <a class="pilcrow" href="#section-16" id="section-16">&#182;</a>
 </div>
 <p>Send the number of minutes to wait.</p>
         </td>
@@ -398,7 +382,7 @@ dk.markInvalid(p.id);</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-18" id="section-18">&#182;</a>
+  <a class="pilcrow" href="#section-17" id="section-17">&#182;</a>
 </div>
 <p>Wait for all players to connect.</p>
         </td>
@@ -420,7 +404,7 @@ dk.markInvalid(p.id);</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-19" id="section-19">&#182;</a>
+  <a class="pilcrow" href="#section-18" id="section-18">&#182;</a>
 </div>
 <p>Clear timeout for players.</p>
         </td>
@@ -440,7 +424,7 @@ dk.markInvalid(p.id);</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-20" id="section-20">&#182;</a>
+  <a class="pilcrow" href="#section-19" id="section-19">&#182;</a>
 </div>
 <p>Decide treatment.</p>
         </td>
@@ -475,7 +459,7 @@ dk.markInvalid(p.id);</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-21" id="section-21">&#182;</a>
+  <a class="pilcrow" href="#section-20" id="section-20">&#182;</a>
 </div>
 <p>This callback is executed when a player connects to the channel.</p>
         </td>
@@ -489,7 +473,7 @@ dk.markInvalid(p.id);</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-22" id="section-22">&#182;</a>
+  <a class="pilcrow" href="#section-21" id="section-21">&#182;</a>
 </div>
 <p>This callback is executed when a player connects to the channel.</p>
         </td>
@@ -503,7 +487,7 @@ dk.markInvalid(p.id);</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-23" id="section-23">&#182;</a>
+  <a class="pilcrow" href="#section-22" id="section-22">&#182;</a>
 </div>
 <p>This callback is executed whenever a player reconnects.</p>
         </td>
@@ -517,7 +501,7 @@ dk.markInvalid(p.id);</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-24" id="section-24">&#182;</a>
+  <a class="pilcrow" href="#section-23" id="section-23">&#182;</a>
 </div>
 <p>This must be done manually for now.
 (maybe will change in the future).</p>
