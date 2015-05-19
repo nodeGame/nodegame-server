@@ -49,7 +49,7 @@
         <a href="#gameroom.game">GameRoom.game</a>
       </div>
       <div class="heading h3">
-        <a href="#gameroom.gamepaths">GameRoom.gamePaths</a>
+        <a href="#gameroom.clienttypes">GameRoom.clientTypes</a>
       </div>
       <div class="heading h3">
         <a href="#gameroom.clients">GameRoom.clients</a>
@@ -418,20 +418,21 @@ within the whole <em>ServerNode</em>.</p>
       <tr>
         <td class="docs"><div class="dox">
   <div class="summary">
-<div class="pilwrap" id="gameroom.gamepaths">
+<div class="pilwrap" id="gameroom.clienttypes">
   <h3>
-    <a href="#gameroom.gamepaths" name="gameroom.gamepaths" class="pilcrow">&#182;</a>
-    GameRoom.gamePaths
+    <a href="#gameroom.clienttypes" name="gameroom.clienttypes" class="pilcrow">&#182;</a>
+    GameRoom.clientTypes
   </h3>
 </div>
 
   </div>
-  <div class="body"><p>Game paths for the room</p>
+  <div class="body"><p>Client types defined by the game</p>
   </div>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">gamePaths</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">treatments</span><span class="p">[</span><span class="k">this</span><span class="p">.</span><span class="nx">treatmentName</span><span class="p">].</span><span class="nx">gamePaths</span><span class="p">;</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">clientTypes</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">clientTypes</span><span class="p">;</span>
+
 
 
 </pre></div>
@@ -942,8 +943,8 @@ options are merged before requiring the logic or client file.</p>
 <p>Instantiates Logic.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-        <span class="nx">game</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">gamePaths</span><span class="p">.</span><span class="nx">logic</span><span class="p">(</span><span class="nx">node</span><span class="p">,</span> <span class="nx">channel</span><span class="p">,</span> <span class="k">this</span><span class="p">,</span>
-                                    <span class="k">this</span><span class="p">.</span><span class="nx">treatmentName</span><span class="p">,</span> <span class="nx">settings</span><span class="p">);</span>
+        <span class="nx">game</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">clientTypes</span><span class="p">.</span><span class="nx">logic</span><span class="p">(</span><span class="nx">node</span><span class="p">,</span> <span class="nx">channel</span><span class="p">,</span> <span class="k">this</span><span class="p">,</span>
+                                      <span class="k">this</span><span class="p">.</span><span class="nx">treatmentName</span><span class="p">,</span> <span class="nx">settings</span><span class="p">);</span>
 
         <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">game</span><span class="p">)</span> <span class="p">{</span>
             <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameRoom.setupGame: room &#39;</span> <span class="o">+</span> <span class="k">this</span><span class="p">.</span><span class="nx">name</span> <span class="o">+</span>
@@ -1113,13 +1114,13 @@ passed in the constructor and be already connected.</p>
 <p>Instantiates the game.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-            <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">gamePaths</span><span class="p">.</span><span class="nx">hasOwnProperty</span><span class="p">(</span><span class="nx">type</span><span class="p">))</span> <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">clientTypes</span><span class="p">.</span><span class="nx">hasOwnProperty</span><span class="p">(</span><span class="nx">type</span><span class="p">))</span> <span class="p">{</span>
                 <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s2">&quot;GameRoom.setupGame: no path defined for &quot;</span> <span class="o">+</span>
-                        <span class="s2">&quot;client type &#39;&quot;</span> <span class="o">+</span> <span class="nx">type</span> <span class="o">+</span> <span class="s2">&quot;&#39;.&quot;</span><span class="p">);</span>
+                                <span class="s2">&quot;client type &#39;&quot;</span> <span class="o">+</span> <span class="nx">type</span> <span class="o">+</span> <span class="s2">&quot;&#39;.&quot;</span><span class="p">);</span>
             <span class="p">}</span>
             <span class="nx">gameNode</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">bots</span><span class="p">[</span><span class="nx">clientId</span><span class="p">];</span>
-            <span class="nx">game</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">gamePaths</span><span class="p">[</span><span class="nx">type</span><span class="p">](</span><span class="k">this</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">treatmentName</span><span class="p">,</span>
-                                        <span class="nx">settings</span><span class="p">,</span> <span class="nx">gameNode</span><span class="p">);</span>
+            <span class="nx">game</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">clientTypes</span><span class="p">[</span><span class="nx">type</span><span class="p">](</span><span class="k">this</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">treatmentName</span><span class="p">,</span>
+                                          <span class="nx">settings</span><span class="p">,</span> <span class="nx">gameNode</span><span class="p">);</span>
 
             <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">game</span><span class="p">)</span> <span class="p">{</span>
                 <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameRoom.setupGame: room &#39;</span> <span class="o">+</span> <span class="k">this</span><span class="p">.</span><span class="nx">name</span> <span class="o">+</span>
