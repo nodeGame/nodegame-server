@@ -1135,6 +1135,10 @@ it detects the client's disconnection.</p>
       <span class="dox_type">Socket</span>
       <span>The sockect object</span>
     </div>
+    <div class="dox_tag_title">emit</div>
+    <div class="dox_tag_detail">
+      <span>disconnect</span>
+    </div>
   </div>
 </div>
         </td>
@@ -2336,11 +2340,11 @@ This is probably a duplicated connection. Not allowed for the moment.</p>
   <a class="pilcrow" href="#section-89" id="section-89">&#182;</a>
 </div>
 
-<div class="highlight"><pre><code>    <span class="n">this</span><span class="o">.</span><span class="n">socketManager</span><span class="o">.</span><span class="nb">send</span><span class="p">(</span><span class="n">this</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">create</span><span class="p">({</span>
-        <span class="n">target:</span> <span class="n">ngc</span><span class="o">.</span><span class="n">constants</span><span class="o">.</span><span class="n">target</span><span class="o">.</span><span class="n">ALERT</span><span class="p">,</span>
-        <span class="n">to:</span> <span class="n">clientId</span><span class="p">,</span>
-        <span class="n">text:</span> <span class="s">&#39;An invalid session cookie has been found. &#39;</span> <span class="o">+</span>
-            <span class="s">&#39;This will be considered as a new connection.&#39;</span>
+<div class="highlight"><pre><code>    <span class="k">this</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">msg</span><span class="p">.</span><span class="nx">create</span><span class="p">({</span>
+        <span class="nx">target</span><span class="o">:</span> <span class="nx">ngc</span><span class="p">.</span><span class="nx">constants</span><span class="p">.</span><span class="nx">target</span><span class="p">.</span><span class="nx">ALERT</span><span class="p">,</span>
+        <span class="nx">to</span><span class="o">:</span> <span class="nx">clientId</span><span class="p">,</span>
+        <span class="nx">text</span><span class="o">:</span> <span class="s1">&#39;An invalid session cookie has been found. &#39;</span> <span class="o">+</span>
+            <span class="s1">&#39;This will be considered as a new connection.&#39;</span>
     <span class="p">}));</span>
 </code></pre></div>
 
@@ -3065,6 +3069,7 @@ invoking this method, which evaluates only if the sender exists.</p>
       </tr>
   </tbody>
 </table>
+
   </div>
 </body>
 </html>

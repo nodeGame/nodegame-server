@@ -2516,18 +2516,18 @@ ServerChannel.prototype.killAllPhantoms = function() {
            if (c.admin) {</p>
 
 
-<div class="highlight"><pre><code>           <span class="sr">//</span> <span class="n">This</span> <span class="n">is</span> <span class="n">correct</span> <span class="n">but</span> <span class="n">too</span> <span class="n">much</span><span class="o">...</span>
-           <span class="sr">//</span><span class="n">that</span><span class="o">.</span><span class="n">admin</span><span class="o">.</span><span class="nb">socket</span><span class="o">.</span><span class="n">clients</span><span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">id</span><span class="p">]</span><span class="o">.</span><span class="n">disconnect</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">sid</span><span class="p">);</span>
+<div class="highlight"><pre><code>           <span class="c1">// This is correct but too much...</span>
+           <span class="c1">//that.admin.socket.clients[c.id].disconnect(c.sid);</span>
 
 
-           <span class="nb">delete</span> <span class="n">that</span><span class="o">.</span><span class="n">admin</span><span class="o">.</span><span class="nb">socket</span><span class="o">.</span><span class="n">clients</span><span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">id</span><span class="p">]</span><span class="o">.</span><span class="n">clients</span><span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">sid</span><span class="p">];</span>
+           <span class="k">delete</span> <span class="nx">that</span><span class="p">.</span><span class="nx">admin</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">clients</span><span class="p">[</span><span class="nx">c</span><span class="p">.</span><span class="nx">id</span><span class="p">].</span><span class="nx">clients</span><span class="p">[</span><span class="nx">c</span><span class="p">.</span><span class="nx">sid</span><span class="p">];</span>
        <span class="p">}</span>
        <span class="k">else</span> <span class="p">{</span>
-           <span class="sr">//</span> <span class="n">This</span> <span class="n">is</span> <span class="n">correct</span> <span class="n">but</span> <span class="n">too</span> <span class="n">much</span><span class="o">...</span>
-           <span class="sr">//</span><span class="n">that</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="nb">socket</span><span class="o">.</span><span class="n">clients</span><span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">id</span><span class="p">]</span><span class="o">.</span><span class="n">disconnect</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">sid</span><span class="p">);</span>
+           <span class="c1">// This is correct but too much...</span>
+           <span class="c1">//that.player.socket.clients[c.id].disconnect(c.sid);</span>
 
-           <span class="n">that</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="nb">socket</span><span class="o">.</span><span class="n">clients</span><span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">id</span><span class="p">]</span><span class="o">.</span><span class="n">sio</span><span class="o">.</span><span class="n">sockets</span><span class="o">.</span>
-                 <span class="n">sockets</span><span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">sid</span><span class="o">.</span><span class="n">slice</span><span class="p">(</span><span class="mi">2</span><span class="p">)]</span><span class="o">.</span><span class="n">disconnect</span><span class="p">();</span>
+           <span class="nx">that</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">clients</span><span class="p">[</span><span class="nx">c</span><span class="p">.</span><span class="nx">id</span><span class="p">].</span><span class="nx">sio</span><span class="p">.</span><span class="nx">sockets</span><span class="p">.</span>
+                 <span class="nx">sockets</span><span class="p">[</span><span class="nx">c</span><span class="p">.</span><span class="nx">sid</span><span class="p">.</span><span class="nx">slice</span><span class="p">(</span><span class="mi">2</span><span class="p">)].</span><span class="nx">disconnect</span><span class="p">();</span>
        <span class="p">}</span>
    <span class="p">}</span>
 </code></pre></div>
@@ -2600,6 +2600,7 @@ this.registry = new ChannelRegistry({ name: this.name });</p>
       </tr>
   </tbody>
 </table>
+
   </div>
 </body>
 </html>
