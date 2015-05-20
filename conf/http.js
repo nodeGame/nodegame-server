@@ -19,7 +19,8 @@ nodemailer = require('nodemailer');
 // STE: new.
 var bodyParser = require('body-parser'),
 cookieParser = require('cookie-parser'),
-errorHandler = require('errorhandler');
+errorHandler = require('errorhandler'),
+session = require('cookie-session')({ secret: 'secret' });
 
 /**
  * ### ServerNode._configureHTTP
@@ -110,6 +111,7 @@ function configure(app, servernode) {
     //app.use(express.cookieParser());
     // New:
     app.use(cookieParser());
+    app.use(session);
 
     if (process.env.NODE_ENV === 'development') {
         app.use(errorHandler());
@@ -183,6 +185,11 @@ function configure(app, servernode) {
     });
 
     // Serves game files or default game index file: index.htm.
+    app.get('/login', function(req, res) {
+        res.send('You can login: ' + req.session.game);
+    });
+
+    // Serves game files or default game index file: index.htm.
     app.get('/:game/*', function(req, res) {
         var gameName, gameInfo, gameSettings, filePath, file;
         var jadeTemplate, jsonContext, contextPath, langPath, pageName;
@@ -192,6 +199,13 @@ function configure(app, servernode) {
 
         gameName = req.params.game;
         file = req.params[0];
+
+        if (!req.session.user) {
+            req.session.error = 'Access denied!';
+            req.session.game = gameName;
+            res.redirect('/login');
+            return;
+        }
 
         gameSettings = gameInfo.treatments;
 
@@ -310,6 +324,20 @@ function configure(app, servernode) {
         app.set('view options', {layout: false});
         app.use(express.static(rootDir + '/public'));
     //});
+
+//    servernode.sio.use(function(socket, next) {
+//        var req = socket.handshake;
+//        var res = {};
+//        cookieParser(req, res, function(err) {
+//            if (err) return next(err);
+//            session(req, res, next);
+//        });
+//    });
+//
+//    servernode.sio.on('connection', function(socket) {
+//        debugger
+//        console.log("Session: ", socket.handshake.session);
+//    });
 
     return true;
 }

@@ -24,6 +24,7 @@
   ,   "request": "2.11.1"
   ,   "body-parser": "*"
   ,   "cookie-parser": "*"
+  ,   "cookie-session": "*"
   ,   "errorhandler": "*"
   ,   "jade": "0.25.0"
   ,   "JSON": "1.0.0"
