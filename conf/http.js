@@ -16,6 +16,11 @@ express = require('express'),
 J = require('nodegame-client').JSUS,
 nodemailer = require('nodemailer');
 
+// STE: new.
+var bodyParser = require('body-parser'),
+cookieParser = require('cookie-parser'),
+errorHandler = require('errorhandler');
+
 /**
  * ### ServerNode._configureHTTP
  *
@@ -59,7 +64,7 @@ function configure(app, servernode) {
         // Build path to file.
         path = rootDir + '/public/' + type + '/' + file;
         // Send file.
-        res.sendfile(path);
+        res.sendFile(path);
     }
 
     function renderTemplate(req, res, gameName, templatePath, contextPath,
@@ -101,18 +106,24 @@ function configure(app, servernode) {
         });
     }
 
-    app.use(express.cookieParser());
+    // Ste: was.
+    //app.use(express.cookieParser());
+    // New:
+    app.use(cookieParser());
 
-    app.configure('development', function(){
-        app.use(express.errorHandler({
-            dumpExceptions: true,
-            showStack: true
-        }));
-    });
+    if (process.env.NODE_ENV === 'development') {
+        app.use(errorHandler());
+// Ste: was.
+//         app.use(errorHandler({
+//             dumpExceptions: true,
+//             showStack: true
+//         }));
+    };
 
-    app.configure('production', function(){
-        app.use(express.errorHandler());
-    });
+    // Ste: was.
+//     app.configure('production', function(){
+//         app.use(errorHandler());
+//     });
 
     app.enable("jsonp callback");
 
@@ -221,7 +232,7 @@ function configure(app, servernode) {
         // immediately (cached by Express).
         if (pager.inPublic(gameName, file)) {
             // Send file (if it is a directory it is not sent).
-            res.sendfile(filePath);
+            res.sendFile(filePath);
             return;
         }
 
@@ -234,7 +245,7 @@ function configure(app, servernode) {
                 fs.readFile(filePath, 'utf8', function(err, data) {
                     // Mark existing.
                     pager.inPublic(gameName, file, true);
-                    res.sendfile(filePath);
+                    res.sendFile(filePath);
                 });
                 return;
             }
@@ -293,12 +304,12 @@ function configure(app, servernode) {
         res.redirect('/' + req.params.game + '/');
     });
 
-    app.configure(function(){
+    //app.configure(function(){
         app.set('views', rootDir + '/views');
         app.set('view engine', 'jade');
         app.set('view options', {layout: false});
         app.use(express.static(rootDir + '/public'));
-    });
+    //});
 
     return true;
 }

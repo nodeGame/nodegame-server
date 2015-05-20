@@ -222,6 +222,7 @@ directories.</p>
 <span class="kd">var</span> <span class="nx">serverVersionObj</span><span class="p">;</span>
 
 
+
 </pre></div>
         </td>
       </tr>
@@ -230,10 +231,39 @@ directories.</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-3" id="section-3">&#182;</a>
 </div>
-<p>Create Express server</p>
+<p>Create Express server.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-<span class="kd">var</span> <span class="nx">http</span> <span class="o">=</span> <span class="nx">express</span><span class="p">.</span><span class="nx">createServer</span><span class="p">();</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-4" id="section-4">&#182;</a>
+</div>
+<p>Ste: was.
+var http = express.createServer();</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-5" id="section-5">&#182;</a>
+</div>
+<p>Ste: New.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="kd">var</span> <span class="nx">nodeHTTP</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;http&#39;</span><span class="p">);</span>
+<span class="kd">var</span> <span class="nx">exp</span> <span class="o">=</span> <span class="nx">express</span><span class="p">();</span>
+<span class="kd">var</span> <span class="nx">http</span> <span class="o">=</span> <span class="nx">nodeHTTP</span><span class="p">.</span><span class="nx">createServer</span><span class="p">(</span><span class="nx">exp</span><span class="p">);</span>
 
 
 </pre></div>
@@ -615,7 +645,7 @@ directories.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-19" id="section-19">&#182;</a>
+  <a class="pilcrow" href="#section-21" id="section-21">&#182;</a>
 </div>
 <p>see <a href='http://nodejs.org/docs/latest/'>http://nodejs.org/docs/latest/</a>
            api/events.html#events_emitter_setmaxlisteners_n</p>
@@ -696,7 +726,7 @@ directories.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-23" id="section-23">&#182;</a>
+  <a class="pilcrow" href="#section-25" id="section-25">&#182;</a>
 </div>
 <p>Loading configurations.</p>
         </td>
@@ -759,14 +789,26 @@ directories.</p>
 
     <span class="nx">that</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
 
-    <span class="nx">process</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;uncaughtException&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nx">that</span><span class="p">.</span><span class="nx">logger</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="s1">&#39;ServerNode caught an exception: &#39;</span> <span class="o">+</span> <span class="nx">err</span><span class="p">);</span>
-        <span class="nx">that</span><span class="p">.</span><span class="nx">lastError</span> <span class="o">=</span> <span class="nx">err</span><span class="p">;</span>
-        <span class="k">if</span> <span class="p">(</span><span class="nx">that</span><span class="p">.</span><span class="nx">debug</span><span class="p">)</span> <span class="p">{</span>
-            <span class="nx">that</span><span class="p">.</span><span class="nx">terminatePhantoms</span><span class="p">();</span>
-            <span class="k">throw</span> <span class="nx">err</span><span class="p">;</span>
-        <span class="p">}</span>
-    <span class="p">});</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-28" id="section-28">&#182;</a>
+</div>
+<p>TODO: uncomment.
+    process.on('uncaughtException', function(err) {
+        that.logger.error('ServerNode caught an exception: ' + err);
+        that.lastError = err;
+        if (that.debug) {
+            that.terminatePhantoms();
+            throw err;
+        }
+    });</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
 
 
 </pre></div>
@@ -775,7 +817,7 @@ directories.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-26" id="section-26">&#182;</a>
+  <a class="pilcrow" href="#section-29" id="section-29">&#182;</a>
 </div>
 <p>Transform server version string to object (used to check dependencies).</p>
         </td>
@@ -789,7 +831,7 @@ directories.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-27" id="section-27">&#182;</a>
+  <a class="pilcrow" href="#section-30" id="section-30">&#182;</a>
 </div>
 <p>Loading default config files.</p>
         </td>
@@ -808,7 +850,7 @@ directories.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-28" id="section-28">&#182;</a>
+  <a class="pilcrow" href="#section-31" id="section-31">&#182;</a>
 </div>
 <p>Loading user configuration files</p>
         </td>
@@ -822,7 +864,7 @@ directories.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-29" id="section-29">&#182;</a>
+  <a class="pilcrow" href="#section-32" id="section-32">&#182;</a>
 </div>
 <p>We load the loggers configuration file first, so that
 the the output is nicely formatted.</p>
@@ -844,7 +886,7 @@ the the output is nicely formatted.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-30" id="section-30">&#182;</a>
+  <a class="pilcrow" href="#section-33" id="section-33">&#182;</a>
 </div>
 <p>Mix in options with configuration files.</p>
         </td>
@@ -862,7 +904,7 @@ the the output is nicely formatted.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-31" id="section-31">&#182;</a>
+  <a class="pilcrow" href="#section-34" id="section-34">&#182;</a>
 </div>
 <p>Start error manager.</p>
         </td>
@@ -876,7 +918,7 @@ the the output is nicely formatted.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-32" id="section-32">&#182;</a>
+  <a class="pilcrow" href="#section-35" id="section-35">&#182;</a>
 </div>
 <p>TODO: Think about how to handle SIGXXX signals.</p>
         </td>
@@ -889,12 +931,12 @@ the the output is nicely formatted.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-33" id="section-33">&#182;</a>
+  <a class="pilcrow" href="#section-36" id="section-36">&#182;</a>
 </div>
 
-<div class="highlight"><pre><code><span class="nx">process</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;SIGHUP&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
-    <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Got SIGHUP signal.&#39;</span><span class="p">);</span>
-    <span class="nx">process</span><span class="p">.</span><span class="nx">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+<div class="highlight"><pre><code><span class="n">process</span><span class="o">.</span><span class="n">on</span><span class="p">(</span><span class="s">&#39;SIGHUP&#39;</span><span class="p">,</span> <span class="n">function</span><span class="p">()</span> <span class="p">{</span>
+    <span class="n">console</span><span class="o">.</span><span class="nb">log</span><span class="p">(</span><span class="s">&#39;Got SIGHUP signal.&#39;</span><span class="p">);</span>
+    <span class="n">process</span><span class="o">.</span><span class="nb">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
 <span class="p">});</span>
 </code></pre></div>
 
@@ -919,7 +961,7 @@ the the output is nicely formatted.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-34" id="section-34">&#182;</a>
+  <a class="pilcrow" href="#section-37" id="section-37">&#182;</a>
 </div>
 <p>Loading games.</p>
         </td>
@@ -934,7 +976,7 @@ the the output is nicely formatted.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-35" id="section-35">&#182;</a>
+  <a class="pilcrow" href="#section-38" id="section-38">&#182;</a>
 </div>
 <p>Done.</p>
         </td>
@@ -1062,7 +1104,7 @@ is aborted.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-38" id="section-38">&#182;</a>
+  <a class="pilcrow" href="#section-41" id="section-41">&#182;</a>
 </div>
 <p>Pre-parse user defined configuration options.</p>
         </td>
@@ -1075,7 +1117,7 @@ is aborted.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-39" id="section-39">&#182;</a>
+  <a class="pilcrow" href="#section-42" id="section-42">&#182;</a>
 </div>
 <p>Merge user-defined options with defaults.</p>
         </td>
@@ -1094,7 +1136,7 @@ is aborted.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-40" id="section-40">&#182;</a>
+  <a class="pilcrow" href="#section-43" id="section-43">&#182;</a>
 </div>
 <p>TODO: better check the merged object.</p>
         </td>
@@ -1109,7 +1151,7 @@ is aborted.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-41" id="section-41">&#182;</a>
+  <a class="pilcrow" href="#section-44" id="section-44">&#182;</a>
 </div>
 <p>Creating the channel.</p>
         </td>
@@ -1183,7 +1225,7 @@ package.json files.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-43" id="section-43">&#182;</a>
+  <a class="pilcrow" href="#section-46" id="section-46">&#182;</a>
 </div>
 <p>Here we scan folders that contains games directories.</p>
         </td>
@@ -1202,7 +1244,7 @@ package.json files.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-44" id="section-44">&#182;</a>
+  <a class="pilcrow" href="#section-47" id="section-47">&#182;</a>
 </div>
 <p>Register operation in the queue.</p>
         </td>
@@ -1215,7 +1257,7 @@ package.json files.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-45" id="section-45">&#182;</a>
+  <a class="pilcrow" href="#section-48" id="section-48">&#182;</a>
 </div>
 <p>Go inside, and check every file to see if it is a game directory.</p>
         </td>
@@ -1229,7 +1271,7 @@ package.json files.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-46" id="section-46">&#182;</a>
+  <a class="pilcrow" href="#section-49" id="section-49">&#182;</a>
 </div>
 <p>Remove async operation from queue.</p>
         </td>
@@ -1248,7 +1290,7 @@ package.json files.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-47" id="section-47">&#182;</a>
+  <a class="pilcrow" href="#section-50" id="section-50">&#182;</a>
 </div>
 <p>Check every file.</p>
         </td>
@@ -1263,7 +1305,7 @@ package.json files.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-48" id="section-48">&#182;</a>
+  <a class="pilcrow" href="#section-51" id="section-51">&#182;</a>
 </div>
 <p>Register operation in the queue.</p>
         </td>
@@ -1276,7 +1318,7 @@ package.json files.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-49" id="section-49">&#182;</a>
+  <a class="pilcrow" href="#section-52" id="section-52">&#182;</a>
 </div>
 <p>Get file stats.</p>
         </td>
@@ -1296,7 +1338,7 @@ package.json files.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-50" id="section-50">&#182;</a>
+  <a class="pilcrow" href="#section-53" id="section-53">&#182;</a>
 </div>
 <p>It is a folder, try to add it as a game.</p>
         </td>
@@ -1314,7 +1356,7 @@ package.json files.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-51" id="section-51">&#182;</a>
+  <a class="pilcrow" href="#section-54" id="section-54">&#182;</a>
 </div>
 <p>Remove async operation from queue.</p>
         </td>
@@ -1372,7 +1414,7 @@ package.json files.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-53" id="section-53">&#182;</a>
+  <a class="pilcrow" href="#section-56" id="section-56">&#182;</a>
 </div>
 <p>Reading package.json</p>
         </td>
@@ -1393,7 +1435,7 @@ package.json files.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-54" id="section-54">&#182;</a>
+  <a class="pilcrow" href="#section-57" id="section-57">&#182;</a>
 </div>
 <p>Reading game.settings.js</p>
         </td>
@@ -1412,7 +1454,7 @@ package.json files.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-55" id="section-55">&#182;</a>
+  <a class="pilcrow" href="#section-58" id="section-58">&#182;</a>
 </div>
 <p>throw e;</p>
         </td>
@@ -1433,7 +1475,7 @@ package.json files.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-56" id="section-56">&#182;</a>
+  <a class="pilcrow" href="#section-59" id="section-59">&#182;</a>
 </div>
 <p>Ready to add the game.</p>
         </td>
@@ -1517,7 +1559,7 @@ package.json files.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-58" id="section-58">&#182;</a>
+  <a class="pilcrow" href="#section-61" id="section-61">&#182;</a>
 </div>
 <p>Check name.</p>
         </td>
@@ -1534,7 +1576,7 @@ package.json files.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-59" id="section-59">&#182;</a>
+  <a class="pilcrow" href="#section-62" id="section-62">&#182;</a>
 </div>
 <p>Checking nodeGame server version requirement.</p>
         </td>
@@ -1557,7 +1599,7 @@ package.json files.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-60" id="section-60">&#182;</a>
+  <a class="pilcrow" href="#section-63" id="section-63">&#182;</a>
 </div>
 <p>Require all specified game files for each treatment.</p>
         </td>
@@ -1613,7 +1655,7 @@ package.json files.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-61" id="section-61">&#182;</a>
+  <a class="pilcrow" href="#section-64" id="section-64">&#182;</a>
 </div>
 <p>Building language object.</p>
         </td>
@@ -1627,7 +1669,7 @@ package.json files.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-62" id="section-62">&#182;</a>
+  <a class="pilcrow" href="#section-65" id="section-65">&#182;</a>
 </div>
 <p>Adding game info to global info object.</p>
         </td>
@@ -1647,15 +1689,13 @@ package.json files.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-63" id="section-63">&#182;</a>
+  <a class="pilcrow" href="#section-66" id="section-66">&#182;</a>
 </div>
 <p>Adding the public directory of the game to the static directories
 <a href='http://stackoverflow.com/questions/5973432/'>http://stackoverflow.com/questions/5973432/</a>
  setting-up-two-different-static-directories-in-node-js-express-framework</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">http</span><span class="p">.</span><span class="nx">use</span><span class="p">(</span><span class="nx">gameInfo</span><span class="p">.</span><span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39;/public&#39;</span><span class="p">,</span>
-                  <span class="nx">express</span><span class="p">.</span><span class="kr">static</span><span class="p">(</span><span class="nx">gameDir</span> <span class="o">+</span> <span class="s1">&#39;public&#39;</span><span class="p">));</span>
 
 
 </pre></div>
@@ -1664,7 +1704,25 @@ package.json files.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-64" id="section-64">&#182;</a>
+  <a class="pilcrow" href="#section-67" id="section-67">&#182;</a>
+</div>
+<p>Ste: was.
+   this.http.use(gameInfo.name + '/public',
+                 express.static(gameDir + 'public'));</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
+    <span class="nx">exp</span><span class="p">.</span><span class="nx">use</span><span class="p">(</span><span class="nx">gameInfo</span><span class="p">.</span><span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39;/public&#39;</span><span class="p">,</span>
+            <span class="nx">express</span><span class="p">.</span><span class="kr">static</span><span class="p">(</span><span class="nx">gameDir</span> <span class="o">+</span> <span class="s1">&#39;public&#39;</span><span class="p">));</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-68" id="section-68">&#182;</a>
 </div>
 <p>Tries to load Channels file from game directory.</p>
         </td>
@@ -1678,7 +1736,7 @@ package.json files.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-65" id="section-65">&#182;</a>
+  <a class="pilcrow" href="#section-69" id="section-69">&#182;</a>
 </div>
 <p>Loading Auth dir, if any.</p>
         </td>
@@ -1692,7 +1750,7 @@ package.json files.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-66" id="section-66">&#182;</a>
+  <a class="pilcrow" href="#section-70" id="section-70">&#182;</a>
 </div>
 <p>Tries to load Views file from game directory.</p>
         </td>
@@ -1706,7 +1764,7 @@ package.json files.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-67" id="section-67">&#182;</a>
+  <a class="pilcrow" href="#section-71" id="section-71">&#182;</a>
 </div>
 <p>Adding game alias.</p>
         </td>
@@ -1722,7 +1780,7 @@ package.json files.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-68" id="section-68">&#182;</a>
+  <a class="pilcrow" href="#section-72" id="section-72">&#182;</a>
 </div>
 <p>Done.</p>
         </td>
@@ -1890,7 +1948,7 @@ automatically add a waiting room to the channel.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-71" id="section-71">&#182;</a>
+  <a class="pilcrow" href="#section-75" id="section-75">&#182;</a>
 </div>
 <p>Validate,</p>
         </td>
@@ -1925,7 +1983,7 @@ automatically add a waiting room to the channel.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-72" id="section-72">&#182;</a>
+  <a class="pilcrow" href="#section-76" id="section-76">&#182;</a>
 </div>
 <p>Add the list of channels created by the game.</p>
         </td>
@@ -1941,7 +1999,7 @@ automatically add a waiting room to the channel.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-73" id="section-73">&#182;</a>
+  <a class="pilcrow" href="#section-77" id="section-77">&#182;</a>
 </div>
 <p>We prepend the baseDir parameter, if any.
 If logicPath is not string we let the WaitingRoom
@@ -2000,9 +2058,6 @@ automatically add a waiting room to the channel.</p>
 
 TODO: views.js file is not loaded anymore because all context are dynamics.</span>
     </div>
-    <div class="dox_tag_title">experimental</div>
-    <div class="dox_tag_detail">
-    </div>
     <div class="dox_tag_title">See</div>
     <div class="dox_tag_detail">
       <span class="dox_type">PageManager
@@ -2028,7 +2083,7 @@ TODO: views.js file is not loaded anymore because all context are dynamics.</spa
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-75" id="section-75">&#182;</a>
+  <a class="pilcrow" href="#section-79" id="section-79">&#182;</a>
 </div>
 <p>Prepare data structure for game.</p>
         </td>
@@ -2042,26 +2097,26 @@ TODO: views.js file is not loaded anymore because all context are dynamics.</spa
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-76" id="section-76">&#182;</a>
+  <a class="pilcrow" href="#section-80" id="section-80">&#182;</a>
 </div>
 <p>TODO: see if still needed (broken now).</p>
 
 
-<div class="highlight"><pre><code><span class="nx">that</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
-<span class="nx">viewsFile</span> <span class="o">=</span> <span class="nx">directory</span> <span class="o">+</span> <span class="s1">&#39;views/views.js&#39;</span><span class="p">;</span>
-<span class="nx">fs</span><span class="p">.</span><span class="nx">exists</span><span class="p">(</span><span class="nx">viewsFile</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">exists</span><span class="p">)</span> <span class="p">{</span>
-     <span class="kd">var</span> <span class="nx">cb</span><span class="p">,</span> <span class="nx">sb</span><span class="p">;</span>
-     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">exists</span><span class="p">)</span> <span class="k">return</span><span class="p">;</span>
-     <span class="nx">cb</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="nx">viewsFile</span><span class="p">);</span>
-     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;function&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">cb</span><span class="p">)</span> <span class="p">{</span>
-         <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerNode.loadViewsFile: &#39;</span> <span class="o">+</span>
-             <span class="s1">&#39;views.js did not &#39;</span> <span class="o">+</span>
-             <span class="s1">&#39;return a valid function. Dir: &#39;</span> <span class="o">+</span> <span class="nx">directory</span><span class="p">);</span>
+<div class="highlight"><pre><code><span class="n">that</span> <span class="o">=</span> <span class="n">this</span><span class="p">;</span>
+<span class="n">viewsFile</span> <span class="o">=</span> <span class="n">directory</span> <span class="o">+</span> <span class="s">&#39;views/views.js&#39;</span><span class="p">;</span>
+<span class="n">fs</span><span class="o">.</span><span class="nb">exists</span><span class="p">(</span><span class="n">viewsFile</span><span class="p">,</span> <span class="n">function</span><span class="p">(</span><span class="nb">exists</span><span class="p">)</span> <span class="p">{</span>
+     <span class="n">var</span> <span class="n">cb</span><span class="p">,</span> <span class="n">sb</span><span class="p">;</span>
+     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nb">exists</span><span class="p">)</span> <span class="k">return</span><span class="p">;</span>
+     <span class="n">cb</span> <span class="o">=</span> <span class="nb">require</span><span class="p">(</span><span class="n">viewsFile</span><span class="p">);</span>
+     <span class="k">if</span> <span class="p">(</span><span class="s">&#39;function&#39;</span> <span class="o">!==</span> <span class="n">typeof</span> <span class="n">cb</span><span class="p">)</span> <span class="p">{</span>
+         <span class="n">throw</span> <span class="k">new</span> <span class="n">TypeError</span><span class="p">(</span><span class="s">&#39;ServerNode.loadViewsFile: &#39;</span> <span class="o">+</span>
+             <span class="s">&#39;views.js did not &#39;</span> <span class="o">+</span>
+             <span class="s">&#39;return a valid function. Dir: &#39;</span> <span class="o">+</span> <span class="n">directory</span><span class="p">);</span>
      <span class="p">}</span>
-     <span class="c1">// Execute views function in a sandboxed enviroment.</span>
-     <span class="c1">// A game cannot modify other games settings.</span>
-     <span class="nx">sb</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">pager</span><span class="p">.</span><span class="nx">getSandBox</span><span class="p">(</span><span class="nx">gameName</span><span class="p">,</span> <span class="nx">directory</span><span class="p">);</span>
-     <span class="nx">cb</span><span class="p">(</span><span class="nx">sb</span><span class="p">,</span> <span class="nx">gameInfo</span><span class="p">.</span><span class="nx">settings</span><span class="p">);</span>
+     <span class="sr">//</span> <span class="n">Execute</span> <span class="n">views</span> <span class="n">function</span> <span class="n">in</span> <span class="n">a</span> <span class="n">sandboxed</span> <span class="n">enviroment</span><span class="o">.</span>
+     <span class="sr">//</span> <span class="n">A</span> <span class="n">game</span> <span class="n">cannot</span> <span class="n">modify</span> <span class="n">other</span> <span class="n">games</span> <span class="n">settings</span><span class="o">.</span>
+     <span class="n">sb</span> <span class="o">=</span> <span class="n">that</span><span class="o">.</span><span class="n">pager</span><span class="o">.</span><span class="n">getSandBox</span><span class="p">(</span><span class="n">gameName</span><span class="p">,</span> <span class="n">directory</span><span class="p">);</span>
+     <span class="n">cb</span><span class="p">(</span><span class="n">sb</span><span class="p">,</span> <span class="n">gameInfo</span><span class="o">.</span><span class="n">settings</span><span class="p">);</span>
  <span class="p">});</span>
 </code></pre></div>
 
@@ -2198,7 +2253,7 @@ TODO: views.js file is not loaded anymore because all context are dynamics.</spa
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-79" id="section-79">&#182;</a>
+  <a class="pilcrow" href="#section-83" id="section-83">&#182;</a>
 </div>
 <p>Add standard name.</p>
         </td>
@@ -2247,7 +2302,21 @@ return TRUE if configuration is successful.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">ServerNode</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">configureHTTP</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">func</span><span class="p">)</span> <span class="p">{</span>
-    <span class="k">return</span> <span class="nx">func</span><span class="p">(</span><span class="nx">http</span><span class="p">,</span> <span class="k">this</span><span class="p">);</span>
+    <span class="k">return</span> <span class="nx">func</span><span class="p">(</span><span class="nx">exp</span><span class="p">,</span> <span class="k">this</span><span class="p">);</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-85" id="section-85">&#182;</a>
+</div>
+<p>Ste: was:
+return func(http, this);</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
 <span class="p">};</span>
 
 
@@ -2591,7 +2660,7 @@ that passes the correct objects to the configurator function.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-86" id="section-86">&#182;</a>
+  <a class="pilcrow" href="#section-91" id="section-91">&#182;</a>
 </div>
 <p>Requiring configuration function (can throw errors).</p>
         </td>
@@ -2610,7 +2679,7 @@ that passes the correct objects to the configurator function.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-87" id="section-87">&#182;</a>
+  <a class="pilcrow" href="#section-92" id="section-92">&#182;</a>
 </div>
 <p>The configuration function is called internally by <em>cb</em> that takes
 care of passing the right parameters to it.</p>
@@ -2798,7 +2867,7 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-90" id="section-90">&#182;</a>
+  <a class="pilcrow" href="#section-95" id="section-95">&#182;</a>
 </div>
 <p>Channels defined by a game with the channels.js file.
 Auth callback can modify the authorization only of those.</p>
@@ -2813,7 +2882,7 @@ Auth callback can modify the authorization only of those.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-91" id="section-91">&#182;</a>
+  <a class="pilcrow" href="#section-96" id="section-96">&#182;</a>
 </div>
 <p>1 Auth for all servers of all channels.</p>
         </td>
@@ -2834,7 +2903,7 @@ Auth callback can modify the authorization only of those.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-92" id="section-92">&#182;</a>
+  <a class="pilcrow" href="#section-97" id="section-97">&#182;</a>
 </div>
 <p>1 Auth for one channel, 1 or both servers</p>
         </td>
@@ -2852,7 +2921,7 @@ Auth callback can modify the authorization only of those.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-93" id="section-93">&#182;</a>
+  <a class="pilcrow" href="#section-98" id="section-98">&#182;</a>
 </div>
 <p>Retrieve the channel name.</p>
         </td>
@@ -2866,7 +2935,7 @@ Auth callback can modify the authorization only of those.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-94" id="section-94">&#182;</a>
+  <a class="pilcrow" href="#section-99" id="section-99">&#182;</a>
 </div>
 <p>Check if the channel belongs to the game.</p>
         </td>
@@ -2884,7 +2953,7 @@ Auth callback can modify the authorization only of those.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-95" id="section-95">&#182;</a>
+  <a class="pilcrow" href="#section-100" id="section-100">&#182;</a>
 </div>
 <p>Retrieve the channel object.</p>
         </td>
@@ -2898,7 +2967,7 @@ Auth callback can modify the authorization only of those.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-96" id="section-96">&#182;</a>
+  <a class="pilcrow" href="#section-101" id="section-101">&#182;</a>
 </div>
 <p>1 Auth for a specific channel.</p>
         </td>
@@ -2914,7 +2983,7 @@ Auth callback can modify the authorization only of those.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-97" id="section-97">&#182;</a>
+  <a class="pilcrow" href="#section-102" id="section-102">&#182;</a>
 </div>
 <p>1 Auth for a specific server of a specific channel.</p>
         </td>
@@ -3199,7 +3268,7 @@ Auth callback can modify the authorization only of those.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-104" id="section-104">&#182;</a>
+  <a class="pilcrow" href="#section-109" id="section-109">&#182;</a>
 </div>
 <ul>
 <li>skips the check.</li>
@@ -3215,7 +3284,7 @@ Auth callback can modify the authorization only of those.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-105" id="section-105">&#182;</a>
+  <a class="pilcrow" href="#section-110" id="section-110">&#182;</a>
 </div>
 <p>Trick: we compare version numbers using the GameStage class.</p>
         </td>
@@ -3242,7 +3311,6 @@ Auth callback can modify the authorization only of those.</p>
       </tr>
   </tbody>
 </table>
-
   </div>
 </body>
 </html>

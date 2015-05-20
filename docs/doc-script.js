@@ -210,13 +210,7 @@ function switchTab(tab){
  *
  * When the document is ready, make the sidebar and all that jazz
  */
-(function (init) {
-  if (window.addEventListener) {
-    window.addEventListener('DOMContentLoaded', init);
-  } else { // IE8 and below
-    window.onload = init;
-  }
-}(function(){
+window.onload = function(){
   makeTree(tree, relativeDir, thisFile);
   wireUpTabs();
 
@@ -226,5 +220,4 @@ function switchTab(tab){
   }else{
     switchTab('tree');
   }
-}));
-
+};

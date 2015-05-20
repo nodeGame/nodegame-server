@@ -8,8 +8,13 @@
 module.exports = configure;
 
 function configure(sio, servernode) {
-    sio.enable('browser client etag');
-    sio.set('log level', -1);
+
+    // Log level not existing.
+    //sio.set('log level', -1);
+
+    // Not existing in 1.3.5
+    // sio.enable('browser client etag');
+
 
     // Possible transports values are the base-names of the files in
     // node_modules/socket.io/lib/transports/.

@@ -1661,7 +1661,8 @@ been registered in the new room.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
         <span class="nx">pConnectMsg</span><span class="p">.</span><span class="nx">data</span> <span class="o">=</span> <span class="p">{</span><span class="nx">id</span><span class="o">:</span> <span class="nx">playerObj</span><span class="p">.</span><span class="nx">id</span><span class="p">};</span>
-        <span class="k">this</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">broadcast2room</span><span class="p">(</span><span class="nx">pConnectMsg</span><span class="p">,</span> <span class="nx">toRoomObj</span><span class="p">,</span> <span class="nx">playerId</span><span class="p">);</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">broadcast2room</span><span class="p">(</span><span class="nx">pConnectMsg</span><span class="p">,</span> <span class="nx">toRoomObj</span><span class="p">,</span>
+                                                 <span class="nx">playerId</span><span class="p">);</span>
 
 
 </pre></div>
@@ -2402,11 +2403,15 @@ Optional. Array of strings to give PhantomJS as command line arguments</li>
     <span class="nx">phantomjs</span><span class="p">.</span><span class="nx">stdout</span><span class="p">.</span><span class="nx">setEncoding</span><span class="p">(</span><span class="s1">&#39;utf8&#39;</span><span class="p">);</span>
     <span class="nx">logger</span> <span class="o">=</span> <span class="nx">Logger</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;clients&#39;</span><span class="p">,</span> <span class="p">{</span><span class="nx">name</span><span class="o">:</span> <span class="s1">&#39;phantomjs&#39;</span><span class="p">});</span>
 
-    <span class="nx">phantomjs</span><span class="p">.</span><span class="nx">stdout</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">text</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nx">logger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">text</span><span class="p">);</span>
+    <span class="nx">phantomjs</span><span class="p">.</span><span class="nx">stdout</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">data</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">logger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;stdout: &#39;</span> <span class="o">+</span> <span class="nx">data</span><span class="p">);</span>
     <span class="p">});</span>
 
-    <span class="nx">phantomjs</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;exit&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">code</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">phantomjs</span><span class="p">.</span><span class="nx">stderr</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">data</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">logger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;stderr: &#39;</span> <span class="o">+</span> <span class="nx">data</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
+    <span class="p">});</span>
+
+    <span class="nx">phantomjs</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;exit&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">code</span><span class="p">,</span> <span class="nx">signal</span><span class="p">)</span> <span class="p">{</span>
 
 </pre></div>
         </td>
@@ -2422,9 +2427,12 @@ Optional. Array of strings to give PhantomJS as command line arguments</li>
         <span class="nx">setTimeout</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
             <span class="nx">logger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;PhantomJS (PID &#39;</span> <span class="o">+</span> <span class="nx">phantomjs</span><span class="p">.</span><span class="nx">pid</span> <span class="o">+</span> <span class="s1">&#39;) exited&#39;</span><span class="p">);</span>
             <span class="k">if</span> <span class="p">(</span><span class="nx">code</span> <span class="o">!==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
-                <span class="kd">var</span> <span class="nx">msg</span> <span class="o">=</span> <span class="s1">&#39;PhantomJS received non-zero exit code: &#39;</span> <span class="o">+</span> <span class="nx">arguments</span><span class="p">;</span>
-                <span class="nx">logger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">msg</span><span class="p">);</span>
-                <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">msg</span><span class="p">);</span>
+                <span class="kd">var</span> <span class="nx">msg</span> <span class="o">=</span> <span class="s1">&#39;PhantomJS received non-zero exit code: &#39;</span> <span class="o">+</span> <span class="nx">code</span> <span class="o">+</span>
+                          <span class="s1">&#39;, Signal: &#39;</span> <span class="o">+</span> <span class="nx">signal</span><span class="p">;</span>
+                <span class="nx">logger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">,</span> <span class="p">{</span> <span class="nx">code</span><span class="o">:</span> <span class="nx">code</span><span class="p">,</span> <span class="nx">signal</span><span class="o">:</span> <span class="nx">signal</span> <span class="p">});</span>
+                <span class="k">if</span> <span class="p">(</span><span class="nx">that</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">debug</span><span class="p">)</span> <span class="p">{</span>
+                    <span class="k">throw</span> <span class="nb">Error</span><span class="p">(</span><span class="nx">msg</span><span class="p">);</span>
+                <span class="p">}</span>
             <span class="p">}</span>
 
             <span class="k">delete</span> <span class="nx">that</span><span class="p">.</span><span class="nx">phantoms</span><span class="p">[</span><span class="nx">phantomjs</span><span class="p">.</span><span class="nx">pid</span><span class="p">];</span>
@@ -2516,18 +2524,18 @@ ServerChannel.prototype.killAllPhantoms = function() {
            if (c.admin) {</p>
 
 
-<div class="highlight"><pre><code>           <span class="c1">// This is correct but too much...</span>
-           <span class="c1">//that.admin.socket.clients[c.id].disconnect(c.sid);</span>
+<div class="highlight"><pre><code>           <span class="sr">//</span> <span class="n">This</span> <span class="n">is</span> <span class="n">correct</span> <span class="n">but</span> <span class="n">too</span> <span class="n">much</span><span class="o">...</span>
+           <span class="sr">//</span><span class="n">that</span><span class="o">.</span><span class="n">admin</span><span class="o">.</span><span class="nb">socket</span><span class="o">.</span><span class="n">clients</span><span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">id</span><span class="p">]</span><span class="o">.</span><span class="n">disconnect</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">sid</span><span class="p">);</span>
 
 
-           <span class="k">delete</span> <span class="nx">that</span><span class="p">.</span><span class="nx">admin</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">clients</span><span class="p">[</span><span class="nx">c</span><span class="p">.</span><span class="nx">id</span><span class="p">].</span><span class="nx">clients</span><span class="p">[</span><span class="nx">c</span><span class="p">.</span><span class="nx">sid</span><span class="p">];</span>
+           <span class="nb">delete</span> <span class="n">that</span><span class="o">.</span><span class="n">admin</span><span class="o">.</span><span class="nb">socket</span><span class="o">.</span><span class="n">clients</span><span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">id</span><span class="p">]</span><span class="o">.</span><span class="n">clients</span><span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">sid</span><span class="p">];</span>
        <span class="p">}</span>
        <span class="k">else</span> <span class="p">{</span>
-           <span class="c1">// This is correct but too much...</span>
-           <span class="c1">//that.player.socket.clients[c.id].disconnect(c.sid);</span>
+           <span class="sr">//</span> <span class="n">This</span> <span class="n">is</span> <span class="n">correct</span> <span class="n">but</span> <span class="n">too</span> <span class="n">much</span><span class="o">...</span>
+           <span class="sr">//</span><span class="n">that</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="nb">socket</span><span class="o">.</span><span class="n">clients</span><span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">id</span><span class="p">]</span><span class="o">.</span><span class="n">disconnect</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">sid</span><span class="p">);</span>
 
-           <span class="nx">that</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">clients</span><span class="p">[</span><span class="nx">c</span><span class="p">.</span><span class="nx">id</span><span class="p">].</span><span class="nx">sio</span><span class="p">.</span><span class="nx">sockets</span><span class="p">.</span>
-                 <span class="nx">sockets</span><span class="p">[</span><span class="nx">c</span><span class="p">.</span><span class="nx">sid</span><span class="p">.</span><span class="nx">slice</span><span class="p">(</span><span class="mi">2</span><span class="p">)].</span><span class="nx">disconnect</span><span class="p">();</span>
+           <span class="n">that</span><span class="o">.</span><span class="n">player</span><span class="o">.</span><span class="nb">socket</span><span class="o">.</span><span class="n">clients</span><span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">id</span><span class="p">]</span><span class="o">.</span><span class="n">sio</span><span class="o">.</span><span class="n">sockets</span><span class="o">.</span>
+                 <span class="n">sockets</span><span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">sid</span><span class="o">.</span><span class="n">slice</span><span class="p">(</span><span class="mi">2</span><span class="p">)]</span><span class="o">.</span><span class="n">disconnect</span><span class="p">();</span>
        <span class="p">}</span>
    <span class="p">}</span>
 </code></pre></div>
@@ -2600,7 +2608,6 @@ this.registry = new ChannelRegistry({ name: this.name });</p>
       </tr>
   </tbody>
 </table>
-
   </div>
 </body>
 </html>
