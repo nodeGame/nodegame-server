@@ -9236,6 +9236,9 @@ if (!Array.prototype.indexOf) {
     if ('undefined' !== typeof store) node.store = store;
     node.support = JSUS.compatibility();
 
+    // Auto-Generated.
+    node.version = '0.9.10';
+
 })(window);
 
 /**
@@ -9252,9 +9255,6 @@ if (!Array.prototype.indexOf) {
     // ## Constants
 
     var k = node.constants = {};
-
-    // ### version
-    k.version = '1.0.0-beta';
 
     /**
      * ### node.constants.verbosity_levels
