@@ -1108,6 +1108,22 @@ is aborted.</p>
     <span class="k">this</span><span class="p">.</span><span class="nx">info</span><span class="p">.</span><span class="nx">channels</span><span class="p">[</span><span class="nx">cname</span><span class="p">]</span> <span class="o">=</span> <span class="nx">J</span><span class="p">.</span><span class="nx">merge</span><span class="p">(</span><span class="nx">channelOptions</span><span class="p">,</span> <span class="p">{</span><span class="nx">open</span><span class="o">:</span> <span class="kc">true</span><span class="p">});</span>
 
     <span class="k">this</span><span class="p">.</span><span class="nx">channels</span><span class="p">[</span><span class="nx">cname</span><span class="p">]</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-41" id="section-41">&#182;</a>
+</div>
+<p>Add the channel to the Page manager.
+TODO: rename addGame to addChannel.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">this</span><span class="p">.</span><span class="nx">pager</span><span class="p">.</span><span class="nx">addGame</span><span class="p">(</span><span class="nx">cname</span><span class="p">);</span>
+
     <span class="k">this</span><span class="p">.</span><span class="nx">logger</span><span class="p">.</span><span class="nx">info</span><span class="p">(</span><span class="s1">&#39;ServerNode.addChannel: channel added correctly: &#39;</span> <span class="o">+</span>
                      <span class="nx">channelOptions</span><span class="p">.</span><span class="nx">name</span><span class="p">);</span>
 
@@ -1164,7 +1180,7 @@ package.json files.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-42" id="section-42">&#182;</a>
+  <a class="pilcrow" href="#section-43" id="section-43">&#182;</a>
 </div>
 <p>Here we scan folders that contains games directories.</p>
         </td>
@@ -1183,7 +1199,7 @@ package.json files.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-43" id="section-43">&#182;</a>
+  <a class="pilcrow" href="#section-44" id="section-44">&#182;</a>
 </div>
 <p>Register operation in the queue.</p>
         </td>
@@ -1196,7 +1212,7 @@ package.json files.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-44" id="section-44">&#182;</a>
+  <a class="pilcrow" href="#section-45" id="section-45">&#182;</a>
 </div>
 <p>Go inside, and check every file to see if it is a game directory.</p>
         </td>
@@ -1210,7 +1226,7 @@ package.json files.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-45" id="section-45">&#182;</a>
+  <a class="pilcrow" href="#section-46" id="section-46">&#182;</a>
 </div>
 <p>Remove async operation from queue.</p>
         </td>
@@ -1229,7 +1245,7 @@ package.json files.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-46" id="section-46">&#182;</a>
+  <a class="pilcrow" href="#section-47" id="section-47">&#182;</a>
 </div>
 <p>Check every file.</p>
         </td>
@@ -1244,7 +1260,7 @@ package.json files.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-47" id="section-47">&#182;</a>
+  <a class="pilcrow" href="#section-48" id="section-48">&#182;</a>
 </div>
 <p>Register operation in the queue.</p>
         </td>
@@ -1257,7 +1273,7 @@ package.json files.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-48" id="section-48">&#182;</a>
+  <a class="pilcrow" href="#section-49" id="section-49">&#182;</a>
 </div>
 <p>Get file stats.</p>
         </td>
@@ -1277,7 +1293,7 @@ package.json files.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-49" id="section-49">&#182;</a>
+  <a class="pilcrow" href="#section-50" id="section-50">&#182;</a>
 </div>
 <p>It is a folder, try to add it as a game.</p>
         </td>
@@ -1295,7 +1311,7 @@ package.json files.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-50" id="section-50">&#182;</a>
+  <a class="pilcrow" href="#section-51" id="section-51">&#182;</a>
 </div>
 <p>Remove async operation from queue.</p>
         </td>
@@ -1354,7 +1370,7 @@ package.json files.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-52" id="section-52">&#182;</a>
+  <a class="pilcrow" href="#section-53" id="section-53">&#182;</a>
 </div>
 <p>Reading package.json</p>
         </td>
@@ -1375,7 +1391,7 @@ package.json files.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-53" id="section-53">&#182;</a>
+  <a class="pilcrow" href="#section-54" id="section-54">&#182;</a>
 </div>
 <p>Ready to add the game.</p>
         </td>
@@ -1454,7 +1470,7 @@ package.json files.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-55" id="section-55">&#182;</a>
+  <a class="pilcrow" href="#section-56" id="section-56">&#182;</a>
 </div>
 <p>Check name.</p>
         </td>
@@ -1471,7 +1487,7 @@ package.json files.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-56" id="section-56">&#182;</a>
+  <a class="pilcrow" href="#section-57" id="section-57">&#182;</a>
 </div>
 <p>Checking nodeGame server version requirement.</p>
         </td>
@@ -1495,7 +1511,7 @@ package.json files.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-57" id="section-57">&#182;</a>
+  <a class="pilcrow" href="#section-58" id="section-58">&#182;</a>
 </div>
 <p>Loading treatments, settings, and stages.</p>
         </td>
@@ -1509,7 +1525,7 @@ package.json files.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-58" id="section-58">&#182;</a>
+  <a class="pilcrow" href="#section-59" id="section-59">&#182;</a>
 </div>
 <p>Loading client types.</p>
         </td>
@@ -1523,7 +1539,7 @@ package.json files.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-59" id="section-59">&#182;</a>
+  <a class="pilcrow" href="#section-60" id="section-60">&#182;</a>
 </div>
 <p>Building language object.</p>
         </td>
@@ -1537,7 +1553,7 @@ package.json files.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-60" id="section-60">&#182;</a>
+  <a class="pilcrow" href="#section-61" id="section-61">&#182;</a>
 </div>
 <p>Adding game info to global info object.</p>
         </td>
@@ -1560,7 +1576,7 @@ package.json files.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-61" id="section-61">&#182;</a>
+  <a class="pilcrow" href="#section-62" id="section-62">&#182;</a>
 </div>
 <p>Adding the public directory of the game to the static directories
 <a href='http://stackoverflow.com/questions/5973432/'>http://stackoverflow.com/questions/5973432/</a>
@@ -1576,7 +1592,7 @@ package.json files.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-62" id="section-62">&#182;</a>
+  <a class="pilcrow" href="#section-63" id="section-63">&#182;</a>
 </div>
 <p>Tries to load Channels file from game directory.</p>
         </td>
@@ -1590,7 +1606,7 @@ package.json files.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-63" id="section-63">&#182;</a>
+  <a class="pilcrow" href="#section-64" id="section-64">&#182;</a>
 </div>
 <p>Creates a waiting room.</p>
         </td>
@@ -1604,7 +1620,7 @@ package.json files.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-64" id="section-64">&#182;</a>
+  <a class="pilcrow" href="#section-65" id="section-65">&#182;</a>
 </div>
 <p>Loading Auth dir, if any.</p>
         </td>
@@ -1618,28 +1634,12 @@ package.json files.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-65" id="section-65">&#182;</a>
+  <a class="pilcrow" href="#section-66" id="section-66">&#182;</a>
 </div>
 <p>Tries to load Views file from game directory.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="k">this</span><span class="p">.</span><span class="nx">loadViewsFile</span><span class="p">(</span><span class="nx">gameDir</span><span class="p">,</span> <span class="nx">gameInfo</span><span class="p">);</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-66" id="section-66">&#182;</a>
-</div>
-<p>Adding game alias.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">if</span> <span class="p">(</span><span class="nx">gameInfo</span><span class="p">.</span><span class="nx">alias</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">this</span><span class="p">.</span><span class="nx">createGameAlias</span><span class="p">(</span><span class="nx">gameInfo</span><span class="p">.</span><span class="nx">alias</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">);</span>
-    <span class="p">}</span>
 
 
 </pre></div>
@@ -2252,7 +2252,7 @@ constructor throw an error.</p>
                                     <span class="nx">channel</span><span class="p">.</span><span class="nx">name</span><span class="p">);</span>
                 <span class="p">}</span>
             <span class="p">}</span>
-        <span class="p">}</span>
+
 
 </pre></div>
         </td>
@@ -2261,6 +2261,23 @@ constructor throw an error.</p>
         <td class="docs">
 <div class="pilwrap">
   <a class="pilcrow" href="#section-81" id="section-81">&#182;</a>
+</div>
+<p>Adding channel alias.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+            <span class="k">if</span> <span class="p">(</span><span class="nx">channelConf</span><span class="p">.</span><span class="nx">alias</span><span class="p">)</span> <span class="p">{</span>
+                <span class="k">this</span><span class="p">.</span><span class="nx">createGameAlias</span><span class="p">(</span><span class="nx">channelConf</span><span class="p">.</span><span class="nx">alias</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">);</span>
+            <span class="p">}</span>
+
+        <span class="p">}</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-82" id="section-82">&#182;</a>
 </div>
 <p>Errors in channel creation are already logged.</p>
         </td>
@@ -2320,20 +2337,6 @@ TODO: views.js file is not loaded anymore because all context are dynamics.</spa
                             <span class="s1">&#39;string.&#39;</span><span class="p">);</span>
     <span class="p">}</span>
     <span class="nx">gameName</span> <span class="o">=</span> <span class="nx">gameInfo</span><span class="p">.</span><span class="nx">name</span><span class="p">;</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-83" id="section-83">&#182;</a>
-</div>
-<p>Prepare data structure for game.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">pager</span><span class="p">.</span><span class="nx">addGame</span><span class="p">(</span><span class="nx">gameName</span><span class="p">);</span>
 
 
 </pre></div>
