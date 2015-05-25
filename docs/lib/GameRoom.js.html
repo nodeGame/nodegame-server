@@ -108,6 +108,9 @@
       <div class="heading h2">
         <a href="#trytogetclient">tryToGetClient</a>
       </div>
+      <div class="heading h2">
+        <a href="#mixingamemetadata">mixinGameMetadata</a>
+      </div>
     </div>
   </div>
   <div id="sidebar-toggle"></div>
@@ -1571,6 +1574,9 @@ options are merged before requiring the logic or client file.</p>
 
     <span class="nx">game</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">getClientType</span><span class="p">(</span><span class="s1">&#39;logic&#39;</span><span class="p">,</span> <span class="nx">mixinConf</span><span class="p">);</span>
 
+<span class="kr">debugger</span>
+    <span class="nx">mixinGameMetadata</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="nx">game</span><span class="p">);</span>
+
     <span class="nx">node</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">node</span><span class="p">;</span>
 
 
@@ -1728,6 +1734,8 @@ passed in the constructor and be already connected.</p>
             <span class="nx">type</span> <span class="o">=</span> <span class="nx">clientObj</span><span class="p">.</span><span class="nx">clientType</span><span class="p">;</span>
 
             <span class="nx">game</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">getClientType</span><span class="p">(</span><span class="nx">type</span><span class="p">,</span> <span class="nx">mixinConf</span><span class="p">);</span>
+<span class="kr">debugger</span>
+            <span class="nx">mixinGameMetadata</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="nx">game</span><span class="p">);</span>
 
 
 </pre></div>
@@ -1853,6 +1861,52 @@ otherwise the whole function is not optimized.</p>
                                    <span class="nx">clientId</span> <span class="o">+</span> <span class="s2">&quot;&#39;&quot;</span><span class="p">,</span> <span class="s1">&#39;warn&#39;</span><span class="p">);</span>
     <span class="p">}</span>
     <span class="k">return</span> <span class="nx">clientObj</span><span class="p">;</span>
+<span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="mixingamemetadata">
+  <h2>
+    <a href="#mixingamemetadata" name="mixingamemetadata" class="pilcrow">&#182;</a>
+    mixinGameMetadata
+  </h2>
+</div>
+
+  </div>
+  <div class="body"><p>Adds default game info (name, description, version) if missing</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">game</span>
+      <span class="dox_type">object</span>
+      <span>The game object used to setup a client</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">GameRoom.setupClients</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">GameRoom.setupLogic
+</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="kd">function</span> <span class="nx">mixinGameMetadata</span><span class="p">(</span><span class="nx">game</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">game</span><span class="p">.</span><span class="nx">metadata</span><span class="p">)</span> <span class="nx">game</span><span class="p">.</span><span class="nx">metadata</span> <span class="o">=</span> <span class="p">{};</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">game</span><span class="p">.</span><span class="nx">metadata</span><span class="p">.</span><span class="nx">name</span><span class="p">)</span> <span class="nx">game</span><span class="p">.</span><span class="nx">metadata</span><span class="p">.</span><span class="nx">name</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">info</span><span class="p">.</span><span class="nx">name</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">game</span><span class="p">.</span><span class="nx">metadata</span><span class="p">.</span><span class="nx">description</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">game</span><span class="p">.</span><span class="nx">metadata</span><span class="p">.</span><span class="nx">description</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">info</span><span class="p">.</span><span class="nx">description</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">game</span><span class="p">.</span><span class="nx">metadata</span><span class="p">.</span><span class="nx">version</span><span class="p">)</span> <span class="nx">game</span><span class="p">.</span><span class="nx">metadata</span><span class="p">.</span><span class="nx">version</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">info</span><span class="p">.</span><span class="nx">version</span><span class="p">;</span>
 <span class="p">}</span>
 </pre></div>
         </td>

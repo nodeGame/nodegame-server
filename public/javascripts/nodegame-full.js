@@ -20085,13 +20085,13 @@ if (!Array.prototype.indexOf) {
         });
 
         /**
-         * ### node.setup.game_metadata
+         * ### node.setup.metadata
          *
          * Sets up `node.game.metadata`
          */
-        this.registerSetup('game_metadata', function(metadata) {
+        this.registerSetup('metadata', function(metadata) {
             if (!this.game) {
-                this.warn('setup("game_metadata") called before ' +
+                this.warn('setup("metadata") called before ' +
                           'node.game was initialized');
                 throw new node.NodeGameMisconfiguredGameError(
                     "node.game non-existent");
