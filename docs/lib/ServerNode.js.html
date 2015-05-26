@@ -118,7 +118,7 @@
         <a href="#servernode.buildlanguagesobject">ServerNode.buildLanguagesObject</a>
       </div>
       <div class="heading h3">
-        <a href="#servernode.parsegametreatments">ServerNode.parseGameTreatments</a>
+        <a href="#servernode.parsegamesettings">ServerNode.parseGameSettings</a>
       </div>
       <div class="heading h3">
         <a href="#servernode.configurehttp">ServerNode.configureHTTP</a>
@@ -1429,11 +1429,6 @@ package.json files.</p>
       <span>A game descriptor, usually from package.json</span>
     </div>
     <div class="dox_tag_detail">
-      <span class="dox_tag_name">treatments</span>
-      <span class="dox_type">object</span>
-      <span>Game treatments, usually from game.settings.js</span>
-    </div>
-    <div class="dox_tag_detail">
       <span class="dox_tag_name">gameDir</span>
       <span class="dox_type">string</span>
       <span>The root directory of the game (with trailing slash)</span>
@@ -1513,7 +1508,7 @@ package.json files.</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-58" id="section-58">&#182;</a>
 </div>
-<p>Loading treatments, settings, and stages.</p>
+<p>Loading settings, setup, and stages.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="nx">gameGame</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">loadGameGameDir</span><span class="p">(</span><span class="nx">gameDir</span><span class="p">);</span>
@@ -1562,7 +1557,7 @@ package.json files.</p>
         <span class="nx">dir</span><span class="o">:</span> <span class="nx">gameDir</span><span class="p">,</span>
         <span class="nx">info</span><span class="o">:</span> <span class="nx">gameInfo</span><span class="p">,</span>
         <span class="nx">clientTypes</span><span class="o">:</span> <span class="nx">clientTypes</span><span class="p">,</span>
-        <span class="nx">treatments</span><span class="o">:</span> <span class="nx">gameGame</span><span class="p">.</span><span class="nx">treatments</span><span class="p">,</span>
+        <span class="nx">settings</span><span class="o">:</span> <span class="nx">gameGame</span><span class="p">.</span><span class="nx">settings</span><span class="p">,</span>
         <span class="nx">setup</span><span class="o">:</span> <span class="nx">gameGame</span><span class="p">.</span><span class="nx">setup</span><span class="p">,</span>
         <span class="nx">stager</span><span class="o">:</span> <span class="nx">gameGame</span><span class="p">.</span><span class="nx">stager</span><span class="p">,</span>
         <span class="nx">languages</span><span class="o">:</span> <span class="nx">langObject</span><span class="p">,</span>
@@ -1768,7 +1763,7 @@ package.json files.</p>
       <span class="dox_tag_name"></span>
       <span class="dox_type">object</span>
       <span>An object containing three properties:
-  'treatments', 'stager', and 'setup'.</span>
+  'settings', 'stager', and 'setup'.</span>
     </div>
     <div class="dox_tag_title">See</div>
     <div class="dox_tag_detail">
@@ -1776,7 +1771,7 @@ package.json files.</p>
     </div>
     <div class="dox_tag_title">See</div>
     <div class="dox_tag_detail">
-      <span class="dox_type">ServerNode.parseGameTreatments
+      <span class="dox_type">ServerNode.parseGameSettings
 </span>
     </div>
   </div>
@@ -1785,7 +1780,7 @@ package.json files.</p>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">ServerNode</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">loadGameGameDir</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">directory</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">gameSetupPath</span><span class="p">,</span> <span class="nx">gameSetup</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">gameTreatmentsPath</span><span class="p">,</span> <span class="nx">gameTreatments</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">gameSettingsPath</span><span class="p">,</span> <span class="nx">gameSettings</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">gameStagesPath</span><span class="p">,</span> <span class="nx">gameStages</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">stager</span><span class="p">;</span>
 
@@ -1803,22 +1798,22 @@ package.json files.</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-70" id="section-70">&#182;</a>
 </div>
-<p>Treatments.</p>
+<p>Settings.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="nx">gameTreatmentsPath</span> <span class="o">=</span> <span class="nx">directory</span> <span class="o">+</span> <span class="s1">&#39;game/game.treatments.js&#39;</span><span class="p">;</span>
+    <span class="nx">gameSettingsPath</span> <span class="o">=</span> <span class="nx">directory</span> <span class="o">+</span> <span class="s1">&#39;game/game.settings.js&#39;</span><span class="p">;</span>
 
     <span class="k">try</span> <span class="p">{</span>
-        <span class="nx">gameTreatments</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="nx">gameTreatmentsPath</span><span class="p">);</span>
+        <span class="nx">gameSettings</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="nx">gameSettingsPath</span><span class="p">);</span>
     <span class="p">}</span>
     <span class="k">catch</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;ServerNode.loadGameGameDir: cannot read &#39;</span> <span class="o">+</span>
-                        <span class="nx">gameTreatmentsPath</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
+                        <span class="nx">gameSettingsPath</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
     <span class="p">}</span>
 
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">gameTreatments</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;SeverNode.loadGameGameDir: invalid treatments file: &#39;</span> <span class="o">+</span>
-                        <span class="nx">gameTreatmentsPath</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">gameSettings</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;SeverNode.loadGameGameDir: invalid settings file: &#39;</span> <span class="o">+</span>
+                        <span class="nx">gameSettingsPath</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
     <span class="p">}</span>
 
 
@@ -1849,7 +1844,7 @@ package.json files.</p>
     <span class="p">}</span>
 
     <span class="nx">stager</span> <span class="o">=</span> <span class="nx">ngc</span><span class="p">.</span><span class="nx">getStager</span><span class="p">();</span>
-    <span class="nx">gameStages</span> <span class="o">=</span> <span class="nx">gameStages</span><span class="p">(</span><span class="nx">stager</span><span class="p">,</span> <span class="nx">gameTreatments</span><span class="p">);</span>
+    <span class="nx">gameStages</span> <span class="o">=</span> <span class="nx">gameStages</span><span class="p">(</span><span class="nx">stager</span><span class="p">,</span> <span class="nx">gameSettings</span><span class="p">);</span>
 
 
 </pre></div>
@@ -1878,7 +1873,7 @@ package.json files.</p>
                         <span class="s1">&#39;export a valid function: &#39;</span> <span class="o">+</span> <span class="nx">gameSetupPath</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
     <span class="p">}</span>
 
-    <span class="nx">gameSetup</span> <span class="o">=</span> <span class="nx">gameSetup</span><span class="p">(</span><span class="nx">gameTreatments</span><span class="p">,</span> <span class="nx">gameStages</span><span class="p">);</span>
+    <span class="nx">gameSetup</span> <span class="o">=</span> <span class="nx">gameSetup</span><span class="p">(</span><span class="nx">gameSettings</span><span class="p">,</span> <span class="nx">gameStages</span><span class="p">);</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">gameSetup</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;SeverNode.loadGameGameDir: setup function did  &#39;</span> <span class="o">+</span>
@@ -1894,19 +1889,19 @@ package.json files.</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-73" id="section-73">&#182;</a>
 </div>
-<p>Parsing the treatments object before returning.</p>
+<p>Parsing the settings object before returning.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="nx">gameTreatments</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">parseGameTreatments</span><span class="p">(</span><span class="nx">gameTreatments</span><span class="p">);</span>
+    <span class="nx">gameSettings</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">parseGameSettings</span><span class="p">(</span><span class="nx">gameSettings</span><span class="p">);</span>
 
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">gameTreatments</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">gameSettings</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;SeverNode.loadGameGameDir: error parsing &#39;</span> <span class="o">+</span>
-                        <span class="s1">&#39;treatment object: &#39;</span> <span class="o">+</span> <span class="nx">gameTreatmentsPath</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
+                        <span class="s1">&#39;treatment object: &#39;</span> <span class="o">+</span> <span class="nx">gameSettingsPath</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
     <span class="p">}</span>
 
     <span class="k">return</span> <span class="p">{</span>
         <span class="nx">setup</span><span class="o">:</span> <span class="nx">gameSetup</span><span class="p">,</span>
-        <span class="nx">treatments</span><span class="o">:</span> <span class="nx">gameTreatments</span><span class="p">,</span>
+        <span class="nx">settings</span><span class="o">:</span> <span class="nx">gameSettings</span><span class="p">,</span>
         <span class="nx">stager</span><span class="o">:</span> <span class="nx">stager</span>
     <span class="p">};</span>
 <span class="p">};</span>
@@ -2465,21 +2460,21 @@ TODO: views.js file is not loaded anymore because all context are dynamics.</spa
       <tr>
         <td class="docs"><div class="dox">
   <div class="summary">
-<div class="pilwrap" id="servernode.parsegametreatments">
+<div class="pilwrap" id="servernode.parsegamesettings">
   <h3>
-    <a href="#servernode.parsegametreatments" name="servernode.parsegametreatments" class="pilcrow">&#182;</a>
-    ServerNode.parseGameTreatments
+    <a href="#servernode.parsegamesettings" name="servernode.parsegamesettings" class="pilcrow">&#182;</a>
+    ServerNode.parseGameSettings
   </h3>
 </div>
 
   </div>
-  <div class="body"><p>Parses a game treatments object and builds the treatments object</p>
+  <div class="body"><p>Parses a game settings object and builds the treatments object</p>
 
 <p>The treatment object always includes a 'standard' treatment plus
-any other treatment specified in the 'treatments' object.</p>
+any other treatment specified in the 'settings' object.</p>
 
 <p>All properties of the 'standard' treatment are shared with the other
-treatments.</p>
+settings.</p>
   </div>
   <div class="details">
     <div class="dox_tag_title">Params</div>
@@ -2493,7 +2488,7 @@ treatments.</p>
     <div class="dox_tag_detail">
       <span class="dox_tag_name"></span>
       <span class="dox_type">object</span>
-      <span>out The parsed treatments object</span>
+      <span>out The parsed settings object containing treatments</span>
     </div>
     <div class="dox_tag_title">See</div>
     <div class="dox_tag_detail">
@@ -2504,29 +2499,24 @@ treatments.</p>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-<span class="nx">ServerNode</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">parseGameTreatments</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">treatmentsObj</span><span class="p">)</span> <span class="p">{</span>
-    <span class="kd">var</span> <span class="nx">standard</span><span class="p">,</span> <span class="nx">t</span><span class="p">,</span> <span class="nx">tmp</span><span class="p">,</span> <span class="nx">out</span><span class="p">;</span>
+<span class="nx">ServerNode</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">parseGameSettings</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">settingsObj</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">standard</span><span class="p">,</span> <span class="nx">t</span><span class="p">,</span> <span class="nx">out</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">treatments</span><span class="p">;</span>
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">treatmentsObj</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerNode.parseGameSettings: treatmentsObj &#39;</span> <span class="o">+</span>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">settingsObj</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerNode.parseGameSettings: settingsObj &#39;</span> <span class="o">+</span>
                             <span class="s1">&#39;must be object.&#39;</span><span class="p">);</span>
     <span class="p">}</span>
 
     <span class="nx">out</span> <span class="o">=</span> <span class="p">{};</span>
+    <span class="nx">out</span><span class="p">.</span><span class="nx">standard</span> <span class="o">=</span> <span class="nx">J</span><span class="p">.</span><span class="nx">clone</span><span class="p">(</span><span class="nx">settingsObj</span><span class="p">);</span>
 
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">treatmentsObj</span><span class="p">.</span><span class="nx">treatments</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nx">out</span><span class="p">.</span><span class="nx">standard</span> <span class="o">=</span> <span class="nx">J</span><span class="p">.</span><span class="nx">clone</span><span class="p">(</span><span class="nx">treatmentsObj</span><span class="p">);</span>
-    <span class="p">}</span>
-    <span class="k">else</span> <span class="p">{</span>
-        <span class="nx">treatments</span> <span class="o">=</span> <span class="nx">treatmentsObj</span><span class="p">.</span><span class="nx">treatments</span><span class="p">;</span>
-        <span class="nx">out</span><span class="p">.</span><span class="nx">standard</span> <span class="o">=</span> <span class="nx">J</span><span class="p">.</span><span class="nx">clone</span><span class="p">(</span><span class="nx">treatmentsObj</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">settingsObj</span><span class="p">.</span><span class="nx">treatments</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">treatments</span> <span class="o">=</span> <span class="nx">settingsObj</span><span class="p">.</span><span class="nx">treatments</span><span class="p">;</span>
         <span class="k">delete</span> <span class="nx">out</span><span class="p">.</span><span class="nx">standard</span><span class="p">.</span><span class="nx">treatments</span><span class="p">;</span>
         <span class="k">for</span> <span class="p">(</span><span class="nx">t</span> <span class="k">in</span> <span class="nx">treatments</span><span class="p">)</span> <span class="p">{</span>
             <span class="k">if</span> <span class="p">(</span><span class="nx">treatments</span><span class="p">.</span><span class="nx">hasOwnProperty</span><span class="p">(</span><span class="nx">t</span><span class="p">))</span> <span class="p">{</span>
-                <span class="nx">tmp</span> <span class="o">=</span> <span class="nx">J</span><span class="p">.</span><span class="nx">clone</span><span class="p">(</span><span class="nx">out</span><span class="p">.</span><span class="nx">standard</span><span class="p">);</span>
-                <span class="nx">J</span><span class="p">.</span><span class="nx">mixin</span><span class="p">(</span><span class="nx">tmp</span><span class="p">,</span> <span class="nx">treatments</span><span class="p">[</span><span class="nx">t</span><span class="p">]);</span>
-                <span class="nx">out</span><span class="p">[</span><span class="nx">t</span><span class="p">]</span> <span class="o">=</span> <span class="nx">tmp</span><span class="p">;</span>
-                <span class="nx">out</span><span class="p">[</span><span class="nx">t</span><span class="p">].</span><span class="nx">name</span> <span class="o">=</span> <span class="nx">t</span><span class="p">;</span>
+                <span class="nx">out</span><span class="p">[</span><span class="nx">t</span><span class="p">]</span> <span class="o">=</span> <span class="nx">J</span><span class="p">.</span><span class="nx">merge</span><span class="p">(</span><span class="nx">out</span><span class="p">.</span><span class="nx">standard</span><span class="p">,</span> <span class="nx">treatments</span><span class="p">[</span><span class="nx">t</span><span class="p">]);</span>
+                <span class="nx">out</span><span class="p">[</span><span class="nx">t</span><span class="p">].</span><span class="nx">treatmentName</span> <span class="o">=</span> <span class="nx">t</span><span class="p">;</span>
             <span class="p">}</span>
         <span class="p">}</span>
     <span class="p">}</span>
@@ -3043,7 +3033,7 @@ generation and clientObject decoration.</p>
             <span class="nx">clientObjDecorator</span><span class="o">:</span> <span class="nx">sandboxDecorate</span>
         <span class="p">};</span>
 
-        <span class="nx">require</span><span class="p">(</span><span class="nx">authFile</span><span class="p">)(</span><span class="nx">authObj</span><span class="p">,</span> <span class="nx">that</span><span class="p">.</span><span class="nx">info</span><span class="p">.</span><span class="nx">games</span><span class="p">[</span><span class="nx">gameName</span><span class="p">].</span><span class="nx">treatments</span><span class="p">);</span>
+        <span class="nx">require</span><span class="p">(</span><span class="nx">authFile</span><span class="p">)(</span><span class="nx">authObj</span><span class="p">,</span> <span class="nx">that</span><span class="p">.</span><span class="nx">info</span><span class="p">.</span><span class="nx">games</span><span class="p">[</span><span class="nx">gameName</span><span class="p">].</span><span class="nx">settings</span><span class="p">);</span>
 
     <span class="p">});</span>
 <span class="p">};</span>
@@ -3300,7 +3290,7 @@ Auth callback can modify the authorization only of those.</p>
        logic: function() { ... },
        player: function() { ...},
     },
-    treatments: {
+    settings: {
       standard: {
         option1: ...,
         option2: ...

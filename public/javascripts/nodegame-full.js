@@ -16709,24 +16709,12 @@ if (!Array.prototype.indexOf) {
             throw new TypeError(
                 'Game.shouldPublishUpdate: type must be string.');
         }
-//        myPublishLevel = this.settings.publishLevel;
 
         myStage = this.getCurrentGameStage();
         levels = constants.publishLevels;
         stageLevels = constants.stageLevels;
 
-        // TODO. Hack. Fix getting / settings default Stager properties.
-        // if (!this.getCurrentStepObj()) {
-        //    myPublishLevel = levels.REGULAR;
-        // }
-        // else {
         myPublishLevel = this.plot.getProperty(myStage, 'publishLevel');
-
-        if (myPublishLevel !== null) {
-            console.log('AAAAAAAAAAAAAAAAAAAAAAAA ', myPublishLevel);
-        }
-
-        // }
 
         // Two cases are handled outside of the switch: NO msg
         // and LOADED stage with syncOnLoaded option.
@@ -20081,9 +20069,9 @@ if (!Array.prototype.indexOf) {
          *
          * Sets up `node.game.settings`
          */
-        this.registerSetup('game_settings', function(settings) {
+        this.registerSetup('settings', function(settings) {
             if (!this.game) {
-                this.warn('setup("game_settings") called before ' +
+                this.warn('setup("settings") called before ' +
                           'node.game was initialized.');
                 throw new node.NodeGameMisconfiguredGameError(
                     "node.game non-existent");

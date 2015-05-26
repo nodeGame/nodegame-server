@@ -84,7 +84,7 @@ TODO: do we need it global ?</p>
 
     <span class="kd">var</span> <span class="nx">MAX_WAIT_TIME</span> <span class="o">=</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">MAX_WAIT_TIME</span><span class="p">;</span>
 
-    <span class="kd">var</span> <span class="nx">treatments</span> <span class="o">=</span> <span class="nb">Object</span><span class="p">.</span><span class="nx">keys</span><span class="p">(</span><span class="nx">channel</span><span class="p">.</span><span class="nx">gameInfo</span><span class="p">.</span><span class="nx">treatments</span><span class="p">);</span>
+    <span class="kd">var</span> <span class="nx">treatments</span> <span class="o">=</span> <span class="nb">Object</span><span class="p">.</span><span class="nx">keys</span><span class="p">(</span><span class="nx">channel</span><span class="p">.</span><span class="nx">gameInfo</span><span class="p">.</span><span class="nx">settings</span><span class="p">);</span>
     <span class="kd">var</span> <span class="nx">tLen</span> <span class="o">=</span> <span class="nx">treatments</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span>
 
 
@@ -118,6 +118,7 @@ TODO: do we need it global ?</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="kd">function</span> <span class="nx">decideTreatment</span><span class="p">(</span><span class="nx">t</span><span class="p">)</span> <span class="p">{</span>
+        <span class="kr">debugger</span>
         <span class="k">if</span> <span class="p">(</span><span class="nx">t</span> <span class="o">===</span> <span class="s2">&quot;treatment_rotate&quot;</span><span class="p">)</span> <span class="p">{</span>
             <span class="k">return</span> <span class="nx">treatmentName</span> <span class="o">=</span> <span class="nx">treatments</span><span class="p">[(</span><span class="nx">counter</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="nx">tLen</span><span class="p">];</span>
         <span class="p">}</span>
