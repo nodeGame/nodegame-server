@@ -46,7 +46,7 @@ in each client, move them in a separate gaming room, and start the game.</p>
   </div>
 </div>
         </td>
-        <td class="code highlight"><div class="highlight"><pre><span class="nx">module</span><span class="p">.</span><span class="nx">exports</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">settings</span><span class="p">,</span> <span class="nx">node</span><span class="p">,</span> <span class="nx">channel</span><span class="p">,</span> <span class="nx">waitRoom</span><span class="p">)</span> <span class="p">{</span>
+        <td class="code highlight"><div class="highlight"><pre><span class="nx">module</span><span class="p">.</span><span class="nx">exports</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">settings</span><span class="p">,</span> <span class="nx">waitRoom</span><span class="p">,</span> <span class="nx">runtimeConf</span><span class="p">)</span> <span class="p">{</span>
 
 
 </pre></div>
@@ -63,6 +63,9 @@ in each client, move them in a separate gaming room, and start the game.</p>
     <span class="kd">var</span> <span class="nx">dk</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;descil-mturk&#39;</span><span class="p">)();</span>
 
     <span class="kd">var</span> <span class="nx">J</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;JSUS&#39;</span><span class="p">).</span><span class="nx">JSUS</span><span class="p">;</span>
+
+    <span class="kd">var</span> <span class="nx">node</span> <span class="o">=</span> <span class="nx">waitRoom</span><span class="p">.</span><span class="nx">node</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">channel</span> <span class="o">=</span> <span class="nx">waitRoom</span><span class="p">.</span><span class="nx">channel</span><span class="p">;</span>
 
 
 </pre></div>

@@ -70,6 +70,9 @@
         <a href="#servernode.sio">ServerNode.sio</a>
       </div>
       <div class="heading h3">
+        <a href="#servernode.gameloader">ServerNode.gameLoader</a>
+      </div>
+      <div class="heading h3">
         <a href="#servernode.page">ServerNode.page</a>
       </div>
       <div class="heading h3">
@@ -94,31 +97,10 @@
         <a href="#servernode.addgamedir">ServerNode.addGameDir</a>
       </div>
       <div class="heading h3">
-        <a href="#servernode.addgame">ServerNode.addGame</a>
+        <a href="#servernode.loadconfdir">ServerNode.loadConfDir</a>
       </div>
       <div class="heading h3">
-        <a href="#servernode.creategamealias">ServerNode.createGameAlias</a>
-      </div>
-      <div class="heading h3">
-        <a href="#servernode.loadgamegamedir">ServerNode.loadGameGameDir</a>
-      </div>
-      <div class="heading h3">
-        <a href="#servernode.loadclienttypes">ServerNode.loadClientTypes</a>
-      </div>
-      <div class="heading h3">
-        <a href="#servernode.loadwaitroomfile">ServerNode.loadWaitRoomFile</a>
-      </div>
-      <div class="heading h3">
-        <a href="#servernode.loadchannelsfile">ServerNode.loadChannelsFile</a>
-      </div>
-      <div class="heading h3">
-        <a href="#servernode.loadviewsfile">ServerNode.loadViewsFile</a>
-      </div>
-      <div class="heading h3">
-        <a href="#servernode.buildlanguagesobject">ServerNode.buildLanguagesObject</a>
-      </div>
-      <div class="heading h3">
-        <a href="#servernode.parsegamesettings">ServerNode.parseGameSettings</a>
+        <a href="#servernode.loadconffile">ServerNode.loadConfFile</a>
       </div>
       <div class="heading h3">
         <a href="#servernode.configurehttp">ServerNode.configureHTTP</a>
@@ -133,18 +115,6 @@
         <a href="#servernode.configure">ServerNode.configure</a>
       </div>
       <div class="heading h3">
-        <a href="#servernode.loadconfdir">ServerNode.loadConfDir</a>
-      </div>
-      <div class="heading h3">
-        <a href="#servernode.loadconffile">ServerNode.loadConfFile</a>
-      </div>
-      <div class="heading h3">
-        <a href="#servernode.loadauthdir">ServerNode.loadAuthDir</a>
-      </div>
-      <div class="heading h3">
-        <a href="#servernode.getchannelsandbox">ServerNode.getChannelSandbox</a>
-      </div>
-      <div class="heading h3">
         <a href="#servernode.getgamesinfo">ServerNode.getGamesInfo</a>
       </div>
       <div class="heading h3">
@@ -152,15 +122,6 @@
       </div>
       <div class="heading h3">
         <a href="#servernode.ready">ServerNode.ready</a>
-      </div>
-      <div class="heading h2">
-        <a href="#helper%20methods">Helper methods</a>
-      </div>
-      <div class="heading h3">
-        <a href="#version2gamestage">version2GameStage</a>
-      </div>
-      <div class="heading h3">
-        <a href="#gamerequirementsfail">gameRequirementsFail</a>
       </div>
     </div>
   </div>
@@ -211,22 +172,17 @@ directories.</p>
 
 <span class="nx">module</span><span class="p">.</span><span class="nx">exports</span> <span class="o">=</span> <span class="nx">ServerNode</span><span class="p">;</span>
 
-<span class="kd">var</span> <span class="nx">util</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;util&#39;</span><span class="p">),</span>
-<span class="nx">fs</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;fs&#39;</span><span class="p">),</span>
+<span class="kd">var</span> <span class="nx">fs</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;fs&#39;</span><span class="p">),</span>
 <span class="nx">path</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;path&#39;</span><span class="p">),</span>
 <span class="nx">express</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;express&#39;</span><span class="p">),</span>
 <span class="nx">socket_io</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;socket.io&#39;</span><span class="p">),</span>
-<span class="nx">winston</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;winston&#39;</span><span class="p">),</span>
-<span class="nx">nodemailer</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;nodemailer&#39;</span><span class="p">);</span>
+<span class="nx">winston</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;winston&#39;</span><span class="p">);</span>
 
 <span class="kd">var</span> <span class="nx">ServerChannel</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;./ServerChannel&#39;</span><span class="p">);</span>
 <span class="kd">var</span> <span class="nx">PageManager</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;./PageManager&#39;</span><span class="p">);</span>
+<span class="kd">var</span> <span class="nx">GameLoader</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;./GameLoader&#39;</span><span class="p">);</span>
 
 <span class="kd">var</span> <span class="nx">J</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;JSUS&#39;</span><span class="p">).</span><span class="nx">JSUS</span><span class="p">;</span>
-<span class="kd">var</span> <span class="nx">ngc</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;nodegame-client&#39;</span><span class="p">)</span>
-<span class="kd">var</span> <span class="nx">GameStage</span> <span class="o">=</span> <span class="nx">ngc</span><span class="p">.</span><span class="nx">GameStage</span><span class="p">;</span>
-
-<span class="kd">var</span> <span class="nx">serverVersionObj</span><span class="p">;</span>
 
 
 </pre></div>
@@ -637,6 +593,28 @@ directories.</p>
       <tr>
         <td class="docs"><div class="dox">
   <div class="summary">
+<div class="pilwrap" id="servernode.gameloader">
+  <h3>
+    <a href="#servernode.gameloader" name="servernode.gameloader" class="pilcrow">&#182;</a>
+    ServerNode.gameLoader
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Object responsible to load the games from the file system.</p>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">this</span><span class="p">.</span><span class="nx">gameLoader</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">GameLoader</span><span class="p">(</span><span class="k">this</span><span class="p">);</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
 <div class="pilwrap" id="servernode.page">
   <h3>
     <a href="#servernode.page" name="servernode.page" class="pilcrow">&#182;</a>
@@ -703,7 +681,7 @@ directories.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-23" id="section-23">&#182;</a>
+  <a class="pilcrow" href="#section-24" id="section-24">&#182;</a>
 </div>
 <p>Loading configurations.</p>
         </td>
@@ -773,20 +751,6 @@ directories.</p>
             <span class="k">throw</span> <span class="nx">err</span><span class="p">;</span>
         <span class="p">}</span>
     <span class="p">});</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-26" id="section-26">&#182;</a>
-</div>
-<p>Transform server version string to object (used to check dependencies).</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="nx">serverVersionObj</span> <span class="o">=</span> <span class="nx">version2GameStage</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">version</span><span class="p">);</span>
 
 
 </pre></div>
@@ -1147,8 +1111,7 @@ TODO: rename addGame to addChannel.</p>
   </div>
   <div class="body"><p>Loads the games from the file systems</p>
 
-<p>Scans the directories listed in this.gamesDirs, looking for
-package.json files.</p>
+<p>Scans the directories listed in <code>this.gamesDirs</code>.</p>
   </div>
   <div class="details">
     <div class="dox_tag_title">Params</div>
@@ -1336,18 +1299,18 @@ package.json files.</p>
 </div>
 
   </div>
-  <div class="body"><p>Scans a directory for games folders</p>
+  <div class="body"><p>Scans a directory for games folders (must contain a package.json file)</p>
   </div>
   <div class="details">
     <div class="dox_tag_title">Params</div>
     <div class="dox_tag_detail">
       <span class="dox_tag_name">gameDir</span>
       <span class="dox_type">string</span>
-      <span>The path to a directory containing nodeGame games</span>
+      <span>The path to a directory containing a nodeGame game</span>
     </div>
     <div class="dox_tag_title">See</div>
     <div class="dox_tag_detail">
-      <span class="dox_type">ServerNode.addGame
+      <span class="dox_type">GameLoader.addGame
 </span>
     </div>
   </div>
@@ -1396,1314 +1359,7 @@ package.json files.</p>
 <p>Ready to add the game.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">addGame</span><span class="p">(</span><span class="nx">gameInfo</span><span class="p">,</span> <span class="nx">gameDir</span><span class="p">);</span>
-<span class="p">};</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs"><div class="dox">
-  <div class="summary">
-<div class="pilwrap" id="servernode.addgame">
-  <h3>
-    <a href="#servernode.addgame" name="servernode.addgame" class="pilcrow">&#182;</a>
-    ServerNode.addGame
-  </h3>
-</div>
-
-  </div>
-  <div class="body"><p>Adds a new game to the global collection <code>info.games</code></p>
-
-<p>The version of ServerNode is compared against the information in
-<em>gameInfo.engines.nodegame</em>, if found.</p>
-
-<p>Aliases will be created, if needed.</p>
-  </div>
-  <div class="details">
-    <div class="dox_tag_title">Params</div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name">gameInfo</span>
-      <span class="dox_type">object</span>
-      <span>A game descriptor, usually from package.json</span>
-    </div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name">gameDir</span>
-      <span class="dox_type">string</span>
-      <span>The root directory of the game (with trailing slash)</span>
-    </div>
-    <div class="dox_tag_title">See</div>
-    <div class="dox_tag_detail">
-      <span class="dox_type">ServerNode.addGameDir
-</span>
-    </div>
-  </div>
-</div>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-<span class="nx">ServerNode</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">addGame</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">gameInfo</span><span class="p">,</span> <span class="nx">gameDir</span><span class="p">)</span> <span class="p">{</span>
-    <span class="kd">var</span> <span class="nx">gamePath</span><span class="p">,</span> <span class="nx">reqFail</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">gameLogicPath</span><span class="p">,</span> <span class="nx">gameLogic</span><span class="p">,</span> <span class="nx">gameClientPath</span><span class="p">,</span> <span class="nx">gameClient</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">clientTypes</span><span class="p">,</span> <span class="nx">langObject</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">gameType</span><span class="p">,</span> <span class="nx">gameGame</span><span class="p">,</span> <span class="nx">game</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">treatment</span><span class="p">,</span> <span class="nx">t</span><span class="p">;</span>
-
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">gameInfo</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerNode.addGame: gameInfo must be object.&#39;</span><span class="p">);</span>
-    <span class="p">}</span>
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">gameDir</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerNode.addGame: gameDir must be string.&#39;</span><span class="p">);</span>
-    <span class="p">}</span>
-
-    <span class="nx">gameName</span> <span class="o">=</span> <span class="nx">gameInfo</span><span class="p">.</span><span class="nx">name</span><span class="p">;</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-56" id="section-56">&#182;</a>
-</div>
-<p>Check name.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">gameName</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;ServerNode.addGame: missing or invalid game name: &#39;</span> <span class="o">+</span>
-                        <span class="nx">gameDir</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
-    <span class="p">}</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-57" id="section-57">&#182;</a>
-</div>
-<p>Checking nodeGame server version requirement.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-
-    <span class="k">if</span> <span class="p">(</span><span class="nx">gameInfo</span><span class="p">.</span><span class="nx">engines</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nx">reqFail</span> <span class="o">=</span> <span class="nx">gameRequirementsFail</span><span class="p">(</span><span class="nx">gameInfo</span><span class="p">.</span><span class="nx">engines</span><span class="p">.</span><span class="nx">nodegame</span><span class="p">);</span>
-        <span class="k">if</span> <span class="p">(</span><span class="nx">reqFail</span><span class="p">)</span> <span class="p">{</span>
-            <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;ServerNode.addGame: game &#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39; &#39;</span> <span class="o">+</span>
-                            <span class="s1">&#39;requires nodeGame version &#39;</span> <span class="o">+</span>
-                            <span class="nx">gameInfo</span><span class="p">.</span><span class="nx">engines</span><span class="p">.</span><span class="nx">nodegame</span>  <span class="o">+</span> <span class="s1">&#39; &#39;</span> <span class="o">+</span>
-                            <span class="s1">&#39;but found &#39;</span> <span class="o">+</span> <span class="k">this</span><span class="p">.</span><span class="nx">version</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
-        <span class="p">}</span>
-    <span class="p">}</span>
-
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-58" id="section-58">&#182;</a>
-</div>
-<p>Loading settings, setup, and stages.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="nx">gameGame</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">loadGameGameDir</span><span class="p">(</span><span class="nx">gameDir</span><span class="p">);</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-59" id="section-59">&#182;</a>
-</div>
-<p>Loading client types.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="nx">clientTypes</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">loadClientTypes</span><span class="p">(</span><span class="nx">gameDir</span><span class="p">);</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-60" id="section-60">&#182;</a>
-</div>
-<p>Building language object.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="nx">langObject</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">buildLanguagesObject</span><span class="p">(</span><span class="nx">gameDir</span><span class="p">);</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-61" id="section-61">&#182;</a>
-</div>
-<p>Adding game info to global info object.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">info</span><span class="p">.</span><span class="nx">games</span><span class="p">[</span><span class="nx">gameInfo</span><span class="p">.</span><span class="nx">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="nx">dir</span><span class="o">:</span> <span class="nx">gameDir</span><span class="p">,</span>
-        <span class="nx">info</span><span class="o">:</span> <span class="nx">gameInfo</span><span class="p">,</span>
-        <span class="nx">clientTypes</span><span class="o">:</span> <span class="nx">clientTypes</span><span class="p">,</span>
-        <span class="nx">settings</span><span class="o">:</span> <span class="nx">gameGame</span><span class="p">.</span><span class="nx">settings</span><span class="p">,</span>
-        <span class="nx">setup</span><span class="o">:</span> <span class="nx">gameGame</span><span class="p">.</span><span class="nx">setup</span><span class="p">,</span>
-        <span class="nx">stager</span><span class="o">:</span> <span class="nx">gameGame</span><span class="p">.</span><span class="nx">stager</span><span class="p">,</span>
-        <span class="nx">languages</span><span class="o">:</span> <span class="nx">langObject</span><span class="p">,</span>
-        <span class="nx">channels</span><span class="o">:</span> <span class="p">{}</span>
-    <span class="p">};</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-62" id="section-62">&#182;</a>
-</div>
-<p>Adding the public directory of the game to the static directories
-<a href='http://stackoverflow.com/questions/5973432/'>http://stackoverflow.com/questions/5973432/</a>
- setting-up-two-different-static-directories-in-node-js-express-framework</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">http</span><span class="p">.</span><span class="nx">use</span><span class="p">(</span><span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;/public&#39;</span><span class="p">,</span> <span class="nx">express</span><span class="p">.</span><span class="kr">static</span><span class="p">(</span><span class="nx">gameDir</span> <span class="o">+</span> <span class="s1">&#39;public&#39;</span><span class="p">));</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-63" id="section-63">&#182;</a>
-</div>
-<p>Tries to load Channels file from game directory.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">loadChannelsFile</span><span class="p">(</span><span class="nx">gameDir</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">);</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-64" id="section-64">&#182;</a>
-</div>
-<p>Creates a waiting room.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">loadWaitRoomFile</span><span class="p">(</span><span class="nx">gameDir</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">);</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-65" id="section-65">&#182;</a>
-</div>
-<p>Loading Auth dir, if any.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">loadAuthDir</span><span class="p">(</span><span class="nx">gameDir</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">);</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-66" id="section-66">&#182;</a>
-</div>
-<p>Tries to load Views file from game directory.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">loadViewsFile</span><span class="p">(</span><span class="nx">gameDir</span><span class="p">,</span> <span class="nx">gameInfo</span><span class="p">);</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-67" id="section-67">&#182;</a>
-</div>
-<p>Done.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">logger</span><span class="p">.</span><span class="nx">info</span><span class="p">(</span><span class="s1">&#39;ServerNode.addGame: &#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;: &#39;</span> <span class="o">+</span> <span class="nx">gameDir</span><span class="p">);</span>
-<span class="p">};</span>
-
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs"><div class="dox">
-  <div class="summary">
-<div class="pilwrap" id="servernode.creategamealias">
-  <h3>
-    <a href="#servernode.creategamealias" name="servernode.creategamealias" class="pilcrow">&#182;</a>
-    ServerNode.createGameAlias
-  </h3>
-</div>
-
-  </div>
-  <div class="body"><p>Adds one or multiple game alias</p>
-
-<p>Adds references into the <code>info.games</code> and <code>pager.games</code> objects.</p>
-  </div>
-  <div class="details">
-    <div class="dox_tag_title">Params</div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name">alias</span>
-      <span class="dox_type">string</span>
-      <span>The name of the alias</span>
-    </div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name">gameName</span>
-      <span class="dox_type">string</span>
-      <span>The name of the game</span>
-    </div>
-    <div class="dox_tag_title">See</div>
-    <div class="dox_tag_detail">
-      <span class="dox_type">ServerNode.addGame</span>
-    </div>
-    <div class="dox_tag_title">See</div>
-    <div class="dox_tag_detail">
-      <span class="dox_type">ServerChannel.pager
-</span>
-    </div>
-  </div>
-</div>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-<span class="nx">ServerNode</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">createGameAlias</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">alias</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">)</span> <span class="p">{</span>
-    <span class="kd">var</span> <span class="nx">i</span><span class="p">,</span> <span class="nx">len</span><span class="p">;</span>
-
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">alias</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nx">alias</span> <span class="o">=</span> <span class="p">[</span><span class="nx">alias</span><span class="p">];</span>
-    <span class="p">}</span>
-    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">J</span><span class="p">.</span><span class="nx">isArray</span><span class="p">(</span><span class="nx">alias</span><span class="p">))</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerNode.createGameAlias: alias&#39;</span> <span class="o">+</span>
-                            <span class="s1">&#39;must be either string or array.&#39;</span><span class="p">);</span>
-    <span class="p">}</span>
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">gameName</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerNode.createGameAlias: gameName must be &#39;</span> <span class="o">+</span>
-                            <span class="s1">&#39;string.&#39;</span><span class="p">);</span>
-    <span class="p">}</span>
-    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">info</span><span class="p">.</span><span class="nx">games</span><span class="p">[</span><span class="nx">gameName</span><span class="p">])</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;ServerNode.createGameAlias: game not found:&#39;</span> <span class="o">+</span>
-                        <span class="nx">gameName</span><span class="p">);</span>
-    <span class="p">}</span>
-
-    <span class="nx">i</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
-    <span class="nx">len</span> <span class="o">=</span> <span class="nx">alias</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span>
-    <span class="k">for</span> <span class="p">(</span> <span class="p">;</span> <span class="o">++</span><span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">len</span> <span class="p">;</span> <span class="p">)</span> <span class="p">{</span>
-        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">alias</span><span class="p">[</span><span class="nx">i</span><span class="p">])</span> <span class="p">{</span>
-            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span>
-                <span class="s1">&#39;ServerNode.createGameAlias: alias must be string.&#39;</span><span class="p">);</span>
-        <span class="p">}</span>
-        <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">info</span><span class="p">.</span><span class="nx">games</span><span class="p">[</span><span class="nx">alias</span><span class="p">[</span><span class="nx">i</span><span class="p">]])</span> <span class="p">{</span>
-            <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;ServerNode.createGameAlias: &#39;</span> <span class="o">+</span>
-                            <span class="s1">&#39;alias must be unique: &#39;</span> <span class="o">+</span> <span class="nx">alias</span><span class="p">[</span><span class="nx">i</span><span class="p">]</span> <span class="o">+</span>
-                            <span class="s1">&#39; (&#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;).&#39;</span><span class="p">);</span>
-        <span class="p">}</span>
-
-        <span class="k">this</span><span class="p">.</span><span class="nx">info</span><span class="p">.</span><span class="nx">games</span><span class="p">[</span><span class="nx">alias</span><span class="p">[</span><span class="nx">i</span><span class="p">]]</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">info</span><span class="p">.</span><span class="nx">games</span><span class="p">[</span><span class="nx">gameName</span><span class="p">];</span>
-        <span class="k">this</span><span class="p">.</span><span class="nx">pager</span><span class="p">.</span><span class="nx">createAlias</span><span class="p">(</span><span class="nx">alias</span><span class="p">[</span><span class="nx">i</span><span class="p">],</span> <span class="nx">gameName</span><span class="p">);</span>
-    <span class="p">}</span>
-<span class="p">};</span>
-
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs"><div class="dox">
-  <div class="summary">
-<div class="pilwrap" id="servernode.loadgamegamedir">
-  <h3>
-    <a href="#servernode.loadgamegamedir" name="servernode.loadgamegamedir" class="pilcrow">&#182;</a>
-    ServerNode.loadGameGameDir
-  </h3>
-</div>
-
-  </div>
-  <div class="body"><p>Loads the <em>game</em> dir of the game</p>
-  </div>
-  <div class="details">
-    <div class="dox_tag_title">Params</div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name">directory</span>
-      <span class="dox_type">string</span>
-      <span>The path of the game directory</span>
-    </div>
-    <div class="dox_tag_title">Returns</div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name"></span>
-      <span class="dox_type">object</span>
-      <span>An object containing three properties:
-  'settings', 'stager', and 'setup'.</span>
-    </div>
-    <div class="dox_tag_title">See</div>
-    <div class="dox_tag_detail">
-      <span class="dox_type">ServerNode.addGame</span>
-    </div>
-    <div class="dox_tag_title">See</div>
-    <div class="dox_tag_detail">
-      <span class="dox_type">ServerNode.parseGameSettings
-</span>
-    </div>
-  </div>
-</div>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-<span class="nx">ServerNode</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">loadGameGameDir</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">directory</span><span class="p">)</span> <span class="p">{</span>
-    <span class="kd">var</span> <span class="nx">gameSetupPath</span><span class="p">,</span> <span class="nx">gameSetup</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">gameSettingsPath</span><span class="p">,</span> <span class="nx">gameSettings</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">gameStagesPath</span><span class="p">,</span> <span class="nx">gameStages</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">stager</span><span class="p">;</span>
-
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">directory</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerNode.loadGameGameDir: directory must be &#39;</span> <span class="o">+</span>
-                            <span class="s1">&#39;string.&#39;</span><span class="p">);</span>
-    <span class="p">}</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-70" id="section-70">&#182;</a>
-</div>
-<p>Settings.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="nx">gameSettingsPath</span> <span class="o">=</span> <span class="nx">directory</span> <span class="o">+</span> <span class="s1">&#39;game/game.settings.js&#39;</span><span class="p">;</span>
-
-    <span class="k">try</span> <span class="p">{</span>
-        <span class="nx">gameSettings</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="nx">gameSettingsPath</span><span class="p">);</span>
-    <span class="p">}</span>
-    <span class="k">catch</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;ServerNode.loadGameGameDir: cannot read &#39;</span> <span class="o">+</span>
-                        <span class="nx">gameSettingsPath</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
-    <span class="p">}</span>
-
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">gameSettings</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;SeverNode.loadGameGameDir: invalid settings file: &#39;</span> <span class="o">+</span>
-                        <span class="nx">gameSettingsPath</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
-    <span class="p">}</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-71" id="section-71">&#182;</a>
-</div>
-<p>Stages.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="nx">gameStagesPath</span> <span class="o">=</span> <span class="nx">directory</span> <span class="o">+</span> <span class="s1">&#39;game/game.stages.js&#39;</span><span class="p">;</span>
-
-    <span class="k">try</span> <span class="p">{</span>
-        <span class="nx">gameStages</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="nx">gameStagesPath</span><span class="p">);</span>
-    <span class="p">}</span>
-    <span class="k">catch</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;ServerNode.loadGameGameDir: cannot read &#39;</span> <span class="o">+</span>
-                        <span class="nx">gameStagesPath</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
-    <span class="p">}</span>
-
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;function&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">gameStages</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;SeverNode.loadGameGameDir: stages file did not &#39;</span> <span class="o">+</span>
-                        <span class="s1">&#39;export a valid function: &#39;</span> <span class="o">+</span> <span class="nx">gameStagesPath</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
-    <span class="p">}</span>
-
-    <span class="nx">stager</span> <span class="o">=</span> <span class="nx">ngc</span><span class="p">.</span><span class="nx">getStager</span><span class="p">();</span>
-    <span class="nx">gameStages</span> <span class="o">=</span> <span class="nx">gameStages</span><span class="p">(</span><span class="nx">stager</span><span class="p">,</span> <span class="nx">gameSettings</span><span class="p">);</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-72" id="section-72">&#182;</a>
-</div>
-<p>Setup.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="nx">gameSetupPath</span> <span class="o">=</span> <span class="nx">directory</span> <span class="o">+</span> <span class="s1">&#39;game/game.setup.js&#39;</span><span class="p">;</span>
-
-    <span class="k">try</span> <span class="p">{</span>
-        <span class="nx">gameSetup</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="nx">gameSetupPath</span><span class="p">);</span>
-    <span class="p">}</span>
-    <span class="k">catch</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;ServerNode.loadGameGameDir: cannot read &#39;</span> <span class="o">+</span>
-                        <span class="nx">gameSetupPath</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
-    <span class="p">}</span>
-
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;function&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">gameSetup</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;SeverNode.loadGameGameDir: setup file did not &#39;</span> <span class="o">+</span>
-                        <span class="s1">&#39;export a valid function: &#39;</span> <span class="o">+</span> <span class="nx">gameSetupPath</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
-    <span class="p">}</span>
-
-    <span class="nx">gameSetup</span> <span class="o">=</span> <span class="nx">gameSetup</span><span class="p">(</span><span class="nx">gameSettings</span><span class="p">,</span> <span class="nx">gameStages</span><span class="p">);</span>
-
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">gameSetup</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;SeverNode.loadGameGameDir: setup function did  &#39;</span> <span class="o">+</span>
-                        <span class="s1">&#39;not return a valid object: &#39;</span> <span class="o">+</span> <span class="nx">gameSetupPath</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
-    <span class="p">}</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-73" id="section-73">&#182;</a>
-</div>
-<p>Parsing the settings object before returning.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="nx">gameSettings</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">parseGameSettings</span><span class="p">(</span><span class="nx">gameSettings</span><span class="p">);</span>
-
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">gameSettings</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;SeverNode.loadGameGameDir: error parsing &#39;</span> <span class="o">+</span>
-                        <span class="s1">&#39;treatment object: &#39;</span> <span class="o">+</span> <span class="nx">gameSettingsPath</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
-    <span class="p">}</span>
-
-    <span class="k">return</span> <span class="p">{</span>
-        <span class="nx">setup</span><span class="o">:</span> <span class="nx">gameSetup</span><span class="p">,</span>
-        <span class="nx">settings</span><span class="o">:</span> <span class="nx">gameSettings</span><span class="p">,</span>
-        <span class="nx">stager</span><span class="o">:</span> <span class="nx">stager</span>
-    <span class="p">};</span>
-<span class="p">};</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs"><div class="dox">
-  <div class="summary">
-<div class="pilwrap" id="servernode.loadclienttypes">
-  <h3>
-    <a href="#servernode.loadclienttypes" name="servernode.loadclienttypes" class="pilcrow">&#182;</a>
-    ServerNode.loadClientTypes
-  </h3>
-</div>
-
-  </div>
-  <div class="body"><p>Loads client types from <em>game/client_types</em> directory</p>
-  </div>
-  <div class="details">
-    <div class="dox_tag_title">Params</div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name">directory</span>
-      <span class="dox_type">string</span>
-      <span>The path of the game directory</span>
-    </div>
-    <div class="dox_tag_title">See</div>
-    <div class="dox_tag_detail">
-      <span class="dox_type">ServerNode.addGame
-</span>
-    </div>
-  </div>
-</div>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-<span class="nx">ServerNode</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">loadClientTypes</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">directory</span><span class="p">)</span> <span class="p">{</span>
-    <span class="kd">var</span> <span class="nx">clientTypesDir</span><span class="p">,</span> <span class="nx">fileNames</span><span class="p">,</span> <span class="nx">fileName</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">clientType</span><span class="p">,</span> <span class="nx">clientTypes</span><span class="p">,</span> <span class="nx">clientTypePath</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">i</span><span class="p">,</span> <span class="nx">len</span><span class="p">;</span>
-
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">directory</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerNode.loadClientTypes: directory must be &#39;</span> <span class="o">+</span>
-                            <span class="s1">&#39;string.&#39;</span><span class="p">);</span>
-    <span class="p">}</span>
-
-    <span class="nx">clientTypesDir</span> <span class="o">=</span> <span class="nx">directory</span> <span class="o">+</span> <span class="s1">&#39;game/client_types/&#39;</span><span class="p">;</span>
-
-    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">J</span><span class="p">.</span><span class="nx">existsSync</span><span class="p">(</span><span class="nx">clientTypesDir</span><span class="p">))</span> <span class="p">{</span>
-        <span class="k">this</span><span class="p">.</span><span class="nx">logger</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="s1">&#39;ServerNode.loadClientTypes: game directory not &#39;</span> <span class="o">+</span>
-                          <span class="s1">&#39;found: &#39;</span> <span class="o">+</span> <span class="nx">dir</span><span class="p">);</span>
-        <span class="k">return</span><span class="p">;</span>
-    <span class="p">}</span>
-
-    <span class="nx">fileNames</span> <span class="o">=</span> <span class="nx">fs</span><span class="p">.</span><span class="nx">readdirSync</span><span class="p">(</span><span class="nx">clientTypesDir</span><span class="p">);</span>
-
-    <span class="nx">clientTypes</span> <span class="o">=</span> <span class="p">{};</span>
-
-    <span class="nx">i</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="nx">len</span> <span class="o">=</span> <span class="nx">fileNames</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span>
-    <span class="k">for</span> <span class="p">(</span> <span class="p">;</span> <span class="o">++</span><span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">len</span> <span class="p">;</span> <span class="p">)</span> <span class="p">{</span>
-        <span class="nx">fileName</span> <span class="o">=</span> <span class="nx">fileNames</span><span class="p">[</span><span class="nx">i</span><span class="p">];</span>
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-75" id="section-75">&#182;</a>
-</div>
-<p>Ignore non-js files, and temporary and hidden files (begin with '.').</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-        <span class="k">if</span> <span class="p">(</span><span class="nx">path</span><span class="p">.</span><span class="nx">extname</span><span class="p">(</span><span class="nx">fileName</span><span class="p">)</span> <span class="o">===</span> <span class="s1">&#39;.js&#39;</span> <span class="o">&amp;&amp;</span> <span class="nx">fileName</span><span class="p">.</span><span class="nx">charAt</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">!==</span> <span class="s1">&#39;.&#39;</span><span class="p">)</span> <span class="p">{</span>
-            <span class="nx">clientTypePath</span> <span class="o">=</span> <span class="nx">clientTypesDir</span> <span class="o">+</span> <span class="nx">fileName</span><span class="p">;</span>
-            <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">fs</span><span class="p">.</span><span class="nx">statSync</span><span class="p">(</span><span class="nx">clientTypePath</span><span class="p">).</span><span class="nx">isDirectory</span><span class="p">())</span> <span class="p">{</span>
-                <span class="k">try</span> <span class="p">{</span>
-                    <span class="nx">clientType</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="nx">clientTypePath</span><span class="p">);</span>
-                    <span class="nx">clientTypes</span><span class="p">[</span><span class="nx">fileName</span><span class="p">.</span><span class="nx">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">3</span><span class="p">)]</span> <span class="o">=</span> <span class="nx">clientType</span><span class="p">;</span>
-                <span class="p">}</span>
-                <span class="k">catch</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
-                    <span class="k">this</span><span class="p">.</span><span class="nx">logger</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="s1">&#39;ServerNode.loadClientTypes: cannot &#39;</span> <span class="o">+</span>
-                                      <span class="s1">&#39;read &#39;</span> <span class="o">+</span> <span class="nx">clientTypePath</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
-                    <span class="k">throw</span> <span class="nx">e</span><span class="p">;</span>
-                <span class="p">}</span>
-            <span class="p">}</span>
-        <span class="p">}</span>
-    <span class="p">}</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-76" id="section-76">&#182;</a>
-</div>
-<p>Checking if mandatory types are found.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">clientTypes</span><span class="p">.</span><span class="nx">logic</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;ServerNode.loadClientTypes: logic type not found.&#39;</span><span class="p">);</span>
-    <span class="p">}</span>
-    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">clientTypes</span><span class="p">.</span><span class="nx">player</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;ServerNode.loadClientTypes: player type not found.&#39;</span><span class="p">);</span>
-    <span class="p">}</span>
-
-    <span class="k">return</span> <span class="nx">clientTypes</span><span class="p">;</span>
-<span class="p">};</span>
-
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs"><div class="dox">
-  <div class="summary">
-<div class="pilwrap" id="servernode.loadwaitroomfile">
-  <h3>
-    <a href="#servernode.loadwaitroomfile" name="servernode.loadwaitroomfile" class="pilcrow">&#182;</a>
-    ServerNode.loadWaitRoomFile
-  </h3>
-</div>
-
-  </div>
-  <div class="body"><p>Loads <em>waitroom/room.settings.js</em> from file system and acts accordingly</p>
-
-<p>Synchronously looks for a file called <em>waitroom/room.settings.js</em> at the top
-level of the specified directory.</p>
-  </div>
-  <div class="details">
-    <div class="dox_tag_title">Params</div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name">directory</span>
-      <span class="dox_type">string</span>
-      <span>The directory of the game..</span>
-    </div>
-    <div class="dox_tag_title">See</div>
-    <div class="dox_tag_detail">
-      <span class="dox_type">ServerNode.addChannel</span>
-    </div>
-    <div class="dox_tag_title">See</div>
-    <div class="dox_tag_detail">
-      <span class="dox_type">ServerChannel</span>
-    </div>
-    <div class="dox_tag_title">See</div>
-    <div class="dox_tag_detail">
-      <span class="dox_type">ServerChannel.createWaitingRoom
-</span>
-    </div>
-  </div>
-</div>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-<span class="nx">ServerNode</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">loadWaitRoomFile</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">directory</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">)</span> <span class="p">{</span>
-    <span class="kd">var</span> <span class="nx">waitRoomFile</span><span class="p">,</span> <span class="nx">conf</span><span class="p">,</span> <span class="nx">waitRoom</span><span class="p">;</span>
-
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">directory</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerNode.loadWaitRoomFile: directory myst be &#39;</span> <span class="o">+</span>
-                            <span class="s1">&#39;string.&#39;</span><span class="p">);</span>
-    <span class="p">}</span>
-
-    <span class="nx">waitRoomFile</span> <span class="o">=</span> <span class="nx">directory</span> <span class="o">+</span> <span class="s1">&#39;waitroom/waitroom.settings.js&#39;</span><span class="p">;</span>
-
-    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">fs</span><span class="p">.</span><span class="nx">existsSync</span><span class="p">(</span><span class="nx">waitRoomFile</span><span class="p">))</span> <span class="p">{</span>
-        <span class="k">this</span><span class="p">.</span><span class="nx">logger</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="s1">&#39;ServerNode.loadWaitRoomFile: waitroom.settings.js &#39;</span> <span class="o">+</span>
-                          <span class="s1">&#39;not found. Game: &#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
-        <span class="k">return</span><span class="p">;</span>
-    <span class="p">}</span>
-
-    <span class="k">try</span> <span class="p">{</span>
-        <span class="nx">conf</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="nx">waitRoomFile</span><span class="p">);</span>
-    <span class="p">}</span>
-    <span class="k">catch</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">this</span><span class="p">.</span><span class="nx">logger</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="s1">&#39;ServerNode.loadWaitRoomFile: error reading &#39;</span> <span class="o">+</span>
-                          <span class="s1">&#39;waitroom.settings file. Game: &#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
-        <span class="k">throw</span> <span class="nx">e</span><span class="p">;</span>
-    <span class="p">}</span>
-
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">conf</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerNode.loadWaitRoomFile: room.settings file &#39;</span> <span class="o">+</span>
-                            <span class="s1">&#39;must return a configuration object.&#39;</span><span class="p">);</span>
-    <span class="p">}</span>
-
-    <span class="k">if</span> <span class="p">(</span><span class="nx">conf</span><span class="p">.</span><span class="nx">logicPath</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">conf</span><span class="p">.</span><span class="nx">logicPath</span><span class="p">)</span> <span class="p">{</span>
-            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerNode.loadWaitRoomFile: configuration &#39;</span> <span class="o">+</span>
-                                <span class="s1">&#39;loaded, but &quot;logicPath&quot; must be undefined &#39;</span> <span class="o">+</span>
-                                <span class="s1">&#39;or string.&#39;</span><span class="p">);</span>
-        <span class="p">}</span>
-        <span class="k">if</span> <span class="p">(</span><span class="nx">conf</span><span class="p">.</span><span class="nx">logicPath</span><span class="p">.</span><span class="nx">substring</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span> <span class="o">===</span> <span class="s1">&#39;./&#39;</span><span class="p">)</span> <span class="p">{</span>
-            <span class="nx">conf</span><span class="p">.</span><span class="nx">logicPath</span> <span class="o">=</span> <span class="nx">directory</span> <span class="o">+</span> <span class="s1">&#39;waitroom/&#39;</span> <span class="o">+</span> <span class="nx">conf</span><span class="p">.</span><span class="nx">logicPath</span><span class="p">;</span>
-        <span class="p">}</span>
-    <span class="p">}</span>
-
-    <span class="nx">waitRoom</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">channels</span><span class="p">[</span><span class="nx">gameName</span><span class="p">].</span><span class="nx">createWaitingRoom</span><span class="p">(</span><span class="nx">conf</span><span class="p">);</span>
-
-    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">waitRoom</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;ServerNode.loadChannelsFile: could not create &#39;</span> <span class="o">+</span>
-                        <span class="s1">&#39;waiting room. Game: &#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
-    <span class="p">}</span>
-<span class="p">};</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs"><div class="dox">
-  <div class="summary">
-<div class="pilwrap" id="servernode.loadchannelsfile">
-  <h3>
-    <a href="#servernode.loadchannelsfile" name="servernode.loadchannelsfile" class="pilcrow">&#182;</a>
-    ServerNode.loadChannelsFile
-  </h3>
-</div>
-
-  </div>
-  <div class="body"><p>Loads <em>channels.js</em> from file system and adds channels accordingly</p>
-
-<p>Synchronously looks for a file called <em>channels.js</em> at the top
-level of the specified directory.</p>
-
-<p>The file <em>channels.js</em> must export an array containing channels object
-in the format specified by the <em>ServerChannel</em> constructor. Every channel
-configuration object can optionally have a <em>waitingRoom</em> object to
-automatically add a waiting room to the channel.</p>
-  </div>
-  <div class="details">
-    <div class="dox_tag_title">Params</div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name">directory</span>
-      <span class="dox_type">string</span>
-      <span>The path in which <em>channels.js</em> will be looked for</span>
-    </div>
-    <div class="dox_tag_title">See</div>
-    <div class="dox_tag_detail">
-      <span class="dox_type">ServerNode.addChannel</span>
-    </div>
-    <div class="dox_tag_title">See</div>
-    <div class="dox_tag_detail">
-      <span class="dox_type">ServerChannel</span>
-    </div>
-    <div class="dox_tag_title">See</div>
-    <div class="dox_tag_detail">
-      <span class="dox_type">ServerChannel.createWaitingRoom
-</span>
-    </div>
-  </div>
-</div>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-<span class="nx">ServerNode</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">loadChannelsFile</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">directory</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">)</span> <span class="p">{</span>
-    <span class="kd">var</span> <span class="nx">channelsFile</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">conf</span><span class="p">,</span> <span class="nx">channel</span><span class="p">,</span> <span class="nx">waitRoom</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">i</span><span class="p">,</span> <span class="nx">len</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">channelConf</span><span class="p">,</span> <span class="nx">waitRoomConf</span><span class="p">;</span>
-
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">directory</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerNode.loadChannelsFile: directory myst be &#39;</span> <span class="o">+</span>
-                            <span class="s1">&#39;string.&#39;</span><span class="p">);</span>
-    <span class="p">}</span>
-
-    <span class="nx">channelsFile</span> <span class="o">=</span> <span class="nx">directory</span> <span class="o">+</span> <span class="s1">&#39;/server/channels.js&#39;</span><span class="p">;</span>
-
-    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">fs</span><span class="p">.</span><span class="nx">existsSync</span><span class="p">(</span><span class="nx">channelsFile</span><span class="p">))</span> <span class="k">return</span><span class="p">;</span>
-
-    <span class="nx">conf</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="nx">channelsFile</span><span class="p">);</span>
-
-    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">J</span><span class="p">.</span><span class="nx">isArray</span><span class="p">(</span><span class="nx">conf</span><span class="p">))</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerNode.loadChannelsFile: channels file &#39;</span> <span class="o">+</span>
-                            <span class="s1">&#39;must return an array of channels.&#39;</span><span class="p">);</span>
-    <span class="p">}</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-79" id="section-79">&#182;</a>
-</div>
-<p>Validate,</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="nx">i</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
-    <span class="nx">len</span> <span class="o">=</span> <span class="nx">conf</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span>
-    <span class="k">for</span> <span class="p">(</span> <span class="p">;</span> <span class="o">++</span><span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">len</span> <span class="p">;</span> <span class="p">)</span> <span class="p">{</span>
-
-        <span class="nx">channelConf</span> <span class="o">=</span> <span class="nx">conf</span><span class="p">[</span><span class="nx">i</span><span class="p">];</span>
-
-        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">channelConf</span><span class="p">)</span> <span class="p">{</span>
-            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerNode.loadChannelsFile:&#39;</span> <span class="o">+</span>
-                                <span class="s1">&#39;channels must be object. Directory: &#39;</span> <span class="o">+</span>
-                                <span class="nx">directory</span><span class="p">);</span>
-        <span class="p">}</span>
-        <span class="k">if</span> <span class="p">(</span><span class="nx">channelConf</span><span class="p">.</span><span class="nx">waitingRoom</span> <span class="o">&amp;&amp;</span>
-            <span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">channelConf</span><span class="p">.</span><span class="nx">waitingRoom</span><span class="p">)</span> <span class="p">{</span>
-
-            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerNode.loadChannelsFile: waitingRoom &#39;</span> <span class="o">+</span>
-                                <span class="s1">&#39;in channel configuration must be object. &#39;</span> <span class="o">+</span>
-                                <span class="s1">&#39;Directory: &#39;</span> <span class="o">+</span> <span class="nx">directory</span><span class="p">);</span>
-        <span class="p">}</span>
-        <span class="nx">waitRoomConf</span> <span class="o">=</span> <span class="nx">channelConf</span><span class="p">.</span><span class="nx">waitingRoom</span><span class="p">;</span>
-        <span class="k">delete</span> <span class="nx">channelConf</span><span class="p">.</span><span class="nx">waitingRoom</span><span class="p">;</span>
-
-        <span class="nx">channelConf</span><span class="p">.</span><span class="nx">gameName</span> <span class="o">=</span> <span class="nx">gameName</span><span class="p">;</span>
-
-        <span class="nx">channel</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">addChannel</span><span class="p">(</span><span class="nx">channelConf</span><span class="p">);</span>
-
-        <span class="k">if</span> <span class="p">(</span><span class="nx">channel</span><span class="p">)</span> <span class="p">{</span>
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-80" id="section-80">&#182;</a>
-</div>
-<p>Add the list of channels created by the game.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-            <span class="k">this</span><span class="p">.</span><span class="nx">info</span><span class="p">.</span><span class="nx">games</span><span class="p">[</span><span class="nx">gameName</span><span class="p">].</span><span class="nx">channels</span><span class="p">[</span><span class="nx">channel</span><span class="p">.</span><span class="nx">name</span><span class="p">]</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
-
-            <span class="k">if</span> <span class="p">(</span><span class="nx">waitRoomConf</span><span class="p">)</span> <span class="p">{</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-81" id="section-81">&#182;</a>
-</div>
-<p>We prepend the baseDir parameter, if any.
-If logicPath is not string we let the WaitingRoom
-constructor throw an error.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-                <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">waitRoomConf</span><span class="p">.</span><span class="nx">logicPath</span><span class="p">)</span> <span class="p">{</span>
-                    <span class="nx">waitRoomConf</span><span class="p">.</span><span class="nx">logicPath</span> <span class="o">=</span>
-                        <span class="nx">directory</span> <span class="o">+</span> <span class="s1">&#39;server/&#39;</span> <span class="o">+</span> <span class="nx">waitRoomConf</span><span class="p">.</span><span class="nx">logicPath</span><span class="p">;</span>
-                <span class="p">}</span>
-
-                <span class="nx">waitRoom</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">createWaitingRoom</span><span class="p">(</span><span class="nx">waitRoomConf</span><span class="p">);</span>
-
-                <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">waitRoom</span><span class="p">)</span> <span class="p">{</span>
-                    <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;ServerNode.loadChannelsFile: could &#39;</span> <span class="o">+</span>
-                                    <span class="s1">&#39;not add waiting room to channel &#39;</span> <span class="o">+</span>
-                                    <span class="nx">channel</span><span class="p">.</span><span class="nx">name</span><span class="p">);</span>
-                <span class="p">}</span>
-            <span class="p">}</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-82" id="section-82">&#182;</a>
-</div>
-<p>Adding channel alias.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-            <span class="k">if</span> <span class="p">(</span><span class="nx">channelConf</span><span class="p">.</span><span class="nx">alias</span><span class="p">)</span> <span class="p">{</span>
-                <span class="k">this</span><span class="p">.</span><span class="nx">createGameAlias</span><span class="p">(</span><span class="nx">channelConf</span><span class="p">.</span><span class="nx">alias</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">);</span>
-            <span class="p">}</span>
-
-        <span class="p">}</span>
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-83" id="section-83">&#182;</a>
-</div>
-<p>Errors in channel creation are already logged.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="p">}</span>
-<span class="p">};</span>
-
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs"><div class="dox">
-  <div class="summary">
-<div class="pilwrap" id="servernode.loadviewsfile">
-  <h3>
-    <a href="#servernode.loadviewsfile" name="servernode.loadviewsfile" class="pilcrow">&#182;</a>
-    ServerNode.loadViewsFile
-  </h3>
-</div>
-
-  </div>
-  <div class="body"><p>Loads <em>views.js</em> from file system and adds channels accordingly</p>
-
-<p>Asynchronously looks for a file called <em>channels.js</em> at the top
-level of the specified directory.</p>
-
-<p>The file <em>channels.js</em> must export an array containing channels object
-in the format specified by the <em>ServerChannel</em> constructor. Every channel
-configuration object can optionally have a <em>waitingRoom</em> object to
-automatically add a waiting room to the channel.</p>
-  </div>
-  <div class="details">
-    <div class="dox_tag_title">Params</div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name">directory</span>
-      <span class="dox_type">string</span>
-      <span>The path in which <em>views.js</em> will be looked for
-
-TODO: views.js file is not loaded anymore because all context are dynamics.</span>
-    </div>
-    <div class="dox_tag_title">See</div>
-    <div class="dox_tag_detail">
-      <span class="dox_type">PageManager
-</span>
-    </div>
-  </div>
-</div>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-<span class="nx">ServerNode</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">loadViewsFile</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">directory</span><span class="p">,</span> <span class="nx">gameInfo</span><span class="p">)</span> <span class="p">{</span>
-    <span class="kd">var</span> <span class="nx">viewsFile</span><span class="p">,</span> <span class="nx">that</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">;</span>
-
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">directory</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerNode.loadViewsFile: directory myst be &#39;</span> <span class="o">+</span>
-                            <span class="s1">&#39;string.&#39;</span><span class="p">);</span>
-    <span class="p">}</span>
-    <span class="nx">gameName</span> <span class="o">=</span> <span class="nx">gameInfo</span><span class="p">.</span><span class="nx">name</span><span class="p">;</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-85" id="section-85">&#182;</a>
-</div>
-<p>TODO: see if still needed (broken now).</p>
-
-
-<div class="highlight"><pre><code><span class="n">that</span> <span class="o">=</span> <span class="n">this</span><span class="p">;</span>
-<span class="n">viewsFile</span> <span class="o">=</span> <span class="n">directory</span> <span class="o">+</span> <span class="s">&#39;views/views.js&#39;</span><span class="p">;</span>
-<span class="n">fs</span><span class="o">.</span><span class="nb">exists</span><span class="p">(</span><span class="n">viewsFile</span><span class="p">,</span> <span class="n">function</span><span class="p">(</span><span class="nb">exists</span><span class="p">)</span> <span class="p">{</span>
-     <span class="n">var</span> <span class="n">cb</span><span class="p">,</span> <span class="n">sb</span><span class="p">;</span>
-     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nb">exists</span><span class="p">)</span> <span class="k">return</span><span class="p">;</span>
-     <span class="n">cb</span> <span class="o">=</span> <span class="nb">require</span><span class="p">(</span><span class="n">viewsFile</span><span class="p">);</span>
-     <span class="k">if</span> <span class="p">(</span><span class="s">&#39;function&#39;</span> <span class="o">!==</span> <span class="n">typeof</span> <span class="n">cb</span><span class="p">)</span> <span class="p">{</span>
-         <span class="n">throw</span> <span class="k">new</span> <span class="n">TypeError</span><span class="p">(</span><span class="s">&#39;ServerNode.loadViewsFile: &#39;</span> <span class="o">+</span>
-             <span class="s">&#39;views.js did not &#39;</span> <span class="o">+</span>
-             <span class="s">&#39;return a valid function. Dir: &#39;</span> <span class="o">+</span> <span class="n">directory</span><span class="p">);</span>
-     <span class="p">}</span>
-     <span class="sr">//</span> <span class="n">Execute</span> <span class="n">views</span> <span class="n">function</span> <span class="n">in</span> <span class="n">a</span> <span class="n">sandboxed</span> <span class="n">enviroment</span><span class="o">.</span>
-     <span class="sr">//</span> <span class="n">A</span> <span class="n">game</span> <span class="n">cannot</span> <span class="n">modify</span> <span class="n">other</span> <span class="n">games</span> <span class="n">settings</span><span class="o">.</span>
-     <span class="n">sb</span> <span class="o">=</span> <span class="n">that</span><span class="o">.</span><span class="n">pager</span><span class="o">.</span><span class="n">getSandBox</span><span class="p">(</span><span class="n">gameName</span><span class="p">,</span> <span class="n">directory</span><span class="p">);</span>
-     <span class="n">cb</span><span class="p">(</span><span class="n">sb</span><span class="p">,</span> <span class="n">gameInfo</span><span class="o">.</span><span class="n">settings</span><span class="p">);</span>
- <span class="p">});</span>
-</code></pre></div>
-
-
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-<span class="p">};</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs"><div class="dox">
-  <div class="summary">
-<div class="pilwrap" id="servernode.buildlanguagesobject">
-  <h3>
-    <a href="#servernode.buildlanguagesobject" name="servernode.buildlanguagesobject" class="pilcrow">&#182;</a>
-    ServerNode.buildLanguagesObject
-  </h3>
-</div>
-
-  </div>
-  <div class="body"><p>Builds an object containing language objects for a given game directory</p>
-  </div>
-  <div class="details">
-    <div class="dox_tag_title">Params</div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name">directory</span>
-      <span class="dox_type">string</span>
-      <span>The directory of the game.</span>
-    </div>
-    <div class="dox_tag_title">Returns</div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name"></span>
-      <span class="dox_type">object</span>
-      <span>languages Object of language objects.</span>
-    </div>
-  </div>
-</div>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-<span class="nx">ServerNode</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">buildLanguagesObject</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">directory</span><span class="p">)</span> <span class="p">{</span>
-    <span class="kd">var</span> <span class="nx">ctxPath</span><span class="p">,</span> <span class="nx">langPaths</span><span class="p">,</span> <span class="nx">languages</span><span class="p">,</span> <span class="nx">pathIndex</span><span class="p">,</span> <span class="nx">languageObject</span><span class="p">;</span>
-
-    <span class="nx">ctxPath</span> <span class="o">=</span> <span class="nx">directory</span> <span class="o">+</span> <span class="s1">&#39;/views/contexts/&#39;</span><span class="p">;</span>
-    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">fs</span><span class="p">.</span><span class="nx">existsSync</span><span class="p">(</span><span class="nx">ctxPath</span><span class="p">))</span> <span class="k">return</span><span class="p">;</span>
-
-    <span class="nx">langPaths</span> <span class="o">=</span> <span class="nx">fs</span><span class="p">.</span><span class="nx">readdirSync</span><span class="p">(</span><span class="nx">ctxPath</span><span class="p">);</span>
-
-    <span class="nx">languages</span> <span class="o">=</span> <span class="p">{};</span>
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-87" id="section-87">&#182;</a>
-</div>
-<p>TODO: Use for loop, not for in.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">for</span> <span class="p">(</span><span class="nx">pathIndex</span> <span class="k">in</span> <span class="nx">langPaths</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">if</span> <span class="p">(</span><span class="nx">langPaths</span><span class="p">.</span><span class="nx">hasOwnProperty</span><span class="p">(</span><span class="nx">pathIndex</span><span class="p">))</span> <span class="p">{</span>
-            <span class="nx">languageObject</span> <span class="o">=</span> <span class="p">{};</span>
-            <span class="k">if</span> <span class="p">(</span><span class="nx">fs</span><span class="p">.</span><span class="nx">existsSync</span><span class="p">(</span><span class="nx">ctxPath</span> <span class="o">+</span> <span class="nx">langPaths</span><span class="p">[</span><span class="nx">pathIndex</span><span class="p">]</span> <span class="o">+</span>
-                              <span class="s1">&#39;/languageInfo.json&#39;</span><span class="p">))</span> <span class="p">{</span>
-
-                <span class="nx">languageObject</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="nx">ctxPath</span> <span class="o">+</span> <span class="nx">langPaths</span><span class="p">[</span><span class="nx">pathIndex</span><span class="p">]</span> <span class="o">+</span>
-                                         <span class="s1">&#39;/languageInfo.json&#39;</span><span class="p">);</span>
-            <span class="p">}</span>
-
-            <span class="nx">languageObject</span><span class="p">.</span><span class="nx">shortName</span> <span class="o">=</span> <span class="nx">langPaths</span><span class="p">[</span><span class="nx">pathIndex</span><span class="p">];</span>
-            <span class="nx">languages</span><span class="p">[</span><span class="nx">languageObject</span><span class="p">.</span><span class="nx">shortName</span><span class="p">]</span> <span class="o">=</span> <span class="nx">languageObject</span><span class="p">;</span>
-        <span class="p">}</span>
-    <span class="p">}</span>
-    <span class="k">return</span> <span class="nx">languages</span><span class="p">;</span>
-<span class="p">};</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs"><div class="dox">
-  <div class="summary">
-<div class="pilwrap" id="servernode.parsegamesettings">
-  <h3>
-    <a href="#servernode.parsegamesettings" name="servernode.parsegamesettings" class="pilcrow">&#182;</a>
-    ServerNode.parseGameSettings
-  </h3>
-</div>
-
-  </div>
-  <div class="body"><p>Parses a game settings object and builds the treatments object</p>
-
-<p>The treatment object always includes a 'standard' treatment plus
-any other treatment specified in the 'settings' object.</p>
-
-<p>All properties of the 'standard' treatment are shared with the other
-settings.</p>
-  </div>
-  <div class="details">
-    <div class="dox_tag_title">Params</div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name">game</span>
-      <span class="dox_type">object</span>
-      <span>The path to a package.json file,
-  or its content as loaded from <code>require</code></span>
-    </div>
-    <div class="dox_tag_title">Returns</div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name"></span>
-      <span class="dox_type">object</span>
-      <span>out The parsed settings object containing treatments</span>
-    </div>
-    <div class="dox_tag_title">See</div>
-    <div class="dox_tag_detail">
-      <span class="dox_type">ServerNode.addGame
-</span>
-    </div>
-  </div>
-</div>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-<span class="nx">ServerNode</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">parseGameSettings</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">settingsObj</span><span class="p">)</span> <span class="p">{</span>
-    <span class="kd">var</span> <span class="nx">standard</span><span class="p">,</span> <span class="nx">t</span><span class="p">,</span> <span class="nx">out</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">treatments</span><span class="p">;</span>
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">settingsObj</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerNode.parseGameSettings: settingsObj &#39;</span> <span class="o">+</span>
-                            <span class="s1">&#39;must be object.&#39;</span><span class="p">);</span>
-    <span class="p">}</span>
-
-    <span class="nx">out</span> <span class="o">=</span> <span class="p">{};</span>
-    <span class="nx">out</span><span class="p">.</span><span class="nx">standard</span> <span class="o">=</span> <span class="nx">J</span><span class="p">.</span><span class="nx">clone</span><span class="p">(</span><span class="nx">settingsObj</span><span class="p">);</span>
-
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">settingsObj</span><span class="p">.</span><span class="nx">treatments</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nx">treatments</span> <span class="o">=</span> <span class="nx">settingsObj</span><span class="p">.</span><span class="nx">treatments</span><span class="p">;</span>
-        <span class="k">delete</span> <span class="nx">out</span><span class="p">.</span><span class="nx">standard</span><span class="p">.</span><span class="nx">treatments</span><span class="p">;</span>
-        <span class="k">for</span> <span class="p">(</span><span class="nx">t</span> <span class="k">in</span> <span class="nx">treatments</span><span class="p">)</span> <span class="p">{</span>
-            <span class="k">if</span> <span class="p">(</span><span class="nx">treatments</span><span class="p">.</span><span class="nx">hasOwnProperty</span><span class="p">(</span><span class="nx">t</span><span class="p">))</span> <span class="p">{</span>
-                <span class="nx">out</span><span class="p">[</span><span class="nx">t</span><span class="p">]</span> <span class="o">=</span> <span class="nx">J</span><span class="p">.</span><span class="nx">merge</span><span class="p">(</span><span class="nx">out</span><span class="p">.</span><span class="nx">standard</span><span class="p">,</span> <span class="nx">treatments</span><span class="p">[</span><span class="nx">t</span><span class="p">]);</span>
-                <span class="nx">out</span><span class="p">[</span><span class="nx">t</span><span class="p">].</span><span class="nx">treatmentName</span> <span class="o">=</span> <span class="nx">t</span><span class="p">;</span>
-            <span class="p">}</span>
-        <span class="p">}</span>
-    <span class="p">}</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-89" id="section-89">&#182;</a>
-</div>
-<p>Add standard name.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="nx">out</span><span class="p">.</span><span class="nx">standard</span><span class="p">.</span><span class="nx">name</span> <span class="o">=</span> <span class="s1">&#39;standard&#39;</span><span class="p">;</span>
-
-    <span class="k">return</span> <span class="nx">out</span><span class="p">;</span>
-<span class="p">};</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs"><div class="dox">
-  <div class="summary">
-<div class="pilwrap" id="servernode.configurehttp">
-  <h3>
-    <a href="#servernode.configurehttp" name="servernode.configurehttp" class="pilcrow">&#182;</a>
-    ServerNode.configureHTTP
-  </h3>
-</div>
-
-  </div>
-  <div class="body"><p>Configure express server hook</p>
-
-<p>Accepts a callback function that receives the express app
-object as first parameter. The callback function should
-return TRUE if configuration is successful.</p>
-  </div>
-  <div class="details">
-    <div class="dox_tag_title">Params</div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name">func</span>
-      <span class="dox_type">function</span>
-      <span>The function that will configure the express server</span>
-    </div>
-    <div class="dox_tag_title">Returns</div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name"></span>
-      <span class="dox_type">boolean</span>
-      <span>The return value of the callback function</span>
-    </div>
-  </div>
-</div>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-<span class="nx">ServerNode</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">configureHTTP</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">func</span><span class="p">)</span> <span class="p">{</span>
-    <span class="k">return</span> <span class="nx">func</span><span class="p">(</span><span class="nx">http</span><span class="p">,</span> <span class="k">this</span><span class="p">);</span>
-<span class="p">};</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs"><div class="dox">
-  <div class="summary">
-<div class="pilwrap" id="servernode.configuresio">
-  <h3>
-    <a href="#servernode.configuresio" name="servernode.configuresio" class="pilcrow">&#182;</a>
-    ServerNode.configureSIO
-  </h3>
-</div>
-
-  </div>
-  <div class="body"><p>Configure socket.io hook</p>
-
-<p>Accepts a callback function that receives the socket.io app
-object as first parameter. The callback function should
-return TRUE if configuration is successful.</p>
-  </div>
-  <div class="details">
-    <div class="dox_tag_title">Params</div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name">func</span>
-      <span class="dox_type">function</span>
-      <span>The function that will configure the socket.io app</span>
-    </div>
-    <div class="dox_tag_title">Returns</div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name"></span>
-      <span class="dox_type">boolean</span>
-      <span>The return value of the callback function</span>
-    </div>
-  </div>
-</div>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-<span class="nx">ServerNode</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">configureSIO</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">func</span><span class="p">)</span> <span class="p">{</span>
-    <span class="k">return</span> <span class="nx">func</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">sio</span><span class="p">,</span> <span class="k">this</span><span class="p">);</span>
-<span class="p">};</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs"><div class="dox">
-  <div class="summary">
-<div class="pilwrap" id="servernode.configureloggers">
-  <h3>
-    <a href="#servernode.configureloggers" name="servernode.configureloggers" class="pilcrow">&#182;</a>
-    ServerNode.configureLoggers
-  </h3>
-</div>
-
-  </div>
-  <div class="body"><p>Configure winston loggers hook</p>
-
-<p>Accepts a callback function that receives <code>winston.loggers</code> and
-<code>this.logDir</code> as parameters. The callback function should return TRUE if
-configuration is successful.</p>
-  </div>
-  <div class="details">
-    <div class="dox_tag_title">Params</div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name">func</span>
-      <span class="dox_type">function</span>
-      <span>The function that will configure the loggers</span>
-    </div>
-    <div class="dox_tag_title">Returns</div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name"></span>
-      <span class="dox_type">boolean</span>
-      <span>The return value of the callback function</span>
-    </div>
-  </div>
-</div>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-<span class="nx">ServerNode</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">configureLoggers</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">func</span><span class="p">)</span> <span class="p">{</span>
-    <span class="k">return</span> <span class="nx">func</span><span class="p">(</span><span class="nx">winston</span><span class="p">.</span><span class="nx">loggers</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">logDir</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span><span class="p">);</span>
-<span class="p">};</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs"><div class="dox">
-  <div class="summary">
-<div class="pilwrap" id="servernode.configure">
-  <h3>
-    <a href="#servernode.configure" name="servernode.configure" class="pilcrow">&#182;</a>
-    ServerNode.configure
-  </h3>
-</div>
-
-  </div>
-  <div class="body"><p>Configure ServerNode hook</p>
-
-<p>Accepts a callback function to receives the current ServerNode
-instance as first parameter. The callback function should
-return TRUE if configuration is successful.</p>
-  </div>
-  <div class="details">
-    <div class="dox_tag_title">Params</div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name">func</span>
-      <span class="dox_type">function</span>
-      <span>The function that will configure the ServerNode</span>
-    </div>
-    <div class="dox_tag_title">Returns</div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name"></span>
-      <span class="dox_type">boolean</span>
-      <span>The return value of the callback function</span>
-    </div>
-  </div>
-</div>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-<span class="nx">ServerNode</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">configure</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">func</span><span class="p">)</span> <span class="p">{</span>
-    <span class="k">return</span> <span class="nx">func</span><span class="p">(</span><span class="k">this</span><span class="p">);</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">gameLoader</span><span class="p">.</span><span class="nx">addGame</span><span class="p">(</span><span class="nx">gameInfo</span><span class="p">,</span> <span class="nx">gameDir</span><span class="p">);</span>
 <span class="p">};</span>
 
 
@@ -2921,7 +1577,7 @@ that passes the correct objects to the configurator function.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-96" id="section-96">&#182;</a>
+  <a class="pilcrow" href="#section-57" id="section-57">&#182;</a>
 </div>
 <p>Requiring configuration function (can throw errors).</p>
         </td>
@@ -2940,7 +1596,7 @@ that passes the correct objects to the configurator function.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-97" id="section-97">&#182;</a>
+  <a class="pilcrow" href="#section-58" id="section-58">&#182;</a>
 </div>
 <p>The configuration function is called internally by <em>cb</em> that takes
 care of passing the right parameters to it.</p>
@@ -2959,85 +1615,6 @@ care of passing the right parameters to it.</p>
 <span class="p">};</span>
 
 
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs"><div class="dox">
-  <div class="summary">
-<div class="pilwrap" id="servernode.loadauthdir">
-  <h3>
-    <a href="#servernode.loadauthdir" name="servernode.loadauthdir" class="pilcrow">&#182;</a>
-    ServerNode.loadAuthDir
-  </h3>
-</div>
-
-  </div>
-  <div class="body"><p>Reads the <code>auth/</code> directory and imports settings from it</p>
-
-<p>If a function is found in <code>auth/auth.js</code> it calls it with an object
-containing a sandboxed environment for authorization, clientId
-generation and clientObject decoration.</p>
-  </div>
-  <div class="details">
-    <div class="dox_tag_title">Params</div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name">file</span>
-      <span class="dox_type">string</span>
-      <span>The path to the configuration file</span>
-    </div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name">gameName</span>
-      <span class="dox_type">string</span>
-      <span>The name of the game</span>
-    </div>
-    <div class="dox_tag_title">See</div>
-    <div class="dox_tag_detail">
-      <span class="dox_type">ServerNode.loadConfDir</span>
-    </div>
-    <div class="dox_tag_title">See</div>
-    <div class="dox_tag_detail">
-      <span class="dox_type">ServerNode.getChannelSandbox
-</span>
-    </div>
-  </div>
-</div>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-<span class="nx">ServerNode</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">loadAuthDir</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">directory</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">)</span> <span class="p">{</span>
-    <span class="kd">var</span> <span class="nx">authFile</span><span class="p">,</span> <span class="nx">that</span><span class="p">;</span>
-
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">directory</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerNode.loadAuthDir: directory myst be &#39;</span> <span class="o">+</span>
-                            <span class="s1">&#39;string.&#39;</span><span class="p">);</span>
-    <span class="p">}</span>
-
-    <span class="nx">that</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
-    <span class="nx">authFile</span> <span class="o">=</span> <span class="nx">directory</span> <span class="o">+</span> <span class="s1">&#39;auth/auth.js&#39;</span><span class="p">;</span>
-
-    <span class="nx">fs</span><span class="p">.</span><span class="nx">exists</span><span class="p">(</span><span class="nx">authFile</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">exists</span><span class="p">)</span> <span class="p">{</span>
-        <span class="kd">var</span> <span class="nx">authObj</span><span class="p">,</span> <span class="nx">sandboxAuth</span><span class="p">,</span> <span class="nx">sandboxClientIdGen</span><span class="p">,</span> <span class="nx">sandboxDecorate</span><span class="p">;</span>
-
-        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">exists</span><span class="p">)</span> <span class="k">return</span><span class="p">;</span>
-
-        <span class="nx">sandboxAuth</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">getChannelSandbox</span><span class="p">(</span><span class="nx">gameName</span><span class="p">,</span> <span class="s1">&#39;authorization&#39;</span><span class="p">,</span> <span class="s1">&#39;Auth&#39;</span><span class="p">);</span>
-        <span class="nx">sandboxClientIdGen</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">getChannelSandbox</span><span class="p">(</span><span class="nx">gameName</span><span class="p">,</span>
-                                                    <span class="s1">&#39;clientIdGenerator&#39;</span><span class="p">,</span>
-                                                    <span class="s1">&#39;clientId Generator&#39;</span><span class="p">);</span>
-        <span class="nx">sandboxDecorate</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">getChannelSandbox</span><span class="p">(</span><span class="nx">gameName</span><span class="p">,</span>
-                                                 <span class="s1">&#39;clientObjDecorator&#39;</span><span class="p">);</span>
-
-        <span class="nx">authObj</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="nx">authorization</span><span class="o">:</span> <span class="nx">sandboxAuth</span><span class="p">,</span>
-            <span class="nx">clientIdGenerator</span><span class="o">:</span> <span class="nx">sandboxClientIdGen</span><span class="p">,</span>
-            <span class="nx">clientObjDecorator</span><span class="o">:</span> <span class="nx">sandboxDecorate</span>
-        <span class="p">};</span>
-
-        <span class="nx">require</span><span class="p">(</span><span class="nx">authFile</span><span class="p">)(</span><span class="nx">authObj</span><span class="p">,</span> <span class="nx">that</span><span class="p">.</span><span class="nx">info</span><span class="p">.</span><span class="nx">games</span><span class="p">[</span><span class="nx">gameName</span><span class="p">].</span><span class="nx">settings</span><span class="p">);</span>
-
-    <span class="p">});</span>
-<span class="p">};</span>
-
 
 </pre></div>
         </td>
@@ -3045,223 +1622,166 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs"><div class="dox">
   <div class="summary">
-<div class="pilwrap" id="servernode.getchannelsandbox">
+<div class="pilwrap" id="servernode.configurehttp">
   <h3>
-    <a href="#servernode.getchannelsandbox" name="servernode.getchannelsandbox" class="pilcrow">&#182;</a>
-    ServerNode.getChannelSandbox
+    <a href="#servernode.configurehttp" name="servernode.configurehttp" class="pilcrow">&#182;</a>
+    ServerNode.configureHTTP
   </h3>
 </div>
 
   </div>
-  <div class="body"><p>Returns a sandbox function to configure a channel</p>
+  <div class="body"><p>Configure express server hook</p>
+
+<p>Accepts a callback function that receives the express app
+object as first parameter. The callback function should
+return TRUE if configuration is successful.</p>
   </div>
   <div class="details">
     <div class="dox_tag_title">Params</div>
     <div class="dox_tag_detail">
-      <span class="dox_tag_name">gameName</span>
-      <span class="dox_type">string</span>
-      <span>The name of the game</span>
-    </div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name">method</span>
-      <span class="dox_type">string</span>
-      <span>The name of the method in ServerChannel</span>
-    </div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name">methodName</span>
-      <span class="dox_type">string</span>
-      <span>Optional The name of the method as diplayed in
-  error messages.</span>
+      <span class="dox_tag_name">func</span>
+      <span class="dox_type">function</span>
+      <span>The function that will configure the express server</span>
     </div>
     <div class="dox_tag_title">Returns</div>
     <div class="dox_tag_detail">
       <span class="dox_tag_name"></span>
-      <span class="dox_type">function</span>
-      <span>The</span>
-    </div>
-    <div class="dox_tag_title">See</div>
-    <div class="dox_tag_detail">
-      <span class="dox_type">ServerNode.loadConfDir</span>
-    </div>
-    <div class="dox_tag_title">See</div>
-    <div class="dox_tag_detail">
-      <span class="dox_type">ServerNode.getChannelSandbox
-</span>
+      <span class="dox_type">boolean</span>
+      <span>The return value of the callback function</span>
     </div>
   </div>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-<span class="nx">ServerNode</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">getChannelSandbox</span> <span class="o">=</span>
-    <span class="kd">function</span><span class="p">(</span><span class="nx">gameName</span><span class="p">,</span> <span class="nx">method</span><span class="p">,</span> <span class="nx">methodName</span><span class="p">)</span> <span class="p">{</span>
-
-    <span class="kd">var</span> <span class="nx">that</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
-    <span class="nx">methodName</span> <span class="o">=</span> <span class="nx">methodName</span> <span class="o">||</span> <span class="nx">method</span><span class="p">;</span>
-
-    <span class="k">return</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
-        <span class="kd">var</span> <span class="nx">len</span><span class="p">;</span>
-        <span class="kd">var</span> <span class="nx">callback</span><span class="p">,</span> <span class="nx">channel</span><span class="p">,</span> <span class="nx">server</span><span class="p">;</span>
-        <span class="kd">var</span> <span class="nx">gameChannelNames</span><span class="p">;</span>
-        <span class="kd">var</span> <span class="nx">errorBegin</span><span class="p">;</span>
-
-        <span class="nx">errorBegin</span> <span class="o">=</span> <span class="s1">&#39;ServerNode.loadAuthDir: &#39;</span> <span class="o">+</span> <span class="nx">methodName</span> <span class="o">+</span> <span class="s1">&#39; callback: &#39;</span><span class="p">;</span>
-
-        <span class="nx">len</span> <span class="o">=</span> <span class="nx">arguments</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span>
-
-        <span class="k">if</span> <span class="p">(</span><span class="nx">len</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">)</span> <span class="p">{</span>
-            <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="nx">errorBegin</span> <span class="o">+</span>
-                            <span class="s1">&#39;accepts maximum 3 input parameters, &#39;</span> <span class="o">+</span>
-                            <span class="nx">len</span> <span class="o">+</span> <span class="s1">&#39; given. Game: &#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
-        <span class="p">}</span>
-
-        <span class="nx">callback</span> <span class="o">=</span> <span class="nx">arguments</span><span class="p">[</span><span class="nx">len</span><span class="o">-</span><span class="mi">1</span><span class="p">];</span>
-
-        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;function&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">callback</span><span class="p">)</span> <span class="p">{</span>
-            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="nx">errorBegin</span> <span class="o">+</span> <span class="s1">&#39;last parameter &#39;</span> <span class="o">+</span>
-                                <span class="s1">&#39;must be function. Game: &#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
-        <span class="p">}</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-100" id="section-100">&#182;</a>
-</div>
-<p>Channels defined by a game with the channels.js file.
-Auth callback can modify the authorization only of those.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-        <span class="nx">gameChannelNames</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">info</span><span class="p">.</span><span class="nx">games</span><span class="p">[</span><span class="nx">gameName</span><span class="p">].</span><span class="nx">channels</span><span class="p">;</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-101" id="section-101">&#182;</a>
-</div>
-<p>1 Auth for all servers of all channels.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-        <span class="k">if</span> <span class="p">(</span><span class="nx">len</span> <span class="o">===</span> <span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
-            <span class="k">for</span> <span class="p">(</span><span class="nx">channel</span> <span class="k">in</span> <span class="nx">gameChannelNames</span><span class="p">)</span> <span class="p">{</span>
-                <span class="k">if</span> <span class="p">(</span><span class="nx">gameChannelNames</span><span class="p">.</span><span class="nx">hasOwnProperty</span><span class="p">(</span><span class="nx">channel</span><span class="p">))</span> <span class="p">{</span>
-                    <span class="nx">that</span><span class="p">.</span><span class="nx">channels</span><span class="p">[</span><span class="nx">channel</span><span class="p">].</span><span class="nx">admin</span><span class="p">[</span><span class="nx">method</span><span class="p">](</span><span class="nx">callback</span><span class="p">);</span>
-                    <span class="nx">that</span><span class="p">.</span><span class="nx">channels</span><span class="p">[</span><span class="nx">channel</span><span class="p">].</span><span class="nx">player</span><span class="p">[</span><span class="nx">method</span><span class="p">](</span><span class="nx">callback</span><span class="p">);</span>
-                <span class="p">}</span>
-            <span class="p">}</span>
-        <span class="p">}</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-102" id="section-102">&#182;</a>
-</div>
-<p>1 Auth for one channel, 1 or both servers</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-        <span class="k">else</span> <span class="p">{</span>
-
-            <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">arguments</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="p">{</span>
-                <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="nx">errorBegin</span> <span class="o">+</span> <span class="s1">&#39;channel parameter must be &#39;</span> <span class="o">+</span>
-                                    <span class="s1">&#39;string. Game: &#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
-            <span class="p">}</span>
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-103" id="section-103">&#182;</a>
-</div>
-<p>Retrieve the channel name.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-            <span class="nx">channel</span> <span class="o">=</span> <span class="nx">gameChannelNames</span><span class="p">[</span><span class="nx">arguments</span><span class="p">[</span><span class="mi">0</span><span class="p">]];</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-104" id="section-104">&#182;</a>
-</div>
-<p>Check if the channel belongs to the game.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-            <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">channel</span><span class="p">)</span> <span class="p">{</span>
-                <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="nx">errorBegin</span> <span class="o">+</span> <span class="s1">&#39;channel is not existing or &#39;</span> <span class="o">+</span>
-                                    <span class="s1">&#39;it does not belong to the game: &#39;</span> <span class="o">+</span>
-                                    <span class="nx">channel</span> <span class="o">+</span> <span class="s1">&#39;. Game: &#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
-            <span class="p">}</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-105" id="section-105">&#182;</a>
-</div>
-<p>Retrieve the channel object.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-            <span class="nx">channel</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">channels</span><span class="p">[</span><span class="nx">arguments</span><span class="p">[</span><span class="mi">0</span><span class="p">]];</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-106" id="section-106">&#182;</a>
-</div>
-<p>1 Auth for a specific channel.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-            <span class="k">if</span> <span class="p">(</span><span class="nx">len</span> <span class="o">===</span> <span class="mi">2</span><span class="p">)</span> <span class="p">{</span>
-                <span class="nx">channel</span><span class="p">.</span><span class="nx">admin</span><span class="p">[</span><span class="nx">method</span><span class="p">](</span><span class="nx">callback</span><span class="p">);</span>
-                <span class="nx">channel</span><span class="p">.</span><span class="nx">player</span><span class="p">[</span><span class="nx">method</span><span class="p">](</span><span class="nx">callback</span><span class="p">);</span>
-            <span class="p">}</span>
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-107" id="section-107">&#182;</a>
-</div>
-<p>1 Auth for a specific server of a specific channel.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-            <span class="k">else</span> <span class="p">{</span>
-                <span class="k">if</span> <span class="p">(</span><span class="nx">arguments</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!==</span> <span class="s1">&#39;admin&#39;</span> <span class="o">&amp;&amp;</span> <span class="nx">arguments</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!==</span> <span class="s1">&#39;player&#39;</span><span class="p">)</span> <span class="p">{</span>
-                    <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="nx">errorBegin</span> <span class="o">+</span> <span class="s1">&#39;server parameter must &#39;</span> <span class="o">+</span>
-                                        <span class="s1">&#39;be either &quot;player&quot; or &quot;admin&quot;. &#39;</span> <span class="o">+</span>
-                                        <span class="s1">&#39;Game: &#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
-                <span class="p">}</span>
-
-                <span class="nx">channel</span><span class="p">[</span><span class="nx">arguments</span><span class="p">[</span><span class="mi">1</span><span class="p">]][</span><span class="nx">method</span><span class="p">](</span><span class="nx">callback</span><span class="p">);</span>
-            <span class="p">}</span>
-        <span class="p">}</span>
-    <span class="p">};</span>
+<span class="nx">ServerNode</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">configureHTTP</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">func</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="nx">func</span><span class="p">(</span><span class="nx">http</span><span class="p">,</span> <span class="k">this</span><span class="p">);</span>
 <span class="p">};</span>
 
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="servernode.configuresio">
+  <h3>
+    <a href="#servernode.configuresio" name="servernode.configuresio" class="pilcrow">&#182;</a>
+    ServerNode.configureSIO
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Configure socket.io hook</p>
+
+<p>Accepts a callback function that receives the socket.io app
+object as first parameter. The callback function should
+return TRUE if configuration is successful.</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">func</span>
+      <span class="dox_type">function</span>
+      <span>The function that will configure the socket.io app</span>
+    </div>
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">boolean</span>
+      <span>The return value of the callback function</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">ServerNode</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">configureSIO</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">func</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="nx">func</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">sio</span><span class="p">,</span> <span class="k">this</span><span class="p">);</span>
+<span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="servernode.configureloggers">
+  <h3>
+    <a href="#servernode.configureloggers" name="servernode.configureloggers" class="pilcrow">&#182;</a>
+    ServerNode.configureLoggers
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Configure winston loggers hook</p>
+
+<p>Accepts a callback function that receives <code>winston.loggers</code> and
+<code>this.logDir</code> as parameters. The callback function should return TRUE if
+configuration is successful.</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">func</span>
+      <span class="dox_type">function</span>
+      <span>The function that will configure the loggers</span>
+    </div>
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">boolean</span>
+      <span>The return value of the callback function</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">ServerNode</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">configureLoggers</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">func</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="nx">func</span><span class="p">(</span><span class="nx">winston</span><span class="p">.</span><span class="nx">loggers</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">logDir</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span><span class="p">);</span>
+<span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="servernode.configure">
+  <h3>
+    <a href="#servernode.configure" name="servernode.configure" class="pilcrow">&#182;</a>
+    ServerNode.configure
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Configure ServerNode hook</p>
+
+<p>Accepts a callback function to receives the current ServerNode
+instance as first parameter. The callback function should
+return TRUE if configuration is successful.</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">func</span>
+      <span class="dox_type">function</span>
+      <span>The function that will configure the ServerNode</span>
+    </div>
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">boolean</span>
+      <span>The return value of the callback function</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">ServerNode</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">configure</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">func</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="nx">func</span><span class="p">(</span><span class="k">this</span><span class="p">);</span>
+<span class="p">};</span>
 
 
 </pre></div>
@@ -3417,160 +1937,6 @@ Auth callback can modify the authorization only of those.</p>
     <span class="p">}</span>
     <span class="k">this</span><span class="p">.</span><span class="nx">asyncQueue</span><span class="p">.</span><span class="nx">onReady</span><span class="p">(</span><span class="nx">cb</span><span class="p">);</span>
 <span class="p">};</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap" id="helper%20methods">
-  <h2>
-    <a href="#helper%20methods" name="helper%20methods" class="pilcrow">&#182;</a>
-    Helper methods
-  </h2>
-</div>
-
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs"><div class="dox">
-  <div class="summary">
-<div class="pilwrap" id="version2gamestage">
-  <h3>
-    <a href="#version2gamestage" name="version2gamestage" class="pilcrow">&#182;</a>
-    version2GameStage
-  </h3>
-</div>
-
-  </div>
-  <div class="body"><p>Helper function to parse a version string into a GameStage</p>
-
-<p>Cannot use GameStage constructor because it does not accept stage = 0</p>
-  </div>
-  <div class="details">
-    <div class="dox_tag_title">Params</div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name">str</span>
-      <span class="dox_type">string</span>
-      <span>The version number to parse</span>
-    </div>
-    <div class="dox_tag_title">See</div>
-    <div class="dox_tag_detail">
-      <span class="dox_type">GameStage constructor
-</span>
-    </div>
-  </div>
-</div>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-<span class="kd">function</span> <span class="nx">version2GameStage</span><span class="p">(</span><span class="nx">str</span><span class="p">)</span> <span class="p">{</span>
-    <span class="kd">var</span> <span class="nx">tokens</span><span class="p">,</span> <span class="nx">stage</span><span class="p">,</span> <span class="nx">step</span><span class="p">,</span> <span class="nx">round</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">out</span><span class="p">;</span>
-    <span class="nx">tokens</span> <span class="o">=</span> <span class="nx">str</span><span class="p">.</span><span class="nx">trim</span><span class="p">().</span><span class="nx">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">);</span>
-    <span class="nx">stage</span> <span class="o">=</span> <span class="nb">parseInt</span><span class="p">(</span><span class="nx">tokens</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">10</span><span class="p">);</span>
-    <span class="k">if</span> <span class="p">(</span><span class="nb">isNaN</span><span class="p">(</span><span class="nx">stage</span><span class="p">))</span> <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
-    <span class="nx">step</span>  <span class="o">=</span> <span class="nb">parseInt</span><span class="p">(</span><span class="nx">tokens</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">10</span><span class="p">);</span>
-    <span class="k">if</span> <span class="p">(</span><span class="nb">isNaN</span><span class="p">(</span><span class="nx">step</span><span class="p">))</span> <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
-    <span class="nx">round</span> <span class="o">=</span> <span class="nb">parseInt</span><span class="p">(</span><span class="nx">tokens</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="mi">10</span><span class="p">);</span>
-    <span class="k">if</span> <span class="p">(</span><span class="nb">isNaN</span><span class="p">(</span><span class="nx">round</span><span class="p">))</span> <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
-    <span class="k">return</span> <span class="p">{</span>
-        <span class="nx">stage</span><span class="o">:</span> <span class="nx">stage</span><span class="p">,</span> <span class="nx">step</span><span class="o">:</span> <span class="nx">step</span><span class="p">,</span> <span class="nx">round</span><span class="o">:</span> <span class="nx">round</span>
-    <span class="p">};</span>
-<span class="p">}</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs"><div class="dox">
-  <div class="summary">
-<div class="pilwrap" id="gamerequirementsfail">
-  <h3>
-    <a href="#gamerequirementsfail" name="gamerequirementsfail" class="pilcrow">&#182;</a>
-    gameRequirementsFail
-  </h3>
-</div>
-
-  </div>
-  <div class="body"><p>Helper function that checks if game requirements are fullfilled</p>
-  </div>
-  <div class="details">
-    <div class="dox_tag_title">Params</div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name">req</span>
-      <span class="dox_type">mixed</span>
-      <span>The game requirements from <code>package.json</code></span>
-    </div>
-    <div class="dox_tag_title">Returns</div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name"></span>
-      <span class="dox_type">boolean</span>
-      <span>TRUE, if check fails</span>
-    </div>
-    <div class="dox_tag_title">See</div>
-    <div class="dox_tag_detail">
-      <span class="dox_type">GameStage constructor
-</span>
-    </div>
-  </div>
-</div>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-<span class="kd">function</span> <span class="nx">gameRequirementsFail</span><span class="p">(</span><span class="nx">req</span><span class="p">)</span> <span class="p">{</span>
-    <span class="kd">var</span> <span class="nx">reqFail</span><span class="p">;</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-114" id="section-114">&#182;</a>
-</div>
-<ul>
-<li>skips the check.</li>
-</ul>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">req</span> <span class="o">||</span> <span class="nx">req</span><span class="p">.</span><span class="nx">trim</span><span class="p">()</span> <span class="o">===</span> <span class="s1">&#39;*&#39;</span><span class="p">)</span> <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-115" id="section-115">&#182;</a>
-</div>
-<p>Trick: we compare version numbers using the GameStage class.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">if</span> <span class="p">(</span><span class="nx">req</span><span class="p">.</span><span class="nx">indexOf</span><span class="p">(</span><span class="s2">&quot;&gt;=&quot;</span><span class="p">)</span> <span class="o">!==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nx">req</span> <span class="o">=</span> <span class="nx">req</span><span class="p">.</span><span class="nx">split</span><span class="p">(</span><span class="s2">&quot;&gt;=&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">];</span>
-        <span class="nx">req</span> <span class="o">=</span> <span class="nx">version2GameStage</span><span class="p">(</span><span class="nx">req</span><span class="p">);</span>
-        <span class="nx">reqFail</span> <span class="o">=</span> <span class="o">!</span><span class="nx">req</span> <span class="o">||</span> <span class="nx">GameStage</span><span class="p">.</span><span class="nx">compare</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">serverVersionObj</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">;</span>
-    <span class="p">}</span>
-    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">req</span><span class="p">.</span><span class="nx">indexOf</span><span class="p">(</span><span class="s2">&quot;&gt;&quot;</span><span class="p">)</span> <span class="o">!==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nx">req</span> <span class="o">=</span> <span class="nx">req</span><span class="p">.</span><span class="nx">split</span><span class="p">(</span><span class="s2">&quot;&gt;&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">];</span>
-        <span class="nx">req</span> <span class="o">=</span> <span class="nx">version2GameStage</span><span class="p">(</span><span class="nx">req</span><span class="p">);</span>
-        <span class="nx">reqFail</span> <span class="o">=</span> <span class="o">!</span><span class="nx">req</span> <span class="o">||</span> <span class="nx">GameStage</span><span class="p">.</span><span class="nx">compare</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">serverVersionObj</span><span class="p">)</span> <span class="o">&gt;</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
-    <span class="p">}</span>
-    <span class="k">else</span> <span class="p">{</span>
-        <span class="nx">req</span> <span class="o">=</span> <span class="nx">version2GameStage</span><span class="p">(</span><span class="nx">req</span><span class="p">);</span>
-        <span class="nx">reqFail</span> <span class="o">=</span> <span class="o">!</span><span class="nx">req</span> <span class="o">||</span> <span class="nx">GameStage</span><span class="p">.</span><span class="nx">compare</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">serverVersionObj</span><span class="p">)</span> <span class="o">!==</span> <span class="mi">0</span><span class="p">;</span>
-    <span class="p">}</span>
-
-    <span class="k">return</span> <span class="nx">reqFail</span><span class="p">;</span>
-<span class="p">}</span>
 </pre></div>
         </td>
       </tr>

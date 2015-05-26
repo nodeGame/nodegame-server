@@ -596,11 +596,10 @@ Note: this.node.player will be added to admins.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">logicPath</span> <span class="o">===</span> <span class="s1">&#39;standard&#39;</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nx">game</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">StandardWaitingRoom</span><span class="p">(</span><span class="nx">settings</span><span class="p">,</span> <span class="nx">node</span><span class="p">,</span> <span class="nx">channel</span><span class="p">,</span> <span class="k">this</span><span class="p">);</span>
+        <span class="nx">game</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">StandardWaitingRoom</span><span class="p">(</span><span class="nx">settings</span><span class="p">,</span> <span class="k">this</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">runtimeConf</span><span class="p">);</span>
     <span class="p">}</span>
     <span class="k">else</span> <span class="p">{</span>
-        <span class="nx">game</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">logicPath</span><span class="p">)(</span><span class="nx">settings</span><span class="p">,</span> <span class="nx">node</span><span class="p">,</span> <span class="nx">channel</span><span class="p">,</span> <span class="k">this</span><span class="p">,</span>
-                                       <span class="k">this</span><span class="p">.</span><span class="nx">runtimeConf</span><span class="p">);</span>
+        <span class="nx">game</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">logicPath</span><span class="p">)(</span><span class="nx">settings</span><span class="p">,</span> <span class="k">this</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">runtimeConf</span><span class="p">);</span>
     <span class="p">}</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">game</span><span class="p">)</span> <span class="p">{</span>
