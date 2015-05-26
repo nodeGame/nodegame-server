@@ -9562,7 +9562,7 @@ if (!Array.prototype.indexOf) {
      * - MODERATE: only gameStage updates (might not work for multiplayer games)
      * - NONE: no updates. The same as observer.
      */
-    k.publish_levels = {
+    k.publishLevels = {
         ALL: 4,
         MOST: 3,
         REGULAR: 2,
@@ -15574,7 +15574,8 @@ if (!Array.prototype.indexOf) {
         GameDB = parent.GameDB,
         GamePlot = parent.GamePlot,
         PlayerList = parent.PlayerList,
-        Stager = parent.Stager;
+        Stager = parent.Stager,
+        J = parent.JSUS;
 
     var constants = parent.constants;
 
@@ -15584,50 +15585,48 @@ if (!Array.prototype.indexOf) {
      * Creates a new instance of Game
      *
      * @param {NodeGameClient} node A valid NodeGameClient object
-     * @param {object} settings Optional. A configuration object
+     * @param {object} setup Optional. A configuration object
      */
-    function Game(node, settings) {
+    function Game(node, setup) {
 
         this.node = node;
 
-        settings = settings || {};
+        setup = setup || {};
 
         // This updates are never published.
         this.setStateLevel(constants.stateLevels.UNINITIALIZED, 'S');
         this.setStageLevel(constants.stageLevels.UNINITIALIZED, 'S');
 
-        // ## Private properties
+        // ## Properties
 
         /**
          * ### Game.metadata
          *
          * The game's metadata
          *
-         * Contains following properties:
-         * name, description, version, session
+         * Contains at least the following properties:
+         *
+         *   - name,
+         *   - description,
+         *   - version
          */
-        this.metadata = {
-            name:        settings.name || 'A nodeGame game',
-            description: settings.description || 'No Description',
-            version:     settings.version || '0',
-            session:     settings.session || '0'
-        };
+        this.metadata = J.merge({
+            name:        'A nodeGame game',
+            description: 'No description',
+            version:     '0.0.1'
+        }, setup);
 
         /**
          * ### Game.settings
          *
          * The game's settings
-         *
-         * Contains the following properties:
-         *
-         * - publishLevel: Default: REGULAR (10)
-         * - syncStepping: Default: false
          */
-        this.settings = {
-            publishLevel: 'undefined' === typeof settings.publishLevel ?
-                constants.publish_levels.REGULAR : settings.publishLevel,
-            syncStepping: settings.syncStepping ? true : false
-        };
+        this.settings = setup.settings || {}
+
+//             publishLevel: 'undefined' === typeof setup.publishLevel ?
+//                 constants.publishLevels.REGULAR : setup.publishLevel,
+//             syncStepping: setup.syncStepping ? true : false
+//         };
 
         /**
          * ### Game.pl
@@ -15665,9 +15664,6 @@ if (!Array.prototype.indexOf) {
             name: 'ml_' + this.node.nodename
         });
 
-
-        // ## Public properties
-
         /**
          * ### Game.memory
          *
@@ -15687,11 +15683,11 @@ if (!Array.prototype.indexOf) {
         /**
          * ### Game.plot
          *
-         * The Game Plot
+         * The Game plot
          *
          * @see GamePlot
          */
-        this.plot = new GamePlot(new Stager(settings.stages));
+        this.plot = new GamePlot(new Stager(setup.stages));
 
         // Overriding stdout for game plot and stager.
         this.plot.setDefaultLog(function() {
@@ -16154,7 +16150,7 @@ if (!Array.prototype.indexOf) {
         }
 
         // Sends start / step command to connected clients if option is on.
-        if (this.settings.syncStepping) {
+        if (this.plot.getProperty(nextStep, 'syncStepping')) {
             if (curStep.stage === 0) {
                 node.remoteCommand('start', 'ROOM');
             }
@@ -16707,21 +16703,37 @@ if (!Array.prototype.indexOf) {
      * @return {boolean} TRUE, if the update should be sent
      */
     Game.prototype.shouldPublishUpdate = function(type, value) {
+        var myStage;
         var levels, myPublishLevel, stageLevels;
         if ('string' !== typeof type) {
             throw new TypeError(
                 'Game.shouldPublishUpdate: type must be string.');
         }
-        myPublishLevel = this.settings.publishLevel;
-        levels = constants.publish_levels;
+//        myPublishLevel = this.settings.publishLevel;
+
+        myStage = this.getCurrentGameStage();
+        levels = constants.publishLevels;
         stageLevels = constants.stageLevels;
+
+        // TODO. Hack. Fix getting / settings default Stager properties.
+        // if (!this.getCurrentStepObj()) {
+        //    myPublishLevel = levels.REGULAR;
+        // }
+        // else {
+        myPublishLevel = this.plot.getProperty(myStage, 'publishLevel');
+
+        if (myPublishLevel !== null) {
+            console.log('AAAAAAAAAAAAAAAAAAAAAAAA ', myPublishLevel);
+        }
+
+        // }
 
         // Two cases are handled outside of the switch: NO msg
         // and LOADED stage with syncOnLoaded option.
         if (myPublishLevel === levels.NONE) {
             return false;
         }
-        if (this.plot.getProperty(this.getCurrentGameStage(), 'syncOnLoaded')) {
+        if (this.plot.getProperty(myStage, 'syncOnLoaded')) {
             if (type === 'stageLevel' &&
                 value.stageLevel === stageLevels.LOADED) {
                 return true;
