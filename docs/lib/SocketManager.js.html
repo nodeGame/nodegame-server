@@ -2156,6 +2156,20 @@ to locate the room. Can return null if the lookup fails.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
 
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-69" id="section-69">&#182;</a>
+</div>
+<p>TODO: As of 4f82fa9 (may 27 2015) lookupClient returns resolvedTo 
+also for disconnected clients. Check if it is a problem.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
     <span class="nx">registry</span> <span class="o">=</span> <span class="nx">ownChannel</span><span class="p">.</span><span class="nx">registry</span><span class="p">;</span>
     <span class="nx">resolvedTo</span> <span class="o">=</span> <span class="nx">registry</span><span class="p">.</span><span class="nx">lookupClient</span><span class="p">(</span><span class="nx">to</span><span class="p">,</span>
                                        <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">_room</span> <span class="o">||</span>
@@ -2168,7 +2182,7 @@ to locate the room. Can return null if the lookup fails.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-69" id="section-69">&#182;</a>
+  <a class="pilcrow" href="#section-70" id="section-70">&#182;</a>
 </div>
 <p>Get the socket object first from current channel.</p>
         </td>
@@ -2186,7 +2200,7 @@ to locate the room. Can return null if the lookup fails.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-70" id="section-70">&#182;</a>
+  <a class="pilcrow" href="#section-71" id="section-71">&#182;</a>
 </div>
 <p>If server can send to other channels as well, look for
 recipient information in all channels.</p>
@@ -2220,7 +2234,7 @@ recipient information in all channels.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-71" id="section-71">&#182;</a>
+  <a class="pilcrow" href="#section-72" id="section-72">&#182;</a>
 </div>
 <p>If socket object for to field is not found, return an error message.</p>
         </td>
@@ -2314,7 +2328,7 @@ found in the local registry, and if the server is allowed to do so.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-73" id="section-73">&#182;</a>
+  <a class="pilcrow" href="#section-74" id="section-74">&#182;</a>
 </div>
 <p>Look first inside own channel.</p>
         </td>
@@ -2328,7 +2342,7 @@ found in the local registry, and if the server is allowed to do so.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-74" id="section-74">&#182;</a>
+  <a class="pilcrow" href="#section-75" id="section-75">&#182;</a>
 </div>
 <p>Checks if clientId is an alias, and returns the real id.
 If it is not an alias, it still needs to be found
@@ -2348,7 +2362,7 @@ in the registry, otherwise it returns NULL.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-75" id="section-75">&#182;</a>
+  <a class="pilcrow" href="#section-76" id="section-76">&#182;</a>
 </div>
 <p>If server can send to other channels as well, look for
 recipient information in all channels.</p>
