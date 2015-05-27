@@ -328,7 +328,7 @@ back the result. Default: FALSE</p>
 
         <span class="nx">clientId</span> <span class="o">=</span> <span class="nx">clientObj</span><span class="p">.</span><span class="nx">id</span><span class="p">;</span>
         <span class="nx">socketId</span> <span class="o">=</span> <span class="nx">clientObj</span><span class="p">.</span><span class="nx">sid</span><span class="p">;</span>
-        <span class="nx">sys</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Incoming player: &#39;</span> <span class="o">+</span> <span class="nx">clientId</span><span class="p">);</span>
+
         <span class="nx">roomName</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">registry</span><span class="p">.</span><span class="nx">getClientRoom</span><span class="p">(</span><span class="nx">clientId</span><span class="p">);</span>
         <span class="nx">room</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">[</span><span class="nx">roomName</span><span class="p">];</span>
         <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">room</span><span class="p">)</span> <span class="p">{</span>
@@ -437,7 +437,7 @@ could be passed as parameter.</p>
         <span class="kd">var</span> <span class="nx">pConnectMsg</span><span class="p">;</span>
 
         <span class="nx">clientId</span> <span class="o">=</span> <span class="nx">clientObj</span><span class="p">.</span><span class="nx">id</span><span class="p">;</span>
-        <span class="nx">sys</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Returning player: &#39;</span> <span class="o">+</span> <span class="nx">clientId</span><span class="p">);</span>
+
         <span class="nx">roomName</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">registry</span><span class="p">.</span><span class="nx">getClientRoom</span><span class="p">(</span><span class="nx">clientId</span><span class="p">);</span>
         <span class="nx">room</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">[</span><span class="nx">roomName</span><span class="p">];</span>
         <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">room</span><span class="p">)</span> <span class="p">{</span>

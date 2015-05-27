@@ -52,6 +52,9 @@
         <a href="#channelregistry.addclient">ChannelRegistry.addClient</a>
       </div>
       <div class="heading h3">
+        <a href="#channelregistry.importclients">ChannelRegistry.importClients</a>
+      </div>
+      <div class="heading h3">
         <a href="#channelregistry.removeclient">ChannelRegistry.removeClient</a>
       </div>
       <div class="heading h3">
@@ -64,10 +67,19 @@
         <a href="#channelregistry.markdisconnected">ChannelRegistry.markDisconnected</a>
       </div>
       <div class="heading h3">
+        <a href="#channelregistry.markvalid">ChannelRegistry.markValid</a>
+      </div>
+      <div class="heading h3">
+        <a href="#channelregistry.markinvalid">ChannelRegistry.markInvalid</a>
+      </div>
+      <div class="heading h3">
         <a href="#channelregistry.updateclient">ChannelRegistry.updateClient</a>
       </div>
       <div class="heading h3">
         <a href="#channelregistry.markconnected">ChannelRegistry.markConnected</a>
+      </div>
+      <div class="heading h3">
+        <a href="#channelregistry.getclient">ChannelRegistry.getClient</a>
       </div>
       <div class="heading h3">
         <a href="#channelregistry.getids">ChannelRegistry.getIds</a>
@@ -132,6 +144,12 @@
       <div class="heading h3">
         <a href="#channelregistry.lookupclient">ChannelRegistry.lookupClient</a>
       </div>
+      <div class="heading h2">
+        <a href="#helper%20methods">Helper methods</a>
+      </div>
+      <div class="heading h2">
+        <a href="#generateclient">generateClient</a>
+      </div>
     </div>
   </div>
   <div id="sidebar-toggle"></div>
@@ -177,7 +195,7 @@ MIT Licensed</p>
 
 <span class="kd">var</span> <span class="nx">ngc</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;nodegame-client&#39;</span><span class="p">);</span>
 
-<span class="kd">var</span> <span class="nx">JSUS</span>       <span class="o">=</span> <span class="nx">ngc</span><span class="p">.</span><span class="nx">JSUS</span><span class="p">;</span>
+<span class="kd">var</span> <span class="nx">J</span>          <span class="o">=</span> <span class="nx">ngc</span><span class="p">.</span><span class="nx">JSUS</span><span class="p">;</span>
 <span class="kd">var</span> <span class="nx">PlayerList</span> <span class="o">=</span> <span class="nx">ngc</span><span class="p">.</span><span class="nx">PlayerList</span><span class="p">;</span>
 <span class="kd">var</span> <span class="nx">Player</span>     <span class="o">=</span> <span class="nx">ngc</span><span class="p">.</span><span class="nx">Player</span><span class="p">;</span>
 
@@ -422,7 +440,7 @@ MIT Licensed</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">ChannelRegistry</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">generateClientId</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
-    <span class="k">return</span> <span class="nx">JSUS</span><span class="p">.</span><span class="nx">uniqueKey</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">getClients</span><span class="p">());</span>
+    <span class="k">return</span> <span class="nx">J</span><span class="p">.</span><span class="nx">uniqueKey</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">getClients</span><span class="p">());</span>
 <span class="p">};</span>
 
 
@@ -485,7 +503,7 @@ MIT Licensed</p>
     <span class="p">}</span>
 
     <span class="nx">playerObj</span><span class="p">.</span><span class="nx">id</span> <span class="o">=</span> <span class="nx">clientId</span><span class="p">;</span>
-    <span class="nx">playerObj</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Player</span><span class="p">(</span><span class="nx">playerObj</span><span class="p">);</span>
+    <span class="nx">playerObj</span> <span class="o">=</span> <span class="nx">generateClient</span><span class="p">(</span><span class="nx">playerObj</span><span class="p">);</span>
 
 
 </pre></div>
@@ -508,6 +526,53 @@ MIT Licensed</p>
 
     <span class="k">this</span><span class="p">.</span><span class="nx">roomStacks</span><span class="p">[</span><span class="nx">clientId</span><span class="p">]</span> <span class="o">=</span> <span class="p">[];</span>
     <span class="k">return</span> <span class="nx">clientId</span><span class="p">;</span>
+<span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="channelregistry.importclients">
+  <h3>
+    <a href="#channelregistry.importclients" name="channelregistry.importclients" class="pilcrow">&#182;</a>
+    ChannelRegistry.importClients
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Registers multiple clients</p>
+
+<p>Each client in the array must be an object with a <code>id</code> property as string.</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">The</span>
+      <span class="dox_type">array</span>
+      <span>array of clients</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">ChannelRegistry.addClient
+</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">ChannelRegistry</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">importClients</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">clientsArray</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">i</span><span class="p">,</span> <span class="nx">len</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">J</span><span class="p">.</span><span class="nx">isArray</span><span class="p">(</span><span class="nx">clientsArray</span><span class="p">))</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ChannelRegistry.importClients: clientsArray &#39;</span> <span class="o">+</span>
+                            <span class="s1">&#39;must be array.&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="nx">i</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="nx">len</span> <span class="o">=</span> <span class="nx">clientsArray</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span>
+    <span class="k">for</span> <span class="p">(</span> <span class="p">;</span> <span class="o">++</span><span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">len</span> <span class="p">;</span> <span class="p">)</span> <span class="p">{</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">addClient</span><span class="p">(</span><span class="nx">clientsArray</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">id</span><span class="p">,</span> <span class="nx">clientsArray</span><span class="p">[</span><span class="nx">i</span><span class="p">]);</span>
+    <span class="p">}</span>
 <span class="p">};</span>
 
 
@@ -556,7 +621,7 @@ MIT Licensed</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-14" id="section-14">&#182;</a>
+  <a class="pilcrow" href="#section-15" id="section-15">&#182;</a>
 </div>
 <p>Remove client from all the rooms to trigger removing
 room aliases to client ID:</p>
@@ -571,7 +636,7 @@ room aliases to client ID:</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-15" id="section-15">&#182;</a>
+  <a class="pilcrow" href="#section-16" id="section-16">&#182;</a>
 </div>
 <p>Remove game aliases to ID:</p>
         </td>
@@ -590,7 +655,7 @@ room aliases to client ID:</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-16" id="section-16">&#182;</a>
+  <a class="pilcrow" href="#section-17" id="section-17">&#182;</a>
 </div>
 <p>Remove room stack:</p>
         </td>
@@ -604,7 +669,7 @@ room aliases to client ID:</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-17" id="section-17">&#182;</a>
+  <a class="pilcrow" href="#section-18" id="section-18">&#182;</a>
 </div>
 <p>Remove client from PlayerList:</p>
         </td>
@@ -676,7 +741,7 @@ from the old room.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-19" id="section-19">&#182;</a>
+  <a class="pilcrow" href="#section-20" id="section-20">&#182;</a>
 </div>
 <p>Remove all room aliases to the client's ID:</p>
         </td>
@@ -745,7 +810,7 @@ from the old room.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-21" id="section-21">&#182;</a>
+  <a class="pilcrow" href="#section-22" id="section-22">&#182;</a>
 </div>
 <p>Remove all room aliases to the client's ID:</p>
         </td>
@@ -762,7 +827,7 @@ from the old room.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-22" id="section-22">&#182;</a>
+  <a class="pilcrow" href="#section-23" id="section-23">&#182;</a>
 </div>
 <p>Try to pop the client's stack:</p>
         </td>
@@ -804,6 +869,70 @@ from the old room.</p>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">ChannelRegistry</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">markDisconnected</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">client</span><span class="p">)</span> <span class="p">{</span>
     <span class="k">this</span><span class="p">.</span><span class="nx">updateClient</span><span class="p">(</span><span class="nx">client</span><span class="p">,</span> <span class="p">{</span> <span class="nx">disconnected</span><span class="o">:</span> <span class="kc">true</span> <span class="p">});</span>
+<span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="channelregistry.markvalid">
+  <h3>
+    <a href="#channelregistry.markvalid" name="channelregistry.markvalid" class="pilcrow">&#182;</a>
+    ChannelRegistry.markValid
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Marks a client as valid</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">client</span>
+      <span class="dox_type">string</span>
+      <span>The client's alias or ID</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">ChannelRegistry</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">markValid</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">client</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">updateClient</span><span class="p">(</span><span class="nx">client</span><span class="p">,</span> <span class="p">{</span> <span class="nx">valid</span><span class="o">:</span> <span class="kc">true</span> <span class="p">});</span>
+<span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="channelregistry.markinvalid">
+  <h3>
+    <a href="#channelregistry.markinvalid" name="channelregistry.markinvalid" class="pilcrow">&#182;</a>
+    ChannelRegistry.markInvalid
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Marks a client as invalid</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">client</span>
+      <span class="dox_type">string</span>
+      <span>The client's alias or ID</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">ChannelRegistry</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">markInvalid</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">client</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">updateClient</span><span class="p">(</span><span class="nx">client</span><span class="p">,</span> <span class="p">{</span> <span class="nx">valid</span><span class="o">:</span> <span class="kc">false</span> <span class="p">});</span>
 <span class="p">};</span>
 
 
@@ -866,7 +995,7 @@ maybe we can merge / use the updateClient method and markDisconnected</span>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-25" id="section-25">&#182;</a>
+  <a class="pilcrow" href="#section-28" id="section-28">&#182;</a>
 </div>
 <p>Update the PlayerList:</p>
         </td>
@@ -918,7 +1047,7 @@ maybe we can merge / use the updateClient method</span>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-27" id="section-27">&#182;</a>
+  <a class="pilcrow" href="#section-30" id="section-30">&#182;</a>
 </div>
 <p>TODO: this fails because the client is disconnected. Maybe we don't
 need to lookup in this cases;
@@ -933,7 +1062,7 @@ clientId = this.lookupClient(client);</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-28" id="section-28">&#182;</a>
+  <a class="pilcrow" href="#section-31" id="section-31">&#182;</a>
 </div>
 <p>clientName = client + ' (resolved to "' + clientId + '")';
 throw new Error('ChannelRegistry.markConnected: invalid client ' +
@@ -951,7 +1080,7 @@ throw new Error('ChannelRegistry.markConnected: invalid client ' +
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-29" id="section-29">&#182;</a>
+  <a class="pilcrow" href="#section-32" id="section-32">&#182;</a>
 </div>
 <p>Update the PlayerList:</p>
         </td>
@@ -960,6 +1089,44 @@ throw new Error('ChannelRegistry.markConnected: invalid client ' +
         <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;ChannelRegistry.markConnected: error &#39;</span> <span class="o">+</span>
                 <span class="s1">&#39;updating client with id &#39;</span> <span class="o">+</span> <span class="nx">clientId</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
     <span class="p">}</span>
+<span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="channelregistry.getclient">
+  <h3>
+    <a href="#channelregistry.getclient" name="channelregistry.getclient" class="pilcrow">&#182;</a>
+    ChannelRegistry.getClient
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Returns the client object with the specified id</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">id</span>
+      <span class="dox_type">string</span>
+      <span>The id of the client</span>
+    </div>
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">object</span>
+      <span>The client object</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">ChannelRegistry</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">getClient</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">id</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">id</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="nx">id</span><span class="p">);</span>
 <span class="p">};</span>
 
 
@@ -978,6 +1145,14 @@ throw new Error('ChannelRegistry.markConnected: invalid client ' +
 
   </div>
   <div class="body"><p>Returns an array of all IDs</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">array</span>
+      <span>An array of client ids</span>
+    </div>
   </div>
 </div>
         </td>
@@ -1003,6 +1178,14 @@ throw new Error('ChannelRegistry.markConnected: invalid client ' +
   </div>
   <div class="body"><p>Returns an array of all SIDs</p>
   </div>
+  <div class="details">
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">array</span>
+      <span>An array of client socket ids</span>
+    </div>
+  </div>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
@@ -1026,6 +1209,14 @@ throw new Error('ChannelRegistry.markConnected: invalid client ' +
 
   </div>
   <div class="body"><p>Returns a map of all clients</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">object</span>
+      <span>A map client ids - client objects</span>
+    </div>
   </div>
 </div>
         </td>
@@ -1099,6 +1290,14 @@ throw new Error('ChannelRegistry.markConnected: invalid client ' +
   </div>
   <div class="body"><p>Returns a map of all connected clients</p>
   </div>
+  <div class="details">
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">array</span>
+      <span>An array of all connected client objects</span>
+    </div>
+  </div>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
@@ -1122,6 +1321,14 @@ throw new Error('ChannelRegistry.markConnected: invalid client ' +
 
   </div>
   <div class="body"><p>Returns a map of all disconnected clients</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">array</span>
+      <span>An array of all disconnected client objects</span>
+    </div>
   </div>
 </div>
         </td>
@@ -1147,6 +1354,14 @@ throw new Error('ChannelRegistry.markConnected: invalid client ' +
   </div>
   <div class="body"><p>Returns a map of all connected players</p>
   </div>
+  <div class="details">
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">array</span>
+      <span>An array of all connected player objects</span>
+    </div>
+  </div>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
@@ -1170,6 +1385,14 @@ throw new Error('ChannelRegistry.markConnected: invalid client ' +
 
   </div>
   <div class="body"><p>Returns a map of all disconnected players</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">array</span>
+      <span>An array of all disconnected player objects</span>
+    </div>
   </div>
 </div>
         </td>
@@ -1195,6 +1418,14 @@ throw new Error('ChannelRegistry.markConnected: invalid client ' +
   </div>
   <div class="body"><p>Returns a map of all connected admins</p>
   </div>
+  <div class="details">
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">array</span>
+      <span>An array of all connected admin objects</span>
+    </div>
+  </div>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
@@ -1218,6 +1449,14 @@ throw new Error('ChannelRegistry.markConnected: invalid client ' +
 
   </div>
   <div class="body"><p>Returns a map of all disconnected admins</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">array</span>
+      <span>An array of all disconnected admin objects</span>
+    </div>
   </div>
 </div>
         </td>
@@ -1499,7 +1738,7 @@ the alias will fail then.</p>
 
     <span class="k">delete</span> <span class="k">this</span><span class="p">.</span><span class="nx">roomAliases</span><span class="p">[</span><span class="nx">room</span><span class="p">][</span><span class="nx">alias</span><span class="p">];</span>
 
-    <span class="k">if</span> <span class="p">(</span><span class="nx">JSUS</span><span class="p">.</span><span class="nx">isEmpty</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">roomAliases</span><span class="p">[</span><span class="nx">room</span><span class="p">]))</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">J</span><span class="p">.</span><span class="nx">isEmpty</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">roomAliases</span><span class="p">[</span><span class="nx">room</span><span class="p">]))</span> <span class="p">{</span>
         <span class="k">delete</span> <span class="k">this</span><span class="p">.</span><span class="nx">roomAliases</span><span class="p">[</span><span class="nx">room</span><span class="p">];</span>
     <span class="p">}</span>
 
@@ -1568,7 +1807,7 @@ the alias will fail then.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-48" id="section-48">&#182;</a>
+  <a class="pilcrow" href="#section-52" id="section-52">&#182;</a>
 </div>
 <p>Delete that alias:</p>
         </td>
@@ -1726,9 +1965,9 @@ Returns NULL if not found or infinite loop detected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-52" id="section-52">&#182;</a>
+  <a class="pilcrow" href="#section-56" id="section-56">&#182;</a>
 </div>
-<p>Avoid alias loop:</p>
+<p>Avoid alias loop.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
         <span class="k">if</span> <span class="p">(</span><span class="nx">aliasTrace</span><span class="p">.</span><span class="nx">indexOf</span><span class="p">(</span><span class="nx">client</span><span class="p">)</span> <span class="o">!==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="k">return</span> <span class="kc">null</span><span class="p">;</span>
@@ -1741,14 +1980,15 @@ Returns NULL if not found or infinite loop detected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-53" id="section-53">&#182;</a>
+  <a class="pilcrow" href="#section-57" id="section-57">&#182;</a>
 </div>
-<p>Check aliases in given room:</p>
+<p>Check aliases in given room.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
         <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="p">(</span><span class="k">typeof</span> <span class="nx">room</span><span class="p">)</span> <span class="o">&amp;&amp;</span>
-                <span class="k">this</span><span class="p">.</span><span class="nx">roomAliases</span><span class="p">.</span><span class="nx">hasOwnProperty</span><span class="p">(</span><span class="nx">room</span><span class="p">)</span> <span class="o">&amp;&amp;</span>
-                <span class="k">this</span><span class="p">.</span><span class="nx">roomAliases</span><span class="p">[</span><span class="nx">room</span><span class="p">].</span><span class="nx">hasOwnProperty</span><span class="p">(</span><span class="nx">client</span><span class="p">))</span> <span class="p">{</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">roomAliases</span><span class="p">.</span><span class="nx">hasOwnProperty</span><span class="p">(</span><span class="nx">room</span><span class="p">)</span> <span class="o">&amp;&amp;</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">roomAliases</span><span class="p">[</span><span class="nx">room</span><span class="p">].</span><span class="nx">hasOwnProperty</span><span class="p">(</span><span class="nx">client</span><span class="p">))</span> <span class="p">{</span>
+
             <span class="nx">client</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">roomAliases</span><span class="p">[</span><span class="nx">room</span><span class="p">][</span><span class="nx">client</span><span class="p">];</span>
             <span class="k">continue</span><span class="p">;</span>
         <span class="p">}</span>
@@ -1760,12 +2000,12 @@ Returns NULL if not found or infinite loop detected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-54" id="section-54">&#182;</a>
+  <a class="pilcrow" href="#section-58" id="section-58">&#182;</a>
 </div>
-<p>Check if ID exists and is connected:</p>
+<p>Check if ID exists.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-        <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">connected</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="nx">client</span><span class="p">))</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">exist</span><span class="p">(</span><span class="nx">client</span><span class="p">))</span> <span class="p">{</span>
             <span class="k">return</span> <span class="nx">client</span><span class="p">;</span>
         <span class="p">}</span>
 
@@ -1776,9 +2016,9 @@ Returns NULL if not found or infinite loop detected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-55" id="section-55">&#182;</a>
+  <a class="pilcrow" href="#section-59" id="section-59">&#182;</a>
 </div>
-<p>Check game aliases:</p>
+<p>Check game aliases.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
         <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">gameAliases</span><span class="p">.</span><span class="nx">hasOwnProperty</span><span class="p">(</span><span class="nx">client</span><span class="p">))</span> <span class="p">{</span>
@@ -1793,14 +2033,72 @@ Returns NULL if not found or infinite loop detected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-56" id="section-56">&#182;</a>
+  <a class="pilcrow" href="#section-60" id="section-60">&#182;</a>
 </div>
-<p>Client wasn't found:</p>
+<p>Client not found.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
         <span class="k">return</span> <span class="kc">null</span><span class="p">;</span>
     <span class="p">}</span>
 <span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap" id="helper%20methods">
+  <h2>
+    <a href="#helper%20methods" name="helper%20methods" class="pilcrow">&#182;</a>
+    Helper methods
+  </h2>
+</div>
+
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="generateclient">
+  <h2>
+    <a href="#generateclient" name="generateclient" class="pilcrow">&#182;</a>
+    generateClient
+  </h2>
+</div>
+
+  </div>
+  <div class="body"><p>Returns a decorated Player object with properties useful for the regitry</p>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="kd">function</span> <span class="nx">generateClient</span><span class="p">(</span><span class="nx">clientObj</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">client</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Player</span><span class="p">(</span><span class="nx">clientObj</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">client</span><span class="p">.</span><span class="nx">valid</span><span class="p">)</span> <span class="nx">client</span><span class="p">.</span><span class="nx">valid</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">client</span><span class="p">.</span><span class="nx">connected</span><span class="p">)</span> <span class="nx">client</span><span class="p">.</span><span class="nx">connected</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-63" id="section-63">&#182;</a>
+</div>
+<p>if ('undefined' === typeof client.history) client.history = [];</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">client</span><span class="p">.</span><span class="nx">checkedOut</span><span class="p">)</span> <span class="nx">client</span><span class="p">.</span><span class="nx">checkedOut</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">client</span><span class="p">.</span><span class="nx">dropOut</span><span class="p">)</span> <span class="nx">client</span><span class="p">.</span><span class="nx">dropOut</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+
+    <span class="k">return</span> <span class="nx">client</span><span class="p">;</span>
+<span class="p">}</span>
 </pre></div>
         </td>
       </tr>

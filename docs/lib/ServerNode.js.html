@@ -1605,8 +1605,7 @@ care of passing the right parameters to it.</p>
     <span class="nx">result</span> <span class="o">=</span> <span class="nx">cb</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="nx">conf</span><span class="p">);</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="nx">result</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">this</span><span class="p">.</span><span class="nx">logger</span><span class="p">.</span><span class="nx">info</span><span class="p">(</span><span class="s1">&#39;ServerNode.loadConfFile: conf file loaded &#39;</span> <span class="o">+</span>
-                         <span class="s1">&#39;correctly: &#39;</span> <span class="o">+</span> <span class="nx">file</span><span class="p">);</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">logger</span><span class="p">.</span><span class="nx">info</span><span class="p">(</span><span class="s1">&#39;ServerNode.loadConfFile: loaded &#39;</span> <span class="o">+</span> <span class="nx">file</span><span class="p">);</span>
     <span class="p">}</span>
     <span class="k">else</span> <span class="p">{</span>
         <span class="k">this</span><span class="p">.</span><span class="nx">logger</span><span class="p">.</span><span class="nx">warn</span><span class="p">(</span><span class="s1">&#39;ServerNode.loadConfFile: a non-fatal error &#39;</span> <span class="o">+</span>

@@ -1118,6 +1118,11 @@ the conf parameter.</p>
             <span class="p">}</span>
         <span class="p">}</span>
     <span class="p">}</span>
+
+    <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;channel &#39;</span> <span class="o">+</span> <span class="k">this</span><span class="p">.</span><span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39;: room &#39;</span> <span class="o">+</span> <span class="k">this</span><span class="p">.</span><span class="nx">autoRoomNo</span> <span class="o">+</span>
+                       <span class="s1">&#39; created. Chosen treatment: &#39;</span> <span class="o">+</span> 
+                       <span class="nx">conf</span><span class="p">.</span><span class="nx">treatmentName</span> <span class="o">||</span> <span class="s1">&#39;(undefined).&#39;</span><span class="p">);</span>
+
     <span class="k">return</span> <span class="nx">newRoom</span><span class="p">;</span>
 <span class="p">};</span>
 
