@@ -9272,25 +9272,6 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
-     * ### node.constants.verbosity
-     *
-     * The minimum level for a log entry to be displayed as output
-     *
-     * Default: only errors are displayed
-     *
-     */
-    k.verbosity = k.verbosity_levels.warn;
-
-    /**
-     * ### node.constants.remoteVerbosity
-     *
-     * The minimum level for a log entry to be reported to the server
-     *
-     * Default: only errors are displayed
-     */
-    k.remoteVerbosity = k.verbosity_levels.error;
-
-    /**
      * ### node.constants.actions
      *
      * Collection of available nodeGame actions
@@ -9884,7 +9865,7 @@ if (!Array.prototype.indexOf) {
             this.events[type] = [this.events[type], listener];
         }
 
-        this.node.silly(this.name + '.on: added: ' + type + ' ' + listener);
+        this.node.silly(this.name + '.on: added: ' + type + '.');
     };
 
     /**
@@ -9937,7 +9918,7 @@ if (!Array.prototype.indexOf) {
 
         // Useful for debugging.
         if (this.node.conf.events && this.node.conf.events.dumpEvents) {
-            this.node.log('F - ' + this.name + ': ' + type);
+            this.node.info('F: ' + this.name + ': ' + type);
         }
 
         if ('function' === typeof handler) {
@@ -10130,8 +10111,7 @@ if (!Array.prototype.indexOf) {
         }
 
         if (found) {
-            node.silly('ee.' + this.name + ' removed listener: ' +
-                       type + ' ' + listener + '.');
+            node.silly('ee.' + this.name + ' removed listener: ' + type + '.');
             return true;
         }
 
@@ -14559,9 +14539,11 @@ if (!Array.prototype.indexOf) {
          *
          * Contains the options that will be passed to the `connect` method
          *
-         * The property is set by `node.setup.socket`
+         * The property is set by `node.setup.socket`.
+         * Passing options to the `connect` method will overwrite this property.
          *
          * @see node.setup
+         * @see Socket.connect
          */
         this.userOptions = {};
 
@@ -14695,14 +14677,6 @@ if (!Array.prototype.indexOf) {
     Socket.prototype.connect = function(uri, options) {
         var humanReadableUri;
 
-        if (uri && 'string' !== typeof uri) {
-            throw new TypeError('Socket.connect: uri must be string or ' +
-                                'undefined.');
-        }
-        if (options && 'object' !== typeof options) {
-            throw new TypeError('Socket.connect: options must be object or ' +
-                                'undefined.');
-        }
         if (this.connected) {
             throw new Error('Socket.connect: socket is already connected. ' +
                             'Only one connection is allowed.');
@@ -14710,6 +14684,17 @@ if (!Array.prototype.indexOf) {
         if (this.connecting) {
             throw new Error('Socket.connecting: one connection attempt is ' +
                             'already in progress. Please try again later.');
+        }
+        if (uri && 'string' !== typeof uri) {
+            throw new TypeError('Socket.connect: uri must be string or ' +
+                                'undefined.');
+        }
+        if (options) {
+            if ('object' !== typeof options) {
+                throw new TypeError('Socket.connect: options must be ' +
+                                    'object or undefined.');
+            }
+            this.userOptions = options;
         }
 
         humanReadableUri = uri || 'local server';
@@ -14721,8 +14706,24 @@ if (!Array.prototype.indexOf) {
         this.node.emit('SOCKET_CONNECTING');
         this.connecting = true;
         this.url = uri;
-        this.node.log('connecting to ' + humanReadableUri + '.');
-        this.socket.connect(uri, options || this.userOptions);
+        this.node.info('connecting to ' + humanReadableUri + '.');
+        this.socket.connect(uri, this.userOptions);
+    };
+
+    /**
+     * ### Socket.reconnect
+     *
+     * Calls the connect method with previous parameters
+     *
+     * @see Socket.connect
+     * @see Socket.disconnect
+     */
+    Socket.prototype.reconnect = function() {
+        if (!this.url) {
+            throw new Error('Socket.reconnect: cannot find previous uri.');
+        }
+        if (this.isConnected()) this.disconnect();
+        this.connect(this.url, this.userOptions);
     };
 
     /**
@@ -14752,7 +14753,7 @@ if (!Array.prototype.indexOf) {
         this.node.emit('SOCKET_CONNECT');
 
         // The testing framework expects this, do not remove.
-        this.node.log('socket connected.');
+        this.node.info('socket connected.');
     };
 
     /**
@@ -14775,7 +14776,13 @@ if (!Array.prototype.indexOf) {
         this.node.game.pl.clear(true);
         this.node.game.ml.clear(true);
 
-        this.node.log('socket closed.');
+        // Restore original message handler.
+        this.setMsgListener(this.onMessageHI);
+
+        // Delete session.
+        this.session = null;
+
+        this.node.info('socket closed.');
     };
 
     /**
@@ -14838,7 +14845,7 @@ if (!Array.prototype.indexOf) {
      * @see Socket.onMessageFull
      * @see node.createPlayer
      */
-    Socket.prototype.onMessage = function(msg) {
+    Socket.prototype.onMessageHI = function(msg) {
         msg = this.validateIncomingMsg(msg);
         if (!msg) return;
 
@@ -14854,7 +14861,7 @@ if (!Array.prototype.indexOf) {
             this.startSession(msg);
             // Functions listening to these events can be executed before HI.
         }
-    };
+    }
 
     /**
      * ### Socket.onMessageFull
@@ -14883,6 +14890,16 @@ if (!Array.prototype.indexOf) {
             this.buffer.push(msg);
         }
     };
+
+    /**
+     * ### Socket.onMessage
+     *
+     * Handler for incoming messages from the server
+     *
+     * @see Socket.onMessageHI
+     * @see Socket.onMessageFull
+     */
+    Socket.prototype.onMessage = Socket.prototype.onMessageHI;
 
     /**
      * ### Socket.shouldClearBuffer
@@ -15816,6 +15833,7 @@ if (!Array.prototype.indexOf) {
         if (!this.isStartable()) {
             throw new Error('Game.start: game cannot be started.');
         }
+        node.info('game started.');
 
         // Store time.
         node.timer.setTimestamp('start');
@@ -19721,7 +19739,7 @@ if (!Array.prototype.indexOf) {
  * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
- * nodeGame: Social Experiments in the Browser!
+ * nodeGame: Real-time social experiments in the browser.
  *
  * `nodeGame` is a free, open source javascript framework for online,
  * multiplayer games in the browser.
@@ -19755,7 +19773,7 @@ if (!Array.prototype.indexOf) {
     function NodeGameClient() {
         var that = this;
 
-        this.silly('node: loading.');
+        this.info('node: loading.');
 
         /**
          * ### node.nodename
@@ -19771,7 +19789,7 @@ if (!Array.prototype.indexOf) {
          *
          * The minimum level for a log entry to be displayed as output
          *
-         * Default: only errors are displayed
+         * Default: only warnings and errors are displayed
          */
         this.verbosity = constants.verbosity_levels.warn;
 
@@ -19897,6 +19915,8 @@ if (!Array.prototype.indexOf) {
         this.support = {};
 
         // ## Configuration functions
+
+        this.info('node: registering setup functions.');
 
         /**
          * ### node.setup.nodegame
@@ -20276,6 +20296,8 @@ if (!Array.prototype.indexOf) {
             return dstList;
         }
 
+        this.info('node: adding emit/on functions.');
+
         /**
          * ### NodeGameClient.emit
          *
@@ -20363,6 +20385,7 @@ if (!Array.prototype.indexOf) {
 
         // TODO: move aliases into a separate method,
         // like addDefaultIncomingListeners
+        this.info('node: adding default alias.');
 
         // ### node.on.txt
         this.alias('txt', 'in.say.TXT');
@@ -20438,12 +20461,13 @@ if (!Array.prototype.indexOf) {
         // Gets language information.
         this.alias('lang','in.say.LANG');
 
-
         // LISTENERS.
+        this.info('node: adding default listeners.');
+
         this.addDefaultIncomingListeners();
         this.addDefaultInternalListeners();
 
-        this.silly('node: created.');
+        this.info('node: created.');
     }
 
     // ## Closure
@@ -20650,13 +20674,19 @@ if (!Array.prototype.indexOf) {
      * @see node.setup
      */
     NGC.prototype.registerSetup = function(property, func) {
+        var that;
         if ('string' !== typeof property) {
             throw new TypeError('node.registerSetup: property must be string.');
         }
         if ('function' !== typeof func) {
             throw new TypeError('node.registerSetup: func must be function.');
         }
-        this.setup[property] = func;
+        that = this;
+        this.setup[property] = function() {
+            that.info('setup ' + property + '.');
+            return func.apply(that, arguments);
+        }
+
     };
 
     /**
@@ -20681,13 +20711,15 @@ if (!Array.prototype.indexOf) {
             throw new TypeError('node.remoteSetup: property must be string.');
         }
         if ('string' !== typeof to && !J.isArray(to)) {
-            throw new TypeError('node.remoteSetup: to must be string or array.');
+            throw new TypeError('node.remoteSetup: to must be string or ' +
+                                'array.');
         }
 
         payload = J.stringifyAll(Array.prototype.slice.call(arguments, 2));
 
         if (!payload) {
-            this.err('an error occurred while stringifying payload for remote setup');
+            this.err('node.remoteSetup: an error occurred while ' +
+                     'stringifying payload.');
             return false;
         }
 
@@ -21634,6 +21666,7 @@ if (!Array.prototype.indexOf) {
             }
         };
         this.tempCallbacks[cbIdx] = tempCb;
+        //this['tempCallbacks' + cbIdx] = tempCb;
 
         for (uriIdx = 0; uriIdx < uris.length; uriIdx++) {
             currentUri = uris[uriIdx];

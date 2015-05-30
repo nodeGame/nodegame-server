@@ -14,7 +14,30 @@ fs = require('fs'),
 path = require('path'),
 express = require('express'),
 J = require('nodegame-client').JSUS,
-nodemailer = require('nodemailer');
+jwt = require('jsonwebtoken'),
+expressJwt = require('express-jwt');
+
+
+var passport = require('passport')
+  , LocalStrategy = require('passport-local').Strategy;
+
+passport.use(new LocalStrategy(
+  function(username, password, done) {
+debugger
+
+    User.findOne({ username: username }, function (err, user) {
+      if (err) { return done(err); }
+      if (!user) {
+        return done(null, false, { message: 'Incorrect username.' });
+      }
+      if (!user.validPassword(password)) {
+        return done(null, false, { message: 'Incorrect password.' });
+      }
+      return done(null, user);
+    });
+  }
+));
+
 
 /**
  * ### ServerNode._configureHTTP
@@ -29,6 +52,38 @@ function configure(app, servernode) {
 
     rootDir = servernode.rootDir;
     pager = servernode.pager;
+
+    var jwtSecret = 'your secret or public key';
+
+    app.configure(function() {
+        app.set('views', rootDir + '/views');
+        app.set('view engine', 'jade');
+        app.set('view options', {layout: false});
+        app.use(express.static(rootDir + '/public'));
+    });
+
+    app.configure('development', function(){
+        app.use(express.errorHandler({
+            dumpExceptions: true,
+            showStack: true
+        }));
+    });
+
+    app.configure('production', function(){
+        app.use(express.errorHandler());
+    });
+
+    app.enable("jsonp callback");
+
+    app.use(express.cookieParser());
+    app.use('/:game', expressJwt({secret: jwtSecret}));
+
+    // app.use(express.json());
+    // app.use(express.urlencoded());
+
+    app.use(express.session({ secret: 'keyboard cat' }));
+    app.use(passport.initialize());
+    app.use(passport.session());
 
     function verifyGameRequest(req, res) {
         var gameInfo;
@@ -101,21 +156,6 @@ function configure(app, servernode) {
         });
     }
 
-    app.use(express.cookieParser());
-
-    app.configure('development', function(){
-        app.use(express.errorHandler({
-            dumpExceptions: true,
-            showStack: true
-        }));
-    });
-
-    app.configure('production', function(){
-        app.use(express.errorHandler());
-    });
-
-    app.enable("jsonp callback");
-
     app.get('/', function(req, res) {
         var q;
         if (J.isEmpty(req.query)) {
@@ -171,6 +211,60 @@ function configure(app, servernode) {
         sendFromPublic('pages', req, res);
     });
 
+    app.post('/login',
+             passport.authenticate('local'),
+             function(req, res) {
+                 debugger
+
+                 // If this function gets called, authentication was successful.
+                 // `req.user` contains the authenticated user.
+                 res.redirect('/users/' + req.user.username);
+             });
+
+ //   app.post('/login',
+ //            passport.authenticate('local', { successRedirect: '/',
+ //                                             failureRedirect: '/login',
+ //                                             failureFlash: true })
+ //           );
+
+    app.get('/auth/:game/:userid/:pwd', function(req, res) {
+        var gameName, gameInfo;
+        var userId, pwd;
+
+        console.log('auth GET');
+
+        gameInfo = verifyGameRequest(req, res);
+        if (!gameInfo) return;
+
+        if (!gameInfo.auth.enabled) {
+            res.send('No authorization needed.');
+            return;
+        }
+
+        gameName = req.params.game;
+
+        gameSettings = gameInfo.settings;
+
+        // if (gameInfo.auth.enabled
+
+        userId = req.params.userid;
+
+        if ('undefined' === typeof userId) {
+            res.send('Missing username.');
+        }
+
+        var profile = {
+            userId: userId
+        };
+
+        // we are sending the profile in the token
+        var token = jwt.sign(profile, jwtSecret, { expiresInMinutes: 60*5 });
+        res.header('Content-Type', 'application/javascript');
+        res.header('Charset', 'utf-8');
+        res.send(req.query.callback + '("' + token + '");');
+        //res.json({token: token});
+    });
+
     // Serves game files or default game index file: index.htm.
     app.get('/:game/*', function(req, res) {
         var gameName, gameInfo, gameSettings, filePath, file;
@@ -179,10 +273,16 @@ function configure(app, servernode) {
         gameInfo = verifyGameRequest(req, res);
         if (!gameInfo) return;
 
+        debugger
+        if (gameInfo.auth.enabled) {
+
+            // check
+        }
+
         gameName = req.params.game;
         file = req.params[0];
 
-        gameSettings = gameInfo.treatments;
+        gameSettings = gameInfo.settings;
 
         if ('' === file || 'undefined' === typeof file) {
             file = 'index.htm';
@@ -291,13 +391,6 @@ function configure(app, servernode) {
 
     app.get('/:game', function(req, res) {
         res.redirect('/' + req.params.game + '/');
-    });
-
-    app.configure(function(){
-        app.set('views', rootDir + '/views');
-        app.set('view engine', 'jade');
-        app.set('view options', {layout: false});
-        app.use(express.static(rootDir + '/public'));
     });
 
     return true;
