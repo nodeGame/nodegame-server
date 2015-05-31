@@ -748,10 +748,12 @@ directories.</p>
     <span class="nx">that</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
 
     <span class="nx">process</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;uncaughtException&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nx">that</span><span class="p">.</span><span class="nx">logger</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="s1">&#39;ServerNode caught an exception: &#39;</span> <span class="o">+</span> <span class="nx">err</span><span class="p">.</span><span class="nx">stack</span><span class="p">);</span>
-        <span class="nx">that</span><span class="p">.</span><span class="nx">lastError</span> <span class="o">=</span> <span class="nx">err</span><span class="p">;</span>
         <span class="k">if</span> <span class="p">(</span><span class="nx">that</span><span class="p">.</span><span class="nx">debug</span><span class="p">)</span> <span class="p">{</span>
             <span class="k">throw</span> <span class="nx">err</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="k">else</span> <span class="p">{</span>
+            <span class="nx">that</span><span class="p">.</span><span class="nx">logger</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="s2">&quot;ServerNode caught an exception: \n&quot;</span> <span class="o">+</span> <span class="nx">err</span><span class="p">.</span><span class="nx">stack</span><span class="p">);</span>
+            <span class="nx">that</span><span class="p">.</span><span class="nx">lastError</span> <span class="o">=</span> <span class="nx">err</span><span class="p">;</span>
         <span class="p">}</span>
     <span class="p">});</span>
 
@@ -1377,7 +1379,7 @@ TODO: rename addGame to addChannel.</p>
 <li><code>loggers.js</code> configuring the Wiston logging service</li>
 </ul>
 
-<p>For documentation refer to the comments  inside each configuration file.</p>
+<p>For documentation refer to the comments inside each configuration file.</p>
 
 <p>The method keeps track of which directories are already been scanned
 and they will not scanned again, unless the force flag is set to TRUE.</p>
@@ -1479,7 +1481,6 @@ and they will not scanned again, unless the force flag is set to TRUE.</p>
             <span class="k">this</span><span class="p">.</span><span class="nx">loadConfFile</span><span class="p">(</span><span class="nx">file</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">configureSIO</span><span class="p">);</span>
         <span class="p">}</span>
     <span class="p">}</span>
-
     <span class="k">this</span><span class="p">.</span><span class="nx">scannedGamesDirs</span><span class="p">[</span><span class="nx">dir</span><span class="p">]</span> <span class="o">=</span> <span class="nx">mask</span><span class="p">;</span>
 <span class="p">};</span>
 
@@ -1593,13 +1594,7 @@ care of passing the right parameters to it.</p>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="nx">result</span> <span class="o">=</span> <span class="nx">cb</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="nx">conf</span><span class="p">);</span>
 
-    <span class="k">if</span> <span class="p">(</span><span class="nx">result</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">this</span><span class="p">.</span><span class="nx">logger</span><span class="p">.</span><span class="nx">info</span><span class="p">(</span><span class="s1">&#39;ServerNode.loadConfFile: loaded &#39;</span> <span class="o">+</span> <span class="nx">file</span><span class="p">);</span>
-    <span class="p">}</span>
-    <span class="k">else</span> <span class="p">{</span>
-        <span class="k">this</span><span class="p">.</span><span class="nx">logger</span><span class="p">.</span><span class="nx">warn</span><span class="p">(</span><span class="s1">&#39;ServerNode.loadConfFile: a non-fatal error &#39;</span> <span class="o">+</span>
-                         <span class="s1">&#39;occurred while loading conf file: &#39;</span> <span class="o">+</span> <span class="nx">file</span><span class="p">);</span>
-    <span class="p">}</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">logger</span><span class="p">.</span><span class="nx">info</span><span class="p">(</span><span class="s1">&#39;ServerNode.loadConfFile: loaded &#39;</span> <span class="o">+</span> <span class="nx">file</span><span class="p">);</span>
 <span class="p">};</span>
 
 

@@ -18,25 +18,7 @@ jwt = require('jsonwebtoken'),
 expressJwt = require('express-jwt');
 
 
-var passport = require('passport')
-  , LocalStrategy = require('passport-local').Strategy;
-
-passport.use(new LocalStrategy(
-  function(username, password, done) {
-debugger
-
-    User.findOne({ username: username }, function (err, user) {
-      if (err) { return done(err); }
-      if (!user) {
-        return done(null, false, { message: 'Incorrect username.' });
-      }
-      if (!user.validPassword(password)) {
-        return done(null, false, { message: 'Incorrect password.' });
-      }
-      return done(null, user);
-    });
-  }
-));
+var tokens = {};
 
 
 /**
@@ -75,15 +57,17 @@ function configure(app, servernode) {
 
     app.enable("jsonp callback");
 
-    app.use(express.cookieParser());
-    app.use('/:game', expressJwt({secret: jwtSecret}));
 
+    app.use(express.cookieParser());
+
+    // app.use('/:game', expressJwt({secret: jwtSecret}));
     // app.use(express.json());
     // app.use(express.urlencoded());
 
-    app.use(express.session({ secret: 'keyboard cat' }));
-    app.use(passport.initialize());
-    app.use(passport.session());
+    // app.use(express.bodyParser());
+
+    // app.use(express.session({ secret: 'keyboard cat' }));
+
 
     function verifyGameRequest(req, res) {
         var gameInfo;
@@ -158,10 +142,12 @@ function configure(app, servernode) {
 
     app.get('/', function(req, res) {
         var q;
+
         if (J.isEmpty(req.query)) {
             res.render('index', {
                 title: 'Yay! Your nodeGame server is running.'
             });
+            return
         }
 
         q = req.query.q;
@@ -190,11 +176,6 @@ function configure(app, servernode) {
         }
     });
 
-    app.get('/error/:type', function(req, res) {
-        var type = req.params.type;
-        res.render('error/' + type);
-    });
-
     app.get('/images/:file', function(req, res) {
         sendFromPublic('images', req, res);
     });
@@ -211,25 +192,10 @@ function configure(app, servernode) {
         sendFromPublic('pages', req, res);
     });
 
-    app.post('/login',
-             passport.authenticate('local'),
-             function(req, res) {
-                 debugger
-
-                 // If this function gets called, authentication was successful.
-                 // `req.user` contains the authenticated user.
-                 res.redirect('/users/' + req.user.username);
-             });
-
- //   app.post('/login',
- //            passport.authenticate('local', { successRedirect: '/',
- //                                             failureRedirect: '/login',
- //                                             failureFlash: true })
- //           );
-
-    app.get('/auth/:game/:userid/:pwd', function(req, res) {
+    app.get('/:game/auth/:userid/:pwd', function(req, res, next) {
         var gameName, gameInfo;
         var userId, pwd;
+        var registry, token, expire;
 
         console.log('auth GET');
 
@@ -245,24 +211,33 @@ function configure(app, servernode) {
 
         gameSettings = gameInfo.settings;
 
-        // if (gameInfo.auth.enabled
-
         userId = req.params.userid;
+        pwd = req.params.pwd;
 
-        if ('undefined' === typeof userId) {
-            res.send('Missing username.');
+        registry = servernode.channels[gameName].registry;
+
+        profile = registry.authorize({ id: userId, pwd: pwd });
+
+        if (profile) {
+            expire = 60*5;
+            // we are sending the profile in the token
+            token = jwt.sign(profile, jwtSecret, { expiresInMinutes: expire});
+
+            tokens[token] = profile;
+
+
+            console.log('setting cookie');
+
+            res.cookie('nodegame_token', token, {
+                path: '/',
+                httpOnly: true
+            });
+            res.redirect('/' + gameName);
         }
-
-        var profile = {
-            userId: userId
-        };
-
-        // we are sending the profile in the token
-        var token = jwt.sign(profile, jwtSecret, { expiresInMinutes: 60*5 });
-        res.header('Content-Type', 'application/javascript');
-        res.header('Charset', 'utf-8');
-        res.send(req.query.callback + '("' + token + '");');
-        //res.json({token: token});
+        else {
+            res.send('Wrong user/pwd.');
+            return;
+        }
     });
 
     // Serves game files or default game index file: index.htm.
@@ -273,10 +248,12 @@ function configure(app, servernode) {
         gameInfo = verifyGameRequest(req, res);
         if (!gameInfo) return;
 
-        debugger
-        if (gameInfo.auth.enabled) {
 
-            // check
+        if (gameInfo.auth.enabled) {
+            if (!req.cookies || !tokens[req.cookies.nodegame_token]) {
+                res.send('Not Auth');
+                return;
+            }
         }
 
         gameName = req.params.game;

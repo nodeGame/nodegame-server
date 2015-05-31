@@ -144,6 +144,9 @@
       <div class="heading h3">
         <a href="#channelregistry.lookupclient">ChannelRegistry.lookupClient</a>
       </div>
+      <div class="heading h3">
+        <a href="#channelregistry.authorize">ChannelRegistry.authorize</a>
+      </div>
       <div class="heading h2">
         <a href="#helper%20methods">Helper methods</a>
       </div>
@@ -2047,6 +2050,109 @@ Returns NULL if not found or infinite loop detected.</p>
         </td>
       </tr>
       <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="channelregistry.authorize">
+  <h3>
+    <a href="#channelregistry.authorize" name="channelregistry.authorize" class="pilcrow">&#182;</a>
+    ChannelRegistry.authorize
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Gets client ID from an alias and optional game room</p>
+
+<p>May return ID even if that client is not in the given room.
+Only connected clients are searched.
+Returns NULL if not found or infinite loop detected.</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">client</span>
+      <span class="dox_type">string</span>
+      <span>The client's alias or ID</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">room</span>
+      <span class="dox_type">string</span>
+      <span>Optional. The room ID.</span>
+    </div>
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">string</span>
+      <span class="dox_type">null</span>
+      <span>The client ID. NULL on error.</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">ChannelRegistry</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">authorize</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">profile</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">client</span><span class="p">;</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-62" id="section-62">&#182;</a>
+</div>
+<p>Username.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">client</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">getClient</span><span class="p">(</span><span class="nx">profile</span><span class="p">.</span><span class="nx">id</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">client</span><span class="p">)</span> <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-63" id="section-63">&#182;</a>
+</div>
+<p>Pwd.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">client</span><span class="p">.</span><span class="nx">pwd</span> <span class="o">&amp;&amp;</span> <span class="nx">profile</span><span class="p">.</span><span class="nx">pwd</span> <span class="o">!==</span> <span class="nx">client</span><span class="p">.</span><span class="nx">pwd</span><span class="p">)</span> <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-64" id="section-64">&#182;</a>
+</div>
+<p>CheckedOut</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">client</span><span class="p">.</span><span class="nx">checkedOut</span><span class="p">)</span> <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-65" id="section-65">&#182;</a>
+</div>
+<p>In Use.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">client</span><span class="p">.</span><span class="nx">valid</span> <span class="o">===</span> <span class="kc">false</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="nx">client</span><span class="p">.</span><span class="nx">disconnected</span><span class="p">)</span> <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
+
+    <span class="k">return</span> <span class="nx">client</span><span class="p">;</span>
+<span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
         <td class="docs">
 <div class="pilwrap" id="helper%20methods">
   <h2>
@@ -2089,7 +2195,7 @@ Returns NULL if not found or infinite loop detected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-63" id="section-63">&#182;</a>
+  <a class="pilcrow" href="#section-68" id="section-68">&#182;</a>
 </div>
 <p>if ('undefined' === typeof client.history) client.history = [];</p>
         </td>

@@ -1,7 +1,7 @@
 /**
  * # servernode.js
  *
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * Configuration file for ServerNode in nodegame-server.
@@ -16,20 +16,16 @@ var path = require('path');
 
 function configure(servernode) {
 
-    var rootDir, player, admin;
-    rootDir = servernode.rootDir;
+    var rootDir;
+    var player, admin;
 
+    rootDir = servernode.rootDir;
     if (!rootDir) {
         servernode.logger.error('configure servernode: rootDir not found.');
         return false;
     }
 
-    // TODO: check
-    //  servernode.log.msg = false;
-    //  servernode.log.sys = false;
-    //  servernode.log.folder = rootDir + '/log/';
-    //
-    //  servernode.mail = false; // experimental
+    // 1. Servernode configuration.
 
     // The name of the server.
     servernode.name = "nodeGame server";
@@ -61,6 +57,8 @@ function configure(servernode) {
     // Every channel defines 1 or more game servers, and each defines
     // a certain number of Node.JS listeners.
     servernode.maxListeners = 0;
+
+    // 2. Channels configuration.
 
     // AdminServer default options.
     admin = {
