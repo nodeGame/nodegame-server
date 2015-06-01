@@ -743,10 +743,9 @@ directories.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">ServerNode</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">init</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">options</span><span class="p">)</span> <span class="p">{</span>
-    <span class="kd">var</span> <span class="nx">that</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">that</span><span class="p">,</span> <span class="nx">requirementsChannel</span><span class="p">;</span>
 
     <span class="nx">that</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
-
     <span class="nx">process</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;uncaughtException&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">if</span> <span class="p">(</span><span class="nx">that</span><span class="p">.</span><span class="nx">debug</span><span class="p">)</span> <span class="p">{</span>
             <span class="k">throw</span> <span class="nx">err</span><span class="p">;</span>

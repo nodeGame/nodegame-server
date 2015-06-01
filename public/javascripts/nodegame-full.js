@@ -14677,7 +14677,7 @@ if (!Array.prototype.indexOf) {
     Socket.prototype.connect = function(uri, options) {
         var humanReadableUri;
 
-        if (this.connected) {
+        if (this.isConnected()) {
             throw new Error('Socket.connect: socket is already connected. ' +
                             'Only one connection is allowed.');
         }
@@ -20666,7 +20666,8 @@ if (!Array.prototype.indexOf) {
      *
      * Registers a configuration function
      *
-     * An incoming event listener in.say.SETUP is added automatically.
+     * Setup functions can be invoked remotely with in.say.SETUP messages
+     * and the name property stated in `msg.text`.
      *
      * @param {string} property The feature to configure
      * @param {mixed} options The value of the option to configure
@@ -20687,6 +20688,29 @@ if (!Array.prototype.indexOf) {
             return func.apply(that, arguments);
         }
 
+    };
+
+    /**
+     * ### node.deregisterSetup
+     *
+     * Registers a configuration function
+     *
+     * @param {string} feature The name of the setup feature to deregister
+     *
+     * @see node.setup
+     */
+    NGC.prototype.deregisterSetup = function(feature) {
+        var that;
+        if ('string' !== typeof feature) {
+            throw new TypeError('node.deregisterSetup: property must ' +
+                                'be string.');
+        }
+        if (!this.setup[feature]) {
+            this.warn('node.deregisterSetup: feature ' + property + ' not ' +
+                      'previously registered.');
+            return;
+        }
+        delete this.setup[feature];
     };
 
     /**
@@ -21666,7 +21690,6 @@ if (!Array.prototype.indexOf) {
             }
         };
         this.tempCallbacks[cbIdx] = tempCb;
-        //this['tempCallbacks' + cbIdx] = tempCb;
 
         for (uriIdx = 0; uriIdx < uris.length; uriIdx++) {
             currentUri = uris[uriIdx];
@@ -30225,17 +30248,19 @@ if (!Array.prototype.indexOf) {
 
         that = this;
 
+        // Should get the game ?
+
         ee = node.getCurrentEventEmitter();
 
         ee.on('STEP_CALLBACK_EXECUTED', function() {
             that.updateAll();
         });
 
-        ee.on('SOCKET_CONNECTED', function() {
+        ee.on('SOCKET_CONNECT', function() {
             that.updateAll();
         });
 
-        ee.on('SOCKET_DICONNECTED', function() {
+        ee.on('SOCKET_DICONNECT', function() {
             that.updateAll();
         });
 
@@ -31965,7 +31990,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    Requirements.version = '0.5.1';
+    Requirements.version = '0.6.0';
     Requirements.description = 'Checks a set of requirements and display the ' +
         'results';
 
@@ -31987,12 +32012,13 @@ if (!Array.prototype.indexOf) {
      * @param {object} options
      */
     function Requirements(options) {
+
         /**
          * ### Requirements.callbacks
          *
          * Array of all test callbacks
          */
-        this.callbacks = [];
+        this.requirements = [];
 
         /**
          * ### Requirements.stillChecking
@@ -32093,11 +32119,11 @@ if (!Array.prototype.indexOf) {
         this.onSuccess = null;
 
         /**
-         * ### Requirements.onFail
+         * ### Requirements.onFailure
          *
          * Callback to be executed at the end of all tests
          */
-        this.onFail = null;
+        this.onFailure = null;
 
         /**
          * ### Requirements.list
@@ -32139,9 +32165,75 @@ if (!Array.prototype.indexOf) {
     // ## Requirements methods
 
     /**
+     * ### Requirements.init
+     *
+     * Setups the requirements widget
+     *
+     * Available options:
+     *
+     *   - requirements: array of callback functions or objects formatted as
+     *      { cb: function [, params: object] [, name: string] };
+     *   - onComplete: function executed with either failure or success
+     *   - onFailure: function executed when at least one test fails
+     *   - onSuccess: function executed when all tests succeed
+     *   - maxWaitTime: max waiting time to execute all tests (in milliseconds)
+     *
+     * @param {object} conf Configuration object.
+     */
+    Requirements.prototype.init = function(conf) {
+        if ('object' !== typeof conf) {
+            throw new TypeError('Requirements.init: conf must be object.');
+        }
+        if (conf.requirements) {
+            if (!J.isArray(conf.requirements)) {
+                throw new TypeError('Requirements.init: conf.requirements ' +
+                                    'must be array or undefined.');
+            }
+            this.requirements = conf.requirements;
+        }
+        if ('undefined' !== typeof conf.onComplete) {
+            if (null !== conf.onComplete &&
+                'function' !== typeof conf.onComplete) {
+
+                throw new TypeError('Requirements.init: conf.onComplete must ' +
+                                    'be function, null or undefined.');
+            }
+            this.onComplete = conf.onComplete;
+        }
+        if ('undefined' !== typeof conf.onSuccess) {
+            if (null !== conf.onSuccess &&
+                'function' !== typeof conf.onSuccess) {
+
+                throw new TypeError('Requirements.init: conf.onSuccess must ' +
+                                    'be function, null or undefined.');
+            }
+            this.onSuccess = conf.onSuccess;
+        }
+        if ('undefined' !== typeof conf.onFailure) {
+            if (null !== conf.onFailure &&
+                'function' !== typeof conf.onFailure) {
+
+                throw new TypeError('Requirements.init: conf.onFailure must ' +
+                                    'be function, null or undefined.');
+            }
+            this.onFailure = conf.onFailure;
+        }
+        if (conf.maxExecTime) {
+            if (null !== conf.maxExecTime &&
+                'number' !== typeof conf.maxExecTime) {
+
+                throw new TypeError('Requirements.init: conf.onMaxExecTime ' +
+                                    'must be number, null or undefined.');
+            }
+            this.withTimeout = !!conf.maxExecTime;
+            this.timeoutTime = conf.maxExecTime;
+        }
+    };
+
+    /**
      * ### Requirements.addRequirements
      *
-     * Adds any number of callbacks checking the requirements
+     * Adds any number of requirements to the requirements array
      *
      * Callbacks can be asynchronous or synchronous.
      *
@@ -32153,17 +32245,19 @@ if (!Array.prototype.indexOf) {
      * In both cases the return is an array, where every item is an
      * error message. Empty array means test passed.
      *
-     * @see this.callbacks
+     * @see this.requirements
      */
     Requirements.prototype.addRequirements = function() {
         var i, len;
         i = -1, len = arguments.length;
         for ( ; ++i < len ; ) {
-            if ('function' !== typeof arguments[i]) {
+            if ('function' !== typeof arguments[i] &&
+                'object' !== typeof arguments[i] ) {
+
                 throw new TypeError('Requirements.addRequirements: ' +
-                                    'all requirements must be function.');
+                                    'requirements must be function or object.');
             }
-            this.callbacks.push(arguments[i]);
+            this.requirements.push(arguments[i]);
         }
     };
 
@@ -32182,39 +32276,37 @@ if (!Array.prototype.indexOf) {
      * @return {array} The array containing the errors
      *
      * @see this.withTimeout
-     * @see this.callbacks
+     * @see this.requirements
      */
     Requirements.prototype.checkRequirements = function(display) {
         var i, len;
         var errors, cbErrors, cbName, errMsg;
-        if (!this.callbacks.length) {
-            throw new Error('Requirements.checkRequirements: no callback ' +
-                            'found.');
+        if (!this.requirements.length) {
+            throw new Error('Requirements.checkRequirements: no requirements ' +
+                            'to check found.');
         }
 
-        this.updateStillChecking(this.callbacks.length, true);
+        this.updateStillChecking(this.requirements.length, true);
 
         errors = [];
-        i = -1, len = this.callbacks.length;
+        i = -1, len = this.requirements.length;
         for ( ; ++i < len ; ) {
+            // Get Test Name.
+            if (this.requirements[i] && this.requirements[i].name) {
+                cbName = this.requirements[i].name;
+            }
+            else {
+                cbName = i + 1;
+            }
             try {
-                cbErrors = resultCb(this, i);
+                resultCb(this, name, i);
             }
             catch(e) {
                 errMsg = extractErrorMsg(e);
                 this.updateStillChecking(-1);
-                if (this.callbacks[i] && this.callbacks[i].name) {
-                    cbName = this.callbacks[i].name;
-                }
-                else {
-                    cbName = i + 1;
-                }
+
                 errors.push('An exception occurred in requirement n.' +
                             cbName + ': ' + errMsg);
-            }
-            if (cbErrors) {
-                this.updateStillChecking(-1);
-                errors = errors.concat(cbErrors);
             }
         }
 
@@ -32236,13 +32328,13 @@ if (!Array.prototype.indexOf) {
     /**
      * ### Requirements.addTimeout
      *
-     * Starts a timeout for the max execution time of the callbacks
+     * Starts a timeout for the max execution time of the requirements
      *
      * Upon time out results are checked, and eventually displayed.
      *
      * @see this.stillCheckings
      * @see this.withTimeout
-     * @see this.callbacks
+     * @see this.requirements
      */
     Requirements.prototype.addTimeout = function() {
         var that = this;
@@ -32263,11 +32355,11 @@ if (!Array.prototype.indexOf) {
     /**
      * ### Requirements.clearTimeout
      *
-     * Clears the timeout for the max execution time of the callbacks
+     * Clears the timeout for the max execution time of the requirements
      *
      * @see this.timeoutId
      * @see this.stillCheckings
-     * @see this.callbacks
+     * @see this.requirements
      */
     Requirements.prototype.clearTimeout = function() {
         if (this.timeoutId) {
@@ -32279,23 +32371,23 @@ if (!Array.prototype.indexOf) {
     /**
      * ### Requirements.updateStillChecking
      *
-     * Updates the number of callbacks still running on the display
+     * Updates the number of requirements still running on the display
      *
-     * @param {number} update The number of callbacks still running, or an
+     * @param {number} update The number of requirements still running, or an
      *   increment as compared to the current value
      * @param {boolean} absolute TRUE, if `update` is to be interpreted as an
      *   absolute value
      *
      * @see this.summaryUpdate
      * @see this.stillCheckings
-     * @see this.callbacks
+     * @see this.requirements
      */
     Requirements.prototype.updateStillChecking = function(update, absolute) {
         var total, remaining;
 
         this.stillChecking = absolute ? update : this.stillChecking + update;
 
-        total = this.callbacks.length;
+        total = this.requirements.length;
         remaining = total - this.stillChecking;
         this.summaryUpdate.innerHTML = ' (' +  remaining + ' / ' + total + ')';
     };
@@ -32303,10 +32395,10 @@ if (!Array.prototype.indexOf) {
     /**
      * ### Requirements.isCheckingFinished
      *
-     * Returns TRUE if all callbacks have returned
+     * Returns TRUE if all requirements have returned
      *
      * @see this.stillCheckings
-     * @see this.callbacks
+     * @see this.requirements
      */
     Requirements.prototype.isCheckingFinished = function() {
         return this.stillChecking <= 0;
@@ -32315,17 +32407,17 @@ if (!Array.prototype.indexOf) {
     /**
      * ### Requirements.CheckingFinished
      *
-     * Cleans up timer and dots, and executes final callbacks accordingly
+     * Cleans up timer and dots, and executes final requirements accordingly
      *
      * First, executes the `onComplete` callback in any case. Then if no
      * errors have been raised executes the `onSuccess` callback, otherwise
-     * the `onFail` callback.
+     * the `onFailure` callback.
      *
      * @see this.onComplete
      * @see this.onSuccess
-     * @see this.onFail
+     * @see this.onFailure
      * @see this.stillCheckings
-     * @see this.callbacks
+     * @see this.requirements
      */
     Requirements.prototype.checkingFinished = function() {
         var results;
@@ -32338,8 +32430,8 @@ if (!Array.prototype.indexOf) {
 
         if (this.sayResults) {
             results = {
-                userAgent: navigator.userAgent,
-                result: this.results
+                success: !this.hasFailed,
+                results: this.results
             };
 
             if (this.addToResults) {
@@ -32353,7 +32445,7 @@ if (!Array.prototype.indexOf) {
         }
 
         if (this.hasFailed) {
-            if (this.onFail) this.onFail();
+            if (this.onFailure) this.onFailure();
         }
         else if (this.onSuccess) {
             this.onSuccess();
@@ -32363,7 +32455,7 @@ if (!Array.prototype.indexOf) {
     /**
      * ### Requirements.displayResults
      *
-     * Displays the results of the callbacks on the screen
+     * Displays the results of the requirements on the screen
      *
      * Creates a new item in the list of results for every error found
      * in the results array.
@@ -32371,13 +32463,13 @@ if (!Array.prototype.indexOf) {
      * If no error was raised, the results array should be empty.
      *
      * @param {array} results The array containing the return values of all
-     *   the callbacks
+     *   the requirements
      *
      * @see this.onComplete
      * @see this.onSuccess
-     * @see this.onFail
+     * @see this.onFailure
      * @see this.stillCheckings
-     * @see this.callbacks
+     * @see this.requirements
      */
     Requirements.prototype.displayResults = function(results) {
         var i, len;
@@ -32401,12 +32493,9 @@ if (!Array.prototype.indexOf) {
                     success: true,
                     text:'All tests passed.'
                 });
-                // Add to the array of results.
-                this.results.push('All tests passed.');
             }
         }
         else {
-            this.hasFailed = true;
             // Add the errors.
             i = -1, len = results.length;
             for ( ; ++i < len ; ) {
@@ -32414,8 +32503,6 @@ if (!Array.prototype.indexOf) {
                     success: false,
                     text: results[i]
                 });
-                // Add to the array of results.
-                this.results.push(results[i]);
             }
         }
         // Parse deletes previously existing nodes in the list.
@@ -32440,136 +32527,71 @@ if (!Array.prototype.indexOf) {
         this.bodyDiv.appendChild(this.list.getRoot());
     };
 
-    Requirements.prototype.listeners = function() {};
-
-    // ## Default Requirement Functions
-
-    /**
-     * ### Requirements.nodeGameRequirements
-     *
-     * Checks whether the basic dependencies of nodeGame are satisfied
-     *
-     * @param {function} result The asynchronous result function
-     *
-     * @return {array} Array of synchronous errors
-     */
-    Requirements.prototype.nodeGameRequirements = function(result) {
-        var errors, db;
-        errors = [];
-
-        if ('undefined' === typeof NDDB) {
-            errors.push('NDDB not found.');
-        }
-
-        if ('undefined' === typeof JSUS) {
-            errors.push('JSUS not found.');
-        }
-
-        if ('undefined' === typeof node.window) {
-            errors.push('node.window not found.');
-        }
-
-        if ('undefined' === typeof W) {
-            errors.push('W not found.');
-        }
-
-        if ('undefined' === typeof node.widgets) {
-            errors.push('node.widgets not found.');
-        }
-
-        if ('undefined' !== typeof NDDB) {
-            try {
-                db = new NDDB();
+    Requirements.prototype.listeners = function() {
+        var that;
+        that = this;
+        node.registerSetup('requirements', function(conf) {
+            if (!conf) return;
+            if ('object' !== typeof conf) {
+                node.warn('requirements widget: invalid setup object: ' + conf);
+                return;
             }
-            catch(e) {
-                errors.push('An error occurred manipulating the NDDB object: ' +
-                            e.message);
-            }
-        }
-
-        // We need to test node.Stager because it will be used in other tests.
-        if ('undefined' === typeof node.Stager) {
-            errors.push('node.Stager not found.');
-        }
-
-        return errors;
+            // Configure all requirements.
+            that.init(conf);
+            // Start a checking immediately if requested.
+            if (conf.doChecking) that.checkRequirements();
+        });
     };
 
-    /**
-     * ### Requirements.loadFrameTest
-     *
-     * Checks whether the iframe can be created and used
-     *
-     * Requires an active connection.
-     *
-     * @param {function} result The asynchronous result function
-     *
-     * @return {array} Array of synchronous errors
-     */
-    Requirements.prototype.loadFrameTest = function(result) {
-        var errors, that, testIframe, root;
-        var oldIframe, oldIframeName, oldIframeRoot, iframeName;
-        errors = [];
-        that = this;
-        oldIframe = W.getFrame();
-
-        if (oldIframe) {
-            oldIframeName = W.getFrameName();
-            oldIframeRoot = W.getFrameRoot();
-            root = W.getIFrameAnyChild(oldIframe);
-        }
-        else {
-            root = document.body;
-        }
-
-        try {
-            iframeName = 'testIFrame';
-            testIframe = W.addIFrame(root, iframeName, {
-                style: { display: 'none' } } );
-            W.setFrame(testIframe, iframeName, root);
-            W.loadFrame('/pages/testpage.htm', function() {
-                var found;
-                found = W.getElementById('root');
-                if (!found) {
-                    errors.push('W.loadFrame failed to load a test frame ' +
-                                'correctly.');
-                }
-                root.removeChild(testIframe);
-                if (oldIframe) {
-                    W.setFrame(oldIframe, oldIframeName, oldIframeRoot);
-                }
-                else {
-                    W.frameElement = null;
-                    W.frameWindow = null;
-                    W.frameDocument = null;
-                    W.frameRoot = null;
-                }
-                result(errors);
-            });
-        }
-        catch(e) {
-            errors.push('W.loadFrame raised an error: ' + extractErrorMsg(e));
-            return errors;
-        }
+    Requirements.prototype.destroy = function() {
+        node.deregisterSetup('requirements');
     };
 
     // ## Helper methods
 
-    function resultCb(that, i) {
-        var update = function(result) {
+    function resultCb(that, name, i) {
+        var req, update, res;
+
+        update = function(success, errors, data) {
             that.updateStillChecking(-1);
-            if (result) {
-                if (!J.isArray(result)) {
-                    throw new Error('Requirements.checkRequirements: ' +
-                                    'result must be array or undefined.');
-                }
-                that.displayResults(result);
+            if (!success) {
+                debugger
+                that.hasFailed = true;
             }
+
+            if (errors) {
+                if (!J.isArray(errors)) {
+                    throw new Error('Requirements.checkRequirements: ' +
+                                    'errors must be array or undefined.');
+                }
+                that.displayResults(errors);
+            }
+
+            that.results.push({
+                name: name,
+                success: success,
+                errors: errors,
+                data: data
+            });
+
             if (that.isCheckingFinished()) {
                 that.checkingFinished();
             }
         };
-        return that.callbacks[i](update);
+
+        req = that.requirements[i];
+        if ('function' === typeof req) {
+            res = req(update);
+        }
+        else if ('object' === typeof req) {
+            res = req.cb(update, req.params || {});
+        }
+        else {
+            throw new TypeError('Requirements.checkRequirements: invalid ' +
+                                'requirement: ' + name + '.');
+        }
+        // Synchronous checking.
+        if (res) update(res.success, res.errors, res.data);
     }
 
     function extractErrorMsg(e) {

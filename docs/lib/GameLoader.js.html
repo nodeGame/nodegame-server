@@ -61,10 +61,16 @@
         <a href="#gameloader.loadauthdir">GameLoader.loadAuthDir</a>
       </div>
       <div class="heading h3">
+        <a href="#gameloader.loadauthdir">GameLoader.loadAuthDir</a>
+      </div>
+      <div class="heading h3">
         <a href="#gameloader.getchannelsandbox">GameLoader.getChannelSandbox</a>
       </div>
       <div class="heading h2">
         <a href="#helper%20methods">Helper methods</a>
+      </div>
+      <div class="heading h3">
+        <a href="#checklocalpath">checkLocalPath</a>
       </div>
       <div class="heading h3">
         <a href="#version2gamestage">version2GameStage</a>
@@ -491,6 +497,20 @@ overwritten later on.</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-19" id="section-19">&#182;</a>
 </div>
+<p>Loading Requirements dir, if any.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">this</span><span class="p">.</span><span class="nx">loadRequirementsDir</span><span class="p">(</span><span class="nx">gameDir</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">);</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-20" id="section-20">&#182;</a>
+</div>
 <p>Tries to load Views file from game directory.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
@@ -503,7 +523,7 @@ overwritten later on.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-20" id="section-20">&#182;</a>
+  <a class="pilcrow" href="#section-21" id="section-21">&#182;</a>
 </div>
 <p>Done.</p>
         </td>
@@ -660,7 +680,7 @@ overwritten later on.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-23" id="section-23">&#182;</a>
+  <a class="pilcrow" href="#section-24" id="section-24">&#182;</a>
 </div>
 <p>Settings.</p>
         </td>
@@ -687,7 +707,7 @@ overwritten later on.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-24" id="section-24">&#182;</a>
+  <a class="pilcrow" href="#section-25" id="section-25">&#182;</a>
 </div>
 <p>Stages.</p>
         </td>
@@ -717,7 +737,7 @@ overwritten later on.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-25" id="section-25">&#182;</a>
+  <a class="pilcrow" href="#section-26" id="section-26">&#182;</a>
 </div>
 <p>Setup.</p>
         </td>
@@ -751,7 +771,7 @@ overwritten later on.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-26" id="section-26">&#182;</a>
+  <a class="pilcrow" href="#section-27" id="section-27">&#182;</a>
 </div>
 <p>Parsing the settings object before returning.</p>
         </td>
@@ -838,7 +858,7 @@ overwritten later on.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-28" id="section-28">&#182;</a>
+  <a class="pilcrow" href="#section-29" id="section-29">&#182;</a>
 </div>
 <p>Ignore non-js files, and temporary and hidden files (begin with '.').</p>
         </td>
@@ -866,7 +886,7 @@ overwritten later on.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-29" id="section-29">&#182;</a>
+  <a class="pilcrow" href="#section-30" id="section-30">&#182;</a>
 </div>
 <p>Checking if mandatory types are found.</p>
         </td>
@@ -964,9 +984,7 @@ level of the specified directory.</p>
                                 <span class="s1">&#39;loaded, but &quot;logicPath&quot; must be undefined &#39;</span> <span class="o">+</span>
                                 <span class="s1">&#39;or string.&#39;</span><span class="p">);</span>
         <span class="p">}</span>
-        <span class="k">if</span> <span class="p">(</span><span class="nx">conf</span><span class="p">.</span><span class="nx">logicPath</span><span class="p">.</span><span class="nx">substring</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span> <span class="o">===</span> <span class="s1">&#39;./&#39;</span><span class="p">)</span> <span class="p">{</span>
-            <span class="nx">conf</span><span class="p">.</span><span class="nx">logicPath</span> <span class="o">=</span> <span class="nx">directory</span> <span class="o">+</span> <span class="s1">&#39;waitroom/&#39;</span> <span class="o">+</span> <span class="nx">conf</span><span class="p">.</span><span class="nx">logicPath</span><span class="p">;</span>
-        <span class="p">}</span>
+        <span class="nx">conf</span><span class="p">.</span><span class="nx">logicPath</span> <span class="o">=</span> <span class="nx">checkLocalPath</span><span class="p">(</span><span class="nx">directory</span><span class="p">,</span> <span class="s1">&#39;waitroom/&#39;</span><span class="p">,</span> <span class="nx">conf</span><span class="p">.</span><span class="nx">logicPath</span><span class="p">);</span>
     <span class="p">}</span>
     <span class="k">else</span> <span class="p">{</span>
         <span class="nx">waitRoomFile</span> <span class="o">=</span> <span class="nx">directory</span> <span class="o">+</span> <span class="s1">&#39;waitroom/waitroom.js&#39;</span><span class="p">;</span>
@@ -982,7 +1000,7 @@ level of the specified directory.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-31" id="section-31">&#182;</a>
+  <a class="pilcrow" href="#section-32" id="section-32">&#182;</a>
 </div>
 <p>Add waiting room information to global game object.</p>
         </td>
@@ -1075,7 +1093,7 @@ automatically add a waiting room to the channel.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-33" id="section-33">&#182;</a>
+  <a class="pilcrow" href="#section-34" id="section-34">&#182;</a>
 </div>
 <p>Validate,</p>
         </td>
@@ -1113,7 +1131,7 @@ automatically add a waiting room to the channel.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-34" id="section-34">&#182;</a>
+  <a class="pilcrow" href="#section-35" id="section-35">&#182;</a>
 </div>
 <p>Add the list of channels created by the game.</p>
         </td>
@@ -1129,7 +1147,7 @@ automatically add a waiting room to the channel.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-35" id="section-35">&#182;</a>
+  <a class="pilcrow" href="#section-36" id="section-36">&#182;</a>
 </div>
 <p>We prepend the baseDir parameter, if any.
 If logicPath is not string we let the WaitingRoom
@@ -1137,8 +1155,8 @@ constructor throw an error.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
                 <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">waitRoomConf</span><span class="p">.</span><span class="nx">logicPath</span><span class="p">)</span> <span class="p">{</span>
-                    <span class="nx">waitRoomConf</span><span class="p">.</span><span class="nx">logicPath</span> <span class="o">=</span>
-                        <span class="nx">directory</span> <span class="o">+</span> <span class="s1">&#39;server/&#39;</span> <span class="o">+</span> <span class="nx">waitRoomConf</span><span class="p">.</span><span class="nx">logicPath</span><span class="p">;</span>
+                    <span class="nx">waitRoomConf</span><span class="p">.</span><span class="nx">logicPath</span> <span class="o">=</span> <span class="nx">checkLocalPath</span><span class="p">(</span>
+                        <span class="nx">directory</span><span class="p">,</span> <span class="s1">&#39;server/&#39;</span><span class="p">,</span> <span class="nx">waitRoomConf</span><span class="p">.</span><span class="nx">logicPath</span><span class="p">);</span>
                 <span class="p">}</span>
 
                 <span class="nx">waitRoom</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">createWaitingRoom</span><span class="p">(</span><span class="nx">waitRoomConf</span><span class="p">);</span>
@@ -1157,7 +1175,7 @@ constructor throw an error.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-36" id="section-36">&#182;</a>
+  <a class="pilcrow" href="#section-37" id="section-37">&#182;</a>
 </div>
 <p>Adding channel alias.</p>
         </td>
@@ -1174,7 +1192,7 @@ constructor throw an error.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-37" id="section-37">&#182;</a>
+  <a class="pilcrow" href="#section-38" id="section-38">&#182;</a>
 </div>
 <p>Errors in channel creation are already logged.</p>
         </td>
@@ -1242,7 +1260,7 @@ TODO: views.js file is not loaded anymore because all context are dynamics.</spa
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-39" id="section-39">&#182;</a>
+  <a class="pilcrow" href="#section-40" id="section-40">&#182;</a>
 </div>
 <p>TODO: see if still needed (broken now).</p>
 
@@ -1320,7 +1338,7 @@ TODO: views.js file is not loaded anymore because all context are dynamics.</spa
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-41" id="section-41">&#182;</a>
+  <a class="pilcrow" href="#section-42" id="section-42">&#182;</a>
 </div>
 <p>TODO: Use for loop, not for in.</p>
         </td>
@@ -1404,7 +1422,7 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-43" id="section-43">&#182;</a>
+  <a class="pilcrow" href="#section-44" id="section-44">&#182;</a>
 </div>
 <p>Auth settings.</p>
         </td>
@@ -1443,7 +1461,7 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-44" id="section-44">&#182;</a>
+  <a class="pilcrow" href="#section-45" id="section-45">&#182;</a>
 </div>
 <p>Enable authorization by default.</p>
         </td>
@@ -1457,7 +1475,7 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-45" id="section-45">&#182;</a>
+  <a class="pilcrow" href="#section-46" id="section-46">&#182;</a>
 </div>
 <p>Add waiting room information to global game object.</p>
         </td>
@@ -1471,7 +1489,7 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-46" id="section-46">&#182;</a>
+  <a class="pilcrow" href="#section-47" id="section-47">&#182;</a>
 </div>
 <p>Exit here if auth is disabled.</p>
         </td>
@@ -1489,7 +1507,7 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-47" id="section-47">&#182;</a>
+  <a class="pilcrow" href="#section-48" id="section-48">&#182;</a>
 </div>
 <p>Auth codes. Can be synchronous or asynchronous.</p>
         </td>
@@ -1522,7 +1540,7 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-48" id="section-48">&#182;</a>
+  <a class="pilcrow" href="#section-49" id="section-49">&#182;</a>
 </div>
 <p>Auth file.</p>
         </td>
@@ -1554,6 +1572,234 @@ generation and clientObject decoration.</p>
         <span class="p">}</span>
     <span class="p">}</span>
 <span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="gameloader.loadauthdir">
+  <h3>
+    <a href="#gameloader.loadauthdir" name="gameloader.loadauthdir" class="pilcrow">&#182;</a>
+    GameLoader.loadAuthDir
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Reads the <code>requirements/</code> directory and imports settings from it</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">file</span>
+      <span class="dox_type">string</span>
+      <span>The path to the configuration file</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">gameName</span>
+      <span class="dox_type">string</span>
+      <span>The name of the game</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">GameLoader</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">loadRequirementsDir</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">directory</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">file</span><span class="p">,</span> <span class="nx">settingsFile</span><span class="p">,</span> <span class="nx">settings</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">logger</span><span class="p">,</span> <span class="nx">that</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">reqFunc</span><span class="p">,</span> <span class="nx">reqObj</span><span class="p">;</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">directory</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadRequirementsDir: directory &#39;</span> <span class="o">+</span>
+                            <span class="s1">&#39;must be string.&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="nx">logger</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">logger</span><span class="p">;</span>
+    <span class="nx">that</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-51" id="section-51">&#182;</a>
+</div>
+<p>Requirements settings.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">settingsFile</span> <span class="o">=</span> <span class="nx">directory</span> <span class="o">+</span> <span class="s1">&#39;requirements/requirements.settings.js&#39;</span><span class="p">;</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">fs</span><span class="p">.</span><span class="nx">existsSync</span><span class="p">(</span><span class="nx">settingsFile</span><span class="p">))</span> <span class="p">{</span>
+        <span class="nx">settings</span> <span class="o">=</span> <span class="p">{</span> <span class="nx">enabled</span><span class="o">:</span> <span class="kc">true</span> <span class="p">};</span>
+        <span class="nx">logger</span><span class="p">.</span><span class="nx">warn</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadRequirementsDir: channel&#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span>
+                    <span class="s1">&#39;: no settings file found. Default settings used.&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="k">else</span> <span class="p">{</span>
+        <span class="k">try</span> <span class="p">{</span>
+            <span class="nx">settings</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="nx">settingsFile</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="k">catch</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadRequirementsDir: cannot read &#39;</span> <span class="o">+</span>
+                            <span class="nx">settingsFile</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
+        <span class="p">}</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadRequirementsDir: invalid &#39;</span> <span class="o">+</span>
+                            <span class="s1">&#39;settings file: &#39;</span> <span class="o">+</span> <span class="nx">settingsFile</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-52" id="section-52">&#182;</a>
+</div>
+<p>We prepend the baseDir parameter, if any.
+If logicPath is not string RequirementsRoom constructor throws an error.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">logicPath</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">settings</span><span class="p">.</span><span class="nx">logicPath</span> <span class="o">=</span> <span class="nx">checkLocalPath</span><span class="p">(</span><span class="nx">directory</span><span class="p">,</span> <span class="s1">&#39;requirements/&#39;</span><span class="p">,</span>
+                                            <span class="nx">settings</span><span class="p">.</span><span class="nx">logicPath</span><span class="p">);</span>
+    <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-53" id="section-53">&#182;</a>
+</div>
+<p>Enable requirements by default.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">enabled</span><span class="p">)</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">enabled</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-54" id="section-54">&#182;</a>
+</div>
+<p>Exit here if requirements is disabled.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">settings</span><span class="p">.</span><span class="nx">enabled</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">logger</span><span class="p">.</span><span class="nx">warn</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadRequirementsDir: channel &#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span>
+                    <span class="s1">&#39;: requirements checking disabled in configuration file.&#39;</span><span class="p">);</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-55" id="section-55">&#182;</a>
+</div>
+<p>Add information to global game object.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="k">this</span><span class="p">.</span><span class="nx">updateGameInfo</span><span class="p">(</span><span class="nx">gameName</span><span class="p">,</span> <span class="p">{</span> <span class="nx">requirements</span><span class="o">:</span> <span class="nx">settings</span> <span class="p">});</span>
+        <span class="k">return</span><span class="p">;</span>
+    <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-56" id="section-56">&#182;</a>
+</div>
+<p>Requirements file.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
+    <span class="nx">file</span> <span class="o">=</span> <span class="nx">directory</span> <span class="o">+</span> <span class="s1">&#39;requirements/requirements.js&#39;</span><span class="p">;</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="nx">fs</span><span class="p">.</span><span class="nx">existsSync</span><span class="p">(</span><span class="nx">file</span><span class="p">))</span> <span class="p">{</span>
+        <span class="nx">reqObj</span> <span class="o">=</span> <span class="p">{};</span>
+        <span class="nx">reqFunc</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">RequirementsSandbox</span><span class="p">(</span><span class="nx">gameName</span><span class="p">,</span> <span class="nx">reqObj</span><span class="p">);</span>
+
+        <span class="k">try</span> <span class="p">{</span>
+            <span class="nx">require</span><span class="p">(</span><span class="nx">file</span><span class="p">)(</span><span class="nx">reqFunc</span><span class="p">,</span> <span class="nx">settings</span><span class="p">);</span>
+            <span class="nx">reqObj</span><span class="p">.</span><span class="nx">enabled</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="k">catch</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadRequirementsDir: channel &#39;</span> <span class="o">+</span>
+                            <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39; cannot read &#39;</span> <span class="o">+</span> <span class="nx">file</span> <span class="o">+</span>
+                            <span class="s1">&#39;. \n&#39;</span> <span class="o">+</span> <span class="nx">e</span><span class="p">.</span><span class="nx">stack</span><span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-57" id="section-57">&#182;</a>
+</div>
+<p>Add information to global game object.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">this</span><span class="p">.</span><span class="nx">updateGameInfo</span><span class="p">(</span><span class="nx">gameName</span><span class="p">,</span> <span class="p">{</span> <span class="nx">requirements</span><span class="o">:</span> <span class="nx">reqObj</span> <span class="p">});</span>
+<span class="kr">debugger</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">channels</span><span class="p">[</span><span class="nx">gameName</span><span class="p">]</span>
+        <span class="p">.</span><span class="nx">createRequirementsRoom</span><span class="p">(</span><span class="nx">J</span><span class="p">.</span><span class="nx">merge</span><span class="p">(</span><span class="nx">reqObj</span><span class="p">,</span> <span class="nx">settings</span><span class="p">));</span>
+<span class="p">};</span>
+
+<span class="kd">function</span> <span class="nx">RequirementsSandbox</span><span class="p">(</span><span class="nx">gameName</span><span class="p">,</span> <span class="nx">requirementsObj</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">errBegin</span> <span class="o">=</span> <span class="s1">&#39;GameLoader.loadRequirementsDir: &#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;: &#39;</span><span class="p">;</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">add</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">cb</span><span class="p">,</span> <span class="nx">params</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;function&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">cb</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="nx">errBegin</span> <span class="o">+</span> <span class="s1">&#39;requirement must be function.&#39;</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">params</span> <span class="o">&amp;&amp;</span> <span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">params</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="nx">errBegin</span> <span class="o">+</span> <span class="s1">&#39;params must be object or &#39;</span> <span class="o">+</span>
+                                <span class="s1">&#39;undefined: &#39;</span><span class="p">,</span> <span class="nx">params</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">requirementsObj</span><span class="p">.</span><span class="nx">requirements</span><span class="p">)</span> <span class="nx">requirementsObj</span><span class="p">.</span><span class="nx">requirements</span> <span class="o">=</span> <span class="p">[];</span>
+        <span class="nx">requirementsObj</span><span class="p">.</span><span class="nx">requirements</span><span class="p">.</span><span class="nx">push</span><span class="p">({</span> <span class="nx">cb</span><span class="o">:</span> <span class="nx">cb</span><span class="p">,</span> <span class="nx">params</span><span class="o">:</span> <span class="nx">params</span> <span class="p">});</span>
+    <span class="p">};</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">onSuccess</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">cb</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;function&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">cb</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="nx">errBegin</span> <span class="o">+</span> <span class="s1">&#39;onSuccess callback must be &#39;</span> <span class="o">+</span>
+                                <span class="s1">&#39;function.&#39;</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="nx">requirementsObj</span><span class="p">.</span><span class="nx">onSuccess</span> <span class="o">=</span> <span class="nx">cb</span><span class="p">;</span>
+    <span class="p">};</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">onFailure</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">cb</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;function&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">cb</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="nx">errBegin</span> <span class="o">+</span> <span class="s1">&#39;onFailure callback must be &#39;</span> <span class="o">+</span>
+                                <span class="s1">&#39;function.&#39;</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="nx">requirementsObj</span><span class="p">.</span><span class="nx">onFailure</span> <span class="o">=</span> <span class="nx">cb</span><span class="p">;</span>
+    <span class="p">};</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">setMaxExecutionTime</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">maxTime</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;number&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">maxTime</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="nx">errBegin</span> <span class="o">+</span> <span class="s1">&#39;max execution time must be &#39;</span> <span class="o">+</span>
+                                <span class="s1">&#39;number:&#39;</span> <span class="o">+</span> <span class="nx">maxTime</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="nx">requirementsObj</span><span class="p">.</span><span class="nx">maxExecTime</span> <span class="o">=</span> <span class="nx">maxTime</span><span class="p">;</span>
+    <span class="p">};</span>
+<span class="p">}</span>
 
 
 </pre></div>
@@ -1648,7 +1894,7 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-50" id="section-50">&#182;</a>
+  <a class="pilcrow" href="#section-59" id="section-59">&#182;</a>
 </div>
 <p>Channels defined by a game with the channels.js file.
 Auth callback can modify the authorization only of those.</p>
@@ -1663,7 +1909,7 @@ Auth callback can modify the authorization only of those.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-51" id="section-51">&#182;</a>
+  <a class="pilcrow" href="#section-60" id="section-60">&#182;</a>
 </div>
 <p>1 Auth for all servers of all channels.</p>
         </td>
@@ -1684,7 +1930,7 @@ Auth callback can modify the authorization only of those.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-52" id="section-52">&#182;</a>
+  <a class="pilcrow" href="#section-61" id="section-61">&#182;</a>
 </div>
 <p>1 Auth for one channel, 1 or both servers</p>
         </td>
@@ -1702,7 +1948,7 @@ Auth callback can modify the authorization only of those.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-53" id="section-53">&#182;</a>
+  <a class="pilcrow" href="#section-62" id="section-62">&#182;</a>
 </div>
 <p>Retrieve the channel name.</p>
         </td>
@@ -1716,7 +1962,7 @@ Auth callback can modify the authorization only of those.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-54" id="section-54">&#182;</a>
+  <a class="pilcrow" href="#section-63" id="section-63">&#182;</a>
 </div>
 <p>Check if the channel belongs to the game.</p>
         </td>
@@ -1734,7 +1980,7 @@ Auth callback can modify the authorization only of those.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-55" id="section-55">&#182;</a>
+  <a class="pilcrow" href="#section-64" id="section-64">&#182;</a>
 </div>
 <p>Retrieve the channel object.</p>
         </td>
@@ -1748,14 +1994,14 @@ Auth callback can modify the authorization only of those.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-56" id="section-56">&#182;</a>
+  <a class="pilcrow" href="#section-65" id="section-65">&#182;</a>
 </div>
 <p>1 Auth for a specific channel.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
             <span class="k">if</span> <span class="p">(</span><span class="nx">len</span> <span class="o">===</span> <span class="mi">2</span><span class="p">)</span> <span class="p">{</span>
-                <span class="nx">channel</span><span class="p">.</span><span class="nx">admin</span><span class="p">[</span><span class="nx">method</span><span class="p">](</span><span class="nx">callback</span><span class="p">);</span>
-                <span class="nx">channel</span><span class="p">.</span><span class="nx">player</span><span class="p">[</span><span class="nx">method</span><span class="p">](</span><span class="nx">callback</span><span class="p">);</span>
+                <span class="nx">channel</span><span class="p">.</span><span class="nx">adminServer</span><span class="p">[</span><span class="nx">method</span><span class="p">](</span><span class="nx">callback</span><span class="p">);</span>
+                <span class="nx">channel</span><span class="p">.</span><span class="nx">playerServer</span><span class="p">[</span><span class="nx">method</span><span class="p">](</span><span class="nx">callback</span><span class="p">);</span>
             <span class="p">}</span>
 
 </pre></div>
@@ -1764,7 +2010,7 @@ Auth callback can modify the authorization only of those.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-57" id="section-57">&#182;</a>
+  <a class="pilcrow" href="#section-66" id="section-66">&#182;</a>
 </div>
 <p>1 Auth for a specific server of a specific channel.</p>
         </td>
@@ -1798,6 +2044,60 @@ Auth callback can modify the authorization only of those.</p>
 
         </td>
         <td class="code highlight"><div class="highlight"><pre>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="checklocalpath">
+  <h3>
+    <a href="#checklocalpath" name="checklocalpath" class="pilcrow">&#182;</a>
+    checkLocalPath
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Helper function to specify full path in a game subdir</p>
+
+<p>Checks if the file starts with './' and, if so, adds the absolute path
+to the game directory in front.</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">gameDir</span>
+      <span class="dox_type">string</span>
+      <span>The absolute path of the game directory</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">subDir</span>
+      <span class="dox_type">string</span>
+      <span>The name of the game sub directory</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">filePath</span>
+      <span class="dox_type">string</span>
+      <span>The path of the file in the sub directory</span>
+    </div>
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">string</span>
+      <span>The updated file path (if local)</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="kd">function</span> <span class="nx">checkLocalPath</span><span class="p">(</span><span class="nx">gameDir</span><span class="p">,</span> <span class="nx">subDir</span><span class="p">,</span> <span class="nx">filePath</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">filePath</span><span class="p">.</span><span class="nx">substring</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span> <span class="o">===</span> <span class="s1">&#39;./&#39;</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="nx">path</span><span class="p">.</span><span class="nx">resolve</span><span class="p">(</span><span class="nx">gameDir</span><span class="p">,</span> <span class="nx">subDir</span><span class="p">,</span> <span class="nx">filePath</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="nx">filePath</span><span class="p">;</span>
+<span class="p">}</span>
 
 
 </pre></div>
@@ -1898,7 +2198,7 @@ Auth callback can modify the authorization only of those.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-61" id="section-61">&#182;</a>
+  <a class="pilcrow" href="#section-71" id="section-71">&#182;</a>
 </div>
 <ul>
 <li>skips the check.</li>
@@ -1914,7 +2214,7 @@ Auth callback can modify the authorization only of those.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-62" id="section-62">&#182;</a>
+  <a class="pilcrow" href="#section-72" id="section-72">&#182;</a>
 </div>
 <p>Trick: we compare version numbers using the GameStage class.</p>
         </td>
@@ -2012,7 +2312,7 @@ settings.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-64" id="section-64">&#182;</a>
+  <a class="pilcrow" href="#section-74" id="section-74">&#182;</a>
 </div>
 <p>Add standard name.</p>
         </td>

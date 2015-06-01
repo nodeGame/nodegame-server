@@ -202,6 +202,52 @@ function configure(servernode) {
         admin: admin
     };
 
+    // 3. Requirements channel.
+
+    servernode.requirementsChannel = {
+
+        enabled: true,
+
+        conf:  {
+            name: 'requirements',
+
+            verbosity: 100,
+
+            getFromAdmins: true,
+
+            waitingRoom: {
+                logicPath: 'requirements.room.js',
+                name: 'requirements'
+            },
+
+            notify: {
+                onConnect: false,
+                onStageUpdate: false,
+                onStageLevelUpdate: false,
+                onStageLoadedUpdate: false
+            },
+
+            enableReconnections: false,
+
+
+            admin: {
+
+                name: 'requirements_admin',
+
+                endpoint: 'requirements/admin',
+
+                sockets: {
+                    sio: false,
+                    direct: true
+                }
+
+            },
+
+            player: 'requirements',
+
+        }
+    };
+
     // Returns TRUE to signal successful configuration of the server.
     return true;
 }

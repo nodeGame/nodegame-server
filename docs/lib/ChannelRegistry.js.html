@@ -847,6 +847,20 @@ from the old room.</p>
         </td>
       </tr>
       <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-24" id="section-24">&#182;</a>
+</div>
+<p>TODO: use lookup!
+//////////////////</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
         <td class="docs"><div class="dox">
   <div class="summary">
 <div class="pilwrap" id="channelregistry.markdisconnected">
@@ -967,10 +981,7 @@ from the old room.</p>
     <div class="dox_tag_detail">
       <span class="dox_tag_name">update</span>
       <span class="dox_type">object</span>
-      <span>The object with the updated properties
-
-TODO: we need a lookup for disconnected clients too. If we have that,
-maybe we can merge / use the updateClient method and markDisconnected</span>
+      <span>The object with the updated properties</span>
     </div>
   </div>
 </div>
@@ -998,7 +1009,7 @@ maybe we can merge / use the updateClient method and markDisconnected</span>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-28" id="section-28">&#182;</a>
+  <a class="pilcrow" href="#section-29" id="section-29">&#182;</a>
 </div>
 <p>Update the PlayerList:</p>
         </td>
@@ -1033,31 +1044,16 @@ maybe we can merge / use the updateClient method and markDisconnected</span>
     <div class="dox_tag_detail">
       <span class="dox_tag_name">client</span>
       <span class="dox_type">string</span>
-      <span>The client's alias or ID
-
-TODO: we need a lookup for disconnected clients too. If we have that,
-maybe we can merge / use the updateClient method</span>
+      <span>The client's alias or ID</span>
     </div>
   </div>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-<span class="nx">ChannelRegistry</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">markConnected</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">clientId</span><span class="p">)</span> <span class="p">{</span>
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-30" id="section-30">&#182;</a>
-</div>
-<p>TODO: this fails because the client is disconnected. Maybe we don't
-need to lookup in this cases;
-clientId = this.lookupClient(client);</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">exist</span><span class="p">(</span><span class="nx">clientId</span><span class="p">))</span> <span class="p">{</span>
+<span class="nx">ChannelRegistry</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">markConnected</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">client</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">clientId</span><span class="p">;</span>
+    <span class="nx">clientId</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">lookupClient</span><span class="p">(</span><span class="nx">client</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">clientId</span><span class="p">)</span> <span class="p">{</span>
 
 </pre></div>
         </td>
@@ -1067,12 +1063,13 @@ clientId = this.lookupClient(client);</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-31" id="section-31">&#182;</a>
 </div>
-<p>clientName = client + ' (resolved to "' + clientId + '")';
-throw new Error('ChannelRegistry.markConnected: invalid client ' +
-               clientName + '.');</p>
+<p>if (!this.clients.exist(client)) {</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;ChannelRegistry.markConnected: invalid client &#39;</span> <span class="o">+</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">client</span> <span class="o">!==</span> <span class="nx">clientId</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">clientId</span> <span class="o">=</span> <span class="nx">client</span> <span class="o">+</span> <span class="s1">&#39; (resolved to &quot;&#39;</span> <span class="o">+</span> <span class="nx">clientId</span> <span class="o">+</span> <span class="s1">&#39;&quot;)&#39;</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;ChannelRegistry.markConnected: invalid client: &#39;</span> <span class="o">+</span>
                         <span class="nx">clientId</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
     <span class="p">}</span>
 
@@ -1085,12 +1082,15 @@ throw new Error('ChannelRegistry.markConnected: invalid client ' +
 <div class="pilwrap">
   <a class="pilcrow" href="#section-32" id="section-32">&#182;</a>
 </div>
-<p>Update the PlayerList:</p>
+<p>Update the PlayerList.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">id</span><span class="p">.</span><span class="nx">update</span><span class="p">(</span><span class="nx">clientId</span><span class="p">,</span> <span class="p">{</span> <span class="nx">disconnected</span><span class="o">:</span> <span class="kc">false</span> <span class="p">}))</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">client</span> <span class="o">!==</span> <span class="nx">clientId</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">clientId</span> <span class="o">=</span> <span class="nx">client</span> <span class="o">+</span> <span class="s1">&#39; (resolved to &quot;&#39;</span> <span class="o">+</span> <span class="nx">clientId</span> <span class="o">+</span> <span class="s1">&#39;&quot;)&#39;</span><span class="p">;</span>
+        <span class="p">}</span>
         <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;ChannelRegistry.markConnected: error &#39;</span> <span class="o">+</span>
-                <span class="s1">&#39;updating client with id &#39;</span> <span class="o">+</span> <span class="nx">clientId</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
+                        <span class="s1">&#39;updating client with id &#39;</span> <span class="o">+</span> <span class="nx">clientId</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
     <span class="p">}</span>
 <span class="p">};</span>
 

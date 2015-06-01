@@ -175,7 +175,8 @@ MIT Licensed</p>
   </div>
   <div class="body"><p>Parses incoming messages and emits correspondings events</p>
 
-<p>Contains methods that are instantiated by two inheriting classes:</p>
+<p>Contains methods that are instantiated / overwritten
+by two inheriting classes:</p>
 
 <ul>
 <li><code>AdminServer</code>
@@ -1316,7 +1317,7 @@ They can trigger another disconnect event after first disconnect.</p>
       <span class="dox_tag_name">startingRoom</span>
       <span class="dox_type">string</span>
       <span>Optional. The name of the room in which
-  the client is to be placed. Default: Waiting room</span>
+  the client is to be placed. Default: Waiting or Requirements room</span>
     </div>
     <div class="dox_tag_title">Returns</div>
     <div class="dox_tag_detail">
@@ -2011,7 +2012,7 @@ is already existing, then <code>handleReconnectingClient</code> is called.</p>
       <span class="dox_tag_name">startingRoom</span>
       <span class="dox_type">string</span>
       <span>Optional. The name of the room in which
-   the client is to be placed. Default: Waiting room</span>
+   the client is to be placed. Default: Waiting or Requirements room</span>
     </div>
     <div class="dox_tag_title">Returns</div>
     <div class="dox_tag_detail">
@@ -2293,10 +2294,21 @@ is made here, it should be ported there too.</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-86" id="section-86">&#182;</a>
 </div>
-<p>Put the connecting client in the waiting room or the startingRoom.</p>
+<p>If not startingRoom is provided,
+put the client in the requirements or waiting room.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="nx">startingRoom</span> <span class="o">=</span> <span class="nx">startingRoom</span> <span class="o">||</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">waitingRoom</span><span class="p">.</span><span class="nx">name</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">startingRoom</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">gameInfo</span><span class="p">.</span><span class="nx">requirements</span> <span class="o">&amp;&amp;</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">gameInfo</span><span class="p">.</span><span class="nx">requirements</span><span class="p">.</span><span class="nx">enabled</span><span class="p">)</span> <span class="p">{</span>
+
+            <span class="nx">startingRoom</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">requirementsRoom</span><span class="p">.</span><span class="nx">name</span>
+        <span class="p">}</span>
+        <span class="k">else</span> <span class="p">{</span>
+            <span class="nx">startingRoom</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">waitingRoom</span><span class="p">.</span><span class="nx">name</span><span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">placePlayer</span><span class="p">(</span><span class="nx">clientObj</span><span class="p">,</span> <span class="nx">startingRoom</span><span class="p">))</span> <span class="p">{</span>
         <span class="k">return</span> <span class="nx">GameServer</span><span class="p">.</span><span class="nx">codes</span><span class="p">.</span><span class="nx">ROOM_NOT_FOUND</span><span class="p">;</span>
     <span class="p">}</span>
@@ -2314,7 +2326,6 @@ is made here, it should be ported there too.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="k">this</span><span class="p">.</span><span class="nx">welcomeClient</span><span class="p">(</span><span class="nx">clientId</span><span class="p">,</span> <span class="nx">socketId</span><span class="p">);</span>
-
 
 
 </pre></div>
