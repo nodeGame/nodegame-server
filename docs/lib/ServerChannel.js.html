@@ -103,7 +103,7 @@
         <a href="#serverchannel.createrequirementsroom">ServerChannel.createRequirementsRoom</a>
       </div>
       <div class="heading h3">
-        <a href="#serverchannel.destroygameroom">ServerChannel.destroyGameRoom</a>
+        <a href="#serverchannel.destroyroom">ServerChannel.destroyRoom</a>
       </div>
       <div class="heading h3">
         <a href="#serverchannel.moveplayer">ServerChannel.movePlayer</a>
@@ -146,7 +146,7 @@
 </div>
 
 
-<p>Copyright(c) 2014 Stefano Balietti
+<p>Copyright(c) 2015 Stefano Balietti
 MIT Licensed</p>
   </div>
   <div class="body"><p>Creates the Player, and Admin Server</p>
@@ -1313,15 +1313,15 @@ the conf parameter.</p>
       <tr>
         <td class="docs"><div class="dox">
   <div class="summary">
-<div class="pilwrap" id="serverchannel.destroygameroom">
+<div class="pilwrap" id="serverchannel.destroyroom">
   <h3>
-    <a href="#serverchannel.destroygameroom" name="serverchannel.destroygameroom" class="pilcrow">&#182;</a>
-    ServerChannel.destroyGameRoom
+    <a href="#serverchannel.destroyroom" name="serverchannel.destroyroom" class="pilcrow">&#182;</a>
+    ServerChannel.destroyRoom
   </h3>
 </div>
 
   </div>
-  <div class="body"><p>Destroys a game room</p>
+  <div class="body"><p>Destroys a game|requirements|waiting room</p>
 
 <p>The child-rooms of the destroyed room are reparented to the destroyed room's
 parent.
@@ -1331,9 +1331,10 @@ given to move the players to.</p>
   <div class="details">
     <div class="dox_tag_title">Params</div>
     <div class="dox_tag_detail">
-      <span class="dox_tag_name">roomName</span>
+      <span class="dox_tag_name">room</span>
       <span class="dox_type">string</span>
-      <span>Name of the room to destroy</span>
+      <span class="dox_type">object</span>
+      <span>The name of room, or the room object to destroy</span>
     </div>
     <div class="dox_tag_detail">
       <span class="dox_tag_name">options</span>
@@ -1341,17 +1342,16 @@ given to move the players to.</p>
       <span>Optional. Additional parameters.
 
 <ul>
-<li>substituteRoomName (string):
-Optional. Name of the room to move the players to.
-If null, then the room will not be deleted if it has players unless
-<code>ignorePlayers</code> is true. Default: null</li>
 <li>ignoreRunningGame (boolean):
-Optional. Delete the room even if the contained game hasn't finished.
-Default: FALSE</li>
-<li>ignorePlayers (boolean):
-Optional. Delete the room even if there are players inside of it.
-Players will be moved to the parent room or the waiting room if there is
-no parent. Default: FALSE</li>
+  Optional. Tries to destroy the room even if the game is
+  not in gameover state. Default: FALSE</li>
+<li>substituteRoomName (string):
+  Optional. Name of the room to move the players to.
+  If null, the room will not be destroyed if it contains players unless
+  <code>disconnectPlayers</code> is true. Default: null</li>
+<li>disconnectPlayers (boolean):
+  Optional. If no <code>substituteRoomName</code> is given causes remaining players
+  to disconnect. Otherwise room will not be destroyed. Default: FALSE</li>
 </ul></span>
     </div>
     <div class="dox_tag_title">Returns</div>
@@ -1369,14 +1369,29 @@ no parent. Default: FALSE</li>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-<span class="nx">ServerChannel</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">destroyGameRoom</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">roomName</span><span class="p">,</span> <span class="nx">options</span><span class="p">)</span> <span class="p">{</span>
-    <span class="kd">var</span> <span class="nx">i</span><span class="p">;</span>
+<span class="nx">ServerChannel</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">destroyGameRoom</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">room</span><span class="p">,</span> <span class="nx">options</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">i</span><span class="p">,</span> <span class="nx">len</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">roomObj</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">clientObjs</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">parentRoom</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">childName</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">substituteRoomName</span><span class="p">,</span> <span class="nx">ignoreRunningGame</span><span class="p">,</span> <span class="nx">ignorePlayers</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">substituteRoomName</span><span class="p">,</span> <span class="nx">ignoreRunningGame</span><span class="p">,</span> <span class="nx">disconnectPlayers</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">socket</span><span class="p">;</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">room</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">roomObj</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">[</span><span class="nx">room</span><span class="p">];</span>
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">roomObj</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerChannel.destroyGameRoom: room not &#39;</span> <span class="o">+</span>
+                                <span class="s1">&#39;found: &#39;</span> <span class="o">+</span> <span class="nx">room</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">room</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">roomObj</span> <span class="o">=</span> <span class="nx">room</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="k">else</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerChannel.destroyGameRoom: room must be &#39;</span> <span class="o">+</span>
+                            <span class="s1">&#39;string or object.&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
 
 
 </pre></div>
@@ -1387,19 +1402,26 @@ no parent. Default: FALSE</li>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-48" id="section-48">&#182;</a>
 </div>
-<p>Get parameters:</p>
+<p>Get parameters.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="nx">options</span> <span class="o">=</span> <span class="nx">options</span> <span class="o">||</span> <span class="p">{};</span>
     <span class="nx">substituteRoomName</span> <span class="o">=</span> <span class="nx">options</span><span class="p">.</span><span class="nx">substituteRoomName</span> <span class="o">||</span> <span class="kc">null</span><span class="p">;</span>
     <span class="nx">ignoreRunningGame</span> <span class="o">=</span> <span class="o">!!</span><span class="nx">options</span><span class="p">.</span><span class="nx">ignoreRunningGame</span><span class="p">;</span>
-    <span class="nx">ignorePlayers</span> <span class="o">=</span> <span class="o">!!</span><span class="nx">options</span><span class="p">.</span><span class="nx">ignorePlayers</span><span class="p">;</span>
+    <span class="nx">disconnectPlayers</span> <span class="o">=</span> <span class="o">!!</span><span class="nx">options</span><span class="p">.</span><span class="nx">disconnectPlayers</span><span class="p">;</span>
 
-    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="p">(</span><span class="nx">roomName</span> <span class="k">in</span> <span class="k">this</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">))</span> <span class="p">{</span>
-        <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">substituteRoomName</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">[</span><span class="nx">substituteRoomName</span><span class="p">]))</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;ServerChannel.destroyGameRoom: &#39;</span> <span class="o">+</span>
+                        <span class="s1">&#39;options.substituteRoomName is not a valid room: &#39;</span> <span class="o">+</span>
+                        <span class="nx">substituteRoomName</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
     <span class="p">}</span>
 
-    <span class="nx">roomObj</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">[</span><span class="nx">roomName</span><span class="p">];</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">substituteRoomName</span> <span class="o">&amp;&amp;</span> <span class="nx">disconnectPlayers</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;ServerChannel.destroyGameRoom: incompatible &#39;</span> <span class="o">+</span>
+                        <span class="s1">&#39;options selected: substituteRoomName and &#39;</span> <span class="o">+</span>
+                        <span class="s1">&#39;disconnectPlayers.&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+
 
 
 </pre></div>
@@ -1410,13 +1432,23 @@ no parent. Default: FALSE</li>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-49" id="section-49">&#182;</a>
 </div>
-<p>Check whether the game in the room is still running:
-TODO: test this</p>
+<p>Check whether the game in the room is still running.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">ignoreRunningGame</span> <span class="o">&amp;&amp;</span>
-            <span class="nx">roomObj</span><span class="p">.</span><span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">getStateLevel</span><span class="p">()</span> <span class="o">&lt;</span>
-            <span class="nx">ngc</span><span class="p">.</span><span class="nx">constants</span><span class="p">.</span><span class="nx">stateLevels</span><span class="p">.</span><span class="nx">GAMEOVER</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">ignoreRunningGame</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="nx">roomObj</span><span class="p">.</span><span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">isGameover</span><span class="p">())</span> <span class="p">{</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;ServerChannel.destroyGameRoom: game still &#39;</span> <span class="o">+</span>
+                           <span class="s1">&#39;running in room &#39;</span> <span class="o">+</span> <span class="nx">roomObj</span><span class="p">.</span><span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39;. Use &#39;</span> <span class="o">+</span>
+                           <span class="s1">&#39;ignoreRunningGame flag to proceed anyway. &#39;</span> <span class="o">+</span>
+                           <span class="s1">&#39;Aborting.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
+        <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="nx">roomObj</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">size</span><span class="p">()</span> <span class="o">&amp;&amp;</span>
+        <span class="p">(</span><span class="o">!</span><span class="nx">substituteRoomName</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="nx">disconnectPlayers</span><span class="p">))</span> <span class="p">{</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;ServerChannel.destroyGameRoom: room &#39;</span> <span class="o">+</span>
+                           <span class="nx">roomObj</span><span class="p">.</span><span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39;still contains players. Use &#39;</span> <span class="o">+</span>
+                           <span class="s1">&#39;substituteRoomName or disconnectPlayers flags &#39;</span> <span class="o">+</span>
+                           <span class="s1">&#39;to proceed anyway.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
         <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
     <span class="p">}</span>
 
@@ -1429,10 +1461,12 @@ TODO: test this</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-50" id="section-50">&#182;</a>
 </div>
-<p>Find out where to move the remaining players:</p>
+<p>Find out where to move the remaining players.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="nx">clientObjs</span> <span class="o">=</span> <span class="nx">roomObj</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">id</span><span class="p">.</span><span class="nx">getAllKeyElements</span><span class="p">();</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">J</span><span class="p">.</span><span class="nx">isEmpty</span><span class="p">(</span><span class="nx">clientObjs</span><span class="p">))</span> <span class="p">{</span>
+
 
 </pre></div>
         </td>
@@ -1442,54 +1476,7 @@ TODO: test this</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-51" id="section-51">&#182;</a>
 </div>
-<p>TODO: Check whether there are any <em>players</em> (non-admins) left</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">J</span><span class="p">.</span><span class="nx">isEmpty</span><span class="p">(</span><span class="nx">clientObjs</span><span class="p">))</span> <span class="p">{</span>
-        <span class="k">if</span> <span class="p">(</span><span class="nx">substituteRoomName</span><span class="p">)</span> <span class="p">{</span>
-            <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="p">(</span><span class="nx">substituteRoomName</span> <span class="k">in</span> <span class="k">this</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">))</span> <span class="p">{</span>
-                <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
-            <span class="p">}</span>
-        <span class="p">}</span>
-        <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">ignorePlayers</span><span class="p">)</span> <span class="p">{</span>
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-52" id="section-52">&#182;</a>
-</div>
-<p>Move players to parent or waiting room:</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-            <span class="k">if</span> <span class="p">(</span><span class="nx">roomObj</span><span class="p">.</span><span class="nx">parentRoom</span> <span class="k">in</span> <span class="k">this</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">)</span> <span class="p">{</span>
-                <span class="nx">substituteRoomName</span> <span class="o">=</span> <span class="nx">roomObj</span><span class="p">.</span><span class="nx">parentRoom</span><span class="p">;</span>
-            <span class="p">}</span>
-            <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">waitingRoom</span><span class="p">)</span> <span class="p">{</span>
-                <span class="nx">substituteRoomName</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">waitingRoom</span><span class="p">.</span><span class="nx">name</span><span class="p">;</span>
-            <span class="p">}</span>
-            <span class="k">else</span> <span class="p">{</span>
-                <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;ServerChannel.destroyGameRoom: trying to &#39;</span> <span class="o">+</span>
-                        <span class="s1">&#39;destroy a room with players but without parent or &#39;</span> <span class="o">+</span>
-                        <span class="s1">&#39;waiting room.&#39;</span><span class="p">);</span>
-            <span class="p">}</span>
-        <span class="p">}</span>
-        <span class="k">else</span> <span class="p">{</span>
-            <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
-        <span class="p">}</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-53" id="section-53">&#182;</a>
-</div>
-<p>Move players into substitute room and remove admins:</p>
+<p>Move/disconnect players and disconnect admins.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
         <span class="k">for</span> <span class="p">(</span><span class="nx">i</span> <span class="k">in</span> <span class="nx">clientObjs</span><span class="p">)</span> <span class="p">{</span>
@@ -1502,12 +1489,13 @@ TODO: test this</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-54" id="section-54">&#182;</a>
+  <a class="pilcrow" href="#section-52" id="section-52">&#182;</a>
 </div>
-<p>Move player:</p>
+<p>Disconnect admin.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-                    <span class="k">this</span><span class="p">.</span><span class="nx">movePlayer</span><span class="p">(</span><span class="nx">i</span><span class="p">,</span> <span class="nx">substituteRoomName</span><span class="p">);</span>
+                    <span class="nx">socket</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">adminServer</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">clients</span><span class="p">[</span><span class="nx">i</span><span class="p">];</span>
+                    <span class="nx">socket</span><span class="p">.</span><span class="nx">disconnect</span><span class="p">(</span><span class="nx">clientObjs</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">sid</span><span class="p">);</span>
                 <span class="p">}</span>
                 <span class="k">else</span> <span class="p">{</span>
 
@@ -1517,14 +1505,18 @@ TODO: test this</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-55" id="section-55">&#182;</a>
+  <a class="pilcrow" href="#section-53" id="section-53">&#182;</a>
 </div>
-<p>Disconnect admin:
-TODO: test this</p>
+<p>Move or disconnect player.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-                    <span class="nx">socket</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">adminServer</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">clients</span><span class="p">[</span><span class="nx">i</span><span class="p">];</span>
-                    <span class="nx">socket</span><span class="p">.</span><span class="nx">disconnect</span><span class="p">(</span><span class="nx">clientObjs</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">sid</span><span class="p">);</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="nx">substituteRoomName</span><span class="p">)</span> <span class="p">{</span>
+                        <span class="k">this</span><span class="p">.</span><span class="nx">movePlayer</span><span class="p">(</span><span class="nx">i</span><span class="p">,</span> <span class="nx">substituteRoomName</span><span class="p">);</span>
+                    <span class="p">}</span>
+                    <span class="k">else</span> <span class="p">{</span>
+                        <span class="nx">socket</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">playerServer</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">clients</span><span class="p">[</span><span class="nx">i</span><span class="p">];</span>
+                        <span class="nx">socket</span><span class="p">.</span><span class="nx">disconnect</span><span class="p">(</span><span class="nx">clientObjs</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">sid</span><span class="p">);</span>
+                    <span class="p">}</span>
                 <span class="p">}</span>
             <span class="p">}</span>
         <span class="p">}</span>
@@ -1537,14 +1529,14 @@ TODO: test this</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-56" id="section-56">&#182;</a>
+  <a class="pilcrow" href="#section-54" id="section-54">&#182;</a>
 </div>
-<p>Remove from parent's list of children:</p>
+<p>Remove from parent's list of children.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="nx">parentRoom</span> <span class="o">=</span> <span class="nx">roomObj</span><span class="p">.</span><span class="nx">parentRoom</span><span class="p">;</span>
-    <span class="k">if</span> <span class="p">(</span><span class="nx">parentRoom</span> <span class="o">&amp;&amp;</span> <span class="nx">parentRoom</span> <span class="k">in</span> <span class="k">this</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nx">J</span><span class="p">.</span><span class="nx">removeElement</span><span class="p">(</span><span class="nx">roomName</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">[</span><span class="nx">parentRoom</span><span class="p">].</span><span class="nx">children</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">parentRoom</span> <span class="o">&amp;&amp;</span> <span class="k">this</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">[</span><span class="nx">parentRoom</span><span class="p">])</span> <span class="p">{</span>
+        <span class="k">delete</span> <span class="k">this</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">[</span><span class="nx">parentRoom</span><span class="p">].</span><span class="nx">children</span><span class="p">[</span><span class="nx">roomName</span><span class="p">];</span>
     <span class="p">}</span>
     <span class="k">else</span> <span class="p">{</span>
         <span class="nx">parentRoom</span> <span class="o">=</span> <span class="kc">null</span><span class="p">;</span>
@@ -1557,15 +1549,15 @@ TODO: test this</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-57" id="section-57">&#182;</a>
+  <a class="pilcrow" href="#section-55" id="section-55">&#182;</a>
 </div>
-<p>Give orphan rooms to their grandparent:</p>
+<p>Give orphan rooms to their grandparent.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">for</span> <span class="p">(</span><span class="nx">i</span> <span class="k">in</span> <span class="nx">roomObj</span><span class="p">.</span><span class="nx">childRooms</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">i</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="nx">len</span> <span class="o">=</span> <span class="nx">roomObj</span><span class="p">.</span><span class="nx">childRooms</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span>
+    <span class="k">for</span> <span class="p">(</span> <span class="p">;</span> <span class="o">++</span><span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">len</span> <span class="p">;</span> <span class="p">)</span> <span class="p">{</span>
         <span class="nx">childName</span> <span class="o">=</span> <span class="nx">roomObj</span><span class="p">.</span><span class="nx">childRooms</span><span class="p">[</span><span class="nx">i</span><span class="p">];</span>
-        <span class="k">if</span> <span class="p">(</span><span class="nx">roomObj</span><span class="p">.</span><span class="nx">childRooms</span><span class="p">.</span><span class="nx">hasOwnProperty</span><span class="p">(</span><span class="nx">i</span><span class="p">)</span> <span class="o">&amp;&amp;</span>
-            <span class="nx">childName</span> <span class="k">in</span> <span class="k">this</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">childName</span> <span class="k">in</span> <span class="k">this</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">)</span> <span class="p">{</span>
 
 </pre></div>
         </td>
@@ -1573,9 +1565,9 @@ TODO: test this</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-58" id="section-58">&#182;</a>
+  <a class="pilcrow" href="#section-56" id="section-56">&#182;</a>
 </div>
-<p>Tell child:</p>
+<p>Tell child.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
             <span class="k">this</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">[</span><span class="nx">childName</span><span class="p">].</span><span class="nx">parentRoom</span> <span class="o">=</span> <span class="nx">parentRoom</span><span class="p">;</span>
@@ -1587,9 +1579,9 @@ TODO: test this</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-59" id="section-59">&#182;</a>
+  <a class="pilcrow" href="#section-57" id="section-57">&#182;</a>
 </div>
-<p>Tell parent:</p>
+<p>Tell parent.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
             <span class="k">if</span> <span class="p">(</span><span class="nx">parentRoom</span><span class="p">)</span> <span class="p">{</span>
@@ -1605,14 +1597,15 @@ TODO: test this</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-60" id="section-60">&#182;</a>
+  <a class="pilcrow" href="#section-58" id="section-58">&#182;</a>
 </div>
 <p>Remove room references.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">delete</span> <span class="k">this</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">[</span><span class="nx">roomName</span><span class="p">];</span>
-    <span class="k">delete</span> <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">rooms</span><span class="p">[</span><span class="nx">roomName</span><span class="p">];</span>
+    <span class="k">delete</span> <span class="k">this</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">[</span><span class="nx">roomObj</span><span class="p">.</span><span class="nx">name</span><span class="p">];</span>
+    <span class="k">delete</span> <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">rooms</span><span class="p">[</span><span class="nx">roomObj</span><span class="p">.</span><span class="nx">id</span><span class="p">];</span>
 
+    <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;room destroyed: &#39;</span> <span class="o">+</span> <span class="nx">roomObj</span><span class="p">.</span><span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
     <span class="k">return</span> <span class="kc">true</span><span class="p">;</span>
 <span class="p">};</span>
 
@@ -1671,7 +1664,7 @@ Updates the ChannelRegistry.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-62" id="section-62">&#182;</a>
+  <a class="pilcrow" href="#section-60" id="section-60">&#182;</a>
 </div>
 <p>Check for existence of fromRoom:</p>
         </td>
@@ -1688,7 +1681,7 @@ Updates the ChannelRegistry.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-63" id="section-63">&#182;</a>
+  <a class="pilcrow" href="#section-61" id="section-61">&#182;</a>
 </div>
 <p>Check for existence of toRoom:</p>
         </td>
@@ -1705,7 +1698,7 @@ Updates the ChannelRegistry.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-64" id="section-64">&#182;</a>
+  <a class="pilcrow" href="#section-62" id="section-62">&#182;</a>
 </div>
 <p>Delete player from old room:</p>
         </td>
@@ -1726,7 +1719,7 @@ Updates the ChannelRegistry.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-65" id="section-65">&#182;</a>
+  <a class="pilcrow" href="#section-63" id="section-63">&#182;</a>
 </div>
 <p>Add player to new room:</p>
         </td>
@@ -1741,7 +1734,7 @@ Updates the ChannelRegistry.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-66" id="section-66">&#182;</a>
+  <a class="pilcrow" href="#section-64" id="section-64">&#182;</a>
 </div>
 <p>Update ChannelRegistry:</p>
         </td>
@@ -1755,7 +1748,7 @@ Updates the ChannelRegistry.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-67" id="section-67">&#182;</a>
+  <a class="pilcrow" href="#section-65" id="section-65">&#182;</a>
 </div>
 <p>Send updated PLISTs to all involved players.
 It is important that the following code executes <em>after</em> the player has
@@ -1779,7 +1772,7 @@ been registered in the new room.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-68" id="section-68">&#182;</a>
+  <a class="pilcrow" href="#section-66" id="section-66">&#182;</a>
 </div>
 <p>Notify all the  players that a new one just connected</p>
         </td>
@@ -1795,7 +1788,7 @@ been registered in the new room.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-69" id="section-69">&#182;</a>
+  <a class="pilcrow" href="#section-67" id="section-67">&#182;</a>
 </div>
 <p>Send the list of connected players to the new player</p>
         </td>
@@ -1816,7 +1809,7 @@ been registered in the new room.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-70" id="section-70">&#182;</a>
+  <a class="pilcrow" href="#section-68" id="section-68">&#182;</a>
 </div>
 <p>"Disconnect" moving player from old room</p>
         </td>
@@ -1890,8 +1883,7 @@ first room, or reconnecting players in their last room.</p>
     <span class="nx">roomObj</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">[</span><span class="nx">inRoom</span><span class="p">];</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">roomObj</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nx">e</span> <span class="o">=</span> <span class="s1">&#39;ServerChannel.placePlayer: &#39;</span> <span class="o">+</span>
-            <span class="s1">&#39;room not found: &quot;&#39;</span> <span class="o">+</span> <span class="nx">inRoom</span> <span class="o">+</span> <span class="s1">&#39;&quot;.&#39;</span><span class="p">;</span>
+        <span class="nx">e</span> <span class="o">=</span> <span class="s1">&#39;ServerChannel.placePlayer: room not found: &quot;&#39;</span> <span class="o">+</span> <span class="nx">inRoom</span> <span class="o">+</span> <span class="s1">&#39;&quot;.&#39;</span><span class="p">;</span>
         <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">e</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
         <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
     <span class="p">}</span>
@@ -1906,7 +1898,7 @@ first room, or reconnecting players in their last room.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-72" id="section-72">&#182;</a>
+  <a class="pilcrow" href="#section-70" id="section-70">&#182;</a>
 </div>
 <p>Player must not be found already in any room.</p>
         </td>
@@ -1925,7 +1917,7 @@ first room, or reconnecting players in their last room.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-73" id="section-73">&#182;</a>
+  <a class="pilcrow" href="#section-71" id="section-71">&#182;</a>
 </div>
 <p>Add player to room.</p>
         </td>
@@ -1939,7 +1931,7 @@ first room, or reconnecting players in their last room.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-74" id="section-74">&#182;</a>
+  <a class="pilcrow" href="#section-72" id="section-72">&#182;</a>
 </div>
 <p>Adds a new room in the room stack in Channel Registry unless the client
 is reconnecting, in which case the new room is the same as the old one.</p>
@@ -2133,7 +2125,7 @@ Optional. Name of the treatment. Default: room.treatmentName</li>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-78" id="section-78">&#182;</a>
+  <a class="pilcrow" href="#section-76" id="section-76">&#182;</a>
 </div>
 <p>Check inputs.</p>
         </td>
@@ -2190,7 +2182,7 @@ Optional. Name of the treatment. Default: room.treatmentName</li>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-79" id="section-79">&#182;</a>
+  <a class="pilcrow" href="#section-77" id="section-77">&#182;</a>
 </div>
 <p>Create the bot.</p>
         </td>
@@ -2226,7 +2218,7 @@ Optional. Name of the treatment. Default: room.treatmentName</li>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-80" id="section-80">&#182;</a>
+  <a class="pilcrow" href="#section-78" id="section-78">&#182;</a>
 </div>
 <p>If not given, look up the path of the given type.</p>
         </td>
@@ -2239,7 +2231,7 @@ Optional. Name of the treatment. Default: room.treatmentName</li>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-81" id="section-81">&#182;</a>
+  <a class="pilcrow" href="#section-79" id="section-79">&#182;</a>
 </div>
 <p>Prepend the path to the game directory.</p>
         </td>
@@ -2261,7 +2253,7 @@ Optional. Name of the treatment. Default: room.treatmentName</li>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-82" id="section-82">&#182;</a>
+  <a class="pilcrow" href="#section-80" id="section-80">&#182;</a>
 </div>
 <p>Require bot.</p>
         </td>
@@ -2280,7 +2272,7 @@ Optional. Name of the treatment. Default: room.treatmentName</li>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-83" id="section-83">&#182;</a>
+  <a class="pilcrow" href="#section-81" id="section-81">&#182;</a>
 </div>
 <p>Mixin-in nodeGame options.</p>
         </td>
@@ -2296,7 +2288,7 @@ Optional. Name of the treatment. Default: room.treatmentName</li>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-84" id="section-84">&#182;</a>
+  <a class="pilcrow" href="#section-82" id="section-82">&#182;</a>
 </div>
 <p>Setup must be called before connect.</p>
         </td>
@@ -2311,7 +2303,7 @@ Optional. Name of the treatment. Default: room.treatmentName</li>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-85" id="section-85">&#182;</a>
+  <a class="pilcrow" href="#section-83" id="section-83">&#182;</a>
 </div>
 <p>This code needs to run as soon as the clientId is generated to avoid
 calling GameRoom.setupGame before the node object is stored.</p>
@@ -2328,7 +2320,7 @@ calling GameRoom.setupGame before the node object is stored.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-86" id="section-86">&#182;</a>
+  <a class="pilcrow" href="#section-84" id="section-84">&#182;</a>
 </div>
 <p>Connect bot to server.</p>
         </td>
@@ -2418,7 +2410,7 @@ Optional. Array of strings to give PhantomJS as command line arguments</li>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-88" id="section-88">&#182;</a>
+  <a class="pilcrow" href="#section-86" id="section-86">&#182;</a>
 </div>
 <p>Check inputs.</p>
         </td>
@@ -2475,7 +2467,7 @@ Optional. Array of strings to give PhantomJS as command line arguments</li>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-89" id="section-89">&#182;</a>
+  <a class="pilcrow" href="#section-87" id="section-87">&#182;</a>
 </div>
 <p>Launch a phantomjs process with a connection to the server.</p>
         </td>
@@ -2488,7 +2480,7 @@ Optional. Array of strings to give PhantomJS as command line arguments</li>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-90" id="section-90">&#182;</a>
+  <a class="pilcrow" href="#section-88" id="section-88">&#182;</a>
 </div>
 <p>Set up the arguments to phantomjs.</p>
         </td>
@@ -2506,7 +2498,7 @@ Optional. Array of strings to give PhantomJS as command line arguments</li>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-91" id="section-91">&#182;</a>
+  <a class="pilcrow" href="#section-89" id="section-89">&#182;</a>
 </div>
 <p>Do not call /phantomjs/bin/phantomjs to avoid double spawn.</p>
         </td>
@@ -2519,7 +2511,7 @@ Optional. Array of strings to give PhantomJS as command line arguments</li>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-92" id="section-92">&#182;</a>
+  <a class="pilcrow" href="#section-90" id="section-90">&#182;</a>
 </div>
 <p>Spawn.</p>
         </td>
@@ -2541,7 +2533,7 @@ Optional. Array of strings to give PhantomJS as command line arguments</li>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-93" id="section-93">&#182;</a>
+  <a class="pilcrow" href="#section-91" id="section-91">&#182;</a>
 </div>
 <p>Wait few ms for error to be printed.</p>
         </td>
@@ -2570,7 +2562,7 @@ Optional. Array of strings to give PhantomJS as command line arguments</li>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-94" id="section-94">&#182;</a>
+  <a class="pilcrow" href="#section-92" id="section-92">&#182;</a>
 </div>
 <p>Add to the global collection.</p>
         </td>
@@ -2586,7 +2578,7 @@ Optional. Array of strings to give PhantomJS as command line arguments</li>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-95" id="section-95">&#182;</a>
+  <a class="pilcrow" href="#section-93" id="section-93">&#182;</a>
 </div>
 <p>Maybe we do not need this api.
 /**
@@ -2615,7 +2607,7 @@ ServerChannel.prototype.killAllPhantoms = function() {
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-96" id="section-96">&#182;</a>
+  <a class="pilcrow" href="#section-94" id="section-94">&#182;</a>
 </div>
 <p>TODO: finish this method. Should destroy all game rooms. clear all players?,
       keep the waiting room</p>
@@ -2635,7 +2627,7 @@ ServerChannel.prototype.killAllPhantoms = function() {
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-97" id="section-97">&#182;</a>
+  <a class="pilcrow" href="#section-95" id="section-95">&#182;</a>
 </div>
 <p>Remove clients from registry, game rooms and disconnect them.
    this.registry.clients.each(function(c) {
@@ -2672,7 +2664,7 @@ ServerChannel.prototype.killAllPhantoms = function() {
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-98" id="section-98">&#182;</a>
+  <a class="pilcrow" href="#section-96" id="section-96">&#182;</a>
 </div>
 <p>Remove clients from registry, game rooms and disconnect them.</p>
         </td>
@@ -2693,7 +2685,7 @@ ServerChannel.prototype.killAllPhantoms = function() {
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-99" id="section-99">&#182;</a>
+  <a class="pilcrow" href="#section-97" id="section-97">&#182;</a>
 </div>
 <p>Destroy empty game rooms.</p>
         </td>
@@ -2714,7 +2706,7 @@ ServerChannel.prototype.killAllPhantoms = function() {
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-100" id="section-100">&#182;</a>
+  <a class="pilcrow" href="#section-98" id="section-98">&#182;</a>
 </div>
 <p>Create a brand new Registry.
 this.registry = new ChannelRegistry({ name: this.name });</p>
@@ -2772,7 +2764,7 @@ this.registry = new ChannelRegistry({ name: this.name });</p>
     <div class="dox_tag_title">Returns</div>
     <div class="dox_tag_detail">
       <span class="dox_tag_name"></span>
-      <span class="dox_type">GameRoom</span>
+      <span class="dox_type">RequirementsRoom</span>
       <span class="dox_type">WaitingRoom</span>
       <span>room The created room</span>
     </div>
@@ -2790,7 +2782,7 @@ this.registry = new ChannelRegistry({ name: this.name });</p>
 
     <span class="nx">conf</span> <span class="o">=</span> <span class="p">{};</span>
     <span class="nx">conf</span><span class="p">.</span><span class="nx">group</span> <span class="o">=</span> <span class="nx">type</span> <span class="o">+</span> <span class="s1">&#39;Room&#39;</span><span class="p">;</span>
-    <span class="nx">conf</span><span class="p">.</span><span class="nx">name</span> <span class="o">=</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">name</span> <span class="o">||</span> <span class="nx">type</span> <span class="o">+</span> <span class="s1">&#39;Room&#39;</span><span class="p">;</span>
+    <span class="nx">conf</span><span class="p">.</span><span class="nx">name</span> <span class="o">=</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">name</span> <span class="o">||</span> <span class="nx">type</span><span class="p">.</span><span class="nx">toLowerCase</span><span class="p">();</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">[</span><span class="nx">conf</span><span class="p">.</span><span class="nx">name</span><span class="p">])</span> <span class="p">{</span>
         <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;ServerChannel.create&#39;</span> <span class="o">+</span> <span class="nx">type</span> <span class="o">+</span> <span class="s1">&#39;Room: room name &#39;</span> <span class="o">+</span>
@@ -2809,7 +2801,7 @@ this.registry = new ChannelRegistry({ name: this.name });</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-103" id="section-103">&#182;</a>
+  <a class="pilcrow" href="#section-101" id="section-101">&#182;</a>
 </div>
 <p>Adding a reference to this channel.</p>
         </td>
@@ -2823,7 +2815,7 @@ this.registry = new ChannelRegistry({ name: this.name });</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-104" id="section-104">&#182;</a>
+  <a class="pilcrow" href="#section-102" id="section-102">&#182;</a>
 </div>
 <p>Adding settings.</p>
         </td>
@@ -2837,7 +2829,7 @@ this.registry = new ChannelRegistry({ name: this.name });</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-105" id="section-105">&#182;</a>
+  <a class="pilcrow" href="#section-103" id="section-103">&#182;</a>
 </div>
 <p>Construct room (the players will be moved into it explicitly):</p>
         </td>
@@ -2856,9 +2848,26 @@ this.registry = new ChannelRegistry({ name: this.name });</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-106" id="section-106">&#182;</a>
+  <a class="pilcrow" href="#section-104" id="section-104">&#182;</a>
 </div>
-<p>Register room in channel.</p>
+<p>TODO: consider this. Maybe waiting and requirements room should not
+be added to the gameRooms. But there is a lot refactoring for this.
+Notice that unlike game rooms, waiting and requirements room are added
+as a direct reference in the channel object, instead of to the
+<code>gameRooms</code> object.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-105" id="section-105">&#182;</a>
+</div>
+<p>Adding room to gameRooms object.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="k">this</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">[</span><span class="nx">conf</span><span class="p">.</span><span class="nx">name</span><span class="p">]</span> <span class="o">=</span> <span class="nx">room</span><span class="p">;</span>
@@ -2868,6 +2877,40 @@ this.registry = new ChannelRegistry({ name: this.name });</p>
 
     <span class="k">return</span> <span class="nx">room</span><span class="p">;</span>
 <span class="p">}</span>
+
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-106" id="section-106">&#182;</a>
+</div>
+<p>Code to look for a room in case waitingRoom and requirementRoom are
+not poart of this.gameRooms
+if (!roomObj) {
+    if (this.waitingRoom &amp;&amp; this.waitingRoom.name === room) {
+        roomObj = this.waitingRoom;
+    }
+    else if (this.requirementsRoom &amp;&amp;
+             this.requirementsRoom.name === room) {</p>
+
+
+<div class="highlight"><pre><code>    <span class="n">roomObj</span> <span class="o">=</span> <span class="n">this</span><span class="o">.</span><span class="n">requirementsRoom</span><span class="p">;</span>
+<span class="p">}</span>
+<span class="k">else</span> <span class="p">{</span>
+    <span class="n">throw</span> <span class="k">new</span> <span class="n">Error</span><span class="p">(</span><span class="s">&#39;ServerChannel.destroyGameRoom: trying to &#39;</span> <span class="o">+</span>
+                    <span class="s">&#39;destroy a unexisting room: &#39;</span> <span class="o">+</span> <span class="n">room</span> <span class="o">+</span> <span class="s">&#39;.&#39;</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+
+
+<p>}</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
 </pre></div>
         </td>
       </tr>

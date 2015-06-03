@@ -24,6 +24,18 @@
       <div class="heading h2">
         <a href="#global%20scope">Global scope</a>
       </div>
+      <div class="heading h3">
+        <a href="#gameroom.gamename">GameRoom.gameName</a>
+      </div>
+      <div class="heading h3">
+        <a href="#gameroom.treatmentname">GameRoom.treatmentName</a>
+      </div>
+      <div class="heading h3">
+        <a href="#gameroom.game">GameRoom.game</a>
+      </div>
+      <div class="heading h3">
+        <a href="#gameroom.gamepaths">GameRoom.gamePaths</a>
+      </div>
       <div class="heading h2">
         <a href="#gameroom%20static%20functions">GameRoom static functions</a>
       </div>
@@ -135,6 +147,104 @@ MIT Licensed</p>
     <span class="k">if</span> <span class="p">(</span><span class="nx">config</span><span class="p">.</span><span class="nx">runtimeConf</span> <span class="o">&amp;&amp;</span> <span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">config</span><span class="p">.</span><span class="nx">runtimeConf</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;GameRoom: config.channel must be object.&#39;</span><span class="p">);</span>
     <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="gameroom.gamename">
+  <h3>
+    <a href="#gameroom.gamename" name="gameroom.gamename" class="pilcrow">&#182;</a>
+    GameRoom.gameName
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>The name of the game played in this room</p>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">this</span><span class="p">.</span><span class="nx">gameName</span> <span class="o">=</span> <span class="nx">config</span><span class="p">.</span><span class="nx">gameName</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="gameroom.treatmentname">
+  <h3>
+    <a href="#gameroom.treatmentname" name="gameroom.treatmentname" class="pilcrow">&#182;</a>
+    GameRoom.treatmentName
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>The name of the game played in this room, or 'standard' if not defined.</p>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">this</span><span class="p">.</span><span class="nx">treatmentName</span> <span class="o">=</span> <span class="nx">config</span><span class="p">.</span><span class="nx">treatmentName</span> <span class="o">||</span> <span class="s1">&#39;standard&#39;</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="gameroom.game">
+  <h3>
+    <a href="#gameroom.game" name="gameroom.game" class="pilcrow">&#182;</a>
+    GameRoom.game
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Reference to the game info object contained in servernode</p>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">this</span><span class="p">.</span><span class="nx">game</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">getGamesInfo</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">gameName</span><span class="p">);</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">game</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameRoom: game not found: &#39;</span> <span class="o">+</span> <span class="k">this</span><span class="p">.</span><span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">treatments</span><span class="p">[</span><span class="k">this</span><span class="p">.</span><span class="nx">treatmentName</span><span class="p">])</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameRoom: game &#39;</span> <span class="o">+</span> <span class="k">this</span><span class="p">.</span><span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39; treatment &#39;</span> <span class="o">+</span>
+                        <span class="s1">&#39;not found: &#39;</span> <span class="o">+</span> <span class="k">this</span><span class="p">.</span><span class="nx">treatmentName</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="gameroom.gamepaths">
+  <h3>
+    <a href="#gameroom.gamepaths" name="gameroom.gamepaths" class="pilcrow">&#182;</a>
+    GameRoom.gamePaths
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Game paths for the room</p>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">this</span><span class="p">.</span><span class="nx">gamePaths</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">treatments</span><span class="p">[</span><span class="k">this</span><span class="p">.</span><span class="nx">treatmentName</span><span class="p">].</span><span class="nx">gamePaths</span><span class="p">;</span>
+
 
     <span class="k">this</span><span class="p">.</span><span class="nx">registerRoom</span><span class="p">();</span>
 <span class="p">}</span>
@@ -290,7 +400,7 @@ MIT Licensed</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-7" id="section-7">&#182;</a>
+  <a class="pilcrow" href="#section-11" id="section-11">&#182;</a>
 </div>
 <p>TODO: Don't send to logic!</p>
         </td>
@@ -378,7 +488,7 @@ MIT Licensed</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-9" id="section-9">&#182;</a>
+  <a class="pilcrow" href="#section-13" id="section-13">&#182;</a>
 </div>
 <p>Check parameters.</p>
         </td>
@@ -409,7 +519,7 @@ MIT Licensed</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-10" id="section-10">&#182;</a>
+  <a class="pilcrow" href="#section-14" id="section-14">&#182;</a>
 </div>
 <p>Apply defaults.</p>
         </td>
@@ -425,7 +535,7 @@ MIT Licensed</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-11" id="section-11">&#182;</a>
+  <a class="pilcrow" href="#section-15" id="section-15">&#182;</a>
 </div>
 <p>Set up logic.</p>
         </td>
@@ -439,7 +549,7 @@ MIT Licensed</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-12" id="section-12">&#182;</a>
+  <a class="pilcrow" href="#section-16" id="section-16">&#182;</a>
 </div>
 <p>At this point clientList should be an array of client IDs.</p>
         </td>
@@ -504,7 +614,7 @@ MIT Licensed</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-14" id="section-14">&#182;</a>
+  <a class="pilcrow" href="#section-18" id="section-18">&#182;</a>
 </div>
 <p>Check parameters.</p>
         </td>
@@ -519,7 +629,7 @@ MIT Licensed</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-15" id="section-15">&#182;</a>
+  <a class="pilcrow" href="#section-19" id="section-19">&#182;</a>
 </div>
 <p>Apply defaults.</p>
         </td>
@@ -535,7 +645,7 @@ MIT Licensed</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-16" id="section-16">&#182;</a>
+  <a class="pilcrow" href="#section-20" id="section-20">&#182;</a>
 </div>
 <p>Check startability.</p>
         </td>
@@ -553,7 +663,7 @@ MIT Licensed</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-17" id="section-17">&#182;</a>
+  <a class="pilcrow" href="#section-21" id="section-21">&#182;</a>
 </div>
 <p>Start.</p>
         </td>
@@ -621,7 +731,7 @@ MIT Licensed</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-19" id="section-19">&#182;</a>
+  <a class="pilcrow" href="#section-23" id="section-23">&#182;</a>
 </div>
 <p>Check parameters.</p>
         </td>
@@ -636,7 +746,7 @@ MIT Licensed</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-20" id="section-20">&#182;</a>
+  <a class="pilcrow" href="#section-24" id="section-24">&#182;</a>
 </div>
 <p>Apply defaults.</p>
         </td>
@@ -652,7 +762,7 @@ MIT Licensed</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-21" id="section-21">&#182;</a>
+  <a class="pilcrow" href="#section-25" id="section-25">&#182;</a>
 </div>
 <p>Check pausability.</p>
         </td>
@@ -670,7 +780,7 @@ MIT Licensed</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-22" id="section-22">&#182;</a>
+  <a class="pilcrow" href="#section-26" id="section-26">&#182;</a>
 </div>
 <p>Pause.</p>
         </td>
@@ -738,7 +848,7 @@ MIT Licensed</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-24" id="section-24">&#182;</a>
+  <a class="pilcrow" href="#section-28" id="section-28">&#182;</a>
 </div>
 <p>Check parameters.</p>
         </td>
@@ -753,7 +863,7 @@ MIT Licensed</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-25" id="section-25">&#182;</a>
+  <a class="pilcrow" href="#section-29" id="section-29">&#182;</a>
 </div>
 <p>Apply defaults.</p>
         </td>
@@ -769,7 +879,7 @@ MIT Licensed</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-26" id="section-26">&#182;</a>
+  <a class="pilcrow" href="#section-30" id="section-30">&#182;</a>
 </div>
 <p>Check resumability.</p>
         </td>
@@ -787,7 +897,7 @@ MIT Licensed</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-27" id="section-27">&#182;</a>
+  <a class="pilcrow" href="#section-31" id="section-31">&#182;</a>
 </div>
 <p>Resume.</p>
         </td>
@@ -855,7 +965,7 @@ MIT Licensed</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-29" id="section-29">&#182;</a>
+  <a class="pilcrow" href="#section-33" id="section-33">&#182;</a>
 </div>
 <p>Check parameters.</p>
         </td>
@@ -870,7 +980,7 @@ MIT Licensed</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-30" id="section-30">&#182;</a>
+  <a class="pilcrow" href="#section-34" id="section-34">&#182;</a>
 </div>
 <p>Apply defaults.</p>
         </td>
@@ -886,7 +996,7 @@ MIT Licensed</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-31" id="section-31">&#182;</a>
+  <a class="pilcrow" href="#section-35" id="section-35">&#182;</a>
 </div>
 <p>Check stoppability.</p>
         </td>
@@ -904,7 +1014,7 @@ MIT Licensed</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-32" id="section-32">&#182;</a>
+  <a class="pilcrow" href="#section-36" id="section-36">&#182;</a>
 </div>
 <p>Stop.</p>
         </td>
@@ -979,7 +1089,7 @@ MIT Licensed</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-34" id="section-34">&#182;</a>
+  <a class="pilcrow" href="#section-38" id="section-38">&#182;</a>
 </div>
 <p>Add treatment settings.</p>
         </td>
@@ -993,7 +1103,7 @@ MIT Licensed</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-35" id="section-35">&#182;</a>
+  <a class="pilcrow" href="#section-39" id="section-39">&#182;</a>
 </div>
 <p>Mixin-in nodeGame options.</p>
         </td>
@@ -1012,7 +1122,7 @@ MIT Licensed</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-36" id="section-36">&#182;</a>
+  <a class="pilcrow" href="#section-40" id="section-40">&#182;</a>
 </div>
 <p>Helper functions.</p>
         </td>
@@ -1073,7 +1183,7 @@ MIT Licensed</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-38" id="section-38">&#182;</a>
+  <a class="pilcrow" href="#section-42" id="section-42">&#182;</a>
 </div>
 <p>Stop logic if necessary.</p>
         </td>
@@ -1089,7 +1199,7 @@ MIT Licensed</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-39" id="section-39">&#182;</a>
+  <a class="pilcrow" href="#section-43" id="section-43">&#182;</a>
 </div>
 <p>Setup must be called before connect.</p>
         </td>
@@ -1103,7 +1213,7 @@ MIT Licensed</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-40" id="section-40">&#182;</a>
+  <a class="pilcrow" href="#section-44" id="section-44">&#182;</a>
 </div>
 <p>Connect logic to server, if not already connected. E.g., after a stop
 command it is generally still connected. Or the node object can be
@@ -1181,7 +1291,7 @@ passed in the constructor and be already connected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-42" id="section-42">&#182;</a>
+  <a class="pilcrow" href="#section-46" id="section-46">&#182;</a>
 </div>
 <p>Resolve special values of clientList.</p>
         </td>
@@ -1209,7 +1319,7 @@ passed in the constructor and be already connected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-43" id="section-43">&#182;</a>
+  <a class="pilcrow" href="#section-47" id="section-47">&#182;</a>
 </div>
 <p>Setup all given clients.</p>
         </td>
@@ -1228,7 +1338,7 @@ passed in the constructor and be already connected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-44" id="section-44">&#182;</a>
+  <a class="pilcrow" href="#section-48" id="section-48">&#182;</a>
 </div>
 <p>See if the client is local or remote.</p>
         </td>
@@ -1242,7 +1352,7 @@ passed in the constructor and be already connected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-45" id="section-45">&#182;</a>
+  <a class="pilcrow" href="#section-49" id="section-49">&#182;</a>
 </div>
 <p>Client type.</p>
         </td>
@@ -1256,7 +1366,7 @@ passed in the constructor and be already connected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-46" id="section-46">&#182;</a>
+  <a class="pilcrow" href="#section-50" id="section-50">&#182;</a>
 </div>
 <p>Get the client type, check cache (bots are never cached).</p>
         </td>
@@ -1277,7 +1387,7 @@ passed in the constructor and be already connected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-47" id="section-47">&#182;</a>
+  <a class="pilcrow" href="#section-51" id="section-51">&#182;</a>
 </div>
 <p>Setup the client.</p>
         </td>
@@ -1290,7 +1400,7 @@ passed in the constructor and be already connected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-48" id="section-48">&#182;</a>
+  <a class="pilcrow" href="#section-52" id="section-52">&#182;</a>
 </div>
 <p>Local client.</p>
         </td>
@@ -1303,7 +1413,7 @@ passed in the constructor and be already connected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-49" id="section-49">&#182;</a>
+  <a class="pilcrow" href="#section-53" id="section-53">&#182;</a>
 </div>
 <p>Can't remoteSetup here because serializing the plot methods
 would make them lose their context (node etc.).</p>
@@ -1319,7 +1429,7 @@ would make them lose their context (node etc.).</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-50" id="section-50">&#182;</a>
+  <a class="pilcrow" href="#section-54" id="section-54">&#182;</a>
 </div>
 <p>Remote client.</p>
         </td>
