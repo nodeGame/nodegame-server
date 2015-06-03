@@ -2990,8 +2990,8 @@ invoking this method, which evaluates only if the sender exists.</p>
     <span class="p">}</span>
 
     <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">_roomName</span> <span class="o">=</span> <span class="nx">_room</span><span class="p">;</span>
-    <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">_channelName</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">[</span><span class="nx">_room</span><span class="p">].</span><span class="nx">channel</span><span class="p">.</span><span class="nx">name</span><span class="p">;</span>
-    <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">_sid</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">registry</span><span class="p">.</span><span class="nx">getClients</span><span class="p">()[</span><span class="nx">gameMsg</span><span class="p">.</span><span class="nx">from</span><span class="p">].</span><span class="nx">sid</span><span class="p">;</span>
+    <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">_channelName</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">name</span><span class="p">;</span>
+    <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">_sid</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">registry</span><span class="p">.</span><span class="nx">getClient</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">.</span><span class="nx">from</span><span class="p">).</span><span class="nx">sid</span><span class="p">;</span>
     <span class="k">return</span> <span class="nx">gameMsg</span><span class="p">;</span>
 <span class="p">};</span>
 
