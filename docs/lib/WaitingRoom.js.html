@@ -78,6 +78,17 @@ MIT Licensed</p>
 <span class="nx">WaitingRoom</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">constructor</span> <span class="o">=</span> <span class="nx">WaitingRoom</span><span class="p">;</span>
 
 <span class="kd">function</span> <span class="nx">WaitingRoom</span><span class="p">(</span><span class="nx">config</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">config</span> <span class="o">=</span> <span class="nx">config</span> <span class="o">||</span> <span class="p">{};</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">config</span><span class="p">.</span><span class="nx">acm</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">config</span><span class="p">.</span><span class="nx">acm</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="nx">notify</span><span class="o">:</span> <span class="p">{</span>
+                <span class="nx">onConnect</span><span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
+                <span class="nx">onStageUpdate</span><span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
+                <span class="nx">onStageLevelUpdate</span><span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
+                <span class="nx">onStageLoadedUpdated</span><span class="o">:</span> <span class="kc">false</span>
+            <span class="p">}</span>
+        <span class="p">};</span>
+    <span class="p">}</span>
     <span class="nx">BasicRoom</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="s1">&#39;Waiting&#39;</span><span class="p">,</span> <span class="nx">config</span><span class="p">);</span>
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">logicPath</span><span class="p">)</span> <span class="k">this</span><span class="p">.</span><span class="nx">logicPath</span>  <span class="o">=</span> <span class="s1">&#39;./rooms/wait.room&#39;</span><span class="p">;</span>
     <span class="k">this</span><span class="p">.</span><span class="nx">registerRoom</span><span class="p">();</span>

@@ -15964,9 +15964,9 @@ if (!Array.prototype.indexOf) {
 
         this.setStateLevel(constants.stateLevels.GAMEOVER);
         this.setStageLevel(constants.stageLevels.DONE);
-        node.emit('GAME_OVER');
 
         node.log('game over.');
+        node.emit('GAME_OVER');
     };
 
     /**
@@ -16878,6 +16878,16 @@ if (!Array.prototype.indexOf) {
                stateLevel < constants.stateLevels.FINISHING;
     };
 
+    /**
+     * ### Game.isGameover
+     *
+     * Returns TRUE if gameover was called and state level set
+     *
+     * @return {boolean} TRUE if is game over
+     */
+    Game.prototype.isGameover = Game.prototype.isGameOver = function() {
+        return this.getStateLevel() === constants.stateLevels.GAMEOVER;
+    };
 
     /**
      * ### Game.shouldEmitPlaying
@@ -23096,20 +23106,8 @@ if (!Array.prototype.indexOf) {
          */
         this.isIE = !!document.createElement('span').attachEvent;
 
-        /**
-         * ### node.setup.window
-         *
-         * Setup handler for the node.window object
-         *
-         * @see node.setup
-         */
-        node.registerSetup('window', function(conf) {
-            conf = J.merge(W.conf, conf);
-            //if ('object' === typeof conf && !J.isEmpty(conf)) {
-                this.window.init(conf);
-                return conf;
-            //}
-        });
+        // Add setup functions.
+        this.addDefaultSetups();
 
         // Adding listeners.
         this.addDefaultListeners();
@@ -23309,7 +23307,7 @@ if (!Array.prototype.indexOf) {
         }
         if ('undefined' === typeof screenLevels[level]) {
             throw new Error('GameWindow.setScreenLevel: unrecognized level: ' +
-                           level + '.');
+                            level + '.');
         }
 
         this.screenState = screenLevels[level];
@@ -23571,7 +23569,7 @@ if (!Array.prototype.indexOf) {
             // We need to re-get it from the DOM.
             if (J.getIFrameDocument(iframe).documentElement) {
                 J.removeChildrenFromNode(
-                        J.getIFrameDocument(iframe).documentElement);
+                    J.getIFrameDocument(iframe).documentElement);
             }
         }
 
@@ -23711,7 +23709,7 @@ if (!Array.prototype.indexOf) {
     GameWindow.prototype.setHeader = function(header, headerName, root) {
         if (!J.isElement(header)) {
             throw new Error(
-                    'GameWindow.setHeader: header must be HTMLElement.');
+                'GameWindow.setHeader: header must be HTMLElement.');
         }
         if ('string' !== typeof headerName) {
             throw new Error('GameWindow.setHeader: headerName must be string.');
@@ -23854,15 +23852,15 @@ if (!Array.prototype.indexOf) {
             this.generateHeader();
 
             node.game.visualState = node.widgets.append('VisualState',
-                    this.headerElement);
+                                                        this.headerElement);
             node.game.timer = node.widgets.append('VisualTimer',
-                    this.headerElement);
+                                                  this.headerElement);
             node.game.stateDisplay = node.widgets.append('StateDisplay',
-                    this.headerElement);
+                                                         this.headerElement);
 
             // Will continue in SOLO_PLAYER.
 
-        /* falls through */
+            /* falls through */
         case 'SOLO_PLAYER':
 
             if (!this.getFrame()) {
@@ -24230,7 +24228,8 @@ if (!Array.prototype.indexOf) {
                 }
                 else {
                     throw new Error('GameWindow.loadFrame: unkown cache ' +
-                            'store mode: ' + opts.cache.storeMode + '.');
+                                    'store mode: ' + opts.cache.storeMode +
+                                    '.');
                 }
             }
         }
@@ -24284,9 +24283,10 @@ if (!Array.prototype.indexOf) {
                 handleFrameLoad(that, uri, iframe, iframeName, loadCache,
                                 storeCacheNow, function() {
 
-                    // Executes callback and updates GameWindow state.
-                    that.updateLoadFrameState(func);
-                });
+                                    // Executes callback
+                                    // and updates GameWindow state.
+                                    that.updateLoadFrameState(func);
+                                });
             });
         }
 
@@ -24301,9 +24301,10 @@ if (!Array.prototype.indexOf) {
                 handleFrameLoad(this, uri, iframe, iframeName, loadCache,
                                 storeCacheNow, function() {
 
-                    // Executes callback and updates GameWindow state.
-                    that.updateLoadFrameState(func);
-                });
+                                    // Executes callback
+                                    // and updates GameWindow state.
+                                    that.updateLoadFrameState(func);
+                                });
             }
         }
         else {
@@ -24351,6 +24352,35 @@ if (!Array.prototype.indexOf) {
         else {
             node.silly('game-window: ' + this.areLoading + ' frames ' +
                        'still loading.');
+        }
+    };
+
+    /**
+     * ### GameWindow.clearPageBody
+     *
+     * Removes all HTML from body, and resets GameWindow
+     *
+     * @see GameWindow.reset
+     */
+    GameWindow.prototype.clearPageBody = function() {
+        this.reset();
+        document.body.innerHTML = '';
+    };
+
+    /**
+     * ### GameWindow.clearPage
+     *
+     * Removes all HTML from page and resets GameWindow
+     *
+     * @see GameWindow.reset
+     */
+    GameWindow.prototype.clearPage = function() {
+        this.reset();
+        try {
+            document.documentElement.innerHTML = '';
+        }
+        catch(e) {
+            this.removeChildrenFromNode(document.documentElement);
         }
     };
 
@@ -24491,7 +24521,7 @@ if (!Array.prototype.indexOf) {
 
         scriptNodes = contentDocument.getElementsByTagName('script');
         for (scriptNodeIdx = 0; scriptNodeIdx < scriptNodes.length;
-                scriptNodeIdx++) {
+             scriptNodeIdx++) {
 
             // Remove tag:
             tag = scriptNodes[scriptNodeIdx];
@@ -24596,7 +24626,7 @@ if (!Array.prototype.indexOf) {
         // When we move from bottom to any other configuration, we need
         // to move the header before the frame.
         if (oldHeaderPos === 'bottom' && position !== 'bottom') {
-             W.getFrameRoot().insertBefore(W.headerElement, W.frameElement);
+            W.getFrameRoot().insertBefore(W.headerElement, W.frameElement);
         }
 
         W.removeClass(W.frameElement, 'ng_mainframe-header-[a-z-]*');
@@ -24628,6 +24658,193 @@ if (!Array.prototype.indexOf) {
     //Expose GameWindow prototype to the global object.
     node.GameWindow = GameWindow;
 
+})(
+    // GameWindow works only in the browser environment. The reference
+    // to the node.js module object is for testing purpose only
+    ('undefined' !== typeof window) ? window : module.parent.exports.window,
+    ('undefined' !== typeof window) ? window.node : module.parent.exports.node
+);
+
+/**
+ * # setup.window
+ * Copyright(c) 2015 Stefano Balietti
+ * MIT Licensed
+ *
+ * GameWindow setup functions
+ *
+ * http://www.nodegame.org
+ */
+(function(window, node) {
+
+    var GameWindow = node.GameWindow;
+    var J = node.JSUS;
+
+    /**
+     * ### GameWindow.addDefaultSetups
+     *
+     * Registers setup functions for GameWindow, the frame and the header
+     */
+    GameWindow.prototype.addDefaultSetups = function() {
+
+        /**
+         * ### node.setup.window
+         *
+         * Setup handler for the node.window object
+         *
+         * @see node.setup
+         */
+        node.registerSetup('window', function(conf) {
+            conf = J.merge(W.conf, conf);
+            this.window.init(conf);
+            return conf;
+        });
+
+        /**
+         * ### node.setup.page
+         *
+         * Manipulates the HTML page
+         *
+         * @see node.setup
+         */
+        node.registerSetup('page', function(conf) {
+            if (!conf) return;
+
+            // Clear.
+            if (conf.clearBody) this.window.clearPageBody();
+            if (conf.clear) this.window.clearPage();
+
+            return conf;
+        });
+
+        /**
+         * ### node.setup.frame
+         *
+         * Manipulates the frame object
+         *
+         * @see node.setup
+         */
+        node.registerSetup('frame', function(conf) {
+            var url, cb, options;
+            var frameName, force, root, rootName;
+            if (!conf) return;
+
+            // Generate.
+            if (conf.generate) {
+                if ('object' === typeof conf.generate) {
+                    if (conf.generate.root) {
+                        if ('string' !== typeof conf.generate.root) {
+                            node.warn('node.setup.frame: conf.generate.root ' +
+                                      'must be string or undefined.');
+                            return;
+                        }
+                        rootName = conf.generate.root;
+                        force = conf.generate.force;
+                        frameName = conf.generate.name;
+                    }
+                }
+                else {
+                    node.warn('node.setup.frame: conf.generate must be ' +
+                              'object or undefined.');
+                    return;
+                }
+
+                root = this.window.getElementById(rootName);
+                if (!root) root = this.window.getScreen();
+                if (!root) {
+                    node.warn('node.setup.frame: could not find valid ' +
+                              'root element to generate new frame.');
+                    return;
+                }
+
+                this.window.generateFrame(root, frameName, force);
+            }
+
+            // Load.
+            if (conf.load) {
+                if ('object' === typeof conf.load) {
+                    url = conf.load.url;
+                    cb = conf.load.cb;
+                    options = conf.load.options;
+                }
+                else if ('string' === typeof conf.load) {
+                    url = conf.load;
+                }
+                else {
+                    node.warn('node.setup.frame: conf.load must be string, ' +
+                              'object or undefined.');
+                    return;
+                }
+                this.window.loadFrame(url, cb, options);
+            }
+
+            // Clear and destroy.
+            if (conf.clear) this.window.clearFrame();
+            if (conf.destroy) this.window.destroyFrame();
+
+            return conf;
+        });
+
+        /**
+         * ### node.setup.header
+         *
+         * Manipulates the header object
+         *
+         * @see node.setup
+         */
+        node.registerSetup('header', function(conf) {
+            var url, cb, options;
+            var frameName, force, root, rootName;
+            if (!conf) return;
+
+            // Generate.
+            if (conf.generate) {
+                if ('object' === typeof conf.generate) {
+                    if (conf.generate.root) {
+                        if ('string' !== typeof conf.generate.root) {
+                            node.warn('node.setup.header: conf.generate.root ' +
+                                      'must be string or undefined.');
+                            return;
+                        }
+                        rootName = conf.generate.root;
+                        force = conf.generate.force;
+                        frameName = conf.generate.name;
+                    }
+                }
+                else {
+                    node.warn('node.setup.header: conf.generate must be ' +
+                              'object or undefined.');
+                    return;
+                }
+
+                root = this.window.getElementById(rootName);
+                if (!root) root = this.window.getScreen();
+                if (!root) {
+                    node.warn('node.setup.frame: could not find valid ' +
+                              'root element to generate new frame.');
+                    return;
+                }
+
+                this.window.generateFrame(root, frameName, force);
+            }
+
+            // Position.
+            if (conf.position) {
+                if ('string' !== typeof conf.position) {
+                    node.warn('node.setup.header: conf.position ' +
+                              'must be string or undefined.');
+                    return;
+                }
+                this.window.setHeaderPosition(conf.position);
+            }
+
+            // Clear and destroy.
+            if (conf.clear) this.window.clearHeader();
+            if (conf.destroy) this.window.destroyHeader();
+
+            return conf;
+        });
+
+    };
 })(
     // GameWindow works only in the browser environment. The reference
     // to the node.js module object is for testing purpose only
@@ -24883,14 +25100,10 @@ if (!Array.prototype.indexOf) {
 
     "use strict";
 
-    function getElement(idOrObj, prefix) {
+    function getElement(idOrObj) {
         var el;
         if ('string' === typeof idOrObj) {
             el = W.getElementById(idOrObj);
-            if (!el) {
-                throw new Error(prefix + ': could not find element ' +
-                                'with id ' + idOrObj);
-            }
         }
         else if (JSUS.isElement(idOrObj)) {
             el = idOrObj;
@@ -24927,23 +25140,27 @@ if (!Array.prototype.indexOf) {
         });
 
         node.on('HIDE', function(idOrObj) {
-            var el = getElement(idOrObj, 'GameWindow.on.HIDE');
-            el.style.display = 'none';
+            var el;
+            el = getElement(idOrObj, 'GameWindow.on.HIDE');
+            if (el) el.style.display = 'none';
         });
 
         node.on('SHOW', function(idOrObj) {
-            var el = getElement(idOrObj, 'GameWindow.on.SHOW');
-            el.style.display = '';
+            var el;
+            el = getElement(idOrObj, 'GameWindow.on.SHOW');
+            if (el) el.style.display = '';
         });
 
         node.on('TOGGLE', function(idOrObj) {
-            var el = getElement(idOrObj, 'GameWindow.on.TOGGLE');
-
-            if (el.style.display === 'none') {
-                el.style.display = '';
-            }
-            else {
-                el.style.display = 'none';
+            var el;
+            el = getElement(idOrObj, 'GameWindow.on.TOGGLE');
+            if (el) {
+                if (el.style.display === 'none') {
+                    el.style.display = '';
+                }
+                else {
+                    el.style.display = 'none';
+                }
             }
         });
 
@@ -25573,7 +25790,6 @@ if (!Array.prototype.indexOf) {
     "use strict";
 
     var GameWindow = node.GameWindow;
-
     var J = node.JSUS;
     var DOM = J.get('DOM');
 
@@ -27401,6 +27617,7 @@ if (!Array.prototype.indexOf) {
     // ## Widgets constructor
 
     function Widgets() {
+        var that;
 
         /**
          * ### Widgets.widgets
@@ -27420,8 +27637,44 @@ if (!Array.prototype.indexOf) {
          */
         this.instances = [];
 
+        that = this;
+        node.registerSetup('widgets', function(conf) {
+            var name, root;
+            if (!conf) return;
 
-        node.silly('node-widgets: loading.');
+            // Add new widgets.
+            if (conf.widgets) {
+                for ( name in conf.widgets) {
+                    if (conf.widgets.hasOwnProperty(name)) {
+                        that.register(name, conf.widgets[name]);
+                    }
+                }
+            }
+
+            // Append existing widgets.
+            if (conf.append) {
+                for (name in conf.append) {
+                    if (conf.append.hasOwnProperty(name)) {
+                        // Determine root.
+                        if ('string' === typeof conf.append[name].root) {
+                            root = W.getElementById(conf.append[name].root);
+                        }
+                        if (!root) root = W.getScreen();
+                        if (!root) {
+                            node.warn('setup widgets: could not find a root ' +
+                                      'for widget ' + name + '.');
+                        }
+                        else {
+                            that.append(name, root, conf.append[name]);
+                        }
+                    }
+                }
+            }
+
+            return conf;
+        });
+
+        node.info('node-widgets: loading.');
     }
 
     // ## Widgets methods
@@ -32540,6 +32793,8 @@ if (!Array.prototype.indexOf) {
             that.init(conf);
             // Start a checking immediately if requested.
             if (conf.doChecking) that.checkRequirements();
+
+            return conf;
         });
     };
 

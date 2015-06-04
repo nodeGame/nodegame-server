@@ -1759,7 +1759,9 @@ If logicPath is not string RequirementsRoom constructor throws an error.</p>
 <p>Add information to global game object.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">updateGameInfo</span><span class="p">(</span><span class="nx">gameName</span><span class="p">,</span> <span class="p">{</span> <span class="nx">requirements</span><span class="o">:</span> <span class="nx">reqObj</span> <span class="p">});</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">updateGameInfo</span><span class="p">(</span><span class="nx">gameName</span><span class="p">,</span> <span class="p">{</span>
+        <span class="nx">requirements</span><span class="o">:</span> <span class="nx">J</span><span class="p">.</span><span class="nx">merge</span><span class="p">(</span><span class="nx">settings</span><span class="p">,</span> <span class="nx">reqObj</span><span class="p">)</span>
+    <span class="p">});</span>
 
 
 </pre></div>
