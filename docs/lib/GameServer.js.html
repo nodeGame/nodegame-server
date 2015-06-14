@@ -210,6 +210,8 @@ by two inheriting classes:</p>
 
 <span class="nx">util</span><span class="p">.</span><span class="nx">inherits</span><span class="p">(</span><span class="nx">GameServer</span><span class="p">,</span> <span class="nx">EventEmitter</span><span class="p">);</span>
 
+<span class="kd">var</span> <span class="nx">jwt</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;jsonwebtoken&#39;</span><span class="p">);</span>
+
 <span class="kd">var</span> <span class="nx">Logger</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;./Logger&#39;</span><span class="p">);</span>
 
 <span class="kd">var</span> <span class="nx">SocketManager</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;./SocketManager&#39;</span><span class="p">),</span>
@@ -1341,7 +1343,7 @@ They can trigger another disconnect event after first disconnect.</p>
 <span class="nx">GameServer</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">onConnect</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">socketId</span><span class="p">,</span> <span class="nx">socketObj</span><span class="p">,</span> <span class="nx">headers</span><span class="p">,</span>
                                           <span class="nx">clientType</span><span class="p">,</span> <span class="nx">startingRoom</span><span class="p">)</span> <span class="p">{</span>
 
-    <span class="kd">var</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">clientId</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">decoded</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">clientId</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">cookies</span><span class="p">,</span> <span class="nx">disconnected</span><span class="p">,</span> <span class="nx">returningRoom</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">newConnection</span><span class="p">,</span> <span class="nx">invalidSessionCookie</span><span class="p">;</span>
 
@@ -1353,6 +1355,20 @@ They can trigger another disconnect event after first disconnect.</p>
     <span class="p">}</span>
     <span class="k">else</span> <span class="p">{</span>
         <span class="nx">cookies</span> <span class="o">=</span> <span class="p">{};</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="nx">cookies</span> <span class="o">&amp;&amp;</span> <span class="nx">cookies</span><span class="p">.</span><span class="nx">nodegame_token</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">decoded</span> <span class="o">=</span> <span class="nx">decodeJWT</span><span class="p">(</span><span class="nx">cookies</span><span class="p">.</span><span class="nx">nodegame_token</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">secret</span><span class="p">);</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">decoded</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">cookies</span><span class="p">.</span><span class="nx">session</span> <span class="o">=</span> <span class="nx">decoded</span><span class="p">.</span><span class="nx">session</span><span class="p">;</span>
+            <span class="nx">cookies</span><span class="p">.</span><span class="nx">player</span> <span class="o">=</span> <span class="nx">decoded</span><span class="p">.</span><span class="nx">player</span><span class="p">;</span>
+            <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;decoded correctly&#39;</span><span class="p">);</span>
+
+        <span class="p">}</span>
+        <span class="k">else</span> <span class="p">{</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">ADMIN_SERVER</span> <span class="o">?</span> <span class="s1">&#39;Admin&#39;</span> <span class="o">:</span> <span class="s1">&#39;Player&#39;</span> <span class="o">+</span>
+                               <span class="s1">&#39;Server: decoding jwt failed.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
+        <span class="p">}</span>
     <span class="p">}</span>
 
 
@@ -2308,7 +2324,6 @@ put the client in the requirements or waiting room.</p>
             <span class="nx">startingRoom</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">waitingRoom</span><span class="p">.</span><span class="nx">name</span><span class="p">;</span>
         <span class="p">}</span>
     <span class="p">}</span>
-
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">placePlayer</span><span class="p">(</span><span class="nx">clientObj</span><span class="p">,</span> <span class="nx">startingRoom</span><span class="p">))</span> <span class="p">{</span>
         <span class="k">return</span> <span class="nx">GameServer</span><span class="p">.</span><span class="nx">codes</span><span class="p">.</span><span class="nx">ROOM_NOT_FOUND</span><span class="p">;</span>
     <span class="p">}</span>
@@ -2422,7 +2437,7 @@ This is probably a duplicated connection. Not allowed for the moment.</p>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">GameServer</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">welcomeClient</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">clientId</span><span class="p">,</span> <span class="nx">socketId</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">connStr</span><span class="p">;</span>
-    <span class="nx">connStr</span> <span class="o">=</span> <span class="s2">&quot;Welcome &lt;&quot;</span> <span class="o">+</span> <span class="nx">clientId</span> <span class="o">+</span> <span class="s2">&quot;&gt;&quot;</span><span class="p">;</span>
+    <span class="nx">connStr</span> <span class="o">=</span> <span class="s1">&#39;Welcome &lt;&#39;</span> <span class="o">+</span> <span class="nx">clientId</span> <span class="o">+</span> <span class="s1">&#39;&gt;&#39;</span><span class="p">;</span>
     <span class="k">this</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">msg</span><span class="p">.</span><span class="nx">create</span><span class="p">({</span>
         <span class="nx">target</span><span class="o">:</span> <span class="s1">&#39;HI&#39;</span><span class="p">,</span>
         <span class="nx">to</span><span class="o">:</span> <span class="nx">clientId</span><span class="p">,</span>
@@ -3096,6 +3111,16 @@ invoking this method, which evaluates only if the sender exists.</p>
 
         </td>
         <td class="code highlight"><div class="highlight"><pre>
+
+
+<span class="kd">function</span> <span class="nx">decodeJWT</span><span class="p">(</span><span class="nx">token</span><span class="p">,</span> <span class="nx">secret</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">try</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="nx">jwt</span><span class="p">.</span><span class="nx">verify</span><span class="p">(</span><span class="nx">cookies</span><span class="p">.</span><span class="nx">nodegame_token</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">secret</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="k">catch</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
 
 
 </pre></div>

@@ -612,7 +612,7 @@ it is not used to locate the client.</p>
             <span class="nx">client</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">sockets</span><span class="p">[</span><span class="nx">strippedSid</span><span class="p">];</span>
 
             <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">client</span><span class="p">)</span> <span class="p">{</span>
-                <span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;SocketIo.send: Msg not sent. Unexisting &#39;</span> <span class="o">+</span>
+                <span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;SocketIo.send: msg not sent. Unexisting &#39;</span> <span class="o">+</span>
                               <span class="s1">&#39;recipient sid: &#39;</span> <span class="o">+</span> <span class="nx">strippedSid</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
                 <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
             <span class="p">}</span>

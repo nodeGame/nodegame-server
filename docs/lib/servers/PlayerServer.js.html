@@ -788,6 +788,7 @@ It ignores ALL, CHANNEL, CHANNEL_X, ROOM_X recipients.</p>
         <span class="p">}</span>
 
         <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">msg</span><span class="p">.</span><span class="nx">to</span> <span class="o">===</span> <span class="s1">&#39;SERVER&#39;</span><span class="p">)</span> <span class="p">{</span>
+
             <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">room</span><span class="p">.</span><span class="nx">acm</span><span class="p">.</span><span class="nx">getFromAdmins</span><span class="p">)</span> <span class="k">return</span><span class="p">;</span>
 
             <span class="nx">that</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">send2roomAdmins</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">room</span><span class="p">);</span>

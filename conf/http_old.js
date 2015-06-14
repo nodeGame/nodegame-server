@@ -14,13 +14,7 @@ fs = require('fs'),
 path = require('path'),
 express = require('express'),
 J = require('nodegame-client').JSUS,
-jwt = require('jsonwebtoken');
-
-// expressJwt = require('express-jwt');
-
-
-var tokens = {};
-
+nodemailer = require('nodemailer');
 
 /**
  * ### ServerNode._configureHTTP
@@ -35,74 +29,6 @@ function configure(app, servernode) {
 
     rootDir = servernode.rootDir;
     pager = servernode.pager;
-
-    app.configure(function() {
-        app.set('views', rootDir + '/views');
-        app.set('view engine', 'jade');
-        app.set('view options', {layout: false});
-        app.use(express.static(rootDir + '/public'));
-    });
-
-    app.configure('development', function(){
-        app.use(express.errorHandler({
-            dumpExceptions: true,
-            showStack: true
-        }));
-    });
-
-    app.configure('production', function(){
-        app.use(express.errorHandler());
-    });
-
-    app.enable("jsonp callback");
-
-
-    app.use(express.cookieParser());
-    app.use(express.bodyParser());
-
-    // app.use('/:game', expressJwt({secret: jwtSecret}));
-    // app.use(express.json());
-    // app.use(express.urlencoded());
-
-
-    // app.use(express.session({ secret: 'keyboard cat' }));
-
-    function login(gameName, user, pwd, res, req) {
-        var registry, authorized, profile;
-        var secret, token, expire;
-
-        registry = servernode.channels[gameName].registry;
-        authorized = registry.authorize({ id: user, pwd: pwd });
-
-        if (authorized) {
-
-            profile = {
-                player: user,
-                session: servernode.channels[gameName].session
-            };
-
-            secret = servernode.channels[gameName].secret;
-            expire = 60*5;
-            // We are sending the profile in the token.
-            token = jwt.sign(user, secret, { expiresInMinutes: expire});
-
-            // Store the token somewhere.
-            tokens[token] = profile;
-
-            console.log('setting cookie');
-
-            res.cookie('nodegame_token', token, {
-                path: '/',
-                httpOnly: true
-            });
-            res.redirect('/' + gameName);
-            return true;
-        }
-
-        res.send('Wrong user/pwd.');
-        return false;
-    }
-
 
     function verifyGameRequest(req, res) {
         var gameInfo;
@@ -175,14 +101,27 @@ function configure(app, servernode) {
         });
     }
 
+    app.use(express.cookieParser());
+
+    app.configure('development', function(){
+        app.use(express.errorHandler({
+            dumpExceptions: true,
+            showStack: true
+        }));
+    });
+
+    app.configure('production', function(){
+        app.use(express.errorHandler());
+    });
+
+    app.enable("jsonp callback");
+
     app.get('/', function(req, res) {
         var q;
-
         if (J.isEmpty(req.query)) {
             res.render('index', {
                 title: 'Yay! Your nodeGame server is running.'
             });
-            return
         }
 
         q = req.query.q;
@@ -211,6 +150,11 @@ function configure(app, servernode) {
         }
     });
 
+    app.get('/error/:type', function(req, res) {
+        var type = req.params.type;
+        res.render('error/' + type);
+    });
+
     app.get('/images/:file', function(req, res) {
         sendFromPublic('images', req, res);
     });
@@ -227,75 +171,6 @@ function configure(app, servernode) {
         sendFromPublic('pages', req, res);
     });
 
-//     app.post('/:game/auth', function(req, res, next) {
-//         login(req.params.game, req.body.username,
-//               req.body.password, res, req);
-//     });
-
-    app.get('/:game/auth/:userid/:pwd', function(req, res, next) {
-        var gameName, gameInfo;
-        var userId, pwd;
-
-        console.log('auth GET');
-
-        gameInfo = verifyGameRequest(req, res);
-        if (!gameInfo) return;
-
-        if (!gameInfo.auth.enabled) {
-            res.send('No authorization needed.');
-            return;
-        }
-
-        gameName = req.params.game;
-
-        gameSettings = gameInfo.settings;
-
-        userId = req.params.userid;
-        pwd = req.params.pwd;
-
-        login(gameName, userId, pwd, res, req)
-    });
-
-//     app.get('/auth/:game', function(req, res) {
-//         var gameName, gameInfo;
-//         gameInfo = verifyGameRequest(req, res);
-//         if (!gameInfo) return;
-//         gameName = req.params.game;
-//
-//
-//
-//         // Auth.
-//         if (gameInfo.auth.enabled) {
-//             console.log('auth enabled');
-//
-//             // Check if a cookie is set, if not redirect to auth page.
-//             if (!req.cookies || !tokens[req.cookies.nodegame_token]) {
-//
-//                 console.log('no valid cookie');
-//
-//                 // Game auth page.
-//                 if (gameInfo.auth.page) {
-//                     console.log('game auth page');
-//                     file = gameInfo.dir + '/public/' + gameInfo.auth.page;
-//
-//                 }
-//                 // Servernode auth page.
-//                 else {
-//                     console.log('servernode auth page');
-//                     file = rootDir + '/public/pages/auth.htm';
-//                     return;
-//                 }
-//
-//                 res.sendfile(file);
-//
-//             }
-//             else {
-//                 console.log('authorized');
-//             }
-//         }
-//     });
-
-
     // Serves game files or default game index file: index.htm.
     app.get('/:game/*', function(req, res) {
         var gameName, gameInfo, gameSettings, filePath, file;
@@ -305,67 +180,18 @@ function configure(app, servernode) {
         if (!gameInfo) return;
 
         gameName = req.params.game;
-
-        // Auth.
-        if (gameInfo.auth.enabled) {
-            console.log('auth enabled');
-
-            // Check if a cookie is set, if not redirect to auth page.
-            if (!req.cookies || !tokens[req.cookies.nodegame_token]) {
-                res.send('Not Authorized.');
-                //res.redirect('/auth/' + gameName);
-                return;
-            }
-            else {
-                console.log('authorized');
-            }
-        }
-
         file = req.params[0];
+
+        gameSettings = gameInfo.treatments;
+
         if ('' === file || 'undefined' === typeof file) {
             file = 'index.htm';
         }
         else if (file.lastIndexOf('\/') === (file.length - 1)) {
             // Removing the trailing slash because it creates:
             // Error: ENOTDIR in fetching the file.
-           file = file.substring(0, file.length - 1);
+            file = file.substring(0, file.length - 1);
         }
-
-//         if (gameInfo.auth.enabled) {
-//             console.log('auth enabled');
-//
-//             // Check if a cookie is set, if not redirect to auth page.
-//             if (!req.cookies || !tokens[req.cookies.nodegame_token]) {
-//
-//                 console.log('no valid cookie');
-//
-//                 res.redirect('/pages/accessdenied.htm');
-//                 return;
-//                 // Game auth page.
-//                 // if (gameInfo.auth.page) {
-//                 //     console.log('game auth page');
-//                 //     file = gameInfo.auth.page;
-//                 // gameInfo.dir + '/public/' +
-//                 //
-//                 // }
-//                 // Servernode auth page.
-//                // else {
-//                //     console.log('servernode auth page');
-//                //     file = rootDir + '/public/pages/auth.htm';
-//                //     return;
-//                // }
-//
-//                //  res.sendfile(file);
-//
-//             }
-//             else {
-//                 console.log('authorized');
-//             }
-//         }
-
-
-        gameSettings = gameInfo.settings;
-
 
         // Build filePath to file in public directory.
         filePath = gameInfo.dir + 'public/' + file;
@@ -465,6 +291,13 @@ function configure(app, servernode) {
 
     app.get('/:game', function(req, res) {
         res.redirect('/' + req.params.game + '/');
+    });
+
+    app.configure(function(){
+        app.set('views', rootDir + '/views');
+        app.set('view engine', 'jade');
+        app.set('view options', {layout: false});
+        app.use(express.static(rootDir + '/public'));
     });
 
     return true;
