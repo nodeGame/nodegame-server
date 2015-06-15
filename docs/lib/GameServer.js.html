@@ -1966,7 +1966,7 @@ There are actually minor differences on the parameters passed.</p>
             <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">ADMIN_SERVER</span> <span class="o">?</span> <span class="s1">&#39;admin&#39;</span> <span class="o">:</span> <span class="s1">&#39;player&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39; re-connected: &#39;</span> <span class="o">+</span>
             <span class="nx">clientId</span><span class="p">);</span>
 
-    <span class="k">this</span><span class="p">.</span><span class="nx">emit</span><span class="p">(</span><span class="s1">&#39;re-connecting&#39;</span><span class="p">,</span> <span class="nx">clientObj</span><span class="p">);</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">emit</span><span class="p">(</span><span class="s1">&#39;re-connecting&#39;</span><span class="p">,</span> <span class="nx">clientObj</span><span class="p">,</span> <span class="nx">returningRoom</span><span class="p">);</span>
 
     <span class="k">return</span> <span class="nx">GameServer</span><span class="p">.</span><span class="nx">codes</span><span class="p">.</span><span class="nx">OPERATION_OK</span><span class="p">;</span>
 <span class="p">};</span>
@@ -2397,7 +2397,7 @@ This is probably a duplicated connection. Not allowed for the moment.</p>
             <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">ADMIN_SERVER</span> <span class="o">?</span> <span class="s1">&#39;admin&#39;</span> <span class="o">:</span> <span class="s1">&#39;player&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39; connected: &#39;</span> <span class="o">+</span>
             <span class="nx">clientId</span><span class="p">);</span>
 
-    <span class="k">this</span><span class="p">.</span><span class="nx">emit</span><span class="p">(</span><span class="s1">&#39;connecting&#39;</span><span class="p">,</span> <span class="nx">clientObj</span><span class="p">);</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">emit</span><span class="p">(</span><span class="s1">&#39;connecting&#39;</span><span class="p">,</span> <span class="nx">clientObj</span><span class="p">,</span> <span class="nx">startingRoom</span><span class="p">);</span>
 
     <span class="k">return</span> <span class="nx">GameServer</span><span class="p">.</span><span class="nx">codes</span><span class="p">.</span><span class="nx">OPERATION_OK</span><span class="p">;</span>
 <span class="p">};</span>

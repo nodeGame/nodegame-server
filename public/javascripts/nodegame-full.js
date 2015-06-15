@@ -11794,6 +11794,13 @@ if (!Array.prototype.indexOf) {
         this.sid = player.sid;
 
         /**
+         * ### Player.clientType
+         *
+         * The client type (e.g. player, admin, bot, ...)
+         */
+        this.clientType = player.clientType || null;
+
+        /**
          * ### Player.group
          *
          * The group to which the player belongs
@@ -20624,7 +20631,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Player
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * Player related functions

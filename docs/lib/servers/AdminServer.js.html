@@ -295,20 +295,14 @@ players, and admin connected), about the state of the GameServer</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
 
-    <span class="k">this</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;connecting&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">clientObj</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;connecting&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">clientObj</span><span class="p">,</span> <span class="nx">roomName</span><span class="p">)</span> <span class="p">{</span>
         <span class="kd">var</span> <span class="nx">roomName</span><span class="p">,</span> <span class="nx">room</span><span class="p">,</span> <span class="nx">players</span><span class="p">,</span> <span class="nx">admins</span><span class="p">,</span> <span class="nx">oldAdmins</span><span class="p">,</span> <span class="nx">clientId</span><span class="p">,</span> <span class="nx">socketId</span><span class="p">;</span>
 
         <span class="nx">clientId</span> <span class="o">=</span> <span class="nx">clientObj</span><span class="p">.</span><span class="nx">id</span><span class="p">;</span>
         <span class="nx">socketId</span> <span class="o">=</span> <span class="nx">clientObj</span><span class="p">.</span><span class="nx">sid</span><span class="p">;</span>
         <span class="nx">sys</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Incoming monitor: &#39;</span> <span class="o">+</span> <span class="nx">clientId</span><span class="p">);</span>
-        <span class="nx">roomName</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">registry</span><span class="p">.</span><span class="nx">getClientRoom</span><span class="p">(</span><span class="nx">clientId</span><span class="p">);</span>
-        <span class="nx">room</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">[</span><span class="nx">roomName</span><span class="p">];</span>
 
-        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">room</span><span class="p">)</span> <span class="p">{</span>
-            <span class="nx">sys</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;AdminServer.on.connecting: Could not determine room &#39;</span> <span class="o">+</span>
-                    <span class="s1">&#39;for incoming monitor: &#39;</span> <span class="o">+</span> <span class="nx">clientId</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
-            <span class="k">return</span><span class="p">;</span>
-        <span class="p">}</span>
+        <span class="nx">room</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">[</span><span class="nx">roomName</span><span class="p">];</span>
 
         <span class="nx">players</span> <span class="o">=</span> <span class="nx">room</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">player</span><span class="p">;</span>
         <span class="nx">admins</span> <span class="o">=</span> <span class="nx">room</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">admin</span><span class="p">;</span>
@@ -381,23 +375,17 @@ players, and admin connected), about the state of the GameServer</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-11" id="section-11">&#182;</a>
 </div>
-<p>TODO: cleanup code, maybe merge with connecting. Maybe the room/roomName
-could be passed as parameter.</p>
+<p>TODO: cleanup code, maybe merge with connecting.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;re-connecting&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">clientObj</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;re-connecting&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">clientObj</span><span class="p">,</span> <span class="nx">roomName</span><span class="p">)</span> <span class="p">{</span>
         <span class="kd">var</span> <span class="nx">msg</span><span class="p">,</span> <span class="nx">room</span><span class="p">,</span> <span class="nx">roomName</span><span class="p">,</span> <span class="nx">clientId</span><span class="p">,</span> <span class="nx">socketId</span><span class="p">;</span>
 
         <span class="nx">clientId</span> <span class="o">=</span> <span class="nx">clientObj</span><span class="p">.</span><span class="nx">id</span><span class="p">;</span>
         <span class="nx">socketId</span> <span class="o">=</span> <span class="nx">clientObj</span><span class="p">.</span><span class="nx">sid</span><span class="p">;</span>
         <span class="nx">sys</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Returning admin: &#39;</span> <span class="o">+</span> <span class="nx">clientId</span><span class="p">);</span>
-        <span class="nx">roomName</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">registry</span><span class="p">.</span><span class="nx">getClientRoom</span><span class="p">(</span><span class="nx">clientId</span><span class="p">);</span>
+
         <span class="nx">room</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">[</span><span class="nx">roomName</span><span class="p">];</span>
-        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">room</span><span class="p">)</span> <span class="p">{</span>
-            <span class="nx">sys</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;AdminServer.on.re-connecting: Could not determine room &#39;</span> <span class="o">+</span>
-                    <span class="s1">&#39;for returning admin: &#39;</span> <span class="o">+</span> <span class="nx">clientId</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
-            <span class="k">return</span><span class="p">;</span>
-        <span class="p">}</span>
 
         <span class="nx">msg</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">msg</span><span class="p">.</span><span class="nx">create</span><span class="p">({</span>
             <span class="nx">target</span><span class="o">:</span> <span class="s1">&#39;MRECONNECT&#39;</span><span class="p">,</span>
@@ -1178,7 +1166,8 @@ Important: the ID is not obfuscated.</p>
                data: msg.data.stage,
                to: msg.to
            });
-           that.socketManager.broadcast(that.msg.obfuscate(newMsg), msg.from);
+           that.socketManager.broadcast(that.msg.obfuscate(newMsg),
+                                        msg.from);
        }</p>
 
 
@@ -1189,7 +1178,8 @@ Important: the ID is not obfuscated.</p>
            <span class="n">from:</span> <span class="n">msg</span><span class="o">.</span><span class="n">from</span><span class="p">,</span>
            <span class="n">to:</span> <span class="n">msg</span><span class="o">.</span><span class="n">to</span>
        <span class="p">});</span>
-       <span class="n">that</span><span class="o">.</span><span class="n">socketManager</span><span class="o">.</span><span class="n">broadcast</span><span class="p">(</span><span class="n">that</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">obfuscate</span><span class="p">(</span><span class="n">newMsg</span><span class="p">),</span> <span class="n">msg</span><span class="o">.</span><span class="n">from</span><span class="p">);</span>
+       <span class="n">that</span><span class="o">.</span><span class="n">socketManager</span><span class="o">.</span><span class="n">broadcast</span><span class="p">(</span><span class="n">that</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">obfuscate</span><span class="p">(</span><span class="n">newMsg</span><span class="p">),</span>
+                                    <span class="n">msg</span><span class="o">.</span><span class="n">from</span><span class="p">);</span>
    <span class="p">}</span>
 </code></pre></div>
 
