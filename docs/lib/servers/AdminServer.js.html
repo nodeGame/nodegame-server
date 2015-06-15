@@ -688,10 +688,10 @@ Admins decides what to do with it.</p>
         <span class="nx">origRoom</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">registry</span><span class="p">.</span><span class="nx">getClientRoom</span><span class="p">(</span><span class="nx">from</span><span class="p">);</span>
 
         <span class="k">if</span> <span class="p">(</span><span class="nx">origRoom</span><span class="p">)</span> <span class="p">{</span>
-            <span class="nx">that</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">movePlayer</span><span class="p">(</span><span class="nx">from</span><span class="p">,</span> <span class="nx">newRoom</span><span class="p">.</span><span class="nx">name</span><span class="p">);</span>
+            <span class="nx">that</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">moveClient</span><span class="p">(</span><span class="nx">from</span><span class="p">,</span> <span class="nx">newRoom</span><span class="p">.</span><span class="nx">name</span><span class="p">);</span>
         <span class="p">}</span>
         <span class="k">else</span> <span class="p">{</span>
-            <span class="nx">that</span><span class="p">.</span><span class="nx">channe</span><span class="p">.</span><span class="nx">placePlayer</span><span class="p">(</span><span class="nx">from</span><span class="p">,</span> <span class="nx">newRoom</span><span class="p">.</span><span class="nx">name</span><span class="p">);</span>
+            <span class="nx">that</span><span class="p">.</span><span class="nx">channe</span><span class="p">.</span><span class="nx">placeClient</span><span class="p">(</span><span class="nx">from</span><span class="p">,</span> <span class="nx">newRoom</span><span class="p">.</span><span class="nx">name</span><span class="p">);</span>
         <span class="p">}</span>
     <span class="p">});</span>
 

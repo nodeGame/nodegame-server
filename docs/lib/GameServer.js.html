@@ -118,10 +118,10 @@
         <a href="#gameserver.onconnect">GameServer.onConnect</a>
       </div>
       <div class="heading h3">
-        <a href="#gameserver.handlereconnectingclient">GameServer.handleReconnectingClient</a>
+        <a href="#gameserver.handleconnectingclient">GameServer.handleConnectingClient</a>
       </div>
       <div class="heading h3">
-        <a href="#gameserver.handleconnectingclient">GameServer.handleConnectingClient</a>
+        <a href="#gameserver.handlereconnectingclient">GameServer.handleReconnectingClient</a>
       </div>
       <div class="heading h3">
         <a href="#gameserver.welcomeclient">GameServer.welcomeClient</a>
@@ -1637,421 +1637,6 @@ at other cookies, or at the headers).</p>
 <span class="p">};</span>
 
 
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs"><div class="dox">
-  <div class="summary">
-<div class="pilwrap" id="gameserver.handlereconnectingclient">
-  <h3>
-    <a href="#gameserver.handlereconnectingclient" name="gameserver.handlereconnectingclient" class="pilcrow">&#182;</a>
-    GameServer.handleReconnectingClient
-  </h3>
-</div>
-
-  </div>
-  <div class="body"><p>Handles a reconnecting client.</p>
-  </div>
-  <div class="details">
-    <div class="dox_tag_title">Params</div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name">clientId</span>
-      <span class="dox_type">string</span>
-      <span>The id of the freshly connected client</span>
-    </div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name">socketId</span>
-      <span class="dox_type">string</span>
-      <span>The id of the socket connection</span>
-    </div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name">socketObj</span>
-      <span class="dox_type">Socket</span>
-      <span>The socket object (Direct or SIO)</span>
-    </div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name">clientType</span>
-      <span class="dox_type">string</span>
-      <span>The type of the client (player, bot, etc.)</span>
-    </div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name">headers</span>
-      <span class="dox_type">object</span>
-      <span>Optional. The connection headers passed by the Socket</span>
-    </div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name">cookies</span>
-      <span class="dox_type">object</span>
-      <span>Optional. An object containing the cookies, if any</span>
-    </div>
-    <div class="dox_tag_title">Returns</div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name"></span>
-      <span class="dox_type">number</span>
-      <span>A numeric code describing the outcome of the operation.</span>
-    </div>
-    <div class="dox_tag_title">See</div>
-    <div class="dox_tag_detail">
-      <span class="dox_type">GameServer.codes
-</span>
-    </div>
-  </div>
-</div>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-<span class="nx">GameServer</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">handleReconnectingClient</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span>
-    <span class="nx">clientId</span><span class="p">,</span> <span class="nx">socketId</span><span class="p">,</span> <span class="nx">socketObj</span><span class="p">,</span> <span class="nx">clientType</span><span class="p">,</span> <span class="nx">cookies</span><span class="p">,</span> <span class="nx">headers</span><span class="p">)</span> <span class="p">{</span>
-
-    <span class="kd">var</span> <span class="nx">sys</span><span class="p">,</span> <span class="nx">client</span><span class="p">,</span> <span class="nx">returningRoom</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">clientObj</span><span class="p">,</span> <span class="nx">decorClientObj</span><span class="p">;</span>
-
-    <span class="kd">var</span> <span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">globalLookup</span><span class="p">,</span> <span class="nx">oldInfo</span><span class="p">;</span>
-
-    <span class="nx">sys</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">;</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-56" id="section-56">&#182;</a>
-</div>
-<p>TODO: we need two operations to check existence and accessing it.
-PlayerList API should be changed.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">registry</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">exist</span><span class="p">(</span><span class="nx">clientId</span><span class="p">))</span> <span class="p">{</span>
-        <span class="nx">sys</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;GameServer.handleReconnectingClient: Reconnecting &#39;</span> <span class="o">+</span>
-                <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">ADMIN_SERVER</span> <span class="o">?</span> <span class="s1">&#39;admin&#39;</span> <span class="o">:</span> <span class="s1">&#39;player&#39;</span> <span class="p">)</span> <span class="o">+</span> <span class="s1">&#39; with &#39;</span> <span class="o">+</span>
-                <span class="s1">&#39;invalid cookie: &#39;</span> <span class="o">+</span> <span class="nx">clientId</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-57" id="section-57">&#182;</a>
-</div>
-<p>TODO: the error code is not a good description,
-but it will trigger the desired reaction: a new connection.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-        <span class="k">return</span> <span class="nx">GameServer</span><span class="p">.</span><span class="nx">codes</span><span class="p">.</span><span class="nx">DUPLICATED_CLIENT_ID</span><span class="p">;</span>
-    <span class="p">}</span>
-    <span class="nx">client</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">registry</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="nx">clientId</span><span class="p">);</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-58" id="section-58">&#182;</a>
-</div>
-<p>It can happen that when the client disconnected the previous time,
-its disconnection was not registered by the server (can happen
-with ajax). We do it here.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">client</span><span class="p">.</span><span class="nx">disconnected</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nx">sys</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;GameServer.handleReconnectingClient: Reconnecting &#39;</span> <span class="o">+</span>
-                <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">ADMIN_SERVER</span> <span class="o">?</span> <span class="s1">&#39;admin&#39;</span> <span class="o">:</span> <span class="s1">&#39;player&#39;</span> <span class="p">)</span> <span class="o">+</span> <span class="s1">&#39; that &#39;</span> <span class="o">+</span>
-                <span class="s1">&#39;was not marked as disconnected: &#39;</span> <span class="o">+</span> <span class="nx">clientId</span><span class="p">,</span> <span class="s1">&#39;warn&#39;</span><span class="p">);</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-59" id="section-59">&#182;</a>
-</div>
-<p>TODO: Ste: Mark disconnected and try to resume the connection.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-        <span class="nx">gameMsg</span> <span class="o">=</span> <span class="p">{</span><span class="nx">to</span><span class="o">:</span> <span class="nx">clientId</span><span class="p">};</span> <span class="c1">// needs a game msg. TODO: update.</span>
-        <span class="nx">globalLookup</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
-        <span class="nx">oldInfo</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">resolveClientAndSocket</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span>
-                                                            <span class="nx">globalLookup</span><span class="p">);</span>
-
-
-        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">oldInfo</span><span class="p">.</span><span class="nx">success</span><span class="p">)</span> <span class="p">{</span>
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-60" id="section-60">&#182;</a>
-</div>
-<p>TODO: check what to do here.
-The client will be treated as a new connection, but a
-warning will be sent.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-            <span class="k">return</span> <span class="nx">GameServer</span><span class="p">.</span><span class="nx">codes</span><span class="p">.</span><span class="nx">DUPLICATED_CLIENT_ID</span><span class="p">;</span>
-        <span class="p">}</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-61" id="section-61">&#182;</a>
-</div>
-<p>Force disconnection of old socket.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-        <span class="nx">oldInfo</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">disconnect</span><span class="p">(</span><span class="nx">oldInfo</span><span class="p">.</span><span class="nx">sid</span><span class="p">);</span>
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-62" id="section-62">&#182;</a>
-</div>
-<p>this.onDisconnect(oldInfo.sid, oldInfo.socket);</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="p">}</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-63" id="section-63">&#182;</a>
-</div>
-<p>Mark the client connected (necessary to do updates).</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">registry</span><span class="p">.</span><span class="nx">markConnected</span><span class="p">(</span><span class="nx">clientId</span><span class="p">);</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-64" id="section-64">&#182;</a>
-</div>
-<p>Updates the socket id of the client in the registry,
-otherwise the welcomeClient will fail.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">registry</span><span class="p">.</span><span class="nx">updateClient</span><span class="p">(</span><span class="nx">clientId</span><span class="p">,</span> <span class="p">{</span> <span class="nx">sid</span><span class="o">:</span> <span class="nx">socketId</span> <span class="p">});</span>
-
-    <span class="nx">returningRoom</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">registry</span><span class="p">.</span><span class="nx">getClientRoom</span><span class="p">(</span><span class="nx">clientId</span><span class="p">);</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-65" id="section-65">&#182;</a>
-</div>
-<p>The old room must be still existing.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">[</span><span class="nx">returningRoom</span><span class="p">])</span> <span class="p">{</span>
-        <span class="nx">sys</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;GameServer.handleReconnectingClient: &#39;</span> <span class="o">+</span>
-                <span class="s1">&#39;Room no longer existing for re-connecting &#39;</span> <span class="o">+</span>
-                <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">ADMIN_SERVER</span> <span class="o">?</span> <span class="s1">&#39;admin&#39;</span> <span class="o">:</span> <span class="s1">&#39;player&#39;</span> <span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;: &#39;</span> <span class="o">+</span>
-                <span class="nx">clientId</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
-
-        <span class="k">this</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">msg</span><span class="p">.</span><span class="nx">create</span><span class="p">({</span>
-            <span class="nx">target</span><span class="o">:</span> <span class="nx">ngc</span><span class="p">.</span><span class="nx">constants</span><span class="p">.</span><span class="nx">target</span><span class="p">.</span><span class="nx">ALERT</span><span class="p">,</span>
-            <span class="nx">to</span><span class="o">:</span> <span class="nx">clientId</span><span class="p">,</span>
-            <span class="nx">text</span><span class="o">:</span> <span class="s1">&#39;The game room you are looking for is not &#39;</span> <span class="o">+</span>
-                <span class="s1">&#39;existing any more. You will be redirected to &#39;</span> <span class="o">+</span>
-                <span class="s1">&#39;main waiting room.&#39;</span>
-        <span class="p">}));</span>
-
-        <span class="k">return</span> <span class="nx">GameServer</span><span class="p">.</span><span class="nx">codes</span><span class="p">.</span><span class="nx">ROOM_NOT_FOUND</span><span class="p">;</span>
-    <span class="p">}</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-66" id="section-66">&#182;</a>
-</div>
-<p>All checks passed. Approved reconnection.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-67" id="section-67">&#182;</a>
-</div>
-<p>Creating one client object.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="nx">clientObj</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="nx">id</span><span class="o">:</span> <span class="nx">clientId</span><span class="p">,</span>
-        <span class="nx">sid</span><span class="o">:</span> <span class="nx">socketId</span><span class="p">,</span>
-        <span class="nx">admin</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">ADMIN_SERVER</span> <span class="o">||</span> <span class="kc">false</span><span class="p">,</span>
-        <span class="nx">clientType</span><span class="o">:</span> <span class="nx">clientType</span>
-    <span class="p">};</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-68" id="section-68">&#182;</a>
-</div>
-<p>Here the clientObj can be altered by a user-defined callback.
-This part is repeated for connecting and reconnecting, if a change
-is made here, it should be ported there too.
-There are actually minor differences on the parameters passed.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">decorateClientObj</span><span class="p">)</span> <span class="p">{</span>
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-69" id="section-69">&#182;</a>
-</div>
-<p>Manually clone clientObj.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-        <span class="nx">decorClientObj</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="nx">id</span><span class="o">:</span> <span class="nx">clientObj</span><span class="p">.</span><span class="nx">id</span><span class="p">,</span>
-            <span class="nx">sid</span><span class="o">:</span> <span class="nx">clientObj</span><span class="p">.</span><span class="nx">sid</span><span class="p">,</span>
-            <span class="nx">admin</span><span class="o">:</span> <span class="nx">clientObj</span><span class="p">.</span><span class="nx">admin</span><span class="p">,</span>
-            <span class="nx">clientType</span><span class="o">:</span> <span class="nx">clientObj</span><span class="p">.</span><span class="nx">clientType</span>
-        <span class="p">};</span>
-        <span class="k">this</span><span class="p">.</span><span class="nx">decorateClientObj</span><span class="p">(</span><span class="nx">decorClientObj</span><span class="p">,</span> <span class="p">{</span>
-            <span class="nx">headers</span><span class="o">:</span> <span class="nx">headers</span><span class="p">,</span>
-            <span class="nx">cookies</span><span class="o">:</span> <span class="nx">cookies</span><span class="p">,</span>
-            <span class="nx">validSessionCookie</span><span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
-            <span class="nx">socketObj</span><span class="o">:</span> <span class="nx">socketObj</span><span class="p">,</span>
-            <span class="nx">socketId</span><span class="o">:</span> <span class="nx">socketId</span><span class="p">,</span>
-            <span class="nx">room</span><span class="o">:</span> <span class="nx">returningRoom</span>
-        <span class="p">});</span>
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-70" id="section-70">&#182;</a>
-</div>
-<p>Some properties cannot be changed.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-        <span class="k">if</span> <span class="p">(</span><span class="nx">decorClientObj</span><span class="p">.</span><span class="nx">id</span> <span class="o">!==</span> <span class="nx">clientObj</span><span class="p">.</span><span class="nx">id</span> <span class="o">||</span>
-            <span class="nx">decorClientObj</span><span class="p">.</span><span class="nx">sid</span> <span class="o">!==</span> <span class="nx">clientObj</span><span class="p">.</span><span class="nx">sid</span> <span class="o">||</span>
-            <span class="nx">decorClientObj</span><span class="p">.</span><span class="nx">admin</span> <span class="o">!==</span> <span class="nx">clientObj</span><span class="p">.</span><span class="nx">admin</span><span class="p">)</span> <span class="p">{</span>
-
-            <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameServer.handleConnection: &#39;</span> <span class="o">+</span>
-                            <span class="s1">&#39;decorateClientObj cannot alter properties: &#39;</span> <span class="o">+</span>
-                            <span class="s1">&#39;id, sid, admin.&#39;</span><span class="p">);</span>
-        <span class="p">}</span>
-        <span class="nx">clientObj</span> <span class="o">=</span> <span class="nx">decorClientObj</span><span class="p">;</span>
-    <span class="p">}</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-71" id="section-71">&#182;</a>
-</div>
-<p>Officially register the client in the socket manager.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">registerClient</span><span class="p">(</span><span class="nx">clientId</span><span class="p">,</span> <span class="nx">socketObj</span><span class="p">);</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-72" id="section-72">&#182;</a>
-</div>
-<p>Placing the player in the returning room.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">placePlayer</span><span class="p">(</span><span class="nx">clientObj</span><span class="p">,</span> <span class="nx">returningRoom</span><span class="p">))</span> <span class="p">{</span>
-        <span class="k">return</span> <span class="nx">GameServer</span><span class="p">.</span><span class="nx">codes</span><span class="p">.</span><span class="nx">ROOM_NOT_FOUND</span><span class="p">;</span>
-    <span class="p">}</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-73" id="section-73">&#182;</a>
-</div>
-<p>Notify the client of its ID.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">welcomeClient</span><span class="p">(</span><span class="nx">clientId</span><span class="p">,</span> <span class="nx">socketId</span><span class="p">);</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-74" id="section-74">&#182;</a>
-</div>
-<p>Let Admin and Player Server handle the new connection.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="nx">sys</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;channel &#39;</span> <span class="o">+</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39; &#39;</span> <span class="o">+</span>
-            <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">ADMIN_SERVER</span> <span class="o">?</span> <span class="s1">&#39;admin&#39;</span> <span class="o">:</span> <span class="s1">&#39;player&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39; re-connected: &#39;</span> <span class="o">+</span>
-            <span class="nx">clientId</span><span class="p">);</span>
-
-    <span class="k">this</span><span class="p">.</span><span class="nx">emit</span><span class="p">(</span><span class="s1">&#39;re-connecting&#39;</span><span class="p">,</span> <span class="nx">clientObj</span><span class="p">,</span> <span class="nx">returningRoom</span><span class="p">);</span>
-
-    <span class="k">return</span> <span class="nx">GameServer</span><span class="p">.</span><span class="nx">codes</span><span class="p">.</span><span class="nx">OPERATION_OK</span><span class="p">;</span>
-<span class="p">};</span>
-
-
 </pre></div>
         </td>
       </tr>
@@ -2146,7 +1731,7 @@ is already existing, then <code>handleReconnectingClient</code> is called.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-76" id="section-76">&#182;</a>
+  <a class="pilcrow" href="#section-56" id="section-56">&#182;</a>
 </div>
 <p>A new ID can be generated automatically, or through a custom cb.</p>
         </td>
@@ -2168,7 +1753,7 @@ is already existing, then <code>handleReconnectingClient</code> is called.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-77" id="section-77">&#182;</a>
+  <a class="pilcrow" href="#section-57" id="section-57">&#182;</a>
 </div>
 <p>If clientId is not string (for a failure or because the custom
 id generator function did no accept the connection) the connection
@@ -2190,7 +1775,7 @@ is disposed, exactly as it was not authorized.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-78" id="section-78">&#182;</a>
+  <a class="pilcrow" href="#section-58" id="section-58">&#182;</a>
 </div>
 <p>If the authorization function returned an id that actually
 already exists we need to try to handle as a reconnection.
@@ -2207,7 +1792,7 @@ anymore, a new id will be issued.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-79" id="section-79">&#182;</a>
+  <a class="pilcrow" href="#section-59" id="section-59">&#182;</a>
 </div>
 <p>clientObj = this.registry.getClient(clientId);</p>
         </td>
@@ -2236,7 +1821,7 @@ anymore, a new id will be issued.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-80" id="section-80">&#182;</a>
+  <a class="pilcrow" href="#section-60" id="section-60">&#182;</a>
 </div>
 <p>clientId will be reset below.</p>
         </td>
@@ -2256,7 +1841,7 @@ anymore, a new id will be issued.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-81" id="section-81">&#182;</a>
+  <a class="pilcrow" href="#section-61" id="section-61">&#182;</a>
 </div>
 <p>Duplicated code from above.</p>
         </td>
@@ -2277,7 +1862,7 @@ anymore, a new id will be issued.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-82" id="section-82">&#182;</a>
+  <a class="pilcrow" href="#section-62" id="section-62">&#182;</a>
 </div>
 <p>Creating one client object.</p>
         </td>
@@ -2296,7 +1881,7 @@ anymore, a new id will be issued.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-83" id="section-83">&#182;</a>
+  <a class="pilcrow" href="#section-63" id="section-63">&#182;</a>
 </div>
 <p>Here the clientObj can be altered by a user-defined callback.
 This part is repeated for connecting and reconnecting, if a change
@@ -2311,7 +1896,7 @@ is made here, it should be ported there too.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-84" id="section-84">&#182;</a>
+  <a class="pilcrow" href="#section-64" id="section-64">&#182;</a>
 </div>
 <p>Manually clone clientObj.</p>
         </td>
@@ -2337,7 +1922,7 @@ is made here, it should be ported there too.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-85" id="section-85">&#182;</a>
+  <a class="pilcrow" href="#section-65" id="section-65">&#182;</a>
 </div>
 <p>Some properties cannot be changed.</p>
         </td>
@@ -2360,7 +1945,7 @@ is made here, it should be ported there too.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-86" id="section-86">&#182;</a>
+  <a class="pilcrow" href="#section-66" id="section-66">&#182;</a>
 </div>
 <p>Adds the client to the registry.</p>
         </td>
@@ -2374,7 +1959,7 @@ is made here, it should be ported there too.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-87" id="section-87">&#182;</a>
+  <a class="pilcrow" href="#section-67" id="section-67">&#182;</a>
 </div>
 <p>Officially register the client in the socket manager.</p>
         </td>
@@ -2388,7 +1973,7 @@ is made here, it should be ported there too.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-88" id="section-88">&#182;</a>
+  <a class="pilcrow" href="#section-68" id="section-68">&#182;</a>
 </div>
 <p>If not startingRoom is provided,
 put the client in the requirements or waiting room.</p>
@@ -2404,7 +1989,7 @@ put the client in the requirements or waiting room.</p>
             <span class="nx">startingRoom</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">waitingRoom</span><span class="p">.</span><span class="nx">name</span><span class="p">;</span>
         <span class="p">}</span>
     <span class="p">}</span>
-    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">placePlayer</span><span class="p">(</span><span class="nx">clientObj</span><span class="p">,</span> <span class="nx">startingRoom</span><span class="p">))</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">placeClient</span><span class="p">(</span><span class="nx">clientObj</span><span class="p">,</span> <span class="nx">startingRoom</span><span class="p">))</span> <span class="p">{</span>
         <span class="k">return</span> <span class="nx">GameServer</span><span class="p">.</span><span class="nx">codes</span><span class="p">.</span><span class="nx">ROOM_NOT_FOUND</span><span class="p">;</span>
     <span class="p">}</span>
 
@@ -2415,7 +2000,7 @@ put the client in the requirements or waiting room.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-89" id="section-89">&#182;</a>
+  <a class="pilcrow" href="#section-69" id="section-69">&#182;</a>
 </div>
 <p>Notify the client of its ID.</p>
         </td>
@@ -2429,7 +2014,7 @@ put the client in the requirements or waiting room.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-90" id="section-90">&#182;</a>
+  <a class="pilcrow" href="#section-70" id="section-70">&#182;</a>
 </div>
 <p>TODO: remove comments
 TODO: in some cases it could be allowed. And in any case
@@ -2445,7 +2030,7 @@ This is probably a duplicated connection. Not allowed for the moment.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-91" id="section-91">&#182;</a>
+  <a class="pilcrow" href="#section-71" id="section-71">&#182;</a>
 </div>
 
 <div class="highlight"><pre><code>    <span class="n">this</span><span class="o">.</span><span class="n">socketManager</span><span class="o">.</span><span class="nb">send</span><span class="p">(</span><span class="n">this</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">create</span><span class="p">({</span>
@@ -2468,7 +2053,7 @@ This is probably a duplicated connection. Not allowed for the moment.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-92" id="section-92">&#182;</a>
+  <a class="pilcrow" href="#section-72" id="section-72">&#182;</a>
 </div>
 <p>Let each Admin and Player Server registering the new connection.</p>
         </td>
@@ -2478,6 +2063,419 @@ This is probably a duplicated connection. Not allowed for the moment.</p>
             <span class="nx">clientId</span><span class="p">);</span>
 
     <span class="k">this</span><span class="p">.</span><span class="nx">emit</span><span class="p">(</span><span class="s1">&#39;connecting&#39;</span><span class="p">,</span> <span class="nx">clientObj</span><span class="p">,</span> <span class="nx">startingRoom</span><span class="p">);</span>
+
+    <span class="k">return</span> <span class="nx">GameServer</span><span class="p">.</span><span class="nx">codes</span><span class="p">.</span><span class="nx">OPERATION_OK</span><span class="p">;</span>
+<span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="gameserver.handlereconnectingclient">
+  <h3>
+    <a href="#gameserver.handlereconnectingclient" name="gameserver.handlereconnectingclient" class="pilcrow">&#182;</a>
+    GameServer.handleReconnectingClient
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Handles a reconnecting client.</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">clientId</span>
+      <span class="dox_type">string</span>
+      <span>The id of the freshly connected client</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">socketId</span>
+      <span class="dox_type">string</span>
+      <span>The id of the socket connection</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">socketObj</span>
+      <span class="dox_type">Socket</span>
+      <span>The socket object (Direct or SIO)</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">clientType</span>
+      <span class="dox_type">string</span>
+      <span>The type of the client (player, bot, etc.)</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">headers</span>
+      <span class="dox_type">object</span>
+      <span>Optional. The connection headers passed by the Socket</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">cookies</span>
+      <span class="dox_type">object</span>
+      <span>Optional. An object containing the cookies, if any</span>
+    </div>
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">number</span>
+      <span>A numeric code describing the outcome of the operation.</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">GameServer.codes
+</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">GameServer</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">handleReconnectingClient</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span>
+    <span class="nx">clientId</span><span class="p">,</span> <span class="nx">socketId</span><span class="p">,</span> <span class="nx">socketObj</span><span class="p">,</span> <span class="nx">clientType</span><span class="p">,</span> <span class="nx">cookies</span><span class="p">,</span> <span class="nx">headers</span><span class="p">)</span> <span class="p">{</span>
+
+    <span class="kd">var</span> <span class="nx">sys</span><span class="p">,</span> <span class="nx">client</span><span class="p">,</span> <span class="nx">returningRoom</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">clientObj</span><span class="p">,</span> <span class="nx">decorClientObj</span><span class="p">;</span>
+
+    <span class="kd">var</span> <span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">globalLookup</span><span class="p">,</span> <span class="nx">oldInfo</span><span class="p">;</span>
+
+    <span class="nx">sys</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-74" id="section-74">&#182;</a>
+</div>
+<p>TODO: we need two operations to check existence and accessing it.
+PlayerList API should be changed.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">registry</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">exist</span><span class="p">(</span><span class="nx">clientId</span><span class="p">))</span> <span class="p">{</span>
+        <span class="nx">sys</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;GameServer.handleReconnectingClient: Reconnecting &#39;</span> <span class="o">+</span>
+                <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">ADMIN_SERVER</span> <span class="o">?</span> <span class="s1">&#39;admin&#39;</span> <span class="o">:</span> <span class="s1">&#39;player&#39;</span> <span class="p">)</span> <span class="o">+</span> <span class="s1">&#39; with &#39;</span> <span class="o">+</span>
+                <span class="s1">&#39;invalid cookie: &#39;</span> <span class="o">+</span> <span class="nx">clientId</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-75" id="section-75">&#182;</a>
+</div>
+<p>TODO: the error code is not a good description,
+but it will trigger the desired reaction: a new connection.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="k">return</span> <span class="nx">GameServer</span><span class="p">.</span><span class="nx">codes</span><span class="p">.</span><span class="nx">DUPLICATED_CLIENT_ID</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="nx">client</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">registry</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="nx">clientId</span><span class="p">);</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-76" id="section-76">&#182;</a>
+</div>
+<p>It can happen that when the client disconnected the previous time,
+its disconnection was not registered by the server (can happen
+with ajax). We do it here.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">client</span><span class="p">.</span><span class="nx">disconnected</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">sys</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;GameServer.handleReconnectingClient: Reconnecting &#39;</span> <span class="o">+</span>
+                <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">ADMIN_SERVER</span> <span class="o">?</span> <span class="s1">&#39;admin&#39;</span> <span class="o">:</span> <span class="s1">&#39;player&#39;</span> <span class="p">)</span> <span class="o">+</span> <span class="s1">&#39; that &#39;</span> <span class="o">+</span>
+                <span class="s1">&#39;was not marked as disconnected: &#39;</span> <span class="o">+</span> <span class="nx">clientId</span><span class="p">,</span> <span class="s1">&#39;warn&#39;</span><span class="p">);</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-77" id="section-77">&#182;</a>
+</div>
+<p>TODO: Ste: Mark disconnected and try to resume the connection.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="nx">gameMsg</span> <span class="o">=</span> <span class="p">{</span><span class="nx">to</span><span class="o">:</span> <span class="nx">clientId</span><span class="p">};</span> <span class="c1">// needs a game msg. TODO: update.</span>
+        <span class="nx">globalLookup</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+        <span class="nx">oldInfo</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">resolveClientAndSocket</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span>
+                                                            <span class="nx">globalLookup</span><span class="p">);</span>
+
+
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">oldInfo</span><span class="p">.</span><span class="nx">success</span><span class="p">)</span> <span class="p">{</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-78" id="section-78">&#182;</a>
+</div>
+<p>TODO: check what to do here.
+The client will be treated as a new connection, but a
+warning will be sent.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+            <span class="k">return</span> <span class="nx">GameServer</span><span class="p">.</span><span class="nx">codes</span><span class="p">.</span><span class="nx">DUPLICATED_CLIENT_ID</span><span class="p">;</span>
+        <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-79" id="section-79">&#182;</a>
+</div>
+<p>Force disconnection of old socket.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="nx">oldInfo</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">disconnect</span><span class="p">(</span><span class="nx">oldInfo</span><span class="p">.</span><span class="nx">sid</span><span class="p">);</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-80" id="section-80">&#182;</a>
+</div>
+<p>this.onDisconnect(oldInfo.sid, oldInfo.socket);</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-81" id="section-81">&#182;</a>
+</div>
+<p>Mark the client connected (necessary to do updates).</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">this</span><span class="p">.</span><span class="nx">registry</span><span class="p">.</span><span class="nx">markConnected</span><span class="p">(</span><span class="nx">clientId</span><span class="p">);</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-82" id="section-82">&#182;</a>
+</div>
+<p>Updates the socket id of the client in the registry,
+otherwise the welcomeClient will fail.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">this</span><span class="p">.</span><span class="nx">registry</span><span class="p">.</span><span class="nx">updateClient</span><span class="p">(</span><span class="nx">clientId</span><span class="p">,</span> <span class="p">{</span> <span class="nx">sid</span><span class="o">:</span> <span class="nx">socketId</span> <span class="p">});</span>
+
+    <span class="nx">returningRoom</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">registry</span><span class="p">.</span><span class="nx">getClientRoom</span><span class="p">(</span><span class="nx">clientId</span><span class="p">);</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-83" id="section-83">&#182;</a>
+</div>
+<p>The old room must be still existing.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">[</span><span class="nx">returningRoom</span><span class="p">])</span> <span class="p">{</span>
+        <span class="nx">sys</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;GameServer.handleReconnectingClient: &#39;</span> <span class="o">+</span>
+                <span class="s1">&#39;Room no longer existing for re-connecting &#39;</span> <span class="o">+</span>
+                <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">ADMIN_SERVER</span> <span class="o">?</span> <span class="s1">&#39;admin&#39;</span> <span class="o">:</span> <span class="s1">&#39;player&#39;</span> <span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;: &#39;</span> <span class="o">+</span>
+                <span class="nx">clientId</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
+
+        <span class="k">this</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">msg</span><span class="p">.</span><span class="nx">create</span><span class="p">({</span>
+            <span class="nx">target</span><span class="o">:</span> <span class="nx">ngc</span><span class="p">.</span><span class="nx">constants</span><span class="p">.</span><span class="nx">target</span><span class="p">.</span><span class="nx">ALERT</span><span class="p">,</span>
+            <span class="nx">to</span><span class="o">:</span> <span class="nx">clientId</span><span class="p">,</span>
+            <span class="nx">text</span><span class="o">:</span> <span class="s1">&#39;The game room you are looking for is not &#39;</span> <span class="o">+</span>
+                <span class="s1">&#39;existing any more. You will be redirected to &#39;</span> <span class="o">+</span>
+                <span class="s1">&#39;main waiting room.&#39;</span>
+        <span class="p">}));</span>
+
+        <span class="k">return</span> <span class="nx">GameServer</span><span class="p">.</span><span class="nx">codes</span><span class="p">.</span><span class="nx">ROOM_NOT_FOUND</span><span class="p">;</span>
+    <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-84" id="section-84">&#182;</a>
+</div>
+<p>All checks passed. Approved reconnection.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-85" id="section-85">&#182;</a>
+</div>
+<p>Creating one client object.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">clientObj</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="nx">id</span><span class="o">:</span> <span class="nx">clientId</span><span class="p">,</span>
+        <span class="nx">sid</span><span class="o">:</span> <span class="nx">socketId</span><span class="p">,</span>
+        <span class="nx">admin</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">ADMIN_SERVER</span> <span class="o">||</span> <span class="kc">false</span><span class="p">,</span>
+        <span class="nx">clientType</span><span class="o">:</span> <span class="nx">clientType</span>
+    <span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-86" id="section-86">&#182;</a>
+</div>
+<p>Here the clientObj can be altered by a user-defined callback.
+This part is repeated for connecting and reconnecting, if a change
+is made here, it should be ported there too.
+There are actually minor differences on the parameters passed.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">decorateClientObj</span><span class="p">)</span> <span class="p">{</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-87" id="section-87">&#182;</a>
+</div>
+<p>Manually clone clientObj.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="nx">decorClientObj</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="nx">id</span><span class="o">:</span> <span class="nx">clientObj</span><span class="p">.</span><span class="nx">id</span><span class="p">,</span>
+            <span class="nx">sid</span><span class="o">:</span> <span class="nx">clientObj</span><span class="p">.</span><span class="nx">sid</span><span class="p">,</span>
+            <span class="nx">admin</span><span class="o">:</span> <span class="nx">clientObj</span><span class="p">.</span><span class="nx">admin</span><span class="p">,</span>
+            <span class="nx">clientType</span><span class="o">:</span> <span class="nx">clientObj</span><span class="p">.</span><span class="nx">clientType</span>
+        <span class="p">};</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">decorateClientObj</span><span class="p">(</span><span class="nx">decorClientObj</span><span class="p">,</span> <span class="p">{</span>
+            <span class="nx">headers</span><span class="o">:</span> <span class="nx">headers</span><span class="p">,</span>
+            <span class="nx">cookies</span><span class="o">:</span> <span class="nx">cookies</span><span class="p">,</span>
+            <span class="nx">validSessionCookie</span><span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
+            <span class="nx">socketObj</span><span class="o">:</span> <span class="nx">socketObj</span><span class="p">,</span>
+            <span class="nx">socketId</span><span class="o">:</span> <span class="nx">socketId</span><span class="p">,</span>
+            <span class="nx">room</span><span class="o">:</span> <span class="nx">returningRoom</span>
+        <span class="p">});</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-88" id="section-88">&#182;</a>
+</div>
+<p>Some properties cannot be changed.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">decorClientObj</span><span class="p">.</span><span class="nx">id</span> <span class="o">!==</span> <span class="nx">clientObj</span><span class="p">.</span><span class="nx">id</span> <span class="o">||</span>
+            <span class="nx">decorClientObj</span><span class="p">.</span><span class="nx">sid</span> <span class="o">!==</span> <span class="nx">clientObj</span><span class="p">.</span><span class="nx">sid</span> <span class="o">||</span>
+            <span class="nx">decorClientObj</span><span class="p">.</span><span class="nx">admin</span> <span class="o">!==</span> <span class="nx">clientObj</span><span class="p">.</span><span class="nx">admin</span><span class="p">)</span> <span class="p">{</span>
+
+            <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameServer.handleConnection: &#39;</span> <span class="o">+</span>
+                            <span class="s1">&#39;decorateClientObj cannot alter properties: &#39;</span> <span class="o">+</span>
+                            <span class="s1">&#39;id, sid, admin.&#39;</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="nx">clientObj</span> <span class="o">=</span> <span class="nx">decorClientObj</span><span class="p">;</span>
+    <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-89" id="section-89">&#182;</a>
+</div>
+<p>Officially register the client in the socket manager.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">this</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">registerClient</span><span class="p">(</span><span class="nx">clientId</span><span class="p">,</span> <span class="nx">socketObj</span><span class="p">);</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-90" id="section-90">&#182;</a>
+</div>
+<p>Placing the player in the returning room.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">placeClient</span><span class="p">(</span><span class="nx">clientObj</span><span class="p">,</span> <span class="nx">returningRoom</span><span class="p">))</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="nx">GameServer</span><span class="p">.</span><span class="nx">codes</span><span class="p">.</span><span class="nx">ROOM_NOT_FOUND</span><span class="p">;</span>
+    <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-91" id="section-91">&#182;</a>
+</div>
+<p>Notify the client of its ID.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">this</span><span class="p">.</span><span class="nx">welcomeClient</span><span class="p">(</span><span class="nx">clientId</span><span class="p">,</span> <span class="nx">socketId</span><span class="p">);</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-92" id="section-92">&#182;</a>
+</div>
+<p>Let Admin and Player Server handle the new connection.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">sys</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;channel &#39;</span> <span class="o">+</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39; &#39;</span> <span class="o">+</span>
+            <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">ADMIN_SERVER</span> <span class="o">?</span> <span class="s1">&#39;admin&#39;</span> <span class="o">:</span> <span class="s1">&#39;player&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39; re-connected: &#39;</span> <span class="o">+</span>
+            <span class="nx">clientId</span><span class="p">);</span>
+
+    <span class="k">this</span><span class="p">.</span><span class="nx">emit</span><span class="p">(</span><span class="s1">&#39;re-connecting&#39;</span><span class="p">,</span> <span class="nx">clientObj</span><span class="p">,</span> <span class="nx">returningRoom</span><span class="p">);</span>
 
     <span class="k">return</span> <span class="nx">GameServer</span><span class="p">.</span><span class="nx">codes</span><span class="p">.</span><span class="nx">OPERATION_OK</span><span class="p">;</span>
 <span class="p">};</span>

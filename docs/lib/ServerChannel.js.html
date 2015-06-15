@@ -109,10 +109,10 @@
         <a href="#serverchannel.destroyroom">ServerChannel.destroyRoom</a>
       </div>
       <div class="heading h3">
-        <a href="#serverchannel.moveplayer">ServerChannel.movePlayer</a>
+        <a href="#serverchannel.moveclient">ServerChannel.moveClient</a>
       </div>
       <div class="heading h3">
-        <a href="#serverchannel.placeplayer">ServerChannel.placePlayer</a>
+        <a href="#serverchannel.placeclient">ServerChannel.placeClient</a>
       </div>
       <div class="heading h3">
         <a href="#serverchannel.require">ServerChannel.require</a>
@@ -1182,7 +1182,7 @@ the conf parameter.</p>
         <span class="nx">playerIds</span> <span class="o">=</span> <span class="nx">clients</span><span class="p">.</span><span class="nx">id</span><span class="p">.</span><span class="nx">getAllKeys</span><span class="p">();</span>
         <span class="k">for</span> <span class="p">(</span><span class="nx">i</span> <span class="k">in</span> <span class="nx">playerIds</span><span class="p">)</span> <span class="p">{</span>
             <span class="k">if</span> <span class="p">(</span><span class="nx">playerIds</span><span class="p">.</span><span class="nx">hasOwnProperty</span><span class="p">(</span><span class="nx">i</span><span class="p">))</span> <span class="p">{</span>
-                <span class="k">this</span><span class="p">.</span><span class="nx">movePlayer</span><span class="p">(</span><span class="nx">playerIds</span><span class="p">[</span><span class="nx">i</span><span class="p">],</span> <span class="nx">newRoom</span><span class="p">.</span><span class="nx">name</span><span class="p">);</span>
+                <span class="k">this</span><span class="p">.</span><span class="nx">moveClient</span><span class="p">(</span><span class="nx">playerIds</span><span class="p">[</span><span class="nx">i</span><span class="p">],</span> <span class="nx">newRoom</span><span class="p">.</span><span class="nx">name</span><span class="p">);</span>
             <span class="p">}</span>
         <span class="p">}</span>
     <span class="p">}</span>
@@ -1537,7 +1537,7 @@ given to move the players to.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
                     <span class="k">if</span> <span class="p">(</span><span class="nx">substituteRoomName</span><span class="p">)</span> <span class="p">{</span>
-                        <span class="k">this</span><span class="p">.</span><span class="nx">movePlayer</span><span class="p">(</span><span class="nx">i</span><span class="p">,</span> <span class="nx">substituteRoomName</span><span class="p">);</span>
+                        <span class="k">this</span><span class="p">.</span><span class="nx">moveClient</span><span class="p">(</span><span class="nx">i</span><span class="p">,</span> <span class="nx">substituteRoomName</span><span class="p">);</span>
                     <span class="p">}</span>
                     <span class="k">else</span> <span class="p">{</span>
                         <span class="nx">socket</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">playerServer</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">clients</span><span class="p">[</span><span class="nx">i</span><span class="p">];</span>
@@ -1642,10 +1642,10 @@ given to move the players to.</p>
       <tr>
         <td class="docs"><div class="dox">
   <div class="summary">
-<div class="pilwrap" id="serverchannel.moveplayer">
+<div class="pilwrap" id="serverchannel.moveclient">
   <h3>
-    <a href="#serverchannel.moveplayer" name="serverchannel.moveplayer" class="pilcrow">&#182;</a>
-    ServerChannel.movePlayer
+    <a href="#serverchannel.moveclient" name="serverchannel.moveclient" class="pilcrow">&#182;</a>
+    ServerChannel.moveClient
   </h3>
 </div>
 
@@ -1679,7 +1679,7 @@ Updates the ChannelRegistry.</p>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-<span class="nx">ServerChannel</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">movePlayer</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">playerId</span><span class="p">,</span> <span class="nx">toRoom</span><span class="p">,</span> <span class="nx">fromRoom</span><span class="p">)</span> <span class="p">{</span>
+<span class="nx">ServerChannel</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">moveClient</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">playerId</span><span class="p">,</span> <span class="nx">toRoom</span><span class="p">,</span> <span class="nx">fromRoom</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">playerObj</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">toRoomObj</span><span class="p">,</span> <span class="nx">fromRoomObj</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">oldPlayerList</span><span class="p">;</span>
@@ -1702,7 +1702,7 @@ Updates the ChannelRegistry.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">fromRoom</span> <span class="o">||</span> <span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">.</span><span class="nx">hasOwnProperty</span><span class="p">(</span><span class="nx">fromRoom</span><span class="p">))</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;ServerChannel.movePlayer: &#39;</span> <span class="o">+</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;ServerChannel.moveClient: &#39;</span> <span class="o">+</span>
                         <span class="s1">&#39;Player was in invalid room: &quot;&#39;</span> <span class="o">+</span> <span class="nx">fromRoom</span> <span class="o">+</span> <span class="s1">&#39;&quot;&#39;</span><span class="p">);</span>
     <span class="p">}</span>
 
@@ -1719,7 +1719,7 @@ Updates the ChannelRegistry.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">toRoom</span> <span class="o">||</span> <span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">.</span><span class="nx">hasOwnProperty</span><span class="p">(</span><span class="nx">toRoom</span><span class="p">))</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;ServerChannel.movePlayer: &#39;</span> <span class="o">+</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;ServerChannel.moveClient: &#39;</span> <span class="o">+</span>
                         <span class="s1">&#39;Unknown toRoom: &quot;&#39;</span> <span class="o">+</span> <span class="nx">toRoom</span> <span class="o">+</span> <span class="s1">&#39;&quot;&#39;</span><span class="p">);</span>
     <span class="p">}</span>
 
@@ -1737,7 +1737,7 @@ Updates the ChannelRegistry.</p>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="nx">playerObj</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">[</span><span class="nx">fromRoom</span><span class="p">].</span><span class="nx">clients</span><span class="p">.</span><span class="nx">remove</span><span class="p">(</span><span class="nx">playerId</span><span class="p">);</span>
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">playerObj</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;ServerChannel.movePlayer: &#39;</span> <span class="o">+</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;ServerChannel.moveClient: &#39;</span> <span class="o">+</span>
                         <span class="s1">&#39;Player &quot;&#39;</span> <span class="o">+</span> <span class="nx">playerId</span> <span class="o">+</span>
                         <span class="s1">&#39;&quot; not found in room &quot;&#39;</span> <span class="o">+</span> <span class="nx">fromRoom</span> <span class="o">+</span> <span class="s1">&#39;&quot;&#39;</span><span class="p">);</span>
     <span class="p">}</span>
@@ -1828,10 +1828,10 @@ Force clear the player list.</p>
       <tr>
         <td class="docs"><div class="dox">
   <div class="summary">
-<div class="pilwrap" id="serverchannel.placeplayer">
+<div class="pilwrap" id="serverchannel.placeclient">
   <h3>
-    <a href="#serverchannel.placeplayer" name="serverchannel.placeplayer" class="pilcrow">&#182;</a>
-    ServerChannel.placePlayer
+    <a href="#serverchannel.placeclient" name="serverchannel.placeclient" class="pilcrow">&#182;</a>
+    ServerChannel.placeClient
   </h3>
 </div>
 
@@ -1844,7 +1844,7 @@ an error is raised.</p>
 <p>The method is used to place newly connecting players in their
 first room, or reconnecting players in their last room.</p>
 
-<p>Unlike <code>movePlayer</code> this method does not send out notifications.</p>
+<p>Unlike <code>moveClient</code> this method does not send out notifications.</p>
   </div>
   <div class="details">
     <div class="dox_tag_title">Params</div>
@@ -1869,14 +1869,14 @@ first room, or reconnecting players in their last room.</p>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-<span class="nx">ServerChannel</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">placePlayer</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">playerObj</span><span class="p">,</span> <span class="nx">inRoom</span><span class="p">)</span> <span class="p">{</span>
+<span class="nx">ServerChannel</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">placeClient</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">playerObj</span><span class="p">,</span> <span class="nx">inRoom</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">playerId</span><span class="p">,</span> <span class="nx">fromRoomName</span><span class="p">,</span> <span class="nx">roomObj</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">e</span><span class="p">;</span>
 
     <span class="nx">roomObj</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">[</span><span class="nx">inRoom</span><span class="p">];</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">roomObj</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nx">e</span> <span class="o">=</span> <span class="s1">&#39;ServerChannel.placePlayer: room not found: &quot;&#39;</span> <span class="o">+</span> <span class="nx">inRoom</span> <span class="o">+</span> <span class="s1">&#39;&quot;.&#39;</span><span class="p">;</span>
+        <span class="nx">e</span> <span class="o">=</span> <span class="s1">&#39;ServerChannel.placeClient: room not found: &quot;&#39;</span> <span class="o">+</span> <span class="nx">inRoom</span> <span class="o">+</span> <span class="s1">&#39;&quot;.&#39;</span><span class="p">;</span>
         <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">e</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
         <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
     <span class="p">}</span>
@@ -1897,7 +1897,7 @@ first room, or reconnecting players in their last room.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="k">if</span> <span class="p">(</span><span class="nx">fromRoomName</span> <span class="o">&amp;&amp;</span> <span class="k">this</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">[</span><span class="nx">fromRoomName</span><span class="p">].</span><span class="nx">clients</span><span class="p">.</span><span class="nx">exist</span><span class="p">(</span><span class="nx">playerId</span><span class="p">))</span> <span class="p">{</span>
-        <span class="nx">e</span> <span class="o">=</span> <span class="s1">&#39;ServerChannel.placePlayer: &#39;</span> <span class="o">+</span>
+        <span class="nx">e</span> <span class="o">=</span> <span class="s1">&#39;ServerChannel.placeClient: &#39;</span> <span class="o">+</span>
             <span class="s1">&#39;player already in room: &quot;&#39;</span> <span class="o">+</span> <span class="nx">fromRoomName</span> <span class="o">+</span> <span class="s1">&#39;&quot;&#39;</span><span class="p">;</span>
         <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">e</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
         <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
