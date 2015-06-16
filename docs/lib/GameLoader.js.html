@@ -132,7 +132,8 @@ MIT Licensed</p>
 
 <span class="kd">var</span> <span class="nx">path</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;path&#39;</span><span class="p">);</span>
 <span class="kd">var</span> <span class="nx">fs</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;fs&#39;</span><span class="p">);</span>
-<span class="kd">var</span> <span class="nx">express</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;express&#39;</span><span class="p">);</span>
+
+<span class="kd">var</span> <span class="nx">GameRouter</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;./GameRouter&#39;</span><span class="p">);</span>
 
 <span class="kd">var</span> <span class="nx">J</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;JSUS&#39;</span><span class="p">).</span><span class="nx">JSUS</span><span class="p">;</span>
 <span class="kd">var</span> <span class="nx">ngc</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;nodegame-client&#39;</span><span class="p">);</span>
@@ -162,6 +163,8 @@ MIT Licensed</p>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="kd">function</span> <span class="nx">GameLoader</span><span class="p">(</span><span class="nx">servernode</span><span class="p">)</span> <span class="p">{</span>
     <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span> <span class="o">=</span> <span class="nx">servernode</span><span class="p">;</span>
+
+    <span class="k">this</span><span class="p">.</span><span class="nx">gameRouter</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">GameRouter</span><span class="p">(</span><span class="nx">servernode</span><span class="p">);</span>
 
 
 </pre></div>
@@ -418,7 +421,7 @@ overwritten later on.</p>
 <p>Adding game info to global info object.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">info</span><span class="p">.</span><span class="nx">games</span><span class="p">[</span><span class="nx">gameInfo</span><span class="p">.</span><span class="nx">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">info</span><span class="p">.</span><span class="nx">games</span><span class="p">[</span><span class="nx">gameName</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
         <span class="nx">dir</span><span class="o">:</span> <span class="nx">gameDir</span><span class="p">,</span>
         <span class="nx">info</span><span class="o">:</span> <span class="nx">gameInfo</span><span class="p">,</span>
         <span class="nx">clientTypes</span><span class="o">:</span> <span class="nx">clientTypes</span><span class="p">,</span>
@@ -438,23 +441,6 @@ overwritten later on.</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-15" id="section-15">&#182;</a>
 </div>
-<p>Adding the public directory of the game to the static directories
-<a href='http://stackoverflow.com/questions/5973432/'>http://stackoverflow.com/questions/5973432/</a>
- setting-up-two-different-static-directories-in-node-js-express-framework</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">http</span><span class="p">.</span><span class="nx">use</span><span class="p">(</span><span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;/public&#39;</span><span class="p">,</span>
-                             <span class="nx">express</span><span class="p">.</span><span class="kr">static</span><span class="p">(</span><span class="nx">gameDir</span> <span class="o">+</span> <span class="s1">&#39;public&#39;</span><span class="p">));</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-16" id="section-16">&#182;</a>
-</div>
 <p>Tries to load Channels file from game directory.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
@@ -467,7 +453,7 @@ overwritten later on.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-17" id="section-17">&#182;</a>
+  <a class="pilcrow" href="#section-16" id="section-16">&#182;</a>
 </div>
 <p>Creates a waiting room.</p>
         </td>
@@ -481,7 +467,7 @@ overwritten later on.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-18" id="section-18">&#182;</a>
+  <a class="pilcrow" href="#section-17" id="section-17">&#182;</a>
 </div>
 <p>Loading Auth dir, if any.</p>
         </td>
@@ -495,7 +481,7 @@ overwritten later on.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-19" id="section-19">&#182;</a>
+  <a class="pilcrow" href="#section-18" id="section-18">&#182;</a>
 </div>
 <p>Loading Requirements dir, if any.</p>
         </td>
@@ -509,12 +495,27 @@ overwritten later on.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-20" id="section-20">&#182;</a>
+  <a class="pilcrow" href="#section-19" id="section-19">&#182;</a>
 </div>
 <p>Tries to load Views file from game directory.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="k">this</span><span class="p">.</span><span class="nx">loadViewsFile</span><span class="p">(</span><span class="nx">gameDir</span><span class="p">,</span> <span class="nx">gameInfo</span><span class="p">);</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-20" id="section-20">&#182;</a>
+</div>
+<p>Add routes (considering other loaded options: auth, monitor, etc.).</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">this</span><span class="p">.</span><span class="nx">gameRouter</span><span class="p">.</span><span class="nx">addRoutes</span><span class="p">(</span><span class="nx">gameDir</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span>
+                              <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">info</span><span class="p">.</span><span class="nx">games</span><span class="p">[</span><span class="nx">gameName</span><span class="p">]);</span>
 
 
 </pre></div>
@@ -1125,6 +1126,7 @@ automatically add a waiting room to the channel.</p>
 
         <span class="k">if</span> <span class="p">(</span><span class="nx">channel</span><span class="p">)</span> <span class="p">{</span>
 
+
 </pre></div>
         </td>
       </tr>
@@ -1136,7 +1138,12 @@ automatically add a waiting room to the channel.</p>
 <p>Add the list of channels created by the game.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-            <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">info</span><span class="p">.</span><span class="nx">games</span><span class="p">[</span><span class="nx">gameName</span><span class="p">].</span><span class="nx">channels</span><span class="p">[</span><span class="nx">channel</span><span class="p">.</span><span class="nx">name</span><span class="p">]</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">info</span><span class="p">.</span><span class="nx">games</span><span class="p">[</span><span class="nx">gameName</span><span class="p">].</span><span class="nx">channels</span><span class="p">[</span><span class="nx">channel</span><span class="p">.</span><span class="nx">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="nx">player</span><span class="o">:</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">playerServer</span> <span class="o">?</span>
+                    <span class="nx">channel</span><span class="p">.</span><span class="nx">playerServer</span><span class="p">.</span><span class="nx">endpoint</span> <span class="o">:</span> <span class="kc">null</span><span class="p">,</span>
+                <span class="nx">admin</span><span class="o">:</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">adminServer</span> <span class="o">?</span>
+                    <span class="nx">channel</span><span class="p">.</span><span class="nx">adminServer</span><span class="p">.</span><span class="nx">endpoint</span> <span class="o">:</span> <span class="kc">null</span>
+            <span class="p">};</span>
 
             <span class="k">if</span> <span class="p">(</span><span class="nx">waitRoomConf</span><span class="p">)</span> <span class="p">{</span>
 
@@ -2060,7 +2067,6 @@ Auth callback can modify the authorization only of those.</p>
         <span class="p">}</span>
     <span class="p">};</span>
 <span class="p">};</span>
-
 
 
 </pre></div>
