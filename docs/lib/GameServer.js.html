@@ -156,6 +156,9 @@
       <div class="heading h2">
         <a href="#helper%20methods">Helper methods</a>
       </div>
+      <div class="heading h2">
+        <a href="#decodejwt">decodeJWT</a>
+      </div>
       <div class="heading h3">
         <a href="#parsecookies">parseCookies</a>
       </div>
@@ -3191,9 +3194,48 @@ invoking this method, which evaluates only if the sender exists.</p>
         <td class="code highlight"><div class="highlight"><pre>
 
 
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="decodejwt">
+  <h2>
+    <a href="#decodejwt" name="decodejwt" class="pilcrow">&#182;</a>
+    decodeJWT
+  </h2>
+</div>
+
+  </div>
+  <div class="body"><p>Tries to decode a jwt token and catches the possible error</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">token</span>
+      <span class="dox_type">string</span>
+      <span>The encrypted token</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">secret</span>
+      <span class="dox_type">strong</span>
+      <span>The secret for decoding</span>
+    </div>
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">object</span>
+      <span class="dox_type">boolean</span>
+      <span>The decoded token, or FALSE on failure</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
 <span class="kd">function</span> <span class="nx">decodeJWT</span><span class="p">(</span><span class="nx">token</span><span class="p">,</span> <span class="nx">secret</span><span class="p">)</span> <span class="p">{</span>
     <span class="k">try</span> <span class="p">{</span>
-        <span class="k">return</span> <span class="nx">jwt</span><span class="p">.</span><span class="nx">verify</span><span class="p">(</span><span class="nx">cookies</span><span class="p">.</span><span class="nx">nodegame_token</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">secret</span><span class="p">);</span>
+        <span class="k">return</span> <span class="nx">jwt</span><span class="p">.</span><span class="nx">verify</span><span class="p">(</span><span class="nx">token</span><span class="p">,</span> <span class="nx">secret</span><span class="p">);</span>
     <span class="p">}</span>
     <span class="k">catch</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>

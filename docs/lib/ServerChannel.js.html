@@ -224,9 +224,9 @@ and to move players around them.</p>
 <p>Each server (player and admin) needs a separate configuration object.
 However servernode <em>addChannel</em> method receive a single object.</p>
 
-<p>The object must have the <em>admin</em> and <em>player</em> properties, as two objects.
-All the properties that are the first level in the main configuration object,
-and that are not found in <em>admin</em> or <em>player</em> will be inherited.</p>
+<p>The object must have the <em>adminServer</em> and <em>playerServer</em> properties,
+as two objects. All the other properties in the main configuration object,
+and that are not found in <em>admin</em> or <em>player</em> will be added to them.</p>
   </div>
   <div class="details">
     <div class="dox_tag_title">Params</div>
@@ -260,18 +260,18 @@ and that are not found in <em>admin</em> or <em>player</em> will be inherited.</
 <p>Options are mixed in.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="nx">adminOptions</span> <span class="o">=</span> <span class="nx">options</span><span class="p">.</span><span class="nx">admin</span><span class="p">;</span>
-    <span class="nx">playerOptions</span> <span class="o">=</span> <span class="nx">options</span><span class="p">.</span><span class="nx">player</span><span class="p">;</span>
-    <span class="k">delete</span> <span class="nx">options</span><span class="p">.</span><span class="nx">admin</span><span class="p">;</span>
-    <span class="k">delete</span> <span class="nx">options</span><span class="p">.</span><span class="nx">player</span><span class="p">;</span>
+    <span class="nx">adminOptions</span> <span class="o">=</span> <span class="nx">options</span><span class="p">.</span><span class="nx">adminServer</span><span class="p">;</span>
+    <span class="nx">playerOptions</span> <span class="o">=</span> <span class="nx">options</span><span class="p">.</span><span class="nx">playerServer</span><span class="p">;</span>
+    <span class="k">delete</span> <span class="nx">options</span><span class="p">.</span><span class="nx">adminServer</span><span class="p">;</span>
+    <span class="k">delete</span> <span class="nx">options</span><span class="p">.</span><span class="nx">playerServer</span><span class="p">;</span>
 
     <span class="nx">out</span> <span class="o">=</span> <span class="nx">J</span><span class="p">.</span><span class="nx">clone</span><span class="p">(</span><span class="nx">options</span><span class="p">);</span>
     <span class="nx">J</span><span class="p">.</span><span class="nx">mixin</span><span class="p">(</span><span class="nx">adminOptions</span><span class="p">,</span> <span class="nx">out</span><span class="p">);</span>
     <span class="nx">tmp</span> <span class="o">=</span> <span class="nx">J</span><span class="p">.</span><span class="nx">clone</span><span class="p">(</span><span class="nx">options</span><span class="p">);</span>
     <span class="nx">J</span><span class="p">.</span><span class="nx">mixout</span><span class="p">(</span><span class="nx">playerOptions</span><span class="p">,</span> <span class="nx">out</span><span class="p">);</span>
 
-    <span class="nx">out</span><span class="p">.</span><span class="nx">admin</span> <span class="o">=</span> <span class="nx">adminOptions</span><span class="p">;</span>
-    <span class="nx">out</span><span class="p">.</span><span class="nx">player</span> <span class="o">=</span> <span class="nx">playerOptions</span><span class="p">;</span>
+    <span class="nx">out</span><span class="p">.</span><span class="nx">adminServer</span> <span class="o">=</span> <span class="nx">adminOptions</span><span class="p">;</span>
+    <span class="nx">out</span><span class="p">.</span><span class="nx">playerServer</span> <span class="o">=</span> <span class="nx">playerOptions</span><span class="p">;</span>
 
     <span class="k">return</span> <span class="nx">out</span><span class="p">;</span>
 <span class="p">};</span>
@@ -397,12 +397,12 @@ and that are not found in <em>admin</em> or <em>player</em> will be inherited.</
 </div>
 
   </div>
-  <div class="body"><p>The name of the channel</p>
+  <div class="body"><p>The name of the channel (under normal condition equal to gameName)</p>
   </div>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">name</span> <span class="o">=</span> <span class="nx">options</span><span class="p">.</span><span class="nx">name</span><span class="p">;</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">name</span> <span class="o">=</span> <span class="nx">options</span><span class="p">.</span><span class="nx">name</span>
 
 
 </pre></div>
@@ -873,8 +873,8 @@ game rooms with a default name.</p>
 <p>Enforce a name.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="nx">options</span><span class="p">.</span><span class="nx">admin</span><span class="p">.</span><span class="nx">name</span> <span class="o">=</span> <span class="nx">options</span><span class="p">.</span><span class="nx">admin</span><span class="p">.</span><span class="nx">name</span> <span class="o">||</span> <span class="s1">&#39;[ADMIN_SERVER]&#39;</span><span class="p">;</span>
-    <span class="nx">options</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">name</span> <span class="o">=</span> <span class="nx">options</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">name</span> <span class="o">||</span> <span class="s1">&#39;[PLAYER_SERVER]&#39;</span><span class="p">;</span>
+    <span class="nx">options</span><span class="p">.</span><span class="nx">adminServer</span><span class="p">.</span><span class="nx">name</span> <span class="o">=</span> <span class="nx">options</span><span class="p">.</span><span class="nx">adminServer</span><span class="p">.</span><span class="nx">name</span> <span class="o">||</span> <span class="s1">&#39;[ADMIN_SERVER]&#39;</span><span class="p">;</span>
+    <span class="nx">options</span><span class="p">.</span><span class="nx">playerServer</span><span class="p">.</span><span class="nx">name</span> <span class="o">=</span> <span class="nx">options</span><span class="p">.</span><span class="nx">playerServer</span><span class="p">.</span><span class="nx">name</span> <span class="o">||</span> <span class="s1">&#39;[PLAYER_SERVER]&#39;</span><span class="p">;</span>
 
 
 </pre></div>
@@ -888,8 +888,8 @@ game rooms with a default name.</p>
 <p>Actually creates the servers.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">adminServer</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">AdminServer</span><span class="p">(</span><span class="nx">options</span><span class="p">.</span><span class="nx">admin</span><span class="p">,</span> <span class="k">this</span><span class="p">);</span>
-    <span class="k">this</span><span class="p">.</span><span class="nx">playerServer</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">PlayerServer</span><span class="p">(</span><span class="nx">options</span><span class="p">.</span><span class="nx">player</span><span class="p">,</span> <span class="k">this</span><span class="p">);</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">adminServer</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">AdminServer</span><span class="p">(</span><span class="nx">options</span><span class="p">.</span><span class="nx">adminServer</span><span class="p">,</span> <span class="k">this</span><span class="p">);</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">playerServer</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">PlayerServer</span><span class="p">(</span><span class="nx">options</span><span class="p">.</span><span class="nx">playerServer</span><span class="p">,</span> <span class="k">this</span><span class="p">);</span>
 
 
 </pre></div>

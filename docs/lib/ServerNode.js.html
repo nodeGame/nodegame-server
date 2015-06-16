@@ -966,20 +966,20 @@ is aborted.</p>
         <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerNode.addChannel: options must be object.&#39;</span><span class="p">);</span>
     <span class="p">}</span>
 
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">options</span><span class="p">.</span><span class="nx">player</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nx">options</span><span class="p">.</span><span class="nx">player</span> <span class="o">=</span> <span class="p">{</span> <span class="nx">endpoint</span><span class="o">:</span> <span class="nx">options</span><span class="p">.</span><span class="nx">player</span> <span class="p">};</span>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">options</span><span class="p">.</span><span class="nx">playerServer</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">options</span><span class="p">.</span><span class="nx">playerServer</span> <span class="o">=</span> <span class="p">{</span> <span class="nx">endpoint</span><span class="o">:</span> <span class="nx">options</span><span class="p">.</span><span class="nx">playerServer</span> <span class="p">};</span>
     <span class="p">}</span>
 
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">options</span><span class="p">.</span><span class="nx">player</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">options</span><span class="p">.</span><span class="nx">playerServer</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerNode.addChannel: &#39;</span> <span class="o">+</span>
-                            <span class="s1">&#39;options.player must be string or object.&#39;</span><span class="p">);</span>
+                            <span class="s1">&#39;options.playerServer must be string or object.&#39;</span><span class="p">);</span>
     <span class="p">}</span>
 
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">options</span><span class="p">.</span><span class="nx">admin</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nx">options</span><span class="p">.</span><span class="nx">admin</span> <span class="o">=</span> <span class="p">{</span> <span class="nx">endpoint</span><span class="o">:</span> <span class="nx">options</span><span class="p">.</span><span class="nx">admin</span> <span class="p">};</span>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">options</span><span class="p">.</span><span class="nx">adminServer</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">options</span><span class="p">.</span><span class="nx">adminServer</span> <span class="o">=</span> <span class="p">{</span> <span class="nx">endpoint</span><span class="o">:</span> <span class="nx">options</span><span class="p">.</span><span class="nx">adminServer</span> <span class="p">};</span>
     <span class="p">}</span>
 
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">options</span><span class="p">.</span><span class="nx">admin</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">options</span><span class="p">.</span><span class="nx">adminServer</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerNode.addChannel: &#39;</span> <span class="o">+</span>
                             <span class="s1">&#39;options.admin must be string or object.&#39;</span><span class="p">);</span>
     <span class="p">}</span>
@@ -1017,6 +1017,7 @@ is aborted.</p>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="nx">channelOptions</span> <span class="o">=</span> <span class="nx">J</span><span class="p">.</span><span class="nx">merge</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">defaults</span><span class="p">.</span><span class="nx">channel</span><span class="p">,</span> <span class="nx">channelOptions</span><span class="p">);</span>
 
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">channelOptions</span><span class="p">.</span><span class="nx">name</span><span class="p">)</span> <span class="nx">channelOptions</span><span class="p">.</span><span class="nx">name</span> <span class="o">=</span> <span class="nx">channelOptions</span><span class="p">.</span><span class="nx">gameName</span><span class="p">;</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">channelOptions</span><span class="p">.</span><span class="nx">name</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;ServerNode.addChannel: channel name must be string.&#39;</span><span class="p">);</span>
