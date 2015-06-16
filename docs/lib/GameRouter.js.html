@@ -56,6 +56,7 @@ MIT Licensed</p>
         <td class="code highlight"><div class="highlight"><pre><span class="kd">var</span> <span class="nx">fs</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;fs&#39;</span><span class="p">);</span>
 <span class="kd">var</span> <span class="nx">express</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;express&#39;</span><span class="p">);</span>
 <span class="kd">var</span> <span class="nx">jwt</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;jsonwebtoken&#39;</span><span class="p">);</span>
+<span class="kd">var</span> <span class="nx">url</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;url&#39;</span><span class="p">);</span>
 
 
 </pre></div>
@@ -157,7 +158,6 @@ MIT Licensed</p>
 
         <span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;/monitor/auth/:id/:pwd&#39;</span><span class="p">,</span>
                 <span class="kd">function</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">next</span><span class="p">)</span> <span class="p">{</span>
-
             <span class="kd">var</span> <span class="nx">userId</span><span class="p">,</span> <span class="nx">pwd</span><span class="p">;</span>
             <span class="nx">userId</span> <span class="o">=</span> <span class="nx">req</span><span class="p">.</span><span class="nx">params</span><span class="p">.</span><span class="nx">id</span><span class="p">;</span>
             <span class="nx">pwd</span> <span class="o">=</span> <span class="nx">req</span><span class="p">.</span><span class="nx">params</span><span class="p">.</span><span class="nx">pwd</span><span class="p">;</span>
@@ -227,16 +227,10 @@ MIT Licensed</p>
     <span class="nx">monitorUri</span> <span class="o">=</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;/monitor/index.htm?channel=&#39;</span> <span class="o">+</span>
         <span class="nx">gameInfo</span><span class="p">.</span><span class="nx">channels</span><span class="p">[</span><span class="nx">gameName</span><span class="p">].</span><span class="nx">admin</span><span class="p">;</span>
 
-    <span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;/monitor&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nx">res</span><span class="p">.</span><span class="nx">redirect</span><span class="p">(</span><span class="nx">monitorUri</span><span class="p">);</span>
-    <span class="p">});</span>
-
-
     <span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;/monitor/*&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">next</span><span class="p">)</span> <span class="p">{</span>
-
         <span class="kd">var</span> <span class="nx">userId</span><span class="p">,</span> <span class="nx">pwd</span><span class="p">;</span>
         <span class="kd">var</span> <span class="nx">path</span><span class="p">,</span> <span class="nx">file</span><span class="p">;</span>
-
+        <span class="kd">var</span> <span class="nx">search</span><span class="p">;</span>
 
         <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">gameInfo</span><span class="p">.</span><span class="nx">auth</span><span class="p">.</span><span class="nx">enabled</span><span class="p">)</span> <span class="p">{</span>
 
@@ -256,7 +250,9 @@ return;</p>
 
         <span class="nx">file</span> <span class="o">=</span> <span class="nx">req</span><span class="p">.</span><span class="nx">params</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
         <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;&#39;</span> <span class="o">===</span> <span class="nx">file</span> <span class="o">||</span> <span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">file</span><span class="p">)</span> <span class="p">{</span>
-            <span class="nx">res</span><span class="p">.</span><span class="nx">redirect</span><span class="p">(</span><span class="nx">monitorUri</span><span class="p">);</span>
+            <span class="nx">search</span> <span class="o">=</span> <span class="nx">url</span><span class="p">.</span><span class="nx">parse</span><span class="p">(</span><span class="nx">req</span><span class="p">.</span><span class="nx">url</span><span class="p">,</span> <span class="kc">true</span><span class="p">).</span><span class="nx">search</span><span class="p">;</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nx">search</span><span class="p">)</span> <span class="nx">res</span><span class="p">.</span><span class="nx">redirect</span><span class="p">(</span><span class="nx">monitorUri</span> <span class="o">+</span> <span class="s1">&#39;&amp;&#39;</span> <span class="o">+</span> <span class="nx">search</span><span class="p">.</span><span class="nx">substring</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+            <span class="k">else</span> <span class="nx">res</span><span class="p">.</span><span class="nx">redirect</span><span class="p">(</span><span class="nx">monitorUri</span><span class="p">);</span>
             <span class="k">return</span><span class="p">;</span>
         <span class="p">}</span>
 
@@ -303,6 +299,10 @@ Error: ENOTDIR in fetching the file.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
         <span class="nx">res</span><span class="p">.</span><span class="nx">sendfile</span><span class="p">(</span><span class="nx">path</span><span class="p">);</span>
+    <span class="p">});</span>
+
+    <span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;/monitor&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">res</span><span class="p">.</span><span class="nx">redirect</span><span class="p">(</span><span class="nx">monitorUri</span><span class="p">);</span>
     <span class="p">});</span>
 
 
@@ -660,6 +660,7 @@ to instantiate the page requested by <code>xx/xx/page*</code>.</p>
 
 <span class="kd">function</span> <span class="nx">loginSuper</span><span class="p">(</span><span class="nx">servernode</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">user</span><span class="p">,</span> <span class="nx">pwd</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">req</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">channel</span><span class="p">,</span> <span class="nx">authorized</span><span class="p">,</span> <span class="nx">token</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">search</span><span class="p">,</span> <span class="nx">redirectUri</span><span class="p">;</span>
 
     <span class="nx">channel</span> <span class="o">=</span> <span class="nx">servernode</span><span class="p">.</span><span class="nx">channels</span><span class="p">[</span><span class="nx">gameName</span><span class="p">];</span>
     <span class="nx">authorized</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">authorizeSuperUser</span><span class="p">(</span><span class="nx">user</span><span class="p">,</span> <span class="nx">pwd</span><span class="p">);</span>
@@ -671,7 +672,10 @@ to instantiate the page requested by <code>xx/xx/page*</code>.</p>
             <span class="nx">path</span><span class="o">:</span> <span class="s1">&#39;/&#39;</span><span class="p">,</span>
             <span class="nx">httpOnly</span><span class="o">:</span> <span class="kc">true</span>
         <span class="p">});</span>
-        <span class="nx">res</span><span class="p">.</span><span class="nx">redirect</span><span class="p">(</span><span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;/monitor/&#39;</span><span class="p">);</span>
+        <span class="nx">redirectUri</span> <span class="o">=</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;/monitor/&#39;</span><span class="p">;</span>
+        <span class="nx">search</span> <span class="o">=</span> <span class="nx">url</span><span class="p">.</span><span class="nx">parse</span><span class="p">(</span><span class="nx">req</span><span class="p">.</span><span class="nx">url</span><span class="p">,</span> <span class="kc">true</span><span class="p">).</span><span class="nx">search</span><span class="p">;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">search</span><span class="p">)</span> <span class="nx">redirectUri</span> <span class="o">+=</span> <span class="nx">search</span><span class="p">;</span>
+        <span class="nx">res</span><span class="p">.</span><span class="nx">redirect</span><span class="p">(</span><span class="nx">redirectUri</span><span class="p">);</span>
         <span class="k">return</span> <span class="kc">true</span><span class="p">;</span>
     <span class="p">}</span>
 
@@ -681,6 +685,7 @@ to instantiate the page requested by <code>xx/xx/page*</code>.</p>
 
 <span class="kd">function</span> <span class="nx">login</span><span class="p">(</span><span class="nx">servernode</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">user</span><span class="p">,</span> <span class="nx">pwd</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">req</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">channel</span><span class="p">,</span> <span class="nx">authorized</span><span class="p">,</span> <span class="nx">token</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">search</span><span class="p">,</span> <span class="nx">redirectUri</span><span class="p">;</span>
 
     <span class="nx">channel</span> <span class="o">=</span> <span class="nx">servernode</span><span class="p">.</span><span class="nx">channels</span><span class="p">[</span><span class="nx">gameName</span><span class="p">];</span>
     <span class="nx">authorized</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">registry</span><span class="p">.</span><span class="nx">authorize</span><span class="p">({</span> <span class="nx">id</span><span class="o">:</span> <span class="nx">user</span><span class="p">,</span> <span class="nx">pwd</span><span class="o">:</span> <span class="nx">pwd</span> <span class="p">});</span>
@@ -692,7 +697,10 @@ to instantiate the page requested by <code>xx/xx/page*</code>.</p>
             <span class="nx">path</span><span class="o">:</span> <span class="s1">&#39;/&#39;</span><span class="p">,</span>
             <span class="nx">httpOnly</span><span class="o">:</span> <span class="kc">true</span>
         <span class="p">});</span>
-        <span class="nx">res</span><span class="p">.</span><span class="nx">redirect</span><span class="p">(</span><span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">gameName</span><span class="p">);</span>
+        <span class="nx">redirectUri</span> <span class="o">=</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span><span class="p">;</span>
+        <span class="nx">search</span> <span class="o">=</span> <span class="nx">url</span><span class="p">.</span><span class="nx">parse</span><span class="p">(</span><span class="nx">req</span><span class="p">.</span><span class="nx">url</span><span class="p">,</span> <span class="kc">true</span><span class="p">).</span><span class="nx">search</span><span class="p">;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">search</span><span class="p">)</span> <span class="nx">redirectUri</span> <span class="o">+=</span> <span class="nx">search</span><span class="p">;</span>
+        <span class="nx">res</span><span class="p">.</span><span class="nx">redirect</span><span class="p">(</span><span class="nx">redirectUri</span><span class="p">);</span>
         <span class="k">return</span> <span class="kc">true</span><span class="p">;</span>
     <span class="p">}</span>
 
