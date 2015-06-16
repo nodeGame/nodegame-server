@@ -1083,7 +1083,7 @@ automatically add a waiting room to the channel.</p>
     <span class="nx">conf</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="nx">channelsFile</span><span class="p">);</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">J</span><span class="p">.</span><span class="nx">isArray</span><span class="p">(</span><span class="nx">conf</span><span class="p">))</span> <span class="nx">conf</span> <span class="o">=</span> <span class="p">[</span><span class="nx">conf</span><span class="p">];</span>
-    
+
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">conf</span> <span class="p">)</span> <span class="p">{</span>
         <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadChannelsFile: channels file &#39;</span> <span class="o">+</span>
                             <span class="s1">&#39;must return an object or array.&#39;</span><span class="p">);</span>

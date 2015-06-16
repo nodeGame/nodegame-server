@@ -61,7 +61,7 @@ function configure(servernode) {
     // 2. Channels configuration.
 
     // AdminServer default options.
-    admin = {
+    adminServer = {
 
         // A PLAYER_UPDATE / PCONNECT / PDISCONNECT message will be sent to
         // all clients connected to the PlayerServer endpoint when:
@@ -127,7 +127,7 @@ function configure(servernode) {
     };
 
     // PlayerServer default options.
-    player = {
+    playerServer = {
 
         // A PLAYER_UPDATE / PCONNECT / PDISCONNECT message will be sent to
         // all clients connected to the PlayerServer endpoint when:
@@ -198,8 +198,8 @@ function configure(servernode) {
         accessDeniedUrl: '/pages/accessdenied.htm',
         // Admin and Player server specific options.
         // Can overwrite common ones.
-        player: player,
-        admin: admin
+        playerServer: playerServer,
+        adminServer: adminServer
     };
 
     // Returns TRUE to signal successful configuration of the server.

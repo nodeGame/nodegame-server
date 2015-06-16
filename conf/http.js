@@ -48,7 +48,6 @@ function configure(app, servernode) {
 
     app.enable("jsonp callback");
 
-
     app.use(express.cookieParser());
     app.use(express.bodyParser());
 
