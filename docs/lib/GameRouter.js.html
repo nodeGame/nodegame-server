@@ -25,7 +25,7 @@
         <a href="#gameloader.loadauthdir">GameLoader.loadAuthDir</a>
       </div>
       <div class="heading h2">
-        <a href="#helper%20methods">Helper Methods</a>
+        <a href="#helper%20methods.">Helper Methods.</a>
       </div>
     </div>
   </div>
@@ -73,9 +73,24 @@ MIT Licensed</p>
 <span class="kd">var</span> <span class="nx">unauthMsg</span> <span class="o">=</span> <span class="s1">&#39;Sorry, but your connection is &#39;</span> <span class="o">+</span>
     <span class="s1">&#39;&lt;strong&gt;not&lt;/strong&gt; authorized.&#39;</span><span class="p">;</span>
 
-<span class="kd">var</span> <span class="nx">tokens</span> <span class="o">=</span> <span class="p">{};</span>
 
 <span class="nx">module</span><span class="p">.</span><span class="nx">exports</span> <span class="o">=</span> <span class="nx">GameRouter</span><span class="p">;</span>
+
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-3" id="section-3">&#182;</a>
+</div>
+<p>TODO: see if we should move them in constructor.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="kd">var</span> <span class="nx">tokens</span> <span class="o">=</span> <span class="p">{};</span>
+<span class="kd">var</span> <span class="nx">superTokens</span> <span class="o">=</span> <span class="p">{};</span>
 
 <span class="kd">function</span> <span class="nx">GameRouter</span><span class="p">(</span><span class="nx">servernode</span><span class="p">)</span> <span class="p">{</span>
     <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span> <span class="o">=</span> <span class="nx">servernode</span><span class="p">;</span>
@@ -133,12 +148,21 @@ MIT Licensed</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-4" id="section-4">&#182;</a>
+  <a class="pilcrow" href="#section-5" id="section-5">&#182;</a>
 </div>
 <p>Auth.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="k">if</span> <span class="p">(</span><span class="nx">gameInfo</span><span class="p">.</span><span class="nx">auth</span> <span class="o">&amp;&amp;</span> <span class="nx">gameInfo</span><span class="p">.</span><span class="nx">auth</span><span class="p">.</span><span class="nx">enabled</span><span class="p">)</span> <span class="p">{</span>
+
+        <span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;/monitor/auth/:id/:pwd&#39;</span><span class="p">,</span>
+                <span class="kd">function</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">next</span><span class="p">)</span> <span class="p">{</span>
+
+            <span class="kd">var</span> <span class="nx">userId</span><span class="p">,</span> <span class="nx">pwd</span><span class="p">;</span>
+            <span class="nx">userId</span> <span class="o">=</span> <span class="nx">req</span><span class="p">.</span><span class="nx">params</span><span class="p">.</span><span class="nx">id</span><span class="p">;</span>
+            <span class="nx">pwd</span> <span class="o">=</span> <span class="nx">req</span><span class="p">.</span><span class="nx">params</span><span class="p">.</span><span class="nx">pwd</span><span class="p">;</span>
+            <span class="nx">loginSuper</span><span class="p">(</span><span class="nx">servernode</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">userId</span><span class="p">,</span> <span class="nx">pwd</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">req</span><span class="p">);</span>
+        <span class="p">});</span>
 
         <span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;/auth/:id/:pwd&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">next</span><span class="p">)</span> <span class="p">{</span>
             <span class="kd">var</span> <span class="nx">userId</span><span class="p">,</span> <span class="nx">pwd</span><span class="p">;</span>
@@ -149,18 +173,25 @@ MIT Licensed</p>
 
         <span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;/*&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">next</span><span class="p">)</span> <span class="p">{</span>
 
+            <span class="k">if</span> <span class="p">(</span><span class="nx">req</span><span class="p">.</span><span class="nx">params</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&amp;&amp;</span> <span class="nx">req</span><span class="p">.</span><span class="nx">params</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="nx">substring</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">8</span><span class="p">)</span> <span class="o">===</span> <span class="s1">&#39;monitor/&#39;</span><span class="p">)</span> <span class="p">{</span>
+                <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">req</span><span class="p">.</span><span class="nx">cookies</span> <span class="o">||</span> <span class="o">!</span><span class="nx">superTokens</span><span class="p">[</span><span class="nx">req</span><span class="p">.</span><span class="nx">cookies</span><span class="p">.</span><span class="nx">nodegame_token</span><span class="p">])</span> <span class="p">{</span>
+                    <span class="nx">res</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="nx">unauthMsg</span><span class="p">);</span>
+                    <span class="k">return</span><span class="p">;</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+
 </pre></div>
         </td>
       </tr>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-5" id="section-5">&#182;</a>
+  <a class="pilcrow" href="#section-6" id="section-6">&#182;</a>
 </div>
 <p>Check if a cookie is set correctly.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-            <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">req</span><span class="p">.</span><span class="nx">cookies</span> <span class="o">||</span> <span class="o">!</span><span class="nx">tokens</span><span class="p">[</span><span class="nx">req</span><span class="p">.</span><span class="nx">cookies</span><span class="p">.</span><span class="nx">nodegame_token</span><span class="p">])</span> <span class="p">{</span>
+            <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">req</span><span class="p">.</span><span class="nx">cookies</span> <span class="o">||</span> <span class="o">!</span><span class="nx">tokens</span><span class="p">[</span><span class="nx">req</span><span class="p">.</span><span class="nx">cookies</span><span class="p">.</span><span class="nx">nodegame_token</span><span class="p">])</span> <span class="p">{</span>
                 <span class="nx">res</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="nx">unauthMsg</span><span class="p">);</span>
                 <span class="k">return</span><span class="p">;</span>
             <span class="p">}</span>
@@ -171,7 +202,7 @@ MIT Licensed</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-6" id="section-6">&#182;</a>
+  <a class="pilcrow" href="#section-7" id="section-7">&#182;</a>
 </div>
 <p>Auth OK.</p>
         </td>
@@ -187,51 +218,27 @@ MIT Licensed</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-7" id="section-7">&#182;</a>
-</div>
-<p>Monitor.
-if (gameInfo.monitor &amp;&amp; gameInfo.monitor.enabled) {</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">if</span> <span class="p">(</span><span class="kc">true</span><span class="p">)</span> <span class="p">{</span>
-
-        <span class="nx">monitorUri</span> <span class="o">=</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;/monitor/index.htm?channel=&#39;</span> <span class="o">+</span>
-            <span class="nx">gameInfo</span><span class="p">.</span><span class="nx">channels</span><span class="p">[</span><span class="nx">gameName</span><span class="p">].</span><span class="nx">admin</span><span class="p">;</span>
-
-        <span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;/monitor&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
-            <span class="nx">res</span><span class="p">.</span><span class="nx">redirect</span><span class="p">(</span><span class="nx">monitorUri</span><span class="p">);</span>
-        <span class="p">});</span>
-
-
-        <span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;/monitor/*&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">next</span><span class="p">)</span> <span class="p">{</span>
-
-            <span class="kd">var</span> <span class="nx">userId</span><span class="p">,</span> <span class="nx">pwd</span><span class="p">;</span>
-            <span class="kd">var</span> <span class="nx">path</span><span class="p">,</span> <span class="nx">file</span><span class="p">;</span>
-
-
-            <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">gameInfo</span><span class="p">.</span><span class="nx">auth</span><span class="p">.</span><span class="nx">enabled</span><span class="p">)</span> <span class="p">{</span>
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
   <a class="pilcrow" href="#section-8" id="section-8">&#182;</a>
 </div>
-<p>res.send('No authorization needed.');
-return;</p>
+<p>Monitor.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-            <span class="p">}</span>
 
-            <span class="nx">file</span> <span class="o">=</span> <span class="nx">req</span><span class="p">.</span><span class="nx">params</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
-            <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;&#39;</span> <span class="o">===</span> <span class="nx">file</span> <span class="o">||</span> <span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">file</span><span class="p">)</span> <span class="p">{</span>
-                <span class="nx">res</span><span class="p">.</span><span class="nx">redirect</span><span class="p">(</span><span class="nx">monitorUri</span><span class="p">);</span>
-                <span class="k">return</span><span class="p">;</span>
-            <span class="p">}</span>
+    <span class="nx">monitorUri</span> <span class="o">=</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;/monitor/index.htm?channel=&#39;</span> <span class="o">+</span>
+        <span class="nx">gameInfo</span><span class="p">.</span><span class="nx">channels</span><span class="p">[</span><span class="nx">gameName</span><span class="p">].</span><span class="nx">admin</span><span class="p">;</span>
 
-            <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">file</span><span class="p">.</span><span class="nx">lastIndexOf</span><span class="p">(</span><span class="s1">&#39;\/&#39;</span><span class="p">)</span> <span class="o">===</span> <span class="p">(</span><span class="nx">file</span><span class="p">.</span><span class="nx">length</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span> <span class="p">{</span>
+    <span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;/monitor&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">res</span><span class="p">.</span><span class="nx">redirect</span><span class="p">(</span><span class="nx">monitorUri</span><span class="p">);</span>
+    <span class="p">});</span>
+
+
+    <span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;/monitor/*&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">next</span><span class="p">)</span> <span class="p">{</span>
+
+        <span class="kd">var</span> <span class="nx">userId</span><span class="p">,</span> <span class="nx">pwd</span><span class="p">;</span>
+        <span class="kd">var</span> <span class="nx">path</span><span class="p">,</span> <span class="nx">file</span><span class="p">;</span>
+
+
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">gameInfo</span><span class="p">.</span><span class="nx">auth</span><span class="p">.</span><span class="nx">enabled</span><span class="p">)</span> <span class="p">{</span>
 
 </pre></div>
         </td>
@@ -241,13 +248,19 @@ return;</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-9" id="section-9">&#182;</a>
 </div>
-<p>Removing the trailing slash because it creates:
-Error: ENOTDIR in fetching the file.</p>
+<p>res.send('No authorization needed.');
+return;</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-                <span class="nx">file</span> <span class="o">=</span> <span class="nx">file</span><span class="p">.</span><span class="nx">substring</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nx">file</span><span class="p">.</span><span class="nx">length</span> <span class="o">-</span> <span class="mi">1</span><span class="p">);</span>
-            <span class="p">}</span>
+        <span class="p">}</span>
 
+        <span class="nx">file</span> <span class="o">=</span> <span class="nx">req</span><span class="p">.</span><span class="nx">params</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;&#39;</span> <span class="o">===</span> <span class="nx">file</span> <span class="o">||</span> <span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">file</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">res</span><span class="p">.</span><span class="nx">redirect</span><span class="p">(</span><span class="nx">monitorUri</span><span class="p">);</span>
+            <span class="k">return</span><span class="p">;</span>
+        <span class="p">}</span>
+
+        <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">file</span><span class="p">.</span><span class="nx">lastIndexOf</span><span class="p">(</span><span class="s1">&#39;\/&#39;</span><span class="p">)</span> <span class="o">===</span> <span class="p">(</span><span class="nx">file</span><span class="p">.</span><span class="nx">length</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span> <span class="p">{</span>
 
 </pre></div>
         </td>
@@ -257,10 +270,13 @@ Error: ENOTDIR in fetching the file.</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-10" id="section-10">&#182;</a>
 </div>
-<p>Build path to file.</p>
+<p>Removing the trailing slash because it creates:
+Error: ENOTDIR in fetching the file.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-            <span class="nx">path</span> <span class="o">=</span> <span class="nx">monitorDir</span> <span class="o">+</span> <span class="nx">file</span><span class="p">;</span>
+            <span class="nx">file</span> <span class="o">=</span> <span class="nx">file</span><span class="p">.</span><span class="nx">substring</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nx">file</span><span class="p">.</span><span class="nx">length</span> <span class="o">-</span> <span class="mi">1</span><span class="p">);</span>
+        <span class="p">}</span>
+
 
 </pre></div>
         </td>
@@ -270,13 +286,10 @@ Error: ENOTDIR in fetching the file.</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-11" id="section-11">&#182;</a>
 </div>
-<p>Send file.</p>
+<p>Build path to file.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-            <span class="nx">res</span><span class="p">.</span><span class="nx">sendfile</span><span class="p">(</span><span class="nx">path</span><span class="p">);</span>
-        <span class="p">});</span>
-    <span class="p">}</span>
-
+        <span class="nx">path</span> <span class="o">=</span> <span class="nx">monitorDir</span> <span class="o">+</span> <span class="nx">file</span><span class="p">;</span>
 
 </pre></div>
         </td>
@@ -285,6 +298,22 @@ Error: ENOTDIR in fetching the file.</p>
         <td class="docs">
 <div class="pilwrap">
   <a class="pilcrow" href="#section-12" id="section-12">&#182;</a>
+</div>
+<p>Send file.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="nx">res</span><span class="p">.</span><span class="nx">sendfile</span><span class="p">(</span><span class="nx">path</span><span class="p">);</span>
+    <span class="p">});</span>
+
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-13" id="section-13">&#182;</a>
 </div>
 <p>Game. (default index.htm).</p>
         </td>
@@ -306,7 +335,7 @@ Error: ENOTDIR in fetching the file.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-13" id="section-13">&#182;</a>
+  <a class="pilcrow" href="#section-14" id="section-14">&#182;</a>
 </div>
 <p>Removing the trailing slash because it creates:
 Error: ENOTDIR in fetching the file.</p>
@@ -324,7 +353,7 @@ Error: ENOTDIR in fetching the file.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-14" id="section-14">&#182;</a>
+  <a class="pilcrow" href="#section-15" id="section-15">&#182;</a>
 </div>
 <p>Build filePath to file in public directory.</p>
         </td>
@@ -338,7 +367,7 @@ Error: ENOTDIR in fetching the file.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-15" id="section-15">&#182;</a>
+  <a class="pilcrow" href="#section-16" id="section-16">&#182;</a>
 </div>
 <p>TODO: move after refactoring.
 Send JSON data as JSONP if there is a callback query parameter:</p>
@@ -352,7 +381,7 @@ Send JSON data as JSONP if there is a callback query parameter:</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-16" id="section-16">&#182;</a>
+  <a class="pilcrow" href="#section-17" id="section-17">&#182;</a>
 </div>
 <p>Load file contents:</p>
         </td>
@@ -372,7 +401,7 @@ Send JSON data as JSONP if there is a callback query parameter:</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-17" id="section-17">&#182;</a>
+  <a class="pilcrow" href="#section-18" id="section-18">&#182;</a>
 </div>
 <p>Send it:</p>
         </td>
@@ -392,7 +421,7 @@ Send JSON data as JSONP if there is a callback query parameter:</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-18" id="section-18">&#182;</a>
+  <a class="pilcrow" href="#section-19" id="section-19">&#182;</a>
 </div>
 <p>If file was served already from public/ serve it
 immediately (cached by Express).</p>
@@ -406,7 +435,7 @@ immediately (cached by Express).</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-19" id="section-19">&#182;</a>
+  <a class="pilcrow" href="#section-20" id="section-20">&#182;</a>
 </div>
 <p>Send file (if it is a directory it is not sent).</p>
         </td>
@@ -422,7 +451,7 @@ immediately (cached by Express).</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-20" id="section-20">&#182;</a>
+  <a class="pilcrow" href="#section-21" id="section-21">&#182;</a>
 </div>
 <p>Checks if exists in 'public/' or as view.</p>
         </td>
@@ -437,7 +466,7 @@ immediately (cached by Express).</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-21" id="section-21">&#182;</a>
+  <a class="pilcrow" href="#section-22" id="section-22">&#182;</a>
 </div>
 <p>Exists in public, cache it, serve it.</p>
         </td>
@@ -451,7 +480,7 @@ immediately (cached by Express).</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-22" id="section-22">&#182;</a>
+  <a class="pilcrow" href="#section-23" id="section-23">&#182;</a>
 </div>
 <p>Mark existing.</p>
         </td>
@@ -469,7 +498,7 @@ immediately (cached by Express).</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-23" id="section-23">&#182;</a>
+  <a class="pilcrow" href="#section-24" id="section-24">&#182;</a>
 </div>
 <p>Check if it a template.</p>
         </td>
@@ -483,7 +512,7 @@ immediately (cached by Express).</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-24" id="section-24">&#182;</a>
+  <a class="pilcrow" href="#section-25" id="section-25">&#182;</a>
 </div>
 <p>Instantiate templates, if available.
 <code>html/templates/page.jade</code> holds the template and
@@ -499,7 +528,7 @@ to instantiate the page requested by <code>xx/xx/page*</code>.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-25" id="section-25">&#182;</a>
+  <a class="pilcrow" href="#section-26" id="section-26">&#182;</a>
 </div>
 <p>Matches: xx/xx/xx/xx/xx/</p>
         </td>
@@ -523,7 +552,7 @@ to instantiate the page requested by <code>xx/xx/page*</code>.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-26" id="section-26">&#182;</a>
+  <a class="pilcrow" href="#section-27" id="section-27">&#182;</a>
 </div>
 <p>Info about previous requests to the template file.</p>
         </td>
@@ -537,7 +566,7 @@ to instantiate the page requested by <code>xx/xx/page*</code>.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-27" id="section-27">&#182;</a>
+  <a class="pilcrow" href="#section-28" id="section-28">&#182;</a>
 </div>
 <p>Template not existing.</p>
         </td>
@@ -552,7 +581,7 @@ to instantiate the page requested by <code>xx/xx/page*</code>.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-28" id="section-28">&#182;</a>
+  <a class="pilcrow" href="#section-29" id="section-29">&#182;</a>
 </div>
 <p>Template existing, render it.</p>
         </td>
@@ -568,7 +597,7 @@ to instantiate the page requested by <code>xx/xx/page*</code>.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-29" id="section-29">&#182;</a>
+  <a class="pilcrow" href="#section-30" id="section-30">&#182;</a>
 </div>
 <p>Do not know if exists or not, check and render it.</p>
         </td>
@@ -601,7 +630,7 @@ to instantiate the page requested by <code>xx/xx/page*</code>.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-30" id="section-30">&#182;</a>
+  <a class="pilcrow" href="#section-31" id="section-31">&#182;</a>
 </div>
 <p>Adding the public directory of the game to the static directories
 <a href='http://stackoverflow.com/questions/5973432/'>http://stackoverflow.com/questions/5973432/</a>
@@ -619,62 +648,46 @@ to instantiate the page requested by <code>xx/xx/page*</code>.</p>
       </tr>
       <tr>
         <td class="docs">
-<div class="pilwrap" id="helper%20methods">
+<div class="pilwrap" id="helper%20methods.">
   <h2>
-    <a href="#helper%20methods" name="helper%20methods" class="pilcrow">&#182;</a>
-    Helper Methods
+    <a href="#helper%20methods." name="helper%20methods." class="pilcrow">&#182;</a>
+    Helper Methods.
   </h2>
 </div>
 
         </td>
         <td class="code highlight"><div class="highlight"><pre>
 
-<span class="kd">function</span> <span class="nx">login</span><span class="p">(</span><span class="nx">servernode</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">user</span><span class="p">,</span> <span class="nx">pwd</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">req</span><span class="p">)</span> <span class="p">{</span>
-    <span class="kd">var</span> <span class="nx">registry</span><span class="p">,</span> <span class="nx">authorized</span><span class="p">,</span> <span class="nx">profile</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">secret</span><span class="p">,</span> <span class="nx">token</span><span class="p">,</span> <span class="nx">expire</span><span class="p">;</span>
+<span class="kd">function</span> <span class="nx">loginSuper</span><span class="p">(</span><span class="nx">servernode</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">user</span><span class="p">,</span> <span class="nx">pwd</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">req</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">channel</span><span class="p">,</span> <span class="nx">authorized</span><span class="p">,</span> <span class="nx">token</span><span class="p">;</span>
 
-    <span class="nx">registry</span> <span class="o">=</span> <span class="nx">servernode</span><span class="p">.</span><span class="nx">channels</span><span class="p">[</span><span class="nx">gameName</span><span class="p">].</span><span class="nx">registry</span><span class="p">;</span>
-    <span class="nx">authorized</span> <span class="o">=</span> <span class="nx">registry</span><span class="p">.</span><span class="nx">authorize</span><span class="p">({</span> <span class="nx">id</span><span class="o">:</span> <span class="nx">user</span><span class="p">,</span> <span class="nx">pwd</span><span class="o">:</span> <span class="nx">pwd</span> <span class="p">});</span>
+    <span class="nx">channel</span> <span class="o">=</span> <span class="nx">servernode</span><span class="p">.</span><span class="nx">channels</span><span class="p">[</span><span class="nx">gameName</span><span class="p">];</span>
+    <span class="nx">authorized</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">authorizeSuperUser</span><span class="p">(</span><span class="nx">user</span><span class="p">,</span> <span class="nx">pwd</span><span class="p">);</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="nx">authorized</span><span class="p">)</span> <span class="p">{</span>
-
-        <span class="nx">profile</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="nx">player</span><span class="o">:</span> <span class="nx">user</span><span class="p">,</span>
-            <span class="nx">session</span><span class="o">:</span> <span class="nx">servernode</span><span class="p">.</span><span class="nx">channels</span><span class="p">[</span><span class="nx">gameName</span><span class="p">].</span><span class="nx">session</span>
-        <span class="p">};</span>
-
-        <span class="nx">secret</span> <span class="o">=</span> <span class="nx">servernode</span><span class="p">.</span><span class="nx">channels</span><span class="p">[</span><span class="nx">gameName</span><span class="p">].</span><span class="nx">secret</span><span class="p">;</span>
-        <span class="nx">expire</span> <span class="o">=</span> <span class="mi">60</span><span class="o">*</span><span class="mi">5</span><span class="p">;</span>
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-32" id="section-32">&#182;</a>
-</div>
-<p>We are sending the profile in the token.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-        <span class="nx">token</span> <span class="o">=</span> <span class="nx">jwt</span><span class="p">.</span><span class="nx">sign</span><span class="p">(</span><span class="nx">user</span><span class="p">,</span> <span class="nx">secret</span><span class="p">,</span> <span class="p">{</span> <span class="nx">expiresInMinutes</span><span class="o">:</span> <span class="nx">expire</span><span class="p">});</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-33" id="section-33">&#182;</a>
-</div>
-<p>Store the token somewhere.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-        <span class="nx">tokens</span><span class="p">[</span><span class="nx">token</span><span class="p">]</span> <span class="o">=</span> <span class="nx">profile</span><span class="p">;</span>
-
+        <span class="nx">token</span> <span class="o">=</span> <span class="nx">createToken</span><span class="p">(</span><span class="nx">user</span><span class="p">,</span> <span class="nx">channel</span><span class="p">,</span> <span class="nx">superTokens</span><span class="p">);</span>
         <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;setting cookie&#39;</span><span class="p">);</span>
+        <span class="nx">res</span><span class="p">.</span><span class="nx">cookie</span><span class="p">(</span><span class="s1">&#39;nodegame_token&#39;</span><span class="p">,</span> <span class="nx">token</span><span class="p">,</span> <span class="p">{</span>
+            <span class="nx">path</span><span class="o">:</span> <span class="s1">&#39;/&#39;</span><span class="p">,</span>
+            <span class="nx">httpOnly</span><span class="o">:</span> <span class="kc">true</span>
+        <span class="p">});</span>
+        <span class="nx">res</span><span class="p">.</span><span class="nx">redirect</span><span class="p">(</span><span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;/monitor/&#39;</span><span class="p">);</span>
+        <span class="k">return</span> <span class="kc">true</span><span class="p">;</span>
+    <span class="p">}</span>
 
+    <span class="nx">res</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="s1">&#39;Wrong user/pwd.&#39;</span><span class="p">);</span>
+    <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kd">function</span> <span class="nx">login</span><span class="p">(</span><span class="nx">servernode</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">user</span><span class="p">,</span> <span class="nx">pwd</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">req</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">channel</span><span class="p">,</span> <span class="nx">authorized</span><span class="p">,</span> <span class="nx">token</span><span class="p">;</span>
+
+    <span class="nx">channel</span> <span class="o">=</span> <span class="nx">servernode</span><span class="p">.</span><span class="nx">channels</span><span class="p">[</span><span class="nx">gameName</span><span class="p">];</span>
+    <span class="nx">authorized</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">registry</span><span class="p">.</span><span class="nx">authorize</span><span class="p">({</span> <span class="nx">id</span><span class="o">:</span> <span class="nx">user</span><span class="p">,</span> <span class="nx">pwd</span><span class="o">:</span> <span class="nx">pwd</span> <span class="p">});</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="nx">authorized</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">token</span> <span class="o">=</span> <span class="nx">createToken</span><span class="p">(</span><span class="nx">user</span><span class="p">,</span> <span class="nx">channel</span><span class="p">,</span> <span class="nx">tokens</span><span class="p">);</span>
+        <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;setting cookie&#39;</span><span class="p">);</span>
         <span class="nx">res</span><span class="p">.</span><span class="nx">cookie</span><span class="p">(</span><span class="s1">&#39;nodegame_token&#39;</span><span class="p">,</span> <span class="nx">token</span><span class="p">,</span> <span class="p">{</span>
             <span class="nx">path</span><span class="o">:</span> <span class="s1">&#39;/&#39;</span><span class="p">,</span>
             <span class="nx">httpOnly</span><span class="o">:</span> <span class="kc">true</span>
@@ -685,6 +698,46 @@ to instantiate the page requested by <code>xx/xx/page*</code>.</p>
 
     <span class="nx">res</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="s1">&#39;Wrong user/pwd.&#39;</span><span class="p">);</span>
     <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kd">function</span> <span class="nx">createToken</span><span class="p">(</span><span class="nx">user</span><span class="p">,</span> <span class="nx">channel</span><span class="p">,</span> <span class="nx">tokenList</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">profile</span><span class="p">,</span> <span class="nx">secret</span><span class="p">,</span> <span class="nx">expire</span><span class="p">,</span> <span class="nx">token</span><span class="p">;</span>
+    <span class="nx">profile</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="nx">player</span><span class="o">:</span> <span class="nx">user</span><span class="p">,</span>
+        <span class="nx">session</span><span class="o">:</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">session</span>
+    <span class="p">};</span>
+
+    <span class="nx">secret</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">secret</span><span class="p">;</span>
+    <span class="nx">expire</span> <span class="o">=</span> <span class="mi">60</span><span class="o">*</span><span class="mi">5</span><span class="p">;</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-33" id="section-33">&#182;</a>
+</div>
+<p>We are sending the profile in the token.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">token</span> <span class="o">=</span> <span class="nx">jwt</span><span class="p">.</span><span class="nx">sign</span><span class="p">(</span><span class="nx">user</span><span class="p">,</span> <span class="nx">secret</span><span class="p">,</span> <span class="p">{</span> <span class="nx">expiresInMinutes</span><span class="o">:</span> <span class="nx">expire</span><span class="p">});</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-34" id="section-34">&#182;</a>
+</div>
+<p>Store the token somewhere.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">tokenList</span><span class="p">[</span><span class="nx">token</span><span class="p">]</span> <span class="o">=</span> <span class="nx">profile</span><span class="p">;</span>
+
+    <span class="k">return</span> <span class="nx">token</span><span class="p">;</span>
 <span class="p">}</span>
 
 <span class="kd">function</span> <span class="nx">renderTemplate</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">templatePath</span><span class="p">,</span> <span class="nx">contextPath</span><span class="p">,</span>
@@ -698,7 +751,7 @@ to instantiate the page requested by <code>xx/xx/page*</code>.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-34" id="section-34">&#182;</a>
+  <a class="pilcrow" href="#section-35" id="section-35">&#182;</a>
 </div>
 <p>Context is retrieved from cache,
 and can be modified by user-defined callbacks.</p>
@@ -731,7 +784,7 @@ and can be modified by user-defined callbacks.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-35" id="section-35">&#182;</a>
+  <a class="pilcrow" href="#section-36" id="section-36">&#182;</a>
 </div>
 <p>TODO: Log error.
 TODO: Mark file as non-existing ?</p>
@@ -750,7 +803,7 @@ TODO: Mark file as non-existing ?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-36" id="section-36">&#182;</a>
+  <a class="pilcrow" href="#section-37" id="section-37">&#182;</a>
 </div>
 <p>Render anyway, with or without context.</p>
         </td>

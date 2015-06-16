@@ -49,6 +49,9 @@
         <a href="#gameloader.loadwaitroomdir">GameLoader.loadWaitRoomDir</a>
       </div>
       <div class="heading h3">
+        <a href="#gameloader.loadserverdir">GameLoader.loadServerDir</a>
+      </div>
+      <div class="heading h3">
         <a href="#gameloader.loadchannelsfile">GameLoader.loadChannelsFile</a>
       </div>
       <div class="heading h3">
@@ -441,10 +444,10 @@ overwritten later on.</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-15" id="section-15">&#182;</a>
 </div>
-<p>Tries to load Channels file from game directory.</p>
+<p>Load server dir first (channels, etc.).</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">loadChannelsFile</span><span class="p">(</span><span class="nx">gameDir</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">);</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">loadServerDir</span><span class="p">(</span><span class="nx">gameDir</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">);</span>
 
 
 </pre></div>
@@ -1023,6 +1026,150 @@ level of the specified directory.</p>
       <tr>
         <td class="docs"><div class="dox">
   <div class="summary">
+<div class="pilwrap" id="gameloader.loadserverdir">
+  <h3>
+    <a href="#gameloader.loadserverdir" name="gameloader.loadserverdir" class="pilcrow">&#182;</a>
+    GameLoader.loadServerDir
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Loads several files from <code>server/</code> dir</p>
+
+<p>Read: <em>channel.settings.js</em>, <em>channel.credentials.js</em>, _channel.secret.js</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">directory</span>
+      <span class="dox_type">string</span>
+      <span>The directory of the game..</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">GameLoader.addChannel</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">ServerChannel</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">ServerChannel.createWaitingRoom
+</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">GameLoader</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">loadServerDir</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">directory</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">settings</span><span class="p">,</span> <span class="nx">pwdFile</span><span class="p">,</span> <span class="nx">jwtFile</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">channel</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-34" id="section-34">&#182;</a>
+</div>
+<ol>
+<li>Channel settings.</li>
+</ol>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">settings</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">loadChannelsFile</span><span class="p">(</span><span class="nx">directory</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">);</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-35" id="section-35">&#182;</a>
+</div>
+<p>Save ref. to newly created channel.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">channel</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">channels</span><span class="p">[</span><span class="nx">gameName</span><span class="p">];</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-36" id="section-36">&#182;</a>
+</div>
+<ol>
+<li>Credentials.</li>
+</ol>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">pwdFile</span> <span class="o">=</span> <span class="nx">directory</span> <span class="o">+</span> <span class="s1">&#39;server/channel.credentials.js&#39;</span><span class="p">;</span>
+
+    <span class="nx">loadSyncAsync</span><span class="p">(</span><span class="nx">pwdFile</span><span class="p">,</span> <span class="nx">settings</span><span class="p">,</span> <span class="s1">&#39;loadServerDir&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">credentials</span><span class="p">)</span> <span class="p">{</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-37" id="section-37">&#182;</a>
+</div>
+<p>TODO: checkings. Add method.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="nx">channel</span><span class="p">.</span><span class="nx">credentials</span> <span class="o">=</span> <span class="nx">credentials</span><span class="p">;</span>
+    <span class="p">});</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-38" id="section-38">&#182;</a>
+</div>
+<ol>
+<li>JWT secret.</li>
+</ol>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">jwtFile</span> <span class="o">=</span> <span class="nx">directory</span> <span class="o">+</span> <span class="s1">&#39;server/channel.secret.js&#39;</span><span class="p">;</span>
+
+    <span class="nx">loadSyncAsync</span><span class="p">(</span><span class="nx">jwtFile</span><span class="p">,</span> <span class="nx">settings</span><span class="p">,</span> <span class="s1">&#39;loadServerDir&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">secret</span><span class="p">)</span> <span class="p">{</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-39" id="section-39">&#182;</a>
+</div>
+<p>TODO: checkings. Add method.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="nx">channel</span><span class="p">.</span><span class="nx">secret</span> <span class="o">=</span> <span class="nx">secret</span><span class="p">;</span>
+    <span class="p">});</span>
+
+<span class="p">};</span>
+
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
 <div class="pilwrap" id="gameloader.loadchannelsfile">
   <h3>
     <a href="#gameloader.loadchannelsfile" name="gameloader.loadchannelsfile" class="pilcrow">&#182;</a>
@@ -1033,11 +1180,11 @@ level of the specified directory.</p>
   </div>
   <div class="body"><p>Loads <em>channels.js</em> from file system and adds channels accordingly</p>
 
-<p>Synchronously looks for a file called <em>channels.js</em> at the top
+<p>Synchronously looks for a file called <em>channel.settings.js</em> at the top
 level of the specified directory.</p>
 
-<p>The file <em>channels.js</em> must export an array containing channels object
-in the format specified by the <em>ServerChannel</em> constructor. Every channel
+<p>The file <em>channels.settings.js</em> must export one channel object in the
+format specified by the <em>ServerChannel</em> constructor. Every channel
 configuration object can optionally have a <em>waitingRoom</em> object to
 automatically add a waiting room to the channel.</p>
   </div>
@@ -1067,7 +1214,7 @@ automatically add a waiting room to the channel.</p>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">GameLoader</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">loadChannelsFile</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">directory</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">channelsFile</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">conf</span><span class="p">,</span> <span class="nx">channel</span><span class="p">,</span> <span class="nx">waitRoom</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">channel</span><span class="p">,</span> <span class="nx">waitRoom</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">i</span><span class="p">,</span> <span class="nx">len</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">channelConf</span><span class="p">,</span> <span class="nx">waitRoomConf</span><span class="p">;</span>
 
@@ -1076,18 +1223,11 @@ automatically add a waiting room to the channel.</p>
                             <span class="s1">&#39;string.&#39;</span><span class="p">);</span>
     <span class="p">}</span>
 
-    <span class="nx">channelsFile</span> <span class="o">=</span> <span class="nx">directory</span> <span class="o">+</span> <span class="s1">&#39;/server/channels.js&#39;</span><span class="p">;</span>
+    <span class="nx">channelsFile</span> <span class="o">=</span> <span class="nx">directory</span> <span class="o">+</span> <span class="s1">&#39;/server/channel.settings.js&#39;</span><span class="p">;</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">fs</span><span class="p">.</span><span class="nx">existsSync</span><span class="p">(</span><span class="nx">channelsFile</span><span class="p">))</span> <span class="k">return</span><span class="p">;</span>
 
-    <span class="nx">conf</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="nx">channelsFile</span><span class="p">);</span>
-
-    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">J</span><span class="p">.</span><span class="nx">isArray</span><span class="p">(</span><span class="nx">conf</span><span class="p">))</span> <span class="nx">conf</span> <span class="o">=</span> <span class="p">[</span><span class="nx">conf</span><span class="p">];</span>
-
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">conf</span> <span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadChannelsFile: channels file &#39;</span> <span class="o">+</span>
-                            <span class="s1">&#39;must return an object or array.&#39;</span><span class="p">);</span>
-    <span class="p">}</span>
+    <span class="nx">channelConf</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="nx">channelsFile</span><span class="p">);</span>
 
 
 </pre></div>
@@ -1096,37 +1236,33 @@ automatically add a waiting room to the channel.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-34" id="section-34">&#182;</a>
+  <a class="pilcrow" href="#section-41" id="section-41">&#182;</a>
 </div>
-<p>Validate,</p>
+<p>Validate</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="nx">i</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
-    <span class="nx">len</span> <span class="o">=</span> <span class="nx">conf</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span>
-    <span class="k">for</span> <span class="p">(</span> <span class="p">;</span> <span class="o">++</span><span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">len</span> <span class="p">;</span> <span class="p">)</span> <span class="p">{</span>
 
-        <span class="nx">channelConf</span> <span class="o">=</span> <span class="nx">conf</span><span class="p">[</span><span class="nx">i</span><span class="p">];</span>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">channelConf</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadChannelsFile:&#39;</span> <span class="o">+</span>
+                            <span class="s1">&#39;channels must be object. Directory: &#39;</span> <span class="o">+</span>
+                            <span class="nx">directory</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">channelConf</span><span class="p">.</span><span class="nx">waitingRoom</span> <span class="o">&amp;&amp;</span>
+        <span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">channelConf</span><span class="p">.</span><span class="nx">waitingRoom</span><span class="p">)</span> <span class="p">{</span>
 
-        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">channelConf</span><span class="p">)</span> <span class="p">{</span>
-            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadChannelsFile:&#39;</span> <span class="o">+</span>
-                                <span class="s1">&#39;channels must be object. Directory: &#39;</span> <span class="o">+</span>
-                                <span class="nx">directory</span><span class="p">);</span>
-        <span class="p">}</span>
-        <span class="k">if</span> <span class="p">(</span><span class="nx">channelConf</span><span class="p">.</span><span class="nx">waitingRoom</span> <span class="o">&amp;&amp;</span>
-            <span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">channelConf</span><span class="p">.</span><span class="nx">waitingRoom</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadChannelsFile: waitingRoom &#39;</span> <span class="o">+</span>
+                            <span class="s1">&#39;in channel configuration must be object. &#39;</span> <span class="o">+</span>
+                            <span class="s1">&#39;Directory: &#39;</span> <span class="o">+</span> <span class="nx">directory</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="nx">waitRoomConf</span> <span class="o">=</span> <span class="nx">channelConf</span><span class="p">.</span><span class="nx">waitingRoom</span><span class="p">;</span>
+    <span class="k">delete</span> <span class="nx">channelConf</span><span class="p">.</span><span class="nx">waitingRoom</span><span class="p">;</span>
 
-            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadChannelsFile: waitingRoom &#39;</span> <span class="o">+</span>
-                                <span class="s1">&#39;in channel configuration must be object. &#39;</span> <span class="o">+</span>
-                                <span class="s1">&#39;Directory: &#39;</span> <span class="o">+</span> <span class="nx">directory</span><span class="p">);</span>
-        <span class="p">}</span>
-        <span class="nx">waitRoomConf</span> <span class="o">=</span> <span class="nx">channelConf</span><span class="p">.</span><span class="nx">waitingRoom</span><span class="p">;</span>
-        <span class="k">delete</span> <span class="nx">channelConf</span><span class="p">.</span><span class="nx">waitingRoom</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">channelConf</span><span class="p">.</span><span class="nx">name</span><span class="p">)</span> <span class="nx">channelConf</span><span class="p">.</span><span class="nx">name</span> <span class="o">=</span> <span class="nx">gameName</span><span class="p">;</span>
+    <span class="nx">channelConf</span><span class="p">.</span><span class="nx">gameName</span> <span class="o">=</span> <span class="nx">gameName</span><span class="p">;</span>
 
-        <span class="nx">channelConf</span><span class="p">.</span><span class="nx">gameName</span> <span class="o">=</span> <span class="nx">gameName</span><span class="p">;</span>
+    <span class="nx">channel</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">addChannel</span><span class="p">(</span><span class="nx">channelConf</span><span class="p">);</span>
 
-        <span class="nx">channel</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">addChannel</span><span class="p">(</span><span class="nx">channelConf</span><span class="p">);</span>
-
-        <span class="k">if</span> <span class="p">(</span><span class="nx">channel</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">channel</span><span class="p">)</span> <span class="p">{</span>
 
 
 </pre></div>
@@ -1135,19 +1271,19 @@ automatically add a waiting room to the channel.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-35" id="section-35">&#182;</a>
+  <a class="pilcrow" href="#section-42" id="section-42">&#182;</a>
 </div>
 <p>Add the list of channels created by the game.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-            <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">info</span><span class="p">.</span><span class="nx">games</span><span class="p">[</span><span class="nx">gameName</span><span class="p">].</span><span class="nx">channels</span><span class="p">[</span><span class="nx">channel</span><span class="p">.</span><span class="nx">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="nx">player</span><span class="o">:</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">playerServer</span> <span class="o">?</span>
-                    <span class="nx">channel</span><span class="p">.</span><span class="nx">playerServer</span><span class="p">.</span><span class="nx">endpoint</span> <span class="o">:</span> <span class="kc">null</span><span class="p">,</span>
-                <span class="nx">admin</span><span class="o">:</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">adminServer</span> <span class="o">?</span>
-                    <span class="nx">channel</span><span class="p">.</span><span class="nx">adminServer</span><span class="p">.</span><span class="nx">endpoint</span> <span class="o">:</span> <span class="kc">null</span>
-            <span class="p">};</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">info</span><span class="p">.</span><span class="nx">games</span><span class="p">[</span><span class="nx">gameName</span><span class="p">].</span><span class="nx">channels</span><span class="p">[</span><span class="nx">channel</span><span class="p">.</span><span class="nx">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="nx">player</span><span class="o">:</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">playerServer</span> <span class="o">?</span>
+                <span class="nx">channel</span><span class="p">.</span><span class="nx">playerServer</span><span class="p">.</span><span class="nx">endpoint</span> <span class="o">:</span> <span class="kc">null</span><span class="p">,</span>
+            <span class="nx">admin</span><span class="o">:</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">adminServer</span> <span class="o">?</span>
+                <span class="nx">channel</span><span class="p">.</span><span class="nx">adminServer</span><span class="p">.</span><span class="nx">endpoint</span> <span class="o">:</span> <span class="kc">null</span>
+        <span class="p">};</span>
 
-            <span class="k">if</span> <span class="p">(</span><span class="nx">waitRoomConf</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">waitRoomConf</span><span class="p">)</span> <span class="p">{</span>
 
 
 </pre></div>
@@ -1156,26 +1292,26 @@ automatically add a waiting room to the channel.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-36" id="section-36">&#182;</a>
+  <a class="pilcrow" href="#section-43" id="section-43">&#182;</a>
 </div>
 <p>We prepend the baseDir parameter, if any.
 If logicPath is not string we let the WaitingRoom
 constructor throw an error.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-                <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">waitRoomConf</span><span class="p">.</span><span class="nx">logicPath</span><span class="p">)</span> <span class="p">{</span>
-                    <span class="nx">waitRoomConf</span><span class="p">.</span><span class="nx">logicPath</span> <span class="o">=</span> <span class="nx">checkLocalPath</span><span class="p">(</span>
-                        <span class="nx">directory</span><span class="p">,</span> <span class="s1">&#39;server/&#39;</span><span class="p">,</span> <span class="nx">waitRoomConf</span><span class="p">.</span><span class="nx">logicPath</span><span class="p">);</span>
-                <span class="p">}</span>
-
-                <span class="nx">waitRoom</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">createWaitingRoom</span><span class="p">(</span><span class="nx">waitRoomConf</span><span class="p">);</span>
-
-                <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">waitRoom</span><span class="p">)</span> <span class="p">{</span>
-                    <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadChannelsFile: could &#39;</span> <span class="o">+</span>
-                                    <span class="s1">&#39;not add waiting room to channel &#39;</span> <span class="o">+</span>
-                                    <span class="nx">channel</span><span class="p">.</span><span class="nx">name</span><span class="p">);</span>
-                <span class="p">}</span>
+            <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">waitRoomConf</span><span class="p">.</span><span class="nx">logicPath</span><span class="p">)</span> <span class="p">{</span>
+                <span class="nx">waitRoomConf</span><span class="p">.</span><span class="nx">logicPath</span> <span class="o">=</span> <span class="nx">checkLocalPath</span><span class="p">(</span>
+                    <span class="nx">directory</span><span class="p">,</span> <span class="s1">&#39;server/&#39;</span><span class="p">,</span> <span class="nx">waitRoomConf</span><span class="p">.</span><span class="nx">logicPath</span><span class="p">);</span>
             <span class="p">}</span>
+
+            <span class="nx">waitRoom</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">createWaitingRoom</span><span class="p">(</span><span class="nx">waitRoomConf</span><span class="p">);</span>
+
+            <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">waitRoom</span><span class="p">)</span> <span class="p">{</span>
+                <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadChannelsFile: could &#39;</span> <span class="o">+</span>
+                                <span class="s1">&#39;not add waiting room to channel &#39;</span> <span class="o">+</span>
+                                <span class="nx">channel</span><span class="p">.</span><span class="nx">name</span><span class="p">);</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
 
 
 </pre></div>
@@ -1184,16 +1320,16 @@ constructor throw an error.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-37" id="section-37">&#182;</a>
+  <a class="pilcrow" href="#section-44" id="section-44">&#182;</a>
 </div>
 <p>Adding channel alias.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-            <span class="k">if</span> <span class="p">(</span><span class="nx">channelConf</span><span class="p">.</span><span class="nx">alias</span><span class="p">)</span> <span class="p">{</span>
-                <span class="k">this</span><span class="p">.</span><span class="nx">createGameAlias</span><span class="p">(</span><span class="nx">channelConf</span><span class="p">.</span><span class="nx">alias</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">);</span>
-            <span class="p">}</span>
-
+        <span class="k">if</span> <span class="p">(</span><span class="nx">channelConf</span><span class="p">.</span><span class="nx">alias</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">createGameAlias</span><span class="p">(</span><span class="nx">channelConf</span><span class="p">.</span><span class="nx">alias</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">);</span>
         <span class="p">}</span>
+
+    <span class="p">}</span>
 
 </pre></div>
         </td>
@@ -1201,12 +1337,13 @@ constructor throw an error.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-38" id="section-38">&#182;</a>
+  <a class="pilcrow" href="#section-45" id="section-45">&#182;</a>
 </div>
 <p>Errors in channel creation are already logged.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="nx">channelConf</span><span class="p">;</span>
 <span class="p">};</span>
 
 
@@ -1269,7 +1406,7 @@ TODO: views.js file is not loaded anymore because all context are dynamics.</spa
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-40" id="section-40">&#182;</a>
+  <a class="pilcrow" href="#section-47" id="section-47">&#182;</a>
 </div>
 <p>TODO: see if still needed (broken now).</p>
 
@@ -1347,7 +1484,7 @@ TODO: views.js file is not loaded anymore because all context are dynamics.</spa
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-42" id="section-42">&#182;</a>
+  <a class="pilcrow" href="#section-49" id="section-49">&#182;</a>
 </div>
 <p>TODO: Use for loop, not for in.</p>
         </td>
@@ -1431,7 +1568,7 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-44" id="section-44">&#182;</a>
+  <a class="pilcrow" href="#section-51" id="section-51">&#182;</a>
 </div>
 <p>Auth settings.</p>
         </td>
@@ -1470,7 +1607,7 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-45" id="section-45">&#182;</a>
+  <a class="pilcrow" href="#section-52" id="section-52">&#182;</a>
 </div>
 <p>Enable authorization by default.</p>
         </td>
@@ -1478,31 +1615,13 @@ generation and clientObject decoration.</p>
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">enabled</span><span class="p">)</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">enabled</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
 
 
-
 </pre></div>
         </td>
       </tr>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-46" id="section-46">&#182;</a>
-</div>
-<p>Store the secret directly in the channel and delete it from settings.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">if</span> <span class="p">(</span><span class="nx">settings</span><span class="p">.</span><span class="nx">secret</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">channels</span><span class="p">[</span><span class="nx">gameName</span><span class="p">].</span><span class="nx">secret</span> <span class="o">=</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">secret</span><span class="p">;</span>
-        <span class="nx">settings</span><span class="p">.</span><span class="nx">secret</span> <span class="o">=</span> <span class="s1">&#39;***&#39;</span><span class="p">;</span>
-    <span class="p">}</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-47" id="section-47">&#182;</a>
+  <a class="pilcrow" href="#section-53" id="section-53">&#182;</a>
 </div>
 <p>Add waiting room information to global game object.</p>
         </td>
@@ -1517,7 +1636,7 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-48" id="section-48">&#182;</a>
+  <a class="pilcrow" href="#section-54" id="section-54">&#182;</a>
 </div>
 <p>Exit here if auth is disabled.</p>
         </td>
@@ -1535,7 +1654,7 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-49" id="section-49">&#182;</a>
+  <a class="pilcrow" href="#section-55" id="section-55">&#182;</a>
 </div>
 <p>Auth codes. Can be synchronous or asynchronous.</p>
         </td>
@@ -1568,7 +1687,7 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-50" id="section-50">&#182;</a>
+  <a class="pilcrow" href="#section-56" id="section-56">&#182;</a>
 </div>
 <p>Auth file.</p>
         </td>
@@ -1653,7 +1772,7 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-52" id="section-52">&#182;</a>
+  <a class="pilcrow" href="#section-58" id="section-58">&#182;</a>
 </div>
 <p>Requirements settings.</p>
         </td>
@@ -1688,7 +1807,7 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-53" id="section-53">&#182;</a>
+  <a class="pilcrow" href="#section-59" id="section-59">&#182;</a>
 </div>
 <p>We prepend the baseDir parameter, if any.
 If logicPath is not string RequirementsRoom constructor throws an error.</p>
@@ -1706,7 +1825,7 @@ If logicPath is not string RequirementsRoom constructor throws an error.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-54" id="section-54">&#182;</a>
+  <a class="pilcrow" href="#section-60" id="section-60">&#182;</a>
 </div>
 <p>Enable requirements by default.</p>
         </td>
@@ -1720,7 +1839,7 @@ If logicPath is not string RequirementsRoom constructor throws an error.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-55" id="section-55">&#182;</a>
+  <a class="pilcrow" href="#section-61" id="section-61">&#182;</a>
 </div>
 <p>Exit here if requirements is disabled.</p>
         </td>
@@ -1736,7 +1855,7 @@ If logicPath is not string RequirementsRoom constructor throws an error.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-56" id="section-56">&#182;</a>
+  <a class="pilcrow" href="#section-62" id="section-62">&#182;</a>
 </div>
 <p>Add information to global game object.</p>
         </td>
@@ -1752,7 +1871,7 @@ If logicPath is not string RequirementsRoom constructor throws an error.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-57" id="section-57">&#182;</a>
+  <a class="pilcrow" href="#section-63" id="section-63">&#182;</a>
 </div>
 <p>Requirements file.</p>
         </td>
@@ -1782,7 +1901,7 @@ If logicPath is not string RequirementsRoom constructor throws an error.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-58" id="section-58">&#182;</a>
+  <a class="pilcrow" href="#section-64" id="section-64">&#182;</a>
 </div>
 <p>Add information to global game object.</p>
         </td>
@@ -1798,7 +1917,7 @@ If logicPath is not string RequirementsRoom constructor throws an error.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-59" id="section-59">&#182;</a>
+  <a class="pilcrow" href="#section-65" id="section-65">&#182;</a>
 </div>
 <p>Create requirements room in channel.</p>
         </td>
@@ -1936,7 +2055,7 @@ If logicPath is not string RequirementsRoom constructor throws an error.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-61" id="section-61">&#182;</a>
+  <a class="pilcrow" href="#section-67" id="section-67">&#182;</a>
 </div>
 <p>Channels defined by a game with the channels.js file.
 Auth callback can modify the authorization only of those.</p>
@@ -1951,7 +2070,7 @@ Auth callback can modify the authorization only of those.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-62" id="section-62">&#182;</a>
+  <a class="pilcrow" href="#section-68" id="section-68">&#182;</a>
 </div>
 <p>1 Auth for all servers of all channels.</p>
         </td>
@@ -1972,7 +2091,7 @@ Auth callback can modify the authorization only of those.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-63" id="section-63">&#182;</a>
+  <a class="pilcrow" href="#section-69" id="section-69">&#182;</a>
 </div>
 <p>1 Auth for one channel, 1 or both servers</p>
         </td>
@@ -1990,7 +2109,7 @@ Auth callback can modify the authorization only of those.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-64" id="section-64">&#182;</a>
+  <a class="pilcrow" href="#section-70" id="section-70">&#182;</a>
 </div>
 <p>Retrieve the channel name.</p>
         </td>
@@ -2004,7 +2123,7 @@ Auth callback can modify the authorization only of those.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-65" id="section-65">&#182;</a>
+  <a class="pilcrow" href="#section-71" id="section-71">&#182;</a>
 </div>
 <p>Check if the channel belongs to the game.</p>
         </td>
@@ -2022,7 +2141,7 @@ Auth callback can modify the authorization only of those.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-66" id="section-66">&#182;</a>
+  <a class="pilcrow" href="#section-72" id="section-72">&#182;</a>
 </div>
 <p>Retrieve the channel object.</p>
         </td>
@@ -2036,7 +2155,7 @@ Auth callback can modify the authorization only of those.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-67" id="section-67">&#182;</a>
+  <a class="pilcrow" href="#section-73" id="section-73">&#182;</a>
 </div>
 <p>1 Auth for a specific channel.</p>
         </td>
@@ -2052,7 +2171,7 @@ Auth callback can modify the authorization only of those.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-68" id="section-68">&#182;</a>
+  <a class="pilcrow" href="#section-74" id="section-74">&#182;</a>
 </div>
 <p>1 Auth for a specific server of a specific channel.</p>
         </td>
@@ -2239,7 +2358,7 @@ to the game directory in front.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-73" id="section-73">&#182;</a>
+  <a class="pilcrow" href="#section-79" id="section-79">&#182;</a>
 </div>
 <ul>
 <li>skips the check.</li>
@@ -2255,7 +2374,7 @@ to the game directory in front.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-74" id="section-74">&#182;</a>
+  <a class="pilcrow" href="#section-80" id="section-80">&#182;</a>
 </div>
 <p>Trick: we compare version numbers using the GameStage class.</p>
         </td>
@@ -2353,7 +2472,7 @@ settings.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-76" id="section-76">&#182;</a>
+  <a class="pilcrow" href="#section-82" id="section-82">&#182;</a>
 </div>
 <p>Add standard name.</p>
         </td>
@@ -2409,6 +2528,28 @@ settings.</p>
                         <span class="s1">&#39;(if asynchronous): &#39;</span> <span class="o">+</span> <span class="nx">file</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
     <span class="p">}</span>
     <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">channels</span><span class="p">[</span><span class="nx">channelName</span><span class="p">].</span><span class="nx">registry</span><span class="p">.</span><span class="nx">importClients</span><span class="p">(</span><span class="nx">codes</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kd">function</span> <span class="nx">loadSyncAsync</span><span class="p">(</span><span class="nx">filepath</span><span class="p">,</span> <span class="nx">settings</span><span class="p">,</span> <span class="nx">method</span><span class="p">,</span> <span class="nx">cb</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">result</span><span class="p">;</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="nx">fs</span><span class="p">.</span><span class="nx">existsSync</span><span class="p">(</span><span class="nx">filepath</span><span class="p">))</span> <span class="p">{</span>
+        <span class="k">try</span> <span class="p">{</span>
+            <span class="nx">result</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="nx">filepath</span><span class="p">)(</span><span class="nx">settings</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">result</span><span class="p">)</span> <span class="p">{</span>
+                <span class="k">if</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span>
+                    <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.&#39;</span> <span class="o">+</span> <span class="nx">method</span> <span class="o">+</span> <span class="s1">&#39;: an error &#39;</span> <span class="o">+</span>
+                                    <span class="s1">&#39;occurred: &#39;</span> <span class="o">+</span> <span class="nx">err</span><span class="p">);</span>
+                <span class="p">}</span>
+                <span class="nx">cb</span><span class="p">(</span><span class="nx">result</span><span class="p">);</span>
+            <span class="p">});</span>
+        <span class="p">}</span>
+        <span class="k">catch</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.&#39;</span> <span class="o">+</span> <span class="nx">method</span> <span class="o">+</span> <span class="s1">&#39;: cannot read &#39;</span> <span class="o">+</span>
+                            <span class="nx">pwdFile</span> <span class="o">+</span> <span class="s2">&quot;: \n&quot;</span> <span class="o">+</span> <span class="nx">e</span><span class="p">);</span>
+        <span class="p">}</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="nx">result</span><span class="p">)</span> <span class="nx">cb</span><span class="p">(</span><span class="nx">result</span><span class="p">);</span>
+    <span class="p">}</span>
 <span class="p">}</span>
 </pre></div>
         </td>
