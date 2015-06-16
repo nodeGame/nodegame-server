@@ -30,18 +30,20 @@ var tokens = {};
  * @param {object} options The object containing the custom settings
  */
 function configure(app, servernode) {
-    var rootDir;
+    var rootDir, monitorDir, publicDir;
     var pager;
 
     rootDir = servernode.rootDir;
+    publicDir = rootDir + '/public/';
+    monitorDir = rootDir + '/node_modules/nodegame-monitor/public/';
     pager = servernode.pager;
 
-    app.configure(function() {
-        app.set('views', rootDir + '/views');
-        app.set('view engine', 'jade');
-        app.set('view options', {layout: false});
-        app.use(express.static(rootDir + '/public'));
-    });
+
+    app.set('views', rootDir + '/views');
+    app.set('view engine', 'jade');
+    app.set('view options', {layout: false});
+
+    app.use(express.static(publicDir));
 
     app.configure('development', function(){
         app.use(express.errorHandler({
@@ -122,20 +124,6 @@ function configure(app, servernode) {
         return gameInfo;
     }
 
-    function sendFromPublic(type, req, res) {
-        var path, i, file;
-        file = req.params.file;
-        if (!file) return;
-        if (file.lastIndexOf('\/') === (file.length - 1)) {
-            file = file.substring(0, file.length - 1);
-        }
-
-        // Build path to file.
-        path = rootDir + '/public/' + type + '/' + file;
-        // Send file.
-        res.sendfile(path);
-    }
-
     function renderTemplate(req, res, gameName, templatePath, contextPath,
                             gameSettings) {
         var context, cb;
@@ -211,27 +199,6 @@ function configure(app, servernode) {
         }
     });
 
-    app.get('/images/:file', function(req, res) {
-        sendFromPublic('images', req, res);
-    });
-
-    app.get('/javascripts/:file', function(req, res) {
-        sendFromPublic('javascripts', req, res);
-    });
-
-    app.get('/stylesheets/:file', function(req, res) {
-        sendFromPublic('stylesheets', req, res);
-    });
-
-    app.get('/pages/:file', function(req, res) {
-        sendFromPublic('pages', req, res);
-    });
-
-//     app.post('/:game/auth', function(req, res, next) {
-//         login(req.params.game, req.body.username,
-//               req.body.password, res, req);
-//     });
-
     app.get('/:game/auth/:userid/:pwd', function(req, res, next) {
         var gameName, gameInfo;
         var userId, pwd;
@@ -248,13 +215,61 @@ function configure(app, servernode) {
 
         gameName = req.params.game;
 
-        gameSettings = gameInfo.settings;
-
         userId = req.params.userid;
         pwd = req.params.pwd;
 
-        login(gameName, userId, pwd, res, req)
+        login(gameName, userId, pwd, res, req);
     });
+
+
+
+     app.get('/:game/monitor/*', function(req, res, next) {
+         var gameName, gameInfo;
+         var userId, pwd;
+         var path, file;
+
+         console.log('monitor GET');
+
+         gameInfo = verifyGameRequest(req, res);
+         if (!gameInfo) return;
+
+         if (!gameInfo.auth.enabled) {
+            // res.send('No authorization needed.');
+            // return;
+         }
+
+         gameName = req.params.game;
+
+         // Assume authorized.
+         // userId = req.params.userid;
+         // pwd = req.params.pwd;
+
+         file = req.params[0];
+         if ('' === file || 'undefined' === typeof file) {
+             file = 'index.htm';
+         }
+         else if (file.lastIndexOf('\/') === (file.length - 1)) {
+             // Removing the trailing slash because it creates:
+             // Error: ENOTDIR in fetching the file.
+            file = file.substring(0, file.length - 1);
+         }
+
+ //         file = 'index.htm?channel=burdenshare/admin';
+ //         file = 'index.htm';
+ //
+ //         if (file.lastIndexOf('\/') === (file.length - 1)) {
+ //             // Removing the trailing slash because it creates:
+ //             // Error: ENOTDIR in fetching the file.
+ //            file = file.substring(0, file.length - 1);
+ //         }
+
+         // Build path to file.
+         path = monitorDir + file;
+         // Send file.
+         res.sendfile(path);
+
+         //next();
+     });
 
 //     app.get('/auth/:game', function(req, res) {
 //         var gameName, gameInfo;

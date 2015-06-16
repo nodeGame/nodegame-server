@@ -1089,7 +1089,7 @@ Important: the ID is not obfuscated.</p>
         <span class="nx">monitorName</span> <span class="o">=</span> <span class="nx">monitor</span><span class="p">.</span><span class="nx">id</span> <span class="o">+</span> <span class="s1">&#39; (sid: &#39;</span> <span class="o">+</span> <span class="nx">monitor</span><span class="p">.</span><span class="nx">sid</span> <span class="o">+</span> <span class="s1">&#39;)&#39;</span><span class="p">;</span>
         <span class="nx">sys</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">that</span><span class="p">.</span><span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39; client disconnected: &#39;</span> <span class="o">+</span> <span class="nx">monitorName</span><span class="p">);</span>
 
-        <span class="nx">that</span><span class="p">.</span><span class="nx">notifyRoomDisconnect</span><span class="p">(</span><span class="nx">monitor</span><span class="p">.</span><span class="nx">id</span><span class="p">,</span> <span class="nx">room</span><span class="p">);</span>
+        <span class="nx">that</span><span class="p">.</span><span class="nx">notifyRoomDisconnection</span><span class="p">(</span><span class="nx">monitor</span><span class="p">.</span><span class="nx">id</span><span class="p">,</span> <span class="nx">room</span><span class="p">);</span>
     <span class="p">});</span>
 
 
