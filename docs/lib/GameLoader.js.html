@@ -1499,7 +1499,7 @@ generation and clientObject decoration.</p>
                     <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadAuthDir: an error &#39;</span> <span class="o">+</span>
                                     <span class="s1">&#39;occurred: &#39;</span> <span class="o">+</span> <span class="nx">err</span><span class="p">);</span>
                 <span class="p">}</span>
-                <span class="nx">importAuthCodes</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">codes</span><span class="p">,</span> <span class="nx">authCodesFile</span><span class="p">);</span>
+                <span class="nx">importAuthCodes</span><span class="p">(</span><span class="nx">channel</span><span class="p">,</span> <span class="nx">codes</span><span class="p">,</span> <span class="nx">authCodesFile</span><span class="p">);</span>
             <span class="p">});</span>
         <span class="p">}</span>
         <span class="k">catch</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
@@ -1507,7 +1507,7 @@ generation and clientObject decoration.</p>
                             <span class="nx">authCodesFile</span> <span class="o">+</span> <span class="s2">&quot;: \n&quot;</span> <span class="o">+</span> <span class="nx">e</span><span class="p">);</span>
         <span class="p">}</span>
 
-        <span class="k">if</span> <span class="p">(</span><span class="nx">codes</span><span class="p">)</span> <span class="nx">importAuthCodes</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">codes</span><span class="p">,</span> <span class="nx">authCodesFile</span><span class="p">);</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">codes</span><span class="p">)</span> <span class="nx">importAuthCodes</span><span class="p">(</span><span class="nx">channel</span><span class="p">,</span> <span class="nx">codes</span><span class="p">,</span> <span class="nx">authCodesFile</span><span class="p">);</span>
     <span class="p">}</span>
 
 
@@ -2348,9 +2348,8 @@ settings.</p>
   <div class="details">
     <div class="dox_tag_title">Params</div>
     <div class="dox_tag_detail">
-      <span class="dox_tag_name">gameName</span>
-      <span class="dox_type">string</span>
-      <span>the name of the channel</span>
+      <span class="dox_tag_name">channel</span>
+      <span class="dox_type">ServerChannel</span>
     </div>
     <div class="dox_tag_detail">
       <span class="dox_tag_name">codes</span>
@@ -2367,13 +2366,13 @@ settings.</p>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-<span class="kd">function</span> <span class="nx">importAuthCodes</span><span class="p">(</span><span class="nx">channelName</span><span class="p">,</span> <span class="nx">codes</span><span class="p">,</span> <span class="nx">file</span><span class="p">)</span> <span class="p">{</span>
+<span class="kd">function</span> <span class="nx">importAuthCodes</span><span class="p">(</span><span class="nx">channel</span><span class="p">,</span> <span class="nx">codes</span><span class="p">,</span> <span class="nx">file</span><span class="p">)</span> <span class="p">{</span>
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">J</span><span class="p">.</span><span class="nx">isArray</span><span class="p">(</span><span class="nx">codes</span><span class="p">))</span> <span class="p">{</span>
         <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadAuthDir: codes file must &#39;</span> <span class="o">+</span>
                         <span class="s1">&#39;return an array of codes, or undefined &#39;</span> <span class="o">+</span>
                         <span class="s1">&#39;(if asynchronous): &#39;</span> <span class="o">+</span> <span class="nx">file</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
     <span class="p">}</span>
-    <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">channels</span><span class="p">[</span><span class="nx">channelName</span><span class="p">].</span><span class="nx">registry</span><span class="p">.</span><span class="nx">importClients</span><span class="p">(</span><span class="nx">codes</span><span class="p">);</span>
+    <span class="nx">channel</span><span class="p">.</span><span class="nx">registry</span><span class="p">.</span><span class="nx">importClients</span><span class="p">(</span><span class="nx">codes</span><span class="p">);</span>
 <span class="p">}</span>
 
 <span class="kd">function</span> <span class="nx">loadSyncAsync</span><span class="p">(</span><span class="nx">filepath</span><span class="p">,</span> <span class="nx">settings</span><span class="p">,</span> <span class="nx">method</span><span class="p">,</span> <span class="nx">cb</span><span class="p">)</span> <span class="p">{</span>

@@ -1435,10 +1435,10 @@ They can trigger another disconnect event after first disconnect.</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-45" id="section-45">&#182;</a>
 </div>
-<p>TODO: remove</p>
+<p>TODO: remove
+if (socketId.charAt(0) !== 'D') debugger</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">if</span> <span class="p">(</span><span class="nx">socketId</span><span class="p">.</span><span class="nx">charAt</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">!==</span> <span class="s1">&#39;D&#39;</span><span class="p">)</span> <span class="kr">debugger</span>
 
     <span class="kd">var</span> <span class="nx">decoded</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">clientId</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">cookies</span><span class="p">,</span> <span class="nx">disconnected</span><span class="p">,</span> <span class="nx">returningRoom</span><span class="p">;</span>
@@ -2000,7 +2000,6 @@ put the client in the requirements or waiting room.</p>
         <span class="k">return</span> <span class="nx">GameServer</span><span class="p">.</span><span class="nx">codes</span><span class="p">.</span><span class="nx">ROOM_NOT_FOUND</span><span class="p">;</span>
     <span class="p">}</span>
 
-<span class="kr">debugger</span>
 
 </pre></div>
         </td>
