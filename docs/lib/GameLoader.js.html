@@ -1526,7 +1526,6 @@ generation and clientObject decoration.</p>
     <span class="nx">authFile</span> <span class="o">=</span> <span class="nx">directory</span> <span class="o">+</span> <span class="s1">&#39;auth/auth.js&#39;</span><span class="p">;</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="nx">fs</span><span class="p">.</span><span class="nx">existsSync</span><span class="p">(</span><span class="nx">authCodesFile</span><span class="p">))</span> <span class="p">{</span>
-
         <span class="nx">sandboxAuth</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">getChannelSandbox</span><span class="p">(</span><span class="nx">channel</span><span class="p">,</span> <span class="s1">&#39;authorization&#39;</span><span class="p">);</span>
         <span class="nx">sandboxIdGen</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">getChannelSandbox</span><span class="p">(</span><span class="nx">channel</span><span class="p">,</span> <span class="s1">&#39;clientIdGenerator&#39;</span><span class="p">);</span>
         <span class="nx">sandboxDecorate</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">getChannelSandbox</span><span class="p">(</span><span class="nx">channel</span><span class="p">,</span> <span class="s1">&#39;clientObjDecorator&#39;</span><span class="p">);</span>
@@ -1759,6 +1758,20 @@ If logicPath is not string RequirementsRoom constructor throws an error.</p>
     <span class="k">return</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">createRequirementsRoom</span><span class="p">(</span><span class="nx">J</span><span class="p">.</span><span class="nx">merge</span><span class="p">(</span><span class="nx">reqObj</span><span class="p">,</span> <span class="nx">settings</span><span class="p">));</span>
 <span class="p">};</span>
 
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-62" id="section-62">&#182;</a>
+</div>
+<p>TODO: see if we want to add it to prototype.
+Else remove getChannelSandbox also (maybe).</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
 <span class="kd">function</span> <span class="nx">RequirementsSandbox</span><span class="p">(</span><span class="nx">gameName</span><span class="p">,</span> <span class="nx">requirementsObj</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">errBegin</span> <span class="o">=</span> <span class="s1">&#39;GameLoader.loadRequirementsDir: &#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;: &#39;</span><span class="p">;</span>
     <span class="k">this</span><span class="p">.</span><span class="nx">add</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">cb</span><span class="p">,</span> <span class="nx">params</span><span class="p">)</span> <span class="p">{</span>
@@ -1859,8 +1872,7 @@ If logicPath is not string RequirementsRoom constructor throws an error.</p>
 
     <span class="k">return</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
         <span class="kd">var</span> <span class="nx">len</span><span class="p">;</span>
-        <span class="kd">var</span> <span class="nx">callback</span><span class="p">,</span> <span class="nx">channel</span><span class="p">,</span> <span class="nx">server</span><span class="p">;</span>
-        <span class="kd">var</span> <span class="nx">gameChannelNames</span><span class="p">;</span>
+        <span class="kd">var</span> <span class="nx">callback</span><span class="p">;</span>
         <span class="kd">var</span> <span class="nx">errorBegin</span><span class="p">;</span>
         <span class="kd">var</span> <span class="nx">servernode</span><span class="p">;</span>
 
@@ -1873,14 +1885,14 @@ If logicPath is not string RequirementsRoom constructor throws an error.</p>
         <span class="k">if</span> <span class="p">(</span><span class="nx">len</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">)</span> <span class="p">{</span>
             <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="nx">errorBegin</span> <span class="o">+</span>
                             <span class="s1">&#39;accepts maximum 2 input parameters, &#39;</span> <span class="o">+</span>
-                            <span class="nx">len</span> <span class="o">+</span> <span class="s1">&#39; given. Channel: &#39;</span> <span class="o">+</span> <span class="nx">channelName</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
+                            <span class="nx">len</span> <span class="o">+</span> <span class="s1">&#39; given. Game: &#39;</span> <span class="o">+</span> <span class="nx">channelName</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
         <span class="p">}</span>
 
         <span class="nx">callback</span> <span class="o">=</span> <span class="nx">arguments</span><span class="p">[</span><span class="nx">len</span><span class="o">-</span><span class="mi">1</span><span class="p">];</span>
 
         <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;function&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">callback</span><span class="p">)</span> <span class="p">{</span>
             <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="nx">errorBegin</span> <span class="o">+</span> <span class="s1">&#39;last parameter must be &#39;</span> <span class="o">+</span>
-                                <span class="s1">&#39;function. Channel: &#39;</span> <span class="o">+</span> <span class="nx">channelName</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
+                                <span class="s1">&#39;function. Game: &#39;</span> <span class="o">+</span> <span class="nx">channelName</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
         <span class="p">}</span>
 
 
@@ -1890,7 +1902,7 @@ If logicPath is not string RequirementsRoom constructor throws an error.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-63" id="section-63">&#182;</a>
+  <a class="pilcrow" href="#section-64" id="section-64">&#182;</a>
 </div>
 <p>Channels defined by a game with the channels.js file.
 Auth callback can modify the authorization only of those.</p>
@@ -1904,7 +1916,7 @@ Auth callback can modify the authorization only of those.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-64" id="section-64">&#182;</a>
+  <a class="pilcrow" href="#section-65" id="section-65">&#182;</a>
 </div>
 <p>1 Auth for both admin and player servers.</p>
         </td>
@@ -1921,7 +1933,7 @@ Auth callback can modify the authorization only of those.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-65" id="section-65">&#182;</a>
+  <a class="pilcrow" href="#section-66" id="section-66">&#182;</a>
 </div>
 <p>1 Auth for one server: admin or player.</p>
         </td>
@@ -1932,10 +1944,9 @@ Auth callback can modify the authorization only of those.</p>
                 <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="nx">errorBegin</span> <span class="o">+</span> <span class="s1">&#39;server parameter must &#39;</span> <span class="o">+</span>
                                     <span class="s1">&#39;be either &quot;player&quot; or &quot;admin&quot;. &#39;</span> <span class="o">+</span>
                                     <span class="s1">&#39;Given: &#39;</span> <span class="o">+</span> <span class="nx">arguments</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;. &#39;</span> <span class="o">+</span>
-                                    <span class="s1">&#39;Channel: &#39;</span> <span class="o">+</span> <span class="nx">channelName</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
+                                    <span class="s1">&#39;Game: &#39;</span> <span class="o">+</span> <span class="nx">channelName</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
             <span class="p">}</span>
-
-            <span class="nx">channel</span><span class="p">[</span><span class="nx">arguments</span><span class="p">[</span><span class="mi">0</span><span class="p">]][</span><span class="nx">method</span><span class="p">](</span><span class="nx">callback</span><span class="p">);</span>
+            <span class="nx">channel</span><span class="p">[</span><span class="nx">arguments</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;Server&#39;</span><span class="p">][</span><span class="nx">method</span><span class="p">](</span><span class="nx">callback</span><span class="p">);</span>
         <span class="p">}</span>
     <span class="p">};</span>
 <span class="p">};</span>
@@ -2193,7 +2204,7 @@ to the game directory in front.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-71" id="section-71">&#182;</a>
+  <a class="pilcrow" href="#section-72" id="section-72">&#182;</a>
 </div>
 <ul>
 <li>skips the check.</li>
@@ -2209,7 +2220,7 @@ to the game directory in front.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-72" id="section-72">&#182;</a>
+  <a class="pilcrow" href="#section-73" id="section-73">&#182;</a>
 </div>
 <p>Trick: we compare version numbers using the GameStage class.</p>
         </td>
@@ -2307,7 +2318,7 @@ settings.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-74" id="section-74">&#182;</a>
+  <a class="pilcrow" href="#section-75" id="section-75">&#182;</a>
 </div>
 <p>Add standard name.</p>
         </td>
@@ -2394,7 +2405,7 @@ settings.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-76" id="section-76">&#182;</a>
+  <a class="pilcrow" href="#section-77" id="section-77">&#182;</a>
 </div>
 <p>TODO: see if we need it in the future:</p>
         </td>

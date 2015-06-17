@@ -74,9 +74,7 @@ MIT Licensed</p>
 <span class="kd">var</span> <span class="nx">unauthMsg</span> <span class="o">=</span> <span class="s1">&#39;Sorry, but your connection is &#39;</span> <span class="o">+</span>
     <span class="s1">&#39;&lt;strong&gt;not&lt;/strong&gt; authorized.&#39;</span><span class="p">;</span>
 
-
 <span class="nx">module</span><span class="p">.</span><span class="nx">exports</span> <span class="o">=</span> <span class="nx">GameRouter</span><span class="p">;</span>
-
 
 
 </pre></div>
@@ -321,7 +319,6 @@ Error: ENOTDIR in fetching the file.</p>
     <span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;/*&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
         <span class="kd">var</span> <span class="nx">gameSettings</span><span class="p">,</span> <span class="nx">filePath</span><span class="p">,</span> <span class="nx">file</span><span class="p">;</span>
         <span class="kd">var</span> <span class="nx">jadeTemplate</span><span class="p">,</span> <span class="nx">jsonContext</span><span class="p">,</span> <span class="nx">contextPath</span><span class="p">,</span> <span class="nx">langPath</span><span class="p">,</span> <span class="nx">pageName</span><span class="p">;</span>
-
 
         <span class="nx">file</span> <span class="o">=</span> <span class="nx">req</span><span class="p">.</span><span class="nx">params</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
         <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;&#39;</span> <span class="o">===</span> <span class="nx">file</span> <span class="o">||</span> <span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">file</span><span class="p">)</span> <span class="p">{</span>
@@ -623,7 +620,6 @@ to instantiate the page requested by <code>xx/xx/page*</code>.</p>
     <span class="p">});</span>
 
 
-
 </pre></div>
         </td>
       </tr>
@@ -638,7 +634,6 @@ to instantiate the page requested by <code>xx/xx/page*</code>.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="nx">app</span><span class="p">.</span><span class="nx">use</span><span class="p">(</span><span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;/public&#39;</span><span class="p">,</span> <span class="nx">express</span><span class="p">.</span><span class="kr">static</span><span class="p">(</span><span class="nx">gameDir</span> <span class="o">+</span> <span class="s1">&#39;public&#39;</span><span class="p">));</span>
-
 
 <span class="p">};</span>
 
@@ -729,7 +724,7 @@ to instantiate the page requested by <code>xx/xx/page*</code>.</p>
 <p>We are sending the profile in the token.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="nx">token</span> <span class="o">=</span> <span class="nx">jwt</span><span class="p">.</span><span class="nx">sign</span><span class="p">(</span><span class="nx">user</span><span class="p">,</span> <span class="nx">secret</span><span class="p">,</span> <span class="p">{</span> <span class="nx">expiresInMinutes</span><span class="o">:</span> <span class="nx">expire</span><span class="p">});</span>
+    <span class="nx">token</span> <span class="o">=</span> <span class="nx">jwt</span><span class="p">.</span><span class="nx">sign</span><span class="p">(</span><span class="nx">profile</span><span class="p">,</span> <span class="nx">secret</span><span class="p">,</span> <span class="p">{</span> <span class="nx">expiresInMinutes</span><span class="o">:</span> <span class="nx">expire</span><span class="p">});</span>
 
 
 </pre></div>
