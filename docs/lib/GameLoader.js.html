@@ -49,7 +49,7 @@
         <a href="#gameloader.loadwaitroomdir">GameLoader.loadWaitRoomDir</a>
       </div>
       <div class="heading h3">
-        <a href="#gameloader.loadserverdir">GameLoader.loadServerDir</a>
+        <a href="#gameloader.loadchanneldir">GameLoader.loadChannelDir</a>
       </div>
       <div class="heading h3">
         <a href="#gameloader.loadchannelsfile">GameLoader.loadChannelsFile</a>
@@ -1026,15 +1026,15 @@ level of the specified directory.</p>
       <tr>
         <td class="docs"><div class="dox">
   <div class="summary">
-<div class="pilwrap" id="gameloader.loadserverdir">
+<div class="pilwrap" id="gameloader.loadchanneldir">
   <h3>
-    <a href="#gameloader.loadserverdir" name="gameloader.loadserverdir" class="pilcrow">&#182;</a>
-    GameLoader.loadServerDir
+    <a href="#gameloader.loadchanneldir" name="gameloader.loadchanneldir" class="pilcrow">&#182;</a>
+    GameLoader.loadChannelDir
   </h3>
 </div>
 
   </div>
-  <div class="body"><p>Loads several files from <code>server/</code> dir</p>
+  <div class="body"><p>Loads several files from <code>channel/</code> dir</p>
 
 <p>Read: <em>channel.settings.js</em>, <em>channel.credentials.js</em>, _channel.secret.js</p>
   </div>
@@ -1110,7 +1110,7 @@ level of the specified directory.</p>
 </ol>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="nx">pwdFile</span> <span class="o">=</span> <span class="nx">directory</span> <span class="o">+</span> <span class="s1">&#39;server/channel.credentials.js&#39;</span><span class="p">;</span>
+    <span class="nx">pwdFile</span> <span class="o">=</span> <span class="nx">directory</span> <span class="o">+</span> <span class="s1">&#39;channel/channel.credentials.js&#39;</span><span class="p">;</span>
 
     <span class="nx">loadSyncAsync</span><span class="p">(</span><span class="nx">pwdFile</span><span class="p">,</span> <span class="nx">settings</span><span class="p">,</span> <span class="s1">&#39;loadServerDir&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">credentials</span><span class="p">)</span> <span class="p">{</span>
 
@@ -1142,7 +1142,7 @@ level of the specified directory.</p>
 </ol>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="nx">jwtFile</span> <span class="o">=</span> <span class="nx">directory</span> <span class="o">+</span> <span class="s1">&#39;server/channel.secret.js&#39;</span><span class="p">;</span>
+    <span class="nx">jwtFile</span> <span class="o">=</span> <span class="nx">directory</span> <span class="o">+</span> <span class="s1">&#39;channel/channel.secret.js&#39;</span><span class="p">;</span>
 
     <span class="nx">loadSyncAsync</span><span class="p">(</span><span class="nx">jwtFile</span><span class="p">,</span> <span class="nx">settings</span><span class="p">,</span> <span class="s1">&#39;loadServerDir&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">secret</span><span class="p">)</span> <span class="p">{</span>
 
@@ -1223,7 +1223,7 @@ automatically add a waiting room to the channel.</p>
                             <span class="s1">&#39;string.&#39;</span><span class="p">);</span>
     <span class="p">}</span>
 
-    <span class="nx">channelsFile</span> <span class="o">=</span> <span class="nx">directory</span> <span class="o">+</span> <span class="s1">&#39;/server/channel.settings.js&#39;</span><span class="p">;</span>
+    <span class="nx">channelsFile</span> <span class="o">=</span> <span class="nx">directory</span> <span class="o">+</span> <span class="s1">&#39;/channel/channel.settings.js&#39;</span><span class="p">;</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">fs</span><span class="p">.</span><span class="nx">existsSync</span><span class="p">(</span><span class="nx">channelsFile</span><span class="p">))</span> <span class="k">return</span><span class="p">;</span>
 
@@ -1301,7 +1301,7 @@ constructor throw an error.</p>
         <td class="code highlight"><div class="highlight"><pre>
             <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">waitRoomConf</span><span class="p">.</span><span class="nx">logicPath</span><span class="p">)</span> <span class="p">{</span>
                 <span class="nx">waitRoomConf</span><span class="p">.</span><span class="nx">logicPath</span> <span class="o">=</span> <span class="nx">checkLocalPath</span><span class="p">(</span>
-                    <span class="nx">directory</span><span class="p">,</span> <span class="s1">&#39;server/&#39;</span><span class="p">,</span> <span class="nx">waitRoomConf</span><span class="p">.</span><span class="nx">logicPath</span><span class="p">);</span>
+                    <span class="nx">directory</span><span class="p">,</span> <span class="s1">&#39;channel/&#39;</span><span class="p">,</span> <span class="nx">waitRoomConf</span><span class="p">.</span><span class="nx">logicPath</span><span class="p">);</span>
             <span class="p">}</span>
 
             <span class="nx">waitRoom</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">createWaitingRoom</span><span class="p">(</span><span class="nx">waitRoomConf</span><span class="p">);</span>
