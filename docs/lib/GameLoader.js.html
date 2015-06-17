@@ -84,6 +84,9 @@
       <div class="heading h3">
         <a href="#importauthcodes">importAuthCodes</a>
       </div>
+      <div class="heading h3">
+        <a href="#gameloader.loadviewsfile">GameLoader.loadViewsFile</a>
+      </div>
     </div>
   </div>
   <div id="sidebar-toggle"></div>
@@ -862,9 +865,9 @@ this.loadViewsFile(gameDir, gameInfo);</p>
     <span class="nx">i</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="nx">len</span> <span class="o">=</span> <span class="nx">langPaths</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span>
     <span class="k">for</span> <span class="p">(</span> <span class="p">;</span> <span class="o">++</span><span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">len</span> <span class="p">;</span> <span class="p">)</span> <span class="p">{</span>
         <span class="nx">languageObject</span> <span class="o">=</span> <span class="p">{};</span>
-        
+
         <span class="nx">langFile</span> <span class="o">=</span> <span class="nx">ctxPath</span> <span class="o">+</span> <span class="nx">langPaths</span><span class="p">[</span><span class="nx">i</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;/languageInfo.json&#39;</span><span class="p">;</span>
-        <span class="k">if</span> <span class="p">(</span><span class="nx">fs</span><span class="p">.</span><span class="nx">existsSync</span><span class="p">(</span><span class="nx">langFile</span><span class="p">))</span> <span class="nx">languageObject</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="nx">langFile</span><span class="p">);</span>        
+        <span class="k">if</span> <span class="p">(</span><span class="nx">fs</span><span class="p">.</span><span class="nx">existsSync</span><span class="p">(</span><span class="nx">langFile</span><span class="p">))</span> <span class="nx">languageObject</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="nx">langFile</span><span class="p">);</span>
 
         <span class="nx">languageObject</span><span class="p">.</span><span class="nx">shortName</span> <span class="o">=</span> <span class="nx">langPaths</span><span class="p">[</span><span class="nx">i</span><span class="p">];</span>
         <span class="nx">languages</span><span class="p">[</span><span class="nx">languageObject</span><span class="p">.</span><span class="nx">shortName</span><span class="p">]</span> <span class="o">=</span> <span class="nx">languageObject</span><span class="p">;</span>
@@ -1908,7 +1911,7 @@ Auth callback can modify the authorization only of those.</p>
         <td class="code highlight"><div class="highlight"><pre>
         <span class="k">if</span> <span class="p">(</span><span class="nx">len</span> <span class="o">===</span> <span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
             <span class="nx">channel</span><span class="p">.</span><span class="nx">adminServer</span><span class="p">[</span><span class="nx">method</span><span class="p">](</span><span class="nx">callback</span><span class="p">);</span>
-            <span class="nx">channel</span><span class="p">.</span><span class="nx">playerServer</span><span class="p">[</span><span class="nx">method</span><span class="p">](</span><span class="nx">callback</span><span class="p">);</span>            
+            <span class="nx">channel</span><span class="p">.</span><span class="nx">playerServer</span><span class="p">[</span><span class="nx">method</span><span class="p">](</span><span class="nx">callback</span><span class="p">);</span>
         <span class="p">}</span>
 
 
@@ -1932,7 +1935,7 @@ Auth callback can modify the authorization only of those.</p>
                                     <span class="s1">&#39;Channel: &#39;</span> <span class="o">+</span> <span class="nx">channelName</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
             <span class="p">}</span>
 
-            <span class="nx">channel</span><span class="p">[</span><span class="nx">arguments</span><span class="p">[</span><span class="mi">0</span><span class="p">]][</span><span class="nx">method</span><span class="p">](</span><span class="nx">callback</span><span class="p">);</span>        
+            <span class="nx">channel</span><span class="p">[</span><span class="nx">arguments</span><span class="p">[</span><span class="mi">0</span><span class="p">]][</span><span class="nx">method</span><span class="p">](</span><span class="nx">callback</span><span class="p">);</span>
         <span class="p">}</span>
     <span class="p">};</span>
 <span class="p">};</span>
@@ -2402,31 +2405,44 @@ settings.</p>
         </td>
       </tr>
       <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-77" id="section-77">&#182;</a>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="gameloader.loadviewsfile">
+  <h3>
+    <a href="#gameloader.loadviewsfile" name="gameloader.loadviewsfile" class="pilcrow">&#182;</a>
+    GameLoader.loadViewsFile
+  </h3>
 </div>
-<p>/**
- * ### GameLoader.loadViewsFile
- *
- * Loads <em>views.js</em> from file system and adds channels accordingly
- *
- * Asynchronously looks for a file called <em>channels.js</em> at the top
- * level of the specified directory.
- *
- * The file <em>channels.js</em> must export an array containing channels object
- * in the format specified by the <em>ServerChannel</em> constructor. Every channel
- * configuration object can optionally have a <em>waitingRoom</em> object to
- * automatically add a waiting room to the channel.
- *
- * @param {string} directory The path in which <em>views.js</em> will be looked for
- *
- * TODO: views.js file is not loaded anymore because all context are dynamics.
- *
- * @experimental
- * @see PageManager
- */
-GameLoader.prototype.loadViewsFile = function(directory, gameInfo) {
+
+  </div>
+  <div class="body"><p>Loads <em>views.js</em> from file system and adds channels accordingly</p>
+
+<p>Asynchronously looks for a file called <em>channels.js</em> at the top
+level of the specified directory.</p>
+
+<p>The file <em>channels.js</em> must export an array containing channels object
+in the format specified by the <em>ServerChannel</em> constructor. Every channel
+configuration object can optionally have a <em>waitingRoom</em> object to
+automatically add a waiting room to the channel.</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">directory</span>
+      <span class="dox_type">string</span>
+      <span>The path in which <em>views.js</em> will be looked for
+
+TODO: views.js file is not loaded anymore because all context are dynamics.</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">PageManager
+</span>
+    </div>
+  </div>
+</div>
+
+<p>GameLoader.prototype.loadViewsFile = function(directory, gameInfo) {
     var viewsFile, that, gameName;</p>
 
 
