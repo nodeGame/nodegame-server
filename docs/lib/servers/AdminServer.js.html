@@ -1456,10 +1456,12 @@ the client-id of the recipient.</p>
 
     <span class="nx">players</span> <span class="o">=</span> <span class="nx">roomObj</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">player</span><span class="p">;</span>
     <span class="nx">admins</span> <span class="o">=</span> <span class="nx">roomObj</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">admin</span><span class="p">;</span>
-    <span class="nx">oldAdmins</span> <span class="o">=</span> <span class="nx">admins</span><span class="p">.</span><span class="nx">breed</span><span class="p">();</span>
-    <span class="nx">oldAdmins</span><span class="p">.</span><span class="nx">id</span><span class="p">.</span><span class="nx">remove</span><span class="p">(</span><span class="nx">clientId</span><span class="p">);</span>
 
-    <span class="k">if</span> <span class="p">(</span><span class="nx">oldAdmins</span><span class="p">.</span><span class="nx">size</span><span class="p">())</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">admins</span><span class="p">.</span><span class="nx">db</span><span class="p">.</span><span class="nx">length</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+
+        <span class="nx">oldAdmins</span> <span class="o">=</span> <span class="nx">admins</span><span class="p">.</span><span class="nx">breed</span><span class="p">();</span>
+        <span class="nx">oldAdmins</span><span class="p">.</span><span class="nx">id</span><span class="p">.</span><span class="nx">remove</span><span class="p">(</span><span class="nx">clientId</span><span class="p">);</span>
+
 
 </pre></div>
         </td>
