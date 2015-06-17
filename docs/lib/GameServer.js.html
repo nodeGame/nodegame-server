@@ -1534,7 +1534,7 @@ They can trigger another disconnect event after first disconnect.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">enableReconnections</span> <span class="o">&amp;&amp;</span> <span class="nx">cookies</span><span class="p">.</span><span class="nx">session</span> <span class="o">===</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">session</span><span class="p">)</span> <span class="p">{</span>
-        
+
 
 </pre></div>
         </td>
@@ -2139,7 +2139,7 @@ its disconnection was not registered by the server (can happen
 with ajax). We do it here.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">client</span><span class="p">.</span><span class="nx">disconnected</span><span class="p">)</span> <span class="p">{</span>        
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">client</span><span class="p">.</span><span class="nx">disconnected</span><span class="p">)</span> <span class="p">{</span>
         <span class="nx">sys</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;GameServer.handleReconnectingClient: Reconnecting &#39;</span> <span class="o">+</span>
                 <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">ADMIN_SERVER</span> <span class="o">?</span> <span class="s1">&#39;admin&#39;</span> <span class="o">:</span> <span class="s1">&#39;player&#39;</span> <span class="p">)</span> <span class="o">+</span> <span class="s1">&#39; that &#39;</span> <span class="o">+</span>
                 <span class="s1">&#39;was not marked as disconnected: &#39;</span> <span class="o">+</span> <span class="nx">clientId</span><span class="p">,</span> <span class="s1">&#39;warn&#39;</span><span class="p">);</span>
