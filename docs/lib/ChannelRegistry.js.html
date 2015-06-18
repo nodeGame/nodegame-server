@@ -76,6 +76,9 @@
         <a href="#channelregistry.markinvalid">ChannelRegistry.markInvalid</a>
       </div>
       <div class="heading h3">
+        <a href="#channelregistry.checkout">ChannelRegistry.checkOut</a>
+      </div>
+      <div class="heading h3">
         <a href="#channelregistry.updateclient">ChannelRegistry.updateClient</a>
       </div>
       <div class="heading h3">
@@ -974,6 +977,38 @@ from the old room.</p>
       <tr>
         <td class="docs"><div class="dox">
   <div class="summary">
+<div class="pilwrap" id="channelregistry.checkout">
+  <h3>
+    <a href="#channelregistry.checkout" name="channelregistry.checkout" class="pilcrow">&#182;</a>
+    ChannelRegistry.checkOut
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Marks a client as checked out</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">client</span>
+      <span class="dox_type">string</span>
+      <span>The client's alias or ID</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">ChannelRegistry</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">checkOut</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">client</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">updateClient</span><span class="p">(</span><span class="nx">client</span><span class="p">,</span> <span class="p">{</span> <span class="nx">checkout</span><span class="o">:</span> <span class="kc">false</span> <span class="p">});</span>
+<span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
 <div class="pilwrap" id="channelregistry.updateclient">
   <h3>
     <a href="#channelregistry.updateclient" name="channelregistry.updateclient" class="pilcrow">&#182;</a>
@@ -1024,7 +1059,7 @@ from the old room.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-28" id="section-28">&#182;</a>
+  <a class="pilcrow" href="#section-29" id="section-29">&#182;</a>
 </div>
 <p>Update the PlayerList:</p>
         </td>
@@ -1793,7 +1828,7 @@ the alias will fail then.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-49" id="section-49">&#182;</a>
+  <a class="pilcrow" href="#section-50" id="section-50">&#182;</a>
 </div>
 <p>Delete that alias:</p>
         </td>
@@ -1951,7 +1986,7 @@ Returns NULL if not found or infinite loop detected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-53" id="section-53">&#182;</a>
+  <a class="pilcrow" href="#section-54" id="section-54">&#182;</a>
 </div>
 <p>Avoid alias loop.</p>
         </td>
@@ -1966,7 +2001,7 @@ Returns NULL if not found or infinite loop detected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-54" id="section-54">&#182;</a>
+  <a class="pilcrow" href="#section-55" id="section-55">&#182;</a>
 </div>
 <p>Check aliases in given room.</p>
         </td>
@@ -1986,7 +2021,7 @@ Returns NULL if not found or infinite loop detected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-55" id="section-55">&#182;</a>
+  <a class="pilcrow" href="#section-56" id="section-56">&#182;</a>
 </div>
 <p>Check if ID exists.</p>
         </td>
@@ -2002,7 +2037,7 @@ Returns NULL if not found or infinite loop detected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-56" id="section-56">&#182;</a>
+  <a class="pilcrow" href="#section-57" id="section-57">&#182;</a>
 </div>
 <p>Check game aliases.</p>
         </td>
@@ -2019,7 +2054,7 @@ Returns NULL if not found or infinite loop detected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-57" id="section-57">&#182;</a>
+  <a class="pilcrow" href="#section-58" id="section-58">&#182;</a>
 </div>
 <p>Client not found.</p>
         </td>
@@ -2081,7 +2116,7 @@ Returns NULL if not found or infinite loop detected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-59" id="section-59">&#182;</a>
+  <a class="pilcrow" href="#section-60" id="section-60">&#182;</a>
 </div>
 <p>Username.</p>
         </td>
@@ -2095,7 +2130,7 @@ Returns NULL if not found or infinite loop detected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-60" id="section-60">&#182;</a>
+  <a class="pilcrow" href="#section-61" id="section-61">&#182;</a>
 </div>
 <p>Pwd.</p>
         </td>
@@ -2108,7 +2143,7 @@ Returns NULL if not found or infinite loop detected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-61" id="section-61">&#182;</a>
+  <a class="pilcrow" href="#section-62" id="section-62">&#182;</a>
 </div>
 <p>CheckedOut.</p>
         </td>
@@ -2121,7 +2156,7 @@ Returns NULL if not found or infinite loop detected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-62" id="section-62">&#182;</a>
+  <a class="pilcrow" href="#section-63" id="section-63">&#182;</a>
 </div>
 <p>In Use.</p>
         </td>
@@ -2192,7 +2227,7 @@ Returns NULL if not found or infinite loop detected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-65" id="section-65">&#182;</a>
+  <a class="pilcrow" href="#section-66" id="section-66">&#182;</a>
 </div>
 <p>if ('undefined' === typeof client.history) client.history = [];</p>
         </td>

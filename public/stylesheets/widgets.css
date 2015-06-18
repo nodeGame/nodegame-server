@@ -24,6 +24,7 @@
 .languageselector > .panel-body > form > label.selectedButtonLabel {
     font-weight: bold;
 }
+
 /* Visual Timer */
 
 .visualtimer {
@@ -148,16 +149,52 @@
 
 /* Requirements */
 
+.requirements {
+    font-size: 1.2em;
+}
+
 .requirements-success {
-  font-weight: bold;
-  color: green;
-  padding-top: 15px;
-  padding-bottom: 15px;
+    font-weight: bold;
+    color: green;
+    padding-top: 15px;
+    padding-bottom: 15px;
 }
 
 .requirements-fail {
-  font-weight: bold;
-  color: red;
-  padding-top: 15px;
-  padding-bottom: 15px;
+    font-weight: bold;
+    color: red;
+    padding-top: 15px;
+    padding-bottom: 15px;
+}
+
+
+
+/* Waiting Room */
+.waitingroom {
+    font-size: 1.2em;
+}
+
+.waitingroom > .panel-body {
+    text-align: center;
+}
+
+.waitingroom > .panel-body > div#timer-div {
+    margin-top: 30px;
+}
+
+.waitingroom > .panel-body > div#player-count-div > p#player-count {
+    font-size: 40px;
+    clear: both;
+    margin-top: 30px;
+}
+
+.waitingroom > .panel-body > div > .visualtimer {
+    float: none;
+    display: inline;
+    font-size: 40px;
+    margin: 0;
+}
+
+.waitingroom > .panel-body > div > span#span_dots {
+    font-size: 40px;
 }

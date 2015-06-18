@@ -11895,6 +11895,22 @@ if (!Array.prototype.indexOf) {
             nativeName: 'English',
             path: 'en/'
         };
+
+        /**
+         * ## Extra properties
+         *
+         * For security reasons, they cannot be of type function, and they
+         * cannot overwrite any previously defined variable
+         */
+        for (key in player) {
+            if (player.hasOwnProperty(key)) {
+                if ('function' !== typeof player[key]) {
+                    if (!this.hasOwnProperty(key)) {
+                        this[key] = player[key];
+                    }
+                }
+            }
+        }
     }
 
     // ## Player methods
@@ -24969,12 +24985,27 @@ if (!Array.prototype.indexOf) {
          * @see node.setup
          */
         node.registerSetup('page', function(conf) {
+            var tmp, body;
             if (!conf) return;
 
             // Clear.
             if (conf.clearBody) this.window.clearPageBody();
             if (conf.clear) this.window.clearPage();
-
+            if ('string' === typeof conf.title) {
+                conf.title = { title: conf.title };
+            }
+            if ('object' === typeof conf.title) {
+                // TODO: add option to animate it.
+                document.title = conf.title.title;
+                if (conf.title.addToBody) {
+                    tmp = document.createElement('h1');
+                    tmp.className = 'ng-page-title';
+                    tmp.innerHTML = conf.title.title;
+                    body = document.body;
+                    if (body.innerHTML === '') body.appendChild(tmp);
+                    else body.insertBefore(tmp, body.firstChild);
+                }
+            }
             return conf;
         });
 
@@ -32638,6 +32669,13 @@ if (!Array.prototype.indexOf) {
         this.summaryUpdate = null;
 
         /**
+         * ### Requirements.summaryResults
+         *
+         * Span displaying the results of the tests
+         */
+        this.summaryResults = null;
+
+        /**
          * ### Requirements.dots
          *
          * Looping dots to give the user the feeling of code execution
@@ -33060,15 +33098,12 @@ if (!Array.prototype.indexOf) {
         }
 
         // No errors.
-        if (!results.length) {
-            // Last check and no previous errors.
-            if (!this.hasFailed && this.stillChecking <= 0) {
-                // All tests passed.
-                this.list.addDT({
-                    success: true,
-                    text:'All tests passed.'
-                });
-            }
+        if (!this.hasFailed && this.stillChecking <= 0) {
+            // All tests passed.
+            this.list.addDT({
+                success: true,
+                text:'All tests passed.'
+            });
         }
         else {
             // Add the errors.
@@ -33094,11 +33129,14 @@ if (!Array.prototype.indexOf) {
         this.summary.appendChild(this.summaryUpdate);
 
         this.dots = W.getLoadingDots();
-
         this.summary.appendChild(this.dots.span);
 
-        this.bodyDiv.appendChild(this.summary);
+        this.summaryResults = document.createElement('div');
+        this.summary.appendChild(document.createElement('br'));
+        this.summary.appendChild(this.summaryResults);
 
+
+        this.bodyDiv.appendChild(this.summary);
         this.bodyDiv.appendChild(this.list.getRoot());
     };
 
@@ -35352,7 +35390,7 @@ if (!Array.prototype.indexOf) {
     WaitingRoom.description = 'Displays a waiting room for clients.';
 
     WaitingRoom.title = 'Waiting Room';
-    WaitingRoom.className = 'waitingRoom';
+    WaitingRoom.className = 'waitingroom';
 
     // ## Dependencies
 
@@ -35406,47 +35444,29 @@ if (!Array.prototype.indexOf) {
         this.timeoutId = null;
 
         /**
-         * ### WaitingRoom.summary
+         * ### WaitingRoom.playerCountDiv
          *
-         * Span summarizing the status of the wait room
+         * Div containing the span for displaying the number of players
+         *
+         * @see WaitingRoom.playerCount
          */
-        this.summary = null;
+        this.playerCountDiv = null;
 
         /**
-         * ### WaitingRoom.summaryUpdate
+         * ### WaitingRoom.playerCount
          *
          * Span displaying the number of connected players
          */
-        this.summaryUpdate = null;
+        this.playerCount = null;
 
         /**
-         * ### WaitingRoom.dots
+         * ### WaitingRoom.timerDiv
          *
-         * Looping dots to give the user the feeling of code execution
-         */
-        this.dots = null;
-
-        /**
-         * ### WaitingRoom.onComplete
+         * Div containing the timer
          *
-         * Callback to be executed at the end of all tests
+         * @see WaitingRoom.timer
          */
-        this.onComplete = null;
-
-        /**
-         * ### WaitingRoom.onSuccess
-         *
-         * Callback to be executed at the end of all tests
-         */
-        this.onSuccess = null;
-
-        /**
-         * ### WaitingRoom.onTimeout
-         *
-         * Callback to be executed at the end of all tests
-         */
-        this.onTimeout = null;
-
+        this.timerDiv = null;
 
         /**
          * ### WaitingRoom.timer
@@ -35456,6 +35476,27 @@ if (!Array.prototype.indexOf) {
          * @see VisualTimer
          */
         this.timer = null;
+
+        /**
+         * ### WaitingRoom.dots
+         *
+         * Looping dots to give the user the feeling of code execution
+         */
+        this.dots = null;
+
+        /**
+         * ### WaitingRoom.ontTimeout
+         *
+         * Callback to be executed if the timer expires
+         */
+        this.ontTimeout = null;
+
+        /**
+         * ### WaitingRoom.onTimeout
+         *
+         * TRUE if the timer expired
+         */
+        this.alreadyTimeUp = null;
 
     }
 
@@ -35478,24 +35519,6 @@ if (!Array.prototype.indexOf) {
     WaitingRoom.prototype.init = function(conf) {
         if ('object' !== typeof conf) {
             throw new TypeError('WaitingRoom.init: conf must be object.');
-        }
-        if ('undefined' !== typeof conf.onComplete) {
-            if (null !== conf.onComplete &&
-                'function' !== typeof conf.onComplete) {
-
-                throw new TypeError('WaitingRoom.init: conf.onComplete must ' +
-                                    'be function, null or undefined.');
-            }
-            this.onComplete = conf.onComplete;
-        }
-        if ('undefined' !== typeof conf.onSuccess) {
-            if (null !== conf.onSuccess &&
-                'function' !== typeof conf.onSuccess) {
-
-                throw new TypeError('WaitingRoom.init: conf.onSuccess must ' +
-                                    'be function, null or undefined.');
-            }
-            this.onSuccess = conf.onSuccess;
         }
         if ('undefined' !== typeof conf.onTimeout) {
             if (null !== conf.onTimeout &&
@@ -35552,11 +35575,23 @@ if (!Array.prototype.indexOf) {
         var that = this;
         if (this.timer) return;
         if (!this.maxWaitTime) return;
-        this.timer = node.widgets.append('VisualTimer', this.summary, {
+        if (!this.timerDiv) {
+            this.timerDiv = document.createElement('div');
+            this.timerDiv.id = 'timer-div';
+        }
+        this.timerDiv.appendChild(document.createTextNode(
+            'Maximum Waiting Time: '
+        ));
+        this.timer = node.widgets.append('VisualTimer', this.timerDiv, {
             milliseconds: this.maxWaitTime,
             timeup: this.onTimeup,
             update: 1000
         });
+        // Style up: delete title and border;
+        this.timer.setTitle();
+        this.timer.panelDiv.className = 'ng_widget visualtimer';
+        // Append to bodyDiv.
+        this.bodyDiv.appendChild(this.timerDiv);
         this.timer.start();
     };
 
@@ -35604,34 +35639,35 @@ if (!Array.prototype.indexOf) {
      * @see WaitingRoom.updateState
      */
     WaitingRoom.prototype.updateDisplay = function() {
-        this.summaryUpdate.innerHTML = this.connected + ' / ' + this.poolSize;
+        this.playerCount.innerHTML = this.connected + ' / ' + this.poolSize;
     };
 
     WaitingRoom.prototype.append = function() {
+        this.playerCountDiv = document.createElement('div');
+        this.playerCountDiv.id = 'player-count-div';
 
-        this.summary = document.createElement('span');
-        this.summary.appendChild(
-            document.createTextNode('Waiting for all players to connect: '));
+        this.playerCountDiv.appendChild(
+            document.createTextNode('Waiting for All Players to Connect: '));
 
-        this.summaryUpdate = document.createElement('span');
-        this.summary.appendChild(this.summaryUpdate);
+        this.playerCount = document.createElement('p');
+        this.playerCount.id = 'player-count';
+        this.playerCountDiv.appendChild(this.playerCount);
 
         this.dots = W.getLoadingDots();
+        this.playerCountDiv.appendChild(this.dots.span);
 
-        this.summary.appendChild(this.dots.span);
+        this.bodyDiv.appendChild(this.playerCountDiv);
 
         if (this.maxWaitTime) {
             this.startTimer();
         }
-
-        this.bodyDiv.appendChild(this.summary);
-
 
     };
 
     WaitingRoom.prototype.listeners = function() {
         var that;
         that = this;
+
         node.registerSetup('waitroom', function(conf) {
             if (!conf) return;
             if ('object' !== typeof conf) {
@@ -35646,14 +35682,13 @@ if (!Array.prototype.indexOf) {
 
         // NodeGame Listeners.
         node.on.data('PLAYERSCONNECTED', function(msg) {
-
             if (!msg.data) return;
             that.connected = msg.data;
             that.updateDisplay();
         });
 
         node.on.data('TIME', function(msg) {
-            timeIsUp(msg.data);
+            timeIsUp.call(that, msg.data);
         });
 
 
@@ -35669,6 +35704,8 @@ if (!Array.prototype.indexOf) {
         });
 
         node.on('SOCKET_DISCONNECT', function() {
+            if (that.alreadyTimeUp) return;
+
             // Terminate countdown.
             if (that.timer) {
                 that.timer.stop();
@@ -35676,14 +35713,14 @@ if (!Array.prototype.indexOf) {
             }
 
             // Write about disconnection in page.
-            that.summary.innerHTML = '<span style="color: red">You have been ' +
+            that.bodyDiv.innerHTML = '<span style="color: red">You have been ' +
                 '<strong>disconnected</strong>. Please try again later.' +
                 '</span><br><br>';
 
-            // Enough to not display it in case of page refresh.
-            setTimeout(function() {
-                alert('Disconnection from server detected!');
-            }, 200);
+//             // Enough to not display it in case of page refresh.
+//             setTimeout(function() {
+//                 alert('Disconnection from server detected!');
+//             }, 200);
         });
     };
 
@@ -35693,74 +35730,23 @@ if (!Array.prototype.indexOf) {
 
     // ## Helper methods
 
-    function Countdown() {
-        var PrevMin = (minutes < 10) ? "0" : ":";
-        var PrevSec = (seconds < 10) ? ":0" : ":";
-        var TimeNow = PrevMin + minutes + PrevSec + seconds;
-
-        if (DHTML) {
-            if (NS4) {
-                setContent("id", "Uhr", null,
-                           '<span class="Uhr">' + TimeNow + "<\/span>");
-            }
-            else {
-                setContent("id", "Uhr", null, TimeNow);
-            }
-            if (minutes > 0 && seconds == 0) {
-                minutes--;
-                seconds = 59;
-            }
-            else seconds--;
-        }
-    }
-
     function timeIsUp(data) {
         var timeOut;
-
         console.log('TIME IS UP!');
-        return;
 
-        // if (alreadyTimeUp) return;
-        // alreadyTimeUp = true;
+        if (this.alreadyTimeUp) return;
+        this.alreadyTimeUp = true;
+        if (this.timer) this.timer.stop();
 
-        // clearInterval(timeCheck);
+        data = data || {};
 
         // All players have connected. Game starts.
-        if (data && data.over === 'AllPlayersConnected') return;
+        if (data.over === 'AllPlayersConnected') return;
 
         node.socket.disconnect();
 
-        // Enough Time passed, not enough players connected.
-        if (data && data.over === 'Time elapsed!!!') {
 
-            timeOut = "<h3 align='center'>Thank you for your patience.<br>";
-            timeOut += "Unfortunately, there are not enough participants in ";
-            timeOut += "your group to start the experiment.<br>";
-
-            timeOut += "You will be payed out a fix amount for your ";
-            timeOut += "participation up to this point.<br><br>";
-
-            timeOut += "Please go back to Amazon Mechanical Turk ";
-            timeOut += "web site and submit the hit.<br>";
-
-            timeOut += "We usually pay within 24 hours. <br>For any ";
-            timeOut += "problems, please look for a HIT called ";
-            timeOut += "<strong>ETH Descil Trouble Ticket</strong> and file ";
-            timtOut += "a new trouble ticket reporting the exit code ";
-            timeOut += "as written below.<br><br>";
-
-            timeOut += "Exit Code: " + data.exit + "<br> </h3>";
-        }
-
-        // Too much time passed, but no message from server received.
-        else {
-            timeOut = "An error has occurred. You seem to be ";
-            timeOut += "waiting for too long. Please look for a HIT called ";
-            timeOut += "<strong>ETH Descil Trouble Ticket</strong> and file ";
-            timeOut += "a new trouble ticket reporting your experience."
-        }
-
-        document.getElementById("startPage").innerHTML = timeOut;
+        if (this.onTimeout) this.onTimeout(data);
     }
 
 })(node);

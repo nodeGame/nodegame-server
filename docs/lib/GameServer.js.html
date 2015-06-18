@@ -1466,7 +1466,7 @@ if (socketId.charAt(0) !== 'D') debugger</p>
                                <span class="s1">&#39;Server: decoding jwt failed.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
         <span class="p">}</span>
     <span class="p">}</span>
-
+<span class="kr">debugger</span>
 
 </pre></div>
         </td>
@@ -1793,15 +1793,26 @@ is disposed, exactly as it was not authorized.</p>
   <a class="pilcrow" href="#section-60" id="section-60">&#182;</a>
 </div>
 <p>If the authorization function returned an id that actually
-already exists we need to try to handle as a reconnection.
-If it is existing, but not disconnected an error will be raised.
-If it is existing and disconnected, but its room is not found
-anymore, a new id will be issued.</p>
+already exists we need to try to handle as a reconnection,
+if the option is enabled.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
+        <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">registry</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">exist</span><span class="p">(</span><span class="nx">clientId</span><span class="p">)</span> <span class="o">&amp;&amp;</span>
+            <span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">enableReconnections</span><span class="p">)</span> <span class="p">{</span>
+
+            <span class="nx">sys</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;GameServer.handleConnectingClient: generateClientId &#39;</span> <span class="o">+</span>
+                    <span class="s1">&#39;returned an existing ID for incoming &#39;</span> <span class="o">+</span>
+                    <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">ADMIN_SERVER</span> <span class="o">?</span> <span class="s1">&#39;admin&#39;</span> <span class="o">:</span> <span class="s1">&#39;player&#39;</span> <span class="p">)</span> <span class="o">+</span>
+                    <span class="s1">&#39;, but reconnections are disabled.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
+
+            <span class="k">return</span> <span class="nx">GameServer</span><span class="p">.</span><span class="nx">codes</span><span class="p">.</span><span class="nx">DUPLICATED_CLIENT_ID</span><span class="p">;</span>
+        <span class="p">}</span>
 
         <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">registry</span><span class="p">.</span><span class="nx">isUsed</span><span class="p">(</span><span class="nx">clientId</span><span class="p">))</span> <span class="p">{</span>
-            <span class="nx">res</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">handleReconnectingClient</span><span class="p">(</span><span class="nx">clientId</span><span class="p">,</span> <span class="nx">socketId</span><span class="p">,</span> <span class="nx">socketObj</span><span class="p">);</span>
+
+            <span class="nx">res</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">handleReconnectingClient</span><span class="p">(</span><span class="nx">clientId</span><span class="p">,</span> <span class="nx">socketId</span><span class="p">,</span> <span class="nx">socketObj</span><span class="p">,</span>
+                                                <span class="nx">clientType</span><span class="p">,</span> <span class="nx">cookies</span><span class="p">,</span> <span class="nx">headers</span><span class="p">);</span>
+
             <span class="k">if</span> <span class="p">(</span><span class="nx">res</span> <span class="o">===</span> <span class="nx">GameServer</span><span class="p">.</span><span class="nx">codes</span><span class="p">.</span><span class="nx">OPERATION_OK</span><span class="p">)</span> <span class="p">{</span>
                 <span class="k">return</span> <span class="nx">res</span><span class="p">;</span>
             <span class="p">}</span>
