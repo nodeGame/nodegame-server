@@ -467,7 +467,7 @@ MIT Licensed</p>
 </div>
 
   </div>
-  <div class="body"><p>Registers a client</p>
+  <div class="body"><p>Registers a new client</p>
   </div>
   <div class="details">
     <div class="dox_tag_title">Params</div>
@@ -478,7 +478,7 @@ MIT Licensed</p>
   must be unique in <em>this.clients.id</em>.</span>
     </div>
     <div class="dox_tag_detail">
-      <span class="dox_tag_name">playerObj</span>
+      <span class="dox_tag_name">clientObj</span>
       <span class="dox_type">object</span>
       <span>An object constituting a valid Player object
   except the <code>id</code> field</span>
@@ -493,7 +493,7 @@ MIT Licensed</p>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-<span class="nx">ChannelRegistry</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">addClient</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">clientId</span><span class="p">,</span> <span class="nx">playerObj</span><span class="p">)</span> <span class="p">{</span>
+<span class="nx">ChannelRegistry</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">addClient</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">clientId</span><span class="p">,</span> <span class="nx">clientObj</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">res</span><span class="p">;</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">clientId</span><span class="p">)</span> <span class="p">{</span>
@@ -501,8 +501,8 @@ MIT Licensed</p>
                             <span class="s1">&#39;clientId.&#39;</span><span class="p">);</span>
     <span class="p">}</span>
 
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">playerObj</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ChannelRegistry.addClient: playerObj must be &#39;</span> <span class="o">+</span>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">clientObj</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ChannelRegistry.addClient: clientObj must be &#39;</span> <span class="o">+</span>
                             <span class="s1">&#39;object.&#39;</span><span class="p">);</span>
     <span class="p">}</span>
 
@@ -510,10 +510,10 @@ MIT Licensed</p>
         <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;ChannelRegistry.addClient: clientId is not unique.&#39;</span><span class="p">);</span>
     <span class="p">}</span>
 
-    <span class="nx">playerObj</span><span class="p">.</span><span class="nx">id</span> <span class="o">=</span> <span class="nx">clientId</span><span class="p">;</span>
-    <span class="nx">playerObj</span> <span class="o">=</span> <span class="nx">generateClient</span><span class="p">(</span><span class="nx">playerObj</span><span class="p">);</span>
+    <span class="nx">clientObj</span><span class="p">.</span><span class="nx">id</span> <span class="o">=</span> <span class="nx">clientId</span><span class="p">;</span>
+    <span class="nx">clientObj</span> <span class="o">=</span> <span class="nx">generateClient</span><span class="p">(</span><span class="nx">clientObj</span><span class="p">);</span>
 
-    <span class="nx">res</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">add</span><span class="p">(</span><span class="nx">playerObj</span><span class="p">);</span>
+    <span class="nx">res</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">add</span><span class="p">(</span><span class="nx">clientObj</span><span class="p">);</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;ChannelRegistry.addClient: error &#39;</span> <span class="o">+</span>
@@ -521,7 +521,7 @@ MIT Licensed</p>
     <span class="p">}</span>
 
     <span class="k">this</span><span class="p">.</span><span class="nx">roomStacks</span><span class="p">[</span><span class="nx">clientId</span><span class="p">]</span> <span class="o">=</span> <span class="p">[];</span>
-    <span class="k">return</span> <span class="nx">clientId</span><span class="p">;</span>
+    <span class="k">return</span> <span class="nx">clientObj</span><span class="p">;</span>
 <span class="p">};</span>
 
 
