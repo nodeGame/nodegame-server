@@ -1478,11 +1478,11 @@ if (socketId.charAt(0) !== 'D') debugger</p>
 <p>If a valid identification cookie is found, it will be used.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">if</span> <span class="p">(</span><span class="nx">cookies</span><span class="p">.</span><span class="nx">session</span> <span class="o">!==</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">session</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">decoded</span><span class="p">.</span><span class="nx">session</span> <span class="o">!==</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">session</span><span class="p">)</span> <span class="p">{</span>
         <span class="nx">invalidSessionCookie</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
     <span class="p">}</span>
-    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">decoded</span><span class="p">.</span><span class="nx">player</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nx">clientId</span> <span class="o">=</span> <span class="nx">decoded</span><span class="p">.</span><span class="nx">player</span><span class="p">;</span>
+    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">decoded</span><span class="p">.</span><span class="nx">clientId</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">clientId</span> <span class="o">=</span> <span class="nx">decoded</span><span class="p">.</span><span class="nx">clientId</span><span class="p">;</span>
     <span class="p">}</span>
 
 

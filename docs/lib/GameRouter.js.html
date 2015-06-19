@@ -702,10 +702,10 @@ to instantiate the page requested by <code>xx/xx/page*</code>.</p>
     <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
 <span class="p">}</span>
 
-<span class="kd">function</span> <span class="nx">createToken</span><span class="p">(</span><span class="nx">user</span><span class="p">,</span> <span class="nx">channel</span><span class="p">,</span> <span class="nx">tokenList</span><span class="p">)</span> <span class="p">{</span>
+<span class="kd">function</span> <span class="nx">createToken</span><span class="p">(</span><span class="nx">userId</span><span class="p">,</span> <span class="nx">channel</span><span class="p">,</span> <span class="nx">tokenList</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">profile</span><span class="p">,</span> <span class="nx">secret</span><span class="p">,</span> <span class="nx">expire</span><span class="p">,</span> <span class="nx">token</span><span class="p">;</span>
     <span class="nx">profile</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="nx">player</span><span class="o">:</span> <span class="nx">user</span><span class="p">,</span>
+        <span class="nx">clientId</span><span class="o">:</span> <span class="nx">userId</span><span class="p">,</span>
         <span class="nx">session</span><span class="o">:</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">session</span>
     <span class="p">};</span>
 
