@@ -9607,7 +9607,7 @@ if (!Array.prototype.indexOf) {
 
     // ## OTHERS_SYNC_STEP
     // All the players in the player list must be sync in the same
-    // stage and DONE. My own stage does not matter.
+    // step and DONE. My own stage does not matter.
     exports.stepRules.OTHERS_SYNC_STEP = function(stage, myStageLevel, pl) {
         var stage;
         if (!pl.size()) return false;
@@ -15192,24 +15192,24 @@ if (!Array.prototype.indexOf) {
         this.session = msg.session;
         this.node.createPlayer(msg.data);
 
-        if (this.node.store.cookie) {
-            this.node.store.cookie('session', this.session);
-
-            // Do not store player cookie if client failed authorization.
-            // Note: if a client is trying to open multiple connections
-            // and this is not allowed by the authorization function
-            // it will have both the player cookie and the auth_failed cookie.
-            if (this.node.player.id === 'unauthorized_client') {
-                this.node.store.cookie('auth_failed', 1);
-            }
-            else {
-                this.node.store.cookie('player', this.node.player.id);
-            }
-        }
-        else {
-            this.node.warn('Socket.startSession: cannot set cookies, session ' +
-                           'support disabled.');
-        }
+//         if (this.node.store.cookie) {
+//             this.node.store.cookie('session', this.session);
+//
+//             // Do not store player cookie if client failed authorization.
+//             // Note: if a client is trying to open multiple connections
+//             // and this is not allowed by the authorization function
+//             // it will have both the player cookie and the auth_failed cookie.
+//             if (this.node.player.id === 'unauthorized_client') {
+//                 this.node.store.cookie('auth_failed', 1);
+//             }
+//             else {
+//                 this.node.store.cookie('player', this.node.player.id);
+//             }
+//         }
+//         else {
+//             this.node.warn('Socket.startSession: cannot set cookies, session ' +
+//                            'support disabled.');
+//         }
         return true;
     };
 
@@ -15811,11 +15811,14 @@ if (!Array.prototype.indexOf) {
          *
          * The game's metadata
          *
+         * This object is under normal auto filled with the data
+         * from the file `package.json` inside the game folder.
+         *
          * Contains at least the following properties:
          *
-         *   - name,
-         *   - description,
-         *   - version
+         *  - name,
+         *  - description,
+         *  - version
          */
         this.metadata = J.merge({
             name:        'A nodeGame game',
@@ -15827,13 +15830,12 @@ if (!Array.prototype.indexOf) {
          * ### Game.settings
          *
          * The game's settings
+         *
+         * This object is under normal auto filled with the settings
+         * contained in the game folder: `game/game.settings`,
+         * depending also on the chosen treatment.
          */
         this.settings = setup.settings || {}
-
-//             publishLevel: 'undefined' === typeof setup.publishLevel ?
-//                 constants.publishLevels.REGULAR : setup.publishLevel,
-//             syncStepping: setup.syncStepping ? true : false
-//         };
 
         /**
          * ### Game.pl
@@ -24433,8 +24435,6 @@ if (!Array.prototype.indexOf) {
         var iframe, iframeName, iframeDocument, iframeWindow;
         var frameDocumentElement, frameReady;
         var lastURI;
-
-        // if (node.env('recon')) debugger
 
         if ('string' !== typeof uri) {
             throw new TypeError('GameWindow.loadFrame: uri must be string.');
