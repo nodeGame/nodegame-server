@@ -24434,6 +24434,8 @@ if (!Array.prototype.indexOf) {
         var frameDocumentElement, frameReady;
         var lastURI;
 
+        // if (node.env('recon')) debugger
+
         if ('string' !== typeof uri) {
             throw new TypeError('GameWindow.loadFrame: uri must be string.');
         }
