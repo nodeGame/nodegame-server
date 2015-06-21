@@ -11304,7 +11304,7 @@ if (!Array.prototype.indexOf) {
         }
 
         if (this.exist(player.id)) {
-            throw new Error('PlayerList.add: player already exististing: ' +
+            throw new Error('PlayerList.add: player already existing: ' +
                             player.id + '.');
         }
         this.insert(player);
@@ -15191,25 +15191,6 @@ if (!Array.prototype.indexOf) {
 
         this.session = msg.session;
         this.node.createPlayer(msg.data);
-
-//         if (this.node.store.cookie) {
-//             this.node.store.cookie('session', this.session);
-//
-//             // Do not store player cookie if client failed authorization.
-//             // Note: if a client is trying to open multiple connections
-//             // and this is not allowed by the authorization function
-//             // it will have both the player cookie and the auth_failed cookie.
-//             if (this.node.player.id === 'unauthorized_client') {
-//                 this.node.store.cookie('auth_failed', 1);
-//             }
-//             else {
-//                 this.node.store.cookie('player', this.node.player.id);
-//             }
-//         }
-//         else {
-//             this.node.warn('Socket.startSession: cannot set cookies, session ' +
-//                            'support disabled.');
-//         }
         return true;
     };
 
