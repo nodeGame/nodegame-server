@@ -121,7 +121,7 @@
         <a href="#serverchannel.require">ServerChannel.require</a>
       </div>
       <div class="heading h3">
-        <a href="#serverchannel.resolvegamedir">ServerChannel.resolveGameDir</a>
+        <a href="#serverchannel.getgamedir">ServerChannel.getGameDir</a>
       </div>
       <div class="heading h3">
         <a href="#serverchannel.authorizesuperuser">ServerChannel.authorizeSuperUser</a>
@@ -2062,17 +2062,15 @@ modules.</p>
       <tr>
         <td class="docs"><div class="dox">
   <div class="summary">
-<div class="pilwrap" id="serverchannel.resolvegamedir">
+<div class="pilwrap" id="serverchannel.getgamedir">
   <h3>
-    <a href="#serverchannel.resolvegamedir" name="serverchannel.resolvegamedir" class="pilcrow">&#182;</a>
-    ServerChannel.resolveGameDir
+    <a href="#serverchannel.getgamedir" name="serverchannel.getgamedir" class="pilcrow">&#182;</a>
+    ServerChannel.getGameDir
   </h3>
 </div>
 
   </div>
-  <div class="body"><p>Shortcut to <code>Servernode.resolveGameDir</code></p>
-
-<p>Useful when it is not possible to expose the whole servernode object</p>
+  <div class="body"><p>Returns the full path to the game directory</p>
   </div>
   <div class="details">
     <div class="dox_tag_title">See</div>
@@ -2084,8 +2082,8 @@ modules.</p>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-<span class="nx">ServerChannel</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">resolveGameDir</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">gameName</span><span class="p">)</span> <span class="p">{</span>
-    <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">resolveGameDir</span><span class="p">(</span><span class="nx">gameName</span><span class="p">);</span>
+<span class="nx">ServerChannel</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">getGameDir</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">resolveGameDir</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">gameName</span><span class="p">);</span>
 <span class="p">};</span>
 
 
