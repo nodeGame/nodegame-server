@@ -2277,8 +2277,8 @@ to the game directory in front.</p>
   </div>
   <div class="body"><p>Parses a game settings object and builds the treatments object</p>
 
-<p>The treatment object always includes a 'standard' treatment plus
-any other treatment specified in the 'settings' object.</p>
+<p>If no <code>treatments</code> property is defined, one is created with one entry
+named 'standard'.</p>
 
 <p>All properties of the 'standard' treatment are shared with the other
 settings.</p>
@@ -2306,7 +2306,7 @@ settings.</p>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
- <span class="kd">function</span> <span class="nx">parseGameSettings</span><span class="p">(</span><span class="nx">settingsObj</span><span class="p">)</span> <span class="p">{</span>
+<span class="kd">function</span> <span class="nx">parseGameSettings</span><span class="p">(</span><span class="nx">settingsObj</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">standard</span><span class="p">,</span> <span class="nx">t</span><span class="p">,</span> <span class="nx">out</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">treatments</span><span class="p">;</span>
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">settingsObj</span><span class="p">)</span> <span class="p">{</span>
@@ -2314,32 +2314,23 @@ settings.</p>
     <span class="p">}</span>
 
     <span class="nx">out</span> <span class="o">=</span> <span class="p">{};</span>
-    <span class="nx">out</span><span class="p">.</span><span class="nx">standard</span> <span class="o">=</span> <span class="nx">J</span><span class="p">.</span><span class="nx">clone</span><span class="p">(</span><span class="nx">settingsObj</span><span class="p">);</span>
+    <span class="nx">standard</span> <span class="o">=</span> <span class="nx">J</span><span class="p">.</span><span class="nx">clone</span><span class="p">(</span><span class="nx">settingsObj</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">settingsObj</span><span class="p">.</span><span class="nx">treatments</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">out</span><span class="p">.</span><span class="nx">standard</span> <span class="o">=</span> <span class="nx">standard</span><span class="p">;</span>
+        <span class="nx">out</span><span class="p">.</span><span class="nx">standard</span><span class="p">.</span><span class="nx">treatmentName</span> <span class="o">=</span> <span class="s1">&#39;standard&#39;</span><span class="p">;</span>
+        <span class="nx">out</span><span class="p">.</span><span class="nx">standard</span><span class="p">.</span><span class="nx">name</span> <span class="o">=</span> <span class="s1">&#39;standard&#39;</span><span class="p">;</span>
 
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">settingsObj</span><span class="p">.</span><span class="nx">treatments</span><span class="p">)</span> <span class="p">{</span>
+    <span class="p">}</span>
+    <span class="k">else</span> <span class="p">{</span>
         <span class="nx">treatments</span> <span class="o">=</span> <span class="nx">settingsObj</span><span class="p">.</span><span class="nx">treatments</span><span class="p">;</span>
-        <span class="k">delete</span> <span class="nx">out</span><span class="p">.</span><span class="nx">standard</span><span class="p">.</span><span class="nx">treatments</span><span class="p">;</span>
         <span class="k">for</span> <span class="p">(</span><span class="nx">t</span> <span class="k">in</span> <span class="nx">treatments</span><span class="p">)</span> <span class="p">{</span>
             <span class="k">if</span> <span class="p">(</span><span class="nx">treatments</span><span class="p">.</span><span class="nx">hasOwnProperty</span><span class="p">(</span><span class="nx">t</span><span class="p">))</span> <span class="p">{</span>
-                <span class="nx">out</span><span class="p">[</span><span class="nx">t</span><span class="p">]</span> <span class="o">=</span> <span class="nx">J</span><span class="p">.</span><span class="nx">merge</span><span class="p">(</span><span class="nx">out</span><span class="p">.</span><span class="nx">standard</span><span class="p">,</span> <span class="nx">treatments</span><span class="p">[</span><span class="nx">t</span><span class="p">]);</span>
+                <span class="nx">out</span><span class="p">[</span><span class="nx">t</span><span class="p">]</span> <span class="o">=</span> <span class="nx">J</span><span class="p">.</span><span class="nx">merge</span><span class="p">(</span><span class="nx">standard</span><span class="p">,</span> <span class="nx">treatments</span><span class="p">[</span><span class="nx">t</span><span class="p">]);</span>
                 <span class="nx">out</span><span class="p">[</span><span class="nx">t</span><span class="p">].</span><span class="nx">treatmentName</span> <span class="o">=</span> <span class="nx">t</span><span class="p">;</span>
+                <span class="nx">out</span><span class="p">[</span><span class="nx">t</span><span class="p">].</span><span class="nx">name</span> <span class="o">=</span> <span class="nx">t</span><span class="p">;</span>
             <span class="p">}</span>
         <span class="p">}</span>
     <span class="p">}</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-76" id="section-76">&#182;</a>
-</div>
-<p>Add standard name.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="nx">out</span><span class="p">.</span><span class="nx">standard</span><span class="p">.</span><span class="nx">name</span> <span class="o">=</span> <span class="s1">&#39;standard&#39;</span><span class="p">;</span>
 
     <span class="k">return</span> <span class="nx">out</span><span class="p">;</span>
 <span class="p">}</span>
@@ -2420,7 +2411,7 @@ settings.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-78" id="section-78">&#182;</a>
+  <a class="pilcrow" href="#section-77" id="section-77">&#182;</a>
 </div>
 <p>TODO: see if we need it in the future:</p>
         </td>
