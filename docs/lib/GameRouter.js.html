@@ -22,7 +22,7 @@
         <a href="#gamerouter">GameRouter</a>
       </div>
       <div class="heading h3">
-        <a href="#gameloader.loadauthdir">GameLoader.loadAuthDir</a>
+        <a href="#gameloader.addroutes">GameLoader.addRoutes</a>
       </div>
       <div class="heading h2">
         <a href="#helper%20methods.">Helper Methods.</a>
@@ -102,43 +102,59 @@ MIT Licensed</p>
       <tr>
         <td class="docs"><div class="dox">
   <div class="summary">
-<div class="pilwrap" id="gameloader.loadauthdir">
+<div class="pilwrap" id="gameloader.addroutes">
   <h3>
-    <a href="#gameloader.loadauthdir" name="gameloader.loadauthdir" class="pilcrow">&#182;</a>
-    GameLoader.loadAuthDir
+    <a href="#gameloader.addroutes" name="gameloader.addroutes" class="pilcrow">&#182;</a>
+    GameLoader.addRoutes
   </h3>
 </div>
 
   </div>
-  <div class="body"><p>Reads the <code>requirements/</code> directory and imports settings from it</p>
+  <div class="body"><p>Add routes for the game name (and aliases)</p>
   </div>
   <div class="details">
     <div class="dox_tag_title">Params</div>
     <div class="dox_tag_detail">
-      <span class="dox_tag_name">file</span>
+      <span class="dox_tag_name">gameDir</span>
       <span class="dox_type">string</span>
-      <span>The path to the configuration file</span>
+      <span>The path to the root directory</span>
     </div>
     <div class="dox_tag_detail">
       <span class="dox_tag_name">gameName</span>
       <span class="dox_type">string</span>
-      <span>The name of the game</span>
+      <span>The name of the game (or its alias)</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">gameInfo</span>
+      <span class="dox_type">object</span>
+      <span>Object containing info about the game (auth, etc.)</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">alias</span>
+      <span class="dox_type">boolean</span>
+      <span>Optional. TRUE, if gameName is an alias, so that
+  aliases will not be added again.</span>
     </div>
   </div>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-<span class="nx">GameRouter</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">addRoutes</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">gameDir</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">gameInfo</span><span class="p">)</span> <span class="p">{</span>
+<span class="nx">GameRouter</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">addRoutes</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">gameDir</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">gameInfo</span><span class="p">,</span> <span class="nx">alias</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">servernode</span><span class="p">,</span> <span class="nx">app</span><span class="p">,</span> <span class="nx">pager</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">rootDir</span><span class="p">,</span> <span class="nx">monitorDir</span><span class="p">,</span> <span class="nx">publicDir</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">monitorUri</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">i</span><span class="p">,</span> <span class="nx">len</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">name</span><span class="p">;</span>
 
     <span class="nx">servernode</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span><span class="p">;</span>
+    <span class="nx">channel</span> <span class="o">=</span> <span class="nx">servernode</span><span class="p">.</span><span class="nx">channels</span><span class="p">[</span><span class="nx">gameName</span><span class="p">];</span>
     <span class="nx">app</span> <span class="o">=</span> <span class="nx">servernode</span><span class="p">.</span><span class="nx">http</span><span class="p">;</span>
     <span class="nx">pager</span> <span class="o">=</span> <span class="nx">servernode</span><span class="p">.</span><span class="nx">pager</span><span class="p">;</span>
     <span class="nx">rootDir</span> <span class="o">=</span> <span class="nx">servernode</span><span class="p">.</span><span class="nx">rootDir</span><span class="p">;</span>
     <span class="nx">publicDir</span> <span class="o">=</span> <span class="nx">rootDir</span> <span class="o">+</span> <span class="s1">&#39;/public/&#39;</span><span class="p">;</span>
     <span class="nx">monitorDir</span> <span class="o">=</span> <span class="nx">rootDir</span> <span class="o">+</span> <span class="s1">&#39;/node_modules/nodegame-monitor/public/&#39;</span><span class="p">;</span>
+
+    <span class="nx">name</span> <span class="o">=</span> <span class="nx">alias</span> <span class="o">||</span> <span class="nx">gameName</span><span class="p">;</span>
 
 
 </pre></div>
@@ -154,21 +170,21 @@ MIT Licensed</p>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="k">if</span> <span class="p">(</span><span class="nx">gameInfo</span><span class="p">.</span><span class="nx">auth</span> <span class="o">&amp;&amp;</span> <span class="nx">gameInfo</span><span class="p">.</span><span class="nx">auth</span><span class="p">.</span><span class="nx">enabled</span><span class="p">)</span> <span class="p">{</span>
 
-        <span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;/monitor/auth/*&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39;/monitor/auth/*&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
             <span class="kd">var</span> <span class="nx">userId</span><span class="p">,</span> <span class="nx">pwd</span><span class="p">;</span>
             <span class="nx">userId</span> <span class="o">=</span> <span class="nx">req</span><span class="p">.</span><span class="nx">params</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
             <span class="nx">pwd</span> <span class="o">=</span> <span class="nx">req</span><span class="p">.</span><span class="nx">params</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>
-            <span class="nx">loginSuper</span><span class="p">(</span><span class="nx">servernode</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">userId</span><span class="p">,</span> <span class="nx">pwd</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">req</span><span class="p">);</span>
+            <span class="nx">loginSuper</span><span class="p">(</span><span class="nx">channel</span><span class="p">,</span> <span class="nx">name</span><span class="p">,</span> <span class="nx">userId</span><span class="p">,</span> <span class="nx">pwd</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">req</span><span class="p">);</span>
         <span class="p">});</span>
 
-        <span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;/auth/*&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">next</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39;/auth/*&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">next</span><span class="p">)</span> <span class="p">{</span>
             <span class="kd">var</span> <span class="nx">userId</span><span class="p">,</span> <span class="nx">pwd</span><span class="p">;</span>
             <span class="nx">userId</span> <span class="o">=</span> <span class="nx">req</span><span class="p">.</span><span class="nx">params</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
             <span class="nx">pwd</span> <span class="o">=</span> <span class="nx">req</span><span class="p">.</span><span class="nx">params</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>
-            <span class="nx">login</span><span class="p">(</span><span class="nx">servernode</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">userId</span><span class="p">,</span> <span class="nx">pwd</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">req</span><span class="p">);</span>
+            <span class="nx">login</span><span class="p">(</span><span class="nx">channel</span><span class="p">,</span> <span class="nx">name</span><span class="p">,</span> <span class="nx">userId</span><span class="p">,</span> <span class="nx">pwd</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">req</span><span class="p">);</span>
         <span class="p">});</span>
 
-        <span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;/*&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">next</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39;/*&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">next</span><span class="p">)</span> <span class="p">{</span>
 
             <span class="k">if</span> <span class="p">(</span><span class="nx">req</span><span class="p">.</span><span class="nx">params</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&amp;&amp;</span> <span class="nx">req</span><span class="p">.</span><span class="nx">params</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="nx">substring</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">8</span><span class="p">)</span> <span class="o">===</span> <span class="s1">&#39;monitor/&#39;</span><span class="p">)</span> <span class="p">{</span>
                 <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">req</span><span class="p">.</span><span class="nx">cookies</span> <span class="o">||</span> <span class="o">!</span><span class="nx">superTokens</span><span class="p">[</span><span class="nx">req</span><span class="p">.</span><span class="nx">cookies</span><span class="p">.</span><span class="nx">nodegame_token</span><span class="p">])</span> <span class="p">{</span>
@@ -221,10 +237,10 @@ MIT Licensed</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
 
-    <span class="nx">monitorUri</span> <span class="o">=</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;/monitor/index.htm?channel=&#39;</span> <span class="o">+</span>
-        <span class="nx">gameInfo</span><span class="p">.</span><span class="nx">channels</span><span class="p">[</span><span class="nx">gameName</span><span class="p">].</span><span class="nx">admin</span><span class="p">;</span>
+    <span class="nx">monitorUri</span> <span class="o">=</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39;/monitor/index.htm?channel=&#39;</span> <span class="o">+</span>
+        <span class="nx">gameInfo</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">admin</span><span class="p">;</span>
 
-    <span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;/monitor/*&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">next</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39;/monitor/*&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">next</span><span class="p">)</span> <span class="p">{</span>
         <span class="kd">var</span> <span class="nx">userId</span><span class="p">,</span> <span class="nx">pwd</span><span class="p">;</span>
         <span class="kd">var</span> <span class="nx">path</span><span class="p">,</span> <span class="nx">file</span><span class="p">;</span>
         <span class="kd">var</span> <span class="nx">search</span><span class="p">;</span>
@@ -298,7 +314,7 @@ Error: ENOTDIR in fetching the file.</p>
         <span class="nx">res</span><span class="p">.</span><span class="nx">sendfile</span><span class="p">(</span><span class="nx">path</span><span class="p">);</span>
     <span class="p">});</span>
 
-    <span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;/monitor&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39;/monitor&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
         <span class="nx">res</span><span class="p">.</span><span class="nx">redirect</span><span class="p">(</span><span class="nx">monitorUri</span><span class="p">);</span>
     <span class="p">});</span>
 
@@ -315,7 +331,7 @@ Error: ENOTDIR in fetching the file.</p>
 <p>Game. (default index.htm).</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;/*&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39;/*&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
         <span class="kd">var</span> <span class="nx">gameSettings</span><span class="p">,</span> <span class="nx">filePath</span><span class="p">,</span> <span class="nx">file</span><span class="p">;</span>
         <span class="kd">var</span> <span class="nx">jadeTemplate</span><span class="p">,</span> <span class="nx">jsonContext</span><span class="p">,</span> <span class="nx">contextPath</span><span class="p">,</span> <span class="nx">langPath</span><span class="p">,</span> <span class="nx">pageName</span><span class="p">;</span>
 
@@ -614,8 +630,8 @@ to instantiate the page requested by <code>xx/xx/page*</code>.</p>
         <span class="p">});</span>
     <span class="p">});</span>
 
-    <span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">gameName</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nx">res</span><span class="p">.</span><span class="nx">redirect</span><span class="p">(</span><span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span><span class="p">);</span>
+    <span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">name</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">res</span><span class="p">.</span><span class="nx">redirect</span><span class="p">(</span><span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span><span class="p">);</span>
     <span class="p">});</span>
 
 
@@ -632,8 +648,26 @@ to instantiate the page requested by <code>xx/xx/page*</code>.</p>
  setting-up-two-different-static-directories-in-node-js-express-framework</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="nx">app</span><span class="p">.</span><span class="nx">use</span><span class="p">(</span><span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;/public&#39;</span><span class="p">,</span> <span class="nx">express</span><span class="p">.</span><span class="kr">static</span><span class="p">(</span><span class="nx">gameDir</span> <span class="o">+</span> <span class="s1">&#39;public&#39;</span><span class="p">));</span>
+    <span class="nx">app</span><span class="p">.</span><span class="nx">use</span><span class="p">(</span><span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39;/public&#39;</span><span class="p">,</span> <span class="nx">express</span><span class="p">.</span><span class="kr">static</span><span class="p">(</span><span class="nx">gameDir</span> <span class="o">+</span> <span class="s1">&#39;public&#39;</span><span class="p">));</span>
 
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-32" id="section-32">&#182;</a>
+</div>
+<p>Add alias routes (if any and if it is not an alias already).</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">alias</span> <span class="o">&amp;&amp;</span> <span class="nx">gameInfo</span><span class="p">.</span><span class="nx">alias</span><span class="p">.</span><span class="nx">length</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">i</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="nx">len</span> <span class="o">=</span> <span class="nx">gameInfo</span><span class="p">.</span><span class="nx">alias</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span>
+        <span class="k">for</span> <span class="p">(</span> <span class="p">;</span> <span class="o">++</span><span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">len</span> <span class="p">;</span> <span class="p">)</span> <span class="p">{</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">addRoutes</span><span class="p">(</span><span class="nx">gameDir</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">gameInfo</span><span class="p">,</span> <span class="nx">gameInfo</span><span class="p">.</span><span class="nx">alias</span><span class="p">[</span><span class="nx">i</span><span class="p">]);</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
 <span class="p">};</span>
 
 
@@ -652,11 +686,10 @@ to instantiate the page requested by <code>xx/xx/page*</code>.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
 
-<span class="kd">function</span> <span class="nx">loginSuper</span><span class="p">(</span><span class="nx">servernode</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">user</span><span class="p">,</span> <span class="nx">pwd</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">req</span><span class="p">)</span> <span class="p">{</span>
-    <span class="kd">var</span> <span class="nx">channel</span><span class="p">,</span> <span class="nx">authorized</span><span class="p">,</span> <span class="nx">token</span><span class="p">;</span>
+<span class="kd">function</span> <span class="nx">loginSuper</span><span class="p">(</span><span class="nx">channel</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">user</span><span class="p">,</span> <span class="nx">pwd</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">req</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">authorized</span><span class="p">,</span> <span class="nx">token</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">search</span><span class="p">,</span> <span class="nx">redirectUri</span><span class="p">;</span>
 
-    <span class="nx">channel</span> <span class="o">=</span> <span class="nx">servernode</span><span class="p">.</span><span class="nx">channels</span><span class="p">[</span><span class="nx">gameName</span><span class="p">];</span>
     <span class="nx">authorized</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">authorizeSuperUser</span><span class="p">(</span><span class="nx">user</span><span class="p">,</span> <span class="nx">pwd</span><span class="p">);</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="nx">authorized</span><span class="p">)</span> <span class="p">{</span>
@@ -677,11 +710,10 @@ to instantiate the page requested by <code>xx/xx/page*</code>.</p>
     <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
 <span class="p">}</span>
 
-<span class="kd">function</span> <span class="nx">login</span><span class="p">(</span><span class="nx">servernode</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">user</span><span class="p">,</span> <span class="nx">pwd</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">req</span><span class="p">)</span> <span class="p">{</span>
-    <span class="kd">var</span> <span class="nx">channel</span><span class="p">,</span> <span class="nx">authorized</span><span class="p">,</span> <span class="nx">token</span><span class="p">;</span>
+<span class="kd">function</span> <span class="nx">login</span><span class="p">(</span><span class="nx">channel</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">user</span><span class="p">,</span> <span class="nx">pwd</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">req</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">authorized</span><span class="p">,</span> <span class="nx">token</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">search</span><span class="p">,</span> <span class="nx">redirectUri</span><span class="p">;</span>
 
-    <span class="nx">channel</span> <span class="o">=</span> <span class="nx">servernode</span><span class="p">.</span><span class="nx">channels</span><span class="p">[</span><span class="nx">gameName</span><span class="p">];</span>
     <span class="nx">authorized</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">registry</span><span class="p">.</span><span class="nx">authorize</span><span class="p">({</span> <span class="nx">id</span><span class="o">:</span> <span class="nx">user</span><span class="p">,</span> <span class="nx">pwd</span><span class="o">:</span> <span class="nx">pwd</span> <span class="p">});</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="nx">authorized</span><span class="p">)</span> <span class="p">{</span>
@@ -718,7 +750,7 @@ to instantiate the page requested by <code>xx/xx/page*</code>.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-33" id="section-33">&#182;</a>
+  <a class="pilcrow" href="#section-34" id="section-34">&#182;</a>
 </div>
 <p>We are sending the profile in the token.</p>
         </td>
@@ -732,7 +764,7 @@ to instantiate the page requested by <code>xx/xx/page*</code>.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-34" id="section-34">&#182;</a>
+  <a class="pilcrow" href="#section-35" id="section-35">&#182;</a>
 </div>
 <p>Store the token somewhere.</p>
         </td>
@@ -753,7 +785,7 @@ to instantiate the page requested by <code>xx/xx/page*</code>.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-35" id="section-35">&#182;</a>
+  <a class="pilcrow" href="#section-36" id="section-36">&#182;</a>
 </div>
 <p>Context is retrieved from cache,
 and can be modified by user-defined callbacks.</p>
@@ -786,7 +818,7 @@ and can be modified by user-defined callbacks.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-36" id="section-36">&#182;</a>
+  <a class="pilcrow" href="#section-37" id="section-37">&#182;</a>
 </div>
 <p>TODO: Log error.
 TODO: Mark file as non-existing ?</p>
@@ -805,7 +837,7 @@ TODO: Mark file as non-existing ?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-37" id="section-37">&#182;</a>
+  <a class="pilcrow" href="#section-38" id="section-38">&#182;</a>
 </div>
 <p>Render anyway, with or without context.</p>
         </td>

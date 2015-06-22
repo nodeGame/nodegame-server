@@ -431,7 +431,8 @@ overwritten later on.</p>
         <span class="nx">setup</span><span class="o">:</span> <span class="nx">gameGame</span><span class="p">.</span><span class="nx">setup</span><span class="p">,</span>
         <span class="nx">stager</span><span class="o">:</span> <span class="nx">gameGame</span><span class="p">.</span><span class="nx">stager</span><span class="p">,</span>
         <span class="nx">languages</span><span class="o">:</span> <span class="nx">langObject</span><span class="p">,</span>
-        <span class="nx">channels</span><span class="o">:</span> <span class="p">{}</span>
+        <span class="nx">channel</span><span class="o">:</span> <span class="p">{},</span>
+        <span class="nx">alias</span><span class="o">:</span> <span class="p">[]</span>
     <span class="p">};</span>
 
 
@@ -1145,7 +1146,7 @@ automatically add a waiting room to the channel.</p>
 <p>Add the list of channels created by the game.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-        <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">info</span><span class="p">.</span><span class="nx">games</span><span class="p">[</span><span class="nx">gameName</span><span class="p">].</span><span class="nx">channels</span><span class="p">[</span><span class="nx">channel</span><span class="p">.</span><span class="nx">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">info</span><span class="p">.</span><span class="nx">games</span><span class="p">[</span><span class="nx">gameName</span><span class="p">].</span><span class="nx">channel</span> <span class="o">=</span> <span class="p">{</span>
             <span class="nx">player</span><span class="o">:</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">playerServer</span> <span class="o">?</span>
                 <span class="nx">channel</span><span class="p">.</span><span class="nx">playerServer</span><span class="p">.</span><span class="nx">endpoint</span> <span class="o">:</span> <span class="kc">null</span><span class="p">,</span>
             <span class="nx">admin</span><span class="o">:</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">adminServer</span> <span class="o">?</span>
@@ -1996,10 +1997,8 @@ Auth callback can modify the authorization only of those.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">GameLoader</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">createGameAlias</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">alias</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">)</span> <span class="p">{</span>
-    <span class="kd">var</span> <span class="nx">servernode</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">servernode</span><span class="p">,</span> <span class="nx">gameInfo</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">i</span><span class="p">,</span> <span class="nx">len</span><span class="p">;</span>
-
-    <span class="kd">var</span> <span class="nx">servernode</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span><span class="p">;</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">alias</span><span class="p">)</span> <span class="p">{</span>
         <span class="nx">alias</span> <span class="o">=</span> <span class="p">[</span><span class="nx">alias</span><span class="p">];</span>
@@ -2012,8 +2011,11 @@ Auth callback can modify the authorization only of those.</p>
         <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;GameLoader.createGameAlias: gameName must be &#39;</span> <span class="o">+</span>
                             <span class="s1">&#39;string.&#39;</span><span class="p">);</span>
     <span class="p">}</span>
-    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">info</span><span class="p">.</span><span class="nx">games</span><span class="p">[</span><span class="nx">gameName</span><span class="p">])</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.createGameAlias: game not found:&#39;</span> <span class="o">+</span>
+
+    <span class="nx">servernode</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span><span class="p">;</span>
+    <span class="nx">gameInfo</span> <span class="o">=</span> <span class="nx">servernode</span><span class="p">.</span><span class="nx">getGamesInfo</span><span class="p">(</span><span class="nx">gameName</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">gameInfo</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.createGameAlias: game not found: &#39;</span> <span class="o">+</span>
                         <span class="nx">gameName</span><span class="p">);</span>
     <span class="p">}</span>
 
@@ -2030,8 +2032,22 @@ Auth callback can modify the authorization only of those.</p>
                             <span class="s1">&#39; (&#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;).&#39;</span><span class="p">);</span>
         <span class="p">}</span>
 
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-68" id="section-68">&#182;</a>
+</div>
+<p>TODO: do not add aliases to the info.games object.
+(we need to make sure aliases do not clash).</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
         <span class="nx">servernode</span><span class="p">.</span><span class="nx">info</span><span class="p">.</span><span class="nx">games</span><span class="p">[</span><span class="nx">alias</span><span class="p">[</span><span class="nx">i</span><span class="p">]]</span> <span class="o">=</span> <span class="nx">servernode</span><span class="p">.</span><span class="nx">info</span><span class="p">.</span><span class="nx">games</span><span class="p">[</span><span class="nx">gameName</span><span class="p">];</span>
         <span class="nx">servernode</span><span class="p">.</span><span class="nx">pager</span><span class="p">.</span><span class="nx">createAlias</span><span class="p">(</span><span class="nx">alias</span><span class="p">[</span><span class="nx">i</span><span class="p">],</span> <span class="nx">gameName</span><span class="p">);</span>
+        <span class="nx">gameInfo</span><span class="p">.</span><span class="nx">alias</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">alias</span><span class="p">[</span><span class="nx">i</span><span class="p">]);</span>
     <span class="p">}</span>
 <span class="p">};</span>
 
@@ -2204,7 +2220,7 @@ to the game directory in front.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-72" id="section-72">&#182;</a>
+  <a class="pilcrow" href="#section-73" id="section-73">&#182;</a>
 </div>
 <ul>
 <li>skips the check.</li>
@@ -2220,7 +2236,7 @@ to the game directory in front.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-73" id="section-73">&#182;</a>
+  <a class="pilcrow" href="#section-74" id="section-74">&#182;</a>
 </div>
 <p>Trick: we compare version numbers using the GameStage class.</p>
         </td>
@@ -2318,7 +2334,7 @@ settings.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-75" id="section-75">&#182;</a>
+  <a class="pilcrow" href="#section-76" id="section-76">&#182;</a>
 </div>
 <p>Add standard name.</p>
         </td>
@@ -2404,7 +2420,7 @@ settings.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-77" id="section-77">&#182;</a>
+  <a class="pilcrow" href="#section-78" id="section-78">&#182;</a>
 </div>
 <p>TODO: see if we need it in the future:</p>
         </td>
