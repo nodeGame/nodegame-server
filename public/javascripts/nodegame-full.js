@@ -35106,7 +35106,6 @@ if (!Array.prototype.indexOf) {
                 if (!stepObj) return;
                 timer = stepObj.timer;
                 if (timer) {
-                    if (!timer.milliseconds) debugger
                     options = processOptions(timer, this.options);
                     that.startTiming(options);
                 }
@@ -35145,7 +35144,6 @@ if (!Array.prototype.indexOf) {
     function processOptions(inOptions, curOptions) {
         var options, typeofOptions;
         options = {};
-        var a = inOptions;
         inOptions = J.clone(inOptions);
         typeofOptions = typeof inOptions;
         switch (typeofOptions) {
@@ -35170,7 +35168,6 @@ if (!Array.prototype.indexOf) {
         J.mixout(options, curOptions || {});
 
         if (!options.milliseconds) {
-            debugger
             throw new Error('VisualTimer processOptions: milliseconds cannot ' +
                             'be 0 or undefined.');
         }
