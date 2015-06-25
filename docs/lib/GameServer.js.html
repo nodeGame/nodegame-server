@@ -2278,8 +2278,6 @@ and a warning will be sent.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">GameServer</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">welcomeClient</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">clientId</span><span class="p">,</span> <span class="nx">socketId</span><span class="p">)</span> <span class="p">{</span>
-    <span class="kd">var</span> <span class="nx">connStr</span><span class="p">;</span>
-    <span class="nx">connStr</span> <span class="o">=</span> <span class="s1">&#39;Welcome &lt;&#39;</span> <span class="o">+</span> <span class="nx">clientId</span> <span class="o">+</span> <span class="s1">&#39;&gt;&#39;</span><span class="p">;</span>
     <span class="k">this</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">msg</span><span class="p">.</span><span class="nx">create</span><span class="p">({</span>
         <span class="nx">target</span><span class="o">:</span> <span class="s1">&#39;HI&#39;</span><span class="p">,</span>
         <span class="nx">to</span><span class="o">:</span> <span class="nx">clientId</span><span class="p">,</span>
@@ -2288,7 +2286,7 @@ and a warning will be sent.</p>
             <span class="nx">sid</span><span class="o">:</span> <span class="nx">socketId</span><span class="p">,</span>
             <span class="nx">admin</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">ADMIN_SERVER</span>
         <span class="p">},</span>
-        <span class="nx">text</span><span class="o">:</span> <span class="nx">connStr</span>
+        <span class="nx">text</span><span class="o">:</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
     <span class="p">}));</span>
 <span class="p">};</span>
 

@@ -15039,13 +15039,14 @@ if (!Array.prototype.indexOf) {
 
             // Replace itself: will change onMessage to onMessageFull.
             this.setMsgListener();
-            this.node.emit('NODEGAME_READY');
 
             // This will emit PLAYER_CREATED
             this.startSession(msg);
             // Functions listening to these events can be executed before HI.
+
+            this.node.emit('NODEGAME_READY');
         }
-    }
+    };
 
     /**
      * ### Socket.onMessageFull
@@ -15177,7 +15178,9 @@ if (!Array.prototype.indexOf) {
      * Initializes a nodeGame session
      *
      * Creates a the player and saves it in node.player, and
-     * stores the session ids in the session object
+     * stores the session ids in the session object.
+     *
+     * If a game window reference is found, it set the channelURI there.
      *
      * @param {GameMsg} msg A game-msg
      * @return {boolean} TRUE, if session was correctly initialized
@@ -15186,28 +15189,9 @@ if (!Array.prototype.indexOf) {
      * @see Socket.registerServer
      */
     Socket.prototype.startSession = function(msg) {
-        // Extracts server info from the first msg.
-        this.registerServer(msg);
-
         this.session = msg.session;
         this.node.createPlayer(msg.data);
-        return true;
-    };
-
-    /**
-     * ### Socket.registerServer
-     *
-     * Saves the server information based on anx incoming message
-     *
-     * @param {GameMsg} msg A game message
-     *
-     * @see node.createPlayer
-     */
-    Socket.prototype.registerServer = function(msg) {
-        // Setting global info
-        this.servername = msg.from;
-        // Keep serverid = msg.from for now
-        this.serverid = msg.from;
+        if (this.node.window) this.node.window.channelURI = msg.text;
     };
 
     /**
@@ -23259,12 +23243,22 @@ if (!Array.prototype.indexOf) {
         this.conf = {};
 
         /**
+         * ### GameWindow.channelURI
+         *
+         * The uri of the channel on the server
+         *
+         * It is not the socket.io channel, but the HTTP address.
+         *
+         * @see GameWindow.loadFrame
+         */
+        this.channelURI = null;
+
+        /**
          * ### GameWindow.areLoading
          *
          * The number of frames currently being loaded
          */
         this.areLoading = 0;
-
 
         /**
          * ### GameWindow.cacheSupported
@@ -24493,6 +24487,13 @@ if (!Array.prototype.indexOf) {
                                     '.');
                 }
             }
+        }
+
+        // Adapt the uri if necessary.
+        if (this.channelURI &&
+            (uri.charAt(0) !== '/' || uri.substr(0,7) !== 'http://')) {
+
+            uri = this.channelURI + uri + '/';
         }
 
         if (this.cacheSupported === null) {
