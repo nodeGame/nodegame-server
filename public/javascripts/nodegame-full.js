@@ -16548,8 +16548,8 @@ if (!Array.prototype.indexOf) {
             }
 
         }
-        return this.execStep(this.getCurrentGameStage());
-        // return this.execStep(this.getCurrentStepObj());
+        this.execStep(this.getCurrentGameStage());
+        return true;
     };
 
     /**
@@ -16557,25 +16557,25 @@ if (!Array.prototype.indexOf) {
      *
      * Executes the specified stage object
      *
-     * @param {GameStage} stage Stage to execute
+     * @param {GameStage} step Step to execute
      *
      * @return {boolean} The result of the execution of the step callback
      */
-    Game.prototype.execStep = function(stage) {
+    Game.prototype.execStep = function(step) {
         var cb, res;
         var frame, frameOptions;
 
-        if ('object' !== typeof stage) {
-            throw new Error('Game.execStep: stage must be object.');
+        if ('object' !== typeof step) {
+            throw new Error('Game.execStep: step must be object.');
         }
 
-        cb = this.plot.getProperty(stage, 'cb');
-        frame = this.plot.getProperty(stage, 'frame');
+        cb = this.plot.getProperty(step, 'cb');
+        frame = this.plot.getProperty(step, 'frame');
 
         if (frame) {
             if (!this.node.window) {
-                throw new Error('Game.execStep: frame option in stage ' +
-                                stage + ', but nodegame-window is not loaded.');
+                throw new Error('Game.execStep: frame option in step ' +
+                                step + ', but nodegame-window is not loaded.');
             }
 
             if ('object' === typeof frame) {
@@ -16584,19 +16584,24 @@ if (!Array.prototype.indexOf) {
             }
 
             this.node.window.loadFrame(frame, function() {
-
-                this.aa(cb);
-
+                this.execCallback(cb);
             }, frameOptions);
         }
         else {
-            this.aa(cb);
+            this.execCallback(cb);
         }
-
-        return res;
     };
 
-    Game.prototype.aa = function(cb) {
+    /**
+     * ## Game.execCallback
+     *
+     * Executes a callback
+     *
+     * @param {function} cb The callback to execute
+     *
+     * @return {mixed} res The return value of the callback
+     */
+    Game.prototype.execCallback = function(cb) {
         var res;
         this.setStageLevel(constants.stageLevels.EXECUTING_CALLBACK);
 
