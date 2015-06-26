@@ -147,6 +147,7 @@ MIT Licensed</p>
     <span class="kd">var</span> <span class="nx">name</span><span class="p">;</span>
 
     <span class="nx">servernode</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span><span class="p">;</span>
+
     <span class="nx">channel</span> <span class="o">=</span> <span class="nx">servernode</span><span class="p">.</span><span class="nx">channels</span><span class="p">[</span><span class="nx">gameName</span><span class="p">];</span>
     <span class="nx">app</span> <span class="o">=</span> <span class="nx">servernode</span><span class="p">.</span><span class="nx">http</span><span class="p">;</span>
     <span class="nx">pager</span> <span class="o">=</span> <span class="nx">servernode</span><span class="p">.</span><span class="nx">pager</span><span class="p">;</span>
@@ -317,7 +318,6 @@ Error: ENOTDIR in fetching the file.</p>
     <span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39;/monitor&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
         <span class="nx">res</span><span class="p">.</span><span class="nx">redirect</span><span class="p">(</span><span class="nx">monitorUri</span><span class="p">);</span>
     <span class="p">});</span>
-
 
 
 </pre></div>
@@ -599,8 +599,8 @@ to instantiate the page requested by <code>xx/xx/page*</code>.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
             <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">templateFound</span> <span class="o">===</span> <span class="kc">true</span><span class="p">)</span> <span class="p">{</span>
-                <span class="nx">renderTemplate</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">templatePath</span><span class="p">,</span> <span class="nx">contextPath</span><span class="p">,</span>
-                               <span class="nx">gameSettings</span><span class="p">);</span>
+                <span class="nx">renderTemplate</span><span class="p">(</span><span class="nx">pager</span><span class="p">,</span> <span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span>
+                               <span class="nx">templatePath</span><span class="p">,</span> <span class="nx">contextPath</span><span class="p">,</span> <span class="nx">gameSettings</span><span class="p">);</span>
             <span class="p">}</span>
 
 </pre></div>
@@ -623,7 +623,7 @@ to instantiate the page requested by <code>xx/xx/page*</code>.</p>
                         <span class="k">return</span><span class="p">;</span>
                     <span class="p">}</span>
                     <span class="nx">pager</span><span class="p">.</span><span class="nx">inTemplates</span><span class="p">(</span><span class="nx">gameName</span><span class="p">,</span> <span class="nx">templatePath</span><span class="p">,</span> <span class="kc">true</span><span class="p">);</span>
-                    <span class="nx">renderTemplate</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">templatePath</span><span class="p">,</span>
+                    <span class="nx">renderTemplate</span><span class="p">(</span><span class="nx">pager</span><span class="p">,</span> <span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">templatePath</span><span class="p">,</span>
                                    <span class="nx">contextPath</span><span class="p">,</span> <span class="nx">gameSettings</span><span class="p">);</span>
                 <span class="p">});</span>
             <span class="p">}</span>
@@ -774,8 +774,9 @@ to instantiate the page requested by <code>xx/xx/page*</code>.</p>
     <span class="k">return</span> <span class="nx">token</span><span class="p">;</span>
 <span class="p">}</span>
 
-<span class="kd">function</span> <span class="nx">renderTemplate</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">templatePath</span><span class="p">,</span> <span class="nx">contextPath</span><span class="p">,</span>
+<span class="kd">function</span> <span class="nx">renderTemplate</span><span class="p">(</span><span class="nx">pager</span><span class="p">,</span> <span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">templatePath</span><span class="p">,</span> <span class="nx">contextPath</span><span class="p">,</span>
                         <span class="nx">gameSettings</span><span class="p">)</span> <span class="p">{</span>
+
     <span class="kd">var</span> <span class="nx">context</span><span class="p">,</span> <span class="nx">cb</span><span class="p">;</span>
 
 
