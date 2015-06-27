@@ -1,7 +1,7 @@
 /**
  * # servernode.js
  *
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * Configuration file for ServerNode in nodegame-server.
@@ -16,20 +16,16 @@ var path = require('path');
 
 function configure(servernode) {
 
-    var rootDir, player, admin;
-    rootDir = servernode.rootDir;
+    var rootDir;
+    var player, admin;
 
+    rootDir = servernode.rootDir;
     if (!rootDir) {
         servernode.logger.error('configure servernode: rootDir not found.');
         return false;
     }
 
-    // TODO: check
-    //  servernode.log.msg = false;
-    //  servernode.log.sys = false;
-    //  servernode.log.folder = rootDir + '/log/';
-    //
-    //  servernode.mail = false; // experimental
+    // 1. Servernode configuration.
 
     // The name of the server.
     servernode.name = "nodeGame server";
@@ -62,8 +58,10 @@ function configure(servernode) {
     // a certain number of Node.JS listeners.
     servernode.maxListeners = 0;
 
+    // 2. Channels configuration.
+
     // AdminServer default options.
-    admin = {
+    adminServer = {
 
         // A PLAYER_UPDATE / PCONNECT / PDISCONNECT message will be sent to
         // all clients connected to the PlayerServer endpoint when:
@@ -129,7 +127,7 @@ function configure(servernode) {
     };
 
     // PlayerServer default options.
-    player = {
+    playerServer = {
 
         // A PLAYER_UPDATE / PCONNECT / PDISCONNECT message will be sent to
         // all clients connected to the PlayerServer endpoint when:
@@ -200,8 +198,8 @@ function configure(servernode) {
         accessDeniedUrl: '/pages/accessdenied.htm',
         // Admin and Player server specific options.
         // Can overwrite common ones.
-        player: player,
-        admin: admin
+        playerServer: playerServer,
+        adminServer: adminServer
     };
 
     // Returns TRUE to signal successful configuration of the server.

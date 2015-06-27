@@ -19,25 +19,10 @@
     <div id="tree"></div>
     <div id="headings">
       <div class="heading h1">
-        <a href="#gameroom">GameRoom</a>
+        <a href="#game%20room">Game Room</a>
       </div>
       <div class="heading h2">
         <a href="#global%20scope">Global scope</a>
-      </div>
-      <div class="heading h2">
-        <a href="#gameroom%20constructor">GameRoom constructor</a>
-      </div>
-      <div class="heading h3">
-        <a href="#gameroom.name">GameRoom.name</a>
-      </div>
-      <div class="heading h3">
-        <a href="#gameroom.group">GameRoom.group</a>
-      </div>
-      <div class="heading h3">
-        <a href="#gameroom.channel">GameRoom.channel</a>
-      </div>
-      <div class="heading h3">
-        <a href="#gameroom.id">GameRoom.id</a>
       </div>
       <div class="heading h3">
         <a href="#gameroom.gamename">GameRoom.gameName</a>
@@ -52,22 +37,7 @@
         <a href="#gameroom.gamepaths">GameRoom.gamePaths</a>
       </div>
       <div class="heading h3">
-        <a href="#gameroom.clients">GameRoom.clients</a>
-      </div>
-      <div class="heading h3">
-        <a href="#gameroom.parentroom">GameRoom.parentRoom</a>
-      </div>
-      <div class="heading h3">
-        <a href="#gameroom.childrooms">GameRoom.childRooms</a>
-      </div>
-      <div class="heading h3">
-        <a href="#gameroom.runtimeconf">GameRoom.runtimeConf</a>
-      </div>
-      <div class="heading h3">
-        <a href="#gameroom.options">GameRoom.options</a>
-      </div>
-      <div class="heading h3">
-        <a href="#gameroom.node">GameRoom.node</a>
+        <a href="#gameroom.gametreatment">GameRoom.gameTreatment</a>
       </div>
       <div class="heading h2">
         <a href="#gameroom%20static%20functions">GameRoom static functions</a>
@@ -96,6 +66,24 @@
       <div class="heading h3">
         <a href="#gameroom.stopgame">GameRoom.stopGame</a>
       </div>
+      <div class="heading h3">
+        <a href="#gameroom.getclienttype">GameRoom.getClientType</a>
+      </div>
+      <div class="heading h2">
+        <a href="#setuplogic">setupLogic</a>
+      </div>
+      <div class="heading h2">
+        <a href="#setupclients">setupClients</a>
+      </div>
+      <div class="heading h2">
+        <a href="#gameroom.setupclient">GameRoom.setupClient</a>
+      </div>
+      <div class="heading h2">
+        <a href="#trytogetclient">tryToGetClient</a>
+      </div>
+      <div class="heading h2">
+        <a href="#mixingamemetadata">mixinGameMetadata</a>
+      </div>
     </div>
   </div>
   <div id="sidebar-toggle"></div>
@@ -105,24 +93,36 @@
       <tr>
         <td class="docs"><div class="dox">
   <div class="summary">
-<div class="pilwrap" id="gameroom">
+<div class="pilwrap" id="game%20room">
   <h1>
-    <a href="#gameroom" name="gameroom" class="pilcrow">&#182;</a>
-    GameRoom
+    <a href="#game%20room" name="game%20room" class="pilcrow">&#182;</a>
+    Game Room
   </h1>
 </div>
 
 
-<p>Copyright(c) 2014 Stefano Balietti
+<p>Copyright(c) 2015 Stefano Balietti
 MIT Licensed</p>
   </div>
   <div class="body"><p>Game room representation</p>
 
-<p>TODO: there is a big overlap with WaitingRoom. See if they can merge.</p>
+<p><a href='http://www.nodegame.org'>http://www.nodegame.org</a></p>
   </div>
 </div>
         </td>
-        <td class="code highlight"><div class="highlight"><pre><span class="s2">&quot;use strict&quot;</span><span class="p">;</span>
+        <td class="code highlight"><div class="highlight"><pre></pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-2" id="section-2">&#182;</a>
+</div>
+<p>TODO: check which methods put in the prototype.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
+<span class="s2">&quot;use strict&quot;</span><span class="p">;</span>
 
 
 </pre></div>
@@ -144,67 +144,14 @@ MIT Licensed</p>
 <span class="kd">var</span> <span class="nx">ngc</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;nodegame-client&#39;</span><span class="p">);</span>
 <span class="kd">var</span> <span class="nx">J</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;JSUS&#39;</span><span class="p">).</span><span class="nx">JSUS</span><span class="p">;</span>
 
+<span class="kd">var</span> <span class="nx">Room</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;./Room&#39;</span><span class="p">);</span>
 
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs"><div class="dox">
-  <div class="summary">
-<div class="pilwrap" id="gameroom%20constructor">
-  <h2>
-    <a href="#gameroom%20constructor" name="gameroom%20constructor" class="pilcrow">&#182;</a>
-    GameRoom constructor
-  </h2>
-</div>
+<span class="nx">GameRoom</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">__proto__</span> <span class="o">=</span> <span class="nx">Room</span><span class="p">.</span><span class="nx">prototype</span><span class="p">;</span>
+<span class="nx">GameRoom</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">constructor</span> <span class="o">=</span> <span class="nx">GameRoom</span><span class="p">;</span>
 
-  </div>
-  <div class="body"><p>Creates a new instance of GameRoom</p>
-
-<p>The constructor registers the room globally creating a unique random id
-within the whole <em>ServerNode</em>.</p>
-  </div>
-  <div class="details">
-    <div class="dox_tag_title">Params</div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name">config</span>
-      <span class="dox_type">object</span>
-      <span>Initialization values for the GameRoom object
- (see documentation of fields in constructor)</span>
-    </div>
-  </div>
-</div>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
 <span class="kd">function</span> <span class="nx">GameRoom</span><span class="p">(</span><span class="nx">config</span><span class="p">)</span> <span class="p">{</span>
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-4" id="section-4">&#182;</a>
-</div>
-<p>Check for proper config parameter:</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">config</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;GameRoom: config parameter must be object.&#39;</span><span class="p">);</span>
-    <span class="p">}</span>
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">config</span><span class="p">.</span><span class="nx">group</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;GameRoom: config.group must be string.&#39;</span><span class="p">);</span>
-    <span class="p">}</span>
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">config</span><span class="p">.</span><span class="nx">name</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;GameRoom: config.name must be string.&#39;</span><span class="p">);</span>
-    <span class="p">}</span>
-    <span class="k">if</span> <span class="p">(</span><span class="nx">config</span><span class="p">.</span><span class="nx">clients</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="p">(</span><span class="nx">config</span><span class="p">.</span><span class="nx">clients</span> <span class="k">instanceof</span> <span class="nx">PlayerList</span><span class="p">))</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;GameRoom: config.clients must be &#39;</span> <span class="o">+</span>
-                            <span class="s1">&#39;PlayerList or undefined.&#39;</span><span class="p">);</span>
-    <span class="p">}</span>
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">config</span><span class="p">.</span><span class="nx">channel</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;GameRoom: config.channel must be object.&#39;</span><span class="p">);</span>
-    <span class="p">}</span>
+    <span class="nx">Room</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="s1">&#39;Game&#39;</span><span class="p">,</span> <span class="nx">config</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">logicPath</span><span class="p">)</span> <span class="k">this</span><span class="p">.</span><span class="nx">logicPath</span>  <span class="o">=</span> <span class="s1">&#39;./rooms/game.room&#39;</span><span class="p">;</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">config</span><span class="p">.</span><span class="nx">gameName</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;GameRoom: config.gameName must be string.&#39;</span><span class="p">);</span>
@@ -218,123 +165,6 @@ within the whole <em>ServerNode</em>.</p>
     <span class="k">if</span> <span class="p">(</span><span class="nx">config</span><span class="p">.</span><span class="nx">runtimeConf</span> <span class="o">&amp;&amp;</span> <span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">config</span><span class="p">.</span><span class="nx">runtimeConf</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;GameRoom: config.channel must be object.&#39;</span><span class="p">);</span>
     <span class="p">}</span>
-
-    <span class="k">if</span> <span class="p">(</span><span class="nx">config</span><span class="p">.</span><span class="nx">node</span> <span class="o">&amp;&amp;</span> <span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">config</span><span class="p">.</span><span class="nx">node</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;GameRoom: config.node must be object.&#39;</span><span class="p">);</span>
-    <span class="p">}</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs"><div class="dox">
-  <div class="summary">
-<div class="pilwrap" id="gameroom.name">
-  <h3>
-    <a href="#gameroom.name" name="gameroom.name" class="pilcrow">&#182;</a>
-    GameRoom.name
-  </h3>
-</div>
-
-  </div>
-  <div class="body"><p>Name of the room</p>
-  </div>
-</div>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">name</span> <span class="o">=</span> <span class="nx">config</span><span class="p">.</span><span class="nx">name</span><span class="p">;</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs"><div class="dox">
-  <div class="summary">
-<div class="pilwrap" id="gameroom.group">
-  <h3>
-    <a href="#gameroom.group" name="gameroom.group" class="pilcrow">&#182;</a>
-    GameRoom.group
-  </h3>
-</div>
-
-  </div>
-  <div class="body"><p>The group to which the game room belongs</p>
-  </div>
-</div>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">group</span> <span class="o">=</span> <span class="nx">config</span><span class="p">.</span><span class="nx">group</span><span class="p">;</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs"><div class="dox">
-  <div class="summary">
-<div class="pilwrap" id="gameroom.channel">
-  <h3>
-    <a href="#gameroom.channel" name="gameroom.channel" class="pilcrow">&#182;</a>
-    GameRoom.channel
-  </h3>
-</div>
-
-  </div>
-  <div class="body"><p>Reference to the room's ServerChannel</p>
-  </div>
-</div>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">channel</span> <span class="o">=</span> <span class="nx">config</span><span class="p">.</span><span class="nx">channel</span><span class="p">;</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs"><div class="dox">
-  <div class="summary">
-<div class="pilwrap" id="gameroom.id">
-  <h3>
-    <a href="#gameroom.id" name="gameroom.id" class="pilcrow">&#182;</a>
-    GameRoom.id
-  </h3>
-</div>
-
-  </div>
-  <div class="body"><p>Random global unique room identifier.</p>
-  </div>
-  <div class="details">
-    <div class="dox_tag_title">See</div>
-    <div class="dox_tag_detail">
-      <span class="dox_type">ServerNode.rooms
-</span>
-    </div>
-  </div>
-</div>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">id</span> <span class="o">=</span> <span class="nx">J</span><span class="p">.</span><span class="nx">uniqueKey</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">rooms</span><span class="p">);</span>
-
-    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">id</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;GameRoom &#39;</span> <span class="o">+</span> <span class="nx">config</span><span class="p">.</span><span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39; failed to generate &#39;</span> <span class="o">+</span>
-                           <span class="s1">&#39;random global unique identifier.&#39;</span><span class="p">);</span>
-    <span class="p">}</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-9" id="section-9">&#182;</a>
-</div>
-<p>Try to fetch game or game logic</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
 
 
 </pre></div>
@@ -373,7 +203,7 @@ within the whole <em>ServerNode</em>.</p>
 </div>
 
   </div>
-  <div class="body"><p>The name of the game played in this room, or null if not defined.</p>
+  <div class="body"><p>The name of the game played in this room, or 'standard' if not defined.</p>
   </div>
 </div>
         </td>
@@ -406,7 +236,7 @@ within the whole <em>ServerNode</em>.</p>
         <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameRoom: game not found: &#39;</span> <span class="o">+</span> <span class="k">this</span><span class="p">.</span><span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
     <span class="p">}</span>
 
-    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">treatments</span><span class="p">[</span><span class="k">this</span><span class="p">.</span><span class="nx">treatmentName</span><span class="p">])</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">settings</span><span class="p">[</span><span class="k">this</span><span class="p">.</span><span class="nx">treatmentName</span><span class="p">])</span> <span class="p">{</span>
         <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameRoom: game &#39;</span> <span class="o">+</span> <span class="k">this</span><span class="p">.</span><span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39; treatment &#39;</span> <span class="o">+</span>
                         <span class="s1">&#39;not found: &#39;</span> <span class="o">+</span> <span class="k">this</span><span class="p">.</span><span class="nx">treatmentName</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
     <span class="p">}</span>
@@ -431,7 +261,7 @@ within the whole <em>ServerNode</em>.</p>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">gamePaths</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">treatments</span><span class="p">[</span><span class="k">this</span><span class="p">.</span><span class="nx">treatmentName</span><span class="p">].</span><span class="nx">gamePaths</span><span class="p">;</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">clientTypes</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">clientTypes</span><span class="p">;</span>
 
 
 </pre></div>
@@ -440,122 +270,21 @@ within the whole <em>ServerNode</em>.</p>
       <tr>
         <td class="docs"><div class="dox">
   <div class="summary">
-<div class="pilwrap" id="gameroom.clients">
+<div class="pilwrap" id="gameroom.gametreatment">
   <h3>
-    <a href="#gameroom.clients" name="gameroom.clients" class="pilcrow">&#182;</a>
-    GameRoom.clients
+    <a href="#gameroom.gametreatment" name="gameroom.gametreatment" class="pilcrow">&#182;</a>
+    GameRoom.gameTreatment
   </h3>
 </div>
 
   </div>
-  <div class="body"><p>PlayerList containing players and admins inside the room</p>
-  </div>
-</div>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">clients</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">ngc</span><span class="p">.</span><span class="nx">PlayerList</span><span class="p">();</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-15" id="section-15">&#182;</a>
-</div>
-<p>Adding views to distinguish admins and players.
-Note: this.node.player will be added to admins.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">view</span><span class="p">(</span><span class="s1">&#39;admin&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">p</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">return</span> <span class="nx">p</span><span class="p">.</span><span class="nx">admin</span> <span class="o">?</span> <span class="nx">p</span><span class="p">.</span><span class="nx">id</span> <span class="o">:</span> <span class="kc">undefined</span><span class="p">;</span>
-    <span class="p">});</span>
-    <span class="k">this</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">view</span><span class="p">(</span><span class="s1">&#39;player&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">p</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">return</span> <span class="o">!</span><span class="nx">p</span><span class="p">.</span><span class="nx">admin</span> <span class="o">?</span> <span class="nx">p</span><span class="p">.</span><span class="nx">id</span> <span class="o">:</span> <span class="kc">undefined</span><span class="p">;</span>
-    <span class="p">});</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-16" id="section-16">&#182;</a>
-</div>
-<p>Importing initial clients, if any.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">if</span> <span class="p">(</span><span class="nx">config</span><span class="p">.</span><span class="nx">clients</span> <span class="o">&amp;&amp;</span> <span class="nx">config</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">length</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">this</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">importDB</span><span class="p">(</span><span class="nx">config</span><span class="p">.</span><span class="nx">clients</span><span class="p">);</span>
-    <span class="p">}</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs"><div class="dox">
-  <div class="summary">
-<div class="pilwrap" id="gameroom.parentroom">
-  <h3>
-    <a href="#gameroom.parentroom" name="gameroom.parentroom" class="pilcrow">&#182;</a>
-    GameRoom.parentRoom
-  </h3>
-</div>
-
-  </div>
-  <div class="body"><p>Name of the room's parent or null</p>
-  </div>
-</div>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">parentRoom</span> <span class="o">=</span> <span class="nx">config</span><span class="p">.</span><span class="nx">parentRoom</span> <span class="o">||</span> <span class="kc">null</span><span class="p">;</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs"><div class="dox">
-  <div class="summary">
-<div class="pilwrap" id="gameroom.childrooms">
-  <h3>
-    <a href="#gameroom.childrooms" name="gameroom.childrooms" class="pilcrow">&#182;</a>
-    GameRoom.childRooms
-  </h3>
-</div>
-
-  </div>
-  <div class="body"><p>Names of the room's children</p>
-  </div>
-</div>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">childRooms</span> <span class="o">=</span> <span class="nx">config</span><span class="p">.</span><span class="nx">childRooms</span> <span class="o">||</span> <span class="p">[];</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs"><div class="dox">
-  <div class="summary">
-<div class="pilwrap" id="gameroom.runtimeconf">
-  <h3>
-    <a href="#gameroom.runtimeconf" name="gameroom.runtimeconf" class="pilcrow">&#182;</a>
-    GameRoom.runtimeConf
-  </h3>
-</div>
-
-  </div>
-  <div class="body"><p>Extra configuration that will mixed in to the treatment settings.</p>
-
-<p>Unlike the <em>mixinConf</em> parameter of the <em>setupGame</em> method, <em>runtimeConf</em>
-options are merged before requiring the logic or client file.</p>
+  <div class="body"><p>Actual settings for current game based on treatment and runtime conf</p>
   </div>
   <div class="details">
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">GameRoom.runtimeConf</span>
+    </div>
     <div class="dox_tag_title">See</div>
     <div class="dox_tag_detail">
       <span class="dox_type">GameRoom.setupGame
@@ -565,66 +294,12 @@ options are merged before requiring the logic or client file.</p>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">runtimeConf</span> <span class="o">=</span> <span class="nx">config</span><span class="p">.</span><span class="nx">runtimeConf</span> <span class="o">||</span> <span class="p">{};</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">gameTreatment</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">settings</span><span class="p">[</span><span class="k">this</span><span class="p">.</span><span class="nx">treatmentName</span><span class="p">];</span>
+    <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">runtimeConf</span><span class="p">)</span> <span class="nx">J</span><span class="p">.</span><span class="nx">mixin</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">gameTreatment</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">runtimeConf</span><span class="p">);</span>
 
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs"><div class="dox">
-  <div class="summary">
-<div class="pilwrap" id="gameroom.options">
-  <h3>
-    <a href="#gameroom.options" name="gameroom.options" class="pilcrow">&#182;</a>
-    GameRoom.options
-  </h3>
-</div>
-
-  </div>
-  <div class="body"><p>Miscellaneous options</p>
-  </div>
-</div>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">options</span> <span class="o">=</span> <span class="nx">config</span><span class="p">.</span><span class="nx">options</span> <span class="o">||</span> <span class="p">{};</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs"><div class="dox">
-  <div class="summary">
-<div class="pilwrap" id="gameroom.node">
-  <h3>
-    <a href="#gameroom.node" name="gameroom.node" class="pilcrow">&#182;</a>
-    GameRoom.node
-  </h3>
-</div>
-
-  </div>
-  <div class="body"><p>node instance</p>
-  </div>
-</div>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">node</span> <span class="o">=</span> <span class="nx">config</span><span class="p">.</span><span class="nx">node</span> <span class="o">||</span> <span class="nx">ngc</span><span class="p">.</span><span class="nx">getClient</span><span class="p">();</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-22" id="section-22">&#182;</a>
-</div>
-<p>Everything in order, register room globally.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">rooms</span><span class="p">[</span><span class="k">this</span><span class="p">.</span><span class="nx">id</span><span class="p">]</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">registerRoom</span><span class="p">();</span>
 <span class="p">}</span>
+
 
 
 </pre></div>
@@ -703,7 +378,7 @@ options are merged before requiring the logic or client file.</p>
         <span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">clientList</span><span class="p">)</span> <span class="p">{</span>
 
         <span class="k">return</span> <span class="s2">&quot;clientList must be array, &#39;all&#39;, &#39;players&#39;, &#39;admins&#39; &quot;</span> <span class="o">+</span>
-               <span class="s1">&#39;or undefined&#39;</span><span class="p">;</span>
+            <span class="s1">&#39;or undefined&#39;</span><span class="p">;</span>
     <span class="p">}</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;boolean&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">force</span> <span class="o">&amp;&amp;</span> <span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">force</span><span class="p">)</span> <span class="p">{</span>
@@ -761,18 +436,8 @@ options are merged before requiring the logic or client file.</p>
   command, or one of the following strings:
   'all' (all clients), 'players' (all players), 'admins' (all admins)</span>
     </div>
-    <div class="dox_tag_title">private
+  </div>
 </div>
-
-
-<div class="highlight"><pre><code><span class="o">&lt;</span><span class="nx">div</span> <span class="kr">class</span><span class="o">=</span><span class="s2">&quot;dox_tag_detail&quot;</span><span class="o">&gt;</span>
-<span class="o">&lt;</span><span class="err">/div&gt;</span>
-</code></pre></div>
-
-
-
-<p></div>
-</div></p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">GameRoom</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">sendRemoteCommand</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">command</span><span class="p">,</span> <span class="nx">clientList</span><span class="p">)</span> <span class="p">{</span>
@@ -786,7 +451,7 @@ options are merged before requiring the logic or client file.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-27" id="section-27">&#182;</a>
+  <a class="pilcrow" href="#section-13" id="section-13">&#182;</a>
 </div>
 <p>TODO: Don't send to logic!</p>
         </td>
@@ -865,13 +530,7 @@ options are merged before requiring the logic or client file.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">GameRoom</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">setupGame</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">mixinConf</span><span class="p">,</span> <span class="nx">doLogic</span><span class="p">,</span> <span class="nx">clientList</span><span class="p">,</span> <span class="nx">force</span><span class="p">)</span> <span class="p">{</span>
-    <span class="kd">var</span> <span class="nx">game</span><span class="p">,</span> <span class="nx">botGame</span><span class="p">,</span> <span class="nx">channel</span><span class="p">,</span> <span class="nx">node</span><span class="p">,</span> <span class="nx">gameNode</span><span class="p">,</span> <span class="nx">that</span><span class="p">,</span> <span class="nx">settings</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">i</span><span class="p">,</span> <span class="nx">clientId</span><span class="p">,</span> <span class="nx">clientObj</span><span class="p">,</span> <span class="nx">type</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">rc</span><span class="p">;</span>
-
-    <span class="nx">node</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">node</span><span class="p">;</span>
-    <span class="nx">channel</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">;</span>
-    <span class="nx">that</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
 
 
 </pre></div>
@@ -880,7 +539,7 @@ options are merged before requiring the logic or client file.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-29" id="section-29">&#182;</a>
+  <a class="pilcrow" href="#section-15" id="section-15">&#182;</a>
 </div>
 <p>Check parameters.</p>
         </td>
@@ -911,7 +570,7 @@ options are merged before requiring the logic or client file.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-30" id="section-30">&#182;</a>
+  <a class="pilcrow" href="#section-16" id="section-16">&#182;</a>
 </div>
 <p>Apply defaults.</p>
         </td>
@@ -920,12 +579,6 @@ options are merged before requiring the logic or client file.</p>
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">clientList</span><span class="p">)</span> <span class="nx">clientList</span> <span class="o">=</span> <span class="s1">&#39;players&#39;</span><span class="p">;</span>
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">force</span><span class="p">)</span>      <span class="nx">force</span>      <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
 
-    <span class="nx">settings</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">treatments</span><span class="p">[</span><span class="k">this</span><span class="p">.</span><span class="nx">treatmentName</span><span class="p">];</span>
-
-    <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">runtimeConf</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nx">J</span><span class="p">.</span><span class="nx">mixin</span><span class="p">(</span><span class="nx">settings</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">runtimeConf</span><span class="p">);</span>
-    <span class="p">}</span>
-
 
 </pre></div>
         </td>
@@ -933,31 +586,12 @@ options are merged before requiring the logic or client file.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-31" id="section-31">&#182;</a>
+  <a class="pilcrow" href="#section-17" id="section-17">&#182;</a>
 </div>
 <p>Set up logic.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">if</span> <span class="p">(</span><span class="nx">doLogic</span><span class="p">)</span> <span class="p">{</span>
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-32" id="section-32">&#182;</a>
-</div>
-<p>Require Logic.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-        <span class="nx">game</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">gamePaths</span><span class="p">.</span><span class="nx">logic</span><span class="p">)(</span>
-                <span class="nx">node</span><span class="p">,</span> <span class="nx">channel</span><span class="p">,</span> <span class="k">this</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">treatmentName</span><span class="p">,</span> <span class="nx">settings</span><span class="p">);</span>
-
-        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">game</span><span class="p">)</span> <span class="p">{</span>
-            <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameRoom.setupGame: room &#39;</span> <span class="o">+</span> <span class="k">this</span><span class="p">.</span><span class="nx">name</span> <span class="o">+</span>
-                            <span class="s1">&#39;. logicPath did not return a valid game object.&#39;</span><span class="p">);</span>
-        <span class="p">}</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">doLogic</span><span class="p">)</span> <span class="nx">setupLogic</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="nx">mixinConf</span><span class="p">);</span>
 
 
 </pre></div>
@@ -966,207 +600,12 @@ options are merged before requiring the logic or client file.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-33" id="section-33">&#182;</a>
-</div>
-<p>Mixin-in nodeGame options.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-        <span class="k">if</span> <span class="p">(</span><span class="nx">mixinConf</span><span class="p">)</span> <span class="p">{</span>
-            <span class="nx">J</span><span class="p">.</span><span class="nx">mixin</span><span class="p">(</span><span class="nx">game</span><span class="p">,</span> <span class="nx">mixinConf</span><span class="p">);</span>
-        <span class="p">}</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-34" id="section-34">&#182;</a>
-</div>
-<p>Stop logic if necessary.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-        <span class="k">if</span> <span class="p">(</span><span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">isStoppable</span><span class="p">())</span> <span class="p">{</span>
-            <span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">stop</span><span class="p">();</span>
-        <span class="p">}</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-35" id="section-35">&#182;</a>
-</div>
-<p>Setup must be called before connect.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-        <span class="nx">node</span><span class="p">.</span><span class="nx">setup</span><span class="p">(</span><span class="s1">&#39;nodegame&#39;</span><span class="p">,</span> <span class="nx">game</span><span class="p">);</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-36" id="section-36">&#182;</a>
-</div>
-<p>Connect logic to server, if not already connected. E.g., after a stop
-command it is generally still connected. Or the node object can be
-passed in the constructor and be already connected.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">node</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">isConnected</span><span class="p">())</span> <span class="p">{</span>
-            <span class="nx">node</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">setSocketType</span><span class="p">(</span><span class="s1">&#39;SocketDirect&#39;</span><span class="p">,</span> <span class="p">{</span>
-                <span class="nx">socket</span><span class="o">:</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">admin</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">sockets</span><span class="p">.</span><span class="nx">direct</span>
-            <span class="p">});</span>
-            <span class="nx">node</span><span class="p">.</span><span class="nx">connect</span><span class="p">(</span><span class="kc">null</span><span class="p">,</span> <span class="p">{</span>
-                <span class="nx">startingRoom</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">name</span><span class="p">,</span>
-                <span class="nx">clientType</span><span class="o">:</span>   <span class="s1">&#39;logic&#39;</span>
-            <span class="p">});</span>
-        <span class="p">}</span>
-    <span class="p">}</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-37" id="section-37">&#182;</a>
-</div>
-<p>Resolve special values of clientList.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">clientList</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">switch</span> <span class="p">(</span><span class="nx">clientList</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">case</span> <span class="s1">&#39;all&#39;</span><span class="o">:</span>
-            <span class="nx">clientList</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">id</span><span class="p">.</span><span class="nx">getAllKeys</span><span class="p">();</span>
-            <span class="k">break</span><span class="p">;</span>
-
-        <span class="k">case</span> <span class="s1">&#39;players&#39;</span><span class="o">:</span>
-            <span class="nx">clientList</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">id</span><span class="p">.</span><span class="nx">getAllKeys</span><span class="p">();</span>
-            <span class="k">break</span><span class="p">;</span>
-
-        <span class="k">case</span> <span class="s1">&#39;admins&#39;</span><span class="o">:</span>
-            <span class="nx">clientList</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">admin</span><span class="p">.</span><span class="nx">id</span><span class="p">.</span><span class="nx">getAllKeys</span><span class="p">();</span>
-            <span class="k">break</span><span class="p">;</span>
-        <span class="p">}</span>
-    <span class="p">}</span>
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-38" id="section-38">&#182;</a>
+  <a class="pilcrow" href="#section-18" id="section-18">&#182;</a>
 </div>
 <p>At this point clientList should be an array of client IDs.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-39" id="section-39">&#182;</a>
-</div>
-<p>Setup all given clients.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">for</span> <span class="p">(</span><span class="nx">i</span> <span class="k">in</span> <span class="nx">clientList</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">if</span> <span class="p">(</span><span class="nx">clientList</span><span class="p">.</span><span class="nx">hasOwnProperty</span><span class="p">(</span><span class="nx">i</span><span class="p">))</span> <span class="p">{</span>
-            <span class="nx">clientId</span> <span class="o">=</span> <span class="nx">clientList</span><span class="p">[</span><span class="nx">i</span><span class="p">];</span>
-            <span class="k">try</span> <span class="p">{</span>
-                <span class="nx">clientObj</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="nx">clientId</span><span class="p">);</span>
-            <span class="p">}</span>
-            <span class="k">catch</span> <span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
-                <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span>
-                        <span class="s2">&quot;GameRoom.setupGame: no client with id &#39;&quot;</span> <span class="o">+</span>
-                        <span class="nx">clientId</span> <span class="o">+</span> <span class="s2">&quot;&#39;&quot;</span><span class="p">,</span> <span class="s1">&#39;warn&#39;</span><span class="p">);</span>
-                <span class="k">continue</span><span class="p">;</span>
-            <span class="p">}</span>
-            <span class="nx">type</span> <span class="o">=</span> <span class="nx">clientObj</span><span class="p">.</span><span class="nx">clientType</span><span class="p">;</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-40" id="section-40">&#182;</a>
-</div>
-<p>Clear the state of the client with 'stop'.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-            <span class="nx">node</span><span class="p">.</span><span class="nx">remoteCommand</span><span class="p">(</span><span class="s1">&#39;stop&#39;</span><span class="p">,</span> <span class="nx">clientId</span><span class="p">);</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-41" id="section-41">&#182;</a>
-</div>
-<p>Require the game.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-            <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">gamePaths</span><span class="p">.</span><span class="nx">hasOwnProperty</span><span class="p">(</span><span class="nx">type</span><span class="p">))</span> <span class="p">{</span>
-                <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s2">&quot;GameRoom.setupGame: no path defined for &quot;</span> <span class="o">+</span>
-                        <span class="s2">&quot;client type &#39;&quot;</span> <span class="o">+</span> <span class="nx">type</span> <span class="o">+</span> <span class="s2">&quot;&#39;.&quot;</span><span class="p">);</span>
-            <span class="p">}</span>
-            <span class="nx">gameNode</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">bots</span><span class="p">[</span><span class="nx">clientId</span><span class="p">];</span>
-            <span class="nx">game</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">gamePaths</span><span class="p">[</span><span class="nx">type</span><span class="p">])(</span>
-                    <span class="k">this</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">treatmentName</span><span class="p">,</span> <span class="nx">settings</span><span class="p">,</span> <span class="nx">gameNode</span><span class="p">);</span>
-            <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">game</span><span class="p">)</span> <span class="p">{</span>
-                <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameRoom.setupGame: room &#39;</span> <span class="o">+</span> <span class="k">this</span><span class="p">.</span><span class="nx">name</span> <span class="o">+</span>
-                        <span class="s1">&#39;. playerPath did not return a valid game object.&#39;</span><span class="p">);</span>
-            <span class="p">}</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-42" id="section-42">&#182;</a>
-</div>
-<p>Setup the client.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-            <span class="k">if</span> <span class="p">(</span><span class="nx">gameNode</span><span class="p">)</span> <span class="p">{</span>
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-43" id="section-43">&#182;</a>
-</div>
-<p>Can't remoteSetup here because serializing the plot methods
-would make them lose their context (node etc.).</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-                <span class="nx">gameNode</span><span class="p">.</span><span class="nx">setup</span><span class="p">(</span><span class="s1">&#39;nodegame&#39;</span><span class="p">,</span> <span class="nx">game</span><span class="p">);</span>
-            <span class="p">}</span>
-            <span class="k">else</span> <span class="p">{</span>
-                <span class="nx">node</span><span class="p">.</span><span class="nx">remoteSetup</span><span class="p">(</span><span class="s1">&#39;nodegame&#39;</span><span class="p">,</span> <span class="nx">clientId</span><span class="p">,</span> <span class="nx">game</span><span class="p">);</span>
-            <span class="p">}</span>
-        <span class="p">}</span>
-    <span class="p">}</span>
+    <span class="nx">setupClients</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="nx">clientList</span><span class="p">,</span> <span class="nx">mixinConf</span><span class="p">);</span>
 <span class="p">};</span>
 
 
@@ -1226,7 +665,7 @@ would make them lose their context (node etc.).</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-45" id="section-45">&#182;</a>
+  <a class="pilcrow" href="#section-20" id="section-20">&#182;</a>
 </div>
 <p>Check parameters.</p>
         </td>
@@ -1241,7 +680,7 @@ would make them lose their context (node etc.).</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-46" id="section-46">&#182;</a>
+  <a class="pilcrow" href="#section-21" id="section-21">&#182;</a>
 </div>
 <p>Apply defaults.</p>
         </td>
@@ -1257,7 +696,7 @@ would make them lose their context (node etc.).</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-47" id="section-47">&#182;</a>
+  <a class="pilcrow" href="#section-22" id="section-22">&#182;</a>
 </div>
 <p>Check startability.</p>
         </td>
@@ -1275,7 +714,7 @@ would make them lose their context (node etc.).</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-48" id="section-48">&#182;</a>
+  <a class="pilcrow" href="#section-23" id="section-23">&#182;</a>
 </div>
 <p>Start.</p>
         </td>
@@ -1343,7 +782,7 @@ would make them lose their context (node etc.).</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-50" id="section-50">&#182;</a>
+  <a class="pilcrow" href="#section-25" id="section-25">&#182;</a>
 </div>
 <p>Check parameters.</p>
         </td>
@@ -1358,7 +797,7 @@ would make them lose their context (node etc.).</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-51" id="section-51">&#182;</a>
+  <a class="pilcrow" href="#section-26" id="section-26">&#182;</a>
 </div>
 <p>Apply defaults.</p>
         </td>
@@ -1374,7 +813,7 @@ would make them lose their context (node etc.).</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-52" id="section-52">&#182;</a>
+  <a class="pilcrow" href="#section-27" id="section-27">&#182;</a>
 </div>
 <p>Check pausability.</p>
         </td>
@@ -1392,7 +831,7 @@ would make them lose their context (node etc.).</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-53" id="section-53">&#182;</a>
+  <a class="pilcrow" href="#section-28" id="section-28">&#182;</a>
 </div>
 <p>Pause.</p>
         </td>
@@ -1460,7 +899,7 @@ would make them lose their context (node etc.).</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-55" id="section-55">&#182;</a>
+  <a class="pilcrow" href="#section-30" id="section-30">&#182;</a>
 </div>
 <p>Check parameters.</p>
         </td>
@@ -1475,7 +914,7 @@ would make them lose their context (node etc.).</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-56" id="section-56">&#182;</a>
+  <a class="pilcrow" href="#section-31" id="section-31">&#182;</a>
 </div>
 <p>Apply defaults.</p>
         </td>
@@ -1491,7 +930,7 @@ would make them lose their context (node etc.).</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-57" id="section-57">&#182;</a>
+  <a class="pilcrow" href="#section-32" id="section-32">&#182;</a>
 </div>
 <p>Check resumability.</p>
         </td>
@@ -1509,7 +948,7 @@ would make them lose their context (node etc.).</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-58" id="section-58">&#182;</a>
+  <a class="pilcrow" href="#section-33" id="section-33">&#182;</a>
 </div>
 <p>Resume.</p>
         </td>
@@ -1577,7 +1016,7 @@ would make them lose their context (node etc.).</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-60" id="section-60">&#182;</a>
+  <a class="pilcrow" href="#section-35" id="section-35">&#182;</a>
 </div>
 <p>Check parameters.</p>
         </td>
@@ -1592,7 +1031,7 @@ would make them lose their context (node etc.).</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-61" id="section-61">&#182;</a>
+  <a class="pilcrow" href="#section-36" id="section-36">&#182;</a>
 </div>
 <p>Apply defaults.</p>
         </td>
@@ -1608,7 +1047,7 @@ would make them lose their context (node etc.).</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-62" id="section-62">&#182;</a>
+  <a class="pilcrow" href="#section-37" id="section-37">&#182;</a>
 </div>
 <p>Check stoppability.</p>
         </td>
@@ -1626,7 +1065,7 @@ would make them lose their context (node etc.).</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-63" id="section-63">&#182;</a>
+  <a class="pilcrow" href="#section-38" id="section-38">&#182;</a>
 </div>
 <p>Stop.</p>
         </td>
@@ -1636,12 +1075,598 @@ would make them lose their context (node etc.).</p>
     <span class="p">}</span>
     <span class="k">this</span><span class="p">.</span><span class="nx">sendRemoteCommand</span><span class="p">(</span><span class="s1">&#39;stop&#39;</span><span class="p">,</span> <span class="nx">clientList</span><span class="p">);</span>
 <span class="p">};</span>
+
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="gameroom.getclienttype">
+  <h3>
+    <a href="#gameroom.getclienttype" name="gameroom.getclienttype" class="pilcrow">&#182;</a>
+    GameRoom.getClientType
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Loads a specified client type</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">type</span>
+      <span class="dox_type">string</span>
+      <span>The name of the client type</span>
+    </div>
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">object</span>
+      <span>The getd client type</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">GameRoom</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">getClientType</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">type</span><span class="p">,</span> <span class="nx">mixinConf</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">game</span><span class="p">,</span> <span class="nx">settings</span><span class="p">,</span> <span class="nx">stager</span><span class="p">,</span> <span class="nx">setup</span><span class="p">;</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">clientTypes</span><span class="p">[</span><span class="nx">type</span><span class="p">])</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameRoom.getClientType: unknown type: &#39;</span> <span class="o">+</span> <span class="nx">type</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">mixinConf</span> <span class="o">&amp;&amp;</span> <span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">mixinConf</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameRoom.getClientType: runtimeConf must &#39;</span> <span class="o">+</span>
+                        <span class="s1">&#39;be object.&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="nx">stager</span> <span class="o">=</span> <span class="nx">ngc</span><span class="p">.</span><span class="nx">getStager</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">stager</span><span class="p">.</span><span class="nx">getState</span><span class="p">());</span>
+    <span class="nx">setup</span> <span class="o">=</span> <span class="nx">J</span><span class="p">.</span><span class="nx">clone</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">setup</span><span class="p">);</span>
+    <span class="nx">settings</span> <span class="o">=</span> <span class="nx">J</span><span class="p">.</span><span class="nx">clone</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">gameTreatment</span><span class="p">);</span>
+    <span class="nx">game</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">clientTypes</span><span class="p">[</span><span class="nx">type</span><span class="p">](</span><span class="k">this</span><span class="p">.</span><span class="nx">treatmentName</span><span class="p">,</span> <span class="nx">settings</span><span class="p">,</span> <span class="nx">stager</span><span class="p">,</span>
+                                  <span class="nx">setup</span><span class="p">,</span> <span class="k">this</span><span class="p">);</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">game</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameRoom.getClientType: room &#39;</span> <span class="o">+</span> <span class="k">this</span><span class="p">.</span><span class="nx">name</span> <span class="o">+</span>
+                        <span class="s1">&#39;: &#39;</span> <span class="o">+</span> <span class="nx">type</span> <span class="o">+</span> <span class="s1">&#39; did not return a valid game object.&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-40" id="section-40">&#182;</a>
+</div>
+<p>Add treatment settings.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">game</span><span class="p">.</span><span class="nx">settings</span> <span class="o">=</span> <span class="nx">settings</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-41" id="section-41">&#182;</a>
+</div>
+<p>Mixin-in nodeGame options.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">mixinConf</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">J</span><span class="p">.</span><span class="nx">mixin</span><span class="p">(</span><span class="nx">game</span><span class="p">,</span> <span class="nx">mixinConf</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="nx">game</span><span class="p">;</span>
+<span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-42" id="section-42">&#182;</a>
+</div>
+<p>Helper functions.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="setuplogic">
+  <h2>
+    <a href="#setuplogic" name="setuplogic" class="pilcrow">&#182;</a>
+    setupLogic
+  </h2>
+</div>
+
+  </div>
+  <div class="body"><p>Instantiates and setups the logic of the game room</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">mixinConf</span>
+      <span class="dox_type">object</span>
+      <span>Optional. Additional options to mixin with the
+  instantiated client type.</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">GameRoom.getClientType</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">GameRoom.node
+</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="kd">function</span> <span class="nx">setupLogic</span><span class="p">(</span><span class="nx">mixinConf</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">game</span><span class="p">,</span> <span class="nx">node</span><span class="p">;</span>
+
+    <span class="nx">game</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">getClientType</span><span class="p">(</span><span class="s1">&#39;logic&#39;</span><span class="p">,</span> <span class="nx">mixinConf</span><span class="p">);</span>
+
+    <span class="nx">mixinGameMetadata</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="nx">game</span><span class="p">);</span>
+
+    <span class="nx">node</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">node</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-44" id="section-44">&#182;</a>
+</div>
+<p>Stop logic if necessary.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">isStoppable</span><span class="p">())</span> <span class="p">{</span>
+        <span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">stop</span><span class="p">();</span>
+    <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-45" id="section-45">&#182;</a>
+</div>
+<p>Setup must be called before connect.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">node</span><span class="p">.</span><span class="nx">setup</span><span class="p">(</span><span class="s1">&#39;nodegame&#39;</span><span class="p">,</span> <span class="nx">game</span><span class="p">);</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-46" id="section-46">&#182;</a>
+</div>
+<p>Connect logic to server, if not already connected. E.g., after a stop
+command it is generally still connected. Or the node object can be
+passed in the constructor and be already connected.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">node</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">isConnected</span><span class="p">())</span> <span class="p">{</span>
+        <span class="nx">node</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">setSocketType</span><span class="p">(</span><span class="s1">&#39;SocketDirect&#39;</span><span class="p">,</span> <span class="p">{</span>
+            <span class="nx">socket</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">adminServer</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">sockets</span><span class="p">.</span><span class="nx">direct</span>
+        <span class="p">});</span>
+        <span class="nx">node</span><span class="p">.</span><span class="nx">connect</span><span class="p">(</span><span class="kc">null</span><span class="p">,</span> <span class="p">{</span>
+            <span class="nx">startingRoom</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">name</span><span class="p">,</span>
+            <span class="nx">clientType</span><span class="o">:</span>   <span class="s1">&#39;logic&#39;</span>
+        <span class="p">});</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="setupclients">
+  <h2>
+    <a href="#setupclients" name="setupclients" class="pilcrow">&#182;</a>
+    setupClients
+  </h2>
+</div>
+
+  </div>
+  <div class="body"><p>Instantiates and setups a number of clients of the game room</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">clientList</span>
+      <span class="dox_type">string</span>
+      <span class="dox_type">object</span>
+      <span>The list of clients or a string
+ specifying which clients are to be setup (Accepted values:
+ 'all', 'players', or 'admins')</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">mixinConf
+</span>
+      <span class="dox_type">object</span>
+      <span>Optional. Additional options to mixin with the instantiated client
+ type.</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">GameRoom.getClientType</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">GameRoom.node
+</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="kd">function</span> <span class="nx">setupClients</span><span class="p">(</span><span class="nx">clientList</span><span class="p">,</span> <span class="nx">mixinConf</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">i</span><span class="p">,</span> <span class="nx">len</span><span class="p">,</span> <span class="nx">cache</span><span class="p">;</span>
+
+    <span class="nx">cache</span> <span class="o">=</span> <span class="p">{};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-48" id="section-48">&#182;</a>
+</div>
+<p>Resolve special values of clientList.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">clientList</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">switch</span> <span class="p">(</span><span class="nx">clientList</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">case</span> <span class="s1">&#39;all&#39;</span><span class="o">:</span>
+            <span class="nx">clientList</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">id</span><span class="p">.</span><span class="nx">getAllKeys</span><span class="p">();</span>
+            <span class="k">break</span><span class="p">;</span>
+
+        <span class="k">case</span> <span class="s1">&#39;players&#39;</span><span class="o">:</span>
+            <span class="nx">clientList</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">id</span><span class="p">.</span><span class="nx">getAllKeys</span><span class="p">();</span>
+            <span class="k">break</span><span class="p">;</span>
+
+        <span class="k">case</span> <span class="s1">&#39;admins&#39;</span><span class="o">:</span>
+            <span class="nx">clientList</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">admin</span><span class="p">.</span><span class="nx">id</span><span class="p">.</span><span class="nx">getAllKeys</span><span class="p">();</span>
+            <span class="k">break</span><span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-49" id="section-49">&#182;</a>
+</div>
+<p>Setup all given clients.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">i</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="nx">len</span> <span class="o">=</span> <span class="nx">clientList</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span>
+    <span class="k">for</span> <span class="p">(</span> <span class="p">;</span> <span class="o">++</span><span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">len</span> <span class="p">;</span> <span class="p">)</span> <span class="p">{</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">setupClient</span><span class="p">(</span><span class="nx">clientList</span><span class="p">[</span><span class="nx">i</span><span class="p">],</span> <span class="nx">mixinConf</span><span class="p">,</span> <span class="nx">cache</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="gameroom.setupclient">
+  <h2>
+    <a href="#gameroom.setupclient" name="gameroom.setupclient" class="pilcrow">&#182;</a>
+    GameRoom.setupClient
+  </h2>
+</div>
+
+  </div>
+  <div class="body"><p>Setups a client based on its id</p>
+
+<p>Retrieves the client object, checks its client type, and run the
+appropriate setup command depending if the client it is a bot or
+a remote client.</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">clientId</span>
+      <span class="dox_type">string</span>
+      <span>The id of the client</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">mixinConf</span>
+      <span class="dox_type">object</span>
+      <span>Optional. Additional configuration options</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">cache</span>
+      <span class="dox_type">object</span>
+      <span>Optional. A cache object from where retrieving
+  client types</span>
+    </div>
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">boolean</span>
+      <span>TRUE on success</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">GameRoom.getClientType
+</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">GameRoom</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">setupClient</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">clientId</span><span class="p">,</span> <span class="nx">mixinConf</span><span class="p">,</span> <span class="nx">cache</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">clientObj</span><span class="p">,</span> <span class="nx">gameNode</span><span class="p">,</span> <span class="nx">type</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">game</span><span class="p">;</span>
+
+    <span class="nx">clientObj</span> <span class="o">=</span> <span class="nx">tryToGetClient</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="nx">clientId</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">clientObj</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;GameRoom.setupClient: client not found: &#39;</span> <span class="o">+</span>
+                                   <span class="nx">clientId</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
+        <span class="k">return</span><span class="p">;</span>
+    <span class="p">}</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-51" id="section-51">&#182;</a>
+</div>
+<p>Fake cache.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">cache</span> <span class="o">=</span> <span class="nx">cache</span> <span class="o">||</span> <span class="p">{};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-52" id="section-52">&#182;</a>
+</div>
+<p>See if the client is local or remote.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">gameNode</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">bots</span><span class="p">[</span><span class="nx">clientId</span><span class="p">];</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-53" id="section-53">&#182;</a>
+</div>
+<p>Client type.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">type</span> <span class="o">=</span> <span class="nx">clientObj</span><span class="p">.</span><span class="nx">clientType</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-54" id="section-54">&#182;</a>
+</div>
+<p>Get the client type, check cache (bots are never cached).</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">gameNode</span> <span class="o">&amp;&amp;</span> <span class="nx">cache</span><span class="p">[</span><span class="nx">type</span><span class="p">])</span> <span class="p">{</span>
+        <span class="nx">game</span> <span class="o">=</span> <span class="nx">cache</span><span class="p">[</span><span class="nx">type</span><span class="p">];</span>
+    <span class="p">}</span>
+    <span class="k">else</span> <span class="p">{</span>
+        <span class="nx">game</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">getClientType</span><span class="p">(</span><span class="nx">type</span><span class="p">,</span> <span class="nx">mixinConf</span><span class="p">);</span>
+        <span class="nx">mixinGameMetadata</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="nx">game</span><span class="p">);</span>
+        <span class="nx">cache</span><span class="p">[</span><span class="nx">type</span><span class="p">]</span> <span class="o">=</span> <span class="nx">game</span><span class="p">;</span>
+    <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-55" id="section-55">&#182;</a>
+</div>
+<p>Setup the client.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-56" id="section-56">&#182;</a>
+</div>
+<p>Local client.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">gameNode</span><span class="p">)</span> <span class="p">{</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-57" id="section-57">&#182;</a>
+</div>
+<p>Can't remoteSetup here because serializing the plot methods
+would make them lose their context (node etc.).</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="nx">gameNode</span><span class="p">.</span><span class="nx">stop</span><span class="p">();</span>
+        <span class="nx">gameNode</span><span class="p">.</span><span class="nx">setup</span><span class="p">(</span><span class="s1">&#39;nodegame&#39;</span><span class="p">,</span> <span class="nx">game</span><span class="p">);</span>
+    <span class="p">}</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-58" id="section-58">&#182;</a>
+</div>
+<p>Remote client.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">else</span> <span class="p">{</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">node</span><span class="p">.</span><span class="nx">remoteCommand</span><span class="p">(</span><span class="s1">&#39;stop&#39;</span><span class="p">,</span> <span class="nx">clientId</span><span class="p">);</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">node</span><span class="p">.</span><span class="nx">remoteSetup</span><span class="p">(</span><span class="s1">&#39;nodegame&#39;</span><span class="p">,</span> <span class="nx">clientId</span><span class="p">,</span> <span class="nx">game</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="kc">true</span><span class="p">;</span>
+<span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="trytogetclient">
+  <h2>
+    <a href="#trytogetclient" name="trytogetclient" class="pilcrow">&#182;</a>
+    tryToGetClient
+  </h2>
+</div>
+
+  </div>
+  <div class="body"><p>Returns a client obj with given id, if found.</p>
+
+<p>Notice: separated from the main function because of the try-catch block,
+otherwise the whole function is not optimized.</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">clientId</span>
+      <span class="dox_type">string</span>
+      <span>The client id</span>
+    </div>
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">object</span>
+      <span>The client object</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="kd">function</span> <span class="nx">tryToGetClient</span><span class="p">(</span><span class="nx">clientId</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">clientObj</span><span class="p">;</span>
+    <span class="k">try</span> <span class="p">{</span>
+        <span class="nx">clientObj</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="nx">clientId</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="k">catch</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;GameRoom.setupGame: no client with id &#39;&quot;</span> <span class="o">+</span>
+                                   <span class="nx">clientId</span> <span class="o">+</span> <span class="s2">&quot;&#39;&quot;</span><span class="p">,</span> <span class="s1">&#39;warn&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="nx">clientObj</span><span class="p">;</span>
+<span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="mixingamemetadata">
+  <h2>
+    <a href="#mixingamemetadata" name="mixingamemetadata" class="pilcrow">&#182;</a>
+    mixinGameMetadata
+  </h2>
+</div>
+
+  </div>
+  <div class="body"><p>Adds default game info (name, description, version) if missing</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">game</span>
+      <span class="dox_type">object</span>
+      <span>The game object used to setup a client</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">GameRoom.setupClients</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">GameRoom.setupLogic
+</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="kd">function</span> <span class="nx">mixinGameMetadata</span><span class="p">(</span><span class="nx">game</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">game</span><span class="p">.</span><span class="nx">metadata</span><span class="p">)</span> <span class="nx">game</span><span class="p">.</span><span class="nx">metadata</span> <span class="o">=</span> <span class="p">{};</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">game</span><span class="p">.</span><span class="nx">metadata</span><span class="p">.</span><span class="nx">name</span><span class="p">)</span> <span class="nx">game</span><span class="p">.</span><span class="nx">metadata</span><span class="p">.</span><span class="nx">name</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">info</span><span class="p">.</span><span class="nx">name</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">game</span><span class="p">.</span><span class="nx">metadata</span><span class="p">.</span><span class="nx">description</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">game</span><span class="p">.</span><span class="nx">metadata</span><span class="p">.</span><span class="nx">description</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">info</span><span class="p">.</span><span class="nx">description</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">game</span><span class="p">.</span><span class="nx">metadata</span><span class="p">.</span><span class="nx">version</span><span class="p">)</span> <span class="nx">game</span><span class="p">.</span><span class="nx">metadata</span><span class="p">.</span><span class="nx">version</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">info</span><span class="p">.</span><span class="nx">version</span><span class="p">;</span>
+<span class="p">}</span>
 </pre></div>
         </td>
       </tr>
   </tbody>
 </table>
-
   </div>
 </body>
 </html>

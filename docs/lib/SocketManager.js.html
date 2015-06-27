@@ -508,7 +508,7 @@ found in the <em>from</em> field.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
             <span class="k">if</span> <span class="p">(</span><span class="nx">channel</span><span class="p">.</span><span class="nx">session</span> <span class="o">!==</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">session</span><span class="p">)</span> <span class="p">{</span>
-                <span class="nx">gameMsg</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">msg</span><span class="p">.</span><span class="nx">obfuscate</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">);</span>
+                <span class="nx">gameMsg</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">playerServer</span><span class="p">.</span><span class="nx">msg</span><span class="p">.</span><span class="nx">obfuscate</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">);</span>
             <span class="p">}</span>
             <span class="nx">res</span> <span class="o">=</span> <span class="nx">res</span> <span class="o">&amp;&amp;</span> <span class="k">this</span><span class="p">.</span><span class="nx">send2channel</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">channels</span><span class="p">[</span><span class="nx">channelName</span><span class="p">]);</span>
         <span class="p">}</span>
@@ -577,7 +577,7 @@ found in the <em>from</em> field.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
             <span class="k">if</span> <span class="p">(</span><span class="nx">channel</span><span class="p">.</span><span class="nx">session</span> <span class="o">!==</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">session</span><span class="p">)</span> <span class="p">{</span>
-                <span class="nx">gameMsg</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">msg</span><span class="p">.</span><span class="nx">obfuscate</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">);</span>
+                <span class="nx">gameMsg</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">playerServer</span><span class="p">.</span><span class="nx">msg</span><span class="p">.</span><span class="nx">obfuscate</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">);</span>
             <span class="p">}</span>
             <span class="nx">res</span> <span class="o">=</span> <span class="nx">res</span> <span class="o">&amp;&amp;</span> <span class="k">this</span><span class="p">.</span><span class="nx">send2channelPlayers</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">channel</span><span class="p">);</span>
         <span class="p">}</span>
@@ -732,10 +732,10 @@ can be specified as a second parameter.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="k">if</span> <span class="p">(</span><span class="nx">channel</span><span class="p">.</span><span class="nx">session</span> <span class="o">!==</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">session</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nx">gameMsg</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">msg</span><span class="p">.</span><span class="nx">obfuscate</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">);</span>
+        <span class="nx">gameMsg</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">playerServer</span><span class="p">.</span><span class="nx">msg</span><span class="p">.</span><span class="nx">obfuscate</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">);</span>
     <span class="p">}</span>
-    <span class="nx">res</span> <span class="o">=</span> <span class="nx">send2AllClientsInGameServer</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">admin</span><span class="p">);</span>
-    <span class="nx">res</span> <span class="o">=</span> <span class="nx">res</span> <span class="o">&amp;&amp;</span> <span class="nx">send2AllClientsInGameServer</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">player</span><span class="p">);</span>
+    <span class="nx">res</span> <span class="o">=</span> <span class="nx">send2AllClientsInGameServer</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">adminServer</span><span class="p">);</span>
+    <span class="nx">res</span> <span class="o">=</span> <span class="nx">res</span> <span class="o">&amp;&amp;</span> <span class="nx">send2AllClientsInGameServer</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">playerServer</span><span class="p">);</span>
     <span class="k">return</span> <span class="nx">res</span><span class="p">;</span>
 <span class="p">};</span>
 
@@ -797,9 +797,9 @@ can be specified as a second parameter.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="k">if</span> <span class="p">(</span><span class="nx">channel</span><span class="p">.</span><span class="nx">session</span> <span class="o">!==</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">session</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nx">gameMsg</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">msg</span><span class="p">.</span><span class="nx">obfuscate</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">);</span>
+        <span class="nx">gameMsg</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">playerServer</span><span class="p">.</span><span class="nx">msg</span><span class="p">.</span><span class="nx">obfuscate</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">);</span>
     <span class="p">}</span>
-    <span class="k">return</span> <span class="nx">send2AllClientsInGameServer</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">player</span><span class="p">);</span>
+    <span class="k">return</span> <span class="nx">send2AllClientsInGameServer</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">playerServer</span><span class="p">);</span>
 <span class="p">};</span>
 
 
@@ -959,7 +959,7 @@ can be specified as a second parameter.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="k">if</span> <span class="p">(</span><span class="nx">room</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">session</span> <span class="o">!==</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">session</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nx">gameMsg</span> <span class="o">=</span> <span class="nx">room</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">msg</span><span class="p">.</span><span class="nx">obfuscate</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">);</span>
+        <span class="nx">gameMsg</span> <span class="o">=</span> <span class="nx">room</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">playerServer</span><span class="p">.</span><span class="nx">msg</span><span class="p">.</span><span class="nx">obfuscate</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">);</span>
     <span class="p">}</span>
     <span class="nx">ids</span> <span class="o">=</span> <span class="nx">room</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">id</span><span class="p">.</span><span class="nx">getAllKeys</span><span class="p">();</span>
     <span class="nx">res</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">send2group</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">ids</span><span class="p">);</span>
@@ -1024,7 +1024,7 @@ can be specified as a second parameter.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="k">if</span> <span class="p">(</span><span class="nx">room</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">session</span> <span class="o">!==</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">session</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nx">gameMsg</span> <span class="o">=</span> <span class="nx">room</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">msg</span><span class="p">.</span><span class="nx">obfuscate</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">);</span>
+        <span class="nx">gameMsg</span> <span class="o">=</span> <span class="nx">room</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">playerServer</span><span class="p">.</span><span class="nx">msg</span><span class="p">.</span><span class="nx">obfuscate</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">);</span>
     <span class="p">}</span>
     <span class="nx">ids</span> <span class="o">=</span> <span class="nx">room</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">admin</span><span class="p">.</span><span class="nx">fetchValues</span><span class="p">(</span><span class="s1">&#39;id&#39;</span><span class="p">).</span><span class="nx">id</span><span class="p">;</span>
     <span class="nx">res</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">send2group</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">ids</span><span class="p">);</span>
@@ -1089,7 +1089,7 @@ can be specified as a second parameter.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="k">if</span> <span class="p">(</span><span class="nx">room</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">session</span> <span class="o">!==</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">session</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nx">gameMsg</span> <span class="o">=</span> <span class="nx">room</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">msg</span><span class="p">.</span><span class="nx">obfuscate</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">);</span>
+        <span class="nx">gameMsg</span> <span class="o">=</span> <span class="nx">room</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">playerServer</span><span class="p">.</span><span class="nx">msg</span><span class="p">.</span><span class="nx">obfuscate</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">);</span>
     <span class="p">}</span>
     <span class="nx">ids</span> <span class="o">=</span> <span class="nx">room</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">fetchValues</span><span class="p">(</span><span class="s1">&#39;id&#39;</span><span class="p">).</span><span class="nx">id</span><span class="p">;</span>
     <span class="nx">res</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">send2group</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">ids</span><span class="p">);</span>
@@ -1252,7 +1252,7 @@ other channels, if the server is allowed to do so.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="k">if</span> <span class="p">(</span><span class="nx">resolvedInfo</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">session</span> <span class="o">!==</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">session</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nx">gameMsg</span> <span class="o">=</span> <span class="nx">resolvedInfo</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">msg</span><span class="p">.</span><span class="nx">obfuscate</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">);</span>
+        <span class="nx">gameMsg</span> <span class="o">=</span> <span class="nx">resolvedInfo</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">playerServer</span><span class="p">.</span><span class="nx">msg</span><span class="p">.</span><span class="nx">obfuscate</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">);</span>
     <span class="p">}</span>
 
     <span class="nx">socket</span> <span class="o">=</span> <span class="nx">resolvedInfo</span><span class="p">.</span><span class="nx">socket</span><span class="p">;</span>
@@ -1495,7 +1495,7 @@ This method will remove the .<em>channelName and .</em>sid properties.</p>
 <p>Obfuscate.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-            <span class="nx">gameMsg</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">msg</span><span class="p">.</span><span class="nx">obfuscate</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">);</span>
+            <span class="nx">gameMsg</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">playerServer</span><span class="p">.</span><span class="nx">msg</span><span class="p">.</span><span class="nx">obfuscate</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">);</span>
 
             <span class="nx">res</span> <span class="o">=</span> <span class="nx">res</span> <span class="o">&amp;&amp;</span> <span class="k">this</span><span class="p">.</span><span class="nx">send2channel</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">channel</span><span class="p">);</span>
         <span class="p">}</span>
@@ -1676,8 +1676,8 @@ broadcast, if not we use the send method.</p>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">_sid</span><span class="p">)</span> <span class="p">{</span>
         <span class="nx">globalLookUp</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
-        <span class="nx">resolvedInfo</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">admin</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">resolveClientAndSocket</span><span class="p">(</span>
-                <span class="nx">from</span><span class="p">,</span> <span class="nx">globalLookUp</span><span class="p">);</span>
+        <span class="nx">resolvedInfo</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">adminServer</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">resolveClientAndSocket</span><span class="p">(</span>
+            <span class="nx">from</span><span class="p">,</span> <span class="nx">globalLookUp</span><span class="p">);</span>
 
 
 </pre></div>
@@ -1705,10 +1705,12 @@ broadcast, if not we use the send method.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
             <span class="k">if</span> <span class="p">(</span><span class="nx">resolvedInfo</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">session</span> <span class="o">!==</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">session</span><span class="p">)</span> <span class="p">{</span>
-                <span class="nx">gameMsg</span> <span class="o">=</span> <span class="nx">resolvedInfo</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">msg</span><span class="p">.</span><span class="nx">obfuscate</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">);</span>
+                <span class="nx">gameMsg</span> <span class="o">=</span> <span class="nx">resolvedInfo</span><span class="p">.</span><span class="nx">channel</span>
+                    <span class="p">.</span><span class="nx">playerServer</span><span class="p">.</span><span class="nx">msg</span><span class="p">.</span><span class="nx">obfuscate</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">);</span>
             <span class="p">}</span>
-            <span class="nx">res</span> <span class="o">=</span> <span class="nx">send2AllClientsInGameServer</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">admin</span><span class="p">);</span>
-            <span class="nx">res</span> <span class="o">=</span> <span class="nx">res</span> <span class="o">&amp;&amp;</span> <span class="nx">send2AllClientsInGameServer</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">player</span><span class="p">);</span>
+            <span class="nx">res</span> <span class="o">=</span> <span class="nx">send2AllClientsInGameServer</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">adminServer</span><span class="p">);</span>
+            <span class="nx">res</span> <span class="o">=</span> <span class="nx">res</span> <span class="o">&amp;&amp;</span> <span class="nx">send2AllClientsInGameServer</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span>
+                                                     <span class="nx">channel</span><span class="p">.</span><span class="nx">playerServer</span><span class="p">);</span>
         <span class="p">}</span>
         <span class="k">else</span> <span class="p">{</span>
             <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">_sid</span> <span class="o">=</span> <span class="nx">resolvedInfo</span><span class="p">.</span><span class="nx">sid</span><span class="p">;</span>
@@ -1742,8 +1744,11 @@ or sender was found in this channel.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
         <span class="nx">sid</span> <span class="o">=</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">_sid</span><span class="p">;</span>
-        <span class="nx">res</span> <span class="o">=</span> <span class="nx">broadcast2AllClientsInGameServer</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">admin</span><span class="p">,</span> <span class="nx">sid</span><span class="p">);</span>
-        <span class="nx">res</span> <span class="o">=</span> <span class="nx">res</span> <span class="o">&amp;&amp;</span> <span class="nx">broadcast2AllClientsInGameServer</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">player</span><span class="p">,</span>
+        <span class="nx">res</span> <span class="o">=</span> <span class="nx">broadcast2AllClientsInGameServer</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span>
+                                               <span class="nx">channel</span><span class="p">.</span><span class="nx">adminServer</span><span class="p">,</span>
+                                               <span class="nx">sid</span><span class="p">);</span>
+        <span class="nx">res</span> <span class="o">=</span> <span class="nx">res</span> <span class="o">&amp;&amp;</span> <span class="nx">broadcast2AllClientsInGameServer</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span>
+                                                      <span class="nx">channel</span><span class="p">.</span><span class="nx">playerServer</span><span class="p">,</span>
                                                       <span class="nx">sid</span><span class="p">);</span>
     <span class="p">}</span>
 
@@ -2156,6 +2161,20 @@ to locate the room. Can return null if the lookup fails.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
 
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-69" id="section-69">&#182;</a>
+</div>
+<p>TODO: As of 4f82fa9 (may 27 2015) lookupClient returns resolvedTo
+also for disconnected clients. Check if it is a problem.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
     <span class="nx">registry</span> <span class="o">=</span> <span class="nx">ownChannel</span><span class="p">.</span><span class="nx">registry</span><span class="p">;</span>
     <span class="nx">resolvedTo</span> <span class="o">=</span> <span class="nx">registry</span><span class="p">.</span><span class="nx">lookupClient</span><span class="p">(</span><span class="nx">to</span><span class="p">,</span>
                                        <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">_room</span> <span class="o">||</span>
@@ -2168,7 +2187,7 @@ to locate the room. Can return null if the lookup fails.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-69" id="section-69">&#182;</a>
+  <a class="pilcrow" href="#section-70" id="section-70">&#182;</a>
 </div>
 <p>Get the socket object first from current channel.</p>
         </td>
@@ -2186,7 +2205,7 @@ to locate the room. Can return null if the lookup fails.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-70" id="section-70">&#182;</a>
+  <a class="pilcrow" href="#section-71" id="section-71">&#182;</a>
 </div>
 <p>If server can send to other channels as well, look for
 recipient information in all channels.</p>
@@ -2205,8 +2224,9 @@ recipient information in all channels.</p>
                 <span class="nx">resolvedTo</span> <span class="o">=</span> <span class="nx">registry</span><span class="p">.</span><span class="nx">lookupClient</span><span class="p">(</span><span class="nx">to</span><span class="p">,</span>
                                                    <span class="nx">registry</span><span class="p">.</span><span class="nx">getClientRoom</span><span class="p">(</span><span class="nx">to</span><span class="p">));</span>
 
-                <span class="nx">socket</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">clients</span><span class="p">[</span><span class="nx">resolvedTo</span><span class="p">]</span> <span class="o">||</span>
-                    <span class="nx">channel</span><span class="p">.</span><span class="nx">admin</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">clients</span><span class="p">[</span><span class="nx">resolvedTo</span><span class="p">];</span>
+                <span class="nx">socket</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">playerServer</span>
+                    <span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">clients</span><span class="p">[</span><span class="nx">resolvedTo</span><span class="p">]</span> <span class="o">||</span>
+                    <span class="nx">channel</span><span class="p">.</span><span class="nx">adminServer</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">clients</span><span class="p">[</span><span class="nx">resolvedTo</span><span class="p">];</span>
 
                 <span class="k">if</span> <span class="p">(</span><span class="nx">socket</span><span class="p">)</span> <span class="k">break</span><span class="p">;</span>
             <span class="p">}</span>
@@ -2220,7 +2240,7 @@ recipient information in all channels.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-71" id="section-71">&#182;</a>
+  <a class="pilcrow" href="#section-72" id="section-72">&#182;</a>
 </div>
 <p>If socket object for to field is not found, return an error message.</p>
         </td>
@@ -2314,7 +2334,7 @@ found in the local registry, and if the server is allowed to do so.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-73" id="section-73">&#182;</a>
+  <a class="pilcrow" href="#section-74" id="section-74">&#182;</a>
 </div>
 <p>Look first inside own channel.</p>
         </td>
@@ -2328,7 +2348,7 @@ found in the local registry, and if the server is allowed to do so.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-74" id="section-74">&#182;</a>
+  <a class="pilcrow" href="#section-75" id="section-75">&#182;</a>
 </div>
 <p>Checks if clientId is an alias, and returns the real id.
 If it is not an alias, it still needs to be found
@@ -2348,7 +2368,7 @@ in the registry, otherwise it returns NULL.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-75" id="section-75">&#182;</a>
+  <a class="pilcrow" href="#section-76" id="section-76">&#182;</a>
 </div>
 <p>If server can send to other channels as well, look for
 recipient information in all channels.</p>
@@ -2420,7 +2440,6 @@ recipient information in all channels.</p>
       </tr>
   </tbody>
 </table>
-
   </div>
 </body>
 </html>

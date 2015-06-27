@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>GameRouter.js</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <link rel="stylesheet" media="all" href="../doc-style.css" />
+  <script src="../doc-filelist.js"></script>
+  <script>
+    var relativeDir = "../", thisFile = "lib/GameRouter.js", defaultSidebar = true;
+  </script>
+  <script src="../doc-script.js"></script>
+</head>
+<body>
+  <div id="sidebar_wrapper">
+    <div id="sidebar_switch">
+      <span class="tree">Files</span>
+      <span class="headings">Headings</span>
+    </div>
+    <div id="tree"></div>
+    <div id="headings">
+      <div class="heading h1">
+        <a href="#gamerouter">GameRouter</a>
+      </div>
+      <div class="heading h3">
+        <a href="#gameloader.addroutes">GameLoader.addRoutes</a>
+      </div>
+      <div class="heading h2">
+        <a href="#helper%20methods.">Helper Methods.</a>
+      </div>
+    </div>
+  </div>
+  <div id="sidebar-toggle"></div>
+  <div id="container"><div class="background highlight"></div>
+<table cellpadding="0" cellspacing="0">
+  <tbody>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="gamerouter">
+  <h1>
+    <a href="#gamerouter" name="gamerouter" class="pilcrow">&#182;</a>
+    GameRouter
+  </h1>
+</div>
+
+
+<p>Copyright(c) 2015 Stefano Balietti
+MIT Licensed</p>
+  </div>
+  <div class="body"><p>Adds game routes depending on game settings.</p>
+
+<p><a href='http://nodegame.org'>http://nodegame.org</a></p>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre><span class="kd">var</span> <span class="nx">fs</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;fs&#39;</span><span class="p">);</span>
+<span class="kd">var</span> <span class="nx">express</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;express&#39;</span><span class="p">);</span>
+<span class="kd">var</span> <span class="nx">jwt</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;jsonwebtoken&#39;</span><span class="p">);</span>
+<span class="kd">var</span> <span class="nx">url</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;url&#39;</span><span class="p">);</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-2" id="section-2">&#182;</a>
+</div>
+<p>expressJwt = require('express-jwt');</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
+<span class="kd">var</span> <span class="nx">unauthMsg</span> <span class="o">=</span> <span class="s1">&#39;Sorry, but your connection is &#39;</span> <span class="o">+</span>
+    <span class="s1">&#39;&lt;strong&gt;not&lt;/strong&gt; authorized.&#39;</span><span class="p">;</span>
+
+<span class="nx">module</span><span class="p">.</span><span class="nx">exports</span> <span class="o">=</span> <span class="nx">GameRouter</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-3" id="section-3">&#182;</a>
+</div>
+<p>TODO: see if we should move them in constructor.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="kd">var</span> <span class="nx">tokens</span> <span class="o">=</span> <span class="p">{};</span>
+<span class="kd">var</span> <span class="nx">superTokens</span> <span class="o">=</span> <span class="p">{};</span>
+
+<span class="kd">function</span> <span class="nx">GameRouter</span><span class="p">(</span><span class="nx">servernode</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span> <span class="o">=</span> <span class="nx">servernode</span><span class="p">;</span>
+<span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="gameloader.addroutes">
+  <h3>
+    <a href="#gameloader.addroutes" name="gameloader.addroutes" class="pilcrow">&#182;</a>
+    GameLoader.addRoutes
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Add routes for the game name (and aliases)</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">gameDir</span>
+      <span class="dox_type">string</span>
+      <span>The path to the root directory</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">gameName</span>
+      <span class="dox_type">string</span>
+      <span>The name of the game (or its alias)</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">gameInfo</span>
+      <span class="dox_type">object</span>
+      <span>Object containing info about the game (auth, etc.)</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">alias</span>
+      <span class="dox_type">boolean</span>
+      <span>Optional. TRUE, if gameName is an alias, so that
+  aliases will not be added again.</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">GameRouter</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">addRoutes</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">gameDir</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">gameInfo</span><span class="p">,</span> <span class="nx">alias</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">servernode</span><span class="p">,</span> <span class="nx">app</span><span class="p">,</span> <span class="nx">pager</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">rootDir</span><span class="p">,</span> <span class="nx">monitorDir</span><span class="p">,</span> <span class="nx">publicDir</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">monitorUri</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">i</span><span class="p">,</span> <span class="nx">len</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">name</span><span class="p">;</span>
+
+    <span class="nx">servernode</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span><span class="p">;</span>
+
+    <span class="nx">channel</span> <span class="o">=</span> <span class="nx">servernode</span><span class="p">.</span><span class="nx">channels</span><span class="p">[</span><span class="nx">gameName</span><span class="p">];</span>
+    <span class="nx">app</span> <span class="o">=</span> <span class="nx">servernode</span><span class="p">.</span><span class="nx">http</span><span class="p">;</span>
+    <span class="nx">pager</span> <span class="o">=</span> <span class="nx">servernode</span><span class="p">.</span><span class="nx">pager</span><span class="p">;</span>
+    <span class="nx">rootDir</span> <span class="o">=</span> <span class="nx">servernode</span><span class="p">.</span><span class="nx">rootDir</span><span class="p">;</span>
+    <span class="nx">publicDir</span> <span class="o">=</span> <span class="nx">rootDir</span> <span class="o">+</span> <span class="s1">&#39;/public/&#39;</span><span class="p">;</span>
+    <span class="nx">monitorDir</span> <span class="o">=</span> <span class="nx">rootDir</span> <span class="o">+</span> <span class="s1">&#39;/node_modules/nodegame-monitor/public/&#39;</span><span class="p">;</span>
+
+    <span class="nx">name</span> <span class="o">=</span> <span class="nx">alias</span> <span class="o">||</span> <span class="nx">gameName</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-5" id="section-5">&#182;</a>
+</div>
+<p>Auth.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">gameInfo</span><span class="p">.</span><span class="nx">auth</span> <span class="o">&amp;&amp;</span> <span class="nx">gameInfo</span><span class="p">.</span><span class="nx">auth</span><span class="p">.</span><span class="nx">enabled</span><span class="p">)</span> <span class="p">{</span>
+
+        <span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39;/monitor/auth/*&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
+            <span class="kd">var</span> <span class="nx">userId</span><span class="p">,</span> <span class="nx">pwd</span><span class="p">;</span>
+            <span class="nx">userId</span> <span class="o">=</span> <span class="nx">req</span><span class="p">.</span><span class="nx">params</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+            <span class="nx">pwd</span> <span class="o">=</span> <span class="nx">req</span><span class="p">.</span><span class="nx">params</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>
+            <span class="nx">loginSuper</span><span class="p">(</span><span class="nx">channel</span><span class="p">,</span> <span class="nx">name</span><span class="p">,</span> <span class="nx">userId</span><span class="p">,</span> <span class="nx">pwd</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">req</span><span class="p">);</span>
+        <span class="p">});</span>
+
+        <span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39;/auth/*&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">next</span><span class="p">)</span> <span class="p">{</span>
+            <span class="kd">var</span> <span class="nx">userId</span><span class="p">,</span> <span class="nx">pwd</span><span class="p">;</span>
+            <span class="nx">userId</span> <span class="o">=</span> <span class="nx">req</span><span class="p">.</span><span class="nx">params</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+            <span class="nx">pwd</span> <span class="o">=</span> <span class="nx">req</span><span class="p">.</span><span class="nx">params</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>
+            <span class="nx">login</span><span class="p">(</span><span class="nx">channel</span><span class="p">,</span> <span class="nx">name</span><span class="p">,</span> <span class="nx">userId</span><span class="p">,</span> <span class="nx">pwd</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">req</span><span class="p">);</span>
+        <span class="p">});</span>
+
+        <span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39;/*&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">next</span><span class="p">)</span> <span class="p">{</span>
+
+            <span class="k">if</span> <span class="p">(</span><span class="nx">req</span><span class="p">.</span><span class="nx">params</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&amp;&amp;</span> <span class="nx">req</span><span class="p">.</span><span class="nx">params</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="nx">substring</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">8</span><span class="p">)</span> <span class="o">===</span> <span class="s1">&#39;monitor/&#39;</span><span class="p">)</span> <span class="p">{</span>
+                <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">req</span><span class="p">.</span><span class="nx">cookies</span> <span class="o">||</span> <span class="o">!</span><span class="nx">superTokens</span><span class="p">[</span><span class="nx">req</span><span class="p">.</span><span class="nx">cookies</span><span class="p">.</span><span class="nx">nodegame_token</span><span class="p">])</span> <span class="p">{</span>
+                    <span class="nx">res</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="nx">unauthMsg</span><span class="p">);</span>
+                    <span class="k">return</span><span class="p">;</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-6" id="section-6">&#182;</a>
+</div>
+<p>Check if a cookie is set correctly.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+            <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">req</span><span class="p">.</span><span class="nx">cookies</span> <span class="o">||</span> <span class="o">!</span><span class="nx">tokens</span><span class="p">[</span><span class="nx">req</span><span class="p">.</span><span class="nx">cookies</span><span class="p">.</span><span class="nx">nodegame_token</span><span class="p">])</span> <span class="p">{</span>
+                <span class="nx">res</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="nx">unauthMsg</span><span class="p">);</span>
+                <span class="k">return</span><span class="p">;</span>
+            <span class="p">}</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-7" id="section-7">&#182;</a>
+</div>
+<p>Auth OK.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+            <span class="nx">next</span><span class="p">();</span>
+        <span class="p">});</span>
+    <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-8" id="section-8">&#182;</a>
+</div>
+<p>Monitor.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
+    <span class="nx">monitorUri</span> <span class="o">=</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39;/monitor/index.htm?channel=&#39;</span> <span class="o">+</span>
+        <span class="nx">gameInfo</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">admin</span><span class="p">;</span>
+
+    <span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39;/monitor/*&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">next</span><span class="p">)</span> <span class="p">{</span>
+        <span class="kd">var</span> <span class="nx">userId</span><span class="p">,</span> <span class="nx">pwd</span><span class="p">;</span>
+        <span class="kd">var</span> <span class="nx">path</span><span class="p">,</span> <span class="nx">file</span><span class="p">;</span>
+        <span class="kd">var</span> <span class="nx">search</span><span class="p">;</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">gameInfo</span><span class="p">.</span><span class="nx">auth</span><span class="p">.</span><span class="nx">enabled</span><span class="p">)</span> <span class="p">{</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-9" id="section-9">&#182;</a>
+</div>
+<p>res.send('No authorization needed.');
+return;</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="p">}</span>
+
+        <span class="nx">file</span> <span class="o">=</span> <span class="nx">req</span><span class="p">.</span><span class="nx">params</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;&#39;</span> <span class="o">===</span> <span class="nx">file</span> <span class="o">||</span> <span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">file</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">search</span> <span class="o">=</span> <span class="nx">url</span><span class="p">.</span><span class="nx">parse</span><span class="p">(</span><span class="nx">req</span><span class="p">.</span><span class="nx">url</span><span class="p">,</span> <span class="kc">true</span><span class="p">).</span><span class="nx">search</span><span class="p">;</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nx">search</span><span class="p">)</span> <span class="nx">res</span><span class="p">.</span><span class="nx">redirect</span><span class="p">(</span><span class="nx">monitorUri</span> <span class="o">+</span> <span class="s1">&#39;&amp;&#39;</span> <span class="o">+</span> <span class="nx">search</span><span class="p">.</span><span class="nx">substring</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+            <span class="k">else</span> <span class="nx">res</span><span class="p">.</span><span class="nx">redirect</span><span class="p">(</span><span class="nx">monitorUri</span><span class="p">);</span>
+            <span class="k">return</span><span class="p">;</span>
+        <span class="p">}</span>
+
+        <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">file</span><span class="p">.</span><span class="nx">lastIndexOf</span><span class="p">(</span><span class="s1">&#39;\/&#39;</span><span class="p">)</span> <span class="o">===</span> <span class="p">(</span><span class="nx">file</span><span class="p">.</span><span class="nx">length</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span> <span class="p">{</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-10" id="section-10">&#182;</a>
+</div>
+<p>Removing the trailing slash because it creates:
+Error: ENOTDIR in fetching the file.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+            <span class="nx">file</span> <span class="o">=</span> <span class="nx">file</span><span class="p">.</span><span class="nx">substring</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nx">file</span><span class="p">.</span><span class="nx">length</span> <span class="o">-</span> <span class="mi">1</span><span class="p">);</span>
+        <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-11" id="section-11">&#182;</a>
+</div>
+<p>Build path to file.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="nx">path</span> <span class="o">=</span> <span class="nx">monitorDir</span> <span class="o">+</span> <span class="nx">file</span><span class="p">;</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-12" id="section-12">&#182;</a>
+</div>
+<p>Send file.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="nx">res</span><span class="p">.</span><span class="nx">sendfile</span><span class="p">(</span><span class="nx">path</span><span class="p">);</span>
+    <span class="p">});</span>
+
+    <span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39;/monitor&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">res</span><span class="p">.</span><span class="nx">redirect</span><span class="p">(</span><span class="nx">monitorUri</span><span class="p">);</span>
+    <span class="p">});</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-13" id="section-13">&#182;</a>
+</div>
+<p>Game. (default index.htm).</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39;/*&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
+        <span class="kd">var</span> <span class="nx">gameSettings</span><span class="p">,</span> <span class="nx">filePath</span><span class="p">,</span> <span class="nx">file</span><span class="p">;</span>
+        <span class="kd">var</span> <span class="nx">jadeTemplate</span><span class="p">,</span> <span class="nx">jsonContext</span><span class="p">,</span> <span class="nx">contextPath</span><span class="p">,</span> <span class="nx">langPath</span><span class="p">,</span> <span class="nx">pageName</span><span class="p">;</span>
+
+        <span class="nx">file</span> <span class="o">=</span> <span class="nx">req</span><span class="p">.</span><span class="nx">params</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;&#39;</span> <span class="o">===</span> <span class="nx">file</span> <span class="o">||</span> <span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">file</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">file</span> <span class="o">=</span> <span class="s1">&#39;index.htm&#39;</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">file</span><span class="p">.</span><span class="nx">lastIndexOf</span><span class="p">(</span><span class="s1">&#39;\/&#39;</span><span class="p">)</span> <span class="o">===</span> <span class="p">(</span><span class="nx">file</span><span class="p">.</span><span class="nx">length</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span> <span class="p">{</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-14" id="section-14">&#182;</a>
+</div>
+<p>Removing the trailing slash because it creates:
+Error: ENOTDIR in fetching the file.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+            <span class="nx">file</span> <span class="o">=</span> <span class="nx">file</span><span class="p">.</span><span class="nx">substring</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nx">file</span><span class="p">.</span><span class="nx">length</span> <span class="o">-</span> <span class="mi">1</span><span class="p">);</span>
+        <span class="p">}</span>
+
+        <span class="nx">gameSettings</span> <span class="o">=</span> <span class="nx">gameInfo</span><span class="p">.</span><span class="nx">settings</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-15" id="section-15">&#182;</a>
+</div>
+<p>Build filePath to file in public directory.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="nx">filePath</span> <span class="o">=</span> <span class="nx">gameInfo</span><span class="p">.</span><span class="nx">dir</span> <span class="o">+</span> <span class="s1">&#39;public/&#39;</span> <span class="o">+</span> <span class="nx">file</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-16" id="section-16">&#182;</a>
+</div>
+<p>TODO: move after refactoring.
+Send JSON data as JSONP if there is a callback query parameter:</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">file</span><span class="p">.</span><span class="nx">match</span><span class="p">(</span><span class="sr">/\.json$/</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="nx">req</span><span class="p">.</span><span class="nx">query</span><span class="p">.</span><span class="nx">callback</span><span class="p">)</span> <span class="p">{</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-17" id="section-17">&#182;</a>
+</div>
+<p>Load file contents:</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+            <span class="nx">fs</span><span class="p">.</span><span class="nx">readFile</span><span class="p">(</span><span class="nx">filePath</span><span class="p">,</span> <span class="s1">&#39;utf8&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">data</span><span class="p">)</span> <span class="p">{</span>
+                <span class="kd">var</span> <span class="nx">callback</span><span class="p">;</span>
+
+                <span class="k">if</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span>
+                    <span class="nx">res</span><span class="p">.</span><span class="nx">json</span><span class="p">({</span><span class="nx">error</span><span class="o">:</span> <span class="s1">&#39;file not found&#39;</span><span class="p">},</span> <span class="mi">404</span><span class="p">);</span>
+                    <span class="k">return</span><span class="p">;</span>
+                <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-18" id="section-18">&#182;</a>
+</div>
+<p>Send it:</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+                <span class="nx">res</span><span class="p">.</span><span class="nx">header</span><span class="p">(</span><span class="s1">&#39;Content-Type&#39;</span><span class="p">,</span> <span class="s1">&#39;application/javascript&#39;</span><span class="p">);</span>
+                <span class="nx">res</span><span class="p">.</span><span class="nx">header</span><span class="p">(</span><span class="s1">&#39;Charset&#39;</span><span class="p">,</span> <span class="s1">&#39;utf-8&#39;</span><span class="p">);</span>
+                <span class="nx">res</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="nx">req</span><span class="p">.</span><span class="nx">query</span><span class="p">.</span><span class="nx">callback</span> <span class="o">+</span> <span class="s1">&#39;(&#39;</span> <span class="o">+</span> <span class="nx">data</span> <span class="o">+</span> <span class="s1">&#39;);&#39;</span><span class="p">);</span>
+            <span class="p">});</span>
+
+            <span class="k">return</span><span class="p">;</span>
+        <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-19" id="section-19">&#182;</a>
+</div>
+<p>If file was served already from public/ serve it
+immediately (cached by Express).</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">pager</span><span class="p">.</span><span class="nx">inPublic</span><span class="p">(</span><span class="nx">gameName</span><span class="p">,</span> <span class="nx">file</span><span class="p">))</span> <span class="p">{</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-20" id="section-20">&#182;</a>
+</div>
+<p>Send file (if it is a directory it is not sent).</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+            <span class="nx">res</span><span class="p">.</span><span class="nx">sendfile</span><span class="p">(</span><span class="nx">filePath</span><span class="p">);</span>
+            <span class="k">return</span><span class="p">;</span>
+        <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-21" id="section-21">&#182;</a>
+</div>
+<p>Checks if exists in 'public/' or as view.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="nx">fs</span><span class="p">.</span><span class="nx">exists</span><span class="p">(</span><span class="nx">filePath</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">exists</span><span class="p">)</span> <span class="p">{</span>
+            <span class="kd">var</span> <span class="nx">basename</span><span class="p">,</span> <span class="nx">templatePath</span><span class="p">,</span> <span class="nx">templateFound</span><span class="p">,</span> <span class="nx">contextPath</span><span class="p">,</span> <span class="nx">context</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-22" id="section-22">&#182;</a>
+</div>
+<p>Exists in public, cache it, serve it.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+            <span class="k">if</span> <span class="p">(</span><span class="nx">exists</span><span class="p">)</span> <span class="p">{</span>
+                <span class="nx">fs</span><span class="p">.</span><span class="nx">readFile</span><span class="p">(</span><span class="nx">filePath</span><span class="p">,</span> <span class="s1">&#39;utf8&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">data</span><span class="p">)</span> <span class="p">{</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-23" id="section-23">&#182;</a>
+</div>
+<p>Mark existing.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+                    <span class="nx">pager</span><span class="p">.</span><span class="nx">inPublic</span><span class="p">(</span><span class="nx">gameName</span><span class="p">,</span> <span class="nx">file</span><span class="p">,</span> <span class="kc">true</span><span class="p">);</span>
+                    <span class="nx">res</span><span class="p">.</span><span class="nx">sendfile</span><span class="p">(</span><span class="nx">filePath</span><span class="p">);</span>
+                <span class="p">});</span>
+                <span class="k">return</span><span class="p">;</span>
+            <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-24" id="section-24">&#182;</a>
+</div>
+<p>Check if it a template.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+            <span class="nx">basename</span> <span class="o">=</span> <span class="nx">file</span><span class="p">.</span><span class="nx">substr</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nx">file</span><span class="p">.</span><span class="nx">lastIndexOf</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">));</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-25" id="section-25">&#182;</a>
+</div>
+<p>Instantiate templates, if available.
+<code>html/templates/page.jade</code> holds the template and
+<code>html/contexts/xx/xx/page.js</code> holds the context callback
+to instantiate the page requested by <code>xx/xx/page*</code>.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-26" id="section-26">&#182;</a>
+</div>
+<p>Matches: xx/xx/xx/xx/xx/</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+            <span class="k">if</span> <span class="p">(</span><span class="nx">basename</span><span class="p">.</span><span class="nx">match</span><span class="p">(</span><span class="sr">/^[^\/]*\/.*$/</span><span class="p">))</span> <span class="p">{</span>
+                <span class="nx">templatePath</span> <span class="o">=</span> <span class="nx">gameInfo</span><span class="p">.</span><span class="nx">dir</span> <span class="o">+</span> <span class="s1">&#39;views/templates/&#39;</span> <span class="o">+</span>
+                    <span class="nx">basename</span><span class="p">.</span><span class="nx">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;.jade&#39;</span><span class="p">;</span>
+            <span class="p">}</span>
+            <span class="k">else</span> <span class="p">{</span>
+                <span class="nx">templatePath</span> <span class="o">=</span> <span class="nx">gameInfo</span><span class="p">.</span><span class="nx">dir</span> <span class="o">+</span> <span class="s1">&#39;views/templates/&#39;</span> <span class="o">+</span>
+                    <span class="nx">basename</span> <span class="o">+</span> <span class="s1">&#39;.jade&#39;</span><span class="p">;</span>
+            <span class="p">}</span>
+
+            <span class="nx">contextPath</span> <span class="o">=</span> <span class="nx">gameInfo</span><span class="p">.</span><span class="nx">dir</span> <span class="o">+</span> <span class="s1">&#39;views/contexts/&#39;</span> <span class="o">+</span>
+                <span class="nx">basename</span> <span class="o">+</span> <span class="s1">&#39;.js&#39;</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-27" id="section-27">&#182;</a>
+</div>
+<p>Info about previous requests to the template file.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+            <span class="nx">templateFound</span> <span class="o">=</span> <span class="nx">pager</span><span class="p">.</span><span class="nx">inTemplates</span><span class="p">(</span><span class="nx">gameName</span><span class="p">,</span> <span class="nx">templatePath</span><span class="p">);</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-28" id="section-28">&#182;</a>
+</div>
+<p>Template not existing.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+            <span class="k">if</span> <span class="p">(</span><span class="nx">templateFound</span> <span class="o">===</span> <span class="kc">false</span><span class="p">)</span> <span class="p">{</span>
+                <span class="nx">res</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="s1">&#39;File not Found&#39;</span><span class="p">,</span> <span class="mi">404</span><span class="p">);</span>
+            <span class="p">}</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-29" id="section-29">&#182;</a>
+</div>
+<p>Template existing, render it.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+            <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">templateFound</span> <span class="o">===</span> <span class="kc">true</span><span class="p">)</span> <span class="p">{</span>
+                <span class="nx">renderTemplate</span><span class="p">(</span><span class="nx">pager</span><span class="p">,</span> <span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span>
+                               <span class="nx">templatePath</span><span class="p">,</span> <span class="nx">contextPath</span><span class="p">,</span> <span class="nx">gameSettings</span><span class="p">);</span>
+            <span class="p">}</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-30" id="section-30">&#182;</a>
+</div>
+<p>Do not know if exists or not, check and render it.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+            <span class="k">else</span> <span class="p">{</span>
+
+                <span class="nx">fs</span><span class="p">.</span><span class="nx">exists</span><span class="p">(</span><span class="nx">templatePath</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">exists</span><span class="p">)</span> <span class="p">{</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">exists</span><span class="p">)</span> <span class="p">{</span>
+                        <span class="nx">pager</span><span class="p">.</span><span class="nx">inTemplates</span><span class="p">(</span><span class="nx">gameName</span><span class="p">,</span> <span class="nx">templatePath</span><span class="p">,</span> <span class="kc">false</span><span class="p">);</span>
+                        <span class="nx">res</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="s1">&#39;File not Found&#39;</span><span class="p">,</span> <span class="mi">404</span><span class="p">);</span>
+                        <span class="k">return</span><span class="p">;</span>
+                    <span class="p">}</span>
+                    <span class="nx">pager</span><span class="p">.</span><span class="nx">inTemplates</span><span class="p">(</span><span class="nx">gameName</span><span class="p">,</span> <span class="nx">templatePath</span><span class="p">,</span> <span class="kc">true</span><span class="p">);</span>
+                    <span class="nx">renderTemplate</span><span class="p">(</span><span class="nx">pager</span><span class="p">,</span> <span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">templatePath</span><span class="p">,</span>
+                                   <span class="nx">contextPath</span><span class="p">,</span> <span class="nx">gameSettings</span><span class="p">);</span>
+                <span class="p">});</span>
+            <span class="p">}</span>
+        <span class="p">});</span>
+    <span class="p">});</span>
+
+    <span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">name</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">res</span><span class="p">.</span><span class="nx">redirect</span><span class="p">(</span><span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span><span class="p">);</span>
+    <span class="p">});</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-31" id="section-31">&#182;</a>
+</div>
+<p>Adding the public directory of the game to the static directories
+<a href='http://stackoverflow.com/questions/5973432/'>http://stackoverflow.com/questions/5973432/</a>
+ setting-up-two-different-static-directories-in-node-js-express-framework</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">app</span><span class="p">.</span><span class="nx">use</span><span class="p">(</span><span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39;/public&#39;</span><span class="p">,</span> <span class="nx">express</span><span class="p">.</span><span class="kr">static</span><span class="p">(</span><span class="nx">gameDir</span> <span class="o">+</span> <span class="s1">&#39;public&#39;</span><span class="p">));</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-32" id="section-32">&#182;</a>
+</div>
+<p>Add alias routes (if any and if it is not an alias already).</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">alias</span> <span class="o">&amp;&amp;</span> <span class="nx">gameInfo</span><span class="p">.</span><span class="nx">alias</span><span class="p">.</span><span class="nx">length</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">i</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="nx">len</span> <span class="o">=</span> <span class="nx">gameInfo</span><span class="p">.</span><span class="nx">alias</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span>
+        <span class="k">for</span> <span class="p">(</span> <span class="p">;</span> <span class="o">++</span><span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">len</span> <span class="p">;</span> <span class="p">)</span> <span class="p">{</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">addRoutes</span><span class="p">(</span><span class="nx">gameDir</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">gameInfo</span><span class="p">,</span> <span class="nx">gameInfo</span><span class="p">.</span><span class="nx">alias</span><span class="p">[</span><span class="nx">i</span><span class="p">]);</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap" id="helper%20methods.">
+  <h2>
+    <a href="#helper%20methods." name="helper%20methods." class="pilcrow">&#182;</a>
+    Helper Methods.
+  </h2>
+</div>
+
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
+<span class="kd">function</span> <span class="nx">loginSuper</span><span class="p">(</span><span class="nx">channel</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">user</span><span class="p">,</span> <span class="nx">pwd</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">req</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">authorized</span><span class="p">,</span> <span class="nx">token</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">search</span><span class="p">,</span> <span class="nx">redirectUri</span><span class="p">;</span>
+
+    <span class="nx">authorized</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">authorizeSuperUser</span><span class="p">(</span><span class="nx">user</span><span class="p">,</span> <span class="nx">pwd</span><span class="p">);</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="nx">authorized</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">token</span> <span class="o">=</span> <span class="nx">createToken</span><span class="p">(</span><span class="nx">user</span><span class="p">,</span> <span class="nx">channel</span><span class="p">,</span> <span class="nx">superTokens</span><span class="p">);</span>
+        <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;setting cookie&#39;</span><span class="p">);</span>
+        <span class="nx">res</span><span class="p">.</span><span class="nx">cookie</span><span class="p">(</span><span class="s1">&#39;nodegame_token&#39;</span><span class="p">,</span> <span class="nx">token</span><span class="p">,</span> <span class="p">{</span>
+            <span class="nx">path</span><span class="o">:</span> <span class="s1">&#39;/&#39;</span><span class="p">,</span>
+            <span class="nx">httpOnly</span><span class="o">:</span> <span class="kc">true</span>
+        <span class="p">});</span>
+        <span class="nx">redirectUri</span> <span class="o">=</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;/monitor/&#39;</span><span class="p">;</span>
+        <span class="nx">search</span> <span class="o">=</span> <span class="nx">url</span><span class="p">.</span><span class="nx">parse</span><span class="p">(</span><span class="nx">req</span><span class="p">.</span><span class="nx">url</span><span class="p">,</span> <span class="kc">true</span><span class="p">).</span><span class="nx">search</span><span class="p">;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">search</span><span class="p">)</span> <span class="nx">redirectUri</span> <span class="o">+=</span> <span class="nx">search</span><span class="p">;</span>
+        <span class="nx">res</span><span class="p">.</span><span class="nx">redirect</span><span class="p">(</span><span class="nx">redirectUri</span><span class="p">);</span>
+        <span class="k">return</span> <span class="kc">true</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="nx">res</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="s1">&#39;Wrong user/pwd.&#39;</span><span class="p">);</span>
+    <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kd">function</span> <span class="nx">login</span><span class="p">(</span><span class="nx">channel</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">user</span><span class="p">,</span> <span class="nx">pwd</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">req</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">authorized</span><span class="p">,</span> <span class="nx">token</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">search</span><span class="p">,</span> <span class="nx">redirectUri</span><span class="p">;</span>
+
+    <span class="nx">authorized</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">registry</span><span class="p">.</span><span class="nx">authorize</span><span class="p">({</span> <span class="nx">id</span><span class="o">:</span> <span class="nx">user</span><span class="p">,</span> <span class="nx">pwd</span><span class="o">:</span> <span class="nx">pwd</span> <span class="p">});</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="nx">authorized</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">token</span> <span class="o">=</span> <span class="nx">createToken</span><span class="p">(</span><span class="nx">user</span><span class="p">,</span> <span class="nx">channel</span><span class="p">,</span> <span class="nx">tokens</span><span class="p">);</span>
+        <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;setting cookie&#39;</span><span class="p">);</span>
+        <span class="nx">res</span><span class="p">.</span><span class="nx">cookie</span><span class="p">(</span><span class="s1">&#39;nodegame_token&#39;</span><span class="p">,</span> <span class="nx">token</span><span class="p">,</span> <span class="p">{</span>
+            <span class="nx">path</span><span class="o">:</span> <span class="s1">&#39;/&#39;</span><span class="p">,</span>
+            <span class="nx">httpOnly</span><span class="o">:</span> <span class="kc">true</span>
+        <span class="p">});</span>
+        <span class="nx">redirectUri</span> <span class="o">=</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span><span class="p">;</span>
+        <span class="nx">search</span> <span class="o">=</span> <span class="nx">url</span><span class="p">.</span><span class="nx">parse</span><span class="p">(</span><span class="nx">req</span><span class="p">.</span><span class="nx">url</span><span class="p">,</span> <span class="kc">true</span><span class="p">).</span><span class="nx">search</span><span class="p">;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">search</span><span class="p">)</span> <span class="nx">redirectUri</span> <span class="o">+=</span> <span class="nx">search</span><span class="p">;</span>
+        <span class="nx">res</span><span class="p">.</span><span class="nx">redirect</span><span class="p">(</span><span class="nx">redirectUri</span><span class="p">);</span>
+        <span class="k">return</span> <span class="kc">true</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="nx">res</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="s1">&#39;Wrong user/pwd.&#39;</span><span class="p">);</span>
+    <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kd">function</span> <span class="nx">createToken</span><span class="p">(</span><span class="nx">userId</span><span class="p">,</span> <span class="nx">channel</span><span class="p">,</span> <span class="nx">tokenList</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">profile</span><span class="p">,</span> <span class="nx">secret</span><span class="p">,</span> <span class="nx">expire</span><span class="p">,</span> <span class="nx">token</span><span class="p">;</span>
+    <span class="nx">profile</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="nx">clientId</span><span class="o">:</span> <span class="nx">userId</span><span class="p">,</span>
+        <span class="nx">session</span><span class="o">:</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">session</span>
+    <span class="p">};</span>
+
+    <span class="nx">secret</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">secret</span><span class="p">;</span>
+    <span class="nx">expire</span> <span class="o">=</span> <span class="mi">60</span><span class="o">*</span><span class="mi">5</span><span class="p">;</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-34" id="section-34">&#182;</a>
+</div>
+<p>We are sending the profile in the token.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">token</span> <span class="o">=</span> <span class="nx">jwt</span><span class="p">.</span><span class="nx">sign</span><span class="p">(</span><span class="nx">profile</span><span class="p">,</span> <span class="nx">secret</span><span class="p">,</span> <span class="p">{</span> <span class="nx">expiresInMinutes</span><span class="o">:</span> <span class="nx">expire</span><span class="p">});</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-35" id="section-35">&#182;</a>
+</div>
+<p>Store the token somewhere.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">tokenList</span><span class="p">[</span><span class="nx">token</span><span class="p">]</span> <span class="o">=</span> <span class="nx">profile</span><span class="p">;</span>
+
+    <span class="k">return</span> <span class="nx">token</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kd">function</span> <span class="nx">renderTemplate</span><span class="p">(</span><span class="nx">pager</span><span class="p">,</span> <span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">templatePath</span><span class="p">,</span> <span class="nx">contextPath</span><span class="p">,</span>
+                        <span class="nx">gameSettings</span><span class="p">)</span> <span class="p">{</span>
+
+    <span class="kd">var</span> <span class="nx">context</span><span class="p">,</span> <span class="nx">cb</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-36" id="section-36">&#182;</a>
+</div>
+<p>Context is retrieved from cache,
+and can be modified by user-defined callbacks.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">context</span> <span class="o">=</span> <span class="nx">pager</span><span class="p">.</span><span class="nx">getContext</span><span class="p">(</span><span class="nx">gameName</span><span class="p">,</span> <span class="nx">contextPath</span><span class="p">,</span> <span class="nx">gameSettings</span><span class="p">,</span>
+                               <span class="nx">req</span><span class="p">.</span><span class="nx">headers</span><span class="p">);</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="nx">context</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">res</span><span class="p">.</span><span class="nx">render</span><span class="p">(</span><span class="nx">templatePath</span><span class="p">,</span> <span class="nx">context</span><span class="p">);</span>
+        <span class="k">return</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="nx">fs</span><span class="p">.</span><span class="nx">exists</span><span class="p">(</span><span class="nx">contextPath</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">exists</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">exists</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">try</span> <span class="p">{</span>
+                <span class="nx">cb</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="nx">contextPath</span><span class="p">);</span>
+                <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;function&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">cb</span><span class="p">)</span> <span class="p">{</span>
+                    <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ContextCallback must be &#39;</span> <span class="o">+</span>
+                                        <span class="s1">&#39;function.&#39;</span><span class="p">);</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+            <span class="k">catch</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
+                <span class="nx">servernode</span><span class="p">.</span><span class="nx">logger</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="s1">&#39;Error loading context file: &#39;</span> <span class="o">+</span>
+                                        <span class="nx">contextPath</span> <span class="o">+</span> <span class="s1">&#39; &#39;</span> <span class="o">+</span> <span class="nx">e</span><span class="p">);</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-37" id="section-37">&#182;</a>
+</div>
+<p>TODO: Log error.
+TODO: Mark file as non-existing ?</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+                <span class="nx">res</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="s1">&#39;File not Found&#39;</span><span class="p">,</span> <span class="mi">404</span><span class="p">);</span>
+                <span class="k">return</span><span class="p">;</span>
+            <span class="p">}</span>
+            <span class="nx">pager</span><span class="p">.</span><span class="nx">cacheContextCallback</span><span class="p">(</span><span class="nx">gameName</span><span class="p">,</span> <span class="nx">contextPath</span><span class="p">,</span> <span class="nx">cb</span><span class="p">);</span>
+            <span class="nx">context</span> <span class="o">=</span> <span class="nx">cb</span><span class="p">(</span><span class="nx">gameSettings</span><span class="p">,</span> <span class="nx">req</span><span class="p">.</span><span class="nx">headers</span><span class="p">);</span>
+        <span class="p">}</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-38" id="section-38">&#182;</a>
+</div>
+<p>Render anyway, with or without context.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="nx">res</span><span class="p">.</span><span class="nx">render</span><span class="p">(</span><span class="nx">templatePath</span><span class="p">,</span> <span class="nx">context</span><span class="p">);</span>
+    <span class="p">});</span>
+<span class="p">}</span>
+</pre></div>
+        </td>
+      </tr>
+  </tbody>
+</table>
+  </div>
+</body>
+</html>

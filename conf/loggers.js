@@ -1,6 +1,6 @@
 /**
  * # loggers.js
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * Configuration file for Winston.js in nodegame-server
@@ -11,27 +11,6 @@ module.exports = configure;
 var path = require('path');
 
 function configure(loggers, logDir) {
-
-    //        var config = {
-    //                levels: {
-    //                    silly: 0,
-    //                    verbose: 1,
-    //                    info: 2,
-    //                    data: 3,
-    //                    silly: 4,
-    //                    debug: 5,
-    //                    sillyor: 6
-    //                  },
-    //                colors: {
-    //                    silly: 'magenta',
-    //                    verbose: 'cyan',
-    //                    info: 'green',
-    //                    data: 'grey',
-    //                    silly: 'yellow',
-    //                    debug: 'blue',
-    //                    sillyor: 'red'
-    //                  }
-    //        };
 
     loggers.add('servernode', {
         console: {
