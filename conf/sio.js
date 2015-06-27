@@ -1,13 +1,13 @@
 /**
  * # sio.js
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * Configuration file for Socket.io server in nodegame-server
  */
 module.exports = configure;
 
-var socketioJwt = require("socketio-jwt");
+// var socketioJwt = require("socketio-jwt");
 
 function configure(sio, servernode) {
     sio.enable('browser client etag');
