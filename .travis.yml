@@ -14,7 +14,7 @@ install:
   - mkdir -p nodegame node_modules
   - ln -s ../node_modules nodegame/node_modules
   - ln -s .. node_modules/nodegame-server
-  - bin/install-nodegame-for-module.sh -g "nodegame-window nodegame-widgets JSUS NDDB shelf.js nodegame-client descil-mturk nodegame-db nodegame-mongodb"
+  - bin/install-nodegame-for-module.sh -g "nodegame-window nodegame-widgets JSUS NDDB shelf.js nodegame-client descil-mturk nodegame-db nodegame-requirements nodegame-monitor nodegame-mongodb"
   - npm install
 # Patch express connect.
   - patch node_modules/express/node_modules/connect/lib/middleware/static.js < bin/ng.connect.static.js.patch
