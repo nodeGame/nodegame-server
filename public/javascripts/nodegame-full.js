@@ -16595,11 +16595,16 @@ if (!Array.prototype.indexOf) {
     /**
      * ## Game.execCallback
      *
-     * Executes a callback
+     * Executes a game callback
+     *
+     * Sets the stage levels before and after executing the callback,
+     * and emits an event before exiting.
      *
      * @param {function} cb The callback to execute
      *
      * @return {mixed} res The return value of the callback
+     *
+     * @emit 'STEP_CALLBACK_EXECUTED'
      */
     Game.prototype.execCallback = function(cb) {
         var res;
@@ -35139,6 +35144,7 @@ if (!Array.prototype.indexOf) {
                 if (!stepObj) return;
                 timer = stepObj.timer;
                 if (timer) {
+                    // TODO: should be that.options.
                     options = processOptions(timer, this.options);
                     that.startTiming(options);
                 }
