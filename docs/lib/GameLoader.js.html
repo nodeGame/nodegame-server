@@ -610,7 +610,7 @@ this.loadViewsFile(gameDir, gameInfo);</p>
     <span class="p">}</span>
     <span class="k">catch</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadGameGameDir: cannot read &#39;</span> <span class="o">+</span>
-                        <span class="nx">gameSettingsPath</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
+                        <span class="nx">gameSettingsPath</span> <span class="o">+</span> <span class="s1">&#39;: &#39;</span> <span class="o">+</span> <span class="nx">e</span><span class="p">.</span><span class="nx">stack</span><span class="p">);</span>
     <span class="p">}</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">gameSettings</span><span class="p">)</span> <span class="p">{</span>
@@ -637,7 +637,7 @@ this.loadViewsFile(gameDir, gameInfo);</p>
     <span class="p">}</span>
     <span class="k">catch</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadGameGameDir: cannot read &#39;</span> <span class="o">+</span>
-                        <span class="nx">gameStagesPath</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
+                        <span class="nx">gameStagesPath</span> <span class="o">+</span> <span class="s1">&#39;: &#39;</span> <span class="o">+</span> <span class="nx">e</span><span class="p">.</span><span class="nx">stack</span><span class="p">);</span>
     <span class="p">}</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;function&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">gameStages</span><span class="p">)</span> <span class="p">{</span>
@@ -667,7 +667,7 @@ this.loadViewsFile(gameDir, gameInfo);</p>
     <span class="p">}</span>
     <span class="k">catch</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadGameGameDir: cannot read &#39;</span> <span class="o">+</span>
-                        <span class="nx">gameSetupPath</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
+                        <span class="nx">gameSetupPath</span> <span class="o">+</span> <span class="s1">&#39;: &#39;</span> <span class="o">+</span> <span class="nx">e</span><span class="p">.</span><span class="nx">stack</span><span class="p">);</span>
     <span class="p">}</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;function&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">gameSetup</span><span class="p">)</span> <span class="p">{</span>
@@ -790,7 +790,7 @@ this.loadViewsFile(gameDir, gameInfo);</p>
                 <span class="p">}</span>
                 <span class="k">catch</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
                     <span class="nx">logger</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadClientTypes: cannot &#39;</span> <span class="o">+</span>
-                                 <span class="s1">&#39;read &#39;</span> <span class="o">+</span> <span class="nx">clientTypePath</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
+                                 <span class="s1">&#39;read &#39;</span> <span class="o">+</span> <span class="nx">clientTypePath</span> <span class="o">+</span> <span class="s1">&#39;: &#39;</span> <span class="o">+</span> <span class="nx">e</span><span class="p">.</span><span class="nx">stack</span><span class="p">);</span>
                     <span class="k">throw</span> <span class="nx">e</span><span class="p">;</span>
                 <span class="p">}</span>
             <span class="p">}</span>
@@ -1287,7 +1287,8 @@ level of the specified directory.</p>
     <span class="p">}</span>
     <span class="k">catch</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
         <span class="nx">logger</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadWaitRoomDir: error reading &#39;</span> <span class="o">+</span>
-                     <span class="s1">&#39;waitroom.settings file. Game: &#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
+                     <span class="s1">&#39;waitroom.settings file. Game: &#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;: &#39;</span> <span class="o">+</span>
+                    <span class="nx">e</span><span class="p">.</span><span class="nx">stack</span><span class="p">);</span>
         <span class="k">throw</span> <span class="nx">e</span><span class="p">;</span>
     <span class="p">}</span>
 
@@ -1422,12 +1423,12 @@ generation and clientObject decoration.</p>
         <span class="p">}</span>
         <span class="k">catch</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
             <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadAuthDir: cannot read &#39;</span> <span class="o">+</span>
-                            <span class="nx">authSettingsFile</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
+                            <span class="nx">authSettingsFile</span> <span class="o">+</span> <span class="s1">&#39;: &#39;</span> <span class="o">+</span> <span class="nx">e</span><span class="p">.</span><span class="nx">stack</span><span class="p">);</span>
         <span class="p">}</span>
 
         <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">)</span> <span class="p">{</span>
             <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadAuthDir: invalid settings file: &#39;</span> <span class="o">+</span>
-                            <span class="nx">authSettingsFile</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
+                            <span class="nx">authSettingsFile</span> <span class="o">+</span> <span class="s1">&#39;: &#39;</span> <span class="o">+</span> <span class="nx">e</span><span class="p">.</span><span class="nx">stack</span><span class="p">);</span>
         <span class="p">}</span>
     <span class="p">}</span>
 
@@ -1505,7 +1506,7 @@ generation and clientObject decoration.</p>
         <span class="p">}</span>
         <span class="k">catch</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
             <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadAuthDir: cannot read &#39;</span> <span class="o">+</span>
-                            <span class="nx">authCodesFile</span> <span class="o">+</span> <span class="s2">&quot;: \n&quot;</span> <span class="o">+</span> <span class="nx">e</span><span class="p">);</span>
+                            <span class="nx">authCodesFile</span> <span class="o">+</span> <span class="s2">&quot;: \n&quot;</span> <span class="o">+</span> <span class="nx">e</span><span class="p">.</span><span class="nx">stack</span><span class="p">);</span>
         <span class="p">}</span>
 
         <span class="k">if</span> <span class="p">(</span><span class="nx">codes</span><span class="p">)</span> <span class="nx">importAuthCodes</span><span class="p">(</span><span class="nx">channel</span><span class="p">,</span> <span class="nx">codes</span><span class="p">,</span> <span class="nx">authCodesFile</span><span class="p">);</span>
@@ -1542,7 +1543,7 @@ generation and clientObject decoration.</p>
         <span class="p">}</span>
         <span class="k">catch</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
             <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadAuthDir: cannot read &#39;</span> <span class="o">+</span>
-                            <span class="nx">authCodesFile</span> <span class="o">+</span> <span class="s1">&#39;. &#39;</span> <span class="o">+</span> <span class="nx">e</span><span class="p">);</span>
+                            <span class="nx">authCodesFile</span> <span class="o">+</span> <span class="s1">&#39;. &#39;</span> <span class="o">+</span> <span class="nx">e</span><span class="p">.</span><span class="nx">stack</span><span class="p">);</span>
         <span class="p">}</span>
     <span class="p">}</span>
 <span class="p">};</span>
@@ -1625,7 +1626,7 @@ generation and clientObject decoration.</p>
         <span class="p">}</span>
         <span class="k">catch</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
             <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadRequirementsDir: cannot read &#39;</span> <span class="o">+</span>
-                            <span class="nx">settingsFile</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
+                            <span class="nx">settingsFile</span> <span class="o">+</span> <span class="s1">&#39;: &#39;</span> <span class="o">+</span> <span class="nx">e</span><span class="p">.</span><span class="nx">stack</span><span class="p">);</span>
         <span class="p">}</span>
 
         <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">)</span> <span class="p">{</span>
@@ -2397,7 +2398,7 @@ settings.</p>
         <span class="p">}</span>
         <span class="k">catch</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
             <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.&#39;</span> <span class="o">+</span> <span class="nx">method</span> <span class="o">+</span> <span class="s1">&#39;: cannot read &#39;</span> <span class="o">+</span>
-                            <span class="nx">pwdFile</span> <span class="o">+</span> <span class="s2">&quot;: \n&quot;</span> <span class="o">+</span> <span class="nx">e</span><span class="p">);</span>
+                            <span class="nx">pwdFile</span> <span class="o">+</span> <span class="s2">&quot;: \n&quot;</span> <span class="o">+</span> <span class="nx">e</span><span class="p">.</span><span class="nx">stack</span><span class="p">);</span>
         <span class="p">}</span>
 
         <span class="k">if</span> <span class="p">(</span><span class="nx">result</span><span class="p">)</span> <span class="nx">cb</span><span class="p">(</span><span class="nx">result</span><span class="p">);</span>
