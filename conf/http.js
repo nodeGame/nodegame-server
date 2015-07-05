@@ -58,42 +58,49 @@ function configure(app, servernode) {
 
     // app.use(express.session({ secret: 'keyboard cat' }));
 
+    //app.use('/javascript);
 
-    app.get('/', function(req, res) {
-        var q;
 
-        if (J.isEmpty(req.query)) {
-            res.render('index', {
-                title: 'Yay! Your nodeGame server is running.'
-            });
-            return
-        }
+    if (servernode.enableInfoQuery) {
 
-        q = req.query.q;
+        app.get('/', function(req, res) {
+            var q;
 
-        if (!q) {
-            res.send('Query must start with q=XXX');
-        }
+            if (J.isEmpty(req.query)) {
+                res.render('index', {
+                    title: 'Yay! Your nodeGame server is running.'
+                });
+                return
+            }
 
-        switch(q) {
-        case 'info':
-            //console.log(servernode.info);
-            res.send(servernode.info);
-            break;
+            q = req.query.q;
 
-        case 'channels':
-            //console.log(servernode.info);
-            res.send(servernode.info.channels);
-            break;
+            if (!q) {
+                res.send('Query must start with q=XXX');
+            }
 
-        case 'games':
-            //console.log(servernode.info);
-            res.send(servernode.info.games);
-            break;
-        default:
-            res.send('Unknown query received.');
-        }
-    });
+            switch(q) {
+            case 'info':
+                //console.log(servernode.info);
+                res.send(servernode.info);
+                break;
+
+            case 'channels':
+                //console.log(servernode.info);
+                res.send(servernode.info.channels);
+                break;
+
+            case 'games':
+                //console.log(servernode.info);
+                res.send(servernode.info.games);
+                break;
+            default:
+                res.send('Unknown query received.');
+            }
+        });
+    }
+
+
 
     return true;
 }
