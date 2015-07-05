@@ -1,0 +1,3 @@
+conf/http.js sets headers correctly
+GameRouter does not yet.
+There is duplicated code across GameRouter, PageManager, and http.js -> simplify
