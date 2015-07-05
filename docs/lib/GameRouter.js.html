@@ -259,24 +259,8 @@ MIT Licensed</p>
 
     <span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39;/monitor/*&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">next</span><span class="p">)</span> <span class="p">{</span>
         <span class="kd">var</span> <span class="nx">userId</span><span class="p">,</span> <span class="nx">pwd</span><span class="p">;</span>
-        <span class="kd">var</span> <span class="nx">path</span><span class="p">,</span> <span class="nx">file</span><span class="p">;</span>
+        <span class="kd">var</span> <span class="nx">filePath</span><span class="p">,</span> <span class="nx">file</span><span class="p">,</span> <span class="nx">cachedFile</span><span class="p">;</span>
         <span class="kd">var</span> <span class="nx">search</span><span class="p">;</span>
-
-        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">gameInfo</span><span class="p">.</span><span class="nx">auth</span><span class="p">.</span><span class="nx">enabled</span><span class="p">)</span> <span class="p">{</span>
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-10" id="section-10">&#182;</a>
-</div>
-<p>res.send('No authorization needed.');
-return;</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-        <span class="p">}</span>
 
         <span class="nx">file</span> <span class="o">=</span> <span class="nx">req</span><span class="p">.</span><span class="nx">params</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
         <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;&#39;</span> <span class="o">===</span> <span class="nx">file</span> <span class="o">||</span> <span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">file</span><span class="p">)</span> <span class="p">{</span>
@@ -294,7 +278,7 @@ return;</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-11" id="section-11">&#182;</a>
+  <a class="pilcrow" href="#section-10" id="section-10">&#182;</a>
 </div>
 <p>Removing the trailing slash because it creates:
 Error: ENOTDIR in fetching the file.</p>
@@ -310,12 +294,32 @@ Error: ENOTDIR in fetching the file.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
+  <a class="pilcrow" href="#section-11" id="section-11">&#182;</a>
+</div>
+<p>Already found in <code>public/</code> and cached.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="nx">cachedFile</span> <span class="o">=</span> <span class="nx">pager</span><span class="p">.</span><span class="nx">inPublic</span><span class="p">(</span><span class="nx">gameName</span><span class="p">,</span> <span class="nx">file</span><span class="p">);</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">cachedFile</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;SSSSSSServing cached file: &#39;</span><span class="p">,</span> <span class="nx">file</span><span class="p">);</span>
+            <span class="nx">res</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="nx">cachedFile</span><span class="p">);</span>
+            <span class="k">return</span><span class="p">;</span>
+        <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
   <a class="pilcrow" href="#section-12" id="section-12">&#182;</a>
 </div>
 <p>Build path to file.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-        <span class="nx">path</span> <span class="o">=</span> <span class="nx">monitorDir</span> <span class="o">+</span> <span class="nx">file</span><span class="p">;</span>
+        <span class="nx">filePath</span> <span class="o">=</span> <span class="nx">monitorDir</span> <span class="o">+</span> <span class="nx">file</span><span class="p">;</span>
+
 
 </pre></div>
         </td>
@@ -325,10 +329,47 @@ Error: ENOTDIR in fetching the file.</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-13" id="section-13">&#182;</a>
 </div>
-<p>Send file.</p>
+<p>Checks if exists in 'public/' or as view.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-        <span class="nx">res</span><span class="p">.</span><span class="nx">sendfile</span><span class="p">(</span><span class="nx">path</span><span class="p">);</span>
+        <span class="nx">fs</span><span class="p">.</span><span class="nx">exists</span><span class="p">(</span><span class="nx">filePath</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">exists</span><span class="p">)</span> <span class="p">{</span>
+            <span class="kd">var</span> <span class="nx">basename</span><span class="p">,</span> <span class="nx">templatePath</span><span class="p">,</span> <span class="nx">templateFound</span><span class="p">,</span> <span class="nx">contextPath</span><span class="p">,</span> <span class="nx">context</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-14" id="section-14">&#182;</a>
+</div>
+<p>Exists in public, cache it, serve it.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+            <span class="k">if</span> <span class="p">(</span><span class="nx">exists</span><span class="p">)</span> <span class="p">{</span>
+                <span class="nx">fs</span><span class="p">.</span><span class="nx">readFile</span><span class="p">(</span><span class="nx">filePath</span><span class="p">,</span> <span class="s1">&#39;utf8&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">data</span><span class="p">)</span> <span class="p">{</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-15" id="section-15">&#182;</a>
+</div>
+<p>Cache it.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+                    <span class="nx">pager</span><span class="p">.</span><span class="nx">inPublic</span><span class="p">(</span><span class="nx">gameName</span><span class="p">,</span> <span class="nx">file</span><span class="p">,</span> <span class="nx">data</span><span class="p">);</span>
+                    <span class="nx">res</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="nx">data</span><span class="p">);</span>
+                <span class="p">});</span>
+                <span class="k">return</span><span class="p">;</span>
+            <span class="p">}</span>
+            <span class="k">else</span> <span class="p">{</span>
+                <span class="nx">res</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="s1">&#39;File not Found&#39;</span><span class="p">,</span> <span class="mi">404</span><span class="p">);</span>
+            <span class="p">}</span>
+        <span class="p">});</span>
     <span class="p">});</span>
 
     <span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39;/monitor&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
@@ -342,13 +383,13 @@ Error: ENOTDIR in fetching the file.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-14" id="section-14">&#182;</a>
+  <a class="pilcrow" href="#section-16" id="section-16">&#182;</a>
 </div>
 <p>Game. (default index.htm).</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39;/*&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
-        <span class="kd">var</span> <span class="nx">gameSettings</span><span class="p">,</span> <span class="nx">filePath</span><span class="p">,</span> <span class="nx">file</span><span class="p">;</span>
+        <span class="kd">var</span> <span class="nx">gameSettings</span><span class="p">,</span> <span class="nx">filePath</span><span class="p">,</span> <span class="nx">file</span><span class="p">,</span> <span class="nx">cachedFile</span><span class="p">;</span>
         <span class="kd">var</span> <span class="nx">jadeTemplate</span><span class="p">,</span> <span class="nx">jsonContext</span><span class="p">,</span> <span class="nx">contextPath</span><span class="p">,</span> <span class="nx">langPath</span><span class="p">,</span> <span class="nx">pageName</span><span class="p">;</span>
 
         <span class="nx">file</span> <span class="o">=</span> <span class="nx">req</span><span class="p">.</span><span class="nx">params</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
@@ -363,7 +404,7 @@ Error: ENOTDIR in fetching the file.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-15" id="section-15">&#182;</a>
+  <a class="pilcrow" href="#section-17" id="section-17">&#182;</a>
 </div>
 <p>Removing the trailing slash because it creates:
 Error: ENOTDIR in fetching the file.</p>
@@ -381,7 +422,7 @@ Error: ENOTDIR in fetching the file.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-16" id="section-16">&#182;</a>
+  <a class="pilcrow" href="#section-18" id="section-18">&#182;</a>
 </div>
 <p>Build filePath to file in public directory.</p>
         </td>
@@ -395,7 +436,7 @@ Error: ENOTDIR in fetching the file.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-17" id="section-17">&#182;</a>
+  <a class="pilcrow" href="#section-19" id="section-19">&#182;</a>
 </div>
 <p>TODO: move after refactoring.
 Send JSON data as JSONP if there is a callback query parameter:</p>
@@ -409,7 +450,7 @@ Send JSON data as JSONP if there is a callback query parameter:</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-18" id="section-18">&#182;</a>
+  <a class="pilcrow" href="#section-20" id="section-20">&#182;</a>
 </div>
 <p>Load file contents:</p>
         </td>
@@ -429,7 +470,7 @@ Send JSON data as JSONP if there is a callback query parameter:</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-19" id="section-19">&#182;</a>
+  <a class="pilcrow" href="#section-21" id="section-21">&#182;</a>
 </div>
 <p>Send it:</p>
         </td>
@@ -441,7 +482,7 @@ Send JSON data as JSONP if there is a callback query parameter:</p>
 
             <span class="k">return</span><span class="p">;</span>
         <span class="p">}</span>
-<span class="kr">debugger</span>
+
 
 </pre></div>
         </td>
@@ -449,26 +490,15 @@ Send JSON data as JSONP if there is a callback query parameter:</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-20" id="section-20">&#182;</a>
+  <a class="pilcrow" href="#section-22" id="section-22">&#182;</a>
 </div>
-<p>If file was served already from public/ serve it
-immediately (cached by Express).</p>
+<p>Already found in <code>public/</code> and cached.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-        <span class="k">if</span> <span class="p">(</span><span class="nx">pager</span><span class="p">.</span><span class="nx">inPublic</span><span class="p">(</span><span class="nx">gameName</span><span class="p">,</span> <span class="nx">file</span><span class="p">))</span> <span class="p">{</span>
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-21" id="section-21">&#182;</a>
-</div>
-<p>Send file (if it is a directory it is not sent).</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-            <span class="nx">res</span><span class="p">.</span><span class="nx">sendfile</span><span class="p">(</span><span class="nx">filePath</span><span class="p">);</span>
+        <span class="nx">cachedFile</span> <span class="o">=</span> <span class="nx">pager</span><span class="p">.</span><span class="nx">inPublic</span><span class="p">(</span><span class="nx">gameName</span><span class="p">,</span> <span class="nx">file</span><span class="p">);</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">cachedFile</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;SSSSSSServing cached file: &#39;</span><span class="p">,</span> <span class="nx">file</span><span class="p">);</span>
+            <span class="nx">res</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="nx">cachedFile</span><span class="p">);</span>
             <span class="k">return</span><span class="p">;</span>
         <span class="p">}</span>
 
@@ -479,7 +509,7 @@ immediately (cached by Express).</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-22" id="section-22">&#182;</a>
+  <a class="pilcrow" href="#section-23" id="section-23">&#182;</a>
 </div>
 <p>Checks if exists in 'public/' or as view.</p>
         </td>
@@ -494,7 +524,7 @@ immediately (cached by Express).</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-23" id="section-23">&#182;</a>
+  <a class="pilcrow" href="#section-24" id="section-24">&#182;</a>
 </div>
 <p>Exists in public, cache it, serve it.</p>
         </td>
@@ -508,16 +538,19 @@ immediately (cached by Express).</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-24" id="section-24">&#182;</a>
+  <a class="pilcrow" href="#section-25" id="section-25">&#182;</a>
 </div>
-<p>Mark existing.</p>
+<p>Cache it.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-                    <span class="nx">pager</span><span class="p">.</span><span class="nx">inPublic</span><span class="p">(</span><span class="nx">gameName</span><span class="p">,</span> <span class="nx">file</span><span class="p">,</span> <span class="kc">true</span><span class="p">);</span>
-                    <span class="nx">res</span><span class="p">.</span><span class="nx">sendfile</span><span class="p">(</span><span class="nx">filePath</span><span class="p">);</span>
+                    <span class="nx">pager</span><span class="p">.</span><span class="nx">inPublic</span><span class="p">(</span><span class="nx">gameName</span><span class="p">,</span> <span class="nx">file</span><span class="p">,</span> <span class="nx">data</span><span class="p">);</span>
+                    <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;SSSSSSServing NNNEW file: &#39;</span><span class="p">,</span> <span class="nx">file</span><span class="p">);</span>
+                    <span class="nx">res</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="nx">data</span><span class="p">);</span>
                 <span class="p">});</span>
                 <span class="k">return</span><span class="p">;</span>
             <span class="p">}</span>
+
+            <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;NNNNNOT in public: &#39;</span><span class="p">,</span> <span class="nx">file</span><span class="p">);</span>
 
 
 </pre></div>
@@ -526,7 +559,7 @@ immediately (cached by Express).</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-25" id="section-25">&#182;</a>
+  <a class="pilcrow" href="#section-26" id="section-26">&#182;</a>
 </div>
 <p>Check if it a template.</p>
         </td>
@@ -540,7 +573,7 @@ immediately (cached by Express).</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-26" id="section-26">&#182;</a>
+  <a class="pilcrow" href="#section-27" id="section-27">&#182;</a>
 </div>
 <p>Instantiate templates, if available.
 <code>html/templates/page.jade</code> holds the template and
@@ -556,7 +589,7 @@ to instantiate the page requested by <code>xx/xx/page*</code>.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-27" id="section-27">&#182;</a>
+  <a class="pilcrow" href="#section-28" id="section-28">&#182;</a>
 </div>
 <p>Matches: xx/xx/xx/xx/xx/</p>
         </td>
@@ -580,7 +613,7 @@ to instantiate the page requested by <code>xx/xx/page*</code>.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-28" id="section-28">&#182;</a>
+  <a class="pilcrow" href="#section-29" id="section-29">&#182;</a>
 </div>
 <p>Info about previous requests to the template file.</p>
         </td>
@@ -594,7 +627,7 @@ to instantiate the page requested by <code>xx/xx/page*</code>.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-29" id="section-29">&#182;</a>
+  <a class="pilcrow" href="#section-30" id="section-30">&#182;</a>
 </div>
 <p>Template not existing.</p>
         </td>
@@ -609,7 +642,7 @@ to instantiate the page requested by <code>xx/xx/page*</code>.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-30" id="section-30">&#182;</a>
+  <a class="pilcrow" href="#section-31" id="section-31">&#182;</a>
 </div>
 <p>Template existing, render it.</p>
         </td>
@@ -625,7 +658,7 @@ to instantiate the page requested by <code>xx/xx/page*</code>.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-31" id="section-31">&#182;</a>
+  <a class="pilcrow" href="#section-32" id="section-32">&#182;</a>
 </div>
 <p>Do not know if exists or not, check and render it.</p>
         </td>
@@ -657,7 +690,7 @@ to instantiate the page requested by <code>xx/xx/page*</code>.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-32" id="section-32">&#182;</a>
+  <a class="pilcrow" href="#section-33" id="section-33">&#182;</a>
 </div>
 <p>Add alias routes (if any and if it is not an alias already).</p>
         </td>
@@ -750,7 +783,7 @@ to instantiate the page requested by <code>xx/xx/page*</code>.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-34" id="section-34">&#182;</a>
+  <a class="pilcrow" href="#section-35" id="section-35">&#182;</a>
 </div>
 <p>We are sending the profile in the token.</p>
         </td>
@@ -764,7 +797,7 @@ to instantiate the page requested by <code>xx/xx/page*</code>.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-35" id="section-35">&#182;</a>
+  <a class="pilcrow" href="#section-36" id="section-36">&#182;</a>
 </div>
 <p>Store the token somewhere.</p>
         </td>
@@ -786,7 +819,7 @@ to instantiate the page requested by <code>xx/xx/page*</code>.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-36" id="section-36">&#182;</a>
+  <a class="pilcrow" href="#section-37" id="section-37">&#182;</a>
 </div>
 <p>Context is retrieved from cache,
 and can be modified by user-defined callbacks.</p>
@@ -820,7 +853,7 @@ and can be modified by user-defined callbacks.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-37" id="section-37">&#182;</a>
+  <a class="pilcrow" href="#section-38" id="section-38">&#182;</a>
 </div>
 <p>TODO: Log error.
 TODO: Mark file as non-existing ?</p>
@@ -839,7 +872,7 @@ TODO: Mark file as non-existing ?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-38" id="section-38">&#182;</a>
+  <a class="pilcrow" href="#section-39" id="section-39">&#182;</a>
 </div>
 <p>Render anyway, with or without context.</p>
         </td>
