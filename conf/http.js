@@ -10,7 +10,10 @@ module.exports = configure;
 // ## Global scope
 
 var express = require('express'),
+fs = require('fs'),
 J = require('nodegame-client').JSUS;
+
+var mime = require('express').static.mime;
 
 /**
  * ### ServerNode._configureHTTP
@@ -33,7 +36,7 @@ function configure(app, servernode) {
     app.set('view engine', 'jade');
     app.set('view options', {layout: false});
 
-    app.use(express.static(publicDir));
+    // app.use(express.static(publicDir));
 
     app.configure('development', function(){
         app.use(express.errorHandler({
@@ -55,11 +58,80 @@ function configure(app, servernode) {
     // app.use(express.json());
     // app.use(express.urlencoded());
 
-
     // app.use(express.session({ secret: 'keyboard cat' }));
 
-    //app.use('/javascript);
+    // app.use('/javascript);
 
+    function sendFromPublic(type, req, res, headers) {
+        var filePath, file, cachedFile;
+        var headers, mimeType, charset;
+        file = req.params[0];
+        if (!file) return;
+        if (file.lastIndexOf('\/') === (file.length - 1)) {
+            file = file.substring(0, file.length - 1);
+        }
+        // Build path to file.
+        filePath = rootDir + '/public/' + type + '/' + file;
+
+        // Build headers.
+        if (!headers) {
+            mimeType = mime.lookup(filePath);
+            charset = mime.charsets.lookup(type);
+            headers = { 'Content-Type': type };
+            if (charset) headers.charset = charset;
+        }
+
+        // Already found in `public/` and cached.
+        cachedFile = pager.inPublic('/', filePath);
+        if (cachedFile) {
+            console.log('SSSSSSServing cached file: ', file);
+            res.send(cachedFile, headers);
+            return;
+        }
+
+        // Checks if exists in 'public/' or as view.
+        fs.exists(filePath, function(exists) {
+            var basename, templatePath, templateFound, contextPath, context;
+
+            // Exists in public, cache it, serve it.
+            if (exists) {
+                fs.readFile(filePath, 'utf8', function(err, data) {
+                    // Cache it.
+                    pager.inPublic('/', filePath, data);
+                    console.log('SSSSSSServing NNNEW file: ', file);
+                    res.send(data, headers);
+                });
+                return;
+            }
+            console.log('NNNNNOT in public: ', file);
+            res.send('File not Found', 404);
+        });
+    }
+
+    app.get('/javascripts/*', function(req, res) {
+        sendFromPublic('javascripts', req, res, {
+            'Content-Type': 'text/javascript',
+            'charset': 'utf-8'
+        });
+    });
+
+    app.get('/stylesheets/*', function(req, res) {
+        sendFromPublic('stylesheets', req, res, {
+            'Content-Type': 'stylesheet',
+            'charset': 'utf-8'
+        });
+    });
+
+    app.get('/pages/*', function(req, res) {
+        sendFromPublic('pages', req, res, {
+            'Content-Type': 'html',
+            'charset': 'utf-8'
+        });
+    });
+
+    app.get('/lib/*', function(req, res) {
+        sendFromPublic('lib', req, res);
+    });
 
     if (servernode.enableInfoQuery) {
 
