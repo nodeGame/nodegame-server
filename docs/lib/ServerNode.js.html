@@ -182,7 +182,7 @@ directories.</p>
 <span class="nx">winston</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;winston&#39;</span><span class="p">);</span>
 
 <span class="kd">var</span> <span class="nx">ServerChannel</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;./ServerChannel&#39;</span><span class="p">);</span>
-<span class="kd">var</span> <span class="nx">PageManager</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;./PageManager&#39;</span><span class="p">);</span>
+<span class="kd">var</span> <span class="nx">ResourceManager</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;./ResourceManager&#39;</span><span class="p">);</span>
 <span class="kd">var</span> <span class="nx">GameLoader</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;./GameLoader&#39;</span><span class="p">);</span>
 
 <span class="kd">var</span> <span class="nx">J</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;JSUS&#39;</span><span class="p">).</span><span class="nx">JSUS</span><span class="p">;</span>
@@ -629,12 +629,12 @@ directories.</p>
 </div>
 
   </div>
-  <div class="body"><p>The page manager to add game specific settings to template rendering</p>
+  <div class="body"><p>Loading, caching of static resources and templates from file system.</p>
   </div>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">pager</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">PageManager</span><span class="p">();</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">resourceManager</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">ResourceManager</span><span class="p">(</span><span class="k">this</span><span class="p">);</span>
 
 
 </pre></div>
@@ -1106,7 +1106,7 @@ is aborted.</p>
 <p>Add the channel to the Page Manager.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">pager</span><span class="p">.</span><span class="nx">addGame</span><span class="p">(</span><span class="nx">cname</span><span class="p">);</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">resourceManager</span><span class="p">.</span><span class="nx">addGame</span><span class="p">(</span><span class="nx">cname</span><span class="p">);</span>
 
     <span class="k">this</span><span class="p">.</span><span class="nx">logger</span><span class="p">.</span><span class="nx">info</span><span class="p">(</span><span class="s1">&#39;ServerNode.addChannel: channel added correctly: &#39;</span> <span class="o">+</span>
                      <span class="nx">channelOptions</span><span class="p">.</span><span class="nx">name</span><span class="p">);</span>

@@ -58,6 +58,10 @@ function configure(servernode) {
     // a certain number of Node.JS listeners.
     servernode.maxListeners = 0;
 
+    // If TRUE, it is possible to get information from the server by
+    // via querystring (?q=).
+    servernode.enableInfoQuery = false;
+
     // 2. Channels configuration.
 
     // AdminServer default options.

@@ -2022,7 +2022,7 @@ Auth callback can modify the authorization only of those.</p>
   </div>
   <div class="body"><p>Adds one or multiple game alias</p>
 
-<p>Adds references into the <code>info.games</code> and <code>pager.games</code> objects.</p>
+<p>Adds references into the <code>info.games</code> and <code>resourceManager.games</code> objects.</p>
   </div>
   <div class="details">
     <div class="dox_tag_title">Params</div>
@@ -2042,7 +2042,7 @@ Auth callback can modify the authorization only of those.</p>
     </div>
     <div class="dox_tag_title">See</div>
     <div class="dox_tag_detail">
-      <span class="dox_type">ServerChannel.pager
+      <span class="dox_type">ServerChannel.resourceManager
 </span>
     </div>
   </div>
@@ -2099,7 +2099,7 @@ Auth callback can modify the authorization only of those.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
         <span class="nx">servernode</span><span class="p">.</span><span class="nx">info</span><span class="p">.</span><span class="nx">games</span><span class="p">[</span><span class="nx">alias</span><span class="p">[</span><span class="nx">i</span><span class="p">]]</span> <span class="o">=</span> <span class="nx">servernode</span><span class="p">.</span><span class="nx">info</span><span class="p">.</span><span class="nx">games</span><span class="p">[</span><span class="nx">gameName</span><span class="p">];</span>
-        <span class="nx">servernode</span><span class="p">.</span><span class="nx">pager</span><span class="p">.</span><span class="nx">createAlias</span><span class="p">(</span><span class="nx">alias</span><span class="p">[</span><span class="nx">i</span><span class="p">],</span> <span class="nx">gameName</span><span class="p">);</span>
+        <span class="nx">servernode</span><span class="p">.</span><span class="nx">resourceManager</span><span class="p">.</span><span class="nx">createAlias</span><span class="p">(</span><span class="nx">alias</span><span class="p">[</span><span class="nx">i</span><span class="p">],</span> <span class="nx">gameName</span><span class="p">);</span>
         <span class="nx">gameInfo</span><span class="p">.</span><span class="nx">alias</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">alias</span><span class="p">[</span><span class="nx">i</span><span class="p">]);</span>
     <span class="p">}</span>
 <span class="p">};</span>
@@ -2540,7 +2540,8 @@ TODO: views.js file is not loaded anymore because all context are dynamics.</spa
 //          }
 //          // Execute views function in a sandboxed enviroment.
 //          // A game cannot modify other games settings.
-//          sb = that.servernode.pager.getSandBox(gameName, directory);
+//          sb = that.servernode.resourceManager
+//               .getSandBox(gameName, directory);
 //          cb(sb, gameInfo.settings);
 //      });
 };</p>

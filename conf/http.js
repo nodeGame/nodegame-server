@@ -24,12 +24,12 @@ var mime = require('express').static.mime;
  */
 function configure(app, servernode) {
     var rootDir, monitorDir, publicDir;
-    var pager;
+    var resourceManager;
 
     rootDir = servernode.rootDir;
     publicDir = rootDir + '/public/';
     monitorDir = rootDir + '/node_modules/nodegame-monitor/public/';
-    pager = servernode.pager;
+    resourceManager = servernode.resourceManager;
 
 
     app.set('views', rootDir + '/views');
@@ -63,48 +63,32 @@ function configure(app, servernode) {
     // app.use('/javascript);
 
     function sendFromPublic(type, req, res, headers) {
-        var filePath, file, cachedFile;
-        var headers, mimeType, charset;
+        var file, mimeType, charset;
         file = req.params[0];
         if (!file) return;
-        if (file.lastIndexOf('\/') === (file.length - 1)) {
-            file = file.substring(0, file.length - 1);
-        }
-        // Build path to file.
-        filePath = rootDir + '/public/' + type + '/' + file;
+
+        // Build path in `public/`.
+        file = type + '/' + file;
 
         // Build headers.
         if (!headers) {
-            mimeType = mime.lookup(filePath);
-            charset = mime.charsets.lookup(type);
-            headers = { 'Content-Type': type };
+            mimeType = mime.lookup(file);
+            charset = mime.charsets.lookup(mimeType);
+            headers = { 'Content-Type': mimeType };
             if (charset) headers.charset = charset;
         }
 
         // Already found in `public/` and cached.
-        cachedFile = pager.inPublic('/', filePath);
-        if (cachedFile) {
-            console.log('SSSSSSServing cached file: ', file);
-            res.send(cachedFile, headers);
-            return;
-        }
+        resourceManager.getFromPublic('/', file, function(cachedFile) {
 
-        // Checks if exists in 'public/' or as view.
-        fs.exists(filePath, function(exists) {
-            var basename, templatePath, templateFound, contextPath, context;
-
-            // Exists in public, cache it, serve it.
-            if (exists) {
-                fs.readFile(filePath, 'utf8', function(err, data) {
-                    // Cache it.
-                    pager.inPublic('/', filePath, data);
-                    console.log('SSSSSSServing NNNEW file: ', file);
-                    res.send(data, headers);
-                });
-                return;
+            // File found in public (cached or loaded).
+            if (cachedFile) {
+                res.send(cachedFile, headers);
             }
-            console.log('NNNNNOT in public: ', file);
-            res.send('File not Found', 404);
+            else {
+                // Send 404.
+                res.send(404);
+            }
         });
     }
 
@@ -117,14 +101,14 @@ function configure(app, servernode) {
 
     app.get('/stylesheets/*', function(req, res) {
         sendFromPublic('stylesheets', req, res, {
-            'Content-Type': 'stylesheet',
+            'Content-Type': 'text/css',
             'charset': 'utf-8'
         });
     });
 
     app.get('/pages/*', function(req, res) {
         sendFromPublic('pages', req, res, {
-            'Content-Type': 'html',
+            'Content-Type': 'text/html',
             'charset': 'utf-8'
         });
     });
