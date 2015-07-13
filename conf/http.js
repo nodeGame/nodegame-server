@@ -87,7 +87,7 @@ function configure(app, servernode) {
             }
             else {
                 // Send 404.
-                res.send(404);
+                res.send('File not found.', 404);
             }
         });
     }
