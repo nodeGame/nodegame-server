@@ -117,17 +117,17 @@ function configure(app, servernode) {
         sendFromPublic('lib', req, res);
     });
 
-    if (servernode.enableInfoQuery) {
+    app.get('/', function(req, res) {
+        var q;
 
-        app.get('/', function(req, res) {
-            var q;
+        if (J.isEmpty(req.query)) {
+            res.render('index', {
+                title: 'Yay! Your nodeGame server is running.'
+            });
+            return
+        }
 
-            if (J.isEmpty(req.query)) {
-                res.render('index', {
-                    title: 'Yay! Your nodeGame server is running.'
-                });
-                return
-            }
+        if (servernode.enableInfoQuery) {
 
             q = req.query.q;
 
@@ -153,10 +153,8 @@ function configure(app, servernode) {
             default:
                 res.send('Unknown query received.');
             }
-        });
-    }
-
-
+        }
+    });
 
     return true;
 }
