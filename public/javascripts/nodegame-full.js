@@ -12363,7 +12363,6 @@ if (!Array.prototype.indexOf) {
          * step/stage. If a step/stage object defines a `steprule` property,
          * then that function is used instead.
          *
-         * @see Stager.setDefaultStepRule
          * @see Stager.getDefaultStepRule
          * @see GamePlot.getStepRule
          */
@@ -12494,7 +12493,7 @@ if (!Array.prototype.indexOf) {
             this.defaultStepRule = stepRule;
         }
         else {
-            // Initial default:
+            // Initial default.
             this.defaultStepRule = stepRules.SOLO;
         }
     };
@@ -12788,7 +12787,7 @@ if (!Array.prototype.indexOf) {
                                 'function or undefined.');
         }
         if (!this.steps[stepId]) {
-            throw new Error('Stager.extendStage: stageId not found: ' +
+            throw new Error('Stager.extendStep: stepId not found: ' +
                             stepId + '.');
         }
 
@@ -12814,7 +12813,7 @@ if (!Array.prototype.indexOf) {
      */
     Stager.prototype.extendStage = function(stageId, update) {
         if ('string' !== typeof stageId) {
-            throw new TypeError('Stager.extendStage: stageId must be a string.');
+            throw new TypeError('Stager.extendStage: stageId must be string.');
         }
         if (!update || 'object' !== typeof update) {
             throw new TypeError('Stager.extendStage: update must be object.');
@@ -13009,8 +13008,8 @@ if (!Array.prototype.indexOf) {
      * Returns the sequence of stages
      *
      * @param {string} format 'hstages' for an array of human-readable stage
-     *   descriptions, 'hsteps' for an array of human-readable step descriptions,
-     *   'o' for the internal JavaScript object
+     *   descriptions, 'hsteps' for an array of human-readable step
+         descriptions, 'o' for the internal JavaScript object
      *
      * @return {array|object|null} The stage sequence in requested format. NULL
      *   on error.
@@ -13425,7 +13424,7 @@ if (!Array.prototype.indexOf) {
 
         if (unique && that.steps.hasOwnProperty(step.id)) {
             return 'step ID already existing: ' + step.id +
-                '. Use extendStep to modify it.';
+                '. Use extendStep to modify it';
         }
         return null;
     };
@@ -15180,18 +15179,19 @@ if (!Array.prototype.indexOf) {
      * Creates a the player and saves it in node.player, and
      * stores the session ids in the session object.
      *
-     * If a game window reference is found, it set the channelURI there.
+     * If a game window reference is found, sets the `uriChannel` variable.
      *
      * @param {GameMsg} msg A game-msg
      * @return {boolean} TRUE, if session was correctly initialized
      *
      * @see node.createPlayer
      * @see Socket.registerServer
+     * @see GameWindow.setUriChannel
      */
     Socket.prototype.startSession = function(msg) {
         this.session = msg.session;
         this.node.createPlayer(msg.data);
-        if (this.node.window) this.node.window.channelURI = msg.text;
+        if (this.node.window) this.node.window.setUriChannel(msg.text);
     };
 
     /**
@@ -15409,7 +15409,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # GameDB
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * Provides a simple, lightweight NO-SQL database for nodeGame
@@ -19895,6 +19895,15 @@ if (!Array.prototype.indexOf) {
         return this.status === GameTimer.PAUSED;
     };
 
+    /**
+     * ### GameTimer.isPaused
+     *
+     * Return TRUE if the time expired
+     */
+    GameTimer.prototype.isTimeup = function() {
+        return this.timeLeft !== null && this.timeLeft <= 0;
+    };
+
     // Do a timer update.
     // Return false if timer ran out, true otherwise.
     function updateCallback(that) {
@@ -20808,7 +20817,10 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # SAY, SET, GET, DONE
- * Copyright(c) 2014 Stefano Balietti
+ *
+ * Implementation of node.[say|set|get|done].
+ *
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  */
 (function(exports, parent) {
@@ -20816,6 +20828,7 @@ if (!Array.prototype.indexOf) {
     "use strict";
 
     var NGC = parent.NodeGameClient;
+    var J = parent.JSUS;
 
     var GETTING_DONE = parent.constants.stageLevels.GETTING_DONE;
 
@@ -21102,9 +21115,12 @@ if (!Array.prototype.indexOf) {
     NGC.prototype.done = function() {
         var that, game, doneCb, len, args, i;
         var arg1, arg2;
+        var stepTime, timeup, setObj;
+
+        // Get step execution time.
+        stepTime = this.timer.getTimeSince('step');
 
         game = this.game;
-
         if (game.willBeDone || game.getStageLevel() >= GETTING_DONE) {
             node.err('node.done: done already called in this step.');
             return false;
@@ -21113,11 +21129,18 @@ if (!Array.prototype.indexOf) {
         // Evaluating `done` callback if any.
         doneCb = game.plot.getProperty(game.getCurrentGameStage(), 'done');
 
-        // TODO optimize
-        if (doneCb && !doneCb.apply(game, arguments)) {
-            if (!ok) return;
-        }
+        // If a `done` callback returns false, exit.
+        if (doneCb && !doneCb.apply(game, arguments)) return;
 
+        // Build set object (will be sent to server).
+        // Back-compatible checks.
+        if (game.timer && game.timer.isTimeup) {
+            timeup = game.timer.isTimeup();
+        }
+        setObj = { time: stepTime , timeup: timeup };
+
+        // Keep track that the game will be done (done is asynchronous)
+        // to avoid calling `node.done` multiple times in the same stage.
         game.willBeDone = true;
 
         len = arguments.length;
@@ -21128,14 +21151,35 @@ if (!Array.prototype.indexOf) {
         switch(len) {
 
         case 0:
+            this.set('done', setObj);
             setTimeout(function() { that.events.emit('DONE'); }, 0);
             break;
         case 1:
             arg1 = arguments[0];
+            if ('object' === typeof arg1) J.mixin(setObj, arg1);
+            else setObj.value = arg1;
+            this.set('done', setObj);
             setTimeout(function() { that.events.emit('DONE', arg1); }, 0);
             break;
         case 2:
             arg1 = arguments[0], arg2 = arguments[1];
+            // Send first setObj.
+            if ('object' === typeof arg1) {
+                J.mixin(setObj, arg1);
+            }
+            else {
+                setObj.value = arg1;
+            }
+            this.set('done', setObj);
+            // Send second setObj.
+            setObj = { time: stepTime , timeup: timeup };
+            if ('object' === typeof arg2) {
+                J.mixin(setObj, arg2);
+            }
+            else {
+                setObj.value = arg2;
+            }
+            this.set('done', setObj);
             setTimeout(function() { that.events.emit('DONE', arg1, arg2); }, 0);
             break;
         default:
@@ -21143,6 +21187,14 @@ if (!Array.prototype.indexOf) {
             args[0] = 'DONE';
             for (i = 1; i < len; i++) {
                 args[i+1] = arguments[i];
+                if ('object' === typeof arguments[i]) {
+                    J.mixin(setObj, arguments[i]);
+                }
+                else {
+                    setObj.value = arguments[i];
+                }
+                this.set('done', setObj);
+                if (i !== len-1) setObj = { time: stepTime , timeup: timeup };
             }
             setTimeout(function() {
                 that.events.emit.apply(that.events, args);
@@ -23136,10 +23188,10 @@ if (!Array.prototype.indexOf) {
         }
 
         // Ensure firing before onload, maybe late but safe also for iframes.
-        iframe.attachEvent('onreadystatechange', completed );
+        iframe.attachEvent('onreadystatechange', completed);
 
         // A fallback to window.onload, that will always work.
-        iframeWin.attachEvent('onload', completed );
+        iframeWin.attachEvent('onload', completed);
     }
 
     function onLoad(iframe, cb) {
@@ -23280,7 +23332,7 @@ if (!Array.prototype.indexOf) {
         this.conf = {};
 
         /**
-         * ### GameWindow.channelURI
+         * ### GameWindow.uriChannel
          *
          * The uri of the channel on the server
          *
@@ -23288,7 +23340,7 @@ if (!Array.prototype.indexOf) {
          *
          * @see GameWindow.loadFrame
          */
-        this.channelURI = null;
+        this.uriChannel = null;
 
         /**
          * ### GameWindow.areLoading
@@ -23350,6 +23402,19 @@ if (!Array.prototype.indexOf) {
          * @see GameWindow.globalLibs
          */
         this.frameLibs = {};
+
+        /**
+         * ### GameWindow.uriPrefix
+         *
+         * A prefix added to every loaded uri that does not begin with `/`
+         *
+         * Useful for example to add a language path (e.g. a language
+         * directory) that matches a specific context of a view.
+         *
+         * @see GameWindow.loadFrame
+         * @see LanguageSelector (widget)
+         */
+        this.uriPrefix = null;
 
         /**
          * ### GameWindow.stateLevel
@@ -24095,85 +24160,6 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
-     * ### GameWindow.setupFrame
-     *
-     * Sets up the page with a predefined configuration of widgets
-     *
-     * Available setup profiles are:
-     *
-     * - MONITOR: frame
-     * - PLAYER: header + frame
-     * - SOLO_PLAYER: (like player without header)
-     *
-     * @param {string} profile The setup profile
-     */
-    GameWindow.prototype.setupFrame = function(profile) {
-
-        if ('string' !== typeof profile) {
-            throw new TypeError('GameWindow.setup: profile must be string.');
-        }
-
-        switch (profile) {
-
-        case 'MONITOR':
-
-            if (!this.getFrame()) {
-                this.generateFrame();
-            }
-
-            node.widgets.append('NextPreviousState');
-            node.widgets.append('GameSummary');
-            node.widgets.append('StateDisplay');
-            node.widgets.append('StateBar');
-            node.widgets.append('DataBar');
-            node.widgets.append('MsgBar');
-            node.widgets.append('GameBoard');
-            node.widgets.append('ServerInfoDisplay');
-            node.widgets.append('Wall');
-
-            // Add default CSS.
-            if (node.conf.host) {
-                this.addCSS(this.getFrameRoot(),
-                            node.conf.host + '/stylesheets/monitor.css');
-            }
-
-            break;
-
-        case 'PLAYER':
-
-            this.generateHeader();
-
-            node.game.visualState = node.widgets.append('VisualState',
-                                                        this.headerElement);
-            node.game.timer = node.widgets.append('VisualTimer',
-                                                  this.headerElement);
-            node.game.stateDisplay = node.widgets.append('StateDisplay',
-                                                         this.headerElement);
-
-            // Will continue in SOLO_PLAYER.
-
-            /* falls through */
-        case 'SOLO_PLAYER':
-
-            if (!this.getFrame()) {
-                this.generateFrame();
-            }
-
-            // Add default CSS.
-            if (node.conf.host) {
-                this.addCSS(this.getFrameRoot(),
-                            node.conf.host + '/stylesheets/nodegame.css');
-            }
-
-            break;
-
-        default:
-            throw new Error('GameWindow.setupFrame: unknown profile type: ' +
-                            profile + '.');
-        }
-    };
-
-    /**
      * ### GameWindow.initLibs
      *
      * Specifies the libraries to be loaded automatically in the iframe
@@ -24262,12 +24248,16 @@ if (!Array.prototype.indexOf) {
      * If caching is not supported by the browser, the callback will be
      * executed anyway.
      *
+     * All uri to precache are parsed with `GameWindow.processUri` before
+     * being loaded.
+     *
      * @param {string|array} uris The URI(s) to cache
      * @param {function} callback Optional. The function to call once the
      *   caching is done
      *
      * @see GameWindow.cacheSupported
      * @see GameWindow.preCacheTest
+     * @see GameWindow.processUri
      */
     GameWindow.prototype.preCache = function(uris, callback) {
         var that;
@@ -24314,7 +24304,7 @@ if (!Array.prototype.indexOf) {
         loadedCount = 0;
 
         for (uriIdx = 0; uriIdx < uris.length; uriIdx++) {
-            currentUri = uris[uriIdx];
+            currentUri = this.processUri(uris[uriIdx]);
 
             // Create an invisible internal frame for the current URI:
             iframe = document.createElement('iframe');
@@ -24439,6 +24429,9 @@ if (!Array.prototype.indexOf) {
      * @param {function} func Optional. The function to call once the DOM is
      *   ready
      * @param {object} opts Optional. The options object
+     *
+     * @see GameWindow.uriPrefix
+     * @see GameWindow.uriChannel
      */
     GameWindow.prototype.loadFrame = function(uri, func, opts) {
         var that;
@@ -24527,11 +24520,7 @@ if (!Array.prototype.indexOf) {
         }
 
         // Adapt the uri if necessary.
-        if (this.channelURI &&
-            (uri.charAt(0) !== '/' && uri.substr(0,7) !== 'http://')) {
-
-            uri = this.channelURI + uri;
-        }
+        uri = this.processUri(uri);
 
         if (this.cacheSupported === null) {
             this.preCacheTest(function() {
@@ -24616,6 +24605,24 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
+     * ### GameWindow.processUri
+     *
+     * Parses a uri string and adds channel uri and prefix, if defined
+     *
+     * @param {string} uri The uri to process
+     *
+     * @see GameWindow.uriPrefix
+     * @see GameWindow.uriChannel
+     */
+    GameWindow.prototype.processUri = function(uri) {
+        if (uri.charAt(0) !== '/' && uri.substr(0,7) !== 'http://') {
+            if (this.uriPrefix) uri = this.uriPrefix + uri;
+            if (this.uriChannel) uri = this.uriChannel + uri;
+        }
+        return uri;
+    };
+
+    /**
      * ### GameWindow.updateLoadFrameState
      *
      * Sets window state after a new frame has been loaded
@@ -24681,6 +24688,36 @@ if (!Array.prototype.indexOf) {
         catch(e) {
             this.removeChildrenFromNode(document.documentElement);
         }
+    };
+
+    /**
+     * ### GameWindow.setUriPrefix
+     *
+     * Sets the variable uriPrefix
+     *
+     * @see GameWindow.uriPrefix
+     */
+    GameWindow.prototype.setUriPrefix = function(uriPrefix) {
+        if (uriPrefix !== null && 'string' !== typeof uriPrefix) {
+            throw new TypeError('GameWindow.setUriPrefix: uriPrefix must be ' +
+                                'string or null.');
+        }
+        this.uriPrefix = uriPrefix;
+    };
+
+    /**
+     * ### GameWindow.setUriChannel
+     *
+     * Sets the variable uriChannel
+     *
+     * @see GameWindow.uriChannel
+     */
+    GameWindow.prototype.setUriChannel = function(uriChannel) {
+        if (uriChannel !== null && 'string' !== typeof uriChannel) {
+            throw new TypeError('GameWindow.uriChannel: uriChannel must be ' +
+                                'string or null.');
+        }
+        this.uriChannel = uriChannel;
     };
 
     // ## Helper functions
@@ -25403,7 +25440,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # listeners
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * GameWindow listeners
@@ -31769,6 +31806,11 @@ if (!Array.prototype.indexOf) {
          */
         this.languagesLoaded = false;
 
+        /**
+         * ## LanguageSelector.usingButtons
+         *
+         * Flag indicating if the interface should have buttons
+         */
         this.usingButtons = null;
 
         /**
@@ -31798,7 +31840,7 @@ if (!Array.prototype.indexOf) {
             that.availableLanguages = msg.data;
             if (that.usingButtons) {
 
-                // Creates labled buttons.
+                // Creates labeled buttons.
                 for (language in msg.data) {
                     if (msg.data.hasOwnProperty(language)) {
                         that.optionsLabel[language] = W.getElement('label',
@@ -34709,7 +34751,6 @@ if (!Array.prototype.indexOf) {
 
     node.widgets.register('VisualTimer', VisualTimer);
 
-
     // ## Meta-data
 
     VisualTimer.version = '0.5.0';
@@ -35043,10 +35084,9 @@ if (!Array.prototype.indexOf) {
       * @see VisualTimer.restart
       */
     VisualTimer.prototype.startWaiting = function(options) {
-        if (typeof options === 'undefined') {
+        if ('undefined' === typeof options) {
             options = {};
         }
-        options = J.clone(options);
         if (typeof options.milliseconds === 'undefined') {
             options.milliseconds = this.gameTimer.timeLeft;
         }
@@ -35077,14 +35117,13 @@ if (!Array.prototype.indexOf) {
       * @see VisualTimer.restart
       */
     VisualTimer.prototype.startTiming = function(options) {
-        if (typeof options === 'undefined') {
+        if ('undefined' === typeof options) {
             options = {};
         }
-        options = J.clone(options);
-        if (typeof options.mainBoxOptions === 'undefined') {
+        if ('undefined' === typeof options.mainBoxOptions) {
             options.mainBoxOptions = {};
         }
-        if (typeof options.waitBoxOptions === 'undefined') {
+        if ('undefined' === typeof options.waitBoxOptions) {
             options.waitBoxOptions = {};
         }
         options.activeBox = this.mainBox;
@@ -35119,6 +35158,19 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
+     * ### VisualTimer.isTimeup
+     *
+     * Returns TRUE if the timer expired
+     *
+     * This method is added for backward compatibility.
+     *
+     * @see GameTimer.isTimeup
+     */
+    VisualTimer.prototype.isTimeup = function() {
+        return this.gameTimer.isTimeup();
+    };
+
+    /**
      * ### VisualTimer.doTimeUp
      *
      * Stops the timer and calls the timeup
@@ -35138,14 +35190,12 @@ if (!Array.prototype.indexOf) {
         var that = this;
 
         node.on('PLAYING', function() {
-            var stepObj, timer, options;
+            var timer, options, step;
             if (that.options.startOnPlaying) {
-                stepObj = node.game.getCurrentStep();
-                if (!stepObj) return;
-                timer = stepObj.timer;
+                step = node.game.getCurrentGameStage();
+                timer = node.game.plot.getProperty(step, 'timer');
                 if (timer) {
-                    // TODO: should be that.options.
-                    options = processOptions(timer, this.options);
+                    options = that.processOptions(timer);
                     that.startTiming(options);
                 }
             }
@@ -35166,24 +35216,20 @@ if (!Array.prototype.indexOf) {
         this.bodyDiv.removeChild(this.waitBox.boxDiv);
     };
 
-    // ## Helper functions
-
     /**
-     * ### processOptions
+     * ### VisualTimer.processOptions
      *
-     * Clones and mixes in user options with current options
+     * Clones and cleans user options
      *
-     * Return object is transformed accordingly.
+     * Adds the default 'timeup' function as `node.done`.
      *
      * @param {object} options Configuration options
-     * @param {object} curOptions Current configuration of VisualTimer
      *
      * @return {object} Clean, valid configuration object
      */
-    function processOptions(inOptions, curOptions) {
+    VisualTimer.prototype.processOptions = function(inOptions) {
         var options, typeofOptions;
         options = {};
-        inOptions = J.clone(inOptions);
         typeofOptions = typeof inOptions;
         switch (typeofOptions) {
 
@@ -35191,7 +35237,7 @@ if (!Array.prototype.indexOf) {
             options.milliseconds = inOptions;
             break;
         case 'object':
-            options = inOptions;
+            options = J.clone(inOptions);
             if ('function' === typeof options.milliseconds) {
                 options.milliseconds = options.milliseconds.call(node.game);
             }
@@ -35204,18 +35250,18 @@ if (!Array.prototype.indexOf) {
             break;
         }
 
-        J.mixout(options, curOptions || {});
-
         if (!options.milliseconds) {
             throw new Error('VisualTimer processOptions: milliseconds cannot ' +
                             'be 0 or undefined.');
         }
 
         if ('undefined' === typeof options.timeup) {
-            options.timeup = 'DONE';
+            options.timeup = function() {
+                node.done();
+            }
         }
         return options;
-    }
+    };
 
    /**
      * # TimerBox
