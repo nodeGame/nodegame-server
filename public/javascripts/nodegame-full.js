@@ -15379,8 +15379,7 @@ if (!Array.prototype.indexOf) {
      * Returns TRUE, if currently connected
      */
     SocketIo.prototype.isConnected = function() {
-        return this.socket &&
-            this.socket.connected;
+        return this.socket && this.socket.connected;
     };
 
     /**
@@ -16673,30 +16672,6 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
-     * ### Game.getCurrentStep
-     *
-     * Returns the object representing the current game step.
-     *
-     * The returning object includes all the properties, such as:
-     * _id_, _cb_, _timer_, etc.
-     *
-     * @return {object} The game-step as defined in the stager.
-     *
-     * @see Stager
-     * @see GamePlot
-     */
-    Game.prototype.getCurrentStepProperty = function(propertyName) {
-        var step;
-        if ('string' !== typeof propertyName) {
-            throw new TypeError('Game.getCurrentStepProperty: propertyName ' +
-                                'must be string');
-        }
-        step = this.plot.getStep(this.getCurrentGameStage());
-        return 'undefined' === typeof step[propertyName] ?
-            null : step[propertyName];
-    };
-
-    /**
      * ### Game.getCurrentGameStage
      *
      * Return the GameStage that is currently being executed.
@@ -17114,6 +17089,23 @@ if (!Array.prototype.indexOf) {
         syncOnLoaded = this.plot.getProperty(curGameStage, 'syncOnLoaded');
         if (!syncOnLoaded) return true;
         return node.game.pl.isStepLoaded(curGameStage);
+    };
+
+    /**
+     * ### Game.compareCurrentStep
+     *
+     * Returns the relative order of a step with the current step
+     *
+     * @param {GameStage|string} step The step to compare
+     *
+     * @return {number} 0 if comparing step is the same as current step,
+     *   -1 if current step is before comparing step, 1 if current step
+     *   is after comparing step
+     */
+    Game.prototype.compareCurrentStep = function(step) {
+        var normalizedStep;
+        normalizedStep = this.plot.normalizeGameStage(new GameStage(step));
+        return GameStage.compare(this.getCurrentGameStage(), normalizedStep);
     };
 
     // ## Closure
@@ -20633,20 +20625,29 @@ if (!Array.prototype.indexOf) {
      *
      * Establishes a connection with a nodeGame server
      *
-     * Events related to the connection include _SOCKET_CONNECT_ and
-     * _PLAYER_CREATED_.
+     * If channel does not begin with `http://`, if executed in the browser,
+     * the connect method will try to add the value of `window.location.host`
+     * in front of channel to avoid cross-domain errors (as of Socket.io >= 1).
      *
-     * Depending on the type of socket chosen (e.g. Direct or IO), the channel
-     * parameter is optional or not.
+     * Depending on the type of socket chosen (e.g. Direct or IO), the first
+     * parameter might be optional.
      *
-     * @param {string} channel Optional. The channel to connect to
+     * @param {string} channel The channel to connect to
      * @param {object} socketOptions Optional. A configuration object for
      *   the socket connect method.
      *
      * @emit SOCKET_CONNECT
      * @emit PLAYER_CREATED
+     * @emit NODEGAME_READY
      */
     NGC.prototype.connect = function(channel, socketOptions) {
+        if (channel && channel.substr(0,7) !== 'http://') {
+            if ('undefined' !== typeof window &&
+                window.location && window.location.host) {
+
+                channel = 'http://' + window.location.host + channel;
+            }
+        }
         this.socket.connect(channel, socketOptions);
     };
 
