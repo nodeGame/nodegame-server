@@ -62,6 +62,10 @@ function configure(servernode) {
     // via querystring (?q=).
     servernode.enableInfoQuery = false;
 
+    // Url prefix do add in front of every route. Useful if nodegame is used
+    // together with a reverse proxy engine like Ngix.
+    servernode.basepath = null;
+
     // 2. Channels configuration.
 
     // AdminServer default options.

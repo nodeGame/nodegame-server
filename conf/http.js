@@ -25,12 +25,13 @@ var mime = require('express').static.mime;
 function configure(app, servernode) {
     var rootDir, monitorDir, publicDir;
     var resourceManager;
+    var basepath;
 
     rootDir = servernode.rootDir;
     publicDir = rootDir + '/public/';
     monitorDir = rootDir + '/node_modules/nodegame-monitor/public/';
+    basepath = servernode.basepath || '';
     resourceManager = servernode.resourceManager;
-
 
     app.set('views', rootDir + '/views');
     app.set('view engine', 'jade');
@@ -63,7 +64,7 @@ function configure(app, servernode) {
     // app.use('/javascript);
 
     function sendFromPublic(type, req, res, headers) {
-        var file, mimeType, charset;
+        var file, mimeType, charset, filePath;
         file = req.params[0];
         if (!file) return;
 
@@ -76,6 +77,13 @@ function configure(app, servernode) {
             charset = mime.charsets.lookup(mimeType);
             headers = { 'Content-Type': mimeType };
             if (charset) headers.charset = charset;
+        }
+
+        // If it is not text, it was not cached.
+        if (headers['Content-Type'].substring(0,4) !== 'text') {
+            filePath = servernode.rootDir + '/public/' + file;
+            res.sendfile(filePath);
+            return;
         }
 
         // Already found in `public/` and cached.
@@ -92,32 +100,38 @@ function configure(app, servernode) {
         });
     }
 
-    app.get('/javascripts/*', function(req, res) {
+    app.get(basepath + '/javascripts/*', function(req, res) {
         sendFromPublic('javascripts', req, res, {
             'Content-Type': 'text/javascript',
             'charset': 'utf-8'
         });
     });
 
-    app.get('/stylesheets/*', function(req, res) {
+    app.get(basepath + '/stylesheets/*', function(req, res) {
         sendFromPublic('stylesheets', req, res, {
             'Content-Type': 'text/css',
             'charset': 'utf-8'
         });
     });
 
-    app.get('/pages/*', function(req, res) {
+    app.get(basepath + '/images/*', function(req, res) {
+        sendFromPublic('images', req, res, {
+            'Content-Type': 'image/png'
+        });
+    });
+
+    app.get(basepath + '/pages/*', function(req, res) {
         sendFromPublic('pages', req, res, {
             'Content-Type': 'text/html',
             'charset': 'utf-8'
         });
     });
 
-    app.get('/lib/*', function(req, res) {
+    app.get(basepath + '/lib/*', function(req, res) {
         sendFromPublic('lib', req, res);
     });
 
-    app.get('/', function(req, res) {
+    app.get(basepath + '/', function(req, res) {
         var q;
 
         if (J.isEmpty(req.query)) {
