@@ -136,18 +136,6 @@
         <a href="#servernode.loadconffile">ServerNode.loadConfFile</a>
       </div>
       <div class="heading h3">
-        <a href="#servernode.configurehttp">ServerNode.configureHTTP</a>
-      </div>
-      <div class="heading h3">
-        <a href="#servernode.configuresio">ServerNode.configureSIO</a>
-      </div>
-      <div class="heading h3">
-        <a href="#servernode.configureloggers">ServerNode.configureLoggers</a>
-      </div>
-      <div class="heading h3">
-        <a href="#servernode.configure">ServerNode.configure</a>
-      </div>
-      <div class="heading h3">
         <a href="#servernode.getgamesinfo">ServerNode.getGamesInfo</a>
       </div>
       <div class="heading h3">
@@ -310,7 +298,7 @@ var http = express.createServer();</p>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">http</span> <span class="o">=</span> <span class="nx">http</span><span class="p">;</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">http</span> <span class="o">=</span> <span class="nx">exp</span><span class="p">;</span>
 
 
 </pre></div>
@@ -1749,7 +1737,6 @@ is aborted.</p>
 <span class="p">};</span>
 
 
-
 </pre></div>
         </td>
       </tr>
@@ -2262,7 +2249,7 @@ return TRUE if configuration is successful.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">ServerNode</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">configureHTTP</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">func</span><span class="p">)</span> <span class="p">{</span>
-    <span class="k">return</span> <span class="nx">func</span><span class="p">(</span><span class="nx">exp</span><span class="p">,</span> <span class="k">this</span><span class="p">);</span>
+    <span class="k">return</span> <span class="nx">func</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">http</span><span class="p">,</span> <span class="k">this</span><span class="p">);</span>
 
 
 </pre></div>
@@ -2647,175 +2634,6 @@ care of passing the right parameters to it.</p>
     <span class="nx">result</span> <span class="o">=</span> <span class="nx">cb</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="nx">conf</span><span class="p">);</span>
 
     <span class="k">this</span><span class="p">.</span><span class="nx">logger</span><span class="p">.</span><span class="nx">info</span><span class="p">(</span><span class="s1">&#39;ServerNode.loadConfFile: loaded &#39;</span> <span class="o">+</span> <span class="nx">file</span><span class="p">);</span>
-<span class="p">};</span>
-
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs"><div class="dox">
-  <div class="summary">
-<div class="pilwrap" id="servernode.configurehttp">
-  <h3>
-    <a href="#servernode.configurehttp" name="servernode.configurehttp" class="pilcrow">&#182;</a>
-    ServerNode.configureHTTP
-  </h3>
-</div>
-
-  </div>
-  <div class="body"><p>Configure express server hook</p>
-
-<p>Accepts a callback function that receives the express app
-object as first parameter. The callback function should
-return TRUE if configuration is successful.</p>
-  </div>
-  <div class="details">
-    <div class="dox_tag_title">Params</div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name">func</span>
-      <span class="dox_type">function</span>
-      <span>The function that will configure the express server</span>
-    </div>
-    <div class="dox_tag_title">Returns</div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name"></span>
-      <span class="dox_type">boolean</span>
-      <span>The return value of the callback function</span>
-    </div>
-  </div>
-</div>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-<span class="nx">ServerNode</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">configureHTTP</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">func</span><span class="p">)</span> <span class="p">{</span>
-    <span class="k">return</span> <span class="nx">func</span><span class="p">(</span><span class="nx">http</span><span class="p">,</span> <span class="k">this</span><span class="p">);</span>
-<span class="p">};</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs"><div class="dox">
-  <div class="summary">
-<div class="pilwrap" id="servernode.configuresio">
-  <h3>
-    <a href="#servernode.configuresio" name="servernode.configuresio" class="pilcrow">&#182;</a>
-    ServerNode.configureSIO
-  </h3>
-</div>
-
-  </div>
-  <div class="body"><p>Configure socket.io hook</p>
-
-<p>Accepts a callback function that receives the socket.io app
-object as first parameter. The callback function should
-return TRUE if configuration is successful.</p>
-  </div>
-  <div class="details">
-    <div class="dox_tag_title">Params</div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name">func</span>
-      <span class="dox_type">function</span>
-      <span>The function that will configure the socket.io app</span>
-    </div>
-    <div class="dox_tag_title">Returns</div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name"></span>
-      <span class="dox_type">boolean</span>
-      <span>The return value of the callback function</span>
-    </div>
-  </div>
-</div>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-<span class="nx">ServerNode</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">configureSIO</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">func</span><span class="p">)</span> <span class="p">{</span>
-    <span class="k">return</span> <span class="nx">func</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">sio</span><span class="p">,</span> <span class="k">this</span><span class="p">);</span>
-<span class="p">};</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs"><div class="dox">
-  <div class="summary">
-<div class="pilwrap" id="servernode.configureloggers">
-  <h3>
-    <a href="#servernode.configureloggers" name="servernode.configureloggers" class="pilcrow">&#182;</a>
-    ServerNode.configureLoggers
-  </h3>
-</div>
-
-  </div>
-  <div class="body"><p>Configure winston loggers hook</p>
-
-<p>Accepts a callback function that receives <code>winston.loggers</code> and
-<code>this.logDir</code> as parameters. The callback function should return TRUE if
-configuration is successful.</p>
-  </div>
-  <div class="details">
-    <div class="dox_tag_title">Params</div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name">func</span>
-      <span class="dox_type">function</span>
-      <span>The function that will configure the loggers</span>
-    </div>
-    <div class="dox_tag_title">Returns</div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name"></span>
-      <span class="dox_type">boolean</span>
-      <span>The return value of the callback function</span>
-    </div>
-  </div>
-</div>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-<span class="nx">ServerNode</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">configureLoggers</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">func</span><span class="p">)</span> <span class="p">{</span>
-    <span class="k">return</span> <span class="nx">func</span><span class="p">(</span><span class="nx">winston</span><span class="p">.</span><span class="nx">loggers</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">logDir</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span><span class="p">);</span>
-<span class="p">};</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs"><div class="dox">
-  <div class="summary">
-<div class="pilwrap" id="servernode.configure">
-  <h3>
-    <a href="#servernode.configure" name="servernode.configure" class="pilcrow">&#182;</a>
-    ServerNode.configure
-  </h3>
-</div>
-
-  </div>
-  <div class="body"><p>Configure ServerNode hook</p>
-
-<p>Accepts a callback function to receives the current ServerNode
-instance as first parameter. The callback function should
-return TRUE if configuration is successful.</p>
-  </div>
-  <div class="details">
-    <div class="dox_tag_title">Params</div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name">func</span>
-      <span class="dox_type">function</span>
-      <span>The function that will configure the ServerNode</span>
-    </div>
-    <div class="dox_tag_title">Returns</div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name"></span>
-      <span class="dox_type">boolean</span>
-      <span>The return value of the callback function</span>
-    </div>
-  </div>
-</div>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-<span class="nx">ServerNode</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">configure</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">func</span><span class="p">)</span> <span class="p">{</span>
-    <span class="k">return</span> <span class="nx">func</span><span class="p">(</span><span class="k">this</span><span class="p">);</span>
 <span class="p">};</span>
 
 

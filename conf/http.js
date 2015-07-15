@@ -15,14 +15,14 @@ J = require('nodegame-client').JSUS;
 
 var mime = require('express').static.mime;
 
-// STE: new.
 var bodyParser = require('body-parser'),
 cookieParser = require('cookie-parser'),
-errorHandler = require('errorhandler'),
-session = require('cookie-session')({ secret: 'secret' });
+errorHandler = require('errorhandler');
+
+// var session = require('cookie-session')({ secret: 'secret' });
 
 /**
- * ### ServerNode._configureHTTP
+ * ### configure
  *
  * Defines standard routes for the HTTP server
  *
@@ -38,7 +38,7 @@ function configure(app, servernode) {
     monitorDir = rootDir + '/node_modules/nodegame-monitor/public/';
     basepath = servernode.basepath || '';
     resourceManager = servernode.resourceManager;
-debugger
+
     app.set('views', rootDir + '/views');
     app.set('view engine', 'jade');
     app.set('view options', {layout: false});
@@ -54,23 +54,13 @@ debugger
 //         }));
     };
 
-    // Ste: was.
-//     app.configure('production', function(){
-//         app.use(errorHandler());
-//     });
 
     app.enable("jsonp callback");
 
-    app.use(express.cookieParser());
-    app.use(express.bodyParser());
-
-    // app.use('/:game', expressJwt({secret: jwtSecret}));
-    // app.use(express.json());
-    // app.use(express.urlencoded());
-
-    // app.use(express.session({ secret: 'keyboard cat' }));
-
-    // app.use('/javascript);
+    app.use(cookieParser());
+    // app.use(bodyParser());
+    app.use(bodyParser.json());
+    app.use(bodyParser.urlencoded({ extended: true }));
 
     function sendFromPublic(type, req, res, headers) {
         var file, mimeType, charset, filePath;
@@ -156,6 +146,7 @@ debugger
             q = req.query.q;
             if (!q) {
                 res.send('Query must start with q=XXX');
+                return;
             }
 
             switch(q) {
