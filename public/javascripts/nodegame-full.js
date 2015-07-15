@@ -15380,8 +15380,7 @@ if (!Array.prototype.indexOf) {
      */
     SocketIo.prototype.isConnected = function() {
         return this.socket &&
-            this.socket.socket &&
-            this.socket.socket.connected;
+            this.socket.connected;
     };
 
     /**

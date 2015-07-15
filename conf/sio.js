@@ -10,8 +10,13 @@ module.exports = configure;
 // var socketioJwt = require("socketio-jwt");
 
 function configure(sio, servernode) {
-    sio.enable('browser client etag');
-    sio.set('log level', -1);
+
+    // Log level not existing.
+    //sio.set('log level', -1);
+
+    // Not existing in 1.3.5
+    // sio.enable('browser client etag');
+
 
 
     //// With socket.io < 1.0 ////

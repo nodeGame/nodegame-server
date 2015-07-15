@@ -15,6 +15,12 @@ J = require('nodegame-client').JSUS;
 
 var mime = require('express').static.mime;
 
+// STE: new.
+var bodyParser = require('body-parser'),
+cookieParser = require('cookie-parser'),
+errorHandler = require('errorhandler'),
+session = require('cookie-session')({ secret: 'secret' });
+
 /**
  * ### ServerNode._configureHTTP
  *
@@ -32,23 +38,26 @@ function configure(app, servernode) {
     monitorDir = rootDir + '/node_modules/nodegame-monitor/public/';
     basepath = servernode.basepath || '';
     resourceManager = servernode.resourceManager;
-
+debugger
     app.set('views', rootDir + '/views');
     app.set('view engine', 'jade');
     app.set('view options', {layout: false});
 
     // app.use(express.static(publicDir));
 
-    app.configure('development', function(){
-        app.use(express.errorHandler({
-            dumpExceptions: true,
-            showStack: true
-        }));
-    });
+    if (process.env.NODE_ENV === 'development') {
+        app.use(errorHandler());
+// Ste: was.
+//         app.use(errorHandler({
+//             dumpExceptions: true,
+//             showStack: true
+//         }));
+    };
 
-    app.configure('production', function(){
-        app.use(express.errorHandler());
-    });
+    // Ste: was.
+//     app.configure('production', function(){
+//         app.use(errorHandler());
+//     });
 
     app.enable("jsonp callback");
 
@@ -114,6 +123,7 @@ function configure(app, servernode) {
         });
     });
 
+
     app.get(basepath + '/images/*', function(req, res) {
         sendFromPublic('images', req, res, {
             'Content-Type': 'image/png'
@@ -144,7 +154,6 @@ function configure(app, servernode) {
         if (servernode.enableInfoQuery) {
 
             q = req.query.q;
-
             if (!q) {
                 res.send('Query must start with q=XXX');
             }
@@ -167,6 +176,7 @@ function configure(app, servernode) {
             default:
                 res.send('Unknown query received.');
             }
+
         }
     });
 
