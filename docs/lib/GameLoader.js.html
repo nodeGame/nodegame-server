@@ -2376,6 +2376,7 @@ settings.</p>
     <span class="p">}</span>
     <span class="k">else</span> <span class="p">{</span>
         <span class="nx">treatments</span> <span class="o">=</span> <span class="nx">settingsObj</span><span class="p">.</span><span class="nx">treatments</span><span class="p">;</span>
+        <span class="k">delete</span> <span class="nx">standard</span><span class="p">.</span><span class="nx">treatments</span><span class="p">;</span>
         <span class="k">for</span> <span class="p">(</span><span class="nx">t</span> <span class="k">in</span> <span class="nx">treatments</span><span class="p">)</span> <span class="p">{</span>
             <span class="k">if</span> <span class="p">(</span><span class="nx">treatments</span><span class="p">.</span><span class="nx">hasOwnProperty</span><span class="p">(</span><span class="nx">t</span><span class="p">))</span> <span class="p">{</span>
                 <span class="nx">out</span><span class="p">[</span><span class="nx">t</span><span class="p">]</span> <span class="o">=</span> <span class="nx">J</span><span class="p">.</span><span class="nx">merge</span><span class="p">(</span><span class="nx">standard</span><span class="p">,</span> <span class="nx">treatments</span><span class="p">[</span><span class="nx">t</span><span class="p">]);</span>
