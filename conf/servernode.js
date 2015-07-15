@@ -63,7 +63,7 @@ function configure(servernode) {
     servernode.enableInfoQuery = false;
 
     // Url prefix do add in front of every route. Useful if nodegame is used
-    // together with a reverse proxy engine like Ngix.
+    // together with a reverse proxy engine like Ngix. (e.g. /mybasepath).
     servernode.basepath = null;
 
     // 2. Channels configuration.
