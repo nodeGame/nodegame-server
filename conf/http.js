@@ -81,7 +81,7 @@ function configure(app, servernode) {
         // If it is not text, it was not cached.
         if (headers['Content-Type'].substring(0,4) !== 'text') {
             filePath = servernode.rootDir + '/public/' + file;
-            res.sendfile(filePath);
+            res.sendFile(filePath);
             return;
         }
 
@@ -90,11 +90,12 @@ function configure(app, servernode) {
 
             // File found in public (cached or loaded).
             if (cachedFile) {
-                res.send(cachedFile, headers);
+                res.set(headers);
+                res.status(200).send(cachedFile);
             }
             else {
                 // Send 404.
-                res.send('File not found.', 404);
+                res.status(404).send('File not found.');
             }
         });
     }
@@ -145,27 +146,27 @@ function configure(app, servernode) {
 
             q = req.query.q;
             if (!q) {
-                res.send('Query must start with q=XXX');
+                res.status(400).send('Query must start with q=XXX');
                 return;
             }
 
             switch(q) {
             case 'info':
                 //console.log(servernode.info);
-                res.send(servernode.info);
+                res.status(200).send(servernode.info);
                 break;
 
             case 'channels':
                 //console.log(servernode.info);
-                res.send(servernode.info.channels);
+                res.status(200).send(servernode.info.channels);
                 break;
 
             case 'games':
                 //console.log(servernode.info);
-                res.send(servernode.info.games);
+                res.status(200).send(servernode.info.games);
                 break;
             default:
-                res.send('Unknown query received.');
+                res.status(400).send('Unknown query received.');
             }
 
         }

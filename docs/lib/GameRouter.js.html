@@ -213,7 +213,7 @@ MIT Licensed</p>
 
             <span class="k">if</span> <span class="p">(</span><span class="nx">req</span><span class="p">.</span><span class="nx">params</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&amp;&amp;</span> <span class="nx">req</span><span class="p">.</span><span class="nx">params</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="nx">substring</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">8</span><span class="p">)</span> <span class="o">===</span> <span class="s1">&#39;monitor/&#39;</span><span class="p">)</span> <span class="p">{</span>
                 <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">req</span><span class="p">.</span><span class="nx">cookies</span> <span class="o">||</span> <span class="o">!</span><span class="nx">superTokens</span><span class="p">[</span><span class="nx">req</span><span class="p">.</span><span class="nx">cookies</span><span class="p">.</span><span class="nx">nodegame_token</span><span class="p">])</span> <span class="p">{</span>
-                    <span class="nx">res</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="nx">unauthMsg</span><span class="p">);</span>
+                    <span class="nx">res</span><span class="p">.</span><span class="nx">status</span><span class="p">(</span><span class="mi">403</span><span class="p">).</span><span class="nx">send</span><span class="p">(</span><span class="nx">unauthMsg</span><span class="p">);</span>
                     <span class="k">return</span><span class="p">;</span>
                 <span class="p">}</span>
             <span class="p">}</span>
@@ -230,7 +230,7 @@ MIT Licensed</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
             <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">req</span><span class="p">.</span><span class="nx">cookies</span> <span class="o">||</span> <span class="o">!</span><span class="nx">tokens</span><span class="p">[</span><span class="nx">req</span><span class="p">.</span><span class="nx">cookies</span><span class="p">.</span><span class="nx">nodegame_token</span><span class="p">])</span> <span class="p">{</span>
-                <span class="nx">res</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="nx">unauthMsg</span><span class="p">);</span>
+                <span class="nx">res</span><span class="p">.</span><span class="nx">status</span><span class="p">(</span><span class="mi">403</span><span class="p">).</span><span class="nx">send</span><span class="p">(</span><span class="nx">unauthMsg</span><span class="p">);</span>
                 <span class="k">return</span><span class="p">;</span>
             <span class="p">}</span>
 
@@ -310,7 +310,7 @@ Error: ENOTDIR in fetching the file.</p>
         <td class="code highlight"><div class="highlight"><pre>
         <span class="nx">filePath</span> <span class="o">=</span> <span class="nx">monitorDir</span> <span class="o">+</span> <span class="nx">file</span><span class="p">;</span>
 
-        <span class="nx">res</span><span class="p">.</span><span class="nx">sendfile</span><span class="p">(</span><span class="nx">filePath</span><span class="p">);</span>
+        <span class="nx">res</span><span class="p">.</span><span class="nx">sendFile</span><span class="p">(</span><span class="nx">filePath</span><span class="p">);</span>
     <span class="p">});</span>
 
     <span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39;/monitor&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
@@ -383,7 +383,7 @@ Send JSON data as JSONP if there is a callback query parameter:</p>
                 <span class="kd">var</span> <span class="nx">callback</span><span class="p">;</span>
 
                 <span class="k">if</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span>
-                    <span class="nx">res</span><span class="p">.</span><span class="nx">json</span><span class="p">({</span><span class="nx">error</span><span class="o">:</span> <span class="s1">&#39;file not found&#39;</span><span class="p">},</span> <span class="mi">404</span><span class="p">);</span>
+                    <span class="nx">res</span><span class="p">.</span><span class="nx">status</span><span class="p">(</span><span class="mi">404</span><span class="p">).</span><span class="nx">json</span><span class="p">({</span><span class="nx">error</span><span class="o">:</span> <span class="s1">&#39;file not found&#39;</span><span class="p">});</span>
                     <span class="k">return</span><span class="p">;</span>
                 <span class="p">}</span>
 
@@ -399,9 +399,9 @@ Send JSON data as JSONP if there is a callback query parameter:</p>
 <p>Send it:</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-                <span class="nx">res</span><span class="p">.</span><span class="nx">header</span><span class="p">(</span><span class="s1">&#39;Content-Type&#39;</span><span class="p">,</span> <span class="s1">&#39;application/javascript&#39;</span><span class="p">);</span>
-                <span class="nx">res</span><span class="p">.</span><span class="nx">header</span><span class="p">(</span><span class="s1">&#39;Charset&#39;</span><span class="p">,</span> <span class="s1">&#39;utf-8&#39;</span><span class="p">);</span>
-                <span class="nx">res</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="nx">req</span><span class="p">.</span><span class="nx">query</span><span class="p">.</span><span class="nx">callback</span> <span class="o">+</span> <span class="s1">&#39;(&#39;</span> <span class="o">+</span> <span class="nx">data</span> <span class="o">+</span> <span class="s1">&#39;);&#39;</span><span class="p">);</span>
+                <span class="nx">res</span><span class="p">.</span><span class="nx">set</span><span class="p">(</span><span class="s1">&#39;Content-Type&#39;</span><span class="p">,</span> <span class="s1">&#39;application/javascript&#39;</span><span class="p">);</span>
+                <span class="nx">res</span><span class="p">.</span><span class="nx">set</span><span class="p">(</span><span class="s1">&#39;Charset&#39;</span><span class="p">,</span> <span class="s1">&#39;utf-8&#39;</span><span class="p">);</span>
+                <span class="nx">res</span><span class="p">.</span><span class="nx">status</span><span class="p">(</span><span class="mi">200</span><span class="p">).</span><span class="nx">send</span><span class="p">(</span><span class="nx">req</span><span class="p">.</span><span class="nx">query</span><span class="p">.</span><span class="nx">callback</span> <span class="o">+</span> <span class="s1">&#39;(&#39;</span> <span class="o">+</span> <span class="nx">data</span> <span class="o">+</span> <span class="s1">&#39;);&#39;</span><span class="p">);</span>
             <span class="p">});</span>
 
             <span class="k">return</span><span class="p">;</span>
@@ -434,7 +434,7 @@ Send JSON data as JSONP if there is a callback query parameter:</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
         <span class="k">if</span> <span class="p">(</span><span class="nx">headers</span><span class="p">[</span><span class="s1">&#39;Content-Type&#39;</span><span class="p">].</span><span class="nx">substring</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span> <span class="o">!==</span> <span class="s1">&#39;text&#39;</span><span class="p">)</span> <span class="p">{</span>
-            <span class="nx">res</span><span class="p">.</span><span class="nx">sendfile</span><span class="p">(</span><span class="nx">filePath</span><span class="p">);</span>
+            <span class="nx">res</span><span class="p">.</span><span class="nx">sendFile</span><span class="p">(</span><span class="nx">filePath</span><span class="p">);</span>
             <span class="k">return</span><span class="p">;</span>
         <span class="p">}</span>
 
@@ -465,7 +465,8 @@ Send JSON data as JSONP if there is a callback query parameter:</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
             <span class="k">if</span> <span class="p">(</span><span class="nx">cachedFile</span><span class="p">)</span> <span class="p">{</span>
-                <span class="nx">res</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="nx">cachedFile</span><span class="p">,</span> <span class="nx">headers</span><span class="p">);</span>
+                <span class="nx">res</span><span class="p">.</span><span class="nx">set</span><span class="p">(</span><span class="nx">headers</span><span class="p">);</span>
+                <span class="nx">res</span><span class="p">.</span><span class="nx">status</span><span class="p">(</span><span class="mi">200</span><span class="p">).</span><span class="nx">send</span><span class="p">(</span><span class="nx">cachedFile</span><span class="p">);</span>
                 <span class="k">return</span><span class="p">;</span>
             <span class="p">}</span>
 
@@ -577,7 +578,7 @@ to instantiate the page requested by <code>xx/xx/page*</code>.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
             <span class="k">if</span> <span class="p">(</span><span class="nx">templateFound</span> <span class="o">===</span> <span class="kc">false</span><span class="p">)</span> <span class="p">{</span>
-                <span class="nx">res</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="s1">&#39;File not Found&#39;</span><span class="p">,</span> <span class="mi">404</span><span class="p">);</span>
+                <span class="nx">res</span><span class="p">.</span><span class="nx">status</span><span class="p">(</span><span class="mi">404</span><span class="p">).</span><span class="nx">send</span><span class="p">(</span><span class="s1">&#39;File not Found&#39;</span><span class="p">);</span>
             <span class="p">}</span>
 
 </pre></div>
@@ -614,7 +615,7 @@ to instantiate the page requested by <code>xx/xx/page*</code>.</p>
                         <span class="nx">resourceManager</span><span class="p">.</span><span class="nx">inTemplates</span><span class="p">(</span><span class="nx">gameName</span><span class="p">,</span> <span class="nx">templatePath</span><span class="p">,</span>
                                                     <span class="kc">false</span><span class="p">);</span>
 
-                        <span class="nx">res</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="s1">&#39;File not found&#39;</span><span class="p">,</span> <span class="mi">404</span><span class="p">);</span>
+                        <span class="nx">res</span><span class="p">.</span><span class="nx">status</span><span class="p">(</span><span class="mi">404</span><span class="p">).</span><span class="nx">send</span><span class="p">(</span><span class="s1">&#39;File not found&#39;</span><span class="p">);</span>
                         <span class="k">return</span><span class="p">;</span>
                     <span class="p">}</span>
                     <span class="nx">resourceManager</span><span class="p">.</span><span class="nx">inTemplates</span><span class="p">(</span><span class="nx">gameName</span><span class="p">,</span> <span class="nx">templatePath</span><span class="p">,</span> <span class="kc">true</span><span class="p">);</span>
@@ -835,7 +836,7 @@ and can be modified by user-defined callbacks.</p>
 TODO: Mark file as non-existing ?</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-                <span class="nx">res</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="mi">404</span><span class="p">);</span>
+                <span class="nx">res</span><span class="p">.</span><span class="nx">status</span><span class="p">(</span><span class="mi">404</span><span class="p">).</span><span class="nx">send</span><span class="p">(</span><span class="s1">&#39;File not Found&#39;</span><span class="p">);</span>
                 <span class="k">return</span><span class="p">;</span>
             <span class="p">}</span>
             <span class="nx">resourceManager</span><span class="p">.</span><span class="nx">cacheContextCallback</span><span class="p">(</span><span class="nx">gameName</span><span class="p">,</span> <span class="nx">contextPath</span><span class="p">,</span> <span class="nx">cb</span><span class="p">);</span>
