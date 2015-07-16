@@ -41,9 +41,7 @@
       "request": "2.9.153"
     }
   , "engines": { "node": ">= 0.10.0" }
-  , "licenses": [
-    { "type": "MIT" }
-  ]
+  , "license": "MIT"
   , "scripts": {
       "test": "make test"
   }
