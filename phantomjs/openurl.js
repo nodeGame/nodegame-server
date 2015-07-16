@@ -1,3 +1,5 @@
+console.log('0');
+
 var webpage = require('webpage');
 var system = require('system');
 
