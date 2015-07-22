@@ -1339,7 +1339,7 @@ if (!Array.prototype.indexOf) {
 /**
  * # COMPATIBILITY
  *
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * Tests browsers ECMAScript 5 compatibility
@@ -1347,7 +1347,6 @@ if (!Array.prototype.indexOf) {
  * For more information see http://kangax.github.com/es5-compat-table/
  */
 (function(JSUS) {
-    "use strict";
 
     function COMPATIBILITY() {}
 
@@ -1402,14 +1401,13 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # ARRAY
- * Copyright(c) 2015 Stefano Balietti
+ *
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * Collection of static functions to manipulate arrays
  */
 (function(JSUS) {
-
-    "use strict";
 
     function ARRAY() {}
 
@@ -1489,7 +1487,7 @@ if (!Array.prototype.indexOf) {
      * @return {array} The final sequence
      */
     ARRAY.seq = function(start, end, increment, func) {
-        var i, out;
+        var i;
         if ('number' !== typeof start) return false;
         if (start === Infinity) return false;
         if ('number' !== typeof end) return false;
@@ -1552,46 +1550,29 @@ if (!Array.prototype.indexOf) {
     /**
      * ## ARRAY.map
      *
-     * Executes a callback to each element of the array and returns the result
+     * Applies a callback function to each element in the db, store
+     * the results in an array and returns it
      *
      * Any number of additional parameters can be passed after the
-     * callback function.
+     * callback function
      *
      * @return {array} The result of the mapping execution
-     *
      * @see ARRAY.each
      */
     ARRAY.map = function() {
-        var i, len, args, out, o;
-        var array, func;
-
-        array = arguments[0];
-        func = arguments[1];
+        if (arguments.length < 2) return;
+        var args = Array.prototype.slice.call(arguments),
+        array = args.shift(),
+        func = args[0];
 
         if (!ARRAY.isArray(array)) {
-            JSUS.log('ARRAY.map: first parameter must be array. Found: ' +
-                     array);
-            return;
-        }
-        if ('function' !== typeof func) {
-            JSUS.log('ARRAY.map: second parameter must be function. Found: ' +
-                     func);
+            JSUS.log('ARRAY.map() the first argument must be an array. ' +
+                     'Found: ' + array);
             return;
         }
 
-        len = arguments.length;
-        if (len === 3) args = [null, arguments[2]];
-        else if (len === 4) args = [null, arguments[2], arguments[3]];
-        else {
-            len = len - 1;
-            args = new Array(len);
-            for (i = 1; i < (len); i++) {
-                args[i] = arguments[i+1];
-            }
-        }
-
-        out = [], len = array.length;
-        for (i = 0; i < len; i++) {
+        var out = [], o;
+        for (var i = 0; i < array.length; i++) {
             args[0] = array[i];
             o = func.apply(this, args);
             if ('undefined' !== typeof o) out.push(o);
@@ -1614,7 +1595,6 @@ if (!Array.prototype.indexOf) {
      * @param {array} haystack The array to search in
      *
      * @return {mixed} The element that was removed, FALSE if none was removed
-     *
      * @see JSUS.equals
      */
     ARRAY.removeElement = function(needle, haystack) {
@@ -1625,7 +1605,7 @@ if (!Array.prototype.indexOf) {
             func = JSUS.equals;
         }
         else {
-            func = function(a, b) {
+            func = function(a,b) {
                 return (a === b);
             };
         }
@@ -1666,6 +1646,7 @@ if (!Array.prototype.indexOf) {
                 return true;
             }
         }
+        // <!-- console.log(needle, haystack); -->
         return false;
     };
 
@@ -1694,8 +1675,7 @@ if (!Array.prototype.indexOf) {
     /**
      * ## ARRAY.getGroupsSizeN
      *
-     * Returns an array of arrays containing N elements each
-     *
+     * Returns an array of array containing N elements each
      * The last group could have less elements
      *
      * @param {array} array The array to split in subgroups
@@ -2183,8 +2163,6 @@ if (!Array.prototype.indexOf) {
  */
 (function(JSUS) {
 
-    "use strict";
-
     function DOM() {}
 
     // ## GENERAL
@@ -2203,9 +2181,10 @@ if (!Array.prototype.indexOf) {
      */
     DOM.write = function(root, text) {
         var content;
-        if ('undefined' === typeof text || text === null) text = "";
-        if (JSUS.isNode(text) || JSUS.isElement(text)) content = text;
-        else content = document.createTextNode(text);
+        if (!root) return;
+        if ('undefined' === typeof text) text = "";
+        content = (!JSUS.isNode(text) || !JSUS.isElement(text)) ?
+            document.createTextNode(text) : text;
         root.appendChild(content);
         return content;
     };
@@ -2227,10 +2206,9 @@ if (!Array.prototype.indexOf) {
      * @see DOM.addBreak
      */
     DOM.writeln = function(root, text, rc) {
-        var content;
-        content = DOM.write(root, text);
-        this.addBreak(root, rc);
-        return content;
+        if (!root) return;
+        var br = this.addBreak(root, rc);
+        return (text) ? DOM.write(root, text) : br;
     };
 
     /**
@@ -2388,8 +2366,8 @@ if (!Array.prototype.indexOf) {
      * @return {boolean} TRUE, if the the object is a DOM node
      */
     DOM.isNode = function(o) {
-        if ('object' !== typeof o) return false;
         return 'object' === typeof Node ? o instanceof Node :
+            'object' === typeof o &&
             'number' === typeof o.nodeType &&
             'string' === typeof o.nodeName;
     };
@@ -2682,9 +2660,8 @@ if (!Array.prototype.indexOf) {
      *
      */
     DOM.getButton = function(id, text, attributes) {
-        var sb;
-        sb = document.createElement('button');
-        if ('undefined' !== typeof id) sb.id = id;
+        var sb = document.createElement('button');
+        sb.id = id;
         sb.appendChild(document.createTextNode(text || 'Send'));
         return this.addAttributes2Elem(sb, attributes);
     };
@@ -3141,13 +3118,12 @@ if (!Array.prototype.indexOf) {
      *
      * @param {HTMLIFrameElement} iframe The iframe object
      *
-     * @return {HTMLDocument|null} The document of the iframe, or
-     *   null if not found.
+     * @return {HTMLDocument|undefined} The document of the iframe, or
+     *   undefined if not found.
      */
     DOM.getIFrameDocument = function(iframe) {
-        if (!iframe) return null;
-        return iframe.contentDocument ||
-            iframe.contentWindow ? iframe.contentWindow.document : null;
+        if (!iframe) return;
+        return iframe.contentDocument || iframe.contentWindow.document;
     };
 
     /**
@@ -3226,67 +3202,20 @@ if (!Array.prototype.indexOf) {
         doc.oncontextmenu = null;
     };
 
-    /**
-     * ### DOM.addEvent
-     *
-     * Adds an event listener to an element (cross-browser)
-     *
-     * @param {Element} element A target element
-     * @param {string} event The name of the event to handle
-     * @param {function} func The event listener
-     * @param {boolean} Optional. If TRUE, the event will initiate a capture.
-     *   Available only in some browsers. Default, FALSE
-     *
-     * @return {boolean} TRUE, on success. However, the return value is
-     *   browser dependent.
-     *
-     * @see DOM.removeEvent
-     *
-     * Kudos:
-     * http://stackoverflow.com/questions/6348494/addeventlistener-vs-onclick
-     */
-    DOM.addEvent = function(element, event, func, capture) {
-        capture = !!capture;
-        if (element.attachEvent) return element.attachEvent('on' + event, func);
-        else return element.addEventListener(event, func, capture);
-    };
-
-    /**
-     * ### DOM.removeEvent
-     *
-     * Removes an event listener from an element (cross-browser)
-     *
-     * @param {Element} element A target element
-     * @param {string} event The name of the event to remove
-     * @param {function} func The event listener
-     * @param {boolean} Optional. If TRUE, the event was registered
-     *   as a capture. Available only in some browsers. Default, FALSE
-     *
-     * @return {boolean} TRUE, on success. However, the return value is
-     *   browser dependent.
-     *
-     * @see DOM.addEvent
-     */
-    DOM.removeEvent = function(element, event, func, capture) {
-        capture = !!capture;
-        if (element.detachEvent) return element.detachEvent('on' + event, func);
-        else return element.removeEventListener(event, func, capture);
-    };
-
     JSUS.extend(DOM);
 
 })('undefined' !== typeof JSUS ? JSUS : module.parent.exports.JSUS);
 
 /**
  * # EVAL
- * Copyright(c) 2015 Stefano Balietti
+ *
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
- * Evaluation of strings as JavaScript commands
+ * Collection of static functions related to the evaluation
+ * of strings as JavaScript commands
  */
 (function(JSUS) {
-
-    "use strict";
 
     function EVAL() {}
 
@@ -3335,14 +3264,13 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # OBJ
+ *
  * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * Collection of static functions to manipulate JavaScript objects
  */
 (function(JSUS) {
-
-    "use strict";
 
     function OBJ() {}
 
@@ -3351,61 +3279,6 @@ if (!Array.prototype.indexOf) {
     if ('undefined' !== typeof JSUS.compatibility) {
         compatibility = JSUS.compatibility();
     }
-
-    /**
-     * ## OBJ.createObj
-     *
-     * Polyfill for Object.create (when missing)
-     */
-    OBJ.createObj = (function() {
-        // From MDN Object.create (Polyfill)
-        if (typeof Object.create !== 'function') {
-            // Production steps of ECMA-262, Edition 5, 15.2.3.5
-            // Reference: http://es5.github.io/#x15.2.3.5
-            return (function() {
-                // To save on memory, use a shared constructor
-                function Temp() {}
-
-                // make a safe reference to Object.prototype.hasOwnProperty
-                var hasOwn = Object.prototype.hasOwnProperty;
-
-                return function(O) {
-                    // 1. If Type(O) is not Object or Null
-                    if (typeof O != 'object') {
-                        throw TypeError('Object prototype may only ' +
-                            'be an Object or null');
-                    }
-
-                    // 2. Let obj be the result of creating a new object as if
-                    //    by the expression new Object() where Object is the
-                    //    standard built-in constructor with that name
-                    // 3. Set the [[Prototype]] internal property of obj to O.
-                    Temp.prototype = O;
-                    var obj = new Temp();
-                    Temp.prototype = null;
-
-                    // 4. If the argument Properties is present and not
-                    //    undefined, add own properties to obj as if by calling
-                    //    the standard built-in function Object.defineProperties
-                    //    with arguments obj and Properties.
-                    if (arguments.length > 1) {
-                        // Object.defineProperties does ToObject on
-                        // its first argument.
-                        var Properties = Object(arguments[1]);
-                        for (var prop in Properties) {
-                            if (hasOwn.call(Properties, prop)) {
-                                obj[prop] = Properties[prop];
-                            }
-                        }
-                    }
-
-                    // 5. Return obj
-                    return obj;
-                };
-            })();
-        }
-        return Object.create
-    })();
 
     /**
      * ## OBJ.equals
@@ -3747,22 +3620,9 @@ if (!Array.prototype.indexOf) {
         // NaN and +-Infinity are numbers, so no check is necessary.
 
         if ('function' === typeof obj) {
-            clone = function() {
-                var len, args;
-                len = arguments.length;
-                if (!len) return obj.call(clone);
-                else if (len === 1) return obj.call(clone, arguments[0]);
-                else if (len === 2) {
-                    return obj.call(clone, arguments[0], arguments[1]);
-                }
-                else {
-                    args = new Array(len);
-                    for (i = 0; i < len; i++) {
-                        args[i] = arguments[i];
-                    }
-                    return obj.apply(clone, args);
-                }
-            }
+            //          clone = obj;
+            // <!-- Check when and if we need this -->
+            clone = function() { return obj.apply(clone, arguments); };
         }
         else {
             clone = Object.prototype.toString.call(obj) === '[object Array]' ?
@@ -3770,11 +3630,23 @@ if (!Array.prototype.indexOf) {
         }
 
         for (i in obj) {
-            // It is not NULL and it is an object.
-            // Even if it is an array we need to use CLONE,
-            // because `slice()` does not clone arrays of objects.
+            // TODO: index i is being updated, so apply is called on the
+            // last element, instead of the correct one.
+            //if ('function' === typeof obj[i]) {
+            //    value = function() { return obj[i].apply(clone, arguments); };
+            //}
+            // It is not NULL and it is an object
             if (obj[i] && 'object' === typeof obj[i]) {
-                value = OBJ.clone(obj[i]);
+                // Is an array.
+                if (Object.prototype.toString.call(obj[i]) ===
+                    '[object Array]') {
+
+                    value = obj[i].slice(0);
+                }
+                // Is an object.
+                else {
+                    value = OBJ.clone(obj[i]);
+                }
             }
             else {
                 value = obj[i];
@@ -3793,65 +3665,21 @@ if (!Array.prototype.indexOf) {
                     });
                 }
                 else {
-                    setProp(clone, i, value);
+                    // or we try...
+                    try {
+                        Object.defineProperty(clone, i, {
+                            value: value,
+                            writable: true,
+                            configurable: true
+                        });
+                    }
+                    catch(e) {
+                        clone[i] = value;
+                    }
                 }
             }
         }
         return clone;
-    };
-
-    function setProp(clone, i, value) {
-        try {
-            Object.defineProperty(clone, i, {
-                value: value,
-                writable: true,
-                configurable: true
-            });
-        }
-        catch(e) {
-            clone[i] = value;
-        }
-    }
-
-
-    /**
-     * ## OBJ.classClone
-     *
-     * Creates a copy (keeping class) of the object passed as parameter
-     *
-     * Recursively scans all the properties of the object to clone.
-     * The clone is an instance of the type of obj.
-     *
-     * @param {object} obj The object to clone
-     * @param {Number} depth how deep the copy should be
-     *
-     * @return {object} The clone of the object
-     */
-    OBJ.classClone = function(obj, depth) {
-        var clone, i;
-        if (depth === 0) {
-            return obj;
-        }
-
-        if (obj && 'object' === typeof obj) {
-            clone = Object.prototype.toString.call(obj) === '[object Array]' ?
-                [] : JSUS.createObj(obj.constructor.prototype);
-
-            for (i in obj) {
-                if (obj.hasOwnProperty(i)) {
-                    if (obj[i] && 'object' === typeof obj[i]) {
-                        clone[i] = JSUS.classClone(obj[i], depth - 1);
-                    }
-                    else {
-                        clone[i] = obj[i];
-                    }
-                }
-            }
-            return clone;
-        }
-        else {
-            return JSUS.clone(obj);
-        }
     };
 
     /**
@@ -4484,6 +4312,7 @@ if (!Array.prototype.indexOf) {
      * @param {object} o2 The second object
      *
      * @return {object} The object aggregating the results
+     *
      */
     OBJ.pairwiseWalk = function(o1, o2, cb) {
         var i, out;
@@ -4508,56 +4337,20 @@ if (!Array.prototype.indexOf) {
         return out;
     };
 
-    /**
-     * ## OBJ.getKeyByValue
-     *
-     * Returns the key/s associated with a specific value
-     *
-     * Uses OBJ.equals so it can perform complicated comparisons of
-     * the value of the keys.
-     *
-     * Properties of the prototype are not skipped.
-     *
-     * @param {object} obj The object to search
-     * @param {mixed} value The value to match
-     * @param {boolean} allKeys Optional. If TRUE, all keys with the
-     *   specific value are returned. Default FALSE
-     *
-     * @return {object} The object aggregating the results
-     *
-     * @see OBJ.equals
-     */
-    OBJ.getKeyByValue = function(obj, value, allKeys) {
-        var key, out;
-        if ('object' !== typeof obj) {
-            throw new TypeError('OBJ.getKeyByValue: obj must be object.');
-        }
-        if (allKeys) out = [];
-        for (key in obj) {
-            if (obj.hasOwnProperty(key) ) {
-                if (OBJ.equals(value, obj[key])) {
-                    if (!allKeys) return key;
-                    else out.push(key);
-                }
-            }
-        }
-        return out;
-    };
-
     JSUS.extend(OBJ);
 
 })('undefined' !== typeof JSUS ? JSUS : module.parent.exports.JSUS);
 
 /**
  * # RANDOM
- * Copyright(c) 2015 Stefano Balietti
+ *
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
- * Generates pseudo-random numbers
+ * Collection of static functions related to the generation of
+ * pseudo-random numbers
  */
 (function(JSUS) {
-
-    "use strict";
 
     function RANDOM() {}
 
@@ -4565,12 +4358,12 @@ if (!Array.prototype.indexOf) {
      * ## RANDOM.random
      *
      * Generates a pseudo-random floating point number between
-     * [a,b), a inclusive and b exclusive.
+     * (a,b), both a and b exclusive.
      *
      * @param {number} a The lower limit
      * @param {number} b The upper limit
      *
-     * @return {number} A random floating point number in [a,b)
+     * @return {number} A random floating point number in (a,b)
      */
     RANDOM.random = function(a, b) {
         var c;
@@ -4625,7 +4418,7 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
-     * ## RANDOM.getNormalGenerator
+     * ## RANDOM.sample
      *
      * Returns a new generator of normally distributed pseudo random numbers
      *
@@ -4693,8 +4486,6 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
-     * ## RANDOM.nextNormal
-     *
      * Generates random numbers with Normal Gaussian distribution.
      *
      * User must specify the expected mean, and standard deviation a input
@@ -4713,8 +4504,6 @@ if (!Array.prototype.indexOf) {
     RANDOM.nextNormal = RANDOM.getNormalGenerator();
 
     /**
-     * ## RANDOM.nextLogNormal
-     *
      * Generates random numbers with LogNormal distribution.
      *
      * User must specify the expected mean, and standard deviation of the
@@ -4738,8 +4527,6 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
-     * ## RANDOM.nextExponential
-     *
      * Generates random numbers with Exponential distribution.
      *
      * User must specify the lambda the _rate parameter_ of the distribution.
@@ -4761,8 +4548,6 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
-     * ## RANDOM.nextBinomial
-     *
      * Generates random numbers following the Binomial distribution.
      *
      * User must specify the probability of success and the number of trials.
@@ -4802,8 +4587,6 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
-     * ## RANDOM.nextGamma
-     *
      * Generates random numbers following the Gamma distribution.
      *
      * This function is experimental and untested. No documentation.
@@ -4859,6 +4642,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # TIME
+ *
  * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
@@ -4866,8 +4650,6 @@ if (!Array.prototype.indexOf) {
  * manipulation, and formatting of time strings in JavaScript
  */
 (function (JSUS) {
-
-    "use strict";
 
     function TIME() {}
 
@@ -4965,14 +4747,13 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # PARSE
- * Copyright(c) 2015 Stefano Balietti
+ *
+ * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * Collection of static functions related to parsing strings
  */
 (function(JSUS) {
-
-    "use strict";
 
     function PARSE() {}
 
@@ -5012,7 +4793,7 @@ if (!Array.prototype.indexOf) {
      * @see http://stackoverflow.com/q/901115/3347292
      */
     PARSE.getQueryString = function(name, referer) {
-        var regex, results;
+        var regex;
         if (referer && 'string' !== typeof referer) {
             throw new TypeError('JSUS.getQueryString: referer must be string ' +
                                 'or undefined.');
@@ -5207,305 +4988,6 @@ if (!Array.prototype.indexOf) {
             }
             return value;
         }
-    };
-
-    /**
-     * ## PARSE.range
-     *
-     * Decodes strings into an array of integers
-     *
-     * Let n, m  and l be integers, then the tokens of the string are
-     * interpreted in the following way:
-     * - `*`: Any integer.
-     * - `n`: The integer `n`.
-     * - `begin`: The smallest integer in `available`.
-     * - `end`: The largest integer in `available`.
-     * - `<n`, `<=n`, `>n`, `>=n`: Any integer (strictly) smaller/larger than n.
-     * - `n..m`, `[n,m]`: Any integer between n and m (both inclusively).
-     * - `n..l..m`: Any i
-     * - `[n,m)`: Any integer between n (inclusively) and m (exclusively).
-     * - `(n,m]`: Any integer between n (exclusively) and m (inclusively).
-     * - `(n,m)`: Any integer between n and m (both exclusively).
-     * - `%n`: Divisible by n.
-     * - `%n = m`: Divisible with rest m.
-     * - `!`: Not.
-     * - `|`, `||`, `,`: Or.
-     * - `&`, `&&`: And.
-     * The elements of the resulting array are all elements of the `available`
-     * array which satisfy the expression defined by `expr`.
-     *
-     * Example:
-     * PARSE.range('2..5, >8 & !11', '[-2,12]');
-     *      // [2,3,4,5,9,10,12]
-     * PARSE.range('begin...end/2 | 3*end/4...3...end', '[0,40) & %2 = 1');
-     *      // [1,3,5,7,9,11,13,15,17,19,29,35] (end == 39)
-     * PARSE.range('<=19, 22, %5', '>6 & !>27');
-     *      // [7,8,9,10,11,12,13,14,15,16,17,18,19,20,22,25]
-     * PARSE.range('*','(3,8) & !%4, 22, (10,12]');
-     *      // [5,6,7,11,12,22]
-     * PARSE.range('<4', {
-     *      begin: 0,
-     *      end: 21,
-     *      prev: 0,
-     *      cur: 1,
-     *      next: function() {
-     *          var temp = this.prev;
-     *          this.prev = this.cur;
-     *          this.cur += temp;
-     *          return this.cur;
-     *      },
-     *      isFinished: function() {
-     *          return this.cur + this.prev > this.end;
-     *      }
-     * });
-     *      // [5, 8, 13, 21]
-     *
-     *
-     * @param {string} expr The string specifying the selection expression
-     * @param {mixed} available
-     *  - string to be interpreted according to the same rules as
-     *       `expr`
-     *  - array containing the available elements
-     *  - object providing functions next, isFinished and attributes begin, end
-     *
-     * @return {array} The array containing the specified values
-     */
-    // available can be an array, a string or a object.
-    PARSE.range = function(expr, available) {
-        var i, x;
-        var solution = [];
-        var begin, end, lowerBound, numbers;
-        var invalidChars, invalidBeforeOpeningBracket, invalidDot;
-
-        if ("undefined" === typeof expr) {
-            return [];
-        }
-
-        // If no available numbers defined, assumes all possible are allowed.
-        if ("undefined" === typeof available) {
-            available = expr;
-        }
-        if (!JSUS.isArray(available)) {
-            if ("string" !== typeof available) {
-                if ("function" !== typeof available.next ||
-                    "function" !== typeof available.isFinished ||
-                    "number"   !== typeof available.begin ||
-                    "number"   !== typeof available.end
-                )
-                throw new Error('PARSE.range: available wrong type');
-            }
-        }
-        else if (available.length === 0) {
-            return [];
-        }
-
-        // If the availble points are also only given implicitly, compute set
-        // of available numbers by first guessing a bound.
-        if ("string" === typeof available) {
-            available = preprocessRange(available);
-
-            numbers = available.match(/([-+]?\d+)/g);
-            if (numbers === null) {
-                throw new Error(
-                    'PARSE.range: no numbers in available: ' + available);
-            }
-            lowerBound = Math.min.apply(null, numbers);
-
-            available = PARSE.range(available, {
-                begin: lowerBound,
-                end: Math.max.apply(null, numbers),
-                value: lowerBound,
-                next: function() {
-                    return this.value++;
-                },
-                isFinished: function() {
-                    return this.value > this.end;
-                }
-            });
-        }
-        if (JSUS.isArray(available)) {
-            begin = Math.min.apply(null, available);
-            end = Math.max.apply(null, available);
-        }
-        else {
-            begin = available.begin;
-            end = available.end;
-        }
-
-        // end -> maximal available value.
-        expr = expr.replace(/end/g, parseInt(end));
-
-        // begin -> minimal available value.
-        expr = expr.replace(/begin/g, parseInt(begin));
-
-        // Do all computations.
-        expr = preprocessRange(expr);
-
-        // Round all floats
-        expr = expr.replace(/([-+]?\d+\.\d+)/g, function(match, p1) {
-            return parseInt(p1);
-        });
-
-        // Validate expression to only contain allowed symbols.
-        invalidChars = /[^ \*\d<>=!\|&\.\[\],\(\)\-\+%]/g;
-        if (expr.match(invalidChars)) {
-            throw new Error('invalidChars:' + expr);
-        }
-
-        // & -> && and | -> ||.
-        expr = expr.replace(/([^& ]) *& *([^& ])/g, "$1&&$2");
-        expr = expr.replace(/([^| ]) *\| *([^| ])/g, "$1||$2");
-
-        // n -> (x == n).
-        expr = expr.replace(/([-+]?\d+)/g, "(x==$1)");
-
-        // n has already been replaced by (x==n) so match for that from now on.
-
-        // %n -> !(x%n)
-        expr = expr.replace(/% *\(x==([-+]?\d+)\)/,"!(x%$1)");
-
-        // %n has already been replaced by !(x%n) so match for that from now on.
-        // %n = m, %n == m -> (x%n == m).
-        expr = expr.replace(/!\(x%([-+]?\d+)\) *={1,} *\(x==([-+]?\d+)\)/g,
-            "(x%$1==$2)");
-
-        // <n, <=n, >n, >=n -> (x < n), (x <= n), (x > n), (x >= n)
-        expr = expr.replace(/([<>]=?) *\(x==([-+]?\d+)\)/g, "(x$1$2)");
-
-        // n..l..m -> (x >= n && x <= m && !((x-n)%l)) for positive l.
-        expr = expr.replace(
-            /\(x==([-+]?\d+)\)\.{2,}\(x==(\+?\d+)\)\.{2,}\(x==([-+]?\d+)\)/g,
-            "(x>=$1&&x<=$3&&!((x- $1)%$2))");
-
-        // n..l..m -> (x <= n && x >= m && !((x-n)%l)) for negative l.
-        expr = expr.replace(
-            /\(x==([-+]?\d+)\)\.{2,}\(x==(-\d+)\)\.{2,}\(x==([-+]?\d+)\)/g,
-            "(x<=$1&&x>=$3&&!((x- $1)%$2))");
-
-        // n..m -> (x >= n && x <= m).
-        expr = expr.replace(/\(x==([-+]?\d+)\)\.{2,}\(x==([-+]?\d+)\)/g,
-                "(x>=$1&&x<=$2)");
-
-        // (n,m), ... ,[n,m] -> (x > n && x < m), ... , (x >= n && x <= m).
-        expr = expr.replace(
-            /([(\[]) *\(x==([-+]?\d+)\) *, *\(x==([-+]?\d+)\) *([\])])/g,
-                function (match, p1, p2, p3, p4) {
-                    return "(x>" + (p1 == '(' ? '': '=') + p2 + "&&x<" +
-                        (p4 == ')' ? '' : '=') + p3 + ')';
-            }
-        );
-
-        // * -> true.
-        expr = expr.replace('*', 1);
-
-        // a, b -> (a) || (b)
-        expr = expr.replace(/\)[,] *(!*)\(/g, ")||$1(");
-
-
-        // Validating the expression before eval"ing it.
-        invalidChars = /[^ \d<>=!\|&,\(\)\-\+%x\.]/g;
-        // Only & | ! may be before an opening bracket.
-        invalidBeforeOpeningBracket = /[^ &!|\(] *\(/g;
-        // Only dot in floats.
-        invalidDot = /\.[^\d]|[^\d]\./;
-
-        if (expr.match(invalidChars)) {
-            throw new Error('PARSE.range: invalidChars:' + expr);
-        }
-        if (expr.match(invalidBeforeOpeningBracket)) {
-            throw new Error('PARSE.range: invaludBeforeOpeningBracket:' + expr);
-        }
-        if (expr.match(invalidDot)) {
-            throw new Error('PARSE.range: invalidDot:' + expr);
-        }
-
-        if (JSUS.isArray(available)) {
-            for (i in available) {
-                if (available.hasOwnProperty(i)) {
-                    x = parseInt(available[i]);
-                    if (JSUS.eval(expr.replace(/x/g, x))) {
-                        solution.push(x);
-                    }
-                }
-            }
-        }
-        else {
-            while (!available.isFinished()) {
-                x = parseInt(available.next());
-                if (JSUS.eval(expr.replace(/x/g, x))) {
-                    solution.push(x);
-                }
-            }
-        }
-        return solution;
-    };
-
-    function preprocessRange(expr) {
-        var mult = function(match, p1, p2, p3) {
-            var n1 = parseInt(p1);
-            var n3 = parseInt(p3);
-            return p2 == '*' ? n1*n3 : n1/n3;
-        };
-        var add = function(match, p1, p2, p3) {
-            var n1 = parseInt(p1);
-            var n3 = parseInt(p3);
-            return p2 == '-' ? n1 - n3 : n1 + n3;
-        };
-        var mod = function(match, p1, p2, p3) {
-            var n1 = parseInt(p1);
-            var n3 = parseInt(p3);
-            return n1 % n3;
-        };
-
-        while (expr.match(/([-+]?\d+) *([*\/]) *([-+]?\d+)/g)) {
-            expr = expr.replace(/([-+]?\d+) *([*\/]) *([-+]?\d+)/, mult);
-        }
-
-        while (expr.match(/([-+]?\d+) *([-+]) *([-+]?\d+)/g)) {
-            expr = expr.replace(/([-+]?\d+) *([-+]) *([-+]?\d+)/, add);
-        }
-        while (expr.match(/([-+]?\d+) *% *([-+]?\d+)/g)) {
-            expr = expr.replace(/([-+]?\d+) *% *([-+]?\d+)/, mod);
-        }
-        return expr;
-    }
-
-    /**
-     * ## PARSE.funcName
-     *
-     * Returns the name of the function
-     *
-     * Function.name is a non-standard JavaScript property,
-     * although many browsers implement it. This is a cross-browser
-     * implementation for it.
-     *
-     * In case of anonymous functions, an empty string is returned.
-     *
-     * @param {function} func The function to check
-     *
-     * @return {string} The name of the function
-     *
-     * Kudos to:
-     * http://matt.scharley.me/2012/03/09/monkey-patch-name-ie.html
-     */
-    if ('undefined' !== typeof Function.prototype.name) {
-        PARSE.funcName = function(func) {
-            if ('function' !== typeof func) {
-                throw new TypeError('PARSE.funcName: func must be function.');
-            }
-            return func.name;
-        };
-    }
-    else {
-        PARSE.funcName = function(func) {
-            var funcNameRegex, res;
-            if ('function' !== typeof func) {
-                throw new TypeError('PARSE.funcName: func must be function.');
-            }
-            funcNameRegex = /function\s([^(]{1,})\(/;
-            res = (funcNameRegex).exec(func.toString());
-            return (res && res.length > 1) ? res[1].trim() : "";
-        };
     };
 
     JSUS.extend(PARSE);
@@ -6266,14 +5748,8 @@ if (!Array.prototype.indexOf) {
             this.throwErr('TypeError', 'initLog', 'ctx must be object or ' +
                           'function');
         }
-        this.log = function() {
-            var args, i, len;
-            len = arguments.length;
-            args = new Array(len);
-            for (i = 0; i < len; i++) {
-                args[i] = arguments[i];
-            }
-            return cb.apply(ctx, args);
+        this.log = function(){
+            return cb.apply(ctx, arguments);
         };
     }
 
@@ -6340,8 +5816,8 @@ if (!Array.prototype.indexOf) {
     function nddb_insert(o, update) {
         var nddbid;
         if (('object' !== typeof o) && ('function' !== typeof o)) {
-            this.throwErr('TypeError', 'insert', 'object or function ' +
-                          'expected, ' + typeof o + ' received.');
+            this.throwErr('TypeError', 'insert', 'object or function expected ' +
+                          typeof o + ' received.');
         }
 
         // Check / create a global index.
@@ -6349,8 +5825,7 @@ if (!Array.prototype.indexOf) {
             // Create internal idx.
             nddbid = J.uniqueKey(this.nddbid.resolve);
             if (!nddbid) {
-                this.throwErr('Error', 'insert',
-                              'failed to create index: ' + o);
+                this.throwErr('Error', 'insert', 'failed to create index: ' + o);
             }
             if (df) {
                 Object.defineProperty(o, '_nddbid', { value: nddbid });
@@ -7157,93 +6632,22 @@ if (!Array.prototype.indexOf) {
     /**
      * ### NDDB.emit
      *
-     * Fires all the listeners associated with an event (optimized)
+     * Fires all the listeners associated with an event
      *
      * Accepts any number of parameters, the first one is the name
      * of the event, and the remaining will be passed to the event listeners.
      */
     NDDB.prototype.emit = function() {
-        var event;
-        var h, h2;
-        var i, len, argLen, args;
-        event = arguments[0];
-        if ('string' !== typeof event) {
+        var i, event;
+        event = Array.prototype.splice.call(arguments, 0, 1);
+        if ('string' !== typeof event[0]) {
             this.throwErr('TypeError', 'emit', 'first argument must be string');
         }
-        if (!this.hooks[event]) {
-            this.throwErr('TypeError', 'emit', 'unknown event: ' + event);
+        if (!this.hooks[event] || !this.hooks[event].length) {
+            return;
         }
-        len = this.hooks[event].length;
-        if (!len) return;
-        argLen = arguments.length;
-
-        switch(len) {
-
-        case 1:
-            h = this.hooks[event][0];
-            if (argLen === 1) h.call(this);
-            else if (argLen === 2) h.call(this, arguments[1]);
-            else if (argLen === 3) {
-                h.call(this, arguments[1], arguments[2]);
-            }
-            else {
-                args = new Array(argLen-1);
-                for (i = 0; i < argLen; i++) {
-                    args[i] = arguments[i+1];
-                }
-                h.apply(this, args);
-            }
-            break;
-        case 2:
-            h = this.hooks[event][0], h2 = this.hooks[event][1];
-            if (argLen === 1) {
-                h.call(this);
-                h2.call(this);
-            }
-            else if (argLen === 2) {
-                h.call(this, arguments[1]);
-                h2.call(this, arguments[1]);
-            }
-            else if (argLen === 3) {
-                h.call(this, arguments[1], arguments[2]);
-                h2.call(this, arguments[1], arguments[2]);
-            }
-            else {
-                args = new Array(argLen-1);
-                for (i = 0; i < argLen; i++) {
-                    args[i] = arguments[i+1];
-                }
-                h.apply(this, args);
-                h2.apply(this, args);
-            }
-            break;
-        default:
-
-             if (argLen === 1) {
-                 for (i = 0; i < len; i++) {
-                     this.hooks[event][i].call(this);
-                 }
-            }
-            else if (argLen === 2) {
-                for (i = 0; i < len; i++) {
-                    this.hooks[event][i].call(this, arguments[1]);
-                }
-            }
-            else if (argLen === 3) {
-                for (i = 0; i < len; i++) {
-                    this.hooks[event][i].call(this, arguments[1], arguments[2]);
-                }
-            }
-            else {
-                args = new Array(argLen-1);
-                for (i = 0; i < argLen; i++) {
-                    args[i] = arguments[i+1];
-                }
-                for (i = 0; i < len; i++) {
-                    this.hooks[event][i].apply(this, args);
-                }
-
-            }
+        for (i = 0; i < this.hooks[event].length; i++) {
+            this.hooks[event][i].apply(this, arguments);
         }
     };
 
@@ -7529,8 +6933,7 @@ if (!Array.prototype.indexOf) {
     NDDB.prototype.exists = function(o) {
         var i, len, db;
         if ('object' !== typeof o && 'function' !== typeof o) {
-            this.throwErr('TypeError', 'exists',
-                          'o must be object or function');
+            this.throwErr('TypeError', 'exists', 'o must be object or function');
         }
         db = this.fetch();
         len = db.length;
@@ -7624,7 +7027,7 @@ if (!Array.prototype.indexOf) {
             func = function(a,b) {
                 var i, result;
                 for (i = 0; i < d.length; i++) {
-                    result = that.getComparator(d[i]).call(that, a, b);
+                    result = that.getComparator(d[i]).call(that,a,b);
                     if (result !== 0) return result;
                 }
                 return result;
@@ -7682,7 +7085,7 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
-     * ### NDDB.each || NDDB.forEach (optimized)
+     * ### NDDB.each || NDDB.forEach
      *
      * Applies a callback function to each element in the db
      *
@@ -7696,7 +7099,7 @@ if (!Array.prototype.indexOf) {
      * @see NDDB.map
      */
     NDDB.prototype.each = NDDB.prototype.forEach = function() {
-        var func, i, db, len, args, argLen;
+        var func, i, db, len;
         func = arguments[0];
         if ('function' !== typeof func) {
             this.throwErr('TypeError', 'each',
@@ -7704,33 +7107,9 @@ if (!Array.prototype.indexOf) {
         }
         db = this.fetch();
         len = db.length;
-        argLen = arguments.length;
-        switch(argLen) {
-        case 1:
-            for (i = 0 ; i < len ; i++) {
-                func.call(this, db[i]);
-            }
-            break;
-        case 2:
-            for (i = 0 ; i < len ; i++) {
-                func.call(this, db[i], arguments[1]);
-            }
-            break;
-        case 3:
-            for (i = 0 ; i < len ; i++) {
-                func.call(this, db[i], arguments[1], arguments[2]);
-            }
-            break;
-        default:
-            args = new Array(argLen+1);
-            args[0] = null;
-            for (i = 1; i < argLen; i++) {
-                args[i] = arguments[i];
-            }
-            for (i = 0 ; i < len ; i++) {
-                args[0] = db[i];
-                func.apply(this, args);
-            }
+        for (i = 0 ; i < len ; i++) {
+            arguments[0] = db[i];
+            func.apply(this, arguments);
         }
     };
 
@@ -7750,46 +7129,17 @@ if (!Array.prototype.indexOf) {
      */
     NDDB.prototype.map = function() {
         var func, i, db, len, out, o;
-        var args, argLen;
         func = arguments[0];
         if ('function' !== typeof func) {
-            this.throwErr('TypeError', 'map',
-                          'first argument must be function');
+            this.throwErr('TypeError', 'map', 'first argument must be function');
         }
         db = this.fetch();
         len = db.length;
-        argLen = arguments.length;
         out = [];
-        switch(argLen) {
-        case 1:
-            for (i = 0 ; i < len ; i++) {
-                o = func.call(this, db[i]);
-                if ('undefined' !== typeof o) out.push(o);
-            }
-            break;
-        case 2:
-            for (i = 0 ; i < len ; i++) {
-                o = func.call(this, db[i], arguments[1]);
-                if ('undefined' !== typeof o) out.push(o);
-            }
-            break;
-        case 3:
-            for (i = 0 ; i < len ; i++) {
-                o = func.call(this, db[i], arguments[1], arguments[2]);
-                if ('undefined' !== typeof o) out.push(o);
-            }
-            break;
-        default:
-            args = new Array(argLen+1);
-            args[0] = null;
-            for (i = 1; i < argLen; i++) {
-                args[i] = arguments[i];
-            }
-            for (i = 0 ; i < len ; i++) {
-                args[0] = db[i];
-                o = func.apply(this, args);
-                if ('undefined' !== typeof o) out.push(o);
-            }
+        for (i = 0 ; i < db.length ; i++) {
+            arguments[0] = db[i];
+            o = func.apply(this, arguments);
+            if ('undefined' !== typeof o) out.push(o);
         }
         return out;
     };
@@ -7975,6 +7325,7 @@ if (!Array.prototype.indexOf) {
      *
      * A new NDDB object breeded, so that further methods can be chained.
      *
+     * @api private
      * @param {string} key1 First property to compare
      * @param {string} key2 Second property to compare
      * @param {function} comparator Optional. A comparator function.
@@ -7987,8 +7338,6 @@ if (!Array.prototype.indexOf) {
      * @return {NDDB} A new database containing the joined entries
      *
      * @see NDDB.breed
-     *
-     * @api private
      */
     NDDB.prototype._join = function(key1, key2, comparator, pos, select) {
         var out, idxs, foreign_key, key;
