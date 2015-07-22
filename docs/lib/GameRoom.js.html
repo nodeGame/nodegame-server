@@ -1149,6 +1149,9 @@ MIT Licensed</p>
         <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">properties</span><span class="p">.</span><span class="nx">syncStepping</span><span class="p">)</span> <span class="p">{</span>
             <span class="nx">properties</span><span class="p">.</span><span class="nx">syncStepping</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
         <span class="p">}</span>
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">properties</span><span class="p">.</span><span class="nx">autoSet</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">properties</span><span class="p">.</span><span class="nx">autoSet</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+        <span class="p">}</span>
         <span class="k">if</span> <span class="p">(</span><span class="nx">stepRule</span> <span class="o">===</span> <span class="nx">stepRules</span><span class="p">.</span><span class="nx">SOLO</span><span class="p">)</span> <span class="p">{</span>
             <span class="nx">stager</span><span class="p">.</span><span class="nx">setDefaultStepRule</span><span class="p">(</span><span class="nx">stepRules</span><span class="p">.</span><span class="nx">OTHERS_SYNC_STEP</span><span class="p">);</span>
         <span class="p">}</span>
@@ -1156,6 +1159,9 @@ MIT Licensed</p>
     <span class="k">else</span> <span class="p">{</span>
         <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">properties</span><span class="p">.</span><span class="nx">publishLevel</span><span class="p">)</span> <span class="p">{</span>
             <span class="nx">properties</span><span class="p">.</span><span class="nx">publishLevel</span> <span class="o">=</span> <span class="nx">publishLevels</span><span class="p">.</span><span class="nx">REGULAR</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">properties</span><span class="p">.</span><span class="nx">autoSet</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">properties</span><span class="p">.</span><span class="nx">autoSet</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
         <span class="p">}</span>
         <span class="k">if</span> <span class="p">(</span><span class="nx">stepRule</span> <span class="o">===</span> <span class="nx">stepRules</span><span class="p">.</span><span class="nx">SOLO</span><span class="p">)</span> <span class="p">{</span>
             <span class="nx">stager</span><span class="p">.</span><span class="nx">setDefaultStepRule</span><span class="p">(</span><span class="nx">stepRules</span><span class="p">.</span><span class="nx">WAIT</span><span class="p">);</span>

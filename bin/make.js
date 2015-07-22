@@ -26,12 +26,12 @@ J = require('JSUS').JSUS;
 var pkg = require('../package.json'),
 version = pkg.version;
 
-var ngcDir = J.resolveModuleDir('nodegame-client');
-var JSUSDir = J.resolveModuleDir('JSUS');
-var NDDBDir = J.resolveModuleDir('NDDB');
-var shelfDir = J.resolveModuleDir('shelf.js');
-var ngwindowDir = J.resolveModuleDir('nodegame-window');
-var ngwidgetsDir = J.resolveModuleDir('nodegame-widgets');
+var ngcDir = J.resolveModuleDir('nodegame-client', __dirname);
+var JSUSDir = J.resolveModuleDir('JSUS', __dirname);
+var NDDBDir = J.resolveModuleDir('NDDB', __dirname);
+var shelfDir = J.resolveModuleDir('shelf.js', __dirname);
+var ngwindowDir = J.resolveModuleDir('nodegame-window', __dirname);
+var ngwidgetsDir = J.resolveModuleDir('nodegame-widgets', __dirname);
 
 var build_client = require(ngcDir + 'bin/build.js').build;
 var build_client_support = require(ngcDir + 'bin/build.js').build_support;
