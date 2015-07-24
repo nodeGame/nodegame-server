@@ -1,6 +1,6 @@
 /**
  * # nodeGame IE support
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * Shims of methods required by nodeGame, but missing in old IE browsers
@@ -32,7 +32,7 @@ if (!JSON) {
 (function () {
     "use strict";
 
-    var global = Function('return this')()
+    var global = new Function('return this')()
       , JSON = global.JSON
       ;
 
@@ -1177,7 +1177,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # JSUS: JavaScript UtilS.
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * Collection of general purpose javascript functions. JSUS helps!
@@ -1270,7 +1270,7 @@ if (!Array.prototype.indexOf) {
         // TODO: this is true also for {}
         if (additional.prototype) {
             JSUS.extend(additional.prototype, target.prototype || target);
-        };
+        }
 
         return target;
     };
@@ -1310,9 +1310,9 @@ if (!Array.prototype.indexOf) {
      * @return {boolean} TRUE when executed inside Node.JS environment
      */
     JSUS.isNodeJS = function() {
-	return 'undefined' !== typeof module
-	    && 'undefined' !== typeof module.exports
-	    && 'function' === typeof require;
+        return 'undefined' !== typeof module &&
+            'undefined' !== typeof module.exports &&
+            'function' === typeof require;
     };
 
     // ## Node.JS includes
@@ -1339,7 +1339,7 @@ if (!Array.prototype.indexOf) {
 /**
  * # COMPATIBILITY
  *
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * Tests browsers ECMAScript 5 compatibility
@@ -1347,6 +1347,7 @@ if (!Array.prototype.indexOf) {
  * For more information see http://kangax.github.com/es5-compat-table/
  */
 (function(JSUS) {
+    "use strict";
 
     function COMPATIBILITY() {}
 
@@ -1401,13 +1402,14 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # ARRAY
- *
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * Collection of static functions to manipulate arrays
  */
 (function(JSUS) {
+
+    "use strict";
 
     function ARRAY() {}
 
@@ -1422,10 +1424,9 @@ if (!Array.prototype.indexOf) {
      */
     if (!Array.prototype.filter) {
         Array.prototype.filter = function(fun /*, thisp */) {
-            "use strict";
             if (this === void 0 || this === null) throw new TypeError();
 
-            var t = Object(this);
+            var t = new Object(this);
             var len = t.length >>> 0;
             if (typeof fun !== "function") throw new TypeError();
 
@@ -1487,7 +1488,7 @@ if (!Array.prototype.indexOf) {
      * @return {array} The final sequence
      */
     ARRAY.seq = function(start, end, increment, func) {
-        var i;
+        var i, out;
         if ('number' !== typeof start) return false;
         if (start === Infinity) return false;
         if ('number' !== typeof end) return false;
@@ -1550,29 +1551,46 @@ if (!Array.prototype.indexOf) {
     /**
      * ## ARRAY.map
      *
-     * Applies a callback function to each element in the db, store
-     * the results in an array and returns it
+     * Executes a callback to each element of the array and returns the result
      *
      * Any number of additional parameters can be passed after the
-     * callback function
+     * callback function.
      *
      * @return {array} The result of the mapping execution
+     *
      * @see ARRAY.each
      */
     ARRAY.map = function() {
-        if (arguments.length < 2) return;
-        var args = Array.prototype.slice.call(arguments),
-        array = args.shift(),
-        func = args[0];
+        var i, len, args, out, o;
+        var array, func;
+
+        array = arguments[0];
+        func = arguments[1];
 
         if (!ARRAY.isArray(array)) {
-            JSUS.log('ARRAY.map() the first argument must be an array. ' +
-                     'Found: ' + array);
+            JSUS.log('ARRAY.map: first parameter must be array. Found: ' +
+                     array);
+            return;
+        }
+        if ('function' !== typeof func) {
+            JSUS.log('ARRAY.map: second parameter must be function. Found: ' +
+                     func);
             return;
         }
 
-        var out = [], o;
-        for (var i = 0; i < array.length; i++) {
+        len = arguments.length;
+        if (len === 3) args = [null, arguments[2]];
+        else if (len === 4) args = [null, arguments[2], arguments[3]];
+        else {
+            len = len - 1;
+            args = new Array(len);
+            for (i = 1; i < (len); i++) {
+                args[i] = arguments[i+1];
+            }
+        }
+
+        out = [], len = array.length;
+        for (i = 0; i < len; i++) {
             args[0] = array[i];
             o = func.apply(this, args);
             if ('undefined' !== typeof o) out.push(o);
@@ -1595,6 +1613,7 @@ if (!Array.prototype.indexOf) {
      * @param {array} haystack The array to search in
      *
      * @return {mixed} The element that was removed, FALSE if none was removed
+     *
      * @see JSUS.equals
      */
     ARRAY.removeElement = function(needle, haystack) {
@@ -1605,7 +1624,7 @@ if (!Array.prototype.indexOf) {
             func = JSUS.equals;
         }
         else {
-            func = function(a,b) {
+            func = function(a, b) {
                 return (a === b);
             };
         }
@@ -1646,7 +1665,6 @@ if (!Array.prototype.indexOf) {
                 return true;
             }
         }
-        // <!-- console.log(needle, haystack); -->
         return false;
     };
 
@@ -1675,7 +1693,8 @@ if (!Array.prototype.indexOf) {
     /**
      * ## ARRAY.getGroupsSizeN
      *
-     * Returns an array of array containing N elements each
+     * Returns an array of arrays containing N elements each
+     *
      * The last group could have less elements
      *
      * @param {array} array The array to split in subgroups
@@ -1837,27 +1856,26 @@ if (!Array.prototype.indexOf) {
      * @see ARRAY.getGroupSizeN
      * @see ARRAY.getNGroups
      * @see ARRAY.matchN
+     *
+     * Kudos: http://rosettacode.org/wiki/Combinations#JavaScript
      */
-    ARRAY.generateCombinations = function(array, r) {
-        var i, j;
-        function values(i, a) {
-            var ret = [];
-            for (var j = 0; j < i.length; j++) ret.push(a[i[j]]);
-            return ret;
+    ARRAY.generateCombinations = function combinations(arr, k) {
+        var i, subI, ret, sub, next;
+        ret = [];
+        for (i = 0; i < arr.length; i++) {
+            if (k === 1) {
+                ret.push( [ arr[i] ] );
+            }
+            else {
+                sub = combinations(arr.slice(i+1, arr.length), k-1);
+                for (subI = 0; subI < sub.length; subI++ ){
+                    next = sub[subI];
+                    next.unshift(arr[i]);
+                    ret.push( next );
+                }
+            }
         }
-        var n = array.length;
-        var indices = [];
-        for (i = 0; i < r; i++) indices.push(i);
-        var final = [];
-        for (i = n - r; i < n; i++) final.push(i);
-        while (!JSUS.equals(indices, final)) {
-            callback(values(indices, array));
-            i = r - 1;
-            while (indices[i] == n - r + i) i -= 1;
-            indices[i] += 1;
-            for (j = i + 1; j < r; j++) indices[j] = indices[i] + j - i;
-        }
-        return values(indices, array);
+        return ret;
     };
 
     /**
@@ -1884,7 +1902,7 @@ if (!Array.prototype.indexOf) {
      * @see ARRAY.generateCombinations
      */
     ARRAY.matchN = function(array, N, strict) {
-        var result, i, copy, group;
+        var result, i, copy, group, len, found;
         if (!array) return;
         if (!N) return array;
 
@@ -2163,6 +2181,8 @@ if (!Array.prototype.indexOf) {
  */
 (function(JSUS) {
 
+    "use strict";
+
     function DOM() {}
 
     // ## GENERAL
@@ -2181,10 +2201,9 @@ if (!Array.prototype.indexOf) {
      */
     DOM.write = function(root, text) {
         var content;
-        if (!root) return;
-        if ('undefined' === typeof text) text = "";
-        content = (!JSUS.isNode(text) || !JSUS.isElement(text)) ?
-            document.createTextNode(text) : text;
+        if ('undefined' === typeof text || text === null) text = "";
+        if (JSUS.isNode(text) || JSUS.isElement(text)) content = text;
+        else content = document.createTextNode(text);
         root.appendChild(content);
         return content;
     };
@@ -2206,9 +2225,10 @@ if (!Array.prototype.indexOf) {
      * @see DOM.addBreak
      */
     DOM.writeln = function(root, text, rc) {
-        if (!root) return;
-        var br = this.addBreak(root, rc);
-        return (text) ? DOM.write(root, text) : br;
+        var content;
+        content = DOM.write(root, text);
+        this.addBreak(root, rc);
+        return content;
     };
 
     /**
@@ -2252,8 +2272,8 @@ if (!Array.prototype.indexOf) {
      */
     DOM.sprintf = function(string, args, root) {
 
-        var text, textNode, span, idx_start, idx_finish, idx_replace, idxs;
-        var spans, key, i, returnElement;
+        var text, span, idx_start, idx_finish, idx_replace, idxs;
+        var spans, key, i;
 
         root = root || document.createElement('span');
         spans = {};
@@ -2366,8 +2386,8 @@ if (!Array.prototype.indexOf) {
      * @return {boolean} TRUE, if the the object is a DOM node
      */
     DOM.isNode = function(o) {
+        if ('object' !== typeof o) return false;
         return 'object' === typeof Node ? o instanceof Node :
-            'object' === typeof o &&
             'number' === typeof o.nodeType &&
             'string' === typeof o.nodeName;
     };
@@ -2660,8 +2680,9 @@ if (!Array.prototype.indexOf) {
      *
      */
     DOM.getButton = function(id, text, attributes) {
-        var sb = document.createElement('button');
-        sb.id = id;
+        var sb;
+        sb = document.createElement('button');
+        if ('undefined' !== typeof id) sb.id = id;
         sb.appendChild(document.createTextNode(text || 'Send'));
         return this.addAttributes2Elem(sb, attributes);
     };
@@ -3118,12 +3139,13 @@ if (!Array.prototype.indexOf) {
      *
      * @param {HTMLIFrameElement} iframe The iframe object
      *
-     * @return {HTMLDocument|undefined} The document of the iframe, or
-     *   undefined if not found.
+     * @return {HTMLDocument|null} The document of the iframe, or
+     *   null if not found.
      */
     DOM.getIFrameDocument = function(iframe) {
-        if (!iframe) return;
-        return iframe.contentDocument || iframe.contentWindow.document;
+        if (!iframe) return null;
+        return iframe.contentDocument ||
+            iframe.contentWindow ? iframe.contentWindow.document : null;
     };
 
     /**
@@ -3202,20 +3224,67 @@ if (!Array.prototype.indexOf) {
         doc.oncontextmenu = null;
     };
 
+    /**
+     * ### DOM.addEvent
+     *
+     * Adds an event listener to an element (cross-browser)
+     *
+     * @param {Element} element A target element
+     * @param {string} event The name of the event to handle
+     * @param {function} func The event listener
+     * @param {boolean} Optional. If TRUE, the event will initiate a capture.
+     *   Available only in some browsers. Default, FALSE
+     *
+     * @return {boolean} TRUE, on success. However, the return value is
+     *   browser dependent.
+     *
+     * @see DOM.removeEvent
+     *
+     * Kudos:
+     * http://stackoverflow.com/questions/6348494/addeventlistener-vs-onclick
+     */
+    DOM.addEvent = function(element, event, func, capture) {
+        capture = !!capture;
+        if (element.attachEvent) return element.attachEvent('on' + event, func);
+        else return element.addEventListener(event, func, capture);
+    };
+
+    /**
+     * ### DOM.removeEvent
+     *
+     * Removes an event listener from an element (cross-browser)
+     *
+     * @param {Element} element A target element
+     * @param {string} event The name of the event to remove
+     * @param {function} func The event listener
+     * @param {boolean} Optional. If TRUE, the event was registered
+     *   as a capture. Available only in some browsers. Default, FALSE
+     *
+     * @return {boolean} TRUE, on success. However, the return value is
+     *   browser dependent.
+     *
+     * @see DOM.addEvent
+     */
+    DOM.removeEvent = function(element, event, func, capture) {
+        capture = !!capture;
+        if (element.detachEvent) return element.detachEvent('on' + event, func);
+        else return element.removeEventListener(event, func, capture);
+    };
+
     JSUS.extend(DOM);
 
 })('undefined' !== typeof JSUS ? JSUS : module.parent.exports.JSUS);
 
 /**
  * # EVAL
- *
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
- * Collection of static functions related to the evaluation
- * of strings as JavaScript commands
+ * Evaluation of strings as JavaScript commands
  */
 (function(JSUS) {
+
+    "use strict";
 
     function EVAL() {}
 
@@ -3264,13 +3333,14 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # OBJ
- *
  * Copyright(c) 2014 Stefano Balietti
  * MIT Licensed
  *
  * Collection of static functions to manipulate JavaScript objects
  */
 (function(JSUS) {
+
+    "use strict";
 
     function OBJ() {}
 
@@ -3279,6 +3349,61 @@ if (!Array.prototype.indexOf) {
     if ('undefined' !== typeof JSUS.compatibility) {
         compatibility = JSUS.compatibility();
     }
+
+    /**
+     * ## OBJ.createObj
+     *
+     * Polyfill for Object.create (when missing)
+     */
+    OBJ.createObj = (function() {
+        // From MDN Object.create (Polyfill)
+        if (typeof Object.create !== 'function') {
+            // Production steps of ECMA-262, Edition 5, 15.2.3.5
+            // Reference: http://es5.github.io/#x15.2.3.5
+            return (function() {
+                // To save on memory, use a shared constructor
+                function Temp() {}
+
+                // make a safe reference to Object.prototype.hasOwnProperty
+                var hasOwn = Object.prototype.hasOwnProperty;
+
+                return function(O) {
+                    // 1. If Type(O) is not Object or Null
+                    if (typeof O != 'object') {
+                        throw new TypeError('Object prototype may only ' +
+                                            'be an Object or null');
+                    }
+
+                    // 2. Let obj be the result of creating a new object as if
+                    //    by the expression new Object() where Object is the
+                    //    standard built-in constructor with that name
+                    // 3. Set the [[Prototype]] internal property of obj to O.
+                    Temp.prototype = O;
+                    var obj = new Temp();
+                    Temp.prototype = null;
+
+                    // 4. If the argument Properties is present and not
+                    //    undefined, add own properties to obj as if by calling
+                    //    the standard built-in function Object.defineProperties
+                    //    with arguments obj and Properties.
+                    if (arguments.length > 1) {
+                        // Object.defineProperties does ToObject on
+                        // its first argument.
+                        var Properties = new Object(arguments[1]);
+                        for (var prop in Properties) {
+                            if (hasOwn.call(Properties, prop)) {
+                                obj[prop] = Properties[prop];
+                            }
+                        }
+                    }
+
+                    // 5. Return obj
+                    return obj;
+                };
+            })();
+        }
+        return Object.create;
+    })();
 
     /**
      * ## OBJ.equals
@@ -3338,14 +3463,11 @@ if (!Array.prototype.indexOf) {
 
                 if (!o2[p] && o1[p]) return false;
 
-                switch (typeof o1[p]) {
-                case 'function':
+                if ('function' === typeof o1[p]) {
                     if (o1[p].toString() !== o2[p].toString()) return false;
-
-                    /* falls through */
-                default:
-                    if (!OBJ.equals(o1[p], o2[p])) return false;
                 }
+                else
+                    if (!OBJ.equals(o1[p], o2[p])) return false;
             }
         }
 
@@ -3620,33 +3742,33 @@ if (!Array.prototype.indexOf) {
         // NaN and +-Infinity are numbers, so no check is necessary.
 
         if ('function' === typeof obj) {
-            //          clone = obj;
-            // <!-- Check when and if we need this -->
-            clone = function() { return obj.apply(clone, arguments); };
+            clone = function() {
+                var len, args;
+                len = arguments.length;
+                if (!len) return obj.call(clone);
+                else if (len === 1) return obj.call(clone, arguments[0]);
+                else if (len === 2) {
+                    return obj.call(clone, arguments[0], arguments[1]);
+                }
+                else {
+                    args = new Array(len);
+                    for (i = 0; i < len; i++) {
+                        args[i] = arguments[i];
+                    }
+                    return obj.apply(clone, args);
+                }
+            };
         }
         else {
             clone = Object.prototype.toString.call(obj) === '[object Array]' ?
                 [] : {};
         }
-
         for (i in obj) {
-            // TODO: index i is being updated, so apply is called on the
-            // last element, instead of the correct one.
-            //if ('function' === typeof obj[i]) {
-            //    value = function() { return obj[i].apply(clone, arguments); };
-            //}
-            // It is not NULL and it is an object
+            // It is not NULL and it is an object.
+            // Even if it is an array we need to use CLONE,
+            // because `slice()` does not clone arrays of objects.
             if (obj[i] && 'object' === typeof obj[i]) {
-                // Is an array.
-                if (Object.prototype.toString.call(obj[i]) ===
-                    '[object Array]') {
-
-                    value = obj[i].slice(0);
-                }
-                // Is an object.
-                else {
-                    value = OBJ.clone(obj[i]);
-                }
+                value = OBJ.clone(obj[i]);
             }
             else {
                 value = obj[i];
@@ -3665,21 +3787,65 @@ if (!Array.prototype.indexOf) {
                     });
                 }
                 else {
-                    // or we try...
-                    try {
-                        Object.defineProperty(clone, i, {
-                            value: value,
-                            writable: true,
-                            configurable: true
-                        });
-                    }
-                    catch(e) {
-                        clone[i] = value;
-                    }
+                    setProp(clone, i, value);
                 }
             }
         }
         return clone;
+    };
+
+    function setProp(clone, i, value) {
+        try {
+            Object.defineProperty(clone, i, {
+                value: value,
+                writable: true,
+                configurable: true
+            });
+        }
+        catch(e) {
+            clone[i] = value;
+        }
+    }
+
+
+    /**
+     * ## OBJ.classClone
+     *
+     * Creates a copy (keeping class) of the object passed as parameter
+     *
+     * Recursively scans all the properties of the object to clone.
+     * The clone is an instance of the type of obj.
+     *
+     * @param {object} obj The object to clone
+     * @param {Number} depth how deep the copy should be
+     *
+     * @return {object} The clone of the object
+     */
+    OBJ.classClone = function(obj, depth) {
+        var clone, i;
+        if (depth === 0) {
+            return obj;
+        }
+
+        if (obj && 'object' === typeof obj) {
+            clone = Object.prototype.toString.call(obj) === '[object Array]' ?
+                [] : JSUS.createObj(obj.constructor.prototype);
+
+            for (i in obj) {
+                if (obj.hasOwnProperty(i)) {
+                    if (obj[i] && 'object' === typeof obj[i]) {
+                        clone[i] = JSUS.classClone(obj[i], depth - 1);
+                    }
+                    else {
+                        clone[i] = obj[i];
+                    }
+                }
+            }
+            return clone;
+        }
+        else {
+            return JSUS.clone(obj);
+        }
     };
 
     /**
@@ -4312,7 +4478,6 @@ if (!Array.prototype.indexOf) {
      * @param {object} o2 The second object
      *
      * @return {object} The object aggregating the results
-     *
      */
     OBJ.pairwiseWalk = function(o1, o2, cb) {
         var i, out;
@@ -4337,20 +4502,56 @@ if (!Array.prototype.indexOf) {
         return out;
     };
 
+    /**
+     * ## OBJ.getKeyByValue
+     *
+     * Returns the key/s associated with a specific value
+     *
+     * Uses OBJ.equals so it can perform complicated comparisons of
+     * the value of the keys.
+     *
+     * Properties of the prototype are not skipped.
+     *
+     * @param {object} obj The object to search
+     * @param {mixed} value The value to match
+     * @param {boolean} allKeys Optional. If TRUE, all keys with the
+     *   specific value are returned. Default FALSE
+     *
+     * @return {object} The object aggregating the results
+     *
+     * @see OBJ.equals
+     */
+    OBJ.getKeyByValue = function(obj, value, allKeys) {
+        var key, out;
+        if ('object' !== typeof obj) {
+            throw new TypeError('OBJ.getKeyByValue: obj must be object.');
+        }
+        if (allKeys) out = [];
+        for (key in obj) {
+            if (obj.hasOwnProperty(key) ) {
+                if (OBJ.equals(value, obj[key])) {
+                    if (!allKeys) return key;
+                    else out.push(key);
+                }
+            }
+        }
+        return out;
+    };
+
     JSUS.extend(OBJ);
 
 })('undefined' !== typeof JSUS ? JSUS : module.parent.exports.JSUS);
 
 /**
  * # RANDOM
- *
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
- * Collection of static functions related to the generation of
- * pseudo-random numbers
+ * Generates pseudo-random numbers
  */
 (function(JSUS) {
+
+    "use strict";
 
     function RANDOM() {}
 
@@ -4358,12 +4559,12 @@ if (!Array.prototype.indexOf) {
      * ## RANDOM.random
      *
      * Generates a pseudo-random floating point number between
-     * (a,b), both a and b exclusive.
+     * [a,b), a inclusive and b exclusive.
      *
      * @param {number} a The lower limit
      * @param {number} b The upper limit
      *
-     * @return {number} A random floating point number in (a,b)
+     * @return {number} A random floating point number in [a,b)
      */
     RANDOM.random = function(a, b) {
         var c;
@@ -4418,7 +4619,7 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
-     * ## RANDOM.sample
+     * ## RANDOM.getNormalGenerator
      *
      * Returns a new generator of normally distributed pseudo random numbers
      *
@@ -4486,6 +4687,8 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
+     * ## RANDOM.nextNormal
+     *
      * Generates random numbers with Normal Gaussian distribution.
      *
      * User must specify the expected mean, and standard deviation a input
@@ -4504,6 +4707,8 @@ if (!Array.prototype.indexOf) {
     RANDOM.nextNormal = RANDOM.getNormalGenerator();
 
     /**
+     * ## RANDOM.nextLogNormal
+     *
      * Generates random numbers with LogNormal distribution.
      *
      * User must specify the expected mean, and standard deviation of the
@@ -4523,10 +4728,12 @@ if (!Array.prototype.indexOf) {
         if ('number' !== typeof sigma) {
             throw new TypeError('nextLogNormal: sigma must be number.');
         }
-        return Math.exp(nextNormal(mu, sigma));
+        return Math.exp(RANDOM.nextNormal(mu, sigma));
     };
 
     /**
+     * ## RANDOM.nextExponential
+     *
      * Generates random numbers with Exponential distribution.
      *
      * User must specify the lambda the _rate parameter_ of the distribution.
@@ -4548,6 +4755,8 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
+     * ## RANDOM.nextBinomial
+     *
      * Generates random numbers following the Binomial distribution.
      *
      * User must specify the probability of success and the number of trials.
@@ -4587,6 +4796,8 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
+     * ## RANDOM.nextGamma
+     *
      * Generates random numbers following the Gamma distribution.
      *
      * This function is experimental and untested. No documentation.
@@ -4596,7 +4807,7 @@ if (!Array.prototype.indexOf) {
     RANDOM.nextGamma = function(alpha, k) {
         var intK, kDiv, alphaDiv;
         var u1, u2, u3;
-        var x, i, len, tmp;
+        var x, i, tmp;
 
         if ('number' !== typeof alpha) {
             throw new TypeError('nextGamma: alpha must be number.');
@@ -4642,7 +4853,6 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # TIME
- *
  * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
@@ -4650,6 +4860,8 @@ if (!Array.prototype.indexOf) {
  * manipulation, and formatting of time strings in JavaScript
  */
 (function (JSUS) {
+
+    "use strict";
 
     function TIME() {}
 
@@ -4747,13 +4959,14 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # PARSE
- *
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * Collection of static functions related to parsing strings
  */
 (function(JSUS) {
+
+    "use strict";
 
     function PARSE() {}
 
@@ -4793,7 +5006,7 @@ if (!Array.prototype.indexOf) {
      * @see http://stackoverflow.com/q/901115/3347292
      */
     PARSE.getQueryString = function(name, referer) {
-        var regex;
+        var regex, results;
         if (referer && 'string' !== typeof referer) {
             throw new TypeError('JSUS.getQueryString: referer must be string ' +
                                 'or undefined.');
@@ -4989,6 +5202,305 @@ if (!Array.prototype.indexOf) {
             return value;
         }
     };
+
+    /**
+     * ## PARSE.range
+     *
+     * Decodes strings into an array of integers
+     *
+     * Let n, m  and l be integers, then the tokens of the string are
+     * interpreted in the following way:
+     * - `*`: Any integer.
+     * - `n`: The integer `n`.
+     * - `begin`: The smallest integer in `available`.
+     * - `end`: The largest integer in `available`.
+     * - `<n`, `<=n`, `>n`, `>=n`: Any integer (strictly) smaller/larger than n.
+     * - `n..m`, `[n,m]`: Any integer between n and m (both inclusively).
+     * - `n..l..m`: Any i
+     * - `[n,m)`: Any integer between n (inclusively) and m (exclusively).
+     * - `(n,m]`: Any integer between n (exclusively) and m (inclusively).
+     * - `(n,m)`: Any integer between n and m (both exclusively).
+     * - `%n`: Divisible by n.
+     * - `%n = m`: Divisible with rest m.
+     * - `!`: Not.
+     * - `|`, `||`, `,`: Or.
+     * - `&`, `&&`: And.
+     * The elements of the resulting array are all elements of the `available`
+     * array which satisfy the expression defined by `expr`.
+     *
+     * Example:
+     * PARSE.range('2..5, >8 & !11', '[-2,12]');
+     *      // [2,3,4,5,9,10,12]
+     * PARSE.range('begin...end/2 | 3*end/4...3...end', '[0,40) & %2 = 1');
+     *      // [1,3,5,7,9,11,13,15,17,19,29,35] (end == 39)
+     * PARSE.range('<=19, 22, %5', '>6 & !>27');
+     *      // [7,8,9,10,11,12,13,14,15,16,17,18,19,20,22,25]
+     * PARSE.range('*','(3,8) & !%4, 22, (10,12]');
+     *      // [5,6,7,11,12,22]
+     * PARSE.range('<4', {
+     *      begin: 0,
+     *      end: 21,
+     *      prev: 0,
+     *      cur: 1,
+     *      next: function() {
+     *          var temp = this.prev;
+     *          this.prev = this.cur;
+     *          this.cur += temp;
+     *          return this.cur;
+     *      },
+     *      isFinished: function() {
+     *          return this.cur + this.prev > this.end;
+     *      }
+     * });
+     *      // [5, 8, 13, 21]
+     *
+     *
+     * @param {string} expr The string specifying the selection expression
+     * @param {mixed} available
+     *  - string to be interpreted according to the same rules as
+     *       `expr`
+     *  - array containing the available elements
+     *  - object providing functions next, isFinished and attributes begin, end
+     *
+     * @return {array} The array containing the specified values
+     */
+    // available can be an array, a string or a object.
+    PARSE.range = function(expr, available) {
+        var i, x;
+        var solution = [];
+        var begin, end, lowerBound, numbers;
+        var invalidChars, invalidBeforeOpeningBracket, invalidDot;
+
+        if ("undefined" === typeof expr) {
+            return [];
+        }
+
+        // If no available numbers defined, assumes all possible are allowed.
+        if ("undefined" === typeof available) {
+            available = expr;
+        }
+        if (!JSUS.isArray(available)) {
+            if ("string" !== typeof available) {
+                if ("function" !== typeof available.next ||
+                    "function" !== typeof available.isFinished ||
+                    "number"   !== typeof available.begin ||
+                    "number"   !== typeof available.end
+                )
+                throw new Error('PARSE.range: available wrong type');
+            }
+        }
+        else if (available.length === 0) {
+            return [];
+        }
+
+        // If the availble points are also only given implicitly, compute set
+        // of available numbers by first guessing a bound.
+        if ("string" === typeof available) {
+            available = preprocessRange(available);
+
+            numbers = available.match(/([-+]?\d+)/g);
+            if (numbers === null) {
+                throw new Error(
+                    'PARSE.range: no numbers in available: ' + available);
+            }
+            lowerBound = Math.min.apply(null, numbers);
+
+            available = PARSE.range(available, {
+                begin: lowerBound,
+                end: Math.max.apply(null, numbers),
+                value: lowerBound,
+                next: function() {
+                    return this.value++;
+                },
+                isFinished: function() {
+                    return this.value > this.end;
+                }
+            });
+        }
+        if (JSUS.isArray(available)) {
+            begin = Math.min.apply(null, available);
+            end = Math.max.apply(null, available);
+        }
+        else {
+            begin = available.begin;
+            end = available.end;
+        }
+
+        // end -> maximal available value.
+        expr = expr.replace(/end/g, parseInt(end));
+
+        // begin -> minimal available value.
+        expr = expr.replace(/begin/g, parseInt(begin));
+
+        // Do all computations.
+        expr = preprocessRange(expr);
+
+        // Round all floats
+        expr = expr.replace(/([-+]?\d+\.\d+)/g, function(match, p1) {
+            return parseInt(p1);
+        });
+
+        // Validate expression to only contain allowed symbols.
+        invalidChars = /[^ \*\d<>=!\|&\.\[\],\(\)\-\+%]/g;
+        if (expr.match(invalidChars)) {
+            throw new Error('invalidChars:' + expr);
+        }
+
+        // & -> && and | -> ||.
+        expr = expr.replace(/([^& ]) *& *([^& ])/g, "$1&&$2");
+        expr = expr.replace(/([^| ]) *\| *([^| ])/g, "$1||$2");
+
+        // n -> (x == n).
+        expr = expr.replace(/([-+]?\d+)/g, "(x==$1)");
+
+        // n has already been replaced by (x==n) so match for that from now on.
+
+        // %n -> !(x%n)
+        expr = expr.replace(/% *\(x==([-+]?\d+)\)/,"!(x%$1)");
+
+        // %n has already been replaced by !(x%n) so match for that from now on.
+        // %n = m, %n == m -> (x%n == m).
+        expr = expr.replace(/!\(x%([-+]?\d+)\) *={1,} *\(x==([-+]?\d+)\)/g,
+            "(x%$1==$2)");
+
+        // <n, <=n, >n, >=n -> (x < n), (x <= n), (x > n), (x >= n)
+        expr = expr.replace(/([<>]=?) *\(x==([-+]?\d+)\)/g, "(x$1$2)");
+
+        // n..l..m -> (x >= n && x <= m && !((x-n)%l)) for positive l.
+        expr = expr.replace(
+            /\(x==([-+]?\d+)\)\.{2,}\(x==(\+?\d+)\)\.{2,}\(x==([-+]?\d+)\)/g,
+            "(x>=$1&&x<=$3&&!((x- $1)%$2))");
+
+        // n..l..m -> (x <= n && x >= m && !((x-n)%l)) for negative l.
+        expr = expr.replace(
+            /\(x==([-+]?\d+)\)\.{2,}\(x==(-\d+)\)\.{2,}\(x==([-+]?\d+)\)/g,
+            "(x<=$1&&x>=$3&&!((x- $1)%$2))");
+
+        // n..m -> (x >= n && x <= m).
+        expr = expr.replace(/\(x==([-+]?\d+)\)\.{2,}\(x==([-+]?\d+)\)/g,
+                "(x>=$1&&x<=$2)");
+
+        // (n,m), ... ,[n,m] -> (x > n && x < m), ... , (x >= n && x <= m).
+        expr = expr.replace(
+            /([(\[]) *\(x==([-+]?\d+)\) *, *\(x==([-+]?\d+)\) *([\])])/g,
+                function (match, p1, p2, p3, p4) {
+                    return "(x>" + (p1 == '(' ? '': '=') + p2 + "&&x<" +
+                        (p4 == ')' ? '' : '=') + p3 + ')';
+            }
+        );
+
+        // * -> true.
+        expr = expr.replace('*', 1);
+
+        // a, b -> (a) || (b)
+        expr = expr.replace(/\)[,] *(!*)\(/g, ")||$1(");
+
+
+        // Validating the expression before eval"ing it.
+        invalidChars = /[^ \d<>=!\|&,\(\)\-\+%x\.]/g;
+        // Only & | ! may be before an opening bracket.
+        invalidBeforeOpeningBracket = /[^ &!|\(] *\(/g;
+        // Only dot in floats.
+        invalidDot = /\.[^\d]|[^\d]\./;
+
+        if (expr.match(invalidChars)) {
+            throw new Error('PARSE.range: invalidChars:' + expr);
+        }
+        if (expr.match(invalidBeforeOpeningBracket)) {
+            throw new Error('PARSE.range: invaludBeforeOpeningBracket:' + expr);
+        }
+        if (expr.match(invalidDot)) {
+            throw new Error('PARSE.range: invalidDot:' + expr);
+        }
+
+        if (JSUS.isArray(available)) {
+            for (i in available) {
+                if (available.hasOwnProperty(i)) {
+                    x = parseInt(available[i]);
+                    if (JSUS.eval(expr.replace(/x/g, x))) {
+                        solution.push(x);
+                    }
+                }
+            }
+        }
+        else {
+            while (!available.isFinished()) {
+                x = parseInt(available.next());
+                if (JSUS.eval(expr.replace(/x/g, x))) {
+                    solution.push(x);
+                }
+            }
+        }
+        return solution;
+    };
+
+    function preprocessRange(expr) {
+        var mult = function(match, p1, p2, p3) {
+            var n1 = parseInt(p1);
+            var n3 = parseInt(p3);
+            return p2 == '*' ? n1*n3 : n1/n3;
+        };
+        var add = function(match, p1, p2, p3) {
+            var n1 = parseInt(p1);
+            var n3 = parseInt(p3);
+            return p2 == '-' ? n1 - n3 : n1 + n3;
+        };
+        var mod = function(match, p1, p2, p3) {
+            var n1 = parseInt(p1);
+            var n3 = parseInt(p3);
+            return n1 % n3;
+        };
+
+        while (expr.match(/([-+]?\d+) *([*\/]) *([-+]?\d+)/g)) {
+            expr = expr.replace(/([-+]?\d+) *([*\/]) *([-+]?\d+)/, mult);
+        }
+
+        while (expr.match(/([-+]?\d+) *([-+]) *([-+]?\d+)/g)) {
+            expr = expr.replace(/([-+]?\d+) *([-+]) *([-+]?\d+)/, add);
+        }
+        while (expr.match(/([-+]?\d+) *% *([-+]?\d+)/g)) {
+            expr = expr.replace(/([-+]?\d+) *% *([-+]?\d+)/, mod);
+        }
+        return expr;
+    }
+
+    /**
+     * ## PARSE.funcName
+     *
+     * Returns the name of the function
+     *
+     * Function.name is a non-standard JavaScript property,
+     * although many browsers implement it. This is a cross-browser
+     * implementation for it.
+     *
+     * In case of anonymous functions, an empty string is returned.
+     *
+     * @param {function} func The function to check
+     *
+     * @return {string} The name of the function
+     *
+     * Kudos to:
+     * http://matt.scharley.me/2012/03/09/monkey-patch-name-ie.html
+     */
+    if ('undefined' !== typeof Function.prototype.name) {
+        PARSE.funcName = function(func) {
+            if ('function' !== typeof func) {
+                throw new TypeError('PARSE.funcName: func must be function.');
+            }
+            return func.name;
+        };
+    }
+    else {
+        PARSE.funcName = function(func) {
+            var funcNameRegex, res;
+            if ('function' !== typeof func) {
+                throw new TypeError('PARSE.funcName: func must be function.');
+            }
+            funcNameRegex = /function\s([^(]{1,})\(/;
+            res = (funcNameRegex).exec(func.toString());
+            return (res && res.length > 1) ? res[1].trim() : "";
+        };
+    }
 
     JSUS.extend(PARSE);
 
@@ -5217,7 +5729,7 @@ if (!Array.prototype.indexOf) {
         if (db) {
             this.importDB(db);
         }
-    };
+    }
 
     /**
      * ### NDDB.addFilter
@@ -5284,9 +5796,9 @@ if (!Array.prototype.indexOf) {
                     var d, c;
                     for (d in elem) {
                         c = that.getComparator(d);
-                        value[d] = value[0]['*']
+                        value[d] = value[0]['*'];
                         if (c(elem, value, 1) > 0) {
-                            value[d] = value[1]['*']
+                            value[d] = value[1]['*'];
                             if (c(elem, value, -1) < 0) {
                                 return elem;
                             }
@@ -5298,7 +5810,7 @@ if (!Array.prototype.indexOf) {
                     else if ('undefined' !== typeof J.getNestedValue(d,elem)) {
                         return elem;
                     }
-                }
+                };
             }
             else {
                 return function(elem) {
@@ -5308,7 +5820,7 @@ if (!Array.prototype.indexOf) {
                     else if ('undefined' !== typeof J.getNestedValue(d,elem)) {
                         return elem;
                     }
-                }
+                };
             }
         };
 
@@ -5409,9 +5921,9 @@ if (!Array.prototype.indexOf) {
                     var d, c;
                     for (d in elem) {
                         c = that.getComparator(d);
-                        value[d] = value[0]['*']
+                        value[d] = value[0]['*'];
                         if (c(elem, value, 1) > 0) {
-                            value[d] = value[1]['*']
+                            value[d] = value[1]['*'];
                             if (c(elem, value, -1) < 0) {
                                 return elem;
                             }
@@ -5498,11 +6010,11 @@ if (!Array.prototype.indexOf) {
                     for (i = 0; i < len; i++) {
                         obj[d] = value[i];
                         if (comparator(elem, obj, 0) === 0) {
-                            return
+                            return;
                         }
                     }
                     return elem;
-                }
+                };
             }
         };
 
@@ -5583,13 +6095,13 @@ if (!Array.prototype.indexOf) {
      * @param {string} text Optional. The error text. Default, 'generic error'
      */
     NDDB.prototype.throwErr = function(type, method, text) {
-        var errMsg, miss;
+        var errMsg;
         text = text || 'generic error';
         errMsg = this._getConstrName();
         if (method) errMsg = errMsg + '.' + method;
         errMsg = errMsg + ': ' + text + '.';
         if (type === 'TypeError') throw new TypeError(errMsg);
-        throw new Error(errMg);
+        throw new Error(errMsg);
     };
 
     /**
@@ -5748,10 +6260,16 @@ if (!Array.prototype.indexOf) {
             this.throwErr('TypeError', 'initLog', 'ctx must be object or ' +
                           'function');
         }
-        this.log = function(){
-            return cb.apply(ctx, arguments);
+        this.log = function() {
+            var args, i, len;
+            len = arguments.length;
+            args = new Array(len);
+            for (i = 0; i < len; i++) {
+                args[i] = arguments[i];
+            }
+            return cb.apply(ctx, args);
         };
-    }
+    };
 
     /**
      * ### NDDB._getConstrName
@@ -5794,7 +6312,7 @@ if (!Array.prototype.indexOf) {
 
 
     /**
-     * ## .nddb_insert
+     * ## nddb_insert
      *
      * Insert an item into db and performs update operations
      *
@@ -5816,8 +6334,8 @@ if (!Array.prototype.indexOf) {
     function nddb_insert(o, update) {
         var nddbid;
         if (('object' !== typeof o) && ('function' !== typeof o)) {
-            this.throwErr('TypeError', 'insert', 'object or function expected ' +
-                          typeof o + ' received.');
+            this.throwErr('TypeError', 'insert', 'object or function ' +
+                          'expected, ' + typeof o + ' received.');
         }
 
         // Check / create a global index.
@@ -5825,7 +6343,8 @@ if (!Array.prototype.indexOf) {
             // Create internal idx.
             nddbid = J.uniqueKey(this.nddbid.resolve);
             if (!nddbid) {
-                this.throwErr('Error', 'insert', 'failed to create index: ' + o);
+                this.throwErr('Error', 'insert',
+                              'failed to create index: ' + o);
             }
             if (df) {
                 Object.defineProperty(o, '_nddbid', { value: nddbid });
@@ -6100,7 +6619,7 @@ if (!Array.prototype.indexOf) {
      * @see NDDB.compare
      */
     NDDB.prototype.getComparator = function(d) {
-        var len, comparator, comparators;
+        var i, len, comparator, comparators;
 
         // Given field or '*'.
         if ('string' === typeof d) {
@@ -6181,7 +6700,7 @@ if (!Array.prototype.indexOf) {
 
                 return trigger2 === 0 ? 1 : 0;
 
-            }
+            };
         }
         return comparator;
     };
@@ -6440,7 +6959,7 @@ if (!Array.prototype.indexOf) {
      * @param {string} oldIdx Optional. The old index name, if any.
      */
     NDDB.prototype._indexIt = function(o, dbidx, oldIdx) {
-        var func, id, index, key;
+        var func, index, key;
         if (!o || J.isEmpty(this.__I)) return;
 
         for (key in this.__I) {
@@ -6474,7 +6993,7 @@ if (!Array.prototype.indexOf) {
      * @see NDDB.view
      */
     NDDB.prototype._viewIt = function(o) {
-        var func, id, index, key, settings;
+        var func, index, key, settings;
         if (!o || J.isEmpty(this.__V)) return false;
 
         for (key in this.__V) {
@@ -6515,7 +7034,7 @@ if (!Array.prototype.indexOf) {
      * @see NDDB.hash
      */
     NDDB.prototype._hashIt = function(o) {
-        var h, id, hash, key, settings, oldHash;
+        var h, hash, key, settings, oldHash;
         if (!o || J.isEmpty(this.__H)) return false;
 
         for (key in this.__H) {
@@ -6632,22 +7151,93 @@ if (!Array.prototype.indexOf) {
     /**
      * ### NDDB.emit
      *
-     * Fires all the listeners associated with an event
+     * Fires all the listeners associated with an event (optimized)
      *
      * Accepts any number of parameters, the first one is the name
      * of the event, and the remaining will be passed to the event listeners.
      */
     NDDB.prototype.emit = function() {
-        var i, event;
-        event = Array.prototype.splice.call(arguments, 0, 1);
-        if ('string' !== typeof event[0]) {
+        var event;
+        var h, h2;
+        var i, len, argLen, args;
+        event = arguments[0];
+        if ('string' !== typeof event) {
             this.throwErr('TypeError', 'emit', 'first argument must be string');
         }
-        if (!this.hooks[event] || !this.hooks[event].length) {
-            return;
+        if (!this.hooks[event]) {
+            this.throwErr('TypeError', 'emit', 'unknown event: ' + event);
         }
-        for (i = 0; i < this.hooks[event].length; i++) {
-            this.hooks[event][i].apply(this, arguments);
+        len = this.hooks[event].length;
+        if (!len) return;
+        argLen = arguments.length;
+
+        switch(len) {
+
+        case 1:
+            h = this.hooks[event][0];
+            if (argLen === 1) h.call(this);
+            else if (argLen === 2) h.call(this, arguments[1]);
+            else if (argLen === 3) {
+                h.call(this, arguments[1], arguments[2]);
+            }
+            else {
+                args = new Array(argLen-1);
+                for (i = 0; i < argLen; i++) {
+                    args[i] = arguments[i+1];
+                }
+                h.apply(this, args);
+            }
+            break;
+        case 2:
+            h = this.hooks[event][0], h2 = this.hooks[event][1];
+            if (argLen === 1) {
+                h.call(this);
+                h2.call(this);
+            }
+            else if (argLen === 2) {
+                h.call(this, arguments[1]);
+                h2.call(this, arguments[1]);
+            }
+            else if (argLen === 3) {
+                h.call(this, arguments[1], arguments[2]);
+                h2.call(this, arguments[1], arguments[2]);
+            }
+            else {
+                args = new Array(argLen-1);
+                for (i = 0; i < argLen; i++) {
+                    args[i] = arguments[i+1];
+                }
+                h.apply(this, args);
+                h2.apply(this, args);
+            }
+            break;
+        default:
+
+             if (argLen === 1) {
+                 for (i = 0; i < len; i++) {
+                     this.hooks[event][i].call(this);
+                 }
+            }
+            else if (argLen === 2) {
+                for (i = 0; i < len; i++) {
+                    this.hooks[event][i].call(this, arguments[1]);
+                }
+            }
+            else if (argLen === 3) {
+                for (i = 0; i < len; i++) {
+                    this.hooks[event][i].call(this, arguments[1], arguments[2]);
+                }
+            }
+            else {
+                args = new Array(argLen-1);
+                for (i = 0; i < argLen; i++) {
+                    args[i] = arguments[i+1];
+                }
+                for (i = 0; i < len; i++) {
+                    this.hooks[event][i].apply(this, args);
+                }
+
+            }
         }
     };
 
@@ -6675,7 +7265,7 @@ if (!Array.prototype.indexOf) {
      *   if an error was detected
      */
     NDDB.prototype._analyzeQuery = function(d, op, value) {
-        var i, len, newValue, errText;
+        var i, len, errText;
 
         if ('undefined' === typeof d) {
             queryError.call(this, 'undefined dimension', d, op, value);
@@ -6933,7 +7523,8 @@ if (!Array.prototype.indexOf) {
     NDDB.prototype.exists = function(o) {
         var i, len, db;
         if ('object' !== typeof o && 'function' !== typeof o) {
-            this.throwErr('TypeError', 'exists', 'o must be object or function');
+            this.throwErr('TypeError', 'exists',
+                          'o must be object or function');
         }
         db = this.fetch();
         len = db.length;
@@ -7027,11 +7618,11 @@ if (!Array.prototype.indexOf) {
             func = function(a,b) {
                 var i, result;
                 for (i = 0; i < d.length; i++) {
-                    result = that.getComparator(d[i]).call(that,a,b);
+                    result = that.getComparator(d[i]).call(that, a, b);
                     if (result !== 0) return result;
                 }
                 return result;
-            }
+            };
         }
         // Single dimension.
         else {
@@ -7085,7 +7676,7 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
-     * ### NDDB.each || NDDB.forEach
+     * ### NDDB.each || NDDB.forEach (optimized)
      *
      * Applies a callback function to each element in the db
      *
@@ -7099,7 +7690,7 @@ if (!Array.prototype.indexOf) {
      * @see NDDB.map
      */
     NDDB.prototype.each = NDDB.prototype.forEach = function() {
-        var func, i, db, len;
+        var func, i, db, len, args, argLen;
         func = arguments[0];
         if ('function' !== typeof func) {
             this.throwErr('TypeError', 'each',
@@ -7107,9 +7698,33 @@ if (!Array.prototype.indexOf) {
         }
         db = this.fetch();
         len = db.length;
-        for (i = 0 ; i < len ; i++) {
-            arguments[0] = db[i];
-            func.apply(this, arguments);
+        argLen = arguments.length;
+        switch(argLen) {
+        case 1:
+            for (i = 0 ; i < len ; i++) {
+                func.call(this, db[i]);
+            }
+            break;
+        case 2:
+            for (i = 0 ; i < len ; i++) {
+                func.call(this, db[i], arguments[1]);
+            }
+            break;
+        case 3:
+            for (i = 0 ; i < len ; i++) {
+                func.call(this, db[i], arguments[1], arguments[2]);
+            }
+            break;
+        default:
+            args = new Array(argLen+1);
+            args[0] = null;
+            for (i = 1; i < argLen; i++) {
+                args[i] = arguments[i];
+            }
+            for (i = 0 ; i < len ; i++) {
+                args[0] = db[i];
+                func.apply(this, args);
+            }
         }
     };
 
@@ -7129,17 +7744,46 @@ if (!Array.prototype.indexOf) {
      */
     NDDB.prototype.map = function() {
         var func, i, db, len, out, o;
+        var args, argLen;
         func = arguments[0];
         if ('function' !== typeof func) {
-            this.throwErr('TypeError', 'map', 'first argument must be function');
+            this.throwErr('TypeError', 'map',
+                          'first argument must be function');
         }
         db = this.fetch();
         len = db.length;
+        argLen = arguments.length;
         out = [];
-        for (i = 0 ; i < db.length ; i++) {
-            arguments[0] = db[i];
-            o = func.apply(this, arguments);
-            if ('undefined' !== typeof o) out.push(o);
+        switch(argLen) {
+        case 1:
+            for (i = 0 ; i < len ; i++) {
+                o = func.call(this, db[i]);
+                if ('undefined' !== typeof o) out.push(o);
+            }
+            break;
+        case 2:
+            for (i = 0 ; i < len ; i++) {
+                o = func.call(this, db[i], arguments[1]);
+                if ('undefined' !== typeof o) out.push(o);
+            }
+            break;
+        case 3:
+            for (i = 0 ; i < len ; i++) {
+                o = func.call(this, db[i], arguments[1], arguments[2]);
+                if ('undefined' !== typeof o) out.push(o);
+            }
+            break;
+        default:
+            args = new Array(argLen+1);
+            args[0] = null;
+            for (i = 1; i < argLen; i++) {
+                args[i] = arguments[i];
+            }
+            for (i = 0 ; i < len ; i++) {
+                args[0] = db[i];
+                o = func.apply(this, args);
+                if ('undefined' !== typeof o) out.push(o);
+            }
         }
         return out;
     };
@@ -7230,13 +7874,13 @@ if (!Array.prototype.indexOf) {
             this.hashtray.clear();
 
             for (i in this.__H) {
-                if (this[i]) delete this[i]
+                if (this[i]) delete this[i];
             }
             for (i in this.__C) {
-                if (this[i]) delete this[i]
+                if (this[i]) delete this[i];
             }
             for (i in this.__I) {
-                if (this[i]) delete this[i]
+                if (this[i]) delete this[i];
             }
         }
         else {
@@ -7325,7 +7969,6 @@ if (!Array.prototype.indexOf) {
      *
      * A new NDDB object breeded, so that further methods can be chained.
      *
-     * @api private
      * @param {string} key1 First property to compare
      * @param {string} key2 Second property to compare
      * @param {function} comparator Optional. A comparator function.
@@ -7338,6 +7981,8 @@ if (!Array.prototype.indexOf) {
      * @return {NDDB} A new database containing the joined entries
      *
      * @see NDDB.breed
+     *
+     * @api private
      */
     NDDB.prototype._join = function(key1, key2, comparator, pos, select) {
         var out, idxs, foreign_key, key;
@@ -7579,11 +8224,11 @@ if (!Array.prototype.indexOf) {
 
     function getValuesArray(o, key) {
         return J.obj2Array(o, 1);
-    };
+    }
 
     function getKeyValuesArray(o, key) {
         return J.obj2KeyedArray(o, 1);
-    };
+    }
 
 
     function getValuesArray_KeyString(o, key) {
@@ -7591,14 +8236,14 @@ if (!Array.prototype.indexOf) {
         if ('undefined' !== typeof el) {
             return J.obj2Array(el,1);
         }
-    };
+    }
 
     function getValuesArray_KeyArray(o, key) {
         var el = J.subobj(o, key);
         if (!J.isEmpty(el)) {
             return J.obj2Array(el,1);
         }
-    };
+    }
 
 
     function getKeyValuesArray_KeyString(o, key) {
@@ -7606,14 +8251,14 @@ if (!Array.prototype.indexOf) {
         if ('undefined' !== typeof el) {
             return key.split('.').concat(J.obj2KeyedArray(el));
         }
-    };
+    }
 
     function getKeyValuesArray_KeyArray(o, key) {
         var el = J.subobj(o, key);
         if (!J.isEmpty(el)) {
             return J.obj2KeyedArray(el);
         }
-    };
+    }
 
     /**
      * ### NDDB._fetchArray
@@ -7687,7 +8332,7 @@ if (!Array.prototype.indexOf) {
         }
 
         return out;
-    }
+    };
 
     /**
      * ### NDDB.fetchArray
@@ -8329,7 +8974,7 @@ if (!Array.prototype.indexOf) {
      */
     NDDB.prototype.storageAvailable = function() {
         return ('function' === typeof store);
-    }
+    };
 
     /**
      * ### NDDB.save
@@ -8477,7 +9122,7 @@ if (!Array.prototype.indexOf) {
 
     function findCallback(obj) {
         return obj.cb;
-    };
+    }
 
     /**
      * ### QueryBuilder.get
@@ -8497,13 +9142,12 @@ if (!Array.prototype.indexOf) {
      *   conditions
      */
     QueryBuilder.prototype.get = function() {
-        var line, lineLen, f1, f2, f3, type1, type2, i;
+        var line, lineLen, f1, f2, f3, type1, type2;
         var query = this.query, pointer = this.pointer;
-        var operators = this.operators;
 
         // Ready to support nested queries, not yet implemented.
         if (pointer === 0) {
-            line = query[pointer]
+            line = query[pointer];
             lineLen = line.length;
 
             if (lineLen === 1) {
@@ -8520,18 +9164,18 @@ if (!Array.prototype.indexOf) {
                     return function(elem) {
                         if ('undefined' !== typeof f1(elem)) return elem;
                         if ('undefined' !== typeof f2(elem)) return elem;
-                    }
+                    };
                 case 'AND':
                     return function(elem) {
                         if ('undefined' !== typeof f1(elem) &&
                             'undefined' !== typeof f2(elem)) return elem;
-                    }
+                    };
 
                 case 'NOT':
                     return function(elem) {
                         if ('undefined' !== typeof f1(elem) &&
                             'undefined' === typeof f2(elem)) return elem;
-                    }
+                    };
                 }
             }
 
@@ -8604,7 +9248,7 @@ if (!Array.prototype.indexOf) {
 
                     }
                     return elem;
-                }
+                };
 
             }
 
@@ -8857,7 +9501,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Variables
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * `nodeGame` variables and constants module
@@ -9000,6 +9644,10 @@ if (!Array.prototype.indexOf) {
     // @see node.constants.remoteVerbosity
     k.target.LOG = 'LOG';
 
+    // #### target.LOG
+    // Force disconnection upon reception.
+    k.target.BYE  = 'BYE';
+
     //#### not used targets (for future development)
 
 
@@ -9007,7 +9655,6 @@ if (!Array.prototype.indexOf) {
 
     k.target.TXT  = 'TXT';    // Text msg
 
-    k.target.BYE  = 'BYE';    // Force disconnects
     k.target.ACK  = 'ACK';    // A reliable msg was received correctly
 
     k.target.WARN = 'WARN';   // To do.
@@ -9169,7 +9816,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Stepping Rules
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * Collections of rules to determine whether the game should step.
@@ -9223,7 +9870,6 @@ if (!Array.prototype.indexOf) {
     // All the players in the player list must be sync in the same
     // step and DONE. My own stage does not matter.
     exports.stepRules.OTHERS_SYNC_STEP = function(stage, myStageLevel, pl) {
-        var stage;
         if (!pl.size()) return false;
         stage = pl.first().stage;
         return pl.arePlayersSync(stage, node.constants.stageLevels.DONE,
@@ -9238,7 +9884,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # ErrorManager
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * Handles runtime errors
@@ -9249,11 +9895,6 @@ if (!Array.prototype.indexOf) {
 
     // ## Global scope
     var J = parent.JSUS;
-
-    parent.NodeGameRuntimeError = NodeGameRuntimeError;
-    parent.NodeGameStageCallbackError = NodeGameStageCallbackError;
-    parent.NodeGameMisconfiguredGameError = NodeGameMisconfiguredGameError;
-    parent.NodeGameIllegalOperationError = NodeGameIllegalOperationError;
 
     parent.ErrorManager = ErrorManager;
 
@@ -9293,7 +9934,6 @@ if (!Array.prototype.indexOf) {
         that = this;
         if (!J.isNodeJS()) {
             window.onerror = function(msg, url, linenumber) {
-                var msg;
                 msg = url + ' ' + linenumber + ': ' + msg;
                 that.lastError = msg;
                 node.err(msg);
@@ -9311,78 +9951,6 @@ if (!Array.prototype.indexOf) {
 //         }
     };
 
-    /**
-     * ## NodeGameRuntimeError
-     *
-     * An error occurred during the execution of nodeGame
-     */
-    function NodeGameRuntimeError(msg) {
-        //Error.apply(this, arguments);
-        this.msg = msg;
-        this.stack = (new Error()).stack;
-        throw new Error('Runtime: ' + msg);
-    }
-
-    NodeGameRuntimeError.prototype = new Error();
-    NodeGameRuntimeError.prototype.constructor = NodeGameRuntimeError;
-    NodeGameRuntimeError.prototype.name = 'NodeGameRuntimeError';
-
-
-    /**
-     * ## NodeGameStageCallbackError
-     *
-     * An error occurred during the execution of one of the stage callbacks
-     */
-    function NodeGameStageCallbackError(msg) {
-        //Error.apply(this, arguments);
-        this.msg = msg;
-        this.stack = (new Error()).stack;
-        throw 'StageCallback: ' + msg;
-    }
-
-    NodeGameStageCallbackError.prototype = new Error();
-    NodeGameStageCallbackError.prototype.constructor =
-        NodeGameStageCallbackError;
-    NodeGameStageCallbackError.prototype.name =
-        'NodeGameStageCallbackError';
-
-
-    /**
-     * ## NodeGameMisconfiguredGameError
-     *
-     * An error occurred during the configuration of the Game
-     */
-    function NodeGameMisconfiguredGameError(msg) {
-        //Error.apply(this, arguments);
-        this.msg = msg;
-        this.stack = (new Error()).stack;
-        throw 'MisconfiguredGame: ' + msg;
-    }
-
-    NodeGameMisconfiguredGameError.prototype = new Error();
-    NodeGameMisconfiguredGameError.prototype.constructor =
-        NodeGameMisconfiguredGameError;
-    NodeGameMisconfiguredGameError.prototype.name =
-        'NodeGameMisconfiguredGameError';
-
-
-    /**
-     * ## NodeGameIllegalOperationError
-     *
-     * An error occurred during the configuration of the Game
-     */
-    function NodeGameIllegalOperationError(msg) {
-        //Error.apply(this, arguments);
-        this.msg = msg;
-        this.stack = (new Error()).stack;
-        throw 'IllegalOperation: ' + msg;
-    }
-
-    NodeGameIllegalOperationError.prototype = new Error();
-    NodeGameIllegalOperationError.prototype.constructor =
-        NodeGameIllegalOperationError;
-    NodeGameIllegalOperationError.prototype.name =
-        'NodeGameIllegalOperationError';
 
 // ## Closure
 })(
@@ -9392,7 +9960,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # EventEmitter
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * Event emitter engine for `nodeGame`
@@ -9580,7 +10148,6 @@ if (!Array.prototype.indexOf) {
                 break;
 
             default:
-                // slower
                 len = arguments.length;
                 args = new Array(len - 1);
                 for (i = 1; i < len; i++) {
@@ -9611,8 +10178,9 @@ if (!Array.prototype.indexOf) {
         }
 
         // Log the event into node.history object, if present.
-        if (node.conf && node.conf.events
-            && node.conf.events.history) {
+        if (node.conf && node.conf.events &&
+            node.conf.events.history) {
+
             this.history.insert({
                 stage: node.game.getCurrentGameStage(),
                 args: arguments
@@ -9679,7 +10247,7 @@ if (!Array.prototype.indexOf) {
     EventEmitter.prototype.remove = EventEmitter.prototype.off =
     function(type, listener) {
 
-        var listeners, len, i, type, node, found, name, removed;
+        var listeners, len, i, node, found, name, removed;
 
         removed = [];
         node = this.node;
@@ -9717,7 +10285,7 @@ if (!Array.prototype.indexOf) {
                 if ('function' === typeof this.events[type]) {
 
                     if ('function' === typeof listener) {
-                        if (listener == this.events[type]) found = true
+                        if (listener == this.events[type]) found = true;
                     }
                     else {
                         // String.
@@ -9882,7 +10450,7 @@ if (!Array.prototype.indexOf) {
         // Groups disabled for the moment.
         // this.createEEGroup('game', 'step', 'stage', 'game');
         // this.createEEGroup('stage', 'stage', 'game');
-    };
+    }
 
     // ## EventEmitterManager methods
 
@@ -10408,7 +10976,7 @@ if (!Array.prototype.indexOf) {
 
             this.history.rebuildIndexes();
 
-            hash = new GameStage(session.stage).toHash('S.s.r');
+            hash = new GameStage(stage).toHash('S.s.r');
 
             if (!this.history.stage) {
                 node.silly('No past events to re-emit found.');
@@ -10472,7 +11040,7 @@ if (!Array.prototype.indexOf) {
 /**
  * # GameStage
  *
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * Representation of the stage of a game:
@@ -10785,9 +11353,7 @@ if (!Array.prototype.indexOf) {
     // Setting up global scope variables
     var J = parent.JSUS,
         NDDB = parent.NDDB,
-        GameStage = parent.GameStage,
-        Game = parent.Game,
-        NodeGameRuntimeError = parent.NodeGameRuntimeError;
+        GameStage = parent.GameStage;
 
     var stageLevels = parent.constants.stageLevels;
     var stateLevels = parent.constants.stateLevels;
@@ -10975,15 +11541,13 @@ if (!Array.prototype.indexOf) {
      */
     PlayerList.prototype.get = function(id) {
         var player;
-        if ('undefined' === typeof id) {
-            throw new NodeGameRuntimeError(
-                    'PlayerList.get: id was not given');
+        if ('string' !== typeof id) {
+            throw new TypeError('PlayerList.get: id must be string.');
 
         }
         player = this.id.get(id);
         if (!player) {
-            throw new NodeGameRuntimeError(
-                    'PlayerList.get: Player not found (id ' + id + ')');
+            throw new Error('PlayerList.get: Player not found: ' + id + '.');
         }
         return player;
     };
@@ -11281,7 +11845,7 @@ if (!Array.prototype.indexOf) {
                                 '> 0: ' + N + '.');
         }
         groups = J.getNGroups(this.db, N);
-        return PlayerList.array2Groups(groups);
+        return array2Groups(groups);
     };
 
     /**
@@ -11302,7 +11866,7 @@ if (!Array.prototype.indexOf) {
                                 '> 0: ' + N + '.');
         }
         groups = J.getGroupsSizeN(this.db, N);
-        return PlayerList.array2Groups(groups);
+        return array2Groups(groups);
     };
 
     /**
@@ -11346,9 +11910,9 @@ if (!Array.prototype.indexOf) {
         i = -1, len = array.length;
         for ( ; ++i < len ; ) {
             array[i] = new PlayerList(settings, array[i]);
-        };
+        }
         return array;
-    };
+    }
 
     syncTypes = {STAGE: '', STAGE_UPTO: '', EXACT: ''};
 
@@ -11550,7 +12114,7 @@ if (!Array.prototype.indexOf) {
 /**
  * # GameMsg
  *
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * `nodeGame` exchangeable data format
@@ -11795,14 +12359,9 @@ if (!Array.prototype.indexOf) {
      * TODO: Create an hash method as for GameStage
      */
     GameMsg.prototype.toSMS = function() {
-
-        var parseDate = /\w+/; // Select the second word;
-        var results = parseDate.exec(this.created);
-
         var line = '[' + this.from + ']->[' + this.to + ']\t';
         line += '|' + this.action + '.' + this.target + '|'+ '\t';
         line += ' ' + this.text + ' ';
-
         return line;
     };
 
@@ -11849,7 +12408,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Stager
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * `nodeGame` container and builder of the game sequence
@@ -12051,8 +12610,8 @@ if (!Array.prototype.indexOf) {
      */
     Stager.prototype.registerGeneralNext = function(func) {
         if (func !== null && 'function' !== typeof func) {
-            throw new TypError('Stager.registerGeneralNext: ' +
-                               'func must be function or undefined.');
+            throw new TypeError('Stager.registerGeneralNext: ' +
+                                'func must be function or undefined.');
         }
         this.generalNextFunction = func;
     };
@@ -12633,7 +13192,6 @@ if (!Array.prototype.indexOf) {
         var seqIdx;
         var seqObj;
         var stepPrefix;
-        var gameOver = false;
 
         switch (format) {
         case 'hstages':
@@ -13041,7 +13599,7 @@ if (!Array.prototype.indexOf) {
                 '. Use extendStep to modify it';
         }
         return null;
-    };
+    }
 
     /**
      * checkStageValidity
@@ -13077,7 +13635,7 @@ if (!Array.prototype.indexOf) {
         }
 
         return null;
-    };
+    }
 
     /**
      * handleAlias
@@ -13150,7 +13708,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # GamePlot
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * `nodeGame` container of game stages functions
@@ -13162,12 +13720,9 @@ if (!Array.prototype.indexOf) {
     // ## Global scope
     exports.GamePlot = GamePlot;
 
-    var Stager = parent.Stager;
     var GameStage = parent.GameStage;
     var J = parent.JSUS;
 
-    var NodeGameMisconfiguredGameError = parent.NodeGameMisconfiguredGameError,
-    NodeGameRuntimeError = parent.NodeGameRuntimeError;
     // ## Constants
     GamePlot.GAMEOVER = 'NODEGAME_GAMEOVER';
     GamePlot.END_SEQ  = 'NODEGAME_END_SEQ';
@@ -13212,8 +13767,7 @@ if (!Array.prototype.indexOf) {
     GamePlot.prototype.init = function(stager) {
         if (stager) {
             if ('object' !== typeof stager) {
-                throw new NodeGameMisconfiguredGameError(
-                    'GamePlot.init: called with invalid stager.');
+                throw new Error('GamePlot.init: called with invalid stager.');
             }
             this.stager = stager;
         }
@@ -13233,7 +13787,8 @@ if (!Array.prototype.indexOf) {
      */
     GamePlot.prototype.setDefaultLog = function(log) {
         if ('function' !== typeof log) {
-            throw new TypeError('GamePlot.setDefaultLog: log must be function.');
+            throw new TypeError('GamePlot.setDefaultLog: log must be ' +
+                                'function.');
         }
         this.log = log;
         if (this.stager) this.stager.log = this.log;
@@ -13260,7 +13815,7 @@ if (!Array.prototype.indexOf) {
         // Find out flexibility mode:
         var flexibleMode = this.isFlexibleMode();
 
-        var seqIdx, seqObj = null, stageObj;
+        var seqObj = null, stageObj;
         var stageNo, stepNo;
         var normStage = null;
         var nextStage = null;
@@ -13289,9 +13844,8 @@ if (!Array.prototype.indexOf) {
             stageObj = this.stager.stages[curStage.stage];
 
             if ('undefined' === typeof stageObj) {
-                throw new NodeGameRunTimeError(
-                    'GamePlot.next: received nonexistent stage: ' +
-                        curStage.stage);
+                throw new Error('Gameplot.next: received nonexistent stage: ' +
+                                curStage.stage);
             }
 
             // Find step number:
@@ -13302,9 +13856,8 @@ if (!Array.prototype.indexOf) {
                 stepNo = stageObj.steps.indexOf(curStage.step) + 1;
             }
             if (stepNo < 1) {
-                throw new NodeGameRunTimeError(
-                    'GamePlot.next: received nonexistent step: ' +
-                          stageObj.id + '.' + curStage.step);
+                throw new Error('GamePlot.next: received nonexistent step: ' +
+                                stageObj.id + '.' + curStage.step);
             }
 
             // Handle stepping:
@@ -13435,7 +13988,7 @@ if (!Array.prototype.indexOf) {
         if (!this.stager) return GamePlot.NO_SEQ;
 
         var normStage;
-        var seqIdx, seqObj = null, stageObj = null;
+        var seqObj = null, stageObj = null;
         var prevSeqObj;
         var stageNo, stepNo, prevStepNo;
 
@@ -14079,7 +14632,7 @@ if (!Array.prototype.indexOf) {
 /**
  * # GameMsgGenerator
  *
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * `nodeGame` component rensponsible creating messages
@@ -14201,12 +14754,11 @@ if (!Array.prototype.indexOf) {
     // Storage for socket types.
     var types = {};
 
-    function checkContract( proto ) {
+    function checkContract(Proto) {
         var test;
-        test = new proto();
+        test = new Proto();
         if (!test.send) return false;
         if (!test.connect) return false;
-
         return true;
     }
 
@@ -14265,8 +14817,6 @@ if (!Array.prototype.indexOf) {
     var GameMsg = parent.GameMsg,
     SocketFactory = parent.SocketFactory,
     J = parent.JSUS;
-
-    var action = parent.action;
 
     /**
      * ## Socket constructor
@@ -14530,8 +15080,8 @@ if (!Array.prototype.indexOf) {
      *
      * Calls the disconnect method on the actual socket object
      */
-    Socket.prototype.disconnect = function() {
-        if (!this.connecting && !this.connected) {
+    Socket.prototype.disconnect = function(force) {
+        if (!force && !this.connecting && !this.connected) {
             node.warn('Socket.disconnect: socket is not connected.');
             return;
         }
@@ -14878,7 +15428,7 @@ if (!Array.prototype.indexOf) {
         error = (e) ? text + ": " + e : text;
         this.node.err('Socket.secureParse: ' + error);
         return false;
-    };
+    }
 
 })(
     'undefined' != typeof node ? node : module.exports,
@@ -14887,8 +15437,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # SocketIo
- *
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * Implementation of a remote socket communicating over HTTP
@@ -14904,10 +15453,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Global scope
 
-    var GameMsg = node.GameMsg,
-    Player = node.Player,
-    GameMsgGenerator = node.GameMsgGenerator,
-    J = node.JSUS;
+    var J = node.JSUS;
 
     exports.SocketIo = SocketIo;
 
@@ -15042,8 +15588,7 @@ if (!Array.prototype.indexOf) {
     "use strict";
 
     // ## Global scope.
-    var JSUS = parent.JSUS,
-    NDDB = parent.NDDB,
+    var NDDB = parent.NDDB,
     GameStage = parent.GameStage;
 
     // Inheriting from NDDB.
@@ -15126,11 +15671,10 @@ if (!Array.prototype.indexOf) {
     exports.Game = Game;
 
     var GameStage = parent.GameStage,
-        GameDB = parent.GameDB,
-        GamePlot = parent.GamePlot,
-        PlayerList = parent.PlayerList,
-        Stager = parent.Stager,
-        J = parent.JSUS;
+    GameDB = parent.GameDB,
+    GamePlot = parent.GamePlot,
+    PlayerList = parent.PlayerList,
+    Stager = parent.Stager;
 
     var constants = parent.constants;
 
@@ -15180,7 +15724,7 @@ if (!Array.prototype.indexOf) {
          * contained in the game folder: `game/game.settings`,
          * depending also on the chosen treatment.
          */
-        this.settings = {}
+        this.settings = {};
 
         /**
          * ### Game.pl
@@ -15622,8 +16166,7 @@ if (!Array.prototype.indexOf) {
         stepRule = this.plot.getStepRule(this.getCurrentGameStage());
 
         if ('function' !== typeof stepRule) {
-            throw new this.node.NodeGameMisconfiguredGameError(
-                'Game.shouldStep: stepRule is not a function.');
+            throw new TypeError('Game.shouldStep: stepRule is not a function.');
         }
 
         stageLevel = stageLevel || this.getStageLevel();
@@ -15663,6 +16206,9 @@ if (!Array.prototype.indexOf) {
      *
      * @param {string|GameStage} nextStep A game stage object, or a string like
      *   GAME_OVER.
+     * @param {object} options Optional. Additional options, such as:
+     *   `willBeDone` (immediately calls `node.done()`, useful
+     *   for reconnections)
      *
      * @see Game.execStep
      * @see GameStage
@@ -15670,7 +16216,7 @@ if (!Array.prototype.indexOf) {
      * TODO: harmonize return values
      * TODO: remove some unused comments in the code.
      */
-    Game.prototype.gotoStep = function(nextStep) {
+    Game.prototype.gotoStep = function(nextStep, options) {
         var curStep;
         var curStageObj, nextStepObj, nextStageObj;
         var ev, node;
@@ -15679,8 +16225,7 @@ if (!Array.prototype.indexOf) {
         var minCallback = null, maxCallback = null, exactCallback = null;
 
         if (!this.isSteppable()) {
-            throw new this.node.NodeGameMisconfiguredGameError(
-                'Game.gotoStep: game cannot be stepped.');
+            throw new Error('Game.gotoStep: game cannot be stepped.');
         }
 
         if ('string' !== typeof nextStep && 'object' !== typeof nextStep) {
@@ -15688,6 +16233,12 @@ if (!Array.prototype.indexOf) {
                                 'an object or a string.');
         }
 
+        if (options && 'object' !== typeof options) {
+            throw new TypeError('Game.gotoStep: options must be object or ' +
+                                'undefined.');
+        }
+
+        options = options || {};
         curStep = this.getCurrentGameStage();
         node = this.node;
 
@@ -15735,6 +16286,11 @@ if (!Array.prototype.indexOf) {
             nextStepObj = this.plot.getStep(nextStep);
             if (!nextStepObj) return false;
 
+            // Check options.
+            // TODO: this does not lock screen / stop timer.
+            if (options.willBeDone) this.willBeDone = true;
+
+
             // stageLevel needs to be changed (silent), otherwise it stays DONE
             // for a short time in the new game stage:
             this.setStageLevel(constants.stageLevels.UNINITIALIZED, 'S');
@@ -15764,7 +16320,7 @@ if (!Array.prototype.indexOf) {
                 // Load the listeners for the stage, if any:
                 for (ev in nextStageObj.on) {
                     if (nextStageObj.on.hasOwnProperty(ev)) {
-                        node.events.ee.stage.on(ev, nextStageObjs.on[ev]);
+                        node.events.ee.stage.on(ev, nextStageObj.on[ev]);
                     }
                 }
             }
@@ -15915,7 +16471,7 @@ if (!Array.prototype.indexOf) {
             // Load the listeners for the step, if any:
             for (ev in nextStepObj.on) {
                 if (nextStepObj.on.hasOwnProperty(ev)) {
-                    node.events.ee.step.on(ev, nextStepObjs.on[ev]);
+                    node.events.ee.step.on(ev, nextStepObj.on[ev]);
                 }
             }
 
@@ -15939,7 +16495,7 @@ if (!Array.prototype.indexOf) {
      * @return {boolean} The result of the execution of the step callback
      */
     Game.prototype.execStep = function(step) {
-        var cb, res;
+        var cb;
         var frame, frameOptions;
 
         if ('object' !== typeof step) {
@@ -16145,8 +16701,8 @@ if (!Array.prototype.indexOf) {
         var node;
         node = this.node;
         if ('number' !== typeof stateLevel) {
-            throw new node.NodeGameMisconfiguredGameError(
-                'setStateLevel called with invalid parameter: ' + stateLevel);
+            throw new TypeError('Game.setStateLevel: stateLevel must be ' +
+                                'number. Found: ' + stateLevel);
         }
         // Important: First publish, then actually update.
         if (mod === 'F' || (!mod && this.getStateLevel() !== stateLevel)) {
@@ -16200,8 +16756,8 @@ if (!Array.prototype.indexOf) {
         var node;
         node = this.node;
         if ('number' !== typeof stageLevel) {
-            throw new node.NodeGameMisconfiguredGameError(
-                'setStageLevel called with invalid parameter: ' + stageLevel);
+            throw new TypeError('Game.setStageLevel: stageLevel must be ' +
+                                'number. Found: ' + stageLevel);
         }
         // Important: First publish, then actually update.
         if (mod === 'F' || (!mod && this.getStageLevel() !== stageLevel)) {
@@ -16495,7 +17051,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # GameSession
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * `nodeGame` session manager
@@ -16506,10 +17062,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Global scope
 
-    var GameMsg = node.GameMsg,
-    Player = node.Player,
-    GameMsgGenerator = node.GameMsgGenerator,
-    J = node.JSUS;
+    var J = node.JSUS;
 
     // Exposing constructor.
     exports.GameSession = GameSession;
@@ -16606,7 +17159,8 @@ if (!Array.prototype.indexOf) {
 //            return true;
 //        }
 //        catch(e) {
-//            node.err('could not restore game stage. An error has occurred: ' + e);
+//            node.err('could not restore game stage. ' +
+//                     'An error has occurred: ' + e);
 //            return false;
 //        }
 //
@@ -16851,7 +17405,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # GroupManager
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * `nodeGame` group manager
@@ -17254,17 +17808,20 @@ if (!Array.prototype.indexOf) {
         group.addMember(item);
     }
 
-    // Here follows previous implementation of GroupManager, called RMatcher - scarcely commented.
-    // RMatcher is not the same as a GroupManager, but does something very useful:
+    // Here follows previous implementation of GroupManager, called RMatcher
+    // RMatcher is not the same as a GroupManager, and does this:
     // It assigns elements to groups based on a set of preferences
 
     // elements: what you want in the group
-    // pools: array of array. it is set of preferences (elements from the first array will be used first
+    // pools: array of array. it is set of preferences
+    // (elements from the first array will be used first)
 
     // Groups.rowLimit determines how many unique elements per row
 
-    // Group.match returns an array of length N, where N is the length of _elements_.
-    // The t-th position in the matched array is the match for t-th element in the _elements_ array.
+    // Group.match returns an array of length N,
+    // where N is the length of _elements_.
+    // The t-th position in the matched array is the match
+    // for t-th element in the _elements_ array.
     // The matching is done trying to follow the preference in the pool.
 
 
@@ -17416,7 +17973,9 @@ if (!Array.prototype.indexOf) {
     };
 
 
-    RMatcher.prototype.switchFromGroup = function(fromGroup, toGroup, fromRow, leftOvers) {
+    RMatcher.prototype.switchFromGroup = function(fromGroup, toGroup,
+                                                  fromRow, leftOvers) {
+
         var toRow, j, n, x, h, switched;
         for (toRow = 0; toRow < fromGroup.elements.length; toRow++) {
 
@@ -17437,9 +17996,9 @@ if (!Array.prototype.indexOf) {
                                 if (toGroup.matches.done) {
 
 
-                                    //	console.log('is done')
-                                    //	console.log(toGroup);
-                                    //	console.log('is done')
+                                    //  console.log('is done')
+                                    //  console.log(toGroup);
+                                    //  console.log('is done')
 
                                     this.doneCounter++;
                                 }
@@ -17988,7 +18547,8 @@ if (!Array.prototype.indexOf) {
         console.log('elements: ', this.elements);
         console.log('pool: ', this.pool);
         console.log('left over: ', this.leftOver);
-        console.log('hits: ' + this.matches.total + '/' + this.matches.requested);
+        console.log('hits: ' + this.matches.total + '/' +
+                    this.matches.requested);
         console.log('matched: ', this.matched);
     };
 
@@ -18001,7 +18561,7 @@ if (!Array.prototype.indexOf) {
      *
      * Resets match and possibly also elements and pool.
      *
-     * @param {boolean} all If TRUE, also _elements_ and _pool_ will be deletedx
+     * @param {boolean} all If TRUE, also _elements_ and _pool_ will be deleted
      */
     Group.prototype.reset = function(all) {
 
@@ -18072,9 +18632,9 @@ if (!Array.prototype.indexOf) {
             elements = getElements(),
             pools = getPools();
 
-            //		console.log('NN ' , numbers);
-            //		console.log(elements);
-            //		console.log(pools)
+            //          console.log('NN ' , numbers);
+            //          console.log(elements);
+            //          console.log(pools)
             rm.init(elements, pools);
 
             var matched = rm.match();
@@ -18105,7 +18665,8 @@ if (!Array.prototype.indexOf) {
     //simulateMatch(1000000000);
 
     //var myElements = [ [ 1, 5], [ 6, 9 ], [ 2, 3, 4, 7, 8 ] ];
-    //var myPools = [ [ [ ], [ 1,  5, 6, 7] ], [ [4], [ 3, 9] ], [ [], [ 2, 8] ] ];
+    //var myPools = [ [ [ ], [ 1,  5, 6, 7] ], [ [4], [ 3, 9] ],
+    //                [ [], [ 2, 8] ] ];
 
     //4.07A 25
     //4.77C 25
@@ -18151,18 +18712,19 @@ if (!Array.prototype.indexOf) {
 
 
 
-    //20961392604176200	SUB	A	1351591619837
-    //19868497151402600000	SUB	A	1351591620386
-    //5688413461195620000	SUB	A	1351591652731
-    //2019166870553500000	SUB	B	1351591653043
-    //389546331863136000	SUB	B	1351591653803
-    //1886985572967670000	SUB	C	1351591654603
-    //762387587655923000	SUB	C	1351591654648
-    //1757870795266120000	SUB	B	1351591655960
-    //766044637969952000	SUB	A	1351591656253
+    //20961392604176200 SUB     A       1351591619837
+    //19868497151402600000      SUB     A       1351591620386
+    //5688413461195620000       SUB     A       1351591652731
+    //2019166870553500000       SUB     B       1351591653043
+    //389546331863136000        SUB     B       1351591653803
+    //1886985572967670000       SUB     C       1351591654603
+    //762387587655923000        SUB     C       1351591654648
+    //1757870795266120000       SUB     B       1351591655960
+    //766044637969952000        SUB     A       1351591656253
 
     //var myElements = [ [ 3, 5 ], [ 8, 9, 1, 7, 6 ], [ 2, 4 ] ];
-    //var myPools = [ [ [ 6 ], [ 9, 7 ] ], [ [], [ 8, 1, 5, 4 ] ], [ [], [ 2, 3 ] ] ];
+    //var myPools = [ [ [ 6 ], [ 9, 7 ] ], [ [], [ 8, 1, 5, 4 ] ],
+    //                [ [], [ 2, 3 ] ] ];
 
     //var myElements = [ [ '13988427821680113598', '102698780807709949' ],
     //  [],
@@ -18180,28 +18742,28 @@ if (!Array.prototype.indexOf) {
     //
     //
     //for (var j = 0; j < myRM.groups.length; j++) {
-    //	var g = myRM.groups[j];
-    //	for (var h = 0; h < g.elements.length; h++) {
-    //		if (g.matched[h].length !== g.rowLimit) {
-    //			console.log('Wrong match: ' + j + '-' + h);
+    //  var g = myRM.groups[j];
+    //  for (var h = 0; h < g.elements.length; h++) {
+    //          if (g.matched[h].length !== g.rowLimit) {
+    //                  console.log('Wrong match: ' + j + '-' + h);
     //
-    //			console.log(myRM.options.elements);
-    //			console.log(myRM.options.pools);
-    ////			console.log(matched);
-    //		}
-    //	}
+    //                  console.log(myRM.options.elements);
+    //                  console.log(myRM.options.pools);
+    ////                        console.log(matched);
+    //          }
+    //  }
     //}
 
     //if (!myRM.allGroupsDone()) {
-    //	console.log('ERROR')
-    //	console.log(myElements);
-    //	console.log(myPools);
-    //	console.log(myMatch);
+    //  console.log('ERROR')
+    //  console.log(myElements);
+    //  console.log(myPools);
+    //  console.log(myMatch);
     //
-    //	console.log('---')
-    //	J.each(myRM.groups, function(g) {
-    //		console.log(g.pool);
-    //	});
+    //  console.log('---')
+    //  J.each(myRM.groups, function(g) {
+    //          console.log(g.pool);
+    //  });
     //}
 
     //console.log(myElements);
@@ -18252,8 +18814,6 @@ if (!Array.prototype.indexOf) {
     //console.log(g.elements);
     //console.log(g.matched);
 
-
-
     // ## Closure
 })(
     'undefined' != typeof node ? node : module.exports,
@@ -18262,7 +18822,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # RoleMapper
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * `nodeGame` manager of player ids and aliases
@@ -18288,7 +18848,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Timer
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * Timing-related utility functions
@@ -18299,7 +18859,6 @@ if (!Array.prototype.indexOf) {
 
     // ## Global scope
     var J = parent.JSUS;
-    var constants = parent.constants;
 
     // Exposing Timer constructor
     exports.Timer = Timer;
@@ -18519,8 +19078,7 @@ if (!Array.prototype.indexOf) {
             };
         }
 
-        tentativeName = emit
-            ? 'rndEmit_' + hook + '_' + J.randomInt(0, 1000000)
+        tentativeName = emit ? 'rndEmit_' + hook + '_' + J.randomInt(0, 1000000)
             : 'rndExec_' + J.randomInt(0, 1000000);
 
         // Create and run timer:
@@ -18724,7 +19282,7 @@ if (!Array.prototype.indexOf) {
     /**
      * # GameTimer
      *
-     * Copyright(c) 2014 Stefano Balietti
+     * Copyright(c) 2015 Stefano Balietti
      * MIT Licensed
      *
      * Creates a controllable timer object for nodeGame.
@@ -19063,8 +19621,8 @@ if (!Array.prototype.indexOf) {
             }
             hook = hook.hook;
         }
-        if(!name) {
-            name = JSUS.uniqueKey(this.hookNames,'timerHook');
+        if (!name) {
+            name = J.uniqueKey(this.hookNames, 'timerHook');
         }
         for (i = 0; i < this.hooks.length; i++) {
             if (this.hooks[i].name === name) {
@@ -19319,7 +19877,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # NodeGameClient
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * nodeGame: Real-time social experiments in the browser.
@@ -19349,7 +19907,6 @@ if (!Array.prototype.indexOf) {
      * Creates a new NodeGameClient object
      */
     function NodeGameClient() {
-        var that = this;
 
         this.info('node: loading.');
 
@@ -19633,7 +20190,7 @@ if (!Array.prototype.indexOf) {
      *   the log entry. Default: 'ng> '
      */
     NGC.prototype.log = function(txt, level, prefix) {
-        var numLevel, hash
+        var numLevel;
         if ('undefined' === typeof txt) return;
 
         level  = level || 'info';
@@ -19721,13 +20278,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Global scope
 
-    var GameMsg = node.GameMsg,
-    Player = node.Player,
-    Game = node.Game,
-    GamePlot = node.GamePlot,
-    Stager = node.Stager,
-    GameMsgGenerator = node.GameMsgGenerator,
-    J = node.JSUS;
+    var J = node.JSUS;
 
     var NGC = node.NodeGameClient;
 
@@ -19770,8 +20321,8 @@ if (!Array.prototype.indexOf) {
 
         func = this.setup[property];
         if (!func) {
-            throw new Error('node.setup: no such property to configure: '
-                            + property + '.');
+            throw new Error('node.setup: no such property to configure: ' +
+                            property + '.');
         }
 
         // Setup the property using rest of arguments:
@@ -19809,7 +20360,7 @@ if (!Array.prototype.indexOf) {
         this.setup[property] = function() {
             that.info('setup ' + property + '.');
             return func.apply(that, arguments);
-        }
+        };
     };
 
     /**
@@ -19822,13 +20373,12 @@ if (!Array.prototype.indexOf) {
      * @see node.setup
      */
     NGC.prototype.deregisterSetup = function(feature) {
-        var that;
         if ('string' !== typeof feature) {
             throw new TypeError('node.deregisterSetup: property must ' +
                                 'be string.');
         }
         if (!this.setup[feature]) {
-            this.warn('node.deregisterSetup: feature ' + property + ' not ' +
+            this.warn('node.deregisterSetup: feature ' + feature + ' not ' +
                       'previously registered.');
             return;
         }
@@ -19842,7 +20392,7 @@ if (!Array.prototype.indexOf) {
      *
      * Accepts any number of extra parameters that are sent as option values.
      *
-     * @param {string} property The feature to configure
+     * @param {string} feature The feature to configure
      * @param {string|array} to The id of the remote client to configure
      *
      * @return{boolean} TRUE, if configuration is successful
@@ -19850,29 +20400,39 @@ if (!Array.prototype.indexOf) {
      * @see node.setup
      * @see JSUS.stringifyAll
      */
-    NGC.prototype.remoteSetup = function(property, to) {
-        var msg, payload;
+    NGC.prototype.remoteSetup = function(feature, to) {
+        var msg, payload, len;
 
-        if ('string' !== typeof 'property') {
-            throw new TypeError('node.remoteSetup: property must be string.');
+        if ('string' !== typeof feature) {
+            throw new TypeError('node.remoteSetup: feature must be string.');
         }
         if ('string' !== typeof to && !J.isArray(to)) {
             throw new TypeError('node.remoteSetup: to must be string or ' +
                                 'array.');
         }
+        len = arguments.length;
+        if (len > 2) {
+            if (len === 3) payload = [arguments[2]];
+            else if (len === 4) payload = [arguments[2], arguments[3]];
+            else {
+                payload = new Array(len - 2);
+                for (i = 2; i < len; i++) {
+                    payload[i - 2] = arguments[i];
+                }
+            }
+            payload = J.stringifyAll(payload);
 
-        payload = J.stringifyAll(Array.prototype.slice.call(arguments, 2));
-
-        if (!payload) {
-            this.err('node.remoteSetup: an error occurred while ' +
-                     'stringifying payload.');
-            return false;
+            if (!payload) {
+                this.err('node.remoteSetup: an error occurred while ' +
+                         'stringifying payload.');
+                return false;
+            }
         }
 
         msg = this.msg.create({
             target: this.constants.target.SETUP,
             to: to,
-            text: property,
+            text: feature,
             data: payload
         });
 
@@ -19886,7 +20446,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Alias
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * `nodeGame` aliasing module
@@ -19897,10 +20457,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Global scope
 
-    var GameMsg = node.GameMsg,
-    Player = node.Player,
-    GameMsgGenerator = node.GameMsgGenerator,
-    J = node.JSUS;
+    var J = node.JSUS;
 
     var NGC = node.NodeGameClient;
 
@@ -19925,8 +20482,8 @@ if (!Array.prototype.indexOf) {
      *       };
      *   });
      *
-     * 	node.on.data('myLabel', function(){ ... };
-     * 	node.once.data('myLabel', function(){ ... };
+     *  node.on.data('myLabel', function(){ ... };
+     *  node.once.data('myLabel', function(){ ... };
      * ```
      *
      * @param {string} alias The name of alias
@@ -19937,10 +20494,10 @@ if (!Array.prototype.indexOf) {
      *   actually be invoked when the aliased event is fired.
      */
     NGC.prototype.alias = function(alias, events, modifier) {
-	var that, func;
+        var that;
         if ('string' !== typeof alias) {
             throw new TypeError('node.alias: alias must be string.');
-	}
+        }
         if ('string' === typeof events) {
             events = [events];
         }
@@ -19988,7 +20545,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Connect
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * `nodeGame` connect module
@@ -20119,7 +20676,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Events
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * `nodeGame` events handling
@@ -20164,11 +20721,11 @@ if (!Array.prototype.indexOf) {
      * @see EventEmitterManager
      */
     NGC.prototype.getCurrentEventEmitter = function() {
-        var gameStage, stageLevel, stateLevel;
+        var gameStage;
 
         // NodeGame default listeners
         if (!this.game) return this.events.ee.ng;
-        gameStage = this.game.getCurrentGameStage()
+        gameStage = this.game.getCurrentGameStage();
         if (!gameStage) return this.events.ee.ng;
 
         // Game listeners.
@@ -20538,7 +21095,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Commands
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * `nodeGame` commands
@@ -20607,7 +21164,8 @@ if (!Array.prototype.indexOf) {
                             command + '.');
         }
         if ('string' !== typeof to && !J.isArray(to)) {
-            throw new TypeError('node.remoteCommand: to must be string or array.');
+            throw new TypeError('node.remoteCommand: to must be string ' +
+                                'or array.');
         }
 
         msg = this.msg.create({
@@ -20653,7 +21211,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Extra
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * `nodeGame` extra functions
@@ -20662,7 +21220,7 @@ if (!Array.prototype.indexOf) {
 
     "use strict";
 
-    var NGC = parent.NodeGameClient
+    var NGC = parent.NodeGameClient;
 
     /**
      * ### node.env
@@ -20686,7 +21244,8 @@ if (!Array.prototype.indexOf) {
             throw new TypeError('node.env: env must be string.');
         }
         if (func && 'function' !== typeof func) {
-            throw new TypeError('node.env: func must be function or undefined.');
+            throw new TypeError('node.env: func must be function ' +
+                                'or undefined.');
         }
         if (ctx && 'object' !== typeof ctx) {
             throw new TypeError('node.env: ctx must be object or undefined.');
@@ -20732,7 +21291,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # GetJSON
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * `nodeGame` JSON fetching
@@ -20780,7 +21339,8 @@ if (!Array.prototype.indexOf) {
         }
 
         if ('undefined' !== typeof doneCb && 'function' !== typeof doneCb) {
-            throw new Error('NGC.getJSON: doneCb must be undefined or function');
+            throw new Error('NGC.getJSON: doneCb must be undefined or ' +
+                            'function');
         }
 
         // If no URIs are given, we're done:
@@ -20850,7 +21410,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # incoming
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * Listeners for incoming messages
@@ -20865,14 +21425,11 @@ if (!Array.prototype.indexOf) {
 
     var NGC = parent.NodeGameClient;
 
-    var GameMsg = parent.GameMsg,
-    GameStage = parent.GameStage,
-    PlayerList = parent.PlayerList,
+    var PlayerList = parent.PlayerList,
     Player = parent.Player,
     J = parent.JSUS;
 
-    var action = parent.constants.action,
-    target = parent.constants.target;
+    var action = parent.constants.action;
 
     var say = action.SAY + '.',
     set = action.SET + '.',
@@ -20899,6 +21456,24 @@ if (!Array.prototype.indexOf) {
         }
 
         this.info('node: adding incoming listeners.');
+
+        /**
+         * ## in.say.PCONNECT
+         *
+         * Adds a new player to the player list
+         *
+         * @emit UDATED_PLIST
+         * @see Game.pl
+         */
+        node.events.ng.on( IN + say + 'BYE', function(msg) {
+            var force;
+            if (msg.data) {
+                // Options for reconnections, for example.
+                // Sending data, do something before disconnect.
+            }
+            force = true;
+            node.socket.disconnect(force);
+        });
 
         /**
          * ## in.say.PCONNECT
@@ -21295,23 +21870,12 @@ if (!Array.prototype.indexOf) {
 
     var NGC = parent.NodeGameClient;
 
-    var GameMsg = parent.GameMsg,
-    GameStage = parent.GameStage,
-    PlayerList = parent.PlayerList,
-    Player = parent.Player,
-    J = parent.JSUS,
+    var GameStage = parent.GameStage,
     constants = parent.constants;
 
-    var action = constants.action,
-        target = constants.target,
-        stageLevels = constants.stageLevels;
+    var stageLevels = constants.stageLevels,
+    gcommands = constants.gamecommands;
 
-    var say = action.SAY + '.',
-    set = action.SET + '.',
-    get = action.GET + '.',
-    OUT = constants.OUT;
-
-    var gcommands = constants.gamecommands;
     var CMD = 'NODEGAME_GAMECOMMAND_';
 
     /**
@@ -21511,13 +22075,19 @@ if (!Array.prototype.indexOf) {
          * ## NODEGAME_GAMECOMMAND: goto_step
          *
          */
-        this.events.ng.on(CMD + gcommands.goto_step, function(step) {
+        this.events.ng.on(CMD + gcommands.goto_step, function(options) {
+            var step;
             if (!node.game.isSteppable()) {
                 node.err('Game cannot be stepped.');
                 return;
             }
-
-            node.emit('BEFORE_GAMECOMMAND', gcommands.goto_step, step);
+            // Adjust parameters.
+            if (options.targetStep) step = options.targetStep;
+            else {
+                step = options;
+                options = undefined;
+            }
+            node.emit('BEFORE_GAMECOMMAND', gcommands.goto_step, step, options);
             if (step !== parent.GamePlot.GAMEOVER) {
                 step = new GameStage(step);
                 if (!node.game.plot.getStep(step)) {
@@ -21525,7 +22095,7 @@ if (!Array.prototype.indexOf) {
                     return;
                 }
             }
-            node.game.gotoStep(step);
+            node.game.gotoStep(step, options);
         });
 
         /**
@@ -21569,11 +22139,11 @@ if (!Array.prototype.indexOf) {
 
     var NGC = parent.NodeGameClient;
 
-    var GameMsg = parent.GameMsg,
-    GameSage = parent.GameStage,
-    PlayerList = parent.PlayerList,
-    Player = parent.Player,
-    J = parent.JSUS;
+    var J = parent.JSUS,
+    GamePlot = parent.GamePlot,
+    Stager = parent.Stager;
+
+    var constants = parent.constants;
 
     /**
      * ## NodeGameClient.addDefaultSetupFunctions
@@ -21770,13 +22340,6 @@ if (!Array.prototype.indexOf) {
          * Sets up `node.game.settings`
          */
         this.registerSetup('settings', function(settings) {
-            if (!this.game) {
-                this.warn('setup("settings") called before ' +
-                          'node.game was initialized.');
-                throw new node.NodeGameMisconfiguredGameError(
-                    "node.game non-existent");
-            }
-
             if (settings) {
                 J.mixin(this.game.settings, settings);
             }
@@ -21790,13 +22353,6 @@ if (!Array.prototype.indexOf) {
          * Sets up `node.game.metadata`
          */
         this.registerSetup('metadata', function(metadata) {
-            if (!this.game) {
-                this.warn('setup("metadata") called before ' +
-                          'node.game was initialized');
-                throw new node.NodeGameMisconfiguredGameError(
-                    "node.game non-existent");
-            }
-
             if (metadata) {
                 J.mixin(this.game.metadata, metadata);
             }
@@ -21973,7 +22529,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # aliases
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * Event listener aliases.
@@ -21984,7 +22540,6 @@ if (!Array.prototype.indexOf) {
     "use strict";
 
     var NGC = parent.NodeGameClient;
-    var J = parent.JSUS;
 
     /**
      * ## NodeGameClient.addDefaultAliases
@@ -22090,7 +22645,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # TriggerManager
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * Manages a collection of trigger functions to be called sequentially
@@ -22224,8 +22779,9 @@ if (!Array.prototype.indexOf) {
                                 'be string.');
         }
         if (returnAt !== f && returnAt !== l) {
-            throw new TypeError('TriggerManager.setReturnAt: returnAt must be ' +
-                                f + ' or ' + l + '. Given:' + returnAt + '.');
+            throw new TypeError('TriggerManager.setReturnAt: returnAt must ' +
+                                'be ' + f + ' or ' + l + '. Given: ' +
+                                returnAt + '.');
         }
         this.returnAt = returnAt;
     };
@@ -22460,7 +23016,7 @@ if (!Array.prototype.indexOf) {
 
         function completed(event) {
             var iframeDoc;
-            iframeDoc = JSUS.getIFrameDocument(iframe);
+            iframeDoc = J.getIFrameDocument(iframe);
 
             // Detaching the function to avoid double execution.
             iframe.removeEventListener('load', completed, false);
@@ -22490,7 +23046,7 @@ if (!Array.prototype.indexOf) {
             // IE < 10 gives 'Permission Denied' if trying to access
             // the iframeDoc from the context of the function above.
             // We need to re-get it from the DOM.
-            iframeDoc = JSUS.getIFrameDocument(iframe);
+            iframeDoc = J.getIFrameDocument(iframe);
 
             // readyState === "complete" works also in oldIE.
             if (event.type === 'load' ||
@@ -23502,7 +24058,7 @@ if (!Array.prototype.indexOf) {
             throw new TypeError('GameWindow.initLibs: globalLibs must be ' +
                                 'array or undefined.');
         }
-        if (frameLibs && 'object' !== typeof framLibs) {
+        if (frameLibs && 'object' !== typeof frameLibs) {
             throw new TypeError('GameWindow.initLibs: frameLibs must be ' +
                                 'object or undefined.');
         }
@@ -24464,7 +25020,6 @@ if (!Array.prototype.indexOf) {
          * @see node.setup
          */
         node.registerSetup('header', function(conf) {
-            var url, cb, options;
             var frameName, force, root, rootName;
             if (!conf) return;
 
@@ -24526,7 +25081,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # ui-behavior
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * GameWindow UI Behavior module
@@ -24667,7 +25222,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # lockScreen
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * Locks / Unlocks the screen
@@ -24680,8 +25235,6 @@ if (!Array.prototype.indexOf) {
 (function(window, node) {
 
     "use strict";
-
-    var J = node.JSUS;
 
     var GameWindow = node.GameWindow;
     var screenLevels = node.constants.screenLevels;
@@ -24772,12 +25325,14 @@ if (!Array.prototype.indexOf) {
 
     "use strict";
 
-    function getElement(idOrObj) {
+    var J = node.JSUS;
+
+    function getElement(idOrObj, prefix) {
         var el;
         if ('string' === typeof idOrObj) {
             el = W.getElementById(idOrObj);
         }
-        else if (JSUS.isElement(idOrObj)) {
+        else if (J.isElement(idOrObj)) {
             el = idOrObj;
         }
         else {
@@ -24879,7 +25434,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # WaitScreen
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * Covers the screen with a gray layer, disables inputs, and displays a message
@@ -25156,7 +25711,7 @@ if (!Array.prototype.indexOf) {
      * @see WaitScreen.lock
      */
     WaitScreen.prototype.unlock = function() {
-        var j, i, len, inputs, nInputs;
+        var i, len;
 
         if (this.waitingDiv) {
             if (this.waitingDiv.style.display === '') {
@@ -25226,7 +25781,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # selector
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * Utility functions to create and manipulate meaninful HTML select lists for
@@ -25450,7 +26005,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # extra
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * GameWindow extras
@@ -25827,7 +26382,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Canvas
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * Creates an HTML canvas that can be manipulated by an api
@@ -25928,7 +26483,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # HTMLRenderer
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * Renders javascript objects into HTML following a pipeline
@@ -26057,10 +26612,12 @@ if (!Array.prototype.indexOf) {
         });
 
         this.tm.addTrigger(function(el) {
+            var html;
             if (!el) return;
-            if (el.content && el.content.parse
-                && 'function' === typeof el.content.parse) {
-                var html = el.content.parse();
+            if (el.content && el.content.parse &&
+                'function' === typeof el.content.parse) {
+
+                html = el.content.parse();
                 if (JSUS.isElement(html) || JSUS.isNode(html)) {
                     return html;
                 }
@@ -26170,7 +26727,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # List
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * Creates an HTML list that can be manipulated by an api
@@ -26181,7 +26738,6 @@ if (!Array.prototype.indexOf) {
 
     "use strict";
 
-    var JSUS = node.JSUS;
     var NDDB = node.NDDB;
 
     var HTMLRenderer = node.window.HTMLRenderer;
@@ -26371,7 +26927,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Table
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * Creates an HTML table that can be manipulated by an api.
@@ -27376,7 +27932,6 @@ if (!Array.prototype.indexOf) {
      *   or FALSE if an error occurs
      */
     Widgets.prototype.register = function(name, w) {
-        var i;
         if ('string' !== typeof name) {
             throw new TypeError('Widgets.register: name must be string.');
         }
@@ -27412,7 +27967,7 @@ if (!Array.prototype.indexOf) {
      * @TODO: add example.
      */
     Widgets.prototype.get = function(widgetName, options) {
-        var wProto, widget;
+        var WidgetPrototype, widget;
         var changes, origDestroy;
         var that;
         if ('string' !== typeof widgetName) {
@@ -27426,32 +27981,33 @@ if (!Array.prototype.indexOf) {
         that = this;
         options = options || {};
 
-        wProto = J.getNestedValue(widgetName, this.widgets);
+        WidgetPrototype = J.getNestedValue(widgetName, this.widgets);
 
-        if (!wProto) {
+        if (!WidgetPrototype) {
             throw new Error('Widgets.get: ' + widgetName + ' not found.');
         }
 
-        node.info('creating widget ' + wProto.name + ' v.' +  wProto.version);
+        node.info('creating widget ' + WidgetPrototype.name +
+                  ' v.' +  WidgetPrototype.version);
 
-        if (!this.checkDependencies(wProto)) {
+        if (!this.checkDependencies(WidgetPrototype)) {
             throw new Error('Widgets.get: ' + widgetName + ' has unmet ' +
                             'dependencies.');
         }
 
         // Add missing properties to the user options
-        J.mixout(options, J.clone(wProto.defaults));
+        J.mixout(options, J.clone(WidgetPrototype.defaults));
 
         // Create widget.
-        widget = new wProto(options);
+        widget = new WidgetPrototype(options);
 
         // Re-inject defaults.
         widget.defaults = options;
 
-        widget.title = wProto.title;
-        widget.footer = wProto.footer;
-        widget.className = wProto.className;
-        widget.context = wProto.context;
+        widget.title = WidgetPrototype.title;
+        widget.footer = WidgetPrototype.footer;
+        widget.className = WidgetPrototype.className;
+        widget.context = WidgetPrototype.context;
 
         // Add random unique widget id.
         widget.wid = '' + J.randomInt(0,10000000000000000000);
@@ -27718,7 +28274,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Chat
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * Creates a simple configurable chat
@@ -27863,7 +28419,7 @@ if (!Array.prototype.indexOf) {
          * Function which displays the sender's name
          */
         this.displayName = null;
-        this.init(options)
+        this.init(options);
     }
 
     // ## Chat methods
@@ -28094,8 +28650,6 @@ if (!Array.prototype.indexOf) {
     }
 
     ChernoffFaces.prototype.init = function(options) {
-        var that = this;
-
         var controlsOptions;
 
         this.features = options.features || this.features ||
@@ -28713,7 +29267,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # ChernoffFacesSimple
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * Displays multidimensional data in the shape of a Chernoff Face.
@@ -28740,7 +29294,7 @@ if (!Array.prototype.indexOf) {
 
     ChernoffFaces.version = '0.3';
     ChernoffFaces.description =
-        'Display parametric data in the form of a Chernoff Face.'
+        'Display parametric data in the form of a Chernoff Face.';
 
     // ## Dependencies
     ChernoffFaces.dependencies = {
@@ -28778,7 +29332,6 @@ if (!Array.prototype.indexOf) {
     }
 
     ChernoffFaces.prototype.init = function(options) {
-        var that = this;
         this.id = options.id || this.id;
         var PREF = this.id + '_';
 
@@ -28789,7 +29342,6 @@ if (!Array.prototype.indexOf) {
                         options.controls : true;
 
         var idCanvas = (options.idCanvas) ? options.idCanvas : PREF + 'canvas';
-        var idButton = (options.idButton) ? options.idButton : PREF + 'button';
 
         this.dims = {
             width:  options.width ?
@@ -28887,15 +29439,13 @@ if (!Array.prototype.indexOf) {
 
     // FacePainter
     // The class that actually draws the faces on the Canvas
-    function FacePainter (canvas, settings) {
-
+    function FacePainter(canvas, settings) {
         this.canvas = new node.window.Canvas(canvas);
-
         this.scaleX = canvas.width / ChernoffFaces.defaults.canvas.width;
         this.scaleY = canvas.height / ChernoffFaces.defaults.canvas.heigth;
-    };
+    }
 
-    //Draws a Chernoff face.
+    // Draws a Chernoff face.
     FacePainter.prototype.draw = function(face, x, y) {
         if (!face) return;
         this.face = face;
@@ -28924,31 +29474,30 @@ if (!Array.prototype.indexOf) {
     FacePainter.prototype.redraw = function(face, x, y) {
         this.canvas.clear();
         this.draw(face,x,y);
-    }
+    };
 
     FacePainter.prototype.scale = function(x, y) {
         this.canvas.scale(this.scaleX, this.scaleY);
-    }
+    };
 
     // TODO: Improve. It eats a bit of the margins
     FacePainter.prototype.fit2Canvas = function(face) {
+        var ratio;
         if (!this.canvas) {
             console.log('No canvas found');
             return;
         }
 
         if (this.canvas.width > this.canvas.height) {
-            var ratio = this.canvas.width / face.head_radius *
-                face.head_scale_x;
+            ratio = this.canvas.width / face.head_radius * face.head_scale_x;
         }
         else {
-            var ratio = this.canvas.height / face.head_radius *
-                face.head_scale_y;
+            ratio = this.canvas.height / face.head_radius * face.head_scale_y;
         }
 
         face.scaleX = ratio / 2;
         face.scaleY = ratio / 2;
-    }
+    };
 
     FacePainter.prototype.drawHead = function(face, x, y) {
 
@@ -28992,7 +29541,7 @@ if (!Array.prototype.indexOf) {
             color: face.color,
             lineWidth: face.lineWidth
         });
-    }
+    };
 
     FacePainter.prototype.drawPupils = function(face, x, y) {
 
@@ -29310,8 +29859,8 @@ if (!Array.prototype.indexOf) {
         return new FaceVector(out);
     };
 
-    function FaceVector (faceVector) {
-        var faceVector = faceVector || {};
+    function FaceVector(faceVector) {
+        faceVector = faceVector || {};
 
         this.scaleX = faceVector.scaleX || 1;
         this.scaleY = faceVector.scaleY || 1;
@@ -29332,7 +29881,7 @@ if (!Array.prototype.indexOf) {
             }
         }
 
-    };
+    }
 
     //Constructs a random face vector.
     FaceVector.prototype.shuffle = function() {
@@ -29374,7 +29923,7 @@ if (!Array.prototype.indexOf) {
             if (this.hasOwnProperty(key)) {
                 out += key + ' ' + this[key];
             }
-        };
+        }
         return out;
     };
 
@@ -29382,7 +29931,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Controls
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * Creates and manipulates a set of forms
@@ -29394,11 +29943,6 @@ if (!Array.prototype.indexOf) {
     "use strict";
 
     // TODO: handle different events, beside onchange
-
-    var J = node.JSUS;
-    var sliderControls = SliderControls;
-    var jQuerySlider = jQuerySliderControls;
-    var radioControls = RadioControls;
 
     node.widgets.register('Controls', Controls);
 
@@ -29740,7 +30284,7 @@ if (!Array.prototype.indexOf) {
 
     // overriding populate also. There is an error with the Label
     RadioControls.prototype.populate = function() {
-        var key, id, attributes, container, elem, that;
+        var key, id, attributes, elem, that;
         that = this;
 
         if (!this.radioElem) {
@@ -29822,7 +30366,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # D3
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * Integrates nodeGame with the D3 library to plot a real-time chart
@@ -29919,28 +30463,25 @@ if (!Array.prototype.indexOf) {
         y: [D3ts.defaults.height, 0]
     };
 
-    function D3ts (options) {
+    function D3ts(options) {
+        var o, x, y;
         D3.call(this, options);
 
-
-        var o = this.options = JSUS.merge(D3ts.defaults, options);
-
-        var n = this.n = o.n;
-
+        this.options = o = JSUS.merge(D3ts.defaults, options);
+        this.n = o.n;
         this.data = [0];
 
         this.margin = o.margin;
 
-        var width = this.width = o.width - this.margin.left - this.margin.right;
-        var height = this.height = o.height - this.margin.top -
-                     this.margin.bottom;
+        this.width = o.width - this.margin.left - this.margin.right;
+        this.height = o.height - this.margin.top - this.margin.bottom;
 
-        // identity function
-        var x = this.x = d3.scale.linear()
+        // Identity function.
+        this.x = x = d3.scale.linear()
             .domain(o.domain.x)
             .range(o.range.x);
 
-        var y = this.y = d3.scale.linear()
+        this.y = y = d3.scale.linear()
             .domain(o.domain.y)
             .range(o.range.y);
 
@@ -30032,7 +30573,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # DataBar
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * Creates a form to send DATA packages to other clients / SERVER
@@ -30119,8 +30660,7 @@ if (!Array.prototype.indexOf) {
 
     var J = node.JSUS;
 
-    var Table = node.window.Table,
-    GameStage = node.GameStage;
+    var Table = node.window.Table;
 
     node.widgets.register('DebugInfo', DebugInfo);
 
@@ -30201,13 +30741,13 @@ if (!Array.prototype.indexOf) {
         }
 
         stageLevel = J.getKeyByValue(node.constants.stageLevels,
-                                     node.game.getStageLevel())
+                                     node.game.getStageLevel());
 
         stateLevel = J.getKeyByValue(node.constants.stateLevels,
-                                     node.game.getStateLevel())
+                                     node.game.getStateLevel());
 
         winLevel = J.getKeyByValue(node.constants.windowLevels,
-                                   W.getStateLevel())
+                                   W.getStateLevel());
 
 
         errMsg = node.errorManager.lastErr || miss;
@@ -30263,19 +30803,16 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # DisconnectBox
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
- * Shows current, previous and next stage.
+ * Shows a disconnect button
  *
  * www.nodegame.org
  */
 (function(node) {
 
     "use strict";
-
-    var JSUS = node.JSUS;
-    var Table = W.Table;
 
     node.widgets.register('DisconnectBox', DisconnectBox);
 
@@ -30349,7 +30886,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # DynamicTable
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * Extends the GameTable widgets by allowing dynamic reshaping
@@ -30365,9 +30902,10 @@ if (!Array.prototype.indexOf) {
     "use strict";
 
     var GameStage = node.GameStage,
-    PlayerList = node.PlayerList,
     Table = node.window.Table,
-    HTMLRenderer = node.window.HTMLRenderer;
+    HTMLRenderer = node.window.HTMLRenderer,
+    J = node.JSUS;
+
 
     node.widgets.register('DynamicTable', DynamicTable);
 
@@ -30477,7 +31015,7 @@ if (!Array.prototype.indexOf) {
             // Left
             if (bindings.left) {
                 var l = bindings.left.call(that, msg);
-                if (!JSUS.in_array(l, that.left)) {
+                if (!J.inArray(l, that.left)) {
                     that.header.push(l);
                 }
             }
@@ -30502,7 +31040,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Feedback
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * Sends a feedback message to the server
@@ -30595,15 +31133,13 @@ if (!Array.prototype.indexOf) {
         this.bodyDiv.appendChild(this.submit);
     };
 
+    Feedback.prototype.listeners = function() {};
 
-    Feedback.prototype.listeners = function() {
-        var that = this;
-    };
 })(node);
 
 /**
  * # GameBoard
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * Displays a table of currently connected players
@@ -30613,8 +31149,6 @@ if (!Array.prototype.indexOf) {
 (function(node) {
 
     "use strict";
-
-    var PlayerList = node.PlayerList;
 
     node.widgets.register('GameBoard', GameBoard);
 
@@ -30768,7 +31302,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # GameSummary
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * Shows the configuration options of a game in a box
@@ -30846,7 +31380,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # GameTable
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * Creates a table that renders in each cell data captured by fired events
@@ -31008,7 +31542,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # LanguageSelector
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * Manages and displays information about languages available and selected
@@ -31019,8 +31553,7 @@ if (!Array.prototype.indexOf) {
 
     "use strict";
 
-    var J = node.JSUS,
-        game = node.game;
+    var J = node.JSUS;
 
     node.widgets.register('LanguageSelector', LanguageSelector);
 
@@ -31257,8 +31790,6 @@ if (!Array.prototype.indexOf) {
      * @see LanguageSelector.onLangCallback
      */
     LanguageSelector.prototype.init = function(options) {
-        var that = this;
-
         J.mixout(options, this.options);
         this.options = options;
 
@@ -31364,7 +31895,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # MoneyTalks
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * Displays a box for formatting currency
@@ -31374,8 +31905,6 @@ if (!Array.prototype.indexOf) {
 (function(node) {
 
     "use strict";
-
-    var J = node.JSUS;
 
     node.widgets.register('MoneyTalks', MoneyTalks);
 
@@ -31492,8 +32021,8 @@ if (!Array.prototype.indexOf) {
     MoneyTalks.prototype.update = function(amount) {
         if ('number' !== typeof amount) {
             // Try to parse strings
-            amount = parseInt(amount);
-            if (isNaN(n) || !isFinite(n)) {
+            amount = parseInt(amount, 10);
+            if (isNaN(amount) || !isFinite(amount)) {
                 return;
             }
         }
@@ -31504,7 +32033,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # MsgBar
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * Creates a tool for sending messages to other connected clients
@@ -31515,9 +32044,7 @@ if (!Array.prototype.indexOf) {
 
     "use strict";
 
-    var GameMsg = node.GameMsg,
-        GameStage = node.GameStage,
-        JSUS = node.JSUS,
+    var JSUS = node.JSUS,
         Table = W.Table;
 
     node.widgets.register('MsgBar', MsgBar);
@@ -31726,7 +32253,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # NDDBBrowser
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * Creates an interface to interact with an NDDB database
@@ -31739,8 +32266,7 @@ if (!Array.prototype.indexOf) {
 
     node.widgets.register('NDDBBrowser', NDDBBrowser);
 
-    var JSUS = node.JSUS,
-    NDDB = node.NDDB,
+    var NDDB = node.NDDB,
     TriggerManager = node.TriggerManager;
 
     // ## Defaults
@@ -31886,7 +32412,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # NextPreviousState
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * Simple widget to step through the stages of the game
@@ -31963,7 +32489,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Requirements
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * Checks a list of requirements and displays the results
@@ -32277,7 +32803,7 @@ if (!Array.prototype.indexOf) {
      */
     Requirements.prototype.checkRequirements = function(display) {
         var i, len;
-        var errors, cbErrors, cbName, errMsg;
+        var errors, cbName, errMsg;
         if (!this.requirements.length) {
             throw new Error('Requirements.checkRequirements: no requirements ' +
                             'to check found.');
@@ -32296,7 +32822,7 @@ if (!Array.prototype.indexOf) {
                 cbName = i + 1;
             }
             try {
-                resultCb(this, name, i);
+                resultCb(this, cbName, i);
             }
             catch(e) {
                 errMsg = extractErrorMsg(e);
@@ -32601,7 +33127,7 @@ if (!Array.prototype.indexOf) {
             errMsg = e.message;
         }
         else if (e.description) {
-            errMsg.description;
+            errMsg = errMsg.description;
         }
         else {
             errMsg = e.toString();
@@ -32613,7 +33139,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # ServerInfoDisplay
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * Displays information about the server
@@ -32629,7 +33155,7 @@ if (!Array.prototype.indexOf) {
     // ## Meta-data
 
     ServerInfoDisplay.version = '0.4.1';
-    ServerInfoDisplay.description = 'Displays information about the server.'
+    ServerInfoDisplay.description = 'Displays information about the server.';
 
     ServerInfoDisplay.title = 'Server Info';
     ServerInfoDisplay.className = 'serverinfodisplay';
@@ -32735,7 +33261,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # StateBar
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * Provides a simple interface to change the game stages
@@ -32773,7 +33299,7 @@ if (!Array.prototype.indexOf) {
      * Appends widget to `this.bodyDiv`
      */
     StateBar.prototype.append = function() {
-        var prefix, that = this;
+        var prefix;
         var idButton, idStageField, idRecipientField;
         var sendButton, stageField, recipientField;
 
@@ -32792,11 +33318,6 @@ if (!Array.prototype.indexOf) {
         this.bodyDiv.appendChild(recipientField);
 
         sendButton = node.window.addButton(this.bodyDiv, idButton);
-
-        //node.on('UPDATED_PLIST', function() {
-        //    node.window.populateRecipientSelector(
-        //        that.recipient, node.game.pl);
-        //});
 
         sendButton.onclick = function() {
             var to;
@@ -32820,7 +33341,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # VisualRound
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * Display information about rounds and/or stage in the game
@@ -33060,7 +33581,7 @@ if (!Array.prototype.indexOf) {
      * @see VisualRound.init
      */
     VisualRound.prototype.setDisplayMode = function(displayModeNames) {
-        var index, compoundDisplayModeName, compoundDisplayMode, displayModes;
+        var index, compoundDisplayModeName, displayModes;
 
         // Validation of input parameter.
         if (!J.isArray(displayModeNames)) {
@@ -33233,7 +33754,7 @@ if (!Array.prototype.indexOf) {
    /**
      * # EmptyDisplayMode
      *
-     * Copyright(c) 2014 Stefano Balietti
+     * Copyright(c) 2015 Stefano Balietti
      * MIT Licensed
      *
      * Defines a displayMode for the `VisualRound` which displays nothing
@@ -33309,7 +33830,7 @@ if (!Array.prototype.indexOf) {
     /**
      * # CountUpStages
      *
-     * Copyright(c) 2014 Stefano Balietti
+     * Copyright(c) 2015 Stefano Balietti
      * MIT Licensed
      *
      * Defines a displayMode for the `VisualRound` which displays the current
@@ -33454,7 +33975,7 @@ if (!Array.prototype.indexOf) {
    /**
      * # CountDownStages
      *
-     * Copyright(c) 2014 Stefano Balietti
+     * Copyright(c) 2015 Stefano Balietti
      * MIT Licensed
      *
      * Defines a displayMode for the `VisualRound` which displays the remaining
@@ -33559,7 +34080,7 @@ if (!Array.prototype.indexOf) {
    /**
      * # CountUpRounds
      *
-     * Copyright(c) 2014 Stefano Balietti
+     * Copyright(c) 2015 Stefano Balietti
      * MIT Licensed
      *
      * Defines a displayMode for the `VisualRound` which displays the current
@@ -33704,7 +34225,7 @@ if (!Array.prototype.indexOf) {
    /**
      * # CountDownRounds
      *
-     * Copyright(c) 2014 Stefano Balietti
+     * Copyright(c) 2015 Stefano Balietti
      * MIT Licensed
      *
      * Defines a displayMode for the `VisualRound` which displays the remaining
@@ -33809,7 +34330,7 @@ if (!Array.prototype.indexOf) {
     /**
      * # CompoundDisplayMode
      *
-     * Copyright(c) 2014 Stefano Balietti
+     * Copyright(c) 2015 Stefano Balietti
      * MIT Licensed
      *
      * Defines a displayMode for the `VisualRound` which displays the
@@ -33942,7 +34463,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # VisualStage
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * Shows current, previous and next stage.
@@ -33953,7 +34474,6 @@ if (!Array.prototype.indexOf) {
 
     "use strict";
 
-    var JSUS = node.JSUS;
     var Table = node.window.Table;
 
     node.widgets.register('VisualStage', VisualStage);
@@ -34056,7 +34576,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # VisualTimer
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * Display a timer for the game. Timer can trigger events.
@@ -34579,7 +35099,7 @@ if (!Array.prototype.indexOf) {
         if ('undefined' === typeof options.timeup) {
             options.timeup = function() {
                 node.done();
-            }
+            };
         }
         return options;
     };
@@ -34587,7 +35107,7 @@ if (!Array.prototype.indexOf) {
    /**
      * # TimerBox
      *
-     * Copyright(c) 2014 Stefano Balietti
+     * Copyright(c) 2015 Stefano Balietti
      * MIT Licensed
      *
      * Represents a box wherin to display a `VisualTimer`
@@ -34774,8 +35294,6 @@ if (!Array.prototype.indexOf) {
 
     "use strict";
 
-    var J = node.JSUS;
-
     node.widgets.register('WaitingRoom', WaitingRoom);
 
     // ## Meta-data
@@ -34947,7 +35465,7 @@ if (!Array.prototype.indexOf) {
                 throw new TypeError('WaitingRoom.init: conf.groupSize ' +
                                     'must be number or undefined.');
             }
-            this.groupSize = conf.groupSize
+            this.groupSize = conf.groupSize;
         }
 
         if (conf.connected) {
@@ -34955,7 +35473,7 @@ if (!Array.prototype.indexOf) {
                 throw new TypeError('WaitingRoom.init: conf.connected ' +
                                     'must be number or undefined.');
             }
-            this.connected = conf.connected
+            this.connected = conf.connected;
         }
     };
 
@@ -34966,7 +35484,6 @@ if (!Array.prototype.indexOf) {
      *
      */
     WaitingRoom.prototype.startTimer = function() {
-        var that = this;
         if (this.timer) return;
         if (!this.maxWaitTime) return;
         if (!this.timerDiv) {
@@ -35125,7 +35642,6 @@ if (!Array.prototype.indexOf) {
     // ## Helper methods
 
     function timeIsUp(data) {
-        var timeOut;
         console.log('TIME IS UP!');
 
         if (this.alreadyTimeUp) return;
@@ -35147,7 +35663,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Wall
- * Copyright(c) 2014 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * Creates a wall where log and other information is added
@@ -35267,10 +35783,12 @@ if (!Array.prototype.indexOf) {
      * Writes into this.buffer if document is not ready yet.
      */
     Wall.prototype.write = function(text) {
+        var mark;
         if (document.readyState !== 'complete') {
-            this.buffer.push(s);
-        } else {
-            var mark = this.counter++ + ') ' + J.getTime() + ' ';
+            this.buffer.push(text);
+        }
+        else {
+            mark = this.counter++ + ') ' + J.getTime() + ' ';
             this.wall.innerHTML = mark + text + "\n" + this.wall.innerHTML;
         }
     };
