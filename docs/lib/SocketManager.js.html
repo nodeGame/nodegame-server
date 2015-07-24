@@ -2253,7 +2253,7 @@ recipient information in all channels.</p>
         <span class="p">};</span>
     <span class="p">}</span>
 
-    <span class="nx">receiverObj</span> <span class="o">=</span> <span class="nx">registry</span><span class="p">.</span><span class="nx">getClients</span><span class="p">()[</span><span class="nx">resolvedTo</span><span class="p">];</span>
+    <span class="nx">receiverObj</span> <span class="o">=</span> <span class="nx">registry</span><span class="p">.</span><span class="nx">getClient</span><span class="p">(</span><span class="nx">resolvedTo</span><span class="p">);</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">receiverObj</span><span class="p">)</span> <span class="p">{</span>
          <span class="k">return</span> <span class="p">{</span>
