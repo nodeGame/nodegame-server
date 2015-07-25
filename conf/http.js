@@ -47,13 +47,7 @@ function configure(app, servernode) {
 
     if (process.env.NODE_ENV === 'development') {
         app.use(errorHandler());
-// Ste: was.
-//         app.use(errorHandler({
-//             dumpExceptions: true,
-//             showStack: true
-//         }));
     };
-
 
     app.enable("jsonp callback");
 
@@ -168,7 +162,9 @@ function configure(app, servernode) {
             default:
                 res.status(400).send('Unknown query received.');
             }
-
+        }
+        else {
+            res.status(403).end();
         }
     });
 

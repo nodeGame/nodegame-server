@@ -9644,7 +9644,7 @@ if (!Array.prototype.indexOf) {
     // @see node.constants.remoteVerbosity
     k.target.LOG = 'LOG';
 
-    // #### target.LOG
+    // #### target.BYE
     // Force disconnection upon reception.
     k.target.BYE  = 'BYE';
 
@@ -20622,9 +20622,8 @@ if (!Array.prototype.indexOf) {
         if (this.player &&
             this.player.stateLevel > constants.stateLevels.STARTING &&
             this.player.stateLevel !== constants.stateLevels.GAMEOVER) {
-            throw new this.NodeGameIllegalOperationError(
-                'node.createPlayer: cannot create player ' +
-                    'while game is running.');
+            throw new Error('node.createPlayer: cannot create player ' +
+                            'while game is running.');
         }
         if (this.game.pl.exist(player.id)) {
             throw new Error('node.createPlayer: id already found in ' +
