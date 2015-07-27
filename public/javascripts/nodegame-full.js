@@ -20863,19 +20863,23 @@ if (!Array.prototype.indexOf) {
      * @param {string} key The label of the GET message
      * @param {function} cb The callback function to handle the return message
      * @param {string} to Optional. The recipient of the msg. Default: SERVER
-     * @param {mixed} params Optional. Additional parameters to send along
-     * @param {number} timeout Optional. The number of milliseconds after which
-     *   the listener will be removed. If equal -1, the listener will not be
-     *   removed. Default: 0
-     * @param {function} timeoutCb Optional. A callback function to call if
-     *   the timeout is fired (no reply recevied)
+     * @param {object} options Optional. Extra options as follows:
+     *
+     *      - {number} timeout The number of milliseconds after which
+     *            the listener will be removed.
+     *      - {function} timeoutCb A callback function to call if
+     *            the timeout is fired (no reply recevied)
+     *      - {boolean} executeOnce TRUE if listener should be removed after
+     *            one execution. It will also terminate the timeout, if set
+     *      - {mixed} data Data field of the GET msg
      *
      * @return {boolean} TRUE, if GET message is sent and listener registered
      */
-    NGC.prototype.get = function(key, cb, to, params, timeout, timeoutCb) {
+    NGC.prototype.get = function(key, cb, to, options) {
         var msg, g, ee;
         var that, res;
         var timer, success;
+        var data, timeout, timeoutCb, executeOnce;
 
         if ('string' !== typeof key) {
             throw new TypeError('node.get: key must be string.');
@@ -20902,19 +20906,33 @@ if (!Array.prototype.indexOf) {
             throw new TypeError('node.get: to must be string or undefined.');
         }
 
-        if ('undefined' !== typeof timeout) {
-            if ('number' !== typeof timeout) {
-                throw new TypeError('node.get: timeout must be number.');
+        if (options) {
+            if ('object' !== typeof options) {
+                throw new TypeError('node.get: options must be object ' +
+                                    'or undefined.');
             }
-            if (timeout < 0 && timeout !== -1 ) {
-                throw new TypeError('node.get: timeout must be positive, ' +
-                                   '0, or -1.');
-            }
-        }
 
-        if (timeoutCb && 'function' !== typeof timeoutCb) {
-            throw new TypeError('node.get: timeoutCb must be function ' +
-                                'or undefined.');
+            timeout = options.timeout;
+            timeoutCb = options.timeoutCb;
+            data = options.data;
+            executeOnce = options.executeOnce;
+
+            if ('undefined' !== typeof timeout) {
+                if ('number' !== typeof timeout) {
+                    throw new TypeError('node.get: options.timeout must be ' +
+                                        'number.');
+                }
+                if (timeout < 0 && timeout !== -1 ) {
+                    throw new TypeError('node.get: options.timeout must be ' +
+                                        'positive, 0, or -1.');
+                }
+            }
+
+            if (timeoutCb && 'function' !== typeof timeoutCb) {
+                throw new TypeError('node.get: options.timeoutCb must be ' +
+                                    'function or undefined.');
+            }
+
         }
 
         msg = this.msg.create({
@@ -20923,7 +20941,7 @@ if (!Array.prototype.indexOf) {
             to: to,
             reliable: 1,
             text: key,
-            data: params
+            data: data
         });
 
         // TODO: check potential timing issues. Is it safe to send the GET
@@ -20935,21 +20953,8 @@ if (!Array.prototype.indexOf) {
         key = key + '_' + msg.id;
 
         if (res) {
-            ee = this.getCurrentEventEmitter();
-
             that = this;
-
-            // Listener function. If a timeout is not set, the listener
-            // will be removed immediately after its execution.
-            g = function(msg) {
-                if (msg.text === key) {
-                    success = true;
-                    cb.call(that.game, msg.data);
-                    if (!timeout) ee.remove('in.say.DATA', g);
-                }
-            };
-
-            ee.on('in.say.DATA', g);
+            ee = this.getCurrentEventEmitter();
 
             // If a timeout is set the listener is removed independently,
             // of its execution after the timeout is fired.
@@ -20965,6 +20970,28 @@ if (!Array.prototype.indexOf) {
                     }
                 });
                 timer.start();
+            }
+
+            // Listener function. If a timeout is not set, the listener
+            // will be removed immediately after its execution.
+            g = function(msg) {
+                console.log('GET RETURN');
+                if (msg.text === key) {
+                    success = true;
+                    cb.call(that.game, msg.data);
+                    if (executeOnce) {
+                        if ('undefined' !== typeof timer) {
+                            that.timer.destroyTimer(timer);
+                        }
+                    }
+                }
+            };
+
+            if (executeOnce) {
+                ee.once('in.say.DATA', g);
+            }
+            else {
+                ee.on('in.say.DATA', g);
             }
         }
         return res;
@@ -35044,7 +35071,8 @@ if (!Array.prototype.indexOf) {
         node.on('REALLY_DONE', function() {
             if (that.options.stopOnDone) {
                 if (!that.gameTimer.isStopped()) {
-                    that.startWaiting();
+                    that.stop();
+                    // that.startWaiting();
                 }
             }
        });
