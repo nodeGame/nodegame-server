@@ -19829,7 +19829,8 @@ if (!Array.prototype.indexOf) {
      * Return TRUE if the time expired
      */
     GameTimer.prototype.isTimeup = function() {
-        return this.timeLeft !== null && this.timeLeft <= 0;
+        // return this.timeLeft !== null && this.timeLeft <= 0;
+        return this.timeLeft <= 0;
     };
 
     // Do a timer update.
@@ -20975,7 +20976,6 @@ if (!Array.prototype.indexOf) {
             // Listener function. If a timeout is not set, the listener
             // will be removed immediately after its execution.
             g = function(msg) {
-                console.log('GET RETURN');
                 if (msg.text === key) {
                     success = true;
                     cb.call(that.game, msg.data);
@@ -35071,8 +35071,8 @@ if (!Array.prototype.indexOf) {
         node.on('REALLY_DONE', function() {
             if (that.options.stopOnDone) {
                 if (!that.gameTimer.isStopped()) {
-                    that.stop();
                     // that.startWaiting();
+                    that.stop();
                 }
             }
        });
