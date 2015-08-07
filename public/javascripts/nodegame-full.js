@@ -18,6 +18,57 @@ if ('undefined' === typeof console) {
     this.console = {log: function() {}};
 }
 
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/
+// Global_Objects/Date/now
+if (!Date.now) {
+    Date.now = function now() {
+        return new Date().getTime();
+    };
+}
+
+// http://stackoverflow.com/questions/2790001/
+// fixing-javascript-array-functions-in-internet-explorer-indexof-foreach-etc
+if (!('indexOf' in Array.prototype)) {
+    Array.prototype.indexOf= function(find, i /*opt*/) {
+        if (i===undefined) i= 0;
+        if (i<0) i+= this.length;
+        if (i<0) i= 0;
+        for (var n= this.length; i<n; i++)
+            if (i in this && this[i]===find)
+                return i;
+        return -1;
+    };
+}
+if (!('lastIndexOf' in Array.prototype)) {
+    Array.prototype.lastIndexOf= function(find, i /*opt*/) {
+        if (i===undefined) i= this.length-1;
+        if (i<0) i+= this.length;
+        if (i>this.length-1) i= this.length-1;
+        for (i++; i-->0;) /* i++ because from-argument is sadly inclusive */
+            if (i in this && this[i]===find)
+                return i;
+        return -1;
+    };
+}
+
+if (typeof Object.create !== 'function') {
+    Object.create = (function() {
+        var Temp = function() {};
+        return function (prototype) {
+            if (arguments.length > 1) {
+                throw Error('Second argument not supported');
+            }
+            if (typeof prototype != 'object') {
+                throw TypeError('Argument must be an object');
+            }
+            Temp.prototype = prototype;
+            var result = new Temp();
+            Temp.prototype = null;
+            return result;
+        };
+    })();
+}
+
 /**
    JSON2
    http://www.JSON.org/json2.js
@@ -12449,36 +12500,8 @@ if (!Array.prototype.indexOf) {
      * @see Stager.setState
      */
     function Stager(stateObj) {
-        if (stateObj) {
-            if ('object' !== typeof stateObj) {
-                throw new TypeError('Stager: stateObj must be object.');
-            }
-            this.setState(stateObj);
-        }
-        else {
-            this.init();
-        }
 
-        /**
-         * ### Stager.log
-         *
-         * Default stdout output. Override to redirect.
-         */
-        this.log = console.log;
-    }
-
-    // ## Stager methods
-
-    // ### Init / Clear
-
-    /**
-     * ## Stager.clear
-     *
-     * Resets Stager object to initial state
-     *
-     * Called by the constructor.
-     */
-    Stager.prototype.clear = function() {
+        // ## Properties
 
         /**
          * ### Stager.steps
@@ -12659,13 +12682,61 @@ if (!Array.prototype.indexOf) {
          */
         this.defaultSteps = {};
 
+        /**
+         * ### Stager.log
+         *
+         * Default standard output. Override to redirect.
+         */
+        this.log = console.log;
+
+        // Set the state if one is passed.
+        if (stateObj) {
+            if ('object' !== typeof stateObj) {
+                throw new TypeError('Stager: stateObj must be object.');
+            }
+            this.setState(stateObj);
+        }
+        else {
+            // Add first block.
+            this.stageBlock('linear', { id: '__default_block' });
+        }
+    }
+
+    // ## Stager methods
+
+    // Clear, init, finalize, reset.
+
+    /**
+     * ### Stager.clear
+     *
+     * Clears the state of the stager
+     *
+     * @return {Stager} this object
+     */
+    Stager.prototype.clear = function() {
+        this.steps = {};
+        this.stages = {};
+        this.sequence = [];
+        this.generalNextFunction = null;
+        this.nextFunctions = {};
+        this.setDefaultStepRule();
+        this.defaultGlobals = {};
+        this.defaultProperties = {};
+        this.onInit = null;
+        this.onGameover = null;
+        this.blocks = [];
+        this.unfinishedBlocks = [];
+        this.finalized = false;
+        this.currentType = "__default";
+        this.currentBlockType = "__default";
+        this.defaultSteps = {};
         return this;
     };
 
     /**
      * ### Stager.init
      *
-     * Clears the state of the stager and add a default block
+     * Clears the state of the stager and adds a default block
      *
      * @return {Stager} this object
      *
@@ -12674,6 +12745,88 @@ if (!Array.prototype.indexOf) {
     Stager.prototype.init = function() {
         this.clear();
         this.stageBlock('linear', { id: '__default_block' });
+        return this;
+    };
+
+    /**
+     * ## Stager.finalize
+     *
+     * Builds stage and step sequence from the Block hieararchy
+     *
+     * @return {Stager} Reference to the current instance for method chaining
+     *
+     * @see Stager.reset
+     */
+    Stager.prototype.finalize = function() {
+        var currentItem;
+        var outermostBlock, type, blockIndex;
+
+        if (this.finalized) {
+            return this;
+        }
+        this.endAllBlocks();
+
+        for (blockIndex = 0; blockIndex < this.blocks.length;
+            ++blockIndex) {
+                this.blocks[blockIndex].finalize();
+        }
+
+        // TODO: Do we really need this ???.
+        for (type in this.defaultSteps) {
+            if (this.defaultSteps.hasOwnProperty(type)) {
+                this.stages[type].steps = J.clone(
+                    this.defaultSteps[type]
+                );
+            }
+        }
+
+        outermostBlock = this.blocks[0];
+        // Create sequence.
+        currentItem = outermostBlock.next();
+        while (!!currentItem) {
+            if (currentItem.type === "__stage") {
+                    this.sequence.push(currentItem.item);
+            }
+            else {
+                this.stages[currentItem.type].steps.push(
+                    currentItem.item);
+            }
+            currentItem = outermostBlock.next();
+        }
+        this.finalized = true;
+        return this;
+    };
+
+    /**
+     * ## Stager.reset
+     *
+     * Undoes a previous call to `finalize`
+     *
+     * Allows to call `Stager.finalize` again to build a potentially
+     * different sequence from the Block hierarchy.
+     *
+     * @return {Stager} Reference to the current instance for method chaining
+     *
+     * @see Stager.finalize
+     */
+    Stager.prototype.reset = function() {
+        var type, blockIndex;
+
+        if (!this.finalized) {
+            return this;
+        }
+        for (blockIndex = 0; blockIndex < this.blocks.length;
+            ++blockIndex) {
+            this.blocks[blockIndex].reset();
+        }
+        this.sequence = [];
+        for (type in this.defaultSteps) {
+            if (this.defaultSteps.hasOwnProperty(type)) {
+                this.stages[type].steps = this.defaultSteps[type];
+            }
+        }
+
+        this.finalized = false;
         return this;
     };
 
@@ -12707,16 +12860,24 @@ if (!Array.prototype.indexOf) {
         var stageObj;
         var seqObj;
 
-        // Clear previous state:
-        if (!updateRule || updateRule === 'replace') {
-            this.clear();
-        }
-        else if(updateRule !== 'append') {
-            throw new Error('Stager.setState: invalid updateRule.');
+        if ('object' !== typeof stateObj) {
+            throw new TypeError('Stager.setState: stateObj must be object.');
         }
 
-        if (!stateObj) {
-            throw new Error('Stager.setState: invalid stateObj.');
+        updateRule = updateRule || 'replace';
+
+        if ('string' !== typeof updateRule) {
+            throw new TypeError('Stager.setState: updateRule must be object ' +
+                                'or undefined.');
+        }
+
+        // Clear previous state:
+        if (updateRule === 'replace') {
+            this.clear();
+        }
+        else if (updateRule !== 'append') {
+            throw new Error('Stager.setState: invalid updateRule: ' +
+                            updateRule);
         }
 
         // Add steps:
@@ -12834,22 +12995,23 @@ if (!Array.prototype.indexOf) {
         }
 
         this.finalized = true;
-
     };
 
     /**
      * ### Stager.getState
      *
-     * Returns a copy of the internal state of the Stager
+     * Finalizes the stager and returns a copy of internal state
      *
      * Fields of returned object:
+     *
      * steps, stages, sequence, generalNextFunction, nextFunctions,
      * defaultStepRule, defaultGlobals, defaultProperties, onInit,
-     * onGameover.
+     * onGameover, blocks.
      *
      * @return {object} Clone of the Stager's state
      *
      * @see Stager.setState
+     * @see Stager.finalize
      */
     Stager.prototype.getState = function() {
         this.finalize();
@@ -12874,10 +13036,11 @@ if (!Array.prototype.indexOf) {
      *
      * Sets the default step-rule function
      *
-     * @param {function} steprule Optional. The step-rule function.
-     *   If not given, the initial default is restored.
+     * @param {function} stepRule Optional. The step-rule function.
+     *   If undefined, the `SOLO` rule is set.
      *
      * @see Stager.defaultStepRule
+     * @see stepRules
      */
     Stager.prototype.setDefaultStepRule = function(stepRule) {
         if (stepRule) {
@@ -12909,10 +13072,13 @@ if (!Array.prototype.indexOf) {
     /**
      * ### Stager.setDefaultGlobals
      *
-     * Sets the default globals
+     * Sets/mixes in the default globals
      *
      * @param {object} defaultGlobals The map of default global
      *   variables
+     * @param {boolean} mixin Optional. If TRUE, parameter defaultGlobals
+     *    will be mixed-in with current globals, otherwise it will replace
+          it. Default FALSE.
      *
      * @see Stager.defaultGlobals
      * @see GamePlot.getGlobal
@@ -12946,7 +13112,7 @@ if (!Array.prototype.indexOf) {
      * Sets a default property
      *
      * @param {string} name The name of the default property
-     * @param {mixed} value  The value for the default property
+     * @param {mixed} value The value for the default property
      *
      * @see Stager.defaultProperties
      * @see Stager.setDefaultProperties
@@ -12966,6 +13132,9 @@ if (!Array.prototype.indexOf) {
      * Sets the default properties
      *
      * @param {object} defaultProperties The map of default properties
+     * @param {boolean} mixin Optional. If TRUE, parameter defaulProperties
+     *    will be mixed-in with current globals, otherwise it will replace
+          it. Default FALSE.
      *
      * @see Stager.defaultProperties
      * @see GamePlot.getProperty
@@ -13061,6 +13230,7 @@ if (!Array.prototype.indexOf) {
      *
      * @return {function|null} The onGameover function, or NULL if none
      *    is found
+     *
      * @see Stager.onGameover
      */
     Stager.prototype.getOnGameover = function(func) {
@@ -13077,8 +13247,7 @@ if (!Array.prototype.indexOf) {
     Stager.prototype.getOnGameOver = Stager.prototype.getOnGameover;
 
 
-    ////// Add stages, steps.
-
+    // Add stages, steps.
 
     /**
      * ### Stager.addStep
@@ -13129,45 +13298,49 @@ if (!Array.prototype.indexOf) {
      * @see Stager.checkStageValidity
      */
     Stager.prototype.addStage = function(stage) {
-        var res, unique;
+        var res, i;
 
+        if ('object' !== typeof stage) {
+            throw new TypeError('Stager.addStage: stage must be object.')
+        }
         if ((!stage.steps && !stage.cb) || (stage.steps && stage.cb)) {
             throw new TypeError('Stager.addStage: stage must have ' +
                                 'either a steps or a cb property.');
         }
-
+        if (stage.steps && !J.isArray(stage.steps)) {
+            throw new TypeError('Stager.addStage: stage.steps must be ' +
+                                'array or undefined.');
+        }
         if ('string' !== typeof stage.id) {
             throw new TypeError('Stager.addStage: id must be string.');
         }
-
         if (this.stages.hasOwnProperty(stage.id)) {
             throw new Error('Stager.addStage: stage id already ' +
                             'existing: ' + stage.id +
                             '. Use extendStage to modify it.');
         }
 
-        unique = true;
-
-        // Step.
+        // The stage contains only 1 step inside given through the callback
+        // function. A step will be created with the same name of the stage.
         if (stage.cb) {
             this.addStep(stage);
-
-            this.stages[stage.id] = {
+            stage = {
                 id: stage.id,
                 steps: [ stage.id ]
             };
         }
-        // Stage.
+        // Check whether the all referenced steps exist.
         else {
 
-            res = checkStageValidity(this, stage);
-            if (res !== null) {
-                throw new Error('Stager.addStage: invalid stage ' +
-                                'received: ' + res + '.');
+            for (i = 0; i < stage.steps.length; ++i) {
+                if (!this.steps[stage.steps[i]]) {
+                    throw new Error('Stager.addStage: stage ' + stage.id +
+                                    ': unknown step "' + stage.steps[i] + '".');
+                }
             }
-
-            this.stages[stage.id] = stage;
         }
+        //
+        this.stages[stage.id] = stage;
     };
 
     /**
@@ -13175,15 +13348,17 @@ if (!Array.prototype.indexOf) {
      *
      * Adds a step to the current Block.
      *
-     * @param {various} stage A valid step object or the stepId string.
+     * @param {string|object} stage A valid step object or the stepId string.
      * @param {string} positions Optional. Positions within the
      *      enclosing Block that this step can occupy.
+     *
+     * @return {Stager} Reference to the current instance for method chaining
      */
     Stager.prototype.step = function(step, positions) {
         if ('string' === typeof step) {
             step = {
                 id: step,
-                cb: function(){}
+                cb: function() {}
             };
         }
         this.addStep(step);
@@ -13197,42 +13372,15 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
-     * ## Stager.handleStageAdd
-     *
-     * TODO: document
-     *
-     */
-    Stager.prototype.handleStageAdd = function(stage, positions) {
-        var name;
-        name = stage.id || stage.type;
-
-        // Begin stage block.
-        if (this.currentType !== "__default") this.endBlocks(2);
-
-        this.beginBlock(positions, { id: "__enclosing_" + name });
-
-        this.getCurrentBlock().add({
-            type: "__stage",
-            item: stage
-        });
-
-        this.currentType = name;
-
-        // Add step block inside stage block.
-        this.beginBlock('linear', { id: "__steps_" + name });
-    };
-
-    /**
      * ### Stager.next
      *
-     * Adds stage block to sequence
+     * Adds a stage block to sequence
      *
-     * The `id` parameter must have the form 'stageID' or
-     * 'stageID AS alias'.
+     * The `id` parameter must have the form 'stageID' or 'stageID AS alias'.
      * stageID must be a valid stage and it (or alias if given) must be
      * unique in the sequence.
      *
-     * @param {string} id A valid stage name with optional alias
+     * @param {string|object} id A valid stage name with optional alias
      *
      * @return {Stager|null} this object on success, NULL on error
      *
@@ -13377,83 +13525,43 @@ if (!Array.prototype.indexOf) {
         return this;
     };
 
-    //////////// Finalize
 
     /**
-     * ## Stager.finalize
+     * ## Stager.handleStageAdd
      *
-     * Builds stage and step sequence from the Block hieararchy
+     * Performs several meta operations necessary to add a stage block
+     *
+     * Operations:
+     *
+     *  - Ends any unclosed blocks.
+     *  - Begin a new enclosing block.
+     *  - Adds a stage block.
+     *  - Adds a steps block.
+     *
+     * @param {object} stage The stage to add containing its type
+     * @param {string} positions Optional. The allowed positions for the stage
      */
-    Stager.prototype.finalize = function() {
-        var currentItem;
-        var outermostBlock, type, blockIndex;
+    Stager.prototype.handleStageAdd = function(stage, positions) {
+        var name;
+        name = stage.id || stage.type;
 
-        if (this.finalized) {
-            return this;
-        }
-        this.endAllBlocks();
+        // Begin stage block.
+        if (this.currentType !== "__default") this.endBlocks(2);
 
-        for (blockIndex = 0; blockIndex < this.blocks.length;
-            ++blockIndex) {
-                this.blocks[blockIndex].finalize();
-        }
+        this.beginBlock(positions, { id: "__enclosing_" + name });
 
-        // Do we really need this ???.
-        for (type in this.defaultSteps) {
-            if (this.defaultSteps.hasOwnProperty(type)) {
-                this.stages[type].steps = J.clone(
-                    this.defaultSteps[type]
-                );
-            }
-        }
+        this.getCurrentBlock().add({
+            type: "__stage",
+            item: stage
+        });
 
-        outermostBlock = this.blocks[0];
-        // Create sequence.
-        currentItem = outermostBlock.next();
-        while (!!currentItem) {
-            if (currentItem.type === "__stage") {
-                    this.sequence.push(currentItem.item);
-            }
-            else {
-                this.stages[currentItem.type].steps.push(
-                    currentItem.item);
-            }
-            currentItem = outermostBlock.next();
-        }
-        this.finalized = true;
-        return this;
+        this.currentType = name;
+
+        // Add step block inside stage block.
+        this.beginBlock('linear', { id: "__steps_" + name });
     };
 
-    /**
-     * ## Stager.reset
-     *
-     * Undoes Stager.finalize
-     *
-     * Allows to call Stager.finalize again to build a potentially
-     * different sequence from the Block hierarchy.
-     */
-    Stager.prototype.reset = function() {
-        var type, blockIndex;
-
-        if (!this.finalized) {
-            return this;
-        }
-        for (blockIndex = 0; blockIndex < this.blocks.length;
-            ++blockIndex) {
-            this.blocks[blockIndex].reset();
-        }
-        this.sequence = [];
-        for (type in this.defaultSteps) {
-            if (this.defaultSteps.hasOwnProperty(type)) {
-                this.stages[type].steps = this.defaultSteps[type];
-            }
-        }
-
-        this.finalized = false;
-        return this;
-    };
-
-    //////////// Blocks
+    // Block operations.
 
     /**
      * ## Stager.beginBlock
@@ -13461,7 +13569,12 @@ if (!Array.prototype.indexOf) {
      * Begins a new Block
      *
      * @param {string} positions Optional. Positions within the
-     *       enclosing Block that this block can occupy.
+     *    enclosing Block that this block can occupy.
+     * @param {object} options for the Block constructor
+     *
+     * @return {Stager} Reference to the current instance for method chainining
+     *
+     * @see Block
      */
     Stager.prototype.beginBlock = function(positions, options) {
         var block;
@@ -13509,7 +13622,6 @@ if (!Array.prototype.indexOf) {
      */
     Stager.prototype.endBlocks = function(n, options) {
         var i;
-
         for (i = 0; i < n; ++i) {
             this.endBlock(options);
         }
@@ -13592,7 +13704,7 @@ if (!Array.prototype.indexOf) {
         return false;
     };
 
-    ///////////// Extend, Modify
+    // Extend, Modify
 
 
     /**
@@ -13759,8 +13871,7 @@ if (!Array.prototype.indexOf) {
         }
     };
 
-    ///// Get Info out.
-
+    // Get Info out.
 
     /**
      * ### Stager.getSequence
@@ -13885,8 +13996,6 @@ if (!Array.prototype.indexOf) {
         return result;
     };
 
-
-
     /**
      * ### Stager.extractStage
      *
@@ -13978,7 +14087,7 @@ if (!Array.prototype.indexOf) {
     };
 
 
-    ///// Flexible Mode
+    // Flexible Mode
 
     /**
      * ### Stager.registerGeneralNext
@@ -14079,7 +14188,7 @@ if (!Array.prototype.indexOf) {
      * @api private
      */
     function checkStepValidity(that, step, unique) {
-        if (!step)  return 'missing step object';
+        if ('object' !== typeof step)  return 'step must be object';
         if ('string' !== typeof step.id) return 'missing ID';
         if ('function' !== typeof step.cb) return 'missing callback';
 
@@ -14090,42 +14199,43 @@ if (!Array.prototype.indexOf) {
         return null;
     }
 
-    /**
-     * checkStageValidity
-     *
-     * Returns whether given stage is valid
-     *
-     * Checks for existence and type correctness of the fields.
-     * Checks for referenced step existence.
-     *
-     * @param {object} stage The stage object
-     *
-     * @return {string} NULL for valid stages, error description else
-     *
-     * @see Stager.addStage
-     *
-     * @api private
-     */
-    function checkStageValidity(that, stage, unique) {
-        if (!stage) return 'missing stage object';
-        if ('string' !== typeof stage.id) return 'missing ID';
-        if (!stage.steps || !stage.steps.length) {
-            return 'missing "steps" array';
-        }
-
-        if (unique && that.stages.hasOwnProperty(stage.id)) {
-            return 'stage id already existing: ' + stage.id +
-                '. Use extendStage to modify it';
-        }
-
-        // Check whether the all referenced steps exist.
-        for (var i = 0; i < stage.steps.length; ++i) {
-            if (!that.steps[stage.steps[i]]) {
-                return 'unknown step "' + stage.steps[i] + '"';
-            }
-        }
-        return null;
-    }
+//     /**
+//      * checkStageValidity
+//      *
+//      * Returns whether given stage is valid
+//      *
+//      * Checks for existence and type correctness of the fields.
+//      * Checks for referenced step existence.
+//      *
+//      * @param {object} stage The stage object
+//      *
+//      * @return {string} NULL for valid stages, error description else
+//      *
+//      * @see Stager.addStage
+//      *
+//      * @api private
+//      */
+//     function checkStageValidity(that, stage, unique) {
+//         var i;
+//         if ('object' !== typeof stage) return 'stage must be object';
+//         if ('string' !== typeof stage.id) return 'missing ID';
+//         if (!stage.steps || !stage.steps.length) {
+//             return 'missing "steps" array';
+//         }
+//
+//         if (unique && that.stages.hasOwnProperty(stage.id)) {
+//             return 'stage id already existing: ' + stage.id +
+//                 '. Use extendStage to modify it';
+//         }
+//
+//         // Check whether the all referenced steps exist.
+//         for (i = 0; i < stage.steps.length; ++i) {
+//             if (!that.steps[stage.steps[i]]) {
+//                 return 'unknown step "' + stage.steps[i] + '"';
+//             }
+//         }
+//         return null;
+//     }
 
     /**
      * handleAlias
@@ -14160,7 +14270,8 @@ if (!Array.prototype.indexOf) {
                 cb: cb || function() {
                     this.node.log(this.getCurrentStepObj().id);
                     this.node.done();
-                }
+                },
+                alias: alias
             });
         }
 
@@ -14274,15 +14385,13 @@ if (!Array.prototype.indexOf) {
      */
     Block.prototype.add = function(item, positions) {
         if (this.finalized) {
-            throw new Error("Block.add: Cannot add items after" +
-                            " finalization.");
+            throw new Error('Block.add: stager already finalized, cannot add ' +
+                            'further items.');
         }
 
-        if ("undefined" === typeof positions ||
-            positions === "linear") {
-                this.takenPositions.push(this.numberOfItems);
-                this.items[this.numberOfItems] = item;
-
+        if ('undefined' === typeof positions || positions === 'linear') {
+            this.takenPositions.push(this.numberOfItems);
+            this.items[this.numberOfItems] = item;
         }
         else {
             this.unfinishedEntries.push({
@@ -34099,7 +34208,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    VisualRound.version = '0.2.0';
+    VisualRound.version = '0.2.1';
     VisualRound.description = 'Display number of current round and/or stage.' +
         'Can also display countdown and total number of rounds and/or stages.';
 
@@ -34476,7 +34585,9 @@ if (!Array.prototype.indexOf) {
             this.curRound = node.player.stage.round;
 
             if (stage) {
-                this.curStage = idseq.indexOf(stage.id)+1;
+                // TODO: Check the change. It was:
+                // this.curStage = idseq.indexOf(stage.id)+1;
+                this.curStage = node.player.stage.stage;
                 this.totRound = this.stager.sequence[this.curStage -1].num || 1;
             }
             else {
