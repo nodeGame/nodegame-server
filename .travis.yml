@@ -32,5 +32,4 @@ script:
   - cd nodegame/games
   - git clone https://github.com/nodeGame/ultimatum.git
   - cd ultimatum
-  - npm install lru-cache sigmund
   - ./bin/run-standalone-test.sh
