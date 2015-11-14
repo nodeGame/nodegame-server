@@ -17,7 +17,6 @@ install:
 #  - mkdir -p nodegame node_modules
 #  - ln -s ../node_modules nodegame/node_modules
   - bin/install-nodegame-for-module.sh -g "nodegame-window nodegame-widgets JSUS NDDB shelf.js nodegame-client descil-mturk nodegame-db nodegame-requirements nodegame-monitor nodegame-mongodb"
-  - ln -s nodegame/node_modules .
   - npm install
   - ln -s ../.. nodegame/node_modules/nodegame-server
 # Patch express connect.
