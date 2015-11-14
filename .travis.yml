@@ -1,8 +1,8 @@
 sudo: false
 language: node_js
 node_js:
-#  - "0.10"
-#  - "0.12"
+  - "0.10"
+  - "0.12"
   - "5.0"
 
 before_install:
@@ -14,11 +14,12 @@ before_install:
 
 install:
 # Share node_modules with nodeGame.
-  - mkdir -p nodegame node_modules
-  - ln -s ../node_modules nodegame/node_modules
-  - ln -s .. node_modules/nodegame-server
+#  - mkdir -p nodegame node_modules
+#  - ln -s ../node_modules nodegame/node_modules
   - bin/install-nodegame-for-module.sh -g "nodegame-window nodegame-widgets JSUS NDDB shelf.js nodegame-client descil-mturk nodegame-db nodegame-requirements nodegame-monitor nodegame-mongodb"
+  - ln -s nodegame/node_modules .
   - npm install
+  - ln -s ../.. nodegame/node_modules/nodegame-server
 # Patch express connect.
 #  - patch node_modules/express/node_modules/connect/lib/middleware/static.js < bin/ng.connect.static.js.patch
 # Rebuild js files.
@@ -31,4 +32,5 @@ script:
   - cd nodegame/games
   - git clone https://github.com/nodeGame/ultimatum.git
   - cd ultimatum
+  - npm install lru-cache sigmund
   - ./bin/run-standalone-test.sh
