@@ -26,12 +26,12 @@ J = require('JSUS').JSUS;
 var pkg = require('../package.json'),
 version = pkg.version;
 
-var ngcDir = J.resolveModuleDir('nodegame-client');
-var JSUSDir = J.resolveModuleDir('JSUS');
-var NDDBDir = J.resolveModuleDir('NDDB');
-var shelfDir = J.resolveModuleDir('shelf.js');
-var ngwindowDir = J.resolveModuleDir('nodegame-window');
-var ngwidgetsDir = J.resolveModuleDir('nodegame-widgets');
+var ngcDir = J.resolveModuleDir('nodegame-client', __dirname);
+var JSUSDir = J.resolveModuleDir('JSUS', __dirname);
+var NDDBDir = J.resolveModuleDir('NDDB', __dirname);
+var shelfDir = J.resolveModuleDir('shelf.js', __dirname);
+var ngwindowDir = J.resolveModuleDir('nodegame-window', __dirname);
+var ngwidgetsDir = J.resolveModuleDir('nodegame-widgets', __dirname);
 
 var build_client = require(ngcDir + 'bin/build.js').build;
 var build_client_support = require(ngcDir + 'bin/build.js').build_support;
@@ -185,12 +185,13 @@ program
 
         J.copyFromDir(buildDir_ngWindow, buildDir, '.js');
 
-        console.log('All javascript files built and copied to public/javascript/');
+        console.log('All javascript files built and copied to ' +
+                    'public/javascript/');
     });
 
 program
     .command('build-css')
-    .description('Copies all stylesheets files  into public/stylesheets/ and builds nodegame.css')
+    .description('Populates public/stylesheets/ and builds nodegame.css')
     .option('-o, --output <file>', 'output file (without .css)')
     .option('-A, --analyse', 'analyse build')
     .option('-C, --clean', 'clean CSS directory')
@@ -198,52 +199,53 @@ program
         var config, runIt, out, smooshed;
 
         function copyAndBuild() {
-	    // Copy CSS files from submodules.
+            // Copy CSS files from submodules.
             copyCSS(null, function() {
                 // Set output name.
                 out = options.output || "nodegame";
                 if (path.extname(out) === '.css') {
-	            out = path.basename(out, '.css');
+                    out = path.basename(out, '.css');
                 }
 
                 // Configurations for file smooshing.
                 config = {
-	            // VERSION: version,
+                    // VERSION: version,
 
-	            // Use JSHINT to spot code irregularities.
-	            JSHINT_OPTS: {
-	                boss: true,
-	                forin: true,
-	                browser: true,
-	            },
+                    // Use JSHINT to spot code irregularities.
+                    JSHINT_OPTS: {
+                        boss: true,
+                        forin: true,
+                        browser: true,
+                    },
 
-	            CSS: {
+                    CSS: {
                         // Need the extra slash.
-	                DIST_DIR: '/' + cssDir
-	            }
+                        DIST_DIR: '/' + cssDir
+                    }
                 };
 
                 config.CSS[out] = [
                     cssDir + 'window.css',
                     cssDir + 'widgets.css'
                 ];
-	        smooshed = smoosh.config(config);
+                smooshed = smoosh.config(config);
 
-	        // Builds both uncompressed and compressed files.
-	        smooshed.build();
+                // Builds both uncompressed and compressed files.
+                smooshed.build();
 
-    	        if (options.analyse) {
-    	            smooshed.run(); // runs jshint on full build
-    	            smooshed.analyze(); // analyzes everything
-    	        }
+                if (options.analyse) {
+                    smooshed.run(); // runs jshint on full build
+                    smooshed.analyze(); // analyzes everything
+                }
 
-                console.log('All CSS files copied, and ' + out + '.css created.');
+                console.log('All CSS files copied, and ' +
+                            out + '.css created.');
             });
         }
 
-	// Removes all files from the CSS folder.
-	if (options.clean) {
-	    J.cleanDir(cssDir, '.css', copyAndBuild);
+        // Removes all files from the CSS folder.
+        if (options.clean) {
+            J.cleanDir(cssDir, '.css', copyAndBuild);
         }
         else {
             copyAndBuild();
@@ -257,7 +259,7 @@ program
     .option('-a, --all', 'copy all js and css files')
     .option('-j, --js-only', 'copy only js files')
     .option('-c, --css-only', 'copy only css files')
-    .description('Copies build files (.js) and style files (.css) from submodules into public/')
+    .description('Copies all .js .css files from submodules into public/')
     .action(function(options) {
         if (!options.all && !options.js && !options.css) {
             options.all = true;
@@ -268,37 +270,37 @@ program
                 J.copyFromDir(buildDir_client, buildDir, '.js');
             }
             catch(e) {
-                console.log('make refresh: could not find nodegame-client directory.');
+                console.log('make refresh: could not find nodegame-client.');
             }
             try {
                 J.copyFromDir(buildDir_ngWindow, buildDir, '.js');
             }
             catch(e) {
-                console.log('make refresh: could not find nodegame-window directory.');
+                console.log('make refresh: could not find nodegame-window.');
             }
             try {
                 J.copyFromDir(buildDir_ngWidgets, buildDir, '.js');
             }
             catch(e) {
-                console.log('make refresh: could not find nodegame-widgets directory.');
+                console.log('make refresh: could not find nodegame-widgets.');
             }
             try {
                 J.copyFromDir(buildDir_JSUS, buildDir, '.js');
             }
             catch(e) {
-                console.log('make refresh: could not find JSUS directory.');
+                console.log('make refresh: could not find JSUS.');
             }
             try {
                 J.copyFromDir(buildDir_NDDB, buildDir, '.js');
             }
             catch(e) {
-                console.log('make refresh: could not find NDDB directory.');
+                console.log('make refresh: could not find NDDB.');
             }
             try {
                 J.copyFromDir(buildDir_shelf, buildDir, '.js');
             }
             catch(e) {
-                console.log('make refresh: could not find Shelf.js directory.');
+                console.log('make refresh: could not find shelf.js.');
             }
         }
 
@@ -316,10 +318,11 @@ program
         console.log('Building documentation for nodegame-server v.' + version);
         // http://nodejs.org/api.html#_child_processes
         var dockerDir = J.resolveModuleDir('docker', rootDir);
-        var command = dockerDir + 'docker -i ' + rootDir + ' index.js lib/ -o ' + rootDir + '/docs/';
+        var command = dockerDir + 'docker -i ' + rootDir +
+            ' index.js lib/ -o ' + rootDir + '/docs/ -u';
         var child = exec(command, function (error, stdout, stderr) {
-            util.print(stdout);
-            util.print(stderr);
+            if (stdout) console.log(stdout);
+            if (stderr) console.log(stderr);
             if (error !== null) {
                 console.log('build error: ' + error);
             }
@@ -328,7 +331,7 @@ program
 
 program
     .command('sync <path> [options]')
-    .description('Sync the folder with the specified target directory (must exists)')
+    .description('Sync with the specified target directory (must exists)')
     .option('-a, --all', 'sync /lib and /conf folders (default)')
     .option('-l, --lib', 'sync the /lib folder')
     .option('-c, --conf', 'sync the /conf folder')
@@ -360,7 +363,8 @@ program
 function copyDirTo(inputDir, targetDir) {
 
     if (!targetDir) {
-        console.log('You must specify a target directory for the \'sync\' command');
+        console.log('You must specify a target directory ' +
+                    'for the \'sync\' command');
         return;
     }
 
@@ -379,7 +383,8 @@ function copyDirTo(inputDir, targetDir) {
 
     targetDir = targetDir + '/';
 
-    console.log('nodegame-server v.' + version + ': syncing ' + inputDir + ' with ' + targetDir);
+    console.log('nodegame-server v.' + version + ': syncing ' + inputDir +
+                ' with ' + targetDir);
 
     J.copyDirSyncRecursive(inputDir, targetDir);
 }
@@ -393,7 +398,7 @@ function copyCSS(options, cb) {
         });
     }
     catch(e) {
-        console.log('make refresh: could not find nodegame-window css directory.');
+        console.log('make refresh: could not find nodegame-window css dir.');
         asyncQueue.remove('window');
     }
     try {
@@ -403,7 +408,7 @@ function copyCSS(options, cb) {
         });
     }
     catch(e) {
-        console.log('make refresh: could not find nodegame-window css directory.');
+        console.log('make refresh: could not find nodegame-window css dir.');
         asyncQueue.remove('widgets');
     }
 

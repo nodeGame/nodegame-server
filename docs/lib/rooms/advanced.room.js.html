@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>advanced.room.js</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <link rel="stylesheet" media="all" href="../../doc-style.css" />
+  <script src="../../doc-filelist.js"></script>
+  <script>
+    var relativeDir = "../../", thisFile = "lib/rooms/advanced.room.js", defaultSidebar = true;
+  </script>
+  <script src="../../doc-script.js"></script>
+</head>
+<body>
+  <div id="sidebar_wrapper">
+    <div id="sidebar_switch">
+      <span class="tree">Files</span>
+      <span class="headings">Headings</span>
+    </div>
+    <div id="tree"></div>
+    <div id="headings">
+      <div class="heading h1">
+        <a href="#waitingroom">WaitingRoom</a>
+      </div>
+      <div class="heading h2">
+        <a href="#global%20scope">Global scope</a>
+      </div>
+      <div class="heading h2">
+        <a href="#waitingroom.setinterval">WaitingRoom.setInterval</a>
+      </div>
+    </div>
+  </div>
+  <div id="sidebar-toggle"></div>
+  <div id="container"><div class="background highlight"></div>
+<table cellpadding="0" cellspacing="0">
+  <tbody>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="waitingroom">
+  <h1>
+    <a href="#waitingroom" name="waitingroom" class="pilcrow">&#182;</a>
+    WaitingRoom
+  </h1>
+</div>
+
+  </div>
+  <div class="body"><p>Starts a game room based on a list of criteria.</p>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre><span class="s2">&quot;use strict&quot;</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap" id="global%20scope">
+  <h2>
+    <a href="#global%20scope" name="global%20scope" class="pilcrow">&#182;</a>
+    Global scope
+  </h2>
+</div>
+
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">module</span><span class="p">.</span><span class="nx">exports</span> <span class="o">=</span> <span class="nx">Wait</span><span class="p">;</span>
+
+<span class="kd">var</span> <span class="nx">ngc</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;nodegame-client&#39;</span><span class="p">);</span>
+<span class="kd">var</span> <span class="nx">J</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;JSUS&#39;</span><span class="p">).</span><span class="nx">JSUS</span><span class="p">;</span>
+
+<span class="nx">exports</span><span class="p">.</span><span class="nx">WaitingRoom</span> <span class="o">=</span> <span class="nx">WaitingRoom</span><span class="p">;</span>
+
+
+<span class="kd">function</span> <span class="nx">WaitingRoom</span><span class="p">(</span><span class="nx">options</span><span class="p">)</span> <span class="p">{</span>
+
+    <span class="k">this</span><span class="p">.</span><span class="nx">triggerManager</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">ngc</span><span class="p">.</span><span class="nx">TriggerManager</span><span class="p">(</span><span class="nx">options</span><span class="p">);</span>
+
+    <span class="kd">var</span> <span class="nx">that</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
+
+    <span class="kd">var</span> <span class="nx">pullTriggers</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+
+        <span class="kd">var</span> <span class="nx">groups</span>  <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">pullTriggers</span><span class="p">();</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">groups</span><span class="p">)</span> <span class="k">return</span><span class="p">;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">J</span><span class="p">.</span><span class="nx">isArray</span><span class="p">(</span><span class="nx">groups</span><span class="p">))</span> <span class="nx">groups</span> <span class="o">=</span> <span class="p">[</span><span class="nx">groups</span><span class="p">];</span>
+
+        <span class="kd">var</span> <span class="nx">i</span><span class="p">,</span> <span class="nx">name</span><span class="p">,</span> <span class="nx">count</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+        <span class="k">for</span> <span class="p">(</span><span class="nx">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span><span class="o">&lt;</span> <span class="nx">groups</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span> <span class="nx">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">name</span> <span class="o">=</span> <span class="nx">groups</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">name</span> <span class="o">||</span> <span class="nx">count</span><span class="o">++</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-3" id="section-3">&#182;</a>
+</div>
+<p>Start Game.
+node.game.room[name] = new Game(groups[i]);</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
+        <span class="p">}</span>
+    <span class="p">};</span>
+
+    <span class="kd">var</span> <span class="nx">onConnectFunc</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-4" id="section-4">&#182;</a>
+</div>
+<p>console.log('added')</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="nx">node</span><span class="p">.</span><span class="nx">onPLIST</span><span class="p">(</span><span class="kd">function</span><span class="p">(){</span>
+            <span class="nx">pullTriggers</span><span class="p">();</span>
+        <span class="p">});</span>
+    <span class="p">};</span>
+
+    <span class="kd">var</span> <span class="nx">onConnect</span><span class="p">;</span>
+    <span class="nb">Object</span><span class="p">.</span><span class="nx">defineProperty</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="s1">&#39;onConnect&#39;</span><span class="p">,</span> <span class="p">{</span>
+        <span class="nx">set</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">value</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nx">value</span> <span class="o">===</span> <span class="kc">false</span><span class="p">)</span> <span class="p">{</span>
+                <span class="nx">node</span><span class="p">.</span><span class="nx">removeListener</span><span class="p">(</span><span class="s1">&#39;in.say.PLIST&#39;</span><span class="p">,</span> <span class="nx">pullTriggers</span><span class="p">);</span>
+                <span class="nx">node</span><span class="p">.</span><span class="nx">removeListener</span><span class="p">(</span><span class="s1">&#39;in.set.PLIST&#39;</span><span class="p">,</span> <span class="nx">pullTriggers</span><span class="p">);</span>
+            <span class="p">}</span>
+            <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">value</span> <span class="o">===</span> <span class="kc">true</span><span class="p">)</span> <span class="p">{</span>
+                <span class="nx">node</span><span class="p">.</span><span class="nx">onPLIST</span><span class="p">(</span><span class="nx">pullTriggers</span><span class="p">);</span>
+            <span class="p">}</span>
+            <span class="nx">onConnect</span> <span class="o">=</span> <span class="nx">value</span><span class="p">;</span>
+
+        <span class="p">},</span>
+        <span class="nx">get</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+            <span class="k">return</span> <span class="nx">onConnect</span><span class="p">;</span>
+        <span class="p">},</span>
+        <span class="nx">configurable</span><span class="o">:</span> <span class="kc">true</span>
+    <span class="p">});</span>
+
+    <span class="kd">var</span> <span class="nx">onTimeout</span><span class="p">,</span> <span class="nx">onTimeoutTime</span><span class="p">;</span>
+
+    <span class="nb">Object</span><span class="p">.</span><span class="nx">defineProperty</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="s1">&#39;onTimeout&#39;</span><span class="p">,</span> <span class="p">{</span>
+        <span class="nx">set</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">value</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">value</span><span class="p">)</span> <span class="p">{</span>
+                <span class="nx">clearTimeout</span><span class="p">(</span><span class="nx">onTimeout</span><span class="p">);</span>
+                <span class="nx">onTimeoutTime</span> <span class="o">=</span> <span class="nx">value</span><span class="p">;</span>
+                <span class="nx">onTimeout</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+            <span class="p">}</span>
+            <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;numeric&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">value</span><span class="p">)</span> <span class="p">{</span>
+
+                <span class="k">if</span> <span class="p">(</span><span class="nx">onTimeout</span><span class="p">)</span> <span class="p">{</span>
+                    <span class="nx">clearTimeout</span><span class="p">(</span><span class="nx">onTimeout</span><span class="p">);</span>
+                <span class="p">}</span>
+                <span class="nx">onTimeoutTime</span> <span class="o">=</span> <span class="nx">value</span><span class="p">;</span>
+                <span class="nx">onTimeout</span> <span class="o">=</span> <span class="nx">setTimeout</span><span class="p">(</span><span class="nx">pullTriggers</span><span class="p">);</span>
+            <span class="p">}</span>
+        <span class="p">},</span>
+        <span class="nx">get</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+            <span class="k">return</span> <span class="nx">onTimeoutTime</span><span class="p">;</span>
+        <span class="p">},</span>
+        <span class="nx">configurable</span><span class="o">:</span> <span class="kc">true</span>
+    <span class="p">});</span>
+
+    <span class="kd">var</span> <span class="nx">onInterval</span><span class="p">,</span> <span class="nx">onIntervalTime</span><span class="p">;</span>
+    <span class="nb">Object</span><span class="p">.</span><span class="nx">defineProperty</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="s1">&#39;onInterval&#39;</span><span class="p">,</span> <span class="p">{</span>
+        <span class="nx">set</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">value</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">value</span><span class="p">)</span> <span class="p">{</span>
+                <span class="nx">clearInterval</span><span class="p">(</span><span class="nx">onInterval</span><span class="p">);</span>
+                <span class="nx">onIntervalTime</span> <span class="o">=</span> <span class="nx">value</span><span class="p">;</span>
+                <span class="nx">onInterval</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+            <span class="p">}</span>
+            <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;numeric&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">value</span><span class="p">)</span> <span class="p">{</span>
+
+                <span class="k">if</span> <span class="p">(</span><span class="nx">onInterval</span><span class="p">)</span> <span class="p">{</span>
+                    <span class="nx">clearInterval</span><span class="p">(</span><span class="nx">onInterval</span><span class="p">);</span>
+                <span class="p">}</span>
+                <span class="nx">onInterval</span> <span class="o">=</span> <span class="nx">setInterval</span><span class="p">(</span><span class="nx">pullTriggers</span><span class="p">);</span>
+                <span class="nx">onIntervalTime</span> <span class="o">=</span> <span class="nx">value</span><span class="p">;</span>
+            <span class="p">}</span>
+        <span class="p">},</span>
+        <span class="nx">get</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+            <span class="k">return</span> <span class="nx">onIntervalTime</span><span class="p">;</span>
+        <span class="p">},</span>
+        <span class="nx">configurable</span><span class="o">:</span> <span class="kc">true</span>
+    <span class="p">});</span>
+
+
+    <span class="k">this</span><span class="p">.</span><span class="nx">init</span><span class="p">(</span><span class="nx">options</span><span class="p">);</span>
+<span class="p">}</span>
+
+
+<span class="nx">WaitingRoom</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">init</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">options</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">options</span> <span class="o">=</span> <span class="nx">options</span> <span class="o">||</span> <span class="p">{};</span>
+
+    <span class="k">this</span><span class="p">.</span><span class="nx">onConnect</span> <span class="o">=</span> <span class="nx">options</span><span class="p">.</span><span class="nx">onConnect</span> <span class="o">||</span> <span class="kc">true</span><span class="p">;</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">onTimeout</span> <span class="o">=</span> <span class="nx">options</span><span class="p">.</span><span class="nx">onTimeout</span> <span class="o">||</span> <span class="kc">false</span><span class="p">;</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">onInterval</span> <span class="o">=</span> <span class="nx">options</span><span class="p">.</span><span class="nx">onInterval</span> <span class="o">||</span> <span class="kc">false</span><span class="p">;</span>
+
+
+    <span class="k">this</span><span class="p">.</span><span class="nx">addTrigger</span><span class="p">(</span><span class="kd">function</span><span class="p">(){</span>
+        <span class="k">return</span> <span class="k">new</span> <span class="nx">Group</span><span class="p">({</span>
+            <span class="nx">players</span><span class="o">:</span> <span class="nx">node</span><span class="p">.</span><span class="nx">pool</span><span class="p">,</span>
+            <span class="nx">game</span><span class="o">:</span> <span class="nx">options</span><span class="p">.</span><span class="nx">loops</span>
+        <span class="p">});</span>
+    <span class="p">});</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="nx">options</span><span class="p">.</span><span class="nx">minPlayers</span> <span class="o">&amp;&amp;</span> <span class="nx">options</span><span class="p">.</span><span class="nx">maxPlayers</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">addTrigger</span><span class="p">(</span><span class="kd">function</span><span class="p">(){</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nx">node</span><span class="p">.</span><span class="nx">pool</span><span class="p">.</span><span class="nx">length</span> <span class="o">&lt;</span> <span class="nx">options</span><span class="p">.</span><span class="nx">minPlayers</span><span class="p">)</span> <span class="p">{</span>
+                <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
+            <span class="p">}</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nx">node</span><span class="p">.</span><span class="nx">pool</span><span class="p">.</span><span class="nx">length</span> <span class="o">&gt;</span> <span class="nx">options</span><span class="p">.</span><span class="nx">maxPlayers</span><span class="p">)</span> <span class="p">{</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-5" id="section-5">&#182;</a>
+</div>
+<p>Take N = maxPlayers random player</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+                <span class="kd">var</span> <span class="nx">players</span> <span class="o">=</span> <span class="nx">node</span><span class="p">.</span><span class="nx">pool</span><span class="p">.</span><span class="nx">shuffle</span><span class="p">().</span><span class="nx">limit</span><span class="p">(</span><span class="nx">options</span><span class="p">.</span><span class="nx">maxPlayers</span><span class="p">);</span>
+                <span class="k">return</span> <span class="k">new</span> <span class="nx">Group</span><span class="p">({</span>
+                    <span class="nx">players</span><span class="o">:</span> <span class="nx">players</span><span class="p">,</span>
+                    <span class="nx">game</span><span class="o">:</span> <span class="nx">options</span><span class="p">.</span><span class="nx">loops</span>
+                <span class="p">});</span>
+
+            <span class="p">}</span>
+
+            <span class="k">return</span> <span class="k">new</span> <span class="nx">Group</span><span class="p">({</span>
+                <span class="nx">players</span><span class="o">:</span> <span class="nx">node</span><span class="p">.</span><span class="nx">pool</span><span class="p">,</span>
+                <span class="nx">game</span><span class="o">:</span> <span class="nx">options</span><span class="p">.</span><span class="nx">loops</span>
+            <span class="p">});</span>
+        <span class="p">});</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="nx">options</span><span class="p">.</span><span class="nx">minPlayers</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">addTrigger</span><span class="p">(</span><span class="kd">function</span><span class="p">(){</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nx">node</span><span class="p">.</span><span class="nx">pool</span><span class="p">.</span><span class="nx">length</span> <span class="o">&lt;</span> <span class="nx">options</span><span class="p">.</span><span class="nx">minPlayers</span><span class="p">)</span> <span class="p">{</span>
+                <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
+            <span class="p">}</span>
+
+            <span class="k">return</span> <span class="k">new</span> <span class="nx">Group</span><span class="p">({</span>
+                <span class="nx">players</span><span class="o">:</span> <span class="nx">node</span><span class="p">.</span><span class="nx">pool</span><span class="p">,</span>
+                <span class="nx">game</span><span class="o">:</span> <span class="nx">options</span><span class="p">.</span><span class="nx">loops</span>
+            <span class="p">});</span>
+        <span class="p">});</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="nx">options</span><span class="p">.</span><span class="nx">maxPlayers</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">addTrigger</span><span class="p">(</span><span class="kd">function</span><span class="p">(){</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nx">node</span><span class="p">.</span><span class="nx">pool</span><span class="p">.</span><span class="nx">length</span> <span class="o">&gt;</span> <span class="nx">options</span><span class="p">.</span><span class="nx">maxPlayers</span><span class="p">)</span> <span class="p">{</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-6" id="section-6">&#182;</a>
+</div>
+<p>Take N = maxPlayers random player</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+                <span class="kd">var</span> <span class="nx">players</span> <span class="o">=</span> <span class="nx">node</span><span class="p">.</span><span class="nx">pool</span><span class="p">.</span><span class="nx">shuffle</span><span class="p">().</span><span class="nx">limit</span><span class="p">(</span><span class="nx">options</span><span class="p">.</span><span class="nx">maxPlayers</span><span class="p">);</span>
+                <span class="k">return</span> <span class="k">new</span> <span class="nx">Group</span><span class="p">({</span>
+                    <span class="nx">players</span><span class="o">:</span> <span class="nx">players</span><span class="p">,</span>
+                    <span class="nx">game</span><span class="o">:</span> <span class="nx">options</span><span class="p">.</span><span class="nx">loops</span>
+                <span class="p">});</span>
+
+            <span class="p">}</span>
+        <span class="p">});</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="nx">options</span><span class="p">.</span><span class="nx">nPlayers</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">addTrigger</span><span class="p">(</span><span class="kd">function</span><span class="p">(){</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nx">node</span><span class="p">.</span><span class="nx">pool</span><span class="p">.</span><span class="nx">length</span> <span class="o">===</span> <span class="nx">options</span><span class="p">.</span><span class="nx">nPlayers</span><span class="p">)</span> <span class="p">{</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-7" id="section-7">&#182;</a>
+</div>
+<p>Take N = maxPlayers random player</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+                <span class="k">return</span> <span class="k">new</span> <span class="nx">Group</span><span class="p">({</span>
+                    <span class="nx">players</span><span class="o">:</span> <span class="nx">node</span><span class="p">.</span><span class="nx">pool</span><span class="p">,</span>
+                    <span class="nx">game</span><span class="o">:</span> <span class="nx">options</span><span class="p">.</span><span class="nx">loops</span>
+                <span class="p">});</span>
+
+            <span class="p">}</span>
+        <span class="p">});</span>
+    <span class="p">}</span>
+
+<span class="p">};</span>
+
+
+<span class="nx">WaitingRoom</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">criteria</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">func</span><span class="p">,</span> <span class="nx">pos</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">addTrigger</span><span class="p">(</span><span class="nx">func</span><span class="p">,</span> <span class="nx">pos</span><span class="p">);</span>
+<span class="p">};</span>
+
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="waitingroom.setinterval">
+  <h2>
+    <a href="#waitingroom.setinterval" name="waitingroom.setinterval" class="pilcrow">&#182;</a>
+    WaitingRoom.setInterval
+  </h2>
+</div>
+
+  </div>
+  <div class="body"><p>Set the update interval</p>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">WaitingRoom</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">setInterval</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">interval</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">interval</span><span class="p">)</span> <span class="nx">clearInterval</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">interval</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">interval</span><span class="p">)</span> <span class="nx">clearInterval</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">interval</span><span class="p">);</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">interval</span> <span class="o">=</span> <span class="nx">setInterval</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">pullTriggers</span><span class="p">,</span> <span class="nx">interval</span><span class="p">);</span>
+<span class="p">};</span>
+</pre></div>
+        </td>
+      </tr>
+  </tbody>
+</table>
+  </div>
+</body>
+</html>

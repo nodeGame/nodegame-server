@@ -31,16 +31,13 @@
         <a href="#pagemanager.addgame">PageManager.addGame</a>
       </div>
       <div class="heading h3">
+        <a href="#pagemanager.createalias">PageManager.createAlias</a>
+      </div>
+      <div class="heading h3">
         <a href="#pagemanager.inpublic">PageManager.inPublic</a>
       </div>
       <div class="heading h3">
         <a href="#pagemanager.intemplates">PageManager.inTemplates</a>
-      </div>
-      <div class="heading h3">
-        <a href="#pagemanager.cachepublic">PageManager.cachePublic</a>
-      </div>
-      <div class="heading h3">
-        <a href="#pagemanager.cachetemplate">PageManager.cacheTemplate</a>
       </div>
       <div class="heading h3">
         <a href="#pagemanager.cachecontext">PageManager.cacheContext</a>
@@ -71,14 +68,16 @@
 </div>
 
 
-<p>Copyright(c) 2014 Stefano Balietti
+<p>Copyright(c) 2015 Stefano Balietti
 MIT Licensed</p>
   </div>
   <div class="body"><p>Handles caching, and templating options for each game</p>
   </div>
 </div>
         </td>
-        <td class="code highlight"><div class="highlight"><pre><span class="nx">module</span><span class="p">.</span><span class="nx">exports</span> <span class="o">=</span> <span class="nx">PageManager</span><span class="p">;</span>
+        <td class="code highlight"><div class="highlight"><pre><span class="s2">&quot;use strict&quot;</span><span class="p">;</span>
+
+<span class="nx">module</span><span class="p">.</span><span class="nx">exports</span> <span class="o">=</span> <span class="nx">PageManager</span><span class="p">;</span>
 
 <span class="kd">var</span> <span class="nx">games</span> <span class="o">=</span> <span class="p">{};</span>
 
@@ -102,7 +101,36 @@ MIT Licensed</p>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-<span class="kd">function</span> <span class="nx">PageManager</span><span class="p">()</span> <span class="p">{}</span>
+<span class="kd">function</span> <span class="nx">PageManager</span><span class="p">()</span> <span class="p">{</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-3" id="section-3">&#182;</a>
+</div>
+<p>Testing.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">this</span><span class="p">.</span><span class="nx">games</span> <span class="o">=</span> <span class="nx">games</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-4" id="section-4">&#182;</a>
+</div>
+<p>Adding servernode resources caching.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">this</span><span class="p">.</span><span class="nx">addGame</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">);</span>
+<span class="p">}</span>
 
 
 </pre></div>
@@ -154,12 +182,58 @@ MIT Licensed</p>
     <span class="p">}</span>
     <span class="nx">games</span><span class="p">[</span><span class="nx">gameName</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
         <span class="nx">cachePublic</span><span class="o">:</span> <span class="p">{},</span>
-        <span class="nx">cachePublicFile</span><span class="o">:</span> <span class="p">{},</span>
         <span class="nx">cacheTemplate</span><span class="o">:</span> <span class="p">{},</span>
-        <span class="nx">cacheTemplateFile</span><span class="o">:</span> <span class="p">{},</span>
         <span class="nx">cacheContext</span><span class="o">:</span> <span class="p">{},</span>
         <span class="nx">contextCallbacks</span><span class="o">:</span> <span class="p">{}</span>
     <span class="p">};</span>
+<span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="pagemanager.createalias">
+  <h3>
+    <a href="#pagemanager.createalias" name="pagemanager.createalias" class="pilcrow">&#182;</a>
+    PageManager.createAlias
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Creates an alias for a cached game.</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">alias</span>
+      <span class="dox_type">string</span>
+      <span>The name of the alias</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">gameName</span>
+      <span class="dox_type">string</span>
+      <span>The name of the game</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">PageManager</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">createAlias</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">alias</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">alias</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;PageManager.createAlias: alias must be string.&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">gameName</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;PageManager.createAlias: &#39;</span> <span class="o">+</span>
+                            <span class="s1">&#39;gameName must be string.&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">games</span><span class="p">[</span><span class="nx">gameName</span><span class="p">])</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;PageManager.createAlias: &#39;</span> <span class="o">+</span>
+                        <span class="s1">&#39;game not found: &#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="nx">games</span><span class="p">[</span><span class="nx">alias</span><span class="p">]</span> <span class="o">=</span> <span class="nx">games</span><span class="p">[</span><span class="nx">gameName</span><span class="p">];</span>
 <span class="p">};</span>
 
 
@@ -278,94 +352,6 @@ Else returns the value, TRUE if previously found, FALSE, otherwise.</p>
     <span class="p">}</span>
     <span class="nx">games</span><span class="p">[</span><span class="nx">gameName</span><span class="p">].</span><span class="nx">cacheTemplate</span><span class="p">[</span><span class="nx">path</span><span class="p">]</span> <span class="o">=</span> <span class="nx">found</span><span class="p">;</span>
     <span class="k">return</span> <span class="nx">found</span><span class="p">;</span>
-<span class="p">};</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs"><div class="dox">
-  <div class="summary">
-<div class="pilwrap" id="pagemanager.cachepublic">
-  <h3>
-    <a href="#pagemanager.cachepublic" name="pagemanager.cachepublic" class="pilcrow">&#182;</a>
-    PageManager.cachePublic
-  </h3>
-</div>
-
-  </div>
-  <div class="body"><p>Stores in memory a copy of the content of a file found in <code>/public/</code></p>
-
-<p>No type-checking for increasing speed.</p>
-  </div>
-  <div class="details">
-    <div class="dox_tag_title">Params</div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name">gameName</span>
-      <span class="dox_type">string</span>
-      <span>The name of the game</span>
-    </div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name">path</span>
-      <span class="dox_type">string</span>
-      <span>The path to the file in <code>/public/</code></span>
-    </div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name">file</span>
-      <span class="dox_type">string</span>
-      <span>The content of the file</span>
-    </div>
-  </div>
-</div>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-<span class="nx">PageManager</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">cachePublic</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">gameName</span><span class="p">,</span> <span class="nx">path</span><span class="p">,</span> <span class="nx">file</span><span class="p">)</span> <span class="p">{</span>
-    <span class="nx">games</span><span class="p">[</span><span class="nx">gameName</span><span class="p">].</span><span class="nx">cachePublicFile</span><span class="p">[</span><span class="nx">path</span><span class="p">]</span> <span class="o">=</span> <span class="nx">file</span><span class="p">;</span>
-<span class="p">};</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs"><div class="dox">
-  <div class="summary">
-<div class="pilwrap" id="pagemanager.cachetemplate">
-  <h3>
-    <a href="#pagemanager.cachetemplate" name="pagemanager.cachetemplate" class="pilcrow">&#182;</a>
-    PageManager.cacheTemplate
-  </h3>
-</div>
-
-  </div>
-  <div class="body"><p>Stores in memory a copy of the content of a file found in <code>/public/</code></p>
-
-<p>No type-checking for increasing speed.</p>
-  </div>
-  <div class="details">
-    <div class="dox_tag_title">Params</div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name">gameName</span>
-      <span class="dox_type">string</span>
-      <span>The name of the game</span>
-    </div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name">path</span>
-      <span class="dox_type">string</span>
-      <span>The path to the file in <code>/views/templates/</code></span>
-    </div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name">template</span>
-      <span class="dox_type">string</span>
-      <span>The content of the template file</span>
-    </div>
-  </div>
-</div>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-<span class="nx">PageManager</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">cacheTemplate</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">gameName</span><span class="p">,</span> <span class="nx">path</span><span class="p">,</span> <span class="nx">template</span><span class="p">)</span> <span class="p">{</span>
-    <span class="nx">games</span><span class="p">[</span><span class="nx">gameName</span><span class="p">].</span><span class="nx">cacheTemplateFile</span><span class="p">[</span><span class="nx">path</span><span class="p">]</span> <span class="o">=</span> <span class="nx">template</span><span class="p">;</span>
 <span class="p">};</span>
 
 

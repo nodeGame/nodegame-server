@@ -28,16 +28,19 @@
         <a href="#playerserver%20constructor">PlayerServer constructor</a>
       </div>
       <div class="heading h3">
-        <a href="#playerserver.notify">PlayerServer.notify</a>
-      </div>
-      <div class="heading h3">
-        <a href="#playerserver.forwardall">PlayerServer.forwardAll</a>
-      </div>
-      <div class="heading h3">
-        <a href="#playerserver.getfromadmins">PlayerServer.getFromAdmins</a>
-      </div>
-      <div class="heading h3">
         <a href="#playerserver.admin_server">PlayerServer.ADMIN_SERVER</a>
+      </div>
+      <div class="heading h3">
+        <a href="#playerserver.acm">PlayerServer.acm</a>
+      </div>
+      <div class="heading h4">
+        <a href="#playerserver.acm.notify">PlayerServer.acm.notify</a>
+      </div>
+      <div class="heading h4">
+        <a href="#playerserver.acm.forwardall">PlayerServer.acm.forwardAll</a>
+      </div>
+      <div class="heading h4">
+        <a href="#playerserver.acm.getfromadmins">PlayerServer.acm.getFromAdmins</a>
       </div>
       <div class="heading h2">
         <a href="#playerserver%20methods">PlayerServer methods</a>
@@ -81,6 +84,12 @@
       <div class="heading h3">
         <a href="#playerserver.standardplayermsg">PlayerServer.standardPlayerMsg</a>
       </div>
+      <div class="heading h2">
+        <a href="#playerserver.notifyroomconnection">PlayerServer.notifyRoomConnection</a>
+      </div>
+      <div class="heading h2">
+        <a href="#playerserver.notifyroomdisconnection">PlayerServer.notifyRoomDisconnection</a>
+      </div>
     </div>
   </div>
   <div id="sidebar-toggle"></div>
@@ -98,7 +107,7 @@
 </div>
 
 
-<p>Copyright(c) 2014 Stefano Balietti
+<p>Copyright(c) 2015 Stefano Balietti
 MIT Licensed</p>
   </div>
   <div class="body"><p>GameServer for the players endpoint</p>
@@ -177,11 +186,52 @@ MIT Licensed</p>
       </tr>
       <tr>
         <td class="docs">
-<div class="pilwrap" id="playerserver.notify">
+<div class="pilwrap" id="playerserver.admin_server">
   <h3>
-    <a href="#playerserver.notify" name="playerserver.notify" class="pilcrow">&#182;</a>
-    PlayerServer.notify
+    <a href="#playerserver.admin_server" name="playerserver.admin_server" class="pilcrow">&#182;</a>
+    PlayerServer.ADMIN_SERVER
   </h3>
+</div>
+
+
+<p>Flag to distinguish from Admin Server at execution time.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">this</span><span class="p">.</span><span class="nx">ADMIN_SERVER</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="playerserver.acm">
+  <h3>
+    <a href="#playerserver.acm" name="playerserver.acm" class="pilcrow">&#182;</a>
+    PlayerServer.acm
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Action control management</p>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">this</span><span class="p">.</span><span class="nx">acm</span> <span class="o">=</span> <span class="p">{};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap" id="playerserver.acm.notify">
+  <h4>
+    <a href="#playerserver.acm.notify" name="playerserver.acm.notify" class="pilcrow">&#182;</a>
+    PlayerServer.acm.notify
+  </h4>
 </div>
 
 
@@ -199,7 +249,7 @@ a stage: from LOADING to DONE)</li>
 </ul>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">notify</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">options</span><span class="p">.</span><span class="nx">notify</span> <span class="o">||</span> <span class="p">{};</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">acm</span><span class="p">.</span><span class="nx">notify</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">options</span><span class="p">.</span><span class="nx">notify</span> <span class="o">||</span> <span class="p">{};</span>
 
 
 </pre></div>
@@ -207,11 +257,11 @@ a stage: from LOADING to DONE)</li>
       </tr>
       <tr>
         <td class="docs">
-<div class="pilwrap" id="playerserver.forwardall">
-  <h3>
-    <a href="#playerserver.forwardall" name="playerserver.forwardall" class="pilcrow">&#182;</a>
-    PlayerServer.forwardAll
-  </h3>
+<div class="pilwrap" id="playerserver.acm.forwardall">
+  <h4>
+    <a href="#playerserver.acm.forwardall" name="playerserver.acm.forwardall" class="pilcrow">&#182;</a>
+    PlayerServer.acm.forwardAll
+  </h4>
 </div>
 
 
@@ -219,7 +269,7 @@ a stage: from LOADING to DONE)</li>
 will be forwarded to the admins. Default: FALSE</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">forwardAll</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">options</span><span class="p">.</span><span class="nx">forwardAllMessages</span> <span class="o">||</span> <span class="kc">false</span><span class="p">;</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">acm</span><span class="p">.</span><span class="nx">forwardAll</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">options</span><span class="p">.</span><span class="nx">forwardAllMessages</span> <span class="o">||</span> <span class="kc">false</span><span class="p">;</span>
 
 
 </pre></div>
@@ -227,11 +277,11 @@ will be forwarded to the admins. Default: FALSE</p>
       </tr>
       <tr>
         <td class="docs">
-<div class="pilwrap" id="playerserver.getfromadmins">
-  <h3>
-    <a href="#playerserver.getfromadmins" name="playerserver.getfromadmins" class="pilcrow">&#182;</a>
-    PlayerServer.getFromAdmins
-  </h3>
+<div class="pilwrap" id="playerserver.acm.getfromadmins">
+  <h4>
+    <a href="#playerserver.acm.getfromadmins" name="playerserver.acm.getfromadmins" class="pilcrow">&#182;</a>
+    PlayerServer.acm.getFromAdmins
+  </h4>
 </div>
 
 
@@ -239,26 +289,7 @@ will be forwarded to the admins. Default: FALSE</p>
 back the result. Default: FALSE</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">getFromAdmins</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">options</span><span class="p">.</span><span class="nx">getFromAdmins</span> <span class="o">||</span> <span class="kc">false</span><span class="p">;</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap" id="playerserver.admin_server">
-  <h3>
-    <a href="#playerserver.admin_server" name="playerserver.admin_server" class="pilcrow">&#182;</a>
-    PlayerServer.ADMIN_SERVER
-  </h3>
-</div>
-
-
-<p>Flag to distinguish from Admin Server at execution time.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">ADMIN_SERVER</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">acm</span><span class="p">.</span><span class="nx">getFromAdmins</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">options</span><span class="p">.</span><span class="nx">getFromAdmins</span> <span class="o">||</span> <span class="kc">false</span><span class="p">;</span>
 <span class="p">}</span>
 
 
@@ -321,97 +352,11 @@ back the result. Default: FALSE</p>
 <p>Listens on newly connected players</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;connecting&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">clientObj</span><span class="p">)</span> <span class="p">{</span>
-        <span class="kd">var</span> <span class="nx">room</span><span class="p">,</span> <span class="nx">roomName</span><span class="p">,</span> <span class="nx">players</span><span class="p">,</span> <span class="nx">admins</span><span class="p">,</span> <span class="nx">oldPlayers</span><span class="p">,</span> <span class="nx">clientId</span><span class="p">,</span> <span class="nx">socketId</span><span class="p">;</span>
-        <span class="kd">var</span> <span class="nx">filteredPlayers</span><span class="p">;</span>
-        <span class="kd">var</span> <span class="nx">pConnectMsg</span><span class="p">;</span>
-
+    <span class="k">this</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;connecting&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">clientObj</span><span class="p">,</span> <span class="nx">roomName</span><span class="p">)</span> <span class="p">{</span>
+        <span class="kd">var</span> <span class="nx">room</span><span class="p">,</span> <span class="nx">clientId</span><span class="p">;</span>
         <span class="nx">clientId</span> <span class="o">=</span> <span class="nx">clientObj</span><span class="p">.</span><span class="nx">id</span><span class="p">;</span>
-        <span class="nx">socketId</span> <span class="o">=</span> <span class="nx">clientObj</span><span class="p">.</span><span class="nx">sid</span><span class="p">;</span>
-        <span class="nx">sys</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Incoming player: &#39;</span> <span class="o">+</span> <span class="nx">clientId</span><span class="p">);</span>
-        <span class="nx">roomName</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">registry</span><span class="p">.</span><span class="nx">getClientRoom</span><span class="p">(</span><span class="nx">clientId</span><span class="p">);</span>
         <span class="nx">room</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">[</span><span class="nx">roomName</span><span class="p">];</span>
-        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">room</span><span class="p">)</span> <span class="p">{</span>
-            <span class="nx">sys</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;PlayerServer.on.connecting: Could not determine room &#39;</span> <span class="o">+</span>
-                    <span class="s1">&#39;for incoming player: &#39;</span> <span class="o">+</span> <span class="nx">clientId</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
-            <span class="k">return</span><span class="p">;</span>
-        <span class="p">}</span>
-
-        <span class="nx">players</span> <span class="o">=</span> <span class="nx">room</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">player</span><span class="p">;</span>
-        <span class="nx">admins</span> <span class="o">=</span> <span class="nx">room</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">admin</span><span class="p">;</span>
-        <span class="nx">oldPlayers</span> <span class="o">=</span> <span class="nx">players</span><span class="p">.</span><span class="nx">breed</span><span class="p">();</span>
-        <span class="nx">oldPlayers</span><span class="p">.</span><span class="nx">id</span><span class="p">.</span><span class="nx">remove</span><span class="p">(</span><span class="nx">clientId</span><span class="p">);</span>
-
-        <span class="nx">pConnectMsg</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">msg</span><span class="p">.</span><span class="nx">create</span><span class="p">({</span>
-            <span class="nx">target</span><span class="o">:</span> <span class="s1">&#39;PCONNECT&#39;</span><span class="p">,</span>
-            <span class="nx">from</span><span class="o">:</span>   <span class="nx">clientId</span>
-        <span class="p">});</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-11" id="section-11">&#182;</a>
-</div>
-<p>The player list is shared among player-clients only if the server
-setup allows it.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-        <span class="k">if</span> <span class="p">(</span><span class="nx">that</span><span class="p">.</span><span class="nx">notify</span><span class="p">.</span><span class="nx">onConnect</span> <span class="o">&amp;&amp;</span> <span class="nx">oldPlayers</span><span class="p">.</span><span class="nx">db</span><span class="p">.</span><span class="nx">length</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-12" id="section-12">&#182;</a>
-</div>
-<p>Notify all the connected players that a new one just connected.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-            <span class="nx">pConnectMsg</span><span class="p">.</span><span class="nx">data</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="nx">id</span><span class="o">:</span>  <span class="nx">clientId</span>
-            <span class="p">};</span>
-            <span class="nx">that</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">broadcast2group</span><span class="p">(</span><span class="nx">pConnectMsg</span><span class="p">,</span> <span class="nx">oldPlayers</span><span class="p">);</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-13" id="section-13">&#182;</a>
-</div>
-<p>Send the ids and sids of connected players to the new player.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-            <span class="nx">filteredPlayers</span> <span class="o">=</span> <span class="nx">oldPlayers</span><span class="p">.</span><span class="nx">fetchSubObj</span><span class="p">(</span><span class="s1">&#39;id&#39;</span><span class="p">);</span>
-            <span class="nx">that</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">send2client</span><span class="p">(</span><span class="nx">that</span><span class="p">.</span><span class="nx">msg</span><span class="p">.</span><span class="nx">create</span><span class="p">({</span>
-                <span class="nx">target</span><span class="o">:</span> <span class="s1">&#39;SETUP&#39;</span><span class="p">,</span>
-                <span class="nx">to</span><span class="o">:</span>     <span class="nx">clientId</span><span class="p">,</span>
-                <span class="nx">text</span><span class="o">:</span>   <span class="s1">&#39;plist&#39;</span><span class="p">,</span>
-                <span class="nx">data</span><span class="o">:</span>   <span class="nx">J</span><span class="p">.</span><span class="nx">stringify</span><span class="p">([</span><span class="nx">filteredPlayers</span><span class="p">,</span> <span class="s1">&#39;append&#39;</span><span class="p">])</span>
-            <span class="p">}));</span>
-        <span class="p">}</span>
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-14" id="section-14">&#182;</a>
-</div>
-<p>Notifies the monitors that a new player connected.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-        <span class="nx">pConnectMsg</span><span class="p">.</span><span class="nx">data</span> <span class="o">=</span> <span class="nx">clientObj</span><span class="p">;</span>
-        <span class="nx">that</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">send2group</span><span class="p">(</span><span class="nx">pConnectMsg</span><span class="p">,</span> <span class="nx">admins</span><span class="p">);</span>
+        <span class="nx">that</span><span class="p">.</span><span class="nx">notifyRoomConnection</span><span class="p">(</span><span class="nx">clientId</span><span class="p">,</span> <span class="nx">room</span><span class="p">);</span>
     <span class="p">});</span>
 
 
@@ -428,29 +373,16 @@ setup allows it.</p>
 </div>
 
 
-<p>TODO: cleanup code, maybe merge with connecting. Maybe the room/roomName
-could be passed as parameter.</p>
+<p>TODO: cleanup code, maybe merge with connecting.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;re-connecting&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">clientObj</span><span class="p">)</span> <span class="p">{</span>
-        <span class="kd">var</span> <span class="nx">room</span><span class="p">,</span> <span class="nx">roomName</span><span class="p">,</span> <span class="nx">players</span><span class="p">,</span> <span class="nx">admins</span><span class="p">,</span> <span class="nx">oldPlayers</span><span class="p">,</span> <span class="nx">clientId</span><span class="p">,</span> <span class="nx">socketId</span><span class="p">;</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;re-connecting&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">clientObj</span><span class="p">,</span> <span class="nx">roomName</span><span class="p">)</span> <span class="p">{</span>
+        <span class="kd">var</span> <span class="nx">room</span><span class="p">,</span> <span class="nx">admins</span><span class="p">,</span> <span class="nx">clientId</span><span class="p">;</span>
         <span class="kd">var</span> <span class="nx">pConnectMsg</span><span class="p">;</span>
 
         <span class="nx">clientId</span> <span class="o">=</span> <span class="nx">clientObj</span><span class="p">.</span><span class="nx">id</span><span class="p">;</span>
-        <span class="nx">socketId</span> <span class="o">=</span> <span class="nx">clientObj</span><span class="p">.</span><span class="nx">sid</span><span class="p">;</span>
-        <span class="nx">sys</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Returning player: &#39;</span> <span class="o">+</span> <span class="nx">clientId</span><span class="p">);</span>
-        <span class="nx">roomName</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">registry</span><span class="p">.</span><span class="nx">getClientRoom</span><span class="p">(</span><span class="nx">clientId</span><span class="p">);</span>
         <span class="nx">room</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">[</span><span class="nx">roomName</span><span class="p">];</span>
-        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">room</span><span class="p">)</span> <span class="p">{</span>
-            <span class="nx">sys</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;PlayerServer.on.re-connecting: Could not determine room &#39;</span> <span class="o">+</span>
-                    <span class="s1">&#39;for returning player: &#39;</span> <span class="o">+</span> <span class="nx">clientId</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
-            <span class="k">return</span><span class="p">;</span>
-        <span class="p">}</span>
-
-        <span class="nx">players</span> <span class="o">=</span> <span class="nx">room</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">player</span><span class="p">;</span>
         <span class="nx">admins</span> <span class="o">=</span> <span class="nx">room</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">admin</span><span class="p">;</span>
-        <span class="nx">oldPlayers</span> <span class="o">=</span> <span class="nx">players</span><span class="p">.</span><span class="nx">breed</span><span class="p">();</span>
-        <span class="nx">oldPlayers</span><span class="p">.</span><span class="nx">id</span><span class="p">.</span><span class="nx">remove</span><span class="p">(</span><span class="nx">clientId</span><span class="p">);</span>
 
         <span class="nx">pConnectMsg</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">msg</span><span class="p">.</span><span class="nx">create</span><span class="p">({</span>
             <span class="nx">target</span><span class="o">:</span> <span class="s1">&#39;PRECONNECT&#39;</span><span class="p">,</span>
@@ -465,7 +397,7 @@ could be passed as parameter.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-16" id="section-16">&#182;</a>
+  <a class="pilcrow" href="#section-13" id="section-13">&#182;</a>
 </div>
 <p>Unlike connect msgs, reconnect msgs are sent always just to admins.
 Admins decides what to do with it.</p>
@@ -479,12 +411,12 @@ Admins decides what to do with it.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-17" id="section-17">&#182;</a>
+  <a class="pilcrow" href="#section-14" id="section-14">&#182;</a>
 </div>
 <p>Notifies the monitors that a new player connected.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-        <span class="nx">that</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">send2group</span><span class="p">(</span><span class="nx">pConnectMsg</span><span class="p">,</span> <span class="nx">admins</span><span class="p">);</span>
+        <span class="nx">that</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">send2group</span><span class="p">(</span><span class="nx">pConnectMsg</span><span class="p">,</span> <span class="nx">admins</span><span class="p">);</span>
     <span class="p">});</span>
 
 
@@ -555,7 +487,7 @@ Admins decides what to do with it.</p>
             <span class="k">return</span><span class="p">;</span>
         <span class="p">}</span>
 
-        <span class="nx">that</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">send2roomAdmins</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">room</span><span class="p">);</span>
+        <span class="nx">that</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">send2roomAdmins</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">room</span><span class="p">);</span>
     <span class="p">});</span>
 
 
@@ -577,6 +509,14 @@ Admins decides what to do with it.</p>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="k">this</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="nx">say</span> <span class="o">+</span> <span class="s1">&#39;PLAYER_UPDATE&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">msg</span><span class="p">)</span> <span class="p">{</span>
         <span class="kd">var</span> <span class="nx">room</span><span class="p">,</span> <span class="nx">roomName</span><span class="p">;</span>
+        <span class="nx">roomName</span> <span class="o">=</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">_roomName</span> <span class="o">||</span> <span class="nx">that</span><span class="p">.</span><span class="nx">registry</span><span class="p">.</span><span class="nx">getClientRoom</span><span class="p">(</span><span class="nx">msg</span><span class="p">.</span><span class="nx">from</span><span class="p">);</span>
+        <span class="nx">room</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">[</span><span class="nx">roomName</span><span class="p">];</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">room</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">sys</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;PlayerServer.on.say.PLAYER_UPDATE: Could not &#39;</span> <span class="o">+</span>
+                    <span class="s1">&#39;determine room of sender: &#39;</span> <span class="o">+</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">from</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
+            <span class="k">return</span><span class="p">;</span>
+        <span class="p">}</span>
 
 
 </pre></div>
@@ -585,29 +525,21 @@ Admins decides what to do with it.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-22" id="section-22">&#182;</a>
+  <a class="pilcrow" href="#section-19" id="section-19">&#182;</a>
 </div>
 <p>StateLevel is never passed to other players.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-        <span class="k">if</span> <span class="p">((</span><span class="nx">that</span><span class="p">.</span><span class="nx">notify</span><span class="p">.</span><span class="nx">onStageUpdate</span> <span class="o">&amp;&amp;</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">text</span> <span class="o">===</span> <span class="s1">&#39;stage&#39;</span><span class="p">)</span> <span class="o">||</span>
-            <span class="p">(</span><span class="nx">msg</span><span class="p">.</span><span class="nx">text</span> <span class="o">===</span> <span class="s1">&#39;stageLevel&#39;</span> <span class="o">&amp;&amp;</span> <span class="p">(</span><span class="nx">that</span><span class="p">.</span><span class="nx">notify</span><span class="p">.</span><span class="nx">onStageLevelUpdate</span> <span class="o">||</span>
-              <span class="p">(</span><span class="nx">that</span><span class="p">.</span><span class="nx">notify</span><span class="p">.</span><span class="nx">onStageLoadedUpdate</span> <span class="o">&amp;&amp;</span>
+        <span class="k">if</span> <span class="p">((</span><span class="nx">room</span><span class="p">.</span><span class="nx">acm</span><span class="p">.</span><span class="nx">notify</span><span class="p">.</span><span class="nx">onStageUpdate</span> <span class="o">&amp;&amp;</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">text</span> <span class="o">===</span> <span class="s1">&#39;stage&#39;</span><span class="p">)</span> <span class="o">||</span>
+            <span class="p">(</span><span class="nx">msg</span><span class="p">.</span><span class="nx">text</span> <span class="o">===</span> <span class="s1">&#39;stageLevel&#39;</span> <span class="o">&amp;&amp;</span> <span class="p">(</span><span class="nx">room</span><span class="p">.</span><span class="nx">acm</span><span class="p">.</span><span class="nx">notify</span><span class="p">.</span><span class="nx">onStageLevelUpdate</span> <span class="o">||</span>
+              <span class="p">(</span><span class="nx">room</span><span class="p">.</span><span class="nx">acm</span><span class="p">.</span><span class="nx">notify</span><span class="p">.</span><span class="nx">onStageLoadedUpdate</span> <span class="o">&amp;&amp;</span>
                <span class="nx">msg</span><span class="p">.</span><span class="nx">data</span><span class="p">.</span><span class="nx">stageLevel</span> <span class="o">===</span> <span class="nx">ngc</span><span class="p">.</span><span class="nx">constants</span><span class="p">.</span><span class="nx">stageLevels</span><span class="p">.</span><span class="nx">LOADED</span><span class="p">))))</span> <span class="p">{</span>
 
-            <span class="nx">that</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">broadcast2ownRoom</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">from</span><span class="p">);</span>
+            <span class="nx">that</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">broadcast2room</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">room</span><span class="p">,</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">from</span><span class="p">);</span>
         <span class="p">}</span>
         <span class="k">else</span> <span class="p">{</span>
-            <span class="nx">roomName</span> <span class="o">=</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">_roomName</span> <span class="o">||</span> <span class="nx">that</span><span class="p">.</span><span class="nx">registry</span><span class="p">.</span><span class="nx">getClientRoom</span><span class="p">(</span><span class="nx">msg</span><span class="p">.</span><span class="nx">from</span><span class="p">);</span>
-            <span class="nx">room</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">[</span><span class="nx">roomName</span><span class="p">];</span>
 
-            <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">room</span><span class="p">)</span> <span class="p">{</span>
-                <span class="nx">sys</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;PlayerServer.on.say.PLAYER_UPDATE: Could not &#39;</span> <span class="o">+</span>
-                        <span class="s1">&#39;determine room of sender: &#39;</span> <span class="o">+</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">from</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
-                <span class="k">return</span><span class="p">;</span>
-            <span class="p">}</span>
-
-            <span class="nx">that</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">send2roomAdmins</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">room</span><span class="p">);</span>
+            <span class="nx">that</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">send2roomAdmins</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">room</span><span class="p">);</span>
         <span class="p">}</span>
     <span class="p">});</span>
 
@@ -636,7 +568,7 @@ Admins decides what to do with it.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-24" id="section-24">&#182;</a>
+  <a class="pilcrow" href="#section-21" id="section-21">&#182;</a>
 </div>
 <p>TODO: should registry's Player object get updated?</p>
         </td>
@@ -652,11 +584,11 @@ Admins decides what to do with it.</p>
             <span class="k">return</span><span class="p">;</span>
         <span class="p">}</span>
 
-        <span class="k">if</span> <span class="p">(</span><span class="nx">that</span><span class="p">.</span><span class="nx">notify</span><span class="p">.</span><span class="nx">onStageUpdate</span><span class="p">)</span> <span class="p">{</span>
-            <span class="nx">that</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">broadcast2room</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">room</span><span class="p">,</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">from</span><span class="p">);</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">room</span><span class="p">.</span><span class="nx">acm</span><span class="p">.</span><span class="nx">notify</span><span class="p">.</span><span class="nx">onStageUpdate</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">that</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">broadcast2room</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">room</span><span class="p">,</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">from</span><span class="p">);</span>
         <span class="p">}</span>
         <span class="k">else</span> <span class="p">{</span>
-            <span class="nx">that</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">send2roomAdmins</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">room</span><span class="p">);</span>
+            <span class="nx">that</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">send2roomAdmins</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">room</span><span class="p">);</span>
         <span class="p">}</span>
     <span class="p">});</span>
 
@@ -685,7 +617,7 @@ Admins decides what to do with it.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-26" id="section-26">&#182;</a>
+  <a class="pilcrow" href="#section-23" id="section-23">&#182;</a>
 </div>
 <p>TODO: should registry's Player object get updated?</p>
         </td>
@@ -701,11 +633,11 @@ Admins decides what to do with it.</p>
             <span class="k">return</span><span class="p">;</span>
         <span class="p">}</span>
 
-        <span class="k">if</span> <span class="p">(</span><span class="nx">that</span><span class="p">.</span><span class="nx">notify</span><span class="p">.</span><span class="nx">onStageUpdate</span><span class="p">)</span> <span class="p">{</span>
-            <span class="nx">that</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">broadcast2room</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">room</span><span class="p">,</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">from</span><span class="p">);</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">room</span><span class="p">.</span><span class="nx">acm</span><span class="p">.</span><span class="nx">notify</span><span class="p">.</span><span class="nx">onStageUpdate</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">that</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">broadcast2room</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">room</span><span class="p">,</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">from</span><span class="p">);</span>
         <span class="p">}</span>
         <span class="k">else</span> <span class="p">{</span>
-            <span class="nx">that</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">send2roomAdmins</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">room</span><span class="p">);</span>
+            <span class="nx">that</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">send2roomAdmins</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">room</span><span class="p">);</span>
         <span class="p">}</span>
     <span class="p">});</span>
 
@@ -743,42 +675,34 @@ It ignores ALL, CHANNEL, CHANNEL_X, ROOM_X recipients.</p>
             <span class="k">return</span><span class="p">;</span>
         <span class="p">}</span>
 
+        <span class="nx">roomName</span> <span class="o">=</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">_roomName</span> <span class="o">||</span> <span class="nx">that</span><span class="p">.</span><span class="nx">registry</span><span class="p">.</span><span class="nx">getClientRoom</span><span class="p">(</span><span class="nx">msg</span><span class="p">.</span><span class="nx">from</span><span class="p">);</span>
+        <span class="nx">room</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">[</span><span class="nx">roomName</span><span class="p">];</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">room</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">sys</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;PlayerServer.on.get.DATA: Could not determine &#39;</span> <span class="o">+</span>
+                    <span class="s1">&#39;room of sender: &#39;</span> <span class="o">+</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">from</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
+            <span class="k">return</span><span class="p">;</span>
+        <span class="p">}</span>
+
         <span class="k">if</span> <span class="p">(</span><span class="nx">msg</span><span class="p">.</span><span class="nx">to</span> <span class="o">===</span> <span class="s1">&#39;ROOM&#39;</span><span class="p">)</span> <span class="p">{</span>
-            <span class="k">if</span> <span class="p">(</span><span class="nx">that</span><span class="p">.</span><span class="nx">getFromAdmins</span><span class="p">)</span> <span class="p">{</span>
-                <span class="nx">that</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">broadcast2ownRoom</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">from</span><span class="p">);</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nx">room</span><span class="p">.</span><span class="nx">acm</span><span class="p">.</span><span class="nx">getFromAdmins</span><span class="p">)</span> <span class="p">{</span>
+                <span class="nx">that</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">broadcast2room</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">room</span><span class="p">,</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">from</span><span class="p">);</span>
             <span class="p">}</span>
             <span class="k">else</span> <span class="p">{</span>
-                <span class="nx">roomName</span> <span class="o">=</span>
-                    <span class="nx">msg</span><span class="p">.</span><span class="nx">_roomName</span> <span class="o">||</span> <span class="nx">that</span><span class="p">.</span><span class="nx">registry</span><span class="p">.</span><span class="nx">getClientRoom</span><span class="p">(</span><span class="nx">msg</span><span class="p">.</span><span class="nx">from</span><span class="p">);</span>
-                <span class="nx">room</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">[</span><span class="nx">roomName</span><span class="p">];</span>
-
-                <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">room</span><span class="p">)</span> <span class="p">{</span>
-                    <span class="nx">sys</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;PlayerServer.on.get.DATA: Could not determine &#39;</span> <span class="o">+</span>
-                            <span class="s1">&#39;room of sender: &#39;</span> <span class="o">+</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">from</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
-                    <span class="k">return</span><span class="p">;</span>
-                <span class="p">}</span>
 
                 <span class="nx">players</span> <span class="o">=</span> <span class="nx">room</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">players</span><span class="p">;</span>
                 <span class="nx">oldPlayers</span> <span class="o">=</span> <span class="nx">players</span><span class="p">.</span><span class="nx">breed</span><span class="p">();</span>
                 <span class="nx">players</span><span class="p">.</span><span class="nx">id</span><span class="p">.</span><span class="nx">remove</span><span class="p">(</span><span class="nx">msg</span><span class="p">.</span><span class="nx">from</span><span class="p">);</span>
 
-                <span class="nx">that</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">send2group</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">oldPlayers</span><span class="p">);</span>
+                <span class="nx">that</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">send2group</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">oldPlayers</span><span class="p">);</span>
             <span class="p">}</span>
         <span class="p">}</span>
 
         <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">msg</span><span class="p">.</span><span class="nx">to</span> <span class="o">===</span> <span class="s1">&#39;SERVER&#39;</span><span class="p">)</span> <span class="p">{</span>
-            <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">that</span><span class="p">.</span><span class="nx">getFromAdmins</span><span class="p">)</span> <span class="k">return</span><span class="p">;</span>
 
-            <span class="nx">roomName</span> <span class="o">=</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">_roomName</span> <span class="o">||</span> <span class="nx">that</span><span class="p">.</span><span class="nx">registry</span><span class="p">.</span><span class="nx">getClientRoom</span><span class="p">(</span><span class="nx">msg</span><span class="p">.</span><span class="nx">from</span><span class="p">);</span>
-            <span class="nx">room</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">[</span><span class="nx">roomName</span><span class="p">];</span>
+            <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">room</span><span class="p">.</span><span class="nx">acm</span><span class="p">.</span><span class="nx">getFromAdmins</span><span class="p">)</span> <span class="k">return</span><span class="p">;</span>
 
-            <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">room</span><span class="p">)</span> <span class="p">{</span>
-                <span class="nx">sys</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;PlayerServer.on.get.DATA: Could not determine room &#39;</span> <span class="o">+</span>
-                        <span class="s1">&#39;of sender: &#39;</span> <span class="o">+</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">from</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
-                <span class="k">return</span><span class="p">;</span>
-            <span class="p">}</span>
-
-            <span class="nx">that</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">send2roomAdmins</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">room</span><span class="p">);</span>
+            <span class="nx">that</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">send2roomAdmins</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">room</span><span class="p">);</span>
         <span class="p">}</span>
 
         <span class="k">else</span> <span class="p">{</span>
@@ -789,17 +713,15 @@ It ignores ALL, CHANNEL, CHANNEL_X, ROOM_X recipients.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-28" id="section-28">&#182;</a>
+  <a class="pilcrow" href="#section-25" id="section-25">&#182;</a>
 </div>
 <p>Msg to a specific client (might be in another room).</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-            <span class="nx">that</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">send2client</span><span class="p">(</span><span class="nx">msg</span><span class="p">);</span>
+            <span class="nx">that</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">send2client</span><span class="p">(</span><span class="nx">msg</span><span class="p">);</span>
         <span class="p">}</span>
 
     <span class="p">});</span>
-
-
 
 
 </pre></div>
@@ -819,23 +741,11 @@ It ignores ALL, CHANNEL, CHANNEL_X, ROOM_X recipients.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="k">this</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;disconnect&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">player</span><span class="p">,</span> <span class="nx">room</span><span class="p">)</span> <span class="p">{</span>
-        <span class="kd">var</span> <span class="nx">msg</span><span class="p">,</span> <span class="nx">playerName</span><span class="p">;</span>
-
+        <span class="kd">var</span> <span class="nx">playerName</span><span class="p">;</span>
         <span class="nx">playerName</span> <span class="o">=</span> <span class="nx">player</span><span class="p">.</span><span class="nx">id</span> <span class="o">+</span> <span class="s1">&#39; (sid: &#39;</span> <span class="o">+</span> <span class="nx">player</span><span class="p">.</span><span class="nx">sid</span> <span class="o">+</span> <span class="s1">&#39;)&#39;</span><span class="p">;</span>
         <span class="nx">sys</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">that</span><span class="p">.</span><span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39; client disconnected: &#39;</span> <span class="o">+</span> <span class="nx">playerName</span><span class="p">);</span>
 
-        <span class="nx">msg</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">msg</span><span class="p">.</span><span class="nx">create</span><span class="p">({</span>
-            <span class="nx">target</span><span class="o">:</span> <span class="s1">&#39;PDISCONNECT&#39;</span><span class="p">,</span>
-            <span class="nx">from</span><span class="o">:</span> <span class="nx">player</span><span class="p">.</span><span class="nx">id</span><span class="p">,</span>
-            <span class="nx">to</span><span class="o">:</span> <span class="s1">&#39;ALL&#39;</span><span class="p">,</span>
-            <span class="nx">data</span><span class="o">:</span> <span class="nx">player</span>
-        <span class="p">});</span>
-        <span class="k">if</span> <span class="p">(</span><span class="nx">that</span><span class="p">.</span><span class="nx">notify</span><span class="p">.</span><span class="nx">onConnect</span><span class="p">)</span> <span class="p">{</span>
-            <span class="nx">that</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">send2room</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">room</span><span class="p">);</span>
-        <span class="p">}</span>
-        <span class="k">else</span> <span class="p">{</span>
-            <span class="nx">that</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">send2roomAdmins</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">room</span><span class="p">);</span>
-        <span class="p">}</span>
+        <span class="nx">that</span><span class="p">.</span><span class="nx">notifyRoomDisconnection</span><span class="p">(</span><span class="nx">player</span><span class="p">.</span><span class="nx">id</span><span class="p">,</span> <span class="nx">room</span><span class="p">);</span>
     <span class="p">});</span>
 
 
@@ -855,7 +765,7 @@ It ignores ALL, CHANNEL, CHANNEL_X, ROOM_X recipients.</p>
 <p>Listens on server shutdown</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">sio</span><span class="p">.</span><span class="nx">sockets</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s2">&quot;shutdown&quot;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">message</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">sio</span><span class="p">.</span><span class="nx">sockets</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;shutdown&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">message</span><span class="p">)</span> <span class="p">{</span>
         <span class="nx">sys</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Player server &#39;</span> <span class="o">+</span> <span class="nx">that</span><span class="p">.</span><span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39; is shutting down&#39;</span><span class="p">);</span>
 
 </pre></div>
@@ -864,9 +774,9 @@ It ignores ALL, CHANNEL, CHANNEL_X, ROOM_X recipients.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-31" id="section-31">&#182;</a>
+  <a class="pilcrow" href="#section-28" id="section-28">&#182;</a>
 </div>
-<p>TODO save the state to disk</p>
+<p>TODO save the state to disk.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="p">});</span>
@@ -916,22 +826,30 @@ the client-id of the recipient.</p>
     <span class="kd">var</span> <span class="nx">roomName</span><span class="p">,</span> <span class="nx">room</span><span class="p">,</span> <span class="nx">channel</span><span class="p">;</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="nx">msg</span><span class="p">.</span><span class="nx">to</span> <span class="o">===</span> <span class="s1">&#39;ALL&#39;</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">this</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">broadcast2all</span><span class="p">(</span><span class="nx">msg</span><span class="p">);</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">broadcast2all</span><span class="p">(</span><span class="nx">msg</span><span class="p">);</span>
     <span class="p">}</span>
     <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">msg</span><span class="p">.</span><span class="nx">to</span> <span class="o">===</span> <span class="s1">&#39;CHANNEL&#39;</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">this</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">broadcast2ownChannel</span><span class="p">(</span><span class="nx">msg</span><span class="p">);</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">broadcast2ownChannel</span><span class="p">(</span><span class="nx">msg</span><span class="p">);</span>
     <span class="p">}</span>
     <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">msg</span><span class="p">.</span><span class="nx">to</span> <span class="o">===</span> <span class="s1">&#39;ROOM&#39;</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">this</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">broadcast2ownRoom</span><span class="p">(</span><span class="nx">msg</span><span class="p">);</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">broadcast2ownRoom</span><span class="p">(</span><span class="nx">msg</span><span class="p">);</span>
     <span class="p">}</span>
     <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">msg</span><span class="p">.</span><span class="nx">to</span> <span class="o">===</span> <span class="s1">&#39;CHANNEL_X&#39;</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">this</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">broadcast2channel</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">_to</span><span class="p">);</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">broadcast2channel</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">_to</span><span class="p">);</span>
     <span class="p">}</span>
     <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">msg</span><span class="p">.</span><span class="nx">to</span> <span class="o">===</span> <span class="s1">&#39;ROOM_X&#39;</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">this</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">broadcast2room</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">_to</span><span class="p">);</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">broadcast2room</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">_to</span><span class="p">);</span>
     <span class="p">}</span>
     <span class="k">else</span> <span class="p">{</span>
-        <span class="k">if</span> <span class="p">(</span><span class="nx">msg</span><span class="p">.</span><span class="nx">to</span> <span class="o">===</span> <span class="s1">&#39;SERVER&#39;</span> <span class="o">||</span> <span class="k">this</span><span class="p">.</span><span class="nx">forwardAll</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">roomName</span> <span class="o">=</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">_roomName</span> <span class="o">||</span> <span class="k">this</span><span class="p">.</span><span class="nx">registry</span><span class="p">.</span><span class="nx">getClientRoom</span><span class="p">(</span><span class="nx">msg</span><span class="p">.</span><span class="nx">from</span><span class="p">);</span>
+        <span class="nx">room</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">[</span><span class="nx">roomName</span><span class="p">];</span>
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">room</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">sys</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;PlayerServer.on.&#39;</span> <span class="o">+</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">toEvent</span><span class="p">()</span> <span class="o">+</span> <span class="s1">&#39;: Could not &#39;</span> <span class="o">+</span>
+                    <span class="s1">&#39;determine room of msg sender: &#39;</span> <span class="o">+</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">from</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
+            <span class="k">return</span><span class="p">;</span>
+        <span class="p">}</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="nx">msg</span><span class="p">.</span><span class="nx">to</span> <span class="o">===</span> <span class="s1">&#39;SERVER&#39;</span> <span class="o">||</span> <span class="nx">room</span><span class="p">.</span><span class="nx">acm</span><span class="p">.</span><span class="nx">forwardAll</span><span class="p">)</span> <span class="p">{</span>
 
 </pre></div>
         </td>
@@ -939,22 +857,12 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-33" id="section-33">&#182;</a>
+  <a class="pilcrow" href="#section-30" id="section-30">&#182;</a>
 </div>
-<p>Send to admins in sender's room:</p>
+<p>Send to admins in sender's room.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-
-            <span class="nx">roomName</span> <span class="o">=</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">_roomName</span> <span class="o">||</span> <span class="k">this</span><span class="p">.</span><span class="nx">registry</span><span class="p">.</span><span class="nx">getClientRoom</span><span class="p">(</span><span class="nx">msg</span><span class="p">.</span><span class="nx">from</span><span class="p">);</span>
-            <span class="nx">room</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">[</span><span class="nx">roomName</span><span class="p">];</span>
-
-            <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">room</span><span class="p">)</span> <span class="p">{</span>
-                <span class="nx">sys</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;PlayerServer.on.&#39;</span> <span class="o">+</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">toEvent</span><span class="p">()</span> <span class="o">+</span> <span class="s1">&#39;: Could not &#39;</span> <span class="o">+</span>
-                        <span class="s1">&#39;determine room of msg sender: &#39;</span> <span class="o">+</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">from</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
-                <span class="k">return</span><span class="p">;</span>
-            <span class="p">}</span>
-
-            <span class="k">this</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">send2roomAdmins</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">room</span><span class="p">);</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">send2roomAdmins</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">room</span><span class="p">);</span>
         <span class="p">}</span>
 
         <span class="k">if</span> <span class="p">(</span><span class="nx">msg</span><span class="p">.</span><span class="nx">to</span> <span class="o">!==</span> <span class="s1">&#39;SERVER&#39;</span><span class="p">)</span> <span class="p">{</span>
@@ -965,13 +873,160 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-34" id="section-34">&#182;</a>
+  <a class="pilcrow" href="#section-31" id="section-31">&#182;</a>
 </div>
-<p>Send to receiving player:</p>
+<p>Send to receiving player.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-            <span class="k">this</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">send2client</span><span class="p">(</span><span class="nx">msg</span><span class="p">);</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">send2client</span><span class="p">(</span><span class="nx">msg</span><span class="p">);</span>
         <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="playerserver.notifyroomconnection">
+  <h2>
+    <a href="#playerserver.notifyroomconnection" name="playerserver.notifyroomconnection" class="pilcrow">&#182;</a>
+    PlayerServer.notifyRoomConnection
+  </h2>
+</div>
+
+  </div>
+  <div class="body"><p>Implements GameServer.notifyRoomConnection</p>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">PlayerServer</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">notifyRoomConnection</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">clientId</span><span class="p">,</span> <span class="nx">roomObj</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">players</span><span class="p">,</span> <span class="nx">admins</span><span class="p">,</span> <span class="nx">oldPlayers</span><span class="p">,</span> <span class="nx">filteredPlayers</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">pConnectMsg</span><span class="p">;</span>
+
+    <span class="nx">pConnectMsg</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">msg</span><span class="p">.</span><span class="nx">create</span><span class="p">({</span>
+        <span class="nx">target</span><span class="o">:</span> <span class="s1">&#39;PCONNECT&#39;</span><span class="p">,</span>
+        <span class="nx">from</span><span class="o">:</span>    <span class="nx">clientId</span><span class="p">,</span>
+        <span class="nx">data</span><span class="o">:</span>    <span class="p">{</span> <span class="nx">id</span><span class="o">:</span>  <span class="nx">clientId</span> <span class="p">}</span>
+    <span class="p">});</span>
+
+    <span class="nx">players</span> <span class="o">=</span> <span class="nx">roomObj</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">player</span><span class="p">;</span>
+    <span class="nx">admins</span> <span class="o">=</span> <span class="nx">roomObj</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">admin</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-33" id="section-33">&#182;</a>
+</div>
+<p>Send notification to other players (if allowed).</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">roomObj</span><span class="p">.</span><span class="nx">acm</span><span class="p">.</span><span class="nx">notify</span><span class="p">.</span><span class="nx">onConnect</span> <span class="o">&amp;&amp;</span> <span class="nx">players</span><span class="p">.</span><span class="nx">db</span><span class="p">.</span><span class="nx">length</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+
+        <span class="nx">oldPlayers</span> <span class="o">=</span> <span class="nx">players</span><span class="p">.</span><span class="nx">breed</span><span class="p">();</span>
+        <span class="nx">oldPlayers</span><span class="p">.</span><span class="nx">id</span><span class="p">.</span><span class="nx">remove</span><span class="p">(</span><span class="nx">clientId</span><span class="p">);</span>
+
+        <span class="k">this</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">broadcast2group</span><span class="p">(</span><span class="nx">pConnectMsg</span><span class="p">,</span> <span class="nx">oldPlayers</span><span class="p">);</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-34" id="section-34">&#182;</a>
+</div>
+<p>Send the current player list to the new player.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="nx">filteredPlayers</span> <span class="o">=</span> <span class="nx">oldPlayers</span><span class="p">.</span><span class="nx">fetchSubObj</span><span class="p">(</span><span class="s1">&#39;id&#39;</span><span class="p">);</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">send2client</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">msg</span><span class="p">.</span><span class="nx">create</span><span class="p">({</span>
+            <span class="nx">target</span><span class="o">:</span> <span class="s1">&#39;SETUP&#39;</span><span class="p">,</span>
+            <span class="nx">to</span><span class="o">:</span>     <span class="nx">clientId</span><span class="p">,</span>
+            <span class="nx">text</span><span class="o">:</span>   <span class="s1">&#39;plist&#39;</span><span class="p">,</span>
+            <span class="nx">data</span><span class="o">:</span>   <span class="nx">J</span><span class="p">.</span><span class="nx">stringify</span><span class="p">([</span><span class="nx">filteredPlayers</span><span class="p">,</span> <span class="s1">&#39;replace&#39;</span><span class="p">])</span>
+        <span class="p">}));</span>
+    <span class="p">}</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-35" id="section-35">&#182;</a>
+</div>
+<p>Send notification to admin (always).</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">this</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">send2group</span><span class="p">(</span><span class="nx">pConnectMsg</span><span class="p">,</span> <span class="nx">admins</span><span class="p">);</span>
+<span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="playerserver.notifyroomdisconnection">
+  <h2>
+    <a href="#playerserver.notifyroomdisconnection" name="playerserver.notifyroomdisconnection" class="pilcrow">&#182;</a>
+    PlayerServer.notifyRoomDisconnection
+  </h2>
+</div>
+
+  </div>
+  <div class="body"><p>Implements GameServer.notifyRoomDisconnection</p>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">PlayerServer</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">notifyRoomDisconnection</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">clientId</span><span class="p">,</span> <span class="nx">roomObj</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">pDisconnectMsg</span><span class="p">;</span>
+
+    <span class="nx">pDisconnectMsg</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">msg</span><span class="p">.</span><span class="nx">create</span><span class="p">({</span>
+        <span class="nx">target</span><span class="o">:</span> <span class="s1">&#39;PDISCONNECT&#39;</span><span class="p">,</span>
+        <span class="nx">data</span><span class="o">:</span> <span class="p">{</span> <span class="nx">id</span><span class="o">:</span> <span class="nx">clientId</span> <span class="p">}</span>
+    <span class="p">});</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-37" id="section-37">&#182;</a>
+</div>
+<p>Notify players and admins of disconnection in old room.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">roomObj</span><span class="p">.</span><span class="nx">acm</span><span class="p">.</span><span class="nx">notify</span><span class="p">.</span><span class="nx">onConnect</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">broadcast2room</span><span class="p">(</span><span class="nx">pDisconnectMsg</span><span class="p">,</span> <span class="nx">roomObj</span><span class="p">,</span> <span class="nx">clientId</span><span class="p">);</span>
+    <span class="p">}</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-38" id="section-38">&#182;</a>
+</div>
+<p>Notify only admins of disconnection in old room.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">else</span> <span class="p">{</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">send2roomAdmins</span><span class="p">(</span><span class="nx">pDisconnectMsg</span><span class="p">,</span> <span class="nx">roomObj</span><span class="p">);</span>
     <span class="p">}</span>
 <span class="p">};</span>
 </pre></div>

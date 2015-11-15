@@ -303,12 +303,66 @@ TODO: rename.</p>
             <span class="kd">var</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">prefixedSid</span><span class="p">;</span>
             <span class="kd">var</span> <span class="nx">startingRoom</span><span class="p">,</span> <span class="nx">clientType</span><span class="p">;</span>
 
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-11" id="section-11">&#182;</a>
+</div>
+
+<div class="highlight"><pre><code>       <span class="n">console</span><span class="o">.</span><span class="nb">log</span><span class="p">(</span><span class="s">&#39;hello!&#39;</span><span class="p">,</span> <span class="nb">socket</span><span class="o">.</span><span class="n">handshake</span><span class="o">.</span><span class="n">decoded_token</span><span class="o">.</span><span class="n">name</span><span class="p">);</span>
+</code></pre></div>
+
+
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
+
             <span class="nx">prefixedSid</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">sidPrefix</span> <span class="o">+</span> <span class="nx">socket</span><span class="p">.</span><span class="nx">id</span><span class="p">;</span>
 
             <span class="k">if</span> <span class="p">(</span><span class="nx">that</span><span class="p">.</span><span class="nx">gameServer</span><span class="p">.</span><span class="nx">options</span><span class="p">.</span><span class="nx">sioQuery</span> <span class="o">&amp;&amp;</span> <span class="nx">socket</span><span class="p">.</span><span class="nx">handshake</span><span class="p">.</span><span class="nx">query</span><span class="p">)</span> <span class="p">{</span>
                 <span class="nx">startingRoom</span> <span class="o">=</span> <span class="nx">socket</span><span class="p">.</span><span class="nx">handshake</span><span class="p">.</span><span class="nx">query</span><span class="p">.</span><span class="nx">startingRoom</span><span class="p">;</span>
                 <span class="nx">clientType</span> <span class="o">=</span> <span class="nx">socket</span><span class="p">.</span><span class="nx">handshake</span><span class="p">.</span><span class="nx">query</span><span class="p">.</span><span class="nx">clientType</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-12" id="section-12">&#182;</a>
+</div>
+<p>Cleanup clientType (sometimes browsers add quotes).</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+                <span class="k">if</span> <span class="p">(</span><span class="nx">clientType</span> <span class="o">&amp;&amp;</span>
+                    <span class="p">((</span><span class="nx">clientType</span><span class="p">.</span><span class="nx">charAt</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">===</span> <span class="s1">&#39;&quot;&#39;</span> <span class="o">&amp;&amp;</span>
+                     <span class="nx">clientType</span><span class="p">.</span><span class="nx">charAt</span><span class="p">(</span><span class="nx">clientType</span><span class="p">.</span><span class="nx">length</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">===</span> <span class="s1">&#39;&quot;&#39;</span><span class="p">)</span> <span class="o">||</span>
+                    <span class="p">(</span><span class="nx">clientType</span><span class="p">.</span><span class="nx">charAt</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">===</span> <span class="s2">&quot;&#39;&quot;</span> <span class="o">&amp;&amp;</span>
+                     <span class="nx">clientType</span><span class="p">.</span><span class="nx">charAt</span><span class="p">(</span><span class="nx">clientType</span><span class="p">.</span><span class="nx">length</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">===</span> <span class="s2">&quot;&#39;&quot;</span><span class="p">)))</span> <span class="p">{</span>
+
+                    <span class="nx">clientType</span> <span class="o">=</span> <span class="nx">clientType</span><span class="p">.</span><span class="nx">substr</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="nx">clientType</span><span class="p">.</span><span class="nx">length</span> <span class="o">-</span><span class="mi">2</span><span class="p">);</span>
+                <span class="p">}</span>
             <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-13" id="section-13">&#182;</a>
+</div>
+<p>Add information about the IP in the headers.
+This might change in different versions of Socket.IO</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+            <span class="nx">socket</span><span class="p">.</span><span class="nx">handshake</span><span class="p">.</span><span class="nx">headers</span><span class="p">.</span><span class="nx">address</span> <span class="o">=</span> <span class="nx">socket</span><span class="p">.</span><span class="nx">handshake</span><span class="p">.</span><span class="nx">address</span><span class="p">;</span>
 
             <span class="nx">res</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">gameServer</span><span class="p">.</span><span class="nx">onConnect</span><span class="p">(</span><span class="nx">prefixedSid</span><span class="p">,</span> <span class="nx">that</span><span class="p">,</span>
                 <span class="nx">socket</span><span class="p">.</span><span class="nx">handshake</span><span class="p">.</span><span class="nx">headers</span><span class="p">,</span> <span class="nx">clientType</span><span class="p">,</span> <span class="nx">startingRoom</span><span class="p">);</span>
@@ -363,21 +417,47 @@ TODO: rename.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-12" id="section-12">&#182;</a>
+  <a class="pilcrow" href="#section-15" id="section-15">&#182;</a>
 </div>
 <p>Remove socket name from sid (exactly 2 characters, see constructor):</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="nx">strippedSid</span> <span class="o">=</span> <span class="nx">sid</span><span class="p">.</span><span class="nx">slice</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>
-    <span class="nx">socket</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">sio</span><span class="p">.</span><span class="nx">sockets</span><span class="p">.</span><span class="nx">sockets</span><span class="p">[</span><span class="nx">strippedSid</span><span class="p">];</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-16" id="section-16">&#182;</a>
+</div>
+<p>Ste: was.
+socket = this.sio.sockets.sockets[strippedSid];</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">socket</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">sio</span><span class="p">.</span><span class="nx">sockets</span><span class="p">.</span><span class="nx">connected</span><span class="p">[</span><span class="nx">strippedSid</span><span class="p">];</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">socket</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;SocketIo.disconnect: &#39;</span> <span class="o">+</span>
                         <span class="s1">&#39;socket not found for sid &quot;&#39;</span> <span class="o">+</span> <span class="nx">sid</span> <span class="o">+</span> <span class="s1">&#39;&quot;.&#39;</span><span class="p">);</span>
     <span class="p">}</span>
 
-    <span class="nx">socket</span><span class="p">.</span><span class="nx">disconnect</span><span class="p">();</span>
-    <span class="k">this</span><span class="p">.</span><span class="nx">gameServer</span><span class="p">.</span><span class="nx">onDisconnect</span><span class="p">(</span><span class="nx">sid</span><span class="p">,</span> <span class="nx">socket</span><span class="p">);</span>
+    <span class="nx">socket</span><span class="p">.</span><span class="nx">disconnect</span><span class="p">(</span><span class="kc">true</span><span class="p">);</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-17" id="section-17">&#182;</a>
+</div>
+<p>This is already triggered by the method above.
+this.gameServer.onDisconnect(sid, socket);</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
 <span class="p">};</span>
 
 
@@ -456,7 +536,7 @@ it is not used to locate the client.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-14" id="section-14">&#182;</a>
+  <a class="pilcrow" href="#section-19" id="section-19">&#182;</a>
 </div>
 <p>Cleanup msg, if necessary.</p>
         </td>
@@ -486,7 +566,7 @@ it is not used to locate the client.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-15" id="section-15">&#182;</a>
+  <a class="pilcrow" href="#section-20" id="section-20">&#182;</a>
 </div>
 <p>Send to ALL.</p>
         </td>
@@ -509,7 +589,7 @@ it is not used to locate the client.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-16" id="section-16">&#182;</a>
+  <a class="pilcrow" href="#section-21" id="section-21">&#182;</a>
 </div>
 <p>Either send to a specific client(1), or to ALL but a specific client(2).</p>
         </td>
@@ -522,7 +602,7 @@ it is not used to locate the client.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-17" id="section-17">&#182;</a>
+  <a class="pilcrow" href="#section-22" id="section-22">&#182;</a>
 </div>
 <p>Remove socket name from sid (exactly 2 characters, see constructor):</p>
         </td>
@@ -536,17 +616,44 @@ it is not used to locate the client.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-18" id="section-18">&#182;</a>
+  <a class="pilcrow" href="#section-23" id="section-23">&#182;</a>
 </div>
 <p>(1)</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
         <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">broadcast</span><span class="p">)</span> <span class="p">{</span>
 
-            <span class="nx">client</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">sockets</span><span class="p">[</span><span class="nx">strippedSid</span><span class="p">];</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-24" id="section-24">&#182;</a>
+</div>
+<p>Ste: Was:
+client = this.channel.sockets[strippedSid];</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-25" id="section-25">&#182;</a>
+</div>
+<p>Ste: Now:</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+            <span class="nx">client</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">connected</span><span class="p">[</span><span class="nx">strippedSid</span><span class="p">];</span>
+
 
             <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">client</span><span class="p">)</span> <span class="p">{</span>
-                <span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;SocketIo.send: Msg not sent. Unexisting &#39;</span> <span class="o">+</span>
+                <span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;SocketIo.send: msg not sent. Unexisting &#39;</span> <span class="o">+</span>
                               <span class="s1">&#39;recipient sid: &#39;</span> <span class="o">+</span> <span class="nx">strippedSid</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
                 <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
             <span class="p">}</span>
@@ -569,17 +676,40 @@ it is not used to locate the client.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-19" id="section-19">&#182;</a>
+  <a class="pilcrow" href="#section-26" id="section-26">&#182;</a>
 </div>
 <p>(2)</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
         <span class="k">else</span> <span class="p">{</span>
 
-            <span class="k">for</span> <span class="p">(</span><span class="nx">clientSid</span> <span class="k">in</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">sockets</span><span class="p">)</span> <span class="p">{</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-27" id="section-27">&#182;</a>
+</div>
+<p>Ste: was.
+            for (clientSid in this.channel.sockets) {
+                if (strippedSid === clientSid) continue;</p>
+
+
+<div class="highlight"><pre><code>            <span class="n">client</span> <span class="o">=</span> <span class="n">this</span><span class="o">.</span><span class="n">channel</span><span class="o">.</span><span class="n">sockets</span><span class="p">[</span><span class="n">clientSid</span><span class="p">];</span>
+</code></pre></div>
+
+
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
+            <span class="k">for</span> <span class="p">(</span><span class="nx">clientSid</span> <span class="k">in</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">connected</span><span class="p">)</span> <span class="p">{</span>
                 <span class="k">if</span> <span class="p">(</span><span class="nx">strippedSid</span> <span class="o">===</span> <span class="nx">clientSid</span><span class="p">)</span> <span class="k">continue</span><span class="p">;</span>
 
-                <span class="nx">client</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">sockets</span><span class="p">[</span><span class="nx">clientSid</span><span class="p">];</span>
+                <span class="nx">client</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">connected</span><span class="p">[</span><span class="nx">clientSid</span><span class="p">];</span>
+
+
                 <span class="k">if</span> <span class="p">(</span><span class="nx">rel</span><span class="p">)</span> <span class="p">{</span>
                     <span class="nx">client</span><span class="p">.</span><span class="nx">json</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="nx">msg</span><span class="p">);</span>
                 <span class="p">}</span>

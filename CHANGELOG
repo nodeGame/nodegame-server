@@ -1,5 +1,26 @@
 # nodegame-server change log
 
+# 0.9.11
+ - Callback to decorate client objects. The callback is loaded from the auth file.
+ - Treatments are not deleted from required settints file.
+
+# 0.9.10
+ - Treatments are correctly built.
+ - IP address is passed to auth function.
+ - HandleReconnection method in GameServer forces disconnection of previously connected clients if a reconnection with the same client id is found. This can happen with non-WebSockets connections.
+ - `enableReconnections` option for player and admin server.
+
+# 0.9.9
+ - Incorrect Build
+
+# 0.9.8
+ - Servernode.lastError
+
+# 0.9.7
+ - Added more options to control Phantom JS bots
+ - Fixed disconnections on Game Over of Phantom JS bots
+ - Documentation fixes
+
 # 0.9.6
  - Added docs to index
  - ConnectBot and ConnectPhantom
