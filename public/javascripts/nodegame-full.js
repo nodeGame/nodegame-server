@@ -33928,7 +33928,7 @@ debugger
          */
         this.onLangCallback = function(msg) {
             var language;
-
+debugger
             // Clear display.
             while (that.displayForm.firstChild) {
                 that.displayForm.removeChild(that.displayForm.firstChild);

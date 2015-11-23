@@ -839,6 +839,7 @@ TODO: Mark file as non-existing ?</p>
                 <span class="nx">res</span><span class="p">.</span><span class="nx">status</span><span class="p">(</span><span class="mi">404</span><span class="p">).</span><span class="nx">send</span><span class="p">(</span><span class="s1">&#39;File not Found&#39;</span><span class="p">);</span>
                 <span class="k">return</span><span class="p">;</span>
             <span class="p">}</span>
+
             <span class="nx">resourceManager</span><span class="p">.</span><span class="nx">cacheContextCallback</span><span class="p">(</span><span class="nx">gameName</span><span class="p">,</span> <span class="nx">contextPath</span><span class="p">,</span> <span class="nx">cb</span><span class="p">);</span>
             <span class="nx">context</span> <span class="o">=</span> <span class="nx">cb</span><span class="p">(</span><span class="nx">gameSettings</span><span class="p">,</span> <span class="nx">req</span><span class="p">.</span><span class="nx">headers</span><span class="p">);</span>
         <span class="p">}</span>
