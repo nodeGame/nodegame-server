@@ -234,10 +234,14 @@ MIT Licensed</p>
     <span class="nx">where</span> <span class="o">=</span> <span class="s1">&#39;WaitingRoom.dispatch: &#39;</span><span class="p">;</span>
     <span class="nx">numCalls</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
 
-    <span class="k">return</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">timeOutData</span><span class="p">,</span> <span class="nx">nPlayers</span><span class="p">,</span> <span class="nx">pList</span><span class="p">,</span> <span class="nx">timeOuts</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">timeOutData</span><span class="p">,</span> <span class="nx">timeOuts</span><span class="p">)</span> <span class="p">{</span>
         <span class="kd">var</span> <span class="nx">treatmentName</span><span class="p">;</span>
         <span class="kd">var</span> <span class="nx">tmpPlayerList</span><span class="p">;</span>
         <span class="kd">var</span> <span class="nx">i</span><span class="p">,</span> <span class="nx">gameRoom</span><span class="p">;</span>
+        <span class="kd">var</span> <span class="nx">pList</span><span class="p">,</span> <span class="nx">nPlayers</span><span class="p">;</span>
+
+        <span class="nx">pList</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">player</span><span class="p">;</span>
+        <span class="nx">nPlayers</span> <span class="o">=</span> <span class="nx">pList</span><span class="p">.</span><span class="nx">size</span><span class="p">();</span>
 
         <span class="k">if</span> <span class="p">(</span><span class="o">++</span><span class="nx">numCalls</span> <span class="o">&gt;</span> <span class="nx">maxCalls</span><span class="p">)</span> <span class="p">{</span>
             <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span> <span class="s1">&#39;called more than &#39;</span> <span class="o">+</span> <span class="nx">maxCalls</span> <span class="o">+</span>
