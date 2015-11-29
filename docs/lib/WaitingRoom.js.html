@@ -117,6 +117,8 @@ MIT Licensed</p>
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">logicPath</span><span class="p">)</span> <span class="k">this</span><span class="p">.</span><span class="nx">logicPath</span>  <span class="o">=</span> <span class="s1">&#39;./rooms/wait.room&#39;</span><span class="p">;</span>
     <span class="k">this</span><span class="p">.</span><span class="nx">roomOpen</span> <span class="o">=</span> <span class="nx">config</span><span class="p">.</span><span class="nx">roomOpen</span> <span class="o">||</span> <span class="kc">true</span><span class="p">;</span>
 
+    <span class="k">this</span><span class="p">.</span><span class="nx">timeOuts</span><span class="p">;</span>
+
     <span class="k">this</span><span class="p">.</span><span class="nx">GROUP_SIZE</span> <span class="o">=</span> <span class="kc">null</span><span class="p">;</span>
     <span class="k">this</span><span class="p">.</span><span class="nx">POOL_SIZE</span> <span class="o">=</span> <span class="kc">null</span><span class="p">;</span>
     <span class="k">this</span><span class="p">.</span><span class="nx">START_DATE</span> <span class="o">=</span> <span class="kc">null</span><span class="p">;</span>
@@ -234,7 +236,7 @@ MIT Licensed</p>
     <span class="nx">where</span> <span class="o">=</span> <span class="s1">&#39;WaitingRoom.dispatch: &#39;</span><span class="p">;</span>
     <span class="nx">numCalls</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
 
-    <span class="k">return</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">timeOutData</span><span class="p">,</span> <span class="nx">timeOuts</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">timeOutData</span><span class="p">)</span> <span class="p">{</span>
         <span class="kd">var</span> <span class="nx">treatmentName</span><span class="p">;</span>
         <span class="kd">var</span> <span class="nx">tmpPlayerList</span><span class="p">;</span>
         <span class="kd">var</span> <span class="nx">i</span><span class="p">,</span> <span class="nx">gameRoom</span><span class="p">;</span>
@@ -277,7 +279,7 @@ MIT Licensed</p>
 <p>Clear timeout for players.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-            <span class="nx">clearTimeout</span><span class="p">(</span><span class="nx">timeOuts</span><span class="p">[</span><span class="nx">i</span><span class="p">]);</span>
+            <span class="nx">clearTimeout</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">timeOuts</span><span class="p">[</span><span class="nx">i</span><span class="p">]);</span>
         <span class="p">}</span>
 
 
@@ -342,6 +344,53 @@ MIT Licensed</p>
     <span class="p">};</span>
 <span class="p">}(</span><span class="mi">1</span><span class="p">);</span>
 
+<span class="nx">WaitingRoom</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">makeTimeOut</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">playerID</span><span class="p">,</span> <span class="nx">waitTime</span><span class="p">,</span> <span class="nx">cb</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">that</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
+    <span class="nx">cb</span> <span class="o">=</span> <span class="nx">cb</span> <span class="o">||</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+        <span class="kd">var</span> <span class="nx">timeOutData</span><span class="p">,</span> <span class="nx">code</span><span class="p">,</span> <span class="nx">pList</span><span class="p">,</span> <span class="nx">nPlayers</span><span class="p">;</span>
+        <span class="nx">that</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;Timeout has not been cleared!!!&quot;</span><span class="p">);</span>
+        <span class="nx">pList</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">player</span><span class="p">;</span>
+        <span class="nx">nPlayers</span> <span class="o">=</span> <span class="nx">pList</span><span class="p">.</span><span class="nx">size</span><span class="p">();</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="nx">nPlayers</span> <span class="o">&gt;=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">POOL_SIZE</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">that</span><span class="p">.</span><span class="nx">dispatch</span><span class="p">({</span>
+                <span class="nx">over</span><span class="o">:</span> <span class="s2">&quot;Time elapsed!!!&quot;</span><span class="p">,</span>
+                <span class="nx">nPlayers</span><span class="o">:</span> <span class="nx">nPlayers</span>
+            <span class="p">});</span>
+        <span class="p">}</span>
+        <span class="k">else</span> <span class="p">{</span>
+            <span class="nx">that</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">registry</span><span class="p">.</span><span class="nx">checkOut</span><span class="p">(</span><span class="nx">playerID</span><span class="p">);</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-12" id="section-12">&#182;</a>
+</div>
+<p>See if an access code is defined, if so checkout remotely
+also.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+            <span class="nx">code</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">registry</span><span class="p">.</span><span class="nx">getClient</span><span class="p">(</span><span class="nx">playerID</span><span class="p">);</span>
+
+            <span class="nx">timeOutData</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="nx">over</span><span class="o">:</span> <span class="s2">&quot;Time elapsed, disconnect&quot;</span><span class="p">,</span>
+                <span class="nx">exit</span><span class="o">:</span> <span class="nx">code</span><span class="p">.</span><span class="nx">ExitCode</span>
+            <span class="p">};</span>
+            <span class="nx">that</span><span class="p">.</span><span class="nx">node</span><span class="p">.</span><span class="nx">say</span><span class="p">(</span><span class="s2">&quot;TIME&quot;</span><span class="p">,</span> <span class="nx">playerID</span><span class="p">,</span> <span class="nx">timeOutData</span><span class="p">);</span>
+        <span class="p">}</span>
+
+    <span class="p">};</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">timeOuts</span><span class="p">[</span><span class="nx">playerID</span><span class="p">]</span> <span class="o">=</span> <span class="nx">setTimeout</span><span class="p">(</span><span class="nx">cb</span><span class="p">,</span> <span class="nx">waitTime</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="nx">WaitingRoom</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">clearTimeOut</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">playerID</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">clearTimeout</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">timeOuts</span><span class="p">[</span><span class="nx">playerID</span><span class="p">]);</span>
+    <span class="k">delete</span> <span class="k">this</span><span class="p">.</span><span class="nx">timeOuts</span><span class="p">[</span><span class="nx">playerID</span><span class="p">];</span>
+<span class="p">}</span>
 
 <span class="kd">function</span> <span class="nx">checkPositiveInteger</span><span class="p">(</span><span class="nx">settings</span><span class="p">,</span> <span class="nx">name</span><span class="p">,</span> <span class="nx">where</span><span class="p">)</span> <span class="p">{</span>
     <span class="nx">N</span> <span class="o">=</span> <span class="nb">parseFloat</span><span class="p">(</span><span class="nx">settings</span><span class="p">[</span><span class="nx">name</span><span class="p">]);</span>
@@ -359,7 +408,7 @@ MIT Licensed</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-12" id="section-12">&#182;</a>
+  <a class="pilcrow" href="#section-13" id="section-13">&#182;</a>
 </div>
 <p>decideTreatment: check if string, or use it.</p>
         </td>
