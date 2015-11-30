@@ -956,7 +956,7 @@ TODO: Send only specific client data, not everything;
 </div>
 
 
-<p>TODO</p>
+<p>Listener to <code>WAITROOMCOMMAND</code> to OPEN, CLOSE and DISPATCH waitRoom</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
    <span class="k">this</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;SERVERCOMMAND_WAITROOMCOMMAND&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">data</span><span class="p">,</span> <span class="nx">from</span><span class="p">)</span> <span class="p">{</span>
@@ -992,7 +992,7 @@ TODO: Send only specific client data, not everything;
 <p>dispatch a new game</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-        <span class="k">if</span> <span class="p">(</span><span class="nx">data</span><span class="p">.</span><span class="nx">type</span> <span class="o">===</span> <span class="s1">&#39;DISPATCH&#39;</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">data</span><span class="p">.</span><span class="nx">command</span> <span class="o">===</span> <span class="s1">&#39;DISPATCH&#39;</span><span class="p">)</span> <span class="p">{</span>
             <span class="nx">room</span><span class="p">.</span><span class="nx">dispatch</span><span class="p">({</span>
                 <span class="nx">over</span><span class="o">:</span> <span class="s1">&#39;Monitor dispatched game.&#39;</span>
             <span class="p">});</span>
