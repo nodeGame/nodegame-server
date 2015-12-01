@@ -1878,6 +1878,12 @@ Else remove getChannelSandbox also (maybe).</p>
 
   </div>
   <div class="body"><p>Returns a sandbox function to configure a channel</p>
+
+<p>The sandbox is a callback that accepts 1 or 2 parameters, the last
+one must be a callback and the first one is the name of the server
+('player' or 'admin') to which the callback should be applied
+to. If only the callback is provided, then it is applied to both
+'player' and 'admin' servers.</p>
   </div>
   <div class="details">
     <div class="dox_tag_title">Params</div>
