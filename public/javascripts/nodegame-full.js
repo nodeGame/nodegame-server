@@ -13996,8 +13996,6 @@ if (!Array.prototype.indexOf) {
                     that.addStep({
                         id: steps[i],
                         cb: that.getDefaultCb()
-                        // Was defaultStep, but actually is not.
-                        // _defaultStep: true
                     });
                 }
             }
@@ -14328,8 +14326,11 @@ if (!Array.prototype.indexOf) {
                             'cannot add further items.');
         }
 
-        if ('undefined' === typeof positions || positions === 'linear') {
-            positions = this.size();
+        // We cannot set the position as a number here,
+        // because it might change with future modifications of
+        // the block. Only on block.finalize the position is fixed.
+        if ('undefined' === typeof positions) {
+            positions = 'linear';
         }
 
         this.unfinishedEntries.push({
@@ -14370,9 +14371,16 @@ if (!Array.prototype.indexOf) {
 
         // Remove default step if it is BLOCK_STEP and further steps were added.
         if (this.isType(BLOCK_ENCLOSING_STEPS) && this.size() > 1) {
-debugger
             if (isDefaultStep(this.unfinishedEntries[0].item)) {
                 this.unfinishedEntries.splice(0,1);
+            }
+        }
+
+        i = -1, len = this.unfinishedEntries.length;
+        // Update the positions of other steps as needed.
+        for ( ; ++i < len ; ) {
+            if (this.unfinishedEntries[i].positions === 'linear') {
+                this.unfinishedEntries[i].positions = i;
             }
         }
 
@@ -14382,7 +14390,6 @@ debugger
         // from 0 to nItems accounting for already taken positions.
         // available = J.arrayDiff(J.seq(0,this.size()-1), this.takenPositions);
         available = J.seq(0, this.size()-1);
-
 
         // TODO: this could be done inside the while loop. However, as
         // every iterations also other entries are updated, it requires
@@ -15016,20 +15023,20 @@ debugger
     var makeDefaultStep         = Stager.makeDefaultStep;
     var isDefaultStep           = Stager.isDefaultStep;
 
-    var blockTypes = Stager.blockTypes;
+    var blockTypes              = Stager.blockTypes;
 
-    var BLOCK_DEFAULT     = blockTypes.BLOCK_DEFAULT;
-    var BLOCK_STAGEBLOCK  = blockTypes.BLOCK_STAGEBLOCK;
-    var BLOCK_STAGE       = blockTypes. BLOCK_STAGE;
-    var BLOCK_STEPBLOCK   = blockTypes. BLOCK_STEPBLOCK;
-    var BLOCK_STEP        = blockTypes.BLOCK_STEP;
+    var BLOCK_DEFAULT           = blockTypes.BLOCK_DEFAULT;
+    var BLOCK_STAGEBLOCK        = blockTypes.BLOCK_STAGEBLOCK;
+    var BLOCK_STAGE             = blockTypes. BLOCK_STAGE;
+    var BLOCK_STEPBLOCK         = blockTypes. BLOCK_STEPBLOCK;
+    var BLOCK_STEP              = blockTypes.BLOCK_STEP;
 
-    var BLOCK_ENCLOSING          = blockTypes.BLOCK_ENCLOSING;
-    var BLOCK_ENCLOSING_STEPS    = blockTypes. BLOCK_ENCLOSING_STEPS;
-    var BLOCK_ENCLOSING_STAGES   = blockTypes.BLOCK_ENCLOSING_STAGES;
+    var BLOCK_ENCLOSING         = blockTypes.BLOCK_ENCLOSING;
+    var BLOCK_ENCLOSING_STEPS   = blockTypes. BLOCK_ENCLOSING_STEPS;
+    var BLOCK_ENCLOSING_STAGES  = blockTypes.BLOCK_ENCLOSING_STAGES;
 
     /**
-     * #### Stager.addStep
+     * #### Stager.addStep | createStep
      *
      * Adds a new step
      *
@@ -15040,7 +15047,7 @@ debugger
      *
      * @param {object} step A valid step object. Shallowly copied.
      */
-    Stager.prototype.addStep = function(step) {
+    Stager.prototype.createStep = Stager.prototype.addStep = function(step) {
         checkStepValidity(step, 'addStep');
 
         if (this.steps.hasOwnProperty(step.id)) {
@@ -15052,7 +15059,7 @@ debugger
     };
 
     /**
-     * #### Stager.addStage
+     * #### Stager.addStage | createStage
      *
      * Adds a new stage
      *
@@ -15076,7 +15083,7 @@ debugger
      *
      * @see checkStageValidity
      */
-    Stager.prototype.addStage = function(stage) {
+    Stager.prototype.createStage = Stager.prototype.addStage = function(stage) {
         var id;
 
         checkStageValidity(stage, 'addStage');
@@ -15190,13 +15197,21 @@ debugger
      * @see Stager.addStep
      */
     Stager.prototype.step = function(step, positions) {
-        var id;
+        var id, curBlock;
+
+        curBlock = this.getCurrentBlock();
+        if (!curBlock.isType(BLOCK_ENCLOSING_STEPS) &&
+            !curBlock.isType(BLOCK_STEPBLOCK)) {
+
+            throw new Error('Stager.step: step cannot be added at this ' +
+                            'point. Have you add at least one stage? ', step);
+        }
 
         checkFinalized(this, 'step');
-        id = checkStepParameter(this, step, 'step');
+        id = handleStepParameter(this, step, 'step');
         positions = checkPositionsParameter(positions, 'step');
 
-        this.getCurrentBlock().add({
+        curBlock.add({
             type: this.currentType,
             item: id
         }, positions);
@@ -15609,7 +15624,7 @@ debugger
      }
 
     /**
-     * #### checkStepParameter
+     * #### handleStepParameter
      *
      * Check validity of a stage parameter, eventually adds it if missing
      *
@@ -15621,22 +15636,32 @@ debugger
      *
      * @api private
      */
-    function checkStepParameter(that, step, method) {
-        if ('string' === typeof step) {
+    function handleStepParameter(that, step, method) {
+        var id;
+        if ('object' === typeof step) {
+            id = step.id;
+            if (that.steps[id]) {
+                throw new Error('Stager.' + method + ': step is object, ' +
+                                'but a step with the same id already ' +
+                                'exists: ', id);
+            }
+        }
+        else if ('string' === typeof step) {
+            id = step;
             step = {
-                id: step,
+                id: id,
                 cb: that.getDefaultCallback()
             };
         }
-        else if ('object' !== typeof step) {
+        else {
             throw new TypeError('Stager.' + method + ': step must be ' +
                                 'string or object.');
         }
 
         // A new step is created if not found (performs validation).
-        if (!that.steps[step.id]) that.addStep(step);
+        if (!that.steps[id]) that.addStep(step);
 
-        return step.id;
+        return id;
     }
 
     /**
@@ -15658,13 +15683,19 @@ debugger
         var tokens, id, alias;
         if ('object' === typeof stage) {
             id = stage.id;
+
+            if (that.stages[id]) {
+                throw new Error('Stager.' + method + ': stage is object, ' +
+                                'but a stage with the same id already ' +
+                                'exists: ', id);
+            }
+
             // It's a step.
             if (stage.cb) {
                 if (!that.steps[id]) that.addStep(stage);
                 stage = { id: id, steps: [ id ] };
             }
-            // A new stage is created if not found (performs validation).
-            if (!that.stages[id]) that.addStage(stage);
+            that.addStage(stage);
         }
         else {
             if ('string' !== typeof stage) {
@@ -15683,11 +15714,6 @@ debugger
             else if (!that.stages[id]) {
                 // Add the step if not existing and flag it as default.
                 if (!that.steps[id]) {
-//                     that.addStep({
-//                         id: id,
-//                         // Mock functions, will be replaced on `finalize()`.
-//                         cb: makeDefaultCb()
-//                     });
                     that.addStep(makeDefaultStep(id, that.getDefaultCb()));
                 }
                 that.addStage({
@@ -15718,6 +15744,7 @@ debugger
 
     // Referencing shared entities.
     var blockTypes = Stager.blockTypes;
+    var isDefaultCb = Stager.isDefaultCb;
     var makeDefaultCb = Stager.makeDefaultCb;
     var isDefaultStep = Stager.isDefaultStep;
 
@@ -15952,7 +15979,7 @@ debugger
      * @see makeDefaultCallback
      */
     Stager.prototype.setDefaultCallback = function(cb) {
-        var i, len;
+        var i;
         if (cb === null) {
             cb = Stager.defaultCallback;
         }
@@ -15962,10 +15989,11 @@ debugger
         }
         this.defaultCallback = makeDefaultCb(cb);
 
-        i = -1, len = this.steps.length;
-        for ( ; ++i < len ; ) {
-            if (isDefaultCb(this.steps[i].cb)) {
-                this.steps[i].cb = this.defaultCallback;
+        for ( i in this.steps ) {
+            if (this.steps.hasOwnProperty(i)) {
+                if (isDefaultCb(this.steps[i].cb)) {
+                    this.steps[i].cb = this.defaultCallback;
+                }
             }
         }
     };
@@ -22895,12 +22923,18 @@ debugger
      *
      * @param {object} language Object describing language.
      *   Needs shortName property.
+     * @param {boolean} prefix Optional. If TRUE, the window uri prefix is
+     *   set to the value of lang.path. node.window must be defined,
+     *   otherwise a warning is shown. Default, FALSE.
+     *
      * @return {object} The language object
      *
      * @see node.setup.lang
+     * @see GameWindow.setUriPrefix
+     *
      * @emit LANGUAGE_SET
      */
-    NGC.prototype.setLanguage = function(language) {
+    NGC.prototype.setLanguage = function(language, prefix) {
         if ('object' !== typeof language) {
             throw new TypeError('node.setLanguage: language must be object.');
         }
@@ -22909,7 +22943,20 @@ debugger
                 'node.setLanguage: language.shortName must be string.');
         }
         this.player.lang = language;
-        this.player.lang.path = language.shortName + '/';
+        if (!this.player.lang.path) {
+            this.player.lang.path = language.shortName + '/';
+        }
+
+        if (prefix) {
+            if ('undefined' !== typeof this.window) {
+                this.window.setUriPrefix(this.player.lang.path);
+            }
+            else {
+                node.warn('node.setLanguage: prefix is true, but no window ' +
+                          'found.');
+            }
+        }
+
         this.emit('LANGUAGE_SET');
 
         return this.player.lang;
@@ -23084,7 +23131,7 @@ debugger
      * node.get('myLabel, function(reply) {});
      *
      * // Receiver.
-     * node.on('get.myLabel', function() { return 'OK'; });
+     * node.on('get.myLabel', function(msg) { return 'OK'; });
      *
      * ```
      *
@@ -24610,11 +24657,32 @@ debugger
          * Creates the `node.player` object
          *
          * @see node.Player
+         * @see node.player
          * @see node.createPlayer
          */
         this.registerSetup('player', function(player) {
             if (!player) return null;
             return this.createPlayer(player);
+        });
+
+        /**
+         * ### node.setup.lang
+         *
+         * Setups the language of the client
+         *
+         * The `lang` parameter can either be an array containing
+         * input parameters for the method `setLanguage`, or an object,
+         * and in that case, it is only the first parameter (the language
+         * object).
+         *
+         * @see node.player
+         * @see node.setLanguage
+         */
+        this.registerSetup('lang', function(lang) {
+            if (!lang) return null;
+            if (J.isArray(lang)) node.setLanguage(lang[0], lang[1]);
+            else node.setLanguage(lang);
+            return node.player.lang;
         });
 
         /**
@@ -24748,18 +24816,6 @@ debugger
                 return { updateRule: updateRule, list: srcList };
             }
         })(this);
-
-        /**
-         * ### this.setup.lang
-         *
-         * Sets the default language
-         *
-         * @param {object} language The language object to set as default.
-         */
-        this.registerSetup('lang', function(language) {
-            if (!language) return null;
-            return this.setLanguage(language);
-        });
 
         this.conf.setupsAdded = true;
         this.silly('node: setup functions added.');
@@ -25675,6 +25731,10 @@ debugger
         }
         else if (this.conf.disableRightClick === false) {
             this.enableRightClick();
+        }
+
+        if ('undefined' !== typeof this.conf.uriPrefix) {
+            this.setUriPrefix(this.conf.uriPrefix);
         }
 
         this.setStateLevel('INITIALIZED');
@@ -26823,7 +26883,7 @@ debugger
             throw new TypeError('GameWindow.setUriPrefix: uriPrefix must be ' +
                                 'string or null.');
         }
-        this.uriPrefix = uriPrefix;
+        this.conf.uriPrefix = this.uriPrefix = uriPrefix;
     };
 
     /**
@@ -27151,7 +27211,6 @@ debugger
          * @see node.setup
          */
         node.registerSetup('window', function(conf) {
-            conf = J.merge(W.conf, conf);
             this.window.init(conf);
             return conf;
         });
@@ -27247,6 +27306,11 @@ debugger
                     return;
                 }
                 this.window.loadFrame(url, cb, options);
+            }
+
+            // Uri prefix.
+            if ('undefined' !== typeof conf.uriPrefix) {
+                this.window.setUriPrefix(conf.uriPrefix);
             }
 
             // Clear and destroy.
