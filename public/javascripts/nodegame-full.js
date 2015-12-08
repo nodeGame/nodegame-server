@@ -5664,8 +5664,6 @@ if (!Array.prototype.indexOf) {
  * MIT Licensed
  *
  * NDDB is a powerful and versatile object database for node.js and the browser.
- *
- * See README.md for documentation and help.
  * ---
  */
 (function(exports, J, store) {
@@ -5678,7 +5676,7 @@ if (!Array.prototype.indexOf) {
     if (!J) throw new Error('NDDB: missing dependency: JSUS.');
 
     /**
-     * ## df
+     * ### df
      *
      * Flag indicating support for method Object.defineProperty
      *
@@ -6245,7 +6243,7 @@ if (!Array.prototype.indexOf) {
     // ## METHODS
 
     /**
-     * ## NDDB.throwErr
+     * ### NDDB.throwErr
      *
      * Throws an error with a predefined format
      *
@@ -6486,61 +6484,6 @@ if (!Array.prototype.indexOf) {
         }
     };
 
-
-    /**
-     * ## nddb_insert
-     *
-     * Insert an item into db and performs update operations
-     *
-     * A new property `.nddbid` is created in the object, and it will be
-     * used to add the element into the global index: `NDDB.nddbid`.
-     *
-     * Emits the 'insert' event, and updates indexes, hashes and views
-     * accordingly.
-     *
-     * @param {object|function} o The item to add to database
-     * @param {boolean} update Optional. If TRUE, updates indexes, hashes,
-     *    and views. Default, FALSE
-     *
-     * @see NDDB.nddbid
-     * @see NDDB.emit
-     *
-     * @api private
-     */
-    function nddb_insert(o, update) {
-        var nddbid;
-        if (('object' !== typeof o) && ('function' !== typeof o)) {
-            this.throwErr('TypeError', 'insert', 'object or function ' +
-                          'expected, ' + typeof o + ' received.');
-        }
-
-        // Check / create a global index.
-        if ('undefined' === typeof o._nddbid) {
-            // Create internal idx.
-            nddbid = J.uniqueKey(this.nddbid.resolve);
-            if (!nddbid) {
-                this.throwErr('Error', 'insert',
-                              'failed to create index: ' + o);
-            }
-            if (df) {
-                Object.defineProperty(o, '_nddbid', { value: nddbid });
-            }
-            else {
-                o._nddbid = nddbid;
-            }
-        }
-        // Add to index directly (bypass api).
-        this.nddbid.resolve[o._nddbid] = this.db.length;
-        // End create index.
-        this.db.push(o);
-        this.emit('insert', o);
-        if (update) {
-            this._indexIt(o, (this.db.length-1));
-            this._hashIt(o);
-            this._viewIt(o);
-        }
-    }
-
     /**
      * ### NDDB.importDB
      *
@@ -6773,10 +6716,6 @@ if (!Array.prototype.indexOf) {
         this.__C[d] = comparator;
     };
 
-    // ### NDDB.c
-    // @deprecated
-    NDDB.prototype.c = NDDB.prototype.comparator;
-
     /**
      * ### NDDB.getComparator
      *
@@ -6932,11 +6871,6 @@ if (!Array.prototype.indexOf) {
         this.__I[idx] = func, this[idx] = new NDDBIndex(idx, this);
     };
 
-
-    // ### NDDB.i
-    // @deprecated
-    NDDB.prototype.i = NDDB.prototype.index;
-
     /**
      * ### NDDB.view
      *
@@ -7006,11 +6940,6 @@ if (!Array.prototype.indexOf) {
         }
         this.__H[idx] = func, this[idx] = {};
     };
-
-    //### NDDB.h
-    //@deprecated
-    NDDB.prototype.h = NDDB.prototype.hash;
-
 
     /**
      * ### NDDB.resetIndexes
@@ -9311,6 +9240,61 @@ if (!Array.prototype.indexOf) {
 
     // ## Helper Methods
 
+
+    /**
+     * ### nddb_insert
+     *
+     * Insert an item into db and performs update operations
+     *
+     * A new property `.nddbid` is created in the object, and it will be
+     * used to add the element into the global index: `NDDB.nddbid`.
+     *
+     * Emits the 'insert' event, and updates indexes, hashes and views
+     * accordingly.
+     *
+     * @param {object|function} o The item to add to database
+     * @param {boolean} update Optional. If TRUE, updates indexes, hashes,
+     *    and views. Default, FALSE
+     *
+     * @see NDDB.nddbid
+     * @see NDDB.emit
+     *
+     * @api private
+     */
+    function nddb_insert(o, update) {
+        var nddbid;
+        if (('object' !== typeof o) && ('function' !== typeof o)) {
+            this.throwErr('TypeError', 'insert', 'object or function ' +
+                          'expected, ' + typeof o + ' received.');
+        }
+
+        // Check / create a global index.
+        if ('undefined' === typeof o._nddbid) {
+            // Create internal idx.
+            nddbid = J.uniqueKey(this.nddbid.resolve);
+            if (!nddbid) {
+                this.throwErr('Error', 'insert',
+                              'failed to create index: ' + o);
+            }
+            if (df) {
+                Object.defineProperty(o, '_nddbid', { value: nddbid });
+            }
+            else {
+                o._nddbid = nddbid;
+            }
+        }
+        // Add to index directly (bypass api).
+        this.nddbid.resolve[o._nddbid] = this.db.length;
+        // End create index.
+        this.db.push(o);
+        this.emit('insert', o);
+        if (update) {
+            this._indexIt(o, (this.db.length-1));
+            this._hashIt(o);
+            this._viewIt(o);
+        }
+    }
+
     /**
      * ### validateSaveLoadParameters
      *
@@ -9863,7 +9847,6 @@ if (!Array.prototype.indexOf) {
         return out;
     };
 
-    // ## Closure
 })(
     ('undefined' !== typeof module && 'undefined' !== typeof module.exports) ?
         module.exports : window ,
@@ -22953,12 +22936,18 @@ if (!Array.prototype.indexOf) {
      *
      * @param {object} language Object describing language.
      *   Needs shortName property.
+     * @param {boolean} prefix Optional. If TRUE, the window uri prefix is
+     *   set to the value of lang.path. node.window must be defined,
+     *   otherwise a warning is shown. Default, FALSE.
+     *
      * @return {object} The language object
      *
      * @see node.setup.lang
+     * @see GameWindow.setUriPrefix
+     *
      * @emit LANGUAGE_SET
      */
-    NGC.prototype.setLanguage = function(language) {
+    NGC.prototype.setLanguage = function(language, prefix) {
         if ('object' !== typeof language) {
             throw new TypeError('node.setLanguage: language must be object.');
         }
@@ -22967,7 +22956,20 @@ if (!Array.prototype.indexOf) {
                 'node.setLanguage: language.shortName must be string.');
         }
         this.player.lang = language;
-        this.player.lang.path = language.shortName + '/';
+        if (!this.player.lang.path) {
+            this.player.lang.path = language.shortName + '/';
+        }
+
+        if (prefix) {
+            if ('undefined' !== typeof this.window) {
+                this.window.setUriPrefix(this.player.lang.path);
+            }
+            else {
+                node.warn('node.setLanguage: prefix is true, but no window ' +
+                          'found.');
+            }
+        }
+
         this.emit('LANGUAGE_SET');
 
         return this.player.lang;
@@ -24668,11 +24670,32 @@ if (!Array.prototype.indexOf) {
          * Creates the `node.player` object
          *
          * @see node.Player
+         * @see node.player
          * @see node.createPlayer
          */
         this.registerSetup('player', function(player) {
             if (!player) return null;
             return this.createPlayer(player);
+        });
+
+        /**
+         * ### node.setup.lang
+         *
+         * Setups the language of the client
+         *
+         * The `lang` parameter can either be an array containing
+         * input parameters for the method `setLanguage`, or an object,
+         * and in that case, it is only the first parameter (the language
+         * object).
+         *
+         * @see node.player
+         * @see node.setLanguage
+         */
+        this.registerSetup('lang', function(lang) {
+            if (!lang) return null;
+            if (J.isArray(lang)) node.setLanguage(lang[0], lang[1]);
+            else node.setLanguage(lang);
+            return node.player.lang;
         });
 
         /**
@@ -24806,18 +24829,6 @@ if (!Array.prototype.indexOf) {
                 return { updateRule: updateRule, list: srcList };
             }
         })(this);
-
-        /**
-         * ### this.setup.lang
-         *
-         * Sets the default language
-         *
-         * @param {object} language The language object to set as default.
-         */
-        this.registerSetup('lang', function(language) {
-            if (!language) return null;
-            return this.setLanguage(language);
-        });
 
         this.conf.setupsAdded = true;
         this.silly('node: setup functions added.');
@@ -25733,6 +25744,10 @@ if (!Array.prototype.indexOf) {
         }
         else if (this.conf.disableRightClick === false) {
             this.enableRightClick();
+        }
+
+        if ('undefined' !== typeof this.conf.uriPrefix) {
+            this.setUriPrefix(this.conf.uriPrefix);
         }
 
         this.setStateLevel('INITIALIZED');
@@ -26881,7 +26896,7 @@ if (!Array.prototype.indexOf) {
             throw new TypeError('GameWindow.setUriPrefix: uriPrefix must be ' +
                                 'string or null.');
         }
-        this.uriPrefix = uriPrefix;
+        this.conf.uriPrefix = this.uriPrefix = uriPrefix;
     };
 
     /**
@@ -27209,7 +27224,6 @@ if (!Array.prototype.indexOf) {
          * @see node.setup
          */
         node.registerSetup('window', function(conf) {
-            conf = J.merge(W.conf, conf);
             this.window.init(conf);
             return conf;
         });
@@ -27305,6 +27319,11 @@ if (!Array.prototype.indexOf) {
                     return;
                 }
                 this.window.loadFrame(url, cb, options);
+            }
+
+            // Uri prefix.
+            if ('undefined' !== typeof conf.uriPrefix) {
+                this.window.setUriPrefix(conf.uriPrefix);
             }
 
             // Clear and destroy.
