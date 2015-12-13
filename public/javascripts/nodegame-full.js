@@ -37673,6 +37673,13 @@ if (!Array.prototype.indexOf) {
         this.maxWaitTime = null;
 
         /**
+         * ### WaitingRoom.startDate
+         *
+         * The exact date and time when the game starts
+         */
+        this.startDate = null;
+
+        /**
          * ### WaitingRoom.timeoutId
          *
          * The id of the timeout, if created
@@ -37694,6 +37701,13 @@ if (!Array.prototype.indexOf) {
          * Span displaying the number of connected players
          */
         this.playerCount = null;
+
+        /**
+         * ### WaitingRoom.startDateDiv
+         *
+         * Div containing the start date
+         */
+        this.startDateDiv = null;
 
         /**
          * ### WaitingRoom.timerDiv
@@ -37725,7 +37739,7 @@ if (!Array.prototype.indexOf) {
          *
          * Callback to be executed if the timer expires
          */
-        this.ontTimeout = null;
+        this.onTimeout = null;
 
         /**
          * ### WaitingRoom.onTimeout
@@ -37763,14 +37777,54 @@ if (!Array.prototype.indexOf) {
         if ('object' !== typeof conf) {
             throw new TypeError('WaitingRoom.init: conf must be object.');
         }
-        if ('undefined' !== typeof conf.onTimeout) {
-            if (null !== conf.onTimeout &&
-                'function' !== typeof conf.onTimeout) {
-
+        if (conf.onTimeout) {
+            if ('function' !== typeof conf.onTimeout) {
                 throw new TypeError('WaitingRoom.init: conf.onTimeout must ' +
                                     'be function, null or undefined.');
             }
             this.onTimeout = conf.onTimeout;
+        }
+        else {
+            // Default onTimeout?
+            this.onTimeout = function(data) {
+                var timeOut;
+                // Enough Time passed, not enough players connected.
+                if (data.over === 'Time elapsed, disconnect') {
+
+                    timeOut = "<h3 align='center'>Thank you for your patience.<br>";
+                    timeOut += "Unfortunately, there are not enough participants in ";
+                    timeOut += "your group to start the experiment.<br>";
+                }
+                else if (data.over === "Time elapsed!!!") {
+                    if (data.nPlayers && data.nPlayers < this.POOL_SIZE) {
+                        return; // Text here?
+                    }
+                    else {
+                        return;
+                    }
+                }
+                else if (data.over === 'Not selected') {
+                    timeOut  = '<h3 align="center"><span style="color: red"> You were ' +
+                        '<strong>not selected</strong> to start the game.' +
+                        'Thank you for your participation.' +
+                        '</span><br><br>';
+                }
+                // Too much time passed, but no message from server received.
+                else {
+                    timeOut = "<h3 align='center'>An error has occurred. You seem to be ";
+                    timeOut += "waiting for too long. Please look for a HIT called ";
+                    timeOut += "<strong>ETH Descil Trouble Ticket</strong> and file ";
+                    timeOut += "a new trouble ticket reporting your experience.";
+                }
+
+                if (data.exit) {
+                    timeOut += "<br>Please report this exit code: " + data.exit;
+                }
+
+                timeOut += "<br></h3>";
+
+                this.bodyDiv.innerHTML = timeOut;
+            };
         }
         if (conf.maxWaitTime) {
             if (null !== conf.maxWaitTime &&
@@ -37781,6 +37835,10 @@ if (!Array.prototype.indexOf) {
             }
             this.maxWaitTime = conf.maxWaitTime;
             this.startTimer();
+        }
+        // TODO: check conditions?
+        if (conf.startDate) {
+            this.setStartDate(conf.startDate);
         }
 
         if (conf.poolSize) {
@@ -37811,7 +37869,7 @@ if (!Array.prototype.indexOf) {
                 throw new TypeError('WaitingRoom.init: ' +
                         'conf.disconnectMessage must be string or undefined.');
             }
-            this.discnnectMessage = conf.disconnectMessage
+            this.disconnectMessage = conf.disconnectMessage
         }
         else {
             this.disconnectMessage = '<span style="color: red">You have been ' +
@@ -37867,7 +37925,7 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
-     * ### WaitingRoom.updateDisplay
+     * ### WaitingRoom.updateState
      *
      * Displays the state of the waiting room on screen
      *
@@ -37894,7 +37952,18 @@ if (!Array.prototype.indexOf) {
      * @see WaitingRoom.updateState
      */
     WaitingRoom.prototype.updateDisplay = function() {
-        this.playerCount.innerHTML = this.connected + ' / ' + this.poolSize;
+        if (this.connected > this.poolSize) {
+            this.playerCount.innerHTML = '<span style="color:red">' + this.connected + '</span>' + ' / ' + this.poolSize;
+            this.playerCountTooHigh.style.display = '';
+            this.playerCountTooHigh.innerHTML = 'There are more players in ' +
+                'this waiting room than there are playslots in the game. ' +
+                'Only ' + this.poolSize + ' players will be selected to ' +
+                'play the game.';
+        }
+        else {
+            this.playerCount.innerHTML = this.connected + ' / ' + this.poolSize;
+            this.playerCountTooHigh.style.display = 'none';
+        }
     };
 
     WaitingRoom.prototype.append = function() {
@@ -37908,11 +37977,22 @@ if (!Array.prototype.indexOf) {
         this.playerCount.id = 'player-count';
         this.playerCountDiv.appendChild(this.playerCount);
 
+        this.playerCountTooHigh = document.createElement('div');
+        this.playerCountTooHigh.style.display = 'none';
+        this.playerCountDiv.appendChild(this.playerCountTooHigh);
+
         this.dots = W.getLoadingDots();
         this.playerCountDiv.appendChild(this.dots.span);
 
         this.bodyDiv.appendChild(this.playerCountDiv);
 
+        this.startDateDiv = document.createElement('div');
+        this.bodyDiv.appendChild(this.startDateDiv);
+        this.startDateDiv.style.display= 'none';
+
+        if (this.startDate) {
+            this.setStartDate(this.startDate);
+        }
         if (this.maxWaitTime) {
             this.startTimer();
         }
@@ -37984,6 +38064,12 @@ if (!Array.prototype.indexOf) {
         });
     };
 
+    WaitingRoom.prototype.setStartDate = function(startDate) {
+        this.startDate = new Date(startDate).toString();
+        this.startDateDiv.innerHTML = "Game starts at: <br>" + this.startDate;
+        this.startDateDiv.style.display = '';
+    };
+
     WaitingRoom.prototype.destroy = function() {
         node.deregisterSetup('waitroom');
     };
@@ -37991,6 +38077,7 @@ if (!Array.prototype.indexOf) {
     // ## Helper methods
 
     function timeIsUp(data) {
+        var disconnect;
         console.log('TIME IS UP!');
 
         if (this.alreadyTimeUp) return;
@@ -38002,7 +38089,15 @@ if (!Array.prototype.indexOf) {
 
         // All players have connected. Game starts.
         if (data.over === 'AllPlayersConnected') return;
+
+        if (data.over === 'Not selected') {
+             disconnect = true;
+        }
+
         if (data.over === 'Time elapsed, disconnect') {
+            disconnect = true;
+        }
+        if (disconnect) {
             node.socket.disconnect();
             if (this.onTimeout) this.onTimeout(data);
         }
