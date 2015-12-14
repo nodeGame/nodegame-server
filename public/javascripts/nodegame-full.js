@@ -10070,6 +10070,8 @@ if (!Array.prototype.indexOf) {
         STAGE_INIT:    10,  // calling stage's init
         STEP_INIT:     20,  // calling step's init
         PLAYING_STEP:  30,  // executing step
+        STAGE_EXIT:    50,  // calling stage's cleanup
+        STEP_EXIT:     60,  // calling step's clenaup
         FINISHING:     70,  // calling game's gameover
         GAMEOVER:     100,  // game complete
         RUNTIME_ERROR: -1
@@ -10114,7 +10116,9 @@ if (!Array.prototype.indexOf) {
         GETTING_DONE:        90, // Done is being called,
                                  // and the step rule evaluated.
 
-        DONE:                100 // Player completed the stage
+        DONE:               100, // Player completed the stage
+
+        EXIT:               110, // Cleanup function being called (if found)
     };
 
     /**
@@ -12810,19 +12814,28 @@ if (!Array.prototype.indexOf) {
      * If the Stager parameter has an empty sequence, flexible mode is assumed
      * (used by e.g. GamePlot.next).
      *
+     * @param {NodeGameClient} node Reference to current node object
      * @param {Stager} stager Optional. The Stager object.
      *
      * @see Stager
      */
-    function GamePlot(stager) {
-        this.init(stager);
+    function GamePlot(node, stager) {
 
         /**
-         * ### GamePlot.log
+         * ## GamePlot.node
          *
-         * Default stdout output. Override to redirect.
+         * Reference to the node object
          */
-        this.log = console.log;
+        this.node = node;
+
+        /**
+         * ## GamePlot.stager
+         *
+         * The stager object used to perform stepping operations
+         */
+        this.stager = null;
+
+        this.init(stager);
     }
 
     // ## GamePlot methods
@@ -12846,24 +12859,6 @@ if (!Array.prototype.indexOf) {
         else {
             this.stager = null;
         }
-    };
-
-    /**
-     * ### GamePlot.setDefaultLog
-     *
-     * Sets the default stdout function for game plot and stager (if any)
-     *
-     * @param {function} log The logging function
-     *
-     * @see Stager.log
-     */
-    GamePlot.prototype.setDefaultLog = function(log) {
-        if ('function' !== typeof log) {
-            throw new TypeError('GamePlot.setDefaultLog: log must be ' +
-                                'function.');
-        }
-        this.log = log;
-        if (this.stager) this.stager.log = this.log;
     };
 
     /**
@@ -12994,8 +12989,6 @@ if (!Array.prototype.indexOf) {
             // Get stage object.
             stageObj = this.stager.stages[seqObj.id];
 
-            // Ste was:
-            //steps = stageObj.steps;
             steps = seqObj.steps;
 
             // Handle stepping:
@@ -13017,14 +13010,15 @@ if (!Array.prototype.indexOf) {
             }
 
             // Handle looping blocks:
-            if ((seqObj.type === 'doLoop' || seqObj.type === 'loop') &&
-                seqObj.cb()) {
-
-                return new GameStage({
-                    stage: stageNo,
-                    step:  1,
-                    round: normStage.round + 1
-                });
+            if (seqObj.type === 'doLoop' || seqObj.type === 'loop') {
+                // Call loop function. True means continue loop.
+                if (seqObj.cb.call(this.node.game)) {
+                    return new GameStage({
+                        stage: stageNo,
+                        step:  1,
+                        round: normStage.round + 1
+                    });
+                }
             }
 
             // Go to next stage:
@@ -13085,7 +13079,7 @@ if (!Array.prototype.indexOf) {
         // Get normalized GameStage:
         normStage = this.normalizeGameStage(curStage);
         if (normStage === null) {
-            node.warn('previous received invalid stage: ' + curStage);
+            this.node.warn('previous received invalid stage: ' + curStage);
             return null;
         }
         stageNo  = normStage.stage;
@@ -13107,8 +13101,6 @@ if (!Array.prototype.indexOf) {
             if (curStage.round > 1) {
                 return new GameStage({
                     stage: stageNo,
-                    // was:
-                    // step:  stageObj.steps.length,
                     step:  seqObj.steps.length,
                     round: curStage.round - 1
                 });
@@ -13120,8 +13112,6 @@ if (!Array.prototype.indexOf) {
 
                 return new GameStage({
                     stage: stageNo,
-                    // was:
-                    //step:  stageObj.steps.length,
                     step:  seqObj.steps.length,
                     round: 1
                 });
@@ -13156,8 +13146,6 @@ if (!Array.prototype.indexOf) {
         prevSeqObj = this.stager.sequence[stageNo - 2];
 
         // Get number of steps in previous stage:
-        // was:
-        // prevStepNo = this.stager.stages[prevSeqObj.id].steps.length;
         prevStepNo = prevSeqObj.steps.length;
 
         // Handle repeat block:
@@ -13237,9 +13225,6 @@ if (!Array.prototype.indexOf) {
         gameStage = new GameStage(gameStage);
         if (gameStage.stage === 0) return 1;
 
-        // was:
-        // stageObj = this.getStage(gameStage);
-        // if (!stageObj) return null;
         seqObj = this.getSequenceObject(gameStage);
         if (!seqObj) return null;
 
@@ -13247,15 +13232,9 @@ if (!Array.prototype.indexOf) {
             stepNo = gameStage.step;
         }
         else {
-            // was:
-            // stepNo = stageObj.steps.indexOf(gameStage.step) + 1;
             stepNo = seqObj.steps.indexOf(gameStage.step) + 1;
             // If indexOf returned -1, stepNo is 0 which will be caught below.
         }
-
-        // was:
-        // if (stepNo < 1 || stepNo > stageObj.steps.length) return null;
-        // return 1 + stageObj.steps.length - stepNo;
 
         if (stepNo < 1 || stepNo > seqObj.steps.length) return null;
         return 1 + seqObj.steps.length - stepNo;
@@ -13277,9 +13256,6 @@ if (!Array.prototype.indexOf) {
 
         gameStage = new GameStage(gameStage);
 
-        // was:
-        // stageObj = this.getStage(gameStage);
-        // if (!stageObj) return null;
         seqObj = this.getSequenceObject(gameStage);
         if (!seqObj) return null;
 
@@ -13291,8 +13267,6 @@ if (!Array.prototype.indexOf) {
             // If indexOf returned -1, stepNo is 0 which will be caught below.
         }
 
-        // was:
-        // if (stepNo < 1 || stepNo > stageObj.steps.length) return null;
         if (stepNo < 1 || stepNo > seqObj.steps.length) return null;
 
         return stepNo;
@@ -13372,19 +13346,12 @@ if (!Array.prototype.indexOf) {
         if (!this.stager) return null;
         gameStage = new GameStage(gameStage);
         if ('number' === typeof gameStage.step) {
-            // was:
-            // stageObj = this.getStage(gameStage);
-            // return stageObj ?
-            // this.stager.steps[stageObj.steps[gameStage.step - 1]] : null;
-
             seqObj = this.getSequenceObject(gameStage);
             if (seqObj) {
                 stepObj = this.stager.steps[seqObj.steps[gameStage.step - 1]];
             }
         }
         else {
-            // was:
-            // return this.stager.steps[gameStage.step] || null;
             stepObj = this.stager.steps[gameStage.step];
         }
         return stepObj || null;
@@ -13703,7 +13670,7 @@ if (!Array.prototype.indexOf) {
             stageNo = seqIdx + 1;
         }
         if (stageNo < 1 || stageNo > this.stager.sequence.length) {
-            node.warn('normalizeGameStage received nonexistent stage: ' +
+            this.node.warn('normalizeGameStage received nonexistent stage: ' +
                       gameStage.stage);
             return null;
         }
@@ -13729,12 +13696,10 @@ if (!Array.prototype.indexOf) {
             stepNo = gameStage.step;
         }
         else {
-            // was:
-            // stepNo = stageObj.steps.indexOf(gameStage.step) + 1;
             stepNo = seqObj.steps.indexOf(gameStage.step) + 1;
         }
         if (stepNo < 1) {
-            node.warn('normalizeGameStage received nonexistent step: ' +
+            this.node.warn('normalizeGameStage received nonexistent step: ' +
                       stageObj.id + '.' + gameStage.step);
             return null;
         }
@@ -18059,13 +18024,7 @@ if (!Array.prototype.indexOf) {
          *
          * @see GamePlot
          */
-        this.plot = new GamePlot(new Stager());
-
-        // Overriding stdout for game plot and stager.
-        this.plot.setDefaultLog(function() {
-            // Must use apply, else will be executed in the wrong context.
-            node.log.apply(node, arguments);
-        });
+        this.plot = new GamePlot(this.node, new Stager());
 
         /**
          * ### Game.checkPlistSize
@@ -18492,7 +18451,7 @@ if (!Array.prototype.indexOf) {
      */
     Game.prototype.gotoStep = function(nextStep, options) {
         var curStep;
-        var curStageObj, nextStepObj, nextStageObj;
+        var curStepObj, curStageObj, nextStepObj, nextStageObj;
         var ev, node;
         var property, handler;
         var minThreshold, maxThreshold, exactThreshold;
@@ -18554,6 +18513,18 @@ if (!Array.prototype.indexOf) {
 
             node.emit('STEPPING');
 
+            curStageObj = this.plot.getStage(curStep);
+            curStepObj = this.plot.getStep(curStep);
+
+            // Calling exit function of the step.
+            if (curStepObj && curStepObj.exit) {
+                this.setStateLevel(constants.stateLevels.STEP_EXIT);
+                this.setStageLevel(constants.stageLevels.EXIT);
+
+                nextStageObj.exit.call(this);
+            }
+
+
             // Check for stage/step existence:
             nextStageObj = this.plot.getStage(nextStep);
             if (!nextStageObj) return false;
@@ -18564,19 +18535,24 @@ if (!Array.prototype.indexOf) {
             // TODO: this does not lock screen / stop timer.
             if (options.willBeDone) this.willBeDone = true;
 
-
             // stageLevel needs to be changed (silent), otherwise it stays DONE
             // for a short time in the new game stage:
             this.setStageLevel(constants.stageLevels.UNINITIALIZED, 'S');
             this.setCurrentGameStage(nextStep);
 
-            // If we enter a new stage we need to update a few things:
-            //if (this.plot.stepsToNextStage(curStep) === 1) {
-            //if (curStep.stage !== nextStep.stage) {
-            curStageObj = this.plot.getStage(curStep);
+            // If we enter a new stage we need to update a few things.
             if (!curStageObj || nextStageObj.id !== curStageObj.id) {
-                //nextStageObj = this.plot.getStage(nextStep);
-                //if (!nextStageObj) return false;
+
+                // Calling exit function.
+                if (curStageObj && curStageObj.exit) {
+                    this.setStateLevel(constants.stateLevels.STAGE_EXIT);
+                    this.setStageLevel(constants.stageLevels.EXIT);
+
+                    curStageObj.exit.call(this);
+                }
+
+                this.setStateLevel(constants.stateLevels.STAGE_INIT);
+                this.setStageLevel(constants.stageLevels.INITIALIZING);
 
                 // Store time:
                 this.node.timer.setTimestamp('stage', (new Date()).getTime());
@@ -18586,8 +18562,6 @@ if (!Array.prototype.indexOf) {
 
                 // Execute the init function of the stage, if any:
                 if (nextStageObj.hasOwnProperty('init')) {
-                    this.setStateLevel(constants.stateLevels.STAGE_INIT);
-                    this.setStageLevel(constants.stageLevels.INITIALIZING);
                     nextStageObj.init.call(node.game);
                 }
 
@@ -19173,6 +19147,8 @@ if (!Array.prototype.indexOf) {
         case constants.stateLevels.STAGE_INIT:
         case constants.stateLevels.STEP_INIT:
         case constants.stateLevels.FINISHING:
+        case constants.stateLevels.STAGE_EXIT:
+        case constants.stateLevels.STEP_EXIT:
             return false;
 
         case constants.stateLevels.PLAYING_STEP:
@@ -22983,8 +22959,8 @@ if (!Array.prototype.indexOf) {
 
     var GameStage = parent.GameStage;
 
-    var STAGE = parent.constants.stageLevels.UNINITIALIZED;
-    var STATE = parent.constants.stageLevels.INITIALIZED;
+    var STAGE_INIT = parent.constants.stageLevels.INITIALIZING;
+    var STATE_STAGE_INIT = parent.constants.stateLevels.STAGE_INIT;
 
     /**
      * ### NodeGameClient.getCurrentEventEmitter
@@ -23028,8 +23004,8 @@ if (!Array.prototype.indexOf) {
 
         // Stage listeners.
         if (gameStage.step === 1 && gameStage.round === 1) {
-            if (this.game.getStageLevel() === STAGE &&
-                this.game.getStateLevel() === STATE) {
+            if (this.game.getStageLevel() === STAGE_INIT &&
+                this.game.getStateLevel() === STATE_STAGE_INIT) {
 
                 return this.events.ee.stage;
             }
@@ -23301,7 +23277,7 @@ if (!Array.prototype.indexOf) {
      *      if so returns with a warning.
      *  - Checks it there a `done` hanlder in the step, and if so
      *      executes. If the return value is falsy procedure stops.
-     *  - Marks the step as `willBeDone` and no further callas to
+     *  - Marks the step as `willBeDone` and no further calls to
      *      `node.done` are allowed in the same step.
      *  - Creates and send a SET message to server containing the time
      *      passed from the beginning of the step, if `done` was a timeup
@@ -23332,7 +23308,7 @@ if (!Array.prototype.indexOf) {
 
         game = this.game;
         if (game.willBeDone || game.getStageLevel() >= GETTING_DONE) {
-            node.err('node.done: done already called in this step.');
+            this.err('node.done: done already called in this step.');
             return false;
         }
 
@@ -24745,23 +24721,11 @@ if (!Array.prototype.indexOf) {
          * @see Stager.setState
          */
         this.registerSetup('plot', function(stagerState, updateRule) {
-            if (!this.game) {
-                throw new Error("node.setup.plot: node.game not found.");
-            }
-
             stagerState = stagerState || {};
-
-            if (!this.game.plot) {
-                this.game.plot = new GamePlot();
-            }
-
-            if (!this.game.plot.stager) {
-                this.game.plot.stager = new Stager();
-            }
 
             this.game.plot.stager.setState(stagerState, updateRule);
 
-            return this.game.plot;
+            return this.game.plot.stager;
         });
 
         (function(node) {
