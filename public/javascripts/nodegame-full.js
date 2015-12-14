@@ -13395,24 +13395,24 @@ if (!Array.prototype.indexOf) {
         }
 
         // return a step-defined rule
-        if ('string' === typeof stepObj.steprule) {
-            rule = parent.stepRules[stepObj.steprule];
+        if ('string' === typeof stepObj.stepRule) {
+            rule = parent.stepRules[stepObj.stepRule];
         }
-        else if ('function' === typeof stepObj.steprule) {
-            rule = stepObj.steprule;
+        else if ('function' === typeof stepObj.stepRule) {
+            rule = stepObj.stepRule;
         }
         if ('function' === typeof rule) return rule;
 
         // return a stage-defined rule
-        if ('string' === typeof stageObj.steprule) {
-            rule = parent.stepRules[stageObj.steprule];
+        if ('string' === typeof stageObj.stepRule) {
+            rule = parent.stepRules[stageObj.stepRule];
         }
-        else if ('function' === typeof stageObj.steprule) {
-            rule = stageObj.steprule;
+        else if ('function' === typeof stageObj.stepRule) {
+            rule = stageObj.stepRule;
         }
         if ('function' === typeof rule) return rule;
 
-        // Default rule
+        // Default rule.
         // TODO: Use first line once possible (serialization issue):
         //return this.stager.getDefaultStepRule();
         return this.stager.defaultStepRule;
