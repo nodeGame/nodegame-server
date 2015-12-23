@@ -1,6 +1,6 @@
 # nodegame-server change log
 
-# 0.9.11
+# 1.0.0
  - Callback to decorate client objects. The callback is loaded from the auth file.
  - Treatments are not deleted from required settints file.
 
