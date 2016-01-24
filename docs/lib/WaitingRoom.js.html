@@ -153,14 +153,7 @@ without relying on non-standard <code>__proto__</code></p>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-<span class="nx">WaitingRoom</span><span class="p">.</span><span class="nx">prototype</span> <span class="o">=</span>
-    <span class="nb">Object</span><span class="p">.</span><span class="nx">create</span> <span class="o">?</span> <span class="c1">// Object.create is not supported in all browsers</span>
-    <span class="nb">Object</span><span class="p">.</span><span class="nx">create</span><span class="p">(</span><span class="nx">HostRoom</span><span class="p">.</span><span class="nx">prototype</span><span class="p">)</span> <span class="o">:</span>
-    <span class="kd">function</span><span class="p">(</span><span class="nx">o</span><span class="p">)</span> <span class="p">{</span>
-        <span class="kd">var</span> <span class="nx">F</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(){};</span>
-        <span class="nx">F</span><span class="p">.</span><span class="nx">prototype</span> <span class="o">=</span> <span class="nx">o</span><span class="p">;</span>
-        <span class="k">return</span> <span class="k">new</span> <span class="nx">F</span><span class="p">();</span>
-    <span class="p">}(</span><span class="nx">Hostroom</span><span class="p">.</span><span class="nx">prototype</span><span class="p">);</span>
+<span class="nx">WaitingRoom</span><span class="p">.</span><span class="nx">prototype</span> <span class="o">=</span> <span class="nb">Object</span><span class="p">.</span><span class="nx">create</span><span class="p">(</span><span class="nx">HostRoom</span><span class="p">.</span><span class="nx">prototype</span><span class="p">);</span>
 
 <span class="nx">WaitingRoom</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">constructor</span> <span class="o">=</span> <span class="nx">WaitingRoom</span><span class="p">;</span>
 
@@ -198,6 +191,18 @@ without relying on non-standard <code>__proto__</code></p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="kd">function</span> <span class="nx">WaitingRoom</span><span class="p">(</span><span class="nx">config</span><span class="p">)</span> <span class="p">{</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-5" id="section-5">&#182;</a>
+</div>
+<p>Supercall</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
     <span class="nx">HostRoom</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="s1">&#39;Waiting&#39;</span><span class="p">,</span> <span class="nx">config</span><span class="p">);</span>
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">logicPath</span><span class="p">)</span> <span class="k">this</span><span class="p">.</span><span class="nx">logicPath</span>  <span class="o">=</span> <span class="s1">&#39;./rooms/wait.room&#39;</span><span class="p">;</span>
 
@@ -442,32 +447,53 @@ players to start the game.</p>
 <span class="nx">WaitingRoom</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">parseSettings</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">settings</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">d</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">where</span><span class="p">;</span>
-    <span class="nx">where</span> <span class="o">=</span> <span class="s1">&#39;WaitingRoom.parseSettings: &#39;</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">gameName</span><span class="p">;</span>
+    <span class="nx">gameName</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">gameInfo</span><span class="p">.</span><span class="nx">info</span><span class="p">.</span><span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39; &#39;</span><span class="p">;</span>
+    <span class="nx">where</span> <span class="o">=</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;WaitingRoom.parseSettings: &#39;</span><span class="p">;</span>
 
-
-
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span> <span class="s1">&#39;No settings provided to validate.&#39;</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">)</span> <span class="p">{</span>
+         <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span> <span class="s1">&#39;settings must be object.&#39;</span><span class="p">);</span>
     <span class="p">}</span>
 
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">GROUP_SIZE</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;number&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">GROUP_SIZE</span><span class="p">)</span> <span class="p">{</span>
         <span class="nx">checkPositiveInteger</span><span class="p">(</span><span class="nx">settings</span><span class="p">,</span> <span class="s1">&#39;GROUP_SIZE&#39;</span><span class="p">,</span> <span class="nx">where</span><span class="p">);</span>
         <span class="k">this</span><span class="p">.</span><span class="nx">GROUP_SIZE</span> <span class="o">=</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">GROUP_SIZE</span><span class="p">;</span>
     <span class="p">}</span>
     <span class="k">else</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span> <span class="s1">&#39;GROUP_SIZE must be defined.&#39;</span><span class="p">);</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span> <span class="s1">&#39;GROUP_SIZE must be a number.&#39;</span><span class="p">);</span>
     <span class="p">}</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">POOL_SIZE</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nx">checkPositiveInteger</span><span class="p">(</span><span class="nx">settings</span><span class="p">,</span> <span class="s1">&#39;POOL_SIZE&#39;</span><span class="p">,</span> <span class="nx">where</span><span class="p">);</span>
-        <span class="k">this</span><span class="p">.</span><span class="nx">POOL_SIZE</span> <span class="o">=</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">POOL_SIZE</span><span class="p">;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;number&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">POOL_SIZE</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">checkPositiveInteger</span><span class="p">(</span><span class="nx">settings</span><span class="p">,</span> <span class="s1">&#39;POOL_SIZE&#39;</span><span class="p">,</span> <span class="nx">where</span><span class="p">);</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">POOL_SIZE</span> <span class="o">=</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">POOL_SIZE</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="k">else</span> <span class="p">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span>
+                <span class="s1">&#39;POOL_SIZE must be a number or undefined.&#39;</span><span class="p">);</span>
+        <span class="p">}</span>
     <span class="p">}</span>
     <span class="k">else</span> <span class="p">{</span>
         <span class="k">this</span><span class="p">.</span><span class="nx">POOL_SIZE</span> <span class="o">=</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">GROUP_SIZE</span><span class="p">;</span>
     <span class="p">}</span>
 
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">EXECUTION_MODE</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span> <span class="s1">&#39;EXECUTION_MODE must be a string.&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="k">else</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">settings</span><span class="p">.</span><span class="nx">EXECUTION_MODE</span> <span class="o">!==</span> <span class="s1">&#39;TIMEOUT&#39;</span> <span class="o">&amp;&amp;</span>
+            <span class="nx">settings</span><span class="p">.</span><span class="nx">EXECUTION_MODE</span> <span class="o">!==</span> <span class="s1">&#39;WAIT_FOR_N_PLAYERS&#39;</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span> <span class="s1">&#39;Invalid exection mode: &#39;</span> <span class="o">+</span>
+                <span class="nx">settings</span><span class="p">.</span><span class="nx">EXECUTION_MODE</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">EXECUTION_MODE</span> <span class="o">=</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">EXECUTION_MODE</span><span class="p">;</span>
+    <span class="p">}</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">START_DATE</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">EXECUTION_MODE</span> <span class="o">===</span> <span class="s1">&#39;WAIT_FOR_N_PLAYERS&#39;</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span> <span class="s1">&#39;Execution mode &#39;</span> <span class="o">+</span> <span class="k">this</span><span class="p">.</span><span class="nx">EXECUTION_MODE</span> <span class="o">+</span>
+                <span class="s1">&#39; cannot have a START_DATE&#39;</span><span class="p">);</span>
+        <span class="p">}</span>
         <span class="nx">d</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">Date</span><span class="p">(</span><span class="nx">settings</span><span class="p">.</span><span class="nx">START_DATE</span><span class="p">);</span>
         <span class="k">if</span> <span class="p">(</span><span class="nb">isNaN</span><span class="p">(</span><span class="nx">d</span><span class="p">.</span><span class="nx">getTime</span><span class="p">()))</span> <span class="p">{</span>
             <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span> <span class="p">(</span><span class="nx">where</span> <span class="o">+</span> <span class="s1">&#39;START_DATE must be valid argument for&#39;</span> <span class="o">+</span>
@@ -480,39 +506,33 @@ players to start the game.</p>
         <span class="k">this</span><span class="p">.</span><span class="nx">START_DATE</span> <span class="o">=</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">START_DATE</span><span class="p">;</span>
     <span class="p">}</span>
     <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">MAX_WAIT_TIME</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nx">checkPositiveInteger</span><span class="p">(</span><span class="nx">settings</span><span class="p">,</span> <span class="s1">&#39;MAX_WAIT_TIME&#39;</span><span class="p">,</span> <span class="nx">where</span><span class="p">);</span>
-        <span class="k">this</span><span class="p">.</span><span class="nx">MAX_WAIT_TIME</span> <span class="o">=</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">MAX_WAIT_TIME</span><span class="p">;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;number&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">MAX_WAIT_TIME</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">checkPositiveInteger</span><span class="p">(</span><span class="nx">settings</span><span class="p">,</span> <span class="s1">&#39;MAX_WAIT_TIME&#39;</span><span class="p">,</span> <span class="nx">where</span><span class="p">);</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">MAX_WAIT_TIME</span> <span class="o">=</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">MAX_WAIT_TIME</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="k">else</span> <span class="p">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span> <span class="s1">&#39;MAX_WAIT_TIME must be &#39;</span> <span class="o">+</span>
+                   <span class="s1">&#39;a number or undefined.&#39;</span><span class="p">);</span>
+        <span class="p">}</span>
     <span class="p">}</span>
     <span class="k">else</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span> <span class="s1">&#39;Either MAX_WAIT_TIME or START_DATE must be &#39;</span> <span class="o">+</span>
-            <span class="s1">&#39;defined.&#39;</span><span class="p">);</span>
-    <span class="p">}</span>
-
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">EXECUTION_MODE</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">EXECUTION_MODE</span><span class="p">)</span> <span class="p">{</span>
-            <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span> <span class="s1">&#39;EXECUTION_MODE must be a string.&#39;</span><span class="p">);</span>
+        <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">EXECUTION_MODE</span> <span class="o">===</span> <span class="s1">&#39;TIMEOUT&#39;</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span> <span class="s1">&#39;For EXECUTION_MODE &quot;TIMEOUT&quot; either &#39;</span> <span class="o">+</span>
+                <span class="s1">&#39;MAX_WAIT_TIME or START_DATE must be &#39;</span> <span class="o">+</span> <span class="s1">&#39;defined.&#39;</span><span class="p">);</span>
         <span class="p">}</span>
-        <span class="k">if</span> <span class="p">(</span><span class="nx">settings</span><span class="p">.</span><span class="nx">EXECUTION_MODE</span> <span class="o">!==</span> <span class="s1">&#39;TIMEOUT&#39;</span> <span class="o">&amp;&amp;</span>
-            <span class="nx">settings</span><span class="p">.</span><span class="nx">EXECUTION_MODE</span> <span class="o">!==</span> <span class="s1">&#39;WAIT_FOR_N_PLAYERS&#39;</span><span class="p">)</span> <span class="p">{</span>
-            <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span> <span class="s1">&#39;Invalid exection mode: &#39;</span> <span class="o">+</span>
-                <span class="nx">settings</span><span class="p">.</span><span class="nx">EXECUTION_MODE</span><span class="p">);</span>
-        <span class="p">}</span>
-        <span class="k">this</span><span class="p">.</span><span class="nx">EXECUTION_MODE</span> <span class="o">=</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">EXECUTION_MODE</span><span class="p">;</span>
-    <span class="p">}</span>
-    <span class="k">else</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span> <span class="s1">&#39;EXECUTION_MODE must not be undefined.&#39;</span><span class="p">);</span>
     <span class="p">}</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">ON_TIMEOUT</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;function&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">ON_TIMEOUT</span><span class="p">)</span> <span class="p">{</span>
-            <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span> <span class="s1">&#39;ON_TIMEOUT must be a function or undefined.&#39;</span><span class="p">);</span>
+            <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span>
+                <span class="s1">&#39;ON_TIMEOUT must be a function or undefined.&#39;</span><span class="p">);</span>
         <span class="p">}</span>
         <span class="k">this</span><span class="p">.</span><span class="nx">ON_TIMEOUT</span> <span class="o">=</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">ON_TIMEOUT</span><span class="p">;</span>
     <span class="p">}</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">CHOSEN_TREATMENT</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">CHOSEN_TREATMENT</span><span class="p">)</span> <span class="p">{</span>
-            <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span> <span class="s1">&#39;CHOSEN_TREATMENT must be string or &#39;</span> <span class="o">+</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span> <span class="s1">&#39;CHOSEN_TREATMENT must be string or &#39;</span> <span class="o">+</span>
                 <span class="s1">&#39;undefined&#39;</span><span class="p">);</span>
         <span class="p">}</span>
         <span class="k">this</span><span class="p">.</span><span class="nx">CHOSEN_TREATMENT</span> <span class="o">=</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">CHOSEN_TREATMENT</span><span class="p">;</span>
@@ -657,7 +677,7 @@ players to start the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-19" id="section-19">&#182;</a>
+  <a class="pilcrow" href="#section-20" id="section-20">&#182;</a>
 </div>
 <p>Shuffle player list.</p>
         </td>
@@ -671,7 +691,7 @@ players to start the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-20" id="section-20">&#182;</a>
+  <a class="pilcrow" href="#section-21" id="section-21">&#182;</a>
 </div>
 <p>Inform players.</p>
         </td>
@@ -684,7 +704,7 @@ players to start the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-21" id="section-21">&#182;</a>
+  <a class="pilcrow" href="#section-22" id="section-22">&#182;</a>
 </div>
 <p>Players that may join the game.</p>
         </td>
@@ -699,7 +719,7 @@ players to start the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-22" id="section-22">&#182;</a>
+  <a class="pilcrow" href="#section-23" id="section-23">&#182;</a>
 </div>
 <p>Clear body.</p>
         </td>
@@ -720,7 +740,7 @@ players to start the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-23" id="section-23">&#182;</a>
+  <a class="pilcrow" href="#section-24" id="section-24">&#182;</a>
 </div>
 <p>Clear timeout for players.</p>
         </td>
@@ -735,7 +755,7 @@ players to start the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-24" id="section-24">&#182;</a>
+  <a class="pilcrow" href="#section-25" id="section-25">&#182;</a>
 </div>
 <p>Choose players.</p>
         </td>
@@ -749,7 +769,7 @@ players to start the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-25" id="section-25">&#182;</a>
+  <a class="pilcrow" href="#section-26" id="section-26">&#182;</a>
 </div>
 <p>Decide treatment.</p>
         </td>
@@ -763,7 +783,7 @@ players to start the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-26" id="section-26">&#182;</a>
+  <a class="pilcrow" href="#section-27" id="section-27">&#182;</a>
 </div>
 <p>Create new game room.</p>
         </td>
@@ -780,7 +800,7 @@ players to start the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-27" id="section-27">&#182;</a>
+  <a class="pilcrow" href="#section-28" id="section-28">&#182;</a>
 </div>
 <p>Setup and start game.</p>
         </td>
@@ -860,7 +880,7 @@ players to start the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-29" id="section-29">&#182;</a>
+  <a class="pilcrow" href="#section-30" id="section-30">&#182;</a>
 </div>
 <p>See if an access code is defined, if so checkout remotely
 also.</p>
@@ -914,7 +934,7 @@ also.</p>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">WaitingRoom</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">clearTimeOut</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">playerID</span><span class="p">)</span> <span class="p">{</span>
     <span class="nx">clearTimeout</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">timeOuts</span><span class="p">[</span><span class="nx">playerID</span><span class="p">]);</span>
-    <span class="k">delete</span> <span class="k">this</span><span class="p">.</span><span class="nx">timeOuts</span><span class="p">[</span><span class="nx">playerID</span><span class="p">];</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">timeOuts</span><span class="p">[</span><span class="nx">playerID</span><span class="p">]</span> <span class="o">=</span> <span class="kc">null</span><span class="p">;</span>
 <span class="p">};</span>
 
 
@@ -1033,8 +1053,8 @@ also.</p>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="kd">function</span> <span class="nx">checkPositiveInteger</span><span class="p">(</span><span class="nx">settings</span><span class="p">,</span> <span class="nx">name</span><span class="p">,</span> <span class="nx">where</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">N</span><span class="p">;</span>
-    <span class="nx">N</span> <span class="o">=</span> <span class="nb">parseFloat</span><span class="p">(</span><span class="nx">settings</span><span class="p">[</span><span class="nx">name</span><span class="p">]);</span>
-    <span class="k">if</span> <span class="p">(</span><span class="nb">isNaN</span><span class="p">(</span><span class="nx">N</span><span class="p">)</span> <span class="o">||</span> <span class="nx">N</span> <span class="o">%</span> <span class="mi">1</span> <span class="o">!==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">N</span> <span class="o">=</span> <span class="nx">settings</span><span class="p">[</span><span class="nx">name</span><span class="p">];</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">J</span><span class="p">.</span><span class="nx">isInt</span><span class="p">(</span><span class="nx">N</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span> <span class="p">{</span>
         <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span> <span class="p">(</span><span class="nx">where</span> <span class="o">+</span> <span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39; must be an&#39;</span> <span class="o">+</span>
         <span class="s1">&#39; integer and larger than 0.&#39;</span> <span class="o">+</span>
         <span class="s1">&#39; Provided value: &#39;</span> <span class="o">+</span> <span class="nx">N</span><span class="p">);</span>

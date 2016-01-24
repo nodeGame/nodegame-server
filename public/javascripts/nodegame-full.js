@@ -5275,6 +5275,8 @@ if (!Array.prototype.indexOf) {
      * Non-numbers, Infinity, NaN, and floats will return FALSE
      *
      * @param {mixed} n The value to check
+     * @param {number} lower Optional. If set, n must be greater than lower
+     * @param {number} upper Optional. If set, n must be smaller than upper
      *
      * @return {boolean|number} The parsed integer, or FALSE if none was found
      *
@@ -5298,6 +5300,8 @@ if (!Array.prototype.indexOf) {
      * Non-numbers, Infinity, NaN, and integers will return FALSE
      *
      * @param {mixed} n The value to check
+     * @param {number} lower Optional. If set, n must be greater than lower
+     * @param {number} upper Optional. If set, n must be smaller than upper
      *
      * @return {boolean|number} The parsed float, or FALSE if none was found
      *
@@ -5320,6 +5324,8 @@ if (!Array.prototype.indexOf) {
      * Non-numbers, Infinity, NaN will return FALSE
      *
      * @param {mixed} n The value to check
+     * @param {number} lower Optional. If set, n must be greater than lower
+     * @param {number} upper Optional. If set, n must be smaller than upper
      *
      * @return {boolean|number} The parsed number, or FALSE if none was found
      *
@@ -9880,7 +9886,7 @@ if (!Array.prototype.indexOf) {
     node.support = JSUS.compatibility();
 
     // Auto-Generated.
-    node.version = '0.9.10';
+    node.version = '1.0.0';
 
 })(window);
 
@@ -10083,6 +10089,8 @@ if (!Array.prototype.indexOf) {
         STAGE_INIT:    10,  // calling stage's init
         STEP_INIT:     20,  // calling step's init
         PLAYING_STEP:  30,  // executing step
+        STAGE_EXIT:    50,  // calling stage's cleanup
+        STEP_EXIT:     60,  // calling step's clenaup
         FINISHING:     70,  // calling game's gameover
         GAMEOVER:     100,  // game complete
         RUNTIME_ERROR: -1
@@ -10127,7 +10135,9 @@ if (!Array.prototype.indexOf) {
         GETTING_DONE:        90, // Done is being called,
                                  // and the step rule evaluated.
 
-        DONE:                100 // Player completed the stage
+        DONE:               100, // Player completed the stage
+
+        EXITING:            110, // Cleanup function being called (if found)
     };
 
     /**
@@ -10477,8 +10487,14 @@ if (!Array.prototype.indexOf) {
     EventEmitter.prototype.once = function(type, listener) {
         var that = this;
         function g() {
+            var i, len, args;
+            args = [];
+            i = -1, len = arguments.length;
+            for ( ; ++i < len ; ) {
+                args[i] = arguments[i];
+            }
             that.remove(type, g);
-            listener.apply(that.node.game, arguments);
+            listener.apply(that.node.game, args);
         }
         this.on(type, g);
     };
@@ -10566,9 +10582,15 @@ if (!Array.prototype.indexOf) {
         if (node.conf && node.conf.events &&
             node.conf.events.history) {
 
+            len = arguments.length;
+            args = new Array(len);
+            for (i = -1 ; ++i < len ; ) {
+                args[i] = arguments[i];
+            }
+
             this.history.insert({
                 stage: node.game.getCurrentGameStage(),
-                args: arguments
+                args: args
             });
         }
 
@@ -10580,6 +10602,8 @@ if (!Array.prototype.indexOf) {
      *
      * Fires all the listeners associated with an event asynchronously
      *
+     * The event must be already existing, cannot be added after the call.
+     *
      * Unlike normal emit, it does not return a value.
      *
      * @see EventEmitter.emit
@@ -10587,9 +10611,11 @@ if (!Array.prototype.indexOf) {
     EventEmitter.prototype.emitAsync = function() {
         var that, len, args, i;
         var arg1, arg2, arg3;
-        len = arguments.length;
-        if (!len) return;
+        arg1 = arguments[0];
 
+        if (!this.events[arg1]) return;
+
+        len = arguments.length;
         that = this;
 
         // The arguments object must not be passed or leaked anywhere.
@@ -10598,15 +10624,14 @@ if (!Array.prototype.indexOf) {
         switch(len) {
 
         case 1:
-            arg1 = arguments[0];
             setTimeout(function() { that.emit(arg1); }, 0);
             break;
         case 2:
-            arg1 = arguments[0], arg2 = arguments[1];
+            arg2 = arguments[1];
             setTimeout(function() { that.emit(arg1, arg2); }, 0);
             break;
         case 3:
-            arg1 = arguments[0], arg2 = arguments[1], arg3 = arguments[2];
+            arg2 = arguments[1], arg3 = arguments[2];
             setTimeout(function() { that.emit(arg1, arg2, arg3); }, 0);
             break;
         default:
@@ -10632,7 +10657,7 @@ if (!Array.prototype.indexOf) {
     EventEmitter.prototype.remove = EventEmitter.prototype.off =
     function(type, listener) {
 
-        var listeners, len, i, node, found, name, removed;
+        var listeners, len, i, node, found, oneFound, name, removed;
 
         removed = [];
         node = this.node;
@@ -10657,8 +10682,11 @@ if (!Array.prototype.indexOf) {
         if (this.events[type]) {
 
             if (!listener) {
-                found = true;
-                removed.push(this.events[type]);
+                oneFound = true;
+                i = -1, len = this.events[type].length;
+                for ( ; ++i < len ; ) {
+                    removed.push(this.events[type][i]);
+                }
                 delete this.events[type];
             }
 
@@ -10670,15 +10698,15 @@ if (!Array.prototype.indexOf) {
                 if ('function' === typeof this.events[type]) {
 
                     if ('function' === typeof listener) {
-                        if (listener == this.events[type]) found = true;
+                        if (listener == this.events[type]) oneFound = true;
                     }
                     else {
                         // String.
                         name = J.funcName(this.events[type]);
-                        if (name === listener) found = true;
+                        if (name === listener) oneFound = true;
                     }
 
-                    if (found) {
+                    if (oneFound) {
                         removed.push(this.events[type]);
                         delete this.events[type];
                     }
@@ -10688,6 +10716,7 @@ if (!Array.prototype.indexOf) {
                     listeners = this.events[type];
                     len = listeners.length;
                     for (i = 0; i < len; i++) {
+                        found = false;
                         if ('function' === typeof listener) {
                             if (listeners[i] == listener) found = true;
                         }
@@ -10698,6 +10727,7 @@ if (!Array.prototype.indexOf) {
                         }
 
                         if (found) {
+                            oneFound = true;
                             removed.push(listeners[i]);
                             if (len === 1) {
                                 delete this.events[type];
@@ -10715,7 +10745,7 @@ if (!Array.prototype.indexOf) {
             }
         }
 
-        if (found) {
+        if (oneFound) {
             // Storing changes if necessary.
             if (this.recordChanges) {
                 i = -1, len = removed.length;
@@ -10742,7 +10772,56 @@ if (!Array.prototype.indexOf) {
      * Removes all registered event listeners
      */
     EventEmitter.prototype.clear = function() {
+        var event, i, len;
+        if (this.recordChanges) {
+            for (event in this.events) {
+                if ('function' === typeof this.events[event]) {
+                    this.changes.removed.push({
+                        type: event,
+                        listener: this.events[event]
+                    });
+                }
+                else if (J.isArray(this.events[event])) {
+                    i = -1, len = this.events[event].length;
+                    for ( ; ++i < len ; ) {
+                        this.changes.removed.push({
+                            type: event,
+                            listener: this.events[event][i]
+                        });
+                    }
+                }
+            }
+        }
         this.events = {};
+    };
+
+    /**
+     * ### EventEmitter.size
+     *
+     * Returns the number of registered events / event listeners
+     *
+     * @param {mixed} Optional. Modifier controlling the return value
+     *
+     * @return {number} Depending on the value of the modifier returns
+     *   the total number of:
+     *
+     *    - Not set:  events registered
+     *    - String:   event listeners for the specified event
+     *    - true:     event listeners for all events
+     */
+    EventEmitter.prototype.size = function(mod) {
+        var count;
+        if (!mod) return J.size(this.events);
+        if ('string' === typeof mod) {
+            if (!this.events[mod]) return 0;
+            if ('function' === typeof this.events[mod]) return 1;
+            return this.events[mod].length;
+        }
+        count = 0;
+        for (mod in this.events) {
+            count += this.size(mod);
+        }
+        return count;
     };
 
     /**
@@ -10757,10 +10836,9 @@ if (!Array.prototype.indexOf) {
         totalLen = 0, str = '';
         for (i in this.events) {
             if (this.events.hasOwnProperty(i)) {
-                len = ('function' === typeof this.events[i]) ?
-                    1 : this.events[i].length;
-                totalLen += len;
+                len = this.size(i);
                 str += i + ': ' + len + "\n";
+                totalLen += len;
             }
         }
         console.log('[' + this.name + '] ' + totalLen + ' listener/s.');
@@ -10831,149 +10909,9 @@ if (!Array.prototype.indexOf) {
         this.createEE('game');
         this.createEE('stage');
         this.createEE('step');
-
-        // Groups disabled for the moment.
-        // this.createEEGroup('game', 'step', 'stage', 'game');
-        // this.createEEGroup('stage', 'stage', 'game');
     }
 
     // ## EventEmitterManager methods
-
-    /**
-     * ### EventEmitterManager.createEEGroup
-     *
-     * Creates a group of event emitters
-     *
-     * Accepts a variable number of input parameters.
-     * These are the names of existing event emitters.
-     *
-     * Adds _global_ methods: emit, on, once, remove, printAll methods to be
-     * applied to every element of the group
-     *
-     * @param {string} groupName The name of the event emitter group
-     *
-     * @return {object} A reference to the event emitter group
-     *
-     * @see EventEmitterManager.createEE
-     *
-     * TODO: check if this code is still valid.
-     */
-    EventEmitterManager.prototype.createEEGroup = function(groupName) {
-        var i, len, that, args;
-        len = arguments.length, that = this;
-
-        if (!len) {
-            throw new Error('EventEmitterManager.createEEGroup: ' +
-                            'EEGroup needs a name and valid members.');
-        }
-        if (len === 1) {
-            throw new Error('EventEmitterManager.createEEGroup: ' +
-                            'EEGroup needs at least one member.');
-        }
-
-        // Checking if each ee exist.
-        for (i = 1; i < len; i++) {
-            if ('string' !== typeof arguments[i]) {
-                throw new TypeError('EventEmitterManager.createEEGroup: ' +
-                                    'EventEmitter name must be string.');
-            }
-            if (!this.ee[arguments[i]]) {
-                throw new Error('EventEmitterManager.createEEGroup: ' +
-                                'non-existing EventEmitter in group ' +
-                                groupName + ': ' + arguments[i]);
-            }
-        }
-
-        // Copying the args obj into an array.
-        args = new Array(len - 1);
-        for (i = 1; i < len; i++) {
-            args[i - 1] = arguments[i];
-        }
-
-        switch (len) {
-            // Fast cases.
-        case 2:
-            this[groupName] = this.ee[args[0]];
-            break;
-        case 3:
-            this[groupName] = {
-                emit: function() {
-                    that.ee[args[0]].emit(arguments);
-                    that.ee[args[1]].emit(arguments);
-                },
-                on: this.ee[args[0]].on,
-                once: this.ee[args[1]].once,
-                clear: function() {
-                    that.ee[args[0]].clear();
-                    that.ee[args[1]].clear();
-                },
-                remove: function() {
-                    that.ee[args[0]].remove(arguments);
-                    that.ee[args[1]].remove(arguments);
-                },
-                printAll: function() {
-                    that.ee[args[0]].printAll();
-                    that.ee[args[1]].printAll();
-                }
-            };
-            break;
-        case 4:
-            this[groupName] = {
-                emit: function() {
-                    that.ee[args[0]].emit(arguments);
-                    that.ee[args[1]].emit(arguments);
-                    that.ee[args[2]].emit(arguments);
-                },
-                on: this.ee[args[0]].on,
-                once: this.ee[args[1]].once,
-                clear: function() {
-                    that.ee[args[0]].clear();
-                    that.ee[args[1]].clear();
-                    that.ee[args[2]].clear();
-                },
-                remove: function() {
-                    that.ee[args[0]].remove(arguments);
-                    that.ee[args[1]].remove(arguments);
-                    that.ee[args[2]].remove(arguments);
-                },
-                printAll: function() {
-                    that.ee[args[0]].printAll();
-                    that.ee[args[1]].printAll();
-                    that.ee[args[2]].printAll();
-                }
-            };
-            break;
-        default:
-            // Slower.
-            len = args.len;
-            this[groupName] = {
-                emit: function() {
-                    for (i = 0; i < len; i++) {
-                        that.ee[args[i]].emit(arguments);
-                    }
-                },
-                on: this.ee[args[0]].on,
-                once: this.ee[args[1]].once,
-                clear: function() {
-                    for (i = 0; i < len; i++) {
-                        that.ee[args[i]].clear();
-                    }
-
-                },
-                remove: function() {
-                    for (i = 0; i < len; i++) {
-                        that.ee[args[i]].remove(arguments);
-                    }
-                },
-                printAll: function() {
-                    for (i = 0; i < len; i++) {
-                        that.ee[args[i]].printAll();
-                    }
-                }
-            };
-        }
-        return this[groupName];
-    };
 
     /**
      * ### EventEmitterManager.createEE
@@ -10983,6 +10921,7 @@ if (!Array.prototype.indexOf) {
      * A double reference is added to _this.ee_ and to _this_.
      *
      * @param {string} name The name of the event emitter
+     *
      * @return {EventEmitter} A reference to the newly created event emitter
      *
      * @see EventEmitter constructor
@@ -10999,20 +10938,18 @@ if (!Array.prototype.indexOf) {
      * Removes an existing event emitter
      *
      * @param {string} name The name of the event emitter
+     *
      * @return {boolean} TRUE, on success
      *
      * @see EventEmitterManager.createEE
-     *
-     * TODO: the event emitter should be removed by the group
      */
     EventEmitterManager.prototype.destroyEE = function(name) {
         var ee;
-        ee = this.ee[name];
         if ('string' !== typeof name) {
-            this.node.warn('EventEmitterManager.destroyEE: name must be ' +
-                           'string.');
-            return false;
+            throw new TypeError('EventEmitterManager.destroyEE: name must be ' +
+                                'string.');
         }
+        if (!this.ee[name]) return false;
         delete this[name];
         delete this.ee[name];
         return true;
@@ -11021,15 +10958,13 @@ if (!Array.prototype.indexOf) {
     /**
      * ### EventEmitterManager.clear
      *
-     * Removes all registered event listeners from all registered event emitters
+     * Removes all registered event listeners from all event emitters
      */
     EventEmitterManager.prototype.clear = function() {
-        var i;
-        for (i in this.ee) {
-            if (this.ee.hasOwnProperty(i)) {
-                this.ee[i].clear();
-            }
-        }
+        this.ng.clear();
+        this.game.clear();
+        this.stage.clear();
+        this.step.clear();
     };
 
     /**
@@ -11064,33 +10999,33 @@ if (!Array.prototype.indexOf) {
 
         case 1:
             tmpRes = ees.ng.emit(eventName);
-            if (tmpRes) res.push(tmpRes);
+            if ('undefined' !== typeof tmpRes) res.push(tmpRes);
             tmpRes = ees.game.emit(eventName);
-            if (tmpRes) res.push(tmpRes);
+            if ('undefined' !== typeof tmpRes) res.push(tmpRes);
             tmpRes = ees.stage.emit(eventName);
-            if (tmpRes) res.push(tmpRes);
+            if ('undefined' !== typeof tmpRes) res.push(tmpRes);
             tmpRes = ees.step.emit(eventName);
-            if (tmpRes) res.push(tmpRes);
+            if ('undefined' !== typeof tmpRes) res.push(tmpRes);
             break;
         case 2:
             tmpRes = ees.ng.emit(eventName, arguments[1]);
-            if (tmpRes) res.push(tmpRes);
+            if ('undefined' !== typeof tmpRes) res.push(tmpRes);
             tmpRes = ees.game.emit(eventName, arguments[1]);
-            if (tmpRes) res.push(tmpRes);
+            if ('undefined' !== typeof tmpRes) res.push(tmpRes);
             tmpRes = ees.stage.emit(eventName, arguments[1]);
-            if (tmpRes) res.push(tmpRes);
+            if ('undefined' !== typeof tmpRes) res.push(tmpRes);
             tmpRes = ees.step.emit(eventName, arguments[1]);
-            if (tmpRes) res.push(tmpRes);
+            if ('undefined' !== typeof tmpRes) res.push(tmpRes);
             break;
         case 3:
             tmpRes = ees.ng.emit(eventName, arguments[1], arguments[2]);
-            if (tmpRes) res.push(tmpRes);
+            if ('undefined' !== typeof tmpRes) res.push(tmpRes);
             tmpRes = ees.game.emit(eventName, arguments[1], arguments[2]);
-            if (tmpRes) res.push(tmpRes);
+            if ('undefined' !== typeof tmpRes) res.push(tmpRes);
             tmpRes = ees.stage.emit(eventName, arguments[1], arguments[2]);
-            if (tmpRes) res.push(tmpRes);
+            if ('undefined' !== typeof tmpRes) res.push(tmpRes);
             tmpRes = ees.step.emit(eventName, arguments[1], arguments[2]);
-            if (tmpRes) res.push(tmpRes);
+            if ('undefined' !== typeof tmpRes) res.push(tmpRes);
             break;
         default:
             args = new Array(len);
@@ -11098,13 +11033,13 @@ if (!Array.prototype.indexOf) {
                 args[i] = arguments[i];
             }
             tmpRes = ees.ng.emit.apply(ees.ng, args);
-            if (tmpRes) res.push(tmpRes);
+            if ('undefined' !== typeof tmpRes) res.push(tmpRes);
             tmpRes = ees.game.emit.apply(ees.game, args);
-            if (tmpRes) res.push(tmpRes);
+            if ('undefined' !== typeof tmpRes) res.push(tmpRes);
             tmpRes = ees.stage.emit.apply(ees.stage, args);
-            if (tmpRes) res.push(tmpRes);
+            if ('undefined' !== typeof tmpRes) res.push(tmpRes);
             tmpRes = ees.step.emit.apply(ees.step, args);
-            if (tmpRes) res.push(tmpRes);
+            if ('undefined' !== typeof tmpRes) res.push(tmpRes);
         }
 
         // If there are less than 2 elements, unpack the array.
@@ -11175,12 +11110,13 @@ if (!Array.prototype.indexOf) {
      * Removes an event / event listener from all registered event emitters
      *
      * @param {string} eventName The name of the event
-     * @param {function} listener Optional A reference of the function to remove
+     * @param {function|string} listener Optional A reference to the
+     *   function to remove, or its name
      *
-     * @return {boolean} TRUE if the listener was found and removed
+     * @return {object} Object containing removed listeners by event emitter
      */
     EventEmitterManager.prototype.remove = function(eventName, listener) {
-        var i, res, tmpRes;
+        var res;
         if ('string' !== typeof eventName) {
             throw new TypeError('EventEmitterManager.remove: ' +
                                 'eventName must be string.');
@@ -11189,27 +11125,25 @@ if (!Array.prototype.indexOf) {
             ('function' !== typeof listener && 'string' !== typeof listener)) {
             throw new TypeError('EventEmitter.remove (' + this.name +
                                 '): listener must be function, string, or ' +
-                               'undefined.');
+                                'undefined.');
         }
-        res = false;
-        for (i in this.ee) {
-            if (this.ee.hasOwnProperty(i)) {
-                tmpRes = this.ee[i].remove(eventName, listener);
-                res = res || !!tmpRes.length;
-            }
-        }
+        res = {};
+        res.ng = this.ng.remove(eventName, listener);
+        res.game = this.game.remove(eventName, listener);
+        res.stage = this.stage.remove(eventName, listener);
+        res.step = this.step.remove(eventName, listener);
         return res;
     };
 
     /**
-     * ### EventEmitterManager.remove
+     * ### EventEmitterManager.printAll
      *
      * Prints all registered events
      *
      * @param {string} eventEmitterName Optional The name of the event emitter
      */
     EventEmitterManager.prototype.printAll = function(eventEmitterName) {
-        var i, total;
+        var total;
         if (eventEmitterName && 'string' !== typeof eventEmitterName) {
             throw new TypeError('EventEmitterManager.printAll: ' +
                                 'eventEmitterName must be string or ' +
@@ -11220,17 +11154,18 @@ if (!Array.prototype.indexOf) {
                                 'emitter not found: ' + eventEmitterName + '.');
         }
         if (eventEmitterName) {
-            this.ee[eventEmitterName].printAll();
+            total = this.ee[eventEmitterName].printAll();
         }
         else {
             total = 0;
-            for (i in this.ee) {
-                if (this.ee.hasOwnProperty(i)) {
-                    total += this.ee[i].printAll();
-                }
-            }
+            total += this.ng.printAll();
+            total += this.game.printAll();
+            total += this.stage.printAll();
+            total += this.step.printAll();
+
             console.log('Total number of registered listeners: ' + total + '.');
         }
+        return total;
     };
 
     /**
@@ -11241,7 +11176,7 @@ if (!Array.prototype.indexOf) {
      * @param {string} eventEmitterName Optional The name of the event emitter
      */
     EventEmitterManager.prototype.getAll = function(eventEmitterName) {
-        var i, events;
+        var events;
         if (eventEmitterName && 'string' !== typeof eventEmitterName) {
             throw new TypeError('EventEmitterManager.printAll: ' +
                                 'eventEmitterName must be string or ' +
@@ -11255,12 +11190,12 @@ if (!Array.prototype.indexOf) {
             events = this.ee[eventEmitterName].events;
         }
         else {
-            events = {};
-            for (i in this.ee) {
-                if (this.ee.hasOwnProperty(i)) {
-                    events[i] = this.ee[i].events;
-                }
-            }
+            events = {
+                ng: this.ng.events,
+                game: this.game.events,
+                stage: this.stage.events,
+                step: this.step.events
+            };
         }
         return events;
     };
@@ -11315,6 +11250,28 @@ if (!Array.prototype.indexOf) {
         out.stage = this.ee.stage.setRecordChanges(record);
         out.step = this.ee.step.setRecordChanges(record);
         return out;
+    };
+
+    /**
+     * ### EventEmitterManager.size
+     *
+     * Returns the number of registered events / event listeners
+     *
+     * Calls the `size` method of each event emitter.
+     *
+     * @param {mixed} Optional. Modifier controlling the return value
+     *
+     * @return {number} Total number of registered events / event listeners
+     *
+     * @see EventEmitter.size
+     */
+    EventEmitterManager.prototype.size = function(mod) {
+        var count;
+        count = this.ng.size(mod);
+        count += this.game.size(mod);
+        count += this.stage.size(mod);
+        count += this.step.size(mod);
+        return count;
     };
 
     /**
@@ -12823,19 +12780,28 @@ if (!Array.prototype.indexOf) {
      * If the Stager parameter has an empty sequence, flexible mode is assumed
      * (used by e.g. GamePlot.next).
      *
+     * @param {NodeGameClient} node Reference to current node object
      * @param {Stager} stager Optional. The Stager object.
      *
      * @see Stager
      */
-    function GamePlot(stager) {
-        this.init(stager);
+    function GamePlot(node, stager) {
 
         /**
-         * ### GamePlot.log
+         * ## GamePlot.node
          *
-         * Default stdout output. Override to redirect.
+         * Reference to the node object
          */
-        this.log = console.log;
+        this.node = node;
+
+        /**
+         * ## GamePlot.stager
+         *
+         * The stager object used to perform stepping operations
+         */
+        this.stager = null;
+
+        this.init(stager);
     }
 
     // ## GamePlot methods
@@ -12859,24 +12825,6 @@ if (!Array.prototype.indexOf) {
         else {
             this.stager = null;
         }
-    };
-
-    /**
-     * ### GamePlot.setDefaultLog
-     *
-     * Sets the default stdout function for game plot and stager (if any)
-     *
-     * @param {function} log The logging function
-     *
-     * @see Stager.log
-     */
-    GamePlot.prototype.setDefaultLog = function(log) {
-        if ('function' !== typeof log) {
-            throw new TypeError('GamePlot.setDefaultLog: log must be ' +
-                                'function.');
-        }
-        this.log = log;
-        if (this.stager) this.stager.log = this.log;
     };
 
     /**
@@ -13007,8 +12955,6 @@ if (!Array.prototype.indexOf) {
             // Get stage object.
             stageObj = this.stager.stages[seqObj.id];
 
-            // Ste was:
-            //steps = stageObj.steps;
             steps = seqObj.steps;
 
             // Handle stepping:
@@ -13030,14 +12976,15 @@ if (!Array.prototype.indexOf) {
             }
 
             // Handle looping blocks:
-            if ((seqObj.type === 'doLoop' || seqObj.type === 'loop') &&
-                seqObj.cb()) {
-
-                return new GameStage({
-                    stage: stageNo,
-                    step:  1,
-                    round: normStage.round + 1
-                });
+            if (seqObj.type === 'doLoop' || seqObj.type === 'loop') {
+                // Call loop function. True means continue loop.
+                if (seqObj.cb.call(this.node.game)) {
+                    return new GameStage({
+                        stage: stageNo,
+                        step:  1,
+                        round: normStage.round + 1
+                    });
+                }
             }
 
             // Go to next stage:
@@ -13098,7 +13045,7 @@ if (!Array.prototype.indexOf) {
         // Get normalized GameStage:
         normStage = this.normalizeGameStage(curStage);
         if (normStage === null) {
-            node.warn('previous received invalid stage: ' + curStage);
+            this.node.warn('previous received invalid stage: ' + curStage);
             return null;
         }
         stageNo  = normStage.stage;
@@ -13120,8 +13067,6 @@ if (!Array.prototype.indexOf) {
             if (curStage.round > 1) {
                 return new GameStage({
                     stage: stageNo,
-                    // was:
-                    // step:  stageObj.steps.length,
                     step:  seqObj.steps.length,
                     round: curStage.round - 1
                 });
@@ -13133,8 +13078,6 @@ if (!Array.prototype.indexOf) {
 
                 return new GameStage({
                     stage: stageNo,
-                    // was:
-                    //step:  stageObj.steps.length,
                     step:  seqObj.steps.length,
                     round: 1
                 });
@@ -13169,8 +13112,6 @@ if (!Array.prototype.indexOf) {
         prevSeqObj = this.stager.sequence[stageNo - 2];
 
         // Get number of steps in previous stage:
-        // was:
-        // prevStepNo = this.stager.stages[prevSeqObj.id].steps.length;
         prevStepNo = prevSeqObj.steps.length;
 
         // Handle repeat block:
@@ -13250,9 +13191,6 @@ if (!Array.prototype.indexOf) {
         gameStage = new GameStage(gameStage);
         if (gameStage.stage === 0) return 1;
 
-        // was:
-        // stageObj = this.getStage(gameStage);
-        // if (!stageObj) return null;
         seqObj = this.getSequenceObject(gameStage);
         if (!seqObj) return null;
 
@@ -13260,15 +13198,9 @@ if (!Array.prototype.indexOf) {
             stepNo = gameStage.step;
         }
         else {
-            // was:
-            // stepNo = stageObj.steps.indexOf(gameStage.step) + 1;
             stepNo = seqObj.steps.indexOf(gameStage.step) + 1;
             // If indexOf returned -1, stepNo is 0 which will be caught below.
         }
-
-        // was:
-        // if (stepNo < 1 || stepNo > stageObj.steps.length) return null;
-        // return 1 + stageObj.steps.length - stepNo;
 
         if (stepNo < 1 || stepNo > seqObj.steps.length) return null;
         return 1 + seqObj.steps.length - stepNo;
@@ -13290,9 +13222,6 @@ if (!Array.prototype.indexOf) {
 
         gameStage = new GameStage(gameStage);
 
-        // was:
-        // stageObj = this.getStage(gameStage);
-        // if (!stageObj) return null;
         seqObj = this.getSequenceObject(gameStage);
         if (!seqObj) return null;
 
@@ -13304,8 +13233,6 @@ if (!Array.prototype.indexOf) {
             // If indexOf returned -1, stepNo is 0 which will be caught below.
         }
 
-        // was:
-        // if (stepNo < 1 || stepNo > stageObj.steps.length) return null;
         if (stepNo < 1 || stepNo > seqObj.steps.length) return null;
 
         return stepNo;
@@ -13385,19 +13312,12 @@ if (!Array.prototype.indexOf) {
         if (!this.stager) return null;
         gameStage = new GameStage(gameStage);
         if ('number' === typeof gameStage.step) {
-            // was:
-            // stageObj = this.getStage(gameStage);
-            // return stageObj ?
-            // this.stager.steps[stageObj.steps[gameStage.step - 1]] : null;
-
             seqObj = this.getSequenceObject(gameStage);
             if (seqObj) {
                 stepObj = this.stager.steps[seqObj.steps[gameStage.step - 1]];
             }
         }
         else {
-            // was:
-            // return this.stager.steps[gameStage.step] || null;
             stepObj = this.stager.steps[gameStage.step];
         }
         return stepObj || null;
@@ -13441,24 +13361,24 @@ if (!Array.prototype.indexOf) {
         }
 
         // return a step-defined rule
-        if ('string' === typeof stepObj.steprule) {
-            rule = parent.stepRules[stepObj.steprule];
+        if ('string' === typeof stepObj.stepRule) {
+            rule = parent.stepRules[stepObj.stepRule];
         }
-        else if ('function' === typeof stepObj.steprule) {
-            rule = stepObj.steprule;
+        else if ('function' === typeof stepObj.stepRule) {
+            rule = stepObj.stepRule;
         }
         if ('function' === typeof rule) return rule;
 
         // return a stage-defined rule
-        if ('string' === typeof stageObj.steprule) {
-            rule = parent.stepRules[stageObj.steprule];
+        if ('string' === typeof stageObj.stepRule) {
+            rule = parent.stepRules[stageObj.stepRule];
         }
-        else if ('function' === typeof stageObj.steprule) {
-            rule = stageObj.steprule;
+        else if ('function' === typeof stageObj.stepRule) {
+            rule = stageObj.stepRule;
         }
         if ('function' === typeof rule) return rule;
 
-        // Default rule
+        // Default rule.
         // TODO: Use first line once possible (serialization issue):
         //return this.stager.getDefaultStepRule();
         return this.stager.defaultStepRule;
@@ -13716,7 +13636,7 @@ if (!Array.prototype.indexOf) {
             stageNo = seqIdx + 1;
         }
         if (stageNo < 1 || stageNo > this.stager.sequence.length) {
-            node.warn('normalizeGameStage received nonexistent stage: ' +
+            this.node.warn('normalizeGameStage received nonexistent stage: ' +
                       gameStage.stage);
             return null;
         }
@@ -13742,12 +13662,10 @@ if (!Array.prototype.indexOf) {
             stepNo = gameStage.step;
         }
         else {
-            // was:
-            // stepNo = stageObj.steps.indexOf(gameStage.step) + 1;
             stepNo = seqObj.steps.indexOf(gameStage.step) + 1;
         }
         if (stepNo < 1) {
-            node.warn('normalizeGameStage received nonexistent step: ' +
+            this.node.warn('normalizeGameStage received nonexistent step: ' +
                       stageObj.id + '.' + gameStage.step);
             return null;
         }
@@ -13968,6 +13886,7 @@ if (!Array.prototype.indexOf) {
     Stager.isDefaultCb = isDefaultCb;
     Stager.isDefaultStep = isDefaultStep;
     Stager.makeDefaultStep = makeDefaultStep;
+    Stager.addStepToBlock = addStepToBlock;
 
     var BLOCK_DEFAULT     = blockTypes.BLOCK_DEFAULT;
     var BLOCK_STAGEBLOCK  = blockTypes.BLOCK_STAGEBLOCK;
@@ -14041,16 +13960,16 @@ if (!Array.prototype.indexOf) {
     }
 
     /**
-     * #### addStageBlock
+     * #### addBlock
      *
      * Adds a new block of the specified type to the sequence
      *
      * @param {Stager} that The stager instance
      * @param {string} id Optional. The id of the stage block
-     * @param {string} type The type of the stage block
-     * @param {string|number} The allowed positions for the block
-     * @param {string} cbType The type of the currentBlock
-     *    (BLOCK_STAGE or BLOCK_STEP)
+     * @param {string} type The block type
+     * @param {string|number} positions The allowed positions for the block
+     * @param {string} type2 The value that the currentBlock variable
+     *    will be set to (BLOCK_STAGE or BLOCK_STEP)
      */
     function addBlock(that, id, type, positions, type2) {
         var block, options;
@@ -14058,19 +13977,18 @@ if (!Array.prototype.indexOf) {
 
         options.id = id || J.uniqueKey(that.blocksIds, type);
         options.type = type;
+        options.positions = positions;
 
         that.currentBlockType = type2;
 
         // Create the new block, and add it block arrays.
-        block = new node.Block(positions, options);
+        block = new node.Block(options);
         that.unfinishedBlocks.push(block);
         that.blocks.push(block);
 
         // Save block id into the blocks map.
         that.blocksIds[options.id] = (that.blocks.length - 1);
     }
-
-
 
     /**
      * #### checkFinalized
@@ -14122,6 +14040,40 @@ if (!Array.prototype.indexOf) {
                                 positions + '.');
         }
         return positions;
+    }
+
+    /**
+     * #### addStepToBlock
+     *
+     * Adds a step to a block
+     *
+     * Checks if a step with the same id was already added.
+     *
+     * @param {object} that Reference to Stager object
+     * @param {object} stage The block object
+     * @param {string} stepId The id of the step
+     * @param {string} stageId The id of the stage the step belongs to
+     * @param {string|number} positions Optional. Positions allowed for
+     *    step in the block
+     *
+     * @return {boolean} TRUE if the step is added to the block
+     */
+    function addStepToBlock(that, block, stepId, stageId, positions) {
+        var stepInBlock;
+        // Add step, if not already added.
+        if (block.hasItem(stepId)) return false;
+
+        stepInBlock = {
+            type: stageId,
+            item: stepId,
+            id: stepId
+        };
+
+        if (isDefaultStep(that.steps[stepId])) {
+            makeDefaultStep(stepInBlock);
+        }
+        block.add(stepInBlock, positions);
+        return true;
     }
 
     /**
@@ -14206,7 +14158,23 @@ if (!Array.prototype.indexOf) {
  * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
- * Block structure to contain stages and steps of the game sequence.
+ * Blocks contain items that can be sorted in the sequence.
+ *
+ * Blocks can also contains other block as items, and in this case all
+ * items are sorted recursevely.
+ *
+ * Each item must contain a id (unique within the block), and a type parameter.
+ * Optionally, a `positions` parameter, controlling the positions that the item
+ * can take in the sequence, can be be passed along.
+ *
+ * Items is encapsulated in objects of the type:
+ *
+ * { item: item, positions: positions }
+ *
+ * and added to the unfinishedItems array.
+ *
+ * When the finalized method is called, items are sorted according to the
+ * `positions` parameter and moved into the items array.
  */
 (function(exports, parent) {
 
@@ -14242,12 +14210,24 @@ if (!Array.prototype.indexOf) {
      *
      * Creates a new instance of Block
      *
-     * @param {string} positions Optional. Positions within the
-     *      enclosing Block that this block can occupy
-     * @param {object} options Optional. Configuration object
+     * @param {object} options Configuration object
      */
-    function Block(positions, options) {
-        options = options || {};
+    function Block(options) {
+
+        if ('object' !== typeof options) {
+            throw new TypeError('Block constructor: options must be object: ' +
+                                options);
+        }
+
+        if ('string' !== typeof options.type || options.type.trim() === '') {
+            throw new TypeError('Block constructor: options.type must ' +
+                                'be a non-empty string: ' + options.type);
+        }
+
+        if ('string' !== typeof options.id || options.id.trim() === '') {
+            throw new TypeError('Block constructor: options.id must ' +
+                                'be a non-empty string: ' + options.id);
+        }
 
         // ### Properties
 
@@ -14270,8 +14250,8 @@ if (!Array.prototype.indexOf) {
          *
          * Positions in the enclosing Block that this block can occupy
          */
-        this.positions = 'undefined' !== typeof positions ?
-            positions : 'linear';
+        this.positions = 'undefined' !== typeof options.positions ?
+            options.positions : 'linear';
 
         /**
          * #### Block.takenPositions
@@ -14283,16 +14263,23 @@ if (!Array.prototype.indexOf) {
         /**
          * #### Block.items
          *
-         * The items within this Block
+         * The sequence of items within this Block
          */
         this.items = [];
 
         /**
-         * #### Block.unfinishedEntries
+         * #### Block.itemsIds
+         *
+         * List of the items added to the block so far
+         */
+        this.itemsIds = {};
+
+        /**
+         * #### Block.unfinishedItems
          *
          * Items that have not been assigned a position in this block
          */
-        this.unfinishedEntries = [];
+        this.unfinishedItems = [];
 
          /**
          * #### Block.index
@@ -14339,6 +14326,23 @@ if (!Array.prototype.indexOf) {
                             'cannot add further items.');
         }
 
+        if ('string' !== typeof item.id) {
+            throw new TypeError('Block.add: block ' + this.id + ': item id ' +
+                                'must be string: ' + item.id || 'undefined.');
+        }
+        if ('string' !== typeof item.type) {
+            throw new TypeError('Block.add: block ' + this.id +
+                                ': item type must be string: ' +
+                                item.type || 'undefined.');
+        }
+
+        if (this.itemsIds[item.id]) {
+            throw new TypeError('Block.add: block ' + this.id +
+                                ': item was already added to block: ' +
+                                item.id + '.');
+        }
+
+
         // We cannot set the position as a number here,
         // because it might change with future modifications of
         // the block. Only on block.finalize the position is fixed.
@@ -14346,10 +14350,75 @@ if (!Array.prototype.indexOf) {
             positions = 'linear';
         }
 
-        this.unfinishedEntries.push({
+        this.unfinishedItems.push({
             item: item,
             positions: positions
         });
+
+        // Save item's id.
+        this.itemsIds[item.id] = true;
+    };
+
+    /**
+     * #### Block.remove
+     *
+     * Removes an item from a block
+     *
+     * @param {string} itemId The id of the item to be removed
+     *
+     * @return {object} The removed item, or undefined if the item
+     *    does not exist
+     */
+    Block.prototype.remove = function(itemId) {
+        var i, len;
+
+        if (this.finalized) {
+            throw new Error('Block.remove: block already finalized, ' +
+                            'cannot remove items.');
+        }
+
+        if (!this.hasItem(itemId)) return;
+
+        i = -1, len = this.unfinishedItems.length;
+        for ( ; ++i < len ; ) {
+            if (this.unfinishedItems[i].item.id === itemId) {
+                this.itemsIds[itemId] = null;
+
+                // Delete from cache as well.
+                if (this.resetCache &&
+                    this.resetCache.unfinishedItems[itemId]) {
+
+                    delete this.resetCache.unfinishedItems[itemId];
+                }
+                return this.unfinishedItems.splice(i,1);
+            }
+        }
+
+        throw new Error('Block.remove: item ' + itemId + ' was found in the ' +
+                        'in the itemsIds list, but could not be removed ' +
+                        'from block ' + this.id);
+    };
+
+    /**
+     * #### Block.removeAllItems
+     *
+     * Removes all items from a block
+     *
+     * @see Block.remove
+     */
+    Block.prototype.removeAllItems = function(itemId) {
+        var i, len;
+
+        if (this.finalized) {
+            throw new Error('Block.remove: block already finalized, ' +
+                            'cannot remove items.');
+        }
+
+        i = -1, len = this.unfinishedItems.length;
+        for ( ; ++i < len ; ) {
+            this.remove(this.unfinishedItems[i].item.id);
+        }
+
     };
 
     /**
@@ -14357,12 +14426,12 @@ if (!Array.prototype.indexOf) {
      *
      * Checks if an item has been previously added to block
      *
-     * @param {string} item. The item to check
+     * @param {string} itemId The id of item to check
      *
      * @return {boolean} TRUE, if the item is found
      */
-    Block.prototype.hasItem = function(item) {
-        return !!this.items[item];
+    Block.prototype.hasItem = function(itemId) {
+        return !!this.itemsIds[itemId];
     };
 
     /**
@@ -14377,49 +14446,48 @@ if (!Array.prototype.indexOf) {
         var available;
 
         if (this.finalized) return;
-        if (!this.unfinishedEntries.length) {
+        if (!this.unfinishedItems.length) {
             this.finalized = true;
             return;
         }
 
         // Remove default step if it is BLOCK_STEP and further steps were added.
         if (this.isType(BLOCK_ENCLOSING_STEPS) && this.size() > 1) {
-            if (isDefaultStep(this.unfinishedEntries[0].item)) {
-                this.unfinishedEntries.splice(0,1);
+            if (isDefaultStep(this.unfinishedItems[0].item)) {
+                // Remove the id of the removed item from the lists of ids.
+                this.itemsIds[this.unfinishedItems[0].item.id] = null;
+                this.unfinishedItems.splice(0,1);
             }
         }
 
-        i = -1, len = this.unfinishedEntries.length;
+        i = -1, len = this.unfinishedItems.length;
         // Update the positions of other steps as needed.
         for ( ; ++i < len ; ) {
-            if (this.unfinishedEntries[i].positions === 'linear') {
-                this.unfinishedEntries[i].positions = i;
+            if (this.unfinishedItems[i].positions === 'linear') {
+                this.unfinishedItems[i].positions = i;
             }
         }
-
-        // If no positions is assigned before we don't need arraydiff
 
         // Creating array of available positions:
         // from 0 to nItems accounting for already taken positions.
-        // available = J.arrayDiff(J.seq(0,this.size()-1), this.takenPositions);
         available = J.seq(0, this.size()-1);
 
         // TODO: this could be done inside the while loop. However, as
         // every iterations also other entries are updated, it requires
         // multiple calls to J.range.
         // Parsing all of the position strings into arrays.
-        i = -1, len = this.unfinishedEntries.length;
+        i = -1, len = this.unfinishedItems.length;
         for ( ; ++i < len ; ) {
-            positions = this.unfinishedEntries[i].positions;
-            this.unfinishedEntries[i].positions =
+            positions = this.unfinishedItems[i].positions;
+            this.unfinishedItems[i].positions =
                 J.range(positions, available);
         }
 
         // Assigning positions.
-        while (this.unfinishedEntries.length > 0) {
+        while (this.unfinishedItems.length > 0) {
             // Select entry with least possibilities of where to go.
-            this.unfinishedEntries.sort(sortFunction);
-            entry = this.unfinishedEntries.pop();
+            this.unfinishedItems.sort(sortFunction);
+            entry = this.unfinishedItems.pop();
             item = entry.item;
             positions = entry.positions;
 
@@ -14436,10 +14504,10 @@ if (!Array.prototype.indexOf) {
             this.takenPositions.push(chosenPosition);
 
             // Adjust possible positions in remaining entries.
-            i = -1, len = this.unfinishedEntries.length;
+            i = -1, len = this.unfinishedItems.length;
             for ( ; ++i < len ; ) {
                 J.removeElement(chosenPosition,
-                                this.unfinishedEntries[i].positions);
+                                this.unfinishedItems[i].positions);
             }
         }
         this.finalized = true;
@@ -14448,7 +14516,7 @@ if (!Array.prototype.indexOf) {
     /**
      * #### Block.next
      *
-     * Gets the next item in a hierarchy of Blocks
+     * Gets the next item in a hierarchy of Blocksg
      *
      * If there is not next item, false is returned.
      * If the next item is another Block, next is called recursively.
@@ -14488,8 +14556,9 @@ if (!Array.prototype.indexOf) {
     Block.prototype.backup = function() {
         this.resetCache = J.classClone({
             takenPositions: this.takenPositions,
-            unfinishedEntries: this.unfinishedEntries,
-            items: this.items
+            unfinishedItems: this.unfinishedItems,
+            items: this.items,
+            itemsIds: this.itemsIds
         }, 3);
     };
 
@@ -14504,25 +14573,65 @@ if (!Array.prototype.indexOf) {
      * Marks the block as not `finalized`
      *
      * @see Block.finalize
-     * @see Block.finalize
      */
     Block.prototype.restore = function() {
         this.index = 0;
         this.finalized = false;
+
         if (!this.resetCache) return;
-        this.unfinishedEntries = this.resetCache.unfinishedEntries;
+        this.unfinishedItems = this.resetCache.unfinishedItems;
         this.takenPositions = this.resetCache.takenPositions;
         this.items = this.resetCache.items;
+        this.itemsIds = this.resetCache.itemsIds;
         this.resetCache = null;
     };
 
+    /**
+     * ## Block.size
+     *
+     * Returns the total number of items inside the block
+     *
+     * @return {number} The total number of items in the block
+     */
     Block.prototype.size = function() {
-        return this.items.length + this.unfinishedEntries.length;
+        return this.items.length + this.unfinishedItems.length;
     };
 
-
-    Block.prototype.isType = function(type) {
+    /**
+     * ## Block.isType | isOfType
+     *
+     * Returns TRUE if the block is of the specified type
+     *
+     * @param {string} type The type to check
+     *
+     * @return {boolean} TRUE if the block is of the specified type
+     */
+    Block.prototype.isType = Block.prototype.isOfType = function(type) {
         return this.type === type;
+    };
+
+    /**
+     * ## Block.clone
+     *
+     * Returns a copy of the block
+     *
+     * @return {Block} A new instance of block with the same settings and items
+     */
+    Block.prototype.clone = function() {
+        var block;
+        block = new Block({
+            type: this.type,
+            id: this.id
+        });
+        block.positions = J.clone(this.positions);
+        block.takenPositions = J.clone(this.takenPositions);
+        block.items = J.clone(this.items);
+        block.itemsIds = this.itemsIds;
+        block.unfinishedItems = J.clone(this.unfinishedItems);
+        block.index = this.index;
+        block.finalized = this.finalized;
+        block.resetCache = J.clone(this.resetCache);
+        return block;
     };
 
     // ## Helper Functions
@@ -14753,7 +14862,7 @@ if (!Array.prototype.indexOf) {
          *
          * @see blocks
          */
-        this.blocksIds = [];
+        this.blocksIds = {};
 
         /**
          * #### Stager.unfinishedBlocks
@@ -14800,7 +14909,7 @@ if (!Array.prototype.indexOf) {
          *
          * Default callback assigned to a step if none is provided
          */
-        this.defaultCallback = null;
+        this.defaultCallback = Stager.defaultCallback;
 
         /**
          * #### Stager.cacheReset
@@ -14854,12 +14963,13 @@ if (!Array.prototype.indexOf) {
         this.onInit = null;
         this.onGameover = null;
         this.blocks = [];
+        this.blocksIds = {};
         this.unfinishedBlocks = [];
         this.finalized = false;
         this.currentType = blockTypes.BLOCK_DEFAULT;
         this.currentBlockType = blockTypes.BLOCK_DEFAULT;
         this.toSkip = { stages: {}, steps: {} };
-        this.defaultCallback = null;
+        this.defaultCallback = Stager.defaultCallback;
         this.cacheReset = { unfinishedBlocks: [] };
         return this;
     };
@@ -14900,15 +15010,18 @@ if (!Array.prototype.indexOf) {
         // Already finalized.
         if (this.finalized) return;
 
-        // Nothing to do, finalize called to early.
+        // Nothing to do, finalize called too early.
         if (!this.blocks.length) return;
 
         // Cache the ids of unfinishedBlocks for future calls to .reset.
         i = -1, len = this.unfinishedBlocks.length;
         for ( ; ++i < len ; ) {
             this.cacheReset.unfinishedBlocks.push(this.unfinishedBlocks[i].id);
-            // Need to backup unfinished blocks before calling endAllBlocks().
-            this.unfinishedBlocks[i].backup();
+        }
+
+        // Need to backup all blocks before calling endAllBlocks().
+        for (blockIndex = 0; blockIndex < this.blocks.length; ++blockIndex) {
+            this.blocks[blockIndex].backup();
         }
 
         // Closes unclosed blocks.
@@ -14939,8 +15052,6 @@ if (!Array.prototype.indexOf) {
                 // It is a step, currentItem.type = stage id (TODO: change).
                 stageId = currentItem.type;
                 stepId = currentItem.item;
-
-                // Do not add step to the sequence if:
 
                 // 1 - Step was marked as `toSkip`.
                 if (!this.isSkipped(stageId, stepId) &&
@@ -14977,34 +15088,28 @@ if (!Array.prototype.indexOf) {
      * @see Stager.cacheReset
      */
     Stager.prototype.reset = function() {
-        var blockIndex;
-        var i, lenCache, lenBlocks, blocks;
+        var blockIdx, i, len;
 
         if (!this.finalized) return this;
 
         // Restore unfinishedBlocks, if any.
-        lenCache = this.cacheReset.unfinishedBlocks.length;
-        if (lenCache) {
-            // Create index of blocks by id.
-            blocks = {};
-            i = -1, lenBlocks = this.blocks.length;
-            for ( ; ++i < lenBlocks ; ) {
-                blocks[this.blocks[i].id] = this.blocks[i];
-            }
+        len = this.cacheReset.unfinishedBlocks.length;
+        if (len) {
             // Copy by reference cached blocks.
             i = -1;
-            for ( ; ++i < lenCache ; ) {
-                this.unfinishedBlocks
-                    .push(blocks[this.cacheReset.unfinishedBlocks[i]]);
+            for ( ; ++i < len ; ) {
+                blockIdx = this.blocksIds[this.cacheReset.unfinishedBlocks[i]];
+                this.unfinishedBlocks.push(this.blocks[blockIdx]);
             }
             this.cacheReset = { unfinishedBlocks: []};
         }
         // End restore unfinishedBlocks.
 
         // Call restore on individual blocks.
-        for (blockIndex = 0; blockIndex < this.blocks.length; ++blockIndex) {
-            this.blocks[blockIndex].restore();
+        for (blockIdx = 0; blockIdx < this.blocks.length; ++blockIdx) {
+            this.blocks[blockIdx].restore();
         }
+
         this.sequence = [];
         this.finalized = false;
     };
@@ -15035,6 +15140,7 @@ if (!Array.prototype.indexOf) {
     var isDefaultCb             = Stager.isDefaultCb;
     var makeDefaultStep         = Stager.makeDefaultStep;
     var isDefaultStep           = Stager.isDefaultStep;
+    var addStepToBlock          = Stager.addStepToBlock;
 
     var blockTypes              = Stager.blockTypes;
 
@@ -15224,10 +15330,7 @@ if (!Array.prototype.indexOf) {
         id = handleStepParameter(this, step, 'step');
         positions = checkPositionsParameter(positions, 'step');
 
-        curBlock.add({
-            type: this.currentType,
-            item: id
-        }, positions);
+        addStepToBlock(this, curBlock, id, this.currentType, positions);
 
         this.stages[this.currentType].steps.push(id);
 
@@ -15265,7 +15368,7 @@ if (!Array.prototype.indexOf) {
             }, positions);
 
             // Must be done after addStageToCurrentBlock is called.
-            addStepsToCurrentBlock(this, this.stages[stageName]);
+            addStepsToCurrentBlock(this, this.stages[stageName].steps);
             return this;
         };
 
@@ -15308,7 +15411,7 @@ if (!Array.prototype.indexOf) {
             }, positions);
 
             // Must be done after addStageToCurrentBlock is called.
-            addStepsToCurrentBlock(this, this.stages[stageName]);
+            addStepsToCurrentBlock(this, this.stages[stageName].steps);
             return this;
         };
 
@@ -15371,7 +15474,10 @@ if (!Array.prototype.indexOf) {
      * @return {Stager} this object
      */
     Stager.prototype.gameover = function() {
-        addStageToCurrentBlock(this, { type: 'gameover' });
+        addStageToCurrentBlock(this, {
+            id: 'gameover',
+            type: 'gameover'
+        });
         return this;
     };
 
@@ -15417,7 +15523,7 @@ if (!Array.prototype.indexOf) {
         }, positions);
 
         // Must be done after addStageToCurrentBlock is called.
-        addStepsToCurrentBlock(that, that.stages[stageName]);
+        addStepsToCurrentBlock(that, that.stages[stageName].steps);
         return that;
     }
 
@@ -15443,7 +15549,9 @@ if (!Array.prototype.indexOf) {
         var name, curBlock, rndName;
         name = stage.id || stage.type;
 
-        rndName = '_' + J.randomInt(10000);
+        // was:
+        // rndName = '_' + J.randomInt(10000);
+        rndName = '_' + Math.floor((that.blocks.length + 1)/2);
 
         addStageBlock(that,
                       BLOCK_ENCLOSING + name + rndName,
@@ -15454,7 +15562,8 @@ if (!Array.prototype.indexOf) {
         curBlock = that.getCurrentBlock();
         curBlock.add({
             type: BLOCK_STAGE,
-            item: stage
+            item: stage,
+            id: stage.id
         });
 
         that.currentType = name;
@@ -15475,27 +15584,16 @@ if (!Array.prototype.indexOf) {
      * already added to current block, and if not, it adds it.
      *
      * @param {object} that Reference to Stager object
-     * @param {object} stage The stage object
+     * @param {array} steps Array containing the id of the steps
+     *
+     * @see addStepToBlock
      */
-    function addStepsToCurrentBlock(that, stage) {
-        var curBlock;
-        var i, len, stepInBlock;
+    function addStepsToCurrentBlock(that, steps) {
+        var curBlock, i, len;
         curBlock = that.getCurrentBlock();
-
-        i = -1, len = stage.steps.length;
+        i = -1, len = steps.length;
         for ( ; ++i < len ; ) {
-            // Add step, if not already added.
-            // TODO: This If might be always true.
-            if (!curBlock.hasItem(stage.steps[i])) {
-                stepInBlock = {
-                    type: that.currentType,
-                    item: stage.steps[i]
-                };
-                if (isDefaultStep(that.steps[stage.steps[i]])) {
-                    makeDefaultStep(stepInBlock);
-                }
-                curBlock.add(stepInBlock);
-            }
+            addStepToBlock(that, curBlock, steps[i], that.currentType);
         }
     }
 
@@ -15658,6 +15756,8 @@ if (!Array.prototype.indexOf) {
                                 'but a step with the same id already ' +
                                 'exists: ', id);
             }
+            // Add default callback, if missing.
+            if (!step.cb) step.cb = that.getDefaultCallback();
         }
         else if ('string' === typeof step) {
             id = step;
@@ -15691,30 +15791,45 @@ if (!Array.prototype.indexOf) {
      * @return {string} The id or alias of the stage
      *
      * @api private
+     *
+     * @see checkStageValidity
      */
     function handleStageParameter(that, stage, method) {
         var tokens, id, alias;
         if ('object' === typeof stage) {
             id = stage.id;
 
+            // Check only if it is already existing
+            // (type checking is done later).
             if (that.stages[id]) {
                 throw new Error('Stager.' + method + ': stage is object, ' +
                                 'but a stage with the same id already ' +
                                 'exists: ', id);
             }
 
-            // It's a step.
-            if (stage.cb) {
-                if (!that.steps[id]) that.addStep(stage);
-                stage = { id: id, steps: [ id ] };
+            // If both cb and steps are missing, adds steps array,
+            // and create new step, if necessary.
+            if (!stage.cb && !stage.steps) {
+                stage.steps = [ id ];
+                if (!that.steps[id]) {
+                    that.addStep({ id: id, cb: that.getDefaultCb() });
+                }
+            }
+            // If a cb property is present create a new step with that cb.
+            // If a step with same id is already existing, raise an error.
+            else if (stage.cb) {
+                if (that.steps[id]) {
+                    throw new Error('Stager.' + method + ': stage has ' +
+                                    'cb property, but a step with the same ' +
+                                    'id is already defined: ' + id + '.');
+                }
+                that.addStep({ id: id, cb: stage.cb });
+                delete stage.cb;
+                stage.steps = [ id ];
             }
             that.addStage(stage);
         }
-        else {
-            if ('string' !== typeof stage) {
-                throw new TypeError('Stager.' + method + ': stage must be ' +
-                                    'string or object.');
-            }
+        else if ('string' === typeof stage) {
 
             // See whether the stage id contains an alias. Throws errors.
             tokens = handleAlias(that, stage, method);
@@ -15734,6 +15849,10 @@ if (!Array.prototype.indexOf) {
                     steps: [ id ]
                 });
             }
+        }
+        else {
+            throw new TypeError('Stager.' + method + ': stage must be ' +
+                                'string or object.');
         }
 
         return alias || id;
@@ -15786,8 +15905,7 @@ if (!Array.prototype.indexOf) {
      */
     Stager.prototype.setState = function(stateObj, updateRule) {
         var idx;
-        var stageObj;
-        var seqObj;
+        var stageObj, seqObj, blockObj;
 
         if ('object' !== typeof stateObj) {
             throw new TypeError('Stager.setState: stateObj must be object.');
@@ -15837,7 +15955,7 @@ if (!Array.prototype.indexOf) {
             }
         }
 
-        // Add sequence blocks:
+        // Add sequence:
         if (stateObj.hasOwnProperty('sequence')) {
             for (idx = 0; idx < stateObj.sequence.length; idx++) {
                 seqObj = stateObj.sequence[idx];
@@ -15887,14 +16005,31 @@ if (!Array.prototype.indexOf) {
             this.toSkip = stateObj.toSkip;
         }
 
-        // Set defaultCallback
+        // Set defaultCallback.
         if (stateObj.hasOwnProperty('defaultCallback')) {
             this.setDefaultCallback(stateObj.defaultCallback);
         }
 
         // Cache reset.
         if (stateObj.hasOwnProperty('cacheReset')) {
-            this.cacheReset = stageObj.cacheReset;
+            this.cacheReset = stateObj.cacheReset;
+        }
+
+        // Blocks.
+        if (stateObj.hasOwnProperty('blocks')) {
+            this.blocksIds = {};
+            for (idx = 0; idx < stateObj.blocks.length; idx++) {
+                blockObj = stateObj.blocks[idx];
+                this.blocks[idx] = blockObj;
+                // Save block id into the blocks map.
+                this.blocksIds[blockObj.id] = idx;
+            }
+        }
+        if (stateObj.hasOwnProperty('currentType')) {
+            this.currentType = stateObj.currentType;
+        }
+        if (stateObj.hasOwnProperty('currentBlockType')) {
+            this.currentBlockType = stateObj.currentBlockType;
         }
 
         // Mark finalized.
@@ -15918,9 +16053,11 @@ if (!Array.prototype.indexOf) {
      * @see Stager.finalize
      */
     Stager.prototype.getState = function() {
+        var out, i, len;
+
         this.finalize();
 
-        return J.clone({
+        out = J.clone({
             steps:               this.steps,
             stages:              this.stages,
             sequence:            this.sequence,
@@ -15931,10 +16068,20 @@ if (!Array.prototype.indexOf) {
             defaultProperties:   this.defaultProperties,
             onInit:              this.onInit,
             onGameover:          this.onGameover,
-            blocks:              this.blocks,
             toSkip:              this.toSkip,
-            defaultCallback:     this.defaultCallback
+            defaultCallback:     this.defaultCallback,
+            cacheReset:          this.cacheReset,
+            currentType:         this.currentType,
+            currentBlockType:    this.currentBlockType
         });
+
+        // Cloning blocks separately.
+        out.blocks = [];
+        i = -1, len = this.blocks.length;
+        for ( ; ++i < len ; ) {
+            out.blocks.push(this.blocks[i].clone());
+        }
+        return out;
     };
 
     /**
@@ -16288,8 +16435,9 @@ if (!Array.prototype.indexOf) {
     var J = node.JSUS;
     var Stager = node.Stager;
 
-    var checkFinalized = Stager.checkFinalized;
+    var checkFinalized   = Stager.checkFinalized;
     var handleStepsArray = Stager.handleStepsArray;
+    var addStepToBlock   = Stager.addStepToBlock;
 
     /**
      * #### Stager.extendStep
@@ -16530,31 +16678,68 @@ if (!Array.prototype.indexOf) {
      * @see handleStepsArray
      */
     function validateExtendedStep(stepId, update, updateFunction) {
+        var errBegin;
         if (updateFunction) {
+            errBegin = 'Stager.extendStep: update function must return ' +
+                'an object with ';
+
             if (!update || 'object' !== typeof update) {
-                throw new TypeError('Stager.extendStep: update function ' +
-                                    'must return an object with id and cb: ' +
-                                    stepId + '.');
+                throw new TypeError(errBegin + 'id and cb. Found: ' + update +
+                                    '. Step id: ' +  stepId + '.');
             }
             if (update.id !== stepId) {
                 throw new Error('Stager.extendStep: update function ' +
                                 'cannot alter the step id: ' + stepId + '.');
             }
             if ('function' !== typeof update.cb) {
-                throw new TypeError('Stager.extendStep: update function ' +
-                                    'must return an object with a valid ' +
-                                    'callback. Step id:' + stepId + '.');
+                throw new TypeError(errBegin + 'a valid callback. Step id:' +
+                                    stepId + '.');
+            }
+            if (update.init && 'function' !== typeof update.init) {
+                throw new TypeError(errBegin + 'invalid init property. ' +
+                                    'Function or undefined expected, found: ' +
+                                    typeof update.init + '. Step id:' +
+                                    stepId + '.');
+            }
+            if (update.exit && 'function' !== typeof update.exit) {
+                throw new TypeError(errBegin + 'invalid exit property. ' +
+                                    'Function or undefined expected, found: ' +
+                                    typeof update.exit + '. Step id:' +
+                                    stepId + '.');
+            }
+            if (update.done && 'function' !== typeof update.done) {
+                throw new TypeError(errBegin + 'invalid done property. ' +
+                                    'Function or undefined expected, found: ' +
+                                    typeof update.done + '. Step id:' +
+                                    stepId + '.');
             }
         }
         else {
-             if (update.hasOwnProperty('id')) {
+            if (update.hasOwnProperty('id')) {
                 throw new Error('Stager.extendStep: update.id cannot be set. ' +
-                               'Step id: ' + stepId + '.');
+                                'Step id: ' + stepId + '.');
             }
-            if ('function' !== typeof update.cb) {
+            if (update.cb && 'function' !== typeof update.cb) {
                 throw new TypeError('Stager.extendStep: update.cb must be ' +
-                                    'function. Step id: ' + stepId + '.');
+                                    'function or undefined. Step id:' +
+                                    stepId + '.');
             }
+            if (update.init && 'function' !== typeof update.init) {
+                throw new TypeError('Stager.extendStep: update.init must be ' +
+                                    'function or undefined. Step id:' +
+                                    stepId + '.');
+            }
+            if (update.exit && 'function' !== typeof update.exit) {
+                throw new TypeError('Stager.extendStep: update.exit must be ' +
+                                    'function or undefined. Step id:' +
+                                    stepId + '.');
+            }
+            if (update.done && 'function' !== typeof update.done) {
+                throw new TypeError('Stager.extendStep: update.done must be ' +
+                                    'function or undefined. Step id:' +
+                                    stepId + '.');
+            }
+
         }
     }
 
@@ -16574,17 +16759,33 @@ if (!Array.prototype.indexOf) {
      * @see handleStepsArray
      */
     function validateExtendedStage(that, stageId, update, updateFunction) {
+        var block, i, len;
         if ((updateFunction && update.id !== stageId) ||
             (!updateFunction && update.hasOwnProperty('id'))) {
 
             throw new Error('Stager.extendStage: id cannot be altered: ' +
                             stageId + '.');
         }
-        if (update.hasOwnProperty('cb')) {
+        if (update.cb) {
             throw new TypeError('Stager.extendStage: update.cb cannot be ' +
                                 'specified. Stage id: ' + stageId + '.');
         }
-        if (update.hasOwnProperty('steps')) {
+        if (update.init && 'function' !== typeof update.init) {
+            throw new TypeError('Stager.extendStage: update.init must be ' +
+                                'function or undefined. Stage id:' +
+                                stageId + '.');
+        }
+        if (update.exit && 'function' !== typeof update.exit) {
+            throw new TypeError('Stager.extendStage: update.exit must be ' +
+                                'function or undefined. Stage id:' +
+                                stageId + '.');
+        }
+        if (update.done && 'function' !== typeof update.done) {
+            throw new TypeError('Stager.extendStage: update.done must be ' +
+                                'function or undefined. Stage id:' +
+                                stageId + '.');
+        }
+        if (update.steps) {
             if ((!J.isArray(update.steps) || !update.steps.length) ||
                 update.steps === undefined || update.steps === null) {
 
@@ -16593,11 +16794,40 @@ if (!Array.prototype.indexOf) {
                                stageId + '.');
             }
 
+            // No changes to the steps array, just exit.
+            if (J.equals(that.stages[stageId].steps, update.steps)) return;
+
             // Process every step in the array. Steps array is modified.
             handleStepsArray(that, stageId, update.steps, 'extendStage');
+
+            // We need to get the enclosing steps block,
+            // following the stage block.
+            block = that.findBlockWithItem(stageId);
+
+            // Stage is not in any block, just exit.
+            if (!block) return;
+
+            // We need to update the block in which the stage was.
+
+            if ('undefined' !== typeof block.unfinishedItems[1]) {
+                block = block.unfinishedItems[1].item;
+            }
+            // The stage block was not ended yet,
+            // so the the step block is the last of the sequence.
+            else {
+                block = that.blocks[that.blocks.length -1];
+            }
+
+            // Remove all previous steps before adding the updated steps.
+            block.removeAllItems();
+
+            // Add steps to block (if necessary).
+            i = -1, len = update.steps.length;
+            for ( ; ++i < len ; ) {
+                addStepToBlock(that, block, update.steps[i], stageId);
+            }
         }
     }
-
 
 })(
     'undefined' != typeof node ? node : module.exports,
@@ -16743,9 +16973,11 @@ if (!Array.prototype.indexOf) {
 
         block = this.unfinishedBlocks.pop();
 
-        // if (block.id && block.id.indexOf(BLOCK_STEPBLOCK) !== -1) {
+        // Step block.
         if (block.isType(BLOCK_STEPBLOCK)) {
 
+            // We find the first enclosing block for the step block
+            // (in between there could several steps).
             i = this.blocks.length-1;
             do {
                 currentBlock = this.blocks[i];
@@ -16754,14 +16986,16 @@ if (!Array.prototype.indexOf) {
             }
             while (!found && i >= 0)
 
-            if (found) currentBlock.add(block, block.positions);
+            if (found) {
+                currentBlock.add(block, block.positions);
+            }
             else {
-                throw new Error('Ah, this should not happen.');
+                throw new Error('Stager.endBlock: could not find enclosing ' +
+                                'block for stepBlock ' + block.name);
             }
 
         }
         // Normal stage / step block, add it to previous
-        // else if (block.id && block.id.indexOf('AAA') === -1) {
         else if (!block.isType(BLOCK_STAGEBLOCK)) {
 
             currentBlock = this.getCurrentBlock();
@@ -16781,11 +17015,11 @@ if (!Array.prototype.indexOf) {
     /**
      * #### Stager.endBlocks
      *
-     * Ends multiple Blocks
+     * Ends multiple unfinished Blocks
      *
-     * @param Number n Number of Blocks to be ended.
+     * @param Number n Number of unfinished Blocks to be ended.
      * @param {object} options Optional If options.finalize is set, the
-     *      block gets finalized.
+     *    block gets finalized.
      */
     Stager.prototype.endBlocks = function(n, options) {
         var i;
@@ -16802,6 +17036,25 @@ if (!Array.prototype.indexOf) {
      */
     Stager.prototype.endAllBlocks = function() {
         this.endBlocks(this.unfinishedBlocks.length);
+    };
+
+    /**
+     * #### Stager.findBlockWithItem
+     *
+     * Returns the block where the item (step|stage) with specified id is found
+     *
+     * @param {string} itemId The id of the item
+     *
+     * @return {object|boolean} The block containing the requested item,
+     *    or FALSE if none is found
+     */
+    Stager.prototype.findBlockWithItem = function(itemId) {
+        var i, len;
+        i = -1, len = this.blocks.length;
+        for ( ; ++i < len ; ) {
+            if (this.blocks[i].hasItem(itemId)) return this.blocks[i];
+        }
+        return false;
     };
 
 })(
@@ -17464,7 +17717,7 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
-     * ### Socket.onMessage
+     * ### Socket.onMessageHI
      *
      * Initial handler for incoming messages from the server
      *
@@ -18072,13 +18325,7 @@ if (!Array.prototype.indexOf) {
          *
          * @see GamePlot
          */
-        this.plot = new GamePlot(new Stager());
-
-        // Overriding stdout for game plot and stager.
-        this.plot.setDefaultLog(function() {
-            // Must use apply, else will be executed in the wrong context.
-            node.log.apply(node, arguments);
-        });
+        this.plot = new GamePlot(this.node, new Stager());
 
         /**
          * ### Game.checkPlistSize
@@ -18505,7 +18752,7 @@ if (!Array.prototype.indexOf) {
      */
     Game.prototype.gotoStep = function(nextStep, options) {
         var curStep;
-        var curStageObj, nextStepObj, nextStageObj;
+        var curStepObj, curStageObj, nextStepObj, nextStageObj;
         var ev, node;
         var property, handler;
         var minThreshold, maxThreshold, exactThreshold;
@@ -18525,19 +18772,14 @@ if (!Array.prototype.indexOf) {
                                 'undefined.');
         }
 
-        options = options || {};
-        curStep = this.getCurrentGameStage();
         node = this.node;
+        options = options || {};
 
-        node.silly('Next stage ---> ' + nextStep);
+        node.silly('Next step ---> ' + nextStep);
 
-        // Listeners from previous step are cleared in any case.
-        node.events.ee.step.clear();
-
-        // Emit buffered messages:
-        if (node.socket.shouldClearBuffer()) {
-            node.socket.clearBuffer();
-        }
+        curStep = this.getCurrentGameStage();
+        curStageObj = this.plot.getStage(curStep);
+        curStepObj = this.plot.getStep(curStep);
 
         // Sends start / step command to connected clients if option is on.
         if (this.plot.getProperty(nextStep, 'syncStepping')) {
@@ -18549,7 +18791,35 @@ if (!Array.prototype.indexOf) {
             }
         }
 
+        // Calling exit function of the step.
+        if (curStepObj && curStepObj.exit) {
+            this.setStateLevel(constants.stateLevels.STEP_EXIT);
+            this.setStageLevel(constants.stageLevels.EXITING);
+
+            curStepObj.exit.call(this);
+        }
+
+        // Listeners from previous step are cleared (must be after exit).
+        node.events.ee.step.clear();
+
+        // Emit buffered messages.
+        if (node.socket.shouldClearBuffer()) {
+            node.socket.clearBuffer();
+        }
+
         if ('string' === typeof nextStep) {
+
+            // TODO: see if we can avoid code duplication below.
+            // Calling exit function of the stage.
+            if (curStageObj && curStageObj.exit) {
+                this.setStateLevel(constants.stateLevels.STAGE_EXIT);
+                this.setStageLevel(constants.stageLevels.EXITING);
+
+                curStageObj.exit.call(this);
+            }
+            // Clear any event listeners added in the stage exit function.
+            node.events.ee.stage.clear();
+
             if (nextStep === GamePlot.GAMEOVER) {
                 this.gameover();
                 // Emit buffered messages:
@@ -18558,13 +18828,11 @@ if (!Array.prototype.indexOf) {
                 }
                 return null;
             }
-
             // else do nothing
             return null;
         }
         else {
             // TODO maybe update also in case of string.
-
             node.emit('STEPPING');
 
             // Check for stage/step existence:
@@ -18577,39 +18845,42 @@ if (!Array.prototype.indexOf) {
             // TODO: this does not lock screen / stop timer.
             if (options.willBeDone) this.willBeDone = true;
 
-
-            // stageLevel needs to be changed (silent), otherwise it stays DONE
-            // for a short time in the new game stage:
-            this.setStageLevel(constants.stageLevels.UNINITIALIZED, 'S');
-            this.setCurrentGameStage(nextStep);
-
-            // If we enter a new stage we need to update a few things:
-            //if (this.plot.stepsToNextStage(curStep) === 1) {
-            //if (curStep.stage !== nextStep.stage) {
-            curStageObj = this.plot.getStage(curStep);
+            // If we enter a new stage we need to update a few things.
             if (!curStageObj || nextStageObj.id !== curStageObj.id) {
-                //nextStageObj = this.plot.getStage(nextStep);
-                //if (!nextStageObj) return false;
+
+                // Calling exit function.
+                if (curStageObj && curStageObj.exit) {
+                    this.setStateLevel(constants.stateLevels.STAGE_EXIT);
+                    this.setStageLevel(constants.stageLevels.EXITING);
+
+                    curStageObj.exit.call(this);
+                }
+                // TODO: avoid duplication.
+                // stageLevel needs to be changed (silent), otherwise it stays
+                // DONE for a short time in the new game stage:
+                this.setStageLevel(constants.stageLevels.UNINITIALIZED, 'S');
+                this.setCurrentGameStage(nextStep);
 
                 // Store time:
                 this.node.timer.setTimestamp('stage', (new Date()).getTime());
 
-                // clear the previous stage listeners
+                // Clear the previous stage listeners.
                 node.events.ee.stage.clear();
+
+                this.setStateLevel(constants.stateLevels.STAGE_INIT);
+                this.setStageLevel(constants.stageLevels.INITIALIZING);
 
                 // Execute the init function of the stage, if any:
                 if (nextStageObj.hasOwnProperty('init')) {
-                    this.setStateLevel(constants.stateLevels.STAGE_INIT);
-                    this.setStageLevel(constants.stageLevels.INITIALIZING);
                     nextStageObj.init.call(node.game);
                 }
-
-                // Load the listeners for the stage, if any:
-                for (ev in nextStageObj.on) {
-                    if (nextStageObj.on.hasOwnProperty(ev)) {
-                        node.events.ee.stage.on(ev, nextStageObj.on[ev]);
-                    }
-                }
+            }
+            else {
+                // TODO: avoid duplication.
+                // stageLevel needs to be changed (silent), otherwise it stays
+                // DONE for a short time in the new game stage:
+                this.setStageLevel(constants.stageLevels.UNINITIALIZED, 'S');
+                this.setCurrentGameStage(nextStep);
             }
 
             // Execute the init function of the step, if any:
@@ -18753,13 +19024,6 @@ if (!Array.prototype.indexOf) {
             else {
                 // Set bounds-checking function:
                 this.checkPlistSize = function() { return true; };
-            }
-
-            // Load the listeners for the step, if any:
-            for (ev in nextStepObj.on) {
-                if (nextStepObj.on.hasOwnProperty(ev)) {
-                    node.events.ee.step.on(ev, nextStepObj.on[ev]);
-                }
             }
 
             // Emit buffered messages:
@@ -19186,6 +19450,8 @@ if (!Array.prototype.indexOf) {
         case constants.stateLevels.STAGE_INIT:
         case constants.stateLevels.STEP_INIT:
         case constants.stateLevels.FINISHING:
+        case constants.stateLevels.STAGE_EXIT:
+        case constants.stateLevels.STEP_EXIT:
             return false;
 
         case constants.stateLevels.PLAYING_STEP:
@@ -22996,8 +23262,8 @@ if (!Array.prototype.indexOf) {
 
     var GameStage = parent.GameStage;
 
-    var STAGE = parent.constants.stageLevels.UNINITIALIZED;
-    var STATE = parent.constants.stageLevels.INITIALIZED;
+    var STAGE_INIT = parent.constants.stateLevels.STAGE_INIT;
+    var STAGE_EXIT = parent.constants.stateLevels.STAGE_EXIT;
 
     /**
      * ### NodeGameClient.getCurrentEventEmitter
@@ -23027,7 +23293,7 @@ if (!Array.prototype.indexOf) {
      * @see EventEmitterManager
      */
     NGC.prototype.getCurrentEventEmitter = function() {
-        var gameStage;
+        var gameStage, stateL;
 
         // NodeGame default listeners
         if (!this.game) return this.events.ee.ng;
@@ -23040,12 +23306,9 @@ if (!Array.prototype.indexOf) {
         }
 
         // Stage listeners.
-        if (gameStage.step === 1 && gameStage.round === 1) {
-            if (this.game.getStageLevel() === STAGE &&
-                this.game.getStateLevel() === STATE) {
-
-                return this.events.ee.stage;
-            }
+        stateL = this.game.getStateLevel();
+        if (stateL === STAGE_INIT || stateL === STAGE_EXIT) {
+            return this.events.ee.stage;
         }
 
         // Step listeners.
@@ -23105,7 +23368,7 @@ if (!Array.prototype.indexOf) {
     /**
      * ### NodeGameClient.set
      *
-     * Stores a key-value pair in the server memory
+     * Stores an object in the server's memory
      *
      * @param {object|string} The value to set
      * @param {string} to The recipient. Default `SERVER`
@@ -23314,7 +23577,7 @@ if (!Array.prototype.indexOf) {
      *      if so returns with a warning.
      *  - Checks it there a `done` hanlder in the step, and if so
      *      executes. If the return value is falsy procedure stops.
-     *  - Marks the step as `willBeDone` and no further callas to
+     *  - Marks the step as `willBeDone` and no further calls to
      *      `node.done` are allowed in the same step.
      *  - Creates and send a SET message to server containing the time
      *      passed from the beginning of the step, if `done` was a timeup
@@ -23345,7 +23608,7 @@ if (!Array.prototype.indexOf) {
 
         game = this.game;
         if (game.willBeDone || game.getStageLevel() >= GETTING_DONE) {
-            node.err('node.done: done already called in this step.');
+            this.err('node.done: done already called in this step.');
             return false;
         }
 
@@ -23926,9 +24189,8 @@ if (!Array.prototype.indexOf) {
          *
          * Adds an entry to the memory object
          *
-         * Creates a message using the fields `text`, `data`, `stage`
-         * and `from` of the incoming set.DATA message. If `data` is
-         * not defined it is set to TRUE.
+         * Uses the fields `text`, `data`, `stage` and `from`
+         * of the incoming set.DATA message.
          */
         node.events.ng.on( IN + set + 'DATA', function(msg) {
             var o = msg.data;
@@ -24758,23 +25020,11 @@ if (!Array.prototype.indexOf) {
          * @see Stager.setState
          */
         this.registerSetup('plot', function(stagerState, updateRule) {
-            if (!this.game) {
-                throw new Error("node.setup.plot: node.game not found.");
-            }
-
             stagerState = stagerState || {};
-
-            if (!this.game.plot) {
-                this.game.plot = new GamePlot();
-            }
-
-            if (!this.game.plot.stager) {
-                this.game.plot.stager = new Stager();
-            }
 
             this.game.plot.stager.setState(stagerState, updateRule);
 
-            return this.game.plot;
+            return this.game.plot.stager;
         });
 
         (function(node) {
@@ -37790,10 +38040,10 @@ if (!Array.prototype.indexOf) {
                 var timeOut;
                 // Enough Time passed, not enough players connected.
                 if (data.over === 'Time elapsed, disconnect') {
-
-                    timeOut = "<h3 align='center'>Thank you for your patience.<br>";
-                    timeOut += "Unfortunately, there are not enough participants in ";
-                    timeOut += "your group to start the experiment.<br>";
+                    timeOut = "<h3 align='center'>" +
+                        "Thank you for your patience.<br>" +
+                        "Unfortunately, there are not enough participants in " +
+                        "your group to start the experiment.<br>";
                 }
                 else if (data.over === "Time elapsed!!!") {
                     if (data.nPlayers && data.nPlayers < this.POOL_SIZE) {
@@ -37804,17 +38054,19 @@ if (!Array.prototype.indexOf) {
                     }
                 }
                 else if (data.over === 'Not selected') {
-                    timeOut  = '<h3 align="center"><span style="color: red"> You were ' +
+                    timeOut  = '<h3 align="center">' +
+                        '<span style="color: red"> You were ' +
                         '<strong>not selected</strong> to start the game.' +
                         'Thank you for your participation.' +
                         '</span><br><br>';
                 }
                 // Too much time passed, but no message from server received.
                 else {
-                    timeOut = "<h3 align='center'>An error has occurred. You seem to be ";
-                    timeOut += "waiting for too long. Please look for a HIT called ";
-                    timeOut += "<strong>ETH Descil Trouble Ticket</strong> and file ";
-                    timeOut += "a new trouble ticket reporting your experience.";
+                    timeOut = "<h3 align='center'>" +
+                        "An error has occurred. You seem to be ";
+                        "waiting for too long. Please look for a HIT called " +
+                        "<strong>ETH Descil Trouble Ticket</strong> and file " +
+                        "a new trouble ticket reporting your experience.";
                 }
 
                 if (data.exit) {
@@ -37953,7 +38205,8 @@ if (!Array.prototype.indexOf) {
      */
     WaitingRoom.prototype.updateDisplay = function() {
         if (this.connected > this.poolSize) {
-            this.playerCount.innerHTML = '<span style="color:red">' + this.connected + '</span>' + ' / ' + this.poolSize;
+            this.playerCount.innerHTML = '<span style="color:red">' +
+                this.connected + '</span>' + ' / ' + this.poolSize;
             this.playerCountTooHigh.style.display = '';
             this.playerCountTooHigh.innerHTML = 'There are more players in ' +
                 'this waiting room than there are playslots in the game. ' +
