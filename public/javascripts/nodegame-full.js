@@ -5670,6 +5670,8 @@ if (!Array.prototype.indexOf) {
  * MIT Licensed
  *
  * NDDB is a powerful and versatile object database for node.js and the browser.
+ *
+ * See README.md for documentation and help.
  * ---
  */
 (function(exports, J, store) {
@@ -5682,7 +5684,7 @@ if (!Array.prototype.indexOf) {
     if (!J) throw new Error('NDDB: missing dependency: JSUS.');
 
     /**
-     * ### df
+     * ## df
      *
      * Flag indicating support for method Object.defineProperty
      *
@@ -6249,7 +6251,7 @@ if (!Array.prototype.indexOf) {
     // ## METHODS
 
     /**
-     * ### NDDB.throwErr
+     * ## NDDB.throwErr
      *
      * Throws an error with a predefined format
      *
@@ -6490,6 +6492,61 @@ if (!Array.prototype.indexOf) {
         }
     };
 
+
+    /**
+     * ## nddb_insert
+     *
+     * Insert an item into db and performs update operations
+     *
+     * A new property `.nddbid` is created in the object, and it will be
+     * used to add the element into the global index: `NDDB.nddbid`.
+     *
+     * Emits the 'insert' event, and updates indexes, hashes and views
+     * accordingly.
+     *
+     * @param {object|function} o The item to add to database
+     * @param {boolean} update Optional. If TRUE, updates indexes, hashes,
+     *    and views. Default, FALSE
+     *
+     * @see NDDB.nddbid
+     * @see NDDB.emit
+     *
+     * @api private
+     */
+    function nddb_insert(o, update) {
+        var nddbid;
+        if (('object' !== typeof o) && ('function' !== typeof o)) {
+            this.throwErr('TypeError', 'insert', 'object or function ' +
+                          'expected, ' + typeof o + ' received.');
+        }
+
+        // Check / create a global index.
+        if ('undefined' === typeof o._nddbid) {
+            // Create internal idx.
+            nddbid = J.uniqueKey(this.nddbid.resolve);
+            if (!nddbid) {
+                this.throwErr('Error', 'insert',
+                              'failed to create index: ' + o);
+            }
+            if (df) {
+                Object.defineProperty(o, '_nddbid', { value: nddbid });
+            }
+            else {
+                o._nddbid = nddbid;
+            }
+        }
+        // Add to index directly (bypass api).
+        this.nddbid.resolve[o._nddbid] = this.db.length;
+        // End create index.
+        this.db.push(o);
+        this.emit('insert', o);
+        if (update) {
+            this._indexIt(o, (this.db.length-1));
+            this._hashIt(o);
+            this._viewIt(o);
+        }
+    }
+
     /**
      * ### NDDB.importDB
      *
@@ -6722,6 +6779,10 @@ if (!Array.prototype.indexOf) {
         this.__C[d] = comparator;
     };
 
+    // ### NDDB.c
+    // @deprecated
+    NDDB.prototype.c = NDDB.prototype.comparator;
+
     /**
      * ### NDDB.getComparator
      *
@@ -6877,6 +6938,11 @@ if (!Array.prototype.indexOf) {
         this.__I[idx] = func, this[idx] = new NDDBIndex(idx, this);
     };
 
+
+    // ### NDDB.i
+    // @deprecated
+    NDDB.prototype.i = NDDB.prototype.index;
+
     /**
      * ### NDDB.view
      *
@@ -6946,6 +7012,11 @@ if (!Array.prototype.indexOf) {
         }
         this.__H[idx] = func, this[idx] = {};
     };
+
+    //### NDDB.h
+    //@deprecated
+    NDDB.prototype.h = NDDB.prototype.hash;
+
 
     /**
      * ### NDDB.resetIndexes
@@ -7765,6 +7836,26 @@ if (!Array.prototype.indexOf) {
         return this.breed(shuffled);
     };
 
+    /**
+     * ### NDDB.priorityShuffle
+     *
+     * Returns a copy of the current database with semi-randomly shuffled items
+     *
+     * @param {boolean} update Optional. If TRUE, items in the current database
+     *   are also shuffled. Defaults, FALSE.
+     *
+     * @return {NDDB} A new instance of NDDB with the shuffled entries
+     */
+    NDDB.prototype.shuffle = function(update) {
+        // TODO: Multiple lists according to priority, then shuffle each one. return union
+        var shuffled;
+        shuffled = J.shuffle(this.db);
+        if (update) {
+            this.db = shuffled;
+            this.rebuildIndexes();
+        }
+        return this.breed(shuffled);
+    };
     // ## Custom callbacks
 
     /**
@@ -9246,61 +9337,6 @@ if (!Array.prototype.indexOf) {
 
     // ## Helper Methods
 
-
-    /**
-     * ### nddb_insert
-     *
-     * Insert an item into db and performs update operations
-     *
-     * A new property `.nddbid` is created in the object, and it will be
-     * used to add the element into the global index: `NDDB.nddbid`.
-     *
-     * Emits the 'insert' event, and updates indexes, hashes and views
-     * accordingly.
-     *
-     * @param {object|function} o The item to add to database
-     * @param {boolean} update Optional. If TRUE, updates indexes, hashes,
-     *    and views. Default, FALSE
-     *
-     * @see NDDB.nddbid
-     * @see NDDB.emit
-     *
-     * @api private
-     */
-    function nddb_insert(o, update) {
-        var nddbid;
-        if (('object' !== typeof o) && ('function' !== typeof o)) {
-            this.throwErr('TypeError', 'insert', 'object or function ' +
-                          'expected, ' + typeof o + ' received.');
-        }
-
-        // Check / create a global index.
-        if ('undefined' === typeof o._nddbid) {
-            // Create internal idx.
-            nddbid = J.uniqueKey(this.nddbid.resolve);
-            if (!nddbid) {
-                this.throwErr('Error', 'insert',
-                              'failed to create index: ' + o);
-            }
-            if (df) {
-                Object.defineProperty(o, '_nddbid', { value: nddbid });
-            }
-            else {
-                o._nddbid = nddbid;
-            }
-        }
-        // Add to index directly (bypass api).
-        this.nddbid.resolve[o._nddbid] = this.db.length;
-        // End create index.
-        this.db.push(o);
-        this.emit('insert', o);
-        if (update) {
-            this._indexIt(o, (this.db.length-1));
-            this._hashIt(o);
-            this._viewIt(o);
-        }
-    }
-
     /**
      * ### validateSaveLoadParameters
      *
@@ -9853,6 +9889,7 @@ if (!Array.prototype.indexOf) {
         return out;
     };
 
+    // ## Closure
 })(
     ('undefined' !== typeof module && 'undefined' !== typeof module.exports) ?
         module.exports : window ,
@@ -12949,6 +12986,7 @@ if (!Array.prototype.indexOf) {
             stageNo  = normStage.stage;
             stepNo   = normStage.step;
             seqObj   = this.stager.sequence[stageNo - 1];
+
             if (seqObj.type === 'gameover') return GamePlot.GAMEOVER;
 
 
@@ -12989,14 +13027,18 @@ if (!Array.prototype.indexOf) {
 
             // Go to next stage:
             if (stageNo < this.stager.sequence.length) {
+                seqObj = this.stager.sequence[stageNo];
+
                 // Skip over loops if their callbacks return false:
-                while (this.stager.sequence[stageNo].type === 'loop' &&
-                       !this.stager.sequence[stageNo].cb()) {
+                while (seqObj.type === 'loop' &&
+                       !seqObj.cb.call(this.node.game)) {
 
                     stageNo++;
                     if (stageNo >= this.stager.sequence.length) {
                         return GamePlot.END_SEQ;
                     }
+                    seqObj = this.stager.sequence[stageNo];
+
                 }
 
                 // Handle gameover:
@@ -13441,7 +13483,7 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
-     * ### GamePlot.getGlobal
+     * ### GamePlot.getGlobals
      *
      * Looks up and build the _globals_ object for the specified game stage
      *
@@ -13886,6 +13928,7 @@ if (!Array.prototype.indexOf) {
     Stager.isDefaultCb = isDefaultCb;
     Stager.isDefaultStep = isDefaultStep;
     Stager.makeDefaultStep = makeDefaultStep;
+    Stager.unmakeDefaultStep = unmakeDefaultStep;
     Stager.addStepToBlock = addStepToBlock;
 
     var BLOCK_DEFAULT     = blockTypes.BLOCK_DEFAULT;
@@ -14116,8 +14159,9 @@ if (!Array.prototype.indexOf) {
      *
      * @param {object|string} step The step object to mark. If a string
      *   is passed, a new step object with default cb is created.
+     * @ param {function} cb Optional A function to create the step cb
      *
-     * @return {function} A function flagged as `default`
+     * @return {object} step the step flagged as `default`
      *
      * @see makeDefaultCb
      * @see isDefaultStep
@@ -14130,6 +14174,23 @@ if (!Array.prototype.indexOf) {
             };
         }
         step._defaultStep = true;
+        return step;
+    }
+
+    /**
+     * #### unmakeDefaultStep
+     *
+     * Removes the flag from a step marked as `default`
+     *
+     * @param {object} step The step object to unmark.
+     *
+     * @return {object} step the step without the `default` flag
+     *
+     * @see makeDefaultDefaultStep
+     * @see isDefaultStep
+     */
+    function unmakeDefaultStep(step) {
+        if (step._defaultStep) step._defaultStep = null;
         return step;
     }
 
@@ -16435,9 +16496,11 @@ if (!Array.prototype.indexOf) {
     var J = node.JSUS;
     var Stager = node.Stager;
 
-    var checkFinalized   = Stager.checkFinalized;
-    var handleStepsArray = Stager.handleStepsArray;
-    var addStepToBlock   = Stager.addStepToBlock;
+    var checkFinalized    = Stager.checkFinalized;
+    var handleStepsArray  = Stager.handleStepsArray;
+    var addStepToBlock    = Stager.addStepToBlock;
+    var isDefaultStep     = Stager.isDefaultStep;
+    var unmakeDefaultStep = Stager.unmakeDefaultStep;
 
     /**
      * #### Stager.extendStep
@@ -16824,6 +16887,11 @@ if (!Array.prototype.indexOf) {
             // Add steps to block (if necessary).
             i = -1, len = update.steps.length;
             for ( ; ++i < len ; ) {
+                // If the default step is contained in the list of updated
+                // steps, then it's not a default step and we keep it.
+                if (isDefaultStep(that.steps[update.steps[i]])) {
+                    unmakeDefaultStep(that.steps[update.steps[i]]);
+                }
                 addStepToBlock(that, block, update.steps[i], stageId);
             }
         }
@@ -18713,7 +18781,7 @@ if (!Array.prototype.indexOf) {
      *
      * Executes the next stage / step
      *
-     * @return {Boolean} FALSE, if the execution encountered an error
+     * @return {boolean} FALSE, if the execution encountered an error
      *
      * @see Game.stager
      * @see Game.currentStage
@@ -38005,6 +38073,13 @@ if (!Array.prototype.indexOf) {
          * is disconnected.
          */
         this.disconnectMessage = null;
+
+        /**
+         * ### WaitingRoom.disconnectOnNotConnected
+         *
+         * Flag that indicates whether to disconnect an not selected player
+         */
+        this.disconnectMessage = null;
     }
 
     // ## WaitingRoom methods
@@ -38127,6 +38202,18 @@ if (!Array.prototype.indexOf) {
             this.disconnectMessage = '<span style="color: red">You have been ' +
                 '<strong>disconnected</strong>. Please try again later.' +
                 '</span><br><br>';
+        }
+
+        if (conf.disconnectOnNotSelected) {
+            if ('boolean' !== typeof conf.disconnectOnNotSelected) {
+                throw new TypeError('WaitingRoom.init: ' +
+                    'conf.disconnectOnNotSelected must be boolean or ' +
+                    'undefined.');
+            }
+            this.disconnectOnNotSelected = conf.disconnectOnNotSelected;
+        }
+        else {
+            this.disconnectOnNotSelected = false;
         }
 
     };
@@ -38330,7 +38417,7 @@ if (!Array.prototype.indexOf) {
     // ## Helper methods
 
     function timeIsUp(data) {
-        var disconnect;
+        var disconnect, timeout;
         console.log('TIME IS UP!');
 
         if (this.alreadyTimeUp) return;
@@ -38344,16 +38431,18 @@ if (!Array.prototype.indexOf) {
         if (data.over === 'AllPlayersConnected') return;
 
         if (data.over === 'Not selected') {
-             disconnect = true;
+             disconnect = this.disconnectOnNotSelected;
+             timeout = true;
         }
 
         if (data.over === 'Time elapsed, disconnect') {
             disconnect = true;
+            timeout = true;
         }
         if (disconnect) {
             node.socket.disconnect();
-            if (this.onTimeout) this.onTimeout(data);
         }
+	if (timeout && this.onTimeout) this.onTimeout(data);
     }
 
 })(node);
