@@ -12660,16 +12660,21 @@ if (!Array.prototype.indexOf) {
             line += "" + this.data;
         }
         else {
-            tmp = this.data.toString();
-            if (tmp.length > 12) {
-                line += DLM + tmp.substr(0,9) + "..." + DLM + SPT;
+            if (this.data.round) {
+                tmp = new node.GameStage(this.data);
+                tmp = tmp.toString();
             }
-            else if (tmp.length < 9) {
-                line += DLM + tmp + DLM + SPT + TAB;
-            }
-            else {
-                line += DLM + tmp + DLM + SPT;
-            }
+            else tmp = this.data.toString();
+line += DLM + tmp + DLM + SPT;
+//             if (tmp.length > 12) {
+//                 line += DLM + tmp.substr(0,9) + "..." + DLM + SPT;
+//             }
+//             else if (tmp.length < 9) {
+//                 line += DLM + tmp + DLM + SPT + TAB;
+//             }
+//             else {
+//                 line += DLM + tmp + DLM + SPT;
+//             }
         }
 
         line += new GameStage(this.stage) + SPT;
