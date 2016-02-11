@@ -500,8 +500,8 @@ players to start the game.</p>
                 <span class="s1">&#39; Date constructor. Value provided: &#39;</span> <span class="o">+</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">START_DATE</span><span class="p">);</span>
         <span class="p">}</span>
         <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">MAX_WAIT_TIME</span><span class="p">)</span> <span class="p">{</span>
-            <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span> <span class="s1">&#39;Cannot both define MAX_WAIT_TIME and &#39;</span> <span class="o">+</span>
-                <span class="s1">&#39; START_DATE.&#39;</span><span class="p">);</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span> <span class="s1">&#39;Cannot define both MAX_WAIT_TIME and &#39;</span> <span class="o">+</span>
+                <span class="s1">&#39;START_DATE.&#39;</span><span class="p">);</span>
         <span class="p">}</span>
         <span class="k">this</span><span class="p">.</span><span class="nx">START_DATE</span> <span class="o">=</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">START_DATE</span><span class="p">;</span>
     <span class="p">}</span>
@@ -693,7 +693,7 @@ players to start the game.</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-21" id="section-21">&#182;</a>
 </div>
-<p>Sort according to priority</p>
+<p>Sort according to priority.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
         <span class="nx">shuffledPList</span><span class="p">.</span><span class="nx">sort</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">a</span><span class="p">,</span><span class="nx">b</span><span class="p">)</span> <span class="p">{</span>
@@ -1094,11 +1094,6 @@ also.</p>
       <span class="dox_tag_name">where</span>
       <span class="dox_type">string</span>
       <span>String to prepend to the error message.</span>
-    </div>
-    <div class="dox_tag_title">throws</div>
-    <div class="dox_tag_detail">
-      <span class="dox_type">Error</span>
-      <span>Thrown if <code>settings[name]</code> is not a positive integer</span>
     </div>
     <div class="dox_tag_title">See</div>
     <div class="dox_tag_detail">
