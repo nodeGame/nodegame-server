@@ -849,7 +849,6 @@ the client-id of the recipient.</p>
             <span class="k">return</span><span class="p">;</span>
         <span class="p">}</span>
 
-        <span class="k">if</span> <span class="p">(</span><span class="nx">msg</span><span class="p">.</span><span class="nx">to</span> <span class="o">===</span> <span class="s1">&#39;SERVER&#39;</span> <span class="o">||</span> <span class="nx">room</span><span class="p">.</span><span class="nx">acm</span><span class="p">.</span><span class="nx">forwardAll</span><span class="p">)</span> <span class="p">{</span>
 
 </pre></div>
         </td>
@@ -858,6 +857,20 @@ the client-id of the recipient.</p>
         <td class="docs">
 <div class="pilwrap">
   <a class="pilcrow" href="#section-30" id="section-30">&#182;</a>
+</div>
+<p>TODO: improve. Too many ifs.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
+        <span class="k">if</span> <span class="p">(</span><span class="nx">msg</span><span class="p">.</span><span class="nx">to</span> <span class="o">===</span> <span class="s1">&#39;SERVER&#39;</span> <span class="o">||</span> <span class="nx">room</span><span class="p">.</span><span class="nx">acm</span><span class="p">.</span><span class="nx">forwardAll</span><span class="p">)</span> <span class="p">{</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-31" id="section-31">&#182;</a>
 </div>
 <p>Send to admins in sender's room.</p>
         </td>
@@ -873,12 +886,16 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-31" id="section-31">&#182;</a>
+  <a class="pilcrow" href="#section-32" id="section-32">&#182;</a>
 </div>
-<p>Send to receiving player.</p>
+<p>Send to receiving player (do not send twice to admin.)</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-            <span class="k">this</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">send2client</span><span class="p">(</span><span class="nx">msg</span><span class="p">);</span>
+            <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">room</span><span class="p">.</span><span class="nx">acm</span><span class="p">.</span><span class="nx">forwardAll</span> <span class="o">||</span>
+                <span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">registry</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">admin</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="nx">msg</span><span class="p">.</span><span class="nx">to</span><span class="p">))</span> <span class="p">{</span>
+
+                <span class="k">this</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">send2client</span><span class="p">(</span><span class="nx">msg</span><span class="p">);</span>
+            <span class="p">}</span>
         <span class="p">}</span>
     <span class="p">}</span>
 <span class="p">};</span>
@@ -923,7 +940,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-33" id="section-33">&#182;</a>
+  <a class="pilcrow" href="#section-34" id="section-34">&#182;</a>
 </div>
 <p>Send notification to other players (if allowed).</p>
         </td>
@@ -942,7 +959,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-34" id="section-34">&#182;</a>
+  <a class="pilcrow" href="#section-35" id="section-35">&#182;</a>
 </div>
 <p>Send the current player list to the new player.</p>
         </td>
@@ -962,7 +979,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-35" id="section-35">&#182;</a>
+  <a class="pilcrow" href="#section-36" id="section-36">&#182;</a>
 </div>
 <p>Send notification to admin (always).</p>
         </td>
@@ -1005,7 +1022,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-37" id="section-37">&#182;</a>
+  <a class="pilcrow" href="#section-38" id="section-38">&#182;</a>
 </div>
 <p>Notify players and admins of disconnection in old room.</p>
         </td>
@@ -1020,7 +1037,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-38" id="section-38">&#182;</a>
+  <a class="pilcrow" href="#section-39" id="section-39">&#182;</a>
 </div>
 <p>Notify only admins of disconnection in old room.</p>
         </td>
