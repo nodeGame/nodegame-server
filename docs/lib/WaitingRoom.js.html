@@ -707,20 +707,31 @@ players to start the game.</p>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-<span class="nx">WaitingRoom</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">dispatch</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">timeOutData</span><span class="p">)</span> <span class="p">{</span>
-    <span class="kd">var</span> <span class="nx">treatmentName</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">shuffledPList</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">limitedPList</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">i</span><span class="p">,</span> <span class="nx">gameRoom</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">pList</span><span class="p">,</span> <span class="nx">nPlayers</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">where</span><span class="p">;</span>
-    <span class="nx">where</span> <span class="o">=</span> <span class="s1">&#39;WaitingRoom.dispatch: &#39;</span><span class="p">;</span>
+<span class="nx">WaitingRoom</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">dispatch</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">customSorting</span><span class="p">;</span>
+    <span class="nx">customSorting</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">a</span><span class="p">,</span><span class="nx">b</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">a</span><span class="p">.</span><span class="nx">timesNotSelected</span> <span class="o">&lt;</span> <span class="nx">b</span><span class="p">.</span><span class="nx">timesNotSelected</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">a</span><span class="p">.</span><span class="nx">timesNotSelected</span> <span class="o">&gt;</span> <span class="nx">b</span><span class="p">.</span><span class="nx">timesNotSelected</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">timeOutData</span><span class="p">)</span> <span class="p">{</span>
+        <span class="kd">var</span> <span class="nx">treatmentName</span><span class="p">;</span>
+        <span class="kd">var</span> <span class="nx">shuffledPList</span><span class="p">;</span>
+        <span class="kd">var</span> <span class="nx">limitedPList</span><span class="p">;</span>
+        <span class="kd">var</span> <span class="nx">i</span><span class="p">,</span> <span class="nx">gameRoom</span><span class="p">;</span>
+        <span class="kd">var</span> <span class="nx">pList</span><span class="p">,</span> <span class="nx">nPlayers</span><span class="p">;</span>
+        <span class="kd">var</span> <span class="nx">where</span><span class="p">;</span>
+        <span class="nx">where</span> <span class="o">=</span> <span class="s1">&#39;WaitingRoom.dispatch: &#39;</span><span class="p">;</span>
 
-    <span class="nx">pList</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">player</span><span class="p">;</span>
-    <span class="nx">nPlayers</span> <span class="o">=</span> <span class="nx">pList</span><span class="p">.</span><span class="nx">size</span><span class="p">();</span>
+        <span class="nx">pList</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">player</span><span class="p">;</span>
+        <span class="nx">nPlayers</span> <span class="o">=</span> <span class="nx">pList</span><span class="p">.</span><span class="nx">size</span><span class="p">();</span>
 
-    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">isDispatchable</span><span class="p">())</span> <span class="p">{</span>
-        <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span> <span class="s1">&#39;Not allowed to dispatch game.&#39;</span><span class="p">);</span>
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">isDispatchable</span><span class="p">())</span> <span class="p">{</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span> <span class="s1">&#39;Not allowed to dispatch game.&#39;</span><span class="p">);</span>
 
 </pre></div>
         </td>
@@ -734,10 +745,10 @@ players to start the game.</p>
 return;</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="p">}</span>
-    <span class="k">else</span> <span class="p">{</span>
-        <span class="o">++</span><span class="k">this</span><span class="p">.</span><span class="nx">numberOfDispatches</span><span class="p">;</span>
-    <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="k">else</span> <span class="p">{</span>
+            <span class="o">++</span><span class="k">this</span><span class="p">.</span><span class="nx">numberOfDispatches</span><span class="p">;</span>
+        <span class="p">}</span>
 
 
 </pre></div>
@@ -751,7 +762,7 @@ return;</p>
 <p>Shuffle player list.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="nx">shuffledPList</span> <span class="o">=</span> <span class="nx">pList</span><span class="p">.</span><span class="nx">shuffle</span><span class="p">();</span>
+        <span class="nx">shuffledPList</span> <span class="o">=</span> <span class="nx">pList</span><span class="p">.</span><span class="nx">shuffle</span><span class="p">();</span>
 
 
 </pre></div>
@@ -765,15 +776,7 @@ return;</p>
 <p>Sort according to priority.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="nx">shuffledPList</span><span class="p">.</span><span class="nx">sort</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">a</span><span class="p">,</span><span class="nx">b</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">if</span> <span class="p">(</span><span class="nx">a</span><span class="p">.</span><span class="nx">timesNotSelected</span> <span class="o">&lt;</span> <span class="nx">b</span><span class="p">.</span><span class="nx">timesNotSelected</span><span class="p">)</span> <span class="p">{</span>
-            <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
-        <span class="p">}</span>
-        <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">a</span><span class="p">.</span><span class="nx">timesNotSelected</span> <span class="o">&gt;</span> <span class="nx">b</span><span class="p">.</span><span class="nx">timesNotSelected</span><span class="p">)</span> <span class="p">{</span>
-            <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
-        <span class="p">}</span>
-        <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
-    <span class="p">});</span>
+        <span class="nx">shuffledPList</span><span class="p">.</span><span class="nx">sort</span><span class="p">(</span><span class="nx">customSorting</span><span class="p">);</span>
 
 
 
@@ -788,7 +791,7 @@ return;</p>
 <p>Inform players.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">for</span> <span class="p">(</span><span class="nx">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">nPlayers</span><span class="p">;</span> <span class="nx">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">for</span> <span class="p">(</span><span class="nx">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">nPlayers</span><span class="p">;</span> <span class="nx">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
 
 </pre></div>
         </td>
@@ -801,8 +804,8 @@ return;</p>
 <p>Players that may join the game.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-        <span class="k">if</span> <span class="p">(</span><span class="nx">i</span> <span class="o">&lt;</span> <span class="k">this</span><span class="p">.</span><span class="nx">GROUP_SIZE</span><span class="p">)</span> <span class="p">{</span>
-            <span class="k">this</span><span class="p">.</span><span class="nx">node</span><span class="p">.</span><span class="nx">say</span><span class="p">(</span><span class="s2">&quot;TIME&quot;</span><span class="p">,</span> <span class="nx">shuffledPList</span><span class="p">.</span><span class="nx">db</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">id</span><span class="p">,</span> <span class="nx">timeOutData</span><span class="p">);</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nx">i</span> <span class="o">&lt;</span> <span class="k">this</span><span class="p">.</span><span class="nx">GROUP_SIZE</span><span class="p">)</span> <span class="p">{</span>
+                <span class="k">this</span><span class="p">.</span><span class="nx">node</span><span class="p">.</span><span class="nx">say</span><span class="p">(</span><span class="s2">&quot;TIME&quot;</span><span class="p">,</span> <span class="nx">shuffledPList</span><span class="p">.</span><span class="nx">db</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">id</span><span class="p">,</span> <span class="nx">timeOutData</span><span class="p">);</span>
 
 
 </pre></div>
@@ -816,9 +819,9 @@ return;</p>
 <p>Clear body.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-            <span class="k">this</span><span class="p">.</span><span class="nx">node</span><span class="p">.</span><span class="nx">remoteSetup</span><span class="p">(</span><span class="s1">&#39;page&#39;</span><span class="p">,</span> <span class="nx">shuffledPList</span><span class="p">.</span><span class="nx">db</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">id</span><span class="p">,</span> <span class="p">{</span>
-                <span class="nx">clearBody</span><span class="o">:</span> <span class="kc">true</span>
-            <span class="p">});</span>
+                <span class="k">this</span><span class="p">.</span><span class="nx">node</span><span class="p">.</span><span class="nx">remoteSetup</span><span class="p">(</span><span class="s1">&#39;page&#39;</span><span class="p">,</span> <span class="nx">shuffledPList</span><span class="p">.</span><span class="nx">db</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">id</span><span class="p">,</span> <span class="p">{</span>
+                    <span class="nx">clearBody</span><span class="o">:</span> <span class="kc">true</span>
+                <span class="p">});</span>
 
 </pre></div>
         </td>
@@ -831,8 +834,8 @@ return;</p>
 <p>Clear timeout for players.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-            <span class="k">this</span><span class="p">.</span><span class="nx">clearTimeOut</span><span class="p">(</span><span class="nx">shuffledPList</span><span class="p">.</span><span class="nx">db</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">id</span><span class="p">);</span>
-        <span class="p">}</span>
+                <span class="k">this</span><span class="p">.</span><span class="nx">clearTimeOut</span><span class="p">(</span><span class="nx">shuffledPList</span><span class="p">.</span><span class="nx">db</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">id</span><span class="p">);</span>
+            <span class="p">}</span>
 
 </pre></div>
         </td>
@@ -845,11 +848,11 @@ return;</p>
 <p>Players that may not join.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-        <span class="k">else</span> <span class="p">{</span>
-            <span class="k">this</span><span class="p">.</span><span class="nx">node</span><span class="p">.</span><span class="nx">say</span><span class="p">(</span><span class="s2">&quot;TIME&quot;</span><span class="p">,</span> <span class="nx">shuffledPList</span><span class="p">.</span><span class="nx">db</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">id</span><span class="p">,</span> <span class="p">{</span>
-                <span class="nx">over</span><span class="o">:</span> <span class="s2">&quot;Not selected&quot;</span><span class="p">,</span>
-                <span class="nx">isDispatchable</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">isDispatchable</span><span class="p">()</span>
-            <span class="p">});</span>
+            <span class="k">else</span> <span class="p">{</span>
+                <span class="k">this</span><span class="p">.</span><span class="nx">node</span><span class="p">.</span><span class="nx">say</span><span class="p">(</span><span class="s2">&quot;TIME&quot;</span><span class="p">,</span> <span class="nx">shuffledPList</span><span class="p">.</span><span class="nx">db</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">id</span><span class="p">,</span> <span class="p">{</span>
+                    <span class="nx">over</span><span class="o">:</span> <span class="s2">&quot;Not selected&quot;</span><span class="p">,</span>
+                    <span class="nx">isDispatchable</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">isDispatchable</span><span class="p">()</span>
+                <span class="p">});</span>
 
 </pre></div>
         </td>
@@ -862,18 +865,18 @@ return;</p>
 <p>Increase timesNotSelected of player.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-            <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">db</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">timesNotSelected</span><span class="p">)</span> <span class="p">{</span>
-                <span class="o">++</span><span class="k">this</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">db</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">timesNotSelected</span><span class="p">;</span>
-            <span class="p">}</span>
-            <span class="k">else</span> <span class="p">{</span>
-                <span class="k">this</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">db</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">timesNotSelected</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
-            <span class="p">}</span>
+                <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">db</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">timesNotSelected</span><span class="p">)</span> <span class="p">{</span>
+                    <span class="o">++</span><span class="k">this</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">db</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">timesNotSelected</span><span class="p">;</span>
+                <span class="p">}</span>
+                <span class="k">else</span> <span class="p">{</span>
+                    <span class="k">this</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">db</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">timesNotSelected</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+                <span class="p">}</span>
 
-            <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">START_DATE</span><span class="p">)</span> <span class="p">{</span>
-                <span class="k">this</span><span class="p">.</span><span class="nx">clearTimeOut</span><span class="p">(</span><span class="nx">shuffledPList</span><span class="p">.</span><span class="nx">db</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">id</span><span class="p">);</span>
+                <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">START_DATE</span><span class="p">)</span> <span class="p">{</span>
+                    <span class="k">this</span><span class="p">.</span><span class="nx">clearTimeOut</span><span class="p">(</span><span class="nx">shuffledPList</span><span class="p">.</span><span class="nx">db</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">id</span><span class="p">);</span>
+                <span class="p">}</span>
             <span class="p">}</span>
         <span class="p">}</span>
-    <span class="p">}</span>
 
 
 </pre></div>
@@ -887,7 +890,7 @@ return;</p>
 <p>Choose players.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="nx">limitedPList</span> <span class="o">=</span> <span class="nx">shuffledPList</span><span class="p">.</span><span class="nx">limit</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">GROUP_SIZE</span><span class="p">);</span>
+        <span class="nx">limitedPList</span> <span class="o">=</span> <span class="nx">shuffledPList</span><span class="p">.</span><span class="nx">limit</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">GROUP_SIZE</span><span class="p">);</span>
 
 
 </pre></div>
@@ -901,7 +904,7 @@ return;</p>
 <p>Decide treatment.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="nx">treatmentName</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">decideTreatment</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">CHOSEN_TREATMENT</span><span class="p">);</span>
+        <span class="nx">treatmentName</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">decideTreatment</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">CHOSEN_TREATMENT</span><span class="p">);</span>
 
 
 </pre></div>
@@ -915,10 +918,10 @@ return;</p>
 <p>Create new game room.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="nx">gameRoom</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">createGameRoom</span><span class="p">({</span>
-        <span class="nx">clients</span><span class="o">:</span> <span class="nx">limitedPList</span><span class="p">,</span>
-        <span class="nx">treatmentName</span><span class="o">:</span> <span class="nx">treatmentName</span>
-    <span class="p">});</span>
+        <span class="nx">gameRoom</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">createGameRoom</span><span class="p">({</span>
+            <span class="nx">clients</span><span class="o">:</span> <span class="nx">limitedPList</span><span class="p">,</span>
+            <span class="nx">treatmentName</span><span class="o">:</span> <span class="nx">treatmentName</span>
+        <span class="p">});</span>
 
 
 </pre></div>
@@ -932,8 +935,8 @@ return;</p>
 <p>Setup and start game.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="nx">gameRoom</span><span class="p">.</span><span class="nx">setupGame</span><span class="p">();</span>
-    <span class="nx">gameRoom</span><span class="p">.</span><span class="nx">startGame</span><span class="p">(</span><span class="kc">true</span><span class="p">,</span> <span class="p">[]);</span>
+        <span class="nx">gameRoom</span><span class="p">.</span><span class="nx">setupGame</span><span class="p">();</span>
+        <span class="nx">gameRoom</span><span class="p">.</span><span class="nx">startGame</span><span class="p">(</span><span class="kc">true</span><span class="p">,</span> <span class="p">[]);</span>
 
 
 </pre></div>
@@ -947,11 +950,12 @@ return;</p>
 <p>Close waitingRoom if next game would not be dispatchable.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">isDispatchable</span><span class="p">())</span> <span class="p">{</span>
-        <span class="k">this</span><span class="p">.</span><span class="nx">closeRoom</span><span class="p">();</span>
-    <span class="p">}</span>
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">isDispatchable</span><span class="p">())</span> <span class="p">{</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">closeRoom</span><span class="p">();</span>
+        <span class="p">}</span>
 
-<span class="p">};</span>
+    <span class="p">};</span>
+<span class="p">}();</span>
 
 
 
