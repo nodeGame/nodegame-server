@@ -722,6 +722,9 @@ return;</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="p">}</span>
+    <span class="k">else</span> <span class="p">{</span>
+        <span class="o">++</span><span class="k">this</span><span class="p">.</span><span class="nx">numberOfDispatches</span><span class="p">;</span>
+    <span class="p">}</span>
 
 
 </pre></div>
@@ -831,7 +834,8 @@ return;</p>
         <td class="code highlight"><div class="highlight"><pre>
         <span class="k">else</span> <span class="p">{</span>
             <span class="k">this</span><span class="p">.</span><span class="nx">node</span><span class="p">.</span><span class="nx">say</span><span class="p">(</span><span class="s2">&quot;TIME&quot;</span><span class="p">,</span> <span class="nx">shuffledPList</span><span class="p">.</span><span class="nx">db</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">id</span><span class="p">,</span> <span class="p">{</span>
-                <span class="nx">over</span><span class="o">:</span> <span class="s2">&quot;Not selected&quot;</span>
+                <span class="nx">over</span><span class="o">:</span> <span class="s2">&quot;Not selected&quot;</span><span class="p">,</span>
+                <span class="nx">isDispatchable</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">isDispatchable</span><span class="p">()</span>
             <span class="p">});</span>
 
 </pre></div>
@@ -917,8 +921,6 @@ return;</p>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="nx">gameRoom</span><span class="p">.</span><span class="nx">setupGame</span><span class="p">();</span>
     <span class="nx">gameRoom</span><span class="p">.</span><span class="nx">startGame</span><span class="p">(</span><span class="kc">true</span><span class="p">,</span> <span class="p">[]);</span>
-
-    <span class="o">++</span><span class="k">this</span><span class="p">.</span><span class="nx">numberOfDispatches</span><span class="p">;</span>
 
 
 </pre></div>
