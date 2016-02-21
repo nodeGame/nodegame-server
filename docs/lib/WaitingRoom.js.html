@@ -566,6 +566,19 @@ players to start the game.</p>
     <span class="p">}</span>
 <span class="p">};</span>
 
+<span class="nx">WaitingRoom</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">getSettings</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="nx">groupSize</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">GROUP_SIZE</span><span class="p">,</span>
+        <span class="nx">poolSize</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">POOL_SIZE</span><span class="p">,</span>
+        <span class="nx">disconnectIfNotSelected</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">DISCONNECT_IF_NOT_SELECTED</span><span class="p">,</span>
+        <span class="nx">nGames</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">N_GAMES</span><span class="p">,</span>
+        <span class="nx">startDate</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">START_DATE</span><span class="p">,</span>
+        <span class="nx">executionMode</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">EXECUTION_MODE</span><span class="p">,</span>
+        <span class="nx">maxWaitTime</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">MAX_WAIT_TIME</span><span class="p">,</span>
+        <span class="nx">onTimeout</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">ON_TIMEOUT</span><span class="p">,</span>
+        <span class="nx">chosenTreatment</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">CHOSEN_TREATMENT</span>
+    <span class="p">};</span>
+
 
 </pre></div>
         </td>
