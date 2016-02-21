@@ -296,7 +296,9 @@ without relying on non-standard <code>__proto__</code></p>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="k">this</span><span class="p">.</span><span class="nx">POOL_SIZE</span> <span class="o">=</span> <span class="kc">null</span><span class="p">;</span>
 
+    <span class="k">this</span><span class="p">.</span><span class="nx">DISCONNECT_IF_NOT_SELECTED</span> <span class="o">=</span> <span class="kc">null</span><span class="p">;</span>
     <span class="k">this</span><span class="p">.</span><span class="nx">N_GAMES</span> <span class="o">=</span> <span class="kc">null</span><span class="p">;</span>
+
 
 </pre></div>
         </td>
@@ -488,6 +490,17 @@ players to start the game.</p>
         <span class="k">else</span> <span class="p">{</span>
             <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span>
                 <span class="s1">&#39;N_GAMES must be a number or undefined.&#39;</span><span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">DISCONNECT_IF_NOT_SELECTED</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;boolean&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">DISCONNECT_IF_NOT_SELECTED</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">DISCONNECT_IF_NOT_SELECTED</span> <span class="o">=</span>
+                <span class="nx">settings</span><span class="p">.</span><span class="nx">DISCONNECT_IF_NOT_SELECTED</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="k">else</span> <span class="p">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span>
+                <span class="s1">&#39;DISCONNECT_IF_NOT_SELECTED must be boolean or undefined&#39;</span><span class="p">);</span>
         <span class="p">}</span>
     <span class="p">}</span>
 
