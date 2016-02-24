@@ -1,5 +1,8 @@
 # nodegame-server change log
 
+# 1.2.0 (current)
+ - Fixed bug with loading context directories to create language index.
+
 # 1.0.0
  - Callback to decorate client objects. The callback is loaded from the auth file.
  - Treatments are not deleted from required settints file.
