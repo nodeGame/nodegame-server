@@ -660,6 +660,7 @@ players to start the game.</p>
     <span class="k">this</span><span class="p">.</span><span class="nx">roomOpen</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
 <span class="p">};</span>
 
+
 <span class="nx">WaitingRoom</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">isDispatchable</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
     <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">N_GAMES</span><span class="p">)</span> <span class="p">{</span>
        <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">numberOfDispatches</span> <span class="o">&lt;</span> <span class="k">this</span><span class="p">.</span><span class="nx">N_GAMES</span><span class="p">;</span>
@@ -678,6 +679,7 @@ players to start the game.</p>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="k">return</span> <span class="kc">true</span><span class="p">;</span>
 <span class="p">};</span>
+
 
 </pre></div>
         </td>
@@ -708,7 +710,7 @@ players to start the game.</p>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-<span class="nx">WaitingRoom</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">dispatch</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+<span class="nx">WaitingRoom</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">dispatch</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">customSorting</span><span class="p">;</span>
     <span class="nx">customSorting</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">a</span><span class="p">,</span><span class="nx">b</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">if</span> <span class="p">(</span><span class="nx">a</span><span class="p">.</span><span class="nx">timesNotSelected</span> <span class="o">&lt;</span> <span class="nx">b</span><span class="p">.</span><span class="nx">timesNotSelected</span><span class="p">)</span> <span class="p">{</span>
@@ -719,7 +721,7 @@ players to start the game.</p>
         <span class="p">}</span>
         <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
     <span class="p">};</span>
-    <span class="k">return</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">timeOutData</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="kd">function</span><span class="p">(</span><span class="nx">timeOutData</span><span class="p">)</span> <span class="p">{</span>
         <span class="kd">var</span> <span class="nx">treatmentName</span><span class="p">;</span>
         <span class="kd">var</span> <span class="nx">shuffledPList</span><span class="p">;</span>
         <span class="kd">var</span> <span class="nx">limitedPList</span><span class="p">;</span>
@@ -960,7 +962,7 @@ return;</p>
         <span class="p">}</span>
 
     <span class="p">};</span>
-<span class="p">}();</span>
+<span class="p">};</span>
 
 
 
