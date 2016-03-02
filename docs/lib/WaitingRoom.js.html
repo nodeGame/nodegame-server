@@ -578,6 +578,7 @@ players to start the game.</p>
         <span class="nx">onTimeout</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">ON_TIMEOUT</span><span class="p">,</span>
         <span class="nx">chosenTreatment</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">CHOSEN_TREATMENT</span>
     <span class="p">};</span>
+<span class="p">};</span>
 
 
 </pre></div>
@@ -659,7 +660,7 @@ players to start the game.</p>
     <span class="k">this</span><span class="p">.</span><span class="nx">roomOpen</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
 <span class="p">};</span>
 
-<span class="nx">WaitingRoom</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">isDispatchable</span><span class="p">()</span> <span class="p">{</span>
+<span class="nx">WaitingRoom</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">isDispatchable</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
     <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">N_GAMES</span><span class="p">)</span> <span class="p">{</span>
        <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">numberOfDispatches</span> <span class="o">&lt;</span> <span class="k">this</span><span class="p">.</span><span class="nx">N_GAMES</span><span class="p">;</span>
     <span class="p">}</span>
@@ -676,7 +677,7 @@ players to start the game.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="k">return</span> <span class="kc">true</span><span class="p">;</span>
-<span class="p">}</span>
+<span class="p">};</span>
 
 </pre></div>
         </td>
@@ -717,7 +718,7 @@ players to start the game.</p>
             <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
         <span class="p">}</span>
         <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
-    <span class="p">}</span>
+    <span class="p">};</span>
     <span class="k">return</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">timeOutData</span><span class="p">)</span> <span class="p">{</span>
         <span class="kd">var</span> <span class="nx">treatmentName</span><span class="p">;</span>
         <span class="kd">var</span> <span class="nx">shuffledPList</span><span class="p">;</span>
@@ -731,7 +732,11 @@ players to start the game.</p>
         <span class="nx">nPlayers</span> <span class="o">=</span> <span class="nx">pList</span><span class="p">.</span><span class="nx">size</span><span class="p">();</span>
 
         <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">isDispatchable</span><span class="p">())</span> <span class="p">{</span>
-            <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span> <span class="s1">&#39;Not allowed to dispatch game.&#39;</span><span class="p">);</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span>
+                   <span class="s1">&#39;Number of dispatches already performed: &#39;</span> <span class="o">+</span>
+                   <span class="k">this</span><span class="p">.</span><span class="nx">numberOfDispatches</span> <span class="o">+</span>
+                   <span class="s1">&#39; Number of specified games: &#39;</span> <span class="o">+</span> <span class="k">this</span><span class="p">.</span><span class="nx">N_GAMES</span> <span class="o">+</span>
+                   <span class="s1">&#39; Dispatching again anyways.&#39;</span><span class="p">);</span>
 
 </pre></div>
         </td>
