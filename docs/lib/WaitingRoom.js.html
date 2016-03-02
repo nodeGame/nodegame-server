@@ -578,6 +578,7 @@ players to start the game.</p>
         <span class="nx">onTimeout</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">ON_TIMEOUT</span><span class="p">,</span>
         <span class="nx">chosenTreatment</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">CHOSEN_TREATMENT</span>
     <span class="p">};</span>
+<span class="p">};</span>
 
 
 </pre></div>
@@ -659,7 +660,8 @@ players to start the game.</p>
     <span class="k">this</span><span class="p">.</span><span class="nx">roomOpen</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
 <span class="p">};</span>
 
-<span class="nx">WaitingRoom</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">isDispatchable</span><span class="p">()</span> <span class="p">{</span>
+
+<span class="nx">WaitingRoom</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">isDispatchable</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
     <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">N_GAMES</span><span class="p">)</span> <span class="p">{</span>
        <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">numberOfDispatches</span> <span class="o">&lt;</span> <span class="k">this</span><span class="p">.</span><span class="nx">N_GAMES</span><span class="p">;</span>
     <span class="p">}</span>
@@ -676,7 +678,8 @@ players to start the game.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="k">return</span> <span class="kc">true</span><span class="p">;</span>
-<span class="p">}</span>
+<span class="p">};</span>
+
 
 </pre></div>
         </td>
@@ -707,7 +710,7 @@ players to start the game.</p>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-<span class="nx">WaitingRoom</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">dispatch</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+<span class="nx">WaitingRoom</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">dispatch</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">customSorting</span><span class="p">;</span>
     <span class="nx">customSorting</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">a</span><span class="p">,</span><span class="nx">b</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">if</span> <span class="p">(</span><span class="nx">a</span><span class="p">.</span><span class="nx">timesNotSelected</span> <span class="o">&lt;</span> <span class="nx">b</span><span class="p">.</span><span class="nx">timesNotSelected</span><span class="p">)</span> <span class="p">{</span>
@@ -955,7 +958,7 @@ return;</p>
         <span class="p">}</span>
 
     <span class="p">};</span>
-<span class="p">}();</span>
+<span class="p">};</span>
 
 
 
@@ -1184,11 +1187,6 @@ also.</p>
       <span class="dox_tag_name">where</span>
       <span class="dox_type">string</span>
       <span>String to prepend to the error message.</span>
-    </div>
-    <div class="dox_tag_title">throws</div>
-    <div class="dox_tag_detail">
-      <span class="dox_type">Error</span>
-      <span>Thrown if <code>settings[name]</code> is not a positive integer</span>
     </div>
     <div class="dox_tag_title">See</div>
     <div class="dox_tag_detail">
