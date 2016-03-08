@@ -2056,7 +2056,7 @@ modules.</p>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">ServerChannel</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">require</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">path</span><span class="p">,</span> <span class="nx">exports</span><span class="p">,</span> <span class="nx">nocache</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">channel</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
-    <span class="k">if</span> <span class="p">(</span><span class="nx">nocache</span><span class="p">)</span> <span class="k">delete</span> <span class="nx">require</span><span class="p">.</span><span class="nx">cache</span><span class="p">[</span><span class="nx">path</span><span class="p">];</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">nocache</span><span class="p">)</span> <span class="k">delete</span> <span class="nx">require</span><span class="p">.</span><span class="nx">cache</span><span class="p">[</span><span class="nx">require</span><span class="p">.</span><span class="nx">resolve</span><span class="p">(</span><span class="nx">path</span><span class="p">)];</span>
     <span class="k">return</span> <span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
         <span class="nx">module</span><span class="p">.</span><span class="nx">exports</span><span class="p">.</span><span class="nx">channel</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">;</span>
 
