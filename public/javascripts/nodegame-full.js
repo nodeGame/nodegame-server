@@ -3146,9 +3146,7 @@ if (!Array.prototype.indexOf) {
     /**
      * ### DOM.getElementsByClassName
      *
-     * Gets the first available child of an IFrame
-     *
-     * Tries head, body, lastChild and the HTML element
+     * Returns an array of elements with requested class name
      *
      * @param {object} document The document object of a window or iframe
      * @param {string} className The requested className
@@ -3158,13 +3156,17 @@ if (!Array.prototype.indexOf) {
      * @return {array} Array of elements with the requested class name
      *
      * @see https://gist.github.com/E01T/6088383
+     * @see http://stackoverflow.com/
+     *      questions/8808921/selecting-a-css-class-with-xpath
      */
     DOM.getElementsByClassName = function(document, className, nodeName) {
         var result, node, tag, seek, i, rightClass;
         result = [];
         tag = nodeName || '*';
         if (document.evaluate) {
-            seek = '//'+ tag +'[@class="'+ className +'"]';
+            seek = '//' + tag +
+                '[contains(concat(" ", normalize-space(@class), " "), "' +
+                className + ' ")]';
             seek = document.evaluate(seek, document, null, 0, null );
             while ((node = seek.iterateNext())) {
                 result.push(node);
@@ -5657,8 +5659,6 @@ if (!Array.prototype.indexOf) {
  * MIT Licensed
  *
  * NDDB is a powerful and versatile object database for node.js and the browser.
- *
- * See README.md for documentation and help.
  * ---
  */
 (function(exports, J, store) {
@@ -5671,7 +5671,7 @@ if (!Array.prototype.indexOf) {
     if (!J) throw new Error('NDDB: missing dependency: JSUS.');
 
     /**
-     * ## df
+     * ### df
      *
      * Flag indicating support for method Object.defineProperty
      *
@@ -6238,7 +6238,7 @@ if (!Array.prototype.indexOf) {
     // ## METHODS
 
     /**
-     * ## NDDB.throwErr
+     * ### NDDB.throwErr
      *
      * Throws an error with a predefined format
      *
@@ -6479,61 +6479,6 @@ if (!Array.prototype.indexOf) {
         }
     };
 
-
-    /**
-     * ## nddb_insert
-     *
-     * Insert an item into db and performs update operations
-     *
-     * A new property `.nddbid` is created in the object, and it will be
-     * used to add the element into the global index: `NDDB.nddbid`.
-     *
-     * Emits the 'insert' event, and updates indexes, hashes and views
-     * accordingly.
-     *
-     * @param {object|function} o The item to add to database
-     * @param {boolean} update Optional. If TRUE, updates indexes, hashes,
-     *    and views. Default, FALSE
-     *
-     * @see NDDB.nddbid
-     * @see NDDB.emit
-     *
-     * @api private
-     */
-    function nddb_insert(o, update) {
-        var nddbid;
-        if (('object' !== typeof o) && ('function' !== typeof o)) {
-            this.throwErr('TypeError', 'insert', 'object or function ' +
-                          'expected, ' + typeof o + ' received.');
-        }
-
-        // Check / create a global index.
-        if ('undefined' === typeof o._nddbid) {
-            // Create internal idx.
-            nddbid = J.uniqueKey(this.nddbid.resolve);
-            if (!nddbid) {
-                this.throwErr('Error', 'insert',
-                              'failed to create index: ' + o);
-            }
-            if (df) {
-                Object.defineProperty(o, '_nddbid', { value: nddbid });
-            }
-            else {
-                o._nddbid = nddbid;
-            }
-        }
-        // Add to index directly (bypass api).
-        this.nddbid.resolve[o._nddbid] = this.db.length;
-        // End create index.
-        this.db.push(o);
-        this.emit('insert', o);
-        if (update) {
-            this._indexIt(o, (this.db.length-1));
-            this._hashIt(o);
-            this._viewIt(o);
-        }
-    }
-
     /**
      * ### NDDB.importDB
      *
@@ -6766,10 +6711,6 @@ if (!Array.prototype.indexOf) {
         this.__C[d] = comparator;
     };
 
-    // ### NDDB.c
-    // @deprecated
-    NDDB.prototype.c = NDDB.prototype.comparator;
-
     /**
      * ### NDDB.getComparator
      *
@@ -6925,11 +6866,6 @@ if (!Array.prototype.indexOf) {
         this.__I[idx] = func, this[idx] = new NDDBIndex(idx, this);
     };
 
-
-    // ### NDDB.i
-    // @deprecated
-    NDDB.prototype.i = NDDB.prototype.index;
-
     /**
      * ### NDDB.view
      *
@@ -6999,11 +6935,6 @@ if (!Array.prototype.indexOf) {
         }
         this.__H[idx] = func, this[idx] = {};
     };
-
-    //### NDDB.h
-    //@deprecated
-    NDDB.prototype.h = NDDB.prototype.hash;
-
 
     /**
      * ### NDDB.resetIndexes
@@ -9304,6 +9235,61 @@ if (!Array.prototype.indexOf) {
 
     // ## Helper Methods
 
+
+    /**
+     * ### nddb_insert
+     *
+     * Insert an item into db and performs update operations
+     *
+     * A new property `.nddbid` is created in the object, and it will be
+     * used to add the element into the global index: `NDDB.nddbid`.
+     *
+     * Emits the 'insert' event, and updates indexes, hashes and views
+     * accordingly.
+     *
+     * @param {object|function} o The item to add to database
+     * @param {boolean} update Optional. If TRUE, updates indexes, hashes,
+     *    and views. Default, FALSE
+     *
+     * @see NDDB.nddbid
+     * @see NDDB.emit
+     *
+     * @api private
+     */
+    function nddb_insert(o, update) {
+        var nddbid;
+        if (('object' !== typeof o) && ('function' !== typeof o)) {
+            this.throwErr('TypeError', 'insert', 'object or function ' +
+                          'expected, ' + typeof o + ' received.');
+        }
+
+        // Check / create a global index.
+        if ('undefined' === typeof o._nddbid) {
+            // Create internal idx.
+            nddbid = J.uniqueKey(this.nddbid.resolve);
+            if (!nddbid) {
+                this.throwErr('Error', 'insert',
+                              'failed to create index: ' + o);
+            }
+            if (df) {
+                Object.defineProperty(o, '_nddbid', { value: nddbid });
+            }
+            else {
+                o._nddbid = nddbid;
+            }
+        }
+        // Add to index directly (bypass api).
+        this.nddbid.resolve[o._nddbid] = this.db.length;
+        // End create index.
+        this.db.push(o);
+        this.emit('insert', o);
+        if (update) {
+            this._indexIt(o, (this.db.length-1));
+            this._hashIt(o);
+            this._viewIt(o);
+        }
+    }
+
     /**
      * ### validateSaveLoadParameters
      *
@@ -9856,7 +9842,6 @@ if (!Array.prototype.indexOf) {
         return out;
     };
 
-    // ## Closure
 })(
     ('undefined' !== typeof module && 'undefined' !== typeof module.exports) ?
         module.exports : window ,
@@ -10064,7 +10049,6 @@ if (!Array.prototype.indexOf) {
         stop: 'stop',
         restart: 'restart',
         step: 'step',
-        push_step: 'push_step',
         goto_step: 'goto_step',
         clear_buffer: 'clear_buffer',
         erase_buffer: 'erase_buffer'
@@ -11380,8 +11364,8 @@ if (!Array.prototype.indexOf) {
     // ## Closure
 
 })(
-    'undefined' !== typeof node ? node : module.exports
-  , 'undefined' !== typeof node ? node : module.parent.exports
+    'undefined' != typeof node ? node : module.exports
+  , 'undefined' != typeof node ? node : module.parent.exports
 );
 
 /**
@@ -13787,7 +13771,6 @@ if (!Array.prototype.indexOf) {
                  msg.target === constants.target.PCONNECT ||
                  msg.target === constants.target.PDISCONNECT ||
                  msg.target === constants.target.PRECONNECT ||
-                 msg.target === constants.target.SERVERCOMMAND ||
                  msg.target === constants.target.SETUP) {
 
             priority = 1;
@@ -13816,298 +13799,6 @@ if (!Array.prototype.indexOf) {
 })(
     'undefined' != typeof node ? node : module.exports,
     'undefined' != typeof node ? node : module.parent.exports
-);
-
-/**
- * # PushManager
- *
- * Push players to advance to next step, otherwise disconnects them.
- *
- * Copyright(c) 2016 Stefano Balietti
- * MIT Licensed
- */
-(function(exports, parent) {
-
-    "use strict";
-
-    // ## Global scope
-    exports.PushManager = PushManager;
-
-    var GameStage = parent.GameStage;
-    var J = parent.JSUS;
-
-    var DONE = parent.constants.stageLevels.DONE;
-    var PUSH_STEP = parent.constants.gamecommands.push_step;
-    var GAMECOMMAND = parent.constants.target.GAMECOMMAND;
-
-    PushManager.replyWaitTime = 2000;
-    PushManager.checkPushWaitTime = 2000;
-    PushManager.offsetWaitTime = 4000;
-
-    /**
-     * ## PushManager constructor
-     *
-     * Creates a new instance of PushManager
-     *
-     * @param {NodeGameClient} node A nodegame-client instance
-     * @param {object} options Optional. Configuration options
-     */
-    function PushManager(node, options) {
-
-        /**
-         * ### PushManager.node
-         *
-         * Reference to a nodegame-client instance
-         */
-        this.node = node;
-
-        /**
-         * ### PushManager.timeout
-         *
-         * The timeout object that will fire the checking of clients
-         *
-         * @see PushManager.startTimeout
-         */
-        this.timeout = null;
-
-        /**
-         * ### PushManager.offsetWaitTime
-         *
-         * Time that is always added to the timer value of
-         *
-         * @see PushManager.startTimeout
-         */
-        this.offsetWaitTime = PushManager.offsetWaitTime;
-
-        /**
-         * ### PushManager.replyWaitTime
-         *
-         * Time to wait to get a reply from a pushed client
-         *
-         * @see PushManager.pushGame
-         */
-        this.replyWaitTime = PushManager.replyWaitTime;
-
-        /**
-         * ### PushManager.checkPushWaitTime
-         *
-         * Time to wait to check if a pushed client updated its state
-         *
-         * @see PushManager.pushGame
-         */
-        this.checkPushWaitTime = PushManager.checkPushWaitTime;
-
-        this.init(options);
-    }
-
-    /**
-     * ### PushManager.init
-     *
-     * Inits the configuration for the instance
-     *
-     * @param {object} Optional. Configuration object
-     */
-    PushManager.prototype.init = function(options) {
-        options = options || {};
-        checkAndAssignWaitTime(options, 'offsetWaitTime', this);
-        checkAndAssignWaitTime(options, 'replyWaitTime', this);
-        checkAndAssignWaitTime(options, 'checkPushWaitTime', this);
-    };
-
-    /**
-     * ## PushManager.startTimeout
-     *
-     * Sets a timeout for checking if all clients have finished current step
-     *
-     * The length of the timeout is equal to timer + offset.
-     *
-     * By default, it looks up the `timer` property in the current
-     * step object. If no `timer` property is found, timer is set to 0.
-     *
-     * If timeout expires `PushManager.pushGame` will be called.
-     *
-     * @param {number} timer Optional. If set, overwrite the default behavior
-     *   and this number will be used instead of the `timer` property from
-     *   current step object.
-     *
-     * @see PushManager.offsetWaitTime
-     * @see PushManager.pushGame
-     */
-    PushManager.prototype.startTimeout = function(timer) {
-        var node, gameStage, that;
-
-        node = this.node;
-
-        if (this.timeout) this.clearTimeout();
-
-        // Determine the value for timer. Total timeout = timer + offset.
-        if ('undefined' === typeof timer) {
-            gameStage = node.game.getCurrentGameStage();
-            timer = node.game.plot.getProperty(gameStage, 'timer');
-            if ('function' === typeof timer) timer = timer.call(node.game);
-        }
-        else if ('number' !== typeof timer) {
-            throw new TypeError('PushManager.startTimeout: timer must be ' +
-                                'number or undefined.');
-        }
-        timer = timer || 0;
-
-        console.log('TIMER: ', timer, this.offsetWaitTime, node.player.stage);
-
-        that = this;
-        this.timeout = setTimeout(function() {
-            that.pushGame.call(that);
-        }, (timer + this.offsetWaitTime));
-    };
-
-    /**
-     * ## PushManager.clearTimeout
-     *
-     * Clears timeout for checking if all clients have finished current step
-     *
-     * @see PushManager.startTimeout
-     */
-    PushManager.prototype.clearTimeout = function() {
-        console.log('Clearing old push players timeout.');
-        clearTimeout(this.timeout);
-    };
-
-    /**
-     * ### PushManager.pushGame
-     *
-     * Pushes any client that is connected, but not DONE, to step forward
-     *
-     * It sends a GET message to all clients whose stage level is not
-     * marked as DONE (100), and waits for the reply. If the reply does
-     * not arrive it will disconnect them. If the reply arrives, it will
-     * later check if they manage to step, and if not disconnects them.
-     *
-     * @see checkIfPushWorked
-     */
-    PushManager.prototype.pushGame = function() {
-        var that, node;
-        that = this;
-        node = this.node;
-        // console.log('PUSHGAME', node.player.stage);
-        node.game.pl.each(function(p) {
-            var stage;
-            if (p.stageLevel !== DONE) {
-                console.log('Push needed ', p.id, node.player.stage);
-                stage = p.stage;
-                // Send push.
-                node.get(PUSH_STEP,
-                         function(value) {
-                             checkIfPushWorked(node, p, that.checkPushWaitTime);
-                         },
-                         p.id,
-                         {
-                             timeout: that.replyWaitTime,
-                             executeOnce: true,
-                             target: GAMECOMMAND,
-                             timeoutCb: function() {
-                                 // No reply to GET, disconnect client.
-                                 console.log('NO REPLY ', p.id, stage);
-                                 //node.log('node.pushManager: no reply from ' +
-                                 //         p.id);
-                                 forceDisconnect(node, p);
-                             }
-                         });
-            }
-        });
-    };
-
-    // ## Helper methods
-
-    /**
-     * ### checkIfPushWorked
-     *
-     * Checks whether the stage of a client has changed after
-     *
-     * @param {NodeGameClient} node The node instance used to send msg
-     * @param {object} p The player object containing info about id and sid
-     * @param {number} milliseconds Optional The number of milliseconds to
-     *   wait before checking again the stage of a client. Default 0.
-     */
-    function checkIfPushWorked(node, p, milliseconds) {
-        var stage;
-        stage = {
-            stage: p.stage.stage, step: p.stage.step, round: p.stage.round
-        };
-        console.log('received reply from ', p.id, stage);
-
-        setTimeout(function() {
-            var pp;
-
-            if (node.game.pl.exist(p.id)) {
-                pp = node.game.pl.get(p.id);
-
-        //console.log('CONSOLE checking if push worked for ', p.id);
-        //node.log('node.pushManager: checking if push worked for ', p.id);
-                //console.log(pp.stage, stage);
-                if (GameStage.compare(pp.stage, stage) === 0) {
-                    console.log('PUSH did NOT work for ', p.id, stage);
-                    //node.log('node.pushManager: push did not work for ', p.id);
-                    forceDisconnect(node, pp);
-                }
-                else {
-                    console.log('PUSH worked for ', p.id, stage);
-                    //node.log('node.pushManager: push worked for ', p.id);
-                }
-            }
-        }, milliseconds || 0);
-    }
-
-    /**
-     * ### forceDisconnect
-     *
-     * Disconnects one player by sending a DISCONNECT msg to server
-     *
-     * @param {NodeGameClient} node The node instance used to send msg
-     * @param {object} p The player object containing info about id and sid
-     */
-    function forceDisconnect(node, p) {
-        var msg;
-        msg = node.msg.create({
-            target: 'SERVERCOMMAND',
-            text: 'DISCONNECT',
-            data: {
-                id: p.id,
-                sid: p.sid
-            }
-        });
-        node.socket.send(msg);
-    }
-
-    /**
-     * ### checkAndAssignWaitTime
-     *
-     * Checks if a valid wait time is found in options object, if so assigns it
-     *
-     * It is used by `PushManager.init` and will throw an error if value
-     * is not valid.
-     *
-     * @param {object} options Configuration options
-     * @param {string} name The name of the option to check and assign
-     * @param {PushManage} that The instance to which assign the value
-     *
-     * @see PushManager.init
-     */
-    function checkAndAssignWaitTime(options, name, that) {
-        var n;
-        n = options[name];
-        if ('undefined' !== typeof n) {
-            if ('number' !== typeof n || n < 0) {
-                throw new TypeError('PushManager.init: options.' + name +
-                                    'must be a positive number, found: ' + n);
-            }
-            that[name] = n;
-        }
-    }
-
-
-})(
-    'undefined' !== typeof node ? node : module.exports,
-    'undefined' !== typeof node ? node : module.parent.exports
 );
 
 /**
@@ -18543,8 +18234,7 @@ if (!Array.prototype.indexOf) {
     GameDB = parent.GameDB,
     GamePlot = parent.GamePlot,
     PlayerList = parent.PlayerList,
-    Stager = parent.Stager,
-    PushManager = parent.PushManager;
+    Stager = parent.Stager;
 
     var constants = parent.constants;
 
@@ -18744,15 +18434,6 @@ if (!Array.prototype.indexOf) {
          * @see Stager
          */
         this.globals = {};
-
-        /**
-         * ### Game.pushManager
-         *
-         * Handles pushing client to advance to next step
-         *
-         * @see PushManager
-         */
-        this.pushManager = new PushManager(this.node);
     }
 
     // ## Game methods
@@ -19371,15 +19052,6 @@ if (!Array.prototype.indexOf) {
             }
 
         }
-
-        // Pushes clients to finish current step in line with the time
-        // expected by logic, or otherwise disconnects them.
-        if (this.plot.getProperty(nextStep, 'pushClients')) {
-            // TODO: check if should be called after PLAYING
-            // node.events.ee.step.on('PLAYING', ...);
-            this.pushManager.startTimeout();
-        }
-
         this.execStep(this.getCurrentGameStage());
         return true;
     };
@@ -20971,29 +20643,23 @@ if (!Array.prototype.indexOf) {
      *
      * Fires a registered hook
      *
-     * If hook is a string it is emitted as an event,
-     * otherwise it is called as a function.
+     * If it is a string it is emitted as an event,
+     * otherwise it called as a function.
      *
-     * @param {mixed} h The hook to fire (object, function, or string)
+     * @param {mixed} h The hook to fire
      */
     GameTimer.prototype.fire = function(h) {
         var hook, ctx;
-
-        if ('object' === typeof h) {
-            hook = h.hook;
-            ctx = h.ctx;
-            h = hook;
+        if (!h) {
+            throw new Error('GameTimer.fire: missing argument');
         }
-
-        if ('function' === typeof h) {
-            h.call(ctx || this.node.game);
-        }
-        else if ('string' === typeof h) {
-            this.node.emit(h);
+        hook = h.hook || h;
+        if ('function' === typeof hook) {
+            ctx = h.ctx || this.node.game;
+            hook.call(ctx);
         }
         else {
-            throw new TypeError('GameTimer.fire: h must be function, string ' +
-                                'or object.');
+            this.node.emit(hook);
         }
     };
 
@@ -22975,11 +22641,10 @@ if (!Array.prototype.indexOf) {
      *      - {number} timeout The number of milliseconds after which
      *            the listener will be removed.
      *      - {function} timeoutCb A callback function to call if
-     *            the timeout is fired (no reply received)
+     *            the timeout is fired (no reply recevied)
      *      - {boolean} executeOnce TRUE if listener should be removed after
      *            one execution. It will also terminate the timeout, if set
      *      - {mixed} data Data field of the GET msg
-     *      - {string} target Set to override the default DATA target of msg
      *
      * @return {boolean} TRUE, if GET message is sent and listener registered
      */
@@ -22987,7 +22652,7 @@ if (!Array.prototype.indexOf) {
         var msg, g, ee;
         var that, res;
         var timer, success;
-        var data, timeout, timeoutCb, executeOnce, target;
+        var data, timeout, timeoutCb, executeOnce;
 
         if ('string' !== typeof key) {
             throw new TypeError('node.get: key must be string.');
@@ -23024,7 +22689,6 @@ if (!Array.prototype.indexOf) {
             timeoutCb = options.timeoutCb;
             data = options.data;
             executeOnce = options.executeOnce;
-            target = options.target;
 
             if ('undefined' !== typeof timeout) {
                 if ('number' !== typeof timeout) {
@@ -23042,18 +22706,11 @@ if (!Array.prototype.indexOf) {
                                     'function or undefined.');
             }
 
-            if (target &&
-                ('string' !== typeof target || target.trim() === '')) {
-
-                throw new TypeError('node.get: options.target must be ' +
-                                    'a non-empty string or undefined.');
-            }
-
         }
 
         msg = this.msg.create({
             action: this.constants.action.GET,
-            target: target || this.constants.target.DATA,
+            target: this.constants.target.DATA,
             to: to,
             reliable: 1,
             text: key,
@@ -23098,12 +22755,16 @@ if (!Array.prototype.indexOf) {
                         if ('undefined' !== typeof timer) {
                             that.timer.destroyTimer(timer);
                         }
-                        ee.remove('in.say.DATA', g);
                     }
                 }
             };
 
-            ee.on('in.say.DATA', g);
+            if (executeOnce) {
+                ee.once('in.say.DATA', g);
+            }
+            else {
+                ee.on('in.say.DATA', g);
+            }
         }
         return res;
     };
@@ -23141,7 +22802,7 @@ if (!Array.prototype.indexOf) {
      */
     NGC.prototype.done = function() {
         var that, game, doneCb, len, args, i;
-        var arg1, arg2, res;
+        var arg1, arg2;
         var stepTime, timeup;
         var autoSet;
 
@@ -23154,33 +22815,11 @@ if (!Array.prototype.indexOf) {
             return false;
         }
 
-        len = arguments.length;
-
         // Evaluating `done` callback if any.
         doneCb = game.plot.getProperty(game.getCurrentGameStage(), 'done');
 
         // If a `done` callback returns false, exit.
-        if (doneCb) {
-            switch(len){
-            case 0:
-                res = doneCb.call(game);
-                break;
-            case 1:
-                res = doneCb.call(game, arguments[0]);
-                break;
-            case 2:
-                res = doneCb.call(game, arguments[0], arguments[1]);
-                break;
-            default:
-                args = new Array(len);
-                for (i = -1 ; ++i < len ; ) {
-                    args[i] = arguments[i];
-                }
-                res = doneCb.apply(game, args);
-            };
-
-            if (!res) return;
-        }
+        if (doneCb && !doneCb.apply(game, arguments)) return;
 
         // Build set object (will be sent to server).
         // Back-compatible checks.
@@ -23194,6 +22833,7 @@ if (!Array.prototype.indexOf) {
         // to avoid calling `node.done` multiple times in the same stage.
         game.willBeDone = true;
 
+        len = arguments.length;
         that = this;
         // The arguments object must not be passed or leaked anywhere.
         // Therefore, we recreate an args array here. We have a different
@@ -23602,7 +23242,6 @@ if (!Array.prototype.indexOf) {
      * If executed once, it requires a force flag to re-add the listeners
      *
      * @param {boolean} force Whether to force re-adding the listeners
-     *
      * @return {boolean} TRUE on success
      */
     NGC.prototype.addDefaultIncomingListeners = function(force) {
@@ -23840,26 +23479,23 @@ if (!Array.prototype.indexOf) {
         /**
          * ## in.say.GAMECOMMAND
          *
-         * Executes a game command (pause, resume, etc.)
+         * Setups a features of nodegame
+         *
+         * @see node.setup
          */
         node.events.ng.on( IN + say + 'GAMECOMMAND', function(msg) {
-            if (!checkGameCommand(msg, 'say')) return;
-            node.emit('NODEGAME_GAMECOMMAND_' + msg.text, msg.data);
-        });
-
-        /**
-         * ## in.get.GAMECOMMAND
-         *
-         * Executes a game command (pause, resume, etc.) and gives confirmation
-         */
-        node.events.ng.on( IN + get + 'GAMECOMMAND', function(msg) {
-            var res;
-            if (!checkGameCommand(msg, 'get')) return;
-            res = node.emit('NODEGAME_GAMECOMMAND_' + msg.text, msg.data);
-            if (!J.isEmpty(res)) {
-                // New key must contain msg.id.
-                node.say(msg.text + '_' + msg.id, msg.from, res);
+            // console.log('GM', msg);
+            if ('string' !== typeof msg.text) {
+                node.err('"in.say.GAMECOMMAND": msg.text must be string: ' +
+                         msg.text);
+                return;
             }
+            if (!parent.constants.gamecommands[msg.text]) {
+                node.err('"in.say.GAMECOMMAND": unknown game command ' +
+                         'received: ' + msg.text);
+                return;
+            }
+            node.emit('NODEGAME_GAMECOMMAND_' + msg.text, msg.data);
         });
 
         /**
@@ -23979,26 +23615,11 @@ if (!Array.prototype.indexOf) {
             return 'pong';
         });
 
+
         node.conf.incomingAdded = true;
         node.silly('node: incoming listeners added.');
         return true;
     };
-
-    // ## Helper functions.
-
-    function checkGameCommand(msg, action) {
-        if ('string' !== typeof msg.text || msg.text.trim() === '') {
-            node.err('"in.' + action + '.GAMECOMMAND": msg.text must be ' +
-                     'a non-empty string: ' + msg.text);
-            return false;
-        }
-        if (!parent.constants.gamecommands[msg.text]) {
-            node.err('"in.' + action + '.GAMECOMMAND": unknown game command ' +
-                     'received: ' + msg.text);
-            return false;
-        }
-        return true;
-    }
 
 })(
     'undefined' != typeof node ? node : module.exports,
@@ -24149,8 +23770,6 @@ if (!Array.prototype.indexOf) {
             node.timer.setTimestamp('step', currentTime);
 
             // DONE was previously emitted, we just execute done handler.
-            // Check: is it ok to call done, if other handlers on PLAYING
-            // are following?
             if (node.game.willBeDone) {
                 done();
             }
@@ -24264,57 +23883,6 @@ if (!Array.prototype.indexOf) {
         this.events.ng.on(CMD + gcommands.erase_buffer, function() {
             node.emit('BEFORE_GAMECOMMAND', gcommands.clear_buffer);
             node.socket.eraseBuffer();
-        });
-
-        /**
-         * ## NODEGAME_GAMECOMMAND: push_step
-         */
-        node.events.ng.on(CMD + gcommands.push_step, function() {
-            var res;
-            console.log('BEING PUSHED! ', node.player.stage);
-
-
-
-
-            // TODO: check this:
-            // At the moment, we do not have a default timer object,
-            // nor a default done/timeup cb.
-            // We try to see if they exist, and as last resort we emit DONE.
-
-            // if (node.game.getCurrentStep().id === 'quiz') debugger;
-
-             if (node.game.timer && node.game.timer.doTimeUp) {
-                 console.log('TIMEEEEUuuuuuuuuuup');
-                 node.game.timer.doTimeUp();
-             }
-             else if (node.game.visualTimer && node.game.visualTimer.doTimeUp) {
-                 console.log('TIMEEEEUuuuuuuuuuup 2');
-                 node.game.visualTimer.doTimeUp();
-             }
-
-
-            // TODO: CHECK OTHER LEVELS (e.g. getting_done).
-            if (!node.game.willBeDone &&
-                     node.game.getStageLevel() !== stageLevels.DONE) {
-
-                console.log('NODE.DDDDDDDDDDOOONE');
-
-                res = node.done();
-                if (!res) {
-                    node.emit('DONE');
-                    console.log('EMIT DONEOOOOOOOOOOOOO');
-                }
-            }
-
-            // Check this.
-            // node.game.setStageLevel(stageLevels.DONE);
-
-            return 'ok!';
-
-
-            // Important for GET msgs.
-            return node.game.getStageLevel() === stageLevels.DONE  ?
-                'ok!' : 'stuck!';
         });
 
         this.conf.internalAdded = true;
@@ -26466,19 +26034,42 @@ if (!Array.prototype.indexOf) {
      *
      * Returns a list of elements with the given tag name
      *
-     * Looks first into the iframe and then into the rest of the page.
+     * If set, it will look up in iframe, otherwsie into the rest of the page.
      *
      * @param {string} tag The tag of the elements
      *
      * @return {array|null} The elements in the page, or null if none is found
      *
      * @see GameWindow.getElementById
+     * @see GameWindow.frameDocument
      */
     GameWindow.prototype.getElementsByTagName = function(tag) {
         var frameDocument;
         frameDocument = this.getFrameDocument();
         return frameDocument ? frameDocument.getElementsByTagName(tag) :
             document.getElementsByTagName(tag);
+    };
+
+    /**
+     * ### GameWindow.getElementsByClassName
+     *
+     * Returns a list of elements with given class name
+     *
+     * If set, it will look up in iframe, otherwsie into the rest of the page.
+     *
+     * @param {string} className The requested className
+     * @param {string} tag Optional. If set only elements with
+     *   the specified tag name will be searched
+     *
+     * @return {array} Array of elements with the requested class name
+     *
+     * @see GameWindow.getElementByTagName
+     * @see GameWindow.frameDocument
+     */
+    GameWindow.prototype.getElementsByClassName = function(className, tag) {
+        var doc;
+        doc = this.getFrameDocument() || document;
+        return J.getElementsByClassName(doc, className, tag);
     };
 
     /**
