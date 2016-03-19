@@ -3159,9 +3159,7 @@ if (!Array.prototype.indexOf) {
     /**
      * ### DOM.getElementsByClassName
      *
-     * Gets the first available child of an IFrame
-     *
-     * Tries head, body, lastChild and the HTML element
+     * Returns an array of elements with requested class name
      *
      * @param {object} document The document object of a window or iframe
      * @param {string} className The requested className
@@ -3171,13 +3169,17 @@ if (!Array.prototype.indexOf) {
      * @return {array} Array of elements with the requested class name
      *
      * @see https://gist.github.com/E01T/6088383
+     * @see http://stackoverflow.com/
+     *      questions/8808921/selecting-a-css-class-with-xpath
      */
     DOM.getElementsByClassName = function(document, className, nodeName) {
         var result, node, tag, seek, i, rightClass;
         result = [];
         tag = nodeName || '*';
         if (document.evaluate) {
-            seek = '//'+ tag +'[@class="'+ className +'"]';
+            seek = '//' + tag +
+                '[contains(concat(" ", normalize-space(@class), " "), "' +
+                className + ' ")]';
             seek = document.evaluate(seek, document, null, 0, null );
             while ((node = seek.iterateNext())) {
                 result.push(node);
@@ -3333,6 +3335,45 @@ if (!Array.prototype.indexOf) {
         capture = !!capture;
         if (element.detachEvent) return element.detachEvent('on' + event, func);
         else return element.removeEventListener(event, func, capture);
+    };
+
+    /**
+     * ### DOM.playSound
+     *
+     * Plays a sound
+     *
+     * @param {various} sound Audio tag or path to audio file to be played
+     */
+    DOM.playSound = function(sound) {
+        var audio;
+        if ("string" === typeof(sound)) {
+            audio = new Audio(sound);
+        }
+        else if ("object" === typeof(sound) 
+            && "function" === typeof(sound.play)) {
+            audio = sound;
+        }
+        else {
+            throw new TypeError("JSUS.playSound: sound must be string" +
+               " or audio element.");
+        }
+        audio.play();
+    };
+
+    /**
+     * ### DOM.changeTitle
+     *
+     * Changes title of page
+     *
+     * @param {string} title New title of the page
+     */
+    DOM.changeTitle = function(title) {
+        if ("string" === typeof(title)) {
+            document.title = title;
+        }
+        else {
+            throw new TypeError("JSUS.changeTitle: title must be string.");
+        }
     };
 
     JSUS.extend(DOM);
@@ -5670,8 +5711,6 @@ if (!Array.prototype.indexOf) {
  * MIT Licensed
  *
  * NDDB is a powerful and versatile object database for node.js and the browser.
- *
- * See README.md for documentation and help.
  * ---
  */
 (function(exports, J, store) {
@@ -5684,7 +5723,7 @@ if (!Array.prototype.indexOf) {
     if (!J) throw new Error('NDDB: missing dependency: JSUS.');
 
     /**
-     * ## df
+     * ### df
      *
      * Flag indicating support for method Object.defineProperty
      *
@@ -6251,7 +6290,7 @@ if (!Array.prototype.indexOf) {
     // ## METHODS
 
     /**
-     * ## NDDB.throwErr
+     * ### NDDB.throwErr
      *
      * Throws an error with a predefined format
      *
@@ -6492,61 +6531,6 @@ if (!Array.prototype.indexOf) {
         }
     };
 
-
-    /**
-     * ## nddb_insert
-     *
-     * Insert an item into db and performs update operations
-     *
-     * A new property `.nddbid` is created in the object, and it will be
-     * used to add the element into the global index: `NDDB.nddbid`.
-     *
-     * Emits the 'insert' event, and updates indexes, hashes and views
-     * accordingly.
-     *
-     * @param {object|function} o The item to add to database
-     * @param {boolean} update Optional. If TRUE, updates indexes, hashes,
-     *    and views. Default, FALSE
-     *
-     * @see NDDB.nddbid
-     * @see NDDB.emit
-     *
-     * @api private
-     */
-    function nddb_insert(o, update) {
-        var nddbid;
-        if (('object' !== typeof o) && ('function' !== typeof o)) {
-            this.throwErr('TypeError', 'insert', 'object or function ' +
-                          'expected, ' + typeof o + ' received.');
-        }
-
-        // Check / create a global index.
-        if ('undefined' === typeof o._nddbid) {
-            // Create internal idx.
-            nddbid = J.uniqueKey(this.nddbid.resolve);
-            if (!nddbid) {
-                this.throwErr('Error', 'insert',
-                              'failed to create index: ' + o);
-            }
-            if (df) {
-                Object.defineProperty(o, '_nddbid', { value: nddbid });
-            }
-            else {
-                o._nddbid = nddbid;
-            }
-        }
-        // Add to index directly (bypass api).
-        this.nddbid.resolve[o._nddbid] = this.db.length;
-        // End create index.
-        this.db.push(o);
-        this.emit('insert', o);
-        if (update) {
-            this._indexIt(o, (this.db.length-1));
-            this._hashIt(o);
-            this._viewIt(o);
-        }
-    }
-
     /**
      * ### NDDB.importDB
      *
@@ -6779,10 +6763,6 @@ if (!Array.prototype.indexOf) {
         this.__C[d] = comparator;
     };
 
-    // ### NDDB.c
-    // @deprecated
-    NDDB.prototype.c = NDDB.prototype.comparator;
-
     /**
      * ### NDDB.getComparator
      *
@@ -6938,11 +6918,6 @@ if (!Array.prototype.indexOf) {
         this.__I[idx] = func, this[idx] = new NDDBIndex(idx, this);
     };
 
-
-    // ### NDDB.i
-    // @deprecated
-    NDDB.prototype.i = NDDB.prototype.index;
-
     /**
      * ### NDDB.view
      *
@@ -7012,11 +6987,6 @@ if (!Array.prototype.indexOf) {
         }
         this.__H[idx] = func, this[idx] = {};
     };
-
-    //### NDDB.h
-    //@deprecated
-    NDDB.prototype.h = NDDB.prototype.hash;
-
 
     /**
      * ### NDDB.resetIndexes
@@ -9317,6 +9287,61 @@ if (!Array.prototype.indexOf) {
 
     // ## Helper Methods
 
+
+    /**
+     * ### nddb_insert
+     *
+     * Insert an item into db and performs update operations
+     *
+     * A new property `.nddbid` is created in the object, and it will be
+     * used to add the element into the global index: `NDDB.nddbid`.
+     *
+     * Emits the 'insert' event, and updates indexes, hashes and views
+     * accordingly.
+     *
+     * @param {object|function} o The item to add to database
+     * @param {boolean} update Optional. If TRUE, updates indexes, hashes,
+     *    and views. Default, FALSE
+     *
+     * @see NDDB.nddbid
+     * @see NDDB.emit
+     *
+     * @api private
+     */
+    function nddb_insert(o, update) {
+        var nddbid;
+        if (('object' !== typeof o) && ('function' !== typeof o)) {
+            this.throwErr('TypeError', 'insert', 'object or function ' +
+                          'expected, ' + typeof o + ' received.');
+        }
+
+        // Check / create a global index.
+        if ('undefined' === typeof o._nddbid) {
+            // Create internal idx.
+            nddbid = J.uniqueKey(this.nddbid.resolve);
+            if (!nddbid) {
+                this.throwErr('Error', 'insert',
+                              'failed to create index: ' + o);
+            }
+            if (df) {
+                Object.defineProperty(o, '_nddbid', { value: nddbid });
+            }
+            else {
+                o._nddbid = nddbid;
+            }
+        }
+        // Add to index directly (bypass api).
+        this.nddbid.resolve[o._nddbid] = this.db.length;
+        // End create index.
+        this.db.push(o);
+        this.emit('insert', o);
+        if (update) {
+            this._indexIt(o, (this.db.length-1));
+            this._hashIt(o);
+            this._viewIt(o);
+        }
+    }
+
     /**
      * ### validateSaveLoadParameters
      *
@@ -9869,7 +9894,6 @@ if (!Array.prototype.indexOf) {
         return out;
     };
 
-    // ## Closure
 })(
     ('undefined' !== typeof module && 'undefined' !== typeof module.exports) ?
         module.exports : window ,
@@ -22346,14 +22370,19 @@ if (!Array.prototype.indexOf) {
      *
      * Establishes a connection with a nodeGame server
      *
-     * If channel does not begin with `http://`, if executed in the browser,
-     * the connect method will try to add the value of `window.location.host`
-     * in front of channel to avoid cross-domain errors (as of Socket.io >= 1).
+     * Depending on the type of socket used (Direct or IO), the
+     * channel parameter might be optional.
      *
-     * Depending on the type of socket chosen (e.g. Direct or IO), the first
-     * parameter might be optional.
+     * If node is executed in the browser additional checks are performed:
      *
-     * @param {string} channel The channel to connect to
+     * 1. If channel does not begin with `http://`, then `window.location.host`
+     *    will be added in front of channel to avoid cross-domain errors
+     *    (as of Socket.io >= 1).
+     *
+     * 2. If no socketOptions.query parameter is specified any query
+     *    parameters found in `location.search(1)` will be passed.
+     *
+     * @param {string} channel Optional. The channel to connect to
      * @param {object} socketOptions Optional. A configuration object for
      *   the socket connect method.
      *
@@ -22362,11 +22391,17 @@ if (!Array.prototype.indexOf) {
      * @emit NODEGAME_READY
      */
     NGC.prototype.connect = function(channel, socketOptions) {
-        if (channel && channel.substr(0,7) !== 'http://') {
-            if ('undefined' !== typeof window &&
-                window.location && window.location.host) {
-
-                channel = 'http://' + window.location.host + channel;
+        if ('undefined' !== typeof window) {
+            if (channel && channel.substr(0,7) !== 'http://') {
+                if (window.location && window.location.host) {
+                    channel = 'http://' + window.location.host + channel;
+                }
+            }
+            if (!socketOptions || (socketOptions && !socketOptions.query)) {
+                if (('undefined' !== typeof location) && location.search) {
+                    socketOptions = socketOptions || {};
+                    socketOptions.query = location.search.substr(1);
+                }
             }
         }
         this.socket.connect(channel, socketOptions);
@@ -25140,7 +25175,7 @@ if (!Array.prototype.indexOf) {
         // Adding listeners.
         this.addDefaultListeners();
 
-        // Hide <noscript> tag (necessary for IE8).
+        // Hide noscript tag (necessary for IE8).
         setTimeout(function(){
             (function (scriptTag) {
                 if (scriptTag.length >= 1) scriptTag[0].style.display = 'none';
@@ -26062,19 +26097,42 @@ if (!Array.prototype.indexOf) {
      *
      * Returns a list of elements with the given tag name
      *
-     * Looks first into the iframe and then into the rest of the page.
+     * If set, it will look up in iframe, otherwsie into the rest of the page.
      *
      * @param {string} tag The tag of the elements
      *
      * @return {array|null} The elements in the page, or null if none is found
      *
      * @see GameWindow.getElementById
+     * @see GameWindow.frameDocument
      */
     GameWindow.prototype.getElementsByTagName = function(tag) {
         var frameDocument;
         frameDocument = this.getFrameDocument();
         return frameDocument ? frameDocument.getElementsByTagName(tag) :
             document.getElementsByTagName(tag);
+    };
+
+    /**
+     * ### GameWindow.getElementsByClassName
+     *
+     * Returns a list of elements with given class name
+     *
+     * If set, it will look up in iframe, otherwsie into the rest of the page.
+     *
+     * @param {string} className The requested className
+     * @param {string} tag Optional. If set only elements with
+     *   the specified tag name will be searched
+     *
+     * @return {array} Array of elements with the requested class name
+     *
+     * @see GameWindow.getElementByTagName
+     * @see GameWindow.frameDocument
+     */
+    GameWindow.prototype.getElementsByClassName = function(className, tag) {
+        var doc;
+        doc = this.getFrameDocument() || document;
+        return J.getElementsByClassName(doc, className, tag);
     };
 
     /**
@@ -37213,18 +37271,12 @@ if (!Array.prototype.indexOf) {
         this.dots = null;
 
         /**
-         * ### WaitingRoom.ontTimeout
+         * ### WaitingRoom.onTimeout
          *
          * Callback to be executed if the timer expires
          */
         this.onTimeout = null;
 
-        /**
-         * ### WaitingRoom.onTimeout
-         *
-         * TRUE if the timer expired
-         */
-        this.alreadyTimeUp = null;
 
         /**
          * ### WaitingRoom.disconnectMessage
@@ -37252,7 +37304,7 @@ if (!Array.prototype.indexOf) {
      * Available options:
      *
      *   - onComplete: function executed with either failure or success
-     *   - onTimeout: function executed when at least one test fails
+     *   - onTimeout: function executed when timer runs out
      *   - onSuccess: function executed when all tests succeed
      *   - waitTime: max waiting time to execute all tests (in milliseconds)
      *
@@ -37268,50 +37320,6 @@ if (!Array.prototype.indexOf) {
                                     'be function, null or undefined.');
             }
             this.onTimeout = conf.onTimeout;
-        }
-        else {
-            // Default onTimeout?
-            this.onTimeout = function(data) {
-                var timeOut;
-                // Enough Time passed, not enough players connected.
-                if (data.over === 'Time elapsed, disconnect') {
-                    timeOut = "<h3 align='center'>" +
-                        "Thank you for your patience.<br>" +
-                        "Unfortunately, there are not enough participants in " +
-                        "your group to start the experiment.<br>";
-                }
-                else if (data.over === "Time elapsed!!!") {
-                    if (data.nPlayers && data.nPlayers < this.POOL_SIZE) {
-                        return; // Text here?
-                    }
-                    else {
-                        return;
-                    }
-                }
-                else if (data.over === 'Not selected') {
-                    timeOut  = '<h3 align="center">' +
-                        '<span style="color: red"> You were ' +
-                        '<strong>not selected</strong> to start the game.' +
-                        'Thank you for your participation.' +
-                        '</span><br><br>';
-                }
-                // Too much time passed, but no message from server received.
-                else {
-                    timeOut = "<h3 align='center'>" +
-                        "An error has occurred. You seem to be ";
-                        "waiting for too long. Please look for a HIT called " +
-                        "<strong>ETH Descil Trouble Ticket</strong> and file " +
-                        "a new trouble ticket reporting your experience.";
-                }
-
-                if (data.exit) {
-                    timeOut += "<br>Please report this exit code: " + data.exit;
-                }
-
-                timeOut += "<br></h3>";
-
-                this.bodyDiv.innerHTML = timeOut;
-            };
         }
         if (conf.waitTime) {
             if (null !== conf.waitTime &&
@@ -37386,6 +37394,7 @@ if (!Array.prototype.indexOf) {
      *
      */
     WaitingRoom.prototype.startTimer = function() {
+        var that = this;
         if (this.timer) return;
         if (!this.waitTime) return;
         if (!this.timerDiv) {
@@ -37397,7 +37406,12 @@ if (!Array.prototype.indexOf) {
         ));
         this.timer = node.widgets.append('VisualTimer', this.timerDiv, {
             milliseconds: this.waitTime,
-            timeup: this.onTimeup,
+            timeup: function() {
+                that.bodyDiv.innerHTML = 
+                    "Waiting for too long. Please look for a HIT called " +
+                    "<strong>ETH Descil Trouble Ticket</strong> and file" +
+                    " a new trouble ticket reporting your experience.";
+            },
             update: 1000
         });
         // Style up: delete title and border;
@@ -37523,8 +37537,50 @@ if (!Array.prototype.indexOf) {
             that.updateDisplay();
         });
 
+        node.on.data('DISPATCH', function(msg) {
+            var data, reportExitCode;
+            msg = msg || {};
+            data = msg.data || {}; 
+
+            reportExitCode = '<br>You have been disconnected. ' + 
+                'Please report this exit code: ' + 
+                data.exit + '<br></h3>';
+
+            if (data.action === 'AllPlayersConnected') {
+                that.alertPlayer();
+            }
+
+            else if (data.action === 'NotEnoughPlayers') {
+                that.bodyDiv.innerHTML = "<h3 align='center'>" +
+                    "Thank you for your patience.<br>" +
+                    "Unfortunately, there are not enough participants in " +
+                    "your group to start the experiment.<br>"; 
+
+                that.disconnect(that.bodyDiv.innerHTML + reportExitCode);
+            }
+
+            else if (data.action === 'NotSelected') {
+                that.bodyDiv.innerHTML = '<h3 align="center">' +
+                    '<span style="color: red"> You were ' +
+                    '<strong>not selected</strong> to start the game.' +
+                    'Thank you for your participation.' +
+                    '</span><br><br>';
+                if (false === data.isDispatchable 
+                    || that.disconnectIfNotSelected) {
+                    that.disconnect(that.bodyDiv.innerHTML + reportExitCode);
+                }
+            }
+
+            else if (data.action === 'Disconnect') {
+                that.disconnect(that.bodyDiv.innerHTML + reportExitCode);
+            }
+        });
+
         node.on.data('TIME', function(msg) {
-            timeIsUp.call(that, msg.data);
+            msg = msg || {};
+            console.log('TIME IS UP!');
+            that.stopTimer();
+            if (this.onTimeout) this.onTimeout(msg.data);
         });
 
 
@@ -37540,13 +37596,9 @@ if (!Array.prototype.indexOf) {
         });
 
         node.on('SOCKET_DISCONNECT', function() {
-            if (that.alreadyTimeUp) return;
 
             // Terminate countdown.
-            if (that.timer) {
-                that.timer.stop();
-                that.timer.destroy();
-            }
+            that.stopTimer();
 
             // Write about disconnection in page.
             that.bodyDiv.innerHTML = that.disconnectMessage;
@@ -37558,11 +37610,10 @@ if (!Array.prototype.indexOf) {
         });
 
         node.on.data('ROOM_CLOSED', function() {
-             this.disconnectMessage = '<span style="color: red"> The waiting ' +
+            that.disconnect('<span style="color: red"> The waiting ' +
                 'room is <strong>CLOSED</strong>. You have been disconnected.' +
                 ' Please try again later.' +
-                '</span><br><br>';
-            node.socket.disconnect();
+                '</span><br><br>');
         });
     };
 
@@ -37570,6 +37621,27 @@ if (!Array.prototype.indexOf) {
         this.startDate = new Date(startDate).toString();
         this.startDateDiv.innerHTML = "Game starts at: <br>" + this.startDate;
         this.startDateDiv.style.display = '';
+    };
+    
+    WaitingRoom.prototype.stopTimer = function() {
+        if (this.timer) {
+            console.log('STOPPING TIMER');
+            this.timer.stop();
+            this.timer.destroy();
+            if (this.onTimeout) {
+                this.onTimeout();
+            }
+        }
+    };
+
+    WaitingRoom.prototype.disconnect = function(msg) {
+        if (msg) this.disconnectMessage = msg;
+        node.socket.disconnect();
+    };
+
+    WaitingRoom.prototype.alertPlayer = function() {
+        JSUS.playSound('doorbell.ogg');
+        JSUS.changeTitle('GAME STARTS!');
     };
 
     WaitingRoom.prototype.destroy = function() {
@@ -37579,37 +37651,6 @@ if (!Array.prototype.indexOf) {
     // ## Helper methods
 
     function timeIsUp(data) {
-        var disconnect, timeout;
-        console.log('TIME IS UP!');
-
-        if (this.alreadyTimeUp) return;
-        this.alreadyTimeUp = true;
-        if (this.timer) this.timer.stop();
-
-
-        data = data || {};
-
-        // All players have connected. Game starts.
-        if (data.over === 'AllPlayersConnected') return;
-
-        if (data.over === 'Not selected') {
-            if (false === data.isDispatchable) {
-                disconnect = true;
-            }
-            else {
-                disconnect = this.disconnectIfNotSelected;
-            }
-            timeout = true;
-        }
-
-        if (data.over === 'Time elapsed, disconnect') {
-            disconnect = true;
-            timeout = true;
-        }
-        if (disconnect) {
-            node.socket.disconnect();
-        }
-        if (timeout && this.onTimeout) this.onTimeout(data);
     }
 
 })(node);
