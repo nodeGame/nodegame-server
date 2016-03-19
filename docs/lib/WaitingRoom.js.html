@@ -34,10 +34,19 @@
         <a href="#waitingroom.timeouts">WaitingRoom.timeOuts</a>
       </div>
       <div class="heading h3">
+        <a href="#waitingroom.numberofdispatches">WaitingRoom.numberOfDispatches</a>
+      </div>
+      <div class="heading h3">
         <a href="#waitingroom.group_size">WaitingRoom.GROUP_SIZE</a>
       </div>
       <div class="heading h3">
         <a href="#waitingroom.pool_size">WaitingRoom.POOL_SIZE</a>
+      </div>
+      <div class="heading h3">
+        <a href="#waitingroom.disconnect_if_not_selected">WaitingRoom.DISCONNECT_IF_NOT_SELECTED</a>
+      </div>
+      <div class="heading h3">
+        <a href="#waitingroom.timeouts">WaitingRoom.timeOuts</a>
       </div>
       <div class="heading h3">
         <a href="#waitingroom.start_date">WaitingRoom.START_DATE</a>
@@ -58,6 +67,9 @@
         <a href="#waitingroom.parsesettings">WaitingRoom.parseSettings</a>
       </div>
       <div class="heading h2">
+        <a href="#waitingroom.makewidgetconfig">WaitingRoom.makeWidgetConfig</a>
+      </div>
+      <div class="heading h2">
         <a href="#waitingroom.isroomopen">WaitingRoom.isRoomOpen</a>
       </div>
       <div class="heading h2">
@@ -65,6 +77,9 @@
       </div>
       <div class="heading h2">
         <a href="#waitingroom.openroom">WaitingRoom.openRoom</a>
+      </div>
+      <div class="heading h3">
+        <a href="#waitingroom.isdispatchable">WaitingRoom.isDispatchable</a>
       </div>
       <div class="heading h2">
         <a href="#waitingroom.dispatch">WaitingRoom.dispatch</a>
@@ -250,6 +265,27 @@ without relying on non-standard <code>__proto__</code></p>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="k">this</span><span class="p">.</span><span class="nx">timeOuts</span> <span class="o">=</span> <span class="p">{};</span>
 
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="waitingroom.numberofdispatches">
+  <h3>
+    <a href="#waitingroom.numberofdispatches" name="waitingroom.numberofdispatches" class="pilcrow">&#182;</a>
+    WaitingRoom.numberOfDispatches
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Non-negative integer indicating the number of game dispatches</p>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
     <span class="k">this</span><span class="p">.</span><span class="nx">numberOfDispatches</span> <span class="o">=</span> <span class="nx">config</span><span class="p">.</span><span class="nx">numberOfDispatches</span> <span class="o">||</span> <span class="mi">0</span><span class="p">;</span>
 
 
@@ -296,7 +332,49 @@ without relying on non-standard <code>__proto__</code></p>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="k">this</span><span class="p">.</span><span class="nx">POOL_SIZE</span> <span class="o">=</span> <span class="kc">null</span><span class="p">;</span>
 
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="waitingroom.disconnect_if_not_selected">
+  <h3>
+    <a href="#waitingroom.disconnect_if_not_selected" name="waitingroom.disconnect_if_not_selected" class="pilcrow">&#182;</a>
+    WaitingRoom.DISCONNECT_IF_NOT_SELECTED
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Boolean or null, indicating whether unselected players are disconnected</p>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
     <span class="k">this</span><span class="p">.</span><span class="nx">DISCONNECT_IF_NOT_SELECTED</span> <span class="o">=</span> <span class="kc">null</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="waitingroom.timeouts">
+  <h3>
+    <a href="#waitingroom.timeouts" name="waitingroom.timeouts" class="pilcrow">&#182;</a>
+    WaitingRoom.timeOuts
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Array of setTimeout return values indexed by playerIDs</p>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
     <span class="k">this</span><span class="p">.</span><span class="nx">N_GAMES</span> <span class="o">=</span> <span class="kc">null</span><span class="p">;</span>
 
 
@@ -566,7 +644,28 @@ players to start the game.</p>
     <span class="p">}</span>
 <span class="p">};</span>
 
-<span class="nx">WaitingRoom</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">getSettings</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="waitingroom.makewidgetconfig">
+  <h2>
+    <a href="#waitingroom.makewidgetconfig" name="waitingroom.makewidgetconfig" class="pilcrow">&#182;</a>
+    WaitingRoom.makeWidgetConfig
+  </h2>
+</div>
+
+  </div>
+  <div class="body"><p>Creates an object to be passed to widget for configuration</p>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
+<span class="nx">WaitingRoom</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">makeWidgetConfig</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
     <span class="k">return</span> <span class="p">{</span>
         <span class="nx">groupSize</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">GROUP_SIZE</span><span class="p">,</span>
         <span class="nx">poolSize</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">POOL_SIZE</span><span class="p">,</span>
@@ -661,6 +760,26 @@ players to start the game.</p>
 <span class="p">};</span>
 
 
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="waitingroom.isdispatchable">
+  <h3>
+    <a href="#waitingroom.isdispatchable" name="waitingroom.isdispatchable" class="pilcrow">&#182;</a>
+    WaitingRoom.isDispatchable
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Checks whether another game can be dispatched</p>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
 <span class="nx">WaitingRoom</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">isDispatchable</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
     <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">N_GAMES</span><span class="p">)</span> <span class="p">{</span>
        <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">numberOfDispatches</span> <span class="o">&lt;</span> <span class="k">this</span><span class="p">.</span><span class="nx">N_GAMES</span><span class="p">;</span>
@@ -672,7 +791,7 @@ players to start the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-19" id="section-19">&#182;</a>
+  <a class="pilcrow" href="#section-24" id="section-24">&#182;</a>
 </div>
 <p>TODO: Maybe check other conditions?</p>
         </td>
@@ -746,7 +865,7 @@ players to start the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-21" id="section-21">&#182;</a>
+  <a class="pilcrow" href="#section-26" id="section-26">&#182;</a>
 </div>
 <p>TODO: Should we just return here?
 return;</p>
@@ -764,7 +883,7 @@ return;</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-22" id="section-22">&#182;</a>
+  <a class="pilcrow" href="#section-27" id="section-27">&#182;</a>
 </div>
 <p>Shuffle player list.</p>
         </td>
@@ -778,7 +897,7 @@ return;</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-23" id="section-23">&#182;</a>
+  <a class="pilcrow" href="#section-28" id="section-28">&#182;</a>
 </div>
 <p>Sort according to priority.</p>
         </td>
@@ -793,7 +912,7 @@ return;</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-24" id="section-24">&#182;</a>
+  <a class="pilcrow" href="#section-29" id="section-29">&#182;</a>
 </div>
 <p>Inform players.</p>
         </td>
@@ -806,7 +925,7 @@ return;</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-25" id="section-25">&#182;</a>
+  <a class="pilcrow" href="#section-30" id="section-30">&#182;</a>
 </div>
 <p>Players that may join the game.</p>
         </td>
@@ -821,7 +940,7 @@ return;</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-26" id="section-26">&#182;</a>
+  <a class="pilcrow" href="#section-31" id="section-31">&#182;</a>
 </div>
 <p>Clear body.</p>
         </td>
@@ -836,7 +955,7 @@ return;</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-27" id="section-27">&#182;</a>
+  <a class="pilcrow" href="#section-32" id="section-32">&#182;</a>
 </div>
 <p>Clear timeout for players.</p>
         </td>
@@ -850,7 +969,7 @@ return;</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-28" id="section-28">&#182;</a>
+  <a class="pilcrow" href="#section-33" id="section-33">&#182;</a>
 </div>
 <p>Players that may not join.</p>
         </td>
@@ -867,7 +986,7 @@ return;</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-29" id="section-29">&#182;</a>
+  <a class="pilcrow" href="#section-34" id="section-34">&#182;</a>
 </div>
 <p>Increase timesNotSelected of player.</p>
         </td>
@@ -892,7 +1011,7 @@ return;</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-30" id="section-30">&#182;</a>
+  <a class="pilcrow" href="#section-35" id="section-35">&#182;</a>
 </div>
 <p>Choose players.</p>
         </td>
@@ -906,7 +1025,7 @@ return;</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-31" id="section-31">&#182;</a>
+  <a class="pilcrow" href="#section-36" id="section-36">&#182;</a>
 </div>
 <p>Decide treatment.</p>
         </td>
@@ -920,7 +1039,7 @@ return;</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-32" id="section-32">&#182;</a>
+  <a class="pilcrow" href="#section-37" id="section-37">&#182;</a>
 </div>
 <p>Create new game room.</p>
         </td>
@@ -937,7 +1056,7 @@ return;</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-33" id="section-33">&#182;</a>
+  <a class="pilcrow" href="#section-38" id="section-38">&#182;</a>
 </div>
 <p>Setup and start game.</p>
         </td>
@@ -952,7 +1071,7 @@ return;</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-34" id="section-34">&#182;</a>
+  <a class="pilcrow" href="#section-39" id="section-39">&#182;</a>
 </div>
 <p>Close waitingRoom if next game would not be dispatchable.</p>
         </td>
@@ -1035,7 +1154,7 @@ return;</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-36" id="section-36">&#182;</a>
+  <a class="pilcrow" href="#section-41" id="section-41">&#182;</a>
 </div>
 <p>See if an access code is defined, if so checkout remotely
 also.</p>
