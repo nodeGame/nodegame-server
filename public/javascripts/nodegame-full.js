@@ -3376,6 +3376,53 @@ if (!Array.prototype.indexOf) {
         }
     };
 
+    /**
+     * ### DOM.blinkTitle
+     *
+     * Alternates between two titles
+     *
+     * Calling the function a second time clears the current 
+     * blinking. If called without arguments the current title
+     * blinking is cleared.
+     *
+     * @param {string} title New title to blink
+     * @param {string} alternateTitle Title to alternate
+     */
+    DOM.blinkTitle = function(id) {
+        return function(title, alternateTitle, options) {
+            options = options || {};
+
+            if (options.stopOnFocus) {
+                window.onfocus = function() {
+                    JSUS.blinkTitle()
+                };
+            }
+            if (options.startOnBlur) {
+                options.startOnBlur = null;
+                window.onblur = function() {
+                    JSUS.blinkTitle(title, alternateTitle, options);
+                }
+                return;
+            }
+            if (!alternateTitle) {
+                alternateTitle = '!!!';
+            }
+            if (null !== id) {
+                clearInterval(id);
+                id = null;
+            }
+            if ('undefined' !== typeof title) {
+                JSUS.changeTitle(title);
+                id = setInterval(function() { 
+                    JSUS.changeTitle(alternateTitle);
+                    setTimeout(function() {
+                        JSUS.changeTitle(title);
+                    },500);
+                },1000);
+            }
+        };
+    }(null);
+
     JSUS.extend(DOM);
 
 })('undefined' !== typeof JSUS ? JSUS : module.parent.exports.JSUS);
@@ -37628,9 +37675,6 @@ if (!Array.prototype.indexOf) {
             console.log('STOPPING TIMER');
             this.timer.stop();
             this.timer.destroy();
-            if (this.onTimeout) {
-                this.onTimeout();
-            }
         }
     };
 
@@ -37641,7 +37685,7 @@ if (!Array.prototype.indexOf) {
 
     WaitingRoom.prototype.alertPlayer = function() {
         JSUS.playSound('doorbell.ogg');
-        JSUS.changeTitle('GAME STARTS!');
+        JSUS.blinkTitle(document.title, 'GAME STARTS!', {stopOnFocus: true});
     };
 
     WaitingRoom.prototype.destroy = function() {
