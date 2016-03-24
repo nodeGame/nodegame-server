@@ -405,7 +405,7 @@ overwritten later on.</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-15" id="section-15">&#182;</a>
 </div>
-<p>Load server dir first (channels, etc.).</p>
+<p>Load channel dir first.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="nx">channel</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">loadChannelDir</span><span class="p">(</span><span class="nx">gameDir</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">);</span>
@@ -1102,7 +1102,17 @@ automatically add a waiting room to the channel.</p>
     <span class="nx">waitRoomConf</span> <span class="o">=</span> <span class="nx">channelConf</span><span class="p">.</span><span class="nx">waitingRoom</span><span class="p">;</span>
     <span class="k">delete</span> <span class="nx">channelConf</span><span class="p">.</span><span class="nx">waitingRoom</span><span class="p">;</span>
 
-    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">channelConf</span><span class="p">.</span><span class="nx">name</span><span class="p">)</span> <span class="nx">channelConf</span><span class="p">.</span><span class="nx">name</span> <span class="o">=</span> <span class="nx">gameName</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">channelConf</span><span class="p">.</span><span class="nx">name</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="nx">channelConf</span><span class="p">.</span><span class="nx">name</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadChannelFile: name &#39;</span> <span class="o">+</span>
+                                <span class="s1">&#39;must be string or undefined. &#39;</span> <span class="o">+</span>
+                                <span class="s1">&#39;Directory: &#39;</span> <span class="o">+</span> <span class="nx">directory</span><span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+    <span class="k">else</span> <span class="p">{</span>
+        <span class="nx">channelConf</span><span class="p">.</span><span class="nx">name</span> <span class="o">=</span> <span class="nx">gameName</span><span class="p">;</span>
+    <span class="p">}</span>
+
     <span class="nx">channelConf</span><span class="p">.</span><span class="nx">gameName</span> <span class="o">=</span> <span class="nx">gameName</span><span class="p">;</span>
 
     <span class="nx">channel</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">addChannel</span><span class="p">(</span><span class="nx">channelConf</span><span class="p">);</span>

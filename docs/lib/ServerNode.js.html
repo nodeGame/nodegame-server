@@ -141,6 +141,12 @@
       <div class="heading h3">
         <a href="#servernode.ready">ServerNode.ready</a>
       </div>
+      <div class="heading h2">
+        <a href="#helper%20methods">Helper Methods</a>
+      </div>
+      <div class="heading h2">
+        <a href="#checkserveroptions">checkServerOptions</a>
+      </div>
     </div>
   </div>
   <div id="sidebar-toggle"></div>
@@ -928,7 +934,6 @@ the the output is nicely formatted.</p>
 <span class="p">};</span>
 
 
-
 </pre></div>
         </td>
       </tr>
@@ -963,7 +968,6 @@ the the output is nicely formatted.</p>
         <span class="p">}</span>
     <span class="p">}</span>
 <span class="p">};</span>
-
 
 
 </pre></div>
@@ -1015,24 +1019,25 @@ is aborted.</p>
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">options</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerNode.addChannel: options must be object.&#39;</span><span class="p">);</span>
     <span class="p">}</span>
-
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">options</span><span class="p">.</span><span class="nx">playerServer</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nx">options</span><span class="p">.</span><span class="nx">playerServer</span> <span class="o">=</span> <span class="p">{</span> <span class="nx">endpoint</span><span class="o">:</span> <span class="nx">options</span><span class="p">.</span><span class="nx">playerServer</span> <span class="p">};</span>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">options</span><span class="p">.</span><span class="nx">name</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerNode.addChannel: options.name must &#39;</span> <span class="o">+</span>
+                            <span class="s1">&#39;be string.&#39;</span><span class="p">);</span>
     <span class="p">}</span>
 
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">options</span><span class="p">.</span><span class="nx">playerServer</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerNode.addChannel: &#39;</span> <span class="o">+</span>
-                            <span class="s1">&#39;options.playerServer must be string or object.&#39;</span><span class="p">);</span>
-    <span class="p">}</span>
 
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">options</span><span class="p">.</span><span class="nx">adminServer</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nx">options</span><span class="p">.</span><span class="nx">adminServer</span> <span class="o">=</span> <span class="p">{</span> <span class="nx">endpoint</span><span class="o">:</span> <span class="nx">options</span><span class="p">.</span><span class="nx">adminServer</span> <span class="p">};</span>
-    <span class="p">}</span>
-
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">options</span><span class="p">.</span><span class="nx">adminServer</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerNode.addChannel: &#39;</span> <span class="o">+</span>
-                            <span class="s1">&#39;options.admin must be string or object.&#39;</span><span class="p">);</span>
-    <span class="p">}</span>
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-37" id="section-37">&#182;</a>
+</div>
+<p>Check, adapt options for server channels, or throw error.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">checkServerOptions</span><span class="p">(</span><span class="s1">&#39;playerServer&#39;</span><span class="p">,</span> <span class="nx">options</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">channels</span><span class="p">);</span>
+    <span class="nx">checkServerOptions</span><span class="p">(</span><span class="s1">&#39;adminServer&#39;</span><span class="p">,</span> <span class="nx">options</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">channels</span><span class="p">);</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">maxChannels</span> <span class="o">&amp;&amp;</span> <span class="nx">J</span><span class="p">.</span><span class="nx">size</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">channels</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="k">this</span><span class="p">.</span><span class="nx">maxChannels</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">this</span><span class="p">.</span><span class="nx">logger</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="s1">&#39;ServerNode.addChannel: Maximum number of channels &#39;</span> <span class="o">+</span>
@@ -1047,7 +1052,7 @@ is aborted.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-37" id="section-37">&#182;</a>
+  <a class="pilcrow" href="#section-38" id="section-38">&#182;</a>
 </div>
 <p>Pre-parse user defined configuration options.</p>
         </td>
@@ -1060,7 +1065,7 @@ is aborted.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-38" id="section-38">&#182;</a>
+  <a class="pilcrow" href="#section-39" id="section-39">&#182;</a>
 </div>
 <p>Merge user-defined options with defaults.</p>
         </td>
@@ -1080,7 +1085,7 @@ is aborted.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-39" id="section-39">&#182;</a>
+  <a class="pilcrow" href="#section-40" id="section-40">&#182;</a>
 </div>
 <p>TODO: better check the merged object.</p>
         </td>
@@ -1095,7 +1100,7 @@ is aborted.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-40" id="section-40">&#182;</a>
+  <a class="pilcrow" href="#section-41" id="section-41">&#182;</a>
 </div>
 <p>Creating the channel.</p>
         </td>
@@ -1121,7 +1126,7 @@ is aborted.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-41" id="section-41">&#182;</a>
+  <a class="pilcrow" href="#section-42" id="section-42">&#182;</a>
 </div>
 <p>Add the channel to the Page Manager.</p>
         </td>
@@ -1183,7 +1188,7 @@ is aborted.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-43" id="section-43">&#182;</a>
+  <a class="pilcrow" href="#section-44" id="section-44">&#182;</a>
 </div>
 <p>Here we scan folders that contains games directories.</p>
         </td>
@@ -1202,7 +1207,7 @@ is aborted.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-44" id="section-44">&#182;</a>
+  <a class="pilcrow" href="#section-45" id="section-45">&#182;</a>
 </div>
 <p>Register operation in the queue.</p>
         </td>
@@ -1215,7 +1220,7 @@ is aborted.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-45" id="section-45">&#182;</a>
+  <a class="pilcrow" href="#section-46" id="section-46">&#182;</a>
 </div>
 <p>Go inside, and check every file to see if it is a game directory.</p>
         </td>
@@ -1229,7 +1234,7 @@ is aborted.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-46" id="section-46">&#182;</a>
+  <a class="pilcrow" href="#section-47" id="section-47">&#182;</a>
 </div>
 <p>Remove async operation from queue.</p>
         </td>
@@ -1248,7 +1253,7 @@ is aborted.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-47" id="section-47">&#182;</a>
+  <a class="pilcrow" href="#section-48" id="section-48">&#182;</a>
 </div>
 <p>Check every file.</p>
         </td>
@@ -1263,7 +1268,7 @@ is aborted.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-48" id="section-48">&#182;</a>
+  <a class="pilcrow" href="#section-49" id="section-49">&#182;</a>
 </div>
 <p>Register operation in the queue.</p>
         </td>
@@ -1276,7 +1281,7 @@ is aborted.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-49" id="section-49">&#182;</a>
+  <a class="pilcrow" href="#section-50" id="section-50">&#182;</a>
 </div>
 <p>Get file stats.</p>
         </td>
@@ -1296,7 +1301,7 @@ is aborted.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-50" id="section-50">&#182;</a>
+  <a class="pilcrow" href="#section-51" id="section-51">&#182;</a>
 </div>
 <p>It is a folder, try to add it as a game.</p>
         </td>
@@ -1314,7 +1319,7 @@ is aborted.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-51" id="section-51">&#182;</a>
+  <a class="pilcrow" href="#section-52" id="section-52">&#182;</a>
 </div>
 <p>Remove async operation from queue.</p>
         </td>
@@ -1373,7 +1378,7 @@ is aborted.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-53" id="section-53">&#182;</a>
+  <a class="pilcrow" href="#section-54" id="section-54">&#182;</a>
 </div>
 <p>Reading package.json</p>
         </td>
@@ -1394,7 +1399,7 @@ is aborted.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-54" id="section-54">&#182;</a>
+  <a class="pilcrow" href="#section-55" id="section-55">&#182;</a>
 </div>
 <p>Ready to add the game.</p>
         </td>
@@ -1561,7 +1566,7 @@ automatically add a waiting room to the channel.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-57" id="section-57">&#182;</a>
+  <a class="pilcrow" href="#section-58" id="section-58">&#182;</a>
 </div>
 <p>Validate,</p>
         </td>
@@ -1596,7 +1601,7 @@ automatically add a waiting room to the channel.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-58" id="section-58">&#182;</a>
+  <a class="pilcrow" href="#section-59" id="section-59">&#182;</a>
 </div>
 <p>Add the list of channels created by the game.</p>
         </td>
@@ -1612,7 +1617,7 @@ automatically add a waiting room to the channel.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-59" id="section-59">&#182;</a>
+  <a class="pilcrow" href="#section-60" id="section-60">&#182;</a>
 </div>
 <p>We prepend the baseDir parameter, if any.
 If logicPath is not string we let the WaitingRoom
@@ -1696,7 +1701,7 @@ TODO: views.js file is not loaded anymore because all context are dynamics.</spa
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-61" id="section-61">&#182;</a>
+  <a class="pilcrow" href="#section-62" id="section-62">&#182;</a>
 </div>
 <p>Prepare data structure for game.</p>
         </td>
@@ -1710,7 +1715,7 @@ TODO: views.js file is not loaded anymore because all context are dynamics.</spa
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-62" id="section-62">&#182;</a>
+  <a class="pilcrow" href="#section-63" id="section-63">&#182;</a>
 </div>
 <p>TODO: see if still needed (broken now).</p>
 
@@ -1866,7 +1871,7 @@ TODO: views.js file is not loaded anymore because all context are dynamics.</spa
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-65" id="section-65">&#182;</a>
+  <a class="pilcrow" href="#section-66" id="section-66">&#182;</a>
 </div>
 <p>Add standard name.</p>
         </td>
@@ -2258,7 +2263,7 @@ that passes the correct objects to the configurator function.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-72" id="section-72">&#182;</a>
+  <a class="pilcrow" href="#section-73" id="section-73">&#182;</a>
 </div>
 <p>Requiring configuration function (can throw errors).</p>
         </td>
@@ -2277,7 +2282,7 @@ that passes the correct objects to the configurator function.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-73" id="section-73">&#182;</a>
+  <a class="pilcrow" href="#section-74" id="section-74">&#182;</a>
 </div>
 <p>The configuration function is called internally by <em>cb</em> that takes
 care of passing the right parameters to it.</p>
@@ -2442,6 +2447,167 @@ care of passing the right parameters to it.</p>
     <span class="p">}</span>
     <span class="k">this</span><span class="p">.</span><span class="nx">asyncQueue</span><span class="p">.</span><span class="nx">onReady</span><span class="p">(</span><span class="nx">cb</span><span class="p">);</span>
 <span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap" id="helper%20methods">
+  <h2>
+    <a href="#helper%20methods" name="helper%20methods" class="pilcrow">&#182;</a>
+    Helper Methods
+  </h2>
+</div>
+
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="checkserveroptions">
+  <h2>
+    <a href="#checkserveroptions" name="checkserveroptions" class="pilcrow">&#182;</a>
+    checkServerOptions
+  </h2>
+</div>
+
+  </div>
+  <div class="body"><p>Makes sure the server options are well-formed and contain a valid endpoint</p>
+
+<p>Notice: modifies the options object, if necessary, or throws an error
+if configuration cannot be adapted.</p>
+
+<p>Sets default endpoint if missing (gameName and gameName/admin), and
+checks that endpoints are not already in use.</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">type</span>
+      <span class="dox_type">string</span>
+      <span>The type of server: playerServer or adminServer</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">options</span>
+      <span class="dox_type">object</span>
+      <span>The options object to validate</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">channels</span>
+      <span class="dox_type">object</span>
+      <span>The list of already added channels.</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">ServerNode.info.channels
+</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="kd">function</span> <span class="nx">checkServerOptions</span><span class="p">(</span><span class="nx">type</span><span class="p">,</span> <span class="nx">options</span><span class="p">,</span> <span class="nx">channels</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">endpoint</span><span class="p">,</span> <span class="nx">c</span><span class="p">,</span> <span class="nx">err</span><span class="p">;</span>
+<span class="kr">debugger</span>
+    <span class="nx">endpoint</span> <span class="o">=</span> <span class="nx">type</span> <span class="o">===</span> <span class="s1">&#39;adminServer&#39;</span> <span class="o">?</span> <span class="nx">options</span><span class="p">.</span><span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39;/admin&#39;</span> <span class="o">:</span> <span class="nx">options</span><span class="p">.</span><span class="nx">name</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-80" id="section-80">&#182;</a>
+</div>
+<p>Validate options object, and set default endpoint if undefined.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">options</span><span class="p">[</span><span class="nx">type</span><span class="p">])</span> <span class="p">{</span>
+        <span class="nx">options</span><span class="p">[</span><span class="nx">type</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span> <span class="nx">endpoint</span><span class="o">:</span> <span class="nx">endpoint</span> <span class="p">};</span>
+    <span class="p">}</span>
+    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">options</span><span class="p">[</span><span class="nx">type</span><span class="p">])</span> <span class="p">{</span>
+        <span class="nx">options</span><span class="p">[</span><span class="nx">type</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span> <span class="nx">endpoint</span><span class="o">:</span> <span class="nx">options</span><span class="p">[</span><span class="nx">type</span><span class="p">]</span> <span class="p">};</span>
+    <span class="p">}</span>
+    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">options</span><span class="p">[</span><span class="nx">type</span><span class="p">])</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="nx">options</span><span class="p">[</span><span class="nx">type</span><span class="p">].</span><span class="nx">endpoint</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">options</span><span class="p">[</span><span class="nx">type</span><span class="p">].</span><span class="nx">endpoint</span> <span class="o">=</span> <span class="nx">endpoint</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">options</span><span class="p">[</span><span class="nx">type</span><span class="p">].</span><span class="nx">endpoint</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerNode.addChannel: options.&#39;</span> <span class="o">+</span> <span class="nx">type</span> <span class="o">+</span>
+                                <span class="s1">&#39;.endpoint must be string or undefined.&#39;</span><span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+    <span class="k">else</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerNode.addChannel: options.&#39;</span> <span class="o">+</span> <span class="nx">type</span> <span class="o">+</span>
+                            <span class="s1">&#39;must be string, object, or undefined.&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-81" id="section-81">&#182;</a>
+</div>
+<p>See if admin and player server have the same endpoint.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">endpoint</span> <span class="o">=</span> <span class="nx">options</span><span class="p">[</span><span class="nx">type</span><span class="p">].</span><span class="nx">endpoint</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">type</span> <span class="o">===</span> <span class="s1">&#39;adminServer&#39;</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">endpoint</span> <span class="o">===</span> <span class="nx">options</span><span class="p">.</span><span class="nx">playerServer</span> <span class="o">||</span>
+            <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">options</span><span class="p">.</span><span class="nx">playerServer</span> <span class="o">&amp;&amp;</span>
+             <span class="nx">endpoint</span> <span class="o">===</span> <span class="nx">options</span><span class="p">.</span><span class="nx">playerServer</span><span class="p">.</span><span class="nx">endpoint</span><span class="p">))</span> <span class="p">{</span>
+
+            <span class="nx">err</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+    <span class="k">else</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">endpoint</span> <span class="o">===</span> <span class="nx">options</span><span class="p">.</span><span class="nx">adminServer</span> <span class="o">||</span>
+            <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">options</span><span class="p">.</span><span class="nx">adminServer</span> <span class="o">&amp;&amp;</span>
+             <span class="nx">endpoint</span> <span class="o">===</span> <span class="nx">options</span><span class="p">.</span><span class="nx">adminServer</span><span class="p">.</span><span class="nx">endpoint</span><span class="p">))</span> <span class="p">{</span>
+
+            <span class="nx">err</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;ServerNode.addChannel: player and admin servers &#39;</span> <span class="o">+</span>
+                        <span class="s1">&#39;cannot have same endpoint: &#39;</span> <span class="o">+</span> <span class="nx">endpoint</span><span class="p">);</span>
+    <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-82" id="section-82">&#182;</a>
+</div>
+<p>See if an endpoint with the same name is already in use.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">for</span> <span class="p">(</span><span class="nx">c</span> <span class="k">in</span> <span class="nx">channels</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">channels</span><span class="p">.</span><span class="nx">hasOwnProperty</span><span class="p">(</span><span class="nx">c</span><span class="p">))</span> <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nx">channels</span><span class="p">[</span><span class="nx">c</span><span class="p">].</span><span class="nx">adminServer</span><span class="p">.</span><span class="nx">endpoint</span> <span class="o">===</span> <span class="p">(</span><span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">endpoint</span><span class="p">)</span> <span class="o">||</span>
+                <span class="nx">channels</span><span class="p">[</span><span class="nx">c</span><span class="p">].</span><span class="nx">playerServer</span><span class="p">.</span><span class="nx">endpoint</span> <span class="o">===</span> <span class="p">(</span><span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">endpoint</span><span class="p">))</span> <span class="p">{</span>
+
+                <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;ServerNode.addChannel: options.&#39;</span> <span class="o">+</span> <span class="nx">type</span> <span class="o">+</span>
+                                <span class="s1">&#39;.endpoint already existing: &#39;</span> <span class="o">+</span> <span class="nx">endpoint</span><span class="p">);</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
 </pre></div>
         </td>
       </tr>
