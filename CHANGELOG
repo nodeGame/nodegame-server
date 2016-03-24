@@ -1,5 +1,7 @@
 # nodegame-server change log
 
+# 1.1.1 (current)
+ - Added checkings if games have same name or if channel has same endpoint.
 
 # 1.1.0
  - Fixed bug with loading context directories to create language index.
