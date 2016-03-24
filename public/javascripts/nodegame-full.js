@@ -21071,64 +21071,6 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
-     * ### Matcher.roundRobin
-     *
-     * Creates round robin tournament schedules
-     *
-     * @param {number|array} n The number of participants (>1) or
-     *   an array containing the ids of the participants
-     * @param {object} options Optional. Configuration object
-     *   contains the following options:
-     *
-     *   - bye: identifier for dummy competitor. Default: -1.
-     *   - skypeBye: flag whether players matched with the dummy
-     *        competitor should be added or not. Default: true.
-     *
-     * @return The round robin matches
-     */
-    Matcher.roundRobin = function(n, options) {
-        var ps, rs, bye;
-        var i, lenI, j, lenJ;
-        var skipBye;
-
-        if ('number' === typeof n && n > 1) {
-            ps = J.seq(0, (n-1));
-        }
-        else if (J.isArray(n) && n.length) {
-            ps = n.slice();
-            n = ps.length;
-        }
-        else {
-            throw new TypeError('Matcher.roundRobin: n must be number > 1 ' +
-                                'or non-empty array.');
-        }
-        options = options || {};
-        rs = new Array(n-1);
-        bye = 'undefined' !== typeof options.bye ? options.bye : -1;
-        skipBye = options.skipBye || false;
-        if (n % 2 === 1) {
-            // Make sure we have even numbers.
-            ps.push(bye);
-            n += 1;
-        }
-        i = -1, lenI = n-1;
-        for ( ; ++i < lenI ; ) {
-            // Create a new array for round i.
-            rs[i] = [];
-            j = -1, lenJ = n / 2;
-            for ( ; ++j < lenJ ; ) {
-                if (!skipBye || (ps[j] !== bye && ps[n - 1 - j] !== bye)) {
-                    // Insert match.
-                    rs[i].push([ps[j], ps[n - 1 - j]]);
-                }
-            }
-            // Permutate for next round.
-            ps.splice(1, 0, ps.pop());
-        }
-        return rs;
-    };
-
-    /**
      * ## Matcher constructor
      *
      * Creates a new Matcher object
@@ -21319,17 +21261,15 @@ if (!Array.prototype.indexOf) {
         if ('string' !== typeof alg) {
             throw new TypeError('Matcher.generateMatches: alg must be string.');
         }
-        if (alg === 'roundrobin' ||
-            alg === 'roundRobin' ||
-            alg === 'RoundRobin') {
-
-            matches = Matcher.roundRobin(arguments[1], arguments[2]);
-            this.setMatches(matches);
-            return matches;
+        alg = alg.toLowerCase();
+        if (alg !== 'roundrobin' && alg !== 'random') {
+            throw new Error('Matcher.generateMatches: unknown algorithm: ' +
+                            alg + '.');
         }
 
-        throw new Error('Matcher.generateMatches: unknown algorithm: ' +
-                        alg + '.');
+        matches = pairMatcher(alg, arguments[1], arguments[2]);
+        this.setMatches(matches);
+        return matches;
     };
 
     /**
@@ -21626,6 +21566,82 @@ if (!Array.prototype.indexOf) {
         matcher.resolvedMatches = null;
         matcher.resolvedMatchesById = null;
     }
+
+
+
+    /**
+     * ### Matcher.roundRobin
+     *
+     *
+     *
+     * @return The round robin matches
+     */
+    Matcher.roundRobin = function(n, options) {
+        return pairMatcher('roundrobin', n, options);
+    };
+
+    /**
+     * ### pairMatcher
+     *
+     * Creates tournament schedules for different algorithms
+     *
+     * @param {string} alg The name of the algorithm
+     *
+     * @param {number|array} n The number of participants (>1) or
+     *   an array containing the ids of the participants
+     * @param {object} options Optional. Configuration object
+     *   contains the following options:
+     *
+     *   - bye: identifier for dummy competitor. Default: -1.
+     *   - skypeBye: flag whether players matched with the dummy
+     *        competitor should be added or not. Default: true.
+     *
+     * @return {array} matches The matches according to the algorithm
+     */
+    function pairMatcher(alg, n, options) {
+        var ps, matches, bye;
+        var i, lenI, j, lenJ;
+        var skipBye;
+
+        if ('number' === typeof n && n > 1) {
+            ps = J.seq(0, (n-1));
+        }
+        else if (J.isArray(n) && n.length > 1) {
+            ps = n.slice();
+            n = ps.length;
+        }
+        else {
+            throw new TypeError('pairMatcher.' + alg + ': n must be ' +
+                                'number > 1 or array of length > 1.');
+        }
+        options = options || {};
+        matches = new Array(n-1);
+        bye = 'undefined' !== typeof options.bye ? options.bye : -1;
+        skipBye = options.skipBye || false;
+        if (n % 2 === 1) {
+            // Make sure we have even numbers.
+            ps.push(bye);
+            n += 1;
+        }
+        i = -1, lenI = n-1;
+        for ( ; ++i < lenI ; ) {
+            // Shuffle list of ids for random.
+            if (alg === 'random') ps = J.shuffle(ps);
+            // Create a new array for round i.
+            matches[i] = [];
+            j = -1, lenJ = n / 2;
+            for ( ; ++j < lenJ ; ) {
+                if (!skipBye || (ps[j] !== bye && ps[n - 1 - j] !== bye)) {
+                    // Insert match.
+                    matches[i].push([ps[j], ps[n - 1 - j]]);
+                }
+            }
+            // Permutate for next round.
+            ps.splice(1, 0, ps.pop());
+        }
+        return matches;
+    }
+
     // ## Closure
 })(
     'undefined' != typeof node ? node : module.exports,
@@ -22318,14 +22334,19 @@ if (!Array.prototype.indexOf) {
      *
      * Establishes a connection with a nodeGame server
      *
-     * If channel does not begin with `http://`, if executed in the browser,
-     * the connect method will try to add the value of `window.location.host`
-     * in front of channel to avoid cross-domain errors (as of Socket.io >= 1).
+     * Depending on the type of socket used (Direct or IO), the
+     * channel parameter might be optional.
      *
-     * Depending on the type of socket chosen (e.g. Direct or IO), the first
-     * parameter might be optional.
+     * If node is executed in the browser additional checks are performed:
      *
-     * @param {string} channel The channel to connect to
+     * 1. If channel does not begin with `http://`, then `window.location.host`
+     *    will be added in front of channel to avoid cross-domain errors
+     *    (as of Socket.io >= 1).
+     *
+     * 2. If no socketOptions.query parameter is specified any query
+     *    parameters found in `location.search(1)` will be passed.
+     *
+     * @param {string} channel Optional. The channel to connect to
      * @param {object} socketOptions Optional. A configuration object for
      *   the socket connect method.
      *
@@ -22334,11 +22355,32 @@ if (!Array.prototype.indexOf) {
      * @emit NODEGAME_READY
      */
     NGC.prototype.connect = function(channel, socketOptions) {
-        if (channel && channel.substr(0,7) !== 'http://') {
-            if ('undefined' !== typeof window &&
-                window.location && window.location.host) {
-
-                channel = 'http://' + window.location.host + channel;
+        // Browser adjustements.
+        if ('undefined' !== typeof window) {
+            // If no channel is defined use the pathname, and assume
+            // that the name of the game is also the name of the endpoint.
+            if ('undefined' === typeof channel) {
+                if (window.location && window.location.pathname) {
+                    channel = window.location.pathname;
+                    // Making sure it is consistent with what we expect.
+                    if (channel.charAt(0) !== '/') channel = '/' + channel;
+                    if (channel.charAt(channel.length-1) === '/') {
+                        channel = channel.substring(0, channel.length-1);
+                    }
+                }
+            }
+            // Make full path otherwise socket.io will complain.
+            if (channel && channel.substr(0,7) !== 'http://') {
+                if (window.location && window.location.host) {
+                    channel = 'http://' + window.location.host + channel;
+                }
+            }
+            // Pass along any query options. (?clientType=...).
+            if (!socketOptions || (socketOptions && !socketOptions.query)) {
+                if (('undefined' !== typeof location) && location.search) {
+                    socketOptions = socketOptions || {};
+                    socketOptions.query = location.search.substr(1);
+                }
             }
         }
         this.socket.connect(channel, socketOptions);
@@ -25112,7 +25154,7 @@ if (!Array.prototype.indexOf) {
         // Adding listeners.
         this.addDefaultListeners();
 
-        // Hide <noscript> tag (necessary for IE8).
+        // Hide noscript tag (necessary for IE8).
         setTimeout(function(){
             (function (scriptTag) {
                 if (scriptTag.length >= 1) scriptTag[0].style.display = 'none';

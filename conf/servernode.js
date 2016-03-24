@@ -142,7 +142,7 @@ function configure(servernode) {
         notify: {
 
             // A new authorized client connects;
-            onConnect: true,
+            onConnect: false,
 
             // A client enters a new stage;
             onStageUpdate: false,
