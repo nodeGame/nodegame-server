@@ -196,6 +196,8 @@ overwritten later on.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="nx">serverVersionObj</span> <span class="o">=</span> <span class="nx">version2GameStage</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">version</span><span class="p">);</span>
+    <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;*************** &#39;</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">version</span><span class="p">);</span>
+    <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;*************** &#39;</span><span class="p">,</span> <span class="nx">serverVersionObj</span><span class="p">);</span>
 <span class="p">}</span>
 
 
@@ -321,6 +323,8 @@ overwritten later on.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="k">if</span> <span class="p">(</span><span class="nx">gameInfo</span><span class="p">.</span><span class="nx">engines</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;--------------------&#39;</span><span class="p">,</span> <span class="nx">gameInfo</span><span class="p">.</span><span class="nx">engines</span><span class="p">.</span><span class="nx">nodegame</span><span class="p">);</span>
+        <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;--------------------&#39;</span><span class="p">,</span> <span class="nx">gameInfo</span><span class="p">.</span><span class="nx">name</span><span class="p">);</span>
         <span class="nx">reqFail</span> <span class="o">=</span> <span class="nx">gameRequirementsFail</span><span class="p">(</span><span class="nx">gameInfo</span><span class="p">.</span><span class="nx">engines</span><span class="p">.</span><span class="nx">nodegame</span><span class="p">);</span>
         <span class="k">if</span> <span class="p">(</span><span class="nx">reqFail</span><span class="p">)</span> <span class="p">{</span>
             <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.addGame: game &#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39; &#39;</span> <span class="o">+</span>
