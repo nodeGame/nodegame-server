@@ -2236,7 +2236,9 @@ to the game directory in front.</p>
   </div>
   <div class="body"><p>Helper function to parse a version string into a GameStage</p>
 
-<p>Cannot use GameStage constructor because it does not accept stage = 0</p>
+<p>Cannot use GameStage constructor because it does not accept stage = 0
+Adds always +1 to every component (stage, step, round),
+so that GameStage.compare does not complain.</p>
   </div>
   <div class="details">
     <div class="dox_tag_title">Params</div>
@@ -2258,11 +2260,11 @@ to the game directory in front.</p>
     <span class="kd">var</span> <span class="nx">tokens</span><span class="p">,</span> <span class="nx">stage</span><span class="p">,</span> <span class="nx">step</span><span class="p">,</span> <span class="nx">round</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">out</span><span class="p">;</span>
     <span class="nx">tokens</span> <span class="o">=</span> <span class="nx">str</span><span class="p">.</span><span class="nx">trim</span><span class="p">().</span><span class="nx">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">);</span>
-    <span class="nx">stage</span> <span class="o">=</span> <span class="nb">parseInt</span><span class="p">(</span><span class="nx">tokens</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">10</span><span class="p">);</span>
+    <span class="nx">stage</span> <span class="o">=</span> <span class="nb">parseInt</span><span class="p">(</span><span class="nx">tokens</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">10</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
     <span class="k">if</span> <span class="p">(</span><span class="nb">isNaN</span><span class="p">(</span><span class="nx">stage</span><span class="p">))</span> <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
-    <span class="nx">step</span>  <span class="o">=</span> <span class="nb">parseInt</span><span class="p">(</span><span class="nx">tokens</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">10</span><span class="p">);</span>
+    <span class="nx">step</span>  <span class="o">=</span> <span class="nb">parseInt</span><span class="p">(</span><span class="nx">tokens</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">10</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
     <span class="k">if</span> <span class="p">(</span><span class="nb">isNaN</span><span class="p">(</span><span class="nx">step</span><span class="p">))</span> <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
-    <span class="nx">round</span> <span class="o">=</span> <span class="nb">parseInt</span><span class="p">(</span><span class="nx">tokens</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="mi">10</span><span class="p">);</span>
+    <span class="nx">round</span> <span class="o">=</span> <span class="nb">parseInt</span><span class="p">(</span><span class="nx">tokens</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="mi">10</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
     <span class="k">if</span> <span class="p">(</span><span class="nb">isNaN</span><span class="p">(</span><span class="nx">round</span><span class="p">))</span> <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
     <span class="k">return</span> <span class="p">{</span>
         <span class="nx">stage</span><span class="o">:</span> <span class="nx">stage</span><span class="p">,</span> <span class="nx">step</span><span class="o">:</span> <span class="nx">step</span><span class="p">,</span> <span class="nx">round</span><span class="o">:</span> <span class="nx">round</span>
