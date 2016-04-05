@@ -141,6 +141,7 @@ MIT Licensed</p>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">HostRoom</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">setupGame</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">mixinConf</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">game</span><span class="p">,</span> <span class="nx">channel</span><span class="p">,</span> <span class="nx">node</span><span class="p">,</span> <span class="nx">room</span><span class="p">,</span> <span class="nx">settings</span><span class="p">,</span> <span class="nx">runtimeConf</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">stager</span><span class="p">;</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="nx">mixinConf</span> <span class="o">&amp;&amp;</span> <span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">mixinConf</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">roomType</span> <span class="o">+</span>
@@ -181,6 +182,25 @@ MIT Licensed</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-5" id="section-5">&#182;</a>
 </div>
+<p>TODO: check implications here.
+Default callback does not call node.done().</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">stager</span> <span class="o">=</span> <span class="nx">ngc</span><span class="p">.</span><span class="nx">getStager</span><span class="p">(</span><span class="nx">game</span><span class="p">.</span><span class="nx">plot</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">stager</span><span class="p">.</span><span class="nx">getDefaultCb</span><span class="p">()</span> <span class="o">===</span> <span class="nx">ngc</span><span class="p">.</span><span class="nx">Stager</span><span class="p">.</span><span class="nx">defaultCallback</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">stager</span><span class="p">.</span><span class="nx">setDefaultCallback</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{});</span>
+        <span class="nx">game</span><span class="p">.</span><span class="nx">plot</span> <span class="o">=</span> <span class="nx">stager</span><span class="p">.</span><span class="nx">getState</span><span class="p">();</span>
+    <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-6" id="section-6">&#182;</a>
+</div>
 <p>Mixin-in nodeGame options.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
@@ -195,7 +215,7 @@ MIT Licensed</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-6" id="section-6">&#182;</a>
+  <a class="pilcrow" href="#section-7" id="section-7">&#182;</a>
 </div>
 <p>Setup must be called before connect.</p>
         </td>
@@ -209,7 +229,7 @@ MIT Licensed</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-7" id="section-7">&#182;</a>
+  <a class="pilcrow" href="#section-8" id="section-8">&#182;</a>
 </div>
 <p>Connect logic to server, if not already connected. E.g., after a stop
 command it is generally still connected. Or the node object can be
@@ -224,7 +244,7 @@ passed in the constructor and be already connected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-8" id="section-8">&#182;</a>
+  <a class="pilcrow" href="#section-9" id="section-9">&#182;</a>
 </div>
 <p>Mixin-in nodeGame options.</p>
         </td>
