@@ -56,6 +56,7 @@ MIT Licensed</p>
         <td class="code highlight"><div class="highlight"><pre><span class="s2">&quot;use strict&quot;</span><span class="p">;</span>
 
 <span class="kd">var</span> <span class="nx">fs</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;fs&#39;</span><span class="p">);</span>
+<span class="kd">var</span> <span class="nx">path</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;path&#39;</span><span class="p">);</span>
 <span class="kd">var</span> <span class="nx">jwt</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;jsonwebtoken&#39;</span><span class="p">);</span>
 <span class="kd">var</span> <span class="nx">url</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;url&#39;</span><span class="p">);</span>
 
@@ -308,7 +309,7 @@ Error: ENOTDIR in fetching the file.</p>
 <p>Build path to file.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-        <span class="nx">filePath</span> <span class="o">=</span> <span class="nx">monitorDir</span> <span class="o">+</span> <span class="nx">file</span><span class="p">;</span>
+        <span class="nx">filePath</span> <span class="o">=</span> <span class="nx">path</span><span class="p">.</span><span class="nx">resolve</span><span class="p">(</span><span class="nx">monitorDir</span> <span class="o">+</span> <span class="nx">file</span><span class="p">);</span>
 
         <span class="nx">res</span><span class="p">.</span><span class="nx">sendFile</span><span class="p">(</span><span class="nx">filePath</span><span class="p">);</span>
     <span class="p">});</span>
