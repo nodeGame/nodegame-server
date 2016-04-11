@@ -478,28 +478,23 @@ if (!Array.prototype.indexOf) {
  * GPL licenses.
  *
  * Persistent Client-Side Storage
+ *
  * ---
  */
-(function(exports) {
+(function(exports){
 
-    var version = '5.1';
-    var store, mainStorageType;
+    var version = '0.5';
 
-    mainStorageType = "volatile";
+    var store = exports.store = function(key, value, options, type) {
+	options = options || {};
+	type = (options.type && options.type in store.types) ? options.type : store.type;
+	if (!type || !store.types[type]) {
+	    store.log("Cannot save/load value. Invalid storage type selected: " + type, 'ERR');
+	    return;
+	}
+	store.log('Accessing ' + type + ' storage');
 
-    store = exports.store = function(key, value, options, type) {
-        options = options || {};
-        type = (options.type && options.type in store.types) ?
-            options.type : store.type;
-
-        if (!type || !store.types[type]) {
-            store.log('Cannot save/load value. Invalid storage type ' +
-                      'selected: ' + type, 'ERR');
-            return;
-        }
-        store.log('Accessing ' + type + ' storage');
-
-        return store.types[type](key, value, options);
+	return store.types[type](key, value, options);
     };
 
     // Adding functions and properties to store
@@ -510,171 +505,164 @@ if (!Array.prototype.indexOf) {
     store.types = {};
 
 
-
+    var mainStorageType = "volatile";
 
     //if Object.defineProperty works...
     try {
 
-        Object.defineProperty(store, 'type', {
-            set: function(type) {
-                if ('undefined' === typeof store.types[type]) {
-                    store.log('Cannot set store.type to an invalid type: ' +
-                              type);
-                    return false;
-                }
-                mainStorageType = type;
-                return type;
-            },
-            get: function(){
-                return mainStorageType;
-            },
-            configurable: false,
-            enumerable: true
-        });
+	Object.defineProperty(store, 'type', {
+	    set: function(type){
+		if ('undefined' === typeof store.types[type]) {
+		    store.log('Cannot set store.type to an invalid type: ' + type);
+		    return false;
+		}
+		mainStorageType = type;
+		return type;
+	    },
+	    get: function(){
+		return mainStorageType;
+	    },
+	    configurable: false,
+	    enumerable: true
+	});
     }
     catch(e) {
-        store.type = mainStorageType; // default: memory
+	store.type = mainStorageType; // default: memory
     }
 
     store.addType = function(type, storage) {
-        store.types[type] = storage;
-        store[type] = function(key, value, options) {
-            options = options || {};
-            options.type = type;
-            return store(key, value, options);
-        };
+	store.types[type] = storage;
+	store[type] = function(key, value, options) {
+	    options = options || {};
+	    options.type = type;
+	    return store(key, value, options);
+	};
 
-        if (!store.type || store.type === "volatile") {
-            store.type = type;
-        }
+	if (!store.type || store.type === "volatile") {
+	    store.type = type;
+	}
     };
 
     // TODO: create unit test
     store.onquotaerror = undefined;
     store.error = function() {
-        console.log("shelf quota exceeded");
-        if ('function' === typeof store.onquotaerror) {
-            store.onquotaerror(null);
-        }
+	console.log("shelf quota exceeded");
+	if ('function' === typeof store.onquotaerror) {
+	    store.onquotaerror(null);
+	}
     };
 
     store.log = function(text) {
-        if (store.verbosity > 0) {
-            console.log('Shelf v.' + version + ': ' + text);
-        }
+	if (store.verbosity > 0) {
+	    console.log('Shelf v.' + version + ': ' + text);
+	}
 
     };
 
     store.isPersistent = function() {
-        if (!store.types) return false;
-        if (store.type === "volatile") return false;
-        return true;
+	if (!store.types) return false;
+	if (store.type === "volatile") return false;
+	return true;
     };
 
     //if Object.defineProperty works...
     try {
-        Object.defineProperty(store, 'persistent', {
-            set: function(){},
-            get: store.isPersistent,
-            configurable: false
-        });
+	Object.defineProperty(store, 'persistent', {
+	    set: function(){},
+	    get: store.isPersistent,
+	    configurable: false
+	});
     }
     catch(e) {
-        // safe case
-        store.persistent = false;
+	// safe case
+	store.persistent = false;
     }
 
     store.decycle = function(o) {
-        if (JSON && JSON.decycle && 'function' === typeof JSON.decycle) {
-            o = JSON.decycle(o);
-        }
-        return o;
+	if (JSON && JSON.decycle && 'function' === typeof JSON.decycle) {
+	    o = JSON.decycle(o);
+	}
+	return o;
     };
 
     store.retrocycle = function(o) {
-        if (JSON && JSON.retrocycle && 'function' === typeof JSON.retrocycle) {
-            o = JSON.retrocycle(o);
-        }
-        return o;
+	if (JSON && JSON.retrocycle && 'function' === typeof JSON.retrocycle) {
+	    o = JSON.retrocycle(o);
+	}
+	return o;
     };
 
     store.stringify = function(o) {
-        if (!JSON || !JSON.stringify || 'function' !== typeof JSON.stringify) {
-            throw new Error('JSON.stringify not found. Received non-string' +
-                            'value and could not serialize.');
-        }
+	if (!JSON || !JSON.stringify || 'function' !== typeof JSON.stringify) {
+	    throw new Error('JSON.stringify not found. Received non-string value and could not serialize.');
+	}
 
-        o = store.decycle(o);
-        return JSON.stringify(o);
+	o = store.decycle(o);
+	return JSON.stringify(o);
     };
 
     store.parse = function(o) {
-        if ('undefined' === typeof o) return undefined;
-        if (JSON && JSON.parse && 'function' === typeof JSON.parse) {
-            try {
-                o = JSON.parse(o);
-            }
-            catch (e) {
-                store.log('Error while parsing a value: ' + e, 'ERR');
-                store.log(o);
-            }
-        }
+	if ('undefined' === typeof o) return undefined;
+	if (JSON && JSON.parse && 'function' === typeof JSON.parse) {
+	    try {
+		o = JSON.parse(o);
+	    }
+	    catch (e) {
+		store.log('Error while parsing a value: ' + e, 'ERR');
+		store.log(o);
+	    }
+	}
 
-        o = store.retrocycle(o);
-        return o;
+	o = store.retrocycle(o);
+	return o;
     };
 
     // ## In-memory storage
-    // ### fallback to enable the API even if we can't persist data
+    // ### fallback for all browsers to enable the API even if we can't persist data
     (function() {
 
-        var memory = {},
-        timeout = {};
+	var memory = {},
+	timeout = {};
 
-        function copy(obj) {
-            return store.parse(store.stringify(obj));
-        }
+	function copy(obj) {
+	    return store.parse(store.stringify(obj));
+	}
 
-        store.addType("volatile", function(key, value, options) {
+	store.addType("volatile", function(key, value, options) {
 
-            if (!key) {
-                return copy(memory);
-            }
+	    if (!key) {
+		return copy(memory);
+	    }
 
-            if (value === undefined) {
-                return copy(memory[key]);
-            }
+	    if (value === undefined) {
+		return copy(memory[key]);
+	    }
 
-            if (timeout[key]) {
-                clearTimeout(timeout[key]);
-                delete timeout[key];
-            }
+	    if (timeout[key]) {
+		clearTimeout(timeout[key]);
+		delete timeout[key];
+	    }
 
-            if (value === null) {
-                delete memory[key];
-                return null;
-            }
+	    if (value === null) {
+		delete memory[key];
+		return null;
+	    }
 
-            memory[key] = value;
-            if (options.expires) {
-                timeout[key] = setTimeout(function() {
-                    delete memory[key];
-                    delete timeout[key];
-                }, options.expires);
-            }
+	    memory[key] = value;
+	    if (options.expires) {
+		timeout[key] = setTimeout(function() {
+		    delete memory[key];
+		    delete timeout[key];
+		}, options.expires);
+	    }
 
-            return value;
-        });
+	    return value;
+	});
     }());
 
-}(
-    'undefined' !== typeof module && 'undefined' !== typeof module.exports ?
-        module.exports : this
-));
-
+}('undefined' !== typeof module && 'undefined' !== typeof module.exports ? module.exports: this));
 /**
  * ## Amplify storage for Shelf.js
- * Copyright 2014 Stefano Balietti
  *
  * v. 1.1.0 22.05.2013 a275f32ee7603fbae6607c4e4f37c4d6ada6c3d5
  *
@@ -684,7 +672,7 @@ if (!Array.prototype.indexOf) {
  * - JSON.parse -> store.parse (cyclic objects)
  * - store.name -> store.prefix (check)
  * - rprefix -> regex
- * - "__amplify__" -> store.prefix
+ * -  "__amplify__" -> store.prefix
  *
  * ---
  */
@@ -920,10 +908,9 @@ if (!Array.prototype.indexOf) {
     }());
 
 }(this));
-
 /**
  * ## Cookie storage for Shelf.js
- * Copyright 2014 Stefano Balietti
+ * Copyright 2015 Stefano Balietti
  *
  * Original library from:
  * See http://code.google.com/p/cookies/
@@ -28319,7 +28306,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Canvas
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2016 Stefano Balietti
  * MIT Licensed
  *
  * Creates an HTML canvas that can be manipulated by an api
@@ -28335,7 +28322,7 @@ if (!Array.prototype.indexOf) {
     function Canvas(canvas) {
 
         this.canvas = canvas;
-        // 2D Canvas Context
+        // 2D Canvas Context.
         this.ctx = canvas.getContext('2d');
 
         this.centerX = canvas.width / 2;
@@ -28349,16 +28336,13 @@ if (!Array.prototype.indexOf) {
 
         constructor: Canvas,
 
-        drawOval: function (settings) {
+        drawOval: function(settings) {
 
-            // We keep the center fixed
+            // We keep the center fixed.
             var x = settings.x / settings.scale_x;
             var y = settings.y / settings.scale_y;
 
             var radius = settings.radius || 100;
-            //console.log(settings);
-            //console.log('X,Y(' + x + ', ' + y + '); Radius: ' + radius +
-            //    ', Scale: ' + settings.scale_x + ',' + settings.scale_y);
 
             this.ctx.lineWidth = settings.lineWidth || 1;
             this.ctx.strokeStyle = settings.color || '#000000';
@@ -28372,7 +28356,7 @@ if (!Array.prototype.indexOf) {
             this.ctx.restore();
         },
 
-        drawLine: function (settings) {
+        drawLine: function(settings) {
 
             var from_x = settings.x;
             var from_y = settings.y;
@@ -28380,14 +28364,9 @@ if (!Array.prototype.indexOf) {
             var length = settings.length;
             var angle = settings.angle;
 
-            // Rotation
+            // Rotation.
             var to_x = - Math.cos(angle) * length + settings.x;
             var to_y =  Math.sin(angle) * length + settings.y;
-            //console.log('aa ' + to_x + ' ' + to_y);
-
-            //console.log('From (' + from_x + ', ' + from_y + ') To (' + to_x +
-            //            ', ' + to_y + ')');
-            //console.log('Length: ' + length + ', Angle: ' + angle );
 
             this.ctx.lineWidth = settings.lineWidth || 1;
             this.ctx.strokeStyle = settings.color || '#000000';
@@ -28401,7 +28380,7 @@ if (!Array.prototype.indexOf) {
             this.ctx.restore();
         },
 
-        scale: function (x,y) {
+        scale: function(x, y) {
             this.ctx.scale(x,y);
             this.centerX = this.canvas.width / 2 / x;
             this.centerY = this.canvas.height / 2 / y;
@@ -28409,7 +28388,7 @@ if (!Array.prototype.indexOf) {
 
         clear: function() {
             this.ctx.clearRect(0, 0, this.width, this.height);
-            // For IE
+            // For IE.
             var w = this.canvas.width;
             this.canvas.width = 1;
             this.canvas.width = w;
@@ -28420,7 +28399,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # HTMLRenderer
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2016 Stefano Balietti
  * MIT Licensed
  *
  * Renders javascript objects into HTML following a pipeline
@@ -28650,10 +28629,19 @@ if (!Array.prototype.indexOf) {
      *
      * @param {object} e The object to transform in entity
      */
-    function Entity(e) {
-        e = e || {};
-        this.content = ('undefined' !== typeof e.content) ? e.content : '';
-        this.className = ('undefined' !== typeof e.style) ? e.style : null;
+    function Entity(o) {
+        o = o || {};
+        this.content = 'undefined' !== typeof o.content ? o.content : '';
+        if ('string' === typeof o.className) {
+            this.className = o.className;
+        }
+        else if (!o.className) {
+            this.className = null;
+        }
+        else {
+            throw new TypeError('Entity: className must ' +
+                                'be string, array, or undefined.');
+        }
     }
 
 })(
@@ -28864,10 +28852,33 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Table
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2016 Stefano Balietti
  * MIT Licensed
  *
  * Creates an HTML table that can be manipulated by an api.
+ *
+ * Elements can be added individually, as a row, or as column.
+ * They are tranformed into `Cell` objects containining the original
+ * element and a reference to the HTMLElement (e.g. td, th, etc.)
+ *
+ * Internally, data is organized as a `NDDB` database.
+ *
+ * When `.parse()` method is called the current databaase structure is
+ * processed to create the real HTML table. Each cell is passed to the
+ * `HTMLRenderer` instance which tranforms it the correspondent HTML
+ * element based on a user-defined render function.
+ *
+ * The HTML-renderer object renders cells into HTML following a pipeline
+ * of decorator functions. By default, the following rendering operations
+ * are applied to a cell in order:
+ *
+ * - if it is already an HTML element, returns it;
+ * - if it contains a  #parse() method, tries to invoke it to generate HTML;
+ * - if it is an object, tries to render it as a table of key:value pairs;
+ * - if it is a string or number, creates an HTML text node and returns it
+ *
+ * @see NDDB
+ * @see HTMLRendered
  *
  * www.nodegame.org
  */
@@ -28888,123 +28899,15 @@ if (!Array.prototype.indexOf) {
     Table.prototype = new NDDB();
     Table.prototype.constructor = Table;
 
-    // ## Helper functions
-
     /**
-     * ### validateInput
+     * ## Tan;e.
      *
-     * Validates user input and throws an error if input is not correct
+     * Returns a new cell
      *
-     * @param {string} method The name of the method validating the input
-     * @param {mixed} data The data that will be inserted in the database
-     * @param {number} x Optional. The row index
-     * @param {number} y Optional. The column index
-     * @param {boolean} dataArray TRUE, if data should be an array
-     *
-     * @return {boolean} TRUE, if input passes validation
      */
-    function validateInput(method, data, x, y, dataArray) {
-
-        if (x && 'number' !== typeof x) {
-            throw new TypeError('Table.' + method + ': x must be number or ' +
-                                'undefined.');
-        }
-        if (y && 'number' !== typeof y) {
-            throw new TypeError('Table.' + method + ': y must be number or ' +
-                                'undefined.');
-        }
-
-        if (dataArray && !J.isArray(data)) {
-            throw new TypeError('Table.' + method + ': data must be array.');
-        }
-
-        return true;
-    }
-
-    /**
-     * ### Table.addClass
-     *
-     * Adds a CSS class to each element cell in the table
-     *
-     * @param {string|array} className The name of the class/classes
-     *
-     * @return {Table} This instance for chaining
-     */
-    Table.prototype.addClass = function(className) {
-        if ('string' !== typeof className && !J.isArray(className)) {
-            throw new TypeError('Table.addClass: className must be string or ' +
-                                'array.');
-        }
-        if (J.isArray(className)) {
-            className = className.join(' ');
-        }
-
-        this.each(function(el) {
-            W.addClass(el, className);
-            if (el.HTMLElement) {
-                el.HTMLElement.className = el.className;
-            }
-        });
-
-        return this;
+    Table.cell = function(o) {
+        return new Cell(o);
     };
-
-    /**
-     * ### Table.removeClass
-     *
-     * Removes a CSS class from each element cell in the table
-     *
-     * @param {string|array} className The name of the class/classes
-     *
-     * @return {Table} This instance for chaining
-     */
-    Table.prototype.removeClass = function(className) {
-        var func;
-        if ('string' !== typeof className && !J.isArray(className)) {
-            throw new TypeError('Table.removeClass: className must be string ' +
-                                'or array.');
-        }
-
-        if (J.isArray(className)) {
-            func = function(el, className) {
-                for (var i = 0; i < className.length; i++) {
-                    W.removeClass(el, className[i]);
-                }
-            };
-        }
-        else {
-            func = W.removeClass;
-        }
-
-        this.each(function(el) {
-            func.call(this, el, className);
-            if (el.HTMLElement) {
-                el.HTMLElement.className = el.className;
-            }
-        });
-
-        return this;
-    };
-
-    /**
-     * ### addSpecialCells
-     *
-     * Parses an array of data and returns an array of cells
-     *
-     * @param {array} data Array containing data to transform into cells
-     *
-     * @return {array} The array of cells
-     */
-    function addSpecialCells(data) {
-        var out, i, len;
-        out = [];
-        i = -1;
-        len = data.length;
-        for ( ; ++i < len ; ) {
-            out.push({content: data[i]});
-        }
-        return out;
-    }
 
     /**
      * ## Table constructor
@@ -29026,19 +28929,30 @@ if (!Array.prototype.indexOf) {
 
         NDDB.call(this, options, data);
 
-        //if (!this.row) {
-        //    this.view('row', function(c) {
-        //        return c.x;
-        //    });
-        //}
-        //if (!this.col) {
-        //    this.view('col', function(c) {
-        //        return c.y;
-        //    });
-        //}
+//         // ### Table.row
+//         // NDDB hash containing elements grouped by row index
+//         // @see NDDB.hash
+//         if (!this.row) {
+//             this.hash('row', function(c) {
+//                 return c.x;
+//             });
+//         }
+//
+//         // ### Table.col
+//         // NDDB hash containing elements grouped by column index
+//         // @see NDDB.hash
+//         if (!this.col) {
+//             this.hash('col', function(c) {
+//                 return c.y;
+//             });
+//         }
+
+        // ### Table.rowcol
+        // NDDB index to access elements with row.col notation
+        // @see NDDB.hash
         if (!this.rowcol) {
             this.index('rowcol', function(c) {
-                return c.x + '_' + c.y;
+                return c.x + '.' + c.y;
             });
         }
 
@@ -29080,12 +28994,23 @@ if (!Array.prototype.indexOf) {
          */
         this.table = options.table || document.createElement('table');
 
-        if ('undefined' !== typeof options.id) {
+        if ('string' === typeof options.id) {
             this.table.id = options.id;
         }
+        else if (options.id) {
+            throw new TypeError('Table constructor: options.id must be ' +
+                                'string or undefined.');
+        }
 
-        if ('undefined' !== typeof options.className) {
+        if ('string' === typeof options.className) {
             this.table.className = options.className;
+        }
+        else if (J.isArray(options.className)) {
+            this.table.className = options.className.join(' ');
+        }
+        else if (options.className) {
+            throw new TypeError('Table constructor: options.className must ' +
+                                'be string, array, or undefined.');
         }
 
         /**
@@ -29097,7 +29022,18 @@ if (!Array.prototype.indexOf) {
          * the table because one or more cells have been added with higher
          * row and column indexes.
          */
-        this.missingClassName = options.missingClassName || 'missing';
+        this.missingClassName = 'missing';
+
+        if ('string' === typeof options.missingClassName) {
+            this.missingClassName = options.missingClassName;
+        }
+        else if (J.isArray(options.missingClassName)) {
+            this.missingClassName = options.missingClassName.join(' ');
+        }
+        else if (options.missingClassName) {
+            throw new TypeError('Table constructor: options.className must ' +
+                                'be string, array, or undefined.');
+        }
 
         /**
          * ### Table.autoParse
@@ -29107,6 +29043,32 @@ if (!Array.prototype.indexOf) {
          */
         this.autoParse = 'undefined' !== typeof options.autoParse ?
             options.autoParse : false;
+
+        /**
+         * ### Table.trs
+         *
+         * List of TR elements indexed by their order in the parsed table
+         */
+        this.trs = {};
+
+        /**
+         * ### Table.trCb
+         *
+         * Callback function applied to each TR HTML element
+         *
+         * Callback receives the HTML element, and the row index, or
+         * 'thead' and 'tfoot' for header and footer.
+         */
+        if ('function' === typeof options.tr) {
+            this.trCb = options.tr;
+        }
+        else if ('undefined' === typeof options.tr) {
+            this.trCb = null;
+        }
+        else {
+            throw new TypeError('Table constructor: options.tr must be ' +
+                                'function or undefined.');
+        }
 
         // Init renderer.
         this.initRenderer(options.render);
@@ -29149,7 +29111,11 @@ if (!Array.prototype.indexOf) {
      *
      * Create a cell element (td, th, etc.) and renders its content
      *
-     * It also adds an internal reference to the newly created TD/TH element
+     * It also adds an internal reference to the newly created TD/TH element,
+     * stored under a `.HTMLElement` key.
+     *
+     * If the cell contains a `.className` attribute, this is added to
+     * the HTML element.
      *
      * @param {Cell} cell The cell to transform in element
      * @param {string} tagName The name of the tag. Default: 'td'
@@ -29167,7 +29133,6 @@ if (!Array.prototype.indexOf) {
         content = this.htmlRenderer.render(cell);
         TD.appendChild(content);
         if (cell.className) TD.className = cell.className;
-        // Adds a reference inside the cell.
         cell.HTMLElement = TD;
         return TD;
     };
@@ -29180,17 +29145,12 @@ if (!Array.prototype.indexOf) {
      * @param {number} row The row number
      * @param {number} col The column number
      *
-     * @see HTMLRenderer
-     * @see HTMLRenderer.addRenderer
+     * @return {Cell|array} The Cell or array of cells specified by indexes
      */
     Table.prototype.get = function(row, col) {
-        if ('undefined' !== typeof row && 'number' !== typeof row) {
-            throw new TypeError('Table.get: row must be number.');
-        }
-        if ('undefined' !== typeof col && 'number' !== typeof col) {
-            throw new TypeError('Table.get: col must be number.');
-        }
+        validateXY('get', row, col, 'any');
 
+        // TODO: check if we can use hashes.
         if ('undefined' === typeof row) {
             return this.select('y', '=', col);
         }
@@ -29198,7 +29158,7 @@ if (!Array.prototype.indexOf) {
             return this.select('x', '=', row);
         }
 
-        return this.rowcol.get(row + '_' + col);
+        return this.rowcol.get(row + '.' + col);
     };
 
     /**
@@ -29206,20 +29166,21 @@ if (!Array.prototype.indexOf) {
      *
      * Returns a reference to the TR element at row (row)
      *
+     * TR elements are generated only after the table is parsed.
+     *
+     * Notice! If the table structure is manipulated externally,
+     * the return value of this method might be inaccurate.
+     *
      * @param {number} row The row number
      *
      * @return {HTMLElement|boolean} The requested TR object, or FALSE if it
      *   cannot be found
      */
     Table.prototype.getTR = function(row) {
-        var cell;
-        if ('number' !== typeof row) {
-            throw new TypeError('Table.getTr: row must be number.');
+        if (row !== 'thead' && row !== 'tfoot') {
+            validateXY('getTR', row, undefined, 'x');
         }
-        cell = this.get(row, 0);
-        if (!cell) return false;
-        if (!cell.HTMLElement) return false;
-        return cell.HTMLElement.parentNode;
+        return this.trs[row] || false;
     };
 
     /**
@@ -29231,7 +29192,7 @@ if (!Array.prototype.indexOf) {
      *   of the header elements
      */
     Table.prototype.setHeader = function(header) {
-        if (!validateInput('setHeader', header, null, null, true)) return;
+        validateInput('setHeader', header, undefined, undefined, true);
         this.header = addSpecialCells(header);
     };
 
@@ -29244,7 +29205,7 @@ if (!Array.prototype.indexOf) {
      *   of the left elements
      */
     Table.prototype.setLeft = function(left) {
-        if (!validateInput('setLeft', left, null, null, true)) return;
+        validateInput('setLeft', left, undefined, undefined, true);
         this.left = addSpecialCells(left);
     };
 
@@ -29257,7 +29218,7 @@ if (!Array.prototype.indexOf) {
      *   of the footer elements
      */
     Table.prototype.setFooter = function(footer) {
-        if (!validateInput('setFooter', footer, null, null, true)) return;
+        validateInput('setFooter', footer, undefined, undefined, true);
         this.footer = addSpecialCells(footer);
     };
 
@@ -29279,8 +29240,7 @@ if (!Array.prototype.indexOf) {
      */
     Table.prototype.updatePointer = function(pointer, value) {
         if ('undefined' === typeof this.pointers[pointer]) {
-            node.err('Table.updatePointer: invalid pointer: ' + pointer);
-            return false;
+            throw new Error('Table.updatePointer: invalid pointer: ' + pointer);
         }
         if (this.pointers[pointer] === null || value > this.pointers[pointer]) {
             this.pointers[pointer] = value;
@@ -29303,11 +29263,11 @@ if (!Array.prototype.indexOf) {
      */
     Table.prototype.addMultiple = function(data, dim, x, y) {
         var i, lenI, j, lenJ;
-        if (!validateInput('addMultiple', data, x, y)) return;
+        validateInput('addMultiple', data, x, y);
         if ((dim && 'string' !== typeof dim) ||
             (dim && 'undefined' === typeof this.pointers[dim])) {
             throw new TypeError('Table.addMultiple: dim must be a valid ' +
-                                'string (x, y) or undefined.');
+                                'dimension (x or y) or undefined.');
         }
         dim = dim || 'x';
 
@@ -29342,10 +29302,8 @@ if (!Array.prototype.indexOf) {
                 }
             }
         }
-
-        if (this.autoParse) {
-            this.parse();
-        }
+        // Auto-parse.
+        if (this.autoParse) this.parse();
     };
 
     /**
@@ -29357,7 +29315,7 @@ if (!Array.prototype.indexOf) {
      */
     Table.prototype.add = function(content, x, y, dim) {
         var cell;
-        if (!validateInput('addData', content, x, y)) return;
+        validateInput('add', content, x, y);
         if ((dim && 'string' !== typeof dim) ||
             (dim && 'undefined' === typeof this.pointers[dim])) {
             throw new TypeError('Table.add: dim must be a valid string ' +
@@ -29371,11 +29329,21 @@ if (!Array.prototype.indexOf) {
         y = dim === 'y' ?
             this.getNextPointer('y', y) : this.getCurrPointer('y', y);
 
-        cell = new Cell({
-            x: x,
-            y: y,
-            content: content
-        });
+        if ('object' === typeof content &&
+            'undefined' !== typeof content.content) {
+
+            if ('undefined' === typeof content.x) content.x = x;
+            if ('undefined' === typeof content.y) content.y = y;
+
+            cell = new Cell(content);
+        }
+        else {
+            cell = new Cell({
+                x: x,
+                y: y,
+                content: content
+            });
+        }
 
         this.insert(cell);
 
@@ -29395,7 +29363,7 @@ if (!Array.prototype.indexOf) {
      *   will be added. Default: the last column in the table
      */
     Table.prototype.addColumn = function(data, x, y) {
-        if (!validateInput('addColumn', data, x, y)) return;
+        validateInput('addColumn', data, x, y);
         return this.addMultiple(data, 'y', x || 0, this.getNextPointer('y', y));
     };
 
@@ -29411,7 +29379,7 @@ if (!Array.prototype.indexOf) {
      *   will be added. Default: column 0
      */
     Table.prototype.addRow = function(data, x, y) {
-        if (!validateInput('addRow', data, x, y)) return;
+        validateInput('addRow', data, x, y);
         return this.addMultiple(data, 'x', this.getNextPointer('x', x), y || 0);
     };
 
@@ -29477,7 +29445,10 @@ if (!Array.prototype.indexOf) {
         // HEADER
         if (this.header && this.header.length) {
             THEAD = document.createElement('thead');
+
             TR = document.createElement('tr');
+            if (this.trCb) this.trCb(TR, 'thead');
+            this.trs.thead = TR;
 
             // Add an empty cell to balance the left header column.
             if (this.left && this.left.length) {
@@ -29513,6 +29484,9 @@ if (!Array.prototype.indexOf) {
 
                 if (trid !== this.db[i].x) {
                     TR = document.createElement('tr');
+                    if (this.trCb) this.trCb(TR, (trid+1));
+                    this.trs[(trid+1)] = TR;
+
                     TBODY.appendChild(TR);
 
                     // Keep a reference to current TR idx.
@@ -29538,7 +29512,7 @@ if (!Array.prototype.indexOf) {
                         TR.appendChild(TD);
                     }
                 }
-                // Normal Insert.
+                // Normal insert.
                 TR.appendChild(this.renderCell(this.db[i]));
 
                 // Update old refs.
@@ -29551,8 +29525,10 @@ if (!Array.prototype.indexOf) {
         // FOOTER.
         if (this.footer && this.footer.length) {
             TFOOT = document.createElement('tfoot');
-            TR = document.createElement('tr');
 
+            TR = document.createElement('tr');
+            if (this.trCb) this.trCb(TR, 'tfoot');
+            this.trs.tfoot = TR;
 
             if (this.header && this.header.length) {
                 TD = document.createElement('td');
@@ -29591,19 +29567,195 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
+     * ### Table.addClass
+     *
+     * Adds a CSS class to each HTML element in the table
+     *
+     * Cells not containing an HTML elements are skipped.
+     *
+     * @param {string|array} className The name of the class/classes.
+     * @param {number} x Optional. Subsets only on dimension x
+     * @param {number} y Optional. Subsets only on dimension y
+     *
+     * @return {Table} This instance for chaining
+     */
+    Table.prototype.addClass = function(className, x, y) {
+        var db;
+        if (J.isArray(className)) {
+            className = className.join(' ');
+        }
+        else if ('string' !== typeof className) {
+            throw new TypeError('Table.addClass: className must be string ' +
+                                'or array.');
+        }
+        validateXY('addClass', x, y);
+
+        db = this;
+        if (!('undefined' === typeof x && 'undefined' === typeof y)) {
+            if ('undefined' !== typeof x) db = db.select('x', '=', x);
+            if ('undefined' !== typeof y) db = db.and('y', '=', y);
+        }
+
+        db.each(function(el) {
+            W.addClass(el, className);
+            if (el.HTMLElement) el.HTMLElement.className = el.className;
+        });
+
+        return this;
+    };
+
+    /**
+     * ### Table.removeClass
+     *
+     * Removes a CSS class from each element cell in the table
+     *
+     * @param {string|array|null} className Optional. The name of the
+     *   class/classes, or  null to remove all classes. Default: null.
+     * @param {number} x Optional. Subsets only on dimension x
+     * @param {number} y Optional. Subsets only on dimension y
+     *
+     * @return {Table} This instance for chaining
+     */
+    Table.prototype.removeClass = function(className, x, y) {
+        var func, db;
+        if (J.isArray(className)) {
+            func = function(el, className) {
+                for (var i = 0; i < className.length; i++) {
+                    W.removeClass(el, className[i]);
+                }
+            };
+        }
+        else if ('string' === typeof className) {
+            func = W.removeClass;
+        }
+        else if (null === className) {
+            func = function(el) { el.className = ''; };
+        }
+        else {
+            throw new TypeError('Table.removeClass: className must be ' +
+                                'string, array, or null.');
+        }
+
+        validateXY('removeClass', x, y);
+
+        db = this;
+        if (!('undefined' === typeof x && 'undefined' === typeof y)) {
+            if ('undefined' !== typeof x) db = db.select('x', '=', x);
+            if ('undefined' !== typeof y) db = db.and('y', '=', y);
+        }
+
+        db.each(function(el) {
+            func.call(this, el, className);
+            if (el.HTMLElement) el.HTMLElement.className = el.className;
+        });
+
+        return this;
+    };
+
+    /**
      * ### Table.clear
      *
      * Removes all entries and indexes, and resets the pointers
      *
-     * @param {boolean} confirm TRUE, to confirm the operation.
-     *
      * @see NDDB.clear
      */
-    Table.prototype.clear = function(confirm) {
-        if (NDDB.prototype.clear.call(this, confirm)) {
-            this.resetPointers();
-        }
+    Table.prototype.clear = function() {
+        NDDB.prototype.clear.call(this, true);
+        this.resetPointers();
     };
+
+    // ## Helper functions
+
+
+    /**
+     * ### validateXY
+     *
+     * Validates if x and y are correctly specified or throws an error
+     *
+     * @param {string} method The name of the method validating the input
+     * @param {number} x Optional. The row index
+     * @param {number} y Optional. The column index
+     * @param {string} mode Optional. Additionally check for: 'both',
+     *   'either', 'any', 'x', or 'y' parameter to be defined.
+     */
+    function validateXY(method, x, y, mode) {
+        var xOk, yOk;
+        if ('undefined' !== typeof x) {
+            if ('number' !== typeof x || x < 0) {
+                throw new TypeError('Table.' + method + ': x must be ' +
+                                    'a non-negative number or undefined.');
+            }
+            xOk = true;
+        }
+        if ('undefined' !== typeof y) {
+            if ('number' !== typeof y || y < 0) {
+                throw new TypeError('Table.' + method + ': y must be ' +
+                                    'a non-negative number or undefined.');
+            }
+            yOk = true;
+        }
+        if (mode === 'either' && xOk && yOk) {
+            throw new Error('Table.' + method + ': either x OR y can ' +
+                            'be defined.');
+        }
+        else if (mode === 'both' && (!xOk || !yOk)) {
+            throw new Error('Table.' + method + ': both x AND y must ' +
+                            'be defined.');
+        }
+        else if (mode === 'any' && (!xOk && !yOk)) {
+            throw new Error('Table.' + method + ': either x or y must ' +
+                            'be defined.');
+        }
+        else if (mode === 'x' && !xOk) {
+            throw new Error('Table.' + method + ': x must be defined.');
+        }
+        else if (mode === 'y' && !yOk) {
+            throw new Error('Table.' + method + ': y be defined.');
+        }
+    }
+
+    /**
+     * ### validateInput
+     *
+     * Validates user input and throws an error if input is not correct
+     *
+     * @param {string} method The name of the method validating the input
+     * @param {mixed} data The data that will be inserted in the database
+     * @param {number} x Optional. The row index
+     * @param {number} y Optional. The column index
+     * @param {boolean} dataArray TRUE, if data should be an array
+     *
+     * @return {boolean} TRUE, if input passes validation
+     *
+     * @see validateXY
+     */
+    function validateInput(method, data, x, y, dataArray) {
+        validateXY(method, x, y);
+        if (dataArray && !J.isArray(data)) {
+            throw new TypeError('Table.' + method + ': data must be array.');
+        }
+    }
+
+    /**
+     * ### addSpecialCells
+     *
+     * Parses an array of data and returns an array of cells
+     *
+     * @param {array} data Array containing data to transform into cells
+     *
+     * @return {array} The array of cells
+     */
+    function addSpecialCells(data) {
+        var out, i, len;
+        out = [];
+        i = -1;
+        len = data.length;
+        for ( ; ++i < len ; ) {
+            out.push({content: data[i]});
+        }
+        return out;
+    }
+
 
     // # Cell
 
@@ -29644,7 +29796,6 @@ if (!Array.prototype.indexOf) {
          * Reference to the TD/TH element, if built already
          */
         this.HTMLElement = cell.HTMLElement || null;
-
     }
 
 })(
@@ -37484,7 +37635,7 @@ if (!Array.prototype.indexOf) {
         this.timer = node.widgets.append('VisualTimer', this.timerDiv, {
             milliseconds: this.waitTime,
             timeup: function() {
-                that.bodyDiv.innerHTML = 
+                that.bodyDiv.innerHTML =
                     "Waiting for too long. Please look for a HIT called " +
                     "<strong>ETH Descil Trouble Ticket</strong> and file" +
                     " a new trouble ticket reporting your experience.";
@@ -37617,10 +37768,10 @@ if (!Array.prototype.indexOf) {
         node.on.data('DISPATCH', function(msg) {
             var data, reportExitCode;
             msg = msg || {};
-            data = msg.data || {}; 
+            data = msg.data || {};
 
-            reportExitCode = '<br>You have been disconnected. ' + 
-                'Please report this exit code: ' + 
+            reportExitCode = '<br>You have been disconnected. ' +
+                'Please report this exit code: ' +
                 data.exit + '<br></h3>';
 
             if (data.action === 'AllPlayersConnected') {
@@ -37631,7 +37782,7 @@ if (!Array.prototype.indexOf) {
                 that.bodyDiv.innerHTML = "<h3 align='center'>" +
                     "Thank you for your patience.<br>" +
                     "Unfortunately, there are not enough participants in " +
-                    "your group to start the experiment.<br>"; 
+                    "your group to start the experiment.<br>";
 
                 that.disconnect(that.bodyDiv.innerHTML + reportExitCode);
             }
@@ -37642,7 +37793,7 @@ if (!Array.prototype.indexOf) {
                     '<strong>not selected</strong> to start the game.' +
                     'Thank you for your participation.' +
                     '</span><br><br>';
-                if (false === data.isDispatchable 
+                if (false === data.isDispatchable
                     || that.disconnectIfNotSelected) {
                     that.disconnect(that.bodyDiv.innerHTML + reportExitCode);
                 }
@@ -37699,7 +37850,7 @@ if (!Array.prototype.indexOf) {
         this.startDateDiv.innerHTML = "Game starts at: <br>" + this.startDate;
         this.startDateDiv.style.display = '';
     };
-    
+
     WaitingRoom.prototype.stopTimer = function() {
         if (this.timer) {
             console.log('STOPPING TIMER');

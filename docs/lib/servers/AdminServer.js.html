@@ -70,6 +70,9 @@
         <a href="#get.servercommand">get.SERVERCOMMAND</a>
       </div>
       <div class="heading h3">
+        <a href="#get.servercommand_disconnect">get.SERVERCOMMAND_DISCONNECT</a>
+      </div>
+      <div class="heading h3">
         <a href="#get.servercommand_roomcommand">get.SERVERCOMMAND_ROOMCOMMAND</a>
       </div>
       <div class="heading h3">
@@ -578,6 +581,91 @@ Admins decides what to do with it.</p>
       </tr>
       <tr>
         <td class="docs">
+<div class="pilwrap" id="get.servercommand_disconnect">
+  <h3>
+    <a href="#get.servercommand_disconnect" name="get.servercommand_disconnect" class="pilcrow">&#182;</a>
+    get.SERVERCOMMAND_DISCONNECT
+  </h3>
+</div>
+
+
+<p>Disconnects a client from server</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">this</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;SERVERCOMMAND_DISCONNECT&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">data</span><span class="p">,</span> <span class="nx">from</span><span class="p">)</span> <span class="p">{</span>
+        <span class="kd">var</span> <span class="nx">id</span><span class="p">,</span> <span class="nx">socket</span><span class="p">,</span> <span class="nx">channel</span><span class="p">,</span> <span class="nx">server</span><span class="p">;</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">data</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">sys</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;AdminServer.on.SERVERCOMMAND_DISCONNECT: wrong data &#39;</span> <span class="o">+</span>
+                    <span class="s1">&#39;parameter : &#39;</span> <span class="o">+</span> <span class="nx">data</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
+            <span class="k">return</span><span class="p">;</span>
+        <span class="p">}</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">data</span><span class="p">.</span><span class="nx">id</span> <span class="o">||</span>
+            <span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">data</span><span class="p">.</span><span class="nx">sid</span><span class="p">)</span> <span class="p">{</span>
+
+            <span class="nx">sys</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;AdminServer.on.SERVERCOMMAND_DISCONNECT: data.id &#39;</span> <span class="o">+</span>
+                    <span class="s1">&#39;anda data.sid must be string : &#39;</span> <span class="o">+</span> <span class="nx">data</span><span class="p">.</span><span class="nx">id</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
+            <span class="k">return</span><span class="p">;</span>
+        <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-22" id="section-22">&#182;</a>
+</div>
+<p>Fetching the channel of the client to disconnect
+(default: this channel).</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="nx">channel</span> <span class="o">=</span> <span class="s1">&#39;string&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">data</span><span class="p">.</span><span class="nx">channel</span> <span class="o">?</span>
+            <span class="nx">data</span><span class="p">.</span><span class="nx">channel</span> <span class="o">:</span> <span class="nx">that</span><span class="p">.</span><span class="nx">channel</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-23" id="section-23">&#182;</a>
+</div>
+<p>Player or Admin server (default 'player').</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;admin&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">data</span><span class="p">.</span><span class="nx">server</span> <span class="o">||</span>
+            <span class="s1">&#39;player&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">data</span><span class="p">.</span><span class="nx">server</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">server</span> <span class="o">=</span> <span class="nx">data</span><span class="p">.</span><span class="nx">server</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="k">else</span> <span class="p">{</span>
+            <span class="nx">server</span> <span class="o">=</span> <span class="s1">&#39;player&#39;</span><span class="p">;</span>
+        <span class="p">}</span>
+
+        <span class="nx">id</span> <span class="o">=</span> <span class="nx">data</span><span class="p">.</span><span class="nx">id</span><span class="p">;</span>
+        <span class="nx">sys</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;AdminServer.on.SERVERCOMMAND_DISCONNECT: disconnecting &#39;</span><span class="p">,</span> <span class="nx">id</span><span class="p">);</span>
+
+        <span class="nx">socket</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">[</span><span class="nx">server</span> <span class="o">+</span> <span class="s1">&#39;Server&#39;</span><span class="p">].</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">clients</span><span class="p">[</span><span class="nx">id</span><span class="p">];</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">socket</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">sys</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;AdminServer.on.SERVERCOMMAND_DISCONNECT: could not &#39;</span> <span class="o">+</span>
+                    <span class="s1">&#39;find socket for client: &#39;</span> <span class="o">+</span> <span class="nx">id</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
+            <span class="k">return</span><span class="p">;</span>
+        <span class="p">}</span>
+
+        <span class="nx">socket</span><span class="p">.</span><span class="nx">disconnect</span><span class="p">(</span><span class="nx">data</span><span class="p">.</span><span class="nx">sid</span><span class="p">);</span>
+        <span class="nx">sys</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;AdminServer.on.SERVERCOMMAND_DISCONNECT: disconnected &#39;</span><span class="p">,</span> <span class="nx">id</span><span class="p">);</span>
+    <span class="p">});</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
 <div class="pilwrap" id="get.servercommand_roomcommand">
   <h3>
     <a href="#get.servercommand_roomcommand" name="get.servercommand_roomcommand" class="pilcrow">&#182;</a>
@@ -600,7 +688,7 @@ Admins decides what to do with it.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-22" id="section-22">&#182;</a>
+  <a class="pilcrow" href="#section-25" id="section-25">&#182;</a>
 </div>
 <p>Look up room</p>
         </td>
@@ -619,7 +707,7 @@ Admins decides what to do with it.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-23" id="section-23">&#182;</a>
+  <a class="pilcrow" href="#section-26" id="section-26">&#182;</a>
 </div>
 <p>Check data fields:</p>
         </td>
@@ -749,7 +837,7 @@ Admins decides what to do with it.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-27" id="section-27">&#182;</a>
+  <a class="pilcrow" href="#section-30" id="section-30">&#182;</a>
 </div>
 <p>Fill replyData with channel info:</p>
         </td>
@@ -800,7 +888,7 @@ Admins decides what to do with it.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-28" id="section-28">&#182;</a>
+  <a class="pilcrow" href="#section-31" id="section-31">&#182;</a>
 </div>
 <p>Fill replyData with room info:</p>
         </td>
@@ -828,7 +916,7 @@ Admins decides what to do with it.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-29" id="section-29">&#182;</a>
+  <a class="pilcrow" href="#section-32" id="section-32">&#182;</a>
 </div>
 <p>TODO: connected/disconnected etc.</p>
         </td>
@@ -850,7 +938,7 @@ Admins decides what to do with it.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-30" id="section-30">&#182;</a>
+  <a class="pilcrow" href="#section-33" id="section-33">&#182;</a>
 </div>
 <p>Get room object:</p>
         </td>
@@ -869,7 +957,7 @@ Admins decides what to do with it.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-31" id="section-31">&#182;</a>
+  <a class="pilcrow" href="#section-34" id="section-34">&#182;</a>
 </div>
 <p>Fill replyData with client info:
 TODO: Send only specific client data, not everything;
@@ -898,7 +986,7 @@ TODO: Send only specific client data, not everything;
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-32" id="section-32">&#182;</a>
+  <a class="pilcrow" href="#section-35" id="section-35">&#182;</a>
 </div>
 <p>Substitute the clientType functions with their keys.</p>
         </td>
@@ -935,7 +1023,7 @@ TODO: Send only specific client data, not everything;
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-33" id="section-33">&#182;</a>
+  <a class="pilcrow" href="#section-36" id="section-36">&#182;</a>
 </div>
 <p>TODO: CLIENTS (admins or players),
       SERVERCONF,
@@ -972,7 +1060,7 @@ TODO: Send only specific client data, not everything;
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-35" id="section-35">&#182;</a>
+  <a class="pilcrow" href="#section-38" id="section-38">&#182;</a>
 </div>
 <p>open close wait room</p>
         </td>
@@ -990,7 +1078,7 @@ TODO: Send only specific client data, not everything;
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-36" id="section-36">&#182;</a>
+  <a class="pilcrow" href="#section-39" id="section-39">&#182;</a>
 </div>
 <p>dispatch a new game</p>
         </td>
@@ -1062,7 +1150,7 @@ Important: the ID is not obfuscated.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-38" id="section-38">&#182;</a>
+  <a class="pilcrow" href="#section-41" id="section-41">&#182;</a>
 </div>
 <p>Send to admins in the room:</p>
         </td>
@@ -1088,7 +1176,7 @@ Important: the ID is not obfuscated.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-39" id="section-39">&#182;</a>
+  <a class="pilcrow" href="#section-42" id="section-42">&#182;</a>
 </div>
 <p>Send to single recipient.</p>
         </td>
@@ -1124,7 +1212,7 @@ Important: the ID is not obfuscated.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-41" id="section-41">&#182;</a>
+  <a class="pilcrow" href="#section-44" id="section-44">&#182;</a>
 </div>
 <p>Experimental</p>
         </td>
@@ -1182,7 +1270,7 @@ Important: the ID is not obfuscated.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-44" id="section-44">&#182;</a>
+  <a class="pilcrow" href="#section-47" id="section-47">&#182;</a>
 </div>
 <p>TODO save the state to disk.</p>
         </td>
@@ -1243,7 +1331,7 @@ Important: the ID is not obfuscated.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-46" id="section-46">&#182;</a>
+  <a class="pilcrow" href="#section-49" id="section-49">&#182;</a>
 </div>
 <p>// ### say.STAGE
    // Listens on say.STAGE messages
@@ -1328,7 +1416,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-48" id="section-48">&#182;</a>
+  <a class="pilcrow" href="#section-51" id="section-51">&#182;</a>
 </div>
 <p>TODO: Obfuscate just for players.</p>
         </td>
@@ -1361,7 +1449,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-49" id="section-49">&#182;</a>
+  <a class="pilcrow" href="#section-52" id="section-52">&#182;</a>
 </div>
 <p>Send to admins in the room:</p>
         </td>
@@ -1387,7 +1475,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-50" id="section-50">&#182;</a>
+  <a class="pilcrow" href="#section-53" id="section-53">&#182;</a>
 </div>
 <p>Send to single recipient.</p>
         </td>
@@ -1485,7 +1573,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-52" id="section-52">&#182;</a>
+  <a class="pilcrow" href="#section-55" id="section-55">&#182;</a>
 </div>
 <p>Send to single recipient (could be admin too).</p>
         </td>
@@ -1533,7 +1621,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-54" id="section-54">&#182;</a>
+  <a class="pilcrow" href="#section-57" id="section-57">&#182;</a>
 </div>
 <p>Notifies other admins that a new one monitor connected.</p>
         </td>
@@ -1551,7 +1639,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-55" id="section-55">&#182;</a>
+  <a class="pilcrow" href="#section-58" id="section-58">&#182;</a>
 </div>
 <p>Send the list of connected admins to the new admin.</p>
         </td>
@@ -1570,7 +1658,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-56" id="section-56">&#182;</a>
+  <a class="pilcrow" href="#section-59" id="section-59">&#182;</a>
 </div>
 <p>Send the list of connected players to the new admin.</p>
         </td>
