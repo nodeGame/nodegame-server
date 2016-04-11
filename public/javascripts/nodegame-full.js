@@ -3349,7 +3349,7 @@ if (!Array.prototype.indexOf) {
         if ("string" === typeof(sound)) {
             audio = new Audio(sound);
         }
-        else if ("object" === typeof(sound) 
+        else if ("object" === typeof(sound)
             && "function" === typeof(sound.play)) {
             audio = sound;
         }
@@ -3381,7 +3381,7 @@ if (!Array.prototype.indexOf) {
      *
      * Alternates between two titles
      *
-     * Calling the function a second time clears the current 
+     * Calling the function a second time clears the current
      * blinking. If called without arguments the current title
      * blinking is cleared.
      *
@@ -3390,7 +3390,10 @@ if (!Array.prototype.indexOf) {
      */
     DOM.blinkTitle = function(id) {
         return function(title, alternateTitle, options) {
+            var frequency;
+
             options = options || {};
+            frequency = options.frequency || 2000;
 
             if (options.stopOnFocus) {
                 window.onfocus = function() {
@@ -3413,12 +3416,12 @@ if (!Array.prototype.indexOf) {
             }
             if ('undefined' !== typeof title) {
                 JSUS.changeTitle(title);
-                id = setInterval(function() { 
+                id = setInterval(function() {
                     JSUS.changeTitle(alternateTitle);
                     setTimeout(function() {
                         JSUS.changeTitle(title);
-                    },500);
-                },1000);
+                    },frequency/2);
+                },frequency);
             }
         };
     }(null);
@@ -5834,7 +5837,7 @@ if (!Array.prototype.indexOf) {
         // ## Public properties.
 
         // ### nddbid
-        // A global index of all objects
+        // A global index of all objects.
         this.nddbid = new NDDBIndex('nddbid', this);
 
         // ### db
@@ -7215,8 +7218,8 @@ if (!Array.prototype.indexOf) {
                     // Create a copy of the current settings,
                     // without the views functions, otherwise
                     // we establish an infinite loop in the
-                    // constructor.
-                    settings = this.cloneSettings({V: ''});
+                    // constructor, and the hooks.
+                    settings = this.cloneSettings({ V: true, hooks: true });
                     this[key] = new NDDB(settings);
                 }
                 this[key].insert(o);
@@ -7255,8 +7258,9 @@ if (!Array.prototype.indexOf) {
                 if (!this[key][hash]) {
                     // Create a copy of the current settings,
                     // without the hashing functions, otherwise
-                    // we crate an infinite loop at first insert.
-                    settings = this.cloneSettings({H: ''});
+                    // we create an infinite loop at first insert,
+                    // and the hooks (should be called only on main db).
+                    settings = this.cloneSettings({ H: true, hooks: true });
                     this[key][hash] = new NDDB(settings);
                 }
                 this[key][hash].insert(o);
@@ -12838,7 +12842,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # GamePlot
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2016 Stefano Balietti
  * MIT Licensed
  *
  * `nodeGame` container of game stages functions
@@ -12906,7 +12910,8 @@ if (!Array.prototype.indexOf) {
     GamePlot.prototype.init = function(stager) {
         if (stager) {
             if ('object' !== typeof stager) {
-                throw new Error('GamePlot.init: called with invalid stager.');
+                throw new TypeError('GamePlot.init: called ' +
+                                    'with invalid stager.');
             }
             this.stager = stager;
         }
@@ -13687,17 +13692,6 @@ if (!Array.prototype.indexOf) {
             (this.stager.sequence.length > 0 ||
              this.stager.generalNextFunction !== null ||
              !J.isEmpty(this.stager.nextFunctions));
-    };
-
-    /**
-     * ### GamePlot.getName
-     *
-     * TODO: To remove once transition is complete
-     * @deprecated
-     */
-    GamePlot.prototype.getName = function(gameStage) {
-        var s = this.getStep(gameStage);
-        return s ? s.name : s;
     };
 
     /**
@@ -21170,64 +21164,6 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
-     * ### Matcher.roundRobin
-     *
-     * Creates round robin tournament schedules
-     *
-     * @param {number|array} n The number of participants (>1) or
-     *   an array containing the ids of the participants
-     * @param {object} options Optional. Configuration object
-     *   contains the following options:
-     *
-     *   - bye: identifier for dummy competitor. Default: -1.
-     *   - skypeBye: flag whether players matched with the dummy
-     *        competitor should be added or not. Default: true.
-     *
-     * @return The round robin matches
-     */
-    Matcher.roundRobin = function(n, options) {
-        var ps, rs, bye;
-        var i, lenI, j, lenJ;
-        var skipBye;
-
-        if ('number' === typeof n && n > 1) {
-            ps = J.seq(0, (n-1));
-        }
-        else if (J.isArray(n) && n.length) {
-            ps = n.slice();
-            n = ps.length;
-        }
-        else {
-            throw new TypeError('Matcher.roundRobin: n must be number > 1 ' +
-                                'or non-empty array.');
-        }
-        options = options || {};
-        rs = new Array(n-1);
-        bye = 'undefined' !== typeof options.bye ? options.bye : -1;
-        skipBye = options.skipBye || false;
-        if (n % 2 === 1) {
-            // Make sure we have even numbers.
-            ps.push(bye);
-            n += 1;
-        }
-        i = -1, lenI = n-1;
-        for ( ; ++i < lenI ; ) {
-            // Create a new array for round i.
-            rs[i] = [];
-            j = -1, lenJ = n / 2;
-            for ( ; ++j < lenJ ; ) {
-                if (!skipBye || (ps[j] !== bye && ps[n - 1 - j] !== bye)) {
-                    // Insert match.
-                    rs[i].push([ps[j], ps[n - 1 - j]]);
-                }
-            }
-            // Permutate for next round.
-            ps.splice(1, 0, ps.pop());
-        }
-        return rs;
-    };
-
-    /**
      * ## Matcher constructor
      *
      * Creates a new Matcher object
@@ -21418,17 +21354,15 @@ if (!Array.prototype.indexOf) {
         if ('string' !== typeof alg) {
             throw new TypeError('Matcher.generateMatches: alg must be string.');
         }
-        if (alg === 'roundrobin' ||
-            alg === 'roundRobin' ||
-            alg === 'RoundRobin') {
-
-            matches = Matcher.roundRobin(arguments[1], arguments[2]);
-            this.setMatches(matches);
-            return matches;
+        alg = alg.toLowerCase();
+        if (alg !== 'roundrobin' && alg !== 'random') {
+            throw new Error('Matcher.generateMatches: unknown algorithm: ' +
+                            alg + '.');
         }
 
-        throw new Error('Matcher.generateMatches: unknown algorithm: ' +
-                        alg + '.');
+        matches = pairMatcher(alg, arguments[1], arguments[2]);
+        this.setMatches(matches);
+        return matches;
     };
 
     /**
@@ -21566,8 +21500,8 @@ if (!Array.prototype.indexOf) {
         this.resolvedMatches = matched;
         this.resolvedMatchesById = matchedId;
         // Set getMatch indexes to 0.
-        this.x.should.eql(0);
-        this.y.should.eql(0);
+        this.x = 0;
+        this.y = 0;
     };
 
     /**
@@ -21725,6 +21659,82 @@ if (!Array.prototype.indexOf) {
         matcher.resolvedMatches = null;
         matcher.resolvedMatchesById = null;
     }
+
+
+
+    /**
+     * ### Matcher.roundRobin
+     *
+     *
+     *
+     * @return The round robin matches
+     */
+    Matcher.roundRobin = function(n, options) {
+        return pairMatcher('roundrobin', n, options);
+    };
+
+    /**
+     * ### pairMatcher
+     *
+     * Creates tournament schedules for different algorithms
+     *
+     * @param {string} alg The name of the algorithm
+     *
+     * @param {number|array} n The number of participants (>1) or
+     *   an array containing the ids of the participants
+     * @param {object} options Optional. Configuration object
+     *   contains the following options:
+     *
+     *   - bye: identifier for dummy competitor. Default: -1.
+     *   - skypeBye: flag whether players matched with the dummy
+     *        competitor should be added or not. Default: true.
+     *
+     * @return {array} matches The matches according to the algorithm
+     */
+    function pairMatcher(alg, n, options) {
+        var ps, matches, bye;
+        var i, lenI, j, lenJ;
+        var skipBye;
+
+        if ('number' === typeof n && n > 1) {
+            ps = J.seq(0, (n-1));
+        }
+        else if (J.isArray(n) && n.length > 1) {
+            ps = n.slice();
+            n = ps.length;
+        }
+        else {
+            throw new TypeError('pairMatcher.' + alg + ': n must be ' +
+                                'number > 1 or array of length > 1.');
+        }
+        options = options || {};
+        matches = new Array(n-1);
+        bye = 'undefined' !== typeof options.bye ? options.bye : -1;
+        skipBye = options.skipBye || false;
+        if (n % 2 === 1) {
+            // Make sure we have even numbers.
+            ps.push(bye);
+            n += 1;
+        }
+        i = -1, lenI = n-1;
+        for ( ; ++i < lenI ; ) {
+            // Shuffle list of ids for random.
+            if (alg === 'random') ps = J.shuffle(ps);
+            // Create a new array for round i.
+            matches[i] = [];
+            j = -1, lenJ = n / 2;
+            for ( ; ++j < lenJ ; ) {
+                if (!skipBye || (ps[j] !== bye && ps[n - 1 - j] !== bye)) {
+                    // Insert match.
+                    matches[i].push([ps[j], ps[n - 1 - j]]);
+                }
+            }
+            // Permutate for next round.
+            ps.splice(1, 0, ps.pop());
+        }
+        return matches;
+    }
+
     // ## Closure
 })(
     'undefined' != typeof node ? node : module.exports,
@@ -22438,12 +22448,27 @@ if (!Array.prototype.indexOf) {
      * @emit NODEGAME_READY
      */
     NGC.prototype.connect = function(channel, socketOptions) {
+        // Browser adjustements.
         if ('undefined' !== typeof window) {
+            // If no channel is defined use the pathname, and assume
+            // that the name of the game is also the name of the endpoint.
+            if ('undefined' === typeof channel) {
+                if (window.location && window.location.pathname) {
+                    channel = window.location.pathname;
+                    // Making sure it is consistent with what we expect.
+                    if (channel.charAt(0) !== '/') channel = '/' + channel;
+                    if (channel.charAt(channel.length-1) === '/') {
+                        channel = channel.substring(0, channel.length-1);
+                    }
+                }
+            }
+            // Make full path otherwise socket.io will complain.
             if (channel && channel.substr(0,7) !== 'http://') {
                 if (window.location && window.location.host) {
                     channel = 'http://' + window.location.host + channel;
                 }
             }
+            // Pass along any query options. (?clientType=...).
             if (!socketOptions || (socketOptions && !socketOptions.query)) {
                 if (('undefined' !== typeof location) && location.search) {
                     socketOptions = socketOptions || {};
@@ -22839,6 +22864,27 @@ if (!Array.prototype.indexOf) {
             that = this;
             ee = this.getCurrentEventEmitter();
 
+            // Listener function. If a timeout is not set, the listener
+            // will be removed immediately after its execution.
+            g = function(msg) {
+                if (msg.text === key) {
+                    success = true;
+                    if (executeOnce) {
+                        ee.remove('in.say.DATA', g);
+                        if ('undefined' !== typeof timer) {
+                            that.timer.destroyTimer(timer);
+                        }
+                    }
+                    cb.call(that.game, msg.data);
+                }
+            };
+
+            if (executeOnce) {
+                ee.on('in.say.DATA', g);
+            }
+            else {
+                ee.on('in.say.DATA', g);
+            }
             // If a timeout is set the listener is removed independently,
             // of its execution after the timeout is fired.
             // If timeout === -1, the listener is never removed.
@@ -22846,34 +22892,18 @@ if (!Array.prototype.indexOf) {
                 timer = this.timer.createTimer({
                     milliseconds: timeout,
                     timeup: function() {
-                        ee.remove('in.say.DATA', g);
-                        that.timer.destroyTimer(timer);
+                        // `ee.once` already removes the listener on execution.
+                        if (!executeOnce) {
+                            ee.remove('in.say.DATA', g);
+                        }
+                        if ('undefined' !== typeof timer) {
+                            that.timer.destroyTimer(timer);
+                        }
                         // success === true we have received a reply.
                         if (timeoutCb && !success) timeoutCb.call(that.game);
                     }
                 });
                 timer.start();
-            }
-
-            // Listener function. If a timeout is not set, the listener
-            // will be removed immediately after its execution.
-            g = function(msg) {
-                if (msg.text === key) {
-                    success = true;
-                    cb.call(that.game, msg.data);
-                    if (executeOnce) {
-                        if ('undefined' !== typeof timer) {
-                            that.timer.destroyTimer(timer);
-                        }
-                    }
-                }
-            };
-
-            if (executeOnce) {
-                ee.once('in.say.DATA', g);
-            }
-            else {
-                ee.on('in.say.DATA', g);
             }
         }
         return res;
