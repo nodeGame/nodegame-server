@@ -5735,7 +5735,7 @@ if (!Array.prototype.indexOf) {
         // ## Public properties.
 
         // ### nddbid
-        // A global index of all objects
+        // A global index of all objects.
         this.nddbid = new NDDBIndex('nddbid', this);
 
         // ### db
@@ -7116,8 +7116,8 @@ if (!Array.prototype.indexOf) {
                     // Create a copy of the current settings,
                     // without the views functions, otherwise
                     // we establish an infinite loop in the
-                    // constructor.
-                    settings = this.cloneSettings({V: ''});
+                    // constructor, and the hooks.
+                    settings = this.cloneSettings({ V: true, hooks: true });
                     this[key] = new NDDB(settings);
                 }
                 this[key].insert(o);
@@ -7156,8 +7156,9 @@ if (!Array.prototype.indexOf) {
                 if (!this[key][hash]) {
                     // Create a copy of the current settings,
                     // without the hashing functions, otherwise
-                    // we crate an infinite loop at first insert.
-                    settings = this.cloneSettings({H: ''});
+                    // we create an infinite loop at first insert,
+                    // and the hooks (should be called only on main db).
+                    settings = this.cloneSettings({ H: true, hooks: true });
                     this[key][hash] = new NDDB(settings);
                 }
                 this[key][hash].insert(o);
@@ -9893,6 +9894,15 @@ if (!Array.prototype.indexOf) {
     // ## Constants
 
     var k = node.constants = {};
+
+    /**
+     * ### node.constants.nodename
+     *
+     * Default nodename if none is specified
+     *
+     * @see node.setup.nodename
+     */
+    k.nodename = 'ng';
 
     /**
      * ### node.constants.verbosity_levels
@@ -12894,13 +12904,17 @@ if (!Array.prototype.indexOf) {
      * that bound is assumed.
      *
      * @param {GameStage} curStage The GameStage of reference
+     * @param {bolean} execLoops Optional. If true, loop and doLoop
+     *   conditional function will be executed to determine next stage.
+     *   If false, null will be returned if the next stage depends
+     *   on the execution of the loop/doLoop conditional function.
+     *   Default: true.
      *
-     * @return {GameStage|string} The GameStage coming after _curStage_
-     *   in the plot
+     * @return {GameStage|string} The GameStage after _curStage_
      *
      * @see GameStage
      */
-    GamePlot.prototype.next = function(curStage) {
+    GamePlot.prototype.next = function(curStage, execLoops) {
         var seqObj, stageObj;
         var stageNo, stepNo, steps;
         var normStage, nextStage;
@@ -12914,9 +12928,9 @@ if (!Array.prototype.indexOf) {
         // Find out flexibility mode.
         flexibleMode = this.isFlexibleMode();
 
-        curStage = new GameStage(curStage);
-
         if (flexibleMode) {
+            curStage = new GameStage(curStage);
+
             if (curStage.stage === 0) {
                 // Get first stage:
                 if (this.stager.generalNextFunction) {
@@ -12989,7 +13003,17 @@ if (!Array.prototype.indexOf) {
 
         // Standard Mode.
         else {
-            if (curStage.stage === 0) {
+            // Get normalized GameStage:
+            // makes sures stage is with numbers and not strings.
+            normStage = this.normalizeGameStage(curStage);
+            if (normStage === null) {
+                this.node.warn('GamePlot.next: invalid stage: ' + curStage);
+                return null;
+            }
+
+            stageNo = normStage.stage;
+
+            if (stageNo === 0) {
                 return new GameStage({
                     stage: 1,
                     step:  1,
@@ -12997,19 +13021,12 @@ if (!Array.prototype.indexOf) {
                 });
             }
 
-            // Get normalized GameStage:
-            // makes sures stage is with numbers and not strings.
-            normStage = this.normalizeGameStage(curStage);
-            if (normStage === null) {
-                throw new Error('GamePlot.next: invalid stage: ' + curStage);
-            }
-
-            stageNo  = normStage.stage;
-            stepNo   = normStage.step;
-            seqObj   = this.stager.sequence[stageNo - 1];
+            stepNo = normStage.step;
+            seqObj = this.stager.sequence[stageNo - 1];
 
             if (seqObj.type === 'gameover') return GamePlot.GAMEOVER;
 
+            execLoops = 'undefined' === typeof execLoops ? true : execLoops;
 
             // Get stage object.
             stageObj = this.stager.stages[seqObj.id];
@@ -13036,6 +13053,10 @@ if (!Array.prototype.indexOf) {
 
             // Handle looping blocks:
             if (seqObj.type === 'doLoop' || seqObj.type === 'loop') {
+
+                // Return null if a loop is found and can't be executed.
+                if (!execLoops) return null;
+
                 // Call loop function. True means continue loop.
                 if (seqObj.cb.call(this.node.game)) {
                     return new GameStage({
@@ -13046,9 +13067,12 @@ if (!Array.prototype.indexOf) {
                 }
             }
 
-            // Go to next stage:
+            // Go to next stage.
             if (stageNo < this.stager.sequence.length) {
                 seqObj = this.stager.sequence[stageNo];
+
+                // Return null if a loop is found and can't be executed.
+                if (!execLoops && seqObj.type === 'loop') return null;
 
                 // Skip over loops if their callbacks return false:
                 while (seqObj.type === 'loop' &&
@@ -13058,8 +13082,8 @@ if (!Array.prototype.indexOf) {
                     if (stageNo >= this.stager.sequence.length) {
                         return GamePlot.END_SEQ;
                     }
+                    // Update seq object.
                     seqObj = this.stager.sequence[stageNo];
-
                 }
 
                 // Handle gameover:
@@ -13085,14 +13109,22 @@ if (!Array.prototype.indexOf) {
      * Returns the previous stage in the stager
      *
      * Works only in simple mode.
-     * Behaves on loops the same as `GamePlot.next`, with round=1 always.
+     *
+     * Previous of 0.0.0 is 0.0.0.
      *
      * @param {GameStage} curStage The GameStage of reference
-     * @return {GameStage} The GameStage coming before _curStage_ in the plot
+     * @param {bolean} execLoops Optional. If true, loop and doLoop
+     *   conditional function will be executed to determine previous stage.
+     *   If false, null will be returned if the previous stage depends
+     *   on the execution of the loop/doLoop conditional function.
+     *   Default: true.
+     *
+     * @return {GameStage|null} The GameStage before _curStage_, or null
+     *   if _curStage_ is invalid.
      *
      * @see GameStage
      */
-    GamePlot.prototype.previous = function(curStage) {
+    GamePlot.prototype.previous = function(curStage, execLoops) {
         var normStage;
         var seqObj, stageObj;
         var prevSeqObj;
@@ -13103,76 +13135,64 @@ if (!Array.prototype.indexOf) {
 
         seqObj = null, stageObj = null;
 
-        curStage = new GameStage(curStage);
-
-        // Get normalized GameStage.
+        // Get normalized GameStage (calls GameStage constructor).
         normStage = this.normalizeGameStage(curStage);
         if (normStage === null) {
             this.node.warn('GamePlot.previous: invalid stage: ' + curStage);
             return null;
         }
-        stageNo  = normStage.stage;
-        stepNo   = normStage.step;
-        seqObj   = this.stager.sequence[stageNo - 1];
+        stageNo = normStage.stage;
+
+        // Already 0.0.0, there is nothing before.
+        if (stageNo === 0) return new GameStage();
+
+        stepNo = normStage.step;
+        seqObj = this.stager.sequence[stageNo - 1];
+
+        execLoops = 'undefined' === typeof execLoops ? true : execLoops;
+
+        // Within same stage.
 
         // Handle stepping.
         if (stepNo > 1) {
             return new GameStage({
                 stage: stageNo,
                 step:  stepNo - 1,
-                round: curStage.round
+                round: normStage.round
             });
         }
 
-        if ('undefined' !== typeof seqObj.id) {
-            stageObj = this.stager.stages[seqObj.id];
-            // Handle rounds:
-            if (curStage.round > 1) {
-                return new GameStage({
-                    stage: stageNo,
-                    step:  seqObj.steps.length,
-                    round: curStage.round - 1
-                });
-            }
-
-            // Handle looping blocks.
-            if ((seqObj.type === 'doLoop' || seqObj.type === 'loop') &&
-                seqObj.cb()) {
-
-                return new GameStage({
-                    stage: stageNo,
-                    step:  seqObj.steps.length,
-                    round: 1
-                });
-            }
-        }
-
-        // Handle beginning:
-        if (stageNo <= 1) {
+        // Handle rounds:
+        if (normStage.round > 1) {
             return new GameStage({
-                stage: 0,
-                step:  0,
-                round: 0
+                stage: stageNo,
+                step:  seqObj.steps.length,
+                round: normStage.round - 1
             });
         }
 
-        // Go to previous stage:
-        // Skip over loops if their callbacks return false:
-        while (this.stager.sequence[stageNo - 2].type === 'loop' &&
-               !this.stager.sequence[stageNo - 2].cb()) {
-            stageNo--;
+        // Handle beginning (0.0.0).
+        if (stageNo === 1) return new GameStage();
 
-            if (stageNo <= 1) {
-                return new GameStage({
-                    stage: 0,
-                    step:  0,
-                    round: 0
-                });
-            }
-        }
+        // Go to previous stage.
 
         // Get previous sequence object:
         prevSeqObj = this.stager.sequence[stageNo - 2];
+
+        // Return null if a loop is found and can't be executed.
+        if (!execLoops && seqObj.type === 'loop') return null;
+
+        // Skip over loops if their callbacks return false:
+        while (prevSeqObj.type === 'loop' &&
+               !prevSeqObj.cb.call(this.node.game)) {
+
+            stageNo--;
+            // (0.0.0).
+            if (stageNo <= 1) return new GameStage();
+
+            // Update seq object.
+            prevSeqObj = this.stager.sequence[stageNo - 2];
+        }
 
         // Get number of steps in previous stage:
         prevStepNo = prevSeqObj.steps.length;
@@ -13200,36 +13220,60 @@ if (!Array.prototype.indexOf) {
      * Returns a distant stage in the stager
      *
      * Works with negative delta only in simple mode.
+     *
      * Uses `GamePlot.previous` and `GamePlot.next` for stepping.
-     * If a sequence end is reached, returns immediately.
      *
      * @param {GameStage} curStage The GameStage of reference
      * @param {number} delta The offset. Negative number for backward stepping.
+     * @param {bolean} execLoops Optional. If true, loop and doLoop
+     *   conditional function will be executed to determine next stage.
+     *   If false, null will be returned when a loop or doLoop is found
+     *   and more evaluations are still required. Default: true.
      *
-     * @return {GameStage|string} The GameStage describing the distant stage
+     * @return {GameStage|string|null} The distant game stage
      *
      * @see GameStage
      * @see GamePlot.previous
      * @see GamePlot.next
      */
-    GamePlot.prototype.jump = function(curStage, delta) {
+    GamePlot.prototype.jump = function(curStage, delta, execLoops) {
+        var stageType;
+        execLoops = 'undefined' === typeof execLoops ? true : execLoops;
         if (delta < 0) {
             while (delta < 0) {
-                curStage = this.previous(curStage);
-                delta++;
+                curStage = this.previous(curStage, execLoops);
 
                 if (!(curStage instanceof GameStage) || curStage.stage === 0) {
                     return curStage;
+                }
+                delta++;
+                if (!execLoops) {
+                    // If there are more steps to jump, check if we have loops.
+                    stageType = this.stager.sequence[curStage.stage -1].type
+                    if (stageType === 'loop') {
+                        if (delta < 0) return null;
+                    }
+                    else if (stageType === 'doLoop') {
+                        if (delta < -1) return null;
+                        else return curStage;
+                    }
                 }
             }
         }
         else {
             while (delta > 0) {
-                curStage = this.next(curStage);
-                delta--;
+                curStage = this.next(curStage, execLoops);
+                // If we find a loop return null.
+                if (!(curStage instanceof GameStage)) return curStage;
 
-                if (!(curStage instanceof GameStage)) {
-                    return curStage;
+                delta--;
+                if (!execLoops) {
+                    // If there are more steps to jump, check if we have loops.
+                    stageType = this.stager.sequence[curStage.stage -1].type
+                    if (stageType === 'loop' || stageType === 'doLoop') {
+                        if (delta > 0) return null;
+                        else return curStage;
+                    }
                 }
             }
         }
@@ -13240,65 +13284,61 @@ if (!Array.prototype.indexOf) {
     /**
      * ### GamePlot.stepsToNextStage
      *
-     * Returns the number of steps until the beginning of the next stage
+     * Returns the number of steps from next stage (normalized)
+     *
+     * The next stage can be a repetition of the current one, if inside a
+     * loop or a repeat stage.
      *
      * @param {GameStage|string} gameStage The GameStage object,
      *  or its string representation
      *
-     * @return {number|null} The number of steps to go, minimum 1.
-     *  NULL on error.
+     * @return {number|null} The number of steps including current one,
+     *   or NULL on error.
      */
     GamePlot.prototype.stepsToNextStage = function(gameStage) {
-        var seqObj, stageObj, stepNo;
+        var seqObj, stepNo, limit;
+        if (!this.stager) return null;
 
-        gameStage = new GameStage(gameStage);
+        gameStage = this.normalizeGameStage(gameStage);
+        if (!gameStage) return null;
         if (gameStage.stage === 0) return 1;
-
         seqObj = this.getSequenceObject(gameStage);
         if (!seqObj) return null;
-
-        if ('number' === typeof gameStage.step) {
-            stepNo = gameStage.step;
-        }
-        else {
-            stepNo = seqObj.steps.indexOf(gameStage.step) + 1;
-            // If indexOf returned -1, stepNo is 0 which will be caught below.
-        }
-
-        if (stepNo < 1 || stepNo > seqObj.steps.length) return null;
+        stepNo = gameStage.step;
         return 1 + seqObj.steps.length - stepNo;
     };
 
+
+    GamePlot.prototype.stepsToPreviousStage = function(gameStage) {
+        console.log('GamePlot.stepsToPreviousStage is **deprecated**. Use' +
+                    'GamePlot.stepsFromPreviousStage instead.');
+        return this.stepsFromPreviousStage(gameStage);
+    };
+
     /**
-     * ### GamePlot.stepsToPreviousStage
+     * ### GamePlot.stepsFromPreviousStage
      *
-     * Returns the number of steps back until the end of the previous stage
+     * Returns the number of steps from previous stage (normalized)
+     *
+     * The previous stage can be a repetition of the current one, if inside a
+     * loop or a repeat stage.
      *
      * @param {GameStage|string} gameStage The GameStage object,
      *  or its string representation
      *
-     * @return {number|null} The number of steps to go, minimum 1.
-     *  NULL on error.
+     * @return {number|null} The number of steps including current one, or
+     *   NULL on error.
      */
-    GamePlot.prototype.stepsToPreviousStage = function(gameStage) {
-        var seqObj, stageObj, stepNo;
+    GamePlot.prototype.stepsFromPreviousStage = function(gameStage) {
+        var seqObj, stepNo, limit;
+        if (!this.stager) return null;
 
-        gameStage = new GameStage(gameStage);
-
+        gameStage = this.normalizeGameStage(gameStage);
+        if (!gameStage || gameStage.stage === 0) return null;
         seqObj = this.getSequenceObject(gameStage);
         if (!seqObj) return null;
-
-        if ('number' === typeof gameStage.step) {
-            stepNo = gameStage.step;
-        }
-        else {
-            stepNo = stageObj.steps.indexOf(gameStage.step) + 1;
-            // If indexOf returned -1, stepNo is 0 which will be caught below.
-        }
-
-        if (stepNo < 1 || stepNo > seqObj.steps.length) return null;
-
-        return stepNo;
+        stepNo = gameStage.step;
+        return (stepNo < 1 || stepNo > seqObj.steps.length) ? null : stepNo;
     };
 
     /**
@@ -13313,24 +13353,9 @@ if (!Array.prototype.indexOf) {
      *   or NULL if not found
      */
     GamePlot.prototype.getSequenceObject = function(gameStage) {
-        var seqObj;
-        var i, len;
         if (!this.stager) return null;
-        gameStage = new GameStage(gameStage);
-        if ('number' === typeof gameStage.stage) {
-            seqObj = this.stager.sequence[gameStage.stage - 1];
-        }
-        else {
-            i = -1, len = this.stager.sequence.length;
-            for ( ; ++i < len ; ) {
-                if (this.stager.sequence[i].id === gameStage.stage) {
-                    seqObj = this.stager.sequence[i];
-                    break;
-                }
-            }
-
-        }
-        return seqObj || null;
+        gameStage = this.normalizeGameStage(gameStage);
+        return gameStage ? this.stager.sequence[gameStage.stage - 1] : null;
     };
 
     /**
@@ -13346,16 +13371,13 @@ if (!Array.prototype.indexOf) {
      */
     GamePlot.prototype.getStage = function(gameStage) {
         var stageObj;
-
         if (!this.stager) return null;
-        gameStage = new GameStage(gameStage);
-        if ('number' === typeof gameStage.stage) {
+        gameStage = this.normalizeGameStage(gameStage);
+        if (gameStage) {
             stageObj = this.stager.sequence[gameStage.stage - 1];
-            return stageObj ? this.stager.stages[stageObj.id] : null;
+            stageObj = stageObj ? this.stager.stages[stageObj.id] : null;
         }
-        else {
-            return this.stager.stages[gameStage.stage] || null;
-        }
+        return stageObj || null;
     };
 
     /**
@@ -13370,18 +13392,14 @@ if (!Array.prototype.indexOf) {
      *  if the step was not found
      */
     GamePlot.prototype.getStep = function(gameStage) {
-        var seqObj, stepObj, stageObj;
-
+        var seqObj, stepObj;
         if (!this.stager) return null;
-        gameStage = new GameStage(gameStage);
-        if ('number' === typeof gameStage.step) {
+        gameStage = this.normalizeGameStage(gameStage);
+        if (gameStage) {
             seqObj = this.getSequenceObject(gameStage);
             if (seqObj) {
                 stepObj = this.stager.steps[seqObj.steps[gameStage.step - 1]];
             }
-        }
-        else {
-            stepObj = this.stager.steps[gameStage.step];
         }
         return stepObj || null;
     };
@@ -13729,9 +13747,10 @@ if (!Array.prototype.indexOf) {
                             'must be number or string: ' +
                             (typeof gs.step));
         }
-        if (stepNo < 1) {
+
+        if (stepNo < 1 || stepNo > stageObj.steps.length) {
             this.node.warn('normalizeGameStage received nonexistent step: ' +
-                      stageObj.id + '.' + gs.step);
+                           stageObj.id + '.' + gs.step);
             return null;
         }
 
@@ -18278,20 +18297,34 @@ if (!Array.prototype.indexOf) {
             });
         }
 
-        this.on('insert', function(o) {
-            if ('string' !== typeof o.player) {
-                throw new TypeError('GameDB.insert: player field ' +
-                                    'missing or invalid: ', o);
-            }
-            if ('object' !== typeof o.stage) {
-                throw new Error('GameDB.insert: stage field ' +
-                                'missing or invalid: ', o);
-            }
-            if (!o.timestamp) o.timestamp = Date ? Date.now() : null;
-        });
-
         this.node = this.__shared.node;
     }
+
+    /**
+     * ### GameDB.add
+     *
+     * Wrapper around NDDB.insert
+     *
+     * Checks that the object contains a player and stage
+     * property and also adds a timestamp and session field.
+     *
+     * @param {object} o The object to add
+     *
+     * @NDDB.insert
+     */
+    GameDB.prototype.add = function(o) {
+        if ('string' !== typeof o.player) {
+            throw new TypeError('GameDB.add: player field ' +
+                                'missing or invalid: ', o);
+        }
+        if ('object' !== typeof o.stage) {
+            throw new Error('GameDB.add: stage field ' +
+                            'missing or invalid: ', o);
+        }
+        // if (node.nodename !== nodename) o.session = node.nodename;
+        if (!o.timestamp) o.timestamp = Date ? Date.now() : null;
+        this.insert(o);
+    };
 
 })(
     'undefined' != typeof node ? node : module.exports,
@@ -18300,7 +18333,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Game
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2016 Stefano Balietti
  * MIT Licensed
  *
  * Handles the flow of the game
@@ -18518,6 +18551,15 @@ if (!Array.prototype.indexOf) {
          * @see Stager
          */
         this.globals = {};
+
+        /**
+         * ### Game._steppedSteps
+         *
+         * Array of steps previously played
+         *
+         * @see Game.step
+         */
+        this._steppedSteps = [new GameStage()];
     }
 
     // ## Game methods
@@ -19136,6 +19178,8 @@ if (!Array.prototype.indexOf) {
             }
 
         }
+        // Update list of stepped steps.
+        this._steppedSteps.push(nextStep);
         this.execStep(this.getCurrentGameStage());
         return true;
     };
@@ -19698,6 +19742,48 @@ if (!Array.prototype.indexOf) {
         var normalizedStep;
         normalizedStep = this.plot.normalizeGameStage(new GameStage(step));
         return GameStage.compare(this.getCurrentGameStage(), normalizedStep);
+    };
+
+    /**
+     * ### Game.getPreviousStep
+     *
+     * Returns the game-stage played delta steps ago
+     *
+     * @param {number} delta Optional. The number of past steps. Default 1
+     *
+     * @return {GameStage|null} The game-stage played delta steps ago,
+     *   or null if none is found
+     */
+    Game.prototype.getPreviousStep = function(delta) {
+        var len;
+        delta = delta || 1;
+        if ('number' !== typeof delta || delta < 1) {
+            throw new TypeError('Game.getPreviousStep: delta must be a ' +
+                                'positive number or undefined: ', delta);
+        }
+        len = this._steppedSteps.length - delta - 1;
+        if (len < 0) return null;
+        return this._steppedSteps[len];
+    };
+
+    /**
+     * ### Game.getNextStep
+     *
+     * Returns the game-stage that will be played in delta steps
+     *
+     * @param {number} delta Optional. The number of future steps. Default 1
+     *
+     * @return {GameStage|null} The game-stage that will be played in
+     *   delta future steps, or null if none is found, or if the game
+     *   sequence contains a loop in between
+     */
+    Game.prototype.getNextStep = function(delta) {
+        delta = delta || 1;
+        if ('number' !== typeof delta || delta < 1) {
+            throw new TypeError('Game.getNextStep: delta must be a ' +
+                                'positive number or undefined: ', delta);
+        }
+        return this.plot.jump(this.getCurrentGameStage(), delta, false);
     };
 
     // ## Closure
@@ -22925,7 +23011,7 @@ if (!Array.prototype.indexOf) {
      *
      * All input parameters are passed along to `node.emit`.
      *
-     * @return {boolean} TRUE, if the method is authorized
+     * @return {boolean} TRUE, if the method is authorized, FALSE otherwise
      *
      * @see NodeGameClient.emit
      * @emits DONE
@@ -22957,7 +23043,7 @@ if (!Array.prototype.indexOf) {
             if ('boolean' === typeof args) {
                 if (args === false) {
                     this.silly('node.done: done callback returned false.');
-                    return;
+                    return false;
                 }
                 else {
                     console.log('***');
@@ -23563,13 +23649,15 @@ if (!Array.prototype.indexOf) {
          *
          * Adds an entry to the memory object
          *
-         * Uses the fields `text`, `data`, `stage` and `from`
-         * of the incoming set.DATA message.
+         * Decorates incoming msg.data object with the following properties:
+         *
+         *   - player: msg.from
+         *   - stage: msg.stage
          */
         node.events.ng.on( IN + set + 'DATA', function(msg) {
             var o = msg.data;
             o.player = msg.from, o.stage = msg.stage;
-            node.game.memory.insert(o);
+            node.game.memory.add(o);
         });
 
         /**
@@ -24214,7 +24302,7 @@ if (!Array.prototype.indexOf) {
          * Sets the name for nodegame
          */
         this.registerSetup('nodename', function(newName) {
-            newName = newName || 'ng';
+            newName = newName || constants.nodename;
             if ('string' !== typeof newName) {
                 throw new TypeError('node.nodename must be of type string.');
             }
@@ -28350,7 +28438,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Canvas
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2016 Stefano Balietti
  * MIT Licensed
  *
  * Creates an HTML canvas that can be manipulated by an api
@@ -28366,7 +28454,7 @@ if (!Array.prototype.indexOf) {
     function Canvas(canvas) {
 
         this.canvas = canvas;
-        // 2D Canvas Context
+        // 2D Canvas Context.
         this.ctx = canvas.getContext('2d');
 
         this.centerX = canvas.width / 2;
@@ -28380,16 +28468,13 @@ if (!Array.prototype.indexOf) {
 
         constructor: Canvas,
 
-        drawOval: function (settings) {
+        drawOval: function(settings) {
 
-            // We keep the center fixed
+            // We keep the center fixed.
             var x = settings.x / settings.scale_x;
             var y = settings.y / settings.scale_y;
 
             var radius = settings.radius || 100;
-            //console.log(settings);
-            //console.log('X,Y(' + x + ', ' + y + '); Radius: ' + radius +
-            //    ', Scale: ' + settings.scale_x + ',' + settings.scale_y);
 
             this.ctx.lineWidth = settings.lineWidth || 1;
             this.ctx.strokeStyle = settings.color || '#000000';
@@ -28403,7 +28488,7 @@ if (!Array.prototype.indexOf) {
             this.ctx.restore();
         },
 
-        drawLine: function (settings) {
+        drawLine: function(settings) {
 
             var from_x = settings.x;
             var from_y = settings.y;
@@ -28411,14 +28496,9 @@ if (!Array.prototype.indexOf) {
             var length = settings.length;
             var angle = settings.angle;
 
-            // Rotation
+            // Rotation.
             var to_x = - Math.cos(angle) * length + settings.x;
             var to_y =  Math.sin(angle) * length + settings.y;
-            //console.log('aa ' + to_x + ' ' + to_y);
-
-            //console.log('From (' + from_x + ', ' + from_y + ') To (' + to_x +
-            //            ', ' + to_y + ')');
-            //console.log('Length: ' + length + ', Angle: ' + angle );
 
             this.ctx.lineWidth = settings.lineWidth || 1;
             this.ctx.strokeStyle = settings.color || '#000000';
@@ -28432,7 +28512,7 @@ if (!Array.prototype.indexOf) {
             this.ctx.restore();
         },
 
-        scale: function (x,y) {
+        scale: function(x, y) {
             this.ctx.scale(x,y);
             this.centerX = this.canvas.width / 2 / x;
             this.centerY = this.canvas.height / 2 / y;
@@ -28440,7 +28520,7 @@ if (!Array.prototype.indexOf) {
 
         clear: function() {
             this.ctx.clearRect(0, 0, this.width, this.height);
-            // For IE
+            // For IE.
             var w = this.canvas.width;
             this.canvas.width = 1;
             this.canvas.width = w;
@@ -28451,7 +28531,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # HTMLRenderer
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2016 Stefano Balietti
  * MIT Licensed
  *
  * Renders javascript objects into HTML following a pipeline
@@ -28681,10 +28761,19 @@ if (!Array.prototype.indexOf) {
      *
      * @param {object} e The object to transform in entity
      */
-    function Entity(e) {
-        e = e || {};
-        this.content = ('undefined' !== typeof e.content) ? e.content : '';
-        this.className = ('undefined' !== typeof e.style) ? e.style : null;
+    function Entity(o) {
+        o = o || {};
+        this.content = 'undefined' !== typeof o.content ? o.content : '';
+        if ('string' === typeof o.className) {
+            this.className = o.className;
+        }
+        else if (!o.className) {
+            this.className = null;
+        }
+        else {
+            throw new TypeError('Entity: className must ' +
+                                'be string, array, or undefined.');
+        }
     }
 
 })(
@@ -28895,10 +28984,33 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Table
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2016 Stefano Balietti
  * MIT Licensed
  *
  * Creates an HTML table that can be manipulated by an api.
+ *
+ * Elements can be added individually, as a row, or as column.
+ * They are tranformed into `Cell` objects containining the original
+ * element and a reference to the HTMLElement (e.g. td, th, etc.)
+ *
+ * Internally, data is organized as a `NDDB` database.
+ *
+ * When `.parse()` method is called the current databaase structure is
+ * processed to create the real HTML table. Each cell is passed to the
+ * `HTMLRenderer` instance which tranforms it the correspondent HTML
+ * element based on a user-defined render function.
+ *
+ * The HTML-renderer object renders cells into HTML following a pipeline
+ * of decorator functions. By default, the following rendering operations
+ * are applied to a cell in order:
+ *
+ * - if it is already an HTML element, returns it;
+ * - if it contains a  #parse() method, tries to invoke it to generate HTML;
+ * - if it is an object, tries to render it as a table of key:value pairs;
+ * - if it is a string or number, creates an HTML text node and returns it
+ *
+ * @see NDDB
+ * @see HTMLRendered
  *
  * www.nodegame.org
  */
@@ -28919,123 +29031,15 @@ if (!Array.prototype.indexOf) {
     Table.prototype = new NDDB();
     Table.prototype.constructor = Table;
 
-    // ## Helper functions
-
     /**
-     * ### validateInput
+     * ## Tan;e.
      *
-     * Validates user input and throws an error if input is not correct
+     * Returns a new cell
      *
-     * @param {string} method The name of the method validating the input
-     * @param {mixed} data The data that will be inserted in the database
-     * @param {number} x Optional. The row index
-     * @param {number} y Optional. The column index
-     * @param {boolean} dataArray TRUE, if data should be an array
-     *
-     * @return {boolean} TRUE, if input passes validation
      */
-    function validateInput(method, data, x, y, dataArray) {
-
-        if (x && 'number' !== typeof x) {
-            throw new TypeError('Table.' + method + ': x must be number or ' +
-                                'undefined.');
-        }
-        if (y && 'number' !== typeof y) {
-            throw new TypeError('Table.' + method + ': y must be number or ' +
-                                'undefined.');
-        }
-
-        if (dataArray && !J.isArray(data)) {
-            throw new TypeError('Table.' + method + ': data must be array.');
-        }
-
-        return true;
-    }
-
-    /**
-     * ### Table.addClass
-     *
-     * Adds a CSS class to each element cell in the table
-     *
-     * @param {string|array} className The name of the class/classes
-     *
-     * @return {Table} This instance for chaining
-     */
-    Table.prototype.addClass = function(className) {
-        if ('string' !== typeof className && !J.isArray(className)) {
-            throw new TypeError('Table.addClass: className must be string or ' +
-                                'array.');
-        }
-        if (J.isArray(className)) {
-            className = className.join(' ');
-        }
-
-        this.each(function(el) {
-            W.addClass(el, className);
-            if (el.HTMLElement) {
-                el.HTMLElement.className = el.className;
-            }
-        });
-
-        return this;
+    Table.cell = function(o) {
+        return new Cell(o);
     };
-
-    /**
-     * ### Table.removeClass
-     *
-     * Removes a CSS class from each element cell in the table
-     *
-     * @param {string|array} className The name of the class/classes
-     *
-     * @return {Table} This instance for chaining
-     */
-    Table.prototype.removeClass = function(className) {
-        var func;
-        if ('string' !== typeof className && !J.isArray(className)) {
-            throw new TypeError('Table.removeClass: className must be string ' +
-                                'or array.');
-        }
-
-        if (J.isArray(className)) {
-            func = function(el, className) {
-                for (var i = 0; i < className.length; i++) {
-                    W.removeClass(el, className[i]);
-                }
-            };
-        }
-        else {
-            func = W.removeClass;
-        }
-
-        this.each(function(el) {
-            func.call(this, el, className);
-            if (el.HTMLElement) {
-                el.HTMLElement.className = el.className;
-            }
-        });
-
-        return this;
-    };
-
-    /**
-     * ### addSpecialCells
-     *
-     * Parses an array of data and returns an array of cells
-     *
-     * @param {array} data Array containing data to transform into cells
-     *
-     * @return {array} The array of cells
-     */
-    function addSpecialCells(data) {
-        var out, i, len;
-        out = [];
-        i = -1;
-        len = data.length;
-        for ( ; ++i < len ; ) {
-            out.push({content: data[i]});
-        }
-        return out;
-    }
 
     /**
      * ## Table constructor
@@ -29057,19 +29061,30 @@ if (!Array.prototype.indexOf) {
 
         NDDB.call(this, options, data);
 
-        //if (!this.row) {
-        //    this.view('row', function(c) {
-        //        return c.x;
-        //    });
-        //}
-        //if (!this.col) {
-        //    this.view('col', function(c) {
-        //        return c.y;
-        //    });
-        //}
+//         // ### Table.row
+//         // NDDB hash containing elements grouped by row index
+//         // @see NDDB.hash
+//         if (!this.row) {
+//             this.hash('row', function(c) {
+//                 return c.x;
+//             });
+//         }
+//
+//         // ### Table.col
+//         // NDDB hash containing elements grouped by column index
+//         // @see NDDB.hash
+//         if (!this.col) {
+//             this.hash('col', function(c) {
+//                 return c.y;
+//             });
+//         }
+
+        // ### Table.rowcol
+        // NDDB index to access elements with row.col notation
+        // @see NDDB.hash
         if (!this.rowcol) {
             this.index('rowcol', function(c) {
-                return c.x + '_' + c.y;
+                return c.x + '.' + c.y;
             });
         }
 
@@ -29111,12 +29126,23 @@ if (!Array.prototype.indexOf) {
          */
         this.table = options.table || document.createElement('table');
 
-        if ('undefined' !== typeof options.id) {
+        if ('string' === typeof options.id) {
             this.table.id = options.id;
         }
+        else if (options.id) {
+            throw new TypeError('Table constructor: options.id must be ' +
+                                'string or undefined.');
+        }
 
-        if ('undefined' !== typeof options.className) {
+        if ('string' === typeof options.className) {
             this.table.className = options.className;
+        }
+        else if (J.isArray(options.className)) {
+            this.table.className = options.className.join(' ');
+        }
+        else if (options.className) {
+            throw new TypeError('Table constructor: options.className must ' +
+                                'be string, array, or undefined.');
         }
 
         /**
@@ -29128,7 +29154,18 @@ if (!Array.prototype.indexOf) {
          * the table because one or more cells have been added with higher
          * row and column indexes.
          */
-        this.missingClassName = options.missingClassName || 'missing';
+        this.missingClassName = 'missing';
+
+        if ('string' === typeof options.missingClassName) {
+            this.missingClassName = options.missingClassName;
+        }
+        else if (J.isArray(options.missingClassName)) {
+            this.missingClassName = options.missingClassName.join(' ');
+        }
+        else if (options.missingClassName) {
+            throw new TypeError('Table constructor: options.className must ' +
+                                'be string, array, or undefined.');
+        }
 
         /**
          * ### Table.autoParse
@@ -29138,6 +29175,32 @@ if (!Array.prototype.indexOf) {
          */
         this.autoParse = 'undefined' !== typeof options.autoParse ?
             options.autoParse : false;
+
+        /**
+         * ### Table.trs
+         *
+         * List of TR elements indexed by their order in the parsed table
+         */
+        this.trs = {};
+
+        /**
+         * ### Table.trCb
+         *
+         * Callback function applied to each TR HTML element
+         *
+         * Callback receives the HTML element, and the row index, or
+         * 'thead' and 'tfoot' for header and footer.
+         */
+        if ('function' === typeof options.tr) {
+            this.trCb = options.tr;
+        }
+        else if ('undefined' === typeof options.tr) {
+            this.trCb = null;
+        }
+        else {
+            throw new TypeError('Table constructor: options.tr must be ' +
+                                'function or undefined.');
+        }
 
         // Init renderer.
         this.initRenderer(options.render);
@@ -29180,7 +29243,11 @@ if (!Array.prototype.indexOf) {
      *
      * Create a cell element (td, th, etc.) and renders its content
      *
-     * It also adds an internal reference to the newly created TD/TH element
+     * It also adds an internal reference to the newly created TD/TH element,
+     * stored under a `.HTMLElement` key.
+     *
+     * If the cell contains a `.className` attribute, this is added to
+     * the HTML element.
      *
      * @param {Cell} cell The cell to transform in element
      * @param {string} tagName The name of the tag. Default: 'td'
@@ -29198,7 +29265,6 @@ if (!Array.prototype.indexOf) {
         content = this.htmlRenderer.render(cell);
         TD.appendChild(content);
         if (cell.className) TD.className = cell.className;
-        // Adds a reference inside the cell.
         cell.HTMLElement = TD;
         return TD;
     };
@@ -29211,17 +29277,12 @@ if (!Array.prototype.indexOf) {
      * @param {number} row The row number
      * @param {number} col The column number
      *
-     * @see HTMLRenderer
-     * @see HTMLRenderer.addRenderer
+     * @return {Cell|array} The Cell or array of cells specified by indexes
      */
     Table.prototype.get = function(row, col) {
-        if ('undefined' !== typeof row && 'number' !== typeof row) {
-            throw new TypeError('Table.get: row must be number.');
-        }
-        if ('undefined' !== typeof col && 'number' !== typeof col) {
-            throw new TypeError('Table.get: col must be number.');
-        }
+        validateXY('get', row, col, 'any');
 
+        // TODO: check if we can use hashes.
         if ('undefined' === typeof row) {
             return this.select('y', '=', col);
         }
@@ -29229,7 +29290,7 @@ if (!Array.prototype.indexOf) {
             return this.select('x', '=', row);
         }
 
-        return this.rowcol.get(row + '_' + col);
+        return this.rowcol.get(row + '.' + col);
     };
 
     /**
@@ -29237,20 +29298,21 @@ if (!Array.prototype.indexOf) {
      *
      * Returns a reference to the TR element at row (row)
      *
+     * TR elements are generated only after the table is parsed.
+     *
+     * Notice! If the table structure is manipulated externally,
+     * the return value of this method might be inaccurate.
+     *
      * @param {number} row The row number
      *
      * @return {HTMLElement|boolean} The requested TR object, or FALSE if it
      *   cannot be found
      */
     Table.prototype.getTR = function(row) {
-        var cell;
-        if ('number' !== typeof row) {
-            throw new TypeError('Table.getTr: row must be number.');
+        if (row !== 'thead' && row !== 'tfoot') {
+            validateXY('getTR', row, undefined, 'x');
         }
-        cell = this.get(row, 0);
-        if (!cell) return false;
-        if (!cell.HTMLElement) return false;
-        return cell.HTMLElement.parentNode;
+        return this.trs[row] || false;
     };
 
     /**
@@ -29262,7 +29324,7 @@ if (!Array.prototype.indexOf) {
      *   of the header elements
      */
     Table.prototype.setHeader = function(header) {
-        if (!validateInput('setHeader', header, null, null, true)) return;
+        validateInput('setHeader', header, undefined, undefined, true);
         this.header = addSpecialCells(header);
     };
 
@@ -29275,7 +29337,7 @@ if (!Array.prototype.indexOf) {
      *   of the left elements
      */
     Table.prototype.setLeft = function(left) {
-        if (!validateInput('setLeft', left, null, null, true)) return;
+        validateInput('setLeft', left, undefined, undefined, true);
         this.left = addSpecialCells(left);
     };
 
@@ -29288,7 +29350,7 @@ if (!Array.prototype.indexOf) {
      *   of the footer elements
      */
     Table.prototype.setFooter = function(footer) {
-        if (!validateInput('setFooter', footer, null, null, true)) return;
+        validateInput('setFooter', footer, undefined, undefined, true);
         this.footer = addSpecialCells(footer);
     };
 
@@ -29310,8 +29372,7 @@ if (!Array.prototype.indexOf) {
      */
     Table.prototype.updatePointer = function(pointer, value) {
         if ('undefined' === typeof this.pointers[pointer]) {
-            node.err('Table.updatePointer: invalid pointer: ' + pointer);
-            return false;
+            throw new Error('Table.updatePointer: invalid pointer: ' + pointer);
         }
         if (this.pointers[pointer] === null || value > this.pointers[pointer]) {
             this.pointers[pointer] = value;
@@ -29334,11 +29395,11 @@ if (!Array.prototype.indexOf) {
      */
     Table.prototype.addMultiple = function(data, dim, x, y) {
         var i, lenI, j, lenJ;
-        if (!validateInput('addMultiple', data, x, y)) return;
+        validateInput('addMultiple', data, x, y);
         if ((dim && 'string' !== typeof dim) ||
             (dim && 'undefined' === typeof this.pointers[dim])) {
             throw new TypeError('Table.addMultiple: dim must be a valid ' +
-                                'string (x, y) or undefined.');
+                                'dimension (x or y) or undefined.');
         }
         dim = dim || 'x';
 
@@ -29373,10 +29434,8 @@ if (!Array.prototype.indexOf) {
                 }
             }
         }
-
-        if (this.autoParse) {
-            this.parse();
-        }
+        // Auto-parse.
+        if (this.autoParse) this.parse();
     };
 
     /**
@@ -29388,7 +29447,7 @@ if (!Array.prototype.indexOf) {
      */
     Table.prototype.add = function(content, x, y, dim) {
         var cell;
-        if (!validateInput('addData', content, x, y)) return;
+        validateInput('add', content, x, y);
         if ((dim && 'string' !== typeof dim) ||
             (dim && 'undefined' === typeof this.pointers[dim])) {
             throw new TypeError('Table.add: dim must be a valid string ' +
@@ -29402,11 +29461,21 @@ if (!Array.prototype.indexOf) {
         y = dim === 'y' ?
             this.getNextPointer('y', y) : this.getCurrPointer('y', y);
 
-        cell = new Cell({
-            x: x,
-            y: y,
-            content: content
-        });
+        if ('object' === typeof content &&
+            'undefined' !== typeof content.content) {
+
+            if ('undefined' === typeof content.x) content.x = x;
+            if ('undefined' === typeof content.y) content.y = y;
+
+            cell = new Cell(content);
+        }
+        else {
+            cell = new Cell({
+                x: x,
+                y: y,
+                content: content
+            });
+        }
 
         this.insert(cell);
 
@@ -29426,7 +29495,7 @@ if (!Array.prototype.indexOf) {
      *   will be added. Default: the last column in the table
      */
     Table.prototype.addColumn = function(data, x, y) {
-        if (!validateInput('addColumn', data, x, y)) return;
+        validateInput('addColumn', data, x, y);
         return this.addMultiple(data, 'y', x || 0, this.getNextPointer('y', y));
     };
 
@@ -29442,7 +29511,7 @@ if (!Array.prototype.indexOf) {
      *   will be added. Default: column 0
      */
     Table.prototype.addRow = function(data, x, y) {
-        if (!validateInput('addRow', data, x, y)) return;
+        validateInput('addRow', data, x, y);
         return this.addMultiple(data, 'x', this.getNextPointer('x', x), y || 0);
     };
 
@@ -29508,7 +29577,10 @@ if (!Array.prototype.indexOf) {
         // HEADER
         if (this.header && this.header.length) {
             THEAD = document.createElement('thead');
+
             TR = document.createElement('tr');
+            if (this.trCb) this.trCb(TR, 'thead');
+            this.trs.thead = TR;
 
             // Add an empty cell to balance the left header column.
             if (this.left && this.left.length) {
@@ -29544,6 +29616,9 @@ if (!Array.prototype.indexOf) {
 
                 if (trid !== this.db[i].x) {
                     TR = document.createElement('tr');
+                    if (this.trCb) this.trCb(TR, (trid+1));
+                    this.trs[(trid+1)] = TR;
+
                     TBODY.appendChild(TR);
 
                     // Keep a reference to current TR idx.
@@ -29569,7 +29644,7 @@ if (!Array.prototype.indexOf) {
                         TR.appendChild(TD);
                     }
                 }
-                // Normal Insert.
+                // Normal insert.
                 TR.appendChild(this.renderCell(this.db[i]));
 
                 // Update old refs.
@@ -29582,8 +29657,10 @@ if (!Array.prototype.indexOf) {
         // FOOTER.
         if (this.footer && this.footer.length) {
             TFOOT = document.createElement('tfoot');
-            TR = document.createElement('tr');
 
+            TR = document.createElement('tr');
+            if (this.trCb) this.trCb(TR, 'tfoot');
+            this.trs.tfoot = TR;
 
             if (this.header && this.header.length) {
                 TD = document.createElement('td');
@@ -29622,19 +29699,195 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
+     * ### Table.addClass
+     *
+     * Adds a CSS class to each HTML element in the table
+     *
+     * Cells not containing an HTML elements are skipped.
+     *
+     * @param {string|array} className The name of the class/classes.
+     * @param {number} x Optional. Subsets only on dimension x
+     * @param {number} y Optional. Subsets only on dimension y
+     *
+     * @return {Table} This instance for chaining
+     */
+    Table.prototype.addClass = function(className, x, y) {
+        var db;
+        if (J.isArray(className)) {
+            className = className.join(' ');
+        }
+        else if ('string' !== typeof className) {
+            throw new TypeError('Table.addClass: className must be string ' +
+                                'or array.');
+        }
+        validateXY('addClass', x, y);
+
+        db = this;
+        if (!('undefined' === typeof x && 'undefined' === typeof y)) {
+            if ('undefined' !== typeof x) db = db.select('x', '=', x);
+            if ('undefined' !== typeof y) db = db.and('y', '=', y);
+        }
+
+        db.each(function(el) {
+            W.addClass(el, className);
+            if (el.HTMLElement) el.HTMLElement.className = el.className;
+        });
+
+        return this;
+    };
+
+    /**
+     * ### Table.removeClass
+     *
+     * Removes a CSS class from each element cell in the table
+     *
+     * @param {string|array|null} className Optional. The name of the
+     *   class/classes, or  null to remove all classes. Default: null.
+     * @param {number} x Optional. Subsets only on dimension x
+     * @param {number} y Optional. Subsets only on dimension y
+     *
+     * @return {Table} This instance for chaining
+     */
+    Table.prototype.removeClass = function(className, x, y) {
+        var func, db;
+        if (J.isArray(className)) {
+            func = function(el, className) {
+                for (var i = 0; i < className.length; i++) {
+                    W.removeClass(el, className[i]);
+                }
+            };
+        }
+        else if ('string' === typeof className) {
+            func = W.removeClass;
+        }
+        else if (null === className) {
+            func = function(el) { el.className = ''; };
+        }
+        else {
+            throw new TypeError('Table.removeClass: className must be ' +
+                                'string, array, or null.');
+        }
+
+        validateXY('removeClass', x, y);
+
+        db = this;
+        if (!('undefined' === typeof x && 'undefined' === typeof y)) {
+            if ('undefined' !== typeof x) db = db.select('x', '=', x);
+            if ('undefined' !== typeof y) db = db.and('y', '=', y);
+        }
+
+        db.each(function(el) {
+            func.call(this, el, className);
+            if (el.HTMLElement) el.HTMLElement.className = el.className;
+        });
+
+        return this;
+    };
+
+    /**
      * ### Table.clear
      *
      * Removes all entries and indexes, and resets the pointers
      *
-     * @param {boolean} confirm TRUE, to confirm the operation.
-     *
      * @see NDDB.clear
      */
-    Table.prototype.clear = function(confirm) {
-        if (NDDB.prototype.clear.call(this, confirm)) {
-            this.resetPointers();
-        }
+    Table.prototype.clear = function() {
+        NDDB.prototype.clear.call(this, true);
+        this.resetPointers();
     };
+
+    // ## Helper functions
+
+
+    /**
+     * ### validateXY
+     *
+     * Validates if x and y are correctly specified or throws an error
+     *
+     * @param {string} method The name of the method validating the input
+     * @param {number} x Optional. The row index
+     * @param {number} y Optional. The column index
+     * @param {string} mode Optional. Additionally check for: 'both',
+     *   'either', 'any', 'x', or 'y' parameter to be defined.
+     */
+    function validateXY(method, x, y, mode) {
+        var xOk, yOk;
+        if ('undefined' !== typeof x) {
+            if ('number' !== typeof x || x < 0) {
+                throw new TypeError('Table.' + method + ': x must be ' +
+                                    'a non-negative number or undefined.');
+            }
+            xOk = true;
+        }
+        if ('undefined' !== typeof y) {
+            if ('number' !== typeof y || y < 0) {
+                throw new TypeError('Table.' + method + ': y must be ' +
+                                    'a non-negative number or undefined.');
+            }
+            yOk = true;
+        }
+        if (mode === 'either' && xOk && yOk) {
+            throw new Error('Table.' + method + ': either x OR y can ' +
+                            'be defined.');
+        }
+        else if (mode === 'both' && (!xOk || !yOk)) {
+            throw new Error('Table.' + method + ': both x AND y must ' +
+                            'be defined.');
+        }
+        else if (mode === 'any' && (!xOk && !yOk)) {
+            throw new Error('Table.' + method + ': either x or y must ' +
+                            'be defined.');
+        }
+        else if (mode === 'x' && !xOk) {
+            throw new Error('Table.' + method + ': x must be defined.');
+        }
+        else if (mode === 'y' && !yOk) {
+            throw new Error('Table.' + method + ': y be defined.');
+        }
+    }
+
+    /**
+     * ### validateInput
+     *
+     * Validates user input and throws an error if input is not correct
+     *
+     * @param {string} method The name of the method validating the input
+     * @param {mixed} data The data that will be inserted in the database
+     * @param {number} x Optional. The row index
+     * @param {number} y Optional. The column index
+     * @param {boolean} dataArray TRUE, if data should be an array
+     *
+     * @return {boolean} TRUE, if input passes validation
+     *
+     * @see validateXY
+     */
+    function validateInput(method, data, x, y, dataArray) {
+        validateXY(method, x, y);
+        if (dataArray && !J.isArray(data)) {
+            throw new TypeError('Table.' + method + ': data must be array.');
+        }
+    }
+
+    /**
+     * ### addSpecialCells
+     *
+     * Parses an array of data and returns an array of cells
+     *
+     * @param {array} data Array containing data to transform into cells
+     *
+     * @return {array} The array of cells
+     */
+    function addSpecialCells(data) {
+        var out, i, len;
+        out = [];
+        i = -1;
+        len = data.length;
+        for ( ; ++i < len ; ) {
+            out.push({content: data[i]});
+        }
+        return out;
+    }
+
 
     // # Cell
 
@@ -29675,7 +29928,6 @@ if (!Array.prototype.indexOf) {
          * Reference to the TD/TH element, if built already
          */
         this.HTMLElement = cell.HTMLElement || null;
-
     }
 
 })(
@@ -30572,6 +30824,38 @@ if (!Array.prototype.indexOf) {
     ChernoffFaces.height = 100;
     ChernoffFaces.onChange = 'CF_CHANGE';
 
+    /**
+     * ## ChernoffFaces constructor
+     *
+     * Creates a new instance of ChernoffFaces
+     *
+     * @param {object} options Configuration options. Accepted options:
+     *
+     * - canvas {object} containing all options for canvas
+     *
+     * - width {number} width of the canvas (read only if canvas is not set)
+     *
+     * - height {number} height of the canvas (read only if canvas is not set)
+     *
+     * - features {FaceVector} vector of face-features. Default: random
+     *
+     * - onChange {string|boolean} The name of the event that will trigger
+     *      redrawing the canvas, or null/false to disable event listener
+     *
+     * - controls {object|false} the controls (usually a set of sliders)
+     *      offering the user the ability to manipulate the canvas. If equal
+     *      to false no controls will be created. Default: SlidersControls.
+     *      Any custom implementation must provide the following methods:
+     *
+     *          - getAllValues: returns the current features vector
+     *          - refresh: redraws the current feature vector
+     *          - init: accepts a configuration object containing a
+     *               features and onChange as specified above.
+     *
+     *
+     * @see ChernoffFaces.init
+     * @see Canvas constructor
+     */
     function ChernoffFaces(options) {
         var that = this;
         var tblOptions;
@@ -30618,13 +30902,21 @@ if (!Array.prototype.indexOf) {
 
         // ### ChernoffFaces.onChangeCb
         // Updates the canvas when the onChange event is emitted
-        this.onChangeCb = function(f) {
+        this.onChangeCb = function(f, updateControls) {
+            var updateControls;
             // Draw what passed as parameter,
             // or what is the current value of sliders,
             // or a random face.
-            if (!f && that.sc) f = that.sc.getAllValues();
-            if (!f) f = FaceVector.random();
-            that.draw(f);
+            if (!f && that.sc) {
+                f = that.sc.getAllValues();
+                if ('undefined' === typeof updateControls) {
+                    updateControls = false;
+                }
+            }
+            else {
+                f = FaceVector.random();
+            }
+            that.draw(f, updateControls);
         };
 
         // ### ChernoffFaces.features
@@ -30676,7 +30968,7 @@ if (!Array.prototype.indexOf) {
             controlsOptions = {
                 id: 'cf_controls',
                 features: f,
-                change: this.onChange,
+                onChange: this.onChange,
                 submit: 'Send'
             };
             // Create them.
@@ -30703,11 +30995,25 @@ if (!Array.prototype.indexOf) {
         this.bodyDiv.appendChild(this.table.table);
     };
 
-    ChernoffFaces.prototype.draw = function(features) {
+    /**
+     * ### ChernoffFaces.draw
+     *
+     * Draw a face on canvas and optionally updates the controls
+     *
+     * @param {object} features The features to draw
+     * @param {boolean} updateControls Optional. If equal to false,
+     *    controls are not updated. Default: true
+     *
+     * @see this.sc
+     */
+    ChernoffFaces.prototype.draw = function(features, updateControls) {
+        var fv;
         if (!features) return;
-        var fv = new FaceVector(features);
+        updateControls =
+            'undefined' === typeof updateControls ? true : updateControls;
+        fv = new FaceVector(features);
         this.fp.redraw(fv);
-        if (this.sc) {
+        if (this.sc && updateControls) {
             // Without merging wrong values are passed as attributes.
             this.sc.init({
                 features: J.mergeOnKey(FaceVector.defaults, features, 'value')
@@ -30727,7 +31033,7 @@ if (!Array.prototype.indexOf) {
         if (this.sc) {
             this.sc.init({
                 features: J.mergeOnValue(FaceVector.defaults, fv),
-                change: this.onChange
+                onChange: this.onChange
             });
             this.sc.refresh();
         }
@@ -31168,30 +31474,33 @@ if (!Array.prototype.indexOf) {
 
     };
 
-    //Constructs a random face vector.
+    // Constructs a random face vector.
     FaceVector.random = function() {
         var out = {};
         for (var key in FaceVector.defaults) {
             if (FaceVector.defaults.hasOwnProperty(key)) {
-                if (!J.in_array(key,
-                                ['color', 'lineWidth', 'scaleX', 'scaleY'])) {
-
+                if (key === 'color') {
+                    out.color = 'red';
+                }
+                else if (key === 'lineWidth') {
+                    out.lineWidth = 1;
+                }
+                else if (key === 'scaleX') {
+                    out.scaleX = 1;
+                }
+                else if (key === 'scaleY') {
+                    out.scaleY = 1;
+                }
+                else {
                     out[key] = FaceVector.defaults[key].min +
                         Math.random() * FaceVector.defaults[key].max;
                 }
             }
         }
-
-        out.scaleX = 1;
-        out.scaleY = 1;
-
-        out.color = 'red';
-        out.lineWidth = 1;
-
         return new FaceVector(out);
     };
 
-    function FaceVector (faceVector) {
+    function FaceVector(faceVector) {
         faceVector = faceVector || {};
 
         this.scaleX = faceVector.scaleX || 1;
@@ -31231,7 +31540,7 @@ if (!Array.prototype.indexOf) {
 
     //Computes the Euclidean distance between two FaceVectors.
     FaceVector.prototype.distance = function(face) {
-        return FaceVector.distance(this,face);
+        return FaceVector.distance(this, face);
     };
 
 
@@ -32874,6 +33183,195 @@ if (!Array.prototype.indexOf) {
         this.ee.off('SOCKET_CONNECT', 'DBcon');
     };
 
+
+})(node);
+
+/**
+ * # DoneButton
+ * Copyright(c) 2016 Stefano Balietti
+ * MIT Licensed
+ *
+ * Creates a button that if pressed emits node.done()
+ *
+ * www.nodegame.org
+ */
+(function(node) {
+
+    "use strict";
+
+    var J = node.JSUS;
+
+    node.widgets.register('DoneButton', DoneButton);
+
+    // ## Meta-data
+
+    DoneButton.version = '0.1.0';
+    DoneButton.description = 'Creates a button that if ' +
+        'pressed emits node.done().';
+
+    DoneButton.title = 'Done Button';
+    DoneButton.className = 'donebutton';
+
+    DoneButton.text = 'I am done';
+
+    // ## Dependencies
+
+    DoneButton.dependencies = {
+        JSUS: {}
+    };
+
+    /**
+     * ## DoneButton constructor
+     *
+     * `DoneButton` displays and manages a `GameTimer`
+     *
+     * @param {object} options Optional. Configuration options
+     * The options it can take are:
+     *
+     *   - `button`
+     *
+     */
+    function DoneButton(options) {
+        var that;
+        that = this;
+
+        /**
+         * ### DoneButton.button
+         *
+         * The HTML element triggering node.done() when pressed
+         */
+        if ('object' === typeof options.button) {
+            this.button = options.button;
+        }
+        else if ('undefined' === typeof options.button) {
+            this.button = document.createElement('input');
+            this.button.type = 'button';
+        }
+        else {
+            throw new TypeError('DoneButton constructor: options.button must ' +
+                                'be object or undefined. Found: ' +
+                                options.button);
+        }
+
+        this.button.onclick = function() {
+            var res;
+            res = node.done();
+            if (res) that.disable();
+        };
+
+        this.init(options);
+    }
+
+    // ## DoneButton methods
+
+    /**
+     * ### DoneButton.init
+     *
+     * Initializes the instance
+     *
+     * Available options are:
+     *
+     * - id: id of the HTML button, or false to have none. Default:
+     *     DoneButton.className
+     * - className: the className of the button (string, array), or false
+     *     to have none. Default bootstrap classes: 'btn btn-lg btn-primary'
+     * - text: the text on the button. Default: DoneButton.text
+     *
+     * @param {object} options Optional. Configuration options
+     */
+    DoneButton.prototype.init = function(options) {
+        var tmp;
+        options = options || {};
+
+        //Button
+        if ('undefined' === typeof options.id) {
+            tmp = DoneButton.className;
+        }
+        else if ('string' === typeof options.id) {
+            tmp = options.id;
+        }
+        else if (false === options.id) {
+            tmp = '';
+        }
+        else {
+            throw new TypeError('DoneButton.init: options.id must ' +
+                                'be string, false, or undefined. Found: ' +
+                                options.id);
+        }
+        this.button.id = tmp;
+
+        // Button className.
+        if ('undefined' === typeof options.className) {
+            tmp  = 'btn btn-lg btn-primary';
+        }
+        else if (options.className === false) {
+            tmp = '';
+        }
+        else if ('string' === typeof options.className) {
+            tmp = options.className;
+        }
+        else if (J.isArray(options.className)) {
+            tmp = options.className.join(' ');
+        }
+        else  {
+            throw new TypeError('DoneButton.init: options.className must ' +
+                                'be string, array, or undefined. Found: ' +
+                                options.className);
+        }
+        this.button.className = tmp;
+
+
+        // Button text.
+        if ('undefined' === typeof options.text) {
+            tmp = DoneButton.text;
+        }
+        else if ('string' === typeof options.text) {
+            tmp = text;
+        }
+        else  {
+            throw new TypeError('DoneButton.init: options.text must ' +
+                                'be string or undefined. Found: ' +
+                                options.text);
+        }
+        this.button.value = tmp;
+
+    };
+
+    DoneButton.prototype.append = function() {
+        this.bodyDiv.appendChild(this.button);
+    };
+
+    DoneButton.prototype.listeners = function() {
+        var that = this;
+
+        node.on('PLAYING', function() {
+            var prop, step;
+            step = node.game.getCurrentGameStage();
+            prop = node.game.plot.getProperty(step, 'donebutton');
+            if (prop === false || prop && prop.enableOnPlaying === false) {
+                return;
+            }
+            that.enable();
+        });
+    };
+
+    /**
+     * ### DoneButton.disable
+     *
+     * Disables the done button
+     */
+    DoneButton.prototype.disable = function() {
+        this.button.disabled = 'disabled';
+    };
+
+    /**
+     * ### DoneButton.enable
+     *
+     * Enables the done button
+     */
+    DoneButton.prototype.enable = function() {
+        this.button.disabled = false;
+    };
 
 })(node);
 
@@ -35354,7 +35852,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    VisualRound.version = '0.2.1';
+    VisualRound.version = '0.5.1';
     VisualRound.description = 'Display number of current round and/or stage.' +
         'Can also display countdown and total number of rounds and/or stages.';
 

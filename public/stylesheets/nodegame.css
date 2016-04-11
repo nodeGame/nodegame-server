@@ -196,7 +196,7 @@ input[type="range"] {
 
 
 .visualstage {
-    float: left;
+    float: right;
     min-width: 200px;
     width: auto;
 }
@@ -204,7 +204,7 @@ input[type="range"] {
 /* State Display */
 
 .statedisplay {
-    float: left;
+    float: right;
     width: 300px;
 }
 
@@ -228,6 +228,20 @@ input[type="range"] {
 
 .moneytalks > .panel-body > span.moneytalkscurrency {
     font-size: 12px;
+    text-align: center;
+}
+
+/* Done Button */
+
+.donebutton {
+    float: right;
+    width: auto;
+    min-width: 100px;
+    text-align: center;
+}
+
+.donebutton > .panel-body  {
+    font-size: 20px;
     text-align: center;
 }
 
