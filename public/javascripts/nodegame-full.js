@@ -2204,7 +2204,7 @@ if (!Array.prototype.indexOf) {
 /**
  * # DOM
  *
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2016 Stefano Balietti
  * MIT Licensed
  *
  * Collection of static functions related to DOM manipulation
@@ -2233,6 +2233,8 @@ if (!Array.prototype.indexOf) {
 (function(JSUS) {
 
     "use strict";
+
+    var onFocusChange;
 
     function DOM() {}
 
@@ -3323,6 +3325,237 @@ if (!Array.prototype.indexOf) {
         if (element.detachEvent) return element.detachEvent('on' + event, func);
         else return element.removeEventListener(event, func, capture);
     };
+
+    /**
+     * ### DOM.playSound
+     *
+     * Plays a sound
+     *
+     * @param {various} sound Audio tag or path to audio file to be played
+     */
+    DOM.playSound = function(sound) {
+        var audio;
+        if ("string" === typeof(sound)) {
+            audio = new Audio(sound);
+        }
+        else if ("object" === typeof(sound)
+            && "function" === typeof(sound.play)) {
+            audio = sound;
+        }
+        else {
+            throw new TypeError("JSUS.playSound: sound must be string" +
+               " or audio element.");
+        }
+        audio.play();
+    };
+
+    /**
+     * ### DOM.onFocusIn
+     *
+     * Registers a callback to be executed when the page acquires focus
+     *
+     * @param {function} cb Executed if page acquires focus
+     * @param {object|function} ctx Optional. Context of execution for cb
+     *
+     * @see onFocusChange
+     */
+    DOM.onFocusIn = function(cb, ctx) {
+        var origCb;
+        if ('function' !== typeof cb && null !== cb) {
+            throw new TypeError('JSUS.onFocusIn: cb must be function or null.');
+        }
+        if (ctx) {
+            if ('object' !== typeof ctx && 'function' !== typeof ctx) {
+                throw new TypeError('JSUS.onFocusIn: ctx must be object, ' +
+                                    'function or undefined.');
+            }
+            origCb = cb;
+            cb = function() { origCb.call(ctx); };
+        }
+
+        onFocusChange(cb);
+    };
+
+    /**
+     * ### DOM.onFocusOut
+     *
+     * Registers a callback to be executed when the page loses focus
+     *
+     * @param {function} cb Executed if page loses focus
+     * @param {object|function} ctx Optional. Context of execution for cb
+     *
+     * @see onFocusChange
+     */
+    DOM.onFocusOut = function(cb, ctx) {
+        var origCb;
+        if ('function' !== typeof cb && null !== cb) {
+            throw new TypeError('JSUS.onFocusOut: cb must be ' +
+                                'function or null.');
+        }
+        if (ctx) {
+            if ('object' !== typeof ctx && 'function' !== typeof ctx) {
+                throw new TypeError('JSUS.onFocusIn: ctx must be object, ' +
+                                    'function or undefined.');
+            }
+            origCb = cb;
+            cb = function() { origCb.call(ctx); };
+        }
+        onFocusChange(undefined, cb);
+    };
+
+    /**
+     * ### DOM.changeTitle
+     *
+     * Changes title of page
+     *
+     * @param {string} title New title of the page
+     */
+    DOM.changeTitle = function(title) {
+        if ("string" === typeof(title)) {
+            document.title = title;
+        }
+        else {
+            throw new TypeError("JSUS.changeTitle: title must be string.");
+        }
+    };
+
+    /**
+     * ### DOM.blinkTitle
+     *
+     * Alternates between two titles
+     *
+     * Calling the function a second time clears the current
+     * blinking. If called without arguments the current title
+     * blinking is cleared.
+     *
+     * @param {string} title New title to blink
+     * @param {string} alternateTitle Title to alternate
+     */
+    DOM.blinkTitle = function(id) {
+        return function(title, alternateTitle, options) {
+            var frequency;
+
+            options = options || {};
+            frequency = options.frequency || 2000;
+
+            if (options.stopOnFocus) {
+                window.onfocus = function() {
+                    JSUS.blinkTitle()
+                };
+            }
+            if (options.startOnBlur) {
+                options.startOnBlur = null;
+                window.onblur = function() {
+                    JSUS.blinkTitle(title, alternateTitle, options);
+                }
+                return;
+            }
+            if (!alternateTitle) {
+                alternateTitle = '!!!';
+            }
+            if (null !== id) {
+                clearInterval(id);
+                id = null;
+            }
+            if ('undefined' !== typeof title) {
+                JSUS.changeTitle(title);
+                id = setInterval(function() {
+                    JSUS.changeTitle(alternateTitle);
+                    setTimeout(function() {
+                        JSUS.changeTitle(title);
+                    },frequency/2);
+                },frequency);
+            }
+        };
+    }(null);
+
+
+    // ## Helper methods
+
+    /**
+     * ### onFocusChange
+     *
+     * Helper function for DOM.onFocusIn and DOM.onFocusOut (cross-browser)
+     *
+     * Expects only one callback, either inCb, or outCb.
+     *
+     * @param {function} inCb Optional. Executed if page acquires focus
+     * @param {function} outCb Optional. Executed if page loses focus
+     *
+     * Kudos: http://stackoverflow.com/questions/1060008/
+     *   is-there-a-way-to-detect-if-a-browser-window-is-not-currently-active
+     *
+     * @see http://www.w3.org/TR/page-visibility/
+     */
+    onFocusChange = (function(document) {
+        var inFocusCb, outFocusCb, event, hidden, evtMap;
+
+        if (!document) {
+            return function() {
+                JSUS.log('onFocusChange: no document detected.');
+                return;
+            };
+        }
+
+        if ('hidden' in document) {
+            hidden = 'hidden';
+            event = 'visibilitychange';
+        }
+        else if ('mozHidden' in document) {
+            hidden = 'mozHidden';
+            event = 'mozvisibilitychange';
+        }
+        else if ('webkitHidden' in document) {
+            hidden = 'webkitHidden';
+            event = 'webkitvisibilitychange';
+        }
+        else if ('msHidden' in document) {
+            hidden = 'msHidden';
+            event = 'msvisibilitychange';
+        }
+
+        evtMap = {
+            focus: true, focusin: true, pageshow: true,
+            blur: false, focusout: false, pagehide: false
+        };
+
+        function onchange(evt) {
+            var isHidden;
+            evt = evt || window.event;
+            // If event is defined as one from event Map.
+            if (evt.type in evtMap) isHidden = evtMap[evt.type];
+            // Or use the hidden property.
+            else isHidden = this[hidden] ? true : false;
+            // Call the callback, if defined.
+            if (!isHidden) { if (inFocusCb) inFocusCb(); }
+            else { if (outFocusCb) outFocusCb(); }
+        }
+
+        return function(inCb, outCb) {
+            var onchangeCb;
+
+            if ('undefined' !== typeof inCb) inFocusCb = inCb;
+            else outFocusCb = outCb;
+
+            onchangeCb = !inFocusCb && !outFocusCb ? null : onchange;
+
+            // Visibility standard detected.
+            if (event) {
+                // Remove any pre-existing listeners.
+                document.removeEventListener(event);
+                if (onchangeCb) document.addEventListener(event, onchangeCb);
+
+            }
+            else if ('onfocusin' in document) {
+                document.onfocusin = document.onfocusout = onchangeCb;
+            }
+            // All others.
+            else {
+                window.onpageshow = window.onpagehide
+                    = window.onfocus = window.onblur = onchangeCb;
+            }
+        };
+    })('undefined' !== typeof document ? document : null);
 
     JSUS.extend(DOM);
 
@@ -12817,7 +13050,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # GamePlot
- * Copyright(c) 2016 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * `nodeGame` container of game stages functions
@@ -12885,8 +13118,7 @@ if (!Array.prototype.indexOf) {
     GamePlot.prototype.init = function(stager) {
         if (stager) {
             if ('object' !== typeof stager) {
-                throw new TypeError('GamePlot.init: called ' +
-                                    'with invalid stager.');
+                throw new Error('GamePlot.init: called with invalid stager.');
             }
             this.stager = stager;
         }
@@ -13675,6 +13907,17 @@ if (!Array.prototype.indexOf) {
             (this.stager.sequence.length > 0 ||
              this.stager.generalNextFunction !== null ||
              !J.isEmpty(this.stager.nextFunctions));
+    };
+
+    /**
+     * ### GamePlot.getName
+     *
+     * TODO: To remove once transition is complete
+     * @deprecated
+     */
+    GamePlot.prototype.getName = function(gameStage) {
+        var s = this.getStep(gameStage);
+        return s ? s.name : s;
     };
 
     /**
