@@ -2,6 +2,8 @@
 
 # 1.1.1 (current)
  - Added checkings if games have same name or if channel has same endpoint.
+ - Logic client types have default callback where they do **not** call `#node.done()`.
+ - HostRoom default callback does not call **node.done**.
 
 # 1.1.0
  - Fixed bug with loading context directories to create language index.

@@ -104,7 +104,7 @@
 </div>
 
 
-<p>Copyright(c) 2015 Stefano Balietti
+<p>Copyright(c) 2016 Stefano Balietti
 MIT Licensed</p>
   </div>
   <div class="body"><p>Game room representation</p>
@@ -145,6 +145,7 @@ MIT Licensed</p>
 <span class="nx">module</span><span class="p">.</span><span class="nx">exports</span> <span class="o">=</span> <span class="nx">GameRoom</span><span class="p">;</span>
 
 <span class="kd">var</span> <span class="nx">ngc</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;nodegame-client&#39;</span><span class="p">);</span>
+<span class="kd">var</span> <span class="nx">Stager</span> <span class="o">=</span> <span class="nx">ngc</span><span class="p">.</span><span class="nx">Stager</span><span class="p">;</span>
 <span class="kd">var</span> <span class="nx">stepRules</span> <span class="o">=</span> <span class="nx">ngc</span><span class="p">.</span><span class="nx">stepRules</span><span class="p">;</span>
 <span class="kd">var</span> <span class="nx">publishLevels</span> <span class="o">=</span> <span class="nx">ngc</span><span class="p">.</span><span class="nx">constants</span><span class="p">.</span><span class="nx">publishLevels</span><span class="p">;</span>
 
@@ -1157,6 +1158,11 @@ MIT Licensed</p>
         <span class="p">}</span>
         <span class="k">if</span> <span class="p">(</span><span class="nx">stepRule</span> <span class="o">===</span> <span class="nx">stepRules</span><span class="p">.</span><span class="nx">SOLO</span><span class="p">)</span> <span class="p">{</span>
             <span class="nx">stager</span><span class="p">.</span><span class="nx">setDefaultStepRule</span><span class="p">(</span><span class="nx">stepRules</span><span class="p">.</span><span class="nx">OTHERS_SYNC_STEP</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">stager</span><span class="p">.</span><span class="nx">getDefaultCb</span><span class="p">()</span> <span class="o">===</span> <span class="nx">Stager</span><span class="p">.</span><span class="nx">defaultCallback</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">stager</span><span class="p">.</span><span class="nx">setDefaultCallback</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+                <span class="k">this</span><span class="p">.</span><span class="nx">node</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">getCurrentStepObj</span><span class="p">().</span><span class="nx">id</span><span class="p">);</span>
+            <span class="p">});</span>
         <span class="p">}</span>
     <span class="p">}</span>
     <span class="k">else</span> <span class="p">{</span>

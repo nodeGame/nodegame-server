@@ -83,7 +83,7 @@
 
 
 .visualstage {
-    float: left;
+    float: right;
     min-width: 200px;
     width: auto;
 }
@@ -91,7 +91,7 @@
 /* State Display */
 
 .statedisplay {
-    float: left;
+    float: right;
     width: 300px;
 }
 
@@ -117,6 +117,22 @@
     font-size: 12px;
     text-align: center;
 }
+
+/* Done Button */
+
+.donebutton {
+    float: right;
+    width: auto;
+    min-width: 100px;
+    text-align: center;
+    background: blue;
+}
+
+.donebutton > .panel-body  {
+    font-size: 20px;
+    text-align: center;
+}
+
 
 /* Chat */
 
