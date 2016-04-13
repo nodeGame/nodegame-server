@@ -13943,6 +13943,13 @@ if (!Array.prototype.indexOf) {
             stageNo = gs.stage;
         }
         else if ('string' === typeof gs.stage) {
+            if (gs.stage ===  GamePlot.GAMEOVER ||
+                gs.stage === GamePlot.END_SEQ ||
+                gs.stage === GamePlot.NO_SEQ) {
+
+                return null;
+            }
+
             for (seqIdx = 0; seqIdx < this.stager.sequence.length; seqIdx++) {
                 if (this.stager.sequence[seqIdx].id === gs.stage) {
                     break;
@@ -19438,7 +19445,7 @@ if (!Array.prototype.indexOf) {
      */
     Game.prototype.execStep = function(step) {
         var cb;
-        var frame, frameOptions;
+        var frame, frameOptions, frameLoadMode, frameStoreMode, frameAutoParse;
 
         if ('object' !== typeof step) {
             throw new Error('Game.execStep: step must be object.');
@@ -19454,16 +19461,51 @@ if (!Array.prototype.indexOf) {
             }
 
             if ('object' === typeof frame) {
-                frameOptions = frame.options;
                 frame = frame.uri;
+                frameLoadMode = frame.loadMode;
+                frameStoreMode = frame.storeMode;
+                frameAutoParse = frame.autoParse;
             }
 
+            if ('function' === typeof frame) {
+                frame = frame.call(this);
+                if ('string' !== typeof frame) {
+                    throw new TypeError('Game.execStep: frame callback did ' +
+                                        'not return string: ' + frame + '. ' +
+                                        'Step: ' + step);
+                }
+            }
+
+            frameAutoParse = frameAutoParse ||
+                this.plot.getProperty(step, 'frameAutoParse');
+
+            if (frameAutoParse) {
+                if (frameAutoParse === true) {
+                    frameAutoParse = this.settings;
+                }
+                else {
+                    if ('function' === typeof frameautoparse) {
+                        frameautoparse = frameautoparse.call(this);
+                    }
+                    if ('object' !== typeof frameautoparse) {
+                        throw new TypeError('Game.execStep: frameautoparse must be ' +
+                                        'true, object, or function. Step: ' + step);
+                    }
+                }
+            }
             this.node.window.loadFrame(frame, function() {
                 this.execCallback(cb);
+                if (frameAutoParse) {
+                    this.node.window.setInnerHTML(frameAutoParse);
+                }
             }, frameOptions);
         }
         else {
             this.execCallback(cb);
+            if (frameAutoParse) {
+                console.log('*********************!!!!!');
+                this.node.window.setInnerHTML(frameAutoParse);
+            }
         }
     };
 
@@ -24223,7 +24265,7 @@ if (!Array.prototype.indexOf) {
          */
         this.events.ng.on('STEP_CALLBACK_EXECUTED', function() {
             if (!node.window || node.window.isReady()) {
-                node.emit('LOADED');
+                node.emitAsync('LOADED');
             }
         });
 
@@ -24251,7 +24293,7 @@ if (!Array.prototype.indexOf) {
                 node.socket.clearBuffer();
             }
             if (node.game.shouldEmitPlaying()) {
-                node.emit('PLAYING');
+                node.emitAsync('PLAYING');
             }
         });
 
@@ -33569,7 +33611,7 @@ if (!Array.prototype.indexOf) {
             tmp = DoneButton.text;
         }
         else if ('string' === typeof options.text) {
-            tmp = text;
+            tmp = options.text;
         }
         else  {
             throw new TypeError('DoneButton.init: options.text must ' +
