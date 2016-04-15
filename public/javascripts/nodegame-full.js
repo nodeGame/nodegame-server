@@ -478,23 +478,28 @@ if (!Array.prototype.indexOf) {
  * GPL licenses.
  *
  * Persistent Client-Side Storage
- *
  * ---
  */
-(function(exports){
+(function(exports) {
 
-    var version = '0.5';
+    var version = '5.1';
+    var store, mainStorageType;
 
-    var store = exports.store = function(key, value, options, type) {
-	options = options || {};
-	type = (options.type && options.type in store.types) ? options.type : store.type;
-	if (!type || !store.types[type]) {
-	    store.log("Cannot save/load value. Invalid storage type selected: " + type, 'ERR');
-	    return;
-	}
-	store.log('Accessing ' + type + ' storage');
+    mainStorageType = "volatile";
 
-	return store.types[type](key, value, options);
+    store = exports.store = function(key, value, options, type) {
+        options = options || {};
+        type = (options.type && options.type in store.types) ?
+            options.type : store.type;
+
+        if (!type || !store.types[type]) {
+            store.log('Cannot save/load value. Invalid storage type ' +
+                      'selected: ' + type, 'ERR');
+            return;
+        }
+        store.log('Accessing ' + type + ' storage');
+
+        return store.types[type](key, value, options);
     };
 
     // Adding functions and properties to store
@@ -505,164 +510,171 @@ if (!Array.prototype.indexOf) {
     store.types = {};
 
 
-    var mainStorageType = "volatile";
+
 
     //if Object.defineProperty works...
     try {
 
-	Object.defineProperty(store, 'type', {
-	    set: function(type){
-		if ('undefined' === typeof store.types[type]) {
-		    store.log('Cannot set store.type to an invalid type: ' + type);
-		    return false;
-		}
-		mainStorageType = type;
-		return type;
-	    },
-	    get: function(){
-		return mainStorageType;
-	    },
-	    configurable: false,
-	    enumerable: true
-	});
+        Object.defineProperty(store, 'type', {
+            set: function(type) {
+                if ('undefined' === typeof store.types[type]) {
+                    store.log('Cannot set store.type to an invalid type: ' +
+                              type);
+                    return false;
+                }
+                mainStorageType = type;
+                return type;
+            },
+            get: function(){
+                return mainStorageType;
+            },
+            configurable: false,
+            enumerable: true
+        });
     }
     catch(e) {
-	store.type = mainStorageType; // default: memory
+        store.type = mainStorageType; // default: memory
     }
 
     store.addType = function(type, storage) {
-	store.types[type] = storage;
-	store[type] = function(key, value, options) {
-	    options = options || {};
-	    options.type = type;
-	    return store(key, value, options);
-	};
+        store.types[type] = storage;
+        store[type] = function(key, value, options) {
+            options = options || {};
+            options.type = type;
+            return store(key, value, options);
+        };
 
-	if (!store.type || store.type === "volatile") {
-	    store.type = type;
-	}
+        if (!store.type || store.type === "volatile") {
+            store.type = type;
+        }
     };
 
     // TODO: create unit test
     store.onquotaerror = undefined;
     store.error = function() {
-	console.log("shelf quota exceeded");
-	if ('function' === typeof store.onquotaerror) {
-	    store.onquotaerror(null);
-	}
+        console.log("shelf quota exceeded");
+        if ('function' === typeof store.onquotaerror) {
+            store.onquotaerror(null);
+        }
     };
 
     store.log = function(text) {
-	if (store.verbosity > 0) {
-	    console.log('Shelf v.' + version + ': ' + text);
-	}
+        if (store.verbosity > 0) {
+            console.log('Shelf v.' + version + ': ' + text);
+        }
 
     };
 
     store.isPersistent = function() {
-	if (!store.types) return false;
-	if (store.type === "volatile") return false;
-	return true;
+        if (!store.types) return false;
+        if (store.type === "volatile") return false;
+        return true;
     };
 
     //if Object.defineProperty works...
     try {
-	Object.defineProperty(store, 'persistent', {
-	    set: function(){},
-	    get: store.isPersistent,
-	    configurable: false
-	});
+        Object.defineProperty(store, 'persistent', {
+            set: function(){},
+            get: store.isPersistent,
+            configurable: false
+        });
     }
     catch(e) {
-	// safe case
-	store.persistent = false;
+        // safe case
+        store.persistent = false;
     }
 
     store.decycle = function(o) {
-	if (JSON && JSON.decycle && 'function' === typeof JSON.decycle) {
-	    o = JSON.decycle(o);
-	}
-	return o;
+        if (JSON && JSON.decycle && 'function' === typeof JSON.decycle) {
+            o = JSON.decycle(o);
+        }
+        return o;
     };
 
     store.retrocycle = function(o) {
-	if (JSON && JSON.retrocycle && 'function' === typeof JSON.retrocycle) {
-	    o = JSON.retrocycle(o);
-	}
-	return o;
+        if (JSON && JSON.retrocycle && 'function' === typeof JSON.retrocycle) {
+            o = JSON.retrocycle(o);
+        }
+        return o;
     };
 
     store.stringify = function(o) {
-	if (!JSON || !JSON.stringify || 'function' !== typeof JSON.stringify) {
-	    throw new Error('JSON.stringify not found. Received non-string value and could not serialize.');
-	}
+        if (!JSON || !JSON.stringify || 'function' !== typeof JSON.stringify) {
+            throw new Error('JSON.stringify not found. Received non-string' +
+                            'value and could not serialize.');
+        }
 
-	o = store.decycle(o);
-	return JSON.stringify(o);
+        o = store.decycle(o);
+        return JSON.stringify(o);
     };
 
     store.parse = function(o) {
-	if ('undefined' === typeof o) return undefined;
-	if (JSON && JSON.parse && 'function' === typeof JSON.parse) {
-	    try {
-		o = JSON.parse(o);
-	    }
-	    catch (e) {
-		store.log('Error while parsing a value: ' + e, 'ERR');
-		store.log(o);
-	    }
-	}
+        if ('undefined' === typeof o) return undefined;
+        if (JSON && JSON.parse && 'function' === typeof JSON.parse) {
+            try {
+                o = JSON.parse(o);
+            }
+            catch (e) {
+                store.log('Error while parsing a value: ' + e, 'ERR');
+                store.log(o);
+            }
+        }
 
-	o = store.retrocycle(o);
-	return o;
+        o = store.retrocycle(o);
+        return o;
     };
 
     // ## In-memory storage
-    // ### fallback for all browsers to enable the API even if we can't persist data
+    // ### fallback to enable the API even if we can't persist data
     (function() {
 
-	var memory = {},
-	timeout = {};
+        var memory = {},
+        timeout = {};
 
-	function copy(obj) {
-	    return store.parse(store.stringify(obj));
-	}
+        function copy(obj) {
+            return store.parse(store.stringify(obj));
+        }
 
-	store.addType("volatile", function(key, value, options) {
+        store.addType("volatile", function(key, value, options) {
 
-	    if (!key) {
-		return copy(memory);
-	    }
+            if (!key) {
+                return copy(memory);
+            }
 
-	    if (value === undefined) {
-		return copy(memory[key]);
-	    }
+            if (value === undefined) {
+                return copy(memory[key]);
+            }
 
-	    if (timeout[key]) {
-		clearTimeout(timeout[key]);
-		delete timeout[key];
-	    }
+            if (timeout[key]) {
+                clearTimeout(timeout[key]);
+                delete timeout[key];
+            }
 
-	    if (value === null) {
-		delete memory[key];
-		return null;
-	    }
+            if (value === null) {
+                delete memory[key];
+                return null;
+            }
 
-	    memory[key] = value;
-	    if (options.expires) {
-		timeout[key] = setTimeout(function() {
-		    delete memory[key];
-		    delete timeout[key];
-		}, options.expires);
-	    }
+            memory[key] = value;
+            if (options.expires) {
+                timeout[key] = setTimeout(function() {
+                    delete memory[key];
+                    delete timeout[key];
+                }, options.expires);
+            }
 
-	    return value;
-	});
+            return value;
+        });
     }());
 
-}('undefined' !== typeof module && 'undefined' !== typeof module.exports ? module.exports: this));
+}(
+    'undefined' !== typeof module && 'undefined' !== typeof module.exports ?
+        module.exports : this
+));
+
 /**
  * ## Amplify storage for Shelf.js
+ * Copyright 2014 Stefano Balietti
  *
  * v. 1.1.0 22.05.2013 a275f32ee7603fbae6607c4e4f37c4d6ada6c3d5
  *
@@ -672,7 +684,7 @@ if (!Array.prototype.indexOf) {
  * - JSON.parse -> store.parse (cyclic objects)
  * - store.name -> store.prefix (check)
  * - rprefix -> regex
- * -  "__amplify__" -> store.prefix
+ * - "__amplify__" -> store.prefix
  *
  * ---
  */
@@ -908,9 +920,10 @@ if (!Array.prototype.indexOf) {
     }());
 
 }(this));
+
 /**
  * ## Cookie storage for Shelf.js
- * Copyright 2015 Stefano Balietti
+ * Copyright 2014 Stefano Balietti
  *
  * Original library from:
  * See http://code.google.com/p/cookies/
@@ -2204,7 +2217,7 @@ if (!Array.prototype.indexOf) {
 /**
  * # DOM
  *
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2016 Stefano Balietti
  * MIT Licensed
  *
  * Collection of static functions related to DOM manipulation
@@ -2233,6 +2246,8 @@ if (!Array.prototype.indexOf) {
 (function(JSUS) {
 
     "use strict";
+
+    var onFocusChange, changeTitle;
 
     function DOM() {}
 
@@ -3331,37 +3346,81 @@ if (!Array.prototype.indexOf) {
      *
      * @param {various} sound Audio tag or path to audio file to be played
      */
-    DOM.playSound = function(sound) {
+    DOM.playSound = 'undefined' === typeof Audio ?
+        function() {
+            console.log('JSUS.playSound: Audio tag not supported in your' +
+                    ' browser. Cannot play sound.');
+        } :
+        function(sound) {
         var audio;
-        if ("string" === typeof(sound)) {
+        if ('string' === typeof(sound)) {
             audio = new Audio(sound);
         }
-        else if ("object" === typeof(sound)
-            && "function" === typeof(sound.play)) {
+        else if ('object' === typeof sound &&
+            'function' === typeof sound.play) {
             audio = sound;
         }
         else {
-            throw new TypeError("JSUS.playSound: sound must be string" +
-               " or audio element.");
+            throw new TypeError('JSUS.playSound: sound must be string' +
+               ' or audio element.');
         }
         audio.play();
     };
 
     /**
-     * ### DOM.changeTitle
+     * ### DOM.onFocusIn
      *
-     * Changes title of page
+     * Registers a callback to be executed when the page acquires focus
      *
-     * @param {string} title New title of the page
+     * @param {function} cb Executed if page acquires focus
+     * @param {object|function} ctx Optional. Context of execution for cb
+     *
+     * @see onFocusChange
      */
-    DOM.changeTitle = function(title) {
-        if ("string" === typeof(title)) {
-            document.title = title;
+    DOM.onFocusIn = function(cb, ctx) {
+        var origCb;
+        if ('function' !== typeof cb && null !== cb) {
+            throw new TypeError('JSUS.onFocusIn: cb must be function or null.');
         }
-        else {
-            throw new TypeError("JSUS.changeTitle: title must be string.");
+        if (ctx) {
+            if ('object' !== typeof ctx && 'function' !== typeof ctx) {
+                throw new TypeError('JSUS.onFocusIn: ctx must be object, ' +
+                                    'function or undefined.');
+            }
+            origCb = cb;
+            cb = function() { origCb.call(ctx); };
         }
+
+        onFocusChange(cb);
     };
+
+    /**
+     * ### DOM.onFocusOut
+     *
+     * Registers a callback to be executed when the page loses focus
+     *
+     * @param {function} cb Executed if page loses focus
+     * @param {object|function} ctx Optional. Context of execution for cb
+     *
+     * @see onFocusChange
+     */
+    DOM.onFocusOut = function(cb, ctx) {
+        var origCb;
+        if ('function' !== typeof cb && null !== cb) {
+            throw new TypeError('JSUS.onFocusOut: cb must be ' +
+                                'function or null.');
+        }
+        if (ctx) {
+            if ('object' !== typeof ctx && 'function' !== typeof ctx) {
+                throw new TypeError('JSUS.onFocusIn: ctx must be object, ' +
+                                    'function or undefined.');
+            }
+            origCb = cb;
+            cb = function() { origCb.call(ctx); };
+        }
+        onFocusChange(undefined, cb);
+    };
+
 
     /**
      * ### DOM.blinkTitle
@@ -3376,42 +3435,155 @@ if (!Array.prototype.indexOf) {
      * @param {string} alternateTitle Title to alternate
      */
     DOM.blinkTitle = function(id) {
-        return function(title, alternateTitle, options) {
-            var frequency;
+        return function(titles, options) {
+            var period, where, rotation;
+            where = 'JSUS.blinkTitle: ';
 
             options = options || {};
-            frequency = options.frequency || 2000;
+            period = options.period || 1000 * titles.length;
 
             if (options.stopOnFocus) {
-                window.onfocus = function() {
-                    JSUS.blinkTitle()
-                };
+                JSUS.onFocusIn(function() {
+                    JSUS.blinkTitle();
+                });
             }
             if (options.startOnBlur) {
                 options.startOnBlur = null;
-                window.onblur = function() {
-                    JSUS.blinkTitle(title, alternateTitle, options);
-                }
+                JSUS.onFocusOut(function() {
+                    JSUS.blinkTitle(titles, options);
+                });
                 return;
-            }
-            if (!alternateTitle) {
-                alternateTitle = '!!!';
             }
             if (null !== id) {
                 clearInterval(id);
                 id = null;
             }
-            if ('undefined' !== typeof title) {
-                JSUS.changeTitle(title);
-                id = setInterval(function() {
-                    JSUS.changeTitle(alternateTitle);
-                    setTimeout(function() {
-                        JSUS.changeTitle(title);
-                    },frequency/2);
-                },frequency);
+            if ('undefined' !== typeof titles) {
+                if ('string' === typeof titles) {
+                    titles = [titles, '!!!'];
+                } else if (!JSUS.isArray(titles)) {
+                    throw new TypeError(where + 'titles must be string, ' +
+                            ' array of strings or undefined.');
+                }
+                // Function to be executed every period.
+                rotation = function() {
+                    // For every title wait some time, then change title.
+                    titles.forEach(function(title,i) {
+                        setTimeout(function() {
+                            changeTitle(title);
+                        }, i * period/titles.length);
+                    });
+                };
+                // Perform first rotation right now.
+                rotation();
+                id = setInterval(rotation,period);
             }
         };
     }(null);
+
+
+    // ## Helper methods
+
+    /**
+     * ### onFocusChange
+     *
+     * Helper function for DOM.onFocusIn and DOM.onFocusOut (cross-browser)
+     *
+     * Expects only one callback, either inCb, or outCb.
+     *
+     * @param {function} inCb Optional. Executed if page acquires focus
+     * @param {function} outCb Optional. Executed if page loses focus
+     *
+     * Kudos: http://stackoverflow.com/questions/1060008/
+     *   is-there-a-way-to-detect-if-a-browser-window-is-not-currently-active
+     *
+     * @see http://www.w3.org/TR/page-visibility/
+     */
+    onFocusChange = (function(document) {
+        var inFocusCb, outFocusCb, event, hidden, evtMap;
+
+        if (!document) {
+            return function() {
+                JSUS.log('onFocusChange: no document detected.');
+                return;
+            };
+        }
+
+        if ('hidden' in document) {
+            hidden = 'hidden';
+            event = 'visibilitychange';
+        }
+        else if ('mozHidden' in document) {
+            hidden = 'mozHidden';
+            event = 'mozvisibilitychange';
+        }
+        else if ('webkitHidden' in document) {
+            hidden = 'webkitHidden';
+            event = 'webkitvisibilitychange';
+        }
+        else if ('msHidden' in document) {
+            hidden = 'msHidden';
+            event = 'msvisibilitychange';
+        }
+
+        evtMap = {
+            focus: true, focusin: true, pageshow: true,
+            blur: false, focusout: false, pagehide: false
+        };
+
+        function onchange(evt) {
+            var isHidden;
+            evt = evt || window.event;
+            // If event is defined as one from event Map.
+            if (evt.type in evtMap) isHidden = evtMap[evt.type];
+            // Or use the hidden property.
+            else isHidden = this[hidden] ? true : false;
+            // Call the callback, if defined.
+            if (!isHidden) { if (inFocusCb) inFocusCb(); }
+            else { if (outFocusCb) outFocusCb(); }
+        }
+
+        return function(inCb, outCb) {
+            var onchangeCb;
+
+            if ('undefined' !== typeof inCb) inFocusCb = inCb;
+            else outFocusCb = outCb;
+
+            onchangeCb = !inFocusCb && !outFocusCb ? null : onchange;
+
+            // Visibility standard detected.
+            if (event) {
+                // Remove any pre-existing listeners.
+                document.removeEventListener(event);
+                if (onchangeCb) document.addEventListener(event, onchangeCb);
+
+            }
+            else if ('onfocusin' in document) {
+                document.onfocusin = document.onfocusout = onchangeCb;
+            }
+            // All others.
+            else {
+                window.onpageshow = window.onpagehide
+                    = window.onfocus = window.onblur = onchangeCb;
+            }
+        };
+    })('undefined' !== typeof document ? document : null);
+
+    /**
+     * ### changeTitle
+     *
+     * Changes title of page
+     *
+     * @param {string} title New title of the page
+     */
+    changeTitle = function(title) {
+        if ("string" === typeof(title)) {
+            document.title = title;
+        }
+        else {
+            throw new TypeError("JSUS.changeTitle: title must be string.");
+        }
+    };
 
     JSUS.extend(DOM);
 
@@ -24842,7 +25014,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # GameWindow
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2016 Stefano Balietti
  * MIT Licensed
  *
  * GameWindow provides a handy API to interface nodeGame with the
@@ -28259,6 +28431,67 @@ if (!Array.prototype.indexOf) {
 
         return root.appendChild(eb);
     };
+
+    // TODO: continue here.
+
+    /**
+     * ### GameWindow.setInnerHTML
+     *
+     * Replaces the innerHTML property of the element/s specified
+     *
+     * The function accept different input parameters
+     *
+     * @param {string|object|array} Elements
+     * @param {object} values Optional The values for html
+     *
+     * @return {boolean} TRUE, if all elements were found
+     */
+    GameWindow.prototype.setInnerHTML = function(elements, values) {
+        var el, i, len, res, lenValues;
+        res = true;
+        if ('string' === typeof elements) {
+            if ('string' !== typeof values) {
+                throw new TypeError('GameWindow.setInnerHTML: values must be ' +
+                                    'string, if elements is string.');
+            }
+            el = W.getElementById(elements);
+            if (el) el.innerHTML = values;
+            else res = false;
+        }
+        else if (J.isArray(elements)) {
+            if ('string' === typeof values) values = [values];
+            else if (!J.isArray(values) || !values.length) {
+                throw new TypeError('GameWindow.setInnerHTML: values must be ' +
+                                    'string or non-empty array, if elements ' +
+                                    'is string.');
+            }
+            i = -1, len = elements.length, lenValues = values.length;
+            for ( ; ++i < len ; ) {
+                el = W.getElementById(elements[i]);
+                if (el) el.innerHTML = values[i % lenValues];
+                else res = false;
+            }
+        }
+        else if ('object' === typeof elements) {
+            if ('undefined' !== typeof values) {
+                node.warn('GameWindow.setInnerHTML: elements is ' +
+                          'object, therefore values will be ignored.');
+            }
+            for (i in elements) {
+                if (elements.hasOwnProperty(i)) {
+                    el = W.getElementById(i);
+                    if (el) el.innerHTML = elements[i];
+                    else res = false;
+                }
+            }
+        }
+        else {
+            throw new TypeError('GameWindow.setInnerHTML: elements must be ' +
+                                'string, array, or object.');
+        }
+        return res;
+    };
+
 
     // ## Helper Functions
 
@@ -37771,8 +38004,9 @@ if (!Array.prototype.indexOf) {
             data = msg.data || {};
 
             reportExitCode = '<br>You have been disconnected. ' +
-                'Please report this exit code: ' +
-                data.exit + '<br></h3>';
+                ('undefined' !== typeof data.exit ?
+                'Please report this exit code: ' + data.exit : '') +
+                '<br></h3>';
 
             if (data.action === 'AllPlayersConnected') {
                 that.alertPlayer();
