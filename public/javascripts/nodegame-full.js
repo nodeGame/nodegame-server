@@ -3353,7 +3353,7 @@ if (!Array.prototype.indexOf) {
         } :
         function(sound) {
         var audio;
-        if ('string' === typeof(sound)) {
+        if ('string' === typeof sound) {
             audio = new Audio(sound);
         }
         else if ('object' === typeof sound &&
@@ -26406,6 +26406,7 @@ if (!Array.prototype.indexOf) {
         var that;
         var loadCache;
         var storeCacheNow, storeCacheLater;
+        var autoParse, autoParsePrefix;
         var iframe, iframeName, iframeDocument, iframeWindow;
         var frameDocumentElement, frameReady;
         var lastURI;
@@ -26488,6 +26489,22 @@ if (!Array.prototype.indexOf) {
             }
         }
 
+        if ('undefined' !== typeof opts.autoParse) {
+            if ('object' !== typeof opts.autoParse) {
+                throw new TypeError('GameWindow.loadFrame: opts.autoParse ' +
+                                    'must be object or undefined.');
+            }
+            if ('undefined' !== typeof opts.autoParsePrefix) {
+                if ('string' !== typeof opts.autoParsePrefix) {
+                    throw new TypeError('GameWindow.loadFrame: opts.' +
+                                        'autoParsePrefix must be string ' +
+                                        'or undefined.');
+                }
+                autoParsePrefix = opts.autoParsePrefix;
+            }
+            autoParse = opts.autoParse;
+        }
+
         // Adapt the uri if necessary.
         uri = this.processUri(uri);
 
@@ -26540,9 +26557,11 @@ if (!Array.prototype.indexOf) {
                 handleFrameLoad(that, uri, iframe, iframeName, loadCache,
                                 storeCacheNow, function() {
 
-                                    // Executes callback
+                                    // Executes callback, autoParses,
                                     // and updates GameWindow state.
-                                    that.updateLoadFrameState(func);
+                                    that.updateLoadFrameState(func,
+                                                              autoParse,
+                                                              autoParsePrefix);
                                 });
             });
         }
@@ -26560,7 +26579,9 @@ if (!Array.prototype.indexOf) {
 
                                     // Executes callback
                                     // and updates GameWindow state.
-                                    that.updateLoadFrameState(func);
+                                    that.updateLoadFrameState(func,
+                                                              autoParse,
+                                                              autoParsePrefix);
                                 });
             }
         }
@@ -26598,22 +26619,31 @@ if (!Array.prototype.indexOf) {
      *
      * The method performs the following operations:
      *
-     * - executes a given callback function
      * - decrements the counter of loading iframes
+     * - executes a given callback function
+     * - auto parses the elements specified (if any)
      * - set the window state as loaded (eventually)
      *
      * @param {function} func Optional. A callback function
+     * @param {object} autoParse Optional. An object containing elements
+     *    to replace in the HTML DOM.
+     * @param {string} autoParsePrefix Optional. Custom prefix to add to the
+     *    keys of the elements in autoParse object
      *
+     * @see GameWindow.setInnerHTML
      * @see updateAreLoading
      *
      * @emit FRAME_LOADED
      * @emit LOADED
      */
-    GameWindow.prototype.updateLoadFrameState = function(func) {
+    GameWindow.prototype.updateLoadFrameState = function(func, autoParse,
+                                                         autoParsePrefix) {
+
         var loaded, stageLevel;
         loaded = updateAreLoading(this, -1);
         if (loaded) this.setStateLevel('LOADED');
         if (func) func.call(node.game);
+        if (autoParse) this.setInnerHTML(autoParse, autoParsePrefix);
 
         // ng event emitter is not used.
         node.events.ee.game.emit('FRAME_LOADED');
@@ -28432,66 +28462,63 @@ if (!Array.prototype.indexOf) {
         return root.appendChild(eb);
     };
 
-    // TODO: continue here.
-
     /**
      * ### GameWindow.setInnerHTML
      *
-     * Replaces the innerHTML property of the element/s specified
+     * Replaces the innerHTML of the element/s with matching id or class name
      *
-     * The function accept different input parameters
+     * It locates all the elements with classname or id equal
+     * to [prefix] + key and sets the innerHTML property accordintgly.
      *
-     * @param {string|object|array} Elements
-     * @param {object} values Optional The values for html
-     *
-     * @return {boolean} TRUE, if all elements were found
+     * @param {object} Elements defined as key-value pairs. If value is
+     *    not a string or a number it will be skipped.
+     * @param {string} prefix Optional. Prefix added in the search string.
+     *    Default: 'ng_replace_'.
      */
-    GameWindow.prototype.setInnerHTML = function(elements, values) {
-        var el, i, len, res, lenValues;
-        res = true;
-        if ('string' === typeof elements) {
-            if ('string' !== typeof values) {
-                throw new TypeError('GameWindow.setInnerHTML: values must be ' +
-                                    'string, if elements is string.');
-            }
-            el = W.getElementById(elements);
-            if (el) el.innerHTML = values;
-            else res = false;
+    GameWindow.prototype.setInnerHTML = function(elements, prefix) {
+        var el, name, text, search, len, i;
+
+        if ('object' !== typeof elements) {
+            throw new TypeError('GameWindow.setInnerHTML: elements must be ' +
+                                'object.');
         }
-        else if (J.isArray(elements)) {
-            if ('string' === typeof values) values = [values];
-            else if (!J.isArray(values) || !values.length) {
-                throw new TypeError('GameWindow.setInnerHTML: values must be ' +
-                                    'string or non-empty array, if elements ' +
-                                    'is string.');
-            }
-            i = -1, len = elements.length, lenValues = values.length;
-            for ( ; ++i < len ; ) {
-                el = W.getElementById(elements[i]);
-                if (el) el.innerHTML = values[i % lenValues];
-                else res = false;
-            }
-        }
-        else if ('object' === typeof elements) {
-            if ('undefined' !== typeof values) {
-                node.warn('GameWindow.setInnerHTML: elements is ' +
-                          'object, therefore values will be ignored.');
-            }
-            for (i in elements) {
-                if (elements.hasOwnProperty(i)) {
-                    el = W.getElementById(i);
-                    if (el) el.innerHTML = elements[i];
-                    else res = false;
-                }
+        if (prefix) {
+            if ('string' !== typeof prefix) {
+                throw new TypeError('GameWindow.setInnerHTML: prefix must be ' +
+                                    'string or undefined.');
             }
         }
         else {
-            throw new TypeError('GameWindow.setInnerHTML: elements must be ' +
-                                'string, array, or object.');
+            prefix = 'ng_replace_';
         }
-        return res;
-    };
 
+        for (name in elements) {
+            if (elements.hasOwnProperty(name)) {
+                text = elements[name];
+                // Only process strings.
+                if ('string' !== typeof text && 'number' !== typeof text) {
+                    node.warn('GameWindow.setInnerHTML: key "' + name +
+                              '" does not contain a string value. Ignored.');
+                }
+                // Compose name with prefix and lower case.
+                search = (prefix + name).toLowerCase();
+
+                // Look by id.
+                el = W.getElementById(search);
+                if (el && el.className !== search) el.innerHTML = text;
+
+                // Look by class name.
+                el = W.getElementsByClassName(search);
+                len = el.length;
+                if (len) {
+                    i = -1;
+                    for ( ; ++i < len ; ) {
+                        elements[i].innerHTML = text;
+                    }
+                }
+            }
+        }
+    };
 
     // ## Helper Functions
 
@@ -28529,6 +28556,53 @@ if (!Array.prototype.indexOf) {
     ('undefined' !== typeof window) ? window : module.parent.exports.window,
     ('undefined' !== typeof window) ? window.node : module.parent.exports.node
 );
+
+
+// GameWindow.prototype.setInnerHTML2 = function(elements, values) {
+//     var el, i, len, res, lenValues;
+//     res = true;
+//     if ('string' === typeof elements) {
+//         if ('string' !== typeof values) {
+//             throw new TypeError('GameWindow.setInnerHTML: values must be ' +
+//                                 'string, if elements is string.');
+//         }
+//         el = W.getElementById(elements);
+//         if (el) el.innerHTML = values;
+//         else res = false;
+//     }
+//     else if (J.isArray(elements)) {
+//         if ('string' === typeof values) values = [values];
+//         else if (!J.isArray(values) || !values.length) {
+//             throw new TypeError('GameWindow.setInnerHTML: values must be ' +
+//                                 'string or non-empty array, if elements ' +
+//                                 'is string.');
+//         }
+//         i = -1, len = elements.length, lenValues = values.length;
+//         for ( ; ++i < len ; ) {
+//             el = W.getElementById(elements[i]);
+//             if (el) el.innerHTML = values[i % lenValues];
+//             else res = false;
+//         }
+//     }
+//     else if ('object' === typeof elements) {
+//         if ('undefined' !== typeof values) {
+//             node.warn('GameWindow.setInnerHTML: elements is ' +
+//                       'object, therefore values will be ignored.');
+//         }
+//         for (i in elements) {
+//             if (elements.hasOwnProperty(i)) {
+//                 el = W.getElementById(i);
+//                 if (el) el.innerHTML = elements[i];
+//                 else res = false;
+//             }
+//         }
+//     }
+//     else {
+//         throw new TypeError('GameWindow.setInnerHTML: elements must be ' +
+//                             'string, array, or object.');
+//     }
+//     return res;
+// };
 
 // Creates a new GameWindow instance in the global scope.
 (function() {
@@ -37869,9 +37943,9 @@ if (!Array.prototype.indexOf) {
             milliseconds: this.waitTime,
             timeup: function() {
                 that.bodyDiv.innerHTML =
-                    "Waiting for too long. Please look for a HIT called " +
-                    "<strong>ETH Descil Trouble Ticket</strong> and file" +
-                    " a new trouble ticket reporting your experience.";
+                    'Waiting for too long. Please look for a HIT called ' +
+                    '<strong>ETH Descil Trouble Ticket</strong> and file' +
+                    ' a new trouble ticket reporting your experience.';
             },
             update: 1000
         });
@@ -37927,7 +38001,13 @@ if (!Array.prototype.indexOf) {
      * @see WaitingRoom.updateState
      */
     WaitingRoom.prototype.updateDisplay = function() {
+        var numberOfGameslots, numberOfGames;
         if (this.connected > this.poolSize) {
+            numberOfGames = Math.floor(this.connected / this.groupSize);
+            numberOfGames = numberOfGames > this.nGames ?
+                this.nGames : numberOfGames;
+            numberOfGameslots = numberOfGames * this.groupSize;
+
             this.playerCount.innerHTML = '<span style="color:red">' +
                 this.connected + '</span>' + ' / ' + this.poolSize;
             this.playerCountTooHigh.style.display = '';
@@ -38013,10 +38093,11 @@ if (!Array.prototype.indexOf) {
             }
 
             else if (data.action === 'NotEnoughPlayers') {
-                that.bodyDiv.innerHTML = "<h3 align='center'>" +
-                    "Thank you for your patience.<br>" +
-                    "Unfortunately, there are not enough participants in " +
-                    "your group to start the experiment.<br>";
+                that.bodyDiv.innerHTML =
+                    '<h3 align="center" style="color: red">' +
+                    'Thank you for your patience.<br>' +
+                    'Unfortunately, there are not enough participants in ' +
+                    'your group to start the experiment.<br>';
 
                 that.disconnect(that.bodyDiv.innerHTML + reportExitCode);
             }
@@ -38106,11 +38187,6 @@ if (!Array.prototype.indexOf) {
     WaitingRoom.prototype.destroy = function() {
         node.deregisterSetup('waitroom');
     };
-
-    // ## Helper methods
-
-    function timeIsUp(data) {
-    }
 
 })(node);
 
