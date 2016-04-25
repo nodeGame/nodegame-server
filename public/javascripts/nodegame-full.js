@@ -19445,7 +19445,9 @@ if (!Array.prototype.indexOf) {
      */
     Game.prototype.execStep = function(step) {
         var cb;
-        var frame, frameOptions, frameLoadMode, frameStoreMode, frameAutoParse;
+        var frame, uri, frameOptions;
+        var frameLoadMode, frameStoreMode;
+        var frameAutoParse, frameAutoParsePrefix;
 
         if ('object' !== typeof step) {
             throw new Error('Game.execStep: step must be object.');
@@ -19454,58 +19456,49 @@ if (!Array.prototype.indexOf) {
         cb = this.plot.getProperty(step, 'cb');
         frame = this.plot.getProperty(step, 'frame');
 
+        // Handle frame loading natively, if required.
         if (frame) {
             if (!this.node.window) {
                 throw new Error('Game.execStep: frame option in step ' +
                                 step + ', but nodegame-window is not loaded.');
             }
-
-            if ('object' === typeof frame) {
-                frame = frame.uri;
-                frameLoadMode = frame.loadMode;
-                frameStoreMode = frame.storeMode;
-                frameAutoParse = frame.autoParse;
+            frameOptions = {};
+            if ('string' === typeof frame) {
+                uri = frame;
             }
-
-            if ('function' === typeof frame) {
-                frame = frame.call(this);
-                if ('string' !== typeof frame) {
-                    throw new TypeError('Game.execStep: frame callback did ' +
-                                        'not return string: ' + frame + '. ' +
+            else if ('object' === typeof frame) {
+                uri = frame.uri;
+                if ('string' !== typeof uri) {
+                    throw new TypeError('Game.execStep: frame.uri must ' +
+                                        'be string: ' + uri + '. ' +
                                         'Step: ' + step);
                 }
-            }
-
-            frameAutoParse = frameAutoParse ||
-                this.plot.getProperty(step, 'frameAutoParse');
-
-            if (frameAutoParse) {
-                if (frameAutoParse === true) {
-                    frameAutoParse = this.settings;
-                }
-                else {
-                    if ('function' === typeof frameautoparse) {
-                        frameautoparse = frameautoparse.call(this);
-                    }
-                    if ('object' !== typeof frameautoparse) {
-                        throw new TypeError('Game.execStep: frameautoparse must be ' +
-                                        'true, object, or function. Step: ' + step);
-                    }
-                }
-            }
-            this.node.window.loadFrame(frame, function() {
-                this.execCallback(cb);
+                frameOptions.frameLoadMode = frame.loadMode;
+                frameOptions.storeMode = frame.storeMode;
+                frameAutoParse = frame.autoParse;
                 if (frameAutoParse) {
-                    this.node.window.setInnerHTML(frameAutoParse);
+                    // Replacing TRUE with node.game.settings.
+                    if (frameAutoParse === true) {
+                        frameAutoParse = this.settings;
+                    }
+
+                    frameOptions.autoParse = frameAutoParse;
+                    frameOptions.autoParsePrefix = frame.autoParsePrefix;
                 }
+            }
+            else {
+                throw new TypeError('Game.execStep: frame must be string or ' +
+                                    'object: ' + frame + '. ' +
+                                    'Step: ' + step);
+
+            }
+
+            this.node.window.loadFrame(uri, function() {
+                this.execCallback(cb);
             }, frameOptions);
         }
         else {
             this.execCallback(cb);
-            if (frameAutoParse) {
-                console.log('*********************!!!!!');
-                this.node.window.setInnerHTML(frameAutoParse);
-            }
         }
     };
 
@@ -20638,7 +20631,7 @@ if (!Array.prototype.indexOf) {
     };
 
     // Common handler for randomEmit and randomExec
-    function randomFire(hook, maxWait, emit) {
+    function randomFire(hook, maxWait, emit, ctx) {
         var that = this;
         var waitTime;
         var callback;
@@ -20659,7 +20652,7 @@ if (!Array.prototype.indexOf) {
         else {
             callback = function() {
                 that.destroyTimer(timerObj);
-                hook.call();
+                hook.call(ctx);
             };
         }
 
@@ -20846,6 +20839,13 @@ if (!Array.prototype.indexOf) {
      *   to wait before emitting the event. Default: 6000
      */
     Timer.prototype.randomEmit = function(event, maxWait) {
+        if ('string' !== typeof event) {
+            throw new TypeError('Timer.randomEmit: event must be string.');
+        }
+        if ('undefined' !== typeof maxWait && 'number' !== typeof maxWait) {
+            throw new TypeError('Timer.randomEmit: maxWait must be number ' +
+                                'or undefined.');
+        }
         randomFire.call(this, event, maxWait, true);
     };
 
@@ -20859,9 +20859,44 @@ if (!Array.prototype.indexOf) {
      * @param {function} func The callback function to execute
      * @param {number} maxWait Optional. The maximum time (in milliseconds)
      *   to wait before executing the callback. Default: 6000
+     * @param {object|function} ctx Optional. The context of execution of
+     *   of the callback function. Default node.game
      */
-    Timer.prototype.randomExec = function(func, maxWait) {
-        randomFire.call(this, func, maxWait, false);
+    Timer.prototype.randomExec = function(func, maxWait, ctx) {
+        if ('function' !== typeof func) {
+            throw new TypeError('Timer.randomExec: func must be function.');
+        }
+        if ('undefined' !== typeof maxWait && 'number' !== typeof maxWait) {
+            throw new TypeError('Timer.randomExec: maxWait must be number ' +
+                                'or undefined.');
+        }
+        if ('undefined' === typeof ctx) {
+            ctx = this.node.game;
+        }
+        else if ('object' !== typeof ctx && 'function' !== typeof ctx) {
+            throw new TypeError('Timer.randomExec: ctx must be object, ' +
+                                'function or undefined.');
+        }
+        randomFire.call(this, func, maxWait, false, ctx);
+    };
+
+    /**
+     * ### Timer.randomDone
+     *
+     * Executes node.done after a random time interval
+     *
+     * Respects pausing / resuming.
+     *
+     * @param {function} func The callback function to execute
+     * @param {number} maxWait Optional. The maximum time (in milliseconds)
+     *   to wait before executing the callback. Default: 6000
+     */
+    Timer.prototype.randomDone = function(maxWait) {
+        if ('undefined' !== typeof maxWait && 'number' !== typeof maxWait) {
+            throw new TypeError('Timer.randomDone: maxWait must be number ' +
+                                'or undefined.');
+        }
+        randomFire.call(this, this.node.done, maxWait, false, this.node);
     };
 
     /**
@@ -24265,22 +24300,9 @@ if (!Array.prototype.indexOf) {
          */
         this.events.ng.on('STEP_CALLBACK_EXECUTED', function() {
             if (!node.window || node.window.isReady()) {
-                node.emitAsync('LOADED');
+                node.emit('LOADED');
             }
         });
-
-//         /**
-//          * ## WINDOW_LOADED
-//          *
-//          * @emit LOADED
-//          */
-//         this.events.ng.on('WINDOW_LOADED', function() {
-//             var stageLevel;
-//             stageLevel = node.game.getStageLevel();
-//             if (stageLevel === stageLevels.CALLBACK_EXECUTED) {
-//                 node.emit('LOADED');
-//             }
-//         });
 
         /**
          * ## LOADED
@@ -24293,7 +24315,7 @@ if (!Array.prototype.indexOf) {
                 node.socket.clearBuffer();
             }
             if (node.game.shouldEmitPlaying()) {
-                node.emitAsync('PLAYING');
+                node.emit('PLAYING');
             }
         });
 
@@ -24314,10 +24336,7 @@ if (!Array.prototype.indexOf) {
             node.timer.setTimestamp('step', currentTime);
 
             // DONE was previously emitted, we just execute done handler.
-            if (node.game.willBeDone) {
-                done();
-            }
-
+            if (node.game.willBeDone) done();
         });
 
         /**
@@ -25259,7 +25278,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # GameWindow
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2016 Stefano Balietti
  * MIT Licensed
  *
  * GameWindow provides a handy API to interface nodeGame with the
@@ -26651,6 +26670,7 @@ if (!Array.prototype.indexOf) {
         var that;
         var loadCache;
         var storeCacheNow, storeCacheLater;
+        var autoParse, autoParsePrefix;
         var iframe, iframeName, iframeDocument, iframeWindow;
         var frameDocumentElement, frameReady;
         var lastURI;
@@ -26733,6 +26753,22 @@ if (!Array.prototype.indexOf) {
             }
         }
 
+        if ('undefined' !== typeof opts.autoParse) {
+            if ('object' !== typeof opts.autoParse) {
+                throw new TypeError('GameWindow.loadFrame: opts.autoParse ' +
+                                    'must be object or undefined.');
+            }
+            if ('undefined' !== typeof opts.autoParsePrefix) {
+                if ('string' !== typeof opts.autoParsePrefix) {
+                    throw new TypeError('GameWindow.loadFrame: opts.' +
+                                        'autoParsePrefix must be string ' +
+                                        'or undefined.');
+                }
+                autoParsePrefix = opts.autoParsePrefix;
+            }
+            autoParse = opts.autoParse;
+        }
+
         // Adapt the uri if necessary.
         uri = this.processUri(uri);
 
@@ -26785,9 +26821,11 @@ if (!Array.prototype.indexOf) {
                 handleFrameLoad(that, uri, iframe, iframeName, loadCache,
                                 storeCacheNow, function() {
 
-                                    // Executes callback
+                                    // Executes callback, autoParses,
                                     // and updates GameWindow state.
-                                    that.updateLoadFrameState(func);
+                                    that.updateLoadFrameState(func,
+                                                              autoParse,
+                                                              autoParsePrefix);
                                 });
             });
         }
@@ -26805,7 +26843,9 @@ if (!Array.prototype.indexOf) {
 
                                     // Executes callback
                                     // and updates GameWindow state.
-                                    that.updateLoadFrameState(func);
+                                    that.updateLoadFrameState(func,
+                                                              autoParse,
+                                                              autoParsePrefix);
                                 });
             }
         }
@@ -26843,22 +26883,31 @@ if (!Array.prototype.indexOf) {
      *
      * The method performs the following operations:
      *
-     * - executes a given callback function
      * - decrements the counter of loading iframes
+     * - executes a given callback function
+     * - auto parses the elements specified (if any)
      * - set the window state as loaded (eventually)
      *
      * @param {function} func Optional. A callback function
+     * @param {object} autoParse Optional. An object containing elements
+     *    to replace in the HTML DOM.
+     * @param {string} autoParsePrefix Optional. Custom prefix to add to the
+     *    keys of the elements in autoParse object
      *
+     * @see GameWindow.setInnerHTML
      * @see updateAreLoading
      *
      * @emit FRAME_LOADED
      * @emit LOADED
      */
-    GameWindow.prototype.updateLoadFrameState = function(func) {
+    GameWindow.prototype.updateLoadFrameState = function(func, autoParse,
+                                                         autoParsePrefix) {
+
         var loaded, stageLevel;
         loaded = updateAreLoading(this, -1);
         if (loaded) this.setStateLevel('LOADED');
         if (func) func.call(node.game);
+        if (autoParse) this.setInnerHTML(autoParse, autoParsePrefix);
 
         // ng event emitter is not used.
         node.events.ee.game.emit('FRAME_LOADED');
@@ -26867,7 +26916,7 @@ if (!Array.prototype.indexOf) {
 
         if (loaded) {
             stageLevel = node.game.getStageLevel();
-            if (stageLevel === CB_EXECUTED) node.emit('LOADED');
+            if (stageLevel === CB_EXECUTED) node.emitAsync('LOADED');
         }
         else {
             node.silly('game-window: ' + this.areLoading + ' frames ' +
@@ -28677,6 +28726,64 @@ if (!Array.prototype.indexOf) {
         return root.appendChild(eb);
     };
 
+    /**
+     * ### GameWindow.setInnerHTML
+     *
+     * Replaces the innerHTML of the element/s with matching id or class name
+     *
+     * It locates all the elements with classname or id equal
+     * to [prefix] + key and sets the innerHTML property accordintgly.
+     *
+     * @param {object} Elements defined as key-value pairs. If value is
+     *    not a string or a number it will be skipped.
+     * @param {string} prefix Optional. Prefix added in the search string.
+     *    Default: 'ng_replace_'.
+     */
+    GameWindow.prototype.setInnerHTML = function(elements, prefix) {
+        var el, name, text, search, len, i;
+
+        if ('object' !== typeof elements) {
+            throw new TypeError('GameWindow.setInnerHTML: elements must be ' +
+                                'object.');
+        }
+        if (prefix) {
+            if ('string' !== typeof prefix) {
+                throw new TypeError('GameWindow.setInnerHTML: prefix must be ' +
+                                    'string or undefined.');
+            }
+        }
+        else {
+            prefix = 'ng_replace_';
+        }
+
+        for (name in elements) {
+            if (elements.hasOwnProperty(name)) {
+                text = elements[name];
+                // Only process strings.
+                if ('string' !== typeof text && 'number' !== typeof text) {
+                    node.warn('GameWindow.setInnerHTML: key "' + name +
+                              '" does not contain a string value. Ignored.');
+                }
+                // Compose name with prefix and lower case.
+                search = (prefix + name).toLowerCase();
+
+                // Look by id.
+                el = W.getElementById(search);
+                if (el && el.className !== search) el.innerHTML = text;
+
+                // Look by class name.
+                el = W.getElementsByClassName(search);
+                len = el.length;
+                if (len) {
+                    i = -1;
+                    for ( ; ++i < len ; ) {
+                        elements[i].innerHTML = text;
+                    }
+                }
+            }
+        }
+    };
+
     // ## Helper Functions
 
     /**
@@ -28713,6 +28820,53 @@ if (!Array.prototype.indexOf) {
     ('undefined' !== typeof window) ? window : module.parent.exports.window,
     ('undefined' !== typeof window) ? window.node : module.parent.exports.node
 );
+
+
+// GameWindow.prototype.setInnerHTML2 = function(elements, values) {
+//     var el, i, len, res, lenValues;
+//     res = true;
+//     if ('string' === typeof elements) {
+//         if ('string' !== typeof values) {
+//             throw new TypeError('GameWindow.setInnerHTML: values must be ' +
+//                                 'string, if elements is string.');
+//         }
+//         el = W.getElementById(elements);
+//         if (el) el.innerHTML = values;
+//         else res = false;
+//     }
+//     else if (J.isArray(elements)) {
+//         if ('string' === typeof values) values = [values];
+//         else if (!J.isArray(values) || !values.length) {
+//             throw new TypeError('GameWindow.setInnerHTML: values must be ' +
+//                                 'string or non-empty array, if elements ' +
+//                                 'is string.');
+//         }
+//         i = -1, len = elements.length, lenValues = values.length;
+//         for ( ; ++i < len ; ) {
+//             el = W.getElementById(elements[i]);
+//             if (el) el.innerHTML = values[i % lenValues];
+//             else res = false;
+//         }
+//     }
+//     else if ('object' === typeof elements) {
+//         if ('undefined' !== typeof values) {
+//             node.warn('GameWindow.setInnerHTML: elements is ' +
+//                       'object, therefore values will be ignored.');
+//         }
+//         for (i in elements) {
+//             if (elements.hasOwnProperty(i)) {
+//                 el = W.getElementById(i);
+//                 if (el) el.innerHTML = elements[i];
+//                 else res = false;
+//             }
+//         }
+//     }
+//     else {
+//         throw new TypeError('GameWindow.setInnerHTML: elements must be ' +
+//                             'string, array, or object.');
+//     }
+//     return res;
+// };
 
 // Creates a new GameWindow instance in the global scope.
 (function() {
@@ -33629,14 +33783,23 @@ if (!Array.prototype.indexOf) {
     DoneButton.prototype.listeners = function() {
         var that = this;
 
+        // This is normally executed after the PLAYING listener of
+        // GameWindow where lockUnlockedInputs takes place.
+        // In case of a timeup, the donebutton will be locked and
+        // then unlocked by GameWindow, but otherwise it must be
+        // done here.
         node.on('PLAYING', function() {
             var prop, step;
             step = node.game.getCurrentGameStage();
             prop = node.game.plot.getProperty(step, 'donebutton');
-            if (prop === false || prop && prop.enableOnPlaying === false) {
-                return;
+            if (prop === false || (prop && prop.enableOnPlaying === false)) {
+                // It might be disabled already, but we do it again.
+                that.disable();
             }
-            that.enable();
+            else {
+                // It might be enabled already, but we do it again.
+                that.enable();
+            }
         });
     };
 
