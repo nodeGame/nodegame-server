@@ -15049,7 +15049,6 @@ if (!Array.prototype.indexOf) {
      */
     Stager.defaultCallback = function() {
         this.node.log(this.getCurrentStepObj().id);
-        this.node.done();
     };
 
     // Flag it as `default`.
@@ -20619,27 +20618,44 @@ if (!Array.prototype.indexOf) {
      *
      * Stops and removes all registered GameTimers
      */
-    Timer.prototype.destroyAllTimers = function(confirm) {
-        if (!confirm) {
-            node.warn('Timer.destroyAllTimers: confirm must be true to ' +
-                      'proceed. No timer destroyed.');
-            return false;
-        }
+    Timer.prototype.destroyAllTimers = function() {
         for (var i in this.timers) {
-            this.destroyTimer(this.timers[i]);
+            if (this.timers.hasOwnProperty(i)) {
+                this.destroyTimer(this.timers[i]);
+            }
         }
     };
 
-    // Common handler for randomEmit and randomExec
-    function randomFire(hook, maxWait, emit, ctx) {
+    // ## Helper Methods.
+
+    /**
+     * ### randomFire
+     *
+     * Common handler for randomEmit and randomExec
+     *
+     * @param {string} method The name of the method invoking randomFire
+     * @param {string|function} hook The function to call or the event to emit
+     * @param {number} maxWait Optional. The max number of milliseconds
+     *   to wait before firing
+     * @param {boolean} emit TRUE, if it is an event to emit
+     * @param {object|function} ctx Optional. The context of execution for
+     *   the function
+     */
+    function randomFire(method, hook, maxWait, emit, ctx) {
         var that = this;
         var waitTime;
         var callback;
         var timerObj;
         var tentativeName;
 
-        // Get time to wait:
-        maxWait = maxWait || 6000;
+        if ('undefined' === typeof maxWait) {
+            maxWait = 6000;
+        }
+        else if ('number' !== typeof maxWait) {
+            throw new TypeError('Timer.' + method + ': maxWait must ' +
+                                    'be number or undefined.');
+        }
+
         waitTime = Math.random() * maxWait;
 
         // Define timeup callback:
@@ -20837,16 +20853,14 @@ if (!Array.prototype.indexOf) {
      * @param {string} event The name of the event
      * @param {number} maxWait Optional. The maximum time (in milliseconds)
      *   to wait before emitting the event. Default: 6000
+     *
+     * @see randomFire
      */
     Timer.prototype.randomEmit = function(event, maxWait) {
         if ('string' !== typeof event) {
             throw new TypeError('Timer.randomEmit: event must be string.');
         }
-        if ('undefined' !== typeof maxWait && 'number' !== typeof maxWait) {
-            throw new TypeError('Timer.randomEmit: maxWait must be number ' +
-                                'or undefined.');
-        }
-        randomFire.call(this, event, maxWait, true);
+        randomFire.call(this, 'randomEmit', event, maxWait, true);
     };
 
     /**
@@ -20861,14 +20875,12 @@ if (!Array.prototype.indexOf) {
      *   to wait before executing the callback. Default: 6000
      * @param {object|function} ctx Optional. The context of execution of
      *   of the callback function. Default node.game
+     *
+     * @see randomFire
      */
     Timer.prototype.randomExec = function(func, maxWait, ctx) {
         if ('function' !== typeof func) {
             throw new TypeError('Timer.randomExec: func must be function.');
-        }
-        if ('undefined' !== typeof maxWait && 'number' !== typeof maxWait) {
-            throw new TypeError('Timer.randomExec: maxWait must be number ' +
-                                'or undefined.');
         }
         if ('undefined' === typeof ctx) {
             ctx = this.node.game;
@@ -20877,7 +20889,7 @@ if (!Array.prototype.indexOf) {
             throw new TypeError('Timer.randomExec: ctx must be object, ' +
                                 'function or undefined.');
         }
-        randomFire.call(this, func, maxWait, false, ctx);
+        randomFire.call(this, 'randomExec', func, maxWait, false, ctx);
     };
 
     /**
@@ -20887,16 +20899,14 @@ if (!Array.prototype.indexOf) {
      *
      * Respects pausing / resuming.
      *
-     * @param {function} func The callback function to execute
      * @param {number} maxWait Optional. The maximum time (in milliseconds)
      *   to wait before executing the callback. Default: 6000
+     *
+     * @see randomFire
      */
     Timer.prototype.randomDone = function(maxWait) {
-        if ('undefined' !== typeof maxWait && 'number' !== typeof maxWait) {
-            throw new TypeError('Timer.randomDone: maxWait must be number ' +
-                                'or undefined.');
-        }
-        randomFire.call(this, this.node.done, maxWait, false, this.node);
+        randomFire.call(this, 'randomDone', this.node.done,
+                        maxWait, false, this.node);
     };
 
     /**
@@ -33644,7 +33654,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    DoneButton.version = '0.1.0';
+    DoneButton.version = '0.2.0';
     DoneButton.description = 'Creates a button that if ' +
         'pressed emits node.done().';
 
@@ -33662,13 +33672,13 @@ if (!Array.prototype.indexOf) {
     /**
      * ## DoneButton constructor
      *
-     * `DoneButton` displays and manages a `GameTimer`
+     * Creates a new instance of DoneButton
      *
-     * @param {object} options Optional. Configuration options
-     * The options it can take are:
+     * @param {object} options Optional. Configuration options.
+     *   If a `button` option is specified, it sets it as the clickable
+     *   button. All other options are passed to the init method.
      *
-     *   - `button`
-     *
+     * @see DoneButton.init
      */
     function DoneButton(options) {
         var that;
@@ -33761,19 +33771,7 @@ if (!Array.prototype.indexOf) {
 
 
         // Button text.
-        if ('undefined' === typeof options.text) {
-            tmp = DoneButton.text;
-        }
-        else if ('string' === typeof options.text) {
-            tmp = options.text;
-        }
-        else  {
-            throw new TypeError('DoneButton.init: options.text must ' +
-                                'be string or undefined. Found: ' +
-                                options.text);
-        }
-        this.button.value = tmp;
-
+        this.setText(options.text);
     };
 
     DoneButton.prototype.append = function() {
@@ -33800,6 +33798,9 @@ if (!Array.prototype.indexOf) {
                 // It might be enabled already, but we do it again.
                 that.enable();
             }
+            if (prop && prop.text) {
+                that.button.value = prop.text;
+            }
         });
     };
 
@@ -33819,6 +33820,26 @@ if (!Array.prototype.indexOf) {
      */
     DoneButton.prototype.enable = function() {
         this.button.disabled = false;
+    };
+
+    /**
+     * ### DoneButton.enable
+     *
+     * Set the text for the done button
+     *
+     * @param {string} text Optional. The text of the button.
+     *   Default: DoneButton.text
+     */
+    DoneButton.prototype.setText = function(text) {
+        if ('undefined' === typeof text) {
+            text = DoneButton.text;
+        }
+        else if ('string' !== typeof text) {
+            throw new TypeError('DoneButton.setText: text must ' +
+                                'be string or undefined. Found: ' +
+                                typeof text);
+        }
+        this.button.value = text;
     };
 
 })(node);
