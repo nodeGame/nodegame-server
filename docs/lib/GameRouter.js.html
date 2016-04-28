@@ -753,7 +753,7 @@ to instantiate the page requested by <code>xx/xx/page*</code>.</p>
     <span class="p">};</span>
 
     <span class="nx">secret</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">secret</span><span class="p">;</span>
-    <span class="nx">expire</span> <span class="o">=</span> <span class="mi">60</span><span class="o">*</span><span class="mi">5</span><span class="p">;</span>
+    <span class="nx">expire</span> <span class="o">=</span> <span class="mi">60</span><span class="o">*</span><span class="mi">60</span><span class="o">*</span><span class="mi">5</span><span class="p">;</span>
 
 </pre></div>
         </td>
@@ -766,7 +766,7 @@ to instantiate the page requested by <code>xx/xx/page*</code>.</p>
 <p>We are sending the profile in the token.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="nx">token</span> <span class="o">=</span> <span class="nx">jwt</span><span class="p">.</span><span class="nx">sign</span><span class="p">(</span><span class="nx">profile</span><span class="p">,</span> <span class="nx">secret</span><span class="p">,</span> <span class="p">{</span> <span class="nx">expiresInMinutes</span><span class="o">:</span> <span class="nx">expire</span><span class="p">});</span>
+    <span class="nx">token</span> <span class="o">=</span> <span class="nx">jwt</span><span class="p">.</span><span class="nx">sign</span><span class="p">(</span><span class="nx">profile</span><span class="p">,</span> <span class="nx">secret</span><span class="p">,</span> <span class="p">{</span> <span class="nx">expiresIn</span><span class="o">:</span> <span class="nx">expire</span><span class="p">});</span>
 
 
 </pre></div>

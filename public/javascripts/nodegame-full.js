@@ -10458,6 +10458,9 @@ if (!Array.prototype.indexOf) {
     // context-less in the browser too.
     var node = parent;
 
+    // Important! Cannot define DONE = node.constants.stageLevels.DONE;
+    // It is not defined on browsers then.
+
     // ## SOLO
     // Player proceeds to the next step as soon as the current one
     // is DONE, regardless to the situation of other players
@@ -10501,6 +10504,29 @@ if (!Array.prototype.indexOf) {
         stage = pl.first().stage;
         return pl.arePlayersSync(stage, node.constants.stageLevels.DONE,
                                  'EXACT');
+    };
+
+    // ## OTHERS_SYNC_STAGE
+    // All the players in the player list must be sync in the _last_
+    // step of current stage and DONE. My own stage does not matter.
+    // Important: to work it assumes that number of steps in current
+    // stage is the same in all players (including this one).
+    exports.stepRules.OTHERS_SYNC_STAGE = function(stage, myStageLevel, pl,
+                                                   game) {
+
+        if (!pl.size()) return false;
+        stage = pl.first().stage;
+        nSteps = game.plot.stepsToNextStage(stage);
+        // Manual clone in case there are more steps to go.
+        if (nSteps !== 1) {
+            stage = {
+                stage: stage.stage,
+                step: stage.step + (nSteps - 1),
+                round: stage.round
+            };
+        }
+        return pl.arePlayersSync(stage, node.constants.stageLevels.DONE,
+                                 'EXACT', true);
     };
 
     // ## Closure
@@ -11974,7 +12000,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # PlayerList
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2016 Stefano Balietti
  * MIT Licensed
  *
  * Handles a collection of `Player` objects
@@ -13184,7 +13210,7 @@ if (!Array.prototype.indexOf) {
             stageObj = this.stager.stages[curStage.stage];
 
             if ('undefined' === typeof stageObj) {
-                throw new Error('Gameplot.next: received nonexistent stage: ' +
+                throw new Error('Gameplot.next: received non-existent stage: ' +
                                 curStage.stage);
             }
 
@@ -13196,7 +13222,7 @@ if (!Array.prototype.indexOf) {
                 stepNo = stageObj.steps.indexOf(curStage.step) + 1;
             }
             if (stepNo < 1) {
-                throw new Error('GamePlot.next: received nonexistent step: ' +
+                throw new Error('GamePlot.next: received non-existent step: ' +
                                 stageObj.id + '.' + curStage.step);
             }
 
@@ -13964,7 +13990,7 @@ if (!Array.prototype.indexOf) {
         }
 
         if (stageNo < 1 || stageNo > this.stager.sequence.length) {
-            this.node.warn('GamePlot.normalizeGameStage: nonexistent stage: ' +
+            this.node.warn('GamePlot.normalizeGameStage: non-existent stage: ' +
                            gs.stage);
             return null;
         }
@@ -13999,7 +14025,7 @@ if (!Array.prototype.indexOf) {
         }
 
         if (stepNo < 1 || stepNo > stageObj.steps.length) {
-            this.node.warn('normalizeGameStage received nonexistent step: ' +
+            this.node.warn('normalizeGameStage received non-existent step: ' +
                            stageObj.id + '.' + gs.step);
             return null;
         }
@@ -19152,6 +19178,7 @@ if (!Array.prototype.indexOf) {
         var property, handler;
         var minThreshold, maxThreshold, exactThreshold;
         var minCallback = null, maxCallback = null, exactCallback = null;
+        var minRecoverCb = null, maxRecoverCb = null, exactRecoverCb = null;
 
         if (!this.isSteppable()) {
             throw new Error('Game.gotoStep: game cannot be stepped.');
@@ -19304,12 +19331,9 @@ if (!Array.prototype.indexOf) {
 
                 minThreshold = property[0];
                 minCallback = property[1];
-                if ('number' !== typeof minThreshold ||
-                    'function' !== typeof minCallback) {
-                    throw new TypeError(
-                        'Game.gotoStep: minPlayers field must contain a ' +
-                            'number and a function.');
-                }
+                minRecoverCb = property[2];
+                checkMinMaxExactParams('min', minThreshold,
+                                       minCallback, minRecoverCb);
             }
             property = this.plot.getProperty(nextStep, 'maxPlayers');
             if (property) {
@@ -19321,12 +19345,10 @@ if (!Array.prototype.indexOf) {
 
                 maxThreshold = property[0];
                 maxCallback = property[1];
-                if ('number' !== typeof maxThreshold ||
-                    'function' !== typeof maxCallback) {
-                    throw new TypeError(
-                        'Game.gotoStep: maxPlayers field must contain a ' +
-                            'number and a function.');
-                }
+                maxRecoverCb = property[2];
+                checkMinMaxExactParams('max', maxThreshold,
+                                       maxCallback, maxRecoverCb);
+
             }
             property = this.plot.getProperty(nextStep, 'exactPlayers');
             if (property) {
@@ -19338,21 +19360,17 @@ if (!Array.prototype.indexOf) {
 
                 exactThreshold = property[0];
                 exactCallback = property[1];
-                if ('number' !== typeof exactThreshold ||
-                    'function' !== typeof exactCallback) {
-                    throw new TypeError(
-                        'Game.gotoStep: exactPlayers field must contain a ' +
-                            'number and a function.');
-                }
+                exactRecoverCb = property[2];
+                checkMinMaxExactParams('exact', exactThreshold,
+                                       exactCallback, exactRecoverCb);
             }
+
             if (minCallback || maxCallback || exactCallback) {
                 // Register event handler:
                 handler = function() {
                     var nPlayers = node.game.pl.size();
                     // Players should count themselves too.
-                    if (!node.player.admin) {
-                        nPlayers++;
-                    }
+                    if (!node.player.admin) nPlayers++;
 
                     if (nPlayers < minThreshold) {
                         if (minCallback && !node.game.minPlayerCbCalled) {
@@ -19361,6 +19379,9 @@ if (!Array.prototype.indexOf) {
                         }
                     }
                     else {
+                        if (node.game.minPlayerCbCalled) {
+                            minRecoverCb.call(node.game);
+                        }
                         node.game.minPlayerCbCalled = false;
                     }
 
@@ -19371,6 +19392,9 @@ if (!Array.prototype.indexOf) {
                         }
                     }
                     else {
+                        if (node.game.maxPlayerCbCalled) {
+                            maxRecoverCb.call(node.game);
+                        }
                         node.game.maxPlayerCbCalled = false;
                     }
 
@@ -19381,6 +19405,9 @@ if (!Array.prototype.indexOf) {
                         }
                     }
                     else {
+                        if (node.game.exactPlayerCbCalled) {
+                            exactRecoverCb.call(node.game);
+                        }
                         node.game.exactPlayerCbCalled = false;
                     }
                 };
@@ -19397,9 +19424,7 @@ if (!Array.prototype.indexOf) {
                 this.checkPlistSize = function() {
                     var nPlayers = node.game.pl.size();
                     // Players should count themselves too.
-                    if (!node.player.admin) {
-                        nPlayers++;
-                    }
+                    if (!node.player.admin) nPlayers++;
 
                     if (minCallback && nPlayers < minThreshold) {
                         return false;
@@ -19492,9 +19517,10 @@ if (!Array.prototype.indexOf) {
 
             }
 
-            this.node.window.loadFrame(uri, function() {
-                this.execCallback(cb);
-            }, frameOptions);
+            // Auto load frame and wrap cb.
+            this.execCallback(function() {
+                this.node.window.loadFrame(uri, cb, frameOptions);
+            });
         }
         else {
             this.execCallback(cb);
@@ -20062,6 +20088,44 @@ if (!Array.prototype.indexOf) {
         }
         return this.plot.jump(this.getCurrentGameStage(), delta, false);
     };
+
+    // ## Helper Methods
+
+    /**
+     * ### checkMinMaxExactParams
+     *
+     * Checks the parameters of min|max|exactPlayers property of a step
+     *
+     * Method is invoked by Game.gotoStep, and errors are thrown accordingly.
+     *
+     * @param {string} name The name of the parameter: min|max|exact
+     * @param {number} num The threshold for numer of players
+     * @param {function} cb The function being called when the threshold
+     *    is not met
+     * @param {function} recoverCb Optional. The function being called
+     *    when the a threshold previously not met is recovered
+     *
+     * @see Game.gotoStep
+     */
+    function checkMinMaxExactParams(name, num, cb, recoverCb) {
+        if ('number' !== typeof num || !isFinite(num) || num < 1) {
+            throw new TypeError('Game.gotoStep: ' + name +
+                                'Players must be a finite number ' +
+                                'greater than 1: ' + num);
+        }
+        if ('function' !== typeof cb) {
+
+            throw new TypeError('Game.gotoStep: ' + name +
+                                'Players cb must be ' +
+                                'function: ' + cb);
+        }
+        if ('undefined' !== typeof recoverCb && 'function' !== typeof cb) {
+
+            throw new TypeError('Game.gotoStep: ' + name +
+                                'Players recoverCb must be ' +
+                                'function: ' + recoverCb);
+        }
+    }
 
     // ## Closure
 })(
@@ -36321,7 +36385,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    VisualRound.version = '0.5.1';
+    VisualRound.version = '0.5.2';
     VisualRound.description = 'Display number of current round and/or stage.' +
         'Can also display countdown and total number of rounds and/or stages.';
 
@@ -36489,13 +36553,9 @@ if (!Array.prototype.indexOf) {
             this.oldStageId = this.options.oldStageId;
         }
 
-        if (!this.gamePlot) {
-            this.gamePlot = node.game.plot;
-        }
-
-        if (!this.stager) {
-            this.stager = this.gamePlot.stager;
-        }
+        // Save references to gamePlot and stager for convenience.
+        if (!this.gamePlot) this.gamePlot = node.game.plot;
+        if (!this.stager) this.stager = this.gamePlot.stager;
 
         this.updateInformation();
 
@@ -36683,12 +36743,22 @@ if (!Array.prototype.indexOf) {
      * @see VisualRound.updateDisplay
      */
     VisualRound.prototype.updateInformation = function() {
-        var idseq, stage;
-        stage = this.gamePlot.getStage(node.player.stage);
+        var stage;
 
+        // TODO CHECK: was:
+        // stage = this.gamePlot.getStage(node.player.stage);
+        stage = node.player.stage;
+
+        // Game not started.
+        if (stage.stage === 0) {
+            this.curStage = 0;
+            this.totStage = 0;
+            this.totRound = 0;
+        }
         // Flexible mode.
-        if (this.options.flexibleMode) {
-            if (stage) {
+        else if (this.options.flexibleMode) {
+            // Was:
+            // if (stage) {
                 if (stage.id === this.oldStageId) {
                     this.curRound += 1;
                 }
@@ -36697,29 +36767,23 @@ if (!Array.prototype.indexOf) {
                     this.curStage += 1;
                 }
                 this.oldStageId = stage.id;
-            }
+            // }
         }
-
         // Normal mode.
         else {
-            // Extracts only id attribute from array of objects.
-            idseq = J.map(this.stager.sequence, function(obj){return obj.id;});
 
-            // Every round has an identifier.
-            this.totStage = this.stager.sequence.length;
-            this.curRound = node.player.stage.round;
-
-            if (stage) {
-                this.curStage = node.player.stage.stage;
-                this.totRound = this.stager.sequence[this.curStage -1].num || 1;
+            this.curStage = stage.stage;
+            // Stage can be indexed by id or number in the sequence.
+            if ('string' === typeof this.curStage) {
+                this.curStage =
+                    this.gamePlot.normalizeGameStage(stage).stage;
             }
-            else {
-                this.curStage = 1;
-                this.totRound = 1;
-            }
+            this.curRound = stage.round;
+            this.totRound = this.stager.sequence[this.curStage -1].num || 1;
             this.curStage -= this.stageOffset;
-            this.totStage -= this.totStageOffset;
+            this.totStage = this.stager.sequence.length - this.totStageOffset;
         }
+        // Update display.
         this.updateDisplay();
     };
 
