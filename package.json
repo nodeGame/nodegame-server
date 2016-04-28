@@ -32,7 +32,7 @@
   ,   "JSON": "1.0.0"
   ,   "winston": "0.8.0"
   ,   "phantomjs": ">= 1.9.7"
-  ,   "jsonwebtoken": ">= 5.7.0"
+  ,   "jsonwebtoken": "5.7.0"
     }
   , "devDependencies": {
       "mocha": ">= 0.3.0",
