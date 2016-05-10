@@ -37716,21 +37716,28 @@ if (!Array.prototype.indexOf) {
     function WaitingRoom(options) {
 
         /**
-         * ### WaitingRoom.callbacks
+         * ### WaitingRoom.connected
          *
-         * Array of all test callbacks
+         * Number of players connected
          */
         this.connected = 0;
 
         /**
-         * ### WaitingRoom.stillChecking
+         * ### WaitingRoom.poolSize
          *
-         * Number of tests still pending
+         * Number of players connected before groups are made
          */
         this.poolSize = 0;
 
         /**
-         * ### WaitingRoom.withTimeout
+         * ### WaitingRoom.nGames
+         *
+         * Total number of games to be dispatched
+         */
+        this.nGames = 0;
+
+        /**
+         * ### WaitingRoom.groupSize
          *
          * The size of the group
          */
@@ -37886,6 +37893,13 @@ if (!Array.prototype.indexOf) {
             }
             this.groupSize = conf.groupSize;
         }
+        if (conf.nGames) {
+            if (conf.nGames && 'number' !== typeof conf.nGames) {
+                throw new TypeError('WaitingRoom.init: conf.nGames ' +
+                                    'must be number or undefined.');
+            }
+            this.nGames = conf.nGames;
+        }
 
         if (conf.connected) {
             if (conf.connected && 'number' !== typeof conf.connected) {
@@ -38001,19 +38015,19 @@ if (!Array.prototype.indexOf) {
      * @see WaitingRoom.updateState
      */
     WaitingRoom.prototype.updateDisplay = function() {
-        var numberOfGameslots, numberOfGames;
+        var numberOfGameSlots, numberOfGames;
         if (this.connected > this.poolSize) {
             numberOfGames = Math.floor(this.connected / this.groupSize);
             numberOfGames = numberOfGames > this.nGames ?
                 this.nGames : numberOfGames;
-            numberOfGameslots = numberOfGames * this.groupSize;
+            numberOfGameSlots = numberOfGames * this.groupSize;
 
             this.playerCount.innerHTML = '<span style="color:red">' +
                 this.connected + '</span>' + ' / ' + this.poolSize;
             this.playerCountTooHigh.style.display = '';
             this.playerCountTooHigh.innerHTML = 'There are more players in ' +
                 'this waiting room than there are playslots in the game. ' +
-                'Only ' + this.poolSize + ' players will be selected to ' +
+                'Only ' + numberOfGameSlots + ' players will be selected to ' +
                 'play the game.';
         }
         else {
@@ -38180,7 +38194,7 @@ if (!Array.prototype.indexOf) {
     };
 
     WaitingRoom.prototype.alertPlayer = function() {
-        JSUS.playSound('doorbell.ogg');
+        JSUS.playSound('sounds/doorbell.ogg');
         JSUS.blinkTitle(document.title, 'GAME STARTS!', {stopOnFocus: true});
     };
 
