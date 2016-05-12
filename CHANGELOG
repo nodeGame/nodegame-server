@@ -4,6 +4,7 @@
  - Default Stager callback changed: does not call node.done().
  - Added checkings if games have same name or if channel has same endpoint.
  - Logic client types have default callback where they do **not** call `#node.done()`.
+ - `bin/info.js`
 
 # 1.1.0
  - Fixed bug with loading context directories to create language index.
