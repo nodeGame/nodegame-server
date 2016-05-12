@@ -352,7 +352,7 @@ textarea.choicetable-freetext {
 
 table.choicetable td {
     word-wrap: break-word;
-    border: solid 1px;
+    border: 1px solid #333;
     text-align: center;
     padding: 5px;
     width: 40px;
@@ -366,6 +366,19 @@ table.clickable td:hover {
 }
 
 table.choicetable td.selected {
-    border: 3px solid #333 !important;
-    background: #FFE !important;
+    background: #333 !important;
+    color: #FFF;
+    border: 1px solid #333 !important;
+}
+
+table.choicetable td.choicetable-descr {
+    border: 0;
+    background: inherit;
+    padding-right: 15px;
+    text-align: right;
+}
+
+table.choicetable td.choicetable-descr:hover {
+    background: inherit;
+    cursor: default;
 }

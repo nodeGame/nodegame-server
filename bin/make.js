@@ -5,11 +5,6 @@
  *
  */
 
-if (!process.argv || !process.argv.length) {
-    console.log('No input argument. Aborting');
-    return;
-}
-
 /**
  * Module dependencies.
  */
@@ -23,29 +18,30 @@ exec = require('child_process').exec,
 path = require('path'),
 J = require('JSUS').JSUS;
 
-var pkg = require('../package.json'),
-version = pkg.version;
+var info = require('./info.js');
 
-var ngcDir = J.resolveModuleDir('nodegame-client', __dirname);
-var JSUSDir = J.resolveModuleDir('JSUS', __dirname);
-var NDDBDir = J.resolveModuleDir('NDDB', __dirname);
-var shelfDir = J.resolveModuleDir('shelf.js', __dirname);
-var ngwindowDir = J.resolveModuleDir('nodegame-window', __dirname);
-var ngwidgetsDir = J.resolveModuleDir('nodegame-widgets', __dirname);
+var version = info.version;
 
-var build_client = require(ngcDir + 'bin/build.js').build;
-var build_client_support = require(ngcDir + 'bin/build.js').build_support;
-var build_JSUS = require(JSUSDir + 'bin/build.js').build;
-var build_NDDB = require(NDDBDir + 'bin/build.js').build;
-var build_shelf = require(shelfDir + 'bin/build.js').build;
-var build_ngwindow = require(ngwindowDir + 'bin/build.js').build;
-var build_ngwidgets = require(ngwidgetsDir + 'bin/build.js').build;
+var ngcDir = info.modulesDir.client;
+var JSUSDir = info.modulesDir.JSUS;
+var NDDBDir = info.modulesDir.NDDB;
+var shelfDir = info.modulesDir.shelf;
+var ngwindowDir = info.modulesDir.window;
+var ngwidgetsDir = info.modulesDir.widgets;
 
-var rootDir = path.resolve(__dirname, '..');
-var buildDir = rootDir + '/public/javascripts/';
-var cssDir = rootDir + '/public/stylesheets/';
-var libDir = rootDir + '/lib/';
-var confDir = rootDir + '/conf/';
+var build_client = info.build.client;
+var build_client_support = info.build.clientSupport;
+var build_JSUS = info.build.JSUS;
+var build_NDDB = info.build.NDDB;
+var build_shelf = info.build.shelf;
+var build_ngwindow = info.build.window;
+var build_ngwidgets = info.build.widgets;
+
+var rootDir = info.serverDir.root;
+var buildDir = info.serverDir.build;
+var cssDir = info.serverDir.css;
+var libDir = info.serverDir.lib;
+var confDir = info.serverDir.conf;
 
 var buildDir_client = ngcDir + 'build/';
 var buildDir_JSUS = JSUSDir + 'build/';
@@ -54,7 +50,26 @@ var buildDir_shelf = shelfDir + 'build/';
 var buildDir_ngWindow = ngwindowDir + 'build/';
 var buildDir_ngWidgets = ngwidgetsDir + 'build/';
 
+// var ngcDir = J.resolveModuleDir('nodegame-client', __dirname);
+// var JSUSDir = J.resolveModuleDir('JSUS', __dirname);
+// var NDDBDir = J.resolveModuleDir('NDDB', __dirname);
+// var shelfDir = J.resolveModuleDir('shelf.js', __dirname);
+// var ngwindowDir = J.resolveModuleDir('nodegame-window', __dirname);
+// var ngwidgetsDir = J.resolveModuleDir('nodegame-widgets', __dirname);
+//
+// var build_client = require(ngcDir + 'bin/build.js').build;
+// var build_client_support = require(ngcDir + 'bin/build.js').build_support;
+// var build_JSUS = require(JSUSDir + 'bin/build.js').build;
+// var build_NDDB = require(NDDBDir + 'bin/build.js').build;
+// var build_shelf = require(shelfDir + 'bin/build.js').build;
+// var build_ngwindow = require(ngwindowDir + 'bin/build.js').build;
+// var build_ngwidgets = require(ngwidgetsDir + 'bin/build.js').build;
 
+// var rootDir = path.resolve(__dirname, '..');
+// var buildDir = rootDir + '/public/javascripts/';
+// var cssDir = rootDir + '/public/stylesheets/';
+// var libDir = rootDir + '/lib/';
+// var confDir = rootDir + '/conf/';
 
 program
     .version(version);
@@ -65,8 +80,6 @@ program
     .action(function(){
         J.cleandDir(buildDir);
     });
-
-
 
 program
     .command('build-client [options]')
