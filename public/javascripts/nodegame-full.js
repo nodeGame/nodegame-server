@@ -3050,7 +3050,7 @@ if (!Array.prototype.indexOf) {
      * @see DOM.addBorder
      * @see DOM.style
      */
-    DOM.highlight = function(elem) {
+    DOM.highlight = function(elem, code) {
         var color;
         if (!elem) return;
 
