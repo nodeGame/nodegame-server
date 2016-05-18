@@ -10199,6 +10199,15 @@ if (!Array.prototype.indexOf) {
     var k = node.constants = {};
 
     /**
+     * ### node.constants.nodename
+     *
+     * Default nodename if none is specified
+     *
+     * @see node.setup.nodename
+     */
+    k.nodename = 'ng';
+
+    /**
      * ### node.constants.verbosity_levels
      *
      * ALWAYS, ERR, WARN, INFO, DEBUG
@@ -10353,7 +10362,6 @@ if (!Array.prototype.indexOf) {
         stop: 'stop',
         restart: 'restart',
         step: 'step',
-        push_step: 'push_step',
         goto_step: 'goto_step',
         clear_buffer: 'clear_buffer',
         erase_buffer: 'erase_buffer'
@@ -10520,6 +10528,9 @@ if (!Array.prototype.indexOf) {
     // context-less in the browser too.
     var node = parent;
 
+    // Important! Cannot define DONE = node.constants.stageLevels.DONE;
+    // It is not defined on browsers then.
+
     // ## SOLO
     // Player proceeds to the next step as soon as the current one
     // is DONE, regardless to the situation of other players
@@ -10563,6 +10574,29 @@ if (!Array.prototype.indexOf) {
         stage = pl.first().stage;
         return pl.arePlayersSync(stage, node.constants.stageLevels.DONE,
                                  'EXACT');
+    };
+
+    // ## OTHERS_SYNC_STAGE
+    // All the players in the player list must be sync in the _last_
+    // step of current stage and DONE. My own stage does not matter.
+    // Important: to work it assumes that number of steps in current
+    // stage is the same in all players (including this one).
+    exports.stepRules.OTHERS_SYNC_STAGE = function(stage, myStageLevel, pl,
+                                                   game) {
+
+        if (!pl.size()) return false;
+        stage = pl.first().stage;
+        nSteps = game.plot.stepsToNextStage(stage);
+        // Manual clone in case there are more steps to go.
+        if (nSteps !== 1) {
+            stage = {
+                stage: stage.stage,
+                step: stage.step + (nSteps - 1),
+                round: stage.round
+            };
+        }
+        return pl.arePlayersSync(stage, node.constants.stageLevels.DONE,
+                                 'EXACT', true);
     };
 
     // ## Closure
@@ -11669,8 +11703,8 @@ if (!Array.prototype.indexOf) {
     // ## Closure
 
 })(
-    'undefined' !== typeof node ? node : module.exports
-  , 'undefined' !== typeof node ? node : module.parent.exports
+    'undefined' != typeof node ? node : module.exports
+  , 'undefined' != typeof node ? node : module.parent.exports
 );
 
 /**
@@ -11726,7 +11760,7 @@ if (!Array.prototype.indexOf) {
      * @see GameStage.defaults.hash
      */
     function GameStage(gameStage) {
-        var tokens, stageNum, stepNum, roundNum;
+        var tokens, stageNum, stepNum, roundNum, err;
 
         // ## Public properties
 
@@ -11753,21 +11787,37 @@ if (!Array.prototype.indexOf) {
 
         // String.
         if ('string' === typeof gameStage) {
-            tokens = gameStage.split('.');
-            stageNum = parseInt(tokens[0], 10);
-            stepNum  = parseInt(tokens[1], 10);
-            roundNum = parseInt(tokens[2], 10);
-
-            if (tokens[0]) {
-                this.stage = !isNaN(stageNum) ? stageNum : tokens[0];
+            if (gameStage === '') {
+                throw new Error('GameStage constructor: gameStage name ' +
+                                'cannot be an empty string.');
             }
-            if ('undefined' !== typeof tokens[1]) {
-                this.step  = !isNaN(stepNum) ? stepNum : tokens[1];
+            if (gameStage.charAt(0) === '.') {
+                throw new Error('GameStage constructor: gameStage name ' +
+                                'cannot start with a dot.');
+            }
+
+            tokens = gameStage.split('.');
+
+            stageNum = parseInt(tokens[0], 10);
+            this.stage = !isNaN(stageNum) ? stageNum : tokens[0];
+
+            if ('string' === typeof tokens[1]) {
+                if (!tokens[1].length) {
+                    throw new Error('GameStage constructor: gameStage ' +
+                                    'contains empty step: ' + gameStage);
+                }
+                stepNum = parseInt(tokens[1], 10);
+                this.step = !isNaN(stepNum) ? stepNum : tokens[1];
             }
             else if (this.stage !== 0) {
                 this.step = 1;
             }
-            if ('undefined' !== typeof tokens[2]) {
+            if ('string' === typeof tokens[2]) {
+                if (!tokens[2].length) {
+                    throw new Error('GameStage constructor: gameStage ' +
+                                    'contains empty round: ' + gameStage);
+                }
+                roundNum = parseInt(tokens[2], 10);
                 this.round = roundNum;
             }
             else if (this.stage !== 0) {
@@ -11778,9 +11828,9 @@ if (!Array.prototype.indexOf) {
         else if (gameStage && 'object' === typeof gameStage) {
             this.stage = gameStage.stage;
             this.step = 'undefined' !== typeof gameStage.step ?
-                gameStage.step : 1;
+                gameStage.step : this.stage === 0 ? 0 : 1;
             this.round = 'undefined' !== typeof gameStage.round ?
-                gameStage.round : 1;
+                gameStage.round : this.stage === 0 ? 0 : 1;
         }
         // Number.
         else if ('number' === typeof gameStage) {
@@ -11789,43 +11839,56 @@ if (!Array.prototype.indexOf) {
                                    'cannot be a non-integer number.');
             }
             this.stage = gameStage;
-            this.step = 1;
-            this.round = 1;
+            if (this.stage === 0) {
+                this.step = 0;
+                this.round = 0;
+            }
+            else {
+                this.step = 1;
+                this.round = 1;
+            }
         }
         // Defaults or error.
         else if (gameStage !== null && 'undefined' !== typeof gameStage) {
             throw new TypeError('GameStage constructor: gameStage must be ' +
-                                'string, object, a positive number, or ' +
-                                'undefined.');
+                                'string, object, number, undefined, or null.');
         }
 
-        // Final sanity checks.
-
-        if ('undefined' === typeof this.stage) {
-            throw new Error('GameStage constructor: stage cannot be ' +
-                            'undefined.');
+        // At this point we must have positive numbers, or strings for step
+        // and stage, round can be only a positive number, or 0.0.0.
+        if ('number' === typeof this.stage) {
+            if (this.stage < 0) err = 'stage';
         }
-        if ('undefined' === typeof this.step) {
-            throw new Error('GameStage constructor: step cannot be ' +
-                            'undefined.');
-        }
-        if ('undefined' === typeof this.round) {
-            throw new Error('GameStage constructor: round cannot be ' +
-                            'undefined.');
+        else if ('string' !== typeof this.stage) {
+            throw new Error('GameStage constructor: gameStage.stage must be ' +
+                            'number or string: ' + typeof this.stage);
         }
 
-        if (('number' === typeof this.stage && this.stage < 0) ||
-            ('number' === typeof this.step  && this.step < 0) ||
-            ('number' === typeof this.round && this.round < 0)) {
+        if ('number' === typeof this.step) {
+            if (this.step < 0) err = err ? err + ', step' : 'step';
+        }
+        else if ('string' !== typeof this.step) {
+            throw new Error('GameStage constructor: gameStage.step must be ' +
+                            'number or string: ' + typeof this.step);
+        }
 
-            throw new TypeError('GameStage constructor: no field can be ' +
-                                'a negative number.');
+        if ('number' === typeof this.round) {
+            if (this.round < 0) err = err ? err + ', round' : 'round';
+        }
+        else {
+            throw new Error('GameStage constructor: gameStage.round must ' +
+                            'be number.');
+        }
+
+        if (err) {
+            throw new TypeError('GameStage constructor: ' + err + ' field/s ' +
+                                'contain/s negative numbers.');
         }
 
         // Either 0.0.0 or no 0 is allowed.
         if (!(this.stage === 0 && this.step === 0 && this.round === 0)) {
             if (this.stage === 0 || this.step === 0 || this.round === 0) {
-                throw new Error('GameStage constructor: non-sensical game ' +
+                throw new Error('GameStage constructor: malformed game ' +
                                 'stage: ' + this.toString());
             }
         }
@@ -11908,43 +11971,82 @@ if (!Array.prototype.indexOf) {
     /**
      * ### GameStage.compare (static)
      *
-     * Compares two GameStage objects|hash strings and returns:
+     * Converts inputs to GameStage objects and sort them by sequence order
+     *
+     * Returns value is:
      *
      * - 0 if they represent the same game stage
-     * - a positive number if gs1 is ahead of gs2
-     * - a negative number if gs2 is ahead of gs1
+     * - -1 if gs1 is ahead of gs2
+     * - +1 if gs2 is ahead of gs1
      *
-     * The accepted hash string format is the following: 'S.s.r'.
-     * Refer to `GameStage.toHash` for the semantic of the characters.
+     * The accepted hash string format is the following:
      *
-     * @param {GameStage|string} gs1 The first game stage to compare
-     * @param {GameStage|string} gs2 The second game stage to compare
+     *   - 'S.s.r' (stage.step.round)
      *
-     * @return {Number} result The result of the comparison
+     * When comparison contains a missing value or a string (e.g. a step id),
+     * the object is placed ahead.
      *
+     * @param {mixed} gs1 The first game stage to compare
+     * @param {mixed} gs2 The second game stage to compare
+     *
+     * @return {number} result The result of the comparison
+     *
+     * @see GameStage constructor
      * @see GameStage.toHash (static)
      */
     GameStage.compare = function(gs1, gs2) {
         var result;
-        if ('undefined' === typeof gs1 && 'undefined' === typeof gs2) return 0;
-        if ('undefined' === typeof gs2) return 1;
-        if ('undefined' === typeof gs1) return -1;
+        // null, undefined, 0.
+        if (!gs1 && !gs2) return 0;
+        if (!gs2) return 1;
+        if (!gs1) return -1;
 
-        // Convert the parameters to objects, if an hash string was passed.
-        if ('string' === typeof gs1) gs1 = new GameStage(gs1);
-        if ('string' === typeof gs2) gs2 = new GameStage(gs2);
+        gs1 = new GameStage(gs1);
+        gs2 = new GameStage(gs2);
 
-        result = gs1.stage - gs2.stage;
+        if ('number' === typeof gs1.stage) {
+            if ('number' === typeof gs2.stage) {
+                result = gs1.stage - gs2.stage;
+            }
+            else {
+                result = -1;
+            }
+        }
+        else if ('number' === typeof gs2.stage) {
+            result = 1;
+        }
 
-        if (result === 0 && 'undefined' !== typeof gs1.round) {
-            result = gs1.round - gs2.round;
+        if (result === 0) {
+            if ('number' === typeof gs1.step) {
+                if ('number' === typeof gs2.step) {
+                    result = gs1.step - gs2.step;
+                }
+                else {
+                    result = -1;
+                }
 
-            if (result === 0 && 'undefined' !== typeof gs1.step) {
-                result = gs1.step - gs2.step;
+            }
+            else if ('number' === typeof gs2.step) {
+                result = 1;
             }
         }
 
-        return result;
+        if (result === 0) {
+            if ('number' === typeof gs1.round) {
+                if ('number' === typeof gs2.round) {
+                    result = gs1.round - gs2.round;
+                }
+                else {
+                    result = -1;
+                }
+
+            }
+            else if ('number' === typeof gs2.round) {
+                result = 1;
+            }
+        }
+
+        return result > 0 ? 1 : result < 0 ? -1 : 0;
     };
 
     /**
@@ -11968,7 +12070,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # PlayerList
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2016 Stefano Balietti
  * MIT Licensed
  *
  * Handles a collection of `Player` objects
@@ -13130,13 +13232,17 @@ if (!Array.prototype.indexOf) {
      * that bound is assumed.
      *
      * @param {GameStage} curStage The GameStage of reference
+     * @param {bolean} execLoops Optional. If true, loop and doLoop
+     *   conditional function will be executed to determine next stage.
+     *   If false, null will be returned if the next stage depends
+     *   on the execution of the loop/doLoop conditional function.
+     *   Default: true.
      *
-     * @return {GameStage|string} The GameStage coming after _curStage_
-     *   in the plot
+     * @return {GameStage|string} The GameStage after _curStage_
      *
      * @see GameStage
      */
-    GamePlot.prototype.next = function(curStage) {
+    GamePlot.prototype.next = function(curStage, execLoops) {
         var seqObj, stageObj;
         var stageNo, stepNo, steps;
         var normStage, nextStage;
@@ -13150,9 +13256,9 @@ if (!Array.prototype.indexOf) {
         // Find out flexibility mode.
         flexibleMode = this.isFlexibleMode();
 
-        curStage = new GameStage(curStage);
-
         if (flexibleMode) {
+            curStage = new GameStage(curStage);
+
             if (curStage.stage === 0) {
                 // Get first stage:
                 if (this.stager.generalNextFunction) {
@@ -13174,7 +13280,7 @@ if (!Array.prototype.indexOf) {
             stageObj = this.stager.stages[curStage.stage];
 
             if ('undefined' === typeof stageObj) {
-                throw new Error('Gameplot.next: received nonexistent stage: ' +
+                throw new Error('Gameplot.next: received non-existent stage: ' +
                                 curStage.stage);
             }
 
@@ -13186,7 +13292,7 @@ if (!Array.prototype.indexOf) {
                 stepNo = stageObj.steps.indexOf(curStage.step) + 1;
             }
             if (stepNo < 1) {
-                throw new Error('GamePlot.next: received nonexistent step: ' +
+                throw new Error('GamePlot.next: received non-existent step: ' +
                                 stageObj.id + '.' + curStage.step);
             }
 
@@ -13225,7 +13331,17 @@ if (!Array.prototype.indexOf) {
 
         // Standard Mode.
         else {
-            if (curStage.stage === 0) {
+            // Get normalized GameStage:
+            // makes sures stage is with numbers and not strings.
+            normStage = this.normalizeGameStage(curStage);
+            if (normStage === null) {
+                this.node.warn('GamePlot.next: invalid stage: ' + curStage);
+                return null;
+            }
+
+            stageNo = normStage.stage;
+
+            if (stageNo === 0) {
                 return new GameStage({
                     stage: 1,
                     step:  1,
@@ -13233,19 +13349,12 @@ if (!Array.prototype.indexOf) {
                 });
             }
 
-            // Get normalized GameStage:
-            // makes sures stage is with numbers and not strings.
-            normStage = this.normalizeGameStage(curStage);
-            if (normStage === null) {
-                throw new Error('GamePlot.next: invalid stage: ' + curStage);
-            }
-
-            stageNo  = normStage.stage;
-            stepNo   = normStage.step;
-            seqObj   = this.stager.sequence[stageNo - 1];
+            stepNo = normStage.step;
+            seqObj = this.stager.sequence[stageNo - 1];
 
             if (seqObj.type === 'gameover') return GamePlot.GAMEOVER;
 
+            execLoops = 'undefined' === typeof execLoops ? true : execLoops;
 
             // Get stage object.
             stageObj = this.stager.stages[seqObj.id];
@@ -13272,6 +13381,10 @@ if (!Array.prototype.indexOf) {
 
             // Handle looping blocks:
             if (seqObj.type === 'doLoop' || seqObj.type === 'loop') {
+
+                // Return null if a loop is found and can't be executed.
+                if (!execLoops) return null;
+
                 // Call loop function. True means continue loop.
                 if (seqObj.cb.call(this.node.game)) {
                     return new GameStage({
@@ -13282,9 +13395,12 @@ if (!Array.prototype.indexOf) {
                 }
             }
 
-            // Go to next stage:
+            // Go to next stage.
             if (stageNo < this.stager.sequence.length) {
                 seqObj = this.stager.sequence[stageNo];
+
+                // Return null if a loop is found and can't be executed.
+                if (!execLoops && seqObj.type === 'loop') return null;
 
                 // Skip over loops if their callbacks return false:
                 while (seqObj.type === 'loop' &&
@@ -13294,8 +13410,8 @@ if (!Array.prototype.indexOf) {
                     if (stageNo >= this.stager.sequence.length) {
                         return GamePlot.END_SEQ;
                     }
+                    // Update seq object.
                     seqObj = this.stager.sequence[stageNo];
-
                 }
 
                 // Handle gameover:
@@ -13321,14 +13437,22 @@ if (!Array.prototype.indexOf) {
      * Returns the previous stage in the stager
      *
      * Works only in simple mode.
-     * Behaves on loops the same as `GamePlot.next`, with round=1 always.
+     *
+     * Previous of 0.0.0 is 0.0.0.
      *
      * @param {GameStage} curStage The GameStage of reference
-     * @return {GameStage} The GameStage coming before _curStage_ in the plot
+     * @param {bolean} execLoops Optional. If true, loop and doLoop
+     *   conditional function will be executed to determine previous stage.
+     *   If false, null will be returned if the previous stage depends
+     *   on the execution of the loop/doLoop conditional function.
+     *   Default: true.
+     *
+     * @return {GameStage|null} The GameStage before _curStage_, or null
+     *   if _curStage_ is invalid.
      *
      * @see GameStage
      */
-    GamePlot.prototype.previous = function(curStage) {
+    GamePlot.prototype.previous = function(curStage, execLoops) {
         var normStage;
         var seqObj, stageObj;
         var prevSeqObj;
@@ -13339,76 +13463,64 @@ if (!Array.prototype.indexOf) {
 
         seqObj = null, stageObj = null;
 
-        curStage = new GameStage(curStage);
-
-        // Get normalized GameStage:
+        // Get normalized GameStage (calls GameStage constructor).
         normStage = this.normalizeGameStage(curStage);
         if (normStage === null) {
-            this.node.warn('previous received invalid stage: ' + curStage);
+            this.node.warn('GamePlot.previous: invalid stage: ' + curStage);
             return null;
         }
-        stageNo  = normStage.stage;
-        stepNo   = normStage.step;
-        seqObj   = this.stager.sequence[stageNo - 1];
+        stageNo = normStage.stage;
 
-        // Handle stepping:
+        // Already 0.0.0, there is nothing before.
+        if (stageNo === 0) return new GameStage();
+
+        stepNo = normStage.step;
+        seqObj = this.stager.sequence[stageNo - 1];
+
+        execLoops = 'undefined' === typeof execLoops ? true : execLoops;
+
+        // Within same stage.
+
+        // Handle stepping.
         if (stepNo > 1) {
             return new GameStage({
                 stage: stageNo,
                 step:  stepNo - 1,
-                round: curStage.round
+                round: normStage.round
             });
         }
 
-        if ('undefined' !== typeof seqObj.id) {
-            stageObj = this.stager.stages[seqObj.id];
-            // Handle rounds:
-            if (curStage.round > 1) {
-                return new GameStage({
-                    stage: stageNo,
-                    step:  seqObj.steps.length,
-                    round: curStage.round - 1
-                });
-            }
-
-            // Handle looping blocks:
-            if ((seqObj.type === 'doLoop' || seqObj.type === 'loop') &&
-                seqObj.cb()) {
-
-                return new GameStage({
-                    stage: stageNo,
-                    step:  seqObj.steps.length,
-                    round: 1
-                });
-            }
-        }
-
-        // Handle beginning:
-        if (stageNo <= 1) {
+        // Handle rounds:
+        if (normStage.round > 1) {
             return new GameStage({
-                stage: 0,
-                step:  0,
-                round: 0
+                stage: stageNo,
+                step:  seqObj.steps.length,
+                round: normStage.round - 1
             });
         }
 
-        // Go to previous stage:
-        // Skip over loops if their callbacks return false:
-        while (this.stager.sequence[stageNo - 2].type === 'loop' &&
-               !this.stager.sequence[stageNo - 2].cb()) {
-            stageNo--;
+        // Handle beginning (0.0.0).
+        if (stageNo === 1) return new GameStage();
 
-            if (stageNo <= 1) {
-                return new GameStage({
-                    stage: 0,
-                    step:  0,
-                    round: 0
-                });
-            }
-        }
+        // Go to previous stage.
 
         // Get previous sequence object:
         prevSeqObj = this.stager.sequence[stageNo - 2];
+
+        // Return null if a loop is found and can't be executed.
+        if (!execLoops && seqObj.type === 'loop') return null;
+
+        // Skip over loops if their callbacks return false:
+        while (prevSeqObj.type === 'loop' &&
+               !prevSeqObj.cb.call(this.node.game)) {
+
+            stageNo--;
+            // (0.0.0).
+            if (stageNo <= 1) return new GameStage();
+
+            // Update seq object.
+            prevSeqObj = this.stager.sequence[stageNo - 2];
+        }
 
         // Get number of steps in previous stage:
         prevStepNo = prevSeqObj.steps.length;
@@ -13436,36 +13548,60 @@ if (!Array.prototype.indexOf) {
      * Returns a distant stage in the stager
      *
      * Works with negative delta only in simple mode.
+     *
      * Uses `GamePlot.previous` and `GamePlot.next` for stepping.
-     * If a sequence end is reached, returns immediately.
      *
      * @param {GameStage} curStage The GameStage of reference
      * @param {number} delta The offset. Negative number for backward stepping.
+     * @param {bolean} execLoops Optional. If true, loop and doLoop
+     *   conditional function will be executed to determine next stage.
+     *   If false, null will be returned when a loop or doLoop is found
+     *   and more evaluations are still required. Default: true.
      *
-     * @return {GameStage|string} The GameStage describing the distant stage
+     * @return {GameStage|string|null} The distant game stage
      *
      * @see GameStage
      * @see GamePlot.previous
      * @see GamePlot.next
      */
-    GamePlot.prototype.jump = function(curStage, delta) {
+    GamePlot.prototype.jump = function(curStage, delta, execLoops) {
+        var stageType;
+        execLoops = 'undefined' === typeof execLoops ? true : execLoops;
         if (delta < 0) {
             while (delta < 0) {
-                curStage = this.previous(curStage);
-                delta++;
+                curStage = this.previous(curStage, execLoops);
 
                 if (!(curStage instanceof GameStage) || curStage.stage === 0) {
                     return curStage;
+                }
+                delta++;
+                if (!execLoops) {
+                    // If there are more steps to jump, check if we have loops.
+                    stageType = this.stager.sequence[curStage.stage -1].type
+                    if (stageType === 'loop') {
+                        if (delta < 0) return null;
+                    }
+                    else if (stageType === 'doLoop') {
+                        if (delta < -1) return null;
+                        else return curStage;
+                    }
                 }
             }
         }
         else {
             while (delta > 0) {
-                curStage = this.next(curStage);
-                delta--;
+                curStage = this.next(curStage, execLoops);
+                // If we find a loop return null.
+                if (!(curStage instanceof GameStage)) return curStage;
 
-                if (!(curStage instanceof GameStage)) {
-                    return curStage;
+                delta--;
+                if (!execLoops) {
+                    // If there are more steps to jump, check if we have loops.
+                    stageType = this.stager.sequence[curStage.stage -1].type
+                    if (stageType === 'loop' || stageType === 'doLoop') {
+                        if (delta > 0) return null;
+                        else return curStage;
+                    }
                 }
             }
         }
@@ -13476,65 +13612,61 @@ if (!Array.prototype.indexOf) {
     /**
      * ### GamePlot.stepsToNextStage
      *
-     * Returns the number of steps until the beginning of the next stage
+     * Returns the number of steps from next stage (normalized)
+     *
+     * The next stage can be a repetition of the current one, if inside a
+     * loop or a repeat stage.
      *
      * @param {GameStage|string} gameStage The GameStage object,
      *  or its string representation
      *
-     * @return {number|null} The number of steps to go, minimum 1.
-     *  NULL on error.
+     * @return {number|null} The number of steps including current one,
+     *   or NULL on error.
      */
     GamePlot.prototype.stepsToNextStage = function(gameStage) {
-        var seqObj, stageObj, stepNo;
+        var seqObj, stepNo, limit;
+        if (!this.stager) return null;
 
-        gameStage = new GameStage(gameStage);
+        gameStage = this.normalizeGameStage(gameStage);
+        if (!gameStage) return null;
         if (gameStage.stage === 0) return 1;
-
         seqObj = this.getSequenceObject(gameStage);
         if (!seqObj) return null;
-
-        if ('number' === typeof gameStage.step) {
-            stepNo = gameStage.step;
-        }
-        else {
-            stepNo = seqObj.steps.indexOf(gameStage.step) + 1;
-            // If indexOf returned -1, stepNo is 0 which will be caught below.
-        }
-
-        if (stepNo < 1 || stepNo > seqObj.steps.length) return null;
+        stepNo = gameStage.step;
         return 1 + seqObj.steps.length - stepNo;
     };
 
+
+    GamePlot.prototype.stepsToPreviousStage = function(gameStage) {
+        console.log('GamePlot.stepsToPreviousStage is **deprecated**. Use' +
+                    'GamePlot.stepsFromPreviousStage instead.');
+        return this.stepsFromPreviousStage(gameStage);
+    };
+
     /**
-     * ### GamePlot.stepsToPreviousStage
+     * ### GamePlot.stepsFromPreviousStage
      *
-     * Returns the number of steps back until the end of the previous stage
+     * Returns the number of steps from previous stage (normalized)
+     *
+     * The previous stage can be a repetition of the current one, if inside a
+     * loop or a repeat stage.
      *
      * @param {GameStage|string} gameStage The GameStage object,
      *  or its string representation
      *
-     * @return {number|null} The number of steps to go, minimum 1.
-     *  NULL on error.
+     * @return {number|null} The number of steps including current one, or
+     *   NULL on error.
      */
-    GamePlot.prototype.stepsToPreviousStage = function(gameStage) {
-        var seqObj, stageObj, stepNo;
+    GamePlot.prototype.stepsFromPreviousStage = function(gameStage) {
+        var seqObj, stepNo, limit;
+        if (!this.stager) return null;
 
-        gameStage = new GameStage(gameStage);
-
+        gameStage = this.normalizeGameStage(gameStage);
+        if (!gameStage || gameStage.stage === 0) return null;
         seqObj = this.getSequenceObject(gameStage);
         if (!seqObj) return null;
-
-        if ('number' === typeof gameStage.step) {
-            stepNo = gameStage.step;
-        }
-        else {
-            stepNo = stageObj.steps.indexOf(gameStage.step) + 1;
-            // If indexOf returned -1, stepNo is 0 which will be caught below.
-        }
-
-        if (stepNo < 1 || stepNo > seqObj.steps.length) return null;
-
-        return stepNo;
+        stepNo = gameStage.step;
+        return (stepNo < 1 || stepNo > seqObj.steps.length) ? null : stepNo;
     };
 
     /**
@@ -13549,24 +13681,9 @@ if (!Array.prototype.indexOf) {
      *   or NULL if not found
      */
     GamePlot.prototype.getSequenceObject = function(gameStage) {
-        var seqObj;
-        var i, len;
         if (!this.stager) return null;
-        gameStage = new GameStage(gameStage);
-        if ('number' === typeof gameStage.stage) {
-            seqObj = this.stager.sequence[gameStage.stage - 1];
-        }
-        else {
-            i = -1, len = this.stager.sequence.length;
-            for ( ; ++i < len ; ) {
-                if (this.stager.sequence[i].id === gameStage.stage) {
-                    seqObj = this.stager.sequence[i];
-                    break;
-                }
-            }
-
-        }
-        return seqObj || null;
+        gameStage = this.normalizeGameStage(gameStage);
+        return gameStage ? this.stager.sequence[gameStage.stage - 1] : null;
     };
 
     /**
@@ -13582,16 +13699,13 @@ if (!Array.prototype.indexOf) {
      */
     GamePlot.prototype.getStage = function(gameStage) {
         var stageObj;
-
         if (!this.stager) return null;
-        gameStage = new GameStage(gameStage);
-        if ('number' === typeof gameStage.stage) {
+        gameStage = this.normalizeGameStage(gameStage);
+        if (gameStage) {
             stageObj = this.stager.sequence[gameStage.stage - 1];
-            return stageObj ? this.stager.stages[stageObj.id] : null;
+            stageObj = stageObj ? this.stager.stages[stageObj.id] : null;
         }
-        else {
-            return this.stager.stages[gameStage.stage] || null;
-        }
+        return stageObj || null;
     };
 
     /**
@@ -13606,18 +13720,14 @@ if (!Array.prototype.indexOf) {
      *  if the step was not found
      */
     GamePlot.prototype.getStep = function(gameStage) {
-        var seqObj, stepObj, stageObj;
-
+        var seqObj, stepObj;
         if (!this.stager) return null;
-        gameStage = new GameStage(gameStage);
-        if ('number' === typeof gameStage.step) {
+        gameStage = this.normalizeGameStage(gameStage);
+        if (gameStage) {
             seqObj = this.getSequenceObject(gameStage);
             if (seqObj) {
                 stepObj = this.stager.steps[seqObj.steps[gameStage.step - 1]];
             }
-        }
-        else {
-            stepObj = this.stager.steps[gameStage.step];
         }
         return stepObj || null;
     };
@@ -13913,34 +14023,49 @@ if (!Array.prototype.indexOf) {
      *
      * Works only in simple mode.
      *
-     * @param {GameStage} gameStage The GameStage object
+     * @param {GameStage|string} gameStage The GameStage object
      *
      * @return {GameStage|null} The normalized GameStage object; NULL on error
      */
     GamePlot.prototype.normalizeGameStage = function(gameStage) {
-        var stageNo, stageObj, stepNo, seqIdx, seqObj;
+        var stageNo, stageObj, stepNo, seqIdx, seqObj, tokens, round;
+        var gs;
 
-        if (!gameStage || 'object' !== typeof gameStage) return null;
+        gs = new GameStage(gameStage);
 
-        // Find stage number:
-        if ('number' === typeof gameStage.stage) {
-            stageNo = gameStage.stage;
+        // Find stage number.
+        if ('number' === typeof gs.stage) {
+            if (gs.stage === 0) return new GameStage();
+            stageNo = gs.stage;
         }
-        else {
+        else if ('string' === typeof gs.stage) {
+            if (gs.stage ===  GamePlot.GAMEOVER ||
+                gs.stage === GamePlot.END_SEQ ||
+                gs.stage === GamePlot.NO_SEQ) {
+
+                return null;
+            }
+
             for (seqIdx = 0; seqIdx < this.stager.sequence.length; seqIdx++) {
-                if (this.stager.sequence[seqIdx].id === gameStage.stage) {
+                if (this.stager.sequence[seqIdx].id === gs.stage) {
                     break;
                 }
             }
             stageNo = seqIdx + 1;
         }
+        else {
+            throw new Error('GamePlot.normalizeGameStage: gameStage.stage ' +
+                            'must be number or string: ' +
+                            (typeof gs.stage));
+        }
+
         if (stageNo < 1 || stageNo > this.stager.sequence.length) {
-            this.node.warn('normalizeGameStage received nonexistent stage: ' +
-                      gameStage.stage);
+            this.node.warn('GamePlot.normalizeGameStage: non-existent stage: ' +
+                           gs.stage);
             return null;
         }
 
-        // Get sequence object:
+        // Get sequence object.
         seqObj = this.stager.sequence[stageNo - 1];
         if (!seqObj) return null;
 
@@ -13948,34 +14073,40 @@ if (!Array.prototype.indexOf) {
             return new GameStage({
                 stage: stageNo,
                 step:  1,
-                round: gameStage.round
+                round: gs.round
             });
         }
 
-        // Get stage object:
+        // Get stage object.
         stageObj = this.stager.stages[seqObj.id];
         if (!stageObj) return null;
 
-        // Find step number:
-        if ('number' === typeof gameStage.step) {
-            stepNo = gameStage.step;
+        // Find step number.
+        if ('number' === typeof gs.step) {
+            stepNo = gs.step;
+        }
+        else if ('string' === typeof gs.step) {
+            stepNo = seqObj.steps.indexOf(gs.step) + 1;
         }
         else {
-            stepNo = seqObj.steps.indexOf(gameStage.step) + 1;
+            throw new Error('GamePlot.normalizeGameStage: gameStage.step ' +
+                            'must be number or string: ' +
+                            (typeof gs.step));
         }
-        if (stepNo < 1) {
-            this.node.warn('normalizeGameStage received nonexistent step: ' +
-                      stageObj.id + '.' + gameStage.step);
+
+        if (stepNo < 1 || stepNo > stageObj.steps.length) {
+            this.node.warn('normalizeGameStage received non-existent step: ' +
+                           stageObj.id + '.' + gs.step);
             return null;
         }
 
-        // Check round property:
-        if ('number' !== typeof gameStage.round) return null;
+        // Check round property.
+        if ('number' !== typeof gs.round) return null;
 
         return new GameStage({
             stage: stageNo,
             step:  stepNo,
-            round: gameStage.round
+            round: gs.round
         });
     };
 
@@ -14076,7 +14207,6 @@ if (!Array.prototype.indexOf) {
                  msg.target === constants.target.PCONNECT ||
                  msg.target === constants.target.PDISCONNECT ||
                  msg.target === constants.target.PRECONNECT ||
-                 msg.target === constants.target.SERVERCOMMAND ||
                  msg.target === constants.target.SETUP) {
 
             priority = 1;
@@ -14105,298 +14235,6 @@ if (!Array.prototype.indexOf) {
 })(
     'undefined' != typeof node ? node : module.exports,
     'undefined' != typeof node ? node : module.parent.exports
-);
-
-/**
- * # PushManager
- *
- * Push players to advance to next step, otherwise disconnects them.
- *
- * Copyright(c) 2016 Stefano Balietti
- * MIT Licensed
- */
-(function(exports, parent) {
-
-    "use strict";
-
-    // ## Global scope
-    exports.PushManager = PushManager;
-
-    var GameStage = parent.GameStage;
-    var J = parent.JSUS;
-
-    var DONE = parent.constants.stageLevels.DONE;
-    var PUSH_STEP = parent.constants.gamecommands.push_step;
-    var GAMECOMMAND = parent.constants.target.GAMECOMMAND;
-
-    PushManager.replyWaitTime = 2000;
-    PushManager.checkPushWaitTime = 2000;
-    PushManager.offsetWaitTime = 5000;
-
-    /**
-     * ## PushManager constructor
-     *
-     * Creates a new instance of PushManager
-     *
-     * @param {NodeGameClient} node A nodegame-client instance
-     * @param {object} options Optional. Configuration options
-     */
-    function PushManager(node, options) {
-
-        /**
-         * ### PushManager.node
-         *
-         * Reference to a nodegame-client instance
-         */
-        this.node = node;
-
-        /**
-         * ### PushManager.timeout
-         *
-         * The timeout object that will fire the checking of clients
-         *
-         * @see PushManager.startTimeout
-         */
-        this.timeout = null;
-
-        /**
-         * ### PushManager.offsetWaitTime
-         *
-         * Time that is always added to the timer value of
-         *
-         * @see PushManager.startTimeout
-         */
-        this.offsetWaitTime = PushManager.offsetWaitTime;
-
-        /**
-         * ### PushManager.replyWaitTime
-         *
-         * Time to wait to get a reply from a pushed client
-         *
-         * @see PushManager.pushGame
-         */
-        this.replyWaitTime = PushManager.replyWaitTime;
-
-        /**
-         * ### PushManager.checkPushWaitTime
-         *
-         * Time to wait to check if a pushed client updated its state
-         *
-         * @see PushManager.pushGame
-         */
-        this.checkPushWaitTime = PushManager.checkPushWaitTime;
-
-        this.init(options);
-    }
-
-    /**
-     * ### PushManager.init
-     *
-     * Inits the configuration for the instance
-     *
-     * @param {object} Optional. Configuration object
-     */
-    PushManager.prototype.init = function(options) {
-        options = options || {};
-        checkAndAssignWaitTime(options, 'offsetWaitTime', this);
-        checkAndAssignWaitTime(options, 'replyWaitTime', this);
-        checkAndAssignWaitTime(options, 'checkPushWaitTime', this);
-    };
-
-    /**
-     * ## PushManager.startTimeout
-     *
-     * Sets a timeout for checking if all clients have finished current step
-     *
-     * The length of the timeout is equal to timer + offset.
-     *
-     * By default, it looks up the `timer` property in the current
-     * step object. If no `timer` property is found, timer is set to 0.
-     *
-     * If timeout expires `PushManager.pushGame` will be called.
-     *
-     * @param {number} timer Optional. If set, overwrite the default behavior
-     *   and this number will be used instead of the `timer` property from
-     *   current step object.
-     *
-     * @see PushManager.offsetWaitTime
-     * @see PushManager.pushGame
-     */
-    PushManager.prototype.startTimeout = function(timer) {
-        var node, gameStage, that;
-
-        node = this.node;
-
-        if (this.timeout) this.clearTimeout();
-
-        // Determine the value for timer. Total timeout = timer + offset.
-        if ('undefined' === typeof timer) {
-            gameStage = node.game.getCurrentGameStage();
-            timer = node.game.plot.getProperty(gameStage, 'timer');
-            if ('function' === typeof timer) timer = timer.call(node.game);
-        }
-        else if ('number' !== typeof timer) {
-            throw new TypeError('PushManager.startTimeout: timer must be ' +
-                                'number or undefined.');
-        }
-        timer = timer || 0;
-
-        console.log('TIMER: ', timer, this.offsetWaitTime, node.player.stage);
-
-        that = this;
-        this.timeout = setTimeout(function() {
-            that.pushGame.call(that);
-        }, (timer + this.offsetWaitTime));
-    };
-
-    /**
-     * ## PushManager.clearTimeout
-     *
-     * Clears timeout for checking if all clients have finished current step
-     *
-     * @see PushManager.startTimeout
-     */
-    PushManager.prototype.clearTimeout = function() {
-        console.log('Clearing old push players timeout.');
-        clearTimeout(this.timeout);
-    };
-
-    /**
-     * ### PushManager.pushGame
-     *
-     * Pushes any client that is connected, but not DONE, to step forward
-     *
-     * It sends a GET message to all clients whose stage level is not
-     * marked as DONE (100), and waits for the reply. If the reply does
-     * not arrive it will disconnect them. If the reply arrives, it will
-     * later check if they manage to step, and if not disconnects them.
-     *
-     * @see checkIfPushWorked
-     */
-    PushManager.prototype.pushGame = function() {
-        var that, node;
-        that = this;
-        node = this.node;
-        // console.log('PUSHGAME', node.player.stage);
-        node.game.pl.each(function(p) {
-            var stage;
-            if (p.stageLevel !== DONE) {
-                console.log('Push needed ', p.id, node.player.stage);
-                stage = p.stage;
-                // Send push.
-                node.get(PUSH_STEP,
-                         function(value) {
-                             checkIfPushWorked(node, p, that.checkPushWaitTime);
-                         },
-                         p.id,
-                         {
-                             timeout: that.replyWaitTime,
-                             executeOnce: true,
-                             target: GAMECOMMAND,
-                             timeoutCb: function() {
-                                 // No reply to GET, disconnect client.
-                                 console.log('NO REPLY ', p.id, stage);
-                                 //node.log('node.pushManager: no reply from ' +
-                                 //         p.id);
-                                 forceDisconnect(node, p);
-                             }
-                         });
-            }
-        });
-    };
-
-    // ## Helper methods
-
-    /**
-     * ### checkIfPushWorked
-     *
-     * Checks whether the stage of a client has changed after
-     *
-     * @param {NodeGameClient} node The node instance used to send msg
-     * @param {object} p The player object containing info about id and sid
-     * @param {number} milliseconds Optional The number of milliseconds to
-     *   wait before checking again the stage of a client. Default 0.
-     */
-    function checkIfPushWorked(node, p, milliseconds) {
-        var stage;
-        stage = {
-            stage: p.stage.stage, step: p.stage.step, round: p.stage.round
-        };
-        console.log('received reply from ', p.id, stage);
-
-        setTimeout(function() {
-            var pp;
-
-            if (node.game.pl.exist(p.id)) {
-                pp = node.game.pl.get(p.id);
-
-        //console.log('CONSOLE checking if push worked for ', p.id);
-        //node.log('node.pushManager: checking if push worked for ', p.id);
-                //console.log(pp.stage, stage);
-                if (GameStage.compare(pp.stage, stage) === 0) {
-                    console.log('PUSH did NOT work for ', p.id, stage);
-               //node.log('node.pushManager: push did not work for ', p.id);
-                    forceDisconnect(node, pp);
-                }
-                else {
-                    console.log('PUSH worked for ', p.id, stage);
-                    //node.log('node.pushManager: push worked for ', p.id);
-                }
-            }
-        }, milliseconds || 0);
-    }
-
-    /**
-     * ### forceDisconnect
-     *
-     * Disconnects one player by sending a DISCONNECT msg to server
-     *
-     * @param {NodeGameClient} node The node instance used to send msg
-     * @param {object} p The player object containing info about id and sid
-     */
-    function forceDisconnect(node, p) {
-        var msg;
-        msg = node.msg.create({
-            target: 'SERVERCOMMAND',
-            text: 'DISCONNECT',
-            data: {
-                id: p.id,
-                sid: p.sid
-            }
-        });
-        node.socket.send(msg);
-    }
-
-    /**
-     * ### checkAndAssignWaitTime
-     *
-     * Checks if a valid wait time is found in options object, if so assigns it
-     *
-     * It is used by `PushManager.init` and will throw an error if value
-     * is not valid.
-     *
-     * @param {object} options Configuration options
-     * @param {string} name The name of the option to check and assign
-     * @param {PushManage} that The instance to which assign the value
-     *
-     * @see PushManager.init
-     */
-    function checkAndAssignWaitTime(options, name, that) {
-        var n;
-        n = options[name];
-        if ('undefined' !== typeof n) {
-            if ('number' !== typeof n || n < 0) {
-                throw new TypeError('PushManager.init: options.' + name +
-                                    'must be a positive number, found: ' + n);
-            }
-            that[name] = n;
-        }
-    }
-
-
-})(
-    'undefined' !== typeof node ? node : module.exports,
-    'undefined' !== typeof node ? node : module.parent.exports
 );
 
 /**
@@ -15307,7 +15145,6 @@ if (!Array.prototype.indexOf) {
      */
     Stager.defaultCallback = function() {
         this.node.log(this.getCurrentStepObj().id);
-        this.node.done();
     };
 
     // Flag it as `default`.
@@ -18747,7 +18584,8 @@ if (!Array.prototype.indexOf) {
 
     // ## Global scope.
     var NDDB = parent.NDDB,
-    GameStage = parent.GameStage;
+    GameStage = parent.GameStage,
+    J = parent.JSUS;
 
     // Inheriting from NDDB.
     GameDB.prototype = new NDDB();
@@ -18767,6 +18605,8 @@ if (!Array.prototype.indexOf) {
      * @see NDDB constructor
      */
     function GameDB(options, db) {
+        var that;
+        that = this;
         options = options || {};
         options.name = options.name || 'gamedb';
 
@@ -18778,6 +18618,14 @@ if (!Array.prototype.indexOf) {
         NDDB.call(this, options, db);
 
         this.comparator('stage', function(o1, o2) {
+            var _o2;
+            if ('string' === typeof o2.stage && that.node) {
+                debugger
+                if (false === J.isInt(o2.stage)) {
+                    _o2 = that.node.game.plot.normalizeGameStage(o2.stage);
+                    if (_o2) o2.stage = _o2;
+                }
+            }
             return GameStage.compare(o1.stage, o2.stage);
         });
 
@@ -18794,18 +18642,34 @@ if (!Array.prototype.indexOf) {
             });
         }
 
-        this.on('insert', function(o) {
-            if ('string' !== typeof o.player) {
-                throw new Error('GameDB.insert: player field ' +
-                                'missing or invalid: ', o);
-            }
-            if (!o.stage) throw new Error('GameDB.insert: stage field ' +
-                                          'missing or invalid: ', o);
-            if (!o.timestamp) o.timestamp = Date ? Date.now() : null;
-        });
-
         this.node = this.__shared.node;
     }
+
+    /**
+     * ### GameDB.add
+     *
+     * Wrapper around NDDB.insert
+     *
+     * Checks that the object contains a player and stage
+     * property and also adds a timestamp and session field.
+     *
+     * @param {object} o The object to add
+     *
+     * @NDDB.insert
+     */
+    GameDB.prototype.add = function(o) {
+        if ('string' !== typeof o.player) {
+            throw new TypeError('GameDB.add: player field ' +
+                                'missing or invalid: ', o);
+        }
+        if ('object' !== typeof o.stage) {
+            throw new Error('GameDB.add: stage field ' +
+                            'missing or invalid: ', o);
+        }
+        // if (node.nodename !== nodename) o.session = node.nodename;
+        if (!o.timestamp) o.timestamp = Date ? Date.now() : null;
+        this.insert(o);
+    };
 
 })(
     'undefined' != typeof node ? node : module.exports,
@@ -18814,7 +18678,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Game
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2016 Stefano Balietti
  * MIT Licensed
  *
  * Handles the flow of the game
@@ -18832,8 +18696,7 @@ if (!Array.prototype.indexOf) {
     GameDB = parent.GameDB,
     GamePlot = parent.GamePlot,
     PlayerList = parent.PlayerList,
-    Stager = parent.Stager,
-    PushManager = parent.PushManager;
+    Stager = parent.Stager;
 
     var constants = parent.constants;
 
@@ -19035,13 +18898,13 @@ if (!Array.prototype.indexOf) {
         this.globals = {};
 
         /**
-         * ### Game.pushManager
+         * ### Game._steppedSteps
          *
-         * Handles pushing client to advance to next step
+         * Array of steps previously played
          *
-         * @see PushManager
+         * @see Game.step
          */
-        this.pushManager = new PushManager(this.node);
+        this._steppedSteps = [new GameStage()];
     }
 
     // ## Game methods
@@ -19087,10 +18950,11 @@ if (!Array.prototype.indexOf) {
         // This options is useful when a player reconnets.
         startStage = options.startStage || new GameStage();
 
-        // INIT the game.
+        // Update GLOBALS.
+        this.updateGlobals(startStage);
 
+        // INIT the game.
         onInit = this.plot.stager.getOnInit();
-        this.globals = this.plot.getGlobals(startStage);
         if (onInit) {
             this.setStateLevel(constants.stateLevels.INITIALIZING);
             node.emit('INIT');
@@ -19167,7 +19031,7 @@ if (!Array.prototype.indexOf) {
         this.setCurrentGameStage(new GameStage());
 
         // Temporary change:
-        delete node.game;
+        node.game = null;
         node.game = new Game(node);
         node.game.pl = this.pl;
         node.game.ml = this.ml;
@@ -19385,6 +19249,7 @@ if (!Array.prototype.indexOf) {
         var property, handler;
         var minThreshold, maxThreshold, exactThreshold;
         var minCallback = null, maxCallback = null, exactCallback = null;
+        var minRecoverCb = null, maxRecoverCb = null, exactRecoverCb = null;
 
         if (!this.isSteppable()) {
             throw new Error('Game.gotoStep: game cannot be stepped.');
@@ -19522,11 +19387,13 @@ if (!Array.prototype.indexOf) {
             this.setStageLevel(constants.stageLevels.INITIALIZED);
 
             // Updating the globals object.
-            this.globals = this.plot.getGlobals(nextStep);
+            this.updateGlobals(nextStep);
 
             // Add min/max/exactPlayers listeners for the step.
-            // The fields must be of the form
-            //   [ min/max/exactNum, callbackFn ]
+            // The fields must be an array with at least two elements:
+            //   - min/max/exactNum,
+            //   - callbackFn,
+            //   - [recoverCb]
             property = this.plot.getProperty(nextStep, 'minPlayers');
             if (property) {
                 if (property.length < 2) {
@@ -19537,12 +19404,9 @@ if (!Array.prototype.indexOf) {
 
                 minThreshold = property[0];
                 minCallback = property[1];
-                if ('number' !== typeof minThreshold ||
-                    'function' !== typeof minCallback) {
-                    throw new TypeError(
-                        'Game.gotoStep: minPlayers field must contain a ' +
-                            'number and a function.');
-                }
+                minRecoverCb = property[2];
+                checkMinMaxExactParams('min', minThreshold,
+                                       minCallback, minRecoverCb);
             }
             property = this.plot.getProperty(nextStep, 'maxPlayers');
             if (property) {
@@ -19554,12 +19418,10 @@ if (!Array.prototype.indexOf) {
 
                 maxThreshold = property[0];
                 maxCallback = property[1];
-                if ('number' !== typeof maxThreshold ||
-                    'function' !== typeof maxCallback) {
-                    throw new TypeError(
-                        'Game.gotoStep: maxPlayers field must contain a ' +
-                            'number and a function.');
-                }
+                maxRecoverCb = property[2];
+                checkMinMaxExactParams('max', maxThreshold,
+                                       maxCallback, maxRecoverCb);
+
             }
             property = this.plot.getProperty(nextStep, 'exactPlayers');
             if (property) {
@@ -19571,21 +19433,17 @@ if (!Array.prototype.indexOf) {
 
                 exactThreshold = property[0];
                 exactCallback = property[1];
-                if ('number' !== typeof exactThreshold ||
-                    'function' !== typeof exactCallback) {
-                    throw new TypeError(
-                        'Game.gotoStep: exactPlayers field must contain a ' +
-                            'number and a function.');
-                }
+                exactRecoverCb = property[2];
+                checkMinMaxExactParams('exact', exactThreshold,
+                                       exactCallback, exactRecoverCb);
             }
+
             if (minCallback || maxCallback || exactCallback) {
                 // Register event handler:
                 handler = function() {
                     var nPlayers = node.game.pl.size();
                     // Players should count themselves too.
-                    if (!node.player.admin) {
-                        nPlayers++;
-                    }
+                    if (!node.player.admin) nPlayers++;
 
                     if (nPlayers < minThreshold) {
                         if (minCallback && !node.game.minPlayerCbCalled) {
@@ -19594,6 +19452,9 @@ if (!Array.prototype.indexOf) {
                         }
                     }
                     else {
+                        if (node.game.minPlayerCbCalled && minRecoverCb) {
+                            minRecoverCb.call(node.game);
+                        }
                         node.game.minPlayerCbCalled = false;
                     }
 
@@ -19604,6 +19465,9 @@ if (!Array.prototype.indexOf) {
                         }
                     }
                     else {
+                        if (node.game.maxPlayerCbCalled && maxRecoverCb) {
+                            maxRecoverCb.call(node.game);
+                        }
                         node.game.maxPlayerCbCalled = false;
                     }
 
@@ -19614,6 +19478,9 @@ if (!Array.prototype.indexOf) {
                         }
                     }
                     else {
+                        if (node.game.exactPlayerCbCalled && exactRecoverCb) {
+                            exactRecoverCb.call(node.game);
+                        }
                         node.game.exactPlayerCbCalled = false;
                     }
                 };
@@ -19630,9 +19497,7 @@ if (!Array.prototype.indexOf) {
                 this.checkPlistSize = function() {
                     var nPlayers = node.game.pl.size();
                     // Players should count themselves too.
-                    if (!node.player.admin) {
-                        nPlayers++;
-                    }
+                    if (!node.player.admin) nPlayers++;
 
                     if (minCallback && nPlayers < minThreshold) {
                         return false;
@@ -19660,13 +19525,8 @@ if (!Array.prototype.indexOf) {
             }
 
         }
-
-        // Pushes clients to finish current step in line with the time
-        // expected by logic, or otherwise disconnects them.
-        if (this.plot.getProperty(nextStep, 'pushClients')) {
-            this.pushManager.startTimeout();
-        }
-
+        // Update list of stepped steps.
+        this._steppedSteps.push(nextStep);
         this.execStep(this.getCurrentGameStage());
         return true;
     };
@@ -19682,7 +19542,9 @@ if (!Array.prototype.indexOf) {
      */
     Game.prototype.execStep = function(step) {
         var cb;
-        var frame, frameOptions;
+        var frame, uri, frameOptions;
+        var frameLoadMode, frameStoreMode;
+        var frameAutoParse, frameAutoParsePrefix;
 
         if ('object' !== typeof step) {
             throw new Error('Game.execStep: step must be object.');
@@ -19691,20 +19553,48 @@ if (!Array.prototype.indexOf) {
         cb = this.plot.getProperty(step, 'cb');
         frame = this.plot.getProperty(step, 'frame');
 
+        // Handle frame loading natively, if required.
         if (frame) {
             if (!this.node.window) {
                 throw new Error('Game.execStep: frame option in step ' +
                                 step + ', but nodegame-window is not loaded.');
             }
+            frameOptions = {};
+            if ('string' === typeof frame) {
+                uri = frame;
+            }
+            else if ('object' === typeof frame) {
+                uri = frame.uri;
+                if ('string' !== typeof uri) {
+                    throw new TypeError('Game.execStep: frame.uri must ' +
+                                        'be string: ' + uri + '. ' +
+                                        'Step: ' + step);
+                }
+                frameOptions.frameLoadMode = frame.loadMode;
+                frameOptions.storeMode = frame.storeMode;
+                frameAutoParse = frame.autoParse;
+                if (frameAutoParse) {
+                    // Replacing TRUE with node.game.settings.
+                    if (frameAutoParse === true) {
+                        frameAutoParse = this.settings;
+                    }
 
-            if ('object' === typeof frame) {
-                frameOptions = frame.options;
-                frame = frame.uri;
+                    frameOptions.autoParse = frameAutoParse;
+                    frameOptions.autoParseMod = frame.autoParseMod;
+                    frameOptions.autoParsePrefix = frame.autoParsePrefix;
+                }
+            }
+            else {
+                throw new TypeError('Game.execStep: frame must be string or ' +
+                                    'object: ' + frame + '. ' +
+                                    'Step: ' + step);
+
             }
 
-            this.node.window.loadFrame(frame, function() {
-                this.execCallback(cb);
-            }, frameOptions);
+            // Auto load frame and wrap cb.
+            this.execCallback(function() {
+                this.node.window.loadFrame(uri, cb, frameOptions);
+            });
         }
         else {
             this.execCallback(cb);
@@ -20230,6 +20120,128 @@ if (!Array.prototype.indexOf) {
         normalizedStep = this.plot.normalizeGameStage(new GameStage(step));
         return GameStage.compare(this.getCurrentGameStage(), normalizedStep);
     };
+
+    /**
+     * ### Game.getPreviousStep
+     *
+     * Returns the game-stage played delta steps ago
+     *
+     * @param {number} delta Optional. The number of past steps. Default 1
+     *
+     * @return {GameStage|null} The game-stage played delta steps ago,
+     *   or null if none is found
+     */
+    Game.prototype.getPreviousStep = function(delta) {
+        var len;
+        delta = delta || 1;
+        if ('number' !== typeof delta || delta < 1) {
+            throw new TypeError('Game.getPreviousStep: delta must be a ' +
+                                'positive number or undefined: ', delta);
+        }
+        len = this._steppedSteps.length - delta - 1;
+        if (len < 0) return null;
+        return this._steppedSteps[len];
+    };
+
+    /**
+     * ### Game.getNextStep
+     *
+     * Returns the game-stage that will be played in delta steps
+     *
+     * @param {number} delta Optional. The number of future steps. Default 1
+     *
+     * @return {GameStage|null} The game-stage that will be played in
+     *   delta future steps, or null if none is found, or if the game
+     *   sequence contains a loop in between
+     */
+    Game.prototype.getNextStep = function(delta) {
+        delta = delta || 1;
+        if ('number' !== typeof delta || delta < 1) {
+            throw new TypeError('Game.getNextStep: delta must be a ' +
+                                'positive number or undefined: ', delta);
+        }
+        return this.plot.jump(this.getCurrentGameStage(), delta, false);
+    };
+
+    /**
+     * ### Game.updateGlobals
+     *
+     * Updates node.globals and adds properties to window in the browser
+     *
+     * @param {GameStage} stage Optional. The reference game stage.
+     *   Default: Game.currentGameStage()
+     *
+     * @return Game.globals
+     */
+    Game.prototype.updateGlobals = function(stage) {
+        var newGlobals, g;
+        stage = stage || this.getCurrentGameStage();
+        newGlobals = this.plot.getGlobals(stage);
+        if ('undefined' !== typeof window && this.node.window) {
+            // Adding new globals.
+            for (g in newGlobals) {
+                if (newGlobals.hasOwnProperty(g)) {
+                    if (g === 'node' || g === 'W') {
+                        node.warn('Game.updateGlobals: invalid name: ' + g);
+                    }
+                    else {
+                        window[g] = newGlobals[g];
+                    }
+                }
+            }
+            // Removing old ones.
+            for (g in this.globals) {
+                if (this.globals.hasOwnProperty(g) &&
+                    !newGlobals.hasOwnProperty(g)) {
+                    if (g !== 'node' || g !== 'W') {
+                        delete window[g];
+                    }
+                }
+            }
+        }
+        // Updating globals reference.
+        this.globals = newGlobals;
+        return this.globals;
+    };
+
+
+    // ## Helper Methods
+
+    /**
+     * ### checkMinMaxExactParams
+     *
+     * Checks the parameters of min|max|exactPlayers property of a step
+     *
+     * Method is invoked by Game.gotoStep, and errors are thrown accordingly.
+     *
+     * @param {string} name The name of the parameter: min|max|exact
+     * @param {number} num The threshold for numer of players
+     * @param {function} cb The function being called when the threshold
+     *    is not met
+     * @param {function} recoverCb Optional. The function being called
+     *    when the a threshold previously not met is recovered
+     *
+     * @see Game.gotoStep
+     */
+    function checkMinMaxExactParams(name, num, cb, recoverCb) {
+        if ('number' !== typeof num || !isFinite(num) || num < 1) {
+            throw new TypeError('Game.gotoStep: ' + name +
+                                'Players must be a finite number ' +
+                                'greater than 1: ' + num);
+        }
+        if ('function' !== typeof cb) {
+
+            throw new TypeError('Game.gotoStep: ' + name +
+                                'Players cb must be ' +
+                                'function: ' + cb);
+        }
+        if ('undefined' !== typeof recoverCb && 'function' !== typeof cb) {
+
+            throw new TypeError('Game.gotoStep: ' + name +
+                                'Players recoverCb must be ' +
+                                'function: ' + recoverCb);
+        }
+    }
 
     // ## Closure
 })(
@@ -20786,27 +20798,44 @@ if (!Array.prototype.indexOf) {
      *
      * Stops and removes all registered GameTimers
      */
-    Timer.prototype.destroyAllTimers = function(confirm) {
-        if (!confirm) {
-            node.warn('Timer.destroyAllTimers: confirm must be true to ' +
-                      'proceed. No timer destroyed.');
-            return false;
-        }
+    Timer.prototype.destroyAllTimers = function() {
         for (var i in this.timers) {
-            this.destroyTimer(this.timers[i]);
+            if (this.timers.hasOwnProperty(i)) {
+                this.destroyTimer(this.timers[i]);
+            }
         }
     };
 
-    // Common handler for randomEmit and randomExec
-    function randomFire(hook, maxWait, emit) {
+    // ## Helper Methods.
+
+    /**
+     * ### randomFire
+     *
+     * Common handler for randomEmit and randomExec
+     *
+     * @param {string} method The name of the method invoking randomFire
+     * @param {string|function} hook The function to call or the event to emit
+     * @param {number} maxWait Optional. The max number of milliseconds
+     *   to wait before firing
+     * @param {boolean} emit TRUE, if it is an event to emit
+     * @param {object|function} ctx Optional. The context of execution for
+     *   the function
+     */
+    function randomFire(method, hook, maxWait, emit, ctx) {
         var that = this;
         var waitTime;
         var callback;
         var timerObj;
         var tentativeName;
 
-        // Get time to wait:
-        maxWait = maxWait || 6000;
+        if ('undefined' === typeof maxWait) {
+            maxWait = 6000;
+        }
+        else if ('number' !== typeof maxWait) {
+            throw new TypeError('Timer.' + method + ': maxWait must ' +
+                                    'be number or undefined.');
+        }
+
         waitTime = Math.random() * maxWait;
 
         // Define timeup callback:
@@ -20819,7 +20848,7 @@ if (!Array.prototype.indexOf) {
         else {
             callback = function() {
                 that.destroyTimer(timerObj);
-                hook.call();
+                hook.call(ctx);
             };
         }
 
@@ -21004,9 +21033,14 @@ if (!Array.prototype.indexOf) {
      * @param {string} event The name of the event
      * @param {number} maxWait Optional. The maximum time (in milliseconds)
      *   to wait before emitting the event. Default: 6000
+     *
+     * @see randomFire
      */
     Timer.prototype.randomEmit = function(event, maxWait) {
-        randomFire.call(this, event, maxWait, true);
+        if ('string' !== typeof event) {
+            throw new TypeError('Timer.randomEmit: event must be string.');
+        }
+        randomFire.call(this, 'randomEmit', event, maxWait, true);
     };
 
     /**
@@ -21019,9 +21053,40 @@ if (!Array.prototype.indexOf) {
      * @param {function} func The callback function to execute
      * @param {number} maxWait Optional. The maximum time (in milliseconds)
      *   to wait before executing the callback. Default: 6000
+     * @param {object|function} ctx Optional. The context of execution of
+     *   of the callback function. Default node.game
+     *
+     * @see randomFire
      */
-    Timer.prototype.randomExec = function(func, maxWait) {
-        randomFire.call(this, func, maxWait, false);
+    Timer.prototype.randomExec = function(func, maxWait, ctx) {
+        if ('function' !== typeof func) {
+            throw new TypeError('Timer.randomExec: func must be function.');
+        }
+        if ('undefined' === typeof ctx) {
+            ctx = this.node.game;
+        }
+        else if ('object' !== typeof ctx && 'function' !== typeof ctx) {
+            throw new TypeError('Timer.randomExec: ctx must be object, ' +
+                                'function or undefined.');
+        }
+        randomFire.call(this, 'randomExec', func, maxWait, false, ctx);
+    };
+
+    /**
+     * ### Timer.randomDone
+     *
+     * Executes node.done after a random time interval
+     *
+     * Respects pausing / resuming.
+     *
+     * @param {number} maxWait Optional. The maximum time (in milliseconds)
+     *   to wait before executing the callback. Default: 6000
+     *
+     * @see randomFire
+     */
+    Timer.prototype.randomDone = function(maxWait) {
+        randomFire.call(this, 'randomDone', this.node.done,
+                        maxWait, false, this.node);
     };
 
     /**
@@ -21258,29 +21323,23 @@ if (!Array.prototype.indexOf) {
      *
      * Fires a registered hook
      *
-     * If hook is a string it is emitted as an event,
-     * otherwise it is called as a function.
+     * If it is a string it is emitted as an event,
+     * otherwise it called as a function.
      *
-     * @param {mixed} h The hook to fire (object, function, or string)
+     * @param {mixed} h The hook to fire
      */
     GameTimer.prototype.fire = function(h) {
         var hook, ctx;
-
-        if ('object' === typeof h) {
-            hook = h.hook;
-            ctx = h.ctx;
-            h = hook;
+        if (!h) {
+            throw new Error('GameTimer.fire: missing argument');
         }
-
-        if ('function' === typeof h) {
-            h.call(ctx || this.node.game);
-        }
-        else if ('string' === typeof h) {
-            this.node.emit(h);
+        hook = h.hook || h;
+        if ('function' === typeof hook) {
+            ctx = h.ctx || this.node.game;
+            hook.call(ctx);
         }
         else {
-            throw new TypeError('GameTimer.fire: h must be function, string ' +
-                                'or object.');
+            this.node.emit(hook);
         }
     };
 
@@ -21692,64 +21751,6 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
-     * ### Matcher.roundRobin
-     *
-     * Creates round robin tournament schedules
-     *
-     * @param {number|array} n The number of participants (>1) or
-     *   an array containing the ids of the participants
-     * @param {object} options Optional. Configuration object
-     *   contains the following options:
-     *
-     *   - bye: identifier for dummy competitor. Default: -1.
-     *   - skypeBye: flag whether players matched with the dummy
-     *        competitor should be added or not. Default: true.
-     *
-     * @return The round robin matches
-     */
-    Matcher.roundRobin = function(n, options) {
-        var ps, rs, bye;
-        var i, lenI, j, lenJ;
-        var skipBye;
-
-        if ('number' === typeof n && n > 1) {
-            ps = J.seq(0, (n-1));
-        }
-        else if (J.isArray(n) && n.length) {
-            ps = n.slice();
-            n = ps.length;
-        }
-        else {
-            throw new TypeError('Matcher.roundRobin: n must be number > 1 ' +
-                                'or non-empty array.');
-        }
-        options = options || {};
-        rs = new Array(n-1);
-        bye = 'undefined' !== typeof options.bye ? options.bye : -1;
-        skipBye = options.skipBye || false;
-        if (n % 2 === 1) {
-            // Make sure we have even numbers.
-            ps.push(bye);
-            n += 1;
-        }
-        i = -1, lenI = n-1;
-        for ( ; ++i < lenI ; ) {
-            // Create a new array for round i.
-            rs[i] = [];
-            j = -1, lenJ = n / 2;
-            for ( ; ++j < lenJ ; ) {
-                if (!skipBye || (ps[j] !== bye && ps[n - 1 - j] !== bye)) {
-                    // Insert match.
-                    rs[i].push([ps[j], ps[n - 1 - j]]);
-                }
-            }
-            // Permutate for next round.
-            ps.splice(1, 0, ps.pop());
-        }
-        return rs;
-    };
-
-    /**
      * ## Matcher constructor
      *
      * Creates a new Matcher object
@@ -21940,17 +21941,15 @@ if (!Array.prototype.indexOf) {
         if ('string' !== typeof alg) {
             throw new TypeError('Matcher.generateMatches: alg must be string.');
         }
-        if (alg === 'roundrobin' ||
-            alg === 'roundRobin' ||
-            alg === 'RoundRobin') {
-
-            matches = Matcher.roundRobin(arguments[1], arguments[2]);
-            this.setMatches(matches);
-            return matches;
+        alg = alg.toLowerCase();
+        if (alg !== 'roundrobin' && alg !== 'random') {
+            throw new Error('Matcher.generateMatches: unknown algorithm: ' +
+                            alg + '.');
         }
 
-        throw new Error('Matcher.generateMatches: unknown algorithm: ' +
-                        alg + '.');
+        matches = pairMatcher(alg, arguments[1], arguments[2]);
+        this.setMatches(matches);
+        return matches;
     };
 
     /**
@@ -22088,8 +22087,8 @@ if (!Array.prototype.indexOf) {
         this.resolvedMatches = matched;
         this.resolvedMatchesById = matchedId;
         // Set getMatch indexes to 0.
-        this.x.should.eql(0);
-        this.y.should.eql(0);
+        this.x = 0;
+        this.y = 0;
     };
 
     /**
@@ -22247,6 +22246,82 @@ if (!Array.prototype.indexOf) {
         matcher.resolvedMatches = null;
         matcher.resolvedMatchesById = null;
     }
+
+
+
+    /**
+     * ### Matcher.roundRobin
+     *
+     *
+     *
+     * @return The round robin matches
+     */
+    Matcher.roundRobin = function(n, options) {
+        return pairMatcher('roundrobin', n, options);
+    };
+
+    /**
+     * ### pairMatcher
+     *
+     * Creates tournament schedules for different algorithms
+     *
+     * @param {string} alg The name of the algorithm
+     *
+     * @param {number|array} n The number of participants (>1) or
+     *   an array containing the ids of the participants
+     * @param {object} options Optional. Configuration object
+     *   contains the following options:
+     *
+     *   - bye: identifier for dummy competitor. Default: -1.
+     *   - skypeBye: flag whether players matched with the dummy
+     *        competitor should be added or not. Default: true.
+     *
+     * @return {array} matches The matches according to the algorithm
+     */
+    function pairMatcher(alg, n, options) {
+        var ps, matches, bye;
+        var i, lenI, j, lenJ;
+        var skipBye;
+
+        if ('number' === typeof n && n > 1) {
+            ps = J.seq(0, (n-1));
+        }
+        else if (J.isArray(n) && n.length > 1) {
+            ps = n.slice();
+            n = ps.length;
+        }
+        else {
+            throw new TypeError('pairMatcher.' + alg + ': n must be ' +
+                                'number > 1 or array of length > 1.');
+        }
+        options = options || {};
+        matches = new Array(n-1);
+        bye = 'undefined' !== typeof options.bye ? options.bye : -1;
+        skipBye = options.skipBye || false;
+        if (n % 2 === 1) {
+            // Make sure we have even numbers.
+            ps.push(bye);
+            n += 1;
+        }
+        i = -1, lenI = n-1;
+        for ( ; ++i < lenI ; ) {
+            // Shuffle list of ids for random.
+            if (alg === 'random') ps = J.shuffle(ps);
+            // Create a new array for round i.
+            matches[i] = [];
+            j = -1, lenJ = n / 2;
+            for ( ; ++j < lenJ ; ) {
+                if (!skipBye || (ps[j] !== bye && ps[n - 1 - j] !== bye)) {
+                    // Insert match.
+                    matches[i].push([ps[j], ps[n - 1 - j]]);
+                }
+            }
+            // Permutate for next round.
+            ps.splice(1, 0, ps.pop());
+        }
+        return matches;
+    }
+
     // ## Closure
 })(
     'undefined' != typeof node ? node : module.exports,
@@ -22939,14 +23014,19 @@ if (!Array.prototype.indexOf) {
      *
      * Establishes a connection with a nodeGame server
      *
-     * If channel does not begin with `http://`, if executed in the browser,
-     * the connect method will try to add the value of `window.location.host`
-     * in front of channel to avoid cross-domain errors (as of Socket.io >= 1).
+     * Depending on the type of socket used (Direct or IO), the
+     * channel parameter might be optional.
      *
-     * Depending on the type of socket chosen (e.g. Direct or IO), the first
-     * parameter might be optional.
+     * If node is executed in the browser additional checks are performed:
      *
-     * @param {string} channel The channel to connect to
+     * 1. If channel does not begin with `http://`, then `window.location.host`
+     *    will be added in front of channel to avoid cross-domain errors
+     *    (as of Socket.io >= 1).
+     *
+     * 2. If no socketOptions.query parameter is specified any query
+     *    parameters found in `location.search(1)` will be passed.
+     *
+     * @param {string} channel Optional. The channel to connect to
      * @param {object} socketOptions Optional. A configuration object for
      *   the socket connect method.
      *
@@ -22955,11 +23035,32 @@ if (!Array.prototype.indexOf) {
      * @emit NODEGAME_READY
      */
     NGC.prototype.connect = function(channel, socketOptions) {
-        if (channel && channel.substr(0,7) !== 'http://') {
-            if ('undefined' !== typeof window &&
-                window.location && window.location.host) {
-
-                channel = 'http://' + window.location.host + channel;
+        // Browser adjustements.
+        if ('undefined' !== typeof window) {
+            // If no channel is defined use the pathname, and assume
+            // that the name of the game is also the name of the endpoint.
+            if ('undefined' === typeof channel) {
+                if (window.location && window.location.pathname) {
+                    channel = window.location.pathname;
+                    // Making sure it is consistent with what we expect.
+                    if (channel.charAt(0) !== '/') channel = '/' + channel;
+                    if (channel.charAt(channel.length-1) === '/') {
+                        channel = channel.substring(0, channel.length-1);
+                    }
+                }
+            }
+            // Make full path otherwise socket.io will complain.
+            if (channel && channel.substr(0,7) !== 'http://') {
+                if (window.location && window.location.host) {
+                    channel = 'http://' + window.location.host + channel;
+                }
+            }
+            // Pass along any query options. (?clientType=...).
+            if (!socketOptions || (socketOptions && !socketOptions.query)) {
+                if (('undefined' !== typeof location) && location.search) {
+                    socketOptions = socketOptions || {};
+                    socketOptions.query = location.search.substr(1);
+                }
             }
         }
         this.socket.connect(channel, socketOptions);
@@ -23195,16 +23296,19 @@ if (!Array.prototype.indexOf) {
      * Stores an object in the server's memory
      *
      * @param {object|string} The value to set
-     * @param {string} to The recipient. Default `SERVER`
+     * @param {string} to Optional. The recipient. Default `SERVER`
+     * @param {string} text Optional. The text property of the message.
+     *   If set, it allows one to define on.data listeners on receiver.
+     *   Default: undefined
      *
      * @return {boolean} TRUE, if SET message is sent
      */
-    NGC.prototype.set = function(o, to) {
+    NGC.prototype.set = function(o, to, text) {
         var msg, tmp;
         if ('string' === typeof o) {
             tmp = o, o = {}, o[tmp] = true;
         }
-        if ('object' !== typeof o) {
+        else if ('object' !== typeof o) {
             throw new TypeError('node.set: o must be object or string.');
         }
         msg = this.msg.create({
@@ -23214,6 +23318,7 @@ if (!Array.prototype.indexOf) {
             reliable: 1,
             data: o
         });
+        if (text) msg.text = text;
         return this.socket.send(msg);
     };
 
@@ -23262,11 +23367,10 @@ if (!Array.prototype.indexOf) {
      *      - {number} timeout The number of milliseconds after which
      *            the listener will be removed.
      *      - {function} timeoutCb A callback function to call if
-     *            the timeout is fired (no reply received)
+     *            the timeout is fired (no reply recevied)
      *      - {boolean} executeOnce TRUE if listener should be removed after
      *            one execution. It will also terminate the timeout, if set
      *      - {mixed} data Data field of the GET msg
-     *      - {string} target Set to override the default DATA target of msg
      *
      * @return {boolean} TRUE, if GET message is sent and listener registered
      */
@@ -23274,7 +23378,7 @@ if (!Array.prototype.indexOf) {
         var msg, g, ee;
         var that, res;
         var timer, success;
-        var data, timeout, timeoutCb, executeOnce, target;
+        var data, timeout, timeoutCb, executeOnce;
 
         if ('string' !== typeof key) {
             throw new TypeError('node.get: key must be string.');
@@ -23311,7 +23415,6 @@ if (!Array.prototype.indexOf) {
             timeoutCb = options.timeoutCb;
             data = options.data;
             executeOnce = options.executeOnce;
-            target = options.target;
 
             if ('undefined' !== typeof timeout) {
                 if ('number' !== typeof timeout) {
@@ -23329,18 +23432,11 @@ if (!Array.prototype.indexOf) {
                                     'function or undefined.');
             }
 
-            if (target &&
-                ('string' !== typeof target || target.trim() === '')) {
-
-                throw new TypeError('node.get: options.target must be ' +
-                                    'a non-empty string or undefined.');
-            }
-
         }
 
         msg = this.msg.create({
             action: this.constants.action.GET,
-            target: target || this.constants.target.DATA,
+            target: this.constants.target.DATA,
             to: to,
             reliable: 1,
             text: key,
@@ -23385,12 +23481,16 @@ if (!Array.prototype.indexOf) {
                         if ('undefined' !== typeof timer) {
                             that.timer.destroyTimer(timer);
                         }
-                        ee.remove('in.say.DATA', g);
                     }
                 }
             };
 
-            ee.on('in.say.DATA', g);
+            if (executeOnce) {
+                ee.once('in.say.DATA', g);
+            }
+            else {
+                ee.on('in.say.DATA', g);
+            }
         }
         return res;
     };
@@ -23421,14 +23521,14 @@ if (!Array.prototype.indexOf) {
      *
      * All input parameters are passed along to `node.emit`.
      *
-     * @return {boolean} TRUE, if the method is authorized
+     * @return {boolean} TRUE, if the method is authorized, FALSE otherwise
      *
      * @see NodeGameClient.emit
      * @emits DONE
      */
     NGC.prototype.done = function() {
-        var that, game, doneCb, len, args, i;
-        var arg1, arg2, res;
+        var that, game, doneCb, len, i;
+        var arg1, arg2, args, args2;
         var stepTime, timeup;
         var autoSet;
 
@@ -23441,32 +23541,40 @@ if (!Array.prototype.indexOf) {
             return false;
         }
 
-        len = arguments.length;
-
         // Evaluating `done` callback if any.
         doneCb = game.plot.getProperty(game.getCurrentGameStage(), 'done');
 
-        // If a `done` callback returns false, exit.
+        // A done callback can manipulate arguments, add new values to
+        // send to server, or even halt the procedure if returning false.
         if (doneCb) {
-            switch(len){
-            case 0:
-                res = doneCb.call(game);
-                break;
-            case 1:
-                res = doneCb.call(game, arguments[0]);
-                break;
-            case 2:
-                res = doneCb.call(game, arguments[0], arguments[1]);
-                break;
-            default:
-                args = new Array(len);
-                for (i = -1 ; ++i < len ; ) {
-                    args[i] = arguments[i];
-                }
-                res = doneCb.apply(game, args);
-            };
+            args = doneCb.apply(game, arguments);
 
-            if (!res) return;
+            // If a `done` callback returns false, exit.
+            if ('boolean' === typeof args) {
+                if (args === false) {
+                    this.silly('node.done: done callback returned false.');
+                    return false;
+                }
+                else {
+                    console.log('***');
+                    console.log('node.done: done callback returned true. ' +
+                                'For retro-compatibility the value is not ' +
+                                'processed and sent to server. If you wanted ' +
+                                'to return "true" return an array: [true]. ' +
+                                'In future releases any value ' +
+                                'different from false and undefined will be ' +
+                                'treated as a done argument and processed.');
+                    console.log('***');
+
+                    args = null;
+                }
+            }
+            // If a value is provided make it an array, if not already one.
+            else if ('undefined' !== typeof args &&
+                Object.prototype.toString.call(args) !== '[object Array]') {
+
+                args = [args];
+            }
         }
 
         // Build set object (will be sent to server).
@@ -23481,6 +23589,11 @@ if (!Array.prototype.indexOf) {
         // to avoid calling `node.done` multiple times in the same stage.
         game.willBeDone = true;
 
+        // Args can be the original arguments array, or
+        // the one returned by the done callback.
+        // TODO: check if it safe to copy arguments by reference.
+        if (!args) args = arguments;
+        len = args.length;
         that = this;
         // The arguments object must not be passed or leaked anywhere.
         // Therefore, we recreate an args array here. We have a different
@@ -23488,32 +23601,39 @@ if (!Array.prototype.indexOf) {
         switch(len) {
 
         case 0:
-            if (autoSet) this.set(getSetObj(stepTime, timeup));
+            if (autoSet) {
+                this.set(getSetObj(stepTime, timeup), 'SERVER', 'done');
+            }
             setTimeout(function() { that.events.emit('DONE'); }, 0);
             break;
         case 1:
-            arg1 = arguments[0];
-            if (autoSet) this.set(getSetObj(stepTime, timeup, arg1));
+            arg1 = args[0];
+            if (autoSet) {
+                this.set(getSetObj(stepTime, timeup, arg1), 'SERVER', 'done');
+            }
             setTimeout(function() { that.events.emit('DONE', arg1); }, 0);
             break;
         case 2:
-            arg1 = arguments[0], arg2 = arguments[1];
+            arg1 = args[0], arg2 = args[1];
             // Send two setObjs.
             if (autoSet) {
-                this.set(getSetObj(stepTime, timeup, arg1));
-                this.set(getSetObj(stepTime, timeup, arg2));
+                this.set(getSetObj(stepTime, timeup, arg1), 'SERVER', 'done');
+                this.set(getSetObj(stepTime, timeup, arg2), 'SERVER', 'done');
             }
             setTimeout(function() { that.events.emit('DONE', arg1, arg2); }, 0);
             break;
         default:
-            args = new Array(len+1);
-            args[0] = 'DONE';
-            for (i = 1; i < len; i++) {
-                args[i+1] = arguments[i];
-                if (autoSet) this.set(getSetObj(stepTime, timeup, args[i+1]));
+            args2 = new Array(len+1);
+            args2[0] = 'DONE';
+            for (i = 0; i < len; i++) {
+                args2[i+1] = args[i];
+                if (autoSet) {
+                    this.set(getSetObj(stepTime, timeup, args2[i+1]),
+                             'SERVER', 'done');
+                }
             }
             setTimeout(function() {
-                that.events.emit.apply(that.events, args);
+                that.events.emit.apply(that.events, args2);
             }, 0);
         }
 
@@ -23703,7 +23823,7 @@ if (!Array.prototype.indexOf) {
         envValue = this.env[env];
         // Executes the function conditionally to _envValue_.
         if (func && envValue) {
-            ctx = ctx || node;
+            ctx = ctx || this;
             params = params || [];
             func.apply(ctx, params);
         }
@@ -23889,7 +24009,6 @@ if (!Array.prototype.indexOf) {
      * If executed once, it requires a force flag to re-add the listeners
      *
      * @param {boolean} force Whether to force re-adding the listeners
-     *
      * @return {boolean} TRUE on success
      */
     NGC.prototype.addDefaultIncomingListeners = function(force) {
@@ -24040,13 +24159,15 @@ if (!Array.prototype.indexOf) {
          *
          * Adds an entry to the memory object
          *
-         * Uses the fields `text`, `data`, `stage` and `from`
-         * of the incoming set.DATA message.
+         * Decorates incoming msg.data object with the following properties:
+         *
+         *   - player: msg.from
+         *   - stage: msg.stage
          */
         node.events.ng.on( IN + set + 'DATA', function(msg) {
             var o = msg.data;
             o.player = msg.from, o.stage = msg.stage;
-            node.game.memory.insert(o);
+            node.game.memory.add(o);
         });
 
         /**
@@ -24127,26 +24248,23 @@ if (!Array.prototype.indexOf) {
         /**
          * ## in.say.GAMECOMMAND
          *
-         * Executes a game command (pause, resume, etc.)
+         * Setups a features of nodegame
+         *
+         * @see node.setup
          */
         node.events.ng.on( IN + say + 'GAMECOMMAND', function(msg) {
-            if (!checkGameCommand(msg, 'say')) return;
-            node.emit('NODEGAME_GAMECOMMAND_' + msg.text, msg.data);
-        });
-
-        /**
-         * ## in.get.GAMECOMMAND
-         *
-         * Executes a game command (pause, resume, etc.) and gives confirmation
-         */
-        node.events.ng.on( IN + get + 'GAMECOMMAND', function(msg) {
-            var res;
-            if (!checkGameCommand(msg, 'get')) return;
-            res = node.emit('NODEGAME_GAMECOMMAND_' + msg.text, msg.data);
-            if (!J.isEmpty(res)) {
-                // New key must contain msg.id.
-                node.say(msg.text + '_' + msg.id, msg.from, res);
+            // console.log('GM', msg);
+            if ('string' !== typeof msg.text) {
+                node.err('"in.say.GAMECOMMAND": msg.text must be string: ' +
+                         msg.text);
+                return;
             }
+            if (!parent.constants.gamecommands[msg.text]) {
+                node.err('"in.say.GAMECOMMAND": unknown game command ' +
+                         'received: ' + msg.text);
+                return;
+            }
+            node.emit('NODEGAME_GAMECOMMAND_' + msg.text, msg.data);
         });
 
         /**
@@ -24266,26 +24384,11 @@ if (!Array.prototype.indexOf) {
             return 'pong';
         });
 
+
         node.conf.incomingAdded = true;
         node.silly('node: incoming listeners added.');
         return true;
     };
-
-    // ## Helper functions.
-
-    function checkGameCommand(msg, action) {
-        if ('string' !== typeof msg.text || msg.text.trim() === '') {
-            node.err('"in.' + action + '.GAMECOMMAND": msg.text must be ' +
-                     'a non-empty string: ' + msg.text);
-            return false;
-        }
-        if (!parent.constants.gamecommands[msg.text]) {
-            node.err('"in.' + action + '.GAMECOMMAND": unknown game command ' +
-                     'received: ' + msg.text);
-            return false;
-        }
-        return true;
-    }
 
 })(
     'undefined' != typeof node ? node : module.exports,
@@ -24391,19 +24494,6 @@ if (!Array.prototype.indexOf) {
             }
         });
 
-        //         /**
-        //          * ## WINDOW_LOADED
-        //          *
-        //          * @emit LOADED
-        //          */
-        //         this.events.ng.on('WINDOW_LOADED', function() {
-        //             var stageLevel;
-        //             stageLevel = node.game.getStageLevel();
-        //             if (stageLevel === stageLevels.CALLBACK_EXECUTED) {
-        //                 node.emit('LOADED');
-        //             }
-        //         });
-
         /**
          * ## LOADED
          *
@@ -24436,12 +24526,7 @@ if (!Array.prototype.indexOf) {
             node.timer.setTimestamp('step', currentTime);
 
             // DONE was previously emitted, we just execute done handler.
-            // Check: is it ok to call done, if other handlers on PLAYING
-            // are following?
-            if (node.game.willBeDone) {
-                done();
-            }
-
+            if (node.game.willBeDone) done();
         });
 
         /**
@@ -24551,55 +24636,6 @@ if (!Array.prototype.indexOf) {
         this.events.ng.on(CMD + gcommands.erase_buffer, function() {
             node.emit('BEFORE_GAMECOMMAND', gcommands.clear_buffer);
             node.socket.eraseBuffer();
-        });
-
-        /**
-         * ## NODEGAME_GAMECOMMAND: push_step
-         */
-        node.events.ng.on(CMD + gcommands.push_step, function() {
-            var res;
-            console.log('BEING PUSHED! ', node.player.stage);
-
-
-
-
-            // TODO: check this:
-            // At the moment, we do not have a default timer object,
-            // nor a default done/timeup cb.
-            // We try to see if they exist, and as last resort we emit DONE.
-
-            if (node.game.timer && node.game.timer.doTimeUp) {
-                console.log('TIMEEEEUuuuuuuuuuup');
-                node.game.timer.doTimeUp();
-            }
-            else if (node.game.visualTimer && node.game.visualTimer.doTimeUp) {
-                console.log('TIMEEEEUuuuuuuuuuup 2');
-                node.game.visualTimer.doTimeUp();
-            }
-
-
-            // TODO: CHECK OTHER LEVELS (e.g. getting_done).
-            if (!node.game.willBeDone &&
-                node.game.getStageLevel() !== stageLevels.DONE) {
-
-                console.log('NODE.DDDDDDDDDDOOONE');
-
-                res = node.done();
-                if (!res) {
-                    node.emit('DONE');
-                    console.log('EMIT DONEOOOOOOOOOOOOO');
-                }
-            }
-
-            // Check this.
-            // node.game.setStageLevel(stageLevels.DONE);
-
-            return 'ok!';
-
-
-            // Important for GET msgs.
-            return node.game.getStageLevel() === stageLevels.DONE  ?
-                'ok!' : 'stuck!';
         });
 
         this.conf.internalAdded = true;
@@ -24760,7 +24796,7 @@ if (!Array.prototype.indexOf) {
          * Sets the name for nodegame
          */
         this.registerSetup('nodename', function(newName) {
-            newName = newName || 'ng';
+            newName = newName || constants.nodename;
             if ('string' !== typeof newName) {
                 throw new TypeError('node.nodename must be of type string.');
             }
@@ -31998,7 +32034,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    ChernoffFaces.version = '0.5.1';
+    ChernoffFaces.version = '0.6.1';
     ChernoffFaces.description =
         'Display parametric data in the form of a Chernoff Face.';
 
@@ -32024,57 +32060,20 @@ if (!Array.prototype.indexOf) {
      *
      * Creates a new instance of ChernoffFaces
      *
-     * @param {object} options Configuration options. Accepted options:
-     *
-     * - canvas {object} containing all options for canvas
-     *
-     * - width {number} width of the canvas (read only if canvas is not set)
-     *
-     * - height {number} height of the canvas (read only if canvas is not set)
-     *
-     * - features {FaceVector} vector of face-features. Default: random
-     *
-     * - onChange {string|boolean} The name of the event that will trigger
-     *      redrawing the canvas, or null/false to disable event listener
-     *
-     * - controls {object|false} the controls (usually a set of sliders)
-     *      offering the user the ability to manipulate the canvas. If equal
-     *      to false no controls will be created. Default: SlidersControls.
-     *      Any custom implementation must provide the following methods:
-     *
-     *          - getAllValues: returns the current features vector
-     *          - refresh: redraws the current feature vector
-     *          - init: accepts a configuration object containing a
-     *               features and onChange as specified above.
-     *
-     *
-     * @see ChernoffFaces.init
      * @see Canvas constructor
      */
     function ChernoffFaces(options) {
         var that = this;
-        var tblOptions;
 
         // ## Public Properties
 
         // ### ChernoffFaces.options
         // Configuration options
-        this.options = options;
-
-        // Building table options.
-        tblOptions = {};
-        if ('string' === typeof options.id) tblOptions.id = options.id;
-        else if (options.id !== false) tblOptions.id = 'cf_table';
-        if ('string' === typeof options.className) {
-            tblOptions.id = options.className;
-        }
-        else if (options.className !== false) {
-            tblOptions.className = 'cf_table';
-        }
+        this.options = null;
 
         // ### ChernoffFaces.table
         // The table containing everything
-        this.table = new Table(tblOptions);
+        this.table = null;
 
         // ### ChernoffFaces.sc
         // The slider controls of the interface
@@ -32098,7 +32097,6 @@ if (!Array.prototype.indexOf) {
         // ### ChernoffFaces.onChangeCb
         // Updates the canvas when the onChange event is emitted
         this.onChangeCb = function(f, updateControls) {
-            var updateControls;
             // Draw what passed as parameter,
             // or what is the current value of sliders,
             // or a random face.
@@ -32117,13 +32115,116 @@ if (!Array.prototype.indexOf) {
         // ### ChernoffFaces.features
         // The object containing all the features to draw Chernoff faces
         this.features = null;
-
-        // Init.
-        this.init(this.options);
     }
 
+    /**
+     * ### ChernoffFaces.init
+     *
+     * Inits the widget
+     *
+     * Stores the reference to options, most of the operations are done
+     * by the `append` method.
+     *
+     * @param {object} options Configuration options. Accepted options:
+     *
+     * - canvas {object} containing all options for canvas
+     *
+     * - width {number} width of the canvas (read only if canvas is not set)
+     *
+     * - height {number} height of the canvas (read only if canvas is not set)
+     *
+     * - features {FaceVector} vector of face-features. Default: random
+     *
+     * - onChange {string|boolean} The name of the event that will trigger
+     *      redrawing the canvas, or null/false to disable event listener
+     *
+     * - controls {object|false} the controls (usually a set of sliders)
+     *      offering the user the ability to manipulate the canvas. If equal
+     *      to false no controls will be created. Default: SlidersControls.
+     *      Any custom implementation must provide the following methods:
+     *
+     *          - getAllValues: returns the current features vector
+     *          - refresh: redraws the current feature vector
+     *          - init: accepts a configuration object containing a
+     *               features and onChange as specified above.
+     *
+     */
     ChernoffFaces.prototype.init = function(options) {
+
+        this.options = options;
+
+        // Face Painter.
+        this.features = options.features || this.features ||
+            FaceVector.random();
+
+        // Draw features, if facepainter was already created.
+        if (this.fp) this.fp.draw(new FaceVector(this.features));
+
+        // onChange event.
+        if (options.onChange === false || options.onChange === null) {
+            if (this.onChange) {
+                node.off(this.onChange, this.onChangeCb);
+                this.onChange = null;
+            }
+        }
+        else {
+            this.onChange = 'undefined' === typeof options.onChange ?
+                ChernoffFaces.onChange : options.onChange;
+            node.on(this.onChange, this.onChangeCb);
+        }
+    };
+
+    /**
+     * ## ChernoffFaces.getCanvas
+     *
+     * Returns the reference to current wrapper Canvas object
+     *
+     * To get to the HTML Canvas element use `canvas.canvas`.
+     *
+     * @return {Canvas} Canvas object
+     *
+     * @see Canvas
+     */
+    ChernoffFaces.prototype.getCanvas = function() {
+        return this.canvas;
+    };
+
+    /**
+     * ## ChernoffFaces.append
+     *
+     * Appends the widget
+     *
+     * Creates table, canvas, face painter (fp) and controls (sc), according
+     * to current options.
+     *
+     * @see ChernoffFaces.fp
+     * @see ChernoffFaces.sc
+     * @see ChernoffFaces.table
+     * @see Table
+     * @see Canvas
+     * @see SliderControls
+     * @see FacePainter
+     * @see FaceVector
+     */
+    ChernoffFaces.prototype.append = function() {
         var controlsOptions, f;
+        var tblOptions, options;
+
+        options = this.options;
+
+        // Table.
+        tblOptions = {};
+        if (this.id) tblOptions.id = this.id;
+        else if (this.id !== false) tblOptions.id = 'cf_table';
+
+        if ('string' === typeof options.className) {
+            tblOptions.id = options.className;
+        }
+        else if (options.className !== false) {
+            tblOptions.className = 'cf_table';
+        }
+
+        this.table = new Table(tblOptions);
 
         // Canvas.
         if (!options.canvas) {
@@ -32138,23 +32239,8 @@ if (!Array.prototype.indexOf) {
         this.canvas = W.getCanvas('ChernoffFaces_canvas', options.canvas);
 
         // Face Painter.
-        this.features = options.features || this.features ||
-            FaceVector.random();
         this.fp = new FacePainter(this.canvas);
         this.fp.draw(new FaceVector(this.features));
-
-        // onChange event.
-        if (options.onChange === false || options.onChange === null) {
-            if (this.onChange) {
-                node.off(this.onChange, this.onChangeCb);
-                this.onChange = null;
-            }
-        }
-        else {
-            this.onChange = 'undefined' === typeof options.onChange ?
-                ChernoffFaces.onChange : options.onChange;
-            node.on(this.onChange, this.onChangeCb);
-        }
 
         // Controls.
         if ('undefined' === typeof options.controls || options.controls) {
@@ -32178,14 +32264,8 @@ if (!Array.prototype.indexOf) {
         // Table.
         if (this.sc) this.table.addRow([this.sc, this.canvas]);
         else this.table.add(this.canvas);
-        this.table.parse();
-    };
 
-    ChernoffFaces.prototype.getCanvas = function() {
-        return this.canvas;
-    };
-
-    ChernoffFaces.prototype.append = function() {
+        // Create and append table.
         this.table.parse();
         this.bodyDiv.appendChild(this.table.table);
     };
@@ -32199,7 +32279,7 @@ if (!Array.prototype.indexOf) {
      * @param {boolean} updateControls Optional. If equal to false,
      *    controls are not updated. Default: true
      *
-     * @see this.sc
+     * @see ChernoffFaces.sc
      */
     ChernoffFaces.prototype.draw = function(features, updateControls) {
         var fv;
@@ -32221,8 +32301,16 @@ if (!Array.prototype.indexOf) {
         return this.fp.face;
     };
 
+     /**
+     * ### ChernoffFaces.randomize
+     *
+     * Draws a random image and updates controls accordingly (if found)
+     *
+     * @see ChernoffFaces.sc
+     */
     ChernoffFaces.prototype.randomize = function() {
-        var fv = FaceVector.random();
+        var fv;
+        fv = FaceVector.random();
         this.fp.redraw(fv);
         // If controls are visible, updates them.
         if (this.sc) {
@@ -32236,20 +32324,68 @@ if (!Array.prototype.indexOf) {
     };
 
 
-    // # FacePainter
-    // The class that actually draws the faces on the Canvas.
+    /**
+     * # FacePainter
+     *
+     * Draws faces on a Canvas
+     *
+     * @param {HTMLCanvas} canvas The canvas
+     * @param {object} settings Optional. Settings (not used).
+     */
     function FacePainter(canvas, settings) {
 
+        /**
+         * ### FacePainter.canvas
+         *
+         * The wrapper element for the HTML canvas
+         *
+         * @see Canvas
+         */
         this.canvas = new W.Canvas(canvas);
 
+        /**
+         * ### FacePainter.scaleX
+         *
+         * Scales images along the X-axis of this proportion
+         */
         this.scaleX = canvas.width / ChernoffFaces.width;
+
+        /**
+         * ### FacePainter.scaleX
+         *
+         * Scales images along the X-axis of this proportion
+         */
         this.scaleY = canvas.height / ChernoffFaces.heigth;
+
+        /**
+         * ### FacePainter.face
+         *
+         * The last drawn face
+         */
+        this.face = null;
     }
 
-    //Draws a Chernoff face.
+    // ## Methods
+
+    /**
+     * ### FacePainter.draw
+     *
+     * Draws a face into the canvas and stores it as reference
+     *
+     * @param {object} face Multidimensional vector of features
+     * @param {number} x Optional. The x-coordinate to center the image.
+     *   Default: the center of the canvas
+     * @param {number} y Optional. The y-coordinate to center the image.
+     *   Default: the center of the canvas
+     *
+     * @see Canvas
+     * @see Canvas.centerX
+     * @see Canvas.centerY
+     */
     FacePainter.prototype.draw = function(face, x, y) {
         if (!face) return;
         this.face = face;
+
         this.fit2Canvas(face);
         this.canvas.scale(face.scaleX, face.scaleY);
 
@@ -32269,7 +32405,6 @@ if (!Array.prototype.indexOf) {
         this.drawNose(face, x, y);
 
         this.drawMouth(face, x, y);
-
     };
 
     FacePainter.prototype.redraw = function(face, x, y) {
@@ -36612,80 +36747,6 @@ if (!Array.prototype.indexOf) {
 })(node);
 
 /**
- * # DataBar
- * Copyright(c) 2015 Stefano Balietti
- * MIT Licensed
- *
- * Creates a form to send DATA packages to other clients / SERVER
- *
- * www.nodegame.org
- */
-(function(node) {
-
-    "use strict";
-
-    node.widgets.register('DataBar', DataBar);
-
-    // ## Meta-data
-
-    DataBar.version = '0.4.1';
-    DataBar.description =
-        'Adds a input field to send DATA messages to the players';
-
-    DataBar.title = 'DataBar';
-    DataBar.className = 'databar';
-
-
-    /**
-     * ## DataBar constructor
-     *
-     * Instantiates a new DataBar object
-     */
-    function DataBar() {
-        this.bar = null;
-        this.recipient = null;
-    }
-
-    // ## DataBar methods
-
-     /**
-     * ## DataBar.append
-     *
-     * Appends widget to `this.bodyDiv`
-     */
-    DataBar.prototype.append = function() {
-
-        var sendButton, textInput, dataInput;
-        var that = this;
-
-        sendButton = W.addButton(this.bodyDiv);
-        textInput = W.addTextInput(this.bodyDiv, 'data-bar-text');
-        W.addLabel(this.bodyDiv, textInput, undefined, 'Text');
-        W.writeln('Data');
-        dataInput = W.addTextInput(this.bodyDiv, 'data-bar-data');
-
-        this.recipient = W.addRecipientSelector(this.bodyDiv);
-
-        sendButton.onclick = function() {
-            var to, data, text;
-
-            to = that.recipient.value;
-            text = textInput.value;
-            data = dataInput.value;
-
-            node.log('Parsed Data: ' + JSON.stringify(data));
-
-            node.say(text, to, data);
-        };
-
-        node.on('UPDATED_PLIST', function() {
-            node.window.populateRecipientSelector(that.recipient, node.game.pl);
-        });
-    };
-
-})(node);
-
-/**
  * # DebugInfo
  * Copyright(c) 2016 Stefano Balietti
  * MIT Licensed
@@ -37557,84 +37618,6 @@ if (!Array.prototype.indexOf) {
     function printSeparator() {
         return W.getElement('hr', null, {style: 'color: #CCC;'});
     }
-
-})(node);
-
-/**
- * # GameSummary
- * Copyright(c) 2015 Stefano Balietti
- * MIT Licensed
- *
- * Shows the configuration options of a game in a box
- *
- * www.nodegame.org
- */
-(function(node) {
-
-    "use strict";
-
-    node.widgets.register('GameSummary', GameSummary);
-
-    // ## Meta-data
-
-    GameSummary.version = '0.3.1';
-    GameSummary.description =
-        'Show the general configuration options of the game.';
-
-    GameSummary.title = 'Game Summary';
-    GameSummary.className = 'gamesummary';
-
-
-    /**
-     * ## GameSummary constructor
-     *
-     * `GameSummary` shows the configuration options of the game in a box
-     */
-    function GameSummary() {
-        /**
-         * ### GameSummary.summaryDiv
-         *
-         * The DIV in which to display the information
-         */
-        this.summaryDiv = null;
-    }
-
-    // ## GameSummary methods
-
-    /**
-     * ### GameSummary.append
-     *
-     * Appends the widget to `this.bodyDiv` and calls `this.writeSummary`
-     *
-     * @see GameSummary.writeSummary
-     */
-    GameSummary.prototype.append = function() {
-        this.summaryDiv = node.window.addDiv(this.bodyDiv);
-        this.writeSummary();
-    };
-
-    /**
-     * ### GameSummary.writeSummary
-     *
-     * Writes a summary of the game configuration into `this.summaryDiv`
-     */
-    GameSummary.prototype.writeSummary = function(idState, idSummary) {
-        var gName = document.createTextNode('Name: ' + node.game.metadata.name),
-        gDescr = document.createTextNode(
-                'Descr: ' + node.game.metadata.description),
-        gMinP = document.createTextNode('Min Pl.: ' + node.game.minPlayers),
-        gMaxP = document.createTextNode('Max Pl.: ' + node.game.maxPlayers);
-
-        this.summaryDiv.appendChild(gName);
-        this.summaryDiv.appendChild(document.createElement('br'));
-        this.summaryDiv.appendChild(gDescr);
-        this.summaryDiv.appendChild(document.createElement('br'));
-        this.summaryDiv.appendChild(gMinP);
-        this.summaryDiv.appendChild(document.createElement('br'));
-        this.summaryDiv.appendChild(gMaxP);
-
-        node.window.addDiv(this.bodyDiv, this.summaryDiv, idSummary);
-    };
 
 })(node);
 
@@ -38550,7 +38533,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # MsgBar
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2016 Stefano Balietti
  * MIT Licensed
  *
  * Creates a tool for sending messages to other connected clients
@@ -38568,31 +38551,35 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    MsgBar.version = '0.6';
+    MsgBar.version = '0.7.0';
     MsgBar.description = 'Send a nodeGame message to players';
 
     MsgBar.title = 'Send MSG';
     MsgBar.className = 'msgbar';
 
-    function MsgBar(options) {
-        this.id = options.id || MsgBar.className;
-
+    function MsgBar() {
         this.recipient = null;
         this.actionSel = null;
         this.targetSel = null;
 
-        this.table = new Table();
-        this.tableAdvanced = new Table();
-
-        this.init();
+        this.table = null;
+        this.tableAdvanced = null;
     }
 
     MsgBar.prototype.init = function() {
-        var that;
+        this.id = this.id || MsgBar.className;
+    };
+
+    MsgBar.prototype.append = function() {
+        var advButton, sendButton;
         var fields, i, field;
         var table;
+        var that;
 
         that = this;
+
+        this.table = new Table();
+        this.tableAdvanced = new Table();
 
         // Create fields.
         fields = ['to', 'action', 'target', 'text', 'data', 'from', 'priority',
@@ -38643,17 +38630,6 @@ if (!Array.prototype.indexOf) {
             }
         }
 
-        this.table.parse();
-        this.tableAdvanced.parse();
-    };
-
-    MsgBar.prototype.append = function() {
-        var advButton;
-        var sendButton;
-        var that;
-
-        that = this;
-
         // Show table of basic fields.
         this.bodyDiv.appendChild(this.table.table);
 
@@ -38663,11 +38639,9 @@ if (!Array.prototype.indexOf) {
         // Show 'Send' button.
         sendButton = W.addButton(this.bodyDiv);
         sendButton.onclick = function() {
-            var msg = that.parse();
-
-            if (msg) {
-                node.socket.send(msg);
-            }
+            var msg;
+            msg = that.parse();
+            if (msg) node.socket.send(msg);
         };
 
         // Show a button that expands the table of advanced fields.
@@ -38677,9 +38651,9 @@ if (!Array.prototype.indexOf) {
             that.tableAdvanced.table.style.display =
                 that.tableAdvanced.table.style.display === '' ? 'none' : '';
         };
-    };
 
-    MsgBar.prototype.listeners = function() {
+        this.table.parse();
+        this.tableAdvanced.parse();
     };
 
     MsgBar.prototype.parse = function() {
@@ -38794,7 +38768,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    NDDBBrowser.version = '0.1.2';
+    NDDBBrowser.version = '0.2.0';
     NDDBBrowser.description =
         'Provides a very simple interface to control a NDDB istance.';
 
@@ -38810,17 +38784,23 @@ if (!Array.prototype.indexOf) {
         this.options = options;
         this.nddb = null;
 
-        this.commandsDiv = document.createElement('div');
-        this.id = options.id;
-        if ('undefined' !== typeof this.id) {
-            this.commandsDiv.id = this.id;
-        }
+        this.commandsDiv = null;
+
 
         this.info = null;
-        this.init(this.options);
     }
 
     NDDBBrowser.prototype.init = function(options) {
+        this.tm = new TriggerManager();
+        this.tm.init(options.triggers);
+        this.nddb = options.nddb || new NDDB({
+            update: { pointer: true }
+        });
+    };
+
+    NDDBBrowser.prototype.append = function() {
+        this.commandsDiv = document.createElement('div');
+        if (this.id) this.commandsDiv.id = this.id;
 
         function addButtons() {
             var id = this.id;
@@ -38840,19 +38820,10 @@ if (!Array.prototype.indexOf) {
             return span;
         }
 
-
         addButtons.call(this);
         this.info = addInfoBar.call(this);
 
-        this.tm = new TriggerManager();
-        this.tm.init(options.triggers);
-        this.nddb = options.nddb || new NDDB({auto_update_pointer: true});
-    };
-
-    NDDBBrowser.prototype.append = function(root) {
-        this.root = root;
-        root.appendChild(this.commandsDiv);
-        return root;
+        this.bodyDiv.appendChild(this.commandsDiv);
     };
 
     NDDBBrowser.prototype.getRoot = function(root) {
@@ -38917,9 +38888,10 @@ if (!Array.prototype.indexOf) {
     };
 
     NDDBBrowser.prototype.writeInfo = function(text) {
+        var that;
+        that = this;
         if (this.infoTimeout) clearTimeout(this.infoTimeout);
         this.info.innerHTML = text;
-        var that = this;
         this.infoTimeout = setTimeout(function(){
             that.info.innerHTML = '';
         }, 2000);
@@ -38928,8 +38900,8 @@ if (!Array.prototype.indexOf) {
 })(node);
 
 /**
- * # NextPreviousState
- * Copyright(c) 2015 Stefano Balietti
+ * # NextPreviousStep
+ * Copyright(c) 2016 Stefano Balietti
  * MIT Licensed
  *
  * Simple widget to step through the stages of the game
@@ -38940,67 +38912,116 @@ if (!Array.prototype.indexOf) {
 
     "use strict";
 
-    // TODO: Introduce rules for update: other vs self
-
-    node.widgets.register('NextPreviousState', NextPreviousState);
-
-    // ## Defaults
-
-    NextPreviousState.defaults = {};
-    NextPreviousState.defaults.id = 'nextprevious';
-    NextPreviousState.defaults.fieldset = { legend: 'Rew-Fwd' };
+    node.widgets.register('NextPreviousStep', NextPreviousStep);
 
     // ## Meta-data
 
-    NextPreviousState.version = '0.3.2';
-    NextPreviousState.description = 'Adds two buttons to push forward or ' +
+    NextPreviousStep.className = 'nextprevious';
+    NextPreviousStep.title = 'Next/Previous Step';
+
+    NextPreviousStep.version = '1.0.0';
+    NextPreviousStep.description = 'Adds two buttons to push forward or ' +
         'rewind the state of the game by one step.';
 
-    function NextPreviousState(options) {
-        this.id = options.id;
+    /**
+     * ## NextPreviousStep constructor
+     */
+    function NextPreviousStep() {
+
+        /**
+         * ### NextPreviousStep.rew
+         *
+         * The button to go one step back
+         */
+        this.rew = null;
+
+        /**
+         * ### NextPreviousStep.fwd
+         *
+         * The button to go one step forward
+         */
+        this.fwd = null;
+
+        /**
+         * ### NextPreviousStep.checkbox
+         *
+         * The checkbox to call `node.done` on forward
+         */
+        this.checkbox = null;
     }
 
-    NextPreviousState.prototype.getRoot = function() {
-        return this.root;
-    };
+    /**
+     * ### NextPreviousStep.append
+     *
+     * Appends the widget
+     *
+     * Creates two buttons and a checkbox
+     */
+    NextPreviousStep.prototype.append = function() {
+        var that, spanDone;
+        that = this;
 
-    NextPreviousState.prototype.append = function(root) {
-        var idRew = this.id + '_button';
-        var idFwd = this.id + '_button';
+        this.rew = document.createElement('button');
+        this.rew.innerHTML = '<<';
 
-        var rew = node.window.addButton(root, idRew, '<<');
-        var fwd = node.window.addButton(root, idFwd, '>>');
+        this.fwd = document.createElement('button');
+        this.fwd.innerHTML = '>>';
 
+        this.checkbox = document.createElement('input');
+        this.checkbox.type = 'checkbox';
 
-        var that = this;
-
-        var updateState = function(state) {
-            if (state) {
-                var stateEvent = node.IN + node.action.SAY + '.STATE';
-                var stateMsg = node.msg.createSTATE(stateEvent, state);
-                // Self Update
-                node.emit(stateEvent, stateMsg);
-
-                // Update Others
-                stateEvent = node.OUT + node.action.SAY + '.STATE';
-                node.emit(stateEvent, state, 'ROOM');
-            }
-            else {
-                node.err('No next/previous state. Not sent');
+        this.fwd.onclick = function() {
+            if (that.checkbox.checked) node.done();
+            else node.game.step();
+            if (!hasNextStep()) {
+                that.fwd.disabled = 'disabled';
             }
         };
 
-        fwd.onclick = function() {
-            updateState(node.game.next());
+        this.rew.onclick = function() {
+            var prevStep;
+            prevStep = node.game.getPreviousStep();
+            node.game.gotoStep(prevStep);
+            if (!hasPreviousStep()) {
+                that.rew.disabled = 'disabled';
+            }
         };
 
-        rew.onclick = function() {
-            updateState(node.game.previous());
-        };
+        if (!hasPreviousStep()) this.rew.disabled = 'disabled';
+        if (!hasNextStep()) this.fwd.disabled = 'disabled';
 
-        this.root = root;
-        return root;
+        // Buttons.
+        this.bodyDiv.appendChild(this.rew);
+        this.bodyDiv.appendChild(this.fwd);
+
+        // Checkbox.
+        spanDone = document.createElement('span');
+        spanDone.appendChild(document.createTextNode('node.done'));
+        spanDone.appendChild(this.checkbox);
+        this.bodyDiv.appendChild(spanDone);
     };
+
+    function hasNextStep() {
+        var nextStep;
+        nextStep = node.game.getNextStep();
+        if (!nextStep ||
+            nextStep === node.GamePlot.GAMEOVER ||
+            nextStep === node.GamePlot.END_SEQ ||
+            nextStep === node.GamePlot.NO_SEQ) {
+
+            return false;
+        }
+        return true;
+    }
+
+    function hasPreviousStep() {
+        var prevStep;
+        prevStep = node.game.getPreviousStep();
+        if (!prevStep) {
+            return false;
+        }
+        return true;
+    }
 
 })(node);
 
@@ -39968,208 +39989,6 @@ if (!Array.prototype.indexOf) {
 
         return gauge;
     }
-
-})(node);
-
-/**
- * # ServerInfoDisplay
- * Copyright(c) 2015 Stefano Balietti
- * MIT Licensed
- *
- * Displays information about the server
- *
- * www.nodegame.org
- */
-(function(node) {
-
-    "use strict";
-
-    node.widgets.register('ServerInfoDisplay', ServerInfoDisplay);
-
-    // ## Meta-data
-
-    ServerInfoDisplay.version = '0.4.1';
-    ServerInfoDisplay.description = 'Displays information about the server.';
-
-    ServerInfoDisplay.title = 'Server Info';
-    ServerInfoDisplay.className = 'serverinfodisplay';
-
-    /**
-     * ## ServerInfoDisplay constructor
-     *
-     * `ServerInfoDisplay` shows information about the server
-     */
-    function ServerInfoDisplay() {
-        /**
-         * ### ServerInfoDisplay.div
-         *
-         * The DIV wherein to display the information
-         */
-        this.div = document.createElement('div');
-
-        /**
-         * ### ServerInfoDisplay.table
-         *
-         * The table holding the information
-         */
-        this.table = null; //new node.window.Table();
-
-        /**
-         * ### ServerInfoDisplay.button
-         *
-         * The button TODO
-         */
-        this.button = null;
-
-    }
-
-    // ## ServerInfoDisplay methods
-
-    /**
-     * ### ServerInfoDisplay.init
-     *
-     * Initializes the widget
-     */
-    ServerInfoDisplay.prototype.init = function() {
-        var that = this;
-        if (!this.div) {
-            this.div = document.createElement('div');
-        }
-        this.div.innerHTML = 'Waiting for the reply from Server...';
-        if (!this.table) {
-            this.table = new node.window.Table();
-        }
-        this.table.clear(true);
-        this.button = document.createElement('button');
-        this.button.value = 'Refresh';
-        this.button.appendChild(document.createTextNode('Refresh'));
-        this.button.onclick = function(){
-            that.getInfo();
-        };
-        this.bodyDiv.appendChild(this.button);
-        this.getInfo();
-    };
-
-    ServerInfoDisplay.prototype.append = function() {
-        this.bodyDiv.appendChild(this.div);
-    };
-
-    /**
-     * ### ServerInfoDisplay.getInfo
-     *
-     * Updates current info
-     *
-     * @see ServerInfoDisplay.processInfo
-     */
-    ServerInfoDisplay.prototype.getInfo = function() {
-        var that = this;
-        node.get('INFO', function(info) {
-            node.window.removeChildrenFromNode(that.div);
-            that.div.appendChild(that.processInfo(info));
-        });
-    };
-
-    /**
-     * ### ServerInfoDisplay.processInfo
-     *
-     * Processes incoming server info and displays it in `this.table`
-     */
-    ServerInfoDisplay.prototype.processInfo = function(info) {
-        this.table.clear(true);
-        for (var key in info) {
-            if (info.hasOwnProperty(key)){
-                this.table.addRow([key,info[key]]);
-            }
-        }
-        return this.table.parse();
-    };
-
-    ServerInfoDisplay.prototype.listeners = function() {
-        var that = this;
-        node.on('PLAYER_CREATED', function(){
-            that.init();
-        });
-    };
-
-})(node);
-
-/**
- * # StateBar
- * Copyright(c) 2015 Stefano Balietti
- * MIT Licensed
- *
- * Provides a simple interface to change the game stages
- *
- * www.nodegame.org
- */
-(function(node) {
-
-    "use strict";
-
-    node.widgets.register('StateBar', StateBar);
-
-    // ## Meta-data
-
-    StateBar.version = '0.4.0';
-    StateBar.description =
-        'Provides a simple interface to change the stage of a game.';
-
-    StateBar.title = 'Change GameStage';
-    StateBar.className = 'statebar';
-
-
-    /**
-     * ## StateBar constructor
-     *
-     * `StateBar` provides a simple interface to change game stages
-     */
-    function StateBar() {
-        //this.recipient = null;
-    }
-
-    /**
-     * ### StateBar.append
-     *
-     * Appends widget to `this.bodyDiv`
-     */
-    StateBar.prototype.append = function() {
-        var prefix;
-        var idButton, idStageField, idRecipientField;
-        var sendButton, stageField, recipientField;
-
-        prefix = StateBar.className + '_';
-
-        idButton = prefix + 'sendButton';
-        idStageField = prefix + 'stageField';
-        idRecipientField = prefix + 'recipient';
-
-        this.bodyDiv.appendChild(document.createTextNode('Stage:'));
-        stageField = W.getTextInput(idStageField);
-        this.bodyDiv.appendChild(stageField);
-
-        this.bodyDiv.appendChild(document.createTextNode(' To:'));
-        recipientField = W.getTextInput(idRecipientField);
-        this.bodyDiv.appendChild(recipientField);
-
-        sendButton = node.window.addButton(this.bodyDiv, idButton);
-
-        sendButton.onclick = function() {
-            var to;
-            var stage;
-
-            // Should be within the range of valid values
-            // but we should add a check
-            to = recipientField.value;
-
-            try {
-                stage = new node.GameStage(stageField.value);
-                node.remoteCommand('goto_step', to, stage);
-            }
-            catch (e) {
-                node.err('Invalid stage, not sent: ' + e);
-            }
-        };
-    };
 
 })(node);
 
