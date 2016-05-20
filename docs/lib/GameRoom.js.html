@@ -1184,16 +1184,18 @@ MIT Licensed</p>
             <span class="nx">stager</span><span class="p">.</span><span class="nx">setDefaultProperty</span><span class="p">(</span><span class="s1">&#39;timeup&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
                 <span class="kd">var</span> <span class="nx">timer</span><span class="p">,</span> <span class="nx">conf</span><span class="p">,</span> <span class="nx">gameStage</span><span class="p">;</span>
                 <span class="nx">gameStage</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">getCurrentGameStage</span><span class="p">();</span>
-                <span class="kr">debugger</span>
                 <span class="nx">conf</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">plot</span><span class="p">.</span><span class="nx">getProperty</span><span class="p">(</span><span class="nx">gameStage</span><span class="p">,</span> <span class="s1">&#39;pushClients&#39;</span><span class="p">);</span>
-                <span class="k">if</span> <span class="p">(</span><span class="nx">conf</span> <span class="o">!==</span> <span class="kc">false</span><span class="p">)</span> <span class="p">{</span>
-                    <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;DO IT!&#39;</span><span class="p">);</span>
-                    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">conf</span><span class="p">)</span> <span class="nx">conf</span> <span class="o">=</span> <span class="p">{};</span>
-                    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">conf</span><span class="p">.</span><span class="nx">timer</span><span class="p">)</span> <span class="p">{</span>
-                        <span class="nx">conf</span><span class="p">.</span><span class="nx">timer</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">plot</span><span class="p">.</span><span class="nx">getProperty</span><span class="p">(</span><span class="nx">gameStage</span><span class="p">,</span> <span class="s1">&#39;timer&#39;</span><span class="p">);</span>
-                    <span class="p">}</span>
+                <span class="k">if</span> <span class="p">(</span><span class="nx">conf</span> <span class="o">===</span> <span class="kc">false</span><span class="p">)</span> <span class="k">return</span><span class="p">;</span>
+                <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">conf</span><span class="p">)</span> <span class="nx">conf</span> <span class="o">=</span> <span class="p">{};</span>
+                <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">conf</span><span class="p">.</span><span class="nx">timer</span><span class="p">)</span> <span class="p">{</span>
+                    <span class="nx">conf</span><span class="p">.</span><span class="nx">timer</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">plot</span><span class="p">.</span><span class="nx">getProperty</span><span class="p">(</span><span class="nx">gameStage</span><span class="p">,</span> <span class="s1">&#39;timer&#39;</span><span class="p">);</span>
+                <span class="p">}</span>
+                <span class="k">if</span> <span class="p">(</span><span class="kc">null</span> <span class="o">!==</span> <span class="nx">conf</span><span class="p">.</span><span class="nx">timer</span> <span class="o">&amp;&amp;</span>
+                    <span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">conf</span><span class="p">.</span><span class="nx">timer</span><span class="p">)</span> <span class="p">{</span>
+
                     <span class="k">this</span><span class="p">.</span><span class="nx">pushManager</span><span class="p">.</span><span class="nx">startTimer</span><span class="p">(</span><span class="nx">conf</span><span class="p">);</span>
                 <span class="p">}</span>
+
             <span class="p">});</span>
         <span class="p">}</span>
     <span class="p">}</span>
