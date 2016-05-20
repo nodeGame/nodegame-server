@@ -14417,6 +14417,8 @@ if (!Array.prototype.indexOf) {
      * Inits the configuration for the instance
      *
      * @param {object} Optional. Configuration object
+     *
+     * @see checkAndAssignAllWaitTimes
      */
     PushManager.prototype.init = function(options) {
         options = options || {};
@@ -14428,17 +14430,15 @@ if (!Array.prototype.indexOf) {
      *
      * Sets a timer for checking if all clients have finished current step
      *
-     * The length of the timer is equal to timer + offset.
+     * The length of the timer is equal to the sum of
      *
-     * By default, it looks up the `timer` property in the current
-     * step object. If no `timer` property is found, timer is set to 0.
+     *   - timer: conf.timer (Default 0)
+     *   - offset: conf.offset (Default this.offsetWaitTime)
      *
      * If timer expires `PushManager.pushGame` will be called.
      *
-     * @param {object} conf Optional. Configuration passed to `pushGame` method.
-     *    The pushMethod will be called when the push-manager timer expires,
-     *    that is equal conf.timer + conf.offset. conf.timer is interpreted
-     *    by the GameTimer, and can be function, number, object or string.
+     * @param {object} conf Optional. Configuration passed to `pushGame` method,
+     *    with 'milliseconds' option equal to timer + offset.
      *
      * @see PushManager.offsetWaitTime
      * @see PushManager.pushGame
@@ -14446,33 +14446,30 @@ if (!Array.prototype.indexOf) {
      */
     PushManager.prototype.startTimer = function(conf) {
         var gameStage, pushCb, that, timer, offset;
+        var node;
 
+        node = this.node;
+        conf = conf || {};
         if (this.timer) this.clearTimer();
 
-        conf = conf || {};
+        node.silly('push-manager: starting timer: ' + timer +
+                   ', ' + node.player.stage);
 
-        if ('function' === typeof conf.timer) {
-            timer = conf.timer.call(this.node.game);
+        if ('undefined' !== typeof conf.offset) {
+            offset = node.timer.parseInput('offset', conf.offset);
         }
-        // timer = GameTimer.parseMilliseconds(conf.timer) || 0;
-        timer = timer || 0;
-
-        offset = 'undefined' !== typeof offset ? offset : this.offsetWaitTime;
-
+        else {
+            offset = this.offsetWaitTime;
+        }
         that = this;
         pushCb = function() { that.pushGame.call(that, conf); };
 
-        console.log('TIMER: ', timer, this.offsetWaitTime,
-                    this.node.player.stage);
-
         // Make sure milliseconds and update are the same.
-        timer = timer + offset;
         this.timer.init({
-            milliseconds: timer,
+            milliseconds: offset,
             update: timer,
             timeup: pushCb,
         });
-
         this.timer.start();
     };
 
@@ -14484,9 +14481,20 @@ if (!Array.prototype.indexOf) {
      * @see PushManager.startTimer
      */
     PushManager.prototype.clearTimer = function() {
-        console.log('Clearing old push players timer.');
-        if (!this.timer.isStopped()) this.timer.stop();
+        if (!this.timer.isStopped()) {
+            this.node.silly('push-manager: timer cleared.');
+            this.timer.stop();
+        }
     };
+
+    /**
+     * ## PushManager.isActive
+     *
+     * Returns TRUE if timer is running
+     */
+    PushManager.prototype.isActive = function() {
+        return !this.timer.isStopped();
+    }
 
     /**
      * ### PushManager.pushGame
@@ -14498,16 +14506,20 @@ if (!Array.prototype.indexOf) {
      * not arrive it will disconnect them. If the reply arrives, it will
      * later check if they manage to step, and if not disconnects them.
      *
+     * @param {object} conf Optional. Configuration options.
+     *
      * @see checkIfPushWorked
      */
     PushManager.prototype.pushGame = function(conf) {
-        var node, replyWaitTime, checkPushWaitTime;
+        var m, node, replyWaitTime, checkPushWaitTime;
         node = this.node;
 
+        node.silly('push-manager: checking clients.');
+
         if ('object' === typeof conf) {
-            replyWaitTime = checkAndAssignWaitTime(method, conf, 'reply', conf);
-            checkPushWaitTime = checkAndAssignWaitTime(method, conf,
-                                                       'check', conf);
+            m = 'pushGame';
+            replyWaitTime = checkAndAssignWaitTime(m, conf, 'reply', conf);
+            checkPushWaitTime = checkAndAssignWaitTime(m, conf, 'check', conf);
         }
         if ('undefined' === typeof replyWaitTime) {
             replyWaitTime = this.replyWaitTime;
@@ -14532,10 +14544,6 @@ if (!Array.prototype.indexOf) {
                              executeOnce: true,
                              target: GAMECOMMAND,
                              timeoutCb: function() {
-                                 // No reply to GET, disconnect client.
-                                 console.log('NO REPLY ', p.id, stage);
-                                 //node.log('node.pushManager: no reply from ' +
-                                 //         p.id);
                                  forceDisconnect(node, p);
                              }
                          });
@@ -14560,7 +14568,7 @@ if (!Array.prototype.indexOf) {
         stage = {
             stage: p.stage.stage, step: p.stage.step, round: p.stage.round
         };
-        console.log('received reply from ', p.id, stage);
+        node.silly('push-manager: received reply from ' + p.id + ' @' + stage);
 
         setTimeout(function() {
             var pp;
@@ -14568,17 +14576,11 @@ if (!Array.prototype.indexOf) {
             if (node.game.pl.exist(p.id)) {
                 pp = node.game.pl.get(p.id);
 
-        //console.log('CONSOLE checking if push worked for ', p.id);
-        //node.log('node.pushManager: checking if push worked for ', p.id);
-                //console.log(pp.stage, stage);
                 if (GameStage.compare(pp.stage, stage) === 0) {
-                    console.log('PUSH did NOT work for ', p.id, stage);
-               //node.log('node.pushManager: push did not work for ', p.id);
                     forceDisconnect(node, pp);
                 }
                 else {
-                    console.log('PUSH worked for ', p.id, stage);
-                    //node.log('node.pushManager: push worked for ', p.id);
+                    node.silly('push-manager: push worked for ', p.id);
                 }
             }
         }, milliseconds || 0);
@@ -14594,6 +14596,10 @@ if (!Array.prototype.indexOf) {
      */
     function forceDisconnect(node, p) {
         var msg;
+        // No reply to GET, disconnect client.
+        node.warn('push-manager: disconnecting: ' + p.id + ' @'
+                  + node.player.stage);
+
         msg = node.msg.create({
             target: 'SERVERCOMMAND',
             text: 'DISCONNECT',
@@ -19726,6 +19732,9 @@ if (!Array.prototype.indexOf) {
 
         node.silly('Next step ---> ' + nextStep);
 
+        // Clear push-timer at the beginning of each new step.
+        this.pushManager.clearTimer();
+
         curStep = this.getCurrentGameStage();
         curStageObj = this.plot.getStage(curStep);
         curStepObj = this.plot.getStep(curStep);
@@ -19984,13 +19993,6 @@ if (!Array.prototype.indexOf) {
 
         // Update list of stepped steps.
         this._steppedSteps.push(nextStep);
-
-// TODO: check here.
-//         // Pushes clients to finish current step in line with the time
-//         // expected by logic, or otherwise disconnects them.
-//         if (this.plot.getProperty(nextStep, 'pushClients')) {
-//             this.timer.syncWithStager(true);
-//         }
 
         this.execStep(this.getCurrentGameStage());
         return true;
@@ -21534,7 +21536,64 @@ if (!Array.prototype.indexOf) {
         randomFire.call(this, 'randomDone', this.node.done,
                         maxWait, false, this.node, args);
     };
- // ## Helper Methods.
+
+    /**
+     * ## Timer.parseInput
+     *
+     * Resolves an unknown value to a valid time quantity (number >=0)
+     *
+     * Valid types and operation:
+     *   - number (as is),
+     *   - string (casted),
+     *   - object (property _name_ is parsed),
+     *   - function (will be invoked with `node.game` context)
+     *
+     * Parsed value must be a number >= 0
+     *
+     * @param {string} name The name of the property if value is object
+     * @param {number} value The value to parse
+     * @param {string} methodName Optional. The name of the method invoking
+     *   the function for the error messsage. Default: Timer.parseInput
+     *
+     * @param {number} The parsed value
+     */
+    Timer.prototype.parseInput = function(name, value, methodName) {
+        var typeofValue, num;
+        if ('string' !== typeof name) {
+            throw new TypeError((methodName || 'Timer.parseInput') +
+                                ': name must be string. Found: ' + name);
+        }
+        typeofValue = typeof value;
+        switch (typeofValue) {
+
+        case 'number':
+            num = value;
+            break;
+        case 'object':
+            if (null !== value) {
+                if ('function' === typeof value[name]) {
+                    num = value[name].call(this.node.game);
+                }
+            }
+            break;
+        case 'function':
+            num = value.call(this.node.game);
+            break;
+        case 'string':
+            num = Number(options);
+            break;
+        }
+
+        if ('number' !== typeof num || num < 0) {
+            throw new Error((methodName || 'Timer.parseInput') +
+                            ': ' + name + ' must be number >= 0. Found: ' +
+                           num);
+        }
+
+        return num;
+    };
+
+    // ## Helper Methods.
 
     /**
      * ### randomFire
@@ -21589,7 +21648,6 @@ if (!Array.prototype.indexOf) {
         }
 
         tentativeName = method + '_' + hook + '_' + J.randomInt(0, 1000000);
-
 
         // Create and run timer:
         timerObj = this.createTimer({
@@ -21782,7 +21840,7 @@ if (!Array.prototype.indexOf) {
         this.stagerProperty = 'timer';
 
         // Init!
-        this.init();
+        this.init(this.options);
     }
 
     // ## GameTimer methods
@@ -21826,50 +21884,88 @@ if (!Array.prototype.indexOf) {
      * @see GameTimer.addHook
      */
     GameTimer.prototype.init = function(options) {
-        var i, len;
-        options = options || this.options;
-
+        var i, len, node;
         this.status = GameTimer.UNINITIALIZED;
         if (this.timerId) {
             clearInterval(this.timerId);
             this.timerId = null;
         }
-        this.milliseconds = options.milliseconds;
-        this.update = options.update || this.update || this.milliseconds;
+        if (options) {
+            if ('object' !== typeof options) {
+                throw new TypeError('GameTimer.init: options must be object ' +
+                                    'or undefined. Found: ' + options);
+            }
+            node = this.node;
+            if ('undefined' !== typeof options.milliseconds) {
+                this.milliseconds = node.timer.parseInput('milliseconds',
+                                                          options.milliseconds);
+            }
+            if ('undefined' !== typeof options.update) {
+                this.update = node.timer.parseInput('update', options.update);
+            }
+            else {
+                // We keep the current update if not modified.
+                this.update = this.update || this.milliseconds;
+            }
+
+            // Event to be fired when timer expires.
+            if (options.timeup) {
+                if ('function' === typeof options.timeup ||
+                    'string' === typeof options.timeup) {
+
+                    this.timeup = options.timeup;
+                }
+                else {
+                    throw new TypeError('GameTimer.init: options.timeup must ' +
+                                        'be function or undefined. Found: ' +
+                                        options.timeup);
+                }
+            }
+            else {
+                this.timeup = this.timeup || 'TIMEUP'
+            }
+
+            if (options.hooks) {
+                if (J.isArray(options.hooks)) {
+                    len = options.hooks.length;
+                    for (i = 0; i < len; i++) {
+                        this.addHook(options.hooks[i]);
+                    }
+                }
+                else {
+                    this.addHook(options.hooks);
+                }
+            }
+
+            // Set startPaused option. if specified. Default: FALSE
+            this.startPaused = 'undefined' !== options.startPaused ?
+                options.startPaused : false;
+
+            if ('string' === typeof options.eventEmitterName) {
+                this.eventEmitterName = options.eventEmitterName;
+            }
+            // Stager sync options.
+            if ('undefined' !== typeof options.stagerSync) {
+                this.syncWithStager(options.stagerSync);
+            }
+            if ('undefined' !== typeof options.stagerProperty) {
+                this.setStagerProperty(options.stagerProperty);
+            }
+
+        }
+
+        // TODO: check if this TODO is correct.
+        // TODO: update and milliseconds must be multiple now.
+
         this.timeLeft = this.milliseconds;
         this.timePassed = 0;
         this.updateStart = 0;
         this.updateRemaining = 0;
-        // Event to be fired when timer expires.
-        this.timeup = options.timeup || 'TIMEUP';
-        // TODO: update and milliseconds must be multiple now.
-        if (options.hooks) {
-            len = options.hooks.length;
-            for (i = 0; i < len; i++) {
-                this.addHook(options.hooks[i]);
-            }
-        }
-
-        // Set startPaused option. if specified. Default: FALSE
-        this.startPaused = 'undefined' !== options.startPaused ?
-            options.startPaused : false;
 
         // Only set status to INITIALIZED if all of the state is valid and
         // ready to be used by this.start etc.
         if (checkInitialized(this) === null) {
             this.status = GameTimer.INITIALIZED;
-        }
-
-        if ('string' === typeof options.eventEmitterName) {
-            this.eventEmitterName = options.eventEmitterName;
-        }
-
-        // Stager sync options.
-        if ('undefined' !== typeof options.stagerSync) {
-            this.syncWithStager(options.stagerSync);
-        }
-        if ('undefined' !== typeof options.stagerProperty) {
-            this.setStagerProperty(options.stagerProperty);
         }
     };
 
@@ -22240,26 +22336,24 @@ if (!Array.prototype.indexOf) {
         ee = node.events[this.eventEmitterName];
         if (sync === true) {
             that = this;
+
+            // On PLAYING starts.
             ee.on('PLAYING', function() {
                 var options, step, prop;
                 prop = that.getStagerProperty();
                 step = node.game.getCurrentGameStage();
+                // Looks for 'timer' property in stager. If 'timer.timeup'
+                // is missing, it sets it to property 'timeup', if found.
                 options = processStepOptions(node, step, prop);
-                if (options && options.startOnPlaying !== false) {
+                if (options) {
+
                     that.restart(options);
                 }
             }, this.name + '_PLAYING');
 
+            // On REALLY_DONE stops.
             ee.on('REALLY_DONE', function() {
-
-  //              if (that.options.stopOnDone) {
-
-                    if (!that.isStopped()) {
-                        // that.startWaiting();
-                        that.stop();
-                    }
-
-//                }
+                if (!that.isStopped()) that.stop();
             }, this.name + '_REALLY_DONE');
         }
         else {
@@ -22308,88 +22402,84 @@ if (!Array.prototype.indexOf) {
     /**
      * ### processStepOptions
      *
-     * Clones and cleans user options
+     * Makes an object out of step properties 'timer' and 'timeup'
      *
-     * Adds the default 'timeup' function as `node.done`.
+     * Looks up property 'timer' in the game plot. If it is not an object,
+     * makes it an object with property 'milliseconds'. Makes sure
+     * 'milliseconds' is a number, otherwise returns null.
+     *
+     * If property 'timeup' is not defined, it looks it up in the game plot.
+     *
+     * If property 'update' is not defined, it sets it equals to 'milliseconds'.
+     *
+     * For example:
+     *
+     * ```javascript
+     * {
+     *     milliseconds: 2000,
+     *     update: 2000,
+     *     timeup: function() {}
+     *     // Additional properties as specified.
+     * }
+     * ```
      *
      * @param {NodeGameClient} node Reference to node
      * @param {object} step current game step
-     * @param {string} prop The name of the property containing timer info
+     * @param {string} prop The name of the property containing 'timer' info
      *
-     * @return {object} options Validated configuration object, or null
+     * @return {object} options Validated configuration object, or NULL
      *   if no timer info is found for current step
      */
     function processStepOptions(node, step, prop) {
-        var timer, options, typeofOptions, timeup;
+        var timer, timeup;
         timer = node.game.plot.getProperty(step, prop);
-        if (!timer) return null;
+        if (null === timer) return null;
 
-        // Build object.
-        options = {};
-        typeofOptions = typeof timer;
-        switch (typeofOptions) {
-
-        case 'number':
-            options.milliseconds = timer;
-            break;
-        case 'object':
-            if ('function' === typeof timer.milliseconds) {
-                options.milliseconds = timer.milliseconds.call(node.game);
-            }
-            if (timer.timeup && 'function' !== typeof timer.timeup) {
-                throw new TypeError('GameTimer processStepOptions: timeup ' +
-                                    'must be function or undefined. Found: ' +
-                                timer.timup);
-            }
-            options.timeup = timer.timeup;
-            break;
-        case 'function':
-            options.milliseconds = timer.call(node.game);
-            break;
-        case 'string':
-            options.milliseconds = Number(timer);
-            break;
+        if ('object' !== typeof timer) {
+            timer = { milliseconds: timer };
         }
 
-        // Casting or Function returned null. Abort.
-        if (null === options.milliseconds) return;
-
-        if ('number' !== typeof options.milliseconds ||
-            options.milliseconds <= 0) {
-
-            throw new Error('GameTimer processStepOptions: milliseconds ' +
-                            'must be a number >= 0. Found: ' +
-                            options.milliseconds);
+        if ('function' === typeof timer.milliseconds) {
+            timer.milliseconds = timer.milliseconds.call(node.game);
         }
 
-        options.update = options.milliseconds;
+        if ('number' !== typeof timer.milliseconds) return null;
 
-        if ('undefined' === typeof options.timeup) {
-            timer = node.game.plot.getProperty(step, 'timeup');
-            if (timer) options.timeup = timer;
+        // Make sure update and timer are the same.
+        if ('undefined' === typeof timer.update) {
+            timer.update = timer.milliseconds;
         }
 
-        if ('undefined' === typeof options.startOnPlaying) {
-            options.startOnPlaying = true;
+        if ('undefined' === typeof timer.timeup) {
+            timeup = node.game.plot.getProperty(step, 'timeup');
+            if (timeup) timer.timeup = timeup;
         }
 
-        return options;
+        return timer;
     }
 
-    // Do a timer update.
-    // Return false if timer ran out, true otherwise.
+    /**
+     * ### updateCallback
+     *
+     * Updates the timer object
+     *
+     * @param {GameTimer} that The game timer instance
+     *
+     * @return {boolean} FALSE if timer ran out, TRUE otherwise
+     */
     function updateCallback(that) {
+        var i;
         that.status = GameTimer.RUNNING;
         that.timePassed += that.update;
         that.timeLeft -= that.update;
         that.updateStart = (new Date()).getTime();
-        // Fire custom hooks from the latest to the first if any
-        for (var i = that.hooks.length; i > 0; i--) {
+        // Fire custom hooks from the latest to the first if any.
+        for (i = that.hooks.length; i > 0; i--) {
             that.fire(that.hooks[(i-1)]);
         }
         // Fire Timeup Event
         if (that.timeLeft <= 0) {
-            // First stop the timer and then call the timeup
+            // First stop the timer and then call the timeup.
             that.stop();
             that.fire(that.timeup);
             return false;
@@ -22399,48 +22489,25 @@ if (!Array.prototype.indexOf) {
         }
     }
 
-    // Check whether the timer has a valid initialized state.
-    // Returns null if true, an error string otherwise.
+    /**
+     * ### checkInitialized
+     *
+     * Check whether the timer has a valid initialized state
+     *
+     * @param {GameTimer} that The game timer instance
+     *
+     * @return {string|null} Returns null if timer is in valid,
+     *    state, or an error string otherwise.
+     */
     function checkInitialized(that) {
         if ('number' !== typeof that.milliseconds) {
             return 'this.milliseconds must be a number';
         }
         if (that.update > that.milliseconds) {
+            debugger
             return 'this.update must not be greater than this.milliseconds';
         }
-
         return null;
-    }
-
-
-    GameTimer.parseOptions = function(options) {
-        var out, typeofOptions;
-        out = {};
-        typeofOptions = typeof options;
-        switch (typeofOptions) {
-
-        case 'number':
-            out.milliseconds = options;
-            break;
-        case 'object':
-            if ('function' === typeof options.milliseconds) {
-                out.milliseconds = options.milliseconds.call(node.game);
-            }
-            if (options.timeup && 'function' !== typeof options.timeup) {
-                throw new TypeError('GameOptions processStepOptions: timeup ' +
-                                    'must be function or undefined. Found: ' +
-                                options.timup);
-            }
-            out.timeup = options.timeup;
-            break;
-        case 'function':
-            out.milliseconds = options.call(node.game);
-            break;
-        case 'string':
-            out.milliseconds = Number(options);
-            break;
-        }
-        return out;
     }
 
     // ## Closure
