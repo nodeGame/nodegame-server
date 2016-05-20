@@ -579,6 +579,17 @@ this.loadViewsFile(gameDir, gameInfo);</p>
                         <span class="nx">gameSettingsPath</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
     <span class="p">}</span>
 
+    <span class="k">if</span> <span class="p">(</span><span class="nx">gameSettings</span><span class="p">.</span><span class="nx">TIMER</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">gameSettings</span><span class="p">.</span><span class="nx">TIMER</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;SeverNode.loadGameGameDir: gameSettings.TIMER &#39;</span> <span class="o">+</span>
+                            <span class="s1">&#39;must be object or undefined. File: &#39;</span> <span class="o">+</span>
+                            <span class="nx">gameSettingsPath</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+    <span class="k">else</span> <span class="p">{</span>
+        <span class="nx">gameSettings</span><span class="p">.</span><span class="nx">TIMER</span> <span class="o">=</span> <span class="p">{};</span>
+    <span class="p">}</span>
+
 
 </pre></div>
         </td>
