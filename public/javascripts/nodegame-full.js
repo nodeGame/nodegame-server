@@ -11215,13 +11215,21 @@ if (!Array.prototype.indexOf) {
      */
     EventEmitter.prototype.size = function(mod) {
         var count;
-        if (!mod) return J.size(this.events);
+        count = 0;
+        if (!mod) {
+            for (mod in this.events) {
+                if (this.events.hasOwnProperty(mod)) {
+                    // Not null (delete events).
+                    if (this.events[mod]) count++;
+                }
+            }
+            return count;
+        }
         if ('string' === typeof mod) {
             if (!this.events[mod]) return 0;
             if ('function' === typeof this.events[mod]) return 1;
             return this.events[mod].length;
         }
-        count = 0;
         for (mod in this.events) {
             count += this.size(mod);
         }
@@ -14398,9 +14406,11 @@ if (!Array.prototype.indexOf) {
          *
          * The timer object that will fire the checking of clients
          *
+         * The timer will be created only if needed.
+         *
          * @see PushManager.startTimer
          */
-        this.timer = this.node.timer.createTimer({ name: 'push_clients' });
+        this.timer = null;
 
         /**
          * ### PushManager.offsetWaitTime
@@ -14451,15 +14461,16 @@ if (!Array.prototype.indexOf) {
      *
      * Sets a timer for checking if all clients have finished current step
      *
-     * The length of the timer is equal to the sum of
+     * The duration of the timer is specified by parameter  conf.offset.
+     * (Default this.offsetWaitTime). Other options in configuration
+     * parameter are passed to `PushManager.pushGame`, which is called
+     * if timer expires.
      *
-     *   - timer: conf.timer (Default 0)
-     *   - offset: conf.offset (Default this.offsetWaitTime)
+     * Calling startTimer on a running timer will clear previous one,
+     * and create a new one.
      *
-     * If timer expires `PushManager.pushGame` will be called.
-     *
-     * @param {object} conf Optional. Configuration passed to `pushGame` method,
-     *    with 'milliseconds' option equal to timer + offset.
+     * @param {object} conf Optional. Configuration object passed
+     *    to `pushGame` method.
      *
      * @see PushManager.offsetWaitTime
      * @see PushManager.pushGame
@@ -14471,7 +14482,13 @@ if (!Array.prototype.indexOf) {
 
         node = this.node;
         conf = conf || {};
-        if (this.timer) this.clearTimer();
+
+        if (!this.timer) {
+            this.timer = this.node.timer.createTimer({ name: 'push_clients' });
+        }
+        else {
+            this.clearTimer();
+        }
 
         node.silly('push-manager: starting timer: ' + timer +
                    ', ' + node.player.stage);
@@ -14502,7 +14519,7 @@ if (!Array.prototype.indexOf) {
      * @see PushManager.startTimer
      */
     PushManager.prototype.clearTimer = function() {
-        if (!this.timer.isStopped()) {
+        if (this.timer && !this.timer.isStopped()) {
             this.node.silly('push-manager: timer cleared.');
             this.timer.stop();
         }
@@ -18411,10 +18428,16 @@ if (!Array.prototype.indexOf) {
      * Configures the socket
      *
      * @param {object} options Optional. Configuration options.
+     *
      * @see node.setup.socket
      */
     Socket.prototype.setup = function(options) {
-        options = options ? J.clone(options) : {};
+        if (!options) return;
+        if ('object' !== typeof options) {
+            throw new TypeError('Socket.setup: options must be object ' +
+                                'or undefined.');
+        }
+        options = J.clone(options);
         if (options.type) {
             this.setSocketType(options.type, options);
             options.type = null;
@@ -19071,7 +19094,6 @@ if (!Array.prototype.indexOf) {
         this.comparator('stage', function(o1, o2) {
             var _o2;
             if ('string' === typeof o2.stage && that.node) {
-                debugger
                 if (false === J.isInt(o2.stage)) {
                     _o2 = that.node.game.plot.normalizeGameStage(o2.stage);
                     if (_o2) o2.stage = _o2;
@@ -19286,7 +19308,7 @@ if (!Array.prototype.indexOf) {
          *
          * Applies to the PlayerList the constraints defined in the Stager
          *
-         * Reads the properties min/max/exactPlayers valid for the current step
+         * Reads the properties min/max/exactPlayers for the current step
          * and checks them with the PlayerList object.
          *
          * @return {boolean} TRUE if all checks are passed
@@ -19294,6 +19316,19 @@ if (!Array.prototype.indexOf) {
          * @see Game.step
          */
         this.checkPlistSize = function() { return true; };
+
+        /**
+         * ### Game.plChangeHandler
+         *
+         * Handles changes in the number of players
+         *
+         * Reads the properties min/max/exactPlayers for the current step
+         * and calls the appropriate callback functions.
+         *
+         * @see Game.
+         */
+        this.plChangeHandler = function() {};
+
 
         // Setting to stage 0.0.0 and starting.
         this.setCurrentGameStage(new GameStage(), 'S');
@@ -19308,6 +19343,16 @@ if (!Array.prototype.indexOf) {
          * @see Game.resume
          */
         this.paused = false;
+
+        /**
+         * ### Game.pauseCounter
+         *
+         * Counts the number of times the game was paused
+         *
+         * @see Game.pause
+         * @see Game.resume
+         */
+        this.pauseCounter = 0
 
         /**
          * ### Game.willBeDone
@@ -19554,6 +19599,17 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
+     * ### Game.isPaused
+     *
+     * Returns TRUE, if game is paused
+     *
+     * @see Game.pause
+     */
+    Game.prototype.isPaused = function() {
+        return this.paused;
+    };
+
+    /**
      * ### Game.pause
      *
      * Sets the game to pause
@@ -19574,6 +19630,7 @@ if (!Array.prototype.indexOf) {
         node.emit('PAUSING', param);
 
         this.paused = true;
+        this.pauseCounter++;
 
         // If the Stager has a method for accepting messages during a
         // pause, pass them to it. Otherwise, buffer the messages
@@ -19882,7 +19939,7 @@ if (!Array.prototype.indexOf) {
                 if (property.length < 2) {
                     throw new TypeError(
                         'Game.gotoStep: minPlayers field must be an array ' +
-                            'of length 2.');
+                            'of at least length 2.');
                 }
 
                 minThreshold = property[0];
@@ -19896,7 +19953,7 @@ if (!Array.prototype.indexOf) {
                 if (property.length < 2) {
                     throw new TypeError(
                         'Game.gotoStep: maxPlayers field must be an array ' +
-                            'of length 2.');
+                            'of at least length 2.');
                 }
 
                 maxThreshold = property[0];
@@ -19911,7 +19968,7 @@ if (!Array.prototype.indexOf) {
                 if (property.length < 2) {
                     throw new TypeError(
                         'Game.gotoStep: exactPlayers field must be an array ' +
-                            'of length 2.');
+                            'of at least length 2.');
                 }
 
                 exactThreshold = property[0];
@@ -19922,59 +19979,69 @@ if (!Array.prototype.indexOf) {
             }
 
             if (minCallback || maxCallback || exactCallback) {
-                // Register event handler:
+                // Register event handler.
                 handler = function() {
                     var nPlayers = node.game.pl.size();
                     // Players should count themselves too.
                     if (!node.player.admin) nPlayers++;
 
-                    if (nPlayers < minThreshold) {
-                        if (minCallback && !node.game.minPlayerCbCalled) {
-                            node.game.minPlayerCbCalled = true;
-                            minCallback.call(node.game);
+                    if ('number' === typeof minThreshold) {
+                        if (nPlayers < minThreshold) {
+                            if (minCallback && !node.game.minPlayerCbCalled) {
+                                node.game.minPlayerCbCalled = true;
+                                minCallback.call(node.game);
+                            }
                         }
-                    }
-                    else {
-                        if (node.game.minPlayerCbCalled && minRecoverCb) {
-                            minRecoverCb.call(node.game);
+                        else {
+                            if (node.game.minPlayerCbCalled && minRecoverCb) {
+                                minRecoverCb.call(node.game);
+                            }
+                            node.game.minPlayerCbCalled = false;
                         }
-                        node.game.minPlayerCbCalled = false;
                     }
 
-                    if (nPlayers > maxThreshold) {
-                        if (maxCallback && !node.game.maxPlayerCbCalled) {
-                            node.game.maxPlayerCbCalled = true;
-                            maxCallback.call(node.game);
+                    if ('number' === typeof maxThreshold) {
+                        if (nPlayers > maxThreshold) {
+                            if (maxCallback && !node.game.maxPlayerCbCalled) {
+                                node.game.maxPlayerCbCalled = true;
+                                maxCallback.call(node.game);
+                            }
+                        }
+                        else {
+                            if (node.game.maxPlayerCbCalled && maxRecoverCb) {
+                                maxRecoverCb.call(node.game);
+                            }
+                            node.game.maxPlayerCbCalled = false;
                         }
                     }
-                    else {
-                        if (node.game.maxPlayerCbCalled && maxRecoverCb) {
-                            maxRecoverCb.call(node.game);
-                        }
-                        node.game.maxPlayerCbCalled = false;
-                    }
+                    if ('number' === typeof exactThreshold) {
+                        if (nPlayers !== exactThreshold) {
+                            if (exactCallback &&
+                                !node.game.exactPlayerCbCalled) {
 
-                    if (nPlayers !== exactThreshold) {
-                        if (exactCallback && !node.game.exactPlayerCbCalled) {
-                            node.game.exactPlayerCbCalled = true;
-                            exactCallback.call(node.game);
+                                node.game.exactPlayerCbCalled = true;
+                                exactCallback.call(node.game);
+                            }
                         }
-                    }
-                    else {
-                        if (node.game.exactPlayerCbCalled && exactRecoverCb) {
-                            exactRecoverCb.call(node.game);
+                        else {
+                            if (node.game.exactPlayerCbCalled &&
+                                exactRecoverCb) {
+
+                                exactRecoverCb.call(node.game);
+                            }
+                            node.game.exactPlayerCbCalled = false;
                         }
-                        node.game.exactPlayerCbCalled = false;
                     }
                 };
 
                 node.events.ee.step.on('in.say.PCONNECT', handler);
                 node.events.ee.step.on('in.say.PDISCONNECT', handler);
-                // PRECONNECT doesn't change the PlayerList so we don't have to
-                // handle it here.
+                // PRECONNECT needs to verify client is authorized,
+                // so we don't have to handle it here.
 
                 // Check conditions explicitly:
-                handler();
+                this.plChangeHandler = handler;
+                this.plChangeHandler();
 
                 // Set bounds-checking function:
                 this.checkPlistSize = function() {
@@ -20000,6 +20067,7 @@ if (!Array.prototype.indexOf) {
             else {
                 // Set bounds-checking function:
                 this.checkPlistSize = function() { return true; };
+                this.plChangeHandler = function() {};
             }
 
             // Emit buffered messages:
@@ -21114,6 +21182,7 @@ if (!Array.prototype.indexOf) {
      * @param {object} settings Optional. A configuration object
      */
     function Timer(node, settings) {
+        var that;
         this.node = node;
 
         this.settings = settings || {};
@@ -21138,6 +21207,70 @@ if (!Array.prototype.indexOf) {
          * @see Timer.getTimeSince
          */
         this.timestamps = {};
+
+        /**
+         * ### Timer.pausedTimestamps
+         *
+         * Collection of timestamps existing while game is paused
+         *
+         * Will be cleared on resume
+         *
+         * @see Timer.setTimestamp
+         * @see Timer.getTimestamp
+         * @see Timer.getTimeSince
+         */
+        this._pausedTimestamps = {};
+
+        /**
+         * ### Timer.cumulPausedTimestamps
+         *
+         * List of timestamps that had a paused time in between
+         *
+         * Persists after resume
+         *
+         * @see Timer.setTimestamp
+         * @see Timer.getTimestamp
+         * @see Timer.getTimeSince
+         */
+        this._cumulPausedTimestamps = {};
+
+        /**
+         * ### Timer._effectiveDiffs
+         *
+         * List of time differences between timestamps minus paused time
+         *
+         * Persists after resume
+         *
+         * @see Timer.setTimestamp
+         * @see Timer.getTimestamp
+         * @see Timer.getTimeSince
+         */
+        this._effectiveDiffs = {};
+
+        that = this;
+        this.node.on('PAUSED', function() {
+            var i, ts;
+            ts = that.getTimestamp('paused');
+            for (i in that.timestamps) {
+                if (that.timestamps.hasOwnProperty(i)) {
+                    that._pausedTimestamps[i] = ts;
+                }
+            }
+        });
+        this.node.on('RESUMED', function() {
+            var i, time, pt, cpt, pausedTime;
+            pt = that._pausedTimestamps;
+            cpt = that._cumulPausedTimestamps;
+            time = (new Date()).getTime();
+            for (i in pt) {
+                if (pt[i] && pt.hasOwnProperty(i)) {
+                    pausedTime = time - pt[i];
+                    if (!cpt[i]) cpt[i] = pausedTime;
+                    else cpt[i] += pausedTime;
+                }
+            }
+            that._pausedTimestamps = {};
+        });
     }
 
     // ## Timer methods
@@ -21277,6 +21410,11 @@ if (!Array.prototype.indexOf) {
         // Remove listener syncing with stager (if any).
         gameTimer.syncWithStager(false);
 
+
+        // Set status to DESTROYED and make object unusable
+        // (in case external references to the object still exists).
+        gameTimer.status = GameTimer.DESTROYED;
+
         // Delete reference in this.timers.
         delete this.timers[gameTimer.name];
     };
@@ -21285,13 +21423,55 @@ if (!Array.prototype.indexOf) {
      * ### Timer.destroyAllTimers
      *
      * Stops and removes all registered GameTimers
+     *
+     * By default, node.game.timer is not removed.
+     *
+     * @param {boolean} all Removes really all timers, including
+     *    node.game.timer
      */
-    Timer.prototype.destroyAllTimers = function() {
-        for (var i in this.timers) {
+    Timer.prototype.destroyAllTimers = function(all) {
+        var i;
+        for (i in this.timers) {
             if (this.timers.hasOwnProperty(i)) {
+                // Skip node.game.timer, unless so specified.
+                if (!all && i === this.node.game.timer.name) continue;
                 this.destroyTimer(this.timers[i]);
             }
         }
+    };
+
+    /**
+     * ### Timer.getTimer
+     *
+     * Returns a reference to a previosly registered game timer.
+     *
+     * @param {string} name The name of the timer
+     *
+     * @return {GameTimer|null} The game timer with the given name, or
+     *   null if none is found
+     */
+    Timer.prototype.getTimer = function(name) {
+        if ('string' !== typeof name) {
+            throw new TypeError('Timer.getTimer: name must be string.');
+        }
+        return this.timers[name] || null;
+    };
+
+    /**
+     * ### Timer.getTimer
+     *
+     * Returns a reference to a previosly registered game timer.
+     *
+     * @param {string} name The name of the timer
+     *
+     * @return {GameTimer|null} The game timer with the given name, or
+     *   null if none is found
+     */
+    Timer.prototype.getTimer = function(name) {
+        if ('string' !== typeof name) {
+            throw new TypeError('Timer.getTimer: name must be string.');
+        }
+        return this.timers[name] || null;
     };
 
     /**
@@ -21304,6 +21484,7 @@ if (!Array.prototype.indexOf) {
      *   Date.getTime(). Default: Current time.
      */
     Timer.prototype.setTimestamp = function(name, time) {
+        var i;
         // Default time: Current time
         if ('undefined' === typeof time) time = (new Date()).getTime();
 
@@ -21316,6 +21497,26 @@ if (!Array.prototype.indexOf) {
                             'undefined');
         }
 
+        // We had at least one pause.
+        if (this.node.game.pauseCounter) {
+            // Remove records of paused timestamps.
+            if (this._pausedTimestamps[name]) {
+                this._pausedTimestamps[name] = null;
+            }
+            if (this._cumulPausedTimestamps[name]) {
+                this._cumulPausedTimestamps[name] = null;
+            }
+            // Mark timestamp as paused since the beginning, if game is paused.
+            if (this.node.game.isPaused()) this._pausedTimestamps[name] = time;
+
+            // Diffs are updated immediately.
+            this._effectiveDiffs[name] = {};
+            for (i in this.timestamps) {
+                if (this.timestamps.hasOwnProperty(i)) {
+                    this._effectiveDiffs[name][i] = this.getTimeSince(i, true);
+                }
+            }
+        }
         this.timestamps[name] = time;
     };
 
@@ -21334,7 +21535,6 @@ if (!Array.prototype.indexOf) {
         if ('string' !== typeof name) {
             throw new Error('Timer.getTimestamp: name must be a string');
         }
-
         if (this.timestamps.hasOwnProperty(name)) {
             return this.timestamps[name];
         }
@@ -21362,13 +21562,15 @@ if (!Array.prototype.indexOf) {
      * Gets the time in ms since a timestamp
      *
      * @param {string} name The name of the timestamp
+     * @param {boolean} effective Optional. If set, effective time
+     *    is returned, i.e. time minus paused time. Default: false.
      *
      * @return {number|null} The time since the timestamp in ms,
      *   NULL if it doesn't exist
      *
      * @see Timer.getTimeDiff
      */
-    Timer.prototype.getTimeSince = function(name) {
+    Timer.prototype.getTimeSince = function(name, effective) {
         var currentTime;
 
         // Get current time:
@@ -21380,6 +21582,14 @@ if (!Array.prototype.indexOf) {
         }
 
         if (this.timestamps.hasOwnProperty(name)) {
+            if (effective) {
+                if (this._pausedTimestamps[name]) {
+                    currentTime -= (currentTime - this._pausedTimestamps[name]);
+                }
+                if (this._cumulPausedTimestamps[name]) {
+                    currentTime -= this._cumulPausedTimestamps[name];
+                }
+            }
             return currentTime - this.timestamps[name];
         }
         else {
@@ -21394,11 +21604,13 @@ if (!Array.prototype.indexOf) {
      *
      * @param {string} nameFrom The name of the first timestamp
      * @param {string} nameTo The name of the second timestamp
+     * @param {boolean} effective Optional. If set, effective time
+     *    is returned, i.e. time diff minus paused time. Default: false.
      *
      * @return {number} The time difference between the timestamps
      */
-    Timer.prototype.getTimeDiff = function(nameFrom, nameTo) {
-        var timeFrom, timeTo;
+    Timer.prototype.getTimeDiff = function(nameFrom, nameTo, effective) {
+        var timeFrom, timeTo, ed;
 
         // Check input:
         if ('string' !== typeof nameFrom) {
@@ -21422,24 +21634,17 @@ if (!Array.prototype.indexOf) {
                             'a valid timestamp.');
         }
 
-        return timeTo - timeFrom;
-    };
-
-    /**
-     * ### Timer.getTimer
-     *
-     * Returns a reference to a previosly registered game timer.
-     *
-     * @param {string} name The name of the timer
-     *
-     * @return {GameTimer|null} The game timer with the given name, or
-     *   null if none is found
-     */
-    Timer.prototype.getTimer = function(name) {
-        if ('string' !== typeof name) {
-            throw new TypeError('Timer.getTimer: name must be string.');
+        if (effective) {
+            ed = this._effectiveDiffs;
+            if (ed[nameFrom] && ed[nameFrom][nameTo]) {
+                return ed[nameFrom][nameTo];
+            }
+            else if (ed[nameTo] && ed[nameTo][nameFrom]) {
+                return ed[nameTo][nameFrom];
+            }
         }
-        return this.timers[name] || null;
+
+        return timeTo - timeFrom;
     };
 
     /**
@@ -21449,7 +21654,7 @@ if (!Array.prototype.indexOf) {
      *
      * Respects pausing / resuming.
      *
-     * Additional parameters are passed to the
+     * Additional parameters are passed to the node.emit
      *
      * @param {string} event The name of the event
      * @param {number} maxWait Optional. The maximum time (in milliseconds)
@@ -21485,6 +21690,8 @@ if (!Array.prototype.indexOf) {
      * Executes a callback function after a random time interval
      *
      * Respects pausing / resuming.
+     *
+     * Additional parameters are passed to the the callback function.
      *
      * @param {function} func The callback function to execute
      * @param {number} maxWait Optional. The maximum time (in milliseconds)
@@ -21529,6 +21736,8 @@ if (!Array.prototype.indexOf) {
      * Executes node.done after a random time interval
      *
      * Respects pausing / resuming.
+     *
+     * Additional parameters are passed to the the done event listener.
      *
      * @param {number} maxWait Optional. The maximum time (in milliseconds)
      *   to wait before executing the callback. Default: 6000
@@ -21689,7 +21898,7 @@ if (!Array.prototype.indexOf) {
     /**
      * # GameTimer
      *
-     * Copyright(c) 2015 Stefano Balietti
+     * Copyright(c) 2016 Stefano Balietti
      * MIT Licensed
      *
      * Creates a controllable timer object for nodeGame.
@@ -21708,6 +21917,7 @@ if (!Array.prototype.indexOf) {
     GameTimer.INITIALIZED = 0;
     GameTimer.LOADING = 3;
     GameTimer.RUNNING = 5;
+    GameTimer.DESTROYED = 10;
 
     /**
      * ## GameTimer constructor
@@ -21903,6 +22113,7 @@ if (!Array.prototype.indexOf) {
      */
     GameTimer.prototype.init = function(options) {
         var i, len, node;
+        checkDestroyed(this, 'init');
         this.status = GameTimer.UNINITIALIZED;
         if (this.timerId) {
             clearInterval(this.timerId);
@@ -22001,7 +22212,7 @@ if (!Array.prototype.indexOf) {
      */
     GameTimer.prototype.fire = function(h) {
         var hook, ctx;
-
+        checkDestroyed(this, 'fire');
         if ('object' === typeof h) {
             hook = h.hook;
             ctx = h.ctx;
@@ -22038,7 +22249,7 @@ if (!Array.prototype.indexOf) {
      */
     GameTimer.prototype.start = function() {
         var error, that;
-
+        checkDestroyed(this, 'start');
         // Check validity of state
         error = checkInitialized(this);
         if (error !== null) {
@@ -22096,6 +22307,7 @@ if (!Array.prototype.indexOf) {
      */
     GameTimer.prototype.addHook = function(hook, ctx, name) {
         var i;
+        checkDestroyed(this, 'addHook');
         if ('undefined' === typeof hook) {
             throw new TypeError('GameTimer.addHook: hook must be function, ' +
                                 'string or object. Found: ' + hook);
@@ -22129,6 +22341,7 @@ if (!Array.prototype.indexOf) {
      */
     GameTimer.prototype.removeHook = function(name) {
         var i;
+        checkDestroyed(this, 'removeHook');
         if (this.hookNames[name]) {
             for (i = 0; i < this.hooks.length; i++) {
                 if (this.hooks[i].name === name) {
@@ -22150,7 +22363,7 @@ if (!Array.prototype.indexOf) {
      */
     GameTimer.prototype.pause = function() {
         var timestamp;
-
+        checkDestroyed(this, 'pause');
         if (this.isRunning()) {
             clearInterval(this.timerId);
             clearTimeout(this.timerId);
@@ -22193,7 +22406,8 @@ if (!Array.prototype.indexOf) {
      * @see GameTimer.restart
      */
     GameTimer.prototype.resume = function() {
-        var that = this;
+        var that;
+        checkDestroyed(this, 'resume');
 
         // Don't start if the initialization is incomplete (invalid state):
         if (this.status === GameTimer.UNINITIALIZED) {
@@ -22211,6 +22425,7 @@ if (!Array.prototype.indexOf) {
 
         this.updateStart = (new Date()).getTime();
 
+        that = this;
         // Run rest of this "update" interval:
         this.timerId = setTimeout(function() {
             if (updateCallback(that)) {
@@ -22235,6 +22450,7 @@ if (!Array.prototype.indexOf) {
      * and time left properties
      */
     GameTimer.prototype.stop = function() {
+        checkDestroyed(this, 'stop');
         if (this.isStopped()) {
             throw new Error('GameTimer.stop: timer was not running');
         }
@@ -22260,6 +22476,7 @@ if (!Array.prototype.indexOf) {
      * @see GameTimer.init
      */
     GameTimer.prototype.restart = function(options) {
+        checkDestroyed(this, 'restart');
         if (!this.isStopped()) {
             this.stop();
         }
@@ -22275,6 +22492,7 @@ if (!Array.prototype.indexOf) {
      * Running means either LOADING or RUNNING.
      */
     GameTimer.prototype.isRunning = function() {
+        checkDestroyed(this, 'isRunning');
         return (this.status > 0);
     };
 
@@ -22288,6 +22506,7 @@ if (!Array.prototype.indexOf) {
      * @see GameTimer.isPaused
      */
     GameTimer.prototype.isStopped = function() {
+        checkDestroyed(this, 'isStopped');
         if (this.status === GameTimer.UNINITIALIZED ||
             this.status === GameTimer.INITIALIZED ||
             this.status === GameTimer.STOPPED) {
@@ -22305,6 +22524,7 @@ if (!Array.prototype.indexOf) {
      * Returns whether timer is paused
      */
     GameTimer.prototype.isPaused = function() {
+        checkDestroyed(this, 'isPaused');
         return this.status === GameTimer.PAUSED;
     };
 
@@ -22318,6 +22538,7 @@ if (!Array.prototype.indexOf) {
      * @return {boolean} TRUE if a timeup occurred from last initialization
      */
     GameTimer.prototype.isTimeUp = GameTimer.prototype.isTimeup = function() {
+        checkDestroyed(this, 'isTimeup');
         return this._timeup;
     };
 
@@ -22329,7 +22550,7 @@ if (!Array.prototype.indexOf) {
      * @param {boolean|undefined} sync TRUE to sync, FALSE to remove sync.
      *    If undefined no operation is performed, and simply the current
      *    value is returned.
-     * @param {string} property Optiona. Name of the property of the stager
+     * @param {string} property Optional. Name of the property of the stager
      *    from which load timer information. Default: 'timer'
      *
      * @return {boolean} TRUE if synced, FALSE otherwise
@@ -22338,6 +22559,7 @@ if (!Array.prototype.indexOf) {
      */
     GameTimer.prototype.syncWithStager = function(sync, property) {
         var node, that, ee;
+        checkDestroyed(this, 'syncWithStager');
         if ('undefined' === typeof sync) return this.stagerSync;
         if ('boolean' !== typeof sync) {
             throw new TypeError('GameTimer.syncWithStager: sync must be ' +
@@ -22392,6 +22614,7 @@ if (!Array.prototype.indexOf) {
      * @see GameTimer.fire
      */
     GameTimer.prototype.doTimeUp = GameTimer.prototype.doTimeup = function() {
+        checkDestroyed(this, 'doTimeup');
         if (this.isTimeup()) return;
         if (!this.isStopped()) this.stop();
         this._timeup = true;
@@ -22411,6 +22634,7 @@ if (!Array.prototype.indexOf) {
      * @see GameTimer.getStagerProperty
      */
     GameTimer.prototype.setStagerProperty = function(property) {
+        checkDestroyed(this, 'setStagerProperty');
         if ('string' === typeof property) {
             throw new TypeError('GameTimer.setStageProperty: property must ' +
                                 'be string.');
@@ -22428,6 +22652,7 @@ if (!Array.prototype.indexOf) {
      * @see GameTimer.setStagerProperty
      */
     GameTimer.prototype.getStagerProperty = function() {
+        checkDestroyed(this, 'getStagerProperty');
         return this.stagerProperty;
     };
 
@@ -22464,6 +22689,7 @@ if (!Array.prototype.indexOf) {
      */
     GameTimer.prototype.getStepOptions = function(step, prop) {
         var timer, timeup;
+        checkDestroyed(this, 'getStepOptions');
         step = 'undefined' !== typeof step ?
             step : this.node.game.getCurrentGameStage();
         prop = prop || this.getStagerProperty();
@@ -22543,6 +22769,21 @@ if (!Array.prototype.indexOf) {
             return 'this.update must not be greater than this.milliseconds';
         }
         return null;
+    }
+
+    /**
+     * ### checkDestroyed
+     *
+     * Check whether the timer has been destroyed and throws an error if so
+     *
+     * @param {GameTimer} that The game timer instance
+     * @param {string} method The name of the method invoking it
+     */
+    function checkDestroyed(that, method) {
+        if (that.status === GameTimer.DESTROYED) {
+            throw new Error('GameTimer.' + method + ': gameTimer ' +
+                            'marked as destroyed: ' + that.name);
+        }
     }
 
     // ## Closure
@@ -22856,15 +23097,28 @@ if (!Array.prototype.indexOf) {
     /**
      * ### Matcher.assignIds
      *
-     * Calls the assigner callback to assign existing ids to positions
+     * Calls the assigner callback to assign ids to positions
      *
-     * @param {array} ids Array containing the id of the matches
+     * Ids can be overwritten by parameter. If no ids are found,
+     * they will be automatically generated, provided that matches
+     * have been generated first.
+     *
+     * @param {array} ids Optinal. Array containing the id of the matches
+     *   to pass to Matcher.setIds
      *
      * @see Matcher.ids
+     * @see Matcher.setIds
      */
-    Matcher.prototype.assignIds = function() {
+    Matcher.prototype.assignIds = function(ids) {
+        if ('undefined' !== typeof ids) this.setIds(ids);
         if (!J.isArray(this.ids) || !this.ids.length) {
-            throw new Error('Matcher.assignIds: no id found.');
+            if (!J.isArray(this.matches) || !this.matches.length) {
+                throw new TypeError('Matcher.assignIds: no ids and no ' +
+                                    'matches found.');
+            }
+            this.ids = J.seq(0, this.matches.length -1, 1, function(i) {
+                return '' + i;
+            });
         }
         this.assignedIds = this.assignerCb(this.ids);
     };
@@ -22899,11 +23153,18 @@ if (!Array.prototype.indexOf) {
      *
      * If the ids have not been assigned, it will do it automatically.
      *
+     * @param {boolean|array} assignIds Optional. A flag to force to
+     *   re-assign existing ids, or an an array containing new ids to
+     *   assign.
+     *
      * @see Matcher.assignIds
      * @see Matcher.resolvedMatchesById
      * @see Matcher.resolvedMatches
+     *
+     * TODO: creates two lists of matches with bots and without.
+     * TODO: add method getMatchFor(id,x)
      */
-    Matcher.prototype.match = function() {
+    Matcher.prototype.match = function(assignIds) {
         var i, lenI, j, lenJ, pair;
         var matched, matchedId, id1, id2;
 
@@ -22912,13 +23173,9 @@ if (!Array.prototype.indexOf) {
         }
 
         // Assign/generate ids if not done before.
-        if (!this.assignedIds) {
-            if (!J.isArray(this.ids) || !this.ids.length) {
-                this.ids = J.seq(0, this.matches.length -1, 1, function(i) {
-                    return '' + i;
-                });
-            }
-            this.assignIds();
+        if (!this.assignedIds || assignIds) {
+            if (J.isArray(assignIds)) this.assignIds(assignIds);
+            else this.assignIds();
         }
 
         // Parse the matches array and creates two data structures
@@ -23098,8 +23355,6 @@ if (!Array.prototype.indexOf) {
                             i + ',' + j);
     }
 
-
-
     /**
      * ### resetResolvedData
      *
@@ -23111,8 +23366,6 @@ if (!Array.prototype.indexOf) {
         matcher.resolvedMatches = null;
         matcher.resolvedMatchesById = null;
     }
-
-
 
     /**
      * ### Matcher.roundRobin
@@ -23450,6 +23703,18 @@ if (!Array.prototype.indexOf) {
          */
         this.support = {};
 
+        /**
+         * ### node._setup
+         *
+         * Object containing registered setup functions
+         *
+         * @see NodeGameClient.setup
+         * @see NodeGameClient.registerSetup
+         *
+         * @api private
+         */
+        this._setup = {};
+
         // ## Configuration.
 
         // ### Setup functions.
@@ -23596,12 +23861,13 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Setup
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2016 Stefano Balietti
  * MIT Licensed
  *
  * `nodeGame` configuration module
+ *
+ * http://nodegame.org
  */
-
 (function(exports, node) {
 
     "use strict";
@@ -23609,11 +23875,7 @@ if (!Array.prototype.indexOf) {
     // ## Global scope
 
     var J = node.JSUS;
-
     var NGC = node.NodeGameClient;
-
-    // TODO: check this
-    var frozen = false;
 
     /**
      * ### node.setup
@@ -23623,46 +23885,49 @@ if (!Array.prototype.indexOf) {
      * Configures a specific feature of nodeGame and and stores
      * the settings in `node.conf`.
      *
-     * Accepts any number of extra parameters that are passed to the callback
-     * function.
-     *
-     * See the examples folder for all available configuration options.
+     * Accepts any number of extra parameters that are passed
+     * to the callback function.
      *
      * @param {string} property The feature to configure
-     * @return {boolean} TRUE, if configuration is successful
      *
      * @see node.setup.register
      */
     NGC.prototype.setup = function(property) {
         var res, func;
+        var i, len, args;
 
         if ('string' !== typeof property) {
             throw new Error('node.setup: expects a string as first parameter.');
         }
 
-        if (frozen) {
-            throw new Error('node.setup: nodeGame configuration is frozen. ' +
-                            'Calling setup is not allowed.');
-        }
-
-        if (property === 'register') {
-            throw new Error('node.setup: cannot setup property "register".');
-        }
-
-        func = this.setup[property];
+        func = this._setup[property];
         if (!func) {
             throw new Error('node.setup: no such property to configure: ' +
                             property + '.');
         }
 
-        // Setup the property using rest of arguments:
-        res = func.apply(this, Array.prototype.slice.call(arguments, 1));
+        // Setup the property using rest of arguments.
+        len = arguments.length;
+        switch(len) {
+        case 1:
+            res = func.call(this);
+            break;
+        case 2:
+            res = func.call(this, arguments[1]);
+            break;
+        case 3:
+            res = func.call(this, arguments[1], arguments[2]);
+            break;
+        default:
+            len = len - 1;
+            args = new Array(len);
+            for (i = -1 ; ++i < len ; ) {
+                args[i] = arguments[i+1];
+            }
+            res = func.apply(this, args);
+        };
 
-        if (property !== 'nodegame') {
-            this.conf[property] = res;
-        }
-
-        return true;
+        if (property !== 'nodegame') this.conf[property] = res;
     };
 
     /**
@@ -23679,18 +23944,13 @@ if (!Array.prototype.indexOf) {
      * @see node.setup
      */
     NGC.prototype.registerSetup = function(property, func) {
-        var that;
         if ('string' !== typeof property) {
             throw new TypeError('node.registerSetup: property must be string.');
         }
         if ('function' !== typeof func) {
             throw new TypeError('node.registerSetup: func must be function.');
         }
-        that = this;
-        this.setup[property] = function() {
-            that.info('setup ' + property + '.');
-            return func.apply(that, arguments);
-        };
+        this._setup[property] = func;
     };
 
     /**
@@ -23707,12 +23967,12 @@ if (!Array.prototype.indexOf) {
             throw new TypeError('node.deregisterSetup: property must ' +
                                 'be string.');
         }
-        if (!this.setup[feature]) {
+        if (!this._setup[feature]) {
             this.warn('node.deregisterSetup: feature ' + feature + ' not ' +
                       'previously registered.');
             return;
         }
-        this.setup[feature] = null;
+        this._setup[feature] = null;
     };
 
     /**
@@ -25132,10 +25392,10 @@ if (!Array.prototype.indexOf) {
             feature = msg.text;
             if ('string' !== typeof feature) {
                 node.err('"in.say.SETUP": msg.text must be string: ' +
-                         ferature);
+                         feature);
                 return;
             }
-            if (!node.setup[feature]) {
+            if (!node._setup[feature]) {
                 node.err('"in.say.SETUP": no such setup function: ' +
                          feature);
                 return;
@@ -25149,6 +25409,7 @@ if (!Array.prototype.indexOf) {
                          'payload of incoming remote setup message.');
                 return;
             }
+
             node.setup.apply(node, [feature].concat(payload));
         });
 
@@ -25639,7 +25900,7 @@ if (!Array.prototype.indexOf) {
         this.info('node: registering setup functions.');
 
         /**
-         * ### node.setup.nodegame
+         * ### setup("nodegame")
          *
          * Runs all the registered configuration functions
          *
@@ -25654,29 +25915,29 @@ if (!Array.prototype.indexOf) {
             var i, setupOptions;
 
             if (options && 'object' !== typeof options) {
-                throw new TypeError('node.setup.nodegame: options must ' +
+                throw new TypeError('node.setup("nodegame"): options must ' +
                                     'object or undefined.');
             }
             options = options || {};
-            for (i in this.setup) {
-                if (this.setup.hasOwnProperty(i) &&
-                    'function' === typeof this.setup[i]) {
+            for (i in this._setup) {
+                if (this._setup.hasOwnProperty(i) &&
+                    'function' === typeof this._setup[i]) {
 
                     // Old Operas loop over the prototype property as well.
-                    if (i !== 'register' &&
-                        i !== 'nodegame' &&
-                        i !== 'prototype') {
+                    if (i !== 'nodegame' && i !== 'prototype') {
+
                         // Like this browsers do not complain in strict mode.
                         setupOptions = 'undefined' === typeof options[i] ?
                             undefined : options[i];
-                        this.conf[i] = this.setup[i].call(this, setupOptions);
+
+                        this.conf[i] = this._setup[i].call(this, setupOptions);
                     }
                 }
             }
         });
 
         /**
-         * ### node.setup.socket
+         * ### setup("socket")
          *
          * Configures the socket connection to the nodegame-server
          *
@@ -25684,18 +25945,20 @@ if (!Array.prototype.indexOf) {
          * @see node.SocketFactory
          */
         this.registerSetup('socket', function(conf) {
-            if (!conf) return;
+            if ('undefined' === typeof conf) return;
             this.socket.setup(conf);
             return conf;
         });
 
         /**
-         * ### node.setup.host
+         * ### setup("host")
          *
          * Sets the uri of the host
          *
          * If no value is passed, it will try to set the host from
          * the window object in the browser enviroment.
+         *
+         * TODO: what happens if there is a basedir?
          */
         this.registerSetup('host', function(host) {
             var tokens;
@@ -25707,8 +25970,11 @@ if (!Array.prototype.indexOf) {
                     }
                 }
             }
-
             if (host) {
+                if ('string' !== typeof host) {
+                    throw new TypeError('node.setup("host"): if set, host ' +
+                                        'must be string. Found: ' + host);
+                }
                 tokens = host.split('/').slice(0,-2);
                 // url was not of the form '/channel'
                 if (tokens.length > 1) {
@@ -25720,121 +25986,141 @@ if (!Array.prototype.indexOf) {
                     host = host + '/';
                 }
             }
-
             return host;
         });
 
         /**
-         * ### node.setup.verbosity
+         * ### setup("verbosity")
          *
          * Sets the verbosity level for nodegame
          */
         this.registerSetup('verbosity', function(level) {
-            if ('string' === typeof level &&
-                constants.verbosity_levels.hasOwnProperty(level)) {
-
+            if ('undefined' === typeof level) return this.verbosity;
+            if ('string' === typeof level) {
+                if (!constants.verbosity_levels.hasOwnProperty(level)) {
+                    throw new Error('setup("verbosity"): level not found: ' +
+                                    level);
+                }
                 this.verbosity = constants.verbosity_levels[level];
             }
             else if ('number' === typeof level) {
                 this.verbosity = level;
             }
+            else {
+                throw new TypeError('node.setup("verbosity"): level must be ' +
+                                    'number or string. Found: ' + level);
+            }
             return level;
         });
 
         /**
-         * ### node.setup.nodename
+         * ### setup("nodename")
          *
          * Sets the name for nodegame
          */
         this.registerSetup('nodename', function(newName) {
             newName = newName || constants.nodename;
             if ('string' !== typeof newName) {
-                throw new TypeError('node.nodename must be of type string.');
+                throw new TypeError('setup("nodename"): newName must be ' +
+                                    'string. Found: ' + newName);
             }
             this.nodename = newName;
             return newName;
         });
 
         /**
-         * ### node.setup.debug
+         * ### setup("debug")
          *
          * Sets the debug flag for nodegame
          */
         this.registerSetup('debug', function(enable) {
-            enable = enable || false;
-            if ('boolean' !== typeof enable) {
-                throw new TypeError('node.debug must be of type boolean.');
-            }
+            enable = !!enable || false;
             this.debug = enable;
             return enable;
         });
 
         /**
-         * ### node.setup.env
+         * ### setup("env")
          *
          * Defines global variables to be stored in `node.env[myvar]`
          */
         this.registerSetup('env', function(conf) {
             var i;
-            if ('undefined' !== typeof conf) {
-                for (i in conf) {
-                    if (conf.hasOwnProperty(i)) {
-                        this.env[i] = conf[i];
-                    }
+            if ('undefined' === typeof conf) return;
+            if ('object' !== typeof conf) {
+                throw new TypeError('node.setup("env"): conf must be object ' +
+                                    'or undefined. Found: ' + conf);
+            }
+            for (i in conf) {
+                if (conf.hasOwnProperty(i)) {
+                    this.env[i] = conf[i];
                 }
             }
-
             return conf;
         });
 
         /**
-         * ### node.setup.events
+         * ### setup("events")
          *
          * Configure the EventEmitter object
          *
          * @see node.EventEmitter
          */
         this.registerSetup('events', function(conf) {
-            conf = conf || {};
+            if (conf) {
+                if ('object' !== typeof conf) {
+                    throw new TypeError('node.setup("events"): conf must be ' +
+                                        'object or undefined. Found: ' + conf);
+                }
+            }
+            else {
+                conf = {};
+            }
             if ('undefined' === typeof conf.history) {
-                conf.history = false;
+                conf.history = this.conf.history || false;
             }
-
             if ('undefined' === typeof conf.dumpEvents) {
-                conf.dumpEvents = false;
+                conf.dumpEvents = this.conf.dumpEvents || false;
             }
-
             return conf;
         });
 
         /**
-         * ### node.setup.game_settings
+         * ### setup("settings")
          *
          * Sets up `node.game.settings`
          */
         this.registerSetup('settings', function(settings) {
-            if (settings) {
+            if ('undefined' !== typeof settings) {
+                if ('object' !== typeof settings) {
+                    throw new TypeError('node.setup("settings"): settings ' +
+                                        'must be object or undefined. Found: ' +
+                                        settings);
+                }
                 J.mixin(this.game.settings, settings);
             }
-
             return this.game.settings;
         });
 
         /**
-         * ### node.setup.metadata
+         * ### setup("metadata")
          *
          * Sets up `node.game.metadata`
          */
         this.registerSetup('metadata', function(metadata) {
-            if (metadata) {
+            if ('undefined' !== typeof metadata) {
+                if ('object' !== typeof metadata) {
+                    throw new TypeError('node.setup("metadata"): metadata ' +
+                                        'must be object or undefined. Found: ' +
+                                        metadata);
+                }
                 J.mixin(this.game.metadata, metadata);
             }
-
             return this.game.metadata;
         });
 
         /**
-         * ### node.setup.player
+         * ### setup("player")
          *
          * Creates the `node.player` object
          *
@@ -25843,12 +26129,19 @@ if (!Array.prototype.indexOf) {
          * @see node.createPlayer
          */
         this.registerSetup('player', function(player) {
-            if (!player) return null;
-            return this.createPlayer(player);
+            if ('undefined' !== typeof player) {
+                if ('object' !== typeof player) {
+                    throw new TypeError('setup("player"): player must ' +
+                                        'be object or undefined. Found: ' +
+                                        player);
+                }
+                this.createPlayer(player);
+            }
+            return this.player;
         });
 
         /**
-         * ### node.setup.lang
+         * ### setup("lang")
          *
          * Setups the language of the client
          *
@@ -25861,30 +26154,55 @@ if (!Array.prototype.indexOf) {
          * @see node.setLanguage
          */
         this.registerSetup('lang', function(lang) {
-            if (!lang) return null;
-            if (J.isArray(lang)) node.setLanguage(lang[0], lang[1]);
-            else node.setLanguage(lang);
-            return node.player.lang;
+            if ('undefined' !== typeof lang) {
+                if (J.isArray(lang)) {
+                    this.setLanguage(lang[0], lang[1]);
+                }
+                else if ('string' === typeof lang) {
+                    this.setLanguage(lang);
+                }
+                else {
+                    throw new TypeError('setup("lang"): lang must be ' +
+                                        'string, array, or undefined. Found: ' +
+                                        lang);
+                }
+            }
+            return this.player.lang;
         });
 
         /**
-         * ### node.setup.timer
+         * ### setup("timer")
          *
          * Setup a timer object
+         *
+         * Accepts one configuration parameter of the type:
+         *
+         *  - name: name of the timer. Default: node.game.timer.name
+         *  - options: configuration options to pass to the init method
+         *  - action: an action to call on the timer (e.g. start, stop, etc.)
          *
          * @see node.timer
          * @see node.GameTimer
          */
-        this.registerSetup('timer', function(name, data) {
-            var timer;
-            if (!name) return null;
-            timer = this.timer.timers[name];
-            if (!timer) return null;
-            if (timer.options) {
-                timer.init(data.options);
+        this.registerSetup('timer', function(opts) {
+            var name, timer;
+            if (!opts) return;
+            if ('object' !== typeof opts) {
+                throw new TypeError('setup("timer"): opts must object or ' +
+                                    'undefined. Found: ' + opts);
+            }
+            name = opts.name || node.game.timer.name;
+            timer = this.timer.getTimer(name);
+            if (!timer) {
+                this.warn('setup("timer"): timer not found: ' + name);
+                return null;
             }
 
-            switch (timer.action) {
+            if (opts.options) {
+                timer.init(opts.options);
+            }
+
+            switch (opts.action) {
             case 'start':
                 timer.start();
                 break;
@@ -25902,14 +26220,11 @@ if (!Array.prototype.indexOf) {
             }
 
             // Last configured timer options.
-            return {
-                name: name,
-                data: data
-            };
+            return opts;
         });
 
         /**
-         * ### node.setup.plot
+         * ### setup("plot")
          *
          * Creates the `node.game.plot` object
          *
@@ -25937,7 +26252,7 @@ if (!Array.prototype.indexOf) {
         (function(node) {
 
             /**
-             * ### node.setup.plist
+             * ### setup("plist")
              *
              * Updates the player list in Game
              *
@@ -25950,7 +26265,7 @@ if (!Array.prototype.indexOf) {
             });
 
             /**
-             * ### this.setup.mlist
+             * ### setup("mlist")
              *
              * Updates the monitor list in Game
              *
@@ -25975,7 +26290,7 @@ if (!Array.prototype.indexOf) {
                     dstList.clear(true);
                 }
                 else if (updateRule !== 'append') {
-                    throw new Error('setup.' + dstListName + 'ist: invalid ' +
+                    throw new Error('setup("' + dstListName + '") is invalid ' +
                                     'updateRule: ' + updateRule + '.');
                 }
 
@@ -42452,8 +42767,9 @@ if (!Array.prototype.indexOf) {
         else {
             if (!this.isInitialized) {
                 this.internalTimer = true;
-                options.name = 'VisualTimer.updateDisplay';
-                this.gameTimer = node.timer.createTimer();
+                this.gameTimer = node.timer.createTimer({
+                    name: options.name || 'VisualTimer'
+                });
             }
         }
 
