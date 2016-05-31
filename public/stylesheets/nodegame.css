@@ -371,14 +371,16 @@ table.choicetable td.selected {
     border: 1px solid #333 !important;
 }
 
-table.choicetable td.choicetable-descr {
+table.choicetable td.choicetable-left,
+table.choicetable td.choicetable-right {
     border: 0;
     background: inherit;
     padding-right: 15px;
     text-align: right;
 }
 
-table.choicetable td.choicetable-descr:hover {
+table.choicetable td.choicetable-left:hover,
+table.choicetable td.choicetable-right:hover {
     background: inherit;
     cursor: default;
 }
