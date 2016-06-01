@@ -195,7 +195,6 @@ MIT Licensed</p>
     <span class="k">this</span><span class="p">.</span><span class="nx">treatmentName</span> <span class="o">=</span> <span class="nx">config</span><span class="p">.</span><span class="nx">treatmentName</span> <span class="o">||</span> <span class="s1">&#39;standard&#39;</span><span class="p">;</span>
 
 
-
 </pre></div>
         </td>
       </tr>
@@ -1406,7 +1405,6 @@ pause reconnecting player.</p>
 <span class="p">};</span>
 
 
-
 </pre></div>
         </td>
       </tr>
@@ -1455,7 +1453,13 @@ pause reconnecting player.</p>
 
     <span class="nx">that</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
 
-    <span class="nx">stager</span> <span class="o">=</span> <span class="nx">ngc</span><span class="p">.</span><span class="nx">getStager</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">stager</span><span class="p">.</span><span class="nx">getState</span><span class="p">());</span>
+    <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">gameLevel</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">stager</span> <span class="o">=</span> <span class="nx">ngc</span><span class="p">.</span><span class="nx">getStager</span><span class="p">(</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">levels</span><span class="p">[</span><span class="k">this</span><span class="p">.</span><span class="nx">gameLevel</span><span class="p">].</span><span class="nx">stager</span><span class="p">.</span><span class="nx">getState</span><span class="p">());</span>
+    <span class="p">}</span>
+    <span class="k">else</span> <span class="p">{</span>
+        <span class="nx">stager</span> <span class="o">=</span> <span class="nx">ngc</span><span class="p">.</span><span class="nx">getStager</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">stager</span><span class="p">.</span><span class="nx">getState</span><span class="p">());</span>
+    <span class="p">}</span>
 
     <span class="nx">stepRule</span> <span class="o">=</span> <span class="nx">stager</span><span class="p">.</span><span class="nx">getDefaultStepRule</span><span class="p">();</span>
     <span class="nx">properties</span> <span class="o">=</span> <span class="nx">stager</span><span class="p">.</span><span class="nx">getDefaultProperties</span><span class="p">();</span>
