@@ -55,6 +55,12 @@
         <a href="#gamelevel%20methods">GameLevel methods</a>
       </div>
       <div class="heading h3">
+        <a href="#gamelevel.getentryroom">GameLevel.getEntryRoom</a>
+      </div>
+      <div class="heading h3">
+        <a href="#gamelevel.setentryroom">GameLevel.setEntryRoom</a>
+      </div>
+      <div class="heading h3">
         <a href="#gamelevel.creategameroom">GameLevel.createGameRoom</a>
       </div>
       <div class="heading h3">
@@ -359,11 +365,30 @@ MIT Licensed</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-12" id="section-12">&#182;</a>
 </div>
-<p>Create waiting and requriements room.</p>
+<p>Creates waiting and requriements room.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">createRequirementsRoom</span><span class="p">(</span><span class="nx">options</span><span class="p">.</span><span class="nx">requirements</span><span class="p">);</span>
-    <span class="k">this</span><span class="p">.</span><span class="nx">createWaitingRoom</span><span class="p">(</span><span class="nx">options</span><span class="p">.</span><span class="nx">waitroom</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">options</span><span class="p">.</span><span class="nx">requirements</span> <span class="o">&amp;&amp;</span> <span class="nx">options</span><span class="p">.</span><span class="nx">requirements</span><span class="p">.</span><span class="nx">enabled</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">createRequirementsRoom</span><span class="p">(</span><span class="nx">options</span><span class="p">.</span><span class="nx">requirements</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">options</span><span class="p">.</span><span class="nx">waitroom</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">createWaitingRoom</span><span class="p">(</span><span class="nx">options</span><span class="p">.</span><span class="nx">waitroom</span><span class="p">);</span>
+    <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-13" id="section-13">&#182;</a>
+</div>
+<p>Sets the entry room, if either requirements or waiting is created.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">requirementsRoom</span><span class="p">)</span> <span class="k">this</span><span class="p">.</span><span class="nx">setEntryRoom</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">requirementsRoom</span><span class="p">);</span>
+    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">waitingRoom</span><span class="p">)</span> <span class="k">this</span><span class="p">.</span><span class="nx">setEntryRoom</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">waitingRoom</span><span class="p">);</span>
 <span class="p">}</span>
 
 
@@ -381,6 +406,101 @@ MIT Licensed</p>
 
         </td>
         <td class="code highlight"><div class="highlight"><pre>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="gamelevel.getentryroom">
+  <h3>
+    <a href="#gamelevel.getentryroom" name="gamelevel.getentryroom" class="pilcrow">&#182;</a>
+    GameLevel.getEntryRoom
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Returns the entry room, or null if none is set</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">Room</span>
+      <span>The entry room. Could be of any type.</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">GameLevel.entryRoom</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">GameLevel.setEntryRoom
+</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">GameLevel</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">getEntryRoom</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">entryRoom</span> <span class="o">||</span> <span class="kc">null</span><span class="p">;</span>
+<span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="gamelevel.setentryroom">
+  <h3>
+    <a href="#gamelevel.setentryroom" name="gamelevel.setentryroom" class="pilcrow">&#182;</a>
+    GameLevel.setEntryRoom
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Sets the entry room for the level</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">room</span>
+      <span class="dox_type">string</span>
+      <span class="dox_type">Room</span>
+      <span>The entry room</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">GameLevel.entryRoom</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">GameLevel.getEntryRoom
+</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">GameLevel</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">setEntryRoom</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">room</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">room</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">[</span><span class="nx">room</span><span class="p">])</span> <span class="p">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLevel.setEntryRoom: room is not in level: &#39;</span> <span class="o">+</span>
+                            <span class="nx">room</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="nx">room</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">[</span><span class="nx">room</span><span class="p">];</span>
+    <span class="p">}</span>
+    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">room</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLevel.setEntryRoom: room must be string or &#39;</span> <span class="o">+</span>
+                        <span class="s1">&#39;object. Found: &#39;</span> <span class="o">+</span> <span class="nx">room</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">entryRoom</span> <span class="o">=</span> <span class="nx">room</span><span class="p">;</span>
+<span class="p">};</span>
 
 
 </pre></div>
