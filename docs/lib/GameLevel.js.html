@@ -430,7 +430,7 @@ MIT Licensed</p>
     <span class="kd">var</span> <span class="nx">room</span><span class="p">;</span>
     <span class="nx">conf</span> <span class="o">=</span> <span class="nx">conf</span> <span class="o">||</span> <span class="p">{};</span>
     <span class="nx">conf</span><span class="p">.</span><span class="nx">gameLevel</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">name</span><span class="p">;</span>
-    <span class="nx">room</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">createRoom</span><span class="p">(</span><span class="nx">conf</span><span class="p">);</span>
+    <span class="nx">room</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">createGameRoom</span><span class="p">(</span><span class="nx">conf</span><span class="p">);</span>
     <span class="k">this</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">[</span><span class="nx">room</span><span class="p">.</span><span class="nx">name</span><span class="p">]</span> <span class="o">=</span> <span class="nx">room</span><span class="p">;</span>
     <span class="k">return</span> <span class="nx">room</span><span class="p">;</span>
 <span class="p">};</span>

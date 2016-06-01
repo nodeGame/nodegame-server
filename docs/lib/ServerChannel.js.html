@@ -1603,6 +1603,7 @@ the conf parameter.</p>
     <span class="nx">conf</span> <span class="o">=</span> <span class="p">{};</span>
     <span class="nx">conf</span><span class="p">.</span><span class="nx">group</span> <span class="o">=</span> <span class="nx">type</span> <span class="o">+</span> <span class="s1">&#39;Room&#39;</span><span class="p">;</span>
     <span class="nx">conf</span><span class="p">.</span><span class="nx">name</span> <span class="o">=</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">name</span> <span class="o">||</span> <span class="nx">type</span><span class="p">.</span><span class="nx">toLowerCase</span><span class="p">();</span>
+    <span class="nx">conf</span><span class="p">.</span><span class="nx">gameLevel</span> <span class="o">=</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">gameLevel</span><span class="p">;</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">[</span><span class="nx">conf</span><span class="p">.</span><span class="nx">name</span><span class="p">])</span> <span class="p">{</span>
         <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;ServerChannel.create&#39;</span> <span class="o">+</span> <span class="nx">type</span> <span class="o">+</span> <span class="s1">&#39;Room: room name &#39;</span> <span class="o">+</span>
@@ -1613,6 +1614,7 @@ the conf parameter.</p>
 
     <span class="k">delete</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">logicPath</span><span class="p">;</span>
     <span class="k">delete</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">name</span><span class="p">;</span>
+    <span class="k">delete</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">gameLevel</span><span class="p">;</span>
 
 
 </pre></div>
