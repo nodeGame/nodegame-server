@@ -34,7 +34,13 @@
         <a href="#gameloader.addgame">GameLoader.addGame</a>
       </div>
       <div class="heading h3">
-        <a href="#gameloader.loadgamegamedir">GameLoader.loadGameGameDir</a>
+        <a href="#gameloader.loadlevelsdir">GameLoader.loadLevelsDir</a>
+      </div>
+      <div class="heading h3">
+        <a href="#gameloader.loadlevel">GameLoader.loadLevel</a>
+      </div>
+      <div class="heading h3">
+        <a href="#gameloader.loadgamedir">GameLoader.loadGameDir</a>
       </div>
       <div class="heading h3">
         <a href="#gameloader.loadclienttypes">GameLoader.loadClientTypes</a>
@@ -49,10 +55,16 @@
         <a href="#gameloader.loadchannelfile">GameLoader.loadChannelFile</a>
       </div>
       <div class="heading h3">
+        <a href="#gameloader.buildwaitroomconf">GameLoader.buildWaitRoomConf</a>
+      </div>
+      <div class="heading h3">
         <a href="#gameloader.loadwaitroomdir">GameLoader.loadWaitRoomDir</a>
       </div>
       <div class="heading h3">
         <a href="#gameloader.loadauthdir">GameLoader.loadAuthDir</a>
+      </div>
+      <div class="heading h3">
+        <a href="#gameloader.buildrequirementsconf">GameLoader.buildRequirementsConf</a>
       </div>
       <div class="heading h3">
         <a href="#gameloader.loadrequirementsdir">GameLoader.loadRequirementsDir</a>
@@ -262,7 +274,7 @@ overwritten later on.</p>
     <span class="kd">var</span> <span class="nx">gamePath</span><span class="p">,</span> <span class="nx">reqFail</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">gameLogicPath</span><span class="p">,</span> <span class="nx">gameLogic</span><span class="p">,</span> <span class="nx">gameClientPath</span><span class="p">,</span> <span class="nx">gameClient</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">clientTypes</span><span class="p">,</span> <span class="nx">langObject</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">gameType</span><span class="p">,</span> <span class="nx">gameGame</span><span class="p">,</span> <span class="nx">game</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">gameType</span><span class="p">,</span> <span class="nx">gameGame</span><span class="p">,</span> <span class="nx">game</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">levels</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">channel</span><span class="p">;</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">gameInfo</span><span class="p">)</span> <span class="p">{</span>
@@ -342,7 +354,7 @@ overwritten later on.</p>
 <p>Loading settings, setup, and stages.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="nx">gameGame</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">loadGameGameDir</span><span class="p">(</span><span class="nx">gameDir</span><span class="p">);</span>
+    <span class="nx">gameGame</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">loadGameDir</span><span class="p">(</span><span class="nx">gameDir</span><span class="p">);</span>
 
 
 </pre></div>
@@ -356,7 +368,7 @@ overwritten later on.</p>
 <p>Loading client types.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="nx">clientTypes</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">loadClientTypes</span><span class="p">(</span><span class="nx">gameDir</span><span class="p">);</span>
+    <span class="nx">clientTypes</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">loadClientTypes</span><span class="p">(</span><span class="nx">gameDir</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">);</span>
 
 
 </pre></div>
@@ -370,7 +382,7 @@ overwritten later on.</p>
 <p>Building language object.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="nx">langObject</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">buildLanguagesObject</span><span class="p">(</span><span class="nx">gameDir</span><span class="p">);</span>
+    <span class="nx">langObject</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">buildLanguagesObject</span><span class="p">(</span><span class="nx">gameDir</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">);</span>
 
 
 </pre></div>
@@ -393,6 +405,7 @@ overwritten later on.</p>
         <span class="nx">stager</span><span class="o">:</span> <span class="nx">gameGame</span><span class="p">.</span><span class="nx">stager</span><span class="p">,</span>
         <span class="nx">languages</span><span class="o">:</span> <span class="nx">langObject</span><span class="p">,</span>
         <span class="nx">channel</span><span class="o">:</span> <span class="p">{},</span>
+        <span class="nx">levels</span><span class="o">:</span> <span class="p">{},</span>
         <span class="nx">alias</span><span class="o">:</span> <span class="p">[]</span>
     <span class="p">};</span>
 
@@ -461,6 +474,20 @@ overwritten later on.</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-19" id="section-19">&#182;</a>
 </div>
+<p>Loading levels, if any (nodeGame > 2.x);</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">this</span><span class="p">.</span><span class="nx">loadLevelsDir</span><span class="p">(</span><span class="nx">gameDir</span><span class="p">,</span> <span class="nx">channel</span><span class="p">);</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-20" id="section-20">&#182;</a>
+</div>
 <p>Tries to load Views file from game directory.
 this.loadViewsFile(gameDir, gameInfo);</p>
         </td>
@@ -473,7 +500,7 @@ this.loadViewsFile(gameDir, gameInfo);</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-20" id="section-20">&#182;</a>
+  <a class="pilcrow" href="#section-21" id="section-21">&#182;</a>
 </div>
 <p>Add routes (considering other loaded options: auth, monitor, etc.).</p>
         </td>
@@ -488,7 +515,7 @@ this.loadViewsFile(gameDir, gameInfo);</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-21" id="section-21">&#182;</a>
+  <a class="pilcrow" href="#section-22" id="section-22">&#182;</a>
 </div>
 <p>Done.</p>
         </td>
@@ -504,10 +531,170 @@ this.loadViewsFile(gameDir, gameInfo);</p>
       <tr>
         <td class="docs"><div class="dox">
   <div class="summary">
-<div class="pilwrap" id="gameloader.loadgamegamedir">
+<div class="pilwrap" id="gameloader.loadlevelsdir">
   <h3>
-    <a href="#gameloader.loadgamegamedir" name="gameloader.loadgamegamedir" class="pilcrow">&#182;</a>
-    GameLoader.loadGameGameDir
+    <a href="#gameloader.loadlevelsdir" name="gameloader.loadlevelsdir" class="pilcrow">&#182;</a>
+    GameLoader.loadLevelsDir
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Loads the <em>levels</em> dir of the game</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">directory</span>
+      <span class="dox_type">string</span>
+      <span>The path of the game directory</span>
+    </div>
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">object</span>
+      <span>An object containing three properties:
+  'settings', 'stager', and 'setup'.</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">GameLoader.addGame</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">GameLoader.loadLevel
+</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">GameLoader</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">loadLevelsDir</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">directory</span><span class="p">,</span> <span class="nx">channel</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">i</span><span class="p">,</span> <span class="nx">len</span><span class="p">,</span> <span class="nx">levels</span><span class="p">,</span> <span class="nx">level</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">levelsPath</span><span class="p">,</span> <span class="nx">levelsPaths</span><span class="p">,</span> <span class="nx">levelConf</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">logger</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">;</span>
+
+    <span class="nx">logger</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">logger</span><span class="p">;</span>
+    <span class="nx">gameName</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">gameName</span><span class="p">;</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">directory</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadLevelsDir: directory must be &#39;</span> <span class="o">+</span>
+                            <span class="s1">&#39;string. Game: &#39;</span> <span class="o">+</span> <span class="nx">gameName</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="nx">levelsPath</span> <span class="o">=</span> <span class="nx">directory</span> <span class="o">+</span> <span class="s1">&#39;levels/&#39;</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">fs</span><span class="p">.</span><span class="nx">existsSync</span><span class="p">(</span><span class="nx">levelsPath</span><span class="p">))</span> <span class="k">return</span><span class="p">;</span>
+
+    <span class="nx">levelsPaths</span> <span class="o">=</span> <span class="nx">fs</span><span class="p">.</span><span class="nx">readdirSync</span><span class="p">(</span><span class="nx">levelsPath</span><span class="p">);</span>
+
+    <span class="nx">len</span> <span class="o">=</span> <span class="nx">levelsPaths</span><span class="p">.</span><span class="nx">length</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">len</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadLevelsDir: levels dir is empty. &#39;</span> <span class="o">+</span>
+                        <span class="s1">&#39;Game: &#39;</span> <span class="o">+</span> <span class="nx">gameName</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="nx">levels</span> <span class="o">=</span> <span class="p">{};</span>
+    <span class="nx">i</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+    <span class="k">for</span> <span class="p">(</span> <span class="p">;</span> <span class="o">++</span><span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">len</span> <span class="p">;</span> <span class="p">)</span> <span class="p">{</span>
+        <span class="nx">level</span> <span class="o">=</span> <span class="nx">levelsPaths</span><span class="p">[</span><span class="nx">i</span><span class="p">];</span>
+        <span class="nx">levelConf</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">buildLevelConf</span><span class="p">(</span><span class="nx">levelsPath</span> <span class="o">+</span> <span class="nx">level</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span>
+                                        <span class="nx">level</span><span class="p">);</span>
+        <span class="nx">levels</span><span class="p">[</span><span class="nx">level</span><span class="p">]</span> <span class="o">=</span> <span class="nx">levelConf</span><span class="p">;</span>
+        <span class="nx">channel</span><span class="p">.</span><span class="nx">createGameLevel</span><span class="p">(</span><span class="nx">levelConf</span><span class="p">);</span>
+    <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-24" id="section-24">&#182;</a>
+</div>
+<p>Add waiting room information to global game object.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">this</span><span class="p">.</span><span class="nx">updateGameInfo</span><span class="p">(</span><span class="nx">gameName</span><span class="p">,</span> <span class="p">{</span> <span class="nx">levels</span><span class="o">:</span> <span class="nx">levels</span> <span class="p">});</span>
+
+    <span class="k">return</span> <span class="nx">levels</span><span class="p">;</span>
+<span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="gameloader.loadlevel">
+  <h3>
+    <a href="#gameloader.loadlevel" name="gameloader.loadlevel" class="pilcrow">&#182;</a>
+    GameLoader.loadLevel
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Loads one of the levels in the <em>levels</em> dir of the game</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">directory</span>
+      <span class="dox_type">string</span>
+      <span>The path to the level directory</span>
+    </div>
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">object</span>
+      <span>An object containing three properties:
+  'settings', 'stager', and 'setup'.</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">GameLoader.loadLevel
+</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">GameLoader</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">buildLevelConf</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">directory</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">level</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">levelObj</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">directory</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadLevel: game: &#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span>
+                            <span class="s1">&#39;: directory must be string. Found: &#39;</span> <span class="o">+</span>
+                            <span class="nx">directory</span><span class="p">);</span>
+    <span class="p">}</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-26" id="section-26">&#182;</a>
+</div>
+<p>TODO: think about minimal conditions to work.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">levelObj</span> <span class="o">=</span> <span class="p">{</span> <span class="nx">name</span><span class="o">:</span> <span class="nx">level</span> <span class="p">};</span>
+    <span class="nx">levelObj</span><span class="p">.</span><span class="nx">waitroom</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">buildWaitRoomConf</span><span class="p">(</span><span class="nx">directory</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">level</span><span class="p">);</span>
+    <span class="nx">levelObj</span><span class="p">.</span><span class="nx">requirements</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">buildRequirementsConf</span><span class="p">(</span><span class="nx">directory</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span>
+                                                       <span class="nx">level</span><span class="p">);</span>
+    <span class="nx">levelObj</span><span class="p">.</span><span class="nx">clientTypes</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">loadClientTypes</span><span class="p">(</span><span class="nx">directory</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">level</span><span class="p">);</span>
+    <span class="k">return</span> <span class="nx">levelObj</span><span class="p">;</span>
+<span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="gameloader.loadgamedir">
+  <h3>
+    <a href="#gameloader.loadgamedir" name="gameloader.loadgamedir" class="pilcrow">&#182;</a>
+    GameLoader.loadGameDir
   </h3>
 </div>
 
@@ -541,14 +728,14 @@ this.loadViewsFile(gameDir, gameInfo);</p>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-<span class="nx">GameLoader</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">loadGameGameDir</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">directory</span><span class="p">)</span> <span class="p">{</span>
+<span class="nx">GameLoader</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">loadGameDir</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">directory</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">gameSetupPath</span><span class="p">,</span> <span class="nx">gameSetup</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">gameSettingsPath</span><span class="p">,</span> <span class="nx">gameSettings</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">gameStagesPath</span><span class="p">,</span> <span class="nx">gameStages</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">stager</span><span class="p">;</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">directory</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadGameGameDir: directory must be &#39;</span> <span class="o">+</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadGameDir: directory must be &#39;</span> <span class="o">+</span>
                             <span class="s1">&#39;string.&#39;</span><span class="p">);</span>
     <span class="p">}</span>
 
@@ -559,7 +746,7 @@ this.loadViewsFile(gameDir, gameInfo);</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-23" id="section-23">&#182;</a>
+  <a class="pilcrow" href="#section-28" id="section-28">&#182;</a>
 </div>
 <p>Settings.</p>
         </td>
@@ -570,18 +757,18 @@ this.loadViewsFile(gameDir, gameInfo);</p>
         <span class="nx">gameSettings</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="nx">gameSettingsPath</span><span class="p">);</span>
     <span class="p">}</span>
     <span class="k">catch</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadGameGameDir: cannot read &#39;</span> <span class="o">+</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadGameDir: cannot read &#39;</span> <span class="o">+</span>
                         <span class="nx">gameSettingsPath</span> <span class="o">+</span> <span class="s1">&#39;: &#39;</span> <span class="o">+</span> <span class="nx">e</span><span class="p">.</span><span class="nx">stack</span><span class="p">);</span>
     <span class="p">}</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">gameSettings</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;SeverNode.loadGameGameDir: invalid settings file: &#39;</span> <span class="o">+</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;SeverNode.loadGameDir: invalid settings file: &#39;</span> <span class="o">+</span>
                         <span class="nx">gameSettingsPath</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
     <span class="p">}</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="nx">gameSettings</span><span class="p">.</span><span class="nx">TIMER</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">gameSettings</span><span class="p">.</span><span class="nx">TIMER</span><span class="p">)</span> <span class="p">{</span>
-            <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;SeverNode.loadGameGameDir: gameSettings.TIMER &#39;</span> <span class="o">+</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;SeverNode.loadGameDir: gameSettings.TIMER &#39;</span> <span class="o">+</span>
                             <span class="s1">&#39;must be object or undefined. File: &#39;</span> <span class="o">+</span>
                             <span class="nx">gameSettingsPath</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
         <span class="p">}</span>
@@ -597,7 +784,7 @@ this.loadViewsFile(gameDir, gameInfo);</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-24" id="section-24">&#182;</a>
+  <a class="pilcrow" href="#section-29" id="section-29">&#182;</a>
 </div>
 <p>Stages.</p>
         </td>
@@ -608,12 +795,12 @@ this.loadViewsFile(gameDir, gameInfo);</p>
         <span class="nx">gameStages</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="nx">gameStagesPath</span><span class="p">);</span>
     <span class="p">}</span>
     <span class="k">catch</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadGameGameDir: cannot read &#39;</span> <span class="o">+</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadGameDir: cannot read &#39;</span> <span class="o">+</span>
                         <span class="nx">gameStagesPath</span> <span class="o">+</span> <span class="s1">&#39;: &#39;</span> <span class="o">+</span> <span class="nx">e</span><span class="p">.</span><span class="nx">stack</span><span class="p">);</span>
     <span class="p">}</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;function&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">gameStages</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;SeverNode.loadGameGameDir: stages file did not &#39;</span> <span class="o">+</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;SeverNode.loadGameDir: stages file did not &#39;</span> <span class="o">+</span>
                         <span class="s1">&#39;export a valid function: &#39;</span> <span class="o">+</span> <span class="nx">gameStagesPath</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
     <span class="p">}</span>
 
@@ -627,7 +814,7 @@ this.loadViewsFile(gameDir, gameInfo);</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-25" id="section-25">&#182;</a>
+  <a class="pilcrow" href="#section-30" id="section-30">&#182;</a>
 </div>
 <p>Setup.</p>
         </td>
@@ -638,19 +825,19 @@ this.loadViewsFile(gameDir, gameInfo);</p>
         <span class="nx">gameSetup</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="nx">gameSetupPath</span><span class="p">);</span>
     <span class="p">}</span>
     <span class="k">catch</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadGameGameDir: cannot read &#39;</span> <span class="o">+</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadGameDir: cannot read &#39;</span> <span class="o">+</span>
                         <span class="nx">gameSetupPath</span> <span class="o">+</span> <span class="s1">&#39;: &#39;</span> <span class="o">+</span> <span class="nx">e</span><span class="p">.</span><span class="nx">stack</span><span class="p">);</span>
     <span class="p">}</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;function&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">gameSetup</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;SeverNode.loadGameGameDir: setup file did not &#39;</span> <span class="o">+</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;SeverNode.loadGameDir: setup file did not &#39;</span> <span class="o">+</span>
                         <span class="s1">&#39;export a valid function: &#39;</span> <span class="o">+</span> <span class="nx">gameSetupPath</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
     <span class="p">}</span>
 
     <span class="nx">gameSetup</span> <span class="o">=</span> <span class="nx">gameSetup</span><span class="p">(</span><span class="nx">gameSettings</span><span class="p">,</span> <span class="nx">gameStages</span><span class="p">);</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">gameSetup</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;SeverNode.loadGameGameDir: setup function did  &#39;</span> <span class="o">+</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;SeverNode.loadGameDir: setup function did  &#39;</span> <span class="o">+</span>
                         <span class="s1">&#39;not return a valid object: &#39;</span> <span class="o">+</span> <span class="nx">gameSetupPath</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
     <span class="p">}</span>
 
@@ -661,7 +848,7 @@ this.loadViewsFile(gameDir, gameInfo);</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-26" id="section-26">&#182;</a>
+  <a class="pilcrow" href="#section-31" id="section-31">&#182;</a>
 </div>
 <p>Parsing the settings object before returning.</p>
         </td>
@@ -669,7 +856,7 @@ this.loadViewsFile(gameDir, gameInfo);</p>
     <span class="nx">gameSettings</span> <span class="o">=</span> <span class="nx">parseGameSettings</span><span class="p">(</span><span class="nx">gameSettings</span><span class="p">);</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">gameSettings</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;SeverNode.loadGameGameDir: error parsing &#39;</span> <span class="o">+</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;SeverNode.loadGameDir: error parsing &#39;</span> <span class="o">+</span>
                         <span class="s1">&#39;treatment object: &#39;</span> <span class="o">+</span> <span class="nx">gameSettingsPath</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
     <span class="p">}</span>
 
@@ -713,15 +900,18 @@ this.loadViewsFile(gameDir, gameInfo);</p>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-<span class="nx">GameLoader</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">loadClientTypes</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">directory</span><span class="p">)</span> <span class="p">{</span>
+<span class="nx">GameLoader</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">loadClientTypes</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">directory</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">level</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">clientTypesDir</span><span class="p">,</span> <span class="nx">fileNames</span><span class="p">,</span> <span class="nx">fileName</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">clientType</span><span class="p">,</span> <span class="nx">clientTypes</span><span class="p">,</span> <span class="nx">clientTypePath</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">i</span><span class="p">,</span> <span class="nx">len</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">logger</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">logger</span><span class="p">,</span> <span class="nx">errStr</span><span class="p">;</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">directory</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadClientTypes: directory must be &#39;</span> <span class="o">+</span>
-                            <span class="s1">&#39;string.&#39;</span><span class="p">);</span>
+        <span class="nx">errStr</span> <span class="o">=</span> <span class="s1">&#39;GameLoader.loadClientTypes: directory must be string. &#39;</span> <span class="o">+</span>
+            <span class="s1">&#39;Game: &#39;</span> <span class="o">+</span> <span class="nx">gameName</span><span class="p">;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">level</span><span class="p">)</span> <span class="nx">errStr</span> <span class="o">+=</span> <span class="s1">&#39; Level: &#39;</span> <span class="o">+</span> <span class="nx">level</span><span class="p">;</span>
+        <span class="nx">errStr</span> <span class="o">+=</span> <span class="s1">&#39;. Found: &#39;</span> <span class="o">+</span> <span class="nx">directory</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="nx">errStr</span><span class="p">);</span>
     <span class="p">}</span>
 
     <span class="nx">logger</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">logger</span><span class="p">;</span>
@@ -729,8 +919,11 @@ this.loadViewsFile(gameDir, gameInfo);</p>
     <span class="nx">clientTypesDir</span> <span class="o">=</span> <span class="nx">directory</span> <span class="o">+</span> <span class="s1">&#39;game/client_types/&#39;</span><span class="p">;</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">J</span><span class="p">.</span><span class="nx">existsSync</span><span class="p">(</span><span class="nx">clientTypesDir</span><span class="p">))</span> <span class="p">{</span>
-        <span class="nx">logger</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadClientTypes: game directory not &#39;</span> <span class="o">+</span>
-                     <span class="s1">&#39;found: &#39;</span> <span class="o">+</span> <span class="nx">directory</span><span class="p">);</span>
+        <span class="nx">errStr</span> <span class="o">=</span> <span class="s1">&#39;GameLoader.loadClientTypes: directory not found. &#39;</span> <span class="o">+</span>
+            <span class="s1">&#39;Game: &#39;</span> <span class="o">+</span> <span class="nx">gameName</span><span class="p">;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">level</span><span class="p">)</span> <span class="nx">errStr</span> <span class="o">+=</span> <span class="s1">&#39;. Level: &#39;</span> <span class="o">+</span> <span class="nx">level</span><span class="p">;</span>
+        <span class="nx">errStr</span> <span class="o">+=</span> <span class="s1">&#39;. Found: &#39;</span> <span class="o">+</span> <span class="nx">directory</span>
+        <span class="nx">logger</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="nx">errStr</span><span class="p">);</span>
         <span class="k">return</span><span class="p">;</span>
     <span class="p">}</span>
 
@@ -748,7 +941,7 @@ this.loadViewsFile(gameDir, gameInfo);</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-28" id="section-28">&#182;</a>
+  <a class="pilcrow" href="#section-33" id="section-33">&#182;</a>
 </div>
 <p>Ignore non-js files, and temporary and hidden files (begin with '.').</p>
         </td>
@@ -761,8 +954,12 @@ this.loadViewsFile(gameDir, gameInfo);</p>
                     <span class="nx">clientTypes</span><span class="p">[</span><span class="nx">fileName</span><span class="p">.</span><span class="nx">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">3</span><span class="p">)]</span> <span class="o">=</span> <span class="nx">clientType</span><span class="p">;</span>
                 <span class="p">}</span>
                 <span class="k">catch</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
-                    <span class="nx">logger</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadClientTypes: cannot &#39;</span> <span class="o">+</span>
-                                 <span class="s1">&#39;read &#39;</span> <span class="o">+</span> <span class="nx">clientTypePath</span> <span class="o">+</span> <span class="s1">&#39;: &#39;</span> <span class="o">+</span> <span class="nx">e</span><span class="p">.</span><span class="nx">stack</span><span class="p">);</span>
+                    <span class="nx">errStr</span> <span class="o">=</span> <span class="s1">&#39;GameLoader.loadClientTypes: an error occurred &#39;</span> <span class="o">+</span>
+                        <span class="s1">&#39;while reading client type: &#39;</span> <span class="o">+</span> <span class="nx">fileName</span> <span class="o">+</span>
+                        <span class="s1">&#39;. Game: &#39;</span> <span class="o">+</span> <span class="nx">gameName</span><span class="p">;</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="nx">level</span><span class="p">)</span> <span class="nx">errStr</span> <span class="o">+=</span> <span class="s1">&#39;. Level: &#39;</span> <span class="o">+</span> <span class="nx">level</span><span class="p">;</span>
+                    <span class="nx">errStr</span> <span class="o">+=</span> <span class="s1">&#39;. Err: \n&#39;</span> <span class="o">+</span> <span class="nx">e</span><span class="p">.</span><span class="nx">stack</span><span class="p">;</span>
+                    <span class="nx">logger</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="nx">errStr</span><span class="p">);</span>
                     <span class="k">throw</span> <span class="nx">e</span><span class="p">;</span>
                 <span class="p">}</span>
             <span class="p">}</span>
@@ -776,16 +973,22 @@ this.loadViewsFile(gameDir, gameInfo);</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-29" id="section-29">&#182;</a>
+  <a class="pilcrow" href="#section-34" id="section-34">&#182;</a>
 </div>
 <p>Checking if mandatory types are found.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">clientTypes</span><span class="p">.</span><span class="nx">logic</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadClientTypes: logic type not found.&#39;</span><span class="p">);</span>
+        <span class="nx">errStr</span> <span class="o">=</span> <span class="s1">&#39;GameLoader.loadClientTypes: logic type not found. Game: &#39;</span> <span class="o">+</span>
+            <span class="nx">gameName</span><span class="p">;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">level</span><span class="p">)</span> <span class="nx">errStr</span> <span class="o">+=</span> <span class="p">(</span><span class="s1">&#39;. Level: &#39;</span> <span class="o">+</span> <span class="nx">level</span><span class="p">);</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="nx">errStr</span><span class="p">);</span>
     <span class="p">}</span>
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">clientTypes</span><span class="p">.</span><span class="nx">player</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadClientTypes: player type not found.&#39;</span><span class="p">);</span>
+        <span class="nx">errStr</span> <span class="o">=</span> <span class="s1">&#39;GameLoader.loadClientTypes: player type not found. Game: &#39;</span> <span class="o">+</span>
+            <span class="nx">gameName</span><span class="p">;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">level</span><span class="p">)</span> <span class="nx">errStr</span> <span class="o">+=</span> <span class="p">(</span><span class="s1">&#39;. Level: &#39;</span> <span class="o">+</span> <span class="nx">level</span><span class="p">);</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="nx">errStr</span><span class="p">);</span>
     <span class="p">}</span>
 
     <span class="k">return</span> <span class="nx">clientTypes</span><span class="p">;</span>
@@ -815,6 +1018,11 @@ this.loadViewsFile(gameDir, gameInfo);</p>
       <span class="dox_type">string</span>
       <span>The directory of the game.</span>
     </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">gameName</span>
+      <span class="dox_type">string</span>
+      <span>The name of the game.</span>
+    </div>
     <div class="dox_tag_title">Returns</div>
     <div class="dox_tag_detail">
       <span class="dox_tag_name"></span>
@@ -825,7 +1033,7 @@ this.loadViewsFile(gameDir, gameInfo);</p>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-<span class="nx">GameLoader</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">buildLanguagesObject</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">directory</span><span class="p">)</span> <span class="p">{</span>
+<span class="nx">GameLoader</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">buildLanguagesObject</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">directory</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">ctxPath</span><span class="p">,</span> <span class="nx">langPaths</span><span class="p">,</span> <span class="nx">languages</span><span class="p">,</span> <span class="nx">languageObject</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">i</span><span class="p">,</span> <span class="nx">len</span><span class="p">,</span> <span class="nx">langFile</span><span class="p">;</span>
 
@@ -844,7 +1052,7 @@ this.loadViewsFile(gameDir, gameInfo);</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-31" id="section-31">&#182;</a>
+  <a class="pilcrow" href="#section-36" id="section-36">&#182;</a>
 </div>
 <p>Only directories.</p>
         </td>
@@ -923,7 +1131,7 @@ this.loadViewsFile(gameDir, gameInfo);</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-33" id="section-33">&#182;</a>
+  <a class="pilcrow" href="#section-38" id="section-38">&#182;</a>
 </div>
 <ol>
 <li>Channel settings.</li>
@@ -939,7 +1147,7 @@ this.loadViewsFile(gameDir, gameInfo);</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-34" id="section-34">&#182;</a>
+  <a class="pilcrow" href="#section-39" id="section-39">&#182;</a>
 </div>
 <p>Save ref. to newly created channel.</p>
         </td>
@@ -953,7 +1161,7 @@ this.loadViewsFile(gameDir, gameInfo);</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-35" id="section-35">&#182;</a>
+  <a class="pilcrow" href="#section-40" id="section-40">&#182;</a>
 </div>
 <ol>
 <li>Credentials.</li>
@@ -970,7 +1178,7 @@ this.loadViewsFile(gameDir, gameInfo);</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-36" id="section-36">&#182;</a>
+  <a class="pilcrow" href="#section-41" id="section-41">&#182;</a>
 </div>
 <p>TODO: checkings. Add method.</p>
         </td>
@@ -985,7 +1193,7 @@ this.loadViewsFile(gameDir, gameInfo);</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-37" id="section-37">&#182;</a>
+  <a class="pilcrow" href="#section-42" id="section-42">&#182;</a>
 </div>
 <ol>
 <li>JWT secret.</li>
@@ -1002,7 +1210,7 @@ this.loadViewsFile(gameDir, gameInfo);</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-38" id="section-38">&#182;</a>
+  <a class="pilcrow" href="#section-43" id="section-43">&#182;</a>
 </div>
 <p>TODO: checkings. Add method.</p>
         </td>
@@ -1092,7 +1300,7 @@ automatically add a waiting room to the channel.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-40" id="section-40">&#182;</a>
+  <a class="pilcrow" href="#section-45" id="section-45">&#182;</a>
 </div>
 <p>Validate</p>
         </td>
@@ -1137,7 +1345,7 @@ automatically add a waiting room to the channel.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-41" id="section-41">&#182;</a>
+  <a class="pilcrow" href="#section-46" id="section-46">&#182;</a>
 </div>
 <p>Add the list of channels created by the game.</p>
         </td>
@@ -1158,7 +1366,7 @@ automatically add a waiting room to the channel.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-42" id="section-42">&#182;</a>
+  <a class="pilcrow" href="#section-47" id="section-47">&#182;</a>
 </div>
 <p>We prepend the baseDir parameter, if any.
 If logicPath is not string we let the WaitingRoom
@@ -1186,7 +1394,7 @@ constructor throw an error.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-43" id="section-43">&#182;</a>
+  <a class="pilcrow" href="#section-48" id="section-48">&#182;</a>
 </div>
 <p>Adding channel alias.</p>
         </td>
@@ -1203,13 +1411,123 @@ constructor throw an error.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-44" id="section-44">&#182;</a>
+  <a class="pilcrow" href="#section-49" id="section-49">&#182;</a>
 </div>
 <p>Errors in channel creation are already logged.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
 
     <span class="k">return</span> <span class="nx">channelConf</span><span class="p">;</span>
+<span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="gameloader.buildwaitroomconf">
+  <h3>
+    <a href="#gameloader.buildwaitroomconf" name="gameloader.buildwaitroomconf" class="pilcrow">&#182;</a>
+    GameLoader.buildWaitRoomConf
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Loads <em>waitroom/room.settings.js</em> from file system, checks it and returns it</p>
+
+<p>Synchronously looks for a file called <em>waitroom/room.settings.js</em> at the top
+level of the specified directory.</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">directory</span>
+      <span class="dox_type">string</span>
+      <span>The directory of the game</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">channel</span>
+      <span class="dox_type">ServerChannel</span>
+      <span>The channel object</span>
+    </div>
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">object</span>
+      <span>conf The waiting room configuration</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">ServerChannel.createWaitingRoom
+</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">GameLoader</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">buildWaitRoomConf</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">directory</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">level</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">waitRoomSettingsFile</span><span class="p">,</span> <span class="nx">waitRoomFile</span><span class="p">,</span> <span class="nx">conf</span><span class="p">,</span> <span class="nx">waitRoom</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">logger</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">update</span><span class="p">,</span> <span class="nx">errStr</span><span class="p">;</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">directory</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">errStr</span> <span class="o">=</span> <span class="s1">&#39;GameLoader.buildWaitRoomConf: directory must be &#39;</span> <span class="o">+</span>
+            <span class="s1">&#39;string. Game: &#39;</span> <span class="o">+</span> <span class="nx">gameName</span><span class="p">;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">level</span><span class="p">)</span> <span class="nx">errStr</span> <span class="o">+=</span> <span class="s1">&#39;. Level: &#39;</span> <span class="o">+</span> <span class="nx">level</span><span class="p">;</span>
+        <span class="nx">errStr</span> <span class="o">+=</span> <span class="s1">&#39;. Found: &#39;</span> <span class="o">+</span> <span class="nx">directory</span><span class="p">;</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="nx">errStr</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="nx">logger</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">logger</span><span class="p">;</span>
+
+    <span class="nx">waitRoomSettingsFile</span> <span class="o">=</span> <span class="nx">directory</span> <span class="o">+</span> <span class="s1">&#39;waitroom/waitroom.settings.js&#39;</span><span class="p">;</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">fs</span><span class="p">.</span><span class="nx">existsSync</span><span class="p">(</span><span class="nx">waitRoomSettingsFile</span><span class="p">))</span> <span class="p">{</span>
+        <span class="nx">errStr</span> <span class="o">=</span> <span class="s1">&#39;GameLoader.buildWaitRoomConf: file waitroom.settings &#39;</span> <span class="o">+</span>
+            <span class="s1">&#39;not found. Game: &#39;</span> <span class="o">+</span> <span class="nx">gameName</span><span class="p">;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">level</span><span class="p">)</span> <span class="nx">errStr</span> <span class="o">+=</span> <span class="s1">&#39;. Level: &#39;</span> <span class="o">+</span> <span class="nx">level</span><span class="p">;</span>
+        <span class="nx">logger</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="nx">errStr</span><span class="p">);</span>
+        <span class="k">return</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">try</span> <span class="p">{</span>
+        <span class="nx">conf</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="nx">waitRoomSettingsFile</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="k">catch</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">errStr</span> <span class="o">=</span> <span class="s1">&#39;GameLoader.buildWaitRoomConf: error reading &#39;</span> <span class="o">+</span>
+            <span class="s1">&#39;waitroom.settings file. Game: &#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">level</span><span class="p">)</span> <span class="nx">errStr</span> <span class="o">+=</span> <span class="s1">&#39; Level: &#39;</span> <span class="o">+</span> <span class="nx">level</span><span class="p">;</span>
+        <span class="nx">errStr</span> <span class="o">+=</span> <span class="s1">&#39;. Err: \n&#39;</span> <span class="o">+</span> <span class="nx">e</span><span class="p">.</span><span class="nx">stack</span><span class="p">;</span>
+        <span class="nx">logger</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="nx">errStr</span><span class="p">);</span>
+        <span class="k">throw</span> <span class="nx">e</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">conf</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">errStr</span> <span class="o">=</span> <span class="s1">&#39;GameLoader.buildWaitRoomConf: room.settings file &#39;</span> <span class="o">+</span>
+            <span class="s1">&#39;must return a configuration object. Game: &#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">level</span><span class="p">)</span> <span class="nx">errStr</span> <span class="o">+=</span> <span class="s1">&#39; Level: &#39;</span> <span class="o">+</span> <span class="nx">level</span><span class="p">;</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="nx">errStr</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="nx">conf</span><span class="p">.</span><span class="nx">logicPath</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">conf</span><span class="p">.</span><span class="nx">logicPath</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">errStr</span> <span class="o">=</span> <span class="s1">&#39;GameLoader.buildWaitRoomConf: configuration &#39;</span> <span class="o">+</span>
+                <span class="s1">&#39;loaded, but &quot;logicPath&quot; must be undefined or string. &#39;</span> <span class="o">+</span>
+                <span class="s1">&#39;Game: &#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">;</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nx">level</span><span class="p">)</span> <span class="nx">errStr</span> <span class="o">+=</span> <span class="s1">&#39; Level: &#39;</span> <span class="o">+</span> <span class="nx">level</span><span class="p">;</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="nx">errStr</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="nx">conf</span><span class="p">.</span><span class="nx">logicPath</span> <span class="o">=</span> <span class="nx">checkLocalPath</span><span class="p">(</span><span class="nx">directory</span><span class="p">,</span> <span class="s1">&#39;waitroom/&#39;</span><span class="p">,</span> <span class="nx">conf</span><span class="p">.</span><span class="nx">logicPath</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="k">else</span> <span class="p">{</span>
+        <span class="nx">waitRoomFile</span> <span class="o">=</span> <span class="nx">directory</span> <span class="o">+</span> <span class="s1">&#39;waitroom/waitroom.js&#39;</span><span class="p">;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">fs</span><span class="p">.</span><span class="nx">existsSync</span><span class="p">(</span><span class="nx">waitRoomFile</span><span class="p">))</span> <span class="p">{</span>
+            <span class="nx">conf</span><span class="p">.</span><span class="nx">logicPath</span> <span class="o">=</span> <span class="nx">waitRoomFile</span><span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="nx">conf</span><span class="p">;</span>
 <span class="p">};</span>
 
 
@@ -1227,7 +1545,7 @@ constructor throw an error.</p>
 </div>
 
   </div>
-  <div class="body"><p>Loads <em>waitroom/room.settings.js</em> from file system and acts accordingly</p>
+  <div class="body"><p>Loads the waiting room configuration and creates the object in channel</p>
 
 <p>Synchronously looks for a file called <em>waitroom/room.settings.js</em> at the top
 level of the specified directory.</p>
@@ -1252,6 +1570,10 @@ level of the specified directory.</p>
     </div>
     <div class="dox_tag_title">See</div>
     <div class="dox_tag_detail">
+      <span class="dox_type">GameLoader.buildWaitRoomConf</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
       <span class="dox_type">ServerChannel.createWaitingRoom
 </span>
     </div>
@@ -1260,54 +1582,8 @@ level of the specified directory.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">GameLoader</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">loadWaitRoomDir</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">directory</span><span class="p">,</span> <span class="nx">channel</span><span class="p">)</span> <span class="p">{</span>
-    <span class="kd">var</span> <span class="nx">waitRoomSettingsFile</span><span class="p">,</span> <span class="nx">waitRoomFile</span><span class="p">,</span> <span class="nx">conf</span><span class="p">,</span> <span class="nx">waitRoom</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">logger</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">;</span>
-
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">directory</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadWaitRoomDir: directory must be &#39;</span> <span class="o">+</span>
-                            <span class="s1">&#39;string.&#39;</span><span class="p">);</span>
-    <span class="p">}</span>
-    <span class="nx">logger</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">logger</span><span class="p">;</span>
-    <span class="nx">gameName</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">gameName</span><span class="p">;</span>
-
-    <span class="nx">waitRoomSettingsFile</span> <span class="o">=</span> <span class="nx">directory</span> <span class="o">+</span> <span class="s1">&#39;waitroom/waitroom.settings.js&#39;</span><span class="p">;</span>
-
-    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">fs</span><span class="p">.</span><span class="nx">existsSync</span><span class="p">(</span><span class="nx">waitRoomSettingsFile</span><span class="p">))</span> <span class="p">{</span>
-        <span class="nx">logger</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadWaitRoomDir: waitroom.settings.js &#39;</span> <span class="o">+</span>
-                     <span class="s1">&#39;not found. Game: &#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
-        <span class="k">return</span><span class="p">;</span>
-    <span class="p">}</span>
-
-    <span class="k">try</span> <span class="p">{</span>
-        <span class="nx">conf</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="nx">waitRoomSettingsFile</span><span class="p">);</span>
-    <span class="p">}</span>
-    <span class="k">catch</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nx">logger</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadWaitRoomDir: error reading &#39;</span> <span class="o">+</span>
-                     <span class="s1">&#39;waitroom.settings file. Game: &#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;: &#39;</span> <span class="o">+</span>
-                    <span class="nx">e</span><span class="p">.</span><span class="nx">stack</span><span class="p">);</span>
-        <span class="k">throw</span> <span class="nx">e</span><span class="p">;</span>
-    <span class="p">}</span>
-
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">conf</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadWaitRoomDir: room.settings file &#39;</span> <span class="o">+</span>
-                            <span class="s1">&#39;must return a configuration object.&#39;</span><span class="p">);</span>
-    <span class="p">}</span>
-
-    <span class="k">if</span> <span class="p">(</span><span class="nx">conf</span><span class="p">.</span><span class="nx">logicPath</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">conf</span><span class="p">.</span><span class="nx">logicPath</span><span class="p">)</span> <span class="p">{</span>
-            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadWaitRoomDir: configuration &#39;</span> <span class="o">+</span>
-                                <span class="s1">&#39;loaded, but &quot;logicPath&quot; must be undefined &#39;</span> <span class="o">+</span>
-                                <span class="s1">&#39;or string.&#39;</span><span class="p">);</span>
-        <span class="p">}</span>
-        <span class="nx">conf</span><span class="p">.</span><span class="nx">logicPath</span> <span class="o">=</span> <span class="nx">checkLocalPath</span><span class="p">(</span><span class="nx">directory</span><span class="p">,</span> <span class="s1">&#39;waitroom/&#39;</span><span class="p">,</span> <span class="nx">conf</span><span class="p">.</span><span class="nx">logicPath</span><span class="p">);</span>
-    <span class="p">}</span>
-    <span class="k">else</span> <span class="p">{</span>
-        <span class="nx">waitRoomFile</span> <span class="o">=</span> <span class="nx">directory</span> <span class="o">+</span> <span class="s1">&#39;waitroom/waitroom.js&#39;</span><span class="p">;</span>
-        <span class="k">if</span> <span class="p">(</span><span class="nx">fs</span><span class="p">.</span><span class="nx">existsSync</span><span class="p">(</span><span class="nx">waitRoomFile</span><span class="p">))</span> <span class="p">{</span>
-            <span class="nx">conf</span><span class="p">.</span><span class="nx">logicPath</span> <span class="o">=</span> <span class="nx">waitRoomFile</span><span class="p">;</span>
-        <span class="p">}</span>
-    <span class="p">}</span>
-
+    <span class="kd">var</span> <span class="nx">conf</span><span class="p">,</span> <span class="nx">waitRoom</span><span class="p">;</span>
+    <span class="nx">conf</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">buildWaitRoomConf</span><span class="p">(</span><span class="nx">directory</span><span class="p">,</span> <span class="nx">channel</span><span class="p">);</span>
 
 </pre></div>
         </td>
@@ -1315,20 +1591,17 @@ level of the specified directory.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-46" id="section-46">&#182;</a>
+  <a class="pilcrow" href="#section-52" id="section-52">&#182;</a>
 </div>
 <p>Add waiting room information to global game object.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">updateGameInfo</span><span class="p">(</span><span class="nx">gameName</span><span class="p">,</span> <span class="p">{</span> <span class="nx">waitroom</span><span class="o">:</span> <span class="nx">conf</span> <span class="p">});</span>
-
-    <span class="nx">waitRoom</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">createWaitingRoom</span><span class="p">(</span><span class="nx">conf</span><span class="p">);</span>
-
+    <span class="k">this</span><span class="p">.</span><span class="nx">updateGameInfo</span><span class="p">(</span><span class="nx">channel</span><span class="p">.</span><span class="nx">gameName</span><span class="p">,</span> <span class="p">{</span> <span class="nx">waitroom</span><span class="o">:</span> <span class="nx">conf</span> <span class="p">});</span>
+    <span class="nx">waitRoom</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">createWaitingRoom</span><span class="p">(</span><span class="nx">conf</span><span class="p">,</span> <span class="kc">true</span><span class="p">);</span>
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">waitRoom</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadWaitRoomDir: could not create &#39;</span> <span class="o">+</span>
                         <span class="s1">&#39;waiting room. Game: &#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
     <span class="p">}</span>
-
     <span class="k">return</span> <span class="nx">waitRoom</span><span class="p">;</span>
 <span class="p">};</span>
 
@@ -1396,7 +1669,7 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-48" id="section-48">&#182;</a>
+  <a class="pilcrow" href="#section-54" id="section-54">&#182;</a>
 </div>
 <p>Check if directory exists.</p>
         </td>
@@ -1412,7 +1685,7 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-49" id="section-49">&#182;</a>
+  <a class="pilcrow" href="#section-55" id="section-55">&#182;</a>
 </div>
 <p>Add information to global game object.</p>
         </td>
@@ -1428,7 +1701,7 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-50" id="section-50">&#182;</a>
+  <a class="pilcrow" href="#section-56" id="section-56">&#182;</a>
 </div>
 <p>Auth settings.</p>
         </td>
@@ -1467,7 +1740,7 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-51" id="section-51">&#182;</a>
+  <a class="pilcrow" href="#section-57" id="section-57">&#182;</a>
 </div>
 <p>Enable authorization by default.</p>
         </td>
@@ -1481,7 +1754,7 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-52" id="section-52">&#182;</a>
+  <a class="pilcrow" href="#section-58" id="section-58">&#182;</a>
 </div>
 <p>Add waiting room information to global game object.</p>
         </td>
@@ -1496,7 +1769,7 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-53" id="section-53">&#182;</a>
+  <a class="pilcrow" href="#section-59" id="section-59">&#182;</a>
 </div>
 <p>Exit here if auth is disabled.</p>
         </td>
@@ -1514,7 +1787,7 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-54" id="section-54">&#182;</a>
+  <a class="pilcrow" href="#section-60" id="section-60">&#182;</a>
 </div>
 <p>Auth codes. Can be synchronous or asynchronous.</p>
         </td>
@@ -1547,7 +1820,7 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-55" id="section-55">&#182;</a>
+  <a class="pilcrow" href="#section-61" id="section-61">&#182;</a>
 </div>
 <p>Auth file.</p>
         </td>
@@ -1583,10 +1856,10 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs"><div class="dox">
   <div class="summary">
-<div class="pilwrap" id="gameloader.loadrequirementsdir">
+<div class="pilwrap" id="gameloader.buildrequirementsconf">
   <h3>
-    <a href="#gameloader.loadrequirementsdir" name="gameloader.loadrequirementsdir" class="pilcrow">&#182;</a>
-    GameLoader.loadRequirementsDir
+    <a href="#gameloader.buildrequirementsconf" name="gameloader.buildrequirementsconf" class="pilcrow">&#182;</a>
+    GameLoader.buildRequirementsConf
   </h3>
 </div>
 
@@ -1611,26 +1884,42 @@ generation and clientObject decoration.</p>
       <span class="dox_type">RequirementsRoom</span>
       <span>The requirements room (if one is created)</span>
     </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">GameLoader.buildRequirementsConf</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">ServerChannel.createRequirementsRoom
+</span>
+    </div>
   </div>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-<span class="nx">GameLoader</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">loadRequirementsDir</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">directory</span><span class="p">,</span> <span class="nx">channel</span><span class="p">)</span> <span class="p">{</span>
+<span class="nx">GameLoader</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">buildRequirementsConf</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">directory</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span>
+                                                      <span class="nx">level</span><span class="p">)</span> <span class="p">{</span>
+
     <span class="kd">var</span> <span class="nx">file</span><span class="p">,</span> <span class="nx">settingsFile</span><span class="p">,</span> <span class="nx">settings</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">logger</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">reqFunc</span><span class="p">,</span> <span class="nx">reqObj</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">errStr</span><span class="p">;</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">directory</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadRequirementsDir: directory &#39;</span> <span class="o">+</span>
-                            <span class="s1">&#39;must be string.&#39;</span><span class="p">);</span>
+        <span class="nx">errStr</span> <span class="o">=</span> <span class="s1">&#39;GameLoader.buildRequirementsConf: directory must be &#39;</span> <span class="o">+</span>
+            <span class="s1">&#39;string. Game: &#39;</span> <span class="o">+</span> <span class="nx">gameName</span><span class="p">;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">level</span><span class="p">)</span> <span class="nx">errStr</span> <span class="o">+=</span> <span class="s1">&#39;. Level: &#39;</span> <span class="o">+</span> <span class="nx">level</span><span class="p">;</span>
+        <span class="nx">errStr</span> <span class="o">+=</span> <span class="s1">&#39;. Found: &#39;</span> <span class="o">+</span> <span class="nx">directory</span><span class="p">;</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="nx">errStr</span><span class="p">);</span>
     <span class="p">}</span>
 
-    <span class="nx">gameName</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">gameName</span><span class="p">;</span>
     <span class="nx">logger</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">logger</span><span class="p">;</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">fs</span><span class="p">.</span><span class="nx">existsSync</span><span class="p">(</span><span class="nx">directory</span> <span class="o">+</span> <span class="s1">&#39;requirements/&#39;</span><span class="p">))</span> <span class="p">{</span>
-        <span class="nx">logger</span><span class="p">.</span><span class="nx">warn</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadRequirementsDir: channel &#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span>
-                    <span class="s1">&#39;: no requirements directory.&#39;</span><span class="p">);</span><span class="mi">1</span>
+        <span class="nx">errStr</span> <span class="o">=</span> <span class="s1">&#39;GameLoader.buildRequirementsConf: no requirements &#39;</span> <span class="o">+</span>
+            <span class="s1">&#39;directory. Game: &#39;</span> <span class="o">+</span> <span class="nx">gameName</span><span class="p">;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">level</span><span class="p">)</span> <span class="nx">errStr</span> <span class="o">+=</span> <span class="s1">&#39;. Level: &#39;</span> <span class="o">+</span> <span class="nx">level</span><span class="p">;</span>
+        <span class="nx">logger</span><span class="p">.</span><span class="nx">warn</span><span class="p">(</span><span class="nx">errStr</span><span class="p">);</span>
 
 
 </pre></div>
@@ -1639,13 +1928,12 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-57" id="section-57">&#182;</a>
+  <a class="pilcrow" href="#section-63" id="section-63">&#182;</a>
 </div>
 <p>Add information to global game object.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-        <span class="k">this</span><span class="p">.</span><span class="nx">updateGameInfo</span><span class="p">(</span><span class="nx">gameName</span><span class="p">,</span> <span class="p">{</span> <span class="nx">requirements</span><span class="o">:</span> <span class="p">{</span> <span class="nx">enabled</span><span class="o">:</span> <span class="kc">false</span> <span class="p">}</span> <span class="p">});</span>
-        <span class="k">return</span><span class="p">;</span>
+        <span class="k">return</span> <span class="p">{</span> <span class="nx">enabled</span><span class="o">:</span> <span class="kc">false</span> <span class="p">};</span>
     <span class="p">}</span>
 
 
@@ -1655,7 +1943,7 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-58" id="section-58">&#182;</a>
+  <a class="pilcrow" href="#section-64" id="section-64">&#182;</a>
 </div>
 <p>Requirements settings.</p>
         </td>
@@ -1664,8 +1952,10 @@ generation and clientObject decoration.</p>
 
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">fs</span><span class="p">.</span><span class="nx">existsSync</span><span class="p">(</span><span class="nx">settingsFile</span><span class="p">))</span> <span class="p">{</span>
         <span class="nx">settings</span> <span class="o">=</span> <span class="p">{</span> <span class="nx">enabled</span><span class="o">:</span> <span class="kc">true</span> <span class="p">};</span>
-        <span class="nx">logger</span><span class="p">.</span><span class="nx">warn</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadRequirementsDir: channel&#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span>
-                    <span class="s1">&#39;: no settings file found. Default settings used.&#39;</span><span class="p">);</span>
+        <span class="nx">errStr</span> <span class="o">=</span> <span class="s1">&#39;GameLoader.buildRequirementsConf: no settings file found. &#39;</span> <span class="o">+</span>
+            <span class="s1">&#39;Default settings used. Game: &#39;</span> <span class="o">+</span> <span class="nx">gameName</span><span class="p">;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">level</span><span class="p">)</span> <span class="nx">errStr</span> <span class="o">+=</span> <span class="s1">&#39;. Level: &#39;</span> <span class="o">+</span> <span class="nx">level</span><span class="p">;</span>
+        <span class="nx">logger</span><span class="p">.</span><span class="nx">warn</span><span class="p">(</span><span class="nx">errStr</span><span class="p">);;</span>
     <span class="p">}</span>
 
     <span class="k">else</span> <span class="p">{</span>
@@ -1673,13 +1963,18 @@ generation and clientObject decoration.</p>
             <span class="nx">settings</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="nx">settingsFile</span><span class="p">);</span>
         <span class="p">}</span>
         <span class="k">catch</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
-            <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadRequirementsDir: cannot read &#39;</span> <span class="o">+</span>
-                            <span class="nx">settingsFile</span> <span class="o">+</span> <span class="s1">&#39;: &#39;</span> <span class="o">+</span> <span class="nx">e</span><span class="p">.</span><span class="nx">stack</span><span class="p">);</span>
+            <span class="nx">errStr</span> <span class="o">=</span> <span class="s1">&#39;GameLoader.buildRequirementsConf: an error occurred &#39;</span> <span class="o">+</span>
+                <span class="s1">&#39;while reading settings file. Game: &#39;</span> <span class="o">+</span> <span class="nx">gameName</span><span class="p">;</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nx">level</span><span class="p">)</span> <span class="nx">errStr</span> <span class="o">+=</span> <span class="s1">&#39;. Level: &#39;</span> <span class="o">+</span> <span class="nx">level</span><span class="p">;</span>
+            <span class="nx">errStr</span> <span class="o">+=</span> <span class="s1">&#39;. Err: \n&#39;</span> <span class="o">+</span> <span class="nx">e</span><span class="p">.</span><span class="nx">stack</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="nx">errStr</span><span class="p">);</span>
         <span class="p">}</span>
 
         <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">)</span> <span class="p">{</span>
-            <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadRequirementsDir: invalid &#39;</span> <span class="o">+</span>
-                            <span class="s1">&#39;settings file: &#39;</span> <span class="o">+</span> <span class="nx">settingsFile</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
+            <span class="nx">errStr</span> <span class="o">=</span> <span class="s1">&#39;GameLoader.buildRequirementsConf: invalid &#39;</span> <span class="o">+</span>
+                <span class="s1">&#39;settings file. Game: &#39;</span> <span class="o">+</span> <span class="nx">gameName</span><span class="p">;</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nx">level</span><span class="p">)</span> <span class="nx">errStr</span> <span class="o">+=</span> <span class="s1">&#39; Level: &#39;</span> <span class="o">+</span> <span class="nx">level</span><span class="p">;</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="nx">errStr</span><span class="p">);</span>
         <span class="p">}</span>
     <span class="p">}</span>
 
@@ -1690,7 +1985,7 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-59" id="section-59">&#182;</a>
+  <a class="pilcrow" href="#section-65" id="section-65">&#182;</a>
 </div>
 <p>We prepend the baseDir parameter, if any.
 If logicPath is not string RequirementsRoom constructor throws an error.</p>
@@ -1708,7 +2003,7 @@ If logicPath is not string RequirementsRoom constructor throws an error.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-60" id="section-60">&#182;</a>
+  <a class="pilcrow" href="#section-66" id="section-66">&#182;</a>
 </div>
 <p>Enable requirements by default.</p>
         </td>
@@ -1722,29 +2017,18 @@ If logicPath is not string RequirementsRoom constructor throws an error.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-61" id="section-61">&#182;</a>
+  <a class="pilcrow" href="#section-67" id="section-67">&#182;</a>
 </div>
 <p>Exit here if requirements is disabled.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">settings</span><span class="p">.</span><span class="nx">enabled</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nx">logger</span><span class="p">.</span><span class="nx">warn</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadRequirementsDir: channel &#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span>
-                    <span class="s1">&#39;: requirements checking disabled in configuration file.&#39;</span><span class="p">);</span>
+        <span class="nx">errStr</span> <span class="o">=</span> <span class="s1">&#39;GameLoader.buildRequirementsConf: requirements checking &#39;</span> <span class="o">+</span>
+            <span class="s1">&#39;disabled in configuration file. Game: &#39;</span> <span class="o">+</span> <span class="nx">gameName</span><span class="p">;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">level</span><span class="p">)</span> <span class="nx">errStr</span> <span class="o">+=</span> <span class="s1">&#39; Level: &#39;</span> <span class="o">+</span> <span class="nx">level</span><span class="p">;</span>
+        <span class="nx">logger</span><span class="p">.</span><span class="nx">warn</span><span class="p">(</span><span class="nx">errStr</span><span class="p">);</span>
 
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-62" id="section-62">&#182;</a>
-</div>
-<p>Add information to global game object.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-        <span class="k">this</span><span class="p">.</span><span class="nx">updateGameInfo</span><span class="p">(</span><span class="nx">gameName</span><span class="p">,</span> <span class="p">{</span> <span class="nx">requirements</span><span class="o">:</span> <span class="nx">settings</span> <span class="p">});</span>
-        <span class="k">return</span><span class="p">;</span>
+        <span class="k">return</span> <span class="nx">settings</span><span class="p">;</span>
     <span class="p">}</span>
 
 
@@ -1754,7 +2038,7 @@ If logicPath is not string RequirementsRoom constructor throws an error.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-63" id="section-63">&#182;</a>
+  <a class="pilcrow" href="#section-68" id="section-68">&#182;</a>
 </div>
 <p>Requirements file.</p>
         </td>
@@ -1771,9 +2055,11 @@ If logicPath is not string RequirementsRoom constructor throws an error.</p>
             <span class="nx">reqObj</span><span class="p">.</span><span class="nx">enabled</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
         <span class="p">}</span>
         <span class="k">catch</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
-            <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadRequirementsDir: channel &#39;</span> <span class="o">+</span>
-                            <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39; cannot read &#39;</span> <span class="o">+</span> <span class="nx">file</span> <span class="o">+</span>
-                            <span class="s1">&#39;. \n&#39;</span> <span class="o">+</span> <span class="nx">e</span><span class="p">.</span><span class="nx">stack</span><span class="p">);</span>
+            <span class="nx">errStr</span> <span class="o">=</span> <span class="s1">&#39;GameLoader.buildRequirementsConf: an error occurred &#39;</span> <span class="o">+</span>
+                <span class="s1">&#39;while trying to execute requirements file. Game: &#39;</span> <span class="o">+</span> <span class="nx">gameName</span><span class="p">;</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nx">level</span><span class="p">)</span> <span class="nx">errStr</span> <span class="o">+=</span> <span class="s1">&#39; Level: &#39;</span> <span class="o">+</span> <span class="nx">level</span><span class="p">;</span>
+            <span class="nx">errStr</span> <span class="o">+=</span> <span class="s1">&#39;. \n&#39;</span> <span class="o">+</span> <span class="nx">e</span><span class="p">.</span><span class="nx">stack</span><span class="p">;</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="nx">errStr</span><span class="p">);</span>
         <span class="p">}</span>
     <span class="p">}</span>
 
@@ -1784,15 +2070,56 @@ If logicPath is not string RequirementsRoom constructor throws an error.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-64" id="section-64">&#182;</a>
+  <a class="pilcrow" href="#section-69" id="section-69">&#182;</a>
 </div>
-<p>Add information to global game object.</p>
+<p>Return final settings.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">updateGameInfo</span><span class="p">(</span><span class="nx">gameName</span><span class="p">,</span> <span class="p">{</span>
-        <span class="nx">requirements</span><span class="o">:</span> <span class="nx">J</span><span class="p">.</span><span class="nx">merge</span><span class="p">(</span><span class="nx">settings</span><span class="p">,</span> <span class="nx">reqObj</span><span class="p">)</span>
-    <span class="p">});</span>
+    <span class="k">return</span> <span class="nx">J</span><span class="p">.</span><span class="nx">merge</span><span class="p">(</span><span class="nx">settings</span><span class="p">,</span> <span class="nx">reqObj</span><span class="p">);</span>
+<span class="p">};</span>
 
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="gameloader.loadrequirementsdir">
+  <h3>
+    <a href="#gameloader.loadrequirementsdir" name="gameloader.loadrequirementsdir" class="pilcrow">&#182;</a>
+    GameLoader.loadRequirementsDir
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Loads the requirements room configuration and creates the object in channel</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">file</span>
+      <span class="dox_type">string</span>
+      <span>The path to the configuration file</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">channel</span>
+      <span class="dox_type">ServerChannel</span>
+      <span>The channel object</span>
+    </div>
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">RequirementsRoom</span>
+      <span>The requirements room (if one is created)</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">GameLoader</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">loadRequirementsDir</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">directory</span><span class="p">,</span> <span class="nx">channel</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">conf</span><span class="p">,</span> <span class="nx">reqRoom</span><span class="p">;</span>
+    <span class="nx">conf</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">buildRequirementsConf</span><span class="p">(</span><span class="nx">directory</span><span class="p">,</span> <span class="nx">channel</span><span class="p">);</span>
 
 </pre></div>
         </td>
@@ -1800,12 +2127,19 @@ If logicPath is not string RequirementsRoom constructor throws an error.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-65" id="section-65">&#182;</a>
+  <a class="pilcrow" href="#section-71" id="section-71">&#182;</a>
 </div>
-<p>Create requirements room in channel.</p>
+<p>Add waiting room information to global game object.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">return</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">createRequirementsRoom</span><span class="p">(</span><span class="nx">J</span><span class="p">.</span><span class="nx">merge</span><span class="p">(</span><span class="nx">reqObj</span><span class="p">,</span> <span class="nx">settings</span><span class="p">));</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">updateGameInfo</span><span class="p">(</span><span class="nx">channel</span><span class="p">.</span><span class="nx">gameName</span><span class="p">,</span> <span class="p">{</span> <span class="nx">requirements</span><span class="o">:</span> <span class="nx">conf</span> <span class="p">});</span>
+    <span class="nx">reqRoom</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">createRequirementsRoom</span><span class="p">(</span><span class="nx">conf</span><span class="p">,</span> <span class="kc">true</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">reqRoom</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadRequirementsRoomDir: could not &#39;</span> <span class="o">+</span>
+                        <span class="s1">&#39;create requirements room. Game: &#39;</span> <span class="o">+</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">gameName</span> <span class="o">+</span>
+                        <span class="s1">&#39;.&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="nx">reqRoom</span><span class="p">;</span>
 <span class="p">};</span>
 
 
@@ -1815,7 +2149,7 @@ If logicPath is not string RequirementsRoom constructor throws an error.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-66" id="section-66">&#182;</a>
+  <a class="pilcrow" href="#section-72" id="section-72">&#182;</a>
 </div>
 <p>TODO: see if we want to add it to prototype.
 Else remove getChannelSandbox also (maybe).</p>
@@ -1958,7 +2292,7 @@ to. If only the callback is provided, then it is applied to both
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-68" id="section-68">&#182;</a>
+  <a class="pilcrow" href="#section-74" id="section-74">&#182;</a>
 </div>
 <p>Channels defined by a game with the channels.js file.
 Auth callback can modify the authorization only of those.</p>
@@ -1972,7 +2306,7 @@ Auth callback can modify the authorization only of those.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-69" id="section-69">&#182;</a>
+  <a class="pilcrow" href="#section-75" id="section-75">&#182;</a>
 </div>
 <p>1 Auth for both admin and player servers.</p>
         </td>
@@ -1989,7 +2323,7 @@ Auth callback can modify the authorization only of those.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-70" id="section-70">&#182;</a>
+  <a class="pilcrow" href="#section-76" id="section-76">&#182;</a>
 </div>
 <p>1 Auth for one server: admin or player.</p>
         </td>
@@ -2032,32 +2366,68 @@ Auth callback can modify the authorization only of those.</p>
       <span>The name of the game</span>
     </div>
     <div class="dox_tag_detail">
+      <span class="dox_tag_name">level</span>
+      <span class="dox_type">string</span>
+      <span>Optional. The name of the level to update. If not
+   existing it will be added. Important. This parameter can be omitted</span>
+    </div>
+    <div class="dox_tag_detail">
       <span class="dox_tag_name">update</span>
       <span class="dox_type">object</span>
-      <span>An object containing properties to mixin</span>
+      <span>An object containing properties to mixin.</span>
     </div>
   </div>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-<span class="nx">GameLoader</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">updateGameInfo</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">gameName</span><span class="p">,</span> <span class="nx">update</span><span class="p">)</span> <span class="p">{</span>
-    <span class="kd">var</span> <span class="nx">gameInfo</span><span class="p">;</span>
+<span class="nx">GameLoader</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">updateGameInfo</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">gameName</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">gameInfo</span><span class="p">,</span> <span class="nx">update</span><span class="p">,</span> <span class="nx">level</span><span class="p">;</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="nx">arguments</span><span class="p">.</span><span class="nx">length</span> <span class="o">===</span> <span class="mi">2</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">update</span> <span class="o">=</span> <span class="nx">arguments</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>
+    <span class="p">}</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-78" id="section-78">&#182;</a>
+</div>
+<p>3 or more.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">else</span> <span class="p">{</span>
+        <span class="nx">level</span> <span class="o">=</span> <span class="nx">arguments</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>
+        <span class="nx">update</span> <span class="o">=</span> <span class="nx">arguments</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span>
+    <span class="p">}</span>
+
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">gameName</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;GameLoader.updateGameInfo: gameName must &#39;</span> <span class="o">+</span>
-                            <span class="s1">&#39;be string.&#39;</span><span class="p">);</span>
+                            <span class="s1">&#39;be string. Found: &#39;</span> <span class="o">+</span> <span class="nx">gameName</span><span class="p">);</span>
     <span class="p">}</span>
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">update</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;GameLoader.updateGameInfo: update must &#39;</span> <span class="o">+</span>
-                            <span class="s1">&#39;be object.&#39;</span><span class="p">);</span>
+                            <span class="s1">&#39;be object. Found: &#39;</span> <span class="o">+</span> <span class="nx">update</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">level</span> <span class="o">&amp;&amp;</span> <span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">level</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;GameLoader.updateGameInfo: level must &#39;</span> <span class="o">+</span>
+                            <span class="s1">&#39;be string or undefined. Found: &#39;</span> <span class="o">+</span> <span class="nx">level</span><span class="p">);</span>
     <span class="p">}</span>
 
     <span class="nx">gameInfo</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">info</span><span class="p">.</span><span class="nx">games</span><span class="p">[</span><span class="nx">gameName</span><span class="p">];</span>
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">gameInfo</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;GameLoader.updateGameInfo: game not found: &#39;</span> <span class="o">+</span>
-                            <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.updateGameInfo: game not found: &#39;</span> <span class="o">+</span>
+                        <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
     <span class="p">}</span>
-
-    <span class="nx">J</span><span class="p">.</span><span class="nx">mixin</span><span class="p">(</span><span class="nx">gameInfo</span><span class="p">,</span> <span class="nx">update</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">level</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">J</span><span class="p">.</span><span class="nx">mixin</span><span class="p">(</span><span class="nx">gameInfo</span><span class="p">,</span> <span class="nx">update</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="k">else</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">gameInfo</span><span class="p">.</span><span class="nx">levels</span><span class="p">[</span><span class="nx">level</span><span class="p">])</span> <span class="nx">gameInfo</span><span class="p">.</span><span class="nx">levels</span><span class="p">[</span><span class="nx">level</span><span class="p">]</span> <span class="o">=</span> <span class="nx">update</span><span class="p">;</span>
+        <span class="k">else</span> <span class="nx">J</span><span class="p">.</span><span class="nx">mixin</span><span class="p">(</span><span class="nx">gameInfo</span><span class="p">.</span><span class="nx">levels</span><span class="p">[</span><span class="nx">level</span><span class="p">],</span> <span class="nx">update</span><span class="p">);</span>
+    <span class="p">}</span>
     <span class="k">return</span> <span class="nx">gameInfo</span><span class="p">;</span>
 <span class="p">};</span>
 
@@ -2148,7 +2518,7 @@ Auth callback can modify the authorization only of those.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-73" id="section-73">&#182;</a>
+  <a class="pilcrow" href="#section-80" id="section-80">&#182;</a>
 </div>
 <p>TODO: do not add aliases to the info.games object.
 (we need to make sure aliases do not clash).</p>
@@ -2331,7 +2701,7 @@ so that GameStage.compare does not complain.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-78" id="section-78">&#182;</a>
+  <a class="pilcrow" href="#section-85" id="section-85">&#182;</a>
 </div>
 <ul>
 <li>skips the check.</li>
@@ -2347,7 +2717,7 @@ so that GameStage.compare does not complain.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-79" id="section-79">&#182;</a>
+  <a class="pilcrow" href="#section-86" id="section-86">&#182;</a>
 </div>
 <p>Trick: we compare version numbers using the GameStage class.</p>
         </td>
@@ -2523,7 +2893,7 @@ settings.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-82" id="section-82">&#182;</a>
+  <a class="pilcrow" href="#section-89" id="section-89">&#182;</a>
 </div>
 <p>TODO: see if we need it in the future:</p>
         </td>

@@ -46,6 +46,15 @@
         <a href="#room.channel">Room.channel</a>
       </div>
       <div class="heading h3">
+        <a href="#gameroom.gamename">GameRoom.gameName</a>
+      </div>
+      <div class="heading h3">
+        <a href="#gameroom.game">GameRoom.game</a>
+      </div>
+      <div class="heading h3">
+        <a href="#gameroom.gamelevel">GameRoom.gameLevel</a>
+      </div>
+      <div class="heading h3">
         <a href="#room.channeloptions">Room.channelOptions</a>
       </div>
       <div class="heading h3">
@@ -340,6 +349,81 @@ MIT Licensed</p>
       <tr>
         <td class="docs"><div class="dox">
   <div class="summary">
+<div class="pilwrap" id="gameroom.gamename">
+  <h3>
+    <a href="#gameroom.gamename" name="gameroom.gamename" class="pilcrow">&#182;</a>
+    GameRoom.gameName
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>The name of the game played in this room</p>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">this</span><span class="p">.</span><span class="nx">gameName</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">gameName</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="gameroom.game">
+  <h3>
+    <a href="#gameroom.game" name="gameroom.game" class="pilcrow">&#182;</a>
+    GameRoom.game
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Reference to the game info object contained in servernode</p>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">this</span><span class="p">.</span><span class="nx">game</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">getGamesInfo</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">gameName</span><span class="p">);</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">game</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="nx">type</span> <span class="o">+</span> <span class="s1">&#39;Room: game not found: &#39;</span> <span class="o">+</span> <span class="k">this</span><span class="p">.</span><span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="gameroom.gamelevel">
+  <h3>
+    <a href="#gameroom.gamelevel" name="gameroom.gamelevel" class="pilcrow">&#182;</a>
+    GameRoom.gameLevel
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Game paths for the room</p>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">this</span><span class="p">.</span><span class="nx">gameLevel</span> <span class="o">=</span> <span class="nx">config</span><span class="p">.</span><span class="nx">gameLevel</span><span class="p">;</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">gameLevel</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">levels</span><span class="p">[</span><span class="k">this</span><span class="p">.</span><span class="nx">gameLevel</span><span class="p">])</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="nx">type</span> <span class="o">+</span> <span class="s1">&#39;Room: game &#39;</span> <span class="o">+</span> <span class="k">this</span><span class="p">.</span><span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39; game level &#39;</span> <span class="o">+</span>
+                        <span class="s1">&#39;not found: &#39;</span> <span class="o">+</span> <span class="k">this</span><span class="p">.</span><span class="nx">gameLevel</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
 <div class="pilwrap" id="room.channeloptions">
   <h3>
     <a href="#room.channeloptions" name="room.channeloptions" class="pilcrow">&#182;</a>
@@ -388,7 +472,7 @@ MIT Licensed</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-12" id="section-12">&#182;</a>
+  <a class="pilcrow" href="#section-15" id="section-15">&#182;</a>
 </div>
 <p>Adding views to distinguish admins and players.
 Note: this.node.player will be added to admins.</p>
@@ -408,7 +492,7 @@ Note: this.node.player will be added to admins.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-13" id="section-13">&#182;</a>
+  <a class="pilcrow" href="#section-16" id="section-16">&#182;</a>
 </div>
 <p>Importing initial clients, if any.</p>
         </td>
@@ -606,7 +690,7 @@ Note: this.node.player will be added to admins.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-22" id="section-22">&#182;</a>
+  <a class="pilcrow" href="#section-25" id="section-25">&#182;</a>
 </div>
 <p>Register room globally.</p>
         </td>
