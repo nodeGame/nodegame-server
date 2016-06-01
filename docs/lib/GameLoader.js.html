@@ -133,7 +133,7 @@ MIT Licensed</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre><span class="s2">&quot;use strict&quot;</span><span class="p">;</span>
 
-<span class="nx">module</span><span class="p">.</span><span class="nx">exports</span> <span class="o">=</span> <span class="nx">GameLoader</span><span class="p">;</span>
+<span class="nx">Module</span><span class="p">.</span><span class="nx">exports</span> <span class="o">=</span> <span class="nx">GameLoader</span><span class="p">;</span>
 
 
 </pre></div>
@@ -277,10 +277,7 @@ overwritten later on.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">GameLoader</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">addGame</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">gameInfo</span><span class="p">,</span> <span class="nx">gameDir</span><span class="p">)</span> <span class="p">{</span>
-    <span class="kd">var</span> <span class="nx">gamePath</span><span class="p">,</span> <span class="nx">reqFail</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">gameLogicPath</span><span class="p">,</span> <span class="nx">gameLogic</span><span class="p">,</span> <span class="nx">gameClientPath</span><span class="p">,</span> <span class="nx">gameClient</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">clientTypes</span><span class="p">,</span> <span class="nx">langObject</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">gameType</span><span class="p">,</span> <span class="nx">gameGame</span><span class="p">,</span> <span class="nx">game</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">settings</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">reqFail</span><span class="p">,</span> <span class="nx">clientTypes</span><span class="p">,</span> <span class="nx">langObject</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">gameConf</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">channel</span><span class="p">;</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">gameInfo</span><span class="p">)</span> <span class="p">{</span>
@@ -360,7 +357,7 @@ overwritten later on.</p>
 <p>Loading settings, setup, and stages.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="nx">gameGame</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">loadGameDir</span><span class="p">(</span><span class="nx">gameDir</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">);</span>
+    <span class="nx">gameConf</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">loadGameDir</span><span class="p">(</span><span class="nx">gameDir</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">);</span>
 
 
 </pre></div>
@@ -406,9 +403,9 @@ overwritten later on.</p>
         <span class="nx">dir</span><span class="o">:</span> <span class="nx">gameDir</span><span class="p">,</span>
         <span class="nx">info</span><span class="o">:</span> <span class="nx">gameInfo</span><span class="p">,</span>
         <span class="nx">clientTypes</span><span class="o">:</span> <span class="nx">clientTypes</span><span class="p">,</span>
-        <span class="nx">settings</span><span class="o">:</span> <span class="nx">gameGame</span><span class="p">.</span><span class="nx">settings</span><span class="p">,</span>
-        <span class="nx">setup</span><span class="o">:</span> <span class="nx">gameGame</span><span class="p">.</span><span class="nx">setup</span><span class="p">,</span>
-        <span class="nx">stager</span><span class="o">:</span> <span class="nx">gameGame</span><span class="p">.</span><span class="nx">stager</span><span class="p">,</span>
+        <span class="nx">settings</span><span class="o">:</span> <span class="nx">gameConf</span><span class="p">.</span><span class="nx">settings</span><span class="p">,</span>
+        <span class="nx">setup</span><span class="o">:</span> <span class="nx">gameConf</span><span class="p">.</span><span class="nx">setup</span><span class="p">,</span>
+        <span class="nx">stager</span><span class="o">:</span> <span class="nx">gameConf</span><span class="p">.</span><span class="nx">stager</span><span class="p">,</span>
         <span class="nx">languages</span><span class="o">:</span> <span class="nx">langObject</span><span class="p">,</span>
         <span class="nx">channel</span><span class="o">:</span> <span class="p">{},</span>
         <span class="nx">levels</span><span class="o">:</span> <span class="p">{},</span>
@@ -606,7 +603,7 @@ this.loadViewsFile(gameDir, gameInfo);</p>
 
     <span class="nx">levelsPaths</span> <span class="o">=</span> <span class="nx">fs</span><span class="p">.</span><span class="nx">readdirSync</span><span class="p">(</span><span class="nx">levelsPath</span><span class="p">);</span>
 
-    <span class="nx">len</span> <span class="o">=</span> <span class="nx">levelsPaths</span><span class="p">.</span><span class="nx">length</span>
+    <span class="nx">len</span> <span class="o">=</span> <span class="nx">levelsPaths</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span>
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">len</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadLevelsDir: levels dir is empty. &#39;</span> <span class="o">+</span>
                         <span class="s1">&#39;Game: &#39;</span> <span class="o">+</span> <span class="nx">gameName</span><span class="p">);</span>
@@ -745,11 +742,10 @@ Otherwise, if missing an error will be thrown.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">GameLoader</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">loadGameDir</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">directory</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">level</span><span class="p">)</span> <span class="p">{</span>
-    <span class="kd">var</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">origInfo</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">gameSetupPath</span><span class="p">,</span> <span class="nx">gameSetup</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">gameSettingsPath</span><span class="p">,</span> <span class="nx">gameSettings</span><span class="p">,</span> <span class="nx">origSettings</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">gameSettingsPath</span><span class="p">,</span> <span class="nx">gameSettings</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">gameStagesPath</span><span class="p">,</span> <span class="nx">gameStages</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">stager</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">origInfo</span><span class="p">,</span> <span class="nx">stager</span><span class="p">;</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">directory</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">this</span><span class="p">.</span><span class="nx">doErr</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadGameDir: directory must be string&#39;</span><span class="p">,</span> <span class="p">{</span>
@@ -1130,14 +1126,15 @@ mixed-in.</p>
     <span class="kd">var</span> <span class="nx">clientTypesDir</span><span class="p">,</span> <span class="nx">fileNames</span><span class="p">,</span> <span class="nx">fileName</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">clientType</span><span class="p">,</span> <span class="nx">clientTypes</span><span class="p">,</span> <span class="nx">clientTypePath</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">i</span><span class="p">,</span> <span class="nx">len</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">logger</span><span class="p">,</span> <span class="nx">errStr</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">logger</span><span class="p">;</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">directory</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nx">errStr</span> <span class="o">=</span> <span class="s1">&#39;GameLoader.loadClientTypes: directory must be string. &#39;</span> <span class="o">+</span>
-            <span class="s1">&#39;Game: &#39;</span> <span class="o">+</span> <span class="nx">gameName</span><span class="p">;</span>
-        <span class="k">if</span> <span class="p">(</span><span class="nx">level</span><span class="p">)</span> <span class="nx">errStr</span> <span class="o">+=</span> <span class="s1">&#39; Level: &#39;</span> <span class="o">+</span> <span class="nx">level</span><span class="p">;</span>
-        <span class="nx">errStr</span> <span class="o">+=</span> <span class="s1">&#39;. Found: &#39;</span> <span class="o">+</span> <span class="nx">directory</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="nx">errStr</span><span class="p">);</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">doErr</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadClientTypes: directory must be string&#39;</span><span class="p">,</span> <span class="p">{</span>
+            <span class="nx">game</span><span class="o">:</span> <span class="nx">gameName</span><span class="p">,</span>
+            <span class="nx">level</span><span class="o">:</span> <span class="nx">level</span><span class="p">,</span>
+            <span class="nx">found</span><span class="o">:</span> <span class="nx">directory</span><span class="p">,</span>
+            <span class="nx">type</span><span class="o">:</span> <span class="s1">&#39;type&#39;</span>
+        <span class="p">});</span>
     <span class="p">}</span>
 
     <span class="nx">logger</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">logger</span><span class="p">;</span>
@@ -1145,11 +1142,13 @@ mixed-in.</p>
     <span class="nx">clientTypesDir</span> <span class="o">=</span> <span class="nx">directory</span> <span class="o">+</span> <span class="s1">&#39;game/client_types/&#39;</span><span class="p">;</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">J</span><span class="p">.</span><span class="nx">existsSync</span><span class="p">(</span><span class="nx">clientTypesDir</span><span class="p">))</span> <span class="p">{</span>
-        <span class="nx">errStr</span> <span class="o">=</span> <span class="s1">&#39;GameLoader.loadClientTypes: directory not found. &#39;</span> <span class="o">+</span>
-            <span class="s1">&#39;Game: &#39;</span> <span class="o">+</span> <span class="nx">gameName</span><span class="p">;</span>
-        <span class="k">if</span> <span class="p">(</span><span class="nx">level</span><span class="p">)</span> <span class="nx">errStr</span> <span class="o">+=</span> <span class="s1">&#39;. Level: &#39;</span> <span class="o">+</span> <span class="nx">level</span><span class="p">;</span>
-        <span class="nx">errStr</span> <span class="o">+=</span> <span class="s1">&#39;. Found: &#39;</span> <span class="o">+</span> <span class="nx">directory</span>
-        <span class="nx">logger</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="nx">errStr</span><span class="p">);</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">doErr</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadClientTypes: directory not found&#39;</span><span class="p">,</span> <span class="p">{</span>
+            <span class="nx">game</span><span class="o">:</span> <span class="nx">gameName</span><span class="p">,</span>
+            <span class="nx">level</span><span class="o">:</span> <span class="nx">level</span><span class="p">,</span>
+            <span class="nx">found</span><span class="o">:</span> <span class="nx">directory</span><span class="p">,</span>
+            <span class="nx">log</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+            <span class="nx">throwIt</span><span class="o">:</span> <span class="kc">false</span>
+        <span class="p">});</span>
         <span class="k">return</span><span class="p">;</span>
     <span class="p">}</span>
 
@@ -1180,13 +1179,15 @@ mixed-in.</p>
                     <span class="nx">clientTypes</span><span class="p">[</span><span class="nx">fileName</span><span class="p">.</span><span class="nx">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">3</span><span class="p">)]</span> <span class="o">=</span> <span class="nx">clientType</span><span class="p">;</span>
                 <span class="p">}</span>
                 <span class="k">catch</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
-                    <span class="nx">errStr</span> <span class="o">=</span> <span class="s1">&#39;GameLoader.loadClientTypes: an error occurred &#39;</span> <span class="o">+</span>
-                        <span class="s1">&#39;while reading client type: &#39;</span> <span class="o">+</span> <span class="nx">fileName</span> <span class="o">+</span>
-                        <span class="s1">&#39;. Game: &#39;</span> <span class="o">+</span> <span class="nx">gameName</span><span class="p">;</span>
-                    <span class="k">if</span> <span class="p">(</span><span class="nx">level</span><span class="p">)</span> <span class="nx">errStr</span> <span class="o">+=</span> <span class="s1">&#39;. Level: &#39;</span> <span class="o">+</span> <span class="nx">level</span><span class="p">;</span>
-                    <span class="nx">errStr</span> <span class="o">+=</span> <span class="s1">&#39;. Err: \n&#39;</span> <span class="o">+</span> <span class="nx">e</span><span class="p">.</span><span class="nx">stack</span><span class="p">;</span>
-                    <span class="nx">logger</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="nx">errStr</span><span class="p">);</span>
-                    <span class="k">throw</span> <span class="nx">e</span><span class="p">;</span>
+                    <span class="k">this</span><span class="p">.</span><span class="nx">doErr</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadClientTypes: an error &#39;</span> <span class="o">+</span>
+                               <span class="s1">&#39;occurred while reading client type: &#39;</span> <span class="o">+</span>
+                               <span class="nx">fileName</span><span class="p">,</span> <span class="p">{</span>
+                                   <span class="nx">game</span><span class="o">:</span> <span class="nx">gameName</span><span class="p">,</span>
+                                   <span class="nx">level</span><span class="o">:</span> <span class="nx">level</span><span class="p">,</span>
+                                   <span class="nx">err</span><span class="o">:</span> <span class="nx">e</span><span class="p">,</span>
+                                   <span class="nx">log</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+                                   <span class="nx">throwErr</span><span class="o">:</span> <span class="kc">true</span>
+                               <span class="p">});</span>
                 <span class="p">}</span>
             <span class="p">}</span>
         <span class="p">}</span>
@@ -1205,16 +1206,16 @@ mixed-in.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">clientTypes</span><span class="p">.</span><span class="nx">logic</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nx">errStr</span> <span class="o">=</span> <span class="s1">&#39;GameLoader.loadClientTypes: logic type not found. Game: &#39;</span> <span class="o">+</span>
-            <span class="nx">gameName</span><span class="p">;</span>
-        <span class="k">if</span> <span class="p">(</span><span class="nx">level</span><span class="p">)</span> <span class="nx">errStr</span> <span class="o">+=</span> <span class="p">(</span><span class="s1">&#39;. Level: &#39;</span> <span class="o">+</span> <span class="nx">level</span><span class="p">);</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="nx">errStr</span><span class="p">);</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">doErr</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadClientTypes: logic type not found&#39;</span><span class="p">,</span> <span class="p">{</span>
+            <span class="nx">game</span><span class="o">:</span> <span class="nx">gameName</span><span class="p">,</span>
+            <span class="nx">level</span><span class="o">:</span> <span class="nx">level</span>
+        <span class="p">});</span>
     <span class="p">}</span>
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">clientTypes</span><span class="p">.</span><span class="nx">player</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nx">errStr</span> <span class="o">=</span> <span class="s1">&#39;GameLoader.loadClientTypes: player type not found. Game: &#39;</span> <span class="o">+</span>
-            <span class="nx">gameName</span><span class="p">;</span>
-        <span class="k">if</span> <span class="p">(</span><span class="nx">level</span><span class="p">)</span> <span class="nx">errStr</span> <span class="o">+=</span> <span class="p">(</span><span class="s1">&#39;. Level: &#39;</span> <span class="o">+</span> <span class="nx">level</span><span class="p">);</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="nx">errStr</span><span class="p">);</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">doErr</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadClientTypes: player type not found&#39;</span><span class="p">,</span> <span class="p">{</span>
+            <span class="nx">game</span><span class="o">:</span> <span class="nx">gameName</span><span class="p">,</span>
+            <span class="nx">level</span><span class="o">:</span> <span class="nx">level</span>
+        <span class="p">});</span>
     <span class="p">}</span>
 
     <span class="k">return</span> <span class="nx">clientTypes</span><span class="p">;</span>
@@ -1505,7 +1506,6 @@ automatically add a waiting room to the channel.</p>
 <span class="nx">GameLoader</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">loadChannelFile</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">directory</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">channelsFile</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">channel</span><span class="p">,</span> <span class="nx">waitRoom</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">i</span><span class="p">,</span> <span class="nx">len</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">channelConf</span><span class="p">,</span> <span class="nx">waitRoomConf</span><span class="p">;</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">directory</span><span class="p">)</span> <span class="p">{</span>
@@ -1694,26 +1694,27 @@ level of the specified directory.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">GameLoader</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">buildWaitRoomConf</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">directory</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">level</span><span class="p">)</span> <span class="p">{</span>
-    <span class="kd">var</span> <span class="nx">waitRoomSettingsFile</span><span class="p">,</span> <span class="nx">waitRoomFile</span><span class="p">,</span> <span class="nx">conf</span><span class="p">,</span> <span class="nx">waitRoom</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">logger</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">update</span><span class="p">,</span> <span class="nx">errStr</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">waitRoomSettingsFile</span><span class="p">,</span> <span class="nx">waitRoomFile</span><span class="p">,</span> <span class="nx">conf</span><span class="p">;</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">directory</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nx">errStr</span> <span class="o">=</span> <span class="s1">&#39;GameLoader.buildWaitRoomConf: directory must be &#39;</span> <span class="o">+</span>
-            <span class="s1">&#39;string. Game: &#39;</span> <span class="o">+</span> <span class="nx">gameName</span><span class="p">;</span>
-        <span class="k">if</span> <span class="p">(</span><span class="nx">level</span><span class="p">)</span> <span class="nx">errStr</span> <span class="o">+=</span> <span class="s1">&#39;. Level: &#39;</span> <span class="o">+</span> <span class="nx">level</span><span class="p">;</span>
-        <span class="nx">errStr</span> <span class="o">+=</span> <span class="s1">&#39;. Found: &#39;</span> <span class="o">+</span> <span class="nx">directory</span><span class="p">;</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="nx">errStr</span><span class="p">);</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">doErr</span><span class="p">(</span><span class="s1">&#39;GameLoader.buildWaitRoomConf: directory must be &#39;</span> <span class="o">+</span>
+                   <span class="s1">&#39;string&#39;</span><span class="p">,</span> <span class="p">{</span>
+                       <span class="nx">game</span><span class="o">:</span> <span class="nx">gameName</span><span class="p">,</span>
+                       <span class="nx">level</span><span class="o">:</span> <span class="nx">level</span><span class="p">,</span>
+                       <span class="nx">found</span><span class="o">:</span> <span class="nx">directory</span><span class="p">,</span>
+                       <span class="nx">type</span><span class="o">:</span> <span class="s1">&#39;type&#39;</span>
+                   <span class="p">});</span>
     <span class="p">}</span>
-
-    <span class="nx">logger</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">logger</span><span class="p">;</span>
 
     <span class="nx">waitRoomSettingsFile</span> <span class="o">=</span> <span class="nx">directory</span> <span class="o">+</span> <span class="s1">&#39;waitroom/waitroom.settings.js&#39;</span><span class="p">;</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">fs</span><span class="p">.</span><span class="nx">existsSync</span><span class="p">(</span><span class="nx">waitRoomSettingsFile</span><span class="p">))</span> <span class="p">{</span>
-        <span class="nx">errStr</span> <span class="o">=</span> <span class="s1">&#39;GameLoader.buildWaitRoomConf: file waitroom.settings &#39;</span> <span class="o">+</span>
-            <span class="s1">&#39;not found. Game: &#39;</span> <span class="o">+</span> <span class="nx">gameName</span><span class="p">;</span>
-        <span class="k">if</span> <span class="p">(</span><span class="nx">level</span><span class="p">)</span> <span class="nx">errStr</span> <span class="o">+=</span> <span class="s1">&#39;. Level: &#39;</span> <span class="o">+</span> <span class="nx">level</span><span class="p">;</span>
-        <span class="nx">logger</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="nx">errStr</span><span class="p">);</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">doErr</span><span class="p">(</span><span class="s1">&#39;GameLoader.buildWaitRoomConf: file waitroom.settings &#39;</span> <span class="o">+</span>
+                   <span class="s1">&#39;not found&#39;</span><span class="p">,</span> <span class="p">{</span>
+                       <span class="nx">game</span><span class="o">:</span> <span class="nx">gameName</span><span class="p">,</span>
+                       <span class="nx">level</span><span class="o">:</span> <span class="nx">level</span><span class="p">,</span>
+                       <span class="nx">log</span><span class="o">:</span> <span class="s1">&#39;warn&#39;</span>
+                  <span class="p">});</span>
         <span class="k">return</span><span class="p">;</span>
     <span class="p">}</span>
 
@@ -1721,28 +1722,35 @@ level of the specified directory.</p>
         <span class="nx">conf</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="nx">waitRoomSettingsFile</span><span class="p">);</span>
     <span class="p">}</span>
     <span class="k">catch</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nx">errStr</span> <span class="o">=</span> <span class="s1">&#39;GameLoader.buildWaitRoomConf: error reading &#39;</span> <span class="o">+</span>
-            <span class="s1">&#39;waitroom.settings file. Game: &#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">;</span>
-        <span class="k">if</span> <span class="p">(</span><span class="nx">level</span><span class="p">)</span> <span class="nx">errStr</span> <span class="o">+=</span> <span class="s1">&#39; Level: &#39;</span> <span class="o">+</span> <span class="nx">level</span><span class="p">;</span>
-        <span class="nx">errStr</span> <span class="o">+=</span> <span class="s1">&#39;. Err: \n&#39;</span> <span class="o">+</span> <span class="nx">e</span><span class="p">.</span><span class="nx">stack</span><span class="p">;</span>
-        <span class="nx">logger</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="nx">errStr</span><span class="p">);</span>
-        <span class="k">throw</span> <span class="nx">e</span><span class="p">;</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">doErr</span><span class="p">(</span><span class="s1">&#39;GameLoader.buildWaitRoomConf: error reading &#39;</span> <span class="o">+</span>
+                   <span class="s1">&#39;waitroom.settings file&#39;</span><span class="p">,</span> <span class="p">{</span>
+                       <span class="nx">game</span><span class="o">:</span> <span class="nx">gameName</span><span class="p">,</span>
+                       <span class="nx">level</span><span class="o">:</span> <span class="nx">level</span><span class="p">,</span>
+                       <span class="nx">log</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+                       <span class="nx">err</span><span class="o">:</span> <span class="nx">e</span><span class="p">,</span>
+                       <span class="nx">throwErr</span><span class="o">:</span> <span class="kc">true</span>
+                  <span class="p">});</span>
     <span class="p">}</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">conf</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nx">errStr</span> <span class="o">=</span> <span class="s1">&#39;GameLoader.buildWaitRoomConf: room.settings file &#39;</span> <span class="o">+</span>
-            <span class="s1">&#39;must return a configuration object. Game: &#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">;</span>
-        <span class="k">if</span> <span class="p">(</span><span class="nx">level</span><span class="p">)</span> <span class="nx">errStr</span> <span class="o">+=</span> <span class="s1">&#39; Level: &#39;</span> <span class="o">+</span> <span class="nx">level</span><span class="p">;</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="nx">errStr</span><span class="p">);</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">doErr</span><span class="p">(</span><span class="s1">&#39;GameLoader.buildWaitRoomConf: room.settings file &#39;</span> <span class="o">+</span>
+                   <span class="s1">&#39;must return a configuration object&#39;</span><span class="p">,</span> <span class="p">{</span>
+                       <span class="nx">game</span><span class="o">:</span> <span class="nx">gameName</span><span class="p">,</span>
+                       <span class="nx">level</span><span class="o">:</span> <span class="nx">level</span><span class="p">,</span>
+                       <span class="nx">found</span><span class="o">:</span> <span class="nx">conf</span><span class="p">,</span>
+                       <span class="nx">type</span><span class="o">:</span> <span class="s1">&#39;type&#39;</span>
+                   <span class="p">});</span>
     <span class="p">}</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="nx">conf</span><span class="p">.</span><span class="nx">logicPath</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">conf</span><span class="p">.</span><span class="nx">logicPath</span><span class="p">)</span> <span class="p">{</span>
-            <span class="nx">errStr</span> <span class="o">=</span> <span class="s1">&#39;GameLoader.buildWaitRoomConf: configuration &#39;</span> <span class="o">+</span>
-                <span class="s1">&#39;loaded, but &quot;logicPath&quot; must be undefined or string. &#39;</span> <span class="o">+</span>
-                <span class="s1">&#39;Game: &#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">;</span>
-            <span class="k">if</span> <span class="p">(</span><span class="nx">level</span><span class="p">)</span> <span class="nx">errStr</span> <span class="o">+=</span> <span class="s1">&#39; Level: &#39;</span> <span class="o">+</span> <span class="nx">level</span><span class="p">;</span>
-            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="nx">errStr</span><span class="p">);</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">doErr</span><span class="p">(</span><span class="s1">&#39;GameLoader.buildWaitRoomConf: configuration &#39;</span> <span class="o">+</span>
+                       <span class="s1">&#39;loaded, but &quot;logicPath&quot; must be undefined or string&#39;</span><span class="p">,</span> <span class="p">{</span>
+                           <span class="nx">game</span><span class="o">:</span> <span class="nx">gameName</span><span class="p">,</span>
+                           <span class="nx">level</span><span class="o">:</span> <span class="nx">level</span><span class="p">,</span>
+                           <span class="nx">found</span><span class="o">:</span> <span class="nx">conf</span><span class="p">.</span><span class="nx">logicPath</span><span class="p">,</span>
+                           <span class="nx">type</span><span class="o">:</span> <span class="s1">&#39;type&#39;</span>
+                       <span class="p">});</span>
         <span class="p">}</span>
         <span class="nx">conf</span><span class="p">.</span><span class="nx">logicPath</span> <span class="o">=</span> <span class="nx">checkLocalPath</span><span class="p">(</span><span class="nx">directory</span><span class="p">,</span> <span class="s1">&#39;waitroom/&#39;</span><span class="p">,</span> <span class="nx">conf</span><span class="p">.</span><span class="nx">logicPath</span><span class="p">);</span>
     <span class="p">}</span>
@@ -1826,7 +1834,7 @@ level of the specified directory.</p>
     <span class="nx">waitRoom</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">createWaitingRoom</span><span class="p">(</span><span class="nx">conf</span><span class="p">,</span> <span class="kc">true</span><span class="p">);</span>
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">waitRoom</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadWaitRoomDir: could not create &#39;</span> <span class="o">+</span>
-                        <span class="s1">&#39;waiting room. Game: &#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
+                        <span class="s1">&#39;waiting room. Game: &#39;</span> <span class="o">+</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
     <span class="p">}</span>
     <span class="k">return</span> <span class="nx">waitRoom</span><span class="p">;</span>
 <span class="p">};</span>
@@ -1902,7 +1910,7 @@ generation and clientObject decoration.</p>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">fs</span><span class="p">.</span><span class="nx">existsSync</span><span class="p">(</span><span class="nx">directory</span> <span class="o">+</span> <span class="s1">&#39;auth/&#39;</span><span class="p">))</span> <span class="p">{</span>
         <span class="nx">logger</span><span class="p">.</span><span class="nx">warn</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadRequirementsDir: channel &#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span>
-                    <span class="s1">&#39;: no auth directory.&#39;</span><span class="p">);</span><span class="mi">1</span>
+                    <span class="s1">&#39;: no auth directory.&#39;</span><span class="p">);</span>
 
 
 </pre></div>
@@ -2127,25 +2135,26 @@ generation and clientObject decoration.</p>
                                                       <span class="nx">level</span><span class="p">)</span> <span class="p">{</span>
 
     <span class="kd">var</span> <span class="nx">file</span><span class="p">,</span> <span class="nx">settingsFile</span><span class="p">,</span> <span class="nx">settings</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">logger</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">reqFunc</span><span class="p">,</span> <span class="nx">reqObj</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">errStr</span><span class="p">;</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">directory</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nx">errStr</span> <span class="o">=</span> <span class="s1">&#39;GameLoader.buildRequirementsConf: directory must be &#39;</span> <span class="o">+</span>
-            <span class="s1">&#39;string. Game: &#39;</span> <span class="o">+</span> <span class="nx">gameName</span><span class="p">;</span>
-        <span class="k">if</span> <span class="p">(</span><span class="nx">level</span><span class="p">)</span> <span class="nx">errStr</span> <span class="o">+=</span> <span class="s1">&#39;. Level: &#39;</span> <span class="o">+</span> <span class="nx">level</span><span class="p">;</span>
-        <span class="nx">errStr</span> <span class="o">+=</span> <span class="s1">&#39;. Found: &#39;</span> <span class="o">+</span> <span class="nx">directory</span><span class="p">;</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="nx">errStr</span><span class="p">);</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">doErr</span><span class="p">(</span><span class="s1">&#39;GameLoader.buildRequirementsConf: directory must be &#39;</span> <span class="o">+</span>
+                   <span class="s1">&#39;string&#39;</span><span class="p">,</span> <span class="p">{</span>
+                       <span class="nx">game</span><span class="o">:</span> <span class="nx">gameName</span><span class="p">,</span>
+                       <span class="nx">level</span><span class="o">:</span> <span class="nx">level</span><span class="p">,</span>
+                       <span class="nx">found</span><span class="o">:</span> <span class="nx">directory</span><span class="p">,</span>
+                       <span class="nx">type</span><span class="o">:</span> <span class="s1">&#39;type&#39;</span>
+                   <span class="p">});</span>
     <span class="p">}</span>
 
-    <span class="nx">logger</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">logger</span><span class="p">;</span>
-
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">fs</span><span class="p">.</span><span class="nx">existsSync</span><span class="p">(</span><span class="nx">directory</span> <span class="o">+</span> <span class="s1">&#39;requirements/&#39;</span><span class="p">))</span> <span class="p">{</span>
-        <span class="nx">errStr</span> <span class="o">=</span> <span class="s1">&#39;GameLoader.buildRequirementsConf: no requirements &#39;</span> <span class="o">+</span>
-            <span class="s1">&#39;directory. Game: &#39;</span> <span class="o">+</span> <span class="nx">gameName</span><span class="p">;</span>
-        <span class="k">if</span> <span class="p">(</span><span class="nx">level</span><span class="p">)</span> <span class="nx">errStr</span> <span class="o">+=</span> <span class="s1">&#39;. Level: &#39;</span> <span class="o">+</span> <span class="nx">level</span><span class="p">;</span>
-        <span class="nx">logger</span><span class="p">.</span><span class="nx">warn</span><span class="p">(</span><span class="nx">errStr</span><span class="p">);</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">doErr</span><span class="p">(</span><span class="s1">&#39;GameLoader.buildRequirementsConf: no requirements &#39;</span> <span class="o">+</span>
+                   <span class="s1">&#39;directory&#39;</span><span class="p">,</span> <span class="p">{</span>
+                       <span class="nx">game</span><span class="o">:</span> <span class="nx">gameName</span><span class="p">,</span>
+                       <span class="nx">level</span><span class="o">:</span> <span class="nx">level</span><span class="p">,</span>
+                       <span class="nx">log</span><span class="o">:</span> <span class="s1">&#39;warn&#39;</span><span class="p">,</span>
+                       <span class="nx">throwIt</span><span class="o">:</span> <span class="kc">false</span>
+                   <span class="p">});</span>
 
 
 </pre></div>
@@ -2178,10 +2187,13 @@ generation and clientObject decoration.</p>
 
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">fs</span><span class="p">.</span><span class="nx">existsSync</span><span class="p">(</span><span class="nx">settingsFile</span><span class="p">))</span> <span class="p">{</span>
         <span class="nx">settings</span> <span class="o">=</span> <span class="p">{</span> <span class="nx">enabled</span><span class="o">:</span> <span class="kc">true</span> <span class="p">};</span>
-        <span class="nx">errStr</span> <span class="o">=</span> <span class="s1">&#39;GameLoader.buildRequirementsConf: no settings file found. &#39;</span> <span class="o">+</span>
-            <span class="s1">&#39;Default settings used. Game: &#39;</span> <span class="o">+</span> <span class="nx">gameName</span><span class="p">;</span>
-        <span class="k">if</span> <span class="p">(</span><span class="nx">level</span><span class="p">)</span> <span class="nx">errStr</span> <span class="o">+=</span> <span class="s1">&#39;. Level: &#39;</span> <span class="o">+</span> <span class="nx">level</span><span class="p">;</span>
-        <span class="nx">logger</span><span class="p">.</span><span class="nx">warn</span><span class="p">(</span><span class="nx">errStr</span><span class="p">);;</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">doErr</span><span class="p">(</span><span class="s1">&#39;GameLoader.buildRequirementsConf: no settings file &#39;</span> <span class="o">+</span>
+                   <span class="s1">&#39;found. Default settings used&#39;</span><span class="p">,</span> <span class="p">{</span>
+                       <span class="nx">game</span><span class="o">:</span> <span class="nx">gameName</span><span class="p">,</span>
+                       <span class="nx">level</span><span class="o">:</span> <span class="nx">level</span><span class="p">,</span>
+                       <span class="nx">log</span><span class="o">:</span> <span class="s1">&#39;warn&#39;</span><span class="p">,</span>
+                       <span class="nx">throwIt</span><span class="o">:</span> <span class="kc">false</span>
+                   <span class="p">});</span>
     <span class="p">}</span>
 
     <span class="k">else</span> <span class="p">{</span>
@@ -2189,18 +2201,21 @@ generation and clientObject decoration.</p>
             <span class="nx">settings</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="nx">settingsFile</span><span class="p">);</span>
         <span class="p">}</span>
         <span class="k">catch</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
-            <span class="nx">errStr</span> <span class="o">=</span> <span class="s1">&#39;GameLoader.buildRequirementsConf: an error occurred &#39;</span> <span class="o">+</span>
-                <span class="s1">&#39;while reading settings file. Game: &#39;</span> <span class="o">+</span> <span class="nx">gameName</span><span class="p">;</span>
-            <span class="k">if</span> <span class="p">(</span><span class="nx">level</span><span class="p">)</span> <span class="nx">errStr</span> <span class="o">+=</span> <span class="s1">&#39;. Level: &#39;</span> <span class="o">+</span> <span class="nx">level</span><span class="p">;</span>
-            <span class="nx">errStr</span> <span class="o">+=</span> <span class="s1">&#39;. Err: \n&#39;</span> <span class="o">+</span> <span class="nx">e</span><span class="p">.</span><span class="nx">stack</span>
-            <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="nx">errStr</span><span class="p">);</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">doErr</span><span class="p">(</span><span class="s1">&#39;GameLoader.buildRequirementsConf: an error occurred &#39;</span> <span class="o">+</span>
+                       <span class="s1">&#39;while reading settings file&#39;</span><span class="p">,</span> <span class="p">{</span>
+                           <span class="nx">game</span><span class="o">:</span> <span class="nx">gameName</span><span class="p">,</span>
+                           <span class="nx">level</span><span class="o">:</span> <span class="nx">level</span><span class="p">,</span>
+                           <span class="nx">err</span><span class="o">:</span> <span class="nx">e</span>
+                       <span class="p">});</span>
         <span class="p">}</span>
 
         <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">)</span> <span class="p">{</span>
-            <span class="nx">errStr</span> <span class="o">=</span> <span class="s1">&#39;GameLoader.buildRequirementsConf: invalid &#39;</span> <span class="o">+</span>
-                <span class="s1">&#39;settings file. Game: &#39;</span> <span class="o">+</span> <span class="nx">gameName</span><span class="p">;</span>
-            <span class="k">if</span> <span class="p">(</span><span class="nx">level</span><span class="p">)</span> <span class="nx">errStr</span> <span class="o">+=</span> <span class="s1">&#39; Level: &#39;</span> <span class="o">+</span> <span class="nx">level</span><span class="p">;</span>
-            <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="nx">errStr</span><span class="p">);</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">doErr</span><span class="p">(</span><span class="s1">&#39;GameLoader.buildRequirementsConf: invalid &#39;</span> <span class="o">+</span>
+                       <span class="s1">&#39;settings file&#39;</span><span class="p">,</span> <span class="p">{</span>
+                           <span class="nx">game</span><span class="o">:</span> <span class="nx">gameName</span><span class="p">,</span>
+                           <span class="nx">level</span><span class="o">:</span> <span class="nx">level</span><span class="p">,</span>
+                           <span class="nx">found</span><span class="o">:</span> <span class="nx">settings</span>
+                       <span class="p">});</span>
         <span class="p">}</span>
     <span class="p">}</span>
 
@@ -2249,10 +2264,13 @@ If logicPath is not string RequirementsRoom constructor throws an error.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">settings</span><span class="p">.</span><span class="nx">enabled</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nx">errStr</span> <span class="o">=</span> <span class="s1">&#39;GameLoader.buildRequirementsConf: requirements checking &#39;</span> <span class="o">+</span>
-            <span class="s1">&#39;disabled in configuration file. Game: &#39;</span> <span class="o">+</span> <span class="nx">gameName</span><span class="p">;</span>
-        <span class="k">if</span> <span class="p">(</span><span class="nx">level</span><span class="p">)</span> <span class="nx">errStr</span> <span class="o">+=</span> <span class="s1">&#39; Level: &#39;</span> <span class="o">+</span> <span class="nx">level</span><span class="p">;</span>
-        <span class="nx">logger</span><span class="p">.</span><span class="nx">warn</span><span class="p">(</span><span class="nx">errStr</span><span class="p">);</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">doErr</span><span class="p">(</span><span class="s1">&#39;GameLoader.buildRequirementsConf: requirements checking &#39;</span> <span class="o">+</span>
+                   <span class="s1">&#39;disabled in configuration file&#39;</span><span class="p">,</span> <span class="p">{</span>
+                       <span class="nx">game</span><span class="o">:</span> <span class="nx">gameName</span><span class="p">,</span>
+                       <span class="nx">level</span><span class="o">:</span> <span class="nx">level</span><span class="p">,</span>
+                       <span class="nx">log</span><span class="o">:</span> <span class="s1">&#39;warn&#39;</span><span class="p">,</span>
+                       <span class="nx">throwIt</span><span class="o">:</span> <span class="kc">false</span>
+                   <span class="p">});</span>
 
         <span class="k">return</span> <span class="nx">settings</span><span class="p">;</span>
     <span class="p">}</span>
@@ -2281,11 +2299,12 @@ If logicPath is not string RequirementsRoom constructor throws an error.</p>
             <span class="nx">reqObj</span><span class="p">.</span><span class="nx">enabled</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
         <span class="p">}</span>
         <span class="k">catch</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
-            <span class="nx">errStr</span> <span class="o">=</span> <span class="s1">&#39;GameLoader.buildRequirementsConf: an error occurred &#39;</span> <span class="o">+</span>
-                <span class="s1">&#39;while trying to execute requirements file. Game: &#39;</span> <span class="o">+</span> <span class="nx">gameName</span><span class="p">;</span>
-            <span class="k">if</span> <span class="p">(</span><span class="nx">level</span><span class="p">)</span> <span class="nx">errStr</span> <span class="o">+=</span> <span class="s1">&#39; Level: &#39;</span> <span class="o">+</span> <span class="nx">level</span><span class="p">;</span>
-            <span class="nx">errStr</span> <span class="o">+=</span> <span class="s1">&#39;. \n&#39;</span> <span class="o">+</span> <span class="nx">e</span><span class="p">.</span><span class="nx">stack</span><span class="p">;</span>
-            <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="nx">errStr</span><span class="p">);</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">doErr</span><span class="p">(</span><span class="s1">&#39;GameLoader.buildRequirementsConf: an error occurred &#39;</span> <span class="o">+</span>
+                       <span class="s1">&#39;while trying to execute requirements file&#39;</span><span class="p">,</span> <span class="p">{</span>
+                           <span class="nx">game</span><span class="o">:</span> <span class="nx">gameName</span><span class="p">,</span>
+                           <span class="nx">level</span><span class="o">:</span> <span class="nx">level</span><span class="p">,</span>
+                           <span class="nx">err</span><span class="o">:</span> <span class="nx">e</span>
+                       <span class="p">});</span>
         <span class="p">}</span>
     <span class="p">}</span>
 
@@ -2811,7 +2830,18 @@ Auth callback can modify the authorization only of those.</p>
     <span class="k">if</span> <span class="p">(</span><span class="nx">opts</span><span class="p">.</span><span class="nx">level</span><span class="p">)</span> <span class="nx">msg</span> <span class="o">+=</span> <span class="s1">&#39;. Level: &#39;</span> <span class="o">+</span> <span class="nx">opts</span><span class="p">.</span><span class="nx">level</span><span class="p">;</span>
     <span class="k">if</span> <span class="p">(</span><span class="nx">opts</span><span class="p">.</span><span class="nx">found</span><span class="p">)</span> <span class="nx">msg</span> <span class="o">+=</span> <span class="s1">&#39;. Found: &#39;</span> <span class="o">+</span> <span class="nx">opts</span><span class="p">.</span><span class="nx">found</span><span class="p">;</span>
     <span class="k">if</span> <span class="p">(</span><span class="nx">opts</span><span class="p">.</span><span class="nx">err</span><span class="p">)</span> <span class="nx">msg</span> <span class="o">+=</span> <span class="s1">&#39;. Err:\n&#39;</span> <span class="o">+</span> <span class="nx">opts</span><span class="p">.</span><span class="nx">err</span><span class="p">.</span><span class="nx">stack</span><span class="p">;</span>
-    <span class="k">if</span> <span class="p">(</span><span class="nx">opts</span><span class="p">.</span><span class="nx">log</span><span class="p">)</span> <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">logger</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="nx">msg</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">opts</span><span class="p">.</span><span class="nx">log</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;boolean&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">opts</span><span class="p">.</span><span class="nx">log</span> <span class="o">||</span> <span class="nx">opts</span><span class="p">.</span><span class="nx">log</span> <span class="o">===</span> <span class="s1">&#39;err&#39;</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">logger</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="nx">msg</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">opts</span><span class="p">.</span><span class="nx">log</span> <span class="o">===</span> <span class="s1">&#39;warn&#39;</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">logger</span><span class="p">.</span><span class="nx">warn</span><span class="p">(</span><span class="nx">msg</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="k">else</span> <span class="p">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.doErr: invalid value for opts.log: &#39;</span> <span class="o">+</span>
+                            <span class="nx">opts</span><span class="p">.</span><span class="nx">log</span><span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
     <span class="k">if</span> <span class="p">(</span><span class="nx">opts</span><span class="p">.</span><span class="nx">throwErr</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">opts</span><span class="p">.</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span>
             <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.doErr: throwErr is true, but no &#39;</span> <span class="o">+</span>
@@ -2935,7 +2965,6 @@ so that GameStage.compare does not complain.</p>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="kd">function</span> <span class="nx">version2GameStage</span><span class="p">(</span><span class="nx">str</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">tokens</span><span class="p">,</span> <span class="nx">stage</span><span class="p">,</span> <span class="nx">step</span><span class="p">,</span> <span class="nx">round</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">out</span><span class="p">;</span>
     <span class="nx">tokens</span> <span class="o">=</span> <span class="nx">str</span><span class="p">.</span><span class="nx">trim</span><span class="p">().</span><span class="nx">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">);</span>
     <span class="nx">stage</span> <span class="o">=</span> <span class="nb">parseInt</span><span class="p">(</span><span class="nx">tokens</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">10</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
     <span class="k">if</span> <span class="p">(</span><span class="nb">isNaN</span><span class="p">(</span><span class="nx">stage</span><span class="p">))</span> <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
@@ -3175,7 +3204,7 @@ settings.</p>
         <span class="p">}</span>
         <span class="k">catch</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
             <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.&#39;</span> <span class="o">+</span> <span class="nx">method</span> <span class="o">+</span> <span class="s1">&#39;: cannot read &#39;</span> <span class="o">+</span>
-                            <span class="nx">pwdFile</span> <span class="o">+</span> <span class="s2">&quot;: \n&quot;</span> <span class="o">+</span> <span class="nx">e</span><span class="p">.</span><span class="nx">stack</span><span class="p">);</span>
+                            <span class="nx">filepath</span> <span class="o">+</span> <span class="s2">&quot;: \n&quot;</span> <span class="o">+</span> <span class="nx">e</span><span class="p">.</span><span class="nx">stack</span><span class="p">);</span>
         <span class="p">}</span>
 
         <span class="k">if</span> <span class="p">(</span><span class="nx">result</span><span class="p">)</span> <span class="nx">cb</span><span class="p">(</span><span class="nx">result</span><span class="p">);</span>
