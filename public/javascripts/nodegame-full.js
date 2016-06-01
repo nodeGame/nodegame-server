@@ -29754,7 +29754,10 @@ if (!Array.prototype.indexOf) {
             W.setScreenLevel('ACTIVE');
         }
         if (this.waitingDiv) {
-            this.waitingDiv.parentNode.removeChild(this.waitingDiv);
+            // It might have gotten destroyed in the meantime.
+            if (this.waitingDiv.parentNode) {
+                this.waitingDiv.parentNode.removeChild(this.waitingDiv);
+            }
         }
         // Removes previously registered listeners.
         this.disable();

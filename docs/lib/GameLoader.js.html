@@ -43,6 +43,9 @@
         <a href="#gameloader.loadgamedir">GameLoader.loadGameDir</a>
       </div>
       <div class="heading h3">
+        <a href="#gameloader.parsesettings">GameLoader.parseSettings</a>
+      </div>
+      <div class="heading h3">
         <a href="#gameloader.loadclienttypes">GameLoader.loadClientTypes</a>
       </div>
       <div class="heading h3">
@@ -277,7 +280,7 @@ overwritten later on.</p>
     <span class="kd">var</span> <span class="nx">gamePath</span><span class="p">,</span> <span class="nx">reqFail</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">gameLogicPath</span><span class="p">,</span> <span class="nx">gameLogic</span><span class="p">,</span> <span class="nx">gameClientPath</span><span class="p">,</span> <span class="nx">gameClient</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">clientTypes</span><span class="p">,</span> <span class="nx">langObject</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">gameType</span><span class="p">,</span> <span class="nx">gameGame</span><span class="p">,</span> <span class="nx">game</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">levels</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">gameType</span><span class="p">,</span> <span class="nx">gameGame</span><span class="p">,</span> <span class="nx">game</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">settings</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">channel</span><span class="p">;</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">gameInfo</span><span class="p">)</span> <span class="p">{</span>
@@ -357,7 +360,7 @@ overwritten later on.</p>
 <p>Loading settings, setup, and stages.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="nx">gameGame</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">loadGameDir</span><span class="p">(</span><span class="nx">gameDir</span><span class="p">);</span>
+    <span class="nx">gameGame</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">loadGameDir</span><span class="p">(</span><span class="nx">gameDir</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">);</span>
 
 
 </pre></div>
@@ -477,7 +480,7 @@ overwritten later on.</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-19" id="section-19">&#182;</a>
 </div>
-<p>Loading levels, if any (nodeGame > 2.x);</p>
+<p>Loading levels, if any (nodeGame >= 2.x);</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="k">this</span><span class="p">.</span><span class="nx">loadLevelsDir</span><span class="p">(</span><span class="nx">gameDir</span><span class="p">,</span> <span class="nx">channel</span><span class="p">);</span>
@@ -491,6 +494,21 @@ overwritten later on.</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-20" id="section-20">&#182;</a>
 </div>
+<p>After all levels are loaded, we can make the treatments
+in the main settings object.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">this</span><span class="p">.</span><span class="nx">parseSettings</span><span class="p">(</span><span class="nx">gameName</span><span class="p">);</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-21" id="section-21">&#182;</a>
+</div>
 <p>Tries to load Views file from game directory.
 this.loadViewsFile(gameDir, gameInfo);</p>
         </td>
@@ -503,7 +521,7 @@ this.loadViewsFile(gameDir, gameInfo);</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-21" id="section-21">&#182;</a>
+  <a class="pilcrow" href="#section-22" id="section-22">&#182;</a>
 </div>
 <p>Add routes (considering other loaded options: auth, monitor, etc.).</p>
         </td>
@@ -518,7 +536,7 @@ this.loadViewsFile(gameDir, gameInfo);</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-22" id="section-22">&#182;</a>
+  <a class="pilcrow" href="#section-23" id="section-23">&#182;</a>
 </div>
 <p>Done.</p>
         </td>
@@ -648,7 +666,7 @@ this.loadViewsFile(gameDir, gameInfo);</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">GameLoader</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">buildLevelConf</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">directory</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">level</span><span class="p">)</span> <span class="p">{</span>
-    <span class="kd">var</span> <span class="nx">levelObj</span><span class="p">,</span> <span class="nx">origInfo</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">levelObj</span><span class="p">;</span>
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">directory</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadLevel: game: &#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span>
                             <span class="s1">&#39;: directory must be string. Found: &#39;</span> <span class="o">+</span>
@@ -661,40 +679,12 @@ this.loadViewsFile(gameDir, gameInfo);</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-25" id="section-25">&#182;</a>
+  <a class="pilcrow" href="#section-26" id="section-26">&#182;</a>
 </div>
 <p>TODO: think about minimal conditions to work.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="nx">levelObj</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">loadGameDir</span><span class="p">(</span><span class="nx">directory</span><span class="p">);</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-26" id="section-26">&#182;</a>
-</div>
-<p>Merging/cloning from default settings/setup.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="nx">origInfo</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">getGamesInfo</span><span class="p">(</span><span class="nx">gameName</span><span class="p">);</span>
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-27" id="section-27">&#182;</a>
-</div>
-<p>J.merge takes care of undefined values.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="nx">levelObj</span><span class="p">.</span><span class="nx">settings</span> <span class="o">=</span> <span class="nx">J</span><span class="p">.</span><span class="nx">merge</span><span class="p">(</span><span class="nx">origInfo</span><span class="p">.</span><span class="nx">settings</span><span class="p">,</span> <span class="nx">levelObj</span><span class="p">.</span><span class="nx">settings</span><span class="p">);</span>
-    <span class="nx">levelObj</span><span class="p">.</span><span class="nx">setup</span> <span class="o">=</span> <span class="nx">J</span><span class="p">.</span><span class="nx">merge</span><span class="p">(</span><span class="nx">origInfo</span><span class="p">.</span><span class="nx">setup</span><span class="p">,</span> <span class="nx">levelObj</span><span class="p">.</span><span class="nx">setup</span><span class="p">);</span>
+    <span class="nx">levelObj</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">loadGameDir</span><span class="p">(</span><span class="nx">directory</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">level</span><span class="p">);</span>
 
     <span class="nx">levelObj</span><span class="p">.</span><span class="nx">name</span> <span class="o">=</span> <span class="nx">level</span><span class="p">;</span>
     <span class="nx">levelObj</span><span class="p">.</span><span class="nx">waitroom</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">buildWaitRoomConf</span><span class="p">(</span><span class="nx">directory</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">level</span><span class="p">);</span>
@@ -723,7 +713,8 @@ this.loadViewsFile(gameDir, gameInfo);</p>
 
 <p>Files game.settings, game.setup, and game.stages will be loaded.</p>
 
-<p>If loading a game level, game.settings and game.setup are optional.
+<p>If loading a game level, game.settings and game.setup will be merged
+with default values. Therefore, they can be missing in the level folder.
 Otherwise, if missing an error will be thrown.</p>
   </div>
   <div class="details">
@@ -753,8 +744,8 @@ Otherwise, if missing an error will be thrown.</p>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-<span class="nx">GameLoader</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">loadGameDir</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">directory</span><span class="p">,</span> <span class="nx">level</span><span class="p">)</span> <span class="p">{</span>
-    <span class="kd">var</span> <span class="nx">gameName</span><span class="p">;</span>
+<span class="nx">GameLoader</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">loadGameDir</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">directory</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">level</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">origInfo</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">gameSetupPath</span><span class="p">,</span> <span class="nx">gameSetup</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">gameSettingsPath</span><span class="p">,</span> <span class="nx">gameSettings</span><span class="p">,</span> <span class="nx">origSettings</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">gameStagesPath</span><span class="p">,</span> <span class="nx">gameStages</span><span class="p">;</span>
@@ -762,6 +753,7 @@ Otherwise, if missing an error will be thrown.</p>
 
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">directory</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">this</span><span class="p">.</span><span class="nx">doErr</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadGameDir: directory must be string&#39;</span><span class="p">,</span> <span class="p">{</span>
+            <span class="nx">game</span><span class="o">:</span> <span class="nx">gameName</span><span class="p">,</span>
             <span class="nx">level</span><span class="o">:</span> <span class="nx">level</span><span class="p">,</span>
             <span class="nx">found</span><span class="o">:</span> <span class="nx">directory</span><span class="p">,</span>
             <span class="nx">type</span><span class="o">:</span> <span class="s1">&#39;type&#39;</span>
@@ -770,10 +762,25 @@ Otherwise, if missing an error will be thrown.</p>
 
     <span class="k">if</span> <span class="p">(</span><span class="nx">level</span> <span class="o">&amp;&amp;</span> <span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">level</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">this</span><span class="p">.</span><span class="nx">doErr</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadGameDir: level must be string&#39;</span><span class="p">,</span> <span class="p">{</span>
+            <span class="nx">game</span><span class="o">:</span> <span class="nx">gameName</span><span class="p">,</span>
             <span class="nx">found</span><span class="o">:</span> <span class="nx">level</span><span class="p">,</span>
             <span class="nx">type</span><span class="o">:</span> <span class="s1">&#39;type&#39;</span>
         <span class="p">});</span>
     <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-28" id="section-28">&#182;</a>
+</div>
+<p>Used to Merge/clone from default settings/setup.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">origInfo</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">getGamesInfo</span><span class="p">(</span><span class="nx">gameName</span><span class="p">);</span>
 
 
 </pre></div>
@@ -811,6 +818,7 @@ mixed-in.</p>
         <span class="k">catch</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
             <span class="k">this</span><span class="p">.</span><span class="nx">doErr</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadGameDir: an error occurred &#39;</span> <span class="o">+</span>
                        <span class="s1">&#39;while reading game.settings file.&#39;</span><span class="p">,</span> <span class="p">{</span>
+                           <span class="nx">game</span><span class="o">:</span> <span class="nx">gameName</span><span class="p">,</span>
                            <span class="nx">level</span><span class="o">:</span> <span class="nx">level</span><span class="p">,</span>
                            <span class="nx">err</span><span class="o">:</span> <span class="nx">e</span><span class="p">,</span>
                            <span class="nx">throwErr</span><span class="o">:</span> <span class="kc">true</span>
@@ -829,6 +837,7 @@ mixed-in.</p>
             <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">gameSettings</span><span class="p">.</span><span class="nx">TIMER</span><span class="p">)</span> <span class="p">{</span>
                 <span class="k">this</span><span class="p">.</span><span class="nx">doErr</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadGameDir: gameSettings.TIMER &#39;</span> <span class="o">+</span>
                            <span class="s1">&#39;must be object or undefined&#39;</span><span class="p">,</span> <span class="p">{</span>
+                               <span class="nx">game</span><span class="o">:</span> <span class="nx">gameName</span><span class="p">,</span>
                                <span class="nx">level</span><span class="o">:</span> <span class="nx">level</span><span class="p">,</span>
                                <span class="nx">found</span><span class="o">:</span> <span class="nx">gameSettings</span><span class="p">.</span><span class="nx">TIMER</span>
                            <span class="p">});</span>
@@ -837,6 +846,7 @@ mixed-in.</p>
         <span class="k">else</span> <span class="p">{</span>
             <span class="nx">gameSettings</span><span class="p">.</span><span class="nx">TIMER</span> <span class="o">=</span> <span class="p">{};</span>
         <span class="p">}</span>
+
     <span class="p">}</span>
     <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">level</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">this</span><span class="p">.</span><span class="nx">doErr</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadGameDir: game.settings file not found&#39;</span><span class="p">);</span>
@@ -851,6 +861,20 @@ mixed-in.</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-31" id="section-31">&#182;</a>
 </div>
+<p>Merging global options.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">level</span><span class="p">)</span> <span class="nx">gameSettings</span> <span class="o">=</span> <span class="nx">J</span><span class="p">.</span><span class="nx">merge</span><span class="p">(</span><span class="nx">origInfo</span><span class="p">.</span><span class="nx">settings</span><span class="p">,</span> <span class="nx">gameSettings</span><span class="p">);</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-32" id="section-32">&#182;</a>
+</div>
 <p>Stages.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
@@ -862,6 +886,7 @@ mixed-in.</p>
     <span class="k">catch</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">this</span><span class="p">.</span><span class="nx">doErr</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadGameDir: an error occurred while reading &#39;</span> <span class="o">+</span>
                    <span class="s1">&#39;game.stages file&#39;</span><span class="p">,</span> <span class="p">{</span>
+                       <span class="nx">game</span><span class="o">:</span> <span class="nx">gameName</span><span class="p">,</span>
                        <span class="nx">level</span><span class="o">:</span> <span class="nx">level</span><span class="p">,</span>
                        <span class="nx">err</span><span class="o">:</span> <span class="nx">e</span>
                    <span class="p">});</span>
@@ -871,6 +896,7 @@ mixed-in.</p>
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;function&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">gameStages</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">this</span><span class="p">.</span><span class="nx">doErr</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadGameDir: game.stages file did not &#39;</span> <span class="o">+</span>
                    <span class="s1">&#39;export a function&#39;</span><span class="p">,</span> <span class="p">{</span>
+                       <span class="nx">game</span><span class="o">:</span> <span class="nx">gameName</span><span class="p">,</span>
                        <span class="nx">level</span><span class="o">:</span> <span class="nx">level</span><span class="p">,</span>
                        <span class="nx">found</span><span class="o">:</span> <span class="nx">gameStages</span>
                    <span class="p">});</span>
@@ -886,7 +912,7 @@ mixed-in.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-32" id="section-32">&#182;</a>
+  <a class="pilcrow" href="#section-33" id="section-33">&#182;</a>
 </div>
 <p>Setup.</p>
         </td>
@@ -900,7 +926,7 @@ mixed-in.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-33" id="section-33">&#182;</a>
+  <a class="pilcrow" href="#section-34" id="section-34">&#182;</a>
 </div>
 <p>If we are loading a level, setup can be omitted, and the main
 game.settings are used. If not not omitted, the settings will be
@@ -915,6 +941,7 @@ mixed-in.</p>
         <span class="k">catch</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
             <span class="k">this</span><span class="p">.</span><span class="nx">doErr</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadGameDir: an error occurred &#39;</span> <span class="o">+</span>
                        <span class="s1">&#39;while reading game.setup file&#39;</span><span class="p">,</span> <span class="p">{</span>
+                           <span class="nx">game</span><span class="o">:</span> <span class="nx">gameName</span><span class="p">,</span>
                            <span class="nx">level</span><span class="o">:</span> <span class="nx">level</span><span class="p">,</span>
                            <span class="nx">err</span><span class="o">:</span> <span class="nx">e</span>
                        <span class="p">});</span>
@@ -923,6 +950,7 @@ mixed-in.</p>
         <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;function&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">gameSetup</span><span class="p">)</span> <span class="p">{</span>
             <span class="k">this</span><span class="p">.</span><span class="nx">doErr</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadGameDir: setup file did not &#39;</span> <span class="o">+</span>
                        <span class="s1">&#39;export a function&#39;</span><span class="p">,</span> <span class="p">{</span>
+                           <span class="nx">game</span><span class="o">:</span> <span class="nx">gameName</span><span class="p">,</span>
                            <span class="nx">level</span><span class="o">:</span> <span class="nx">level</span><span class="p">,</span>
                            <span class="nx">found</span><span class="o">:</span> <span class="nx">gameSetup</span>
                        <span class="p">});</span>
@@ -933,6 +961,7 @@ mixed-in.</p>
         <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">gameSetup</span><span class="p">)</span> <span class="p">{</span>
             <span class="k">this</span><span class="p">.</span><span class="nx">doErr</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadGameDir: setup function did &#39;</span> <span class="o">+</span>
                        <span class="s1">&#39;not return a valid object&#39;</span><span class="p">,</span> <span class="p">{</span>
+                           <span class="nx">game</span><span class="o">:</span> <span class="nx">gameName</span><span class="p">,</span>
                            <span class="nx">level</span><span class="o">:</span> <span class="nx">level</span><span class="p">,</span>
                            <span class="nx">found</span><span class="o">:</span> <span class="nx">gameSetup</span>
                        <span class="p">});</span>
@@ -949,26 +978,119 @@ mixed-in.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-34" id="section-34">&#182;</a>
+  <a class="pilcrow" href="#section-35" id="section-35">&#182;</a>
 </div>
-<p>Parsing the settings object before returning.</p>
+<p>Merging global options.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="nx">gameSettings</span> <span class="o">=</span> <span class="nx">parseGameSettings</span><span class="p">(</span><span class="nx">gameSettings</span><span class="p">);</span>
-
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">gameSettings</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">this</span><span class="p">.</span><span class="nx">doErr</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadGameDir: error parsing &#39;</span> <span class="o">+</span>
-                   <span class="s1">&#39;treatment object.&#39;</span><span class="p">,</span> <span class="p">{</span>
-                       <span class="nx">level</span><span class="o">:</span> <span class="nx">level</span><span class="p">,</span>
-                       <span class="nx">found</span><span class="o">:</span> <span class="nx">gameSettings</span>
-                   <span class="p">});</span>
-    <span class="p">}</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">level</span><span class="p">)</span> <span class="nx">gameSetup</span> <span class="o">=</span> <span class="nx">J</span><span class="p">.</span><span class="nx">merge</span><span class="p">(</span><span class="nx">origInfo</span><span class="p">.</span><span class="nx">setup</span><span class="p">,</span> <span class="nx">gameSetup</span><span class="p">);</span>
 
     <span class="k">return</span> <span class="p">{</span>
         <span class="nx">setup</span><span class="o">:</span> <span class="nx">gameSetup</span><span class="p">,</span>
         <span class="nx">settings</span><span class="o">:</span> <span class="nx">gameSettings</span><span class="p">,</span>
         <span class="nx">stager</span><span class="o">:</span> <span class="nx">stager</span>
     <span class="p">};</span>
+<span class="p">};</span>
+
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="gameloader.parsesettings">
+  <h3>
+    <a href="#gameloader.parsesettings" name="gameloader.parsesettings" class="pilcrow">&#182;</a>
+    GameLoader.parseSettings
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Look up the settings of a game or a level and parses them into treatments</p>
+
+<p>Modifies the values inside the <code>servernode.info.games</code> object.</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">gameName</span>
+      <span class="dox_type">string</span>
+      <span>The name of the game</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">level</span>
+      <span class="dox_type">string</span>
+      <span>Optional. The name of the game level</span>
+    </div>
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">object</span>
+      <span>settings The parsed settings</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">GameLoader</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">parseSettings</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">gameName</span><span class="p">,</span> <span class="nx">level</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">info</span><span class="p">,</span> <span class="nx">settings</span><span class="p">;</span>
+    <span class="nx">info</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">info</span><span class="p">.</span><span class="nx">games</span><span class="p">[</span><span class="nx">gameName</span><span class="p">];</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">info</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">doErr</span><span class="p">(</span><span class="s1">&#39;GameLoader.parseSettings: game not found&#39;</span><span class="p">,</span> <span class="p">{</span>
+            <span class="nx">game</span><span class="o">:</span> <span class="nx">gameName</span><span class="p">,</span>
+            <span class="nx">level</span><span class="o">:</span> <span class="nx">level</span>
+        <span class="p">});</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="nx">level</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">info</span> <span class="o">=</span> <span class="nx">info</span><span class="p">.</span><span class="nx">levels</span><span class="p">[</span><span class="nx">level</span><span class="p">];</span>
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">info</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">doErr</span><span class="p">(</span><span class="s1">&#39;GameLoader.parseTreatments: level not found&#39;</span><span class="p">,</span> <span class="p">{</span>
+                <span class="nx">game</span><span class="o">:</span> <span class="nx">gameName</span><span class="p">,</span>
+                <span class="nx">level</span><span class="o">:</span> <span class="nx">level</span>
+            <span class="p">});</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-37" id="section-37">&#182;</a>
+</div>
+<p>Parse settings into treatments.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">settings</span> <span class="o">=</span> <span class="nx">parseGameSettings</span><span class="p">(</span><span class="nx">info</span><span class="p">.</span><span class="nx">settings</span><span class="p">);</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">doErr</span><span class="p">(</span><span class="s1">&#39;GameLoader.parseSettings: an error occurred while &#39;</span> <span class="o">+</span>
+                   <span class="s1">&#39;parsing the settings object&#39;</span><span class="p">,</span> <span class="p">{</span>
+                       <span class="nx">game</span><span class="o">:</span> <span class="nx">gameName</span><span class="p">,</span>
+                       <span class="nx">level</span><span class="o">:</span> <span class="nx">level</span><span class="p">,</span>
+                       <span class="nx">found</span><span class="o">:</span> <span class="nx">settings</span>
+                   <span class="p">});</span>
+    <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-38" id="section-38">&#182;</a>
+</div>
+<p>Replace old settings with parsed ones.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">info</span><span class="p">.</span><span class="nx">settings</span> <span class="o">=</span> <span class="nx">settings</span><span class="p">;</span>
+    <span class="k">return</span> <span class="nx">settings</span><span class="p">;</span>
 <span class="p">};</span>
 
 
@@ -1045,7 +1167,7 @@ mixed-in.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-36" id="section-36">&#182;</a>
+  <a class="pilcrow" href="#section-40" id="section-40">&#182;</a>
 </div>
 <p>Ignore non-js files, and temporary and hidden files (begin with '.').</p>
         </td>
@@ -1077,7 +1199,7 @@ mixed-in.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-37" id="section-37">&#182;</a>
+  <a class="pilcrow" href="#section-41" id="section-41">&#182;</a>
 </div>
 <p>Checking if mandatory types are found.</p>
         </td>
@@ -1156,7 +1278,7 @@ mixed-in.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-39" id="section-39">&#182;</a>
+  <a class="pilcrow" href="#section-43" id="section-43">&#182;</a>
 </div>
 <p>Only directories.</p>
         </td>
@@ -1235,7 +1357,7 @@ mixed-in.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-41" id="section-41">&#182;</a>
+  <a class="pilcrow" href="#section-45" id="section-45">&#182;</a>
 </div>
 <ol>
 <li>Channel settings.</li>
@@ -1251,7 +1373,7 @@ mixed-in.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-42" id="section-42">&#182;</a>
+  <a class="pilcrow" href="#section-46" id="section-46">&#182;</a>
 </div>
 <p>Save ref. to newly created channel.</p>
         </td>
@@ -1265,7 +1387,7 @@ mixed-in.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-43" id="section-43">&#182;</a>
+  <a class="pilcrow" href="#section-47" id="section-47">&#182;</a>
 </div>
 <ol>
 <li>Credentials.</li>
@@ -1282,7 +1404,7 @@ mixed-in.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-44" id="section-44">&#182;</a>
+  <a class="pilcrow" href="#section-48" id="section-48">&#182;</a>
 </div>
 <p>TODO: checkings. Add method.</p>
         </td>
@@ -1297,7 +1419,7 @@ mixed-in.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-45" id="section-45">&#182;</a>
+  <a class="pilcrow" href="#section-49" id="section-49">&#182;</a>
 </div>
 <ol>
 <li>JWT secret.</li>
@@ -1314,7 +1436,7 @@ mixed-in.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-46" id="section-46">&#182;</a>
+  <a class="pilcrow" href="#section-50" id="section-50">&#182;</a>
 </div>
 <p>TODO: checkings. Add method.</p>
         </td>
@@ -1404,7 +1526,7 @@ automatically add a waiting room to the channel.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-48" id="section-48">&#182;</a>
+  <a class="pilcrow" href="#section-52" id="section-52">&#182;</a>
 </div>
 <p>Validate</p>
         </td>
@@ -1449,7 +1571,7 @@ automatically add a waiting room to the channel.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-49" id="section-49">&#182;</a>
+  <a class="pilcrow" href="#section-53" id="section-53">&#182;</a>
 </div>
 <p>Add the list of channels created by the game.</p>
         </td>
@@ -1470,7 +1592,7 @@ automatically add a waiting room to the channel.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-50" id="section-50">&#182;</a>
+  <a class="pilcrow" href="#section-54" id="section-54">&#182;</a>
 </div>
 <p>We prepend the baseDir parameter, if any.
 If logicPath is not string we let the WaitingRoom
@@ -1498,7 +1620,7 @@ constructor throw an error.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-51" id="section-51">&#182;</a>
+  <a class="pilcrow" href="#section-55" id="section-55">&#182;</a>
 </div>
 <p>Adding channel alias.</p>
         </td>
@@ -1515,7 +1637,7 @@ constructor throw an error.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-52" id="section-52">&#182;</a>
+  <a class="pilcrow" href="#section-56" id="section-56">&#182;</a>
 </div>
 <p>Errors in channel creation are already logged.</p>
         </td>
@@ -1695,7 +1817,7 @@ level of the specified directory.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-55" id="section-55">&#182;</a>
+  <a class="pilcrow" href="#section-59" id="section-59">&#182;</a>
 </div>
 <p>Add waiting room information to global game object.</p>
         </td>
@@ -1773,7 +1895,7 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-57" id="section-57">&#182;</a>
+  <a class="pilcrow" href="#section-61" id="section-61">&#182;</a>
 </div>
 <p>Check if directory exists.</p>
         </td>
@@ -1789,7 +1911,7 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-58" id="section-58">&#182;</a>
+  <a class="pilcrow" href="#section-62" id="section-62">&#182;</a>
 </div>
 <p>Add information to global game object.</p>
         </td>
@@ -1805,7 +1927,7 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-59" id="section-59">&#182;</a>
+  <a class="pilcrow" href="#section-63" id="section-63">&#182;</a>
 </div>
 <p>Auth settings.</p>
         </td>
@@ -1844,7 +1966,7 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-60" id="section-60">&#182;</a>
+  <a class="pilcrow" href="#section-64" id="section-64">&#182;</a>
 </div>
 <p>Enable authorization by default.</p>
         </td>
@@ -1858,7 +1980,7 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-61" id="section-61">&#182;</a>
+  <a class="pilcrow" href="#section-65" id="section-65">&#182;</a>
 </div>
 <p>Add waiting room information to global game object.</p>
         </td>
@@ -1873,7 +1995,7 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-62" id="section-62">&#182;</a>
+  <a class="pilcrow" href="#section-66" id="section-66">&#182;</a>
 </div>
 <p>Exit here if auth is disabled.</p>
         </td>
@@ -1891,7 +2013,7 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-63" id="section-63">&#182;</a>
+  <a class="pilcrow" href="#section-67" id="section-67">&#182;</a>
 </div>
 <p>Auth codes. Can be synchronous or asynchronous.</p>
         </td>
@@ -1924,7 +2046,7 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-64" id="section-64">&#182;</a>
+  <a class="pilcrow" href="#section-68" id="section-68">&#182;</a>
 </div>
 <p>Auth file.</p>
         </td>
@@ -2032,7 +2154,7 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-66" id="section-66">&#182;</a>
+  <a class="pilcrow" href="#section-70" id="section-70">&#182;</a>
 </div>
 <p>Add information to global game object.</p>
         </td>
@@ -2047,7 +2169,7 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-67" id="section-67">&#182;</a>
+  <a class="pilcrow" href="#section-71" id="section-71">&#182;</a>
 </div>
 <p>Requirements settings.</p>
         </td>
@@ -2089,7 +2211,7 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-68" id="section-68">&#182;</a>
+  <a class="pilcrow" href="#section-72" id="section-72">&#182;</a>
 </div>
 <p>We prepend the baseDir parameter, if any.
 If logicPath is not string RequirementsRoom constructor throws an error.</p>
@@ -2107,7 +2229,7 @@ If logicPath is not string RequirementsRoom constructor throws an error.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-69" id="section-69">&#182;</a>
+  <a class="pilcrow" href="#section-73" id="section-73">&#182;</a>
 </div>
 <p>Enable requirements by default.</p>
         </td>
@@ -2121,7 +2243,7 @@ If logicPath is not string RequirementsRoom constructor throws an error.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-70" id="section-70">&#182;</a>
+  <a class="pilcrow" href="#section-74" id="section-74">&#182;</a>
 </div>
 <p>Exit here if requirements is disabled.</p>
         </td>
@@ -2142,7 +2264,7 @@ If logicPath is not string RequirementsRoom constructor throws an error.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-71" id="section-71">&#182;</a>
+  <a class="pilcrow" href="#section-75" id="section-75">&#182;</a>
 </div>
 <p>Requirements file.</p>
         </td>
@@ -2174,7 +2296,7 @@ If logicPath is not string RequirementsRoom constructor throws an error.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-72" id="section-72">&#182;</a>
+  <a class="pilcrow" href="#section-76" id="section-76">&#182;</a>
 </div>
 <p>Return final settings.</p>
         </td>
@@ -2231,7 +2353,7 @@ If logicPath is not string RequirementsRoom constructor throws an error.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-74" id="section-74">&#182;</a>
+  <a class="pilcrow" href="#section-78" id="section-78">&#182;</a>
 </div>
 <p>Add waiting room information to global game object.</p>
         </td>
@@ -2253,7 +2375,7 @@ If logicPath is not string RequirementsRoom constructor throws an error.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-75" id="section-75">&#182;</a>
+  <a class="pilcrow" href="#section-79" id="section-79">&#182;</a>
 </div>
 <p>TODO: see if we want to add it to prototype.
 Else remove getChannelSandbox also (maybe).</p>
@@ -2396,7 +2518,7 @@ to. If only the callback is provided, then it is applied to both
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-77" id="section-77">&#182;</a>
+  <a class="pilcrow" href="#section-81" id="section-81">&#182;</a>
 </div>
 <p>Channels defined by a game with the channels.js file.
 Auth callback can modify the authorization only of those.</p>
@@ -2410,7 +2532,7 @@ Auth callback can modify the authorization only of those.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-78" id="section-78">&#182;</a>
+  <a class="pilcrow" href="#section-82" id="section-82">&#182;</a>
 </div>
 <p>1 Auth for both admin and player servers.</p>
         </td>
@@ -2427,7 +2549,7 @@ Auth callback can modify the authorization only of those.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-79" id="section-79">&#182;</a>
+  <a class="pilcrow" href="#section-83" id="section-83">&#182;</a>
 </div>
 <p>1 Auth for one server: admin or player.</p>
         </td>
@@ -2497,7 +2619,7 @@ Auth callback can modify the authorization only of those.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-81" id="section-81">&#182;</a>
+  <a class="pilcrow" href="#section-85" id="section-85">&#182;</a>
 </div>
 <p>3 or more.</p>
         </td>
@@ -2622,7 +2744,7 @@ Auth callback can modify the authorization only of those.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-83" id="section-83">&#182;</a>
+  <a class="pilcrow" href="#section-87" id="section-87">&#182;</a>
 </div>
 <p>TODO: do not add aliases to the info.games object.
 (we need to make sure aliases do not clash).</p>
@@ -2658,6 +2780,7 @@ Auth callback can modify the authorization only of those.</p>
     <div class="dox_tag_detail">
       <span class="dox_tag_name">msg</span>
       <span class="dox_type">string</span>
+      <span>The error message</span>
     </div>
     <div class="dox_tag_detail">
       <span class="dox_tag_name">opts</span>
@@ -2666,7 +2789,8 @@ Auth callback can modify the authorization only of those.</p>
    Available options:
 
 
-<div class="highlight"><pre><code> <span class="o">-</span> <span class="n">level:</span> <span class="n">the</span> <span class="n">name</span> <span class="n">of</span> <span class="n">the</span> <span class="n">gameLevel</span> <span class="n">where</span> <span class="n">the</span> <span class="n">error</span> <span class="n">happened</span><span class="p">;</span>
+<div class="highlight"><pre><code> <span class="o">-</span> <span class="n">game:</span> <span class="n">the</span> <span class="n">name</span> <span class="n">of</span> <span class="n">the</span> <span class="n">game</span> <span class="n">where</span> <span class="n">the</span> <span class="n">error</span> <span class="n">happened</span><span class="p">;</span>
+ <span class="o">-</span> <span class="n">level:</span> <span class="n">the</span> <span class="n">name</span> <span class="n">of</span> <span class="n">the</span> <span class="n">gameLevel</span> <span class="n">where</span> <span class="n">the</span> <span class="n">error</span> <span class="n">happened</span><span class="p">;</span>
  <span class="o">-</span> <span class="n">found:</span> <span class="n">an</span> <span class="n">invalid</span> <span class="n">value</span> <span class="n">found</span> <span class="n">instead</span> <span class="n">of</span> <span class="n">the</span> <span class="n">expected</span> <span class="n">one</span><span class="p">;</span>
  <span class="o">-</span> <span class="nb">log</span><span class="p">:</span> <span class="k">if</span> <span class="n">TRUE</span><span class="p">,</span> <span class="n">the</span> <span class="n">message</span> <span class="n">will</span> <span class="n">be</span> <span class="n">logged</span>
  <span class="o">-</span> <span class="n">err:</span> <span class="n">an</span> <span class="n">Error</span> <span class="n">object</span> <span class="n">to</span> <span class="k">print</span> <span class="n">the</span> <span class="n">stack</span> <span class="n">of</span>
@@ -2683,7 +2807,7 @@ Auth callback can modify the authorization only of those.</p>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">GameLoader</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">doErr</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">opts</span><span class="p">)</span> <span class="p">{</span>
     <span class="nx">opts</span> <span class="o">=</span> <span class="nx">opts</span> <span class="o">||</span> <span class="p">{};</span>
-    <span class="nx">msg</span> <span class="o">+=</span> <span class="s1">&#39;. Game: &#39;</span> <span class="o">+</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">gameName</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">opts</span><span class="p">.</span><span class="nx">game</span><span class="p">)</span> <span class="nx">msg</span> <span class="o">+=</span> <span class="s1">&#39;. Game: &#39;</span> <span class="o">+</span> <span class="nx">opts</span><span class="p">.</span><span class="nx">game</span><span class="p">;</span>
     <span class="k">if</span> <span class="p">(</span><span class="nx">opts</span><span class="p">.</span><span class="nx">level</span><span class="p">)</span> <span class="nx">msg</span> <span class="o">+=</span> <span class="s1">&#39;. Level: &#39;</span> <span class="o">+</span> <span class="nx">opts</span><span class="p">.</span><span class="nx">level</span><span class="p">;</span>
     <span class="k">if</span> <span class="p">(</span><span class="nx">opts</span><span class="p">.</span><span class="nx">found</span><span class="p">)</span> <span class="nx">msg</span> <span class="o">+=</span> <span class="s1">&#39;. Found: &#39;</span> <span class="o">+</span> <span class="nx">opts</span><span class="p">.</span><span class="nx">found</span><span class="p">;</span>
     <span class="k">if</span> <span class="p">(</span><span class="nx">opts</span><span class="p">.</span><span class="nx">err</span><span class="p">)</span> <span class="nx">msg</span> <span class="o">+=</span> <span class="s1">&#39;. Err:\n&#39;</span> <span class="o">+</span> <span class="nx">opts</span><span class="p">.</span><span class="nx">err</span><span class="p">.</span><span class="nx">stack</span><span class="p">;</span>
@@ -2873,7 +2997,7 @@ so that GameStage.compare does not complain.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-89" id="section-89">&#182;</a>
+  <a class="pilcrow" href="#section-93" id="section-93">&#182;</a>
 </div>
 <ul>
 <li>skips the check.</li>
@@ -2889,7 +3013,7 @@ so that GameStage.compare does not complain.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-90" id="section-90">&#182;</a>
+  <a class="pilcrow" href="#section-94" id="section-94">&#182;</a>
 </div>
 <p>Trick: we compare version numbers using the GameStage class.</p>
         </td>
@@ -3065,7 +3189,7 @@ settings.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-93" id="section-93">&#182;</a>
+  <a class="pilcrow" href="#section-97" id="section-97">&#182;</a>
 </div>
 <p>TODO: see if we need it in the future:</p>
         </td>
