@@ -1,6 +1,7 @@
 # nodegame-server change log
 
 # 1.2.0 (current)
+ - SSL support.
  - Default Stager callback changed: does not call node.done().
  - Added checkings if games have same name or if channel has same endpoint.
  - Logic client types have default callback where they do **not** call `#node.done()`.
