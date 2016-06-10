@@ -19170,8 +19170,7 @@ if (!Array.prototype.indexOf) {
     GamePlot = parent.GamePlot,
     PlayerList = parent.PlayerList,
     Stager = parent.Stager,
-    PushManager = parent.PushManager,
-    J = parent.JSUS;
+    PushManager = parent.PushManager;
 
     var constants = parent.constants;
 
@@ -19785,7 +19784,6 @@ if (!Array.prototype.indexOf) {
         var curStepObj, curStageObj, nextStepObj, nextStageObj;
         var ev, node;
         var property, handler;
-        var createPlayerHandler;
         var minThreshold, maxThreshold, exactThreshold;
         var minCallback = null, maxCallback = null, exactCallback = null;
         var minRecoverCb = null, maxRecoverCb = null, exactRecoverCb = null;
@@ -19931,103 +19929,107 @@ if (!Array.prototype.indexOf) {
             // Updating the globals object.
             this.updateGlobals(nextStep);
 
-            // Min/Max/Exact Properties.
-
+            // Add min/max/exactPlayers listeners for the step.
+            // The fields must be an array with at least two elements:
+            //   - min/max/exactNum,
+            //   - callbackFn,
+            //   - [recoverCb]
             property = this.plot.getProperty(nextStep, 'minPlayers');
-            if (null !== property) {
-                property = checkMinMaxExactParams('min', property);
+            if (property) {
+                if (property.length < 2) {
+                    throw new TypeError(
+                        'Game.gotoStep: minPlayers field must be an array ' +
+                            'of at least length 2.');
+                }
+
                 minThreshold = property[0];
                 minCallback = property[1];
                 minRecoverCb = property[2];
-                createPlayerHandler = true;
+                checkMinMaxExactParams('min', minThreshold,
+                                       minCallback, minRecoverCb);
             }
-
             property = this.plot.getProperty(nextStep, 'maxPlayers');
-            if (null !== property) {
-                property = checkMinMaxExactParams('max', property);
+            if (property) {
+                if (property.length < 2) {
+                    throw new TypeError(
+                        'Game.gotoStep: maxPlayers field must be an array ' +
+                            'of at least length 2.');
+                }
+
                 maxThreshold = property[0];
                 maxCallback = property[1];
                 maxRecoverCb = property[2];
-                if (maxThreshold <= minThreshold) {
-                    throw new Error('Game.gotoStep: maxPlayers is smaller ' +
-                                    'than minPlayers: ' + maxThreshold);
-                }
-                createPlayerHandler = true;
-            }
+                checkMinMaxExactParams('max', maxThreshold,
+                                       maxCallback, maxRecoverCb);
 
+            }
             property = this.plot.getProperty(nextStep, 'exactPlayers');
-            if (null !== property) {
-                if (createPlayerHandler) {
-                    throw new Error('Game.gotoStep: exactPlayers cannot be ' +
-                                    'set if minPlayers or maxPlayers are set.');
+            if (property) {
+                if (property.length < 2) {
+                    throw new TypeError(
+                        'Game.gotoStep: exactPlayers field must be an array ' +
+                            'of at least length 2.');
                 }
-                property = checkMinMaxExactParams('exact', property);
+
                 exactThreshold = property[0];
                 exactCallback = property[1];
                 exactRecoverCb = property[2];
-                createPlayerHandler = true;
+                checkMinMaxExactParams('exact', exactThreshold,
+                                       exactCallback, exactRecoverCb);
             }
 
-            if (createPlayerHandler) {
-
+            if (minCallback || maxCallback || exactCallback) {
                 // Register event handler.
                 handler = function() {
-                    var cb, nPlayers, wrongNumCb, correctNumCb;
-                    var that;
-                    that = node.game;
-                    nPlayers = node.game.pl.size();
+                    var nPlayers = node.game.pl.size();
                     // Players should count themselves too.
                     if (!node.player.admin) nPlayers++;
 
                     if ('number' === typeof minThreshold) {
                         if (nPlayers < minThreshold) {
-                            if (!that.minPlayerCbCalled) {
-                                that.minPlayerCbCalled = true;
-                                cb = that.getProperty('onWrongPlayerNum');
-
-                                cb.call(that, 'min', minCallback);
+                            if (minCallback && !node.game.minPlayerCbCalled) {
+                                node.game.minPlayerCbCalled = true;
+                                minCallback.call(node.game);
                             }
                         }
                         else {
-                            if (that.minPlayerCbCalled) {
-                                cb = that.getProperty('onCorrectPlayerNum');
-                                cb.call(that, 'min', minRecoverCb);
+                            if (node.game.minPlayerCbCalled && minRecoverCb) {
+                                minRecoverCb.call(node.game);
                             }
-                            that.minPlayerCbCalled = false;
+                            node.game.minPlayerCbCalled = false;
                         }
                     }
 
                     if ('number' === typeof maxThreshold) {
                         if (nPlayers > maxThreshold) {
-                            if (!that.maxPlayerCbCalled) {
-                                that.maxPlayerCbCalled = true;
-                                cb = that.getProperty('onWrongPlayerNum');
-                                cb.call(that, 'max', maxCallback);
+                            if (maxCallback && !node.game.maxPlayerCbCalled) {
+                                node.game.maxPlayerCbCalled = true;
+                                maxCallback.call(node.game);
                             }
                         }
                         else {
-                            if (that.maxPlayerCbCalled) {
-                                cb = that.getProperty('onCorrectPlayerNum');
-                                cb.call(that, 'max', maxRecoverCb);
+                            if (node.game.maxPlayerCbCalled && maxRecoverCb) {
+                                maxRecoverCb.call(node.game);
                             }
-                            that.maxPlayerCbCalled = false;
+                            node.game.maxPlayerCbCalled = false;
                         }
                     }
-
                     if ('number' === typeof exactThreshold) {
                         if (nPlayers !== exactThreshold) {
-                            if (!that.exactPlayerCbCalled) {
-                                that.exactPlayerCbCalled = true;
-                                cb = that.getProperty('onWrongPlayerNum');
-                                cb.call(that, 'exact', exactCallback);
+                            if (exactCallback &&
+                                !node.game.exactPlayerCbCalled) {
+
+                                node.game.exactPlayerCbCalled = true;
+                                exactCallback.call(node.game);
                             }
                         }
                         else {
-                            if (that.exactPlayerCbCalled) {
-                                cb = that.getProperty('onCorrectPlayerNum');
-                                cb.call(that, 'exact', exactRecoverCb);
+                            if (node.game.exactPlayerCbCalled &&
+                                exactRecoverCb) {
+
+                                exactRecoverCb.call(node.game);
                             }
-                            that.exactPlayerCbCalled = false;
+                            node.game.exactPlayerCbCalled = false;
                         }
                     }
                 };
@@ -20755,21 +20757,6 @@ if (!Array.prototype.indexOf) {
         return this.globals;
     };
 
-    /**
-     * ### Game.getProperty
-     *
-     * Returns the requested plot property
-     *
-     * @param {GameStage} gameStage Optional. The reference game stage.
-     *   Default: Game.currentGameStage()
-     *
-     * @return GamePlot.getProperty
-     */
-    Game.prototype.getProperty = function(property, gameStage) {
-        gameStage = 'undefined' !== typeof gameStage ?
-            gameStage : this.getCurrentGameStage();
-        return this.plot.getProperty(gameStage, property);
-    };
 
     // ## Helper Methods
 
@@ -20789,47 +20776,24 @@ if (!Array.prototype.indexOf) {
      *
      * @see Game.gotoStep
      */
-    function checkMinMaxExactParams(name, property) {
-        var num, cb, recoverCb;
-
-        if ('number' === typeof property) {
-            property = [num];
-        }
-
-        if (J.isArray(property)) {
-            if (!property.length) {
-                throw new Error('Game.gotoStep: ' + name + 'Players field ' +
-                                'is empty array.');
-            }
-            num = property[0];
-            cb = property[1];
-            recoverCb = property[2];
-        }
-        else {
-            throw new TypeError('Game.gotoStep: ' + name + 'Players field ' +
-                                'must be number or non-empty array. Found: ' +
-                                property);
-        }
-
+    function checkMinMaxExactParams(name, num, cb, recoverCb) {
         if ('number' !== typeof num || !isFinite(num) || num < 1) {
             throw new TypeError('Game.gotoStep: ' + name +
                                 'Players must be a finite number ' +
                                 'greater than 1: ' + num);
         }
-        if ('undefined' !== typeof cb && 'function' !== typeof cb) {
+        if ('function' !== typeof cb) {
 
             throw new TypeError('Game.gotoStep: ' + name +
                                 'Players cb must be ' +
-                                'function or undefined: ' + cb);
+                                'function: ' + cb);
         }
         if ('undefined' !== typeof recoverCb && 'function' !== typeof cb) {
 
             throw new TypeError('Game.gotoStep: ' + name +
                                 'Players recoverCb must be ' +
-                                'function or undefined: ' + recoverCb);
+                                'function: ' + recoverCb);
         }
-
-        return property;
     }
 
     // ## Closure
@@ -24171,7 +24135,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Connect
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2016 Stefano Balietti
  * MIT Licensed
  *
  * `nodeGame` connect module
@@ -24192,9 +24156,9 @@ if (!Array.prototype.indexOf) {
      *
      * If node is executed in the browser additional checks are performed:
      *
-     * 1. If channel does not begin with `http://`, then `window.location.host`
-     *    will be added in front of channel to avoid cross-domain errors
-     *    (as of Socket.io >= 1).
+     * 1. If channel does not begin with `http://` or `https://,
+     *    then `window.location.origin` will be added in front of
+     *    channel to avoid cross-domain errors (as of Socket.io >= 1).
      *
      * 2. If no socketOptions.query parameter is specified any query
      *    parameters found in `location.search(1)` will be passed.
@@ -24223,9 +24187,12 @@ if (!Array.prototype.indexOf) {
                 }
             }
             // Make full path otherwise socket.io will complain.
-            if (channel && channel.substr(0,7) !== 'http://') {
-                if (window.location && window.location.host) {
-                    channel = 'http://' + window.location.host + channel;
+            if (channel &&
+                (channel.substr(0,8) !== 'https://' &&
+                 channel.substr(0,7) !== 'http://')) {
+
+                if (window.location && window.location.origin) {
+                    channel = window.location.origin + channel;
                 }
             }
             // Pass along any query options. (?clientType=...).
