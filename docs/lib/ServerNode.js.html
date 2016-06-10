@@ -28,10 +28,13 @@
         <a href="#servernode%20constructor">ServerNode constructor</a>
       </div>
       <div class="heading h3">
+        <a href="#servernode.defaultconfdir">ServerNode.defaultConfDir</a>
+      </div>
+      <div class="heading h3">
         <a href="#servernode.http">ServerNode.http</a>
       </div>
       <div class="heading h3">
-        <a href="#servernode.defaultconfdir">ServerNode.defaultConfDir</a>
+        <a href="#servernode.port">ServerNode.port</a>
       </div>
       <div class="heading h3">
         <a href="#servernode.version">ServerNode.version</a>
@@ -141,6 +144,9 @@
       <div class="heading h3">
         <a href="#servernode.ready">ServerNode.ready</a>
       </div>
+      <div class="heading h3">
+        <a href="#servernode.createserver">ServerNode.createServer</a>
+      </div>
       <div class="heading h2">
         <a href="#helper%20methods">Helper Methods</a>
       </div>
@@ -164,7 +170,7 @@
 </div>
 
 
-<p>Copyright(c) 2015 Stefano Balietti
+<p>Copyright(c) 2016 Stefano Balietti
 MIT Licensed</p>
   </div>
   <div class="body"><p>Creates the server node for nodeGame</p>
@@ -217,13 +223,11 @@ directories.</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-3" id="section-3">&#182;</a>
 </div>
-<p>Create Express server.</p>
+<p>Express server.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-
-<span class="kd">var</span> <span class="nx">nodeHTTP</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;http&#39;</span><span class="p">);</span>
-<span class="kd">var</span> <span class="nx">exp</span> <span class="o">=</span> <span class="nx">express</span><span class="p">();</span>
-<span class="kd">var</span> <span class="nx">http</span> <span class="o">=</span> <span class="nx">nodeHTTP</span><span class="p">.</span><span class="nx">createServer</span><span class="p">(</span><span class="nx">exp</span><span class="p">);</span>
+<span class="kd">var</span> <span class="nx">exp</span><span class="p">,</span> <span class="nx">http</span><span class="p">;</span>
+<span class="nx">exp</span> <span class="o">=</span> <span class="nx">express</span><span class="p">();</span>
 
 
 </pre></div>
@@ -245,7 +249,7 @@ directories.</p>
   <div class="details">
     <div class="dox_tag_title">Params</div>
     <div class="dox_tag_detail">
-      <span class="dox_tag_name">options</span>
+      <span class="dox_tag_name">opts</span>
       <span class="dox_type">object</span>
       <span>The configuration object</span>
     </div>
@@ -253,7 +257,46 @@ directories.</p>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-<span class="kd">function</span> <span class="nx">ServerNode</span><span class="p">(</span><span class="nx">options</span><span class="p">)</span> <span class="p">{</span>
+<span class="kd">function</span> <span class="nx">ServerNode</span><span class="p">(</span><span class="nx">opts</span><span class="p">)</span> <span class="p">{</span>
+
+    <span class="nx">opts</span> <span class="o">=</span> <span class="nx">opts</span> <span class="o">||</span> <span class="p">{};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="servernode.defaultconfdir">
+  <h3>
+    <a href="#servernode.defaultconfdir" name="servernode.defaultconfdir" class="pilcrow">&#182;</a>
+    ServerNode.defaultConfDir
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>The directory of execution of the server</p>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">this</span><span class="p">.</span><span class="nx">rootDir</span> <span class="o">=</span> <span class="nx">path</span><span class="p">.</span><span class="nx">resolve</span><span class="p">(</span><span class="nx">__dirname</span><span class="p">,</span> <span class="s1">&#39;..&#39;</span><span class="p">);</span>
+
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-6" id="section-6">&#182;</a>
+</div>
+<p>Creates the http or https server (must be after rootDir is set).</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">this</span><span class="p">.</span><span class="nx">createServer</span><span class="p">(</span><span class="nx">opts</span><span class="p">);</span>
 
 
 </pre></div>
@@ -284,20 +327,20 @@ directories.</p>
       <tr>
         <td class="docs"><div class="dox">
   <div class="summary">
-<div class="pilwrap" id="servernode.defaultconfdir">
+<div class="pilwrap" id="servernode.port">
   <h3>
-    <a href="#servernode.defaultconfdir" name="servernode.defaultconfdir" class="pilcrow">&#182;</a>
-    ServerNode.defaultConfDir
+    <a href="#servernode.port" name="servernode.port" class="pilcrow">&#182;</a>
+    ServerNode.port
   </h3>
 </div>
 
   </div>
-  <div class="body"><p>The directory of execution of the server</p>
+  <div class="body"><p>Default port for server</p>
   </div>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">rootDir</span> <span class="o">=</span> <span class="nx">path</span><span class="p">.</span><span class="nx">resolve</span><span class="p">(</span><span class="nx">__dirname</span><span class="p">,</span> <span class="s1">&#39;..&#39;</span><span class="p">);</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">port</span> <span class="o">=</span> <span class="mi">8080</span><span class="p">;</span>
 
 
 </pre></div>
@@ -608,7 +651,7 @@ directories.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-19" id="section-19">&#182;</a>
+  <a class="pilcrow" href="#section-21" id="section-21">&#182;</a>
 </div>
 <p>see <a href='http://nodejs.org/docs/latest/'>http://nodejs.org/docs/latest/</a>
            api/events.html#events_emitter_setmaxlisteners_n</p>
@@ -711,12 +754,12 @@ directories.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-24" id="section-24">&#182;</a>
+  <a class="pilcrow" href="#section-26" id="section-26">&#182;</a>
 </div>
 <p>Loading configurations.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">init</span><span class="p">(</span><span class="nx">options</span> <span class="o">||</span> <span class="p">{});</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">init</span><span class="p">(</span><span class="nx">opts</span> <span class="o">||</span> <span class="p">{});</span>
 <span class="p">}</span>
 
 
@@ -793,7 +836,7 @@ directories.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-27" id="section-27">&#182;</a>
+  <a class="pilcrow" href="#section-29" id="section-29">&#182;</a>
 </div>
 <p>Loading default config files.</p>
         </td>
@@ -812,7 +855,7 @@ directories.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-28" id="section-28">&#182;</a>
+  <a class="pilcrow" href="#section-30" id="section-30">&#182;</a>
 </div>
 <p>Loading user configuration files</p>
         </td>
@@ -826,7 +869,7 @@ directories.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-29" id="section-29">&#182;</a>
+  <a class="pilcrow" href="#section-31" id="section-31">&#182;</a>
 </div>
 <p>We load the loggers configuration file first, so that
 the the output is nicely formatted.</p>
@@ -848,7 +891,7 @@ the the output is nicely formatted.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-30" id="section-30">&#182;</a>
+  <a class="pilcrow" href="#section-32" id="section-32">&#182;</a>
 </div>
 <p>Mix in options with configuration files.</p>
         </td>
@@ -866,7 +909,7 @@ the the output is nicely formatted.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-31" id="section-31">&#182;</a>
+  <a class="pilcrow" href="#section-33" id="section-33">&#182;</a>
 </div>
 <p>TODO: Think about how to handle SIGXXX signals.</p>
         </td>
@@ -879,7 +922,7 @@ the the output is nicely formatted.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-32" id="section-32">&#182;</a>
+  <a class="pilcrow" href="#section-34" id="section-34">&#182;</a>
 </div>
 
 <div class="highlight"><pre><code><span class="n">process</span><span class="o">.</span><span class="n">on</span><span class="p">(</span><span class="s">&#39;SIGHUP&#39;</span><span class="p">,</span> <span class="n">function</span><span class="p">()</span> <span class="p">{</span>
@@ -909,7 +952,7 @@ the the output is nicely formatted.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-33" id="section-33">&#182;</a>
+  <a class="pilcrow" href="#section-35" id="section-35">&#182;</a>
 </div>
 <p>Loading games.</p>
         </td>
@@ -924,7 +967,7 @@ the the output is nicely formatted.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-34" id="section-34">&#182;</a>
+  <a class="pilcrow" href="#section-36" id="section-36">&#182;</a>
 </div>
 <p>Done.</p>
         </td>
@@ -1031,7 +1074,7 @@ is aborted.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-37" id="section-37">&#182;</a>
+  <a class="pilcrow" href="#section-39" id="section-39">&#182;</a>
 </div>
 <p>Check, adapt options for server channels, or throw error.</p>
         </td>
@@ -1052,7 +1095,7 @@ is aborted.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-38" id="section-38">&#182;</a>
+  <a class="pilcrow" href="#section-40" id="section-40">&#182;</a>
 </div>
 <p>Pre-parse user defined configuration options.</p>
         </td>
@@ -1065,7 +1108,7 @@ is aborted.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-39" id="section-39">&#182;</a>
+  <a class="pilcrow" href="#section-41" id="section-41">&#182;</a>
 </div>
 <p>Merge user-defined options with defaults.</p>
         </td>
@@ -1085,7 +1128,7 @@ is aborted.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-40" id="section-40">&#182;</a>
+  <a class="pilcrow" href="#section-42" id="section-42">&#182;</a>
 </div>
 <p>TODO: better check the merged object.</p>
         </td>
@@ -1100,7 +1143,7 @@ is aborted.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-41" id="section-41">&#182;</a>
+  <a class="pilcrow" href="#section-43" id="section-43">&#182;</a>
 </div>
 <p>Creating the channel.</p>
         </td>
@@ -1126,7 +1169,7 @@ is aborted.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-42" id="section-42">&#182;</a>
+  <a class="pilcrow" href="#section-44" id="section-44">&#182;</a>
 </div>
 <p>Add the channel to the Page Manager.</p>
         </td>
@@ -1188,7 +1231,7 @@ is aborted.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-44" id="section-44">&#182;</a>
+  <a class="pilcrow" href="#section-46" id="section-46">&#182;</a>
 </div>
 <p>Here we scan folders that contains games directories.</p>
         </td>
@@ -1207,7 +1250,7 @@ is aborted.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-45" id="section-45">&#182;</a>
+  <a class="pilcrow" href="#section-47" id="section-47">&#182;</a>
 </div>
 <p>Register operation in the queue.</p>
         </td>
@@ -1220,7 +1263,7 @@ is aborted.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-46" id="section-46">&#182;</a>
+  <a class="pilcrow" href="#section-48" id="section-48">&#182;</a>
 </div>
 <p>Go inside, and check every file to see if it is a game directory.</p>
         </td>
@@ -1234,7 +1277,7 @@ is aborted.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-47" id="section-47">&#182;</a>
+  <a class="pilcrow" href="#section-49" id="section-49">&#182;</a>
 </div>
 <p>Remove async operation from queue.</p>
         </td>
@@ -1253,7 +1296,7 @@ is aborted.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-48" id="section-48">&#182;</a>
+  <a class="pilcrow" href="#section-50" id="section-50">&#182;</a>
 </div>
 <p>Check every file.</p>
         </td>
@@ -1268,7 +1311,7 @@ is aborted.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-49" id="section-49">&#182;</a>
+  <a class="pilcrow" href="#section-51" id="section-51">&#182;</a>
 </div>
 <p>Register operation in the queue.</p>
         </td>
@@ -1281,7 +1324,7 @@ is aborted.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-50" id="section-50">&#182;</a>
+  <a class="pilcrow" href="#section-52" id="section-52">&#182;</a>
 </div>
 <p>Get file stats.</p>
         </td>
@@ -1301,7 +1344,7 @@ is aborted.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-51" id="section-51">&#182;</a>
+  <a class="pilcrow" href="#section-53" id="section-53">&#182;</a>
 </div>
 <p>It is a folder, try to add it as a game.</p>
         </td>
@@ -1319,7 +1362,7 @@ is aborted.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-52" id="section-52">&#182;</a>
+  <a class="pilcrow" href="#section-54" id="section-54">&#182;</a>
 </div>
 <p>Remove async operation from queue.</p>
         </td>
@@ -1378,7 +1421,7 @@ is aborted.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-54" id="section-54">&#182;</a>
+  <a class="pilcrow" href="#section-56" id="section-56">&#182;</a>
 </div>
 <p>Reading package.json</p>
         </td>
@@ -1399,7 +1442,7 @@ is aborted.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-55" id="section-55">&#182;</a>
+  <a class="pilcrow" href="#section-57" id="section-57">&#182;</a>
 </div>
 <p>Ready to add the game.</p>
         </td>
@@ -1562,7 +1605,7 @@ automatically add a waiting room to the channel.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-58" id="section-58">&#182;</a>
+  <a class="pilcrow" href="#section-60" id="section-60">&#182;</a>
 </div>
 <p>Validate,</p>
         </td>
@@ -1597,7 +1640,7 @@ automatically add a waiting room to the channel.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-59" id="section-59">&#182;</a>
+  <a class="pilcrow" href="#section-61" id="section-61">&#182;</a>
 </div>
 <p>Add the list of channels created by the game.</p>
         </td>
@@ -1613,7 +1656,7 @@ automatically add a waiting room to the channel.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-60" id="section-60">&#182;</a>
+  <a class="pilcrow" href="#section-62" id="section-62">&#182;</a>
 </div>
 <p>We prepend the baseDir parameter, if any.
 If logicPath is not string we let the WaitingRoom
@@ -1697,7 +1740,7 @@ TODO: views.js file is not loaded anymore because all context are dynamics.</spa
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-62" id="section-62">&#182;</a>
+  <a class="pilcrow" href="#section-64" id="section-64">&#182;</a>
 </div>
 <p>Prepare data structure for game.</p>
         </td>
@@ -1711,7 +1754,7 @@ TODO: views.js file is not loaded anymore because all context are dynamics.</spa
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-63" id="section-63">&#182;</a>
+  <a class="pilcrow" href="#section-65" id="section-65">&#182;</a>
 </div>
 <p>TODO: see if still needed (broken now).</p>
 
@@ -1867,7 +1910,7 @@ TODO: views.js file is not loaded anymore because all context are dynamics.</spa
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-66" id="section-66">&#182;</a>
+  <a class="pilcrow" href="#section-68" id="section-68">&#182;</a>
 </div>
 <p>Add standard name.</p>
         </td>
@@ -2259,7 +2302,7 @@ that passes the correct objects to the configurator function.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-73" id="section-73">&#182;</a>
+  <a class="pilcrow" href="#section-75" id="section-75">&#182;</a>
 </div>
 <p>Requiring configuration function (can throw errors).</p>
         </td>
@@ -2278,7 +2321,7 @@ that passes the correct objects to the configurator function.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-74" id="section-74">&#182;</a>
+  <a class="pilcrow" href="#section-76" id="section-76">&#182;</a>
 </div>
 <p>The configuration function is called internally by <em>cb</em> that takes
 care of passing the right parameters to it.</p>
@@ -2449,6 +2492,127 @@ care of passing the right parameters to it.</p>
         </td>
       </tr>
       <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="servernode.createserver">
+  <h3>
+    <a href="#servernode.createserver" name="servernode.createserver" class="pilcrow">&#182;</a>
+    ServerNode.createServer
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Creates a new instance of http or https server</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">opts</span>
+      <span class="dox_type">object</span>
+      <span>Configuration options (same as constructor). Looks
+  for <code>opts.ssl</code>, that can be object or boolean. If object, it must
+  contain the properties:
+
+
+<div class="highlight"><pre><code>   <span class="o">-</span> <span class="sb">`key`</span><span class="p">:</span> <span class="n">the</span> <span class="n">private</span> <span class="n">key</span>
+   <span class="o">-</span> <span class="sb">`cert`</span><span class="p">:</span> <span class="n">the</span> <span class="n">certificate</span>
+</code></pre></div>
+
+
+
+If boolean, files:
+
+
+<div class="highlight"><pre><code>   <span class="o">-</span> <span class="sb">`private.key`</span>
+   <span class="o">-</span> <span class="sb">`certificate.pem`</span>
+</code></pre></div>
+
+
+
+are loaded from the nodegame-server/ssl/ directory.</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <a href="http
+">http
+</a>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">ServerNode</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">createServer</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">opts</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">key</span><span class="p">,</span> <span class="nx">cert</span><span class="p">;</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="nx">http</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;ServerNode.createServer: server already running.&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-81" id="section-81">&#182;</a>
+</div>
+<p>Load default key and certificate if requested.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;boolean&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">opts</span><span class="p">.</span><span class="nx">ssl</span> <span class="o">&amp;&amp;</span> <span class="nx">opts</span><span class="p">.</span><span class="nx">ssl</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">opts</span><span class="p">.</span><span class="nx">ssl</span> <span class="o">=</span> <span class="p">{};</span>
+
+        <span class="nx">key</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">rootDir</span> <span class="o">+</span> <span class="s1">&#39;/ssl/private.key&#39;</span><span class="p">;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">fs</span><span class="p">.</span><span class="nx">existsSync</span><span class="p">(</span><span class="nx">key</span><span class="p">))</span> <span class="p">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;Servernode.createServer: ssl option equal to &#39;</span> <span class="o">+</span>
+                            <span class="s1">&#39;true, but no ssl/private.key not found.&#39;</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="nx">cert</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">rootDir</span> <span class="o">+</span> <span class="s1">&#39;/ssl/certificate.pem&#39;</span><span class="p">;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">fs</span><span class="p">.</span><span class="nx">existsSync</span><span class="p">(</span><span class="nx">cert</span><span class="p">))</span> <span class="p">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;Servernode.createServer: ssl option equal to &#39;</span> <span class="o">+</span>
+                            <span class="s1">&#39;true, but no ssl/certificate.pem not found.&#39;</span><span class="p">);</span>
+        <span class="p">}</span>
+
+        <span class="nx">opts</span><span class="p">.</span><span class="nx">ssl</span><span class="p">.</span><span class="nx">key</span> <span class="o">=</span> <span class="nx">fs</span><span class="p">.</span><span class="nx">readFileSync</span><span class="p">(</span><span class="nx">key</span><span class="p">,</span> <span class="s1">&#39;utf8&#39;</span><span class="p">);</span>
+        <span class="nx">opts</span><span class="p">.</span><span class="nx">ssl</span><span class="p">.</span><span class="nx">cert</span> <span class="o">=</span> <span class="nx">fs</span><span class="p">.</span><span class="nx">readFileSync</span><span class="p">(</span><span class="nx">cert</span><span class="p">,</span> <span class="s1">&#39;utf8&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-82" id="section-82">&#182;</a>
+</div>
+<p>Create http or ssl server.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">opts</span><span class="p">.</span><span class="nx">ssl</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">opts</span><span class="p">.</span><span class="nx">ssl</span><span class="p">.</span><span class="nx">key</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;Servernode.createServer: ssl.key must be &#39;</span> <span class="o">+</span>
+                                <span class="s1">&#39;string. Found: &#39;</span> <span class="o">+</span> <span class="nx">opts</span><span class="p">.</span><span class="nx">ssl</span><span class="p">.</span><span class="nx">key</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">opts</span><span class="p">.</span><span class="nx">ssl</span><span class="p">.</span><span class="nx">cert</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;Servernode.createServer: ssl.cert must be &#39;</span> <span class="o">+</span>
+                                <span class="s1">&#39;string. Found: &#39;</span> <span class="o">+</span> <span class="nx">opts</span><span class="p">.</span><span class="nx">ssl</span><span class="p">.</span><span class="nx">cert</span><span class="p">);</span>
+        <span class="p">}</span>
+
+        <span class="nx">http</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;https&#39;</span><span class="p">).</span><span class="nx">createServer</span><span class="p">(</span><span class="nx">opts</span><span class="p">.</span><span class="nx">ssl</span><span class="p">,</span> <span class="nx">exp</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="k">else</span> <span class="p">{</span>
+        <span class="nx">http</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;http&#39;</span><span class="p">).</span><span class="nx">createServer</span><span class="p">(</span><span class="nx">exp</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
         <td class="docs">
 <div class="pilwrap" id="helper%20methods">
   <h2>
@@ -2521,7 +2685,7 @@ checks that endpoints are not already in use.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-80" id="section-80">&#182;</a>
+  <a class="pilcrow" href="#section-85" id="section-85">&#182;</a>
 </div>
 <p>Validate options object, and set default endpoint if undefined.</p>
         </td>
@@ -2553,7 +2717,7 @@ checks that endpoints are not already in use.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-81" id="section-81">&#182;</a>
+  <a class="pilcrow" href="#section-86" id="section-86">&#182;</a>
 </div>
 <p>See if admin and player server have the same endpoint.</p>
         </td>
@@ -2588,7 +2752,7 @@ checks that endpoints are not already in use.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-82" id="section-82">&#182;</a>
+  <a class="pilcrow" href="#section-87" id="section-87">&#182;</a>
 </div>
 <p>See if an endpoint with the same name is already in use.</p>
         </td>

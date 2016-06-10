@@ -11,6 +11,10 @@ npm-debug.log
 
 *.swp
 
+ssl/*.key
+ssl/*.pem
+ssl/*.csr
+ssl/cert*
 
 log/servernode
 log/channels
