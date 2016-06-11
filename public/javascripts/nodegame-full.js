@@ -19787,7 +19787,7 @@ if (!Array.prototype.indexOf) {
         var curStepObj, curStageObj, nextStepObj, nextStageObj;
         var ev, node;
         var property, handler;
-        var createPlayerHandler;
+        var doPlChangeHandler;
         var minThreshold, maxThreshold, exactThreshold;
         var minCallback = null, maxCallback = null, exactCallback = null;
         var minRecoverCb = null, maxRecoverCb = null, exactRecoverCb = null;
@@ -19941,7 +19941,7 @@ if (!Array.prototype.indexOf) {
                 minThreshold = property[0];
                 minCallback = property[1];
                 minRecoverCb = property[2];
-                createPlayerHandler = true;
+                doPlChangeHandler = true;
             }
 
             property = this.plot.getProperty(nextStep, 'maxPlayers');
@@ -19954,12 +19954,12 @@ if (!Array.prototype.indexOf) {
                     throw new Error('Game.gotoStep: maxPlayers is smaller ' +
                                     'than minPlayers: ' + maxThreshold);
                 }
-                createPlayerHandler = true;
+                doPlChangeHandler = true;
             }
 
             property = this.plot.getProperty(nextStep, 'exactPlayers');
             if (property) {
-                if (createPlayerHandler) {
+                if (doPlChangeHandler) {
                     throw new Error('Game.gotoStep: exactPlayers cannot be ' +
                                     'set if minPlayers or maxPlayers are set.');
                 }
@@ -19967,15 +19967,16 @@ if (!Array.prototype.indexOf) {
                 exactThreshold = property[0];
                 exactCallback = property[1];
                 exactRecoverCb = property[2];
-                createPlayerHandler = true;
+                doPlChangeHandler = true;
             }
 
-            if (createPlayerHandler) {
+            if (doPlChangeHandler) {
 
                 // Register event handler.
-                handler = function() {
+                handler = function(player) {
                     var cb, nPlayers, wrongNumCb, correctNumCb;
-                    var that;
+                    var that, res;
+                    res = true;
                     that = node.game;
                     nPlayers = node.game.pl.size();
                     // Players should count themselves too.
@@ -19987,13 +19988,14 @@ if (!Array.prototype.indexOf) {
                                 that.minPlayerCbCalled = true;
                                 cb = that.getProperty('onWrongPlayerNum');
 
-                                cb.call(that, 'min', minCallback);
+                                cb.call(that, 'min', minCallback, player);
                             }
+                            res = false;
                         }
                         else {
                             if (that.minPlayerCbCalled) {
                                 cb = that.getProperty('onCorrectPlayerNum');
-                                cb.call(that, 'min', minRecoverCb);
+                                cb.call(that, 'min', minRecoverCb, player);
                             }
                             that.minPlayerCbCalled = false;
                         }
@@ -20006,6 +20008,7 @@ if (!Array.prototype.indexOf) {
                                 cb = that.getProperty('onWrongPlayerNum');
                                 cb.call(that, 'max', maxCallback);
                             }
+                            res = false;
                         }
                         else {
                             if (that.maxPlayerCbCalled) {
@@ -20023,6 +20026,7 @@ if (!Array.prototype.indexOf) {
                                 cb = that.getProperty('onWrongPlayerNum');
                                 cb.call(that, 'exact', exactCallback);
                             }
+                            res = false;
                         }
                         else {
                             if (that.exactPlayerCbCalled) {
@@ -20032,6 +20036,8 @@ if (!Array.prototype.indexOf) {
                             that.exactPlayerCbCalled = false;
                         }
                     }
+
+                    return res;
                 };
 
                 node.events.ee.step.on('in.say.PCONNECT', handler);
