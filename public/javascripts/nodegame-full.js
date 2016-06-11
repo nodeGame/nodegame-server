@@ -14477,11 +14477,13 @@ if (!Array.prototype.indexOf) {
      * @see GameTimer.parseMilliseconds
      */
     PushManager.prototype.startTimer = function(conf) {
-        var gameStage, pushCb, that, timer, offset;
+        var gameStage, pushCb, that, offset;
         var node;
 
         node = this.node;
         conf = conf || {};
+
+        console.log('PUSH.TIMER ************************* ', conf);
 
         if (!this.timer) {
             this.timer = this.node.timer.createTimer({ name: 'push_clients' });
@@ -14490,22 +14492,22 @@ if (!Array.prototype.indexOf) {
             this.clearTimer();
         }
 
-        node.silly('push-manager: starting timer: ' + timer +
-                   ', ' + node.player.stage);
-
         if ('undefined' !== typeof conf.offset) {
             offset = node.timer.parseInput('offset', conf.offset);
         }
         else {
             offset = this.offsetWaitTime;
         }
+
+        node.silly('push-manager: starting timer: ' + offset +
+                   ', ' + node.player.stage);
         that = this;
         pushCb = function() { that.pushGame.call(that, conf); };
 
         // Make sure milliseconds and update are the same.
         this.timer.init({
             milliseconds: offset,
-            update: timer,
+            update: offset,
             timeup: pushCb,
         });
         this.timer.start();
@@ -19170,7 +19172,8 @@ if (!Array.prototype.indexOf) {
     GamePlot = parent.GamePlot,
     PlayerList = parent.PlayerList,
     Stager = parent.Stager,
-    PushManager = parent.PushManager;
+    PushManager = parent.PushManager,
+    J = parent.JSUS;
 
     var constants = parent.constants;
 
@@ -19784,6 +19787,7 @@ if (!Array.prototype.indexOf) {
         var curStepObj, curStageObj, nextStepObj, nextStageObj;
         var ev, node;
         var property, handler;
+        var createPlayerHandler;
         var minThreshold, maxThreshold, exactThreshold;
         var minCallback = null, maxCallback = null, exactCallback = null;
         var minRecoverCb = null, maxRecoverCb = null, exactRecoverCb = null;
@@ -19929,107 +19933,103 @@ if (!Array.prototype.indexOf) {
             // Updating the globals object.
             this.updateGlobals(nextStep);
 
-            // Add min/max/exactPlayers listeners for the step.
-            // The fields must be an array with at least two elements:
-            //   - min/max/exactNum,
-            //   - callbackFn,
-            //   - [recoverCb]
+            // Min/Max/Exact Properties.
+
             property = this.plot.getProperty(nextStep, 'minPlayers');
             if (property) {
-                if (property.length < 2) {
-                    throw new TypeError(
-                        'Game.gotoStep: minPlayers field must be an array ' +
-                            'of at least length 2.');
-                }
-
+                property = checkMinMaxExactParams('min', property);
                 minThreshold = property[0];
                 minCallback = property[1];
                 minRecoverCb = property[2];
-                checkMinMaxExactParams('min', minThreshold,
-                                       minCallback, minRecoverCb);
+                createPlayerHandler = true;
             }
+
             property = this.plot.getProperty(nextStep, 'maxPlayers');
             if (property) {
-                if (property.length < 2) {
-                    throw new TypeError(
-                        'Game.gotoStep: maxPlayers field must be an array ' +
-                            'of at least length 2.');
-                }
-
+                property = checkMinMaxExactParams('max', property);
                 maxThreshold = property[0];
                 maxCallback = property[1];
                 maxRecoverCb = property[2];
-                checkMinMaxExactParams('max', maxThreshold,
-                                       maxCallback, maxRecoverCb);
-
+                if (maxThreshold <= minThreshold) {
+                    throw new Error('Game.gotoStep: maxPlayers is smaller ' +
+                                    'than minPlayers: ' + maxThreshold);
+                }
+                createPlayerHandler = true;
             }
+
             property = this.plot.getProperty(nextStep, 'exactPlayers');
             if (property) {
-                if (property.length < 2) {
-                    throw new TypeError(
-                        'Game.gotoStep: exactPlayers field must be an array ' +
-                            'of at least length 2.');
+                if (createPlayerHandler) {
+                    throw new Error('Game.gotoStep: exactPlayers cannot be ' +
+                                    'set if minPlayers or maxPlayers are set.');
                 }
-
+                property = checkMinMaxExactParams('exact', property);
                 exactThreshold = property[0];
                 exactCallback = property[1];
                 exactRecoverCb = property[2];
-                checkMinMaxExactParams('exact', exactThreshold,
-                                       exactCallback, exactRecoverCb);
+                createPlayerHandler = true;
             }
 
-            if (minCallback || maxCallback || exactCallback) {
+            if (createPlayerHandler) {
+
                 // Register event handler.
                 handler = function() {
-                    var nPlayers = node.game.pl.size();
+                    var cb, nPlayers, wrongNumCb, correctNumCb;
+                    var that;
+                    that = node.game;
+                    nPlayers = node.game.pl.size();
                     // Players should count themselves too.
                     if (!node.player.admin) nPlayers++;
 
                     if ('number' === typeof minThreshold) {
                         if (nPlayers < minThreshold) {
-                            if (minCallback && !node.game.minPlayerCbCalled) {
-                                node.game.minPlayerCbCalled = true;
-                                minCallback.call(node.game);
+                            if (!that.minPlayerCbCalled) {
+                                that.minPlayerCbCalled = true;
+                                cb = that.getProperty('onWrongPlayerNum');
+
+                                cb.call(that, 'min', minCallback);
                             }
                         }
                         else {
-                            if (node.game.minPlayerCbCalled && minRecoverCb) {
-                                minRecoverCb.call(node.game);
+                            if (that.minPlayerCbCalled) {
+                                cb = that.getProperty('onCorrectPlayerNum');
+                                cb.call(that, 'min', minRecoverCb);
                             }
-                            node.game.minPlayerCbCalled = false;
+                            that.minPlayerCbCalled = false;
                         }
                     }
 
                     if ('number' === typeof maxThreshold) {
                         if (nPlayers > maxThreshold) {
-                            if (maxCallback && !node.game.maxPlayerCbCalled) {
-                                node.game.maxPlayerCbCalled = true;
-                                maxCallback.call(node.game);
+                            if (!that.maxPlayerCbCalled) {
+                                that.maxPlayerCbCalled = true;
+                                cb = that.getProperty('onWrongPlayerNum');
+                                cb.call(that, 'max', maxCallback);
                             }
                         }
                         else {
-                            if (node.game.maxPlayerCbCalled && maxRecoverCb) {
-                                maxRecoverCb.call(node.game);
+                            if (that.maxPlayerCbCalled) {
+                                cb = that.getProperty('onCorrectPlayerNum');
+                                cb.call(that, 'max', maxRecoverCb);
                             }
-                            node.game.maxPlayerCbCalled = false;
+                            that.maxPlayerCbCalled = false;
                         }
                     }
+
                     if ('number' === typeof exactThreshold) {
                         if (nPlayers !== exactThreshold) {
-                            if (exactCallback &&
-                                !node.game.exactPlayerCbCalled) {
-
-                                node.game.exactPlayerCbCalled = true;
-                                exactCallback.call(node.game);
+                            if (!that.exactPlayerCbCalled) {
+                                that.exactPlayerCbCalled = true;
+                                cb = that.getProperty('onWrongPlayerNum');
+                                cb.call(that, 'exact', exactCallback);
                             }
                         }
                         else {
-                            if (node.game.exactPlayerCbCalled &&
-                                exactRecoverCb) {
-
-                                exactRecoverCb.call(node.game);
+                            if (that.exactPlayerCbCalled) {
+                                cb = that.getProperty('onCorrectPlayerNum');
+                                cb.call(that, 'exact', exactRecoverCb);
                             }
-                            node.game.exactPlayerCbCalled = false;
+                            that.exactPlayerCbCalled = false;
                         }
                     }
                 };
@@ -20757,6 +20757,21 @@ if (!Array.prototype.indexOf) {
         return this.globals;
     };
 
+    /**
+     * ### Game.getProperty
+     *
+     * Returns the requested plot property
+     *
+     * @param {GameStage} gameStage Optional. The reference game stage.
+     *   Default: Game.currentGameStage()
+     *
+     * @return GamePlot.getProperty
+     */
+    Game.prototype.getProperty = function(property, gameStage) {
+        gameStage = 'undefined' !== typeof gameStage ?
+            gameStage : this.getCurrentGameStage();
+        return this.plot.getProperty(gameStage, property);
+    };
 
     // ## Helper Methods
 
@@ -20776,24 +20791,47 @@ if (!Array.prototype.indexOf) {
      *
      * @see Game.gotoStep
      */
-    function checkMinMaxExactParams(name, num, cb, recoverCb) {
+    function checkMinMaxExactParams(name, property) {
+        var num, cb, recoverCb;
+
+        if ('number' === typeof property) {
+            property = [num];
+        }
+
+        if (J.isArray(property)) {
+            if (!property.length) {
+                throw new Error('Game.gotoStep: ' + name + 'Players field ' +
+                                'is empty array.');
+            }
+            num = property[0];
+            cb = property[1];
+            recoverCb = property[2];
+        }
+        else {
+            throw new TypeError('Game.gotoStep: ' + name + 'Players field ' +
+                                'must be number or non-empty array. Found: ' +
+                                property);
+        }
+
         if ('number' !== typeof num || !isFinite(num) || num < 1) {
             throw new TypeError('Game.gotoStep: ' + name +
                                 'Players must be a finite number ' +
                                 'greater than 1: ' + num);
         }
-        if ('function' !== typeof cb) {
+        if ('undefined' !== typeof cb && 'function' !== typeof cb) {
 
             throw new TypeError('Game.gotoStep: ' + name +
                                 'Players cb must be ' +
-                                'function: ' + cb);
+                                'function or undefined: ' + cb);
         }
         if ('undefined' !== typeof recoverCb && 'function' !== typeof cb) {
 
             throw new TypeError('Game.gotoStep: ' + name +
                                 'Players recoverCb must be ' +
-                                'function: ' + recoverCb);
+                                'function or undefined: ' + recoverCb);
         }
+
+        return property;
     }
 
     // ## Closure
@@ -21438,23 +21476,6 @@ if (!Array.prototype.indexOf) {
                 this.destroyTimer(this.timers[i]);
             }
         }
-    };
-
-    /**
-     * ### Timer.getTimer
-     *
-     * Returns a reference to a previosly registered game timer.
-     *
-     * @param {string} name The name of the timer
-     *
-     * @return {GameTimer|null} The game timer with the given name, or
-     *   null if none is found
-     */
-    Timer.prototype.getTimer = function(name) {
-        if ('string' !== typeof name) {
-            throw new TypeError('Timer.getTimer: name must be string.');
-        }
-        return this.timers[name] || null;
     };
 
     /**
@@ -24135,7 +24156,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Connect
- * Copyright(c) 2016 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  *
  * `nodeGame` connect module
@@ -24156,9 +24177,9 @@ if (!Array.prototype.indexOf) {
      *
      * If node is executed in the browser additional checks are performed:
      *
-     * 1. If channel does not begin with `http://` or `https://,
-     *    then `window.location.origin` will be added in front of
-     *    channel to avoid cross-domain errors (as of Socket.io >= 1).
+     * 1. If channel does not begin with `http://`, then `window.location.host`
+     *    will be added in front of channel to avoid cross-domain errors
+     *    (as of Socket.io >= 1).
      *
      * 2. If no socketOptions.query parameter is specified any query
      *    parameters found in `location.search(1)` will be passed.
@@ -24187,12 +24208,9 @@ if (!Array.prototype.indexOf) {
                 }
             }
             // Make full path otherwise socket.io will complain.
-            if (channel &&
-                (channel.substr(0,8) !== 'https://' &&
-                 channel.substr(0,7) !== 'http://')) {
-
-                if (window.location && window.location.origin) {
-                    channel = window.location.origin + channel;
+            if (channel && channel.substr(0,7) !== 'http://') {
+                if (window.location && window.location.host) {
+                    channel = 'http://' + window.location.host + channel;
                 }
             }
             // Pass along any query options. (?clientType=...).
@@ -26173,58 +26191,78 @@ if (!Array.prototype.indexOf) {
             return this.player.lang;
         });
 
-        /**
-         * ### setup("timer")
-         *
-         * Setup a timer object
-         *
-         * Accepts one configuration parameter of the type:
-         *
-         *  - name: name of the timer. Default: node.game.timer.name
-         *  - options: configuration options to pass to the init method
-         *  - action: an action to call on the timer (e.g. start, stop, etc.)
-         *
-         * @see node.timer
-         * @see node.GameTimer
-         */
-        this.registerSetup('timer', function(opts) {
-            var name, timer;
-            if (!opts) return;
-            if ('object' !== typeof opts) {
-                throw new TypeError('setup("timer"): opts must object or ' +
-                                    'undefined. Found: ' + opts);
-            }
-            name = opts.name || node.game.timer.name;
-            timer = this.timer.getTimer(name);
-            if (!timer) {
-                this.warn('setup("timer"): timer not found: ' + name);
-                return null;
+        (function(node) {
+
+            /**
+             * ### setup("timer")
+             *
+             * Setup a timer object
+             *
+             * Accepts one configuration parameter of the type:
+             *
+             *  - name: name of the timer. Default: node.game.timer.name
+             *  - options: configuration options to pass to the init method
+             *  - action: an action to call on the timer (start, stop, etc.)
+             *
+             * @see node.timer
+             * @see node.GameTimer
+             */
+            node.registerSetup('timer', function(opts) {
+                var i, len, res;
+                if (!opts) return;
+                if ('object' !== typeof opts) {
+                    throw new TypeError('setup("timer"): opts must object or ' +
+                                        'undefined. Found: ' + opts);
+                }
+                if (J.isArray(opts)) {
+                    res = true;
+                    i = -1, len = opts.length;
+                    for ( ; ++i < len ; ) {
+                        res = res && setupTimer(opts[i]);
+                    }
+                }
+                else {
+                    res = setupTimer(opts);
+                }
+
+                // Last configured timer options, or null if an error occurred.
+                return res ? opts : null;
+            });
+
+            // Helper function to setup a single timer.
+            function setupTimer(opts) {
+                var name, timer;
+                name = opts.name || node.game.timer.name;
+                timer = node.timer.getTimer(name);
+
+                if (!timer) {
+                    node.warn('setup("timer"): timer not found: ' + name);
+                    return false;
+                }
+
+                if (opts.options) timer.init(opts.options);
+
+                switch (opts.action) {
+                case 'start':
+                    timer.start();
+                    break;
+                case 'stop':
+                    timer.stop();
+                    break;
+                case 'restart':
+                    timer.restart();
+                    break;
+                case 'pause':
+                    timer.pause();
+                    break;
+                case 'resume':
+                    timer.resume();
+                }
+
+                return true;
             }
 
-            if (opts.options) {
-                timer.init(opts.options);
-            }
-
-            switch (opts.action) {
-            case 'start':
-                timer.start();
-                break;
-            case 'stop':
-                timer.stop();
-                break;
-            case 'restart':
-                timer.restart();
-                break;
-            case 'pause':
-                timer.pause();
-                break;
-            case 'resume':
-                timer.resume();
-            }
-
-            // Last configured timer options.
-            return opts;
-        });
+        })(this);
 
         /**
          * ### setup("plot")
