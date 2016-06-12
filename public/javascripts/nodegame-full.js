@@ -1466,7 +1466,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # ARRAY
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2016 Stefano Balietti
  * MIT Licensed
  *
  * Collection of static functions to manipulate arrays
@@ -1710,16 +1710,14 @@ if (!Array.prototype.indexOf) {
      * For objects, deep equality comparison is performed
      * through JSUS.equals.
      *
-     * Alias ARRAY.in_array (deprecated)
-     *
      * @param {mixed} needle The element to search in the array
      * @param {array} haystack The array to search in
      *
      * @return {boolean} TRUE, if the element is contained in the array
      *
-     *  @see JSUS.equals
+     * @see JSUS.equals
      */
-    ARRAY.inArray = ARRAY.in_array = function(needle, haystack) {
+    ARRAY.inArray = function(needle, haystack) {
         var func, i, len;
         if (!haystack) return false;
         func = JSUS.equals;
@@ -1730,6 +1728,12 @@ if (!Array.prototype.indexOf) {
             }
         }
         return false;
+    };
+
+    ARRAY.in_array = function(needle, haystack) {
+        console.log('***ARRAY.in_array is deprecated. ' +
+                    'Use ARRAY.inArray instead.***');
+        return ARRAY.inArray(needle, haystack);
     };
 
     /**
@@ -1849,7 +1853,7 @@ if (!Array.prototype.indexOf) {
             do {
                 idx = JSUS.randomInt(start,limit);
             }
-            while (JSUS.in_array(idx, extracted));
+            while (JSUS.inArray(idx, extracted));
             extracted.push(idx);
 
             if (idx == 1) {
@@ -2090,7 +2094,7 @@ if (!Array.prototype.indexOf) {
      */
     ARRAY.arrayIntersect = function(a1, a2) {
         return a1.filter( function(i) {
-            return JSUS.in_array(i, a2);
+            return JSUS.inArray(i, a2);
         });
     };
 
@@ -2108,7 +2112,7 @@ if (!Array.prototype.indexOf) {
      */
     ARRAY.arrayDiff = function(a1, a2) {
         return a1.filter( function(i) {
-            return !(JSUS.in_array(i, a2));
+            return !(JSUS.inArray(i, a2));
         });
     };
 
@@ -2173,7 +2177,7 @@ if (!Array.prototype.indexOf) {
         if (!array) return out;
 
         ARRAY.each(array, function(e) {
-            if (!ARRAY.in_array(e, out)) {
+            if (!ARRAY.inArray(e, out)) {
                 out.push(e);
             }
         });
@@ -2452,7 +2456,7 @@ if (!Array.prototype.indexOf) {
      * @return {boolean} TRUE, if the the object is a DOM node
      */
     DOM.isNode = function(o) {
-        if ('object' !== typeof o) return false;
+        if (!o || 'object' !== typeof o) return false;
         return 'object' === typeof Node ? o instanceof Node :
             'number' === typeof o.nodeType &&
             'string' === typeof o.nodeName;
@@ -2471,16 +2475,17 @@ if (!Array.prototype.indexOf) {
      * @return {boolean} TRUE, if the the object is a DOM element
      */
     DOM.isElement = function(o) {
-        return 'object' === typeof o && o.nodeType === 1 &&
+        return o && 'object' === typeof o && o.nodeType === 1 &&
             'string' === typeof o.nodeName;
     };
 
     /**
      * ### DOM.shuffleElements
      *
-     * Shuffles the children element nodes
+     * Shuffles the order of children of a parent Element
      *
-     * All children must have the id attribute.
+     * All children *must* have the id attribute (live list elements cannot
+     * be identified by position).
      *
      * Notice the difference between Elements and Nodes:
      *
@@ -2494,20 +2499,21 @@ if (!Array.prototype.indexOf) {
      */
     DOM.shuffleElements = function(parent, order) {
         var i, len, idOrder, children, child;
+        var id, forceId, missId;
         if (!JSUS.isNode(parent)) {
-            throw new TypeError('DOM.shuffleNodes: parent must node.');
+            throw new TypeError('DOM.shuffleElements: parent must node.');
         }
         if (!parent.children || !parent.children.length) {
-            JSUS.log('DOM.shuffleNodes: parent has no children.', 'ERR');
+            JSUS.log('DOM.shuffleElements: parent has no children.', 'ERR');
             return false;
         }
         if (order) {
             if (!JSUS.isArray(order)) {
-                throw new TypeError('DOM.shuffleNodes: order must array.');
+                throw new TypeError('DOM.shuffleElements: order must array.');
             }
             if (order.length !== parent.children.length) {
-                throw new Error('DOM.shuffleNodes: order length must match ' +
-                                'the number of children nodes.');
+                throw new Error('DOM.shuffleElements: order length must ' +
+                                'match the number of children nodes.');
             }
         }
 
@@ -2525,18 +2531,23 @@ if (!Array.prototype.indexOf) {
         }
 
         len = children.length;
-        idOrder = [];
+        idOrder = new Array(len);
         if (!order) order = JSUS.sample(0, (len-1));
         for (i = 0 ; i < len; i++) {
-            idOrder.push(children[order[i]].id);
+            id = children[order[i]].id;
+            if ('string' !== typeof id || id === "") {
+                throw new Error('DOM.shuffleElements: no id found on ' +
+                                'child n. ' + order[i] + '.');
+            }
+            idOrder[i] = id;
         }
-        // Two fors are necessary to follow the real sequence.
-        // However parent.children is a special object, so the sequence
+
+        // Two fors are necessary to follow the real sequence (Live List).
+        // However, parent.children is a special object, so the sequence
         // could be unreliable.
         for (i = 0 ; i < len; i++) {
             parent.appendChild(children[idOrder[i]]);
         }
-
         return idOrder;
     };
 
@@ -2547,7 +2558,11 @@ if (!Array.prototype.indexOf) {
      *
      * @deprecated
      */
-    DOM.shuffleNodes = DOM.shuffleElements;
+    DOM.shuffleNodes = function(parent, order) {
+        console.log('***DOM.shuffleNodes is deprecated. ' +
+                    'Use Dom.shuffleElements instead.***');
+        return DOM.shuffleElements(parent, order);
+    };
 
     /**
      * ### DOM.getElement
@@ -3045,10 +3060,13 @@ if (!Array.prototype.indexOf) {
      * highlight(myDiv, '#CCC'); // grey border
      * ```
      *
+     * @param {HTMLElement} elem The element to highlight
+     * @param {string} code The type of highlight
+     *
      * @see DOM.addBorder
      * @see DOM.style
      */
-     DOM.highlight = function(elem, code) {
+    DOM.highlight = function(elem, code) {
         var color;
         if (!elem) return;
 
@@ -3154,7 +3172,8 @@ if (!Array.prototype.indexOf) {
         if (!el) return;
         if (c instanceof Array) c = c.join(' ');
         else if ('string' !== typeof c) return;
-        el.className = el.className ? el.className + ' ' + c : c;
+        if (!el.className || el.className === '') el.className = c;
+        else el.className += (' ' + c);
         return el;
     };
 
@@ -3340,6 +3359,44 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
+     * ### DOM.disableBackButton
+     *
+     * Disables/re-enables backward navigation in history of browsed pages
+     *
+     * When disabling, it inserts twice the current url.
+     *
+     * It will still be possible to manually select the uri in the
+     * history pane and nagivate to it.
+     *
+     * @param {boolean} disable Optional. If TRUE disables back button,
+     *   if FALSE, re-enables it. Default: TRUE.
+     *
+     * @return {boolean} The state of the back button (TRUE = disabled),
+     *   or NULL if the method is not supported by browser.
+     */
+    DOM.disableBackButton = (function(isDisabled) {
+        return function(disable) {
+            disable = 'undefined' === typeof disable ? true : disable;
+            if (disable && !isDisabled) {
+                if (!history.pushState || !history.go) {
+                    node.warn('DOM.disableBackButton: method not ' +
+                              'supported by browser.');
+                    return null;
+                }
+                history.pushState(null, null, location.href);
+                window.onpopstate = function(event) {
+                    history.go(1);
+                };
+            }
+            else if (isDisabled) {
+                window.onpopstate = null;
+            }
+            isDisabled = disable;
+            return disable;
+        };
+    })(false);
+
+    /**
      * ### DOM.playSound
      *
      * Plays a sound
@@ -3440,7 +3497,6 @@ if (!Array.prototype.indexOf) {
             where = 'JSUS.blinkTitle: ';
 
             options = options || {};
-            period = options.period || 1000 * titles.length;
 
             if (options.stopOnFocus) {
                 JSUS.onFocusIn(function() {
@@ -3465,6 +3521,7 @@ if (!Array.prototype.indexOf) {
                     throw new TypeError(where + 'titles must be string, ' +
                             ' array of strings or undefined.');
                 }
+                period = options.period || 1000 * titles.length;
                 // Function to be executed every period.
                 rotation = function() {
                     // For every title wait some time, then change title.
@@ -3553,10 +3610,8 @@ if (!Array.prototype.indexOf) {
 
             // Visibility standard detected.
             if (event) {
-                // Remove any pre-existing listeners.
-                document.removeEventListener(event);
-                if (onchangeCb) document.addEventListener(event, onchangeCb);
-
+                if (onchangeCb) document.addEventListener(event, onchange);
+                else document.removeEventListener(event, onchange);
             }
             else if ('onfocusin' in document) {
                 document.onfocusin = document.onfocusout = onchangeCb;
@@ -5228,42 +5283,63 @@ if (!Array.prototype.indexOf) {
      * hh:mm:ss
      *
      * @return {string} Formatted time string hh:mm:ss
+     *
+     * @see TIME.getTimeM
      */
     TIME.getTime = function() {
-        var d = new Date();
-        var time = d.getHours() + ':' + d.getMinutes() + ':' + d.getSeconds();
+        var d;
+        d = new Date();
+        return d.getHours() + ':' + d.getMinutes() + ':' + d.getSeconds();
+    };
 
-        return time;
+    /**
+     * ## TIME.getTimeM
+     *
+     * Like TIME.getTime, but with millisecondsx
+     *
+     * String is ormatted as follows:
+     *
+     * hh:mm:ss:mls
+     *
+     * @return {string} Formatted time string hh:mm:ss:mls
+     *
+     * @see TIME.getTime
+     */
+    TIME.getTimeM = function() {
+        var d;
+        d = new Date();
+        return d.getHours() + ':' + d.getMinutes() + ':' + d.getSeconds() +
+            ':' + d.getMilliseconds();
     };
 
     /**
      * ## TIME.parseMilliseconds
      *
-     * Parses an integer number representing milliseconds,
-     * and returns an array of days, hours, minutes and seconds
+     * Parses milliseconds into an array of days, hours, minutes and seconds
      *
      * @param {number} ms Integer representing milliseconds
      *
      * @return {array} Milleconds parsed in days, hours, minutes, and seconds
      */
-    TIME.parseMilliseconds = function (ms) {
-        if ('number' !== typeof ms) return;
-
-        var result = [];
-        var x = ms / 1000;
+    TIME.parseMilliseconds = function(ms) {
+        var result, x, seconds, minutes, hours, days;
+        if ('number' !== typeof ms) {
+            throw new TypeError('TIME.parseMilliseconds: ms must be number.');
+        }
+        result = [];
+        x = ms / 1000;
         result[4] = x;
-        var seconds = x % 60;
+        seconds = x % 60;
         result[3] = Math.floor(seconds);
         x = x / 60;
-        var minutes = x % 60;
+        minutes = x % 60;
         result[2] = Math.floor(minutes);
         x = x / 60;
-        var hours = x % 24;
+        hours = x % 24;
         result[1] = Math.floor(hours);
         x = x / 24;
-        var days = x;
+        days = x;
         result[1] = Math.floor(days);
-
         return result;
     };
 
@@ -7649,7 +7725,7 @@ if (!Array.prototype.indexOf) {
             }
 
             // Range-queries need an array as third parameter instance of Array.
-            if (J.in_array(op,['><', '<>', 'in', '!in'])) {
+            if (J.inArray(op,['><', '<>', 'in', '!in'])) {
 
                 if (!(value instanceof Array)) {
                     errText = 'range-queries need an array as third parameter';
@@ -7666,7 +7742,7 @@ if (!Array.prototype.indexOf) {
                 }
             }
 
-            else if (J.in_array(op, ['!=', '>', '==', '>=', '<', '<='])){
+            else if (J.inArray(op, ['!=', '>', '==', '>=', '<', '<='])){
                 // Comparison queries need a third parameter.
                 if ('undefined' === typeof value) {
                     errText = 'value cannot be undefined in comparison queries';
@@ -8800,7 +8876,7 @@ if (!Array.prototype.indexOf) {
             el = J.getNestedValue(key, db[i]);
             if ('undefined' === typeof el) continue;
             // Creates a new group and add entries to it.
-            if (!J.in_array(el, groups)) {
+            if (!J.inArray(el, groups)) {
                 groups.push(el);
                 out = this.filter(function(elem) {
                     if (J.equals(J.getNestedValue(key, elem), el)) {
@@ -25108,7 +25184,7 @@ if (!Array.prototype.indexOf) {
         function completed(event) {
             var iframeDoc;
 
-            // IE < 10 gives 'Permission Denied' if trying to access
+            // IE < 10 (also 11?) gives 'Permission Denied' if trying to access
             // the iframeDoc from the context of the function above.
             // We need to re-get it from the DOM.
             iframeDoc = J.getIFrameDocument(iframe);
@@ -25302,6 +25378,17 @@ if (!Array.prototype.indexOf) {
         this.cacheSupported = null;
 
         /**
+         * ### GameWindow.cacheSupported
+         *
+         * Flag that direct access to the iframe content is allowed
+         *
+         * Usually false, on IEs
+         *
+         * @see testdirectFrameDocumentAccess
+         */
+        this.directFrameDocumentAccess = null;
+
+        /**
          * ### GameWindow.cache
          *
          * Cache for loaded iframes
@@ -25452,7 +25539,7 @@ if (!Array.prototype.indexOf) {
             this.restoreOnleave();
         }
 
-        if (this.conf.noEscape) {
+        if ('undefined' === typeof this.conf.noEscape || this.conf.noEscape) {
             this.noEscape();
         }
         else if (this.conf.noEscape === false) {
@@ -25496,6 +25583,10 @@ if (!Array.prototype.indexOf) {
         }
         else if (this.conf.disableRightClick === false) {
             this.enableRightClick();
+        }
+
+        if ('undefined' !== typeof this.conf.disableBackButton) {
+            this.disableBackButton(this.conf.disableBackButton);
         }
 
         if ('undefined' !== typeof this.conf.uriPrefix) {
@@ -25703,16 +25794,19 @@ if (!Array.prototype.indexOf) {
      * @return {Document} The document object of the iframe of the game
      *
      * @see GameWindow.getFrame
+     * @see GameWindow.testDirectFrameDocumentAccess
      */
     GameWindow.prototype.getFrameDocument = function() {
         var iframe;
         if (!this.frameDocument || this.stateLevel === WIN_LOADING) {
             iframe = this.getFrame();
-            this.frameDocument = iframe ? this.getIFrameDocument(iframe) :
-                null;
+            if (!iframe) return null;
+            this.frameDocument = this.getIFrameDocument(iframe);
         }
-        return this.frameDocument;
-
+        // Some IEs give permission denied when accessing the frame document
+        // directly. We need to re-get it from the DOM.
+        if (this.directFrameDocumentAccess) return this.frameDocument;
+        else return J.getIFrameDocument(this.getFrame());
     };
 
     /**
@@ -25851,7 +25945,7 @@ if (!Array.prototype.indexOf) {
      * Clears the content of the frame
      */
     GameWindow.prototype.clearFrame = function() {
-        var iframe, frameName;
+        var iframe, frameName, frameDocument;
         iframe = this.getFrame();
         if (!iframe) {
             throw new Error('GameWindow.clearFrame: cannot detect frame.');
@@ -25863,18 +25957,29 @@ if (!Array.prototype.indexOf) {
         // Method .replace does not add the uri to the history.
         //iframe.contentWindow.location.replace('about:blank');
 
-        try {
-            this.getFrameDocument().documentElement.innerHTML = '';
+        frameDocument = this.getFrameDocument();
+        frameDocument.documentElement.innerHTML = '';
+
+        if (this.directFrameDocumentAccess) {
+            frameDocument.documentElement.innerHTML = '';
         }
-        catch(e) {
-            // IE < 10 gives 'Permission Denied' if trying to access
-            // the iframeDoc from the context of the function above.
-            // We need to re-get it from the DOM.
-            if (J.getIFrameDocument(iframe).documentElement) {
-                J.removeChildrenFromNode(
-                    J.getIFrameDocument(iframe).documentElement);
-            }
+        else {
+            J.removeChildrenFromNode(frameDocument.documentElement);
         }
+
+// TODO: cleanup refactor.
+//         try {
+//             this.getFrameDocument().documentElement.innerHTML = '';
+//         }
+//         catch(e) {
+//             // IE < 10 gives 'Permission Denied' if trying to access
+//             // the iframeDoc from the context of the function above.
+//             // We need to re-get it from the DOM.
+//             if (J.getIFrameDocument(iframe).documentElement) {
+//                 J.removeChildrenFromNode(
+//                     J.getIFrameDocument(iframe).documentElement);
+//             }
+//         }
 
         this.frameElement = iframe;
         this.frameWindow = window.frames[frameName];
@@ -26181,6 +26286,7 @@ if (!Array.prototype.indexOf) {
             catch(e) {
                 W.cacheSupported = false;
             }
+
             document.body.removeChild(iframe);
             if (cb) cb();
         });
@@ -26406,7 +26512,7 @@ if (!Array.prototype.indexOf) {
         var that;
         var loadCache;
         var storeCacheNow, storeCacheLater;
-        var autoParse, autoParsePrefix;
+        var autoParse, autoParsePrefix, autoParseMod;
         var iframe, iframeName, iframeDocument, iframeWindow;
         var frameDocumentElement, frameReady;
         var lastURI;
@@ -26502,6 +26608,14 @@ if (!Array.prototype.indexOf) {
                 }
                 autoParsePrefix = opts.autoParsePrefix;
             }
+            if ('undefined' !== typeof opts.autoParseMod) {
+                if ('string' !== typeof opts.autoParseMod) {
+                    throw new TypeError('GameWindow.loadFrame: opts.' +
+                                        'autoParseMod must be string ' +
+                                        'or undefined.');
+                }
+                autoParseMod = opts.autoParseMod;
+            }
             autoParse = opts.autoParse;
         }
 
@@ -26553,6 +26667,15 @@ if (!Array.prototype.indexOf) {
         // Add the onLoad event listener:
         if (!loadCache || !frameReady) {
             onLoad(iframe, function() {
+
+                // Check if direct access to the content of the frame is
+                // allowed. Usually IEs do not allow this. Notice, this
+                // is different from preCaching, and that a newly
+                // generated frame (about:blank) will always be accessible.
+                if (that.directFrameDocumentAccess === null) {
+                    testDirectFrameDocumentAccess(that);
+                }
+
                 // Handles caching.
                 handleFrameLoad(that, uri, iframe, iframeName, loadCache,
                                 storeCacheNow, function() {
@@ -26561,6 +26684,7 @@ if (!Array.prototype.indexOf) {
                                     // and updates GameWindow state.
                                     that.updateLoadFrameState(func,
                                                               autoParse,
+                                                              autoParseMod,
                                                               autoParsePrefix);
                                 });
             });
@@ -26570,7 +26694,7 @@ if (!Array.prototype.indexOf) {
         if (loadCache) {
             // Load iframe contents at this point only if the iframe is already
             // "ready" (see definition of frameReady), otherwise the contents
-            // would be cleared once the iframe becomes ready.  In that case,
+            // would be cleared once the iframe becomes ready. In that case,
             // iframe.onload handles the filling of the contents.
             if (frameReady) {
                 // Handles caching.
@@ -26581,6 +26705,7 @@ if (!Array.prototype.indexOf) {
                                     // and updates GameWindow state.
                                     that.updateLoadFrameState(func,
                                                               autoParse,
+                                                              autoParseMod,
                                                               autoParsePrefix);
                                 });
             }
@@ -26627,23 +26752,27 @@ if (!Array.prototype.indexOf) {
      * @param {function} func Optional. A callback function
      * @param {object} autoParse Optional. An object containing elements
      *    to replace in the HTML DOM.
+     * @param {string} autoParseMod Optional. Modifier for search and replace
      * @param {string} autoParsePrefix Optional. Custom prefix to add to the
      *    keys of the elements in autoParse object
      *
-     * @see GameWindow.setInnerHTML
+     * @see GameWindow.searchReplace
      * @see updateAreLoading
      *
      * @emit FRAME_LOADED
      * @emit LOADED
      */
     GameWindow.prototype.updateLoadFrameState = function(func, autoParse,
+                                                         autoParseMod,
                                                          autoParsePrefix) {
 
         var loaded, stageLevel;
         loaded = updateAreLoading(this, -1);
         if (loaded) this.setStateLevel('LOADED');
         if (func) func.call(node.game);
-        if (autoParse) this.setInnerHTML(autoParse, autoParsePrefix);
+        if (autoParse) {
+            this.searchReplace(autoParse, autoParseMod, autoParsePrefix);
+        }
 
         // ng event emitter is not used.
         node.events.ee.game.emit('FRAME_LOADED');
@@ -26769,6 +26898,10 @@ if (!Array.prototype.indexOf) {
             if (that.conf.rightClickDisabled) {
                 J.disableRightClick(that.frameDocument);
             }
+            // Track onkeydown Escape.
+            if (that.conf.noEscape) {
+                that.frameDocument.onkeydown = document.onkeydown;
+            }
         }
 
         // (Re-)Inject libraries and reload scripts:
@@ -26784,6 +26917,7 @@ if (!Array.prototype.indexOf) {
 
             func();
         };
+
         if (loadCache) {
             reloadScripts(iframe, afterScripts);
         }
@@ -26987,6 +27121,30 @@ if (!Array.prototype.indexOf) {
                                               W.frameElement.nextSibling);
             }
             break;
+        }
+    }
+
+    /**
+     * ### testDirectFrameDocumentAccess
+     *
+     * Tests whether the content of the frameDocument can be accessed directly
+     *
+     * The value of the test is stored under `directFrameDocumentAccess`.
+     *
+     * Some IEs give 'Permission denied' when accessing the frame document
+     * directly. In such a case, we need to re-get it from the DOM.
+     *
+     * @param {GameWindow} that This instance
+     *
+     * @see GameWindow.directFrameDocumentAccess
+     */
+    function testDirectFrameDocumentAccess(that) {
+        try {
+            that.frameDocument.getElementById('test');
+            that.directFrameDocumentAccess = true;
+        }
+        catch(e) {
+            that.directFrameDocumentAccess = false;
         }
     }
 
@@ -27229,18 +27387,17 @@ if (!Array.prototype.indexOf) {
      * Binds the ESC key to a function that always returns FALSE
      *
      * This prevents socket.io to break the connection with the server.
-     *
-     * @param {object} windowObj Optional. The window container in which
-     *   to bind the ESC key
      */
-    GameWindow.prototype.noEscape = function(windowObj) {
-        windowObj = windowObj || window;
-        windowObj.document.onkeydown = function(e) {
+    GameWindow.prototype.noEscape = function() {
+        var frameDocument;
+        // AddEventListener seems not to work
+        // as it does not stop other listeners.
+        window.document.onkeydown = function(e) {
             var keyCode = (window.event) ? event.keyCode : e.keyCode;
-            if (keyCode === 27) {
-                return false;
-            }
+            if (keyCode === 27) return false;
         };
+        frameDocument = this.getFrameDocument();
+        if (frameDocument) frameDocument.onkeydown = window.document.onkeydown;
         this.conf.noEscape = true;
     };
 
@@ -27249,14 +27406,13 @@ if (!Array.prototype.indexOf) {
      *
      * Removes the the listener on the ESC key
      *
-     * @param {object} windowObj Optional. The window container in which
-     *   to bind the ESC key
-     *
-     * @see GameWindow.noEscape()
+     * @see GameWindow.noEscape
      */
-    GameWindow.prototype.restoreEscape = function(windowObj) {
-        windowObj = windowObj || window;
-        windowObj.document.onkeydown = null;
+    GameWindow.prototype.restoreEscape = function() {
+        var frameDocument;
+        window.document.onkeydown = null;
+        frameDocument = this.getFrameDocument();
+        if (frameDocument) frameDocument.onkeydown = null;
         this.conf.noEscape = false;
     };
 
@@ -27337,6 +27493,22 @@ if (!Array.prototype.indexOf) {
         }
         J.enableRightClick(document);
         this.conf.rightClickDisabled = false;
+    };
+
+    /**
+     * ### GameWindow.disableBackButton
+     *
+     * Disables/re-enables backward navigation in history of browsed pages
+     *
+     * When disabling, it inserts twice the current url.
+     *
+     * @param {boolean} disable Optional. If TRUE disables back button,
+     *   if FALSE, re-enables it. Default: TRUE.
+     *
+     * @see JSUS.disableBackButton
+     */
+    GameWindow.prototype.disableBackButton = function(disable) {
+        this.conf.backButtonDisabled = J.disableBackButton(disable);
     };
 
 })(
@@ -27494,18 +27666,24 @@ if (!Array.prototype.indexOf) {
 
         node.on('HIDE', function(idOrObj) {
             var el;
+            console.log('***GameWindow.on.HIDE is deprecated. Use ' +
+                        'GameWindow.hide() instead.***');
             el = getElement(idOrObj, 'GameWindow.on.HIDE');
             if (el) el.style.display = 'none';
         });
 
         node.on('SHOW', function(idOrObj) {
             var el;
+            console.log('***GameWindow.on.SHOW is deprecated. Use ' +
+                        'GameWindow.show() instead.***');
             el = getElement(idOrObj, 'GameWindow.on.SHOW');
             if (el) el.style.display = '';
         });
 
         node.on('TOGGLE', function(idOrObj) {
             var el;
+            console.log('***GameWindow.on.TOGGLE is deprecated. Use ' +
+                        'GameWindow.toggle() instead.***');
             el = getElement(idOrObj, 'GameWindow.on.TOGGLE');
             if (el) {
                 if (el.style.display === 'none') {
@@ -27560,7 +27738,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # WaitScreen
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2016 Stefano Balietti
  * MIT Licensed
  *
  * Covers the screen with a gray layer, disables inputs, and displays a message
@@ -27811,9 +27989,11 @@ if (!Array.prototype.indexOf) {
         // Disables all input forms in the page.
         lockUnlockedInputs(document);
 
-        //frameDoc = W.getFrameDocument();
+        frameDoc = W.getFrameDocument();
+
+        // TODO: cleanup refactor.
         // Using this for IE8 compatibility.
-        frameDoc = W.getIFrameDocument(W.getFrame());
+        // frameDoc = W.getIFrameDocument(W.getFrame());
 
         if (frameDoc) lockUnlockedInputs(frameDoc);
 
@@ -27894,7 +28074,10 @@ if (!Array.prototype.indexOf) {
             W.setScreenLevel('ACTIVE');
         }
         if (this.waitingDiv) {
-            this.waitingDiv.parentNode.removeChild(this.waitingDiv);
+            // It might have gotten destroyed in the meantime.
+            if (this.waitingDiv.parentNode) {
+                this.waitingDiv.parentNode.removeChild(this.waitingDiv);
+            }
         }
         // Removes previously registered listeners.
         this.disable();
@@ -28131,7 +28314,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # extra
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2016 Stefano Balietti
  * MIT Licensed
  *
  * GameWindow extras
@@ -28162,13 +28345,10 @@ if (!Array.prototype.indexOf) {
      * @return {Element} The screen
      */
     GameWindow.prototype.getScreen = function() {
-        var el = this.getFrameDocument();
-        if (el) {
-            el = el.body || el;
-        }
-        else {
-            el = document.body || document.lastElementChild;
-        }
+        var el;
+        el = this.getFrameDocument();
+        if (el) el = el.body || el;
+        else el = document.body || document.lastElementChild;
         return el;
     };
 
@@ -28188,12 +28368,9 @@ if (!Array.prototype.indexOf) {
      * @see GameWindow.writeln
      */
     GameWindow.prototype.write = function(text, root) {
-        if ('string' === typeof root) {
-            root = this.getElementById(root);
-        }
-        else if (!root) {
-            root = this.getScreen();
-        }
+        if ('string' === typeof root) root = this.getElementById(root);
+        else if (!root) root = this.getScreen();
+
         if (!root) {
             throw new
                 Error('GameWindow.write: could not determine where to write.');
@@ -28217,12 +28394,9 @@ if (!Array.prototype.indexOf) {
      * @see GameWindow.write
      */
     GameWindow.prototype.writeln = function(text, root, br) {
-        if ('string' === typeof root) {
-            root = this.getElementById(root);
-        }
-        else if (!root) {
-            root = this.getScreen();
-        }
+        if ('string' === typeof root) root = this.getElementById(root);
+        else if (!root) root = this.getScreen();
+
         if (!root) {
             throw new Error('GameWindow.writeln: ' +
                             'could not determine where to write.');
@@ -28303,11 +28477,9 @@ if (!Array.prototype.indexOf) {
         else {
             // The whole page.
             toggleInputs(disabled);
-            // If there is Frame apply it there too.
             container = this.getFrameDocument();
-            if (container) {
-                toggleInputs(disabled, container);
-            }
+            // If there is a frame, apply it there too.
+            if (container) toggleInputs(disabled, container);
         }
         return true;
     };
@@ -28463,61 +28635,235 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
-     * ### GameWindow.setInnerHTML
+     * ### GameWindow.searchReplace
      *
      * Replaces the innerHTML of the element/s with matching id or class name
      *
-     * It locates all the elements with classname or id equal
-     * to [prefix] + key and sets the innerHTML property accordintgly.
+     * It iterates through each element and passes it to
+     * `GameWindow.setInnerHTML`.
      *
-     * @param {object} Elements defined as key-value pairs. If value is
-     *    not a string or a number it will be skipped.
-     * @param {string} prefix Optional. Prefix added in the search string.
-     *    Default: 'ng_replace_'.
+     * If elements is array, each item in the array must be of the type:
+     *
+     * ```javascript
+     *
+     *   { search: 'key', replace: 'value' }
+     *
+     *   // or
+     *
+     *   { search: 'key', replace: 'value', mod: 'id' }
+     * ```
+     *
+     * If elements is object, it must be of the type:
+     *
+     * ```javascript
+     *
+     *    {
+     *      search1: value1, search2: value 2 // etc.
+     *    }
+     * ```
+     *
+     * It accepts a variable number of input parameters. The first is always
+     * _elements_. If there are 2 input parameters, the second is _prefix_,
+     * while if there are 3 input parameters, the second is _mod_ and the third
+     * is _prefix_.
+     *
+     * @param {object|array} Elements to search and replace
+     * @param {string} mod Optional. Modifier passed to GameWindow.setInnerHTML
+     * @param {string} prefix Optional. Prefix added to the search string.
+     *    Default: 'ng_replace_', null or '' equals no prefix.
+     *
+     * @see GameWindow.setInnerHTML
      */
-    GameWindow.prototype.setInnerHTML = function(elements, prefix) {
-        var el, name, text, search, len, i;
+    GameWindow.prototype.searchReplace = function() {
+        var elements, mod, prefix;
+        var name, len, i;
 
-        if ('object' !== typeof elements) {
-            throw new TypeError('GameWindow.setInnerHTML: elements must be ' +
-                                'object.');
+        if (arguments.length === 2) {
+            mod = 'g';
+            prefix = arguments[1];
         }
-        if (prefix) {
-            if ('string' !== typeof prefix) {
-                throw new TypeError('GameWindow.setInnerHTML: prefix must be ' +
-                                    'string or undefined.');
+        else if (arguments.length > 2) {
+            mod = arguments[1];
+            prefix = arguments[2];
+        }
+
+        if ('undefined' !== typeof prefix) {
+            prefix = 'ng_replace_';
+        }
+        else if (null === prefix) {
+            prefix = '';
+        }
+        else if ('string' !== typeof prefix) {
+            throw new TypeError('GameWindow.searchReplace: prefix ' +
+                                'must be string, null or undefined. Found: ' +
+                                prefix);
+        }
+
+        elements = arguments[0];
+        if (J.isArray(elements)) {
+            i = -1, len = elements.length;
+            for ( ; ++i < len ; ) {
+                this.setInnerHTML(prefix + elements[i].search,
+                                  elements[i].replace,
+                                  elements[i].mod || mod);
+            }
+
+        }
+        else if ('object' !== typeof elements) {
+            for (name in elements) {
+                if (elements.hasOwnProperty(name)) {
+                    this.setInnerHTML(prefix + name, elements[name], mod);
+                }
             }
         }
         else {
-            prefix = 'ng_replace_';
+            throw new TypeError('GameWindow.setInnerHTML: elements must be ' +
+                                'object or arrray. Found: ' + elements);
         }
 
-        for (name in elements) {
-            if (elements.hasOwnProperty(name)) {
-                text = elements[name];
-                // Only process strings.
-                if ('string' !== typeof text && 'number' !== typeof text) {
-                    node.warn('GameWindow.setInnerHTML: key "' + name +
-                              '" does not contain a string value. Ignored.');
-                }
-                // Compose name with prefix and lower case.
-                search = (prefix + name).toLowerCase();
+    };
 
-                // Look by id.
-                el = W.getElementById(search);
-                if (el && el.className !== search) el.innerHTML = text;
+    /**
+     * ### GameWindow.setInnerHTML
+     *
+     * Replaces the innerHTML of the element with matching id or class name
+     *
+     * @param {string|number} search Element id or className
+     * @param {string|number} replace The new value of the property innerHTML
+     * @param {string} mod Optional. A modifier defining how to use the
+     *    search parameter. Values:
+     *
+     *    - 'id': replaces at most one element with the same id (default)
+     *    - 'className': replaces all elements with same class name
+     *    - 'g': replaces globally, both by id and className
+     */
+    GameWindow.prototype.setInnerHTML = function(search, replace, mod) {
+        var el, i, len;
 
-                // Look by class name.
-                el = W.getElementsByClassName(search);
-                len = el.length;
-                if (len) {
-                    i = -1;
-                    for ( ; ++i < len ; ) {
-                        elements[i].innerHTML = text;
-                    }
+        // Only process strings or numbers.
+        if ('string' !== typeof search && 'number' !== typeof search) {
+            throw new TypeError('GameWindow.setInnerHTML: search must be ' +
+                                'string or number. Found: ' + search);
+        }
+
+        // Only process strings or numbers.
+        if ('string' !== typeof replace && 'number' !== typeof replace) {
+            throw new TypeError('GameWindow.setInnerHTML: replace must be ' +
+                                'string or number. Found: ' + replace);
+        }
+
+        if ('undefined' === typeof mod) {
+            mod = 'id';
+        }
+        else if ('string' === typeof mod) {
+            if (mod !== 'g' && mod !== 'id' && mod !== 'className') {
+                throw new Error('GameWindow.setInnerHTML: invalid ' +
+                                'mod value: ' + mod);
+            }
+        }
+        else {
+            throw new TypeError('GameWindow.setInnerHTML: mod must be ' +
+                                'string or undefined. Found: ' + mod);
+        }
+
+        if (mod === 'id' || mod === 'g') {
+            // Look by id.
+            el = W.getElementById(search);
+            if (el && el.className !== search) el.innerHTML = replace;
+        }
+
+        if (mod === 'className' || mod === 'g') {
+            // Look by class name.
+            el = W.getElementsByClassName(search);
+            len = el.length;
+            if (len) {
+                i = -1;
+                for ( ; ++i < len ; ) {
+                    el[i].innerHTML = replace;
                 }
             }
         }
+    };
+
+    /**
+     * ## GameWindow.hide
+     *
+     * Gets and hides an HTML element
+     *
+     * Sets the style of the display to 'none'
+     *
+     * @param {string|HTMLElement} idOrObj The id of or the HTML element itself
+     *
+     * @return {HTMLElement} The hidden element, if found
+     *
+     * @see getElement
+     */
+    GameWindow.prototype.hide = function(idOrObj) {
+        var el;
+        el = getElement(idOrObj, 'GameWindow.hide');
+        if (el) el.style.display = 'none';
+        return el;
+    };
+
+    /**
+     * ## GameWindow.show
+     *
+     * Gets and shows (makes visible) an HTML element
+     *
+     * Sets the style of the display to ''.
+     *
+     * @param {string|HTMLElement} idOrObj The id of or the HTML element itself
+     * @param {string} display Optional. The value of the display attribute.
+     *    Default: '' (empty string).
+     *
+     * @return {HTMLElement} The shown element, if found
+     *
+     * @see getElement
+     */
+    GameWindow.prototype.show = function(idOrObj, display) {
+        var el;
+        display = display || '';
+        if ('string' !== typeof display) {
+            throw new TypeError('GameWindow.show: display must be ' +
+                                'string or undefined');
+        }
+        el = getElement(idOrObj, 'GameWindow.show');
+        if (el) el.style.display = display;
+        return el;
+    };
+
+   /**
+     * ## GameWindow.toggle
+     *
+     * Gets and toggles the visibility of an HTML element
+     *
+     * Sets the style of the display to ''.
+     *
+     * @param {string|HTMLElement} idOrObj The id of or the HTML element itself
+     * @param {string} display Optional. The value of the display attribute
+     *    in case it will be set visible. Default: '' (empty string).
+     *
+     * @return {HTMLElement} The toggled element, if found
+     *
+     * @see getElement
+     */
+    GameWindow.prototype.toggle = function(idOrObj, display) {
+        var el;
+        el = getElement(idOrObj, 'GameWindow.toggle');
+        if (el) {
+            if (el.style.display === 'none') {
+                display = display || '';
+                if ('string' !== typeof display) {
+                    throw new TypeError('GameWindow.toggle: display must ' +
+                                        'be string or undefined');
+                }
+                el.style.display = display;
+            }
+            else {
+                el.style.display = 'none';
+            }
+        }
+        return el;
     };
 
     // ## Helper Functions
@@ -28550,59 +28896,39 @@ if (!Array.prototype.indexOf) {
         }
     }
 
+    /**
+     * ### getElement
+     *
+     * Gets the element or returns it
+     *
+     * @param {string|HTMLElement} The id or the HTML element itself
+     *
+     * @return {HTMLElement} The HTML Element
+     *
+     * @see GameWindow.getElementById
+     * @api private
+     */
+    function getElement(idOrObj, prefix) {
+        var el;
+        if ('string' === typeof idOrObj) {
+            el = W.getElementById(idOrObj);
+        }
+        else if (J.isElement(idOrObj)) {
+            el = idOrObj;
+        }
+        else {
+            throw new TypeError(prefix + ': idOrObj must be string ' +
+                                ' or HTML Element. Found: ' + idOrObj);
+        }
+        return el;
+    }
+
 })(
     // GameWindow works only in the browser environment. The reference
     // to the node.js module object is for testing purpose only
     ('undefined' !== typeof window) ? window : module.parent.exports.window,
     ('undefined' !== typeof window) ? window.node : module.parent.exports.node
 );
-
-
-// GameWindow.prototype.setInnerHTML2 = function(elements, values) {
-//     var el, i, len, res, lenValues;
-//     res = true;
-//     if ('string' === typeof elements) {
-//         if ('string' !== typeof values) {
-//             throw new TypeError('GameWindow.setInnerHTML: values must be ' +
-//                                 'string, if elements is string.');
-//         }
-//         el = W.getElementById(elements);
-//         if (el) el.innerHTML = values;
-//         else res = false;
-//     }
-//     else if (J.isArray(elements)) {
-//         if ('string' === typeof values) values = [values];
-//         else if (!J.isArray(values) || !values.length) {
-//             throw new TypeError('GameWindow.setInnerHTML: values must be ' +
-//                                 'string or non-empty array, if elements ' +
-//                                 'is string.');
-//         }
-//         i = -1, len = elements.length, lenValues = values.length;
-//         for ( ; ++i < len ; ) {
-//             el = W.getElementById(elements[i]);
-//             if (el) el.innerHTML = values[i % lenValues];
-//             else res = false;
-//         }
-//     }
-//     else if ('object' === typeof elements) {
-//         if ('undefined' !== typeof values) {
-//             node.warn('GameWindow.setInnerHTML: elements is ' +
-//                       'object, therefore values will be ignored.');
-//         }
-//         for (i in elements) {
-//             if (elements.hasOwnProperty(i)) {
-//                 el = W.getElementById(i);
-//                 if (el) el.innerHTML = elements[i];
-//                 else res = false;
-//             }
-//         }
-//     }
-//     else {
-//         throw new TypeError('GameWindow.setInnerHTML: elements must be ' +
-//                             'string, array, or object.');
-//     }
-//     return res;
-// };
 
 // Creates a new GameWindow instance in the global scope.
 (function() {
@@ -38194,8 +38520,8 @@ if (!Array.prototype.indexOf) {
     };
 
     WaitingRoom.prototype.alertPlayer = function() {
-        JSUS.playSound('sounds/doorbell.ogg');
-        JSUS.blinkTitle(document.title, 'GAME STARTS!', {stopOnFocus: true});
+        JSUS.playSound('/sounds/doorbell.ogg');
+        JSUS.blinkTitle('GAME STARTS!', {stopOnFocus: true});
     };
 
     WaitingRoom.prototype.destroy = function() {
