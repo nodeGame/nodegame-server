@@ -14037,8 +14037,7 @@ if (!Array.prototype.indexOf) {
 
         // Cache it and return it.
         if (found) {
-            if (!this.cache[gameStage]) this.cache[gameStage] = {};
-            this.cache[gameStage][property] = res;
+            cacheStepProperty(this, gameStage, property, res);
             return res;
         }
 
@@ -14101,12 +14100,83 @@ if (!Array.prototype.indexOf) {
 
         // Cache it and return it.
         if (found) {
-            if (!this.cache[gameStage]) this.cache[gameStage] = {};
-            this.cache[gameStage][property] = value;
+            cacheStepProperty(this, gameStage, property, value);
             return true;
         }
 
         // Not found.
+        return false;
+    };
+
+    /**
+     * ### GamePlot.setStepProperty
+     *
+     * Sets the value a property in a step object
+     *
+     * @param {GameStage|string} gameStage The GameStage object,
+     *  or its string representation
+     * @param {string} property The name of the property
+     * @param {mixed} value The new value for the property.
+     *
+     * @return {bool} TRUE, if property is found and updated, FALSE otherwise.
+     *
+     * @see GamePlot.cache
+     */
+    GamePlot.prototype.setStepProperty = function(gameStage, property, value) {
+        var stepObj;
+
+        gameStage = new GameStage(gameStage);
+
+        if ('string' !== typeof property) {
+            throw new TypeError('GamePlot.setStepProperty: property must be ' +
+                                'string');
+        }
+
+        // Get step.
+        stepObj = this.getStep(gameStage);
+
+        if (stepObj) {
+            stepObj[property] = value;
+            // Cache it.
+            cacheStepProperty(this, gameStage, property, value);
+            return true;
+        }
+
+        return false;
+    };
+
+    /**
+     * ### GamePlot.setStageProperty
+     *
+     * Sets the value a property in a step object
+     *
+     * @param {GameStage|string} gameStage The GameStage object,
+     *  or its string representation
+     * @param {string} property The name of the property
+     * @param {mixed} value The new value for the property.
+     *
+     * @return {bool} TRUE, if property is found and updated, FALSE otherwise.
+     *
+     * @see GamePlot.cache
+     */
+    GamePlot.prototype.setStageProperty = function(gameStage, property, value) {
+        var stageObj;
+
+        gameStage = new GameStage(gameStage);
+
+        if ('string' !== typeof property) {
+            throw new TypeError('GamePlot.setStageProperty: property must be ' +
+                                'string');
+        }
+
+        // Get stage.
+        stageObj = this.getStage(gameStage);
+
+        if (stageObj) {
+            stageObj[property] = value;
+            return true;
+        }
+
         return false;
     };
 
@@ -14232,6 +14302,30 @@ if (!Array.prototype.indexOf) {
      */
     GamePlot.prototype.isFlexibleMode = function() {
         return this.stager.sequence.length === 0;
+    };
+
+    // ## Helper Methods
+
+    /**
+     * ### cacheStepProperty
+     *
+     * Sets the value of a property in the cache
+     *
+     * Parameters are not checked
+     *
+     * @param {GamePlot} that The game plot instance
+     * @param {GameStage|string} gameStage The GameStage object,
+     *  or its string representation
+     * @param {string} property The name of the property
+     * @param {mixed} value The value of the property
+     *
+     * @see GamePlot.cache
+     *
+     * @api private
+     */
+    function cacheStepProperty(that, gameStage, property, value) {
+        if (!that.cache[gameStage]) that.cache[gameStage] = {};
+        that.cache[gameStage][property] = value;
     };
 
     // ## Closure
@@ -14457,7 +14551,7 @@ if (!Array.prototype.indexOf) {
      * Calling startTimer on a running timer will clear previous one,
      * and create a new one.
      *
-     * @param {object} conf Optional. Configuration object passed
+     * @param {boolean|object} conf Optional. Configuration object passed
      *    to `pushGame` method.
      *
      * @see PushManager.offsetWaitTime
@@ -14468,13 +14562,21 @@ if (!Array.prototype.indexOf) {
         var gameStage, pushCb, that, offset;
         var node;
 
-        node = this.node;
-        conf = conf || {};
+        // Adjust user input.
+        if (conf === true || 'undefined' === typeof conf) {
+            conf = {};
+        }
+        else if ('object' !== typeof conf) {
+            throw new TypError('PushManager.startTimer: conf must be ' +
+                               'object, TRUE, or undefined. Found: ' + conf);
+        }
 
         console.log('PUSH.TIMER ************************* ', conf);
 
+        node = this.node;
+
         if (!this.timer) {
-            this.timer = this.node.timer.createTimer({ name: 'push_clients' });
+            this.timer = node.timer.createTimer({ name: 'push_clients' });
         }
         else {
             this.clearTimer();
@@ -14486,7 +14588,8 @@ if (!Array.prototype.indexOf) {
         else {
             offset = this.offsetWaitTime;
         }
-
+        console.log('push-manager: starting timer: ' + offset +
+                   ', ' + node.player.stage);
         node.silly('push-manager: starting timer: ' + offset +
                    ', ' + node.player.stage);
         that = this;
@@ -19829,6 +19932,12 @@ if (!Array.prototype.indexOf) {
 
         node.silly('Next step ---> ' + nextStep);
 
+        // TODO: even if node.game.timer.syncWithStage is on,
+        // node.done() is not called on logics. So the timer
+        // is not stopped. We do it manually here for the moment,
+        // and we clear also the milliseconds count.
+        this.timer.reset();
+
         // Clear push-timer at the beginning of each new step.
         this.pushManager.clearTimer();
 
@@ -22014,6 +22123,13 @@ if (!Array.prototype.indexOf) {
         /**
          * ### GameTimer.timeLeft
          *
+         * Total running time of timer.
+         */
+        this.milliseconds = null;
+
+        /**
+         * ### GameTimer.timeLeft
+         *
          * Milliseconds left before time is up.
          */
         this.timeLeft = null;
@@ -22506,6 +22622,32 @@ if (!Array.prototype.indexOf) {
         this.timerId = null;
         this.timePassed = 0;
         this.timeLeft = null;
+        this.startPaused = null;
+        this.updateRemaining = 0;
+        this.updateStart = 0;
+    };
+
+    /**
+     * ### GameTimer.reset
+     *
+     * Resets the timer
+     *
+     * Stops the timer, sets the status to UNINITIALIZED, and
+     * sets the following properties to default: milliseconds,
+     * update, timeup, hooks, hookNames.
+     *
+     * Does **not** change properties: eventEmitterName, and
+     * stagerSync.
+     */
+    GameTimer.prototype.reset = function() {
+        checkDestroyed(this, 'reset');
+        if (!this.isStopped()) this.stop();
+        this.options = {};
+        this.milliseconds = null;
+        this.update = undefined;
+        this.timeup = 'TIMEUP';
+        this.hooks = [];
+        this.hookNames = {};
     };
 
     /**
@@ -22522,9 +22664,7 @@ if (!Array.prototype.indexOf) {
      */
     GameTimer.prototype.restart = function(options) {
         checkDestroyed(this, 'restart');
-        if (!this.isStopped()) {
-            this.stop();
-        }
+        if (!this.isStopped()) this.stop();
         this.init(options);
         this.start();
     };
@@ -26291,26 +26431,58 @@ if (!Array.prototype.indexOf) {
         /**
          * ### setup("plot")
          *
-         * Creates the `node.game.plot` object
+         * Updates the `node.game.plot` object
          *
-         * It can either replace current plot object, or append to it.
-         * Updates are not possible for the moment.
+         * It can either replace entirely the current plot object,
+         * append to it, or update single properties.
          *
-         * TODO: allows updates in plot.
+         * @param {object} stagerState The update for the stager. Depending
+         *   on the rule, it will be passed to `Stager.setState`, or to
+         *   `GamePlot.setStepProperty`, `GamePlot.setStageProperty`.
+         * @param {string} rule Optional. The update rule. Valid rules:
          *
-         * @param {object} stagerState Stager state which is passed
-         *   to `Stager.setState`
-         * @param {string} updateRule Optional. Accepted: <replace>, <append>.
+         *    - 'replace', **default**
+         *    - 'append',
+         *    - 'updateStep',
+         *    - 'updateStage'.
+         *
+         * @param {string} rule Optional. Accepted: <replace>, <append>,
          *   Default: 'replace'
          *
          * @see node.game.plot
          * @see Stager.setState
          */
-        this.registerSetup('plot', function(stagerState, updateRule) {
+        this.registerSetup('plot', function(stagerState, rule, gameStage) {
+            var plot, prop;
             stagerState = stagerState || {};
-
-            this.game.plot.stager.setState(stagerState, updateRule);
-
+            plot = this.game.plot;
+            rule = rule || 'replace';
+            switch(rule) {
+            case 'replace':
+            case 'append':
+                plot.stager.setState(stagerState, rule);
+                break;
+            case 'updateStep':
+                gameStage = gameStage || this.game.getCurrentGameStage();
+                for (prop in stagerState) {
+                    if (stagerState.hasOwnProperty(prop)) {
+                        plot.setStepProperty(gameStage, prop,
+                                             stagerState[prop]);
+                    }
+                }
+                break;
+            case 'updateStage':
+                gameStage = gameStage || this.game.getCurrentGameStage();
+                for (prop in stagerState) {
+                    if (stagerState.hasOwnProperty(prop)) {
+                        plot.setStageProperty(gameStage, prop,
+                                              stagerState[prop]);
+                    }
+                }
+                break;
+            default:
+                throw new Error('setup("plot"): invalid rule: ' + rule);
+            }
             return this.game.plot.stager;
         });
 
