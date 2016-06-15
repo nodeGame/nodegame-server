@@ -450,8 +450,7 @@ TRUE: sets also the URI prefix.</p>
   <a class="pilcrow" href="#section-17" id="section-17">&#182;</a>
 </div>
 <p>Start the game on the reconnecting client.
-Need to give step: false, because otherwise pre-caching will
-call done() on reconnecting stage.</p>
+Need to give step: false, we just init it.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
         <span class="nx">node</span><span class="p">.</span><span class="nx">remoteCommand</span><span class="p">(</span><span class="s1">&#39;start&#39;</span><span class="p">,</span> <span class="nx">p</span><span class="p">.</span><span class="nx">id</span><span class="p">,</span> <span class="p">{</span> <span class="nx">step</span><span class="o">:</span> <span class="kc">false</span> <span class="p">}</span> <span class="p">);</span>

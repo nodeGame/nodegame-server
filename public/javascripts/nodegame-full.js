@@ -5336,7 +5336,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # PARSE
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2016 Stefano Balietti
  * MIT Licensed
  *
  * Collection of static functions related to parsing strings
@@ -11988,7 +11988,8 @@ if (!Array.prototype.indexOf) {
      * @return {string} out The string representation of game stage
      */
     GameStage.prototype.toString = function() {
-        return this.toHash('S.s.r');
+        return this.stage + '.' + this.step + '.' + this.round;
+        // return this.toHash('S.s.r');
     };
 
     /**
@@ -12131,19 +12132,6 @@ if (!Array.prototype.indexOf) {
         }
 
         return result > 0 ? 1 : result < 0 ? -1 : 0;
-    };
-
-    /**
-     * ### GameStage.stringify (static)
-     *
-     * Converts an object GameStage-like to its string representation
-     *
-     * @param {GameStage} gs The object to convert to string
-     * @return {string} out The string representation of a GameStage object
-     */
-    GameStage.stringify = function(gs) {
-        if (!gs) return;
-        return new GameStage(gs).toHash('(r) S.s_i');
     };
 
     // ## Closure
@@ -16039,7 +16027,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Stager stages and steps
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2016 Stefano Balietti
  * MIT Licensed
  */
 (function(exports, node) {
@@ -16588,6 +16576,7 @@ if (!Array.prototype.indexOf) {
      * @param {string} method The name of the method calling the validation
      *
      * @see Stager.addStep
+     * @see checkStageStepId
      *
      * @api private
      */
@@ -16599,14 +16588,7 @@ if (!Array.prototype.indexOf) {
             throw new TypeError('Stager.' + method + ': step.cb must be ' +
                                 'function.');
         }
-        if ('string' !== typeof step.id) {
-            throw new TypeError('Stager.' + method + ': step.id must ' +
-                                'be string.');
-        }
-        if (step.id.trim() === '') {
-            throw new TypeError('Stager.' + method + ': step.id cannot ' +
-                                'be an empty string.');
-        }
+        checkStageStepId(method, 'step', step.id);
     }
 
      /**
@@ -16621,12 +16603,14 @@ if (!Array.prototype.indexOf) {
       * @param {string} method The name of the method calling the validation
       *
       * @see Stager.addStage
+      * @see checkStageStepId
       *
       * @api private
       */
     function checkStageValidity(stage, method) {
         if ('object' !== typeof stage) {
-            throw new TypeError('Stager.' + method + ': stage must be object.');
+            throw new TypeError('Stager.' + method + ': stage must be ' +
+                                'object. Found: ' + stage);
         }
         if ((!stage.steps && !stage.cb) || (stage.steps && stage.cb)) {
             throw new TypeError('Stager.' + method + ': stage must have ' +
@@ -16640,16 +16624,9 @@ if (!Array.prototype.indexOf) {
         }
         else if (stage.steps) {
             throw new TypeError('Stager.' + method + ': stage.steps must be ' +
-                                'array or undefined.');
+                                'array or undefined.  Found: ' + stage.steps);
         }
-        if ('string' !== typeof stage.id) {
-            throw new TypeError('Stager.' + method + ': stage.id must ' +
-                                'be string.');
-        }
-        if (stage.id.trim() === '') {
-            throw new TypeError('Stager.' + method + ': stage.id cannot ' +
-                                'be an empty string.');
-        }
+        checkStageStepId(method, 'stage', stage.id);
      }
 
     /**
@@ -16774,6 +16751,48 @@ if (!Array.prototype.indexOf) {
         }
 
         return alias || id;
+    }
+
+    /**
+     * #### checkStageStepId
+     *
+     * Check the validity of the ID of a step or a stage
+     *
+     * Must be non-empty string, and cannot begin with a dot.
+     *
+     * Notice: in the future, the following limitations might apply:
+     *
+     * - no dots at all in the name
+     * - cannot begin with a number
+     *
+     * @param {string} method The name of the invoking method
+     * @param {string} s A string taking value 'step' or 'stage'
+     * @param {string} id The id to check
+     */
+    function checkStageStepId(method, s, id) {
+        var char0;
+        if ('string' !== typeof id) {
+            throw new TypeError('Stager.' + method + ': ' + s + '.id must ' +
+                                'be string. Found: ' + id);
+        }
+        if (id.trim() === '') {
+            throw new TypeError('Stager.' + method + ': ' + s + '.id cannot ' +
+                                'be an empty string.');
+        }
+        char0 = id.charAt(0);
+        if (char0 === '.') {
+            throw new Error('Stager.' + method + ': ' + s + '.id cannot ' +
+                            'begin with a dot. Found: ' + id);
+        }
+        if (id.lastIndexOf('.') !== -1) {
+            console.log('*** deprecated naming! Stager.' + method + ': ' +
+                        s + '.id cannot contains dots. Found: ' + id + ' ***');
+        }
+        if (/^\d+$/.test(char0)) {
+            console.log('*** deprecated naming! Stager.' + method + ': ' + s +
+                        '.id cannot begin with a number. Found: ' + id +
+                        ' ***');
+        }
     }
 
 })(
@@ -17067,7 +17086,7 @@ if (!Array.prototype.indexOf) {
         }
         this.defaultCallback = makeDefaultCb(cb);
 
-        for ( i in this.steps ) {
+        for (i in this.steps) {
             if (this.steps.hasOwnProperty(i)) {
                 if (isDefaultCb(this.steps[i].cb)) {
                     this.steps[i].cb = this.defaultCallback;
@@ -19040,7 +19059,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # GameDB
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2016 Stefano Balietti
  * MIT Licensed
  *
  * Provides a simple, lightweight NO-SQL database for nodeGame
@@ -19330,8 +19349,7 @@ if (!Array.prototype.indexOf) {
          *
          * @see Game.
          */
-        this.plChangeHandler = function() {};
-
+        this.plChangeHandler = function() { return true };
 
         // Setting to stage 0.0.0 and starting.
         this.setCurrentGameStage(new GameStage(), 'S');
@@ -20073,7 +20091,7 @@ if (!Array.prototype.indexOf) {
             else {
                 // Set bounds-checking function:
                 this.checkPlistSize = function() { return true; };
-                this.plChangeHandler = function() {};
+                this.plChangeHandler = function() { return true; };
             }
 
             // Emit buffered messages:
