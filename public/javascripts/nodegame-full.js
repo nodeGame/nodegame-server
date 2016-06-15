@@ -13221,7 +13221,11 @@ if (!Array.prototype.indexOf) {
  * Copyright(c) 2016 Stefano Balietti
  * MIT Licensed
  *
- * `nodeGame` container of game stages functions
+ * Wraps a stager and exposes methods to navigate through the sequence
+ *
+ * TODO: consider plot updates (setStepProperty, setStageProperty). They
+ * alter the original values, so that an hypothetical game.replay would not
+ * work. It could be solved by updating the cache only. (but not for stages).
  */
 (function(exports, parent) {
 
