@@ -13222,10 +13222,6 @@ if (!Array.prototype.indexOf) {
  * MIT Licensed
  *
  * Wraps a stager and exposes methods to navigate through the sequence
- *
- * TODO: consider plot updates (setStepProperty, setStageProperty). They
- * alter the original values, so that an hypothetical game.replay would not
- * work. It could be solved by updating the cache only. (but not for stages).
  */
 (function(exports, parent) {
 
@@ -13282,6 +13278,58 @@ if (!Array.prototype.indexOf) {
          */
         this.cache = {};
 
+        /**
+         * ### GamePlot.tmpCache
+         *
+         * Handles a temporary cache for properties of current step
+         *
+         * If set, properties are served first by the `getProperty` method.
+         * This cache is deleted each time a step is done.
+         * Used, for example, to reset some properties upon reconnect.
+         *
+         * Defined two additional methods:
+         *
+         *   - tmpCache.hasOwnProperty
+         *   - tmpCache.clear
+         *
+         * @param {string} prop the name of the property to retrieve or set
+         * @param {mixed} value The value of property to set
+         *
+         * @return {mixed} The current value of the property
+         */
+        this.tmpCache = (function() {
+            var tmpCache, handler;
+            tmpCache = {};
+            handler = function(prop, value) {
+                if ('string' === typeof prop) {
+                    if (arguments.length === 1) return tmpCache[prop];
+                    tmpCache[prop] = value;
+                    return value;
+                }
+
+                throw new TypeError('GamePlot.tmpCache: prop must be ' +
+                                    'string. Found: ' + prop);
+            };
+
+            handler.clear = function() {
+                var tmp;
+                tmp = tmpCache;
+                tmpCache = {};
+                return tmp;
+            };
+
+            handler.hasOwnProperty = function(prop) {
+                if ('string' !== typeof prop) {
+                    throw new TypeError('GamePlot.tmpCache.hasProperty: ' +
+                                        'prop must be string. Found: ' +
+                                        prop);
+                }
+                return tmpCache.hasOwnProperty(prop);
+            };
+
+            return handler;
+        })();
+
         this.init(stager);
     }
 
@@ -13309,6 +13357,7 @@ if (!Array.prototype.indexOf) {
             this.stager = null;
         }
         this.cache = {};
+        this.tmpCache.clear();
     };
 
     /**
@@ -13712,7 +13761,7 @@ if (!Array.prototype.indexOf) {
      *   or NULL on error.
      */
     GamePlot.prototype.stepsToNextStage = function(gameStage) {
-        var seqObj, stepNo, limit;
+        var seqObj, stepNo;
         if (!this.stager) return null;
 
         gameStage = this.normalizeGameStage(gameStage);
@@ -13746,7 +13795,7 @@ if (!Array.prototype.indexOf) {
      *   NULL on error.
      */
     GamePlot.prototype.stepsFromPreviousStage = function(gameStage) {
-        var seqObj, stepNo, limit;
+        var seqObj, stepNo;
         if (!this.stager) return null;
 
         gameStage = this.normalizeGameStage(gameStage);
@@ -13982,16 +14031,18 @@ if (!Array.prototype.indexOf) {
      *
      * Looks for definitions of a property in:
      *
-     * 0. the game plot cache
+     * 1. the temporary cache, if game stage equals current game stage
      *
-     * 1. the step object of the given gameStage,
+     * 2. the game plot cache
      *
-     * 2. the stage object of the given gameStage,
+     * 3. the step object of the given gameStage,
      *
-     * 3. the defaults, defined in the Stager.
+     * 4. the stage object of the given gameStage,
+     *
+     * 5. the defaults, defined in the Stager.
      *
      * @param {GameStage|string} gameStage The GameStage object,
-     *  or its string representation
+     *   or its string representation
      * @param {string} property The name of the property
      *
      * @return {mixed|null} The value of the property if found, NULL otherwise.
@@ -14008,6 +14059,14 @@ if (!Array.prototype.indexOf) {
 
         gameStage = new GameStage(gameStage);
 
+        // Look in the tmpCache (cleared every step).
+        if (this.tmpCache.hasOwnProperty(property) &&
+            GameStage.compare(gameStage, this.node.player.stage) === 0) {
+
+            return this.tmpCache(property);
+        }
+
+        // Look in the main cache (this persists over steps).
         if (this.cache[gameStage] &&
             this.cache[gameStage].hasOwnProperty(property)) {
 
@@ -14210,7 +14269,7 @@ if (!Array.prototype.indexOf) {
      * @return {GameStage|null} The normalized GameStage object; NULL on error
      */
     GamePlot.prototype.normalizeGameStage = function(gameStage) {
-        var stageNo, stageObj, stepNo, seqIdx, seqObj, tokens, round;
+        var stageNo, stageObj, stepNo, seqIdx, seqObj;
         var gs;
 
         gs = new GameStage(gameStage);
@@ -14330,7 +14389,7 @@ if (!Array.prototype.indexOf) {
     function cacheStepProperty(that, gameStage, property, value) {
         if (!that.cache[gameStage]) that.cache[gameStage] = {};
         that.cache[gameStage][property] = value;
-    };
+    }
 
     // ## Closure
 })(
@@ -19620,9 +19679,7 @@ if (!Array.prototype.indexOf) {
 
         node.log('game started.');
 
-        if (options.step !== false) {
-            this.step();
-        }
+        if (options.step !== false) this.step();
     };
 
     /**
@@ -19870,6 +19927,8 @@ if (!Array.prototype.indexOf) {
      *
      * Executes the next stage / step
      *
+     * @param {object} options Optional. Options passed to `gotoStep`
+     *
      * @return {boolean} FALSE, if the execution encountered an error
      *
      * @see Game.stager
@@ -19877,11 +19936,11 @@ if (!Array.prototype.indexOf) {
      * @see Game.gotoStep
      * @see Game.execStep
      */
-    Game.prototype.step = function() {
+    Game.prototype.step = function(options) {
         var curStep, nextStep;
         curStep = this.getCurrentGameStage();
         nextStep = this.plot.next(curStep);
-        return this.gotoStep(nextStep);
+        return this.gotoStep(nextStep, options);
     };
 
     /**
@@ -19908,8 +19967,8 @@ if (!Array.prototype.indexOf) {
      * TODO: remove some unused comments in the code.
      */
     Game.prototype.gotoStep = function(nextStep, options) {
-        var curStep;
-        var curStepObj, curStageObj, nextStepObj, nextStageObj;
+        var curStep, curStepObj, curStageObj, nextStepObj, nextStageObj;
+        var stageInit;
         var ev, node;
         var property, handler;
         var doPlChangeHandler;
@@ -19942,8 +20001,11 @@ if (!Array.prototype.indexOf) {
         // and we clear also the milliseconds count.
         this.timer.reset();
 
-        // Clear push-timer at the beginning of each new step.
+        // Clear push-timer.
         this.pushManager.clearTimer();
+
+        // Clear the cache of temporary changes to steps.
+        this.plot.tmpCache.clear();
 
         curStep = this.getCurrentGameStage();
         curStageObj = this.plot.getStage(curStep);
@@ -20009,9 +20071,10 @@ if (!Array.prototype.indexOf) {
             nextStepObj = this.plot.getStep(nextStep);
             if (!nextStepObj) return false;
 
-            // Check options.
-            // TODO: this does not lock screen / stop timer.
-            if (options.willBeDone) this.willBeDone = true;
+//             // TODO: was here.
+//             // Check options.
+//             // TODO: this does not lock screen / stop timer.
+//             if (options.willBeDone) this.willBeDone = true;
 
             // If we enter a new stage we need to update a few things.
             if (!curStageObj || nextStageObj.id !== curStageObj.id) {
@@ -20023,12 +20086,20 @@ if (!Array.prototype.indexOf) {
 
                     curStageObj.exit.call(this);
                 }
-                // TODO: avoid duplication.
-                // stageLevel needs to be changed (silent), otherwise it stays
-                // DONE for a short time in the new game stage:
-                this.setStageLevel(constants.stageLevels.UNINITIALIZED, 'S');
-                this.setCurrentGameStage(nextStep);
+                stageInit = true;
+            }
 
+            // stageLevel needs to be changed (silent), otherwise it stays
+            // DONE for a short time in the new game stage:
+            this.setStageLevel(constants.stageLevels.UNINITIALIZED, 'S');
+            this.setCurrentGameStage(nextStep);
+
+            // Process options before calling any init function.
+            if ('object' === typeof options) {
+                processGotoStepOptions(this, options);
+            }
+
+            if (stageInit) {
                 // Store time:
                 this.node.timer.setTimestamp('stage', (new Date()).getTime());
 
@@ -20042,13 +20113,6 @@ if (!Array.prototype.indexOf) {
                 if (nextStageObj.hasOwnProperty('init')) {
                     nextStageObj.init.call(node.game);
                 }
-            }
-            else {
-                // TODO: avoid duplication.
-                // stageLevel needs to be changed (silent), otherwise it stays
-                // DONE for a short time in the new game stage:
-                this.setStageLevel(constants.stageLevels.UNINITIALIZED, 'S');
-                this.setCurrentGameStage(nextStep);
             }
 
             // Execute the init function of the step, if any:
@@ -20897,12 +20961,15 @@ if (!Array.prototype.indexOf) {
     /**
      * ### Game.getProperty
      *
-     * Returns the requested plot property
+     * Returns the requested step property from the game plot
      *
+     * @param {string} property The name of the property
      * @param {GameStage} gameStage Optional. The reference game stage.
      *   Default: Game.currentGameStage()
      *
-     * @return GamePlot.getProperty
+     * @return {miexed} The value of the requested step property
+     *
+     * @see GamePlot.getProperty
      */
     Game.prototype.getProperty = function(property, gameStage) {
         gameStage = 'undefined' !== typeof gameStage ?
@@ -20911,6 +20978,53 @@ if (!Array.prototype.indexOf) {
     };
 
     // ## Helper Methods
+
+    /**
+     * ### processGoToStepOptions
+     *
+     * Process options before executing the init functions of stage/steps
+     *
+     * Valid options:
+     *
+     *    - willBeDone: sets game.willBeDone to TRUE,
+     *    - plot: add entries to the tmpCache of the plot,
+     *    - cb: a callback executed with the game context, and with options
+     *          object itself as parameter
+     *
+     * @param {Game} game The game instance
+     * @param {object} options The options to process
+     *
+     * @see Game.gotoStep
+     * @see GamePlot.tmpCache
+     * @see Game.willBeDone
+     */
+    function processGotoStepOptions(game, options) {
+        var prop;
+
+        // Set willBeDone. TODO: this does not lock screen / stop timer.
+        if (options.willBeDone) game.willBeDone = true;
+
+        // Temporarily modify plot properties.
+        if (options.plot) {
+            for (prop in options.plot) {
+                if (options.plot.hasOwnProperty(prop)) {
+                    game.plot.tmpCache(prop, options.plot[prop]);
+                }
+            }
+        }
+
+        // Call the cb with options as param, if found.
+        if (options.cb) {
+            if ('function' === typeof options.cb) {
+                options.cb.call(game, options);
+            }
+            else {
+                throw new TypeError('Game.gotoStep: options.cb must be ' +
+                                    'function or undefined. Found: ' +
+                                    options.cb);
+            }
+        }
+    }
 
     /**
      * ### checkMinMaxExactParams
@@ -24180,7 +24294,8 @@ if (!Array.prototype.indexOf) {
      * @see JSUS.stringifyAll
      */
     NGC.prototype.remoteSetup = function(feature, to) {
-        var msg, payload, len;
+        var msg, payload;
+        var i, len;
 
         if ('string' !== typeof feature) {
             throw new TypeError('node.remoteSetup: feature must be string.');
@@ -25979,8 +26094,12 @@ if (!Array.prototype.indexOf) {
                          'be stepped now.');
                 return;
             }
+
             // Adjust parameters.
-            if (options.targetStep) step = options.targetStep;
+            if (options.targetStep) {
+                step = options.targetStep;
+                delete options.targetStep;
+            }
             else {
                 step = options;
                 options = undefined;
@@ -26465,6 +26584,13 @@ if (!Array.prototype.indexOf) {
             case 'replace':
             case 'append':
                 plot.stager.setState(stagerState, rule);
+                break;
+            case 'tmpCache':
+                for (prop in stagerState) {
+                    if (stagerState.hasOwnProperty(prop)) {
+                        plot.tmpCache(prop, stagerState[prop]);
+                    }
+                }
                 break;
             case 'updateStep':
                 gameStage = gameStage || this.game.getCurrentGameStage();
