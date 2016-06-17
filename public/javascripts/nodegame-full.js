@@ -3469,14 +3469,20 @@ if (!Array.prototype.indexOf) {
     /**
      * ### DOM.blinkTitle
      *
-     * Alternates between two titles
+     * Changes the title of the page in regular intervals
      *
-     * Calling the function a second time clears the current
-     * blinking. If called without arguments the current title
-     * blinking is cleared.
+     * Calling the function without any arguments stops the blinking
+     * If an array of strings is provided, that array will be cycled through.
+     * If a signle string is provided, the title will alternate between '!!!'
+     *   and that string.
      *
-     * @param {string} title New title to blink
-     * @param {string} alternateTitle Title to alternate
+     * @param {mixed} titles New title to blink
+     * @param {object} options Configuration object. Default:
+     *  {
+     *    stopOnFocus: false, // Stop blinking if tab is switched to
+     *    startOnBlur: false, // Start blinking if switching away from tab
+     *    period: 1000 * titles.length, // How much time to complete a cycle
+     *  }
      */
     DOM.blinkTitle = function(id) {
         return function(titles, options) {
@@ -3484,7 +3490,6 @@ if (!Array.prototype.indexOf) {
             where = 'JSUS.blinkTitle: ';
 
             options = options || {};
-            period = options.period || 1000 * titles.length;
 
             if (options.stopOnFocus) {
                 JSUS.onFocusIn(function() {
@@ -3509,6 +3514,7 @@ if (!Array.prototype.indexOf) {
                     throw new TypeError(where + 'titles must be string, ' +
                             ' array of strings or undefined.');
                 }
+                period = options.period || 1000 * titles.length;
                 // Function to be executed every period.
                 rotation = function() {
                     // For every title wait some time, then change title.
@@ -5488,13 +5494,18 @@ if (!Array.prototype.indexOf) {
      * @see PARSE.stringify
      */
     PARSE.stringifyAll = function(o, spaces) {
-        for (var i in o) {
-            if (!o.hasOwnProperty(i)) {
-                if ('object' === typeof o[i]) {
-                    o[i] = PARSE.stringifyAll(o[i]);
-                }
-                else {
-                    o[i] = o[i];
+        var i;
+        if ('object' === typeof o || 'function' === typeof o) {
+            for (i in o) {
+                if (!o.hasOwnProperty(i)) {
+                    if ('object' === typeof o[i] ||
+                        'function' === typeof o[i]) {
+
+                        o[i] = PARSE.stringifyAll(o[i]);
+                    }
+                    else {
+                        o[i] = o[i];
+                    }
                 }
             }
         }
@@ -5515,7 +5526,7 @@ if (!Array.prototype.indexOf) {
      * @see JSON.parse
      * @see PARSE.stringify_prefix
      */
-    PARSE.parse = function(str) {
+    PARSE.parse = (function() {
 
         var len_prefix = PARSE.stringify_prefix.length,
             len_func = PARSE.marker_func.length,
@@ -5525,29 +5536,21 @@ if (!Array.prototype.indexOf) {
             len_inf = PARSE.marker_inf.length,
             len_minus_inf = PARSE.marker_minus_inf.length;
 
-
-        var o = JSON.parse(str);
-        return walker(o);
-
         function walker(o) {
+            var i;
             if ('object' !== typeof o) return reviver(o);
-
-            for (var i in o) {
+            for (i in o) {
                 if (o.hasOwnProperty(i)) {
-                    if ('object' === typeof o[i]) {
-                        walker(o[i]);
-                    }
-                    else {
-                        o[i] = reviver(o[i]);
-                    }
+                    if ('object' === typeof o[i]) walker(o[i]);
+                    else o[i] = reviver(o[i]);
                 }
             }
-
             return o;
         }
 
         function reviver(value) {
-            var type = typeof value;
+            var type;
+            type = typeof value;
 
             if (type === 'string') {
                 if (value.substring(0, len_prefix) !== PARSE.stringify_prefix) {
@@ -5578,7 +5581,12 @@ if (!Array.prototype.indexOf) {
             }
             return value;
         }
-    };
+
+        return function(str) {
+            return walker(JSON.parse(str));
+        };
+
+    })();
 
     /**
      * ## PARSE.isInt
@@ -11995,16 +12003,31 @@ if (!Array.prototype.indexOf) {
     /**
      * ### GameStage.toHash
      *
-     * Returns a simplified hash of the stage of the GameStage,
-     * according to the input string
+     * Hashes the game stage according to the input string
      *
      * @param {string} str The hash code
+     *
      * @return {string} hash The hashed game stages
      *
      * @see GameStage.toHash (static)
      */
     GameStage.prototype.toHash = function(str) {
         return GameStage.toHash(this, str);
+    };
+
+    /**
+     * ### GameStage.toObject
+     *
+     * Returns a clone of the game stage with Object as prototype
+     *
+     * @return {object} A new object
+     */
+    GameStage.prototype.toObject = function() {
+        return {
+            stage: this.stage,
+            step: this.step,
+            round: this.round
+        };
     };
 
     /**
@@ -19991,7 +20014,6 @@ if (!Array.prototype.indexOf) {
         }
 
         node = this.node;
-        options = options || {};
 
         node.silly('Next step ---> ' + nextStep);
 
@@ -20017,7 +20039,7 @@ if (!Array.prototype.indexOf) {
                 node.remoteCommand('start', 'ROOM');
             }
             else {
-                node.remoteCommand('goto_step', 'ROOM', nextStep);
+                node.remoteCommand('goto_step', 'ROOM', nextStep.toObject());
             }
         }
 
@@ -20071,7 +20093,7 @@ if (!Array.prototype.indexOf) {
             nextStepObj = this.plot.getStep(nextStep);
             if (!nextStepObj) return false;
 
-//             // TODO: was here.
+//             // TODO: was here. (options might be undefined now)
 //             // Check options.
 //             // TODO: this does not lock screen / stop timer.
 //             if (options.willBeDone) this.willBeDone = true;
@@ -20097,6 +20119,10 @@ if (!Array.prototype.indexOf) {
             // Process options before calling any init function.
             if ('object' === typeof options) {
                 processGotoStepOptions(this, options);
+            }
+            else if (options) {
+                throw new TypeError('Game.gotoStep: options must be object ' +
+                                    'or undefined. Found: ' +  options);
             }
 
             if (stageInit) {
@@ -25187,7 +25213,14 @@ if (!Array.prototype.indexOf) {
      * sent by players will be filtered out by the server.
      *
      * @param {string} command The command to execute
-     * @param {string} to The id of the player to command
+     * @param {string|array} to The id or the array of ids of client/s
+     * @param {mixed} options Optional Options passed to the command.
+     *   If set, options are stringified with JSUS.stringifyAll, therefore
+     *   values such as null, undefined and functions are passed.
+     *
+     * @see JSUS.stringify
+     * @see JSUS.stringifyAll
+     * @see JSUS.parse
      */
     NGC.prototype.remoteCommand = function(command, to, options) {
         var msg;
@@ -25202,6 +25235,9 @@ if (!Array.prototype.indexOf) {
             throw new TypeError('node.remoteCommand: to must be string ' +
                                 'or array.');
         }
+
+        // Stringify options, if any.
+        if (options) options = J.stringifyAll(options);
 
         msg = this.msg.create({
             target: this.constants.target.GAMECOMMAND,
@@ -25723,7 +25759,7 @@ if (!Array.prototype.indexOf) {
          * Executes a game command (pause, resume, etc.)
          */
         node.events.ng.on( IN + say + 'GAMECOMMAND', function(msg) {
-            if (!checkGameCommand(msg, 'say')) return;
+            if (!checkGameCommandMsg(msg)) return;
             node.emit('NODEGAME_GAMECOMMAND_' + msg.text, msg.data);
         });
 
@@ -25734,7 +25770,7 @@ if (!Array.prototype.indexOf) {
          */
         node.events.ng.on( IN + get + 'GAMECOMMAND', function(msg) {
             var res;
-            if (!checkGameCommand(msg, 'get')) return;
+            if (!checkGameCommandMsg(msg)) return;
             res = node.emit('NODEGAME_GAMECOMMAND_' + msg.text, msg.data);
             if (!J.isEmpty(res)) {
                 // New key must contain msg.id.
@@ -25866,17 +25902,33 @@ if (!Array.prototype.indexOf) {
 
     // ## Helper functions.
 
-    function checkGameCommand(msg, action) {
+    /**
+     * ### checkGameCommandMsg
+     *
+     * Checks that the incoming message contains a valid command and options
+     *
+     * Msg.data contains the options for the command. If string, it will be
+     * parsed with JSUS.parse
+     *
+     * @param {GameMsg} msg The incoming message
+     *
+     * @see JSUS.parse
+     */
+    function checkGameCommandMsg(msg) {
         if ('string' !== typeof msg.text || msg.text.trim() === '') {
-            node.err('"in.' + action + '.GAMECOMMAND": msg.text must be ' +
+            node.err('"in.' + msg.action + '.GAMECOMMAND": msg.text must be ' +
                      'a non-empty string: ' + msg.text);
             return false;
         }
         if (!parent.constants.gamecommands[msg.text]) {
-            node.err('"in.' + action + '.GAMECOMMAND": unknown game command ' +
-                     'received: ' + msg.text);
+            node.err('"in.' + msg.action + '.GAMECOMMAND": unknown game  ' +
+                     'command received: ' + msg.text);
             return false;
         }
+
+        // Parse msg.data.
+        if ('string' === typeof msg.data) msg.data = J.parse(msg.data);
+
         return true;
     }
 
@@ -25970,7 +26022,6 @@ if (!Array.prototype.indexOf) {
             else {
                 node.game.willBeDone = true;
             }
-
         });
 
         /**
