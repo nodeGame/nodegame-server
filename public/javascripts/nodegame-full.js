@@ -5495,12 +5495,10 @@ if (!Array.prototype.indexOf) {
      */
     PARSE.stringifyAll = function(o, spaces) {
         var i;
-        if ('object' === typeof o || 'function' === typeof o) {
+        if ('object' === typeof o) {
             for (i in o) {
                 if (!o.hasOwnProperty(i)) {
-                    if ('object' === typeof o[i] ||
-                        'function' === typeof o[i]) {
-
+                    if ('object' === typeof o[i]) {
                         o[i] = PARSE.stringifyAll(o[i]);
                     }
                     else {
