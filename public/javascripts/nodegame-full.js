@@ -14808,19 +14808,9 @@ if (!Array.prototype.indexOf) {
      * @param {object} p The player object containing info about id and sid
      */
     function forceDisconnect(node, p) {
-        var msg;
         // No reply to GET, disconnect client.
         node.warn('push-manager: disconnecting: ' + p.id);
-
-        msg = node.msg.create({
-            target: 'SERVERCOMMAND',
-            text: 'DISCONNECT',
-            data: {
-                id: p.id,
-                sid: p.sid
-            }
-        });
-        node.socket.send(msg);
+        node.disconnectClient(p);
     }
 
     /**
@@ -25269,6 +25259,32 @@ if (!Array.prototype.indexOf) {
             target: this.constants.target.ALERT,
             text: text,
             to: to
+        });
+        this.socket.send(msg);
+    };
+
+    /**
+     * ### NodeGameClient.disconnectClient
+     *
+     * Disconnects one client by sending a DISCONNECT msg to server
+     *
+     * @param {object} p The client object containing info about id and sid
+     */
+    NGC.prototype.disconnectClient = function(p) {
+        var msg;
+        if ('object' !== typeof p) {
+            throw new TypeError('node.disconnectClient: p must be object.');
+        }
+
+        this.info('node.disconnectClient: ' + p.id);
+
+        msg = this.msg.create({
+            target: 'SERVERCOMMAND',
+            text: 'DISCONNECT',
+            data: {
+                id: p.id,
+                sid: p.sid
+            }
         });
         this.socket.send(msg);
     };

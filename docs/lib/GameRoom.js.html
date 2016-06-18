@@ -25,12 +25,6 @@
         <a href="#global%20scope">Global scope</a>
       </div>
       <div class="heading h2">
-        <a href="#gameroom.wrongnumofplayers">GameRoom.wrongNumOfPlayers</a>
-      </div>
-      <div class="heading h2">
-        <a href="#gameroom.correctnumofplayersagain">GameRoom.correctNumOfPlayersAgain</a>
-      </div>
-      <div class="heading h2">
         <a href="#gameroom%20constructor">GameRoom constructor</a>
       </div>
       <div class="heading h3">
@@ -47,6 +41,15 @@
       </div>
       <div class="heading h3">
         <a href="#gameroom.gametreatment">GameRoom.gameTreatment</a>
+      </div>
+      <div class="heading h3">
+        <a href="#gameroom.countdown">GameRoom.countdown</a>
+      </div>
+      <div class="heading h2">
+        <a href="#gameroom.wrongnumofplayers">GameRoom.wrongNumOfPlayers</a>
+      </div>
+      <div class="heading h2">
+        <a href="#gameroom.correctnumofplayersagain">GameRoom.correctNumOfPlayersAgain</a>
       </div>
       <div class="heading h2">
         <a href="#gameroom%20static%20functions">GameRoom static functions</a>
@@ -93,11 +96,14 @@
       <div class="heading h2">
         <a href="#helper%20methods.">Helper Methods.</a>
       </div>
-      <div class="heading h2">
+      <div class="heading h3">
         <a href="#trytogetclient">tryToGetClient</a>
       </div>
-      <div class="heading h2">
+      <div class="heading h3">
         <a href="#mixingamemetadata">mixinGameMetadata</a>
+      </div>
+      <div class="heading h3">
+        <a href="#disposeclient">disposeClient</a>
       </div>
     </div>
   </div>
@@ -156,247 +162,6 @@ MIT Licensed</p>
 
 <span class="nx">GameRoom</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">__proto__</span> <span class="o">=</span> <span class="nx">Room</span><span class="p">.</span><span class="nx">prototype</span><span class="p">;</span>
 <span class="nx">GameRoom</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">constructor</span> <span class="o">=</span> <span class="nx">GameRoom</span><span class="p">;</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-3" id="section-3">&#182;</a>
-</div>
-<p>TODO: missing that.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs"><div class="dox">
-  <div class="summary">
-<div class="pilwrap" id="gameroom.wrongnumofplayers">
-  <h2>
-    <a href="#gameroom.wrongnumofplayers" name="gameroom.wrongnumofplayers" class="pilcrow">&#182;</a>
-    GameRoom.wrongNumOfPlayers
-  </h2>
-</div>
-
-  </div>
-  <div class="body"><p>Listener invoked at any time there is a wrong number of players connected</p>
-
-<p>The number of players is "wrong" if it has been defined any
-min|max|exactPlayers property in current game step.</p>
-
-<p>Default behavior:</p>
-
-<p>1 - Immediately pauses all connected players. A message is displayed
-    with information.
-2 - A timer is started for the value specified in settings.WAIT_TIME,
-    or 30 seconds otherwise.
-3 - If timer expires, game is resumed and, if a custom callback is
-    is defined, it is executed.</p>
-
-<p>This listener is added as default stager property <code>onWrongPlayerNum</code>
-to all <code>logic</code> client types by method <code>GameRoom.getClientType</code>,
-if no othe is already defined.</p>
-
-<p>The listener is then invoked with <code>node.game</code> context.</p>
-  </div>
-  <div class="details">
-    <div class="dox_tag_title">Params</div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name">type</span>
-      <span class="dox_type">string</span>
-      <span>The type of "wrong" number: 'min', 'max', 'exact'</span>
-    </div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name">customCb</span>
-      <span class="dox_type">function</span>
-      <span>Optional. A callback to be executed in
-    in case the timer expires.</span>
-    </div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name">player</span>
-      <span class="dox_type">object</span>
-      <span>Optional. The player object that triggered
-    the listener by either connecting or disconnecting (if available)</span>
-    </div>
-    <div class="dox_tag_title">See</div>
-    <div class="dox_tag_detail">
-      <span class="dox_type">GameRoom.correctNumOfPlayersAgain</span>
-    </div>
-    <div class="dox_tag_title">See</div>
-    <div class="dox_tag_detail">
-      <span class="dox_type">GameRoom.getClientType
-</span>
-    </div>
-  </div>
-</div>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-<span class="nx">GameRoom</span><span class="p">.</span><span class="nx">wrongNumOfPlayers</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">type</span><span class="p">,</span> <span class="nx">customCb</span><span class="p">,</span> <span class="nx">player</span><span class="p">)</span> <span class="p">{</span>
-    <span class="kd">var</span> <span class="nx">node</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">waitTime</span><span class="p">,</span> <span class="nx">disconnectStr</span><span class="p">;</span>
-    <span class="nx">node</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">node</span><span class="p">;</span>
-
-    <span class="k">if</span> <span class="p">(</span><span class="nx">type</span> <span class="o">===</span> <span class="s1">&#39;min&#39;</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nx">node</span><span class="p">.</span><span class="nx">warn</span><span class="p">(</span><span class="s1">&#39;warning: not enough players!!&#39;</span><span class="p">);</span>
-    <span class="p">}</span>
-    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">type</span> <span class="o">===</span> <span class="s1">&#39;max&#39;</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nx">node</span><span class="p">.</span><span class="nx">warn</span><span class="p">(</span><span class="s1">&#39;warning: too many players!!&#39;</span><span class="p">);</span>
-    <span class="p">}</span>
-    <span class="k">else</span> <span class="p">{</span>
-        <span class="nx">node</span><span class="p">.</span><span class="nx">warn</span><span class="p">(</span><span class="s1">&#39;warning: wrong number of players!!&#39;</span><span class="p">);</span>
-    <span class="p">}</span>
-
-    <span class="nx">waitTime</span> <span class="o">=</span> <span class="s1">&#39;number&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="k">this</span><span class="p">.</span><span class="nx">settings</span><span class="p">.</span><span class="nx">WAIT_TIME</span> <span class="o">?</span>
-        <span class="k">this</span><span class="p">.</span><span class="nx">settings</span><span class="p">.</span><span class="nx">WAIT_TIME</span> <span class="o">:</span> <span class="mi">30</span><span class="p">;</span>
-
-    <span class="nx">disconnectStr</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">settings</span><span class="p">.</span><span class="nx">WAIT_TIME_TEXT</span> <span class="o">||</span>
-        <span class="s1">&#39;One or more players disconnected. If they &#39;</span> <span class="o">+</span>
-        <span class="s1">&#39;do not reconnect within &#39;</span> <span class="o">+</span> <span class="nx">waitTime</span>  <span class="o">+</span>
-        <span class="s1">&#39; seconds the game will be terminated.&#39;</span><span class="p">;</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-5" id="section-5">&#182;</a>
-</div>
-<p>Pause connected players.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="nx">node</span><span class="p">.</span><span class="nx">remoteCommand</span><span class="p">(</span><span class="s1">&#39;pause&#39;</span><span class="p">,</span> <span class="s1">&#39;ROOM&#39;</span><span class="p">,</span> <span class="nx">disconnectStr</span><span class="p">);</span>
-    <span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">pause</span><span class="p">();</span>
-
-    <span class="nx">that</span><span class="p">.</span><span class="nx">countdown</span> <span class="o">=</span> <span class="nx">setTimeout</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
-        <span class="nx">node</span><span class="p">.</span><span class="nx">warn</span><span class="p">(</span><span class="s1">&#39;Disconnection Countdown fired: &#39;</span> <span class="o">+</span> <span class="nx">node</span><span class="p">.</span><span class="nx">nodename</span><span class="p">);</span>
-        <span class="nx">node</span><span class="p">.</span><span class="nx">remoteCommand</span><span class="p">(</span><span class="s1">&#39;resume&#39;</span><span class="p">,</span> <span class="s1">&#39;ROOM&#39;</span><span class="p">);</span>
-        <span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">resume</span><span class="p">();</span>
-        <span class="k">if</span> <span class="p">(</span><span class="nx">customCb</span><span class="p">)</span> <span class="nx">customCb</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">,</span> <span class="nx">player</span><span class="p">);</span>
-
-    <span class="p">},</span> <span class="nx">waitTime</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">);</span>
-<span class="p">};</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs"><div class="dox">
-  <div class="summary">
-<div class="pilwrap" id="gameroom.correctnumofplayersagain">
-  <h2>
-    <a href="#gameroom.correctnumofplayersagain" name="gameroom.correctnumofplayersagain" class="pilcrow">&#182;</a>
-    GameRoom.correctNumOfPlayersAgain
-  </h2>
-</div>
-
-  </div>
-  <div class="body"><p>Listener invoked at any time the correct number of players is recovered</p>
-
-<p>The number of players is "wrong" if it has been defined any
-min|max|exactPlayers property in current game step.</p>
-
-<p>Default behavior:</p>
-
-<p>1 - Immediately resumes all connected players that have been
-    paused by callback <code>wrongNumOfPlayers</code>
-2 - The timer defined by <code>wrongNumOfPlayers</code> is cleared
-3 - If any custom callback was defined, it gets executed</p>
-
-<p>This listener is added as default stager property <code>onCorrectPlayerNum</code>
-to all <code>logic</code> client types by method <code>GameRoom.getClientType</code>,
-if no othe is already defined.</p>
-
-<p>The listener is then invoked with <code>node.game</code> context.</p>
-  </div>
-  <div class="details">
-    <div class="dox_tag_title">Params</div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name">type</span>
-      <span class="dox_type">string</span>
-      <span>The type of "wrong" number: 'min', 'max', 'exact'</span>
-    </div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name">customCb</span>
-      <span class="dox_type">function</span>
-      <span>Optional. A callback to be executed in
-    in case the timer expires.</span>
-    </div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name">player</span>
-      <span class="dox_type">object</span>
-      <span>Optional. The player object that triggered
-    the listener by either connecting or disconnecting (if available)</span>
-    </div>
-    <div class="dox_tag_title">See</div>
-    <div class="dox_tag_detail">
-      <span class="dox_type">GameRoom.wrongNumOfPlayers</span>
-    </div>
-    <div class="dox_tag_title">See</div>
-    <div class="dox_tag_detail">
-      <span class="dox_type">GameRoom.getClientType
-</span>
-    </div>
-  </div>
-</div>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-<span class="nx">GameRoom</span><span class="p">.</span><span class="nx">correctNumOfPlayersAgain</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">type</span><span class="p">,</span> <span class="nx">customCb</span><span class="p">,</span> <span class="nx">player</span><span class="p">)</span> <span class="p">{</span>
-    <span class="kd">var</span> <span class="nx">node</span><span class="p">;</span>
-    <span class="nx">node</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">node</span><span class="p">;</span>
-    <span class="k">if</span> <span class="p">(</span><span class="nx">type</span> <span class="o">===</span> <span class="s1">&#39;min&#39;</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nx">node</span><span class="p">.</span><span class="nx">warn</span><span class="p">(</span><span class="s1">&#39;warning: enough players again!!&#39;</span><span class="p">);</span>
-    <span class="p">}</span>
-    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">type</span> <span class="o">===</span> <span class="s1">&#39;max&#39;</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nx">node</span><span class="p">.</span><span class="nx">warn</span><span class="p">(</span><span class="s1">&#39;warning: number of players below maximum again!!&#39;</span><span class="p">);</span>
-    <span class="p">}</span>
-    <span class="k">else</span> <span class="p">{</span>
-        <span class="nx">node</span><span class="p">.</span><span class="nx">warn</span><span class="p">(</span><span class="s1">&#39;warning: correct number of players again!!&#39;</span><span class="p">);</span>
-    <span class="p">}</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-7" id="section-7">&#182;</a>
-</div>
-<p>Delete countdown to terminate the game.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="nx">clearTimeout</span><span class="p">(</span><span class="nx">that</span><span class="p">.</span><span class="nx">countdown</span><span class="p">);</span>
-    <span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">resume</span><span class="p">();</span>
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-8" id="section-8">&#182;</a>
-</div>
-<p>Resume other players.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="nx">setTimeout</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
-        <span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">pl</span><span class="p">.</span><span class="nx">each</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">p</span><span class="p">)</span> <span class="p">{</span>
-            <span class="k">if</span> <span class="p">(</span><span class="nx">player</span><span class="p">.</span><span class="nx">id</span> <span class="o">!==</span> <span class="nx">p</span><span class="p">.</span><span class="nx">id</span><span class="p">)</span> <span class="p">{</span>
-                <span class="nx">node</span><span class="p">.</span><span class="nx">remoteCommand</span><span class="p">(</span><span class="s1">&#39;resume&#39;</span><span class="p">,</span> <span class="nx">p</span><span class="p">.</span><span class="nx">id</span><span class="p">);</span>
-            <span class="p">}</span>
-        <span class="p">});</span>
-    <span class="p">},</span> <span class="mi">100</span><span class="p">);</span>
-    <span class="k">if</span> <span class="p">(</span><span class="nx">customCb</span><span class="p">)</span> <span class="nx">customCb</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">,</span> <span class="nx">player</span><span class="p">);</span>
-<span class="p">};</span>
 
 
 </pre></div>
@@ -586,10 +351,20 @@ if no othe is already defined.</p>
         </td>
       </tr>
       <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-15" id="section-15">&#182;</a>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="gameroom.countdown">
+  <h3>
+    <a href="#gameroom.countdown" name="gameroom.countdown" class="pilcrow">&#182;</a>
+    GameRoom.countdown
+  </h3>
 </div>
+
+  </div>
+  <div class="body"><p>Timeout handled by</p>
+  </div>
+</div>
+
 <p>Configure disconnect/reconnect policy.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
@@ -601,9 +376,239 @@ if no othe is already defined.</p>
         </td>
       </tr>
       <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="gameroom.wrongnumofplayers">
+  <h2>
+    <a href="#gameroom.wrongnumofplayers" name="gameroom.wrongnumofplayers" class="pilcrow">&#182;</a>
+    GameRoom.wrongNumOfPlayers
+  </h2>
+</div>
+
+  </div>
+  <div class="body"><p>Default listener for <code>onWronPlayerNum</code> on logics</p>
+
+<p>This listener is added as default stager property <code>onWrongPlayerNum</code>
+to all <code>logic</code> client types by method <code>GameRoom.getClientType</code>,
+if no other is already defined.</p>
+
+<p>The listener is invoked when there is a "wrong" number of players.
+The number of players is "wrong" if it has been defined any
+min|max|exactPlayers property in current game step.</p>
+
+<p>Default behavior:</p>
+
+<p>1 - Immediately pauses all connected players. A message is displayed
+    with information.
+2 - A timer is started for the value specified in settings.WAIT_TIME,
+    or 30 seconds otherwise.
+3 - If timer expires, game is resumed and, if a custom callback is
+    is defined, it is executed.</p>
+
+<p>The listener is then invoked with <code>node.game</code> context.</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">type</span>
+      <span class="dox_type">string</span>
+      <span>The type of "wrong" number: 'min', 'max', 'exact'</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">customCb</span>
+      <span class="dox_type">function</span>
+      <span>Optional. A callback to be executed in
+    in case the timer expires.</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">player</span>
+      <span class="dox_type">object</span>
+      <span>Optional. The player object that triggered
+    the listener by either connecting or disconnecting (if available)</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">GameRoom.correctNumOfPlayersAgain</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">GameRoom.getClientType
+</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">this</span><span class="p">.</span><span class="nx">wrongNumOfPlayers</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">type</span><span class="p">,</span> <span class="nx">customCb</span><span class="p">,</span> <span class="nx">player</span><span class="p">)</span> <span class="p">{</span>
+        <span class="kd">var</span> <span class="nx">node</span><span class="p">;</span>
+        <span class="kd">var</span> <span class="nx">waitTime</span><span class="p">,</span> <span class="nx">disconnectStr</span><span class="p">;</span>
+        <span class="nx">node</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">node</span><span class="p">;</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="nx">type</span> <span class="o">===</span> <span class="s1">&#39;min&#39;</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">node</span><span class="p">.</span><span class="nx">warn</span><span class="p">(</span><span class="s1">&#39;warning: not enough players!!&#39;</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">type</span> <span class="o">===</span> <span class="s1">&#39;max&#39;</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">node</span><span class="p">.</span><span class="nx">warn</span><span class="p">(</span><span class="s1">&#39;warning: too many players!!&#39;</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="k">else</span> <span class="p">{</span>
+            <span class="nx">node</span><span class="p">.</span><span class="nx">warn</span><span class="p">(</span><span class="s1">&#39;warning: wrong number of players!!&#39;</span><span class="p">);</span>
+        <span class="p">}</span>
+
+        <span class="nx">waitTime</span> <span class="o">=</span> <span class="s1">&#39;number&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="k">this</span><span class="p">.</span><span class="nx">settings</span><span class="p">.</span><span class="nx">WAIT_TIME</span> <span class="o">?</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">settings</span><span class="p">.</span><span class="nx">WAIT_TIME</span> <span class="o">:</span> <span class="mi">30</span><span class="p">;</span>
+
+        <span class="nx">disconnectStr</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">settings</span><span class="p">.</span><span class="nx">WAIT_TIME_TEXT</span> <span class="o">||</span>
+            <span class="s1">&#39;One or more players disconnected. If they &#39;</span> <span class="o">+</span>
+            <span class="s1">&#39;do not reconnect within &#39;</span> <span class="o">+</span> <span class="nx">waitTime</span>  <span class="o">+</span>
+            <span class="s1">&#39; seconds the game will be terminated.&#39;</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-16" id="section-16">&#182;</a>
+  <a class="pilcrow" href="#section-11" id="section-11">&#182;</a>
+</div>
+<p>Pause connected players.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="nx">node</span><span class="p">.</span><span class="nx">remoteCommand</span><span class="p">(</span><span class="s1">&#39;pause&#39;</span><span class="p">,</span> <span class="s1">&#39;ROOM&#39;</span><span class="p">,</span> <span class="nx">disconnectStr</span><span class="p">);</span>
+        <span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">pause</span><span class="p">();</span>
+
+        <span class="nx">that</span><span class="p">.</span><span class="nx">countdown</span> <span class="o">=</span> <span class="nx">setTimeout</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+            <span class="nx">node</span><span class="p">.</span><span class="nx">warn</span><span class="p">(</span><span class="s1">&#39;Disconnection Countdown fired: &#39;</span> <span class="o">+</span> <span class="nx">node</span><span class="p">.</span><span class="nx">nodename</span><span class="p">);</span>
+            <span class="nx">node</span><span class="p">.</span><span class="nx">remoteCommand</span><span class="p">(</span><span class="s1">&#39;resume&#39;</span><span class="p">,</span> <span class="s1">&#39;ROOM&#39;</span><span class="p">);</span>
+            <span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">resume</span><span class="p">();</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nx">customCb</span><span class="p">)</span> <span class="nx">customCb</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">,</span> <span class="nx">player</span><span class="p">);</span>
+
+        <span class="p">},</span> <span class="nx">waitTime</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">);</span>
+    <span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="gameroom.correctnumofplayersagain">
+  <h2>
+    <a href="#gameroom.correctnumofplayersagain" name="gameroom.correctnumofplayersagain" class="pilcrow">&#182;</a>
+    GameRoom.correctNumOfPlayersAgain
+  </h2>
+</div>
+
+  </div>
+  <div class="body"><p>Listener invoked at any time the correct number of players is recovered</p>
+
+<p>The number of players is "wrong" if it has been defined any
+min|max|exactPlayers property in current game step.</p>
+
+<p>Default behavior:</p>
+
+<p>1 - Immediately resumes all connected players that have been
+    paused by callback <code>wrongNumOfPlayers</code>
+2 - The timer defined by <code>wrongNumOfPlayers</code> is cleared
+3 - If any custom callback was defined, it gets executed</p>
+
+<p>This listener is added as default stager property <code>onCorrectPlayerNum</code>
+to all <code>logic</code> client types by method <code>GameRoom.getClientType</code>,
+if no othe is already defined.</p>
+
+<p>The listener is then invoked with <code>node.game</code> context.</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">type</span>
+      <span class="dox_type">string</span>
+      <span>The type of "wrong" number: 'min', 'max', 'exact'</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">customCb</span>
+      <span class="dox_type">function</span>
+      <span>Optional. A callback to be executed in
+    in case the timer expires.</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">player</span>
+      <span class="dox_type">object</span>
+      <span>Optional. The player object that triggered
+    the listener by either connecting or disconnecting (if available)</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">GameRoom.wrongNumOfPlayers</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">GameRoom.getClientType
+</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">this</span><span class="p">.</span><span class="nx">correctNumOfPlayersAgain</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">type</span><span class="p">,</span> <span class="nx">customCb</span><span class="p">,</span> <span class="nx">player</span><span class="p">)</span> <span class="p">{</span>
+        <span class="kd">var</span> <span class="nx">node</span><span class="p">;</span>
+        <span class="nx">node</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">node</span><span class="p">;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">type</span> <span class="o">===</span> <span class="s1">&#39;min&#39;</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">node</span><span class="p">.</span><span class="nx">warn</span><span class="p">(</span><span class="s1">&#39;warning: enough players again!!&#39;</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">type</span> <span class="o">===</span> <span class="s1">&#39;max&#39;</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">node</span><span class="p">.</span><span class="nx">warn</span><span class="p">(</span><span class="s1">&#39;warning: number of players below maximum again!!&#39;</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="k">else</span> <span class="p">{</span>
+            <span class="nx">node</span><span class="p">.</span><span class="nx">warn</span><span class="p">(</span><span class="s1">&#39;warning: correct number of players again!!&#39;</span><span class="p">);</span>
+        <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-13" id="section-13">&#182;</a>
+</div>
+<p>Delete countdown to terminate the game.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="nx">clearTimeout</span><span class="p">(</span><span class="nx">that</span><span class="p">.</span><span class="nx">countdown</span><span class="p">);</span>
+        <span class="nx">that</span><span class="p">.</span><span class="nx">countdown</span> <span class="o">=</span> <span class="kc">null</span><span class="p">;</span>
+        <span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">resume</span><span class="p">();</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-14" id="section-14">&#182;</a>
+</div>
+<p>Resume other players.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="nx">setTimeout</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+            <span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">pl</span><span class="p">.</span><span class="nx">each</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">p</span><span class="p">)</span> <span class="p">{</span>
+                <span class="k">if</span> <span class="p">(</span><span class="nx">player</span><span class="p">.</span><span class="nx">id</span> <span class="o">!==</span> <span class="nx">p</span><span class="p">.</span><span class="nx">id</span><span class="p">)</span> <span class="p">{</span>
+                    <span class="nx">node</span><span class="p">.</span><span class="nx">remoteCommand</span><span class="p">(</span><span class="s1">&#39;resume&#39;</span><span class="p">,</span> <span class="nx">p</span><span class="p">.</span><span class="nx">id</span><span class="p">);</span>
+                <span class="p">}</span>
+            <span class="p">});</span>
+        <span class="p">},</span> <span class="mi">100</span><span class="p">);</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">customCb</span><span class="p">)</span> <span class="nx">customCb</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">,</span> <span class="nx">player</span><span class="p">);</span>
+    <span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-15" id="section-15">&#182;</a>
 </div>
 <p>Register player disconnection, and wait for him...</p>
         </td>
@@ -619,7 +624,7 @@ if no othe is already defined.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-17" id="section-17">&#182;</a>
+  <a class="pilcrow" href="#section-16" id="section-16">&#182;</a>
 </div>
 <p>Player reconnecting.
 This function is called first, and it invokes any
@@ -641,7 +646,7 @@ min/max/exact handler accordingly.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-18" id="section-18">&#182;</a>
+  <a class="pilcrow" href="#section-17" id="section-17">&#182;</a>
 </div>
 <p>Only within stage reconnections are allowed.</p>
         </td>
@@ -652,19 +657,7 @@ min/max/exact handler accordingly.</p>
             <span class="k">if</span> <span class="p">(</span><span class="nx">GameStage</span><span class="p">.</span><span class="nx">compare</span><span class="p">(</span><span class="nx">code</span><span class="p">.</span><span class="nx">stage</span><span class="p">,</span> <span class="nx">curStage</span><span class="p">))</span> <span class="p">{</span>
                 <span class="nx">node</span><span class="p">.</span><span class="nx">err</span><span class="p">(</span><span class="s1">&#39;player reconnected from another stage. &#39;</span> <span class="o">+</span>
                          <span class="s1">&#39;Not allowed. Player: &#39;</span> <span class="o">+</span> <span class="nx">p</span><span class="p">.</span><span class="nx">id</span><span class="p">);</span>
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-19" id="section-19">&#182;</a>
-</div>
-<p>TODO: handle disposal of unauthorized player correctly.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-                <span class="nx">node</span><span class="p">.</span><span class="nx">remoteAlert</span><span class="p">(</span><span class="s1">&#39;Reconnection to game not authorized.&#39;</span><span class="p">,</span> <span class="nx">p</span><span class="p">.</span><span class="nx">id</span><span class="p">);</span>
+                <span class="nx">disposeClient</span><span class="p">(</span><span class="nx">node</span><span class="p">,</span> <span class="nx">p</span><span class="p">);</span>
                 <span class="k">return</span><span class="p">;</span>
             <span class="p">}</span>
         <span class="p">}</span>
@@ -676,7 +669,7 @@ min/max/exact handler accordingly.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-20" id="section-20">&#182;</a>
+  <a class="pilcrow" href="#section-18" id="section-18">&#182;</a>
 </div>
 <p>Setup client.</p>
         </td>
@@ -691,7 +684,7 @@ min/max/exact handler accordingly.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-21" id="section-21">&#182;</a>
+  <a class="pilcrow" href="#section-19" id="section-19">&#182;</a>
 </div>
 <p>If lang is different from Eng, remote setup it.
 TRUE: sets also the URI prefix.</p>
@@ -708,7 +701,7 @@ TRUE: sets also the URI prefix.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-22" id="section-22">&#182;</a>
+  <a class="pilcrow" href="#section-20" id="section-20">&#182;</a>
 </div>
 <p>Start the game on the reconnecting client.
 Need to give step: false, we just init it.</p>
@@ -723,7 +716,7 @@ Need to give step: false, we just init it.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-23" id="section-23">&#182;</a>
+  <a class="pilcrow" href="#section-21" id="section-21">&#182;</a>
 </div>
 <p>Create the reconnection options object.</p>
         </td>
@@ -737,7 +730,7 @@ Need to give step: false, we just init it.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-24" id="section-24">&#182;</a>
+  <a class="pilcrow" href="#section-22" id="section-22">&#182;</a>
 </div>
 <p>Sets the timer on reconnecting client if milliseconds is found.</p>
         </td>
@@ -751,7 +744,7 @@ Need to give step: false, we just init it.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-25" id="section-25">&#182;</a>
+  <a class="pilcrow" href="#section-23" id="section-23">&#182;</a>
 </div>
 <p>Time left to play in stage.</p>
         </td>
@@ -768,7 +761,7 @@ Need to give step: false, we just init it.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-26" id="section-26">&#182;</a>
+  <a class="pilcrow" href="#section-24" id="section-24">&#182;</a>
 </div>
 <p>node.remoteSetup('plot', p.id, { timer: resetTime }, 'tmpCache');</p>
         </td>
@@ -785,7 +778,7 @@ Need to give step: false, we just init it.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-27" id="section-27">&#182;</a>
+  <a class="pilcrow" href="#section-25" id="section-25">&#182;</a>
 </div>
 <p>Res contains the reconnect options for the step,
 or false to abort reconnection.</p>
@@ -794,19 +787,7 @@ or false to abort reconnection.</p>
             <span class="nx">res</span> <span class="o">=</span> <span class="nx">reconCb</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="nx">code</span><span class="p">,</span> <span class="nx">reconOptions</span><span class="p">);</span>
             <span class="k">if</span> <span class="p">(</span><span class="nx">res</span> <span class="o">===</span> <span class="kc">false</span><span class="p">)</span> <span class="p">{</span>
                 <span class="nx">node</span><span class="p">.</span><span class="nx">warn</span><span class="p">(</span><span class="s1">&#39;Reconnect Cb returned false&#39;</span><span class="p">);</span>
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-28" id="section-28">&#182;</a>
-</div>
-<p>TODO: handle disposal of unauthorized player correctly.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-                <span class="nx">node</span><span class="p">.</span><span class="nx">remoteAlert</span><span class="p">(</span><span class="s1">&#39;Reconnection to game not authorized.&#39;</span><span class="p">,</span> <span class="nx">p</span><span class="p">.</span><span class="nx">id</span><span class="p">);</span>
+                <span class="nx">disposeClient</span><span class="p">(</span><span class="nx">node</span><span class="p">,</span> <span class="nx">p</span><span class="p">);</span>
                 <span class="k">return</span><span class="p">;</span>
             <span class="p">}</span>
         <span class="p">}</span>
@@ -818,7 +799,7 @@ or false to abort reconnection.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-29" id="section-29">&#182;</a>
+  <a class="pilcrow" href="#section-26" id="section-26">&#182;</a>
 </div>
 <p>Add player to player list.</p>
         </td>
@@ -832,7 +813,7 @@ or false to abort reconnection.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-30" id="section-30">&#182;</a>
+  <a class="pilcrow" href="#section-27" id="section-27">&#182;</a>
 </div>
 <p>Start the step on reconnecting client.</p>
         </td>
@@ -847,7 +828,7 @@ or false to abort reconnection.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-31" id="section-31">&#182;</a>
+  <a class="pilcrow" href="#section-28" id="section-28">&#182;</a>
 </div>
 <p>See if we have enough players now.</p>
         </td>
@@ -861,7 +842,7 @@ or false to abort reconnection.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-32" id="section-32">&#182;</a>
+  <a class="pilcrow" href="#section-29" id="section-29">&#182;</a>
 </div>
 <p>If we are still missing more players pause reconnecting player.</p>
         </td>
@@ -1024,7 +1005,7 @@ or false to abort reconnection.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-37" id="section-37">&#182;</a>
+  <a class="pilcrow" href="#section-34" id="section-34">&#182;</a>
 </div>
 <p>TODO: Don't send to logic!</p>
         </td>
@@ -1112,7 +1093,7 @@ or false to abort reconnection.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-39" id="section-39">&#182;</a>
+  <a class="pilcrow" href="#section-36" id="section-36">&#182;</a>
 </div>
 <p>Check parameters.</p>
         </td>
@@ -1143,7 +1124,7 @@ or false to abort reconnection.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-40" id="section-40">&#182;</a>
+  <a class="pilcrow" href="#section-37" id="section-37">&#182;</a>
 </div>
 <p>Apply defaults.</p>
         </td>
@@ -1159,7 +1140,7 @@ or false to abort reconnection.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-41" id="section-41">&#182;</a>
+  <a class="pilcrow" href="#section-38" id="section-38">&#182;</a>
 </div>
 <p>Set up logic.</p>
         </td>
@@ -1173,7 +1154,7 @@ or false to abort reconnection.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-42" id="section-42">&#182;</a>
+  <a class="pilcrow" href="#section-39" id="section-39">&#182;</a>
 </div>
 <p>At this point clientList should be an array of client IDs.</p>
         </td>
@@ -1238,7 +1219,7 @@ or false to abort reconnection.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-44" id="section-44">&#182;</a>
+  <a class="pilcrow" href="#section-41" id="section-41">&#182;</a>
 </div>
 <p>Check parameters.</p>
         </td>
@@ -1253,7 +1234,7 @@ or false to abort reconnection.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-45" id="section-45">&#182;</a>
+  <a class="pilcrow" href="#section-42" id="section-42">&#182;</a>
 </div>
 <p>Apply defaults.</p>
         </td>
@@ -1269,7 +1250,7 @@ or false to abort reconnection.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-46" id="section-46">&#182;</a>
+  <a class="pilcrow" href="#section-43" id="section-43">&#182;</a>
 </div>
 <p>Check startability.</p>
         </td>
@@ -1287,7 +1268,7 @@ or false to abort reconnection.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-47" id="section-47">&#182;</a>
+  <a class="pilcrow" href="#section-44" id="section-44">&#182;</a>
 </div>
 <p>Start.</p>
         </td>
@@ -1354,7 +1335,7 @@ or false to abort reconnection.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-49" id="section-49">&#182;</a>
+  <a class="pilcrow" href="#section-46" id="section-46">&#182;</a>
 </div>
 <p>Check parameters.</p>
         </td>
@@ -1369,7 +1350,7 @@ or false to abort reconnection.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-50" id="section-50">&#182;</a>
+  <a class="pilcrow" href="#section-47" id="section-47">&#182;</a>
 </div>
 <p>Apply defaults.</p>
         </td>
@@ -1385,7 +1366,7 @@ or false to abort reconnection.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-51" id="section-51">&#182;</a>
+  <a class="pilcrow" href="#section-48" id="section-48">&#182;</a>
 </div>
 <p>Check pausability.</p>
         </td>
@@ -1403,7 +1384,7 @@ or false to abort reconnection.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-52" id="section-52">&#182;</a>
+  <a class="pilcrow" href="#section-49" id="section-49">&#182;</a>
 </div>
 <p>Pause.</p>
         </td>
@@ -1470,7 +1451,7 @@ or false to abort reconnection.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-54" id="section-54">&#182;</a>
+  <a class="pilcrow" href="#section-51" id="section-51">&#182;</a>
 </div>
 <p>Check parameters.</p>
         </td>
@@ -1485,7 +1466,7 @@ or false to abort reconnection.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-55" id="section-55">&#182;</a>
+  <a class="pilcrow" href="#section-52" id="section-52">&#182;</a>
 </div>
 <p>Apply defaults.</p>
         </td>
@@ -1501,7 +1482,7 @@ or false to abort reconnection.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-56" id="section-56">&#182;</a>
+  <a class="pilcrow" href="#section-53" id="section-53">&#182;</a>
 </div>
 <p>Check resumability.</p>
         </td>
@@ -1519,7 +1500,7 @@ or false to abort reconnection.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-57" id="section-57">&#182;</a>
+  <a class="pilcrow" href="#section-54" id="section-54">&#182;</a>
 </div>
 <p>Resume.</p>
         </td>
@@ -1586,7 +1567,7 @@ or false to abort reconnection.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-59" id="section-59">&#182;</a>
+  <a class="pilcrow" href="#section-56" id="section-56">&#182;</a>
 </div>
 <p>Check parameters.</p>
         </td>
@@ -1601,7 +1582,7 @@ or false to abort reconnection.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-60" id="section-60">&#182;</a>
+  <a class="pilcrow" href="#section-57" id="section-57">&#182;</a>
 </div>
 <p>Apply defaults.</p>
         </td>
@@ -1617,7 +1598,7 @@ or false to abort reconnection.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-61" id="section-61">&#182;</a>
+  <a class="pilcrow" href="#section-58" id="section-58">&#182;</a>
 </div>
 <p>Check stoppability.</p>
         </td>
@@ -1635,7 +1616,7 @@ or false to abort reconnection.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-62" id="section-62">&#182;</a>
+  <a class="pilcrow" href="#section-59" id="section-59">&#182;</a>
 </div>
 <p>Stop.</p>
         </td>
@@ -1669,11 +1650,17 @@ or false to abort reconnection.</p>
       <span class="dox_type">string</span>
       <span>The name of the client type</span>
     </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">mixinConf</span>
+      <span class="dox_type">object</span>
+      <span>Optional. Additional configuration options
+  that will be mixed-in with the final game object</span>
+    </div>
     <div class="dox_tag_title">Returns</div>
     <div class="dox_tag_detail">
       <span class="dox_tag_name"></span>
       <span class="dox_type">object</span>
-      <span>The getd client type</span>
+      <span>The built client type</span>
     </div>
   </div>
 </div>
@@ -1694,6 +1681,18 @@ or false to abort reconnection.</p>
 
     <span class="nx">that</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
 
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-61" id="section-61">&#182;</a>
+</div>
+<p>Get the right stager.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
     <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">gameLevel</span><span class="p">)</span> <span class="p">{</span>
         <span class="nx">stager</span> <span class="o">=</span> <span class="nx">ngc</span><span class="p">.</span><span class="nx">getStager</span><span class="p">(</span>
             <span class="k">this</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">levels</span><span class="p">[</span><span class="k">this</span><span class="p">.</span><span class="nx">gameLevel</span><span class="p">].</span><span class="nx">stager</span><span class="p">.</span><span class="nx">getState</span><span class="p">());</span>
@@ -1701,6 +1700,19 @@ or false to abort reconnection.</p>
     <span class="k">else</span> <span class="p">{</span>
         <span class="nx">stager</span> <span class="o">=</span> <span class="nx">ngc</span><span class="p">.</span><span class="nx">getStager</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">stager</span><span class="p">.</span><span class="nx">getState</span><span class="p">());</span>
     <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-62" id="section-62">&#182;</a>
+</div>
+<p>Start adding default properties by client type.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
 
     <span class="nx">stepRule</span> <span class="o">=</span> <span class="nx">stager</span><span class="p">.</span><span class="nx">getDefaultStepRule</span><span class="p">();</span>
     <span class="nx">properties</span> <span class="o">=</span> <span class="nx">stager</span><span class="p">.</span><span class="nx">getDefaultProperties</span><span class="p">();</span>
@@ -1712,12 +1724,11 @@ or false to abort reconnection.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-64" id="section-64">&#182;</a>
+  <a class="pilcrow" href="#section-63" id="section-63">&#182;</a>
 </div>
 <p>For both logic and other client types.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-
 
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">properties</span><span class="p">.</span><span class="nx">timer</span><span class="p">)</span> <span class="p">{</span>
         <span class="nx">stager</span><span class="p">.</span><span class="nx">setDefaultProperty</span><span class="p">(</span><span class="s1">&#39;timer&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
@@ -1731,7 +1742,7 @@ or false to abort reconnection.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-65" id="section-65">&#182;</a>
+  <a class="pilcrow" href="#section-64" id="section-64">&#182;</a>
 </div>
 <p>If it is a function must be executed.
 Other values will be parsed later.</p>
@@ -1744,12 +1755,12 @@ Other values will be parsed later.</p>
 
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">properties</span><span class="p">.</span><span class="nx">onWrongNumOfPlayers</span><span class="p">)</span> <span class="p">{</span>
         <span class="nx">stager</span><span class="p">.</span><span class="nx">setDefaultProperty</span><span class="p">(</span><span class="s1">&#39;onWrongPlayerNum&#39;</span><span class="p">,</span>
-                                  <span class="nx">GameRoom</span><span class="p">.</span><span class="nx">wrongNumOfPlayers</span><span class="p">);</span>
+                                  <span class="k">this</span><span class="p">.</span><span class="nx">wrongNumOfPlayers</span><span class="p">);</span>
     <span class="p">}</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">properties</span><span class="p">.</span><span class="nx">onCorrectNumOfPlayers</span><span class="p">)</span> <span class="p">{</span>
         <span class="nx">stager</span><span class="p">.</span><span class="nx">setDefaultProperty</span><span class="p">(</span><span class="s1">&#39;onCorrectPlayerNum&#39;</span><span class="p">,</span>
-                                  <span class="nx">GameRoom</span><span class="p">.</span><span class="nx">correctNumOfPlayersAgain</span><span class="p">);</span>
+                                  <span class="k">this</span><span class="p">.</span><span class="nx">correctNumOfPlayersAgain</span><span class="p">);</span>
     <span class="p">}</span>
 
 
@@ -1759,7 +1770,7 @@ Other values will be parsed later.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-66" id="section-66">&#182;</a>
+  <a class="pilcrow" href="#section-65" id="section-65">&#182;</a>
 </div>
 <p>Set different defaults for logic and other client types.</p>
         </td>
@@ -1822,7 +1833,7 @@ Other values will be parsed later.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-67" id="section-67">&#182;</a>
+  <a class="pilcrow" href="#section-66" id="section-66">&#182;</a>
 </div>
 <p>Add treatment settings.</p>
         </td>
@@ -1836,7 +1847,7 @@ Other values will be parsed later.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-68" id="section-68">&#182;</a>
+  <a class="pilcrow" href="#section-67" id="section-67">&#182;</a>
 </div>
 <p>Mixin-in nodeGame options.</p>
         </td>
@@ -1916,7 +1927,7 @@ Other values will be parsed later.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-71" id="section-71">&#182;</a>
+  <a class="pilcrow" href="#section-70" id="section-70">&#182;</a>
 </div>
 <p>Stop logic if necessary.</p>
         </td>
@@ -1930,7 +1941,7 @@ Other values will be parsed later.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-72" id="section-72">&#182;</a>
+  <a class="pilcrow" href="#section-71" id="section-71">&#182;</a>
 </div>
 <p>Setup must be called before connect.</p>
         </td>
@@ -1944,7 +1955,7 @@ Other values will be parsed later.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-73" id="section-73">&#182;</a>
+  <a class="pilcrow" href="#section-72" id="section-72">&#182;</a>
 </div>
 <p>Connect logic to server, if not already connected. E.g., after a stop
 command it is generally still connected. Or the node object can be
@@ -2021,7 +2032,7 @@ passed in the constructor and be already connected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-75" id="section-75">&#182;</a>
+  <a class="pilcrow" href="#section-74" id="section-74">&#182;</a>
 </div>
 <p>Resolve special values of clientList.</p>
         </td>
@@ -2049,7 +2060,7 @@ passed in the constructor and be already connected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-76" id="section-76">&#182;</a>
+  <a class="pilcrow" href="#section-75" id="section-75">&#182;</a>
 </div>
 <p>Setup all given clients.</p>
         </td>
@@ -2131,7 +2142,7 @@ a remote client.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-78" id="section-78">&#182;</a>
+  <a class="pilcrow" href="#section-77" id="section-77">&#182;</a>
 </div>
 <p>Fake cache.</p>
         </td>
@@ -2145,7 +2156,7 @@ a remote client.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-79" id="section-79">&#182;</a>
+  <a class="pilcrow" href="#section-78" id="section-78">&#182;</a>
 </div>
 <p>See if the client is local or remote.</p>
         </td>
@@ -2159,7 +2170,7 @@ a remote client.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-80" id="section-80">&#182;</a>
+  <a class="pilcrow" href="#section-79" id="section-79">&#182;</a>
 </div>
 <p>Client type.</p>
         </td>
@@ -2173,7 +2184,7 @@ a remote client.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-81" id="section-81">&#182;</a>
+  <a class="pilcrow" href="#section-80" id="section-80">&#182;</a>
 </div>
 <p>Get the client type, check cache (bots are never cached).</p>
         </td>
@@ -2194,7 +2205,7 @@ a remote client.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-82" id="section-82">&#182;</a>
+  <a class="pilcrow" href="#section-81" id="section-81">&#182;</a>
 </div>
 <p>Setup the client.</p>
         </td>
@@ -2207,7 +2218,7 @@ a remote client.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-83" id="section-83">&#182;</a>
+  <a class="pilcrow" href="#section-82" id="section-82">&#182;</a>
 </div>
 <p>Local client.</p>
         </td>
@@ -2220,7 +2231,7 @@ a remote client.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-84" id="section-84">&#182;</a>
+  <a class="pilcrow" href="#section-83" id="section-83">&#182;</a>
 </div>
 <p>Can't remoteSetup here because serializing the plot methods
 would make them lose their context (node etc.).</p>
@@ -2236,7 +2247,7 @@ would make them lose their context (node etc.).</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-85" id="section-85">&#182;</a>
+  <a class="pilcrow" href="#section-84" id="section-84">&#182;</a>
 </div>
 <p>Remote client.</p>
         </td>
@@ -2273,10 +2284,10 @@ would make them lose their context (node etc.).</p>
         <td class="docs"><div class="dox">
   <div class="summary">
 <div class="pilwrap" id="trytogetclient">
-  <h2>
+  <h3>
     <a href="#trytogetclient" name="trytogetclient" class="pilcrow">&#182;</a>
     tryToGetClient
-  </h2>
+  </h3>
 </div>
 
   </div>
@@ -2322,10 +2333,10 @@ otherwise the whole function is not optimized.</p>
         <td class="docs"><div class="dox">
   <div class="summary">
 <div class="pilwrap" id="mixingamemetadata">
-  <h2>
+  <h3>
     <a href="#mixingamemetadata" name="mixingamemetadata" class="pilcrow">&#182;</a>
     mixinGameMetadata
-  </h2>
+  </h3>
 </div>
 
   </div>
@@ -2358,6 +2369,61 @@ otherwise the whole function is not optimized.</p>
         <span class="nx">game</span><span class="p">.</span><span class="nx">metadata</span><span class="p">.</span><span class="nx">description</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">info</span><span class="p">.</span><span class="nx">description</span><span class="p">;</span>
     <span class="p">}</span>
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">game</span><span class="p">.</span><span class="nx">metadata</span><span class="p">.</span><span class="nx">version</span><span class="p">)</span> <span class="nx">game</span><span class="p">.</span><span class="nx">metadata</span><span class="p">.</span><span class="nx">version</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">info</span><span class="p">.</span><span class="nx">version</span><span class="p">;</span>
+<span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="disposeclient">
+  <h3>
+    <a href="#disposeclient" name="disposeclient" class="pilcrow">&#182;</a>
+    disposeClient
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Disconnects a client that was not authorized to reconnect</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">node</span>
+      <span class="dox_type">NodeGameCLient</span>
+      <span>The node instance of the game room</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">p</span>
+      <span class="dox_type">object</span>
+      <span>The player object</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">GameRoom.on
+</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="kd">function</span> <span class="nx">disposeClient</span><span class="p">(</span><span class="nx">node</span><span class="p">,</span> <span class="nx">p</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">node</span><span class="p">.</span><span class="nx">remoteAlert</span><span class="p">(</span><span class="s1">&#39;Reconnection to game not authorized.&#39;</span><span class="p">,</span> <span class="nx">p</span><span class="p">.</span><span class="nx">id</span><span class="p">);</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-89" id="section-89">&#182;</a>
+</div>
+<p>Disconnect client.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">setTimeout</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span> <span class="nx">node</span><span class="p">.</span><span class="nx">disconnectClient</span><span class="p">(</span><span class="nx">p</span><span class="p">);</span> <span class="p">});</span>
 <span class="p">}</span>
 </pre></div>
         </td>
