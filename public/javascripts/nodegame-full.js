@@ -5355,7 +5355,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # PARSE
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2016 Stefano Balietti
  * MIT Licensed
  *
  * Collection of static functions related to parsing strings
@@ -5507,13 +5507,16 @@ if (!Array.prototype.indexOf) {
      * @see PARSE.stringify
      */
     PARSE.stringifyAll = function(o, spaces) {
-        for (var i in o) {
-            if (!o.hasOwnProperty(i)) {
-                if ('object' === typeof o[i]) {
-                    o[i] = PARSE.stringifyAll(o[i]);
-                }
-                else {
-                    o[i] = o[i];
+        var i;
+        if ('object' === typeof o) {
+            for (i in o) {
+                if (!o.hasOwnProperty(i)) {
+                    if ('object' === typeof o[i]) {
+                        o[i] = PARSE.stringifyAll(o[i]);
+                    }
+                    else {
+                        o[i] = o[i];
+                    }
                 }
             }
         }
@@ -5534,7 +5537,7 @@ if (!Array.prototype.indexOf) {
      * @see JSON.parse
      * @see PARSE.stringify_prefix
      */
-    PARSE.parse = function(str) {
+    PARSE.parse = (function() {
 
         var len_prefix = PARSE.stringify_prefix.length,
             len_func = PARSE.marker_func.length,
@@ -5544,29 +5547,21 @@ if (!Array.prototype.indexOf) {
             len_inf = PARSE.marker_inf.length,
             len_minus_inf = PARSE.marker_minus_inf.length;
 
-
-        var o = JSON.parse(str);
-        return walker(o);
-
         function walker(o) {
+            var i;
             if ('object' !== typeof o) return reviver(o);
-
-            for (var i in o) {
+            for (i in o) {
                 if (o.hasOwnProperty(i)) {
-                    if ('object' === typeof o[i]) {
-                        walker(o[i]);
-                    }
-                    else {
-                        o[i] = reviver(o[i]);
-                    }
+                    if ('object' === typeof o[i]) walker(o[i]);
+                    else o[i] = reviver(o[i]);
                 }
             }
-
             return o;
         }
 
         function reviver(value) {
-            var type = typeof value;
+            var type;
+            type = typeof value;
 
             if (type === 'string') {
                 if (value.substring(0, len_prefix) !== PARSE.stringify_prefix) {
@@ -5597,7 +5592,12 @@ if (!Array.prototype.indexOf) {
             }
             return value;
         }
-    };
+
+        return function(str) {
+            return walker(JSON.parse(str));
+        };
+
+    })();
 
     /**
      * ## PARSE.isInt
@@ -38454,8 +38454,8 @@ if (!Array.prototype.indexOf) {
                     '<strong>not selected</strong> to start the game.' +
                     'Thank you for your participation.' +
                     '</span><br><br>';
-                if (false === data.shouldDispatchMoreGames
-                    || that.disconnectIfNotSelected) {
+                if (false === data.shouldDispatchMoreGames ||
+                    that.disconnectIfNotSelected) {
                     that.disconnect(that.bodyDiv.innerHTML + reportExitCode);
                 }
             }
@@ -38508,7 +38508,7 @@ if (!Array.prototype.indexOf) {
 
     WaitingRoom.prototype.setStartDate = function(startDate) {
         this.startDate = new Date(startDate).toString();
-        this.startDateDiv.innerHTML = "Game starts at: <br>" + this.startDate;
+        this.startDateDiv.innerHTML = 'Game starts at: <br>' + this.startDate;
         this.startDateDiv.style.display = '';
     };
 
