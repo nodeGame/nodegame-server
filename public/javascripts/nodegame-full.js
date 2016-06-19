@@ -11736,7 +11736,7 @@ if (!Array.prototype.indexOf) {
 
             this.history.rebuildIndexes();
 
-            hash = GameStage.toHash(stage, 'S.s.r');
+            hash = new GameStage.toHash(stage, 'S.s.r');
 
             if (!this.history.stage) {
                 node.silly('No past events to re-emit found.');
@@ -11995,41 +11995,12 @@ if (!Array.prototype.indexOf) {
      */
     GameStage.prototype.toString = function() {
         return this.stage + '.' + this.step + '.' + this.round;
-        // return this.toHash('S.s.r');
     };
+
+    // ## GameStage Static Methods
 
     /**
      * ### GameStage.toHash
-     *
-     * Hashes the game stage according to the input string
-     *
-     * @param {string} str The hash code
-     *
-     * @return {string} hash The hashed game stages
-     *
-     * @see GameStage.toHash (static)
-     */
-    GameStage.prototype.toHash = function(str) {
-        return GameStage.toHash(this, str);
-    };
-
-    /**
-     * ### GameStage.toObject
-     *
-     * Returns a clone of the game stage with Object as prototype
-     *
-     * @return {object} A new object
-     */
-    GameStage.prototype.toObject = function() {
-        return {
-            stage: this.stage,
-            step: this.step,
-            round: this.round
-        };
-    };
-
-    /**
-     * ### GameStage.toHash (static)
      *
      * Returns a simplified hash of the stage of the GameStage,
      * according to the input string.
@@ -12075,7 +12046,22 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
-     * ### GameStage.compare (static)
+     * ### GameStage.toObject
+     *
+     * Returns a clone of the game stage with Object as prototype
+     *
+     * @return {object} A new object
+     */
+    GameStage.toObject = function() {
+        return {
+            stage: this.stage,
+            step: this.step,
+            round: this.round
+        };
+    };
+
+    /**
+     * ### GameStage.compare
      *
      * Converts inputs to GameStage objects and sort them by sequence order
      *
@@ -14546,9 +14532,9 @@ if (!Array.prototype.indexOf) {
     var PUSH_STEP = parent.constants.gamecommands.push_step;
     var GAMECOMMAND = parent.constants.target.GAMECOMMAND;
 
+    PushManager.offsetWaitTime = 5000;
     PushManager.replyWaitTime = 2000;
     PushManager.checkPushWaitTime = 2000;
-    PushManager.offsetWaitTime = 5000;
 
     /**
      * ## PushManager constructor
@@ -14785,15 +14771,18 @@ if (!Array.prototype.indexOf) {
 
         setTimeout(function() {
             var pp;
-
             if (node.game.pl.exist(p.id)) {
                 pp = node.game.pl.get(p.id);
 
-                if (GameStage.compare(pp.stage, stage) === 0) {
-                    forceDisconnect(node, pp);
+                // Client could have moved to next step, or be DONE
+                // waiting for a command from server.
+                if (GameStage.compare(pp.stage, stage) !== 0 ||
+                    pp.stageLevel === DONE) {
+
+                    node.info('push-manager: push worked for ' + p.id);
                 }
                 else {
-                    node.info('push-manager: push worked for ', p.id);
+                    forceDisconnect(node, pp);
                 }
             }
         }, milliseconds || 0);
@@ -14807,10 +14796,27 @@ if (!Array.prototype.indexOf) {
      * @param {NodeGameClient} node The node instance used to send msg
      * @param {object} p The player object containing info about id and sid
      */
+//     function forceDisconnect(node, p) {
+//         // No reply to GET, disconnect client.
+//         node.warn('push-manager: disconnecting: ' + p.id);
+//         node.disconnectClient(p);
+//     }
+
     function forceDisconnect(node, p) {
+        var msg;
         // No reply to GET, disconnect client.
         node.warn('push-manager: disconnecting: ' + p.id);
-        node.disconnectClient(p);
+
+        msg = node.msg.create({
+            target: 'SERVERCOMMAND',
+            text: 'DISCONNECT',
+            data: {
+                id: p.id,
+                sid: p.sid
+            }
+        });
+        node.verbosity = 1000;
+        node.socket.send(msg);
     }
 
     /**
@@ -20027,7 +20033,7 @@ if (!Array.prototype.indexOf) {
                 node.remoteCommand('start', 'ROOM');
             }
             else {
-                node.remoteCommand('goto_step', 'ROOM', nextStep.toObject());
+                node.remoteCommand('goto_step', 'ROOM', nextStep);
             }
         }
 
@@ -25144,7 +25150,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Commands
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2016 Stefano Balietti
  * MIT Licensed
  *
  * `nodeGame` commands
@@ -25225,7 +25231,7 @@ if (!Array.prototype.indexOf) {
         }
 
         // Stringify options, if any.
-        if (options) options = J.stringifyAll(options);
+        if (options) options = J.stringify(options);
 
         msg = this.msg.create({
             target: this.constants.target.GAMECOMMAND,
