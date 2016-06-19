@@ -818,7 +818,7 @@ or false to abort reconnection.</p>
 <p>Start the step on reconnecting client.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-        <span class="nx">reconOptions</span><span class="p">.</span><span class="nx">targetStep</span> <span class="o">=</span> <span class="nx">curStage</span><span class="p">.</span><span class="nx">toObject</span><span class="p">();</span>
+        <span class="nx">reconOptions</span><span class="p">.</span><span class="nx">targetStep</span> <span class="o">=</span> <span class="nx">curStage</span><span class="p">;</span>
         <span class="nx">node</span><span class="p">.</span><span class="nx">remoteCommand</span><span class="p">(</span><span class="s1">&#39;goto_step&#39;</span><span class="p">,</span> <span class="nx">p</span><span class="p">.</span><span class="nx">id</span><span class="p">,</span> <span class="nx">reconOptions</span><span class="p">);</span>
 
 

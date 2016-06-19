@@ -11736,7 +11736,7 @@ if (!Array.prototype.indexOf) {
 
             this.history.rebuildIndexes();
 
-            hash = new GameStage(stage).toHash('S.s.r');
+            hash = GameStage.toHash(stage, 'S.s.r');
 
             if (!this.history.stage) {
                 node.silly('No past events to re-emit found.');
