@@ -16969,12 +16969,13 @@ if (!Array.prototype.indexOf) {
         }
         if (id.lastIndexOf('.') !== -1) {
             console.log('*** deprecated naming! Stager.' + method + ': ' +
-                        s + '.id cannot contains dots. Found: ' + id + ' ***');
+                        s + '.id contains dots. Game will run, but will fail ' +
+                        'to normalize ' + s + 's. Found: ' + id + ' ***');
         }
         if (/^\d+$/.test(char0)) {
             console.log('*** deprecated naming! Stager.' + method + ': ' + s +
-                        '.id cannot begin with a number. Found: ' + id +
-                        ' ***');
+                        '.id begins with a number. Game will run, but will ' +
+                        'fail to normalize ' + s + 's. Found: ' + id + ' ***');
         }
     }
 
@@ -20315,7 +20316,10 @@ if (!Array.prototype.indexOf) {
      * @return {boolean} The result of the execution of the step callback
      */
     Game.prototype.execStep = function(step) {
-        var cb;
+        var cb, origCb;
+        var widget, widgetObj, widgetRoot;
+        var widgetCb, widgetExit, widgetDone;
+        var doneCb, origDoneCb, exitCb, origExitCb;
         var frame, uri, frameOptions;
         var frameLoadMode, frameStoreMode;
         var frameAutoParse, frameAutoParsePrefix;
@@ -20326,6 +20330,121 @@ if (!Array.prototype.indexOf) {
 
         cb = this.plot.getProperty(step, 'cb');
         frame = this.plot.getProperty(step, 'frame');
+        widget = this.plot.getProperty(step, 'widget');
+
+        if (widget) {
+            // Parse input params. // TODO: throws errors.
+            if ('string' === typeof widget) widget = {
+                name: widget,
+                ref: widget.toLowerCase()
+            };
+            if ('string' !== typeof widget.id) {
+                widget.id = 'ng_step_widget_' + widget.name;
+            }
+
+            // Make main callback to get/append the widget.
+            widgetCb = function() {
+
+                if (widget.append === false) {
+                    widgetObj = this.node.widgets.get(widget.name,
+                                                      widget.options);
+                }
+                else {
+                    // Default id 'container' (as in default.html).
+                    widgetRoot = widget.root || 'container';
+                    widgetRoot =  W.getElementById(widgetRoot);
+                    widgetObj = this.node.widgets.append(widget.name,
+                                                         widgetRoot,
+                                                         widget.options);
+                }
+                this[widget.ref] = widgetObj;
+            };
+
+            // Make the step callback.
+            if (cb) {
+                origCb = cb;
+                cb = function() {
+                    widgetCb.call(this);
+                    origCb.call(this);
+                };
+            }
+            else {
+                cb = widgetCb;
+            }
+
+            // Make the done callback to send results.
+            widgetDone = function() {
+                var values, opts;
+                if (widget.checkAnswers !== false) {
+                    opts = { highlight: true, markAttempt: true };
+                }
+                else {
+                    opts = { highlight: false, markAttemps: false };
+                }
+
+                values = this[widget.ref].getValues(opts);
+
+                // If it is not timeup, and user did not
+                // disabled it, check answers.
+                if (widget.checkAnswers !== false &&
+                    !node.game.timer.isTimeup()) {
+
+                    if (!isvalues.missValues ||
+                        values.choice === null ||
+                        values.isCorrect === false) {
+
+                        return false;
+                    }
+                }
+
+                return values;
+            };
+            doneCb = this.plot.getProperty(step, 'done');
+            if (doneCb) {
+                origDoneCb = doneCb;
+                doneCb = function() {
+                    var values;
+                    values = widgetDone.call(this);
+                    if (values !== false) {
+                        values = origDoneCb.call(this, values);
+                    }
+                    return values;
+                };
+            }
+            else {
+                doneCb = widgetDone;
+            }
+
+            // Update the exit function for this step.
+            this.plot.tmpCache('done', doneCb);
+
+            // Make the exit callback (destroy widget by default).
+            if (widget.destroyOnExit !== false) {
+                widgetExit = function() {
+                    this[widget.ref].destroy();
+                    // Remove node.game reference.
+                    this[widget.ref] = null;
+                };
+                exitCb = this.plot.getProperty(step, 'exit');
+                if (exitCb) {
+                    origExitCb = exitCb;
+                    exitCb = function() {
+                        widgetExit.call(this);
+                        origCb.call(this);
+                    };
+                }
+                else {
+                    exitCb = widgetExit;
+                }
+                // Update the exit function for this step.
+                this.plot.tmpCache('exit', exitCb);
+            }
+
+            // Sets a default frame, if none was found.
+            if (widget.append !== false && !frame) {
+                frame = '/pages/default.html';
+            }
+        }
 
         // Handle frame loading natively, if required.
         if (frame) {
@@ -24459,7 +24578,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Connect
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2016 Stefano Balietti
  * MIT Licensed
  *
  * `nodeGame` connect module
@@ -24480,9 +24599,9 @@ if (!Array.prototype.indexOf) {
      *
      * If node is executed in the browser additional checks are performed:
      *
-     * 1. If channel does not begin with `http://`, then `window.location.host`
-     *    will be added in front of channel to avoid cross-domain errors
-     *    (as of Socket.io >= 1).
+     * 1. If channel does not begin with `http://` or `https://,
+     *    then `window.location.origin` will be added in front of
+     *    channel to avoid cross-domain errors (as of Socket.io >= 1).
      *
      * 2. If no socketOptions.query parameter is specified any query
      *    parameters found in `location.search(1)` will be passed.
@@ -24511,9 +24630,12 @@ if (!Array.prototype.indexOf) {
                 }
             }
             // Make full path otherwise socket.io will complain.
-            if (channel && channel.substr(0,7) !== 'http://') {
-                if (window.location && window.location.host) {
-                    channel = 'http://' + window.location.host + channel;
+            if (channel &&
+                (channel.substr(0,8) !== 'https://' &&
+                 channel.substr(0,7) !== 'http://')) {
+
+                if (window.location && window.location.origin) {
+                    channel = window.location.origin + channel;
                 }
             }
             // Pass along any query options. (?clientType=...).
