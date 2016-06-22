@@ -101,6 +101,12 @@ function configure(app, servernode) {
         });
     });
 
+    app.get(basepath + '/sounds/*', function(req, res) {
+        sendFromPublic('sounds', req, res, {
+            'Content-Type': 'sound/ogg'
+        });
+    });
+
     app.get(basepath + '/stylesheets/*', function(req, res) {
         sendFromPublic('stylesheets', req, res, {
             'Content-Type': 'text/css',

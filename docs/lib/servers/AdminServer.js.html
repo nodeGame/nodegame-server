@@ -85,6 +85,9 @@
         <a href="#get.servercommand_info">get.SERVERCOMMAND_INFO</a>
       </div>
       <div class="heading h3">
+        <a href="#get.servercommand_waitroomcommand">get.SERVERCOMMAND_WAITROOMCOMMAND</a>
+      </div>
+      <div class="heading h3">
         <a href="#get.gamecommand">get.GAMECOMMAND</a>
       </div>
       <div class="heading h3">
@@ -906,6 +909,8 @@ Admins decides what to do with it.</p>
                     <span class="nx">replyData</span><span class="p">.</span><span class="nx">push</span><span class="p">({</span>
                         <span class="nx">name</span><span class="o">:</span>     <span class="nx">room</span><span class="p">,</span>
                         <span class="nx">id</span><span class="o">:</span>       <span class="nx">roomObj</span><span class="p">.</span><span class="nx">id</span><span class="p">,</span>
+                        <span class="nx">type</span><span class="o">:</span>     <span class="nx">roomObj</span><span class="p">.</span><span class="nx">roomType</span><span class="p">,</span>
+                        <span class="nx">roomOpen</span><span class="o">:</span> <span class="nx">roomObj</span><span class="p">.</span><span class="nx">roomOpen</span><span class="p">,</span>
                         <span class="nx">nClients</span><span class="o">:</span> <span class="nx">J</span><span class="p">.</span><span class="nx">size</span><span class="p">(</span><span class="nx">roomObj</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">db</span><span class="p">),</span>
                         <span class="nx">nPlayers</span><span class="o">:</span> <span class="nx">J</span><span class="p">.</span><span class="nx">size</span><span class="p">(</span><span class="nx">roomObj</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">db</span><span class="p">),</span>
                         <span class="nx">nAdmins</span><span class="o">:</span>  <span class="nx">J</span><span class="p">.</span><span class="nx">size</span><span class="p">(</span><span class="nx">roomObj</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">admin</span><span class="p">.</span><span class="nx">db</span><span class="p">)</span>
@@ -1039,6 +1044,64 @@ TODO: Send only specific client data, not everything;
       </tr>
       <tr>
         <td class="docs">
+<div class="pilwrap" id="get.servercommand_waitroomcommand">
+  <h3>
+    <a href="#get.servercommand_waitroomcommand" name="get.servercommand_waitroomcommand" class="pilcrow">&#182;</a>
+    get.SERVERCOMMAND_WAITROOMCOMMAND
+  </h3>
+</div>
+
+
+<p>Listener to <code>WAITROOMCOMMAND</code> to OPEN, CLOSE and DISPATCH waitRoom</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+   <span class="k">this</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;SERVERCOMMAND_WAITROOMCOMMAND&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">data</span><span class="p">,</span> <span class="nx">from</span><span class="p">)</span> <span class="p">{</span>
+        <span class="kd">var</span> <span class="nx">room</span><span class="p">;</span>
+
+        <span class="nx">room</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">rooms</span><span class="p">[</span><span class="nx">data</span><span class="p">.</span><span class="nx">roomId</span><span class="p">]</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-38" id="section-38">&#182;</a>
+</div>
+<p>open close wait room</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">data</span><span class="p">.</span><span class="nx">command</span> <span class="o">===</span> <span class="s1">&#39;CLOSE&#39;</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">room</span><span class="p">.</span><span class="nx">closeRoom</span><span class="p">();</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">data</span><span class="p">.</span><span class="nx">command</span> <span class="o">===</span> <span class="s1">&#39;OPEN&#39;</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">room</span><span class="p">.</span><span class="nx">openRoom</span><span class="p">();</span>
+        <span class="p">}</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-39" id="section-39">&#182;</a>
+</div>
+<p>dispatch a new game</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">data</span><span class="p">.</span><span class="nx">command</span> <span class="o">===</span> <span class="s1">&#39;DISPATCH&#39;</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">room</span><span class="p">.</span><span class="nx">dispatch</span><span class="p">({</span>
+                <span class="nx">over</span><span class="o">:</span> <span class="s1">&#39;Monitor dispatched game.&#39;</span>
+            <span class="p">});</span>
+        <span class="p">}</span>
+    <span class="p">});</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
 <div class="pilwrap" id="get.gamecommand">
   <h3>
     <a href="#get.gamecommand" name="get.gamecommand" class="pilcrow">&#182;</a>
@@ -1099,7 +1162,7 @@ Important: the ID is not obfuscated.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-40" id="section-40">&#182;</a>
+  <a class="pilcrow" href="#section-43" id="section-43">&#182;</a>
 </div>
 <p>Experimental</p>
         </td>
@@ -1157,7 +1220,7 @@ Important: the ID is not obfuscated.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-43" id="section-43">&#182;</a>
+  <a class="pilcrow" href="#section-46" id="section-46">&#182;</a>
 </div>
 <p>TODO save the state to disk.</p>
         </td>
@@ -1218,7 +1281,7 @@ Important: the ID is not obfuscated.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-45" id="section-45">&#182;</a>
+  <a class="pilcrow" href="#section-48" id="section-48">&#182;</a>
 </div>
 <p>// ### say.STAGE
    // Listens on say.STAGE messages
@@ -1303,7 +1366,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-47" id="section-47">&#182;</a>
+  <a class="pilcrow" href="#section-50" id="section-50">&#182;</a>
 </div>
 <p>TODO: Obfuscate just for players.</p>
         </td>
@@ -1336,7 +1399,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-48" id="section-48">&#182;</a>
+  <a class="pilcrow" href="#section-51" id="section-51">&#182;</a>
 </div>
 <p>Send to admins in the room:</p>
         </td>
@@ -1362,7 +1425,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-49" id="section-49">&#182;</a>
+  <a class="pilcrow" href="#section-52" id="section-52">&#182;</a>
 </div>
 <p>Send to single recipient.</p>
         </td>
@@ -1460,7 +1523,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-51" id="section-51">&#182;</a>
+  <a class="pilcrow" href="#section-54" id="section-54">&#182;</a>
 </div>
 <p>Send to single recipient (could be admin too).</p>
         </td>
@@ -1553,7 +1616,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-53" id="section-53">&#182;</a>
+  <a class="pilcrow" href="#section-56" id="section-56">&#182;</a>
 </div>
 <p>Send to admins in the room:</p>
         </td>
@@ -1579,7 +1642,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-54" id="section-54">&#182;</a>
+  <a class="pilcrow" href="#section-57" id="section-57">&#182;</a>
 </div>
 <p>Send to single recipient.</p>
         </td>
@@ -1627,7 +1690,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-56" id="section-56">&#182;</a>
+  <a class="pilcrow" href="#section-59" id="section-59">&#182;</a>
 </div>
 <p>Notifies other admins that a new one monitor connected.</p>
         </td>
@@ -1645,7 +1708,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-57" id="section-57">&#182;</a>
+  <a class="pilcrow" href="#section-60" id="section-60">&#182;</a>
 </div>
 <p>Send the list of connected admins to the new admin.</p>
         </td>
@@ -1664,7 +1727,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-58" id="section-58">&#182;</a>
+  <a class="pilcrow" href="#section-61" id="section-61">&#182;</a>
 </div>
 <p>Send the list of connected players to the new admin.</p>
         </td>
