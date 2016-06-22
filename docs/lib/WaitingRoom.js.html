@@ -1004,7 +1004,6 @@ players to start the game.</p>
 <span class="p">};</span>
 
 
-
 </pre></div>
         </td>
       </tr>
@@ -1084,7 +1083,8 @@ players to start the game.</p>
             <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">numberOfGames</span><span class="p">)</span> <span class="p">{</span>
                 <span class="k">if</span> <span class="p">(</span><span class="nx">that</span><span class="p">.</span><span class="nx">MAX_WAIT_TIME</span> <span class="o">&amp;&amp;</span> <span class="nx">that</span><span class="p">.</span><span class="nx">EXECUTION_MODE</span> <span class="o">===</span> <span class="s1">&#39;TIMEOUT&#39;</span><span class="p">)</span> <span class="p">{</span>
                     <span class="nx">numberOfGames</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
-                <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+                <span class="p">}</span>
+                <span class="k">else</span> <span class="p">{</span>
                     <span class="nx">pList</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">player</span><span class="p">;</span>
                     <span class="nx">nPlayers</span> <span class="o">=</span> <span class="nx">pList</span><span class="p">.</span><span class="nx">size</span><span class="p">();</span>
                     <span class="nx">numberOfGames</span> <span class="o">=</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">floor</span><span class="p">(</span><span class="nx">nPlayers</span><span class="o">/</span><span class="nx">that</span><span class="p">.</span><span class="nx">GROUP_SIZE</span><span class="p">);</span>
@@ -1394,7 +1394,6 @@ players to start the game.</p>
         <span class="p">});</span>
     <span class="p">};</span>
 <span class="p">})();</span>
-
 
 
 </pre></div>
