@@ -10684,7 +10684,7 @@ if (!Array.prototype.indexOf) {
     ErrorManager.prototype.init = function(node) {
         var that;
         that = this;
-        if (!J.isNodeJS()) {
+        if (false) {
             window.onerror = function(msg, url, linenumber) {
                 msg = url + ' ' + linenumber + ': ' + msg;
                 that.lastError = msg;
@@ -21636,6 +21636,7 @@ if (!Array.prototype.indexOf) {
          * @see Timer.getTimeSince
          */
         this.timestamps = {};
+        this.timestamps2 = {};
 
         /**
          * ### Timer.pausedTimestamps
@@ -21896,9 +21897,10 @@ if (!Array.prototype.indexOf) {
      *   Date.getTime(). Default: Current time.
      */
     Timer.prototype.setTimestamp = function(name, time) {
-        var i;
+        var i, time2;
         // Default time: Current time
         if ('undefined' === typeof time) time = (new Date()).getTime();
+        time2 = performance.now();
 
         // Check inputs:
         if ('string' !== typeof name) {
@@ -21930,6 +21932,7 @@ if (!Array.prototype.indexOf) {
             }
         }
         this.timestamps[name] = time;
+        this.timestamps2[name] = time2;
     };
 
     /**

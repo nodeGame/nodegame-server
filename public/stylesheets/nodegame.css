@@ -384,3 +384,70 @@ table.choicetable td.choicetable-right:hover {
     background: inherit;
     cursor: default;
 }
+
+
+/* Mood */
+
+div.moodgauge {
+    margin: 0 auto;
+    text-align: center;
+}
+
+div.moodgauge span.choicetable-maintext, div#quiz div.moodgauge table.choicetable {
+    text-align: center;
+}
+
+div.moodgauge span.choicetable-maintext {
+    margin-bottom: 30px;
+    font-weight: bold;
+}
+
+div.moodgauge table.choicetable {
+    margin: 0 auto;
+    text-align: center;
+    border-spacing: 0 5px;
+    border-collapse: separate;
+}
+
+div.moodgauge table.choicetable td {
+    width: 80px !important;
+}
+
+div.moodgauge table.choicetable td.choicetable-left {
+    min-width: 260px !important;
+}
+
+div.moodgauge span.emotion {
+    font-weight: bold;
+    margin-right: 10px;
+}
+
+div.moodgauge table.choicetable td.choicetable-right {
+    width: 100px;
+}
+
+/* SVO */
+
+div.svogauge table.choicetable {
+    margin: 0 auto;
+    text-align: center;
+    border-spacing: 0 30px;
+    border-collapse: separate;
+}
+
+div.svogauge table td {
+    width: 60px !important;
+}
+
+div.svogauge span.choicetable-maintext {
+    margin-bottom: 10px;
+    font-size: 20px;
+}
+
+div.svogauge hr {
+    margin: 10px auto;
+}
+
+div.svogauge td.choicetable-left hr {
+    border-color: black;
+}
