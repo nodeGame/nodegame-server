@@ -44004,7 +44004,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # WaitingRoom
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2016 Stefano Balietti
  * MIT Licensed
  *
  * Display the number of connected / required players to start a game
@@ -44439,6 +44439,8 @@ if (!Array.prototype.indexOf) {
                     'Unfortunately, there are not enough participants in ' +
                     'your group to start the experiment.<br>';
 
+                if (that.onTimeout) that.onTimeout(msg.data);
+
                 that.disconnect(that.bodyDiv.innerHTML + reportExitCode);
             }
 
@@ -44463,7 +44465,6 @@ if (!Array.prototype.indexOf) {
             msg = msg || {};
             console.log('TIME IS UP!');
             that.stopTimer();
-            if (this.onTimeout) this.onTimeout(msg.data);
         });
 
 
