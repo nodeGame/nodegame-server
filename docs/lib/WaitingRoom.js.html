@@ -1421,27 +1421,10 @@ players to start the game.</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-51" id="section-51">&#182;</a>
 </div>
-<p>Close waitingRoom if next game would not be dispatchable.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-                    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">that</span><span class="p">.</span><span class="nx">shouldDispatchMoreGames</span><span class="p">())</span> <span class="p">{</span>
-                        <span class="nx">that</span><span class="p">.</span><span class="nx">closeRoom</span><span class="p">();</span>
-                    <span class="p">}</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-52" id="section-52">&#182;</a>
-</div>
 <p>Store reference.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
                     <span class="nx">that</span><span class="p">.</span><span class="nx">lastGameRoom</span> <span class="o">=</span> <span class="nx">gameRoom</span><span class="p">;</span>
-
                 <span class="p">}</span>
                 <span class="k">else</span> <span class="p">{</span>
                     <span class="nx">playerIds</span> <span class="o">=</span> <span class="nx">limitedPList</span><span class="p">.</span><span class="nx">id</span><span class="p">.</span><span class="nx">getAllKeys</span><span class="p">();</span>
@@ -1452,7 +1435,7 @@ players to start the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-53" id="section-53">&#182;</a>
+  <a class="pilcrow" href="#section-52" id="section-52">&#182;</a>
 </div>
 <p>Move clients into existing room.</p>
         </td>
@@ -1471,13 +1454,29 @@ players to start the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-54" id="section-54">&#182;</a>
+  <a class="pilcrow" href="#section-53" id="section-53">&#182;</a>
 </div>
 <p>Setup new group of players in the old room.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
                     <span class="nx">that</span><span class="p">.</span><span class="nx">lastGameRoom</span><span class="p">.</span><span class="nx">setupGame</span><span class="p">(</span><span class="kc">undefined</span><span class="p">,</span> <span class="kc">false</span><span class="p">,</span> <span class="nx">playerIds</span><span class="p">);</span>
                     <span class="nx">that</span><span class="p">.</span><span class="nx">lastGameRoom</span><span class="p">.</span><span class="nx">startGame</span><span class="p">(</span><span class="kc">false</span><span class="p">,</span> <span class="nx">playerIds</span><span class="p">,</span> <span class="kc">true</span><span class="p">);</span>
+                <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-54" id="section-54">&#182;</a>
+</div>
+<p>Close waitingRoom if next game would not be dispatchable.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+                <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">that</span><span class="p">.</span><span class="nx">shouldDispatchMoreGames</span><span class="p">())</span> <span class="p">{</span>
+                    <span class="nx">that</span><span class="p">.</span><span class="nx">closeRoom</span><span class="p">();</span>
                 <span class="p">}</span>
             <span class="p">}</span>
 

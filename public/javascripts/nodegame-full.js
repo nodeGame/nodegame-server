@@ -13880,62 +13880,27 @@ if (!Array.prototype.indexOf) {
     /**
      * ### GamePlot.getStepRule
      *
-     * Returns the step-rule function corresponding to a GameStage
-     *
-     * If gameStage.stage = 0, it returns a function that always returns TRUE.
+     * Returns the step-rule function for a given game-stage
      *
      * Otherwise, the order of lookup is:
      *
-     * 1. `steprule` property of the step object
-     *
-     * 2. `steprule` property of the stage object
-     *
-     * 3. default step-rule of the Stager object
+     * 1. step object
+     * 2. stage object
+     * 3. default property
+     * 4. default step-rule of the Stager object
      *
      * @param {GameStage|string} gameStage The GameStage object,
-     *  or its string representation
+     *   or its string representation
      *
-     * @return {function|null} The step-rule function. NULL on error.
+     * @return {function} The step-rule function or the default rule
+     *
+     * @see Stager.getDefaultStepRule
      */
     GamePlot.prototype.getStepRule = function(gameStage) {
-        var stageObj, stepObj, rule;
-
-        gameStage = new GameStage(gameStage);
-
-        if (gameStage.stage === 0) {
-            return function() { return false; };
-        }
-
-        stageObj = this.getStage(gameStage);
-        stepObj  = this.getStep(gameStage);
-
-        if (!stageObj || !stepObj) {
-            // TODO is this an error?
-            return null;
-        }
-
-        // return a step-defined rule
-        if ('string' === typeof stepObj.stepRule) {
-            rule = parent.stepRules[stepObj.stepRule];
-        }
-        else if ('function' === typeof stepObj.stepRule) {
-            rule = stepObj.stepRule;
-        }
-        if ('function' === typeof rule) return rule;
-
-        // return a stage-defined rule
-        if ('string' === typeof stageObj.stepRule) {
-            rule = parent.stepRules[stageObj.stepRule];
-        }
-        else if ('function' === typeof stageObj.stepRule) {
-            rule = stageObj.stepRule;
-        }
-        if ('function' === typeof rule) return rule;
-
-        // Default rule.
-        // TODO: Use first line once possible (serialization issue):
-        //return this.stager.getDefaultStepRule();
-        return this.stager.defaultStepRule;
+        var rule;
+        rule = this.getProperty(gameStage, 'stepRule');
+        if ('string' === typeof rule) rule = parent.stepRules[rule];
+        return rule || this.stager.getDefaultStepRule();
     };
 
     /**
@@ -14040,13 +14005,9 @@ if (!Array.prototype.indexOf) {
      * Looks for definitions of a property in:
      *
      * 1. the temporary cache, if game stage equals current game stage
-     *
      * 2. the game plot cache
-     *
      * 3. the step object of the given gameStage,
-     *
      * 4. the stage object of the given gameStage,
-     *
      * 5. the defaults, defined in the Stager.
      *
      * @param {GameStage|string} gameStage The GameStage object,
@@ -15872,19 +15833,19 @@ if (!Array.prototype.indexOf) {
          */
         this.nextFunctions = {};
 
-        /**
-         * #### Stager.defaultStepRule
-         *
-         * Default step-rule function
-         *
-         * This function decides whether it is possible to proceed to
-         * the next step/stage. If a step/stage object defines a
-         * `steprule` property, then that function is used instead.
-         *
-         * @see Stager.getDefaultStepRule
-         * @see GamePlot.getStepRule
-         */
-        this.setDefaultStepRule();
+//         /**
+//          * #### Stager.defaultStepRule
+//          *
+//          * Default step-rule function
+//          *
+//          * This function decides whether it is possible to proceed to
+//          * the next step/stage. If a step/stage object defines a
+//          * `steprule` property, then that function is used instead.
+//          *
+//          * @see Stager.getDefaultStepRule
+//          * @see GamePlot.getStepRule
+//          */
+//         this.setDefaultStepRule();
 
         /**
          * #### Stager.defaultGlobals
@@ -16047,7 +16008,7 @@ if (!Array.prototype.indexOf) {
         this.sequence = [];
         this.generalNextFunction = null;
         this.nextFunctions = {};
-        this.setDefaultStepRule();
+        // this.setDefaultStepRule();
         this.defaultGlobals = {};
         this.defaultProperties = {};
         this.onInit = null;
@@ -19908,37 +19869,36 @@ if (!Array.prototype.indexOf) {
      *
      * Checks if the next step can be executed
      *
-     * Checks the number of players required.
-     * If the game has been initialized and is not in GAME_OVER, then
-     * evaluates the stepRule function for the current step and returns
-     * its result.
+     * The game can step forward if:
+     *
+     *   - There is the "right" number of players.
+     *   - The game has been initialized, and is not in GAME_OVER.
+     *   - The stepRule function for current step and returns TRUE.
      *
      * @param {number} stageLevel Optional. If set, it is used instead
      *   of `Game.getStageLevel()`
      *
-     * @return {boolean} TRUE, if stepping is allowed;
-     *   FALSE, if stepping is not allowed
+     * @return {boolean} TRUE, if stepping is allowed.
      *
      * @see Game.step
      * @see Game.checkPlistSize
      * @see stepRules
      */
     Game.prototype.shouldStep = function(stageLevel) {
-        var stepRule;
+        var stepRule, curStep;
 
-        if (!this.checkPlistSize() || !this.isSteppable()) {
-            return false;
-        }
+        if (!this.checkPlistSize() || !this.isSteppable()) return false;
 
-        stepRule = this.plot.getStepRule(this.getCurrentGameStage());
+        curStep = this.getCurrentGameStage();
+        stepRule = this.plot.getStepRule(curStep);
 
         if ('function' !== typeof stepRule) {
+            debugger
             throw new TypeError('Game.shouldStep: stepRule is not a function.');
         }
 
         stageLevel = stageLevel || this.getStageLevel();
-
-        return stepRule(this.getCurrentGameStage(), stageLevel, this.pl, this);
+        return stepRule(curStep, stageLevel, this.pl, this);
     };
 
     /**
