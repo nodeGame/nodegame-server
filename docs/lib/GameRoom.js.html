@@ -79,19 +79,16 @@
         <a href="#gameroom.getclienttype">GameRoom.getClientType</a>
       </div>
       <div class="heading h2">
-        <a href="#helper%20functions.">Helper functions.</a>
+        <a href="#gameroom.setupclient">GameRoom.setupClient</a>
+      </div>
+      <div class="heading h2">
+        <a href="#helper%20methods.">Helper Methods.</a>
       </div>
       <div class="heading h2">
         <a href="#setuplogic">setupLogic</a>
       </div>
       <div class="heading h2">
         <a href="#setupclients">setupClients</a>
-      </div>
-      <div class="heading h2">
-        <a href="#gameroom.setupclient">GameRoom.setupClient</a>
-      </div>
-      <div class="heading h2">
-        <a href="#helper%20methods.">Helper Methods.</a>
       </div>
       <div class="heading h3">
         <a href="#trytogetclient">tryToGetClient</a>
@@ -1837,11 +1834,200 @@ Other values will be parsed later.</p>
         </td>
       </tr>
       <tr>
-        <td class="docs">
-<div class="pilwrap" id="helper%20functions.">
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="gameroom.setupclient">
   <h2>
-    <a href="#helper%20functions." name="helper%20functions." class="pilcrow">&#182;</a>
-    Helper functions.
+    <a href="#gameroom.setupclient" name="gameroom.setupclient" class="pilcrow">&#182;</a>
+    GameRoom.setupClient
+  </h2>
+</div>
+
+  </div>
+  <div class="body"><p>Setups a client based on its id</p>
+
+<p>Retrieves the client object, checks its client type, and run the
+appropriate setup command depending if the client it is a bot or
+a remote client.</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">clientId</span>
+      <span class="dox_type">string</span>
+      <span>The id of the client</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">mixinConf</span>
+      <span class="dox_type">object</span>
+      <span>Optional. Additional configuration options</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">cache</span>
+      <span class="dox_type">object</span>
+      <span>Optional. A cache object from where retrieving
+  client types</span>
+    </div>
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">boolean</span>
+      <span>TRUE on success</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">GameRoom.getClientType
+</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">GameRoom</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">setupClient</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">clientId</span><span class="p">,</span> <span class="nx">mixinConf</span><span class="p">,</span> <span class="nx">cache</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">clientObj</span><span class="p">,</span> <span class="nx">gameNode</span><span class="p">,</span> <span class="nx">type</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">game</span><span class="p">;</span>
+
+    <span class="nx">clientObj</span> <span class="o">=</span> <span class="nx">tryToGetClient</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="nx">clientId</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">clientObj</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;GameRoom.setupClient: client not found: &#39;</span> <span class="o">+</span>
+                                   <span class="nx">clientId</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
+        <span class="k">return</span><span class="p">;</span>
+    <span class="p">}</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-68" id="section-68">&#182;</a>
+</div>
+<p>Fake cache.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">cache</span> <span class="o">=</span> <span class="nx">cache</span> <span class="o">||</span> <span class="p">{};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-69" id="section-69">&#182;</a>
+</div>
+<p>See if the client is local or remote.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">gameNode</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">bots</span><span class="p">[</span><span class="nx">clientId</span><span class="p">];</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-70" id="section-70">&#182;</a>
+</div>
+<p>Client type.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">type</span> <span class="o">=</span> <span class="nx">clientObj</span><span class="p">.</span><span class="nx">clientType</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-71" id="section-71">&#182;</a>
+</div>
+<p>Get the client type, check cache (bots are never cached).</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">gameNode</span> <span class="o">&amp;&amp;</span> <span class="nx">cache</span><span class="p">[</span><span class="nx">type</span><span class="p">])</span> <span class="p">{</span>
+        <span class="nx">game</span> <span class="o">=</span> <span class="nx">cache</span><span class="p">[</span><span class="nx">type</span><span class="p">];</span>
+    <span class="p">}</span>
+    <span class="k">else</span> <span class="p">{</span>
+        <span class="nx">game</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">getClientType</span><span class="p">(</span><span class="nx">type</span><span class="p">,</span> <span class="nx">mixinConf</span><span class="p">);</span>
+        <span class="nx">mixinGameMetadata</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="nx">game</span><span class="p">);</span>
+        <span class="nx">cache</span><span class="p">[</span><span class="nx">type</span><span class="p">]</span> <span class="o">=</span> <span class="nx">game</span><span class="p">;</span>
+    <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-72" id="section-72">&#182;</a>
+</div>
+<p>Setup the client.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-73" id="section-73">&#182;</a>
+</div>
+<p>Local client.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">gameNode</span><span class="p">)</span> <span class="p">{</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-74" id="section-74">&#182;</a>
+</div>
+<p>Can't remoteSetup here because serializing the plot methods
+would make them lose their context (node etc.).</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="nx">gameNode</span><span class="p">.</span><span class="nx">stop</span><span class="p">();</span>
+        <span class="nx">gameNode</span><span class="p">.</span><span class="nx">setup</span><span class="p">(</span><span class="s1">&#39;nodegame&#39;</span><span class="p">,</span> <span class="nx">game</span><span class="p">);</span>
+    <span class="p">}</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-75" id="section-75">&#182;</a>
+</div>
+<p>Remote client.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">else</span> <span class="p">{</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">node</span><span class="p">.</span><span class="nx">remoteCommand</span><span class="p">(</span><span class="s1">&#39;stop&#39;</span><span class="p">,</span> <span class="nx">clientId</span><span class="p">);</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">node</span><span class="p">.</span><span class="nx">remoteSetup</span><span class="p">(</span><span class="s1">&#39;nodegame&#39;</span><span class="p">,</span> <span class="nx">clientId</span><span class="p">,</span> <span class="nx">game</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="kc">true</span><span class="p">;</span>
+<span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap" id="helper%20methods.">
+  <h2>
+    <a href="#helper%20methods." name="helper%20methods." class="pilcrow">&#182;</a>
+    Helper Methods.
   </h2>
 </div>
 
@@ -1902,7 +2088,7 @@ Other values will be parsed later.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-69" id="section-69">&#182;</a>
+  <a class="pilcrow" href="#section-78" id="section-78">&#182;</a>
 </div>
 <p>Stop logic if necessary.</p>
         </td>
@@ -1916,7 +2102,7 @@ Other values will be parsed later.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-70" id="section-70">&#182;</a>
+  <a class="pilcrow" href="#section-79" id="section-79">&#182;</a>
 </div>
 <p>Setup must be called before connect.</p>
         </td>
@@ -1930,7 +2116,7 @@ Other values will be parsed later.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-71" id="section-71">&#182;</a>
+  <a class="pilcrow" href="#section-80" id="section-80">&#182;</a>
 </div>
 <p>Connect logic to server, if not already connected. E.g., after a stop
 command it is generally still connected. Or the node object can be
@@ -2007,7 +2193,7 @@ passed in the constructor and be already connected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-73" id="section-73">&#182;</a>
+  <a class="pilcrow" href="#section-82" id="section-82">&#182;</a>
 </div>
 <p>Resolve special values of clientList.</p>
         </td>
@@ -2035,7 +2221,7 @@ passed in the constructor and be already connected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-74" id="section-74">&#182;</a>
+  <a class="pilcrow" href="#section-83" id="section-83">&#182;</a>
 </div>
 <p>Setup all given clients.</p>
         </td>
@@ -2045,211 +2231,6 @@ passed in the constructor and be already connected.</p>
         <span class="k">this</span><span class="p">.</span><span class="nx">setupClient</span><span class="p">(</span><span class="nx">clientList</span><span class="p">[</span><span class="nx">i</span><span class="p">],</span> <span class="nx">mixinConf</span><span class="p">,</span> <span class="nx">cache</span><span class="p">);</span>
     <span class="p">}</span>
 <span class="p">}</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs"><div class="dox">
-  <div class="summary">
-<div class="pilwrap" id="gameroom.setupclient">
-  <h2>
-    <a href="#gameroom.setupclient" name="gameroom.setupclient" class="pilcrow">&#182;</a>
-    GameRoom.setupClient
-  </h2>
-</div>
-
-  </div>
-  <div class="body"><p>Setups a client based on its id</p>
-
-<p>Retrieves the client object, checks its client type, and run the
-appropriate setup command depending if the client it is a bot or
-a remote client.</p>
-  </div>
-  <div class="details">
-    <div class="dox_tag_title">Params</div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name">clientId</span>
-      <span class="dox_type">string</span>
-      <span>The id of the client</span>
-    </div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name">mixinConf</span>
-      <span class="dox_type">object</span>
-      <span>Optional. Additional configuration options</span>
-    </div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name">cache</span>
-      <span class="dox_type">object</span>
-      <span>Optional. A cache object from where retrieving
-  client types</span>
-    </div>
-    <div class="dox_tag_title">Returns</div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name"></span>
-      <span class="dox_type">boolean</span>
-      <span>TRUE on success</span>
-    </div>
-    <div class="dox_tag_title">See</div>
-    <div class="dox_tag_detail">
-      <span class="dox_type">GameRoom.getClientType
-</span>
-    </div>
-  </div>
-</div>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-<span class="nx">GameRoom</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">setupClient</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">clientId</span><span class="p">,</span> <span class="nx">mixinConf</span><span class="p">,</span> <span class="nx">cache</span><span class="p">)</span> <span class="p">{</span>
-    <span class="kd">var</span> <span class="nx">clientObj</span><span class="p">,</span> <span class="nx">gameNode</span><span class="p">,</span> <span class="nx">type</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">game</span><span class="p">;</span>
-
-    <span class="nx">clientObj</span> <span class="o">=</span> <span class="nx">tryToGetClient</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="nx">clientId</span><span class="p">);</span>
-    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">clientObj</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;GameRoom.setupClient: client not found: &#39;</span> <span class="o">+</span>
-                                   <span class="nx">clientId</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
-        <span class="k">return</span><span class="p">;</span>
-    <span class="p">}</span>
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-76" id="section-76">&#182;</a>
-</div>
-<p>Fake cache.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="nx">cache</span> <span class="o">=</span> <span class="nx">cache</span> <span class="o">||</span> <span class="p">{};</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-77" id="section-77">&#182;</a>
-</div>
-<p>See if the client is local or remote.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="nx">gameNode</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">bots</span><span class="p">[</span><span class="nx">clientId</span><span class="p">];</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-78" id="section-78">&#182;</a>
-</div>
-<p>Client type.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="nx">type</span> <span class="o">=</span> <span class="nx">clientObj</span><span class="p">.</span><span class="nx">clientType</span><span class="p">;</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-79" id="section-79">&#182;</a>
-</div>
-<p>Get the client type, check cache (bots are never cached).</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">gameNode</span> <span class="o">&amp;&amp;</span> <span class="nx">cache</span><span class="p">[</span><span class="nx">type</span><span class="p">])</span> <span class="p">{</span>
-        <span class="nx">game</span> <span class="o">=</span> <span class="nx">cache</span><span class="p">[</span><span class="nx">type</span><span class="p">];</span>
-    <span class="p">}</span>
-    <span class="k">else</span> <span class="p">{</span>
-        <span class="nx">game</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">getClientType</span><span class="p">(</span><span class="nx">type</span><span class="p">,</span> <span class="nx">mixinConf</span><span class="p">);</span>
-        <span class="nx">mixinGameMetadata</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="nx">game</span><span class="p">);</span>
-        <span class="nx">cache</span><span class="p">[</span><span class="nx">type</span><span class="p">]</span> <span class="o">=</span> <span class="nx">game</span><span class="p">;</span>
-    <span class="p">}</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-80" id="section-80">&#182;</a>
-</div>
-<p>Setup the client.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-81" id="section-81">&#182;</a>
-</div>
-<p>Local client.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">if</span> <span class="p">(</span><span class="nx">gameNode</span><span class="p">)</span> <span class="p">{</span>
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-82" id="section-82">&#182;</a>
-</div>
-<p>Can't remoteSetup here because serializing the plot methods
-would make them lose their context (node etc.).</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-        <span class="nx">gameNode</span><span class="p">.</span><span class="nx">stop</span><span class="p">();</span>
-        <span class="nx">gameNode</span><span class="p">.</span><span class="nx">setup</span><span class="p">(</span><span class="s1">&#39;nodegame&#39;</span><span class="p">,</span> <span class="nx">game</span><span class="p">);</span>
-    <span class="p">}</span>
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-83" id="section-83">&#182;</a>
-</div>
-<p>Remote client.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">else</span> <span class="p">{</span>
-        <span class="k">this</span><span class="p">.</span><span class="nx">node</span><span class="p">.</span><span class="nx">remoteCommand</span><span class="p">(</span><span class="s1">&#39;stop&#39;</span><span class="p">,</span> <span class="nx">clientId</span><span class="p">);</span>
-        <span class="k">this</span><span class="p">.</span><span class="nx">node</span><span class="p">.</span><span class="nx">remoteSetup</span><span class="p">(</span><span class="s1">&#39;nodegame&#39;</span><span class="p">,</span> <span class="nx">clientId</span><span class="p">,</span> <span class="nx">game</span><span class="p">);</span>
-    <span class="p">}</span>
-
-    <span class="k">return</span> <span class="kc">true</span><span class="p">;</span>
-<span class="p">};</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap" id="helper%20methods.">
-  <h2>
-    <a href="#helper%20methods." name="helper%20methods." class="pilcrow">&#182;</a>
-    Helper Methods.
-  </h2>
-</div>
-
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
 
 
 </pre></div>
@@ -2393,7 +2374,7 @@ otherwise the whole function is not optimized.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-88" id="section-88">&#182;</a>
+  <a class="pilcrow" href="#section-87" id="section-87">&#182;</a>
 </div>
 <p>Disconnect client.</p>
         </td>

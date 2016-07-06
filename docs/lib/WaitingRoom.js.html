@@ -37,6 +37,9 @@
         <a href="#waitingroom.numberofdispatches">WaitingRoom.numberOfDispatches</a>
       </div>
       <div class="heading h3">
+        <a href="#waitingroom.lastgameroom">WaitingRoom.lastGameRoom</a>
+      </div>
+      <div class="heading h3">
         <a href="#waitingroom.group_size">WaitingRoom.GROUP_SIZE</a>
       </div>
       <div class="heading h3">
@@ -295,6 +298,28 @@ without relying on non-standard <code>__proto__</code></p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="k">this</span><span class="p">.</span><span class="nx">numberOfDispatches</span> <span class="o">=</span> <span class="nx">config</span><span class="p">.</span><span class="nx">numberOfDispatches</span> <span class="o">||</span> <span class="mi">0</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="waitingroom.lastgameroom">
+  <h3>
+    <a href="#waitingroom.lastgameroom" name="waitingroom.lastgameroom" class="pilcrow">&#182;</a>
+    WaitingRoom.lastGameRoom
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Reference to the last created game room</p>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">this</span><span class="p">.</span><span class="nx">lastGameRoom</span> <span class="o">=</span> <span class="kc">null</span><span class="p">;</span>
 
 
 </pre></div>
@@ -642,6 +667,18 @@ players to start the game.</p>
         <span class="p">}</span>
     <span class="p">}</span>
 
+
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">DISPATCH_TO_SAME_ROOM</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;boolean&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">DISPATCH_TO_SAME_ROOM</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">DISPATCH_TO_SAME_ROOM</span> <span class="o">=</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">DISPATCH_TO_SAME_ROOM</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="k">else</span> <span class="p">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span> <span class="s1">&#39;DISPATCH_TO_SAME_ROOM must &#39;</span> <span class="o">+</span>
+                                <span class="s1">&#39;be boolean or undefined. Found: &#39;</span> <span class="o">+</span>
+                                <span class="nx">settings</span><span class="p">.</span><span class="nx">DISPATCH_TO_SAME_ROOM</span> <span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">EXECUTION_MODE</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span> <span class="s1">&#39;EXECUTION_MODE must be string. Found: &#39;</span> <span class="o">+</span>
                             <span class="nx">settings</span><span class="p">.</span><span class="nx">EXECUTION_MODE</span><span class="p">);</span>
@@ -862,7 +899,7 @@ players to start the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-26" id="section-26">&#182;</a>
+  <a class="pilcrow" href="#section-27" id="section-27">&#182;</a>
 </div>
 <p>TODO: Maybe check other conditions?</p>
         </td>
@@ -933,7 +970,7 @@ players to start the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-28" id="section-28">&#182;</a>
+  <a class="pilcrow" href="#section-29" id="section-29">&#182;</a>
 </div>
 <p>Lock this function.</p>
         </td>
@@ -952,7 +989,7 @@ players to start the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-29" id="section-29">&#182;</a>
+  <a class="pilcrow" href="#section-30" id="section-30">&#182;</a>
 </div>
 <p>When done, unlock function.</p>
         </td>
@@ -967,7 +1004,7 @@ players to start the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-30" id="section-30">&#182;</a>
+  <a class="pilcrow" href="#section-31" id="section-31">&#182;</a>
 </div>
 <p>Execute suspended calls.</p>
         </td>
@@ -1076,7 +1113,7 @@ players to start the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-32" id="section-32">&#182;</a>
+  <a class="pilcrow" href="#section-33" id="section-33">&#182;</a>
 </div>
 <p>Blocks until all players have returned the ping or are kicked.</p>
         </td>
@@ -1085,8 +1122,9 @@ players to start the game.</p>
             <span class="kd">var</span> <span class="nx">treatmentName</span><span class="p">;</span>
             <span class="kd">var</span> <span class="nx">shuffledPList</span><span class="p">;</span>
             <span class="kd">var</span> <span class="nx">limitedPList</span><span class="p">;</span>
-            <span class="kd">var</span> <span class="nx">i</span><span class="p">,</span> <span class="nx">gameRoom</span><span class="p">,</span> <span class="nx">code</span><span class="p">,</span> <span class="nx">gameNumber</span><span class="p">;</span>
-            <span class="kd">var</span> <span class="nx">pList</span><span class="p">,</span> <span class="nx">nPlayers</span><span class="p">;</span>
+            <span class="kd">var</span> <span class="nx">i</span><span class="p">,</span> <span class="nx">len</span><span class="p">;</span>
+            <span class="kd">var</span> <span class="nx">gameRoom</span><span class="p">,</span> <span class="nx">code</span><span class="p">,</span> <span class="nx">gameNumber</span><span class="p">;</span>
+            <span class="kd">var</span> <span class="nx">pList</span><span class="p">,</span> <span class="nx">nPlayers</span><span class="p">,</span> <span class="nx">playerIds</span><span class="p">;</span>
 
 
 </pre></div>
@@ -1095,7 +1133,7 @@ players to start the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-33" id="section-33">&#182;</a>
+  <a class="pilcrow" href="#section-34" id="section-34">&#182;</a>
 </div>
 <p>If nothing is specified, try to dispatch maximal amount of games.</p>
         </td>
@@ -1121,7 +1159,7 @@ players to start the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-34" id="section-34">&#182;</a>
+  <a class="pilcrow" href="#section-35" id="section-35">&#182;</a>
 </div>
 <p>Warn if more participants than seats available.</p>
         </td>
@@ -1139,7 +1177,7 @@ players to start the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-35" id="section-35">&#182;</a>
+  <a class="pilcrow" href="#section-36" id="section-36">&#182;</a>
 </div>
 <p>Attempt to dispatch <code>numberOfGames</code>.</p>
         </td>
@@ -1156,7 +1194,7 @@ players to start the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-36" id="section-36">&#182;</a>
+  <a class="pilcrow" href="#section-37" id="section-37">&#182;</a>
 </div>
 <p>Cannot dispatch a game with too few participants.</p>
         </td>
@@ -1174,7 +1212,7 @@ players to start the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-37" id="section-37">&#182;</a>
+  <a class="pilcrow" href="#section-38" id="section-38">&#182;</a>
 </div>
 <p>Check if we are still allowed to dispatch games.</p>
         </td>
@@ -1196,7 +1234,7 @@ players to start the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-38" id="section-38">&#182;</a>
+  <a class="pilcrow" href="#section-39" id="section-39">&#182;</a>
 </div>
 <p>Shuffle player list.</p>
         </td>
@@ -1210,7 +1248,7 @@ players to start the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-39" id="section-39">&#182;</a>
+  <a class="pilcrow" href="#section-40" id="section-40">&#182;</a>
 </div>
 <p>Sort according to priority.</p>
         </td>
@@ -1224,7 +1262,7 @@ players to start the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-40" id="section-40">&#182;</a>
+  <a class="pilcrow" href="#section-41" id="section-41">&#182;</a>
 </div>
 <p>Inform players.</p>
         </td>
@@ -1237,7 +1275,7 @@ players to start the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-41" id="section-41">&#182;</a>
+  <a class="pilcrow" href="#section-42" id="section-42">&#182;</a>
 </div>
 <p>Players that may join the game.</p>
         </td>
@@ -1252,7 +1290,7 @@ players to start the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-42" id="section-42">&#182;</a>
+  <a class="pilcrow" href="#section-43" id="section-43">&#182;</a>
 </div>
 <p>Clear body.</p>
         </td>
@@ -1267,7 +1305,7 @@ players to start the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-43" id="section-43">&#182;</a>
+  <a class="pilcrow" href="#section-44" id="section-44">&#182;</a>
 </div>
 <p>Clear timeout for players.</p>
         </td>
@@ -1281,7 +1319,7 @@ players to start the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-44" id="section-44">&#182;</a>
+  <a class="pilcrow" href="#section-45" id="section-45">&#182;</a>
 </div>
 <p>Players that may not join.</p>
         </td>
@@ -1294,7 +1332,7 @@ players to start the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-45" id="section-45">&#182;</a>
+  <a class="pilcrow" href="#section-46" id="section-46">&#182;</a>
 </div>
 <p>Increase timesNotSelected of player.</p>
         </td>
@@ -1319,26 +1357,14 @@ players to start the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-46" id="section-46">&#182;</a>
+  <a class="pilcrow" href="#section-47" id="section-47">&#182;</a>
 </div>
 <p>Choose players.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
                 <span class="nx">limitedPList</span> <span class="o">=</span> <span class="nx">shuffledPList</span><span class="p">.</span><span class="nx">limit</span><span class="p">(</span><span class="nx">that</span><span class="p">.</span><span class="nx">GROUP_SIZE</span><span class="p">);</span>
 
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-47" id="section-47">&#182;</a>
-</div>
-<p>Decide treatment.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-                <span class="nx">treatmentName</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">decideTreatment</span><span class="p">(</span><span class="nx">that</span><span class="p">.</span><span class="nx">CHOSEN_TREATMENT</span><span class="p">);</span>
+                <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">that</span><span class="p">.</span><span class="nx">lastGameRoom</span> <span class="o">||</span> <span class="o">!</span><span class="nx">that</span><span class="p">.</span><span class="nx">DISPATCH_TO_SAME_ROOM</span><span class="p">)</span> <span class="p">{</span>
 
 
 </pre></div>
@@ -1349,13 +1375,10 @@ players to start the game.</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-48" id="section-48">&#182;</a>
 </div>
-<p>Create new game room.</p>
+<p>Decide treatment.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-                <span class="nx">gameRoom</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">createGameRoom</span><span class="p">({</span>
-                    <span class="nx">clients</span><span class="o">:</span> <span class="nx">limitedPList</span><span class="p">,</span>
-                    <span class="nx">treatmentName</span><span class="o">:</span> <span class="nx">treatmentName</span>
-                <span class="p">});</span>
+                    <span class="nx">treatmentName</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">decideTreatment</span><span class="p">(</span><span class="nx">that</span><span class="p">.</span><span class="nx">CHOSEN_TREATMENT</span><span class="p">);</span>
 
 
 </pre></div>
@@ -1366,11 +1389,13 @@ players to start the game.</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-49" id="section-49">&#182;</a>
 </div>
-<p>Setup and start game.</p>
+<p>Create new game room.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-                <span class="nx">gameRoom</span><span class="p">.</span><span class="nx">setupGame</span><span class="p">();</span>
-                <span class="nx">gameRoom</span><span class="p">.</span><span class="nx">startGame</span><span class="p">(</span><span class="kc">true</span><span class="p">,</span> <span class="p">[]);</span>
+                    <span class="nx">gameRoom</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">createGameRoom</span><span class="p">({</span>
+                        <span class="nx">clients</span><span class="o">:</span> <span class="nx">limitedPList</span><span class="p">,</span>
+                        <span class="nx">treatmentName</span><span class="o">:</span> <span class="nx">treatmentName</span>
+                    <span class="p">});</span>
 
 
 </pre></div>
@@ -1381,14 +1406,11 @@ players to start the game.</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-50" id="section-50">&#182;</a>
 </div>
-<p>Close waitingRoom if next game would not be dispatchable.</p>
+<p>Setup and start game.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-                <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">that</span><span class="p">.</span><span class="nx">shouldDispatchMoreGames</span><span class="p">())</span> <span class="p">{</span>
-                    <span class="nx">that</span><span class="p">.</span><span class="nx">closeRoom</span><span class="p">();</span>
-                <span class="p">}</span>
-
-            <span class="p">}</span>
+                    <span class="nx">gameRoom</span><span class="p">.</span><span class="nx">setupGame</span><span class="p">();</span>
+                    <span class="nx">gameRoom</span><span class="p">.</span><span class="nx">startGame</span><span class="p">(</span><span class="kc">true</span><span class="p">,</span> <span class="p">[]);</span>
 
 
 </pre></div>
@@ -1398,6 +1420,75 @@ players to start the game.</p>
         <td class="docs">
 <div class="pilwrap">
   <a class="pilcrow" href="#section-51" id="section-51">&#182;</a>
+</div>
+<p>Close waitingRoom if next game would not be dispatchable.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+                    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">that</span><span class="p">.</span><span class="nx">shouldDispatchMoreGames</span><span class="p">())</span> <span class="p">{</span>
+                        <span class="nx">that</span><span class="p">.</span><span class="nx">closeRoom</span><span class="p">();</span>
+                    <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-52" id="section-52">&#182;</a>
+</div>
+<p>Store reference.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+                    <span class="nx">that</span><span class="p">.</span><span class="nx">lastGameRoom</span> <span class="o">=</span> <span class="nx">gameRoom</span><span class="p">;</span>
+
+                <span class="p">}</span>
+                <span class="k">else</span> <span class="p">{</span>
+                    <span class="nx">playerIds</span> <span class="o">=</span> <span class="nx">limitedPList</span><span class="p">.</span><span class="nx">id</span><span class="p">.</span><span class="nx">getAllKeys</span><span class="p">();</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-53" id="section-53">&#182;</a>
+</div>
+<p>Move clients into existing room.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+                    <span class="nx">i</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="nx">len</span> <span class="o">=</span> <span class="nx">playerIds</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span>
+                    <span class="k">for</span> <span class="p">(</span> <span class="p">;</span> <span class="o">++</span><span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">len</span> <span class="p">;</span> <span class="p">)</span> <span class="p">{</span>
+                        <span class="nx">that</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">moveClient</span><span class="p">(</span><span class="nx">playerIds</span><span class="p">[</span><span class="nx">i</span><span class="p">],</span>
+                                                <span class="nx">that</span><span class="p">.</span><span class="nx">lastGameRoom</span><span class="p">.</span><span class="nx">name</span><span class="p">,</span>
+                                                <span class="nx">that</span><span class="p">.</span><span class="nx">name</span><span class="p">);</span>
+                    <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-54" id="section-54">&#182;</a>
+</div>
+<p>Setup new group of players in the old room.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+                    <span class="nx">that</span><span class="p">.</span><span class="nx">lastGameRoom</span><span class="p">.</span><span class="nx">setupGame</span><span class="p">(</span><span class="kc">undefined</span><span class="p">,</span> <span class="kc">false</span><span class="p">,</span> <span class="nx">playerIds</span><span class="p">);</span>
+                    <span class="nx">that</span><span class="p">.</span><span class="nx">lastGameRoom</span><span class="p">.</span><span class="nx">startGame</span><span class="p">(</span><span class="kc">false</span><span class="p">,</span> <span class="nx">playerIds</span><span class="p">,</span> <span class="kc">true</span><span class="p">);</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-55" id="section-55">&#182;</a>
 </div>
 <p>All dispatch attempts have been completed.</p>
         </td>
@@ -1410,7 +1501,7 @@ players to start the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-52" id="section-52">&#182;</a>
+  <a class="pilcrow" href="#section-56" id="section-56">&#182;</a>
 </div>
 <p>Tell players still waiting, that they have not been selected.</p>
         </td>
@@ -1494,7 +1585,7 @@ players to start the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-54" id="section-54">&#182;</a>
+  <a class="pilcrow" href="#section-58" id="section-58">&#182;</a>
 </div>
 <p>TODO: do we need to check if we have enough players?</p>
         </td>
@@ -1515,7 +1606,7 @@ players to start the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-55" id="section-55">&#182;</a>
+  <a class="pilcrow" href="#section-59" id="section-59">&#182;</a>
 </div>
 <p>If a timeout function for the server was specified,
 executes. If the return value is FALSE, do not continue
@@ -1534,7 +1625,7 @@ with checkout and informing the player about NotEnoughPlayers.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-56" id="section-56">&#182;</a>
+  <a class="pilcrow" href="#section-60" id="section-60">&#182;</a>
 </div>
 <p>If an access code is defined, checkout remotely.</p>
         </td>
@@ -1660,7 +1751,7 @@ with checkout and informing the player about NotEnoughPlayers.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-59" id="section-59">&#182;</a>
+  <a class="pilcrow" href="#section-63" id="section-63">&#182;</a>
 </div>
 <p>Return treatment (was a string already).</p>
         </td>
