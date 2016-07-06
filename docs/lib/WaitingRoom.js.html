@@ -692,9 +692,11 @@ players to start the game.</p>
     <span class="p">}</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">CHOSEN_TREATMENT</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">CHOSEN_TREATMENT</span><span class="p">)</span> <span class="p">{</span>
-            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span> <span class="s1">&#39;CHOSEN_TREATMENT must be string or &#39;</span> <span class="o">+</span>
-                <span class="s1">&#39;undefined&#39;</span><span class="p">);</span>
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;function&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">CHOSEN_TREATMENT</span> <span class="o">&amp;&amp;</span>
+            <span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">CHOSEN_TREATMENT</span><span class="p">)</span> <span class="p">{</span>
+
+            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span> <span class="s1">&#39;CHOSEN_TREATMENT must be string, &#39;</span> <span class="o">+</span>
+                <span class="s1">&#39;function or undefined. Found: &#39;</span> <span class="o">+</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">CHOSEN_TREATMENT</span><span class="p">);</span>
         <span class="p">}</span>
         <span class="k">this</span><span class="p">.</span><span class="nx">CHOSEN_TREATMENT</span> <span class="o">=</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">CHOSEN_TREATMENT</span><span class="p">;</span>
     <span class="p">}</span>
@@ -1545,30 +1547,61 @@ also.</p>
     <div class="dox_tag_detail">
       <span class="dox_tag_name">t</span>
       <span class="dox_type">mixed</span>
-      <span>String or object to use to decide on a treatment</span>
+      <span>String, object, function or undefined
+  used to decide a treatment</span>
     </div>
     <div class="dox_tag_title">Returns</div>
     <div class="dox_tag_detail">
       <span class="dox_tag_name"></span>
-      <span class="dox_type">object</span>
-      <span>Decided treatment</span>
+      <span class="dox_type">string</span>
+      <span>Chosen treatment</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">ServerChannel.treatments
+</span>
     </div>
   </div>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">WaitingRoom</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">decideTreatment</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">t</span><span class="p">)</span> <span class="p">{</span>
-    <span class="kd">var</span> <span class="nx">treatments</span><span class="p">,</span> <span class="nx">tLen</span><span class="p">;</span>
-
-    <span class="nx">treatments</span> <span class="o">=</span> <span class="nb">Object</span><span class="p">.</span><span class="nx">keys</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">gameInfo</span><span class="p">.</span><span class="nx">settings</span><span class="p">);</span>
+    <span class="kd">var</span> <span class="nx">treatments</span><span class="p">,</span> <span class="nx">tLen</span><span class="p">,</span> <span class="nx">chosenT</span><span class="p">;</span>
+    <span class="nx">treatments</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">treatmentNames</span><span class="p">;</span>
     <span class="nx">tLen</span> <span class="o">=</span> <span class="nx">treatments</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="nx">t</span> <span class="o">===</span> <span class="s1">&#39;treatment_rotate&#39;</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">return</span> <span class="nx">treatments</span><span class="p">[(</span><span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">autoRoomNo</span><span class="p">)</span> <span class="o">%</span> <span class="nx">tLen</span><span class="p">];</span>
     <span class="p">}</span>
-    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">t</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">return</span> <span class="nx">treatments</span><span class="p">[</span><span class="nx">J</span><span class="p">.</span><span class="nx">randomInt</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="nx">tLen</span><span class="o">-</span><span class="mi">1</span><span class="p">)];</span>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">t</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="nx">treatments</span><span class="p">[</span><span class="nx">J</span><span class="p">.</span><span class="nx">randomInt</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="nx">tLen</span><span class="o">-</span><span class="mi">1</span><span class="p">)];</span>
     <span class="p">}</span>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;function&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">t</span><span class="p">)</span> <span class="p">{</span>
+
+        <span class="nx">chosenT</span> <span class="o">=</span> <span class="nx">t</span><span class="p">(</span><span class="nx">treatments</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">autoRoomNo</span><span class="p">);</span>
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">chosenT</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;WaitingRoom.decideTreatment: callback must &#39;</span> <span class="o">+</span>
+                                <span class="s1">&#39;return string. Found: &#39;</span> <span class="o">+</span> <span class="nx">chosenT</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">hasGameTreatment</span><span class="p">(</span><span class="nx">chosenT</span><span class="p">))</span>  <span class="p">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;WaitingRoom.decideTreatment: callback &#39;</span> <span class="o">+</span>
+                                <span class="s1">&#39;returned unknown treatment: &#39;</span> <span class="o">+</span> <span class="nx">chosenT</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="nx">chosenT</span><span class="p">;</span>
+    <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-56" id="section-56">&#182;</a>
+</div>
+<p>Return treatment (was a string already).</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
     <span class="k">return</span> <span class="nx">t</span><span class="p">;</span>
 <span class="p">};</span>
 
