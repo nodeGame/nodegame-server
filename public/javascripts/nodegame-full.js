@@ -24595,13 +24595,22 @@ if (!Array.prototype.indexOf) {
      *
      * @param {string} channel Optional. The channel to connect to
      * @param {object} socketOptions Optional. A configuration object for
-     *   the socket connect method.
+     *   the socket connect method. If channel is omitted, then socketOptions
+     *   is the first parameter.
      *
      * @emit SOCKET_CONNECT
      * @emit PLAYER_CREATED
      * @emit NODEGAME_READY
      */
-    NGC.prototype.connect = function(channel, socketOptions) {
+    NGC.prototype.connect = function() {
+        var channel, socketOptions;
+        if (arguments.length >= 2) {
+            channel = arguments[0];
+            socketOptions = arguments[1];
+        }
+        else if (arguments.length === 1) {
+            socketOptions = arguments[0];
+        }
         // Browser adjustements.
         if ('undefined' !== typeof window) {
             // If no channel is defined use the pathname, and assume
