@@ -1924,7 +1924,7 @@ generation and clientObject decoration.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">fs</span><span class="p">.</span><span class="nx">existsSync</span><span class="p">(</span><span class="nx">directory</span> <span class="o">+</span> <span class="s1">&#39;auth/&#39;</span><span class="p">))</span> <span class="p">{</span>
-        <span class="nx">logger</span><span class="p">.</span><span class="nx">warn</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadRequirementsDir: channel &#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span>
+        <span class="nx">logger</span><span class="p">.</span><span class="nx">warn</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadAuthDir: channel &#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span>
                     <span class="s1">&#39;: no auth directory.&#39;</span><span class="p">);</span>
 
 
@@ -2379,7 +2379,7 @@ If logicPath is not string RequirementsRoom constructor throws an error.</p>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">GameLoader</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">loadRequirementsDir</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">directory</span><span class="p">,</span> <span class="nx">channel</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">conf</span><span class="p">,</span> <span class="nx">reqRoom</span><span class="p">;</span>
-    <span class="nx">conf</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">buildRequirementsConf</span><span class="p">(</span><span class="nx">directory</span><span class="p">,</span> <span class="nx">channel</span><span class="p">);</span>
+    <span class="nx">conf</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">buildRequirementsConf</span><span class="p">(</span><span class="nx">directory</span><span class="p">,</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">gameName</span><span class="p">);</span>
 
 </pre></div>
         </td>
@@ -2417,14 +2417,16 @@ Else remove getChannelSandbox also (maybe).</p>
         <td class="code highlight"><div class="highlight"><pre>
 
 <span class="kd">function</span> <span class="nx">RequirementsSandbox</span><span class="p">(</span><span class="nx">gameName</span><span class="p">,</span> <span class="nx">requirementsObj</span><span class="p">)</span> <span class="p">{</span>
-    <span class="kd">var</span> <span class="nx">errBegin</span> <span class="o">=</span> <span class="s1">&#39;GameLoader.loadRequirementsDir: &#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;: &#39;</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">errBegin</span><span class="p">;</span>
+    <span class="nx">errBegin</span> <span class="o">=</span> <span class="s1">&#39;GameLoader.loadRequirementsDir: &#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;: &#39;</span><span class="p">;</span>
     <span class="k">this</span><span class="p">.</span><span class="nx">add</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">cb</span><span class="p">,</span> <span class="nx">params</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;function&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">cb</span><span class="p">)</span> <span class="p">{</span>
-            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="nx">errBegin</span> <span class="o">+</span> <span class="s1">&#39;requirement must be function.&#39;</span><span class="p">);</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="nx">errBegin</span> <span class="o">+</span> <span class="s1">&#39;requirement must be function. &#39;</span> <span class="o">+</span>
+                               <span class="s1">&#39;Found: &#39;</span> <span class="o">+</span> <span class="nx">cb</span><span class="p">);</span>
         <span class="p">}</span>
         <span class="k">if</span> <span class="p">(</span><span class="nx">params</span> <span class="o">&amp;&amp;</span> <span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">params</span><span class="p">)</span> <span class="p">{</span>
             <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="nx">errBegin</span> <span class="o">+</span> <span class="s1">&#39;params must be object or &#39;</span> <span class="o">+</span>
-                                <span class="s1">&#39;undefined: &#39;</span><span class="p">,</span> <span class="nx">params</span><span class="p">);</span>
+                                <span class="s1">&#39;undefined. Found: &#39;</span><span class="p">,</span> <span class="nx">params</span><span class="p">);</span>
         <span class="p">}</span>
         <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">requirementsObj</span><span class="p">.</span><span class="nx">requirements</span><span class="p">)</span> <span class="nx">requirementsObj</span><span class="p">.</span><span class="nx">requirements</span> <span class="o">=</span> <span class="p">[];</span>
         <span class="nx">requirementsObj</span><span class="p">.</span><span class="nx">requirements</span><span class="p">.</span><span class="nx">push</span><span class="p">({</span> <span class="nx">cb</span><span class="o">:</span> <span class="nx">cb</span><span class="p">,</span> <span class="nx">params</span><span class="o">:</span> <span class="nx">params</span> <span class="p">});</span>
@@ -2432,21 +2434,21 @@ Else remove getChannelSandbox also (maybe).</p>
     <span class="k">this</span><span class="p">.</span><span class="nx">onSuccess</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">cb</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;function&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">cb</span><span class="p">)</span> <span class="p">{</span>
             <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="nx">errBegin</span> <span class="o">+</span> <span class="s1">&#39;onSuccess callback must be &#39;</span> <span class="o">+</span>
-                                <span class="s1">&#39;function.&#39;</span><span class="p">);</span>
+                                <span class="s1">&#39;function. Found: &#39;</span> <span class="o">+</span> <span class="nx">cb</span><span class="p">);</span>
         <span class="p">}</span>
         <span class="nx">requirementsObj</span><span class="p">.</span><span class="nx">onSuccess</span> <span class="o">=</span> <span class="nx">cb</span><span class="p">;</span>
     <span class="p">};</span>
     <span class="k">this</span><span class="p">.</span><span class="nx">onFailure</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">cb</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;function&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">cb</span><span class="p">)</span> <span class="p">{</span>
             <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="nx">errBegin</span> <span class="o">+</span> <span class="s1">&#39;onFailure callback must be &#39;</span> <span class="o">+</span>
-                                <span class="s1">&#39;function.&#39;</span><span class="p">);</span>
+                                <span class="s1">&#39;function. Found: &#39;</span> <span class="o">+</span> <span class="nx">cb</span><span class="p">);</span>
         <span class="p">}</span>
         <span class="nx">requirementsObj</span><span class="p">.</span><span class="nx">onFailure</span> <span class="o">=</span> <span class="nx">cb</span><span class="p">;</span>
     <span class="p">};</span>
     <span class="k">this</span><span class="p">.</span><span class="nx">setMaxExecutionTime</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">maxTime</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;number&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">maxTime</span><span class="p">)</span> <span class="p">{</span>
             <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="nx">errBegin</span> <span class="o">+</span> <span class="s1">&#39;max execution time must be &#39;</span> <span class="o">+</span>
-                                <span class="s1">&#39;number:&#39;</span> <span class="o">+</span> <span class="nx">maxTime</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
+                                <span class="s1">&#39;number. Found: &#39;</span> <span class="o">+</span> <span class="nx">maxTime</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
         <span class="p">}</span>
         <span class="nx">requirementsObj</span><span class="p">.</span><span class="nx">maxExecTime</span> <span class="o">=</span> <span class="nx">maxTime</span><span class="p">;</span>
     <span class="p">};</span>

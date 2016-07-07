@@ -41595,7 +41595,7 @@ if (!Array.prototype.indexOf) {
             // Configure all requirements.
             that.init(conf);
             // Start a checking immediately if requested.
-            if (conf.doChecking) that.checkRequirements();
+            if (conf.doChecking !== false) that.checkRequirements();
 
             return conf;
         });
