@@ -47,7 +47,7 @@ moves them in a separate game room, and starts the game.</p>
   <div class="details">
     <div class="dox_tag_title">See</div>
     <div class="dox_tag_detail">
-      <span class="dox_type">GameRoom (nodegame-server)
+      <span class="dox_type">GameRoom
 </span>
     </div>
   </div>
@@ -276,7 +276,6 @@ moves them in a separate game room, and starts the game.</p>
         <span class="p">}</span>
     <span class="p">}</span>
 
-
     <span class="kd">function</span> <span class="nx">monitorReconnects</span><span class="p">(</span><span class="nx">p</span><span class="p">)</span> <span class="p">{</span>
         <span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">ml</span><span class="p">.</span><span class="nx">add</span><span class="p">(</span><span class="nx">p</span><span class="p">);</span>
     <span class="p">}</span>
@@ -345,7 +344,7 @@ moves them in a separate game room, and starts the game.</p>
 
     <span class="nx">stager</span><span class="p">.</span><span class="nx">setDefaultProperty</span><span class="p">(</span><span class="s1">&#39;publishLevel&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
 
-    <span class="nx">stager</span><span class="p">.</span><span class="nx">next</span><span class="p">(</span><span class="s1">&#39;waiting&#39;</span><span class="p">);</span>
+    <span class="nx">stager</span><span class="p">.</span><span class="nx">stage</span><span class="p">(</span><span class="s1">&#39;waiting&#39;</span><span class="p">);</span>
 
     <span class="k">return</span> <span class="p">{</span>
         <span class="nx">nodename</span><span class="o">:</span> <span class="s1">&#39;standard_wroom&#39;</span><span class="p">,</span>
