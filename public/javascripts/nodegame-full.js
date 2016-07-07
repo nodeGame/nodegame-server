@@ -15833,19 +15833,19 @@ if (!Array.prototype.indexOf) {
          */
         this.nextFunctions = {};
 
-//         /**
-//          * #### Stager.defaultStepRule
-//          *
-//          * Default step-rule function
-//          *
-//          * This function decides whether it is possible to proceed to
-//          * the next step/stage. If a step/stage object defines a
-//          * `steprule` property, then that function is used instead.
-//          *
-//          * @see Stager.getDefaultStepRule
-//          * @see GamePlot.getStepRule
-//          */
-//         this.setDefaultStepRule();
+        /**
+         * #### Stager.defaultStepRule
+         *
+         * Default step-rule function
+         *
+         * This function decides whether it is possible to proceed to
+         * the next step/stage. If a step/stage object defines a
+         * `steprule` property, then that function is used instead.
+         *
+         * @see Stager.getDefaultStepRule
+         * @see GamePlot.getStepRule
+         */
+        this.setDefaultStepRule();
 
         /**
          * #### Stager.defaultGlobals
@@ -16008,7 +16008,7 @@ if (!Array.prototype.indexOf) {
         this.sequence = [];
         this.generalNextFunction = null;
         this.nextFunctions = {};
-        // this.setDefaultStepRule();
+        this.setDefaultStepRule();
         this.defaultGlobals = {};
         this.defaultProperties = {};
         this.onInit = null;
