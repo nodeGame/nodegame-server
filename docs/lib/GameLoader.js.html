@@ -1758,7 +1758,7 @@ level of the specified directory.</p>
     <span class="p">}</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="nx">conf</span><span class="p">.</span><span class="nx">logicPath</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">conf</span><span class="p">.</span><span class="nx">logicPath</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">conf</span><span class="p">.</span><span class="nx">logicPath</span><span class="p">)</span> <span class="p">{</span>
             <span class="k">this</span><span class="p">.</span><span class="nx">doErr</span><span class="p">(</span><span class="s1">&#39;GameLoader.buildWaitRoomConf: configuration &#39;</span> <span class="o">+</span>
                        <span class="s1">&#39;loaded, but &quot;logicPath&quot; must be undefined or string&#39;</span><span class="p">,</span> <span class="p">{</span>
                            <span class="nx">game</span><span class="o">:</span> <span class="nx">gameName</span><span class="p">,</span>
@@ -2423,10 +2423,6 @@ Else remove getChannelSandbox also (maybe).</p>
         <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;function&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">cb</span><span class="p">)</span> <span class="p">{</span>
             <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="nx">errBegin</span> <span class="o">+</span> <span class="s1">&#39;requirement must be function. &#39;</span> <span class="o">+</span>
                                <span class="s1">&#39;Found: &#39;</span> <span class="o">+</span> <span class="nx">cb</span><span class="p">);</span>
-        <span class="p">}</span>
-        <span class="k">if</span> <span class="p">(</span><span class="nx">params</span> <span class="o">&amp;&amp;</span> <span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">params</span><span class="p">)</span> <span class="p">{</span>
-            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="nx">errBegin</span> <span class="o">+</span> <span class="s1">&#39;params must be object or &#39;</span> <span class="o">+</span>
-                                <span class="s1">&#39;undefined. Found: &#39;</span><span class="p">,</span> <span class="nx">params</span><span class="p">);</span>
         <span class="p">}</span>
         <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">requirementsObj</span><span class="p">.</span><span class="nx">requirements</span><span class="p">)</span> <span class="nx">requirementsObj</span><span class="p">.</span><span class="nx">requirements</span> <span class="o">=</span> <span class="p">[];</span>
         <span class="nx">requirementsObj</span><span class="p">.</span><span class="nx">requirements</span><span class="p">.</span><span class="nx">push</span><span class="p">({</span> <span class="nx">cb</span><span class="o">:</span> <span class="nx">cb</span><span class="p">,</span> <span class="nx">params</span><span class="o">:</span> <span class="nx">params</span> <span class="p">});</span>

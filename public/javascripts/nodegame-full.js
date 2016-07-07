@@ -3533,6 +3533,38 @@ if (!Array.prototype.indexOf) {
     })(null);
 
 
+    /**
+     * ### DOM.cookieSupport
+     *
+     * Tests for cookie support
+     *
+     * @return {boolean|null} The type of support for cookies. Values:
+     *
+     *   - null: no cookies
+     *   - false: only session cookies
+     *   - true: session cookies and persistent cookies (although
+     *       the browser might clear them on exit)
+     *
+     * Kudos: http://stackoverflow.com/questions/2167310/
+     *        how-to-show-a-message-only-if-cookies-are-disabled-in-browser
+     */
+    DOM.cookieSupport = function() {
+        var c, persist;
+        persist = true;
+        do {
+            c = 'gCStest=' + Math.floor(Math.random()*100000000);
+            document.cookie = persist ? c +
+                ';expires=Tue, 01-Jan-2030 00:00:00 GMT' : c;
+
+            if (document.cookie.indexOf(c) !== -1) {
+                document.cookie= c + ';expires=Sat, 01-Jan-2000 00:00:00 GMT';
+                return persist;
+            }
+        } while (!(persist = !persist));
+
+        return null;
+    };
+
     // ## Helper methods
 
     /**
@@ -41358,10 +41390,10 @@ if (!Array.prototype.indexOf) {
                 resultCb(this, cbName, i);
             }
             catch(e) {
+                this.hasFailed = true;
                 errMsg = extractErrorMsg(e);
                 this.updateStillChecking(-1);
-
-                errors.push('An exception occurred in requirement n.' +
+                errors.push('An error occurred in requirement n.' +
                             cbName + ': ' + errMsg);
             }
         }
@@ -41605,7 +41637,7 @@ if (!Array.prototype.indexOf) {
         node.deregisterSetup('requirements');
     };
 
-    // ## Helper methods
+    // ## Helper methods.
 
     function resultCb(that, name, i) {
         var req, update, res;
