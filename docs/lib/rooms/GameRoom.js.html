@@ -1,0 +1,2391 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>GameRoom.js</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <link rel="stylesheet" media="all" href="../../doc-style.css" />
+  <script src="../../doc-filelist.js"></script>
+  <script>
+    var relativeDir = "../../", thisFile = "lib/rooms/GameRoom.js", defaultSidebar = true;
+  </script>
+  <script src="../../doc-script.js"></script>
+</head>
+<body>
+  <div id="sidebar_wrapper">
+    <div id="sidebar_switch">
+      <span class="tree">Files</span>
+      <span class="headings">Headings</span>
+    </div>
+    <div id="tree"></div>
+    <div id="headings">
+      <div class="heading h1">
+        <a href="#game%20room">Game Room</a>
+      </div>
+      <div class="heading h2">
+        <a href="#global%20scope">Global scope</a>
+      </div>
+      <div class="heading h2">
+        <a href="#gameroom%20constructor">GameRoom constructor</a>
+      </div>
+      <div class="heading h3">
+        <a href="#gameroom.treatmentname">GameRoom.treatmentName</a>
+      </div>
+      <div class="heading h3">
+        <a href="#gameroom.gamelevel">GameRoom.gameLevel</a>
+      </div>
+      <div class="heading h3">
+        <a href="#gameroom.gamepaths">GameRoom.gamePaths</a>
+      </div>
+      <div class="heading h3">
+        <a href="#gameroom.gametreatment">GameRoom.gameTreatment</a>
+      </div>
+      <div class="heading h3">
+        <a href="#gameroom.countdown">GameRoom.countdown</a>
+      </div>
+      <div class="heading h2">
+        <a href="#gameroom.wrongnumofplayers">GameRoom.wrongNumOfPlayers</a>
+      </div>
+      <div class="heading h2">
+        <a href="#gameroom.correctnumofplayersagain">GameRoom.correctNumOfPlayersAgain</a>
+      </div>
+      <div class="heading h2">
+        <a href="#gameroom%20static%20functions">GameRoom static functions</a>
+      </div>
+      <div class="heading h3">
+        <a href="#gameroom.checkparams">GameRoom.checkParams</a>
+      </div>
+      <div class="heading h2">
+        <a href="#gameroom%20methods">GameRoom methods</a>
+      </div>
+      <div class="heading h3">
+        <a href="#gameroom.sendremotecommand">GameRoom.sendRemoteCommand</a>
+      </div>
+      <div class="heading h3">
+        <a href="#gameroom.setupgame">GameRoom.setupGame</a>
+      </div>
+      <div class="heading h3">
+        <a href="#gameroom.startgame">GameRoom.startGame</a>
+      </div>
+      <div class="heading h3">
+        <a href="#gameroom.pausegame">GameRoom.pauseGame</a>
+      </div>
+      <div class="heading h3">
+        <a href="#gameroom.resumegame">GameRoom.resumeGame</a>
+      </div>
+      <div class="heading h3">
+        <a href="#gameroom.stopgame">GameRoom.stopGame</a>
+      </div>
+      <div class="heading h3">
+        <a href="#gameroom.getclienttype">GameRoom.getClientType</a>
+      </div>
+      <div class="heading h2">
+        <a href="#gameroom.setupclient">GameRoom.setupClient</a>
+      </div>
+      <div class="heading h2">
+        <a href="#helper%20methods.">Helper Methods.</a>
+      </div>
+      <div class="heading h2">
+        <a href="#setuplogic">setupLogic</a>
+      </div>
+      <div class="heading h2">
+        <a href="#setupclients">setupClients</a>
+      </div>
+      <div class="heading h3">
+        <a href="#trytogetclient">tryToGetClient</a>
+      </div>
+      <div class="heading h3">
+        <a href="#mixingamemetadata">mixinGameMetadata</a>
+      </div>
+      <div class="heading h3">
+        <a href="#disposeclient">disposeClient</a>
+      </div>
+    </div>
+  </div>
+  <div id="sidebar-toggle"></div>
+  <div id="container"><div class="background highlight"></div>
+<table cellpadding="0" cellspacing="0">
+  <tbody>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="game%20room">
+  <h1>
+    <a href="#game%20room" name="game%20room" class="pilcrow">&#182;</a>
+    Game Room
+  </h1>
+</div>
+
+
+<p>Copyright(c) 2016 Stefano Balietti
+MIT Licensed</p>
+  </div>
+  <div class="body"><p>Game room representation</p>
+
+<p><a href='http://www.nodegame.org'>http://www.nodegame.org</a></p>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre><span class="s2">&quot;use strict&quot;</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap" id="global%20scope">
+  <h2>
+    <a href="#global%20scope" name="global%20scope" class="pilcrow">&#182;</a>
+    Global scope
+  </h2>
+</div>
+
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">module</span><span class="p">.</span><span class="nx">exports</span> <span class="o">=</span> <span class="nx">GameRoom</span><span class="p">;</span>
+
+<span class="kd">var</span> <span class="nx">ngc</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;nodegame-client&#39;</span><span class="p">);</span>
+<span class="kd">var</span> <span class="nx">Stager</span> <span class="o">=</span> <span class="nx">ngc</span><span class="p">.</span><span class="nx">Stager</span><span class="p">;</span>
+<span class="kd">var</span> <span class="nx">GameStage</span> <span class="o">=</span> <span class="nx">ngc</span><span class="p">.</span><span class="nx">GameStage</span><span class="p">;</span>
+<span class="kd">var</span> <span class="nx">stepRules</span> <span class="o">=</span> <span class="nx">ngc</span><span class="p">.</span><span class="nx">stepRules</span><span class="p">;</span>
+<span class="kd">var</span> <span class="nx">publishLevels</span> <span class="o">=</span> <span class="nx">ngc</span><span class="p">.</span><span class="nx">constants</span><span class="p">.</span><span class="nx">publishLevels</span><span class="p">;</span>
+
+<span class="kd">var</span> <span class="nx">J</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;JSUS&#39;</span><span class="p">).</span><span class="nx">JSUS</span><span class="p">;</span>
+
+<span class="kd">var</span> <span class="nx">Room</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;./Room&#39;</span><span class="p">);</span>
+
+<span class="nx">GameRoom</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">__proto__</span> <span class="o">=</span> <span class="nx">Room</span><span class="p">.</span><span class="nx">prototype</span><span class="p">;</span>
+<span class="nx">GameRoom</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">constructor</span> <span class="o">=</span> <span class="nx">GameRoom</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="gameroom%20constructor">
+  <h2>
+    <a href="#gameroom%20constructor" name="gameroom%20constructor" class="pilcrow">&#182;</a>
+    GameRoom constructor
+  </h2>
+</div>
+
+  </div>
+  <div class="body"><p>Creates a new game room</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">config</span>
+      <span class="dox_type">object</span>
+      <span>Configuration options</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">Room
+</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="kd">function</span> <span class="nx">GameRoom</span><span class="p">(</span><span class="nx">config</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">that</span><span class="p">,</span> <span class="nx">node</span><span class="p">;</span>
+
+    <span class="nx">Room</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="s1">&#39;Game&#39;</span><span class="p">,</span> <span class="nx">config</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">logicPath</span><span class="p">)</span> <span class="k">this</span><span class="p">.</span><span class="nx">logicPath</span>  <span class="o">=</span> <span class="s1">&#39;./rooms/game.room&#39;</span><span class="p">;</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="nx">config</span><span class="p">.</span><span class="nx">treatmentName</span> <span class="o">&amp;&amp;</span> <span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">config</span><span class="p">.</span><span class="nx">treatmentName</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;GameRoom: config.treatmentName must be &#39;</span> <span class="o">+</span>
+                            <span class="s1">&#39;undefined or string.&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="nx">config</span><span class="p">.</span><span class="nx">runtimeConf</span> <span class="o">&amp;&amp;</span> <span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">config</span><span class="p">.</span><span class="nx">runtimeConf</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;GameRoom: config.runtimeConf must be object.&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="gameroom.treatmentname">
+  <h3>
+    <a href="#gameroom.treatmentname" name="gameroom.treatmentname" class="pilcrow">&#182;</a>
+    GameRoom.treatmentName
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>The name of the game played in this room, or 'standard' if not defined.</p>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">this</span><span class="p">.</span><span class="nx">treatmentName</span> <span class="o">=</span> <span class="nx">config</span><span class="p">.</span><span class="nx">treatmentName</span> <span class="o">||</span> <span class="s1">&#39;standard&#39;</span><span class="p">;</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">settings</span><span class="p">[</span><span class="k">this</span><span class="p">.</span><span class="nx">treatmentName</span><span class="p">])</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameRoom: game &#39;</span> <span class="o">+</span> <span class="k">this</span><span class="p">.</span><span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39; treatment &#39;</span> <span class="o">+</span>
+                        <span class="s1">&#39;not found: &#39;</span> <span class="o">+</span> <span class="k">this</span><span class="p">.</span><span class="nx">treatmentName</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="gameroom.gamelevel">
+  <h3>
+    <a href="#gameroom.gamelevel" name="gameroom.gamelevel" class="pilcrow">&#182;</a>
+    GameRoom.gameLevel
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Game paths for the room</p>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">this</span><span class="p">.</span><span class="nx">gameLevel</span> <span class="o">=</span> <span class="nx">config</span><span class="p">.</span><span class="nx">gameLevel</span><span class="p">;</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">gameLevel</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">levels</span><span class="p">[</span><span class="k">this</span><span class="p">.</span><span class="nx">gameLevel</span><span class="p">])</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameRoom: game &#39;</span> <span class="o">+</span> <span class="k">this</span><span class="p">.</span><span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39; game level &#39;</span> <span class="o">+</span>
+                        <span class="s1">&#39;not found: &#39;</span> <span class="o">+</span> <span class="k">this</span><span class="p">.</span><span class="nx">gameLevel</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="gameroom.gamepaths">
+  <h3>
+    <a href="#gameroom.gamepaths" name="gameroom.gamepaths" class="pilcrow">&#182;</a>
+    GameRoom.gamePaths
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Game paths for the room</p>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">this</span><span class="p">.</span><span class="nx">clientTypes</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">gameLevel</span> <span class="o">?</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">levels</span><span class="p">[</span><span class="k">this</span><span class="p">.</span><span class="nx">gameLevel</span><span class="p">].</span><span class="nx">clientTypes</span> <span class="o">:</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">clientTypes</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="gameroom.gametreatment">
+  <h3>
+    <a href="#gameroom.gametreatment" name="gameroom.gametreatment" class="pilcrow">&#182;</a>
+    GameRoom.gameTreatment
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Actual settings for current game based on treatment and runtime conf</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">GameRoom.runtimeConf</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">GameRoom.setupGame
+</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">this</span><span class="p">.</span><span class="nx">gameTreatment</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">settings</span><span class="p">[</span><span class="k">this</span><span class="p">.</span><span class="nx">treatmentName</span><span class="p">];</span>
+    <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">runtimeConf</span><span class="p">)</span> <span class="nx">J</span><span class="p">.</span><span class="nx">mixin</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">gameTreatment</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">runtimeConf</span><span class="p">);</span>
+
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="gameroom.countdown">
+  <h3>
+    <a href="#gameroom.countdown" name="gameroom.countdown" class="pilcrow">&#182;</a>
+    GameRoom.countdown
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Timeout handled by</p>
+  </div>
+</div>
+
+<p>Configure disconnect/reconnect policy.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">that</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
+    <span class="nx">node</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">node</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="gameroom.wrongnumofplayers">
+  <h2>
+    <a href="#gameroom.wrongnumofplayers" name="gameroom.wrongnumofplayers" class="pilcrow">&#182;</a>
+    GameRoom.wrongNumOfPlayers
+  </h2>
+</div>
+
+  </div>
+  <div class="body"><p>Default listener for <code>onWronPlayerNum</code> on logics</p>
+
+<p>This listener is added as default stager property <code>onWrongPlayerNum</code>
+to all <code>logic</code> client types by method <code>GameRoom.getClientType</code>,
+if no other is already defined.</p>
+
+<p>The listener is invoked when there is a "wrong" number of players.
+The number of players is "wrong" if it has been defined any
+min|max|exactPlayers property in current game step.</p>
+
+<p>Default behavior:</p>
+
+<p>1 - Immediately pauses all connected players. A message is displayed
+    with information.
+2 - A timer is started for the value specified in settings.WAIT_TIME,
+    or 30 seconds otherwise.
+3 - If timer expires, game is resumed and, if a custom callback is
+    is defined, it is executed.</p>
+
+<p>The listener is then invoked with <code>node.game</code> context.</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">type</span>
+      <span class="dox_type">string</span>
+      <span>The type of "wrong" number: 'min', 'max', 'exact'</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">customCb</span>
+      <span class="dox_type">function</span>
+      <span>Optional. A callback to be executed in
+    in case the timer expires.</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">player</span>
+      <span class="dox_type">object</span>
+      <span>Optional. The player object that triggered
+    the listener by either connecting or disconnecting (if available)</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">GameRoom.correctNumOfPlayersAgain</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">GameRoom.getClientType
+</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">this</span><span class="p">.</span><span class="nx">wrongNumOfPlayers</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">type</span><span class="p">,</span> <span class="nx">customCb</span><span class="p">,</span> <span class="nx">player</span><span class="p">)</span> <span class="p">{</span>
+        <span class="kd">var</span> <span class="nx">node</span><span class="p">;</span>
+        <span class="kd">var</span> <span class="nx">waitTime</span><span class="p">,</span> <span class="nx">disconnectStr</span><span class="p">;</span>
+        <span class="nx">node</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">node</span><span class="p">;</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="nx">type</span> <span class="o">===</span> <span class="s1">&#39;min&#39;</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">node</span><span class="p">.</span><span class="nx">warn</span><span class="p">(</span><span class="s1">&#39;warning: not enough players!!&#39;</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">type</span> <span class="o">===</span> <span class="s1">&#39;max&#39;</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">node</span><span class="p">.</span><span class="nx">warn</span><span class="p">(</span><span class="s1">&#39;warning: too many players!!&#39;</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="k">else</span> <span class="p">{</span>
+            <span class="nx">node</span><span class="p">.</span><span class="nx">warn</span><span class="p">(</span><span class="s1">&#39;warning: wrong number of players!!&#39;</span><span class="p">);</span>
+        <span class="p">}</span>
+
+        <span class="nx">waitTime</span> <span class="o">=</span> <span class="s1">&#39;number&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="k">this</span><span class="p">.</span><span class="nx">settings</span><span class="p">.</span><span class="nx">WAIT_TIME</span> <span class="o">?</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">settings</span><span class="p">.</span><span class="nx">WAIT_TIME</span> <span class="o">:</span> <span class="mi">30</span><span class="p">;</span>
+
+        <span class="nx">disconnectStr</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">settings</span><span class="p">.</span><span class="nx">WAIT_TIME_TEXT</span> <span class="o">||</span>
+            <span class="s1">&#39;One or more players disconnected. If they &#39;</span> <span class="o">+</span>
+            <span class="s1">&#39;do not reconnect within &#39;</span> <span class="o">+</span> <span class="nx">waitTime</span>  <span class="o">+</span>
+            <span class="s1">&#39; seconds the game will be terminated.&#39;</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-10" id="section-10">&#182;</a>
+</div>
+<p>Pause connected players.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="nx">node</span><span class="p">.</span><span class="nx">remoteCommand</span><span class="p">(</span><span class="s1">&#39;pause&#39;</span><span class="p">,</span> <span class="s1">&#39;ROOM&#39;</span><span class="p">,</span> <span class="nx">disconnectStr</span><span class="p">);</span>
+        <span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">pause</span><span class="p">();</span>
+
+        <span class="nx">that</span><span class="p">.</span><span class="nx">countdown</span> <span class="o">=</span> <span class="nx">setTimeout</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+            <span class="nx">node</span><span class="p">.</span><span class="nx">warn</span><span class="p">(</span><span class="s1">&#39;Disconnection Countdown fired: &#39;</span> <span class="o">+</span> <span class="nx">node</span><span class="p">.</span><span class="nx">nodename</span><span class="p">);</span>
+            <span class="nx">node</span><span class="p">.</span><span class="nx">remoteCommand</span><span class="p">(</span><span class="s1">&#39;resume&#39;</span><span class="p">,</span> <span class="s1">&#39;ROOM&#39;</span><span class="p">);</span>
+            <span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">resume</span><span class="p">();</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nx">customCb</span><span class="p">)</span> <span class="nx">customCb</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">,</span> <span class="nx">player</span><span class="p">);</span>
+
+        <span class="p">},</span> <span class="nx">waitTime</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">);</span>
+    <span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="gameroom.correctnumofplayersagain">
+  <h2>
+    <a href="#gameroom.correctnumofplayersagain" name="gameroom.correctnumofplayersagain" class="pilcrow">&#182;</a>
+    GameRoom.correctNumOfPlayersAgain
+  </h2>
+</div>
+
+  </div>
+  <div class="body"><p>Listener invoked at any time the correct number of players is recovered</p>
+
+<p>The number of players is "wrong" if it has been defined any
+min|max|exactPlayers property in current game step.</p>
+
+<p>Default behavior:</p>
+
+<p>1 - Immediately resumes all connected players that have been
+    paused by callback <code>wrongNumOfPlayers</code>
+2 - The timer defined by <code>wrongNumOfPlayers</code> is cleared
+3 - If any custom callback was defined, it gets executed</p>
+
+<p>This listener is added as default stager property <code>onCorrectPlayerNum</code>
+to all <code>logic</code> client types by method <code>GameRoom.getClientType</code>,
+if no othe is already defined.</p>
+
+<p>The listener is then invoked with <code>node.game</code> context.</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">type</span>
+      <span class="dox_type">string</span>
+      <span>The type of "wrong" number: 'min', 'max', 'exact'</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">customCb</span>
+      <span class="dox_type">function</span>
+      <span>Optional. A callback to be executed in
+    in case the timer expires.</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">player</span>
+      <span class="dox_type">object</span>
+      <span>Optional. The player object that triggered
+    the listener by either connecting or disconnecting (if available)</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">GameRoom.wrongNumOfPlayers</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">GameRoom.getClientType
+</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">this</span><span class="p">.</span><span class="nx">correctNumOfPlayersAgain</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">type</span><span class="p">,</span> <span class="nx">customCb</span><span class="p">,</span> <span class="nx">player</span><span class="p">)</span> <span class="p">{</span>
+        <span class="kd">var</span> <span class="nx">node</span><span class="p">;</span>
+        <span class="nx">node</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">node</span><span class="p">;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">type</span> <span class="o">===</span> <span class="s1">&#39;min&#39;</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">node</span><span class="p">.</span><span class="nx">warn</span><span class="p">(</span><span class="s1">&#39;warning: enough players again!!&#39;</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">type</span> <span class="o">===</span> <span class="s1">&#39;max&#39;</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">node</span><span class="p">.</span><span class="nx">warn</span><span class="p">(</span><span class="s1">&#39;warning: number of players below maximum again!!&#39;</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="k">else</span> <span class="p">{</span>
+            <span class="nx">node</span><span class="p">.</span><span class="nx">warn</span><span class="p">(</span><span class="s1">&#39;warning: correct number of players again!!&#39;</span><span class="p">);</span>
+        <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-12" id="section-12">&#182;</a>
+</div>
+<p>Delete countdown to terminate the game.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="nx">clearTimeout</span><span class="p">(</span><span class="nx">that</span><span class="p">.</span><span class="nx">countdown</span><span class="p">);</span>
+        <span class="nx">that</span><span class="p">.</span><span class="nx">countdown</span> <span class="o">=</span> <span class="kc">null</span><span class="p">;</span>
+        <span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">resume</span><span class="p">();</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-13" id="section-13">&#182;</a>
+</div>
+<p>Resume other players.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="nx">setTimeout</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+            <span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">pl</span><span class="p">.</span><span class="nx">each</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">p</span><span class="p">)</span> <span class="p">{</span>
+                <span class="k">if</span> <span class="p">(</span><span class="nx">player</span><span class="p">.</span><span class="nx">id</span> <span class="o">!==</span> <span class="nx">p</span><span class="p">.</span><span class="nx">id</span><span class="p">)</span> <span class="p">{</span>
+                    <span class="nx">node</span><span class="p">.</span><span class="nx">remoteCommand</span><span class="p">(</span><span class="s1">&#39;resume&#39;</span><span class="p">,</span> <span class="nx">p</span><span class="p">.</span><span class="nx">id</span><span class="p">);</span>
+                <span class="p">}</span>
+            <span class="p">});</span>
+        <span class="p">},</span> <span class="mi">100</span><span class="p">);</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">customCb</span><span class="p">)</span> <span class="nx">customCb</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">,</span> <span class="nx">player</span><span class="p">);</span>
+    <span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-14" id="section-14">&#182;</a>
+</div>
+<p>Register player disconnection, and wait for him...</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">node</span><span class="p">.</span><span class="nx">on</span><span class="p">.</span><span class="nx">pdisconnect</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">p</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Disconnection in Stage: &#39;</span> <span class="o">+</span> <span class="nx">node</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">stage</span><span class="p">);</span>
+    <span class="p">});</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-15" id="section-15">&#182;</a>
+</div>
+<p>Player reconnecting.
+This function is called first, and it invokes any
+min/max/exact handler accordingly.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">node</span><span class="p">.</span><span class="nx">on</span><span class="p">.</span><span class="nx">preconnect</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">p</span><span class="p">)</span> <span class="p">{</span>
+        <span class="kd">var</span> <span class="nx">code</span><span class="p">,</span> <span class="nx">curStage</span><span class="p">,</span> <span class="nx">reconCb</span><span class="p">,</span> <span class="nx">res</span><span class="p">;</span>
+        <span class="kd">var</span> <span class="nx">reconOptions</span><span class="p">;</span>
+        <span class="kd">var</span> <span class="nx">milliseconds</span><span class="p">,</span> <span class="nx">resetTime</span><span class="p">;</span>
+
+        <span class="nx">node</span><span class="p">.</span><span class="nx">warn</span><span class="p">(</span><span class="s1">&#39;Oh...somebody reconnected!&#39;</span><span class="p">,</span> <span class="nx">p</span><span class="p">);</span>
+        <span class="nx">code</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">registry</span><span class="p">.</span><span class="nx">getClient</span><span class="p">(</span><span class="nx">p</span><span class="p">.</span><span class="nx">id</span><span class="p">);</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-16" id="section-16">&#182;</a>
+</div>
+<p>Only within stage reconnections are allowed.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="nx">curStage</span> <span class="o">=</span> <span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">getCurrentGameStage</span><span class="p">();</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">that</span><span class="p">.</span><span class="nx">allowLateReconnections</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nx">GameStage</span><span class="p">.</span><span class="nx">compare</span><span class="p">(</span><span class="nx">code</span><span class="p">.</span><span class="nx">stage</span><span class="p">,</span> <span class="nx">curStage</span><span class="p">))</span> <span class="p">{</span>
+                <span class="nx">node</span><span class="p">.</span><span class="nx">err</span><span class="p">(</span><span class="s1">&#39;player reconnected from another stage. &#39;</span> <span class="o">+</span>
+                         <span class="s1">&#39;Not allowed. Player: &#39;</span> <span class="o">+</span> <span class="nx">p</span><span class="p">.</span><span class="nx">id</span><span class="p">);</span>
+                <span class="nx">disposeClient</span><span class="p">(</span><span class="nx">node</span><span class="p">,</span> <span class="nx">p</span><span class="p">);</span>
+                <span class="k">return</span><span class="p">;</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-17" id="section-17">&#182;</a>
+</div>
+<p>Setup client.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="nx">that</span><span class="p">.</span><span class="nx">setupClient</span><span class="p">(</span><span class="nx">p</span><span class="p">.</span><span class="nx">id</span><span class="p">);</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="nx">code</span><span class="p">.</span><span class="nx">lang</span><span class="p">.</span><span class="nx">name</span> <span class="o">!==</span> <span class="s1">&#39;English&#39;</span><span class="p">)</span> <span class="p">{</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-18" id="section-18">&#182;</a>
+</div>
+<p>If lang is different from Eng, remote setup it.
+TRUE: sets also the URI prefix.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+            <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;CODE LANG SENT&#39;</span><span class="p">);</span>
+            <span class="nx">node</span><span class="p">.</span><span class="nx">remoteSetup</span><span class="p">(</span><span class="s1">&#39;lang&#39;</span><span class="p">,</span> <span class="nx">p</span><span class="p">.</span><span class="nx">id</span><span class="p">,</span> <span class="p">[</span><span class="nx">code</span><span class="p">.</span><span class="nx">lang</span><span class="p">,</span> <span class="kc">true</span><span class="p">]);</span>
+        <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-19" id="section-19">&#182;</a>
+</div>
+<p>Start the game on the reconnecting client.
+Need to give step: false, we just init it.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="nx">node</span><span class="p">.</span><span class="nx">remoteCommand</span><span class="p">(</span><span class="s1">&#39;start&#39;</span><span class="p">,</span> <span class="nx">p</span><span class="p">.</span><span class="nx">id</span><span class="p">,</span> <span class="p">{</span> <span class="nx">step</span><span class="o">:</span> <span class="kc">false</span> <span class="p">});</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-20" id="section-20">&#182;</a>
+</div>
+<p>Create the reconnection options object.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="nx">reconOptions</span> <span class="o">=</span> <span class="p">{};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-21" id="section-21">&#182;</a>
+</div>
+<p>Sets the timer on reconnecting client if milliseconds is found.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="nx">milliseconds</span> <span class="o">=</span> <span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">timer</span><span class="p">.</span><span class="nx">milliseconds</span><span class="p">;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;number&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">milliseconds</span><span class="p">)</span> <span class="p">{</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-22" id="section-22">&#182;</a>
+</div>
+<p>Time left to play in stage.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+            <span class="nx">resetTime</span> <span class="o">=</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">max</span><span class="p">(</span><span class="nx">milliseconds</span> <span class="o">-</span>
+                                 <span class="nx">node</span><span class="p">.</span><span class="nx">timer</span><span class="p">.</span><span class="nx">getTimeSince</span><span class="p">(</span><span class="s1">&#39;step&#39;</span><span class="p">,</span> <span class="kc">true</span><span class="p">),</span> <span class="mi">0</span><span class="p">);</span>
+
+            <span class="nx">reconOptions</span><span class="p">.</span><span class="nx">plot</span> <span class="o">=</span> <span class="p">{</span> <span class="nx">timer</span><span class="o">:</span> <span class="nx">resetTime</span> <span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-23" id="section-23">&#182;</a>
+</div>
+<p>node.remoteSetup('plot', p.id, { timer: resetTime }, 'tmpCache');</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="p">}</span>
+
+        <span class="nx">reconCb</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">plot</span><span class="p">.</span><span class="nx">getProperty</span><span class="p">(</span><span class="nx">curStage</span><span class="p">,</span> <span class="s1">&#39;reconnect&#39;</span><span class="p">);</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="nx">reconCb</span><span class="p">)</span> <span class="p">{</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-24" id="section-24">&#182;</a>
+</div>
+<p>Res contains the reconnect options for the step,
+or false to abort reconnection.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+            <span class="nx">res</span> <span class="o">=</span> <span class="nx">reconCb</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="nx">code</span><span class="p">,</span> <span class="nx">reconOptions</span><span class="p">);</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nx">res</span> <span class="o">===</span> <span class="kc">false</span><span class="p">)</span> <span class="p">{</span>
+                <span class="nx">node</span><span class="p">.</span><span class="nx">warn</span><span class="p">(</span><span class="s1">&#39;Reconnect Cb returned false&#39;</span><span class="p">);</span>
+                <span class="nx">disposeClient</span><span class="p">(</span><span class="nx">node</span><span class="p">,</span> <span class="nx">p</span><span class="p">);</span>
+                <span class="k">return</span><span class="p">;</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-25" id="section-25">&#182;</a>
+</div>
+<p>Add player to player list.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">pl</span><span class="p">.</span><span class="nx">add</span><span class="p">(</span><span class="nx">p</span><span class="p">);</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-26" id="section-26">&#182;</a>
+</div>
+<p>Start the step on reconnecting client.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="nx">reconOptions</span><span class="p">.</span><span class="nx">targetStep</span> <span class="o">=</span> <span class="nx">curStage</span><span class="p">;</span>
+        <span class="nx">node</span><span class="p">.</span><span class="nx">remoteCommand</span><span class="p">(</span><span class="s1">&#39;goto_step&#39;</span><span class="p">,</span> <span class="nx">p</span><span class="p">.</span><span class="nx">id</span><span class="p">,</span> <span class="nx">reconOptions</span><span class="p">);</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-27" id="section-27">&#182;</a>
+</div>
+<p>See if we have enough players now.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="nx">res</span> <span class="o">=</span> <span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">plChangeHandler</span><span class="p">(</span><span class="nx">p</span><span class="p">);</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-28" id="section-28">&#182;</a>
+</div>
+<p>If we are still missing more players pause reconnecting player.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">res</span><span class="p">)</span> <span class="nx">node</span><span class="p">.</span><span class="nx">remoteCommand</span><span class="p">(</span><span class="s1">&#39;pause&#39;</span><span class="p">,</span> <span class="nx">p</span><span class="p">.</span><span class="nx">id</span><span class="p">);</span>
+
+    <span class="p">});</span>
+
+    <span class="k">this</span><span class="p">.</span><span class="nx">registerRoom</span><span class="p">();</span>
+<span class="p">}</span>
+
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap" id="gameroom%20static%20functions">
+  <h2>
+    <a href="#gameroom%20static%20functions" name="gameroom%20static%20functions" class="pilcrow">&#182;</a>
+    GameRoom static functions
+  </h2>
+</div>
+
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="gameroom.checkparams">
+  <h3>
+    <a href="#gameroom.checkparams" name="gameroom.checkparams" class="pilcrow">&#182;</a>
+    GameRoom.checkParams
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Type-check the parameters given to setup/start/pause/resume/stopGame</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">doLogic</span>
+      <span class="dox_type">boolean</span>
+      <span>If TRUE, sends a command to the logic as well</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">clientList</span>
+      <span class="dox_type">array</span>
+      <span class="dox_type">string</span>
+      <span>List of client IDs to which to send the
+  command, or one of the following strings:
+  'all' (all clients), 'players' (all players), 'admins' (all admins).</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">force</span>
+      <span class="dox_type">boolean</span>
+      <span>If TRUE, skip the check</span>
+    </div>
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">null</span>
+      <span class="dox_type">string</span>
+      <span>NULL for valid parameters, error string for bad ones.</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">GameRoom</span><span class="p">.</span><span class="nx">checkParams</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">doLogic</span><span class="p">,</span> <span class="nx">clientList</span><span class="p">,</span> <span class="nx">force</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;boolean&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">doLogic</span> <span class="o">&amp;&amp;</span> <span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">doLogic</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="s1">&#39;doLogic must be boolean or undefined&#39;</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">J</span><span class="p">.</span><span class="nx">isArray</span><span class="p">(</span><span class="nx">clientList</span><span class="p">)</span> <span class="o">&amp;&amp;</span>
+        <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">clientList</span> <span class="o">||</span>
+         <span class="p">(</span><span class="nx">clientList</span> <span class="o">!==</span> <span class="s1">&#39;all&#39;</span> <span class="o">&amp;&amp;</span>
+          <span class="nx">clientList</span> <span class="o">!==</span> <span class="s1">&#39;players&#39;</span> <span class="o">&amp;&amp;</span>
+          <span class="nx">clientList</span> <span class="o">!==</span> <span class="s1">&#39;admins&#39;</span><span class="p">))</span> <span class="o">&amp;&amp;</span>
+        <span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">clientList</span><span class="p">)</span> <span class="p">{</span>
+
+        <span class="k">return</span> <span class="s2">&quot;clientList must be array, &#39;all&#39;, &#39;players&#39;, &#39;admins&#39; &quot;</span> <span class="o">+</span>
+            <span class="s1">&#39;or undefined&#39;</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;boolean&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">force</span> <span class="o">&amp;&amp;</span> <span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">force</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="s1">&#39;force must be boolean or undefined&#39;</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="kc">null</span><span class="p">;</span>
+<span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap" id="gameroom%20methods">
+  <h2>
+    <a href="#gameroom%20methods" name="gameroom%20methods" class="pilcrow">&#182;</a>
+    GameRoom methods
+  </h2>
+</div>
+
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="gameroom.sendremotecommand">
+  <h3>
+    <a href="#gameroom.sendremotecommand" name="gameroom.sendremotecommand" class="pilcrow">&#182;</a>
+    GameRoom.sendRemoteCommand
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Utility method for sending a remote command to given recipients</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">command</span>
+      <span class="dox_type">string</span>
+      <span>The command to send</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">clientList</span>
+      <span class="dox_type">array</span>
+      <span class="dox_type">string</span>
+      <span>List of client IDs to which to send the
+  command, or one of the following strings:
+  'all' (all clients), 'players' (all players), 'admins' (all admins)</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">GameRoom</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">sendRemoteCommand</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">command</span><span class="p">,</span> <span class="nx">clientList</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">node</span><span class="p">;</span>
+    <span class="nx">node</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">node</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-33" id="section-33">&#182;</a>
+</div>
+<p>TODO: Don't send to logic!</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">J</span><span class="p">.</span><span class="nx">isArray</span><span class="p">(</span><span class="nx">clientList</span><span class="p">))</span> <span class="p">{</span>
+        <span class="nx">node</span><span class="p">.</span><span class="nx">remoteCommand</span><span class="p">(</span><span class="nx">command</span><span class="p">,</span> <span class="nx">clientList</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="k">else</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">clientList</span> <span class="o">===</span> <span class="s1">&#39;all&#39;</span> <span class="o">||</span> <span class="nx">clientList</span> <span class="o">===</span> <span class="s1">&#39;players&#39;</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">each</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">p</span><span class="p">)</span> <span class="p">{</span>
+                <span class="nx">node</span><span class="p">.</span><span class="nx">remoteCommand</span><span class="p">(</span><span class="nx">command</span><span class="p">,</span> <span class="nx">p</span><span class="p">.</span><span class="nx">id</span><span class="p">);</span>
+            <span class="p">});</span>
+        <span class="p">}</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="nx">clientList</span> <span class="o">===</span> <span class="s1">&#39;all&#39;</span> <span class="o">||</span> <span class="nx">clientList</span> <span class="o">===</span> <span class="s1">&#39;admins&#39;</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">admin</span><span class="p">.</span><span class="nx">each</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">p</span><span class="p">)</span> <span class="p">{</span>
+                <span class="nx">node</span><span class="p">.</span><span class="nx">remoteCommand</span><span class="p">(</span><span class="nx">command</span><span class="p">,</span> <span class="nx">p</span><span class="p">.</span><span class="nx">id</span><span class="p">);</span>
+            <span class="p">});</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="gameroom.setupgame">
+  <h3>
+    <a href="#gameroom.setupgame" name="gameroom.setupgame" class="pilcrow">&#182;</a>
+    GameRoom.setupGame
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Setups logic and clients in the room</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">mixinConf</span>
+      <span class="dox_type">object</span>
+      <span>Optional. Additional options to pass to the node
+  instance of the room. Overrides the returned game configuration from the
+  require statement.</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">doLogic</span>
+      <span class="dox_type">boolean</span>
+      <span>Optional. If TRUE, sets up the logic as well.
+  Default: TRUE.</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">clientList</span>
+      <span class="dox_type">array</span>
+      <span class="dox_type">string</span>
+      <span>Optional. List of client IDs to set up,
+  or one of the following strings:
+  'all' (all clients), 'players' (all players), 'admins' (all admins).
+  Default: 'players'.</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">force</span>
+      <span class="dox_type">boolean</span>
+      <span>Optional. If TRUE, skip the check. Default: FALSE.</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">GameRoom.runtimeConf
+</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">GameRoom</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">setupGame</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">mixinConf</span><span class="p">,</span> <span class="nx">doLogic</span><span class="p">,</span> <span class="nx">clientList</span><span class="p">,</span> <span class="nx">force</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">rc</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-35" id="section-35">&#182;</a>
+</div>
+<p>Check parameters.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">rc</span> <span class="o">=</span> <span class="nx">GameRoom</span><span class="p">.</span><span class="nx">checkParams</span><span class="p">(</span><span class="nx">doLogic</span><span class="p">,</span> <span class="nx">clientList</span><span class="p">,</span> <span class="nx">force</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">rc</span> <span class="o">!==</span> <span class="kc">null</span><span class="p">)</span> <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;GameRoom.setupGame: &#39;</span> <span class="o">+</span> <span class="nx">rc</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="nx">mixinConf</span> <span class="o">&amp;&amp;</span> <span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">mixinConf</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;GameRoom.setupGame: mixinConf must be object or &#39;</span> <span class="o">+</span>
+                            <span class="s1">&#39;undefined.&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">clientList</span> <span class="o">&amp;&amp;</span>
+        <span class="o">!</span><span class="nx">J</span><span class="p">.</span><span class="nx">isArray</span><span class="p">(</span><span class="nx">clientList</span><span class="p">)</span> <span class="o">&amp;&amp;</span>
+        <span class="nx">clientList</span> <span class="o">!==</span> <span class="s1">&#39;all&#39;</span> <span class="o">&amp;&amp;</span>
+        <span class="nx">clientList</span> <span class="o">!==</span> <span class="s1">&#39;players&#39;</span> <span class="o">&amp;&amp;</span>
+        <span class="nx">clientList</span> <span class="o">!==</span> <span class="s1">&#39;admins&#39;</span><span class="p">)</span> <span class="p">{</span>
+
+        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s2">&quot;GameRoom.setupGame: clientList must be &quot;</span> <span class="o">+</span>
+                            <span class="s2">&quot;undefined, array, or one of &#39;all&#39;, &#39;players&#39; &quot;</span> <span class="o">+</span>
+                            <span class="s2">&quot; or &#39;admins&#39;&quot;</span><span class="p">);</span>
+    <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-36" id="section-36">&#182;</a>
+</div>
+<p>Apply defaults.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">doLogic</span><span class="p">)</span>    <span class="nx">doLogic</span>    <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">clientList</span><span class="p">)</span> <span class="nx">clientList</span> <span class="o">=</span> <span class="s1">&#39;players&#39;</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">force</span><span class="p">)</span>      <span class="nx">force</span>      <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-37" id="section-37">&#182;</a>
+</div>
+<p>Set up logic.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">doLogic</span><span class="p">)</span> <span class="nx">setupLogic</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="nx">mixinConf</span><span class="p">);</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-38" id="section-38">&#182;</a>
+</div>
+<p>At this point clientList should be an array of client IDs.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">setupClients</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="nx">clientList</span><span class="p">,</span> <span class="nx">mixinConf</span><span class="p">);</span>
+<span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="gameroom.startgame">
+  <h3>
+    <a href="#gameroom.startgame" name="gameroom.startgame" class="pilcrow">&#182;</a>
+    GameRoom.startGame
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Starts the game for the logic and/or other clients</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">doLogic</span>
+      <span class="dox_type">boolean</span>
+      <span>Optional. If TRUE, sends a start command to the
+  logic as well. Default: TRUE.</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">clientList</span>
+      <span class="dox_type">array</span>
+      <span class="dox_type">string</span>
+      <span>Optional. List of client IDs to which to
+  send the start command, or one of the following strings:
+  'all' (all clients), 'players' (all players), 'admins' (all admins).
+  Default: 'all'.</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">force</span>
+      <span class="dox_type">boolean</span>
+      <span>Optional. If TRUE, skip the startable check.
+  Default: FALSE.</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">GameRoom</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">startGame</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">doLogic</span><span class="p">,</span> <span class="nx">clientList</span><span class="p">,</span> <span class="nx">force</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">node</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">rc</span><span class="p">;</span>
+
+    <span class="nx">node</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">node</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-40" id="section-40">&#182;</a>
+</div>
+<p>Check parameters.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">rc</span> <span class="o">=</span> <span class="nx">GameRoom</span><span class="p">.</span><span class="nx">checkParams</span><span class="p">(</span><span class="nx">doLogic</span><span class="p">,</span> <span class="nx">clientList</span><span class="p">,</span> <span class="nx">force</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">rc</span> <span class="o">!==</span> <span class="kc">null</span><span class="p">)</span> <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;GameRoom.startGame: &#39;</span> <span class="o">+</span> <span class="nx">rc</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-41" id="section-41">&#182;</a>
+</div>
+<p>Apply defaults.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">doLogic</span><span class="p">)</span>    <span class="nx">doLogic</span>    <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">clientList</span><span class="p">)</span> <span class="nx">clientList</span> <span class="o">=</span> <span class="s1">&#39;all&#39;</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">force</span><span class="p">)</span>      <span class="nx">force</span>      <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-42" id="section-42">&#182;</a>
+</div>
+<p>Check startability.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">force</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">isStartable</span><span class="p">())</span> <span class="p">{</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span>
+            <span class="s1">&#39;GameRoom.startGame: game cannot be started.&#39;</span><span class="p">,</span> <span class="s1">&#39;warn&#39;</span><span class="p">);</span>
+        <span class="k">return</span><span class="p">;</span>
+    <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-43" id="section-43">&#182;</a>
+</div>
+<p>Start.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">doLogic</span><span class="p">)</span> <span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">start</span><span class="p">();</span>
+
+    <span class="k">this</span><span class="p">.</span><span class="nx">sendRemoteCommand</span><span class="p">(</span><span class="s1">&#39;start&#39;</span><span class="p">,</span> <span class="nx">clientList</span><span class="p">);</span>
+<span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="gameroom.pausegame">
+  <h3>
+    <a href="#gameroom.pausegame" name="gameroom.pausegame" class="pilcrow">&#182;</a>
+    GameRoom.pauseGame
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Pauses the game for the logic and/or other clients</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">doLogic</span>
+      <span class="dox_type">boolean</span>
+      <span>Optional. If TRUE, sends a pause command to the
+  logic as well. Default: TRUE.</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">clientList</span>
+      <span class="dox_type">array</span>
+      <span class="dox_type">string</span>
+      <span>Optional. List of client IDs to which to
+  send the pause command, or one of the following strings:
+  'all' (all clients), 'players' (all players), 'admins' (all admins).
+  Default: 'all'.</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">force</span>
+      <span class="dox_type">boolean</span>
+      <span>Optional. If TRUE, skip the pauseable check.
+  Default: FALSE.</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">GameRoom</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">pauseGame</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">doLogic</span><span class="p">,</span> <span class="nx">clientList</span><span class="p">,</span> <span class="nx">force</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">node</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">rc</span><span class="p">;</span>
+
+    <span class="nx">node</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">node</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-45" id="section-45">&#182;</a>
+</div>
+<p>Check parameters.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">rc</span> <span class="o">=</span> <span class="nx">GameRoom</span><span class="p">.</span><span class="nx">checkParams</span><span class="p">(</span><span class="nx">doLogic</span><span class="p">,</span> <span class="nx">clientList</span><span class="p">,</span> <span class="nx">force</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">rc</span> <span class="o">!==</span> <span class="kc">null</span><span class="p">)</span> <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;GameRoom.pauseGame: &#39;</span> <span class="o">+</span> <span class="nx">rc</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-46" id="section-46">&#182;</a>
+</div>
+<p>Apply defaults.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">doLogic</span><span class="p">)</span>    <span class="nx">doLogic</span>    <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">clientList</span><span class="p">)</span> <span class="nx">clientList</span> <span class="o">=</span> <span class="s1">&#39;all&#39;</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">force</span><span class="p">)</span>      <span class="nx">force</span>      <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-47" id="section-47">&#182;</a>
+</div>
+<p>Check pausability.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">force</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">isPausable</span><span class="p">())</span> <span class="p">{</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span>
+            <span class="s1">&#39;GameRoom.pauseGame: game cannot be paused.&#39;</span><span class="p">,</span> <span class="s1">&#39;warn&#39;</span><span class="p">);</span>
+        <span class="k">return</span><span class="p">;</span>
+    <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-48" id="section-48">&#182;</a>
+</div>
+<p>Pause.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">doLogic</span><span class="p">)</span> <span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">pause</span><span class="p">();</span>
+
+    <span class="k">this</span><span class="p">.</span><span class="nx">sendRemoteCommand</span><span class="p">(</span><span class="s1">&#39;pause&#39;</span><span class="p">,</span> <span class="nx">clientList</span><span class="p">);</span>
+<span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="gameroom.resumegame">
+  <h3>
+    <a href="#gameroom.resumegame" name="gameroom.resumegame" class="pilcrow">&#182;</a>
+    GameRoom.resumeGame
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Resumes the game for the logic and/or other clients</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">doLogic</span>
+      <span class="dox_type">boolean</span>
+      <span>Optional. If TRUE, sends a resume command to the
+  logic as well. Default: TRUE.</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">clientList</span>
+      <span class="dox_type">array</span>
+      <span class="dox_type">string</span>
+      <span>Optional. List of client IDs to which to
+  send the resume command, or one of the following strings:
+  'all' (all clients), 'players' (all players), 'admins' (all admins).
+  Default: 'all'.</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">force</span>
+      <span class="dox_type">boolean</span>
+      <span>Optional. If TRUE, skip the resumeable check.
+  Default: FALSE.</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">GameRoom</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">resumeGame</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">doLogic</span><span class="p">,</span> <span class="nx">clientList</span><span class="p">,</span> <span class="nx">force</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">node</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">rc</span><span class="p">;</span>
+
+    <span class="nx">node</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">node</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-50" id="section-50">&#182;</a>
+</div>
+<p>Check parameters.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">rc</span> <span class="o">=</span> <span class="nx">GameRoom</span><span class="p">.</span><span class="nx">checkParams</span><span class="p">(</span><span class="nx">doLogic</span><span class="p">,</span> <span class="nx">clientList</span><span class="p">,</span> <span class="nx">force</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">rc</span> <span class="o">!==</span> <span class="kc">null</span><span class="p">)</span> <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;GameRoom.resumeGame: &#39;</span> <span class="o">+</span> <span class="nx">rc</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-51" id="section-51">&#182;</a>
+</div>
+<p>Apply defaults.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">doLogic</span><span class="p">)</span>    <span class="nx">doLogic</span>    <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">clientList</span><span class="p">)</span> <span class="nx">clientList</span> <span class="o">=</span> <span class="s1">&#39;all&#39;</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">force</span><span class="p">)</span>      <span class="nx">force</span>      <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-52" id="section-52">&#182;</a>
+</div>
+<p>Check resumability.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">force</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">isResumable</span><span class="p">())</span> <span class="p">{</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span>
+            <span class="s1">&#39;GameRoom.resumeGame: game cannot be resumed.&#39;</span><span class="p">,</span> <span class="s1">&#39;warn&#39;</span><span class="p">);</span>
+        <span class="k">return</span><span class="p">;</span>
+    <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-53" id="section-53">&#182;</a>
+</div>
+<p>Resume.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">doLogic</span><span class="p">)</span> <span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">resume</span><span class="p">();</span>
+
+    <span class="k">this</span><span class="p">.</span><span class="nx">sendRemoteCommand</span><span class="p">(</span><span class="s1">&#39;resume&#39;</span><span class="p">,</span> <span class="nx">clientList</span><span class="p">);</span>
+<span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="gameroom.stopgame">
+  <h3>
+    <a href="#gameroom.stopgame" name="gameroom.stopgame" class="pilcrow">&#182;</a>
+    GameRoom.stopGame
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Stops the game for the logic and/or other clients</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">doLogic</span>
+      <span class="dox_type">boolean</span>
+      <span>Optional. If TRUE, sends a stop command to the logic
+  as well. Default: TRUE.</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">clientList</span>
+      <span class="dox_type">array</span>
+      <span class="dox_type">string</span>
+      <span>Optional. List of client IDs to which to
+  send the stop command, or one of the following strings:
+  'all' (all clients), 'players' (all players), 'admins' (all admins).
+  Default: 'all'.</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">force</span>
+      <span class="dox_type">boolean</span>
+      <span>Optional. If TRUE, skip the stopable check.
+  Default: FALSE.</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">GameRoom</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">stopGame</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">doLogic</span><span class="p">,</span> <span class="nx">clientList</span><span class="p">,</span> <span class="nx">force</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">node</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">rc</span><span class="p">;</span>
+
+    <span class="nx">node</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">node</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-55" id="section-55">&#182;</a>
+</div>
+<p>Check parameters.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">rc</span> <span class="o">=</span> <span class="nx">GameRoom</span><span class="p">.</span><span class="nx">checkParams</span><span class="p">(</span><span class="nx">doLogic</span><span class="p">,</span> <span class="nx">clientList</span><span class="p">,</span> <span class="nx">force</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">rc</span> <span class="o">!==</span> <span class="kc">null</span><span class="p">)</span> <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;GameRoom.stopGame: &#39;</span> <span class="o">+</span> <span class="nx">rc</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-56" id="section-56">&#182;</a>
+</div>
+<p>Apply defaults.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">doLogic</span><span class="p">)</span>    <span class="nx">doLogic</span>    <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">clientList</span><span class="p">)</span> <span class="nx">clientList</span> <span class="o">=</span> <span class="s1">&#39;all&#39;</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">force</span><span class="p">)</span>      <span class="nx">force</span>      <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-57" id="section-57">&#182;</a>
+</div>
+<p>Check stoppability.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">force</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">isStoppable</span><span class="p">())</span> <span class="p">{</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span>
+            <span class="s1">&#39;GameRoom.stopGame: game cannot be stopped.&#39;</span><span class="p">,</span> <span class="s1">&#39;warn&#39;</span><span class="p">);</span>
+        <span class="k">return</span><span class="p">;</span>
+    <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-58" id="section-58">&#182;</a>
+</div>
+<p>Stop.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">doLogic</span><span class="p">)</span> <span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">stop</span><span class="p">();</span>
+
+    <span class="k">this</span><span class="p">.</span><span class="nx">sendRemoteCommand</span><span class="p">(</span><span class="s1">&#39;stop&#39;</span><span class="p">,</span> <span class="nx">clientList</span><span class="p">);</span>
+<span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="gameroom.getclienttype">
+  <h3>
+    <a href="#gameroom.getclienttype" name="gameroom.getclienttype" class="pilcrow">&#182;</a>
+    GameRoom.getClientType
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Loads a specified client type</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">type</span>
+      <span class="dox_type">string</span>
+      <span>The name of the client type</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">mixinConf</span>
+      <span class="dox_type">object</span>
+      <span>Optional. Additional configuration options
+  that will be mixed-in with the final game object</span>
+    </div>
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">object</span>
+      <span>The built client type</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">GameRoom</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">getClientType</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">type</span><span class="p">,</span> <span class="nx">mixinConf</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">game</span><span class="p">,</span> <span class="nx">settings</span><span class="p">,</span> <span class="nx">stager</span><span class="p">,</span> <span class="nx">setup</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">properties</span><span class="p">,</span> <span class="nx">stepRule</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">that</span><span class="p">;</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">clientTypes</span><span class="p">[</span><span class="nx">type</span><span class="p">])</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameRoom.getClientType: unknown type: &#39;</span> <span class="o">+</span> <span class="nx">type</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">mixinConf</span> <span class="o">&amp;&amp;</span> <span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">mixinConf</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameRoom.getClientType: runtimeConf must &#39;</span> <span class="o">+</span>
+                        <span class="s1">&#39;be object.&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="nx">that</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-60" id="section-60">&#182;</a>
+</div>
+<p>Get the right stager.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">gameLevel</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">stager</span> <span class="o">=</span> <span class="nx">ngc</span><span class="p">.</span><span class="nx">getStager</span><span class="p">(</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">levels</span><span class="p">[</span><span class="k">this</span><span class="p">.</span><span class="nx">gameLevel</span><span class="p">].</span><span class="nx">stager</span><span class="p">.</span><span class="nx">getState</span><span class="p">());</span>
+    <span class="p">}</span>
+    <span class="k">else</span> <span class="p">{</span>
+        <span class="nx">stager</span> <span class="o">=</span> <span class="nx">ngc</span><span class="p">.</span><span class="nx">getStager</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">stager</span><span class="p">.</span><span class="nx">getState</span><span class="p">());</span>
+    <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-61" id="section-61">&#182;</a>
+</div>
+<p>Start adding default properties by client type.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
+    <span class="nx">stepRule</span> <span class="o">=</span> <span class="nx">stager</span><span class="p">.</span><span class="nx">getDefaultStepRule</span><span class="p">();</span>
+    <span class="nx">properties</span> <span class="o">=</span> <span class="nx">stager</span><span class="p">.</span><span class="nx">getDefaultProperties</span><span class="p">();</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-62" id="section-62">&#182;</a>
+</div>
+<p>For both logic and other client types.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">properties</span><span class="p">.</span><span class="nx">timer</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">stager</span><span class="p">.</span><span class="nx">setDefaultProperty</span><span class="p">(</span><span class="s1">&#39;timer&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+            <span class="kd">var</span> <span class="nx">timer</span><span class="p">,</span> <span class="nx">stepId</span><span class="p">;</span>
+            <span class="nx">stepId</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">getCurrentStep</span><span class="p">().</span><span class="nx">id</span><span class="p">;</span>
+            <span class="nx">timer</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">settings</span><span class="p">.</span><span class="nx">TIMER</span><span class="p">[</span><span class="nx">stepId</span><span class="p">];</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-63" id="section-63">&#182;</a>
+</div>
+<p>If it is a function must be executed.
+Other values will be parsed later.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+            <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;function&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">timer</span><span class="p">)</span> <span class="nx">timer</span> <span class="o">=</span> <span class="nx">timer</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="k">this</span><span class="p">);</span>
+            <span class="k">return</span> <span class="nx">timer</span> <span class="o">||</span> <span class="kc">null</span><span class="p">;</span>
+        <span class="p">});</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">properties</span><span class="p">.</span><span class="nx">onWrongNumOfPlayers</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">stager</span><span class="p">.</span><span class="nx">setDefaultProperty</span><span class="p">(</span><span class="s1">&#39;onWrongPlayerNum&#39;</span><span class="p">,</span>
+                                  <span class="k">this</span><span class="p">.</span><span class="nx">wrongNumOfPlayers</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">properties</span><span class="p">.</span><span class="nx">onCorrectNumOfPlayers</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">stager</span><span class="p">.</span><span class="nx">setDefaultProperty</span><span class="p">(</span><span class="s1">&#39;onCorrectPlayerNum&#39;</span><span class="p">,</span>
+                                  <span class="k">this</span><span class="p">.</span><span class="nx">correctNumOfPlayersAgain</span><span class="p">);</span>
+    <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-64" id="section-64">&#182;</a>
+</div>
+<p>Set different defaults for logic and other client types.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">type</span> <span class="o">===</span> <span class="s1">&#39;logic&#39;</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">properties</span><span class="p">.</span><span class="nx">publishLevel</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">properties</span><span class="p">.</span><span class="nx">publishLevel</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">properties</span><span class="p">.</span><span class="nx">syncStepping</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">properties</span><span class="p">.</span><span class="nx">syncStepping</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">properties</span><span class="p">.</span><span class="nx">autoSet</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">properties</span><span class="p">.</span><span class="nx">autoSet</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">stepRule</span> <span class="o">===</span> <span class="nx">stepRules</span><span class="p">.</span><span class="nx">SOLO</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">stager</span><span class="p">.</span><span class="nx">setDefaultStepRule</span><span class="p">(</span><span class="nx">stepRules</span><span class="p">.</span><span class="nx">OTHERS_SYNC_STEP</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">properties</span><span class="p">.</span><span class="nx">timeup</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">stager</span><span class="p">.</span><span class="nx">setDefaultProperty</span><span class="p">(</span><span class="s1">&#39;timeup&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+                <span class="kd">var</span> <span class="nx">conf</span><span class="p">,</span> <span class="nx">gameStage</span><span class="p">;</span>
+                <span class="nx">gameStage</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">getCurrentGameStage</span><span class="p">();</span>
+                <span class="nx">conf</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">plot</span><span class="p">.</span><span class="nx">getProperty</span><span class="p">(</span><span class="nx">gameStage</span><span class="p">,</span> <span class="s1">&#39;pushClients&#39;</span><span class="p">);</span>
+                <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">conf</span><span class="p">)</span> <span class="k">return</span><span class="p">;</span>
+                <span class="k">this</span><span class="p">.</span><span class="nx">pushManager</span><span class="p">.</span><span class="nx">startTimer</span><span class="p">(</span><span class="nx">conf</span><span class="p">);</span>
+            <span class="p">});</span>
+        <span class="p">}</span>
+
+    <span class="p">}</span>
+    <span class="k">else</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">properties</span><span class="p">.</span><span class="nx">publishLevel</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">properties</span><span class="p">.</span><span class="nx">publishLevel</span> <span class="o">=</span> <span class="nx">publishLevels</span><span class="p">.</span><span class="nx">REGULAR</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">properties</span><span class="p">.</span><span class="nx">autoSet</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">properties</span><span class="p">.</span><span class="nx">autoSet</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">stepRule</span> <span class="o">===</span> <span class="nx">stepRules</span><span class="p">.</span><span class="nx">SOLO</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">stager</span><span class="p">.</span><span class="nx">setDefaultStepRule</span><span class="p">(</span><span class="nx">stepRules</span><span class="p">.</span><span class="nx">WAIT</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">properties</span><span class="p">.</span><span class="nx">timeup</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">stager</span><span class="p">.</span><span class="nx">setDefaultProperty</span><span class="p">(</span><span class="s1">&#39;timeup&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+                <span class="nx">node</span><span class="p">.</span><span class="nx">done</span><span class="p">();</span>
+            <span class="p">});</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="nx">setup</span> <span class="o">=</span> <span class="nx">J</span><span class="p">.</span><span class="nx">clone</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">setup</span><span class="p">);</span>
+    <span class="nx">settings</span> <span class="o">=</span> <span class="nx">J</span><span class="p">.</span><span class="nx">clone</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">gameTreatment</span><span class="p">);</span>
+    <span class="nx">game</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">clientTypes</span><span class="p">[</span><span class="nx">type</span><span class="p">](</span><span class="k">this</span><span class="p">.</span><span class="nx">treatmentName</span><span class="p">,</span> <span class="nx">settings</span><span class="p">,</span> <span class="nx">stager</span><span class="p">,</span>
+                                  <span class="nx">setup</span><span class="p">,</span> <span class="k">this</span><span class="p">);</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">game</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameRoom.getClientType: room &#39;</span> <span class="o">+</span> <span class="k">this</span><span class="p">.</span><span class="nx">name</span> <span class="o">+</span>
+                        <span class="s1">&#39;: &#39;</span> <span class="o">+</span> <span class="nx">type</span> <span class="o">+</span> <span class="s1">&#39; did not return a valid game object.&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-65" id="section-65">&#182;</a>
+</div>
+<p>Add treatment settings.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">game</span><span class="p">.</span><span class="nx">settings</span> <span class="o">=</span> <span class="nx">settings</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-66" id="section-66">&#182;</a>
+</div>
+<p>Mixin-in nodeGame options.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">mixinConf</span><span class="p">)</span> <span class="nx">J</span><span class="p">.</span><span class="nx">mixin</span><span class="p">(</span><span class="nx">game</span><span class="p">,</span> <span class="nx">mixinConf</span><span class="p">);</span>
+
+    <span class="k">return</span> <span class="nx">game</span><span class="p">;</span>
+<span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="gameroom.setupclient">
+  <h2>
+    <a href="#gameroom.setupclient" name="gameroom.setupclient" class="pilcrow">&#182;</a>
+    GameRoom.setupClient
+  </h2>
+</div>
+
+  </div>
+  <div class="body"><p>Setups a client based on its id</p>
+
+<p>Retrieves the client object, checks its client type, and run the
+appropriate setup command depending if the client it is a bot or
+a remote client.</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">clientId</span>
+      <span class="dox_type">string</span>
+      <span>The id of the client</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">mixinConf</span>
+      <span class="dox_type">object</span>
+      <span>Optional. Additional configuration options</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">cache</span>
+      <span class="dox_type">object</span>
+      <span>Optional. A cache object from where retrieving
+  client types</span>
+    </div>
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">boolean</span>
+      <span>TRUE on success</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">GameRoom.getClientType
+</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">GameRoom</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">setupClient</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">clientId</span><span class="p">,</span> <span class="nx">mixinConf</span><span class="p">,</span> <span class="nx">cache</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">clientObj</span><span class="p">,</span> <span class="nx">gameNode</span><span class="p">,</span> <span class="nx">type</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">game</span><span class="p">;</span>
+
+    <span class="nx">clientObj</span> <span class="o">=</span> <span class="nx">tryToGetClient</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="nx">clientId</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">clientObj</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;GameRoom.setupClient: client not found: &#39;</span> <span class="o">+</span>
+                                   <span class="nx">clientId</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
+        <span class="k">return</span><span class="p">;</span>
+    <span class="p">}</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-68" id="section-68">&#182;</a>
+</div>
+<p>Fake cache.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">cache</span> <span class="o">=</span> <span class="nx">cache</span> <span class="o">||</span> <span class="p">{};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-69" id="section-69">&#182;</a>
+</div>
+<p>See if the client is local or remote.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">gameNode</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">bots</span><span class="p">[</span><span class="nx">clientId</span><span class="p">];</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-70" id="section-70">&#182;</a>
+</div>
+<p>Client type.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">type</span> <span class="o">=</span> <span class="nx">clientObj</span><span class="p">.</span><span class="nx">clientType</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-71" id="section-71">&#182;</a>
+</div>
+<p>Get the client type, check cache (bots are never cached).</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">gameNode</span> <span class="o">&amp;&amp;</span> <span class="nx">cache</span><span class="p">[</span><span class="nx">type</span><span class="p">])</span> <span class="p">{</span>
+        <span class="nx">game</span> <span class="o">=</span> <span class="nx">cache</span><span class="p">[</span><span class="nx">type</span><span class="p">];</span>
+    <span class="p">}</span>
+    <span class="k">else</span> <span class="p">{</span>
+        <span class="nx">game</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">getClientType</span><span class="p">(</span><span class="nx">type</span><span class="p">,</span> <span class="nx">mixinConf</span><span class="p">);</span>
+        <span class="nx">mixinGameMetadata</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="nx">game</span><span class="p">);</span>
+        <span class="nx">cache</span><span class="p">[</span><span class="nx">type</span><span class="p">]</span> <span class="o">=</span> <span class="nx">game</span><span class="p">;</span>
+    <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-72" id="section-72">&#182;</a>
+</div>
+<p>Setup the client.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-73" id="section-73">&#182;</a>
+</div>
+<p>Local client.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">gameNode</span><span class="p">)</span> <span class="p">{</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-74" id="section-74">&#182;</a>
+</div>
+<p>Can't remoteSetup here because serializing the plot methods
+would make them lose their context (node etc.).</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="nx">gameNode</span><span class="p">.</span><span class="nx">stop</span><span class="p">();</span>
+        <span class="nx">gameNode</span><span class="p">.</span><span class="nx">setup</span><span class="p">(</span><span class="s1">&#39;nodegame&#39;</span><span class="p">,</span> <span class="nx">game</span><span class="p">);</span>
+    <span class="p">}</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-75" id="section-75">&#182;</a>
+</div>
+<p>Remote client.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">else</span> <span class="p">{</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">node</span><span class="p">.</span><span class="nx">remoteCommand</span><span class="p">(</span><span class="s1">&#39;stop&#39;</span><span class="p">,</span> <span class="nx">clientId</span><span class="p">);</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">node</span><span class="p">.</span><span class="nx">remoteSetup</span><span class="p">(</span><span class="s1">&#39;nodegame&#39;</span><span class="p">,</span> <span class="nx">clientId</span><span class="p">,</span> <span class="nx">game</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="kc">true</span><span class="p">;</span>
+<span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap" id="helper%20methods.">
+  <h2>
+    <a href="#helper%20methods." name="helper%20methods." class="pilcrow">&#182;</a>
+    Helper Methods.
+  </h2>
+</div>
+
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="setuplogic">
+  <h2>
+    <a href="#setuplogic" name="setuplogic" class="pilcrow">&#182;</a>
+    setupLogic
+  </h2>
+</div>
+
+  </div>
+  <div class="body"><p>Instantiates and setups the logic of the game room</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">mixinConf</span>
+      <span class="dox_type">object</span>
+      <span>Optional. Additional options to mixin with the
+  instantiated client type.</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">GameRoom.getClientType</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">GameRoom.node
+</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="kd">function</span> <span class="nx">setupLogic</span><span class="p">(</span><span class="nx">mixinConf</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">game</span><span class="p">,</span> <span class="nx">node</span><span class="p">;</span>
+
+    <span class="nx">game</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">getClientType</span><span class="p">(</span><span class="s1">&#39;logic&#39;</span><span class="p">,</span> <span class="nx">mixinConf</span><span class="p">);</span>
+
+    <span class="nx">mixinGameMetadata</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="nx">game</span><span class="p">);</span>
+
+    <span class="nx">node</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">node</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-78" id="section-78">&#182;</a>
+</div>
+<p>Stop logic if necessary.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">isStoppable</span><span class="p">())</span> <span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">stop</span><span class="p">();</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-79" id="section-79">&#182;</a>
+</div>
+<p>Setup must be called before connect.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">node</span><span class="p">.</span><span class="nx">setup</span><span class="p">(</span><span class="s1">&#39;nodegame&#39;</span><span class="p">,</span> <span class="nx">game</span><span class="p">);</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-80" id="section-80">&#182;</a>
+</div>
+<p>Connect logic to server, if not already connected. E.g., after a stop
+command it is generally still connected. Or the node object can be
+passed in the constructor and be already connected.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">node</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">isConnected</span><span class="p">())</span> <span class="p">{</span>
+        <span class="nx">node</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">setSocketType</span><span class="p">(</span><span class="s1">&#39;SocketDirect&#39;</span><span class="p">,</span> <span class="p">{</span>
+            <span class="nx">socket</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">adminServer</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">sockets</span><span class="p">.</span><span class="nx">direct</span>
+        <span class="p">});</span>
+        <span class="nx">node</span><span class="p">.</span><span class="nx">connect</span><span class="p">(</span><span class="kc">null</span><span class="p">,</span> <span class="p">{</span>
+            <span class="nx">startingRoom</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">name</span><span class="p">,</span>
+            <span class="nx">clientType</span><span class="o">:</span>   <span class="s1">&#39;logic&#39;</span>
+        <span class="p">});</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="setupclients">
+  <h2>
+    <a href="#setupclients" name="setupclients" class="pilcrow">&#182;</a>
+    setupClients
+  </h2>
+</div>
+
+  </div>
+  <div class="body"><p>Instantiates and setups a number of clients of the game room</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">clientList</span>
+      <span class="dox_type">string</span>
+      <span class="dox_type">object</span>
+      <span>The list of clients or a string
+ specifying which clients are to be setup (Accepted values:
+ 'all', 'players', or 'admins')</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">mixinConf
+</span>
+      <span class="dox_type">object</span>
+      <span>Optional. Additional options to mixin with the instantiated client
+ type.</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">GameRoom.getClientType</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">GameRoom.node
+</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="kd">function</span> <span class="nx">setupClients</span><span class="p">(</span><span class="nx">clientList</span><span class="p">,</span> <span class="nx">mixinConf</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">i</span><span class="p">,</span> <span class="nx">len</span><span class="p">,</span> <span class="nx">cache</span><span class="p">;</span>
+
+    <span class="nx">cache</span> <span class="o">=</span> <span class="p">{};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-82" id="section-82">&#182;</a>
+</div>
+<p>Resolve special values of clientList.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">clientList</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">switch</span> <span class="p">(</span><span class="nx">clientList</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">case</span> <span class="s1">&#39;all&#39;</span><span class="o">:</span>
+            <span class="nx">clientList</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">id</span><span class="p">.</span><span class="nx">getAllKeys</span><span class="p">();</span>
+            <span class="k">break</span><span class="p">;</span>
+
+        <span class="k">case</span> <span class="s1">&#39;players&#39;</span><span class="o">:</span>
+            <span class="nx">clientList</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">id</span><span class="p">.</span><span class="nx">getAllKeys</span><span class="p">();</span>
+            <span class="k">break</span><span class="p">;</span>
+
+        <span class="k">case</span> <span class="s1">&#39;admins&#39;</span><span class="o">:</span>
+            <span class="nx">clientList</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">admin</span><span class="p">.</span><span class="nx">id</span><span class="p">.</span><span class="nx">getAllKeys</span><span class="p">();</span>
+            <span class="k">break</span><span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-83" id="section-83">&#182;</a>
+</div>
+<p>Setup all given clients.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">i</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="nx">len</span> <span class="o">=</span> <span class="nx">clientList</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span>
+    <span class="k">for</span> <span class="p">(</span> <span class="p">;</span> <span class="o">++</span><span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">len</span> <span class="p">;</span> <span class="p">)</span> <span class="p">{</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">setupClient</span><span class="p">(</span><span class="nx">clientList</span><span class="p">[</span><span class="nx">i</span><span class="p">],</span> <span class="nx">mixinConf</span><span class="p">,</span> <span class="nx">cache</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="trytogetclient">
+  <h3>
+    <a href="#trytogetclient" name="trytogetclient" class="pilcrow">&#182;</a>
+    tryToGetClient
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Returns a client obj with given id, if found.</p>
+
+<p>Notice: separated from the main function because of the try-catch block,
+otherwise the whole function is not optimized.</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">clientId</span>
+      <span class="dox_type">string</span>
+      <span>The client id</span>
+    </div>
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">object</span>
+      <span>The client object</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="kd">function</span> <span class="nx">tryToGetClient</span><span class="p">(</span><span class="nx">clientId</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">clientObj</span><span class="p">;</span>
+    <span class="k">try</span> <span class="p">{</span>
+        <span class="nx">clientObj</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="nx">clientId</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="k">catch</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;GameRoom.setupGame: no client with id &#39;&quot;</span> <span class="o">+</span>
+                                   <span class="nx">clientId</span> <span class="o">+</span> <span class="s2">&quot;&#39;&quot;</span><span class="p">,</span> <span class="s1">&#39;warn&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="nx">clientObj</span><span class="p">;</span>
+<span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="mixingamemetadata">
+  <h3>
+    <a href="#mixingamemetadata" name="mixingamemetadata" class="pilcrow">&#182;</a>
+    mixinGameMetadata
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Adds default game info (name, description, version) if missing</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">game</span>
+      <span class="dox_type">object</span>
+      <span>The game object used to setup a client</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">GameRoom.setupClients</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">GameRoom.setupLogic
+</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="kd">function</span> <span class="nx">mixinGameMetadata</span><span class="p">(</span><span class="nx">game</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">game</span><span class="p">.</span><span class="nx">metadata</span><span class="p">)</span> <span class="nx">game</span><span class="p">.</span><span class="nx">metadata</span> <span class="o">=</span> <span class="p">{};</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">game</span><span class="p">.</span><span class="nx">metadata</span><span class="p">.</span><span class="nx">name</span><span class="p">)</span> <span class="nx">game</span><span class="p">.</span><span class="nx">metadata</span><span class="p">.</span><span class="nx">name</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">info</span><span class="p">.</span><span class="nx">name</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">game</span><span class="p">.</span><span class="nx">metadata</span><span class="p">.</span><span class="nx">description</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">game</span><span class="p">.</span><span class="nx">metadata</span><span class="p">.</span><span class="nx">description</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">info</span><span class="p">.</span><span class="nx">description</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">game</span><span class="p">.</span><span class="nx">metadata</span><span class="p">.</span><span class="nx">version</span><span class="p">)</span> <span class="nx">game</span><span class="p">.</span><span class="nx">metadata</span><span class="p">.</span><span class="nx">version</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">info</span><span class="p">.</span><span class="nx">version</span><span class="p">;</span>
+<span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="disposeclient">
+  <h3>
+    <a href="#disposeclient" name="disposeclient" class="pilcrow">&#182;</a>
+    disposeClient
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Disconnects a client that was not authorized to reconnect</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">node</span>
+      <span class="dox_type">NodeGameCLient</span>
+      <span>The node instance of the game room</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">p</span>
+      <span class="dox_type">object</span>
+      <span>The player object</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">GameRoom.on
+</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="kd">function</span> <span class="nx">disposeClient</span><span class="p">(</span><span class="nx">node</span><span class="p">,</span> <span class="nx">p</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">node</span><span class="p">.</span><span class="nx">remoteAlert</span><span class="p">(</span><span class="s1">&#39;Reconnection to game not authorized.&#39;</span><span class="p">,</span> <span class="nx">p</span><span class="p">.</span><span class="nx">id</span><span class="p">);</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-87" id="section-87">&#182;</a>
+</div>
+<p>Disconnect client.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">setTimeout</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span> <span class="nx">node</span><span class="p">.</span><span class="nx">disconnectClient</span><span class="p">(</span><span class="nx">p</span><span class="p">);</span> <span class="p">});</span>
+<span class="p">}</span>
+</pre></div>
+        </td>
+      </tr>
+  </tbody>
+</table>
+  </div>
+</body>
+</html>

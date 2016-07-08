@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>requirements.room.js</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <link rel="stylesheet" media="all" href="../../doc-style.css" />
+  <script src="../../doc-filelist.js"></script>
+  <script>
+    var relativeDir = "../../", thisFile = "lib/logics/requirements.room.js", defaultSidebar = true;
+  </script>
+  <script src="../../doc-script.js"></script>
+</head>
+<body>
+  <div id="sidebar_wrapper">
+    <div id="sidebar_switch">
+      <span class="tree">Files</span>
+      <span class="headings">Headings</span>
+    </div>
+    <div id="tree"></div>
+    <div id="headings">
+      <div class="heading h1">
+        <a href="#standard%20requirements%20room">Standard Requirements Room</a>
+      </div>
+      <div class="heading h2">
+        <a href="#http%3A%2F%2Fnodegame.org">http://nodegame.org</a>
+      </div>
+    </div>
+  </div>
+  <div id="sidebar-toggle"></div>
+  <div id="container"><div class="background highlight"></div>
+<table cellpadding="0" cellspacing="0">
+  <tbody>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="standard%20requirements%20room">
+  <h1>
+    <a href="#standard%20requirements%20room" name="standard%20requirements%20room" class="pilcrow">&#182;</a>
+    Standard Requirements Room
+  </h1>
+</div>
+
+
+<p>Copyright(c) 2016 Stefano Balietti
+MIT Licensed</p>
+  </div>
+  <div class="body"><p>Validates the requirements of incoming connections</p>
+
+
+<div class="pilwrap" id="http%3A%2F%2Fnodegame.org">
+  <h2>
+    <a href="#http%3A%2F%2Fnodegame.org" name="http%3A%2F%2Fnodegame.org" class="pilcrow">&#182;</a>
+    <a href='http://nodegame.org'>http://nodegame.org</a>
+  </h2>
+</div>
+
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre><span class="nx">module</span><span class="p">.</span><span class="nx">exports</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">settings</span><span class="p">,</span> <span class="nx">room</span><span class="p">,</span> <span class="nx">runtimeConf</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">node</span> <span class="o">=</span> <span class="nx">room</span><span class="p">.</span><span class="nx">node</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">channel</span> <span class="o">=</span> <span class="nx">room</span><span class="p">.</span><span class="nx">channel</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">registry</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">registry</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-2" id="section-2">&#182;</a>
+</div>
+<p>Creates a stager object to define the game stages.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="kd">var</span> <span class="nx">stager</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">node</span><span class="p">.</span><span class="nx">Stager</span><span class="p">();</span>
+
+    <span class="kd">var</span> <span class="nx">nextRoom</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">nextRoom</span><span class="p">)</span> <span class="p">{</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-3" id="section-3">&#182;</a>
+</div>
+<p>This should be safe, because waitRoom is created before.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">channel</span><span class="p">.</span><span class="nx">waitingRoom</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">nextRoom</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">waitingRoom</span><span class="p">.</span><span class="nx">name</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="k">else</span> <span class="p">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;requirements.room: no nextRoom provided, and &#39;</span> <span class="o">+</span>
+                            <span class="s1">&#39;no waiting room found.&#39;</span><span class="p">);</span>
+        <span class="p">}</span>
+
+    <span class="p">}</span>
+    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">nextRoom</span> <span class="o">&amp;&amp;</span>
+             <span class="nx">settings</span><span class="p">.</span><span class="nx">nextRoom</span> <span class="o">!==</span> <span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="p">{</span>
+
+        <span class="nx">nextRoom</span> <span class="o">=</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">nextRoom</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="k">else</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;requirements.room: nextRoom must be undefined &#39;</span> <span class="o">+</span>
+                            <span class="s1">&#39;or non-empty string. Found: &#39;</span> <span class="o">+</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">nextRoom</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="kd">function</span> <span class="nx">connectingPlayer</span><span class="p">(</span><span class="nx">player</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Player connected to Requirements room.&#39;</span><span class="p">,</span> <span class="nx">player</span><span class="p">.</span><span class="nx">id</span><span class="p">);</span>
+
+        <span class="nx">setTimeout</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+
+            <span class="nx">node</span><span class="p">.</span><span class="nx">remoteSetup</span><span class="p">(</span><span class="s1">&#39;page&#39;</span><span class="p">,</span> <span class="nx">player</span><span class="p">.</span><span class="nx">id</span><span class="p">,</span> <span class="p">{</span>
+                <span class="nx">clearBody</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+                <span class="nx">title</span><span class="o">:</span> <span class="p">{</span> <span class="nx">title</span><span class="o">:</span> <span class="s1">&#39;Welcome!&#39;</span><span class="p">,</span> <span class="nx">addToBody</span><span class="o">:</span> <span class="kc">true</span> <span class="p">}</span>
+            <span class="p">});</span>
+
+            <span class="nx">node</span><span class="p">.</span><span class="nx">remoteSetup</span><span class="p">(</span><span class="s1">&#39;widgets&#39;</span><span class="p">,</span> <span class="nx">player</span><span class="p">.</span><span class="nx">id</span><span class="p">,</span> <span class="p">{</span>
+                <span class="nx">append</span><span class="o">:</span> <span class="p">{</span> <span class="s1">&#39;Requirements&#39;</span><span class="o">:</span> <span class="p">{</span>
+                    <span class="nx">root</span><span class="o">:</span> <span class="s1">&#39;widgets_div&#39;</span><span class="p">,</span>
+                    <span class="nx">sayResults</span><span class="o">:</span> <span class="kc">true</span>
+                <span class="p">}</span> <span class="p">}</span>
+            <span class="p">});</span>
+            <span class="nx">node</span><span class="p">.</span><span class="nx">remoteSetup</span><span class="p">(</span><span class="s1">&#39;requirements&#39;</span><span class="p">,</span> <span class="nx">player</span><span class="p">.</span><span class="nx">id</span><span class="p">,</span> <span class="nx">settings</span><span class="p">);</span>
+
+        <span class="p">},</span> <span class="mi">500</span><span class="p">);</span>
+    <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-4" id="section-4">&#182;</a>
+</div>
+<p>Define stager.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
+    <span class="nx">stager</span><span class="p">.</span><span class="nx">setOnInit</span><span class="p">(</span><span class="kd">function</span> <span class="nx">init</span><span class="p">()</span> <span class="p">{</span>
+        <span class="kd">var</span> <span class="nx">that</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
+
+        <span class="nx">node</span><span class="p">.</span><span class="nx">on</span><span class="p">.</span><span class="nx">preconnect</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">player</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Player re-connected to Requirements room.&#39;</span><span class="p">);</span>
+            <span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">pl</span><span class="p">.</span><span class="nx">add</span><span class="p">(</span><span class="nx">player</span><span class="p">);</span>
+            <span class="nx">connectingPlayer</span><span class="p">(</span><span class="nx">player</span><span class="p">);</span>
+        <span class="p">});</span>
+
+        <span class="nx">node</span><span class="p">.</span><span class="nx">on</span><span class="p">.</span><span class="nx">pconnect</span><span class="p">(</span><span class="nx">connectingPlayer</span><span class="p">);</span>
+
+        <span class="nx">node</span><span class="p">.</span><span class="nx">on</span><span class="p">.</span><span class="nx">pdisconnect</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">player</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Player disconnected from Requirements room: &#39;</span> <span class="o">+</span>
+                        <span class="nx">player</span><span class="p">.</span><span class="nx">id</span><span class="p">);</span>
+        <span class="p">});</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-5" id="section-5">&#182;</a>
+</div>
+<p>Results of the requirements check.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="nx">node</span><span class="p">.</span><span class="nx">on</span><span class="p">.</span><span class="nx">data</span><span class="p">(</span><span class="s1">&#39;requirements&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">msg</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;requirements&#39;</span><span class="p">);</span>
+            <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">msg</span><span class="p">.</span><span class="nx">data</span><span class="p">);</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nx">msg</span><span class="p">.</span><span class="nx">data</span><span class="p">.</span><span class="nx">success</span><span class="p">)</span> <span class="p">{</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-6" id="section-6">&#182;</a>
+</div>
+<p>Mark client as requirements passed.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+                <span class="nx">registry</span><span class="p">.</span><span class="nx">updateClient</span><span class="p">(</span><span class="nx">msg</span><span class="p">.</span><span class="nx">from</span><span class="p">,</span> <span class="p">{</span><span class="nx">apt</span><span class="o">:</span> <span class="kc">true</span><span class="p">});</span>
+
+                 <span class="nx">setTimeout</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+                     <span class="nx">channel</span><span class="p">.</span><span class="nx">moveClient</span><span class="p">(</span><span class="nx">msg</span><span class="p">.</span><span class="nx">from</span><span class="p">,</span> <span class="nx">nextRoom</span><span class="p">);</span>
+                 <span class="p">},</span> <span class="mi">1000</span><span class="p">);</span>
+            <span class="p">}</span>
+        <span class="p">});</span>
+
+    <span class="p">});</span>
+
+    <span class="nx">stager</span><span class="p">.</span><span class="nx">setDefaultProperty</span><span class="p">(</span><span class="s1">&#39;publishLevel&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+
+    <span class="nx">stager</span><span class="p">.</span><span class="nx">next</span><span class="p">({</span>
+        <span class="nx">id</span><span class="o">:</span> <span class="s1">&#39;requirements&#39;</span><span class="p">,</span>
+        <span class="nx">cb</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+            <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Requirements room created: &#39;</span> <span class="o">+</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">name</span><span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">});</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-7" id="section-7">&#182;</a>
+</div>
+<p>Return the game.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">game</span> <span class="o">=</span> <span class="p">{};</span>
+
+    <span class="nx">game</span><span class="p">.</span><span class="nx">metadata</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="nx">name</span><span class="o">:</span> <span class="s1">&#39;Requirements check room&#39;</span><span class="p">,</span>
+        <span class="nx">description</span><span class="o">:</span> <span class="s1">&#39;Validates clients requirements.&#39;</span><span class="p">,</span>
+        <span class="nx">version</span><span class="o">:</span> <span class="s1">&#39;0.3.0&#39;</span>
+    <span class="p">};</span>
+
+    <span class="nx">game</span><span class="p">.</span><span class="nx">debug</span> <span class="o">=</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">debug</span> <span class="o">||</span> <span class="kc">false</span><span class="p">;</span>
+    <span class="nx">game</span><span class="p">.</span><span class="nx">plot</span> <span class="o">=</span> <span class="nx">stager</span><span class="p">.</span><span class="nx">getState</span><span class="p">();</span>
+    <span class="nx">game</span><span class="p">.</span><span class="nx">nodename</span> <span class="o">=</span> <span class="s1">&#39;requirements&#39;</span><span class="p">;</span>
+    <span class="nx">game</span><span class="p">.</span><span class="nx">verbosity</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="k">return</span> <span class="nx">game</span><span class="p">;</span>
+<span class="p">};</span>
+</pre></div>
+        </td>
+      </tr>
+  </tbody>
+</table>
+  </div>
+</body>
+</html>
