@@ -624,11 +624,14 @@ this.loadViewsFile(gameDir, gameInfo);</p>
     <span class="nx">i</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
     <span class="k">for</span> <span class="p">(</span> <span class="p">;</span> <span class="o">++</span><span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">len</span> <span class="p">;</span> <span class="p">)</span> <span class="p">{</span>
         <span class="nx">level</span> <span class="o">=</span> <span class="nx">levelsPaths</span><span class="p">[</span><span class="nx">i</span><span class="p">];</span>
-        <span class="nx">levelConf</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">buildLevelConf</span><span class="p">(</span><span class="nx">levelsPath</span> <span class="o">+</span> <span class="nx">level</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span>
-                                        <span class="nx">level</span><span class="p">);</span>
-        <span class="nx">levels</span><span class="p">[</span><span class="nx">level</span><span class="p">]</span> <span class="o">=</span> <span class="nx">levelConf</span><span class="p">;</span>
-        <span class="k">this</span><span class="p">.</span><span class="nx">updateGameInfo</span><span class="p">(</span><span class="nx">gameName</span><span class="p">,</span> <span class="nx">level</span><span class="p">,</span> <span class="nx">levelConf</span><span class="p">);</span>
-        <span class="nx">channel</span><span class="p">.</span><span class="nx">createGameLevel</span><span class="p">(</span><span class="nx">levelConf</span><span class="p">);</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">fs</span><span class="p">.</span><span class="nx">statSync</span><span class="p">(</span><span class="nx">levelsPath</span> <span class="o">+</span> <span class="nx">level</span><span class="p">).</span><span class="nx">isDirectory</span><span class="p">())</span> <span class="p">{</span>
+            <span class="nx">levelConf</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">buildLevelConf</span><span class="p">(</span><span class="nx">levelsPath</span> <span class="o">+</span> <span class="nx">level</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span><span class="p">,</span>
+                                            <span class="nx">gameName</span><span class="p">,</span>
+                                            <span class="nx">level</span><span class="p">);</span>
+            <span class="nx">levels</span><span class="p">[</span><span class="nx">level</span><span class="p">]</span> <span class="o">=</span> <span class="nx">levelConf</span><span class="p">;</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">updateGameInfo</span><span class="p">(</span><span class="nx">gameName</span><span class="p">,</span> <span class="nx">level</span><span class="p">,</span> <span class="nx">levelConf</span><span class="p">);</span>
+            <span class="nx">channel</span><span class="p">.</span><span class="nx">createGameLevel</span><span class="p">(</span><span class="nx">levelConf</span><span class="p">);</span>
+        <span class="p">}</span>
     <span class="p">}</span>
 
     <span class="k">return</span> <span class="nx">levels</span><span class="p">;</span>

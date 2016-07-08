@@ -3483,7 +3483,7 @@ if (!Array.prototype.indexOf) {
      *   Accepted values and default in parenthesis:
      *
      *     - stopOnFocus (false): Stop blinking if user switched to tab
-     *     - stopOnClick (false): Stop blinking if user clicks on the 
+     *     - stopOnClick (false): Stop blinking if user clicks on the
      *         specified element
      *     - finalTitle (document.title): Title to set after blinking is done
      *     - repeatFor (undefined): Show each element in titles at most
@@ -3491,7 +3491,10 @@ if (!Array.prototype.indexOf) {
      *     - startOnBlur(false): Start blinking if user switches
      *          away from tab
      *     - period (1000) How much time between two blinking texts in the title
-     *  
+     *
+     * @return {function|null} A function to clear the blinking of texts,
+     *    or NULL, if the interval was not created yet (e.g. with startOnBlur
+     *    option), or just destroyed.
      */
     DOM.blinkTitle = (function(id) {
         var clearBlinkInterval, finalTitle, elem;
@@ -3510,12 +3513,12 @@ if (!Array.prototype.indexOf) {
         return function(titles, options) {
             var period, where, rotation;
             var rotationId, nRepeats;
-      
-            if (null !== id) clearBlinkInterval();
-            if ('undefined' === typeof titles) return;
 
-            where = 'JSUS.blinkTitle: ';           
-            options = options || {};                        
+            if (null !== id) clearBlinkInterval();
+            if ('undefined' === typeof titles) return null;
+
+            where = 'JSUS.blinkTitle: ';
+            options = options || {};
 
             // Option finalTitle.
             if ('undefined' === typeof options.finalTitle) {
@@ -3568,7 +3571,7 @@ if (!Array.prototype.indexOf) {
                 JSUS.onFocusOut(function() {
                     JSUS.blinkTitle(titles, options);
                 });
-                return;
+                return null;
             }
 
             // Prepare the rotation.
@@ -3595,10 +3598,12 @@ if (!Array.prototype.indexOf) {
             };
             // Perform first rotation right now.
             rotation();
-            id = setInterval(rotation, period);       
+            id = setInterval(rotation, period);
+
+            // Return clear function.
+            return clearBlinkInterval;
         };
     })(null);
-
 
     /**
      * ### DOM.cookieSupport
@@ -28118,6 +28123,8 @@ if (!Array.prototype.indexOf) {
      * @see GameWindow.setFrame
      * @see GameWindow.clearFrame
      * @see GameWindow.destroyFrame
+     *
+     * @emit FRAME_GENERATED
      */
     GameWindow.prototype.generateFrame = function(root, frameName, force) {
         var iframe;
@@ -28156,6 +28163,9 @@ if (!Array.prototype.indexOf) {
         if (this.frameElement) {
             adaptFrame2HeaderPosition(this);
         }
+
+        // Emit event.
+        node.events.ng.emit('FRAME_GENERATED', iframe);
 
         return iframe;
     };
@@ -28399,6 +28409,10 @@ if (!Array.prototype.indexOf) {
         this.headerElement = header;
         this.headerName = headerName;
         this.headerRoot = root;
+
+
+        // Emit event.
+        node.events.ng.emit('HEADER_GENERATED', header);
 
         return this.headerElement;
     };
@@ -44595,12 +44609,34 @@ if (!Array.prototype.indexOf) {
     };
 
     WaitingRoom.prototype.alertPlayer = function() {
-        var opts;
+        var clearBlink, onFrame;
+
         JSUS.playSound('/sounds/doorbell.ogg');
-        if (document.hasFocus && document.hasFocus()) opts = { repeatFor: 1 };
-        else opts = { stopOnFocus: true, stopOnClick: window };
-        debugger
-        JSUS.blinkTitle(['3', '2', '1', 'GAME STARTS!'], opts);
+        // If document.hasFocus() returns TRUE, then just one repeat is enough.
+        if (document.hasFocus && document.hasFocus()) {
+            JSUS.blinkTitle('GAME STARTS!', { repeatFor: 1 });
+        }
+        // Otherwise we repeat blinking until an event that shows that the
+        // user is active on the page happens, e.g. focus and click. However,
+        // the iframe is not created yet, and even later. if the user clicks it
+        // it won't be detected in the main window, so we need to handle it.
+        else {
+            clearBlink = JSUS.blinkTitle('GAME STARTS!', {
+                stopOnFocus: true,
+                stopOnClick: window
+            });
+            onFrame = function() {
+                var frame;
+                clearBlink();
+                frame = W.getFrame();
+                if (frame) {
+                    frame.removeEventListener('mouseover', onFrame, false);
+                }
+            };
+            node.events.ng.once('FRAME_GENERATED', function(frame) {
+                frame.addEventListener('mouseover', onFrame, false);
+            });
+        }
     };
 
     WaitingRoom.prototype.destroy = function() {
