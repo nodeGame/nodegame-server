@@ -605,7 +605,7 @@ min/max/exact handler accordingly.</p>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="nx">node</span><span class="p">.</span><span class="nx">on</span><span class="p">.</span><span class="nx">preconnect</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">p</span><span class="p">)</span> <span class="p">{</span>
         <span class="kd">var</span> <span class="nx">code</span><span class="p">,</span> <span class="nx">curStage</span><span class="p">,</span> <span class="nx">reconCb</span><span class="p">,</span> <span class="nx">res</span><span class="p">;</span>
-        <span class="kd">var</span> <span class="nx">reconOptions</span><span class="p">;</span>
+        <span class="kd">var</span> <span class="nx">compareSteps</span><span class="p">,</span> <span class="nx">reconOptions</span><span class="p">;</span>
         <span class="kd">var</span> <span class="nx">milliseconds</span><span class="p">,</span> <span class="nx">resetTime</span><span class="p">;</span>
 
         <span class="nx">node</span><span class="p">.</span><span class="nx">warn</span><span class="p">(</span><span class="s1">&#39;Oh...somebody reconnected!&#39;</span><span class="p">,</span> <span class="nx">p</span><span class="p">);</span>
@@ -625,13 +625,12 @@ min/max/exact handler accordingly.</p>
         <td class="code highlight"><div class="highlight"><pre>
         <span class="nx">curStage</span> <span class="o">=</span> <span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">getCurrentGameStage</span><span class="p">();</span>
 
-        <span class="k">if</span> <span class="p">(</span><span class="nx">that</span><span class="p">.</span><span class="nx">sameStepReconnectionOnly</span><span class="p">)</span> <span class="p">{</span>
-            <span class="k">if</span> <span class="p">(</span><span class="nx">GameStage</span><span class="p">.</span><span class="nx">compare</span><span class="p">(</span><span class="nx">code</span><span class="p">.</span><span class="nx">stage</span><span class="p">,</span> <span class="nx">curStage</span><span class="p">))</span> <span class="p">{</span>
-                <span class="nx">node</span><span class="p">.</span><span class="nx">err</span><span class="p">(</span><span class="s1">&#39;player reconnected from another stage. &#39;</span> <span class="o">+</span>
-                         <span class="s1">&#39;Not allowed. Player: &#39;</span> <span class="o">+</span> <span class="nx">p</span><span class="p">.</span><span class="nx">id</span><span class="p">);</span>
-                <span class="nx">disposeClient</span><span class="p">(</span><span class="nx">node</span><span class="p">,</span> <span class="nx">p</span><span class="p">);</span>
-                <span class="k">return</span><span class="p">;</span>
-            <span class="p">}</span>
+        <span class="nx">compareSteps</span> <span class="o">=</span> <span class="nx">GameStage</span><span class="p">.</span><span class="nx">compare</span><span class="p">(</span><span class="nx">code</span><span class="p">.</span><span class="nx">stage</span><span class="p">,</span> <span class="nx">curStage</span><span class="p">);</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">that</span><span class="p">.</span><span class="nx">sameStepReconnectionOnly</span> <span class="o">&amp;&amp;</span> <span class="nx">compareSteps</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">node</span><span class="p">.</span><span class="nx">err</span><span class="p">(</span><span class="s1">&#39;GameRoom: player reconnected from another step. &#39;</span> <span class="o">+</span>
+                     <span class="s1">&#39;Not allowed. Player: &#39;</span> <span class="o">+</span> <span class="nx">p</span><span class="p">.</span><span class="nx">id</span><span class="p">);</span>
+            <span class="nx">disposeClient</span><span class="p">(</span><span class="nx">node</span><span class="p">,</span> <span class="nx">p</span><span class="p">);</span>
+            <span class="k">return</span><span class="p">;</span>
         <span class="p">}</span>
 
 
@@ -789,10 +788,15 @@ or false to abort reconnection.</p>
 </div>
 <p>Start the step on reconnecting client.
 Unless differently specified by the reconnect callback,
-target step is the current step of the logic.</p>
+target step is what is more advanced between the logic step,
+and the step when the client disconnected.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">reconOptions</span><span class="p">.</span><span class="nx">targetStep</span><span class="p">)</span> <span class="nx">reconOptions</span><span class="p">.</span><span class="nx">targetStep</span> <span class="o">=</span> <span class="nx">curStage</span><span class="p">;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">reconOptions</span><span class="p">.</span><span class="nx">targetStep</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">compareSteps</span><span class="p">,</span> <span class="nx">curStage</span><span class="p">,</span> <span class="nx">code</span><span class="p">.</span><span class="nx">stage</span><span class="p">);</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nx">compareSteps</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="nx">reconOptions</span><span class="p">.</span><span class="nx">targetStep</span> <span class="o">=</span> <span class="nx">code</span><span class="p">.</span><span class="nx">stage</span><span class="p">;</span>
+            <span class="k">else</span> <span class="nx">reconOptions</span><span class="p">.</span><span class="nx">targetStep</span> <span class="o">=</span> <span class="nx">curStage</span><span class="p">;</span>
+        <span class="p">}</span>
         <span class="nx">node</span><span class="p">.</span><span class="nx">remoteCommand</span><span class="p">(</span><span class="s1">&#39;goto_step&#39;</span><span class="p">,</span> <span class="nx">p</span><span class="p">.</span><span class="nx">id</span><span class="p">,</span> <span class="nx">reconOptions</span><span class="p">);</span>
 
 
