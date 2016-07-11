@@ -89,7 +89,7 @@ moves them in a separate game room, and starts the game.</p>
     <span class="nx">waitRoom</span><span class="p">.</span><span class="nx">parseSettings</span><span class="p">(</span><span class="nx">settings</span><span class="p">);</span>
 
     <span class="kd">function</span> <span class="nx">clientReconnects</span><span class="p">(</span><span class="nx">p</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nx">channel</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Reconnection in the waiting room.&#39;</span><span class="p">,</span> <span class="nx">p</span><span class="p">);</span>
+        <span class="nx">channel</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Reconnection to the waiting room.&#39;</span><span class="p">,</span> <span class="nx">p</span><span class="p">);</span>
         <span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">pl</span><span class="p">.</span><span class="nx">add</span><span class="p">(</span><span class="nx">p</span><span class="p">);</span>
         <span class="nx">clientConnects</span><span class="p">(</span><span class="nx">p</span><span class="p">);</span>
     <span class="p">}</span>

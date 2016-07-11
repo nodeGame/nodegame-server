@@ -19414,7 +19414,8 @@ if (!Array.prototype.indexOf) {
                             'missing or invalid: ', o);
         }
         // if (node.nodename !== nodename) o.session = node.nodename;
-        if (!o.timestamp) o.timestamp = Date ? Date.now() : null;
+        if (!o.timestamp) o.timestamp = Date.now ?
+            Date.now() : new Date().getTime();
         this.insert(o);
     };
 
@@ -34010,27 +34011,46 @@ if (!Array.prototype.indexOf) {
         // The HTMLElement canvas where the faces are created
         this.canvas = null;
 
+        // ### ChernoffFaces.effort
+        // Records all the changes (if options.trackChanges is TRUE).
+        this.changes = [];
+
         // ### ChernoffFaces.onChange
         // Name of the event to emit to update the canvas (falsy disabled)
         this.onChange = null;
 
         // ### ChernoffFaces.onChangeCb
         // Updates the canvas when the onChange event is emitted
+        //
+        // @param {object} f Optional. The list of features to change.
+        //    Can be a complete set or subset of all the features. If
+        //    not specified, it will try to get the features from the
+        //    the controls object, and if not found, a random vector
+        //    will be created.
+        // @param {boolean} updateControls Optional. If TRUE, controls
+        //    are updated with the new values. Default, FALSE.
+        //
+        // @see ChernoffFaces.draw
         this.onChangeCb = function(f, updateControls) {
-            // Draw what passed as parameter,
-            // or what is the current value of sliders,
-            // or a random face.
-            if (!f && that.sc) {
-                f = that.sc.getValues();
-                if ('undefined' === typeof updateControls) {
-                    updateControls = false;
-                }
-            }
-            else {
-                f = FaceVector.random();
+            if ('undefined' === typeof updateControls) updateControls = false;
+            if (!f) {
+                if (that.sc) f = that.sc.getValues();
+                else f = FaceVector.random();
             }
             that.draw(f, updateControls);
         };
+
+        /**
+         * ### ChoiceTable.timeFrom
+         *
+         * Name of the event to measure time from for each change
+         *
+         * Default event is a new step is loaded (user can interact with
+         * the screen). Set it to FALSE, to have absolute time.
+         *
+         * @see node.timer.getTimeSince
+         */
+        this.timeFrom = 'step';
 
         // ### ChernoffFaces.features
         // The object containing all the features to draw Chernoff faces
@@ -34074,11 +34094,15 @@ if (!Array.prototype.indexOf) {
         this.options = options;
 
         // Face Painter.
-        this.features = options.features || this.features ||
-            FaceVector.random();
+        if (options.features) {
+            this.features = new FaceVector(options.features);
+        }
+        else if (!this.features) {
+            this.features = FaceVector.random();
+        }
 
         // Draw features, if facepainter was already created.
-        if (this.fp) this.fp.draw(new FaceVector(this.features));
+        if (this.fp) this.fp.draw(this.features);
 
         // onChange event.
         if (options.onChange === false || options.onChange === null) {
@@ -34199,7 +34223,7 @@ if (!Array.prototype.indexOf) {
 
             // Face Painter.
             this.fp = new FacePainter(this.canvas);
-            this.fp.draw(new FaceVector(this.features));
+            this.fp.draw(this.features);
         }
     };
 
@@ -34231,20 +34255,43 @@ if (!Array.prototype.indexOf) {
      *
      * Draw a face on canvas and optionally updates the controls
      *
-     * @param {object} features The features to draw
+     * Stores the current value of the drawn image under `.features`.
+     *
+     * @param {object} features The features to draw (If not a complete
+     *   set of features, they will be merged with current values)
      * @param {boolean} updateControls Optional. If equal to false,
      *    controls are not updated. Default: true
      *
      * @see ChernoffFaces.sc
+     * @see ChernoffFaces.features
      */
     ChernoffFaces.prototype.draw = function(features, updateControls) {
-        var fv;
-        if (!features) return;
-        updateControls =
-            'undefined' === typeof updateControls ? true : updateControls;
-        fv = new FaceVector(features);
-        this.fp.redraw(fv);
-        if (this.sc && updateControls) {
+        var time;
+        if ('object' !== typeof features) {
+            throw new TypeError('ChernoffFaces.draw: features must be object.');
+        }
+        if (this.options.trackChanges) {
+            // Relative time.
+            if ('string' === typeof this.timeFrom) {
+                time = node.timer.getTimeSince(this.timeFrom);
+            }
+            // Absolute time.
+            else {
+                time = Date.now ? Date.now() : new Date().getTime();
+            }
+            this.changes.push({
+                time: time,
+                change: features
+            });
+        };
+
+        // Create a new FaceVector, if features is not one, mixing-in
+        // new features and old ones.
+        this.features = (features instanceof FaceVector) ? features :
+            new FaceVector(features, this.features);
+
+        this.fp.redraw(this.features);
+        if (this.sc && (updateControls !== false)) {
             // Without merging wrong values are passed as attributes.
             this.sc.init({
                 features: J.mergeOnKey(FaceVector.defaults, features, 'value')
@@ -34253,8 +34300,16 @@ if (!Array.prototype.indexOf) {
         }
     };
 
-    ChernoffFaces.prototype.getValues = function() {
-        return this.fp.face;
+    ChernoffFaces.prototype.getValues = function(options) {
+        if (options && options.changes) {
+            return {
+                changes: this.changes,
+                cf: this.features
+            };
+        }
+        else {
+            return this.fp.face;
+        }
     };
 
      /**
@@ -34365,7 +34420,7 @@ if (!Array.prototype.indexOf) {
 
     FacePainter.prototype.redraw = function(face, x, y) {
         this.canvas.clear();
-        this.draw(face,x,y);
+        this.draw(face, x, y);
     };
 
     FacePainter.prototype.scale = function(x, y) {
@@ -34554,13 +34609,10 @@ if (!Array.prototype.indexOf) {
     };
 
 
-    /*!
+    /**
+     * FaceVector.defaults
      *
-     * A description of a Chernoff Face.
-     *
-     * This class packages the 11-dimensional vector of numbers from 0 through
-     * 1 that completely describe a Chernoff face.
-     *
+     * Numerical description of all the components of a standard Chernoff Face
      */
     FaceVector.defaults = {
         // Head
@@ -34757,102 +34809,123 @@ if (!Array.prototype.indexOf) {
             label: 'lineWidth'
         }
 
-
     };
+
+    // Compute range for each feature.
+    (function(defaults) {
+        var key;
+        for (key in defaults) {
+            if (defaults.hasOwnProperty(key)) {
+                defaults[key].range = defaults[key].max - defaults[key].min;
+            }
+        }
+    })(FaceVector.defaults);
 
     // Constructs a random face vector.
     FaceVector.random = function() {
-        var out = {};
-        for (var key in FaceVector.defaults) {
-            if (FaceVector.defaults.hasOwnProperty(key)) {
-                if (key === 'color') {
-                    out.color = 'red';
-                }
-                else if (key === 'lineWidth') {
-                    out.lineWidth = 1;
-                }
-                else if (key === 'scaleX') {
-                    out.scaleX = 1;
-                }
-                else if (key === 'scaleY') {
-                    out.scaleY = 1;
-                }
-                else {
-                    out[key] = FaceVector.defaults[key].min +
-                        Math.random() * FaceVector.defaults[key].max;
-                }
-            }
-        }
-        return new FaceVector(out);
+        console.log('*** FaceVector.random is deprecated. ' +
+                    'Use new FaceVector() instead.');
+        return new FaceVector();
     };
 
-    function FaceVector(faceVector) {
-        faceVector = faceVector || {};
-
-        this.scaleX = faceVector.scaleX || 1;
-        this.scaleY = faceVector.scaleY || 1;
-
-
-        this.color = faceVector.color || 'green';
-        this.lineWidth = faceVector.lineWidth || 1;
-
-        // Merge on key
-        for (var key in FaceVector.defaults) {
-            if (FaceVector.defaults.hasOwnProperty(key)){
-                if (faceVector.hasOwnProperty(key)){
-                    this[key] = faceVector[key];
-                }
-                else {
-                    this[key] = FaceVector.defaults[key].value;
-                }
-            }
-        }
-
-    }
-
-    //Constructs a random face vector.
-    FaceVector.prototype.shuffle = function() {
-        for (var key in this) {
-            if (this.hasOwnProperty(key)) {
+    function FaceVector(faceVector, defaults) {
+        var key;
+        // Make random vector.
+        if ('undefined' === typeof faceVector) {
+            for (key in FaceVector.defaults) {
                 if (FaceVector.defaults.hasOwnProperty(key)) {
-                    if (key !== 'color') {
+                    if (key === 'color') {
+                        this.color = 'red';
+                    }
+                    else if (key === 'lineWidth') {
+                        this.lineWidth = 1;
+                    }
+                    else if (key === 'scaleX') {
+                        this.scaleX = 1;
+                    }
+                    else if (key === 'scaleY') {
+                        this.scaleY = 1;
+                    }
+                    else {
                         this[key] = FaceVector.defaults[key].min +
-                            Math.random() * FaceVector.defaults[key].max;
+                            Math.random() * FaceVector.defaults[key].range;
                     }
                 }
             }
         }
-    };
+        // Mixin values.
+        else if ('object' === typeof faceVector) {
 
-    //Computes the Euclidean distance between two FaceVectors.
-    FaceVector.prototype.distance = function(face) {
-        return FaceVector.distance(this, face);
-    };
+            this.scaleX = faceVector.scaleX || 1;
+            this.scaleY = faceVector.scaleY || 1;
 
+            this.color = faceVector.color || 'green';
+            this.lineWidth = faceVector.lineWidth || 1;
 
-    FaceVector.distance = function(face1, face2) {
-        var sum = 0.0;
-        var diff;
+            defaults = defaults || FaceVector.defaults;
 
-        for (var key in face1) {
-            if (face1.hasOwnProperty(key)) {
-                diff = face1[key] - face2[key];
-                sum = sum + diff * diff;
+            // Merge on key.
+            for (key in defaults) {
+                if (defaults.hasOwnProperty(key)){
+                    if (faceVector.hasOwnProperty(key)) {
+                        this[key] = faceVector[key];
+                    }
+                    else {
+                        this[key] = defaults ? defaults[key] :
+                            FaceVector.defaults[key].value;
+                    }
+                }
             }
         }
-
-        return Math.sqrt(sum);
-    };
-
-    FaceVector.prototype.toString = function() {
-        var out = 'Face: ';
-        for (var key in this) {
-            if (this.hasOwnProperty(key)) {
-                out += key + ' ' + this[key];
-            }
+        else {
+            throw new TypeError('FaceVector constructor: faceVector must be ' +
+                                'object or undefined.');
         }
-        return out;
-    };
+    }
+
+//     //Constructs a random face vector.
+//     FaceVector.prototype.shuffle = function() {
+//         for (var key in this) {
+//             if (this.hasOwnProperty(key)) {
+//                 if (FaceVector.defaults.hasOwnProperty(key)) {
+//                     if (key !== 'color') {
+//                         this[key] = FaceVector.defaults[key].min +
+//                             Math.random() * FaceVector.defaults[key].max;
+//                     }
+//                 }
+//             }
+//         }
+//     };
+
+//     //Computes the Euclidean distance between two FaceVectors.
+//     FaceVector.prototype.distance = function(face) {
+//         return FaceVector.distance(this, face);
+//     };
+//
+//
+//     FaceVector.distance = function(face1, face2) {
+//         var sum = 0.0;
+//         var diff;
+//
+//         for (var key in face1) {
+//             if (face1.hasOwnProperty(key)) {
+//                 diff = face1[key] - face2[key];
+//                 sum = sum + diff * diff;
+//             }
+//         }
+//
+//         return Math.sqrt(sum);
+//     };
+//
+//     FaceVector.prototype.toString = function() {
+//         var out = 'Face: ';
+//         for (var key in this) {
+//             if (this.hasOwnProperty(key)) {
+//                 out += key + ' ' + this[key];
+//             }
+//         }
+//         return out;
+//     };
 
 })(node);
 
@@ -37245,6 +37318,9 @@ if (!Array.prototype.indexOf) {
             nClicks: this.numberOfClicks
         };
         opts = opts || {};
+        if (opts.processChoice) {
+            obj.choice = opts.processChoice.call(this, obj.choice);
+        }
         if (this.shuffleChoices) {
             obj.order = this.order;
         }
@@ -37256,7 +37332,7 @@ if (!Array.prototype.indexOf) {
         }
         if (null !== this.correctChoice || null !== this.requiredChoice) {
             obj.isCorrect = this.verifyChoice(opts.markAttempt);
-            obj.attemps = this.attemps;
+            obj.attempts = this.attempts;
             if (!obj.isCorrect && opts.highlight) this.highlight();
         }
         if (this.textarea) obj.freetext = this.textarea.value;
@@ -38137,7 +38213,7 @@ if (!Array.prototype.indexOf) {
                 obj.missValues = true;
                 if (tbl.requiredChoice) toHighlight = true;
             }
-            if (!obj.items[tbl.id].isCorrect === false && opts.highlight) {
+            if (obj.items[tbl.id].isCorrect === false && opts.highlight) {
                 toHighlight = true;
             }
         }
@@ -41945,6 +42021,13 @@ if (!Array.prototype.indexOf) {
     };
 
     SVOGauge.prototype.getValues = function(opts) {
+        opts = opts || {};
+        // Transform choice in numerical values.
+        if ('undefined' === typeof opts.processChoice) {
+            opts.processChoice = function(choice) {
+                return this.choices[choice];
+            };
+        }
         return this.gauge.getValues(opts);
     };
 
@@ -42081,6 +42164,7 @@ if (!Array.prototype.indexOf) {
 
         renderer = options.renderer || function(td, choice, idx) {
             td.innerHTML = choice[0] + '<hr/>' + choice[1];
+            // return (choice[0] + '_' + choice[1]);
         };
 
         if (options.left) {
@@ -44107,7 +44191,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    WaitingRoom.version = '0.1.0';
+    WaitingRoom.version = '1.0.0';
     WaitingRoom.description = 'Displays a waiting room for clients.';
 
     WaitingRoom.title = 'Waiting Room';

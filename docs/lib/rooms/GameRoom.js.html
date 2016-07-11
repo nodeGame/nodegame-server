@@ -625,7 +625,7 @@ min/max/exact handler accordingly.</p>
         <td class="code highlight"><div class="highlight"><pre>
         <span class="nx">curStage</span> <span class="o">=</span> <span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">getCurrentGameStage</span><span class="p">();</span>
 
-        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">that</span><span class="p">.</span><span class="nx">allowLateReconnections</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">that</span><span class="p">.</span><span class="nx">sameStepReconnectionOnly</span><span class="p">)</span> <span class="p">{</span>
             <span class="k">if</span> <span class="p">(</span><span class="nx">GameStage</span><span class="p">.</span><span class="nx">compare</span><span class="p">(</span><span class="nx">code</span><span class="p">.</span><span class="nx">stage</span><span class="p">,</span> <span class="nx">curStage</span><span class="p">))</span> <span class="p">{</span>
                 <span class="nx">node</span><span class="p">.</span><span class="nx">err</span><span class="p">(</span><span class="s1">&#39;player reconnected from another stage. &#39;</span> <span class="o">+</span>
                          <span class="s1">&#39;Not allowed. Player: &#39;</span> <span class="o">+</span> <span class="nx">p</span><span class="p">.</span><span class="nx">id</span><span class="p">);</span>
@@ -787,10 +787,12 @@ or false to abort reconnection.</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-26" id="section-26">&#182;</a>
 </div>
-<p>Start the step on reconnecting client.</p>
+<p>Start the step on reconnecting client.
+Unless differently specified by the reconnect callback,
+target step is the current step of the logic.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-        <span class="nx">reconOptions</span><span class="p">.</span><span class="nx">targetStep</span> <span class="o">=</span> <span class="nx">curStage</span><span class="p">;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">reconOptions</span><span class="p">.</span><span class="nx">targetStep</span><span class="p">)</span> <span class="nx">reconOptions</span><span class="p">.</span><span class="nx">targetStep</span> <span class="o">=</span> <span class="nx">curStage</span><span class="p">;</span>
         <span class="nx">node</span><span class="p">.</span><span class="nx">remoteCommand</span><span class="p">(</span><span class="s1">&#39;goto_step&#39;</span><span class="p">,</span> <span class="nx">p</span><span class="p">.</span><span class="nx">id</span><span class="p">,</span> <span class="nx">reconOptions</span><span class="p">);</span>
 
 
