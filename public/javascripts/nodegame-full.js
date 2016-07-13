@@ -21210,7 +21210,13 @@ if (!Array.prototype.indexOf) {
         var prop;
 
         // Set willBeDone. TODO: this does not lock screen / stop timer.
-        if (options.willBeDone) game.willBeDone = true;
+        if (options.willBeDone) {
+            // Temporarily remove the done callback.
+            game.plot.tmpCache('done', null);
+            game.node.once('PLAYING', function() {
+                game.node.done();
+            });
+        }
 
         // Temporarily modify plot properties.
         if (options.plot) {
@@ -25695,14 +25701,10 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # incoming
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2016 Stefano Balietti
  * MIT Licensed
  *
  * Listeners for incoming messages
- *
- * TODO: PRECONNECT events are not handled, just emitted.
- * Maybe some default support should be given, or some
- * default handlers provided.
  */
 (function(exports, parent) {
 
