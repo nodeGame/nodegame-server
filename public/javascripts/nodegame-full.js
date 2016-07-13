@@ -21194,10 +21194,10 @@ if (!Array.prototype.indexOf) {
      *
      * Valid options:
      *
-     *    - willBeDone: sets game.willBeDone to TRUE,
-     *    - plot: add entries to the tmpCache of the plot,
-     *    - cb: a callback executed with the game context, and with options
-     *          object itself as parameter
+     *   - willBeDone: sets game.willBeDone to TRUE,
+     *   - plot: add entries to the tmpCache of the plot,
+     *   - cb: a callback executed with the game context, and with options
+     *         object itself as parameter
      *
      * @param {Game} game The game instance
      * @param {object} options The options to process
@@ -21213,6 +21213,7 @@ if (!Array.prototype.indexOf) {
         if (options.willBeDone) {
             // Temporarily remove the done callback.
             game.plot.tmpCache('done', null);
+            // Call node.done() immediately after PLAYING is emitted.
             game.node.once('PLAYING', function() {
                 game.node.done();
             });
