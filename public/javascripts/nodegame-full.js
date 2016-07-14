@@ -10195,6 +10195,7 @@ if (!Array.prototype.indexOf) {
      * Removes and entry from the database with the given id and returns it
      *
      * @param {mixed} idx The id of item to remove
+     *
      * @return {object|boolean} The removed item, or FALSE if index is invalid
      *
      * @see NDDB.index
@@ -10221,9 +10222,10 @@ if (!Array.prototype.indexOf) {
     /**
      * ### NDDBIndex.update
      *
-     * Removes and entry from the database with the given id and returns it
+     * Updates an entry with the given id
      *
      * @param {mixed} idx The id of item to update
+     *
      * @return {object|boolean} The updated item, or FALSE if index is invalid
      *
      * @see NDDB.index
@@ -28169,7 +28171,7 @@ if (!Array.prototype.indexOf) {
         }
 
         // Emit event.
-        node.events.ng.emit('FRAME_GENERATED', iframe);
+        // node.events.ng.emit('FRAME_GENERATED', iframe);
 
         return iframe;
     };
@@ -28416,7 +28418,7 @@ if (!Array.prototype.indexOf) {
 
 
         // Emit event.
-        node.events.ng.emit('HEADER_GENERATED', header);
+        // node.events.ng.emit('HEADER_GENERATED', header);
 
         return this.headerElement;
     };
@@ -42167,7 +42169,6 @@ if (!Array.prototype.indexOf) {
 
         renderer = options.renderer || function(td, choice, idx) {
             td.innerHTML = choice[0] + '<hr/>' + choice[1];
-            // return (choice[0] + '_' + choice[1]);
         };
 
         if (options.left) {

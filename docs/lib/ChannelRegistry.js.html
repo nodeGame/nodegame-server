@@ -153,6 +153,9 @@
       <div class="heading h3">
         <a href="#channelregistry.authorize">ChannelRegistry.authorize</a>
       </div>
+      <div class="heading h3">
+        <a href="#channelregistry.tagnext">ChannelRegistry.tagNext</a>
+      </div>
       <div class="heading h2">
         <a href="#helper%20methods">Helper methods</a>
       </div>
@@ -176,7 +179,7 @@
 </div>
 
 
-<p>Copyright(c) 2014 Stefano Balietti
+<p>Copyright(c) 2016 Stefano Balietti
 MIT Licensed</p>
   </div>
   <div class="body"><p>Container for clients, rooms and aliases</p>
@@ -330,6 +333,25 @@ MIT Licensed</p>
             <span class="p">}</span>
         <span class="p">}</span>
     <span class="p">});</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-6" id="section-6">&#182;</a>
+</div>
+<p>TODO: update when the options are passed correctly.
+Add another index, if required so.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="kc">true</span> <span class="o">||</span> <span class="nx">options</span><span class="p">.</span><span class="nx">tagClients</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">index</span><span class="p">(</span><span class="s1">&#39;tagged&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">o</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">return</span> <span class="nx">o</span><span class="p">.</span><span class="nx">tag</span><span class="p">;</span>
+        <span class="p">});</span>
+    <span class="p">}</span>
 
 
 </pre></div>
@@ -622,7 +644,7 @@ MIT Licensed</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-14" id="section-14">&#182;</a>
+  <a class="pilcrow" href="#section-15" id="section-15">&#182;</a>
 </div>
 <p>Remove client from all the rooms to trigger removing
 room aliases to client ID:</p>
@@ -637,7 +659,7 @@ room aliases to client ID:</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-15" id="section-15">&#182;</a>
+  <a class="pilcrow" href="#section-16" id="section-16">&#182;</a>
 </div>
 <p>Remove game aliases to ID:</p>
         </td>
@@ -656,7 +678,7 @@ room aliases to client ID:</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-16" id="section-16">&#182;</a>
+  <a class="pilcrow" href="#section-17" id="section-17">&#182;</a>
 </div>
 <p>Remove room stack:</p>
         </td>
@@ -670,7 +692,7 @@ room aliases to client ID:</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-17" id="section-17">&#182;</a>
+  <a class="pilcrow" href="#section-18" id="section-18">&#182;</a>
 </div>
 <p>Remove client from PlayerList:</p>
         </td>
@@ -742,7 +764,7 @@ from the old room.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-19" id="section-19">&#182;</a>
+  <a class="pilcrow" href="#section-20" id="section-20">&#182;</a>
 </div>
 <p>Remove all room aliases to the client's ID:</p>
         </td>
@@ -811,7 +833,7 @@ from the old room.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-21" id="section-21">&#182;</a>
+  <a class="pilcrow" href="#section-22" id="section-22">&#182;</a>
 </div>
 <p>Remove all room aliases to the client's ID:</p>
         </td>
@@ -828,7 +850,7 @@ from the old room.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-22" id="section-22">&#182;</a>
+  <a class="pilcrow" href="#section-23" id="section-23">&#182;</a>
 </div>
 <p>Try to pop the client's stack:</p>
         </td>
@@ -1063,7 +1085,7 @@ from the old room.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-29" id="section-29">&#182;</a>
+  <a class="pilcrow" href="#section-30" id="section-30">&#182;</a>
 </div>
 <p>Update the PlayerList:</p>
         </td>
@@ -1832,7 +1854,7 @@ the alias will fail then.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-50" id="section-50">&#182;</a>
+  <a class="pilcrow" href="#section-51" id="section-51">&#182;</a>
 </div>
 <p>Delete that alias:</p>
         </td>
@@ -1990,7 +2012,7 @@ Returns NULL if not found or infinite loop detected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-54" id="section-54">&#182;</a>
+  <a class="pilcrow" href="#section-55" id="section-55">&#182;</a>
 </div>
 <p>Avoid alias loop.</p>
         </td>
@@ -2005,7 +2027,7 @@ Returns NULL if not found or infinite loop detected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-55" id="section-55">&#182;</a>
+  <a class="pilcrow" href="#section-56" id="section-56">&#182;</a>
 </div>
 <p>Check aliases in given room.</p>
         </td>
@@ -2025,7 +2047,7 @@ Returns NULL if not found or infinite loop detected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-56" id="section-56">&#182;</a>
+  <a class="pilcrow" href="#section-57" id="section-57">&#182;</a>
 </div>
 <p>Check if ID exists.</p>
         </td>
@@ -2041,7 +2063,7 @@ Returns NULL if not found or infinite loop detected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-57" id="section-57">&#182;</a>
+  <a class="pilcrow" href="#section-58" id="section-58">&#182;</a>
 </div>
 <p>Check game aliases.</p>
         </td>
@@ -2058,7 +2080,7 @@ Returns NULL if not found or infinite loop detected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-58" id="section-58">&#182;</a>
+  <a class="pilcrow" href="#section-59" id="section-59">&#182;</a>
 </div>
 <p>Client not found.</p>
         </td>
@@ -2082,30 +2104,31 @@ Returns NULL if not found or infinite loop detected.</p>
 </div>
 
   </div>
-  <div class="body"><p>Gets client ID from an alias and optional game room</p>
+  <div class="body"><p>Verifies that a user-profile is "authorized" to access a channel</p>
 
-<p>May return ID even if that client is not in the given room.
-Only connected clients are searched.
-Returns NULL if not found or infinite loop detected.</p>
+<p>A profile is authorized if:</p>
+
+<ul>
+<li>a client object with matching id is found,
+<ul><li>if the client object has a 'pwd' property, this also has to match</li>
+<li>the client has not been checked out already</li></ul></li>
+</ul>
   </div>
   <div class="details">
     <div class="dox_tag_title">Params</div>
     <div class="dox_tag_detail">
-      <span class="dox_tag_name">client</span>
-      <span class="dox_type">string</span>
-      <span>The client's alias or ID</span>
-    </div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name">room</span>
-      <span class="dox_type">string</span>
-      <span>Optional. The room ID.</span>
+      <span class="dox_tag_name">profile.</span>
+      <span class="dox_type">object</span>
+      <span>An object containing the properties 'id',
+  and, optionally, 'pwd'.</span>
     </div>
     <div class="dox_tag_title">Returns</div>
     <div class="dox_tag_detail">
       <span class="dox_tag_name"></span>
-      <span class="dox_type">string</span>
-      <span class="dox_type">null</span>
-      <span>The client ID. NULL on error.</span>
+      <span class="dox_type">object</span>
+      <span class="dox_type">false</span>
+      <span>The client object, or FALSE if the profile
+   was not authorized</span>
     </div>
   </div>
 </div>
@@ -2120,7 +2143,7 @@ Returns NULL if not found or infinite loop detected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-60" id="section-60">&#182;</a>
+  <a class="pilcrow" href="#section-61" id="section-61">&#182;</a>
 </div>
 <p>Username.</p>
         </td>
@@ -2134,7 +2157,7 @@ Returns NULL if not found or infinite loop detected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-61" id="section-61">&#182;</a>
+  <a class="pilcrow" href="#section-62" id="section-62">&#182;</a>
 </div>
 <p>Pwd.</p>
         </td>
@@ -2147,7 +2170,7 @@ Returns NULL if not found or infinite loop detected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-62" id="section-62">&#182;</a>
+  <a class="pilcrow" href="#section-63" id="section-63">&#182;</a>
 </div>
 <p>CheckedOut.</p>
         </td>
@@ -2160,7 +2183,7 @@ Returns NULL if not found or infinite loop detected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-63" id="section-63">&#182;</a>
+  <a class="pilcrow" href="#section-64" id="section-64">&#182;</a>
 </div>
 <p>In Use.</p>
         </td>
@@ -2169,6 +2192,137 @@ Returns NULL if not found or infinite loop detected.</p>
 
     <span class="k">return</span> <span class="nx">client</span><span class="p">;</span>
 <span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="channelregistry.tagnext">
+  <h3>
+    <a href="#channelregistry.tagnext" name="channelregistry.tagnext" class="pilcrow">&#182;</a>
+    ChannelRegistry.tagNext
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Associates (tags) the next available code with to given id</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">tag</span>
+      <span class="dox_type">string</span>
+      <span>The tag to associate</span>
+    </div>
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">object</span>
+      <span class="dox_type">boolean</span>
+      <span>The tagged client object, or FALSE
+   there is no more elements to tag.</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">ChannelRegistry</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">tagNext</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">tag</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">client</span><span class="p">;</span>
+    <span class="kr">debugger</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-66" id="section-66">&#182;</a>
+</div>
+<p>Return same client, if previously associated with a tag.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">client</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">tagged</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="nx">tag</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">client</span><span class="p">)</span> <span class="k">return</span> <span class="nx">client</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-67" id="section-67">&#182;</a>
+</div>
+<p>TODO: some of the indexes in the main playerlist object should be views?
+For example, here we could do:
+client = this.clients.player.current();
+instead we do:</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">client</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">current</span><span class="p">();</span>
+    <span class="k">while</span> <span class="p">(</span><span class="nx">client</span> <span class="o">&amp;&amp;</span> <span class="p">(</span><span class="nx">client</span><span class="p">.</span><span class="nx">admin</span> <span class="o">||</span> <span class="o">!</span><span class="nx">client</span><span class="p">.</span><span class="nx">valid</span> <span class="o">||</span> <span class="nx">client</span><span class="p">.</span><span class="nx">tag</span><span class="p">))</span> <span class="p">{</span>
+        <span class="nx">client</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">next</span><span class="p">();</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">client</span><span class="p">)</span> <span class="k">return</span> <span class="kc">null</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-68" id="section-68">&#182;</a>
+</div>
+<p>TODO: Ideally we should use NDDB.tag, but:
+  - it needs some refactor
+  - and most importantly it is not saved with NDDB.saved
+We get around by creating a new index (tag), and manually
+adding items to it (update would do the same, but it is
+more expensive).</p>
+
+<p>Potentially useful lines of code.
+client = this.clients.tag(tag);
+this.clients.id.update(client.id, { tag: tag });</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-69" id="section-69">&#182;</a>
+</div>
+<p>Tag client.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">client</span><span class="p">.</span><span class="nx">tag</span> <span class="o">=</span> <span class="nx">tag</span><span class="p">;</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">tagged</span><span class="p">.</span><span class="nx">_add</span><span class="p">(</span><span class="nx">tag</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">nddb_pointer</span><span class="p">);</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-70" id="section-70">&#182;</a>
+</div>
+<p>Advance pointer.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">this</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">next</span><span class="p">();</span>
+    <span class="k">return</span> <span class="nx">client</span><span class="p">;</span>
+<span class="p">};</span>
+
+
+
 
 
 </pre></div>
@@ -2231,7 +2385,7 @@ Returns NULL if not found or infinite loop detected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-66" id="section-66">&#182;</a>
+  <a class="pilcrow" href="#section-73" id="section-73">&#182;</a>
 </div>
 <p>if ('undefined' === typeof client.history) client.history = [];</p>
         </td>
