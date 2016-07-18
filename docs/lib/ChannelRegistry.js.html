@@ -159,7 +159,7 @@
       <div class="heading h2">
         <a href="#helper%20methods">Helper methods</a>
       </div>
-      <div class="heading h2">
+      <div class="heading h3">
         <a href="#generateclient">generateClient</a>
       </div>
     </div>
@@ -514,7 +514,10 @@ Add another index, if required so.</p>
     <div class="dox_tag_detail">
       <span class="dox_tag_name"></span>
       <span class="dox_type">string</span>
-      <span>The registered client id.</span>
+      <span>The registered client id.
+
+TODO: refactor API, one parameter might be enough, if object is passed.
+TODO: shall we check Access and Exit Codes as well?</span>
     </div>
   </div>
 </div>
@@ -524,17 +527,18 @@ Add another index, if required so.</p>
     <span class="kd">var</span> <span class="nx">res</span><span class="p">;</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">clientId</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ChannelRegistry.addClient: error generating &#39;</span> <span class="o">+</span>
-                            <span class="s1">&#39;clientId.&#39;</span><span class="p">);</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ChannelRegistry.addClient: clientId must be &#39;</span> <span class="o">+</span>
+                            <span class="s1">&#39;string. Found: &#39;</span> <span class="o">+</span> <span class="nx">clientId</span><span class="p">);</span>
     <span class="p">}</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">clientObj</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ChannelRegistry.addClient: clientObj must be &#39;</span> <span class="o">+</span>
-                            <span class="s1">&#39;object.&#39;</span><span class="p">);</span>
+                            <span class="s1">&#39;object. Found: &#39;</span> <span class="o">+</span> <span class="nx">clientObj</span><span class="p">);</span>
     <span class="p">}</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">id</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="nx">clientId</span><span class="p">))</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;ChannelRegistry.addClient: clientId is not unique.&#39;</span><span class="p">);</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;ChannelRegistry.addClient: clientId is not unique: &#39;</span> <span class="o">+</span>
+                        <span class="nx">clientId</span><span class="p">);</span>
     <span class="p">}</span>
 
     <span class="nx">clientObj</span><span class="p">.</span><span class="nx">id</span> <span class="o">=</span> <span class="nx">clientId</span><span class="p">;</span>
@@ -590,7 +594,7 @@ Add another index, if required so.</p>
     <span class="kd">var</span> <span class="nx">i</span><span class="p">,</span> <span class="nx">len</span><span class="p">;</span>
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">J</span><span class="p">.</span><span class="nx">isArray</span><span class="p">(</span><span class="nx">clientsArray</span><span class="p">))</span> <span class="p">{</span>
         <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ChannelRegistry.importClients: clientsArray &#39;</span> <span class="o">+</span>
-                            <span class="s1">&#39;must be array.&#39;</span><span class="p">);</span>
+                            <span class="s1">&#39;must be array. Found: &#39;</span> <span class="o">+</span> <span class="nx">clientsArray</span><span class="p">);</span>
     <span class="p">}</span>
     <span class="nx">i</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="nx">len</span> <span class="o">=</span> <span class="nx">clientsArray</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span>
     <span class="k">for</span> <span class="p">(</span> <span class="p">;</span> <span class="o">++</span><span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">len</span> <span class="p">;</span> <span class="p">)</span> <span class="p">{</span>
@@ -2231,7 +2235,7 @@ Returns NULL if not found or infinite loop detected.</p>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">ChannelRegistry</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">tagNext</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">tag</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">client</span><span class="p">;</span>
-    <span class="kr">debugger</span>
+
 
 </pre></div>
         </td>
@@ -2348,10 +2352,10 @@ this.clients.id.update(client.id, { tag: tag });</p>
         <td class="docs"><div class="dox">
   <div class="summary">
 <div class="pilwrap" id="generateclient">
-  <h2>
+  <h3>
     <a href="#generateclient" name="generateclient" class="pilcrow">&#182;</a>
     generateClient
-  </h2>
+  </h3>
 </div>
 
   </div>
@@ -2375,7 +2379,8 @@ this.clients.id.update(client.id, { tag: tag });</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="kd">function</span> <span class="nx">generateClient</span><span class="p">(</span><span class="nx">clientObj</span><span class="p">)</span> <span class="p">{</span>
-    <span class="kd">var</span> <span class="nx">client</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Player</span><span class="p">(</span><span class="nx">clientObj</span><span class="p">);</span>
+    <span class="kd">var</span> <span class="nx">client</span><span class="p">;</span>
+    <span class="nx">client</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Player</span><span class="p">(</span><span class="nx">clientObj</span><span class="p">);</span>
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">client</span><span class="p">.</span><span class="nx">valid</span><span class="p">)</span> <span class="nx">client</span><span class="p">.</span><span class="nx">valid</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">client</span><span class="p">.</span><span class="nx">connected</span><span class="p">)</span> <span class="nx">client</span><span class="p">.</span><span class="nx">connected</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
 

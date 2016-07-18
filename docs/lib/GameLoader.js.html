@@ -1907,6 +1907,10 @@ generation and clientObject decoration.</p>
     </div>
     <div class="dox_tag_title">See</div>
     <div class="dox_tag_detail">
+      <span class="dox_type">importAuthCodes</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
       <span class="dox_type">GameLoader.getChannelSandbox
 </span>
     </div>
@@ -1915,7 +1919,7 @@ generation and clientObject decoration.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">GameLoader</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">loadAuthDir</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">directory</span><span class="p">,</span> <span class="nx">channel</span><span class="p">)</span> <span class="p">{</span>
-    <span class="kd">var</span> <span class="nx">authFile</span><span class="p">,</span> <span class="nx">authSettingsFile</span><span class="p">,</span> <span class="nx">authCodesFile</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">authDir</span><span class="p">,</span> <span class="nx">authFile</span><span class="p">,</span> <span class="nx">authSettingsFile</span><span class="p">,</span> <span class="nx">authCodesFile</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">settings</span><span class="p">,</span> <span class="nx">codes</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">authObj</span><span class="p">,</span> <span class="nx">sandboxAuth</span><span class="p">,</span> <span class="nx">sandboxIdGen</span><span class="p">,</span> <span class="nx">sandboxDecorate</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">gameName</span><span class="p">;</span>
@@ -1961,6 +1965,8 @@ generation and clientObject decoration.</p>
         <span class="k">return</span><span class="p">;</span>
     <span class="p">}</span>
 
+    <span class="nx">authDir</span> <span class="o">=</span> <span class="nx">directory</span> <span class="o">+</span> <span class="s1">&#39;auth/&#39;</span><span class="p">;</span>
+
 
 </pre></div>
         </td>
@@ -1974,7 +1980,7 @@ generation and clientObject decoration.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
 
-    <span class="nx">authSettingsFile</span> <span class="o">=</span> <span class="nx">directory</span> <span class="o">+</span> <span class="s1">&#39;auth/auth.settings.js&#39;</span><span class="p">;</span>
+    <span class="nx">authSettingsFile</span> <span class="o">=</span> <span class="nx">authDir</span> <span class="o">+</span> <span class="s1">&#39;auth.settings.js&#39;</span><span class="p">;</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">fs</span><span class="p">.</span><span class="nx">existsSync</span><span class="p">(</span><span class="nx">authSettingsFile</span><span class="p">))</span> <span class="p">{</span>
         <span class="nx">settings</span> <span class="o">=</span> <span class="p">{</span>
@@ -2059,26 +2065,6 @@ generation and clientObject decoration.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
 
-    <span class="nx">authCodesFile</span> <span class="o">=</span> <span class="nx">directory</span> <span class="o">+</span> <span class="s1">&#39;auth/&#39;</span> <span class="o">+</span> <span class="p">(</span><span class="nx">settings</span><span class="p">.</span><span class="nx">codes</span> <span class="o">||</span> <span class="s1">&#39;auth.codes.js&#39;</span><span class="p">);</span>
-
-    <span class="k">if</span> <span class="p">(</span><span class="nx">fs</span><span class="p">.</span><span class="nx">existsSync</span><span class="p">(</span><span class="nx">authCodesFile</span><span class="p">))</span> <span class="p">{</span>
-        <span class="k">try</span> <span class="p">{</span>
-            <span class="nx">codes</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="nx">authCodesFile</span><span class="p">)(</span><span class="nx">settings</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">codes</span><span class="p">)</span> <span class="p">{</span>
-                <span class="k">if</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span>
-                    <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadAuthDir: an error &#39;</span> <span class="o">+</span>
-                                    <span class="s1">&#39;occurred: &#39;</span> <span class="o">+</span> <span class="nx">err</span><span class="p">);</span>
-                <span class="p">}</span>
-                <span class="nx">importAuthCodes</span><span class="p">(</span><span class="nx">channel</span><span class="p">,</span> <span class="nx">codes</span><span class="p">,</span> <span class="nx">authCodesFile</span><span class="p">);</span>
-            <span class="p">});</span>
-        <span class="p">}</span>
-        <span class="k">catch</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
-            <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadAuthDir: cannot read &#39;</span> <span class="o">+</span>
-                            <span class="nx">authCodesFile</span> <span class="o">+</span> <span class="s2">&quot;: \n&quot;</span> <span class="o">+</span> <span class="nx">e</span><span class="p">.</span><span class="nx">stack</span><span class="p">);</span>
-        <span class="p">}</span>
-
-        <span class="k">if</span> <span class="p">(</span><span class="nx">codes</span><span class="p">)</span> <span class="nx">importAuthCodes</span><span class="p">(</span><span class="nx">channel</span><span class="p">,</span> <span class="nx">codes</span><span class="p">,</span> <span class="nx">authCodesFile</span><span class="p">);</span>
-    <span class="p">}</span>
-
 
 </pre></div>
         </td>
@@ -2088,13 +2074,102 @@ generation and clientObject decoration.</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-70" id="section-70">&#182;</a>
 </div>
+<p>Transform relative to absolute paths.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">settings</span><span class="p">.</span><span class="nx">codes</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="nx">path</span><span class="p">.</span><span class="nx">isAbsolute</span><span class="p">(</span><span class="nx">settings</span><span class="p">.</span><span class="nx">codes</span><span class="p">))</span> <span class="p">{</span>
+        <span class="nx">settings</span><span class="p">.</span><span class="nx">codes</span> <span class="o">=</span> <span class="nx">authDir</span> <span class="o">+</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">codes</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="k">else</span> <span class="p">{</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-71" id="section-71">&#182;</a>
+</div>
+<p>TODO: remove. Default in ServerNode.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="nx">settings</span><span class="p">.</span><span class="nx">codes</span> <span class="o">=</span> <span class="nx">authDir</span> <span class="o">+</span> <span class="s1">&#39;auth.codes.js&#39;</span><span class="p">;</span>
+    <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-72" id="section-72">&#182;</a>
+</div>
+<p>TODO: only with custom auth.codes.js.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">fs</span><span class="p">.</span><span class="nx">existsSync</span><span class="p">(</span><span class="nx">settings</span><span class="p">.</span><span class="nx">codes</span><span class="p">))</span> <span class="p">{</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-73" id="section-73">&#182;</a>
+</div>
+<p>Inject authDir into settings (will be removed by importAuthCodes).</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="nx">settings</span><span class="p">.</span><span class="nx">authDir</span> <span class="o">=</span> <span class="nx">authDir</span><span class="p">;</span>
+
+        <span class="k">try</span> <span class="p">{</span>
+            <span class="nx">codes</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="nx">settings</span><span class="p">.</span><span class="nx">codes</span><span class="p">)(</span><span class="nx">settings</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">codes</span><span class="p">)</span> <span class="p">{</span>
+                <span class="k">if</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span>
+                    <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadAuthDir: an error &#39;</span> <span class="o">+</span>
+                                    <span class="s1">&#39;occurred: &#39;</span> <span class="o">+</span> <span class="nx">err</span><span class="p">);</span>
+                <span class="p">}</span>
+                <span class="nx">importAuthCodes</span><span class="p">(</span><span class="nx">channel</span><span class="p">,</span> <span class="nx">codes</span><span class="p">,</span> <span class="nx">settings</span><span class="p">);</span>
+            <span class="p">});</span>
+        <span class="p">}</span>
+        <span class="k">catch</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadAuthDir: cannot read &#39;</span> <span class="o">+</span>
+                            <span class="nx">settings</span><span class="p">.</span><span class="nx">codes</span> <span class="o">+</span> <span class="s2">&quot;: \n&quot;</span> <span class="o">+</span> <span class="nx">e</span><span class="p">.</span><span class="nx">stack</span><span class="p">);</span>
+        <span class="p">}</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="nx">codes</span><span class="p">)</span> <span class="nx">importAuthCodes</span><span class="p">(</span><span class="nx">channel</span><span class="p">,</span> <span class="nx">codes</span><span class="p">,</span> <span class="nx">settings</span><span class="p">);</span>
+    <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-74" id="section-74">&#182;</a>
+</div>
 <p>Auth file.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-75" id="section-75">&#182;</a>
+</div>
+<p>TODO: do we still need this sandbox? Do we need another file?</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
 
     <span class="nx">authFile</span> <span class="o">=</span> <span class="nx">directory</span> <span class="o">+</span> <span class="s1">&#39;auth/auth.js&#39;</span><span class="p">;</span>
 
-    <span class="k">if</span> <span class="p">(</span><span class="nx">fs</span><span class="p">.</span><span class="nx">existsSync</span><span class="p">(</span><span class="nx">authCodesFile</span><span class="p">))</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">fs</span><span class="p">.</span><span class="nx">existsSync</span><span class="p">(</span><span class="nx">authFile</span><span class="p">))</span> <span class="p">{</span>
         <span class="nx">sandboxAuth</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">getChannelSandbox</span><span class="p">(</span><span class="nx">channel</span><span class="p">,</span> <span class="s1">&#39;authorization&#39;</span><span class="p">);</span>
         <span class="nx">sandboxIdGen</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">getChannelSandbox</span><span class="p">(</span><span class="nx">channel</span><span class="p">,</span> <span class="s1">&#39;clientIdGenerator&#39;</span><span class="p">);</span>
         <span class="nx">sandboxDecorate</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">getChannelSandbox</span><span class="p">(</span><span class="nx">channel</span><span class="p">,</span> <span class="s1">&#39;clientObjDecorator&#39;</span><span class="p">);</span>
@@ -2110,7 +2185,7 @@ generation and clientObject decoration.</p>
         <span class="p">}</span>
         <span class="k">catch</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
             <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadAuthDir: cannot read &#39;</span> <span class="o">+</span>
-                            <span class="nx">authCodesFile</span> <span class="o">+</span> <span class="s1">&#39;. &#39;</span> <span class="o">+</span> <span class="nx">e</span><span class="p">.</span><span class="nx">stack</span><span class="p">);</span>
+                            <span class="nx">authFile</span> <span class="o">+</span> <span class="s1">&#39;. &#39;</span> <span class="o">+</span> <span class="nx">e</span><span class="p">.</span><span class="nx">stack</span><span class="p">);</span>
         <span class="p">}</span>
     <span class="p">}</span>
 <span class="p">};</span>
@@ -2195,7 +2270,7 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-72" id="section-72">&#182;</a>
+  <a class="pilcrow" href="#section-77" id="section-77">&#182;</a>
 </div>
 <p>Add information to global game object.</p>
         </td>
@@ -2210,7 +2285,7 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-73" id="section-73">&#182;</a>
+  <a class="pilcrow" href="#section-78" id="section-78">&#182;</a>
 </div>
 <p>Requirements settings.</p>
         </td>
@@ -2258,7 +2333,7 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-74" id="section-74">&#182;</a>
+  <a class="pilcrow" href="#section-79" id="section-79">&#182;</a>
 </div>
 <p>We prepend the baseDir parameter, if any.
 If logicPath is not string RequirementsRoom constructor throws an error.</p>
@@ -2276,7 +2351,7 @@ If logicPath is not string RequirementsRoom constructor throws an error.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-75" id="section-75">&#182;</a>
+  <a class="pilcrow" href="#section-80" id="section-80">&#182;</a>
 </div>
 <p>Enable requirements by default.</p>
         </td>
@@ -2290,7 +2365,7 @@ If logicPath is not string RequirementsRoom constructor throws an error.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-76" id="section-76">&#182;</a>
+  <a class="pilcrow" href="#section-81" id="section-81">&#182;</a>
 </div>
 <p>Exit here if requirements is disabled.</p>
         </td>
@@ -2314,7 +2389,7 @@ If logicPath is not string RequirementsRoom constructor throws an error.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-77" id="section-77">&#182;</a>
+  <a class="pilcrow" href="#section-82" id="section-82">&#182;</a>
 </div>
 <p>Requirements file.</p>
         </td>
@@ -2347,7 +2422,7 @@ If logicPath is not string RequirementsRoom constructor throws an error.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-78" id="section-78">&#182;</a>
+  <a class="pilcrow" href="#section-83" id="section-83">&#182;</a>
 </div>
 <p>Return final settings.</p>
         </td>
@@ -2404,7 +2479,7 @@ If logicPath is not string RequirementsRoom constructor throws an error.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-80" id="section-80">&#182;</a>
+  <a class="pilcrow" href="#section-85" id="section-85">&#182;</a>
 </div>
 <p>Add waiting room information to global game object.</p>
         </td>
@@ -2426,7 +2501,7 @@ If logicPath is not string RequirementsRoom constructor throws an error.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-81" id="section-81">&#182;</a>
+  <a class="pilcrow" href="#section-86" id="section-86">&#182;</a>
 </div>
 <p>TODO: see if we want to add it to prototype.
 Else remove getChannelSandbox also (maybe).</p>
@@ -2567,7 +2642,7 @@ to. If only the callback is provided, then it is applied to both
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-83" id="section-83">&#182;</a>
+  <a class="pilcrow" href="#section-88" id="section-88">&#182;</a>
 </div>
 <p>Channels defined by a game with the channels.js file.
 Auth callback can modify the authorization only of those.</p>
@@ -2581,7 +2656,7 @@ Auth callback can modify the authorization only of those.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-84" id="section-84">&#182;</a>
+  <a class="pilcrow" href="#section-89" id="section-89">&#182;</a>
 </div>
 <p>1 Auth for both admin and player servers.</p>
         </td>
@@ -2598,7 +2673,7 @@ Auth callback can modify the authorization only of those.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-85" id="section-85">&#182;</a>
+  <a class="pilcrow" href="#section-90" id="section-90">&#182;</a>
 </div>
 <p>1 Auth for one server: admin or player.</p>
         </td>
@@ -2668,7 +2743,7 @@ Auth callback can modify the authorization only of those.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-87" id="section-87">&#182;</a>
+  <a class="pilcrow" href="#section-92" id="section-92">&#182;</a>
 </div>
 <p>3 or more.</p>
         </td>
@@ -2793,7 +2868,7 @@ Auth callback can modify the authorization only of those.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-89" id="section-89">&#182;</a>
+  <a class="pilcrow" href="#section-94" id="section-94">&#182;</a>
 </div>
 <p>TODO: do not add aliases to the info.games object.
 (we need to make sure aliases do not clash).</p>
@@ -3056,7 +3131,7 @@ so that GameStage.compare does not complain.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-95" id="section-95">&#182;</a>
+  <a class="pilcrow" href="#section-100" id="section-100">&#182;</a>
 </div>
 <ul>
 <li>skips the check.</li>
@@ -3072,7 +3147,7 @@ so that GameStage.compare does not complain.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-96" id="section-96">&#182;</a>
+  <a class="pilcrow" href="#section-101" id="section-101">&#182;</a>
 </div>
 <p>Trick: we compare version numbers using the GameStage class.</p>
         </td>
@@ -3172,6 +3247,28 @@ settings.</p>
     <span class="k">return</span> <span class="nx">out</span><span class="p">;</span>
 <span class="p">}</span>
 
+<span class="kd">function</span> <span class="nx">loadSyncAsync</span><span class="p">(</span><span class="nx">filepath</span><span class="p">,</span> <span class="nx">settings</span><span class="p">,</span> <span class="nx">method</span><span class="p">,</span> <span class="nx">cb</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">result</span><span class="p">;</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="nx">fs</span><span class="p">.</span><span class="nx">existsSync</span><span class="p">(</span><span class="nx">filepath</span><span class="p">))</span> <span class="p">{</span>
+        <span class="k">try</span> <span class="p">{</span>
+            <span class="nx">result</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="nx">filepath</span><span class="p">)(</span><span class="nx">settings</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">result</span><span class="p">)</span> <span class="p">{</span>
+                <span class="k">if</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span>
+                    <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.&#39;</span> <span class="o">+</span> <span class="nx">method</span> <span class="o">+</span> <span class="s1">&#39;: an error &#39;</span> <span class="o">+</span>
+                                    <span class="s1">&#39;occurred: &#39;</span> <span class="o">+</span> <span class="nx">err</span><span class="p">);</span>
+                <span class="p">}</span>
+                <span class="nx">cb</span><span class="p">(</span><span class="nx">result</span><span class="p">);</span>
+            <span class="p">});</span>
+        <span class="p">}</span>
+        <span class="k">catch</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.&#39;</span> <span class="o">+</span> <span class="nx">method</span> <span class="o">+</span> <span class="s1">&#39;: cannot read &#39;</span> <span class="o">+</span>
+                            <span class="nx">filepath</span> <span class="o">+</span> <span class="s2">&quot;: \n&quot;</span> <span class="o">+</span> <span class="nx">e</span><span class="p">.</span><span class="nx">stack</span><span class="p">);</span>
+        <span class="p">}</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="nx">result</span><span class="p">)</span> <span class="nx">cb</span><span class="p">(</span><span class="nx">result</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
 
 </pre></div>
         </td>
@@ -3201,44 +3298,64 @@ settings.</p>
       <span>The array of codes</span>
     </div>
     <div class="dox_tag_detail">
-      <span class="dox_tag_name">file</span>
-      <span class="dox_type">string</span>
-      <span>The name of the file that returned the codes
-  (used in case of errors)</span>
+      <span class="dox_tag_name">settings</span>
+      <span class="dox_type">object</span>
+      <span>The auth settings</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">GameLoader.loadAuthDir
+</span>
     </div>
   </div>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-<span class="kd">function</span> <span class="nx">importAuthCodes</span><span class="p">(</span><span class="nx">channel</span><span class="p">,</span> <span class="nx">codes</span><span class="p">,</span> <span class="nx">file</span><span class="p">)</span> <span class="p">{</span>
-    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">J</span><span class="p">.</span><span class="nx">isArray</span><span class="p">(</span><span class="nx">codes</span><span class="p">))</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadAuthDir: codes file must &#39;</span> <span class="o">+</span>
-                        <span class="s1">&#39;return an array of codes, or undefined &#39;</span> <span class="o">+</span>
-                        <span class="s1">&#39;(if asynchronous): &#39;</span> <span class="o">+</span> <span class="nx">file</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
-    <span class="p">}</span>
+<span class="kd">function</span> <span class="nx">importAuthCodes</span><span class="p">(</span><span class="nx">channel</span><span class="p">,</span> <span class="nx">codes</span><span class="p">,</span> <span class="nx">settings</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">authDir</span><span class="p">,</span> <span class="nx">outFile</span><span class="p">,</span> <span class="nx">outFileBak</span><span class="p">;</span>
+
     <span class="nx">channel</span><span class="p">.</span><span class="nx">registry</span><span class="p">.</span><span class="nx">importClients</span><span class="p">(</span><span class="nx">codes</span><span class="p">);</span>
-<span class="p">}</span>
 
-<span class="kd">function</span> <span class="nx">loadSyncAsync</span><span class="p">(</span><span class="nx">filepath</span><span class="p">,</span> <span class="nx">settings</span><span class="p">,</span> <span class="nx">method</span><span class="p">,</span> <span class="nx">cb</span><span class="p">)</span> <span class="p">{</span>
-    <span class="kd">var</span> <span class="nx">result</span><span class="p">;</span>
+    <span class="nx">authDir</span> <span class="o">=</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">authDir</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">settings</span><span class="p">.</span><span class="nx">dumpCodes</span> <span class="o">!==</span> <span class="kc">false</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">outFile</span> <span class="o">=</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">outFile</span> <span class="o">||</span> <span class="s1">&#39;codes.imported.csv&#39;</span><span class="p">;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">path</span><span class="p">.</span><span class="nx">isAbsolute</span><span class="p">(</span><span class="nx">outFile</span><span class="p">))</span> <span class="nx">outFile</span> <span class="o">=</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">authDir</span> <span class="o">+</span> <span class="nx">outFile</span><span class="p">;</span>
+        <span class="nx">outFileBak</span> <span class="o">=</span> <span class="nx">outFile</span> <span class="o">+</span> <span class="s1">&#39;.bak&#39;</span><span class="p">;</span>
 
-    <span class="k">if</span> <span class="p">(</span><span class="nx">fs</span><span class="p">.</span><span class="nx">existsSync</span><span class="p">(</span><span class="nx">filepath</span><span class="p">))</span> <span class="p">{</span>
-        <span class="k">try</span> <span class="p">{</span>
-            <span class="nx">result</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="nx">filepath</span><span class="p">)(</span><span class="nx">settings</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">result</span><span class="p">)</span> <span class="p">{</span>
-                <span class="k">if</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span>
-                    <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.&#39;</span> <span class="o">+</span> <span class="nx">method</span> <span class="o">+</span> <span class="s1">&#39;: an error &#39;</span> <span class="o">+</span>
-                                    <span class="s1">&#39;occurred: &#39;</span> <span class="o">+</span> <span class="nx">err</span><span class="p">);</span>
-                <span class="p">}</span>
-                <span class="nx">cb</span><span class="p">(</span><span class="nx">result</span><span class="p">);</span>
-            <span class="p">});</span>
-        <span class="p">}</span>
-        <span class="k">catch</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
-            <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.&#39;</span> <span class="o">+</span> <span class="nx">method</span> <span class="o">+</span> <span class="s1">&#39;: cannot read &#39;</span> <span class="o">+</span>
-                            <span class="nx">filepath</span> <span class="o">+</span> <span class="s2">&quot;: \n&quot;</span> <span class="o">+</span> <span class="nx">e</span><span class="p">.</span><span class="nx">stack</span><span class="p">);</span>
-        <span class="p">}</span>
+        <span class="nx">fs</span><span class="p">.</span><span class="nx">rename</span><span class="p">(</span><span class="nx">outFile</span><span class="p">,</span> <span class="nx">outFileBak</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+            <span class="kd">var</span> <span class="nx">NDDB</span><span class="p">,</span> <span class="nx">db</span><span class="p">;</span>
+            <span class="nx">NDDB</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;NDDB&#39;</span><span class="p">).</span><span class="nx">NDDB</span><span class="p">;</span>
+            <span class="nx">db</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">NDDB</span><span class="p">();</span>
+            <span class="nx">db</span><span class="p">.</span><span class="nx">importDB</span><span class="p">(</span><span class="nx">codes</span><span class="p">);</span>
 
-        <span class="k">if</span> <span class="p">(</span><span class="nx">result</span><span class="p">)</span> <span class="nx">cb</span><span class="p">(</span><span class="nx">result</span><span class="p">);</span>
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-104" id="section-104">&#182;</a>
+</div>
+<p>Async function. Throws errors.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+            <span class="nx">db</span><span class="p">.</span><span class="nx">save</span><span class="p">(</span><span class="nx">outFile</span><span class="p">);</span>
+        <span class="p">});</span>
     <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-105" id="section-105">&#182;</a>
+</div>
+<p>Not needed anymore.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">delete</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">authDir</span><span class="p">;</span>
 <span class="p">}</span>
 
 
@@ -3248,7 +3365,7 @@ settings.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-99" id="section-99">&#182;</a>
+  <a class="pilcrow" href="#section-106" id="section-106">&#182;</a>
 </div>
 <p>TODO: see if we need it in the future:</p>
         </td>
