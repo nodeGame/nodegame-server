@@ -1,5 +1,8 @@
 # nodegame-server change log
 
+# 2.1.0
+ - Better support for authorization codes.
+
 # 2.0.0
  - SSL support.
  - Default Stager callback changed: does not call node.done().
