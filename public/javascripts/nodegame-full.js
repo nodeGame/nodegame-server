@@ -4851,12 +4851,12 @@ if (!Array.prototype.indexOf) {
      *   not found
      */
     OBJ.uniqueKey = function(obj, prefixName, stop) {
-        var name;
-        var duplicateCounter = 1;
+        var name, duplicateCounter;
         if (!obj) {
             JSUS.log('Cannot find unique name in undefined object', 'ERR');
             return;
         }
+        duplicateCounter = 1;
         prefixName = '' + (prefixName ||
                            Math.floor(Math.random()*1000000000000000));
         stop = stop || 1000000;
@@ -5014,7 +5014,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # RANDOM
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2016 Stefano Balietti
  * MIT Licensed
  *
  * Generates pseudo-random numbers
@@ -5316,6 +5316,93 @@ if (!Array.prototype.indexOf) {
 
         return x + tmp;
     };
+
+    /**
+     * ### RANDOM.randomString
+     *
+     * Creates a parametric random string
+     *
+     * @param {number} len The length of string (must be > 0). Default, 6.
+     * @param {string} chars A code specifying which sets of characters
+     *   to use. Available symbols (default 'a'):
+     *      - 'a': lower case letters
+     *      - 'A': upper case letters
+     *      - '1': digits
+     *      - '!': all remaining symbols (excluding spaces)
+     *      - '_': spaces (it can be followed by an integer number > 0
+     *             controlling the frequency of spaces, default = 1)
+     * @param {boolean} useChars If TRUE, the characters of the chars
+     *   parameter are used as they are instead of interpreted as
+     *   special symbols. Default FALSE.
+     *
+     * @return {string} result The random string
+     *
+     * Kudos to: http://stackoverflow.com/questions/10726909/
+     *           random-alpha-numeric-string-in-javascript
+     */
+    RANDOM.randomString = function(len, chars, useChars) {
+        var mask, result, i, nSpaces;
+        if ('undefined' !== typeof len) {
+            if ('number' !== typeof len || len < 1) {
+                throw new Error('randomString: len must a number > 0 or ' +
+                                'undefined. Found: ' + len);
+
+            }
+        }
+        if ('undefined' !== typeof chars) {
+            if ('string' !== typeof chars || chars.trim() === '') {
+                throw new Error('randomString: chars must a non-empty string ' +
+                                'or undefined. Found: ' + chars);
+
+            }
+        }
+        else if (useChars) {
+            throw new Error('randomString: useChars is TRUE, but chars ' +
+                            'is undefined.');
+
+        }
+
+        // Defaults.
+        len = len || 6;
+        chars = chars || 'a';
+
+        // Create/use mask from chars.
+        mask = '';
+        if (!useChars) {
+            if (chars.indexOf('a') > -1) mask += 'abcdefghijklmnopqrstuvwxyz';
+            if (chars.indexOf('A') > -1) mask += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            if (chars.indexOf('1') > -1) mask += '0123456789';
+            if (chars.indexOf('!') > -1) {
+                mask += '!~`@#$%^&*()_+-={}[]:";\'<>?,./|\\';
+            }
+            // Check how many spaces we should add.
+            nSpaces = chars.indexOf('_');
+            if (nSpaces > -1) {
+                nSpaces = chars.charAt(nSpaces + 1);
+                // nSpaces is integer > 0 or 1.
+                nSpaces = JSUS.isInt(nSpaces, 0) || 1;
+                if (nSpaces === 1) mask += ' ';
+                else if (nSpaces === 2) mask += '  ';
+                else if (nSpaces === 3) mask += '   ';
+                else {
+                    i = -1;
+                    for ( ; ++i < nSpaces ; ) {
+                        mask += ' ';
+                    }
+                }
+            }
+        }
+        else {
+            mask = chars;
+        }
+
+        i = -1, result = '';
+        for ( ; ++i < len ; ) {
+            result += mask[Math.floor(Math.random() * mask.length)];
+        }
+        return result;
+    };
+
 
     JSUS.extend(RANDOM);
 
@@ -12745,8 +12832,10 @@ if (!Array.prototype.indexOf) {
      * @return {string} out The string representation of the PlayerList
      */
     PlayerList.prototype.toString = function(eol) {
-        var out = '', EOL = eol || '\n', stage;
+        var out, EOL;
+        out = '', EOL = eol || '\n';
         this.each(function(p) {
+            var stage;
             out += p.id + ': ' + p.name;
             stage = new GameStage(p.stage);
             out += ': ' + stage + EOL;
@@ -36076,6 +36165,30 @@ if (!Array.prototype.indexOf) {
         return obj;
     };
 
+    /**
+     * ### ChoiceManager.setValues
+     *
+     * Sets values for forms in manager as specified by the options
+     *
+     * @param {object} options Optional. Options specifying how to set
+     *   the values. If no parameter is specified, random values will
+     *   be set.
+     */
+    ChoiceManager.prototype.setValues = function(opts) {
+        var i, len;
+        if (!this.forms || !this.forms.length) {
+            throw new Error('ChoiceManager.setValues: no forms found.');
+        }
+        opts = opts || {};
+        i = -1, len = this.forms.length;
+        for ( ; ++i < len ; ) {
+            this.forms[i].setValues(opts);
+        }
+
+        // Make a random comment.
+        if (this.textarea) this.textarea.value = J.randomString(100, '!Aa0');
+    };
+
     // ## Helper methods.
 
 })(node);
@@ -37130,7 +37243,7 @@ if (!Array.prototype.indexOf) {
      * choices:
      *
      *    - requiredChoice: there must be at least N choices selected
-     *    - correcChoice:   the choices are compared against correct ones.
+     *    - correctChoice:  the choices are compared against correct ones.
      *
      * @param {boolean} markAttempt Optional. If TRUE, the value of
      *   current choice is added to the attempts array. Default
@@ -37144,6 +37257,7 @@ if (!Array.prototype.indexOf) {
      */
     ChoiceTable.prototype.verifyChoice = function(markAttempt) {
         var i, len, j, lenJ, c, clone, found;
+        var correctChoice;
 
         // Check the number of choices.
         if (this.requiredChoice !== null) {
@@ -37160,16 +37274,20 @@ if (!Array.prototype.indexOf) {
             return this.currentChoice === this.correctChoice;
         }
         else {
-            len = this.correctChoice.length;
+            // Make it an array (can be a string).
+            correctChoice = J.isArray(this.correctChoice) ?
+                this.correctChoice : [this.correctChoice];
+
+            len = correctChoice.length;
             lenJ = this.currentChoice.length;
             // Quick check.
             if (len !== lenJ) return false;
-            // Check every item
+            // Check every item.
             i = -1;
             clone = this.currentChoice.slice(0);
             for ( ; ++i < len ; ) {
                 found = false;
-                c = this.correctChoices[i];
+                c = correctChoices[i];
                 j = -1;
                 for ( ; ++j < lenJ ; ) {
                     if (clone[j] === c) {
@@ -37342,6 +37460,78 @@ if (!Array.prototype.indexOf) {
         }
         if (this.textarea) obj.freetext = this.textarea.value;
         return obj;
+    };
+
+    /**
+     * ### ChoiceTable.setValues
+     *
+     * Sets values in the choice table as specified by the options
+     *
+     * @param {object} options Optional. Options specifying how to set
+     *   the values. If no parameter is specified, random values will
+     *   be set.
+     *
+     * @experimental
+     */
+    ChoiceTable.prototype.setValues = function(options) {
+        var choice, correctChoice;
+        var i, len, j, lenJ;
+
+        if (!this.choices || !this.choices.length) {
+            throw new Error('ChoiceTable.setValues: no choices found.');
+        }
+        options = options || {};
+
+        // TODO: allow it to set it visually or just in the background.
+        // Use options.visual.
+
+        // TODO: allow it to set random or fixed values, or correct values
+
+        if (!this.choicesCells || !this.choicesCells.length) {
+            throw new Error('Choicetable.setValues: table was not ' +
+                            'built yet.');
+        }
+
+        if (options.correct) {
+            // Value this.correctChoice can be string or array.
+            if (!this.correctChoice || !this.correctChoice.length) {
+                throw new Error('Choicetable.setValues: "correct" is set, ' +
+                               'but no correct choice is found.');
+            }
+            // Make it an array (can be a string).
+            correctChoice = J.isArray(this.correctChoice) ?
+                this.correctChoice : [this.correctChoice];
+
+            i = -1, len = correctChoice.length;
+            for ( ; ++i < len ; ) {
+                choice = parseInt(correctChoice[i], 10);
+                if (this.shuffleChoices) {
+                    j = -1, lenJ = this.order.length;
+                    for ( ; ++j < lenJ ; ) {
+                        if (this.order[j] === choice) {
+                            choice = j;
+                            break;
+                        }
+                    }
+                }
+
+                this.choicesCells[choice].click();
+            }
+            return;
+        }
+
+        // How many random choices?
+        if (!this.selectMultiple) len = 1;
+        else len = J.randomInt(0, this.choicesCells.length);
+
+        i = -1;
+        for ( ; ++i < len ; ) {
+            choice = J.randomInt(0, this.choicesCells.length)-1;
+            this.choicesCells[choice].click();
+        }
+
+        // Make a random comment.
+        if (this.textarea) this.textarea.value = J.randomString(100, '!Aa0');
     };
 
     // ## Helper methods.
@@ -37874,11 +38064,11 @@ if (!Array.prototype.indexOf) {
         this.itemsSettings = items;
         this.items = new Array(len);
 
-        // Save the order in which the choices will be added.
+        // Save the order in which the items will be added.
         this.order = J.seq(0, len-1);
         if (this.shuffleItems) this.order = J.shuffle(this.order);
 
-        // Build the table and choices at once (faster).
+        // Build the table and items at once (faster).
         if (this.table) this.buildTable();
     };
 
@@ -38225,6 +38415,34 @@ if (!Array.prototype.indexOf) {
         if (toHighlight) this.highlight();
         if (this.textarea) obj.freetext = this.textarea.value;
         return obj;
+    };
+
+   /**
+     * ### ChoiceTableGroup.setValues
+     *
+     * Sets values in the choice table group as specified by the options
+     *
+     * @param {object} options Optional. Options specifying how to set
+     *   the values. If no parameter is specified, random values will
+     *   be set.
+     *
+     * @see ChoiceTable.setValues
+     *
+     * @experimental
+     */
+    ChoiceTableGroup.prototype.setValues = function(opts) {
+        var i, len;
+        if (!this.items || !this.items.length) {
+            throw new Error('ChoiceTableGroup.setValues: no items found.');
+        }
+        opts = opts || {};
+        i = -1, len = this.items.length;
+        for ( ; ++i < len ; ) {
+            this.items[i].setValues(opts);
+        }
+
+        // Make a random comment.
+        if (this.textarea) this.textarea.value = J.randomString(100, '!Aa0');
     };
 
     // ## Helper methods.
@@ -40627,6 +40845,10 @@ if (!Array.prototype.indexOf) {
         return this.gauge.getValues(opts);
     };
 
+    MoodGauge.prototype.setValues = function(opts) {
+        return this.gauge.setValues(opts);
+    };
+
     MoodGauge.prototype.enable = function() {
         return this.gauge.enable();
     };
@@ -42030,10 +42252,14 @@ if (!Array.prototype.indexOf) {
         // Transform choice in numerical values.
         if ('undefined' === typeof opts.processChoice) {
             opts.processChoice = function(choice) {
-                return this.choices[choice];
+                return choice === null ? null : this.choices[choice];
             };
         }
         return this.gauge.getValues(opts);
+    };
+
+    SVOGauge.prototype.setValues = function(opts) {
+        return this.gauge.setValues(opts);
     };
 
     SVOGauge.prototype.enable = function() {
@@ -44643,7 +44869,6 @@ if (!Array.prototype.indexOf) {
             that.stopTimer();
         });
 
-
         // Start waiting time timer.
         node.on.data('WAITTIME', function(msg) {
 
@@ -44686,7 +44911,6 @@ if (!Array.prototype.indexOf) {
     WaitingRoom.prototype.stopTimer = function() {
         if (this.timer) {
             console.log('STOPPING TIMER');
-            this.timer.stop();
             this.timer.destroy();
         }
     };

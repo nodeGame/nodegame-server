@@ -2134,8 +2134,8 @@ generation and clientObject decoration.</p>
             <span class="p">});</span>
         <span class="p">}</span>
         <span class="k">catch</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
-            <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadAuthDir: cannot read &#39;</span> <span class="o">+</span>
-                            <span class="nx">settings</span><span class="p">.</span><span class="nx">codes</span> <span class="o">+</span> <span class="s2">&quot;: \n&quot;</span> <span class="o">+</span> <span class="nx">e</span><span class="p">.</span><span class="nx">stack</span><span class="p">);</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadAuthDir: an error occurred &#39;</span> <span class="o">+</span>
+                            <span class="s1">&#39;trying to import the codes:&#39;</span> <span class="o">+</span> <span class="s2">&quot;\n&quot;</span> <span class="o">+</span> <span class="nx">e</span><span class="p">.</span><span class="nx">stack</span><span class="p">);</span>
         <span class="p">}</span>
 
         <span class="k">if</span> <span class="p">(</span><span class="nx">codes</span><span class="p">)</span> <span class="nx">importAuthCodes</span><span class="p">(</span><span class="nx">channel</span><span class="p">,</span> <span class="nx">codes</span><span class="p">,</span> <span class="nx">settings</span><span class="p">);</span>
