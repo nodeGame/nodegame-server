@@ -158,6 +158,8 @@ MIT Licensed</p>
 
 <span class="kd">var</span> <span class="nx">ngc</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;nodegame-client&#39;</span><span class="p">);</span>
 <span class="kd">var</span> <span class="nx">J</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;JSUS&#39;</span><span class="p">).</span><span class="nx">JSUS</span><span class="p">;</span>
+<span class="kd">var</span> <span class="nx">path</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;path&#39;</span><span class="p">);</span>
+<span class="kd">var</span> <span class="nx">ngt</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;nodegame-game-template&#39;</span><span class="p">);</span>
 
 <span class="kd">var</span> <span class="nx">HostRoom</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;./HostRoom&#39;</span><span class="p">);</span>
 
@@ -231,7 +233,9 @@ without relying on non-standard <code>__proto__</code></p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="nx">HostRoom</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="s1">&#39;Waiting&#39;</span><span class="p">,</span> <span class="nx">config</span><span class="p">);</span>
-    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">logicPath</span><span class="p">)</span> <span class="k">this</span><span class="p">.</span><span class="nx">logicPath</span>  <span class="o">=</span> <span class="s1">&#39;../logics/wait.room&#39;</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">logicPath</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">logicPath</span> <span class="o">=</span> <span class="nx">ngt</span><span class="p">.</span><span class="nx">resolve</span><span class="p">(</span><span class="s1">&#39;waitroom/waitroom.js&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
 
 
 </pre></div>

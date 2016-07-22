@@ -5329,7 +5329,7 @@ if (!Array.prototype.indexOf) {
      *      - 'A': upper case letters
      *      - '1': digits
      *      - '!': all remaining symbols (excluding spaces)
-     *      - '_': spaces (it can be followed by an integer number > 0
+     *      - '_': spaces (it can be followed by an integer > 0
      *             controlling the frequency of spaces, default = 1)
      * @param {boolean} useChars If TRUE, the characters of the chars
      *   parameter are used as they are instead of interpreted as

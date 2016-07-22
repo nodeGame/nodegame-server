@@ -71,6 +71,7 @@ MIT Licensed</p>
 
 <span class="kd">var</span> <span class="nx">ngc</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;nodegame-client&#39;</span><span class="p">);</span>
 <span class="kd">var</span> <span class="nx">J</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;JSUS&#39;</span><span class="p">).</span><span class="nx">JSUS</span><span class="p">;</span>
+<span class="kd">var</span> <span class="nx">ngt</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;nodegame-game-template&#39;</span><span class="p">);</span>
 
 <span class="kd">var</span> <span class="nx">HostRoom</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;./HostRoom&#39;</span><span class="p">);</span>
 
@@ -79,7 +80,9 @@ MIT Licensed</p>
 
 <span class="kd">function</span> <span class="nx">RequirementsRoom</span><span class="p">(</span><span class="nx">config</span><span class="p">)</span> <span class="p">{</span>
     <span class="nx">HostRoom</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="s1">&#39;Requirements&#39;</span><span class="p">,</span> <span class="nx">config</span><span class="p">);</span>
-    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">logicPath</span><span class="p">)</span> <span class="k">this</span><span class="p">.</span><span class="nx">logicPath</span>  <span class="o">=</span> <span class="s1">&#39;../logics/requirements.room&#39;</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">logicPath</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">logicPath</span> <span class="o">=</span> <span class="nx">ngt</span><span class="p">.</span><span class="nx">resolve</span><span class="p">(</span><span class="s1">&#39;requirements/requirements.room.js&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
 <span class="p">}</span>
 </pre></div>
         </td>
