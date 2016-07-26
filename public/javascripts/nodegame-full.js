@@ -10403,7 +10403,7 @@ if (!Array.prototype.indexOf) {
     node.support = JSUS.compatibility();
 
     // Auto-Generated.
-    node.version = '2.0.0';
+    node.version = '2.0.1';
 
 })(window);
 
@@ -20092,7 +20092,6 @@ if (!Array.prototype.indexOf) {
         stepRule = this.plot.getStepRule(curStep);
 
         if ('function' !== typeof stepRule) {
-            debugger
             throw new TypeError('Game.shouldStep: stepRule is not a function.');
         }
 
@@ -28261,7 +28260,7 @@ if (!Array.prototype.indexOf) {
         }
 
         // Emit event.
-        // node.events.ng.emit('FRAME_GENERATED', iframe);
+        node.events.ng.emit('FRAME_GENERATED', iframe);
 
         return iframe;
     };
@@ -28508,7 +28507,7 @@ if (!Array.prototype.indexOf) {
 
 
         // Emit event.
-        // node.events.ng.emit('HEADER_GENERATED', header);
+        node.events.ng.emit('HEADER_GENERATED', header);
 
         return this.headerElement;
     };
@@ -44953,6 +44952,7 @@ if (!Array.prototype.indexOf) {
     };
 
     WaitingRoom.prototype.destroy = function() {
+        if (this.dots) this.dots.stop();
         node.deregisterSetup('waitroom');
     };
 
