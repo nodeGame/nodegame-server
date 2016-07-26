@@ -24783,7 +24783,8 @@ if (!Array.prototype.indexOf) {
             socketOptions = arguments[1];
         }
         else if (arguments.length === 1) {
-            socketOptions = arguments[0];
+            if ('string' === typeof arguments[0]) channel = arguments[0];
+            else socketOptions = arguments[0];
         }
         // Browser adjustements.
         if ('undefined' !== typeof window) {

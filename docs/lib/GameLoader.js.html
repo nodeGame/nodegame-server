@@ -1581,7 +1581,7 @@ automatically add a waiting room to the channel.</p>
 
     <span class="k">if</span> <span class="p">(</span><span class="nx">channelConf</span><span class="p">.</span><span class="nx">name</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">channelConf</span><span class="p">.</span><span class="nx">name</span><span class="p">)</span> <span class="p">{</span>
-            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadChannelFile: game: &#39;</span> <span class="o">+</span> 
+            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadChannelFile: game: &#39;</span> <span class="o">+</span>
                                 <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39; name must be string or &#39;</span> <span class="o">+</span>
                                 <span class="s1">&#39;undefined. Found: &#39;</span> <span class="o">+</span> <span class="nx">channelConf</span><span class="p">.</span><span class="nx">name</span><span class="p">);</span>
         <span class="p">}</span>
@@ -2830,7 +2830,7 @@ GameLoader.prototype.createGameAlias = function(alias, gameName) {
 //                             'alias must be unique: ' + alias[i] +
 //                             ' (' + gameName + ').');
 //         }
-// 
+//
 //         // TODO: do not add aliases to the info.games object.
 //         // (we need to make sure aliases do not clash).
 //         servernode.info.games[alias[i]] = servernode.info.games[gameName];
