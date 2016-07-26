@@ -79,9 +79,6 @@
         <a href="#gameloader.updategameinfo">GameLoader.updateGameInfo</a>
       </div>
       <div class="heading h3">
-        <a href="#gameloader.creategamealias">GameLoader.createGameAlias</a>
-      </div>
-      <div class="heading h3">
         <a href="#gameloader.doerr">GameLoader.doErr</a>
       </div>
       <div class="heading h2">
@@ -159,6 +156,8 @@ MIT Licensed</p>
 <span class="kd">var</span> <span class="nx">J</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;JSUS&#39;</span><span class="p">).</span><span class="nx">JSUS</span><span class="p">;</span>
 <span class="kd">var</span> <span class="nx">ngc</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;nodegame-client&#39;</span><span class="p">);</span>
 <span class="kd">var</span> <span class="nx">GameStage</span> <span class="o">=</span> <span class="nx">ngc</span><span class="p">.</span><span class="nx">GameStage</span><span class="p">;</span>
+
+<span class="kd">var</span> <span class="nx">ngt</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;nodegame-game-template&#39;</span><span class="p">);</span>
 
 <span class="kd">var</span> <span class="nx">serverVersionObj</span><span class="p">;</span>
 
@@ -1581,10 +1580,10 @@ automatically add a waiting room to the channel.</p>
     <span class="k">delete</span> <span class="nx">channelConf</span><span class="p">.</span><span class="nx">waitingRoom</span><span class="p">;</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="nx">channelConf</span><span class="p">.</span><span class="nx">name</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="nx">channelConf</span><span class="p">.</span><span class="nx">name</span><span class="p">)</span> <span class="p">{</span>
-            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadChannelFile: name &#39;</span> <span class="o">+</span>
-                                <span class="s1">&#39;must be string or undefined. &#39;</span> <span class="o">+</span>
-                                <span class="s1">&#39;Directory: &#39;</span> <span class="o">+</span> <span class="nx">directory</span><span class="p">);</span>
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">channelConf</span><span class="p">.</span><span class="nx">name</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadChannelFile: game: &#39;</span> <span class="o">+</span> 
+                                <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39; name must be string or &#39;</span> <span class="o">+</span>
+                                <span class="s1">&#39;undefined. Found: &#39;</span> <span class="o">+</span> <span class="nx">channelConf</span><span class="p">.</span><span class="nx">name</span><span class="p">);</span>
         <span class="p">}</span>
     <span class="p">}</span>
     <span class="k">else</span> <span class="p">{</span>
@@ -1659,7 +1658,7 @@ constructor throw an error.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
         <span class="k">if</span> <span class="p">(</span><span class="nx">channelConf</span><span class="p">.</span><span class="nx">alias</span><span class="p">)</span> <span class="p">{</span>
-            <span class="k">this</span><span class="p">.</span><span class="nx">createGameAlias</span><span class="p">(</span><span class="nx">channelConf</span><span class="p">.</span><span class="nx">alias</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">);</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">createGameAlias</span><span class="p">(</span><span class="nx">channelConf</span><span class="p">.</span><span class="nx">alias</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">);</span>
         <span class="p">}</span>
 
     <span class="p">}</span>
@@ -2081,19 +2080,7 @@ generation and clientObject decoration.</p>
         <span class="nx">settings</span><span class="p">.</span><span class="nx">codes</span> <span class="o">=</span> <span class="nx">authDir</span> <span class="o">+</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">codes</span><span class="p">;</span>
     <span class="p">}</span>
     <span class="k">else</span> <span class="p">{</span>
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-71" id="section-71">&#182;</a>
-</div>
-<p>TODO: remove. Default in ServerNode.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-        <span class="nx">settings</span><span class="p">.</span><span class="nx">codes</span> <span class="o">=</span> <span class="nx">authDir</span> <span class="o">+</span> <span class="s1">&#39;auth.codes.js&#39;</span><span class="p">;</span>
+        <span class="nx">settings</span><span class="p">.</span><span class="nx">codes</span> <span class="o">=</span> <span class="nx">ngt</span><span class="p">.</span><span class="nx">resolve</span><span class="p">(</span><span class="s1">&#39;auth/auth.codes.js&#39;</span><span class="p">);</span>
     <span class="p">}</span>
 
 
@@ -2103,7 +2090,7 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-72" id="section-72">&#182;</a>
+  <a class="pilcrow" href="#section-71" id="section-71">&#182;</a>
 </div>
 <p>TODO: only with custom auth.codes.js.</p>
         </td>
@@ -2117,7 +2104,7 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-73" id="section-73">&#182;</a>
+  <a class="pilcrow" href="#section-72" id="section-72">&#182;</a>
 </div>
 <p>Inject authDir into settings (will be removed by importAuthCodes).</p>
         </td>
@@ -2148,7 +2135,7 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-74" id="section-74">&#182;</a>
+  <a class="pilcrow" href="#section-73" id="section-73">&#182;</a>
 </div>
 <p>Auth file.</p>
         </td>
@@ -2161,7 +2148,7 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-75" id="section-75">&#182;</a>
+  <a class="pilcrow" href="#section-74" id="section-74">&#182;</a>
 </div>
 <p>TODO: do we still need this sandbox? Do we need another file?</p>
         </td>
@@ -2270,7 +2257,7 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-77" id="section-77">&#182;</a>
+  <a class="pilcrow" href="#section-76" id="section-76">&#182;</a>
 </div>
 <p>Add information to global game object.</p>
         </td>
@@ -2285,7 +2272,7 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-78" id="section-78">&#182;</a>
+  <a class="pilcrow" href="#section-77" id="section-77">&#182;</a>
 </div>
 <p>Requirements settings.</p>
         </td>
@@ -2333,7 +2320,7 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-79" id="section-79">&#182;</a>
+  <a class="pilcrow" href="#section-78" id="section-78">&#182;</a>
 </div>
 <p>We prepend the baseDir parameter, if any.
 If logicPath is not string RequirementsRoom constructor throws an error.</p>
@@ -2351,7 +2338,7 @@ If logicPath is not string RequirementsRoom constructor throws an error.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-80" id="section-80">&#182;</a>
+  <a class="pilcrow" href="#section-79" id="section-79">&#182;</a>
 </div>
 <p>Enable requirements by default.</p>
         </td>
@@ -2365,7 +2352,7 @@ If logicPath is not string RequirementsRoom constructor throws an error.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-81" id="section-81">&#182;</a>
+  <a class="pilcrow" href="#section-80" id="section-80">&#182;</a>
 </div>
 <p>Exit here if requirements is disabled.</p>
         </td>
@@ -2389,7 +2376,7 @@ If logicPath is not string RequirementsRoom constructor throws an error.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-82" id="section-82">&#182;</a>
+  <a class="pilcrow" href="#section-81" id="section-81">&#182;</a>
 </div>
 <p>Requirements file.</p>
         </td>
@@ -2422,7 +2409,7 @@ If logicPath is not string RequirementsRoom constructor throws an error.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-83" id="section-83">&#182;</a>
+  <a class="pilcrow" href="#section-82" id="section-82">&#182;</a>
 </div>
 <p>Return final settings.</p>
         </td>
@@ -2479,7 +2466,7 @@ If logicPath is not string RequirementsRoom constructor throws an error.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-85" id="section-85">&#182;</a>
+  <a class="pilcrow" href="#section-84" id="section-84">&#182;</a>
 </div>
 <p>Add waiting room information to global game object.</p>
         </td>
@@ -2501,7 +2488,7 @@ If logicPath is not string RequirementsRoom constructor throws an error.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-86" id="section-86">&#182;</a>
+  <a class="pilcrow" href="#section-85" id="section-85">&#182;</a>
 </div>
 <p>TODO: see if we want to add it to prototype.
 Else remove getChannelSandbox also (maybe).</p>
@@ -2642,7 +2629,7 @@ to. If only the callback is provided, then it is applied to both
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-88" id="section-88">&#182;</a>
+  <a class="pilcrow" href="#section-87" id="section-87">&#182;</a>
 </div>
 <p>Channels defined by a game with the channels.js file.
 Auth callback can modify the authorization only of those.</p>
@@ -2656,7 +2643,7 @@ Auth callback can modify the authorization only of those.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-89" id="section-89">&#182;</a>
+  <a class="pilcrow" href="#section-88" id="section-88">&#182;</a>
 </div>
 <p>1 Auth for both admin and player servers.</p>
         </td>
@@ -2673,7 +2660,7 @@ Auth callback can modify the authorization only of those.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-90" id="section-90">&#182;</a>
+  <a class="pilcrow" href="#section-89" id="section-89">&#182;</a>
 </div>
 <p>1 Auth for one server: admin or player.</p>
         </td>
@@ -2743,7 +2730,7 @@ Auth callback can modify the authorization only of those.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-92" id="section-92">&#182;</a>
+  <a class="pilcrow" href="#section-91" id="section-91">&#182;</a>
 </div>
 <p>3 or more.</p>
         </td>
@@ -2786,99 +2773,79 @@ Auth callback can modify the authorization only of those.</p>
         </td>
       </tr>
       <tr>
-        <td class="docs"><div class="dox">
-  <div class="summary">
-<div class="pilwrap" id="gameloader.creategamealias">
-  <h3>
-    <a href="#gameloader.creategamealias" name="gameloader.creategamealias" class="pilcrow">&#182;</a>
-    GameLoader.createGameAlias
-  </h3>
-</div>
-
-  </div>
-  <div class="body"><p>Adds one or multiple game alias</p>
-
-<p>Adds references into the <code>info.games</code> and <code>resourceManager.games</code> objects.</p>
-  </div>
-  <div class="details">
-    <div class="dox_tag_title">Params</div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name">alias</span>
-      <span class="dox_type">string</span>
-      <span>The name of the alias</span>
-    </div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name">gameName</span>
-      <span class="dox_type">string</span>
-      <span>The name of the game</span>
-    </div>
-    <div class="dox_tag_title">See</div>
-    <div class="dox_tag_detail">
-      <span class="dox_type">GameLoader.addGame</span>
-    </div>
-    <div class="dox_tag_title">See</div>
-    <div class="dox_tag_detail">
-      <span class="dox_type">ServerChannel.resourceManager
-</span>
-    </div>
-  </div>
-</div>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-<span class="nx">GameLoader</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">createGameAlias</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">alias</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">)</span> <span class="p">{</span>
-    <span class="kd">var</span> <span class="nx">servernode</span><span class="p">,</span> <span class="nx">gameInfo</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">i</span><span class="p">,</span> <span class="nx">len</span><span class="p">;</span>
-
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">alias</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nx">alias</span> <span class="o">=</span> <span class="p">[</span><span class="nx">alias</span><span class="p">];</span>
-    <span class="p">}</span>
-    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">J</span><span class="p">.</span><span class="nx">isArray</span><span class="p">(</span><span class="nx">alias</span><span class="p">))</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;GameLoader.createGameAlias: alias&#39;</span> <span class="o">+</span>
-                            <span class="s1">&#39;must be either string or array.&#39;</span><span class="p">);</span>
-    <span class="p">}</span>
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">gameName</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;GameLoader.createGameAlias: gameName must be &#39;</span> <span class="o">+</span>
-                            <span class="s1">&#39;string.&#39;</span><span class="p">);</span>
-    <span class="p">}</span>
-
-    <span class="nx">servernode</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span><span class="p">;</span>
-    <span class="nx">gameInfo</span> <span class="o">=</span> <span class="nx">servernode</span><span class="p">.</span><span class="nx">getGamesInfo</span><span class="p">(</span><span class="nx">gameName</span><span class="p">);</span>
-    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">gameInfo</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.createGameAlias: game not found: &#39;</span> <span class="o">+</span>
-                        <span class="nx">gameName</span><span class="p">);</span>
-    <span class="p">}</span>
-
-    <span class="nx">i</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
-    <span class="nx">len</span> <span class="o">=</span> <span class="nx">alias</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span>
-    <span class="k">for</span> <span class="p">(</span> <span class="p">;</span> <span class="o">++</span><span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">len</span> <span class="p">;</span> <span class="p">)</span> <span class="p">{</span>
-        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">alias</span><span class="p">[</span><span class="nx">i</span><span class="p">])</span> <span class="p">{</span>
-            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span>
-                <span class="s1">&#39;GameLoader.createGameAlias: alias must be string.&#39;</span><span class="p">);</span>
-        <span class="p">}</span>
-        <span class="k">if</span> <span class="p">(</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">info</span><span class="p">.</span><span class="nx">games</span><span class="p">[</span><span class="nx">alias</span><span class="p">[</span><span class="nx">i</span><span class="p">]])</span> <span class="p">{</span>
-            <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.createGameAlias: &#39;</span> <span class="o">+</span>
-                            <span class="s1">&#39;alias must be unique: &#39;</span> <span class="o">+</span> <span class="nx">alias</span><span class="p">[</span><span class="nx">i</span><span class="p">]</span> <span class="o">+</span>
-                            <span class="s1">&#39; (&#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;).&#39;</span><span class="p">);</span>
-        <span class="p">}</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-94" id="section-94">&#182;</a>
+  <a class="pilcrow" href="#section-92" id="section-92">&#182;</a>
 </div>
-<p>TODO: do not add aliases to the info.games object.
-(we need to make sure aliases do not clash).</p>
+<p>/**
+ * ### GameLoader.createGameAlias
+ *
+ * Adds one or multiple game alias
+ *
+ * Adds references into the <code>info.games</code> and <code>resourceManager.games</code> objects.
+ *
+ * @param {string} alias The name of the alias
+ * @param {string} gameName The name of the game
+ *
+ * @see GameLoader.addGame
+ * @see ServerChannel.resourceManager
+ */
+GameLoader.prototype.createGameAlias = function(alias, gameName) {
+    var servernode, gameInfo;
+    var i, len;</p>
+
+
+<div class="highlight"><pre><code><span class="k">if</span> <span class="p">(</span><span class="s">&#39;string&#39;</span> <span class="o">===</span> <span class="n">typeof</span> <span class="n">alias</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">alias</span> <span class="o">=</span> <span class="p">[</span><span class="n">alias</span><span class="p">];</span>
+<span class="p">}</span>
+<span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">J</span><span class="o">.</span><span class="n">isArray</span><span class="p">(</span><span class="n">alias</span><span class="p">))</span> <span class="p">{</span>
+    <span class="n">throw</span> <span class="k">new</span> <span class="n">TypeError</span><span class="p">(</span><span class="s">&#39;GameLoader.createGameAlias: alias&#39;</span> <span class="o">+</span>
+                        <span class="s">&#39;must be either string or array.&#39;</span><span class="p">);</span>
+<span class="p">}</span>
+<span class="k">if</span> <span class="p">(</span><span class="s">&#39;string&#39;</span> <span class="o">!==</span> <span class="n">typeof</span> <span class="n">gameName</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">throw</span> <span class="k">new</span> <span class="n">TypeError</span><span class="p">(</span><span class="s">&#39;GameLoader.createGameAlias: gameName must be &#39;</span> <span class="o">+</span>
+                        <span class="s">&#39;string.&#39;</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="n">servernode</span> <span class="o">=</span> <span class="n">this</span><span class="o">.</span><span class="n">servernode</span><span class="p">;</span>
+<span class="n">gameInfo</span> <span class="o">=</span> <span class="n">servernode</span><span class="o">.</span><span class="n">getGamesInfo</span><span class="p">(</span><span class="n">gameName</span><span class="p">);</span>
+<span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">gameInfo</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">throw</span> <span class="k">new</span> <span class="n">Error</span><span class="p">(</span><span class="s">&#39;GameLoader.createGameAlias: game not found: &#39;</span> <span class="o">+</span>
+                    <span class="n">gameName</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="n">i</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+<span class="n">len</span> <span class="o">=</span> <span class="n">alias</span><span class="o">.</span><span class="nb">length</span><span class="p">;</span>
+<span class="k">for</span> <span class="p">(</span> <span class="p">;</span> <span class="o">++</span><span class="n">i</span> <span class="o">&lt;</span> <span class="n">len</span> <span class="p">;</span> <span class="p">)</span> <span class="p">{</span>
+</code></pre></div>
+
+
+
+<p>//         if ('string' !== typeof alias[i]) {
+//             throw new TypeError(
+//                 'GameLoader.createGameAlias: alias must be string.');
+//         }
+//         if (servernode.info.games[alias[i]]) {
+//             throw new Error('GameLoader.createGameAlias: ' +
+//                             'alias must be unique: ' + alias[i] +
+//                             ' (' + gameName + ').');
+//         }
+// 
+//         // TODO: do not add aliases to the info.games object.
+//         // (we need to make sure aliases do not clash).
+//         servernode.info.games[alias[i]] = servernode.info.games[gameName];
+//         servernode.resourceManager.createAlias(alias[i], gameName);
+//         gameInfo.alias.push(alias[i]);</p>
+
+
+<div class="highlight"><pre><code><span class="p">}</span>
+</code></pre></div>
+
+
+
+<p>};</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-        <span class="nx">servernode</span><span class="p">.</span><span class="nx">info</span><span class="p">.</span><span class="nx">games</span><span class="p">[</span><span class="nx">alias</span><span class="p">[</span><span class="nx">i</span><span class="p">]]</span> <span class="o">=</span> <span class="nx">servernode</span><span class="p">.</span><span class="nx">info</span><span class="p">.</span><span class="nx">games</span><span class="p">[</span><span class="nx">gameName</span><span class="p">];</span>
-        <span class="nx">servernode</span><span class="p">.</span><span class="nx">resourceManager</span><span class="p">.</span><span class="nx">createAlias</span><span class="p">(</span><span class="nx">alias</span><span class="p">[</span><span class="nx">i</span><span class="p">],</span> <span class="nx">gameName</span><span class="p">);</span>
-        <span class="nx">gameInfo</span><span class="p">.</span><span class="nx">alias</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">alias</span><span class="p">[</span><span class="nx">i</span><span class="p">]);</span>
-    <span class="p">}</span>
-<span class="p">};</span>
 
 
 </pre></div>
@@ -3131,7 +3098,7 @@ so that GameStage.compare does not complain.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-100" id="section-100">&#182;</a>
+  <a class="pilcrow" href="#section-98" id="section-98">&#182;</a>
 </div>
 <ul>
 <li>skips the check.</li>
@@ -3147,7 +3114,7 @@ so that GameStage.compare does not complain.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-101" id="section-101">&#182;</a>
+  <a class="pilcrow" href="#section-99" id="section-99">&#182;</a>
 </div>
 <p>Trick: we compare version numbers using the GameStage class.</p>
         </td>
@@ -3334,7 +3301,7 @@ settings.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-104" id="section-104">&#182;</a>
+  <a class="pilcrow" href="#section-102" id="section-102">&#182;</a>
 </div>
 <p>Async function. Throws errors.</p>
         </td>
@@ -3350,7 +3317,7 @@ settings.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-105" id="section-105">&#182;</a>
+  <a class="pilcrow" href="#section-103" id="section-103">&#182;</a>
 </div>
 <p>Not needed anymore.</p>
         </td>
@@ -3365,7 +3332,7 @@ settings.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-106" id="section-106">&#182;</a>
+  <a class="pilcrow" href="#section-104" id="section-104">&#182;</a>
 </div>
 <p>TODO: see if we need it in the future:</p>
         </td>
