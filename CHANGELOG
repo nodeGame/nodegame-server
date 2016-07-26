@@ -1,5 +1,8 @@
 # nodegame-server change log
 
+# 2.1.1
+ - Handling aliases better, general cleanup in ServerNode
+
 # 2.1.0
  - Better support for authorization codes.
 
