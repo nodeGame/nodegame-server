@@ -1,5 +1,8 @@
 # nodegame-server change log
 
+# 2.1.2
+ - Built.
+
 # 2.1.1
  - Handling aliases better, general cleanup in ServerNode
 
