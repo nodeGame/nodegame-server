@@ -68,7 +68,7 @@
 </div>
 
 
-<p>Copyright(c) 2014 Stefano Balietti
+<p>Copyright(c) 2016 Stefano Balietti
 MIT Licensed</p>
   </div>
   <div class="body"><p>Handles network connections through Socket.IO</p>
@@ -358,13 +358,14 @@ TODO: rename.</p>
   <a class="pilcrow" href="#section-13" id="section-13">&#182;</a>
 </div>
 <p>Add information about the IP in the headers.
-This might change in different versions of Socket.IO</p>
+This might change in different versions of Socket.IO
+socket.handshake.headers.address = socket.handshake.address;</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-            <span class="nx">socket</span><span class="p">.</span><span class="nx">handshake</span><span class="p">.</span><span class="nx">headers</span><span class="p">.</span><span class="nx">address</span> <span class="o">=</span> <span class="nx">socket</span><span class="p">.</span><span class="nx">handshake</span><span class="p">.</span><span class="nx">address</span><span class="p">;</span>
 
             <span class="nx">res</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">gameServer</span><span class="p">.</span><span class="nx">onConnect</span><span class="p">(</span><span class="nx">prefixedSid</span><span class="p">,</span> <span class="nx">that</span><span class="p">,</span>
-                <span class="nx">socket</span><span class="p">.</span><span class="nx">handshake</span><span class="p">.</span><span class="nx">headers</span><span class="p">,</span> <span class="nx">clientType</span><span class="p">,</span> <span class="nx">startingRoom</span><span class="p">);</span>
+                                            <span class="nx">socket</span><span class="p">.</span><span class="nx">handshake</span><span class="p">,</span> <span class="nx">clientType</span><span class="p">,</span>
+                                            <span class="nx">startingRoom</span><span class="p">);</span>
 
             <span class="k">if</span> <span class="p">(</span><span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
                 <span class="nx">socket</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;message&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">msg</span><span class="p">)</span> <span class="p">{</span>
@@ -681,27 +682,6 @@ client = this.channel.sockets[strippedSid];</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
         <span class="k">else</span> <span class="p">{</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-27" id="section-27">&#182;</a>
-</div>
-<p>Ste: was.
-            for (clientSid in this.channel.sockets) {
-                if (strippedSid === clientSid) continue;</p>
-
-
-<div class="highlight"><pre><code>            <span class="n">client</span> <span class="o">=</span> <span class="n">this</span><span class="o">.</span><span class="n">channel</span><span class="o">.</span><span class="n">sockets</span><span class="p">[</span><span class="n">clientSid</span><span class="p">];</span>
-</code></pre></div>
-
-
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
 
             <span class="k">for</span> <span class="p">(</span><span class="nx">clientSid</span> <span class="k">in</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">connected</span><span class="p">)</span> <span class="p">{</span>
                 <span class="k">if</span> <span class="p">(</span><span class="nx">strippedSid</span> <span class="o">===</span> <span class="nx">clientSid</span><span class="p">)</span> <span class="k">continue</span><span class="p">;</span>

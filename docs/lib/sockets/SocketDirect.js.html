@@ -62,7 +62,7 @@
 </div>
 
 
-<p>Copyright(c) 2014 Stefano Balietti
+<p>Copyright(c) 2016 Stefano Balietti
 MIT Licensed</p>
   </div>
   <div class="body"><p>Manages the communication with clients as objects in memory</p>
@@ -306,7 +306,7 @@ sending a message before this methods exits).</p>
 <p>Ask GameServer to register the client with the ChannelRegistry.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="nx">res</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">gameServer</span><span class="p">.</span><span class="nx">onConnect</span><span class="p">(</span><span class="nx">sid</span><span class="p">,</span> <span class="k">this</span><span class="p">,</span> <span class="nx">options</span><span class="p">.</span><span class="nx">headers</span><span class="p">,</span>
+    <span class="nx">res</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">gameServer</span><span class="p">.</span><span class="nx">onConnect</span><span class="p">(</span><span class="nx">sid</span><span class="p">,</span> <span class="k">this</span><span class="p">,</span> <span class="nx">options</span><span class="p">.</span><span class="nx">handshake</span> <span class="o">||</span> <span class="p">{},</span>
                                     <span class="nx">options</span><span class="p">.</span><span class="nx">clientType</span><span class="p">,</span> <span class="nx">options</span><span class="p">.</span><span class="nx">startingRoom</span><span class="p">);</span>
 
 
@@ -322,9 +322,7 @@ sending a message before this methods exits).</p>
 we delete the socket.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">delete</span> <span class="k">this</span><span class="p">.</span><span class="nx">clients</span><span class="p">[</span><span class="nx">sid</span><span class="p">];</span>
-    <span class="p">}</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">res</span><span class="p">)</span> <span class="k">delete</span> <span class="k">this</span><span class="p">.</span><span class="nx">clients</span><span class="p">[</span><span class="nx">sid</span><span class="p">];</span>
     <span class="k">return</span> <span class="nx">res</span><span class="p">;</span>
 <span class="p">};</span>
 
