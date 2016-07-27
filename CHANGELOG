@@ -1,5 +1,8 @@
 # nodegame-server change log
 
+# 2.2.0
+ - Query parameters passed to onConnect method in GameServer. (retro-compatible).
+
 # 2.1.2
  - Built.
 
