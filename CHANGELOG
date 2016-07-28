@@ -1,5 +1,8 @@
 # nodegame-server change log
 
+# 2.3.0
+ - Fixed resolving monitor directory correctly in GameRouter.
+
 # 2.2.0
  - Query parameters passed to onConnect method in GameServer. (retro-compatible).
 
