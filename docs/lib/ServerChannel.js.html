@@ -3113,10 +3113,9 @@ Optional. Array of strings to give PhantomJS as command line arguments</li>
 <p>Set up the arguments to phantomjs.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="nx">serverdir</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">rootDir</span><span class="p">;</span>
     <span class="nx">url</span> <span class="o">=</span> <span class="s1">&#39;http://localhost:&#39;</span> <span class="o">+</span> <span class="nx">port</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span>
           <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">filePath</span> <span class="o">+</span> <span class="nx">queryString</span><span class="p">;</span>
-    <span class="nx">phantomjsArgs</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">serverdir</span> <span class="o">+</span> <span class="s1">&#39;/phantomjs/openurl.js&#39;</span><span class="p">);</span>
+    <span class="nx">phantomjsArgs</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">rootDir</span> <span class="o">+</span> <span class="s1">&#39;/phantomjs/openurl.js&#39;</span><span class="p">);</span>
     <span class="nx">phantomjsArgs</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">url</span><span class="p">);</span>
 
 
@@ -3131,7 +3130,9 @@ Optional. Array of strings to give PhantomJS as command line arguments</li>
 <p>Do not call /phantomjs/bin/phantomjs to avoid double spawn.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="nx">phPath</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="nx">serverdir</span> <span class="o">+</span> <span class="s1">&#39;/node_modules/phantomjs/lib/phantomjs&#39;</span><span class="p">).</span><span class="nx">path</span><span class="p">;</span>
+    <span class="nx">phPath</span> <span class="o">=</span> <span class="nx">J</span><span class="p">.</span><span class="nx">resolveModuleDir</span><span class="p">(</span><span class="s1">&#39;phantomjs&#39;</span><span class="p">,</span> <span class="nx">__dirname</span><span class="p">);</span>
+    <span class="nx">phPath</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="nx">phPath</span> <span class="o">+</span> <span class="s1">&#39;/lib/phantomjs&#39;</span><span class="p">).</span><span class="nx">path</span><span class="p">;</span>
+
 
 </pre></div>
         </td>
