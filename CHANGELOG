@@ -1,5 +1,8 @@
 # nodegame-server change log
 
+# 2.3.1
+ - Better look-up of the phantomjs directory.
+
 # 2.3.0
  - Fixed resolving monitor directory correctly in GameRouter.
 
