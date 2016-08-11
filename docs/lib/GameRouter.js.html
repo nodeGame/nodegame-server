@@ -163,7 +163,12 @@ MIT Licensed</p>
     <span class="nx">rootDir</span> <span class="o">=</span> <span class="nx">servernode</span><span class="p">.</span><span class="nx">rootDir</span><span class="p">;</span>
     <span class="nx">publicDir</span> <span class="o">=</span> <span class="nx">rootDir</span> <span class="o">+</span> <span class="s1">&#39;/public/&#39;</span><span class="p">;</span>
 
-    <span class="nx">name</span> <span class="o">=</span> <span class="nx">basepath</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="p">(</span><span class="nx">alias</span> <span class="o">||</span> <span class="nx">gameName</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">getDefaultChannel</span><span class="p">()</span> <span class="o">===</span> <span class="nx">gameName</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">name</span> <span class="o">=</span> <span class="nx">basepath</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="k">else</span> <span class="p">{</span>
+        <span class="nx">name</span> <span class="o">=</span> <span class="nx">basepath</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="p">(</span><span class="nx">alias</span> <span class="o">||</span> <span class="nx">gameName</span><span class="p">);</span>
+    <span class="p">}</span>
 
 
 </pre></div>

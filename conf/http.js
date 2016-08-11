@@ -1,6 +1,6 @@
 /**
  * # http.js
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2016 Stefano Balietti
  * MIT Licensed
  *
  * Configuration file for Express server in nodegame-server
@@ -29,13 +29,12 @@ errorHandler = require('errorhandler');
  * @param {object} options The object containing the custom settings
  */
 function configure(app, servernode) {
-    var rootDir, monitorDir, publicDir;
+    var rootDir, publicDir;
     var resourceManager;
     var basepath;
 
     rootDir = servernode.rootDir;
     publicDir = rootDir + '/public/';
-    monitorDir = rootDir + '/node_modules/nodegame-monitor/public/';
     basepath = servernode.basepath || '';
     resourceManager = servernode.resourceManager;
 
@@ -134,6 +133,12 @@ function configure(app, servernode) {
 
     app.get(basepath + '/', function(req, res) {
         var q;
+
+        if (servernode.defaultChannel) {
+            // TODO: do something.
+            //res.redirect(basepath + '/index.htm');
+            // return;
+        }
 
         if (J.isEmpty(req.query)) {
             res.render('index', {
