@@ -131,10 +131,14 @@ function configure(app, servernode) {
         sendFromPublic('lib', req, res);
     });
 
-    app.get(basepath + '/', function(req, res) {
+    app.get(basepath + '/', function(req, res, next) {
         var q;
 
         if (servernode.defaultChannel) {
+            app;
+            debugger
+            next();
+            return;
             // TODO: do something.
             //res.redirect(basepath + '/index.htm');
             // return;
