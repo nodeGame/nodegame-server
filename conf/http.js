@@ -135,13 +135,8 @@ function configure(app, servernode) {
         var q;
 
         if (servernode.defaultChannel) {
-            app;
-            debugger
             next();
             return;
-            // TODO: do something.
-            //res.redirect(basepath + '/index.htm');
-            // return;
         }
 
         if (J.isEmpty(req.query)) {
