@@ -1,5 +1,9 @@
 # nodegame-server change log
 
+# 2.4.0
+ - Channels can be set as "default" and they are served from "/" (aliases of the same game will continue to work, but other games might not be available).
+ - Monitor interface is not available anymore from alias urls.
+
 # 2.3.1
  - Better look-up of the phantomjs directory.
 
