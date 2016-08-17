@@ -3050,7 +3050,7 @@ Optional. Array of strings to give PhantomJS as command line arguments</li>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">ServerChannel</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">connectPhantom</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">options</span><span class="p">)</span> <span class="p">{</span>
-    <span class="kd">var</span> <span class="nx">port</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">filePath</span><span class="p">,</span> <span class="nx">queryString</span><span class="p">,</span> <span class="nx">phantomjsArgs</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">port</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">filePath</span><span class="p">,</span> <span class="nx">queryString</span><span class="p">,</span> <span class="nx">phantomjsArgs</span><span class="p">,</span> <span class="nx">omitGameName</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">serverdir</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">url</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">phantomjs</span><span class="p">,</span> <span class="nx">phPath</span><span class="p">;</span>
@@ -3083,13 +3083,18 @@ Optional. Array of strings to give PhantomJS as command line arguments</li>
     <span class="nx">port</span> <span class="o">=</span> <span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">port</span> <span class="o">?</span>
         <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">port</span> <span class="o">:</span> <span class="nx">port</span><span class="p">;</span>
 
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">options</span><span class="p">.</span><span class="nx">omitGameName</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">omitGameName</span> <span class="o">=</span> <span class="o">!!</span><span class="nx">options</span><span class="p">.</span><span class="nx">omitGameName</span><span class="p">;</span>
+    <span class="p">}</span>
+
     <span class="nx">gameName</span> <span class="o">=</span> <span class="nx">options</span><span class="p">.</span><span class="nx">gameName</span><span class="p">;</span>
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">gameName</span> <span class="o">&amp;&amp;</span>
-        <span class="s1">&#39;string&#39;</span>    <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">gameName</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">gameName</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">gameName</span> <span class="o">=</span> <span class="nx">options</span><span class="p">.</span><span class="nx">gameName</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">gameName</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerChannel.connectPhantom: &#39;</span> <span class="o">+</span>
                 <span class="s1">&#39;gameName must be string or undefined.&#39;</span><span class="p">);</span>
     <span class="p">}</span>
-    <span class="nx">gameName</span> <span class="o">=</span> <span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">gameName</span> <span class="o">?</span> <span class="k">this</span><span class="p">.</span><span class="nx">name</span> <span class="o">:</span> <span class="nx">gameName</span><span class="p">;</span>
 
     <span class="nx">filePath</span> <span class="o">=</span> <span class="nx">options</span><span class="p">.</span><span class="nx">filePath</span><span class="p">;</span>
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">filePath</span> <span class="o">&amp;&amp;</span>
@@ -3141,8 +3146,23 @@ Optional. Array of strings to give PhantomJS as command line arguments</li>
 <p>Set up the arguments to phantomjs.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="nx">url</span> <span class="o">=</span> <span class="s1">&#39;http://localhost:&#39;</span> <span class="o">+</span> <span class="nx">port</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span>
-          <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">filePath</span> <span class="o">+</span> <span class="nx">queryString</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-105" id="section-105">&#182;</a>
+</div>
+<p>Url might or not contain gameName (e.g. not if it is default channel).</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">url</span> <span class="o">=</span> <span class="s1">&#39;http://localhost:&#39;</span> <span class="o">+</span> <span class="nx">port</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">gameName</span><span class="p">)</span> <span class="nx">url</span> <span class="o">+=</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span><span class="p">;</span>
+    <span class="nx">url</span> <span class="o">+=</span> <span class="nx">filePath</span> <span class="o">+</span> <span class="nx">queryString</span><span class="p">;</span>
+
     <span class="nx">phantomjsArgs</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">rootDir</span> <span class="o">+</span> <span class="s1">&#39;/phantomjs/openurl.js&#39;</span><span class="p">);</span>
     <span class="nx">phantomjsArgs</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">url</span><span class="p">);</span>
 
@@ -3153,7 +3173,7 @@ Optional. Array of strings to give PhantomJS as command line arguments</li>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-105" id="section-105">&#182;</a>
+  <a class="pilcrow" href="#section-106" id="section-106">&#182;</a>
 </div>
 <p>Do not call /phantomjs/bin/phantomjs to avoid double spawn.</p>
         </td>
@@ -3168,7 +3188,7 @@ Optional. Array of strings to give PhantomJS as command line arguments</li>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-106" id="section-106">&#182;</a>
+  <a class="pilcrow" href="#section-107" id="section-107">&#182;</a>
 </div>
 <p>Spawn.</p>
         </td>
@@ -3194,7 +3214,7 @@ Optional. Array of strings to give PhantomJS as command line arguments</li>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-107" id="section-107">&#182;</a>
+  <a class="pilcrow" href="#section-108" id="section-108">&#182;</a>
 </div>
 <p>Wait few ms for error to be printed.</p>
         </td>
@@ -3226,7 +3246,7 @@ Optional. Array of strings to give PhantomJS as command line arguments</li>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-108" id="section-108">&#182;</a>
+  <a class="pilcrow" href="#section-109" id="section-109">&#182;</a>
 </div>
 <p>Add to the global collection.</p>
         </td>
@@ -3242,7 +3262,7 @@ Optional. Array of strings to give PhantomJS as command line arguments</li>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-109" id="section-109">&#182;</a>
+  <a class="pilcrow" href="#section-110" id="section-110">&#182;</a>
 </div>
 <p>Maybe we do not need this api.
 /**
@@ -3271,7 +3291,7 @@ ServerChannel.prototype.killAllPhantoms = function() {
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-110" id="section-110">&#182;</a>
+  <a class="pilcrow" href="#section-111" id="section-111">&#182;</a>
 </div>
 <p>TODO: finish this method. Should destroy all game rooms. clear all players?,
       keep the waiting room</p>
@@ -3291,7 +3311,7 @@ ServerChannel.prototype.killAllPhantoms = function() {
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-111" id="section-111">&#182;</a>
+  <a class="pilcrow" href="#section-112" id="section-112">&#182;</a>
 </div>
 <p>Remove clients from registry, game rooms and disconnect them.
    this.registry.clients.each(function(c) {
@@ -3328,7 +3348,7 @@ ServerChannel.prototype.killAllPhantoms = function() {
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-112" id="section-112">&#182;</a>
+  <a class="pilcrow" href="#section-113" id="section-113">&#182;</a>
 </div>
 <p>Remove clients from registry, game rooms and disconnect them.</p>
         </td>
@@ -3349,7 +3369,7 @@ ServerChannel.prototype.killAllPhantoms = function() {
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-113" id="section-113">&#182;</a>
+  <a class="pilcrow" href="#section-114" id="section-114">&#182;</a>
 </div>
 <p>Destroy empty game rooms.</p>
         </td>
@@ -3370,7 +3390,7 @@ ServerChannel.prototype.killAllPhantoms = function() {
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-114" id="section-114">&#182;</a>
+  <a class="pilcrow" href="#section-115" id="section-115">&#182;</a>
 </div>
 <p>Create a brand new Registry.
 this.registry = new ChannelRegistry({ name: this.name });</p>
