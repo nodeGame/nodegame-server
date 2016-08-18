@@ -3637,6 +3637,38 @@ if (!Array.prototype.indexOf) {
         return null;
     };
 
+    /**
+     * ### DOM.viewportSize
+     *
+     * Returns the current size of the viewport in pixels
+     *
+     * The viewport's size is the actual visible part of the browser's
+     * window. This excludes, for example, the area occupied by the
+     * JavaScript console.
+     *
+     * @param {string} dim Optional. Controls the return value ('x', or 'y')
+     *
+     * @return {object|number} An object containing x and y property, or
+     *   number specifying the value for x or y
+     *
+     * Kudos: http://stackoverflow.com/questions/3437786/
+     *        get-the-size-of-the-screen-current-web-page-and-browser-window
+     */
+    DOM.viewportSize = function(dim) {
+        var w, d, e, g, x, y;
+        if (dim && dim !== 'x' && dim !== 'y') {
+            throw new TypeError('DOM.viewportSize: dim must be "x","y" or ' +
+                                'undefined. Found: ' + dim);
+        }
+        w = window;
+        d = document;
+        e = d.documentElement;
+        g = d.getElementsByTagName('body')[0];
+        x = w.innerWidth || e.clientWidth || g.clientWidth,
+        y = w.innerHeight|| e.clientHeight|| g.clientHeight;
+        return !dim ? {x: x, y: y} : dim === 'x' ? x : y;
+    };
+
     // ## Helper methods
 
     /**
@@ -10403,7 +10435,7 @@ if (!Array.prototype.indexOf) {
     node.support = JSUS.compatibility();
 
     // Auto-Generated.
-    node.version = '2.0.3';
+    node.version = '2.0.4';
 
 })(window);
 
@@ -18627,7 +18659,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Socket
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2016 Stefano Balietti
  * MIT Licensed
  *
  * Wrapper class for the actual socket to send messages
@@ -19191,7 +19223,10 @@ if (!Array.prototype.indexOf) {
     Socket.prototype.startSession = function(msg) {
         this.session = msg.session;
         this.node.createPlayer(msg.data);
-        if (this.node.window) this.node.window.setUriChannel(msg.text);
+        // msg.text can be undefined if channel is the "mainChannel."
+        if (this.node.window && msg.text) {
+            this.node.window.setUriChannel(msg.text);
+        }
     };
 
     /**
@@ -30900,34 +30935,34 @@ if (!Array.prototype.indexOf) {
      *   and a method stop, that clears the interval
      */
     GameWindow.prototype.getLoadingDots = function(len, id) {
-        var span_dots, i, limit, intervalId;
+        var spanDots, i, limit, intervalId;
         if (len & len < 0) {
             throw new Error('GameWindow.getLoadingDots: len < 0.');
         }
         len = len || 5;
-        span_dots = document.createElement('span');
-        span_dots.id = id || 'span_dots';
+        spanDots = document.createElement('span');
+        spanDots.id = id || 'span_dots';
         limit = '';
         for (i = 0; i < len; i++) {
             limit = limit + '.';
         }
         // Refreshing the dots...
         intervalId = setInterval(function() {
-            if (span_dots.innerHTML !== limit) {
-                span_dots.innerHTML = span_dots.innerHTML + '.';
+            if (spanDots.innerHTML !== limit) {
+                spanDots.innerHTML = spanDots.innerHTML + '.';
             }
             else {
-                span_dots.innerHTML = '.';
+                spanDots.innerHTML = '.';
             }
         }, 1000);
 
         function stop() {
-            span_dots.innerHTML = '.';
+            spanDots.innerHTML = '.';
             clearInterval(intervalId);
         }
 
         return {
-            span: span_dots,
+            span: spanDots,
             stop: stop
         };
     };
@@ -31436,7 +31471,7 @@ if (!Array.prototype.indexOf) {
     // ## Global scope
 
     var document = window.document,
-    JSUS = node.JSUS;
+    J = node.JSUS;
 
     var TriggerManager = node.TriggerManager;
 
@@ -31525,12 +31560,13 @@ if (!Array.prototype.indexOf) {
         });
 
         this.tm.addTrigger(function(el) {
+            var div, key, str;
             if (!el) return;
             if (el.content && 'object' === typeof el.content) {
-                var div = document.createElement('div');
-                for (var key in el.content) {
+                div = document.createElement('div');
+                for (key in el.content) {
                     if (el.content.hasOwnProperty(key)) {
-                        var str = key + ':\t' + el.content[key];
+                        str = key + ':\t' + el.content[key];
                         div.appendChild(document.createTextNode(str));
                         div.appendChild(document.createElement('br'));
                     }
@@ -31546,7 +31582,7 @@ if (!Array.prototype.indexOf) {
                 'function' === typeof el.content.parse) {
 
                 html = el.content.parse();
-                if (JSUS.isElement(html) || JSUS.isNode(html)) {
+                if (J.isElement(html) || J.isNode(html)) {
                     return html;
                 }
             }
@@ -31554,7 +31590,7 @@ if (!Array.prototype.indexOf) {
 
         this.tm.addTrigger(function(el) {
             if (!el) return;
-            if (JSUS.isElement(el.content) || JSUS.isNode(el.content)) {
+            if (J.isElement(el.content) || J.isNode(el.content)) {
                 return el.content;
             }
         });
@@ -31639,18 +31675,35 @@ if (!Array.prototype.indexOf) {
      *
      * Creates a new instace of Entity
      *
+     * An `Entity` is an abstract representation of an HTML element.
+     *
+     * May contains the following properties:
+     *
+     *   - `content` (that will be processed upon rendering),
+     *   - `id` (if specified)
+     *   - 'className` (if specified)
+     *
      * @param {object} e The object to transform in entity
      */
     function Entity(o) {
         o = o || {};
+
         this.content = 'undefined' !== typeof o.content ? o.content : '';
+
+        if ('string' === typeof o.id) {
+            this.id = o.id;
+        }
+        else if ('undefined' !== typeof o.id) {
+            throw new TypeError('Entity: id must ' +
+                                'be string or undefined.');
+        }
         if ('string' === typeof o.className) {
             this.className = o.className;
         }
-        else if (!o.className) {
-            this.className = null;
+        else if (J.isArray(o.className)) {
+            this.className = o.join(' ');
         }
-        else {
+        else if ('undefined' !== typeof o.className) {
             throw new TypeError('Entity: className must ' +
                                 'be string, array, or undefined.');
         }
@@ -32145,6 +32198,7 @@ if (!Array.prototype.indexOf) {
         content = this.htmlRenderer.render(cell);
         TD.appendChild(content);
         if (cell.className) TD.className = cell.className;
+        if (cell.id) TD.id = cell.id;
         cell.HTMLElement = TD;
         return TD;
     };
@@ -34281,8 +34335,23 @@ if (!Array.prototype.indexOf) {
         }
 
         // Table.
-        if (this.sc) this.table.addRow([this.sc, this.canvas]);
-        else this.table.add(this.canvas);
+        if (this.sc) {
+            this.table.addRow(
+                [{
+                    content: this.sc,
+                    id: this.id + '_td_controls'
+                },{
+                    content: this.canvas,
+                    id: this.id + '_td_cf'
+                }]
+            );
+        }
+        else {
+            this.table.add({
+                content: this.canvas,
+                id: this.id + '_td_cf'
+            });
+        }
 
         // Create and append table.
         this.table.parse();
@@ -42056,6 +42125,8 @@ if (!Array.prototype.indexOf) {
             that.completed[name] = true;
             that.updateStillChecking(-1);
             if (!success) that.hasFailed = true;
+
+            if ('string' === typeof errors) errors = [ errors ];
 
             if (errors) {
                 if (!J.isArray(errors)) {
