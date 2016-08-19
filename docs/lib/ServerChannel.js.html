@@ -3167,7 +3167,7 @@ Optional. Array of strings to give PhantomJS as command line arguments</li>
     <span class="nx">url</span> <span class="o">=</span> <span class="s1">&#39;http://localhost:&#39;</span> <span class="o">+</span> <span class="nx">port</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span><span class="p">;</span>
     <span class="k">if</span> <span class="p">(</span><span class="nx">gameName</span><span class="p">)</span> <span class="nx">url</span> <span class="o">+=</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span><span class="p">;</span>
     <span class="nx">url</span> <span class="o">+=</span> <span class="nx">filePath</span> <span class="o">+</span> <span class="nx">queryString</span><span class="p">;</span>
-
+    <span class="kr">debugger</span>
     <span class="nx">phantomjsArgs</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">rootDir</span> <span class="o">+</span> <span class="s1">&#39;/phantomjs/openurl.js&#39;</span><span class="p">);</span>
     <span class="nx">phantomjsArgs</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">url</span><span class="p">);</span>
 
