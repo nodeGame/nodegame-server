@@ -1335,7 +1335,7 @@ players to start the game.</p>
         <span class="kd">var</span> <span class="nx">treatmentName</span><span class="p">;</span>
         <span class="kd">var</span> <span class="nx">shuffledPList</span><span class="p">;</span>
         <span class="kd">var</span> <span class="nx">pId</span><span class="p">,</span> <span class="nx">group</span><span class="p">,</span> <span class="nx">groupIdx</span><span class="p">,</span> <span class="nx">groupLimit</span><span class="p">;</span>
-        <span class="kd">var</span> <span class="nx">i</span><span class="p">,</span> <span class="nx">len</span><span class="p">;</span>
+        <span class="kd">var</span> <span class="nx">i</span><span class="p">,</span> <span class="nx">j</span><span class="p">;</span>
         <span class="kd">var</span> <span class="nx">gameRoom</span><span class="p">,</span> <span class="nx">code</span><span class="p">,</span> <span class="nx">gameNumber</span><span class="p">;</span>
         <span class="kd">var</span> <span class="nx">pList</span><span class="p">,</span> <span class="nx">nPlayers</span><span class="p">,</span> <span class="nx">playerIds</span><span class="p">,</span> <span class="nx">nPlayersToDispatch</span><span class="p">;</span>
 
@@ -1440,7 +1440,7 @@ sorting criteria, i.e. there might be no need to sort here.</p>
             <span class="p">}</span>
         <span class="p">}</span>
         <span class="k">else</span> <span class="p">{</span>
-            <span class="nx">shuffledPList</span> <span class="o">=</span> <span class="nx">pList</span><span class="p">;</span>
+            <span class="nx">shuffledPList</span> <span class="o">=</span> <span class="nx">pList</span><span class="p">.</span><span class="nx">breed</span><span class="p">();</span>
         <span class="p">}</span>
 
 
@@ -1562,7 +1562,6 @@ sorting criteria, i.e. there might be no need to sort here.</p>
             <span class="k">if</span> <span class="p">(</span><span class="nx">groupIdx</span> <span class="o">===</span> <span class="nx">groupLimit</span><span class="p">)</span> <span class="p">{</span>
                 <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;DISPATCH!&#39;</span><span class="p">);</span>
 
-
 </pre></div>
         </td>
       </tr>
@@ -1607,7 +1606,7 @@ TODO: should the main game have a ghost level?</p>
                     <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">gameLevel</span><span class="p">)</span> <span class="p">{</span>
                         <span class="nx">gameRoom</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">gameLevels</span><span class="p">[</span><span class="k">this</span><span class="p">.</span><span class="nx">gameLevel</span><span class="p">]</span>
                             <span class="p">.</span><span class="nx">createGameRoom</span><span class="p">({</span>
-                                <span class="nx">clients</span><span class="o">:</span> <span class="nx">limitedPList</span><span class="p">,</span>
+                                <span class="nx">clients</span><span class="o">:</span> <span class="nx">group</span><span class="p">,</span>
                                 <span class="nx">treatmentName</span><span class="o">:</span> <span class="nx">treatmentName</span>
                             <span class="p">});</span>
                     <span class="p">}</span>
@@ -1625,7 +1624,7 @@ TODO: should the main game have a ghost level?</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
                         <span class="nx">gameRoom</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">createGameRoom</span><span class="p">({</span>
-                            <span class="nx">clients</span><span class="o">:</span> <span class="nx">limitedPList</span><span class="p">,</span>
+                            <span class="nx">clients</span><span class="o">:</span> <span class="nx">group</span><span class="p">,</span>
                             <span class="nx">treatmentName</span><span class="o">:</span> <span class="nx">treatmentName</span>
                         <span class="p">});</span>
                     <span class="p">}</span>
@@ -1660,7 +1659,6 @@ TODO: should the main game have a ghost level?</p>
                     <span class="k">this</span><span class="p">.</span><span class="nx">lastGameRoom</span> <span class="o">=</span> <span class="nx">gameRoom</span><span class="p">;</span>
                 <span class="p">}</span>
                 <span class="k">else</span> <span class="p">{</span>
-                    <span class="nx">playerIds</span> <span class="o">=</span> <span class="nx">shuffledPList</span><span class="p">.</span><span class="nx">id</span><span class="p">.</span><span class="nx">getAllKeys</span><span class="p">();</span>
 
 </pre></div>
         </td>
@@ -1673,13 +1671,12 @@ TODO: should the main game have a ghost level?</p>
 <p>Move clients into existing room.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-                    <span class="nx">i</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="nx">len</span> <span class="o">=</span> <span class="nx">playerIds</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span>
-                    <span class="k">for</span> <span class="p">(</span> <span class="p">;</span> <span class="o">++</span><span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">len</span> <span class="p">;</span> <span class="p">)</span> <span class="p">{</span>
-                        <span class="nx">channel</span><span class="p">.</span><span class="nx">moveClient</span><span class="p">(</span><span class="nx">playerIds</span><span class="p">[</span><span class="nx">i</span><span class="p">],</span>
+                    <span class="nx">j</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+                    <span class="k">for</span> <span class="p">(</span> <span class="p">;</span> <span class="o">++</span><span class="nx">j</span> <span class="o">&lt;</span> <span class="k">this</span><span class="p">.</span><span class="nx">GROUP_SIZE</span> <span class="p">;</span> <span class="p">)</span> <span class="p">{</span>
+                        <span class="nx">channel</span><span class="p">.</span><span class="nx">moveClient</span><span class="p">(</span><span class="nx">group</span><span class="p">[</span><span class="nx">j</span><span class="p">],</span>
                                            <span class="k">this</span><span class="p">.</span><span class="nx">lastGameRoom</span><span class="p">.</span><span class="nx">name</span><span class="p">,</span>
                                            <span class="k">this</span><span class="p">.</span><span class="nx">name</span><span class="p">);</span>
                     <span class="p">}</span>
-
 
 </pre></div>
         </td>
@@ -1692,8 +1689,8 @@ TODO: should the main game have a ghost level?</p>
 <p>Setup new group of players in the old room.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-                    <span class="k">this</span><span class="p">.</span><span class="nx">lastGameRoom</span><span class="p">.</span><span class="nx">setupGame</span><span class="p">(</span><span class="kc">undefined</span><span class="p">,</span> <span class="kc">false</span><span class="p">,</span> <span class="nx">playerIds</span><span class="p">);</span>
-                    <span class="k">this</span><span class="p">.</span><span class="nx">lastGameRoom</span><span class="p">.</span><span class="nx">startGame</span><span class="p">(</span><span class="kc">false</span><span class="p">,</span> <span class="nx">playerIds</span><span class="p">,</span> <span class="kc">true</span><span class="p">);</span>
+                    <span class="k">this</span><span class="p">.</span><span class="nx">lastGameRoom</span><span class="p">.</span><span class="nx">setupGame</span><span class="p">(</span><span class="kc">undefined</span><span class="p">,</span> <span class="kc">false</span><span class="p">,</span> <span class="nx">group</span><span class="p">);</span>
+                    <span class="k">this</span><span class="p">.</span><span class="nx">lastGameRoom</span><span class="p">.</span><span class="nx">startGame</span><span class="p">(</span><span class="kc">false</span><span class="p">,</span> <span class="nx">group</span><span class="p">,</span> <span class="kc">true</span><span class="p">);</span>
                 <span class="p">}</span>
 
 
@@ -1769,7 +1766,8 @@ TODO: should the main game have a ghost level?</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
         <span class="k">for</span> <span class="p">(</span><span class="nx">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">nPlayers</span><span class="p">;</span> <span class="o">++</span><span class="nx">i</span><span class="p">)</span> <span class="p">{</span>
-            <span class="nx">pId</span> <span class="o">=</span>
+            <span class="nx">pId</span> <span class="o">=</span> <span class="nx">pList</span><span class="p">.</span><span class="nx">db</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">id</span><span class="p">;</span>
+
 
 </pre></div>
         </td>
@@ -1779,22 +1777,16 @@ TODO: should the main game have a ghost level?</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-67" id="section-67">&#182;</a>
 </div>
-<p>Increase timesNotSelected of player.</p>
+<p>Increment timesNotSelected for player.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-            <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">db</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">timesNotSelected</span><span class="p">)</span> <span class="p">{</span>
-                <span class="o">++</span><span class="k">this</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">db</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">timesNotSelected</span><span class="p">;</span>
-            <span class="p">}</span>
-            <span class="k">else</span> <span class="p">{</span>
-                <span class="k">this</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">db</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">timesNotSelected</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
-            <span class="p">}</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nx">pList</span><span class="p">.</span><span class="nx">db</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">timesNotSelected</span><span class="p">)</span> <span class="o">++</span><span class="nx">pList</span><span class="p">.</span><span class="nx">db</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">timesNotSelected</span><span class="p">;</span>
+            <span class="k">else</span> <span class="nx">pList</span><span class="p">.</span><span class="nx">db</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">timesNotSelected</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
 
-            <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">START_DATE</span><span class="p">)</span> <span class="p">{</span>
-                <span class="k">this</span><span class="p">.</span><span class="nx">clearTimeOut</span><span class="p">(</span><span class="nx">shuffledPList</span><span class="p">.</span><span class="nx">db</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">id</span><span class="p">);</span>
-            <span class="p">}</span>
+            <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">START_DATE</span><span class="p">)</span> <span class="k">this</span><span class="p">.</span><span class="nx">clearTimeOut</span><span class="p">(</span><span class="nx">pId</span><span class="p">);</span>
 
-            <span class="nx">code</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">registry</span><span class="p">.</span><span class="nx">getClient</span><span class="p">(</span><span class="nx">pList</span><span class="p">.</span><span class="nx">db</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">id</span><span class="p">);</span>
-            <span class="k">this</span><span class="p">.</span><span class="nx">node</span><span class="p">.</span><span class="nx">say</span><span class="p">(</span><span class="s1">&#39;DISPATCH&#39;</span><span class="p">,</span> <span class="nx">pList</span><span class="p">.</span><span class="nx">db</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">id</span><span class="p">,</span> <span class="p">{</span>
+            <span class="nx">code</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">registry</span><span class="p">.</span><span class="nx">getClient</span><span class="p">(</span><span class="nx">pId</span><span class="p">);</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">node</span><span class="p">.</span><span class="nx">say</span><span class="p">(</span><span class="s1">&#39;DISPATCH&#39;</span><span class="p">,</span> <span class="nx">pId</span><span class="p">,</span> <span class="p">{</span>
                 <span class="nx">action</span><span class="o">:</span> <span class="s1">&#39;NotSelected&#39;</span><span class="p">,</span>
                 <span class="nx">exit</span><span class="o">:</span> <span class="nx">code</span><span class="p">.</span><span class="nx">ExitCode</span><span class="p">,</span>
                 <span class="nx">shouldDispatchMoreGames</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">shouldDispatchMoreGames</span><span class="p">()</span>
