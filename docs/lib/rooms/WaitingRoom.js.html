@@ -25,6 +25,21 @@
         <a href="#global%20scope">Global scope</a>
       </div>
       <div class="heading h2">
+        <a href="#waitingroom.sortingcallbacks">WaitingRoom.sortingCallbacks</a>
+      </div>
+      <div class="heading h3">
+        <a href="#timesnotselected">timesNotSelected</a>
+      </div>
+      <div class="heading h2">
+        <a href="#waitingroom.treatmentcallbacks">WaitingRoom.treatmentCallbacks</a>
+      </div>
+      <div class="heading h3">
+        <a href="#treatment_rotate">treatment_rotate</a>
+      </div>
+      <div class="heading h3">
+        <a href="#random">random</a>
+      </div>
+      <div class="heading h2">
         <a href="#waitingroom%20constructor">WaitingRoom constructor</a>
       </div>
       <div class="heading h3">
@@ -65,6 +80,9 @@
       </div>
       <div class="heading h3">
         <a href="#waitingroom.chosen_treatment">WaitingRoom.CHOSEN_TREATMENT</a>
+      </div>
+      <div class="heading h3">
+        <a href="#waitingroom.player_sorting">WaitingRoom.PLAYER_SORTING</a>
       </div>
       <div class="heading h3">
         <a href="#waitingroom.ispinginprogress">WaitingRoom.isPingInProgress</a>
@@ -193,6 +211,130 @@ without relying on non-standard <code>__proto__</code></p>
       <tr>
         <td class="docs"><div class="dox">
   <div class="summary">
+<div class="pilwrap" id="waitingroom.sortingcallbacks">
+  <h2>
+    <a href="#waitingroom.sortingcallbacks" name="waitingroom.sortingcallbacks" class="pilcrow">&#182;</a>
+    WaitingRoom.sortingCallbacks
+  </h2>
+</div>
+
+  </div>
+  <div class="body"><p>Predefined callbacks to sort the list of players before dispatching.</p>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">WaitingRoom</span><span class="p">.</span><span class="nx">sortingCallbacks</span> <span class="o">=</span> <span class="p">{</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap" id="timesnotselected">
+  <h3>
+    <a href="#timesnotselected" name="timesnotselected" class="pilcrow">&#182;</a>
+    timesNotSelected
+  </h3>
+</div>
+
+
+<p>Gives priority to players which have been left out in previous dispatch</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">timesNotSelected</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">a</span><span class="p">,</span> <span class="nx">b</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">((</span><span class="nx">a</span><span class="p">.</span><span class="nx">timesNotSelected</span> <span class="o">||</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&lt;</span> <span class="nx">b</span><span class="p">.</span><span class="nx">timesNotSelected</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="k">else</span> <span class="k">if</span> <span class="p">((</span><span class="nx">a</span><span class="p">.</span><span class="nx">timesNotSelected</span> <span class="o">||</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nx">b</span><span class="p">.</span><span class="nx">timesNotSelected</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="waitingroom.treatmentcallbacks">
+  <h2>
+    <a href="#waitingroom.treatmentcallbacks" name="waitingroom.treatmentcallbacks" class="pilcrow">&#182;</a>
+    WaitingRoom.treatmentCallbacks
+  </h2>
+</div>
+
+  </div>
+  <div class="body"><p>Names of callbacks for assigning treatments to groups of players</p>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">WaitingRoom</span><span class="p">.</span><span class="nx">treatmentCallbacks</span> <span class="o">=</span> <span class="p">{</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-7" id="section-7">&#182;</a>
+</div>
+<p>Keep treatment_ in front to minimize risk of collision
+with real treatment names.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap" id="treatment_rotate">
+  <h3>
+    <a href="#treatment_rotate" name="treatment_rotate" class="pilcrow">&#182;</a>
+    treatment_rotate
+  </h3>
+</div>
+
+
+<p>Rotates across all treatments sequentially</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="s1">&#39;treatment_rotate&#39;</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap" id="random">
+  <h3>
+    <a href="#random" name="random" class="pilcrow">&#182;</a>
+    random
+  </h3>
+</div>
+
+
+<p>Selects a random treatment (with re-sampling)</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="s1">&#39;treatment_random&#39;</span><span class="o">:</span> <span class="kc">true</span>
+<span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
 <div class="pilwrap" id="waitingroom%20constructor">
   <h2>
     <a href="#waitingroom%20constructor" name="waitingroom%20constructor" class="pilcrow">&#182;</a>
@@ -227,7 +369,7 @@ without relying on non-standard <code>__proto__</code></p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-5" id="section-5">&#182;</a>
+  <a class="pilcrow" href="#section-11" id="section-11">&#182;</a>
 </div>
 <p>Supercall</p>
         </td>
@@ -541,6 +683,30 @@ players to start the game.</p>
       <tr>
         <td class="docs"><div class="dox">
   <div class="summary">
+<div class="pilwrap" id="waitingroom.player_sorting">
+  <h3>
+    <a href="#waitingroom.player_sorting" name="waitingroom.player_sorting" class="pilcrow">&#182;</a>
+    WaitingRoom.PLAYER_SORTING
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Callback to sort the list of players before dispatching</p>
+
+<p>If NULL, random sorting takes place. Default: 'timesNotSelected'</p>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">this</span><span class="p">.</span><span class="nx">PLAYER_SORTING</span> <span class="o">=</span> <span class="nx">WaitingRoom</span><span class="p">.</span><span class="nx">sortingCallbacks</span><span class="p">.</span><span class="nx">timesNotSelected</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
 <div class="pilwrap" id="waitingroom.ispinginprogress">
   <h3>
     <a href="#waitingroom.ispinginprogress" name="waitingroom.ispinginprogress" class="pilcrow">&#182;</a>
@@ -608,9 +774,7 @@ players to start the game.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">WaitingRoom</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">parseSettings</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">settings</span><span class="p">)</span> <span class="p">{</span>
-    <span class="kd">var</span> <span class="nx">d</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">where</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">gameName</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">d</span><span class="p">,</span> <span class="nx">where</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">t</span><span class="p">;</span>
     <span class="nx">gameName</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">gameInfo</span><span class="p">.</span><span class="nx">info</span><span class="p">.</span><span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39; &#39;</span><span class="p">;</span>
     <span class="nx">where</span> <span class="o">=</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;WaitingRoom.parseSettings: &#39;</span><span class="p">;</span>
 
@@ -691,7 +855,7 @@ players to start the game.</p>
         <span class="k">if</span> <span class="p">(</span><span class="nx">settings</span><span class="p">.</span><span class="nx">EXECUTION_MODE</span> <span class="o">!==</span> <span class="s1">&#39;TIMEOUT&#39;</span> <span class="o">&amp;&amp;</span>
             <span class="nx">settings</span><span class="p">.</span><span class="nx">EXECUTION_MODE</span> <span class="o">!==</span> <span class="s1">&#39;WAIT_FOR_N_PLAYERS&#39;</span><span class="p">)</span> <span class="p">{</span>
             <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span> <span class="s1">&#39;Invalid execution mode: &#39;</span> <span class="o">+</span>
-                <span class="nx">settings</span><span class="p">.</span><span class="nx">EXECUTION_MODE</span><span class="p">);</span>
+                            <span class="nx">settings</span><span class="p">.</span><span class="nx">EXECUTION_MODE</span><span class="p">);</span>
         <span class="p">}</span>
         <span class="k">this</span><span class="p">.</span><span class="nx">EXECUTION_MODE</span> <span class="o">=</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">EXECUTION_MODE</span><span class="p">;</span>
     <span class="p">}</span>
@@ -699,16 +863,17 @@ players to start the game.</p>
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">START_DATE</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">EXECUTION_MODE</span> <span class="o">===</span> <span class="s1">&#39;WAIT_FOR_N_PLAYERS&#39;</span><span class="p">)</span> <span class="p">{</span>
             <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span> <span class="s1">&#39;Execution mode &#39;</span> <span class="o">+</span> <span class="k">this</span><span class="p">.</span><span class="nx">EXECUTION_MODE</span> <span class="o">+</span>
-                <span class="s1">&#39; cannot have a START_DATE&#39;</span><span class="p">);</span>
+                            <span class="s1">&#39; cannot have a START_DATE&#39;</span><span class="p">);</span>
         <span class="p">}</span>
         <span class="nx">d</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">Date</span><span class="p">(</span><span class="nx">settings</span><span class="p">.</span><span class="nx">START_DATE</span><span class="p">);</span>
         <span class="k">if</span> <span class="p">(</span><span class="nb">isNaN</span><span class="p">(</span><span class="nx">d</span><span class="p">.</span><span class="nx">getTime</span><span class="p">()))</span> <span class="p">{</span>
-            <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span> <span class="p">(</span><span class="nx">where</span> <span class="o">+</span> <span class="s1">&#39;START_DATE must be valid argument for&#39;</span> <span class="o">+</span>
-                <span class="s1">&#39; Date constructor. Found: &#39;</span> <span class="o">+</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">START_DATE</span><span class="p">);</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span> <span class="p">(</span><span class="nx">where</span> <span class="o">+</span> <span class="s1">&#39;START_DATE must be valid argument &#39;</span> <span class="o">+</span>
+                             <span class="s1">&#39;for Date constructor. Found: &#39;</span> <span class="o">+</span>
+                             <span class="nx">settings</span><span class="p">.</span><span class="nx">START_DATE</span><span class="p">);</span>
         <span class="p">}</span>
         <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">MAX_WAIT_TIME</span><span class="p">)</span> <span class="p">{</span>
             <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span> <span class="s1">&#39;Cannot define both MAX_WAIT_TIME and &#39;</span> <span class="o">+</span>
-                <span class="s1">&#39;START_DATE.&#39;</span><span class="p">);</span>
+                            <span class="s1">&#39;START_DATE.&#39;</span><span class="p">);</span>
         <span class="p">}</span>
         <span class="k">this</span><span class="p">.</span><span class="nx">START_DATE</span> <span class="o">=</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">START_DATE</span><span class="p">;</span>
     <span class="p">}</span>
@@ -719,13 +884,14 @@ players to start the game.</p>
         <span class="p">}</span>
         <span class="k">else</span> <span class="p">{</span>
             <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span> <span class="s1">&#39;MAX_WAIT_TIME must be &#39;</span> <span class="o">+</span>
-                   <span class="s1">&#39;number or undefined. Found: &#39;</span> <span class="o">+</span>  <span class="nx">settings</span><span class="p">.</span><span class="nx">MAX_WAIT_TIME</span><span class="p">);</span>
+                                <span class="s1">&#39;number or undefined. Found: &#39;</span> <span class="o">+</span>
+                                <span class="nx">settings</span><span class="p">.</span><span class="nx">MAX_WAIT_TIME</span><span class="p">);</span>
         <span class="p">}</span>
     <span class="p">}</span>
     <span class="k">else</span> <span class="p">{</span>
         <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">EXECUTION_MODE</span> <span class="o">===</span> <span class="s1">&#39;TIMEOUT&#39;</span><span class="p">)</span> <span class="p">{</span>
             <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span> <span class="s1">&#39;For EXECUTION_MODE=&quot;TIMEOUT&quot; either &#39;</span> <span class="o">+</span>
-                <span class="s1">&#39;MAX_WAIT_TIME or START_DATE must be defined.&#39;</span><span class="p">);</span>
+                            <span class="s1">&#39;MAX_WAIT_TIME or START_DATE must be defined.&#39;</span><span class="p">);</span>
         <span class="p">}</span>
     <span class="p">}</span>
 
@@ -740,21 +906,83 @@ players to start the game.</p>
 
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">ON_TIMEOUT_SERVER</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;function&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">ON_TIMEOUT_SERVER</span><span class="p">)</span> <span class="p">{</span>
-            <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span> <span class="s1">&#39;ON_TIMEOUT_SERVER must be function or &#39;</span> <span class="o">+</span>
-                          <span class="s1">&#39;undefined. Found: &#39;</span> <span class="o">+</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">ON_TIMEOUT_SERVER</span><span class="p">);</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span> <span class="s1">&#39;ON_TIMEOUT_SERVER must be function &#39;</span> <span class="o">+</span>
+                                <span class="s1">&#39;or undefined. Found: &#39;</span> <span class="o">+</span>
+                                <span class="nx">settings</span><span class="p">.</span><span class="nx">ON_TIMEOUT_SERVER</span><span class="p">);</span>
         <span class="p">}</span>
         <span class="k">this</span><span class="p">.</span><span class="nx">ON_TIMEOUT_SERVER</span> <span class="o">=</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">ON_TIMEOUT_SERVER</span><span class="p">;</span>
     <span class="p">}</span>
 
+
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">CHOSEN_TREATMENT</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;function&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">CHOSEN_TREATMENT</span> <span class="o">&amp;&amp;</span>
-            <span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">CHOSEN_TREATMENT</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">CHOSEN_TREATMENT</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">WaitingRoom</span><span class="p">.</span><span class="nx">treatmentCallbacks</span><span class="p">[</span><span class="nx">settings</span><span class="p">.</span><span class="nx">CHOSEN_TREATMENT</span><span class="p">])</span> <span class="p">{</span>
+
+                <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">gameLevel</span><span class="p">)</span> <span class="p">{</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-29" id="section-29">&#182;</a>
+</div>
+<p>Treatments are not yet parsed.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+                    <span class="nx">t</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">levels</span><span class="p">[</span><span class="k">this</span><span class="p">.</span><span class="nx">gameLevel</span><span class="p">].</span><span class="nx">settings</span><span class="p">.</span><span class="nx">treatments</span><span class="p">;</span>
+                <span class="p">}</span>
+                <span class="k">else</span> <span class="p">{</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-30" id="section-30">&#182;</a>
+</div>
+<p>Treatments are already parsed at this point.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+                    <span class="nx">t</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">settings</span><span class="p">;</span>
+                <span class="p">}</span>
+
+                <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">t</span><span class="p">[</span><span class="nx">settings</span><span class="p">.</span><span class="nx">CHOSEN_TREATMENT</span><span class="p">])</span> <span class="p">{</span>
+
+                    <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span> <span class="s1">&#39;CHOSEN_TREATMENT algorithm &#39;</span> <span class="o">+</span>
+                                        <span class="s1">&#39;or treatment not found: &#39;</span> <span class="o">+</span>
+                                        <span class="nx">settings</span><span class="p">.</span><span class="nx">CHOSEN_TREATMENT</span><span class="p">);</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;function&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">CHOSEN_TREATMENT</span><span class="p">)</span> <span class="p">{</span>
 
             <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span> <span class="s1">&#39;CHOSEN_TREATMENT must be string, &#39;</span> <span class="o">+</span>
-                <span class="s1">&#39;function or undefined. Found: &#39;</span> <span class="o">+</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">CHOSEN_TREATMENT</span><span class="p">);</span>
+                                <span class="s1">&#39;function or undefined. Found: &#39;</span> <span class="o">+</span>
+                                <span class="nx">settings</span><span class="p">.</span><span class="nx">CHOSEN_TREATMENT</span><span class="p">);</span>
         <span class="p">}</span>
         <span class="k">this</span><span class="p">.</span><span class="nx">CHOSEN_TREATMENT</span> <span class="o">=</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">CHOSEN_TREATMENT</span><span class="p">;</span>
     <span class="p">}</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">PLAYER_SORTING</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">PLAYER_SORTING</span> <span class="o">&amp;&amp;</span>
+            <span class="o">!</span><span class="nx">WaitingRoom</span><span class="p">.</span><span class="nx">sortingCallbacks</span><span class="p">[</span><span class="nx">settings</span><span class="p">.</span><span class="nx">PLAYER_SORTING</span><span class="p">])</span> <span class="p">{</span>
+
+            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span> <span class="s1">&#39;PLAYER_SORTING algorithm &#39;</span> <span class="o">+</span>
+                                <span class="s1">&#39;not found: &#39;</span> <span class="o">+</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">PLAYER_SORTING</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;function&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">PLAYER_SORTING</span> <span class="o">&amp;&amp;</span>
+                 <span class="kc">null</span> <span class="o">!==</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">PLAYER_SORTING</span><span class="p">)</span> <span class="p">{</span>
+
+            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span> <span class="s1">&#39;PLAYER_SORTING must be string, &#39;</span> <span class="o">+</span>
+                                <span class="s1">&#39;function, null or undefined. Found: &#39;</span> <span class="o">+</span>
+                                <span class="nx">settings</span><span class="p">.</span><span class="nx">PLAYER_SORTING</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">PLAYER_SORTING</span> <span class="o">=</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">PLAYER_SORTING</span><span class="p">;</span>
+    <span class="p">}</span>
+
 <span class="p">};</span>
 
 
@@ -903,7 +1131,7 @@ players to start the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-27" id="section-27">&#182;</a>
+  <a class="pilcrow" href="#section-36" id="section-36">&#182;</a>
 </div>
 <p>TODO: Maybe check other conditions?</p>
         </td>
@@ -978,7 +1206,7 @@ players to start the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-29" id="section-29">&#182;</a>
+  <a class="pilcrow" href="#section-38" id="section-38">&#182;</a>
 </div>
 <p>Lock this function.</p>
         </td>
@@ -997,7 +1225,7 @@ players to start the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-30" id="section-30">&#182;</a>
+  <a class="pilcrow" href="#section-39" id="section-39">&#182;</a>
 </div>
 <p>When done, unlock function.</p>
         </td>
@@ -1014,7 +1242,7 @@ players to start the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-31" id="section-31">&#182;</a>
+  <a class="pilcrow" href="#section-40" id="section-40">&#182;</a>
 </div>
 <p>Execute suspended calls.</p>
         </td>
@@ -1101,17 +1329,7 @@ players to start the game.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">WaitingRoom</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">dispatch</span> <span class="o">=</span> <span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
-    <span class="kd">var</span> <span class="nx">customSorting</span><span class="p">,</span> <span class="nx">doDispatch</span><span class="p">;</span>
-
-    <span class="nx">customSorting</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">a</span><span class="p">,</span><span class="nx">b</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">if</span> <span class="p">(</span><span class="nx">a</span><span class="p">.</span><span class="nx">timesNotSelected</span> <span class="o">&lt;</span> <span class="nx">b</span><span class="p">.</span><span class="nx">timesNotSelected</span><span class="p">)</span> <span class="p">{</span>
-            <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
-        <span class="p">}</span>
-        <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">a</span><span class="p">.</span><span class="nx">timesNotSelected</span> <span class="o">&gt;</span> <span class="nx">b</span><span class="p">.</span><span class="nx">timesNotSelected</span><span class="p">)</span> <span class="p">{</span>
-            <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
-        <span class="p">}</span>
-        <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
-    <span class="p">};</span>
+    <span class="kd">var</span> <span class="nx">doDispatch</span><span class="p">;</span>
 
     <span class="nx">doDispatch</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">numberOfGames</span><span class="p">)</span> <span class="p">{</span>
         <span class="kd">var</span> <span class="nx">treatmentName</span><span class="p">;</span>
@@ -1127,6 +1345,8 @@ players to start the game.</p>
         <span class="nx">log</span> <span class="o">=</span>  <span class="nx">channel</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">;</span>
         <span class="nx">where</span> <span class="o">=</span> <span class="s1">&#39;WaitingRoom.dispatch: &#39;</span><span class="p">;</span>
 
+        <span class="nx">nPlayers</span> <span class="o">=</span> <span class="nx">pList</span><span class="p">.</span><span class="nx">size</span><span class="p">();</span>
+
 
 </pre></div>
         </td>
@@ -1134,7 +1354,7 @@ players to start the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-33" id="section-33">&#182;</a>
+  <a class="pilcrow" href="#section-42" id="section-42">&#182;</a>
 </div>
 <p>If nothing is specified, try to dispatch maximal amount of games.</p>
         </td>
@@ -1145,7 +1365,6 @@ players to start the game.</p>
             <span class="p">}</span>
             <span class="k">else</span> <span class="p">{</span>
                 <span class="nx">pList</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">player</span><span class="p">;</span>
-                <span class="nx">nPlayers</span> <span class="o">=</span> <span class="nx">pList</span><span class="p">.</span><span class="nx">size</span><span class="p">();</span>
                 <span class="nx">numberOfGames</span> <span class="o">=</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">floor</span><span class="p">(</span><span class="nx">nPlayers</span> <span class="o">/</span> <span class="k">this</span><span class="p">.</span><span class="nx">GROUP_SIZE</span><span class="p">);</span>
             <span class="p">}</span>
         <span class="p">}</span>
@@ -1160,14 +1379,14 @@ players to start the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-34" id="section-34">&#182;</a>
+  <a class="pilcrow" href="#section-43" id="section-43">&#182;</a>
 </div>
 <p>Warn if more participants than seats available.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-        <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">GROUP_SIZE</span> <span class="o">*</span> <span class="nx">numberOfGames</span> <span class="o">&lt;</span> <span class="nx">nPlayers</span><span class="p">)</span> <span class="p">{</span>
-            <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Warning. There are more players than available&#39;</span> <span class="o">+</span>
-                        <span class="s1">&#39; seats in the game.&#39;</span> <span class="o">+</span>
+        <span class="k">if</span> <span class="p">((</span><span class="k">this</span><span class="p">.</span><span class="nx">GROUP_SIZE</span> <span class="o">*</span> <span class="nx">numberOfGames</span><span class="p">)</span> <span class="o">&lt;</span> <span class="nx">nPlayers</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Warning. There are more players than available &#39;</span> <span class="o">+</span>
+                        <span class="s1">&#39;spots in the game.&#39;</span> <span class="o">+</span>
                         <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">DISCONNECT_IF_NOT_SELECTED</span> <span class="o">?</span>
                          <span class="s1">&#39; Some players will be disconnected.&#39;</span> <span class="o">:</span> <span class="s1">&#39;&#39;</span> <span class="p">));</span>
         <span class="p">}</span>
@@ -1179,7 +1398,69 @@ players to start the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-35" id="section-35">&#182;</a>
+  <a class="pilcrow" href="#section-44" id="section-44">&#182;</a>
+</div>
+<p>TODO: we could shuffle and sort only the players that we actually
+need (i.e., this.GROUP_SIZE * numberOfGames).</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-45" id="section-45">&#182;</a>
+</div>
+<p>Shuffle and sort players, if necessary.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">nPlayers</span> <span class="o">&gt;</span> <span class="k">this</span><span class="p">.</span><span class="nx">GROUP_SIZE</span><span class="p">)</span> <span class="p">{</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-46" id="section-46">&#182;</a>
+</div>
+<p>Shuffle player list anyway.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+            <span class="nx">shuffledPList</span> <span class="o">=</span> <span class="nx">pList</span><span class="p">.</span><span class="nx">shuffle</span><span class="p">();</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-47" id="section-47">&#182;</a>
+</div>
+<p>Sort according to priority.
+TODO: We could optimize it, if we knew in advance the
+sorting criteria, i.e. there might be no need to sort here.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+            <span class="k">if</span> <span class="p">(</span><span class="kc">null</span> <span class="o">!==</span> <span class="k">this</span><span class="p">.</span><span class="nx">PLAYER_SORTING</span><span class="p">)</span> <span class="p">{</span>
+                <span class="nx">shuffledPList</span> <span class="o">=</span> <span class="nx">shuffledPList</span><span class="p">.</span><span class="nx">sort</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">PLAYER_SORTING</span><span class="p">);</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="k">else</span> <span class="p">{</span>
+            <span class="nx">shuffledPList</span> <span class="o">=</span> <span class="nx">pList</span><span class="p">;</span>
+        <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-48" id="section-48">&#182;</a>
 </div>
 <p>Attempt to dispatch <code>numberOfGames</code>.</p>
         </td>
@@ -1196,7 +1477,7 @@ players to start the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-36" id="section-36">&#182;</a>
+  <a class="pilcrow" href="#section-49" id="section-49">&#182;</a>
 </div>
 <p>Cannot dispatch a game with too few participants.</p>
         </td>
@@ -1204,8 +1485,7 @@ players to start the game.</p>
             <span class="k">if</span> <span class="p">(</span><span class="nx">nPlayers</span> <span class="o">&lt;</span> <span class="k">this</span><span class="p">.</span><span class="nx">GROUP_SIZE</span><span class="p">)</span> <span class="p">{</span>
                 <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span> <span class="s1">&#39;Attempting to dispatch game for &#39;</span> <span class="o">+</span>
                                 <span class="k">this</span><span class="p">.</span><span class="nx">GROUP_SIZE</span> <span class="o">+</span> <span class="s1">&#39; players with only &#39;</span> <span class="o">+</span>
-                                <span class="nx">nPlayers</span> <span class="o">+</span>
-                                <span class="s1">&#39; participants.&#39;</span><span class="p">);</span>
+                                <span class="nx">nPlayers</span> <span class="o">+</span> <span class="s1">&#39; participants.&#39;</span><span class="p">);</span>
             <span class="p">}</span>
 
 
@@ -1215,7 +1495,7 @@ players to start the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-37" id="section-37">&#182;</a>
+  <a class="pilcrow" href="#section-50" id="section-50">&#182;</a>
 </div>
 <p>Check if we are still allowed to dispatch games.</p>
         </td>
@@ -1228,50 +1508,6 @@ players to start the game.</p>
             <span class="p">}</span>
             <span class="o">++</span><span class="k">this</span><span class="p">.</span><span class="nx">numberOfDispatches</span><span class="p">;</span>
 
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-38" id="section-38">&#182;</a>
-</div>
-<p>Shuffle and sort players, if necessary.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-            <span class="k">if</span> <span class="p">(</span><span class="nx">pList</span><span class="p">.</span><span class="nx">size</span><span class="p">()</span> <span class="o">&gt;</span> <span class="k">this</span><span class="p">.</span><span class="nx">GROUP_SIZE</span><span class="p">)</span> <span class="p">{</span>
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-39" id="section-39">&#182;</a>
-</div>
-<p>Shuffle player list.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-                <span class="nx">shuffledPList</span> <span class="o">=</span> <span class="nx">pList</span><span class="p">.</span><span class="nx">shuffle</span><span class="p">();</span>
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-40" id="section-40">&#182;</a>
-</div>
-<p>Sort according to priority.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-                <span class="nx">shuffledPList</span><span class="p">.</span><span class="nx">sort</span><span class="p">(</span><span class="nx">customSorting</span><span class="p">);</span>
-            <span class="p">}</span>
-            <span class="k">else</span> <span class="p">{</span>
-                <span class="nx">shuffledPList</span> <span class="o">=</span> <span class="nx">pList</span><span class="p">;</span>
-            <span class="p">}</span>
-
             <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;DISPATCH!&#39;</span><span class="p">);</span>
 
 
@@ -1281,7 +1517,7 @@ players to start the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-41" id="section-41">&#182;</a>
+  <a class="pilcrow" href="#section-51" id="section-51">&#182;</a>
 </div>
 <p>Inform players.</p>
         </td>
@@ -1294,9 +1530,9 @@ players to start the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-42" id="section-42">&#182;</a>
+  <a class="pilcrow" href="#section-52" id="section-52">&#182;</a>
 </div>
-<p>Players this may join the game.</p>
+<p>Players that may join the game.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
                 <span class="k">if</span> <span class="p">(</span><span class="nx">i</span> <span class="o">&lt;</span> <span class="k">this</span><span class="p">.</span><span class="nx">GROUP_SIZE</span><span class="p">)</span> <span class="p">{</span>
@@ -1309,7 +1545,7 @@ players to start the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-43" id="section-43">&#182;</a>
+  <a class="pilcrow" href="#section-53" id="section-53">&#182;</a>
 </div>
 <p>Clear body.</p>
         </td>
@@ -1324,7 +1560,7 @@ players to start the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-44" id="section-44">&#182;</a>
+  <a class="pilcrow" href="#section-54" id="section-54">&#182;</a>
 </div>
 <p>Clear timeout for players.</p>
         </td>
@@ -1338,7 +1574,7 @@ players to start the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-45" id="section-45">&#182;</a>
+  <a class="pilcrow" href="#section-55" id="section-55">&#182;</a>
 </div>
 <p>Players that may not join.</p>
         </td>
@@ -1351,7 +1587,7 @@ players to start the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-46" id="section-46">&#182;</a>
+  <a class="pilcrow" href="#section-56" id="section-56">&#182;</a>
 </div>
 <p>Increase timesNotSelected of player.</p>
         </td>
@@ -1376,7 +1612,7 @@ players to start the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-47" id="section-47">&#182;</a>
+  <a class="pilcrow" href="#section-57" id="section-57">&#182;</a>
 </div>
 <p>Choose players.</p>
         </td>
@@ -1389,7 +1625,7 @@ players to start the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-48" id="section-48">&#182;</a>
+  <a class="pilcrow" href="#section-58" id="section-58">&#182;</a>
 </div>
 <p>Subset group, if necessary.</p>
         </td>
@@ -1401,6 +1637,19 @@ players to start the game.</p>
                 <span class="nx">limitedPList</span> <span class="o">=</span> <span class="nx">shuffledPList</span><span class="p">;</span>
             <span class="p">}</span>
 
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-59" id="section-59">&#182;</a>
+</div>
+<p>If this is the first dispatch or we need to create a new room
+anyway, assign a treatment and then setup the game.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
             <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">lastGameRoom</span> <span class="o">||</span> <span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">DISPATCH_TO_SAME_ROOM</span><span class="p">)</span> <span class="p">{</span>
 
 
@@ -1410,7 +1659,7 @@ players to start the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-49" id="section-49">&#182;</a>
+  <a class="pilcrow" href="#section-60" id="section-60">&#182;</a>
 </div>
 <p>Decide treatment.</p>
         </td>
@@ -1424,7 +1673,7 @@ players to start the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-50" id="section-50">&#182;</a>
+  <a class="pilcrow" href="#section-61" id="section-61">&#182;</a>
 </div>
 <p>Starts a game level or the main game.
 TODO: should the main game have a ghost level?</p>
@@ -1445,7 +1694,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-51" id="section-51">&#182;</a>
+  <a class="pilcrow" href="#section-62" id="section-62">&#182;</a>
 </div>
 <p>Create new game room.</p>
         </td>
@@ -1463,7 +1712,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-52" id="section-52">&#182;</a>
+  <a class="pilcrow" href="#section-63" id="section-63">&#182;</a>
 </div>
 <p>Setup and start game.</p>
         </td>
@@ -1478,7 +1727,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-53" id="section-53">&#182;</a>
+  <a class="pilcrow" href="#section-64" id="section-64">&#182;</a>
 </div>
 <p>Store reference.</p>
         </td>
@@ -1494,7 +1743,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-54" id="section-54">&#182;</a>
+  <a class="pilcrow" href="#section-65" id="section-65">&#182;</a>
 </div>
 <p>Move clients into existing room.</p>
         </td>
@@ -1513,7 +1762,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-55" id="section-55">&#182;</a>
+  <a class="pilcrow" href="#section-66" id="section-66">&#182;</a>
 </div>
 <p>Setup new group of players in the old room.</p>
         </td>
@@ -1529,7 +1778,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-56" id="section-56">&#182;</a>
+  <a class="pilcrow" href="#section-67" id="section-67">&#182;</a>
 </div>
 <p>Close waitingRoom if next game would not be dispatchable.</p>
         </td>
@@ -1546,7 +1795,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-57" id="section-57">&#182;</a>
+  <a class="pilcrow" href="#section-68" id="section-68">&#182;</a>
 </div>
 <p>All dispatch attempts have been completed.</p>
         </td>
@@ -1559,7 +1808,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-58" id="section-58">&#182;</a>
+  <a class="pilcrow" href="#section-69" id="section-69">&#182;</a>
 </div>
 <p>Tell players still waiting, that they have not been selected.</p>
         </td>
@@ -1584,9 +1833,9 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-59" id="section-59">&#182;</a>
+  <a class="pilcrow" href="#section-70" id="section-70">&#182;</a>
 </div>
-<p>If we have pool of 1 and</p>
+<p>If we have pool of 1 and mode == WAIT_FOR_N_PLAYERS just go ahead!</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
         <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">EXECUTION_MODE</span> <span class="o">===</span> <span class="s1">&#39;WAIT_FOR_N_PLAYERS&#39;</span> <span class="o">&amp;&amp;</span>
@@ -1602,7 +1851,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-60" id="section-60">&#182;</a>
+  <a class="pilcrow" href="#section-71" id="section-71">&#182;</a>
 </div>
 <p>Blocks until all players have returned the ping or are kicked.</p>
         </td>
@@ -1679,7 +1928,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-62" id="section-62">&#182;</a>
+  <a class="pilcrow" href="#section-73" id="section-73">&#182;</a>
 </div>
 <p>TODO: do we need to check if we have enough players?</p>
         </td>
@@ -1700,7 +1949,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-63" id="section-63">&#182;</a>
+  <a class="pilcrow" href="#section-74" id="section-74">&#182;</a>
 </div>
 <p>If a timeout function for the server was specified,
 executes. If the return value is FALSE, do not continue
@@ -1719,7 +1968,7 @@ with checkout and informing the player about NotEnoughPlayers.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-64" id="section-64">&#182;</a>
+  <a class="pilcrow" href="#section-75" id="section-75">&#182;</a>
 </div>
 <p>If an access code is defined, checkout remotely.</p>
         </td>
@@ -1816,7 +2065,7 @@ with checkout and informing the player about NotEnoughPlayers.</p>
     <span class="k">if</span> <span class="p">(</span><span class="nx">t</span> <span class="o">===</span> <span class="s1">&#39;treatment_rotate&#39;</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">return</span> <span class="nx">treatments</span><span class="p">[(</span><span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">autoRoomNo</span><span class="p">)</span> <span class="o">%</span> <span class="nx">tLen</span><span class="p">];</span>
     <span class="p">}</span>
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">t</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;random&#39;</span> <span class="o">===</span> <span class="nx">t</span> <span class="o">||</span> <span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">t</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">return</span> <span class="nx">treatments</span><span class="p">[</span><span class="nx">J</span><span class="p">.</span><span class="nx">randomInt</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="nx">tLen</span><span class="o">-</span><span class="mi">1</span><span class="p">)];</span>
     <span class="p">}</span>
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;function&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">t</span><span class="p">)</span> <span class="p">{</span>
@@ -1840,7 +2089,7 @@ with checkout and informing the player about NotEnoughPlayers.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-67" id="section-67">&#182;</a>
+  <a class="pilcrow" href="#section-78" id="section-78">&#182;</a>
 </div>
 <p>Return treatment (was a string already).</p>
         </td>
