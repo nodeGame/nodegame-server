@@ -1340,11 +1340,12 @@ players to start the game.</p>
 
     <span class="nx">doDispatch</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">numberOfGames</span><span class="p">)</span> <span class="p">{</span>
         <span class="kd">var</span> <span class="nx">treatmentName</span><span class="p">;</span>
-        <span class="kd">var</span> <span class="nx">shuffledPList</span><span class="p">;</span>
+        <span class="kd">var</span> <span class="nx">dispatchList</span><span class="p">;</span>
         <span class="kd">var</span> <span class="nx">pId</span><span class="p">,</span> <span class="nx">group</span><span class="p">,</span> <span class="nx">groupIdx</span><span class="p">,</span> <span class="nx">groupLimit</span><span class="p">;</span>
         <span class="kd">var</span> <span class="nx">i</span><span class="p">,</span> <span class="nx">j</span><span class="p">;</span>
         <span class="kd">var</span> <span class="nx">gameRoom</span><span class="p">,</span> <span class="nx">code</span><span class="p">,</span> <span class="nx">gameNumber</span><span class="p">;</span>
         <span class="kd">var</span> <span class="nx">pList</span><span class="p">,</span> <span class="nx">nPlayers</span><span class="p">,</span> <span class="nx">playerIds</span><span class="p">,</span> <span class="nx">nPlayersToDispatch</span><span class="p">;</span>
+        <span class="kd">var</span> <span class="nx">nGroupsCreated</span><span class="p">;</span>
 
         <span class="kd">var</span> <span class="nx">where</span><span class="p">,</span> <span class="nx">channel</span><span class="p">,</span> <span class="nx">sysLogger</span><span class="p">;</span>
 
@@ -1417,13 +1418,16 @@ the total number of players to dispatch might be too large.</p>
 
             <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">PLAYER_GROUPING</span><span class="p">)</span> <span class="p">{</span>
                 <span class="nx">groups</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">PLAYER_GROUPING</span><span class="p">(</span><span class="nx">pList</span><span class="p">,</span> <span class="nx">numberOfGames</span><span class="p">);</span>
-                <span class="k">if</span> <span class="p">(</span><span class="nx">groups</span><span class="p">.</span><span class="nx">length</span> <span class="o">!==</span> <span class="nx">numberOfGames</span><span class="p">)</span> <span class="p">{</span>
-                    <span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span> <span class="s1">&#39; PLAYER_GROUPING did not return &#39;</span> <span class="o">+</span>
-                                  <span class="s1">&#39;the expected number of groups: &#39;</span> <span class="o">+</span>
-                                  <span class="nx">groups</span><span class="p">.</span><span class="nx">length</span> <span class="o">+</span> <span class="s1">&#39; vs &#39;</span> <span class="o">+</span> <span class="nx">numberOfGames</span><span class="p">,</span>
-                                  <span class="s1">&#39;error&#39;</span><span class="p">);</span>
-                    <span class="k">return</span><span class="p">;</span>
-                <span class="p">}</span>
+                <span class="nx">nGroupsCreated</span> <span class="o">=</span> <span class="nx">groups</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span>
+                <span class="k">if</span> <span class="p">(</span><span class="nx">numberOfGames</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="nx">nGroupsCreated</span> <span class="o">!==</span> <span class="nx">numberOfGames</span><span class="p">)</span> <span class="p">{</span>
+                        <span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span> <span class="s1">&#39; PLAYER_GROUPING did not &#39;</span> <span class="o">+</span>
+                                      <span class="s1">&#39;return the expected number of groups: &#39;</span> <span class="o">+</span>
+                                      <span class="nx">groups</span><span class="p">.</span><span class="nx">length</span> <span class="o">+</span> <span class="s1">&#39; vs &#39;</span> <span class="o">+</span> <span class="nx">numberOfGames</span><span class="p">,</span>
+                                      <span class="s1">&#39;error&#39;</span><span class="p">);</span>
+                        <span class="k">return</span><span class="p">;</span>
+                    <span class="p">}</span>
+
 
 </pre></div>
         </td>
@@ -1433,11 +1437,17 @@ the total number of players to dispatch might be too large.</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-45" id="section-45">&#182;</a>
 </div>
-<p>TODO: Concatenate the groups.
-TODO: work with an array of ids, instead of the pList alsow
-in the other case below.</p>
+<p>TODO: check if each subgroup has the right size.
+TODO: shall we allowed groups of different sizes?
+TODO: what is grouping with one</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
+
+                    <span class="nx">dispatchList</span> <span class="o">=</span> <span class="p">[].</span><span class="nx">concat</span><span class="p">.</span><span class="nx">apply</span><span class="p">([],</span> <span class="nx">groups</span><span class="p">);</span>
+                <span class="p">}</span>
+                <span class="k">else</span> <span class="p">{</span>
+                    <span class="nx">dispatchList</span> <span class="o">=</span> <span class="nx">groups</span><span class="p">;</span>
+                <span class="p">}</span>
             <span class="p">}</span>
             <span class="k">else</span> <span class="p">{</span>
 
@@ -1452,7 +1462,7 @@ in the other case below.</p>
 <p>Shuffle player list anyway.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-                <span class="nx">shuffledPList</span> <span class="o">=</span> <span class="nx">pList</span><span class="p">.</span><span class="nx">shuffle</span><span class="p">();</span>
+                <span class="nx">dispatchList</span> <span class="o">=</span> <span class="nx">pList</span><span class="p">.</span><span class="nx">shuffle</span><span class="p">().</span><span class="nx">db</span><span class="p">;</span>
 
 </pre></div>
         </td>
@@ -1468,12 +1478,12 @@ sorting criteria, i.e. there might be no need to sort here.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
                 <span class="k">if</span> <span class="p">(</span><span class="kc">null</span> <span class="o">!==</span> <span class="k">this</span><span class="p">.</span><span class="nx">PLAYER_SORTING</span><span class="p">)</span> <span class="p">{</span>
-                    <span class="nx">shuffledPList</span> <span class="o">=</span> <span class="nx">shuffledPList</span><span class="p">.</span><span class="nx">sort</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">PLAYER_SORTING</span><span class="p">);</span>
+                    <span class="nx">dispatchList</span> <span class="o">=</span> <span class="nx">dispatchList</span><span class="p">.</span><span class="nx">sort</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">PLAYER_SORTING</span><span class="p">);</span>
                 <span class="p">}</span>
             <span class="p">}</span>
         <span class="p">}</span>
         <span class="k">else</span> <span class="p">{</span>
-            <span class="nx">shuffledPList</span> <span class="o">=</span> <span class="nx">pList</span><span class="p">.</span><span class="nx">breed</span><span class="p">();</span>
+            <span class="nx">dispatchList</span> <span class="o">=</span> <span class="nx">pList</span><span class="p">.</span><span class="nx">breed</span><span class="p">().</span><span class="nx">db</span><span class="p">;</span>
         <span class="p">}</span>
 
 
@@ -1545,7 +1555,7 @@ sorting criteria, i.e. there might be no need to sort here.</p>
 <p>Player id.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-            <span class="nx">pId</span> <span class="o">=</span> <span class="nx">shuffledPList</span><span class="p">.</span><span class="nx">db</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">id</span><span class="p">;</span>
+            <span class="nx">pId</span> <span class="o">=</span> <span class="nx">dispatchList</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">id</span><span class="p">;</span>
 
 
 </pre></div>
