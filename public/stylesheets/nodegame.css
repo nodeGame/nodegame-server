@@ -111,6 +111,11 @@ input[type="range"] {
     text-decoration: line-through;
 }
 
+.hand {
+    cursor: pointer;
+    cursor: hand;
+}
+
 /*
    Stylesheet for nodeGame widgets
    Copyright(c) 2014 Stefano Balietti
@@ -193,7 +198,6 @@ input[type="range"] {
 }
 
 /* Visual State */
-
 
 .visualstage {
     float: right;
