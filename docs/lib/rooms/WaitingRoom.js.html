@@ -983,6 +983,17 @@ players to start the game.</p>
         <span class="k">this</span><span class="p">.</span><span class="nx">PLAYER_SORTING</span> <span class="o">=</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">PLAYER_SORTING</span><span class="p">;</span>
     <span class="p">}</span>
 
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">PLAYER_GROUPING</span><span class="p">)</span> <span class="p">{</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;function&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">PLAYER_GROUPING</span> <span class="o">&amp;&amp;</span>
+            <span class="kc">null</span> <span class="o">!==</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">PLAYER_GROUPING</span><span class="p">)</span> <span class="p">{</span>
+
+            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span> <span class="s1">&#39;PLAYER_GROUPING must be function, &#39;</span> <span class="o">+</span>
+                                <span class="s1">&#39;null or undefined. Found: &#39;</span> <span class="o">+</span>
+                                <span class="nx">settings</span><span class="p">.</span><span class="nx">PLAYER_GROUPING</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">PLAYER_GROUPING</span> <span class="o">=</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">PLAYER_GROUPING</span><span class="p">;</span>
+    <span class="p">}</span>
 <span class="p">};</span>
 
 
@@ -1345,7 +1356,7 @@ players to start the game.</p>
         <span class="kd">var</span> <span class="nx">i</span><span class="p">,</span> <span class="nx">j</span><span class="p">;</span>
         <span class="kd">var</span> <span class="nx">gameRoom</span><span class="p">,</span> <span class="nx">code</span><span class="p">,</span> <span class="nx">gameNumber</span><span class="p">;</span>
         <span class="kd">var</span> <span class="nx">pList</span><span class="p">,</span> <span class="nx">nPlayers</span><span class="p">,</span> <span class="nx">playerIds</span><span class="p">,</span> <span class="nx">nPlayersToDispatch</span><span class="p">;</span>
-        <span class="kd">var</span> <span class="nx">nGroupsCreated</span><span class="p">;</span>
+        <span class="kd">var</span> <span class="nx">groups</span><span class="p">,</span> <span class="nx">nGroupsCreated</span><span class="p">;</span>
 
         <span class="kd">var</span> <span class="nx">where</span><span class="p">,</span> <span class="nx">channel</span><span class="p">,</span> <span class="nx">sysLogger</span><span class="p">;</span>
 
@@ -1442,7 +1453,6 @@ This means that at least two groups will be created.</p>
 TODO: shall we allowed groups of different sizes?</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-
                 <span class="nx">dispatchList</span> <span class="o">=</span> <span class="p">[].</span><span class="nx">concat</span><span class="p">.</span><span class="nx">apply</span><span class="p">([],</span> <span class="nx">groups</span><span class="p">);</span>
 
             <span class="p">}</span>
