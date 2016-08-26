@@ -1411,7 +1411,8 @@ the total number of players to dispatch might be too large.</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-44" id="section-44">&#182;</a>
 </div>
-<p>Shuffle and sort players, if necessary.</p>
+<p>Shuffle and sort players, if necessary.
+This means that at least two groups will be created.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
         <span class="k">if</span> <span class="p">(</span><span class="nx">nPlayersToDispatch</span> <span class="o">&gt;</span> <span class="k">this</span><span class="p">.</span><span class="nx">GROUP_SIZE</span><span class="p">)</span> <span class="p">{</span>
@@ -1419,14 +1420,14 @@ the total number of players to dispatch might be too large.</p>
             <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">PLAYER_GROUPING</span><span class="p">)</span> <span class="p">{</span>
                 <span class="nx">groups</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">PLAYER_GROUPING</span><span class="p">(</span><span class="nx">pList</span><span class="p">,</span> <span class="nx">numberOfGames</span><span class="p">);</span>
                 <span class="nx">nGroupsCreated</span> <span class="o">=</span> <span class="nx">groups</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span>
-                <span class="k">if</span> <span class="p">(</span><span class="nx">numberOfGames</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
-                    <span class="k">if</span> <span class="p">(</span><span class="nx">nGroupsCreated</span> <span class="o">!==</span> <span class="nx">numberOfGames</span><span class="p">)</span> <span class="p">{</span>
-                        <span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span> <span class="s1">&#39; PLAYER_GROUPING did not &#39;</span> <span class="o">+</span>
-                                      <span class="s1">&#39;return the expected number of groups: &#39;</span> <span class="o">+</span>
-                                      <span class="nx">groups</span><span class="p">.</span><span class="nx">length</span> <span class="o">+</span> <span class="s1">&#39; vs &#39;</span> <span class="o">+</span> <span class="nx">numberOfGames</span><span class="p">,</span>
-                                      <span class="s1">&#39;error&#39;</span><span class="p">);</span>
-                        <span class="k">return</span><span class="p">;</span>
-                    <span class="p">}</span>
+
+                <span class="k">if</span> <span class="p">(</span><span class="nx">nGroupsCreated</span> <span class="o">!==</span> <span class="nx">numberOfGames</span><span class="p">)</span> <span class="p">{</span>
+                    <span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span> <span class="s1">&#39; PLAYER_GROUPING did not &#39;</span> <span class="o">+</span>
+                                  <span class="s1">&#39;return the expected number of groups: &#39;</span> <span class="o">+</span>
+                                  <span class="nx">groups</span><span class="p">.</span><span class="nx">length</span> <span class="o">+</span> <span class="s1">&#39; vs &#39;</span> <span class="o">+</span> <span class="nx">numberOfGames</span><span class="p">,</span>
+                                  <span class="s1">&#39;error&#39;</span><span class="p">);</span>
+                    <span class="k">return</span><span class="p">;</span>
+                <span class="p">}</span>
 
 
 </pre></div>
@@ -1438,16 +1439,12 @@ the total number of players to dispatch might be too large.</p>
   <a class="pilcrow" href="#section-45" id="section-45">&#182;</a>
 </div>
 <p>TODO: check if each subgroup has the right size.
-TODO: shall we allowed groups of different sizes?
-TODO: what is grouping with one</p>
+TODO: shall we allowed groups of different sizes?</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
 
-                    <span class="nx">dispatchList</span> <span class="o">=</span> <span class="p">[].</span><span class="nx">concat</span><span class="p">.</span><span class="nx">apply</span><span class="p">([],</span> <span class="nx">groups</span><span class="p">);</span>
-                <span class="p">}</span>
-                <span class="k">else</span> <span class="p">{</span>
-                    <span class="nx">dispatchList</span> <span class="o">=</span> <span class="nx">groups</span><span class="p">;</span>
-                <span class="p">}</span>
+                <span class="nx">dispatchList</span> <span class="o">=</span> <span class="p">[].</span><span class="nx">concat</span><span class="p">.</span><span class="nx">apply</span><span class="p">([],</span> <span class="nx">groups</span><span class="p">);</span>
+
             <span class="p">}</span>
             <span class="k">else</span> <span class="p">{</span>
 
