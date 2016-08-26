@@ -845,7 +845,7 @@ mixed-in.</p>
         <span class="p">}</span>
         <span class="k">catch</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
             <span class="k">this</span><span class="p">.</span><span class="nx">doErr</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadGameDir: an error occurred &#39;</span> <span class="o">+</span>
-                       <span class="s1">&#39;while reading game.settings file.&#39;</span><span class="p">,</span> <span class="p">{</span>
+                       <span class="s1">&#39;while reading game.settings file&#39;</span><span class="p">,</span> <span class="p">{</span>
                            <span class="nx">game</span><span class="o">:</span> <span class="nx">gameName</span><span class="p">,</span>
                            <span class="nx">level</span><span class="o">:</span> <span class="nx">level</span><span class="p">,</span>
                            <span class="nx">err</span><span class="o">:</span> <span class="nx">e</span><span class="p">,</span>
@@ -1217,7 +1217,6 @@ mixed-in.</p>
                                    <span class="nx">game</span><span class="o">:</span> <span class="nx">gameName</span><span class="p">,</span>
                                    <span class="nx">level</span><span class="o">:</span> <span class="nx">level</span><span class="p">,</span>
                                    <span class="nx">err</span><span class="o">:</span> <span class="nx">e</span><span class="p">,</span>
-                                   <span class="nx">log</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
                                    <span class="nx">throwErr</span><span class="o">:</span> <span class="kc">true</span>
                                <span class="p">});</span>
                 <span class="p">}</span>
@@ -2960,8 +2959,8 @@ GameLoader.prototype.createGameAlias = function(alias, gameName) {
     <span class="k">if</span> <span class="p">(</span><span class="nx">opts</span><span class="p">.</span><span class="nx">level</span><span class="p">)</span> <span class="nx">msg</span> <span class="o">+=</span> <span class="s1">&#39;. Level: &#39;</span> <span class="o">+</span> <span class="nx">opts</span><span class="p">.</span><span class="nx">level</span><span class="p">;</span>
     <span class="k">if</span> <span class="p">(</span><span class="nx">opts</span><span class="p">.</span><span class="nx">found</span><span class="p">)</span> <span class="nx">msg</span> <span class="o">+=</span> <span class="s1">&#39;. Found: &#39;</span> <span class="o">+</span> <span class="nx">opts</span><span class="p">.</span><span class="nx">found</span><span class="p">;</span>
     <span class="k">if</span> <span class="p">(</span><span class="nx">opts</span><span class="p">.</span><span class="nx">err</span><span class="p">)</span> <span class="nx">msg</span> <span class="o">+=</span> <span class="s1">&#39;. Err:\n&#39;</span> <span class="o">+</span> <span class="nx">opts</span><span class="p">.</span><span class="nx">err</span><span class="p">.</span><span class="nx">stack</span><span class="p">;</span>
-    <span class="k">if</span> <span class="p">(</span><span class="nx">opts</span><span class="p">.</span><span class="nx">log</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;boolean&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">opts</span><span class="p">.</span><span class="nx">log</span> <span class="o">||</span> <span class="nx">opts</span><span class="p">.</span><span class="nx">log</span> <span class="o">===</span> <span class="s1">&#39;err&#39;</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">opts</span><span class="p">.</span><span class="nx">log</span> <span class="o">!==</span> <span class="kc">false</span> <span class="o">&amp;&amp;</span> <span class="nx">opts</span><span class="p">.</span><span class="nx">log</span> <span class="o">!==</span> <span class="kc">null</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">opts</span><span class="p">.</span><span class="nx">log</span> <span class="o">||</span> <span class="nx">opts</span><span class="p">.</span><span class="nx">log</span> <span class="o">===</span> <span class="s1">&#39;err&#39;</span><span class="p">)</span> <span class="p">{</span>
             <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">logger</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="nx">msg</span><span class="p">);</span>
         <span class="p">}</span>
         <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">opts</span><span class="p">.</span><span class="nx">log</span> <span class="o">===</span> <span class="s1">&#39;warn&#39;</span><span class="p">)</span> <span class="p">{</span>

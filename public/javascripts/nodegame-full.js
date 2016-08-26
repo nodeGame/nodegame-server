@@ -7094,18 +7094,12 @@ if (!Array.prototype.indexOf) {
      * @api private
      */
     NDDB.prototype._autoUpdate = function(options) {
-        var update = options ? J.merge(this.__update, options) : this.__update;
+        var update;
+        update = options ? J.merge(this.__update, options) : this.__update;
 
-        if (update.pointer) {
-            this.nddb_pointer = this.db.length-1;
-        }
-        if (update.sort) {
-            this.sort();
-        }
-
-        if (update.indexes) {
-            this.rebuildIndexes();
-        }
+        if (update.pointer) this.nddb_pointer = this.db.length-1;
+        if (update.sort) this.sort();
+        if (update.indexes) this.rebuildIndexes();
     };
 
     /**
@@ -8569,6 +8563,8 @@ if (!Array.prototype.indexOf) {
      * Removes all entries from the database
      *
      * @return {NDDB} A new instance of NDDB with no entries
+     *
+     * TODO: do we still need this method?
      */
     NDDB.prototype.removeAllEntries = function() {
         if (!this.db.length) return this;
@@ -8588,38 +8584,27 @@ if (!Array.prototype.indexOf) {
      * and resets the current query selection
      *
      * Hooks, indexing, comparator, views, and hash functions are not deleted.
-     *
-     * Requires an additional parameter to confirm the deletion.
-     *
-     * @return {boolean} TRUE, if the database was cleared
      */
-    NDDB.prototype.clear = function(confirm) {
+    NDDB.prototype.clear = function() {
         var i;
-        if (confirm) {
-            this.db = [];
-            this.nddbid.resolve = {};
-            this.tags = {};
-            this.query.reset();
-            this.nddb_pointer = 0;
-            this.lastSelection = [];
-            this.hashtray.clear();
 
-            for (i in this.__H) {
-                if (this[i]) delete this[i];
-            }
-            for (i in this.__C) {
-                if (this[i]) delete this[i];
-            }
-            for (i in this.__I) {
-                if (this[i]) delete this[i];
-            }
-        }
-        else {
-            this.log('Do you really want to clear the current dataset? ' +
-                     'Please use clear(true)', 'WARN');
-        }
+        this.db = [];
+        this.nddbid.resolve = {};
+        this.tags = {};
+        this.query.reset();
+        this.nddb_pointer = 0;
+        this.lastSelection = [];
+        this.hashtray.clear();
 
-        return confirm;
+        for (i in this.__H) {
+            if (this[i]) this[i] = null;
+        }
+        for (i in this.__C) {
+            if (this[i]) this[i] = null;
+        }
+        for (i in this.__I) {
+            if (this[i]) this[i] = null;
+        }
     };
 
 
@@ -9157,7 +9142,7 @@ if (!Array.prototype.indexOf) {
      * groups[1].fetch(); // [ { a: 3, b: 4 } ]
      * ```
      *
-     * @param {string} key If the dimension for grouping
+     * @param {string} key The dimension for grouping
      *
      * @return {array} outs The array of NDDB (or constructor) groups
      */
@@ -22990,7 +22975,7 @@ if (!Array.prototype.indexOf) {
      * @params {object} ctx A reference to the context wherein the hook is
      *  called.
      * @params {string} name The name of the hook. If not provided, this method
-     *  provides an uniqueKey for the hook
+     *  provides a uniqueKey for the hook
      *
      * @returns {mixed} The name of the hook, if it was added; false otherwise.
      */
@@ -23410,15 +23395,23 @@ if (!Array.prototype.indexOf) {
         timer = this.node.game.plot.getProperty(step, prop);
         if (null === timer) return null;
 
-        if ('object' !== typeof timer) {
-            timer = { milliseconds: timer };
-        }
+        // If function, it can return a full object, 
+        // a function, or just the number of milliseconds.
+        if ('function' === typeof timer) timer = timer.call(this.node.game);
 
-        if ('function' === typeof timer.milliseconds) {
-            timer.milliseconds = timer.milliseconds.call(this.node.game);
-        }
+        if (null === timer) return null
+        if ('function' === typeof timer) timer = timer.call(this.node.game);
+        if ('number' === typeof timer) timer = { milliseconds: timer };        
 
-        if ('number' !== typeof timer.milliseconds) return null;
+
+        if ('object' !== typeof timer ||
+            'number' !== typeof timer.milliseconds ||
+            timer.milliseconds < 0) {
+
+            this.node.warn('GameTimer.getStepOptions: invalid value for ' +
+                           'milliseconds. Found: ' + timer.milliseconds);
+            return null;
+        }
 
         // Make sure update and timer are the same.
         if ('undefined' === typeof timer.update) {
