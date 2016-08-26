@@ -1,5 +1,9 @@
 # nodegame-server change log
 
+# 2.6.0
+ - WaitingRoom accepts custom PLAYER_SORTING and PLAYER_GROUPING parameters.
+ - Better error catching in WaitingRoom and GameLoader.
+
 # 2.5.0
  - Phantoms have default viewport 1366x768.
  - Phantoms have a polyfill for the .click() method.
