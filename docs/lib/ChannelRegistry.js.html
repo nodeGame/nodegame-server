@@ -2308,7 +2308,7 @@ this.clients.id.update(client.id, { tag: tag });</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="nx">client</span><span class="p">.</span><span class="nx">tag</span> <span class="o">=</span> <span class="nx">tag</span><span class="p">;</span>
-    <span class="nx">client</span><span class="p">.</span><span class="nx">tagDate</span> <span class="o">=</span> <span class="nb">Date</span><span class="p">.</span><span class="nx">now</span><span class="p">();</span>
+    <span class="nx">client</span><span class="p">.</span><span class="nx">tagDate</span> <span class="o">=</span> <span class="nb">Date</span><span class="p">.</span><span class="nx">now</span> <span class="o">?</span> <span class="nb">Date</span><span class="p">.</span><span class="nx">now</span><span class="p">()</span> <span class="o">:</span> <span class="k">new</span> <span class="nb">Date</span><span class="p">().</span><span class="nx">now</span><span class="p">();</span>
     <span class="k">this</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">tagged</span><span class="p">.</span><span class="nx">_add</span><span class="p">(</span><span class="nx">tag</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">nddb_pointer</span><span class="p">);</span>
 
 </pre></div>
