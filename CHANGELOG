@@ -1,5 +1,8 @@
 # nodegame-server change log
 
+# 2.6.1
+ - The timestamp of claim id action is stored with client object.
+
 # 2.6.0
  - WaitingRoom accepts custom PLAYER_SORTING and PLAYER_GROUPING parameters.
  - Better error catching in WaitingRoom and GameLoader.
