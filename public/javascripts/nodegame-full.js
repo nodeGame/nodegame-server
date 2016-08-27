@@ -22967,17 +22967,17 @@ if (!Array.prototype.indexOf) {
      *
      * Add an hook to the hook list after performing conformity checks
      *
-     * The first parameter hook can be a string, a function, or an object
+     * The first parameter can be a string, a function, or an object
      * containing an hook property.
      *
-     * @params {mixed} hook Either the hook to be called or an object containing
-     *  at least the hook to be called and possibly even ctx and name
-     * @params {object} ctx A reference to the context wherein the hook is
-     *  called.
-     * @params {string} name The name of the hook. If not provided, this method
-     *  provides a uniqueKey for the hook
+     * @params {string|function|object} hook The hook (string or function),
+     *   or an object containing a `hook` property (others: `ctx` and `name`)
+     * @params {object} ctx The context wherein the hook is called.
+     *   Default: node.game
+     * @params {string} name The name of the hook. Default: a random name
+     *   starting with 'timerHook'
      *
-     * @returns {mixed} The name of the hook, if it was added; false otherwise.
+     * @returns {string} The name of the hook
      */
     GameTimer.prototype.addHook = function(hook, ctx, name) {
         var i;
@@ -23011,6 +23011,7 @@ if (!Array.prototype.indexOf) {
      * Removes a hook by its name
      *
      * @param {string} name Name of the hook to be removed
+     *
      * @return {mixed} the hook if it was removed; false otherwise.
      */
     GameTimer.prototype.removeHook = function(name) {
@@ -23395,13 +23396,13 @@ if (!Array.prototype.indexOf) {
         timer = this.node.game.plot.getProperty(step, prop);
         if (null === timer) return null;
 
-        // If function, it can return a full object, 
+        // If function, it can return a full object,
         // a function, or just the number of milliseconds.
         if ('function' === typeof timer) timer = timer.call(this.node.game);
 
         if (null === timer) return null
         if ('function' === typeof timer) timer = timer.call(this.node.game);
-        if ('number' === typeof timer) timer = { milliseconds: timer };        
+        if ('number' === typeof timer) timer = { milliseconds: timer };
 
 
         if ('object' !== typeof timer ||

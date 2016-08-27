@@ -292,7 +292,6 @@ We add alias first so they are available also if this is default channel.</p>
                 <span class="p">}</span>
                 <span class="k">else</span> <span class="p">{</span>
                     <span class="k">return</span> <span class="nx">replyToClaimId</span><span class="p">(</span><span class="nx">res</span><span class="p">,</span> <span class="nx">cb</span><span class="p">,</span> <span class="mi">400</span><span class="p">,</span> <span class="s1">&#39;no more codes&#39;</span><span class="p">);</span>
-                    <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Oh! No more codes!. Deal with it.&#39;</span><span class="p">);</span>
                 <span class="p">}</span>
 
             <span class="p">});</span>
@@ -1014,7 +1013,7 @@ TODO: Mark file as non-existing ?</p>
     <span class="k">else</span> <span class="p">{</span>
         <span class="nx">str</span> <span class="o">=</span> <span class="nx">JSON</span><span class="p">.</span><span class="nx">stringify</span><span class="p">({</span> <span class="nx">err</span><span class="o">:</span> <span class="nx">codeOrErr</span> <span class="p">});</span>
     <span class="p">}</span>
-    <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">str</span><span class="p">);</span>
+    <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;claim id: &#39;</span> <span class="o">+</span> <span class="nx">codeOrErr</span><span class="p">);</span>
     <span class="nx">res</span><span class="p">.</span><span class="nx">status</span><span class="p">(</span><span class="nx">responseCode</span><span class="p">).</span><span class="nx">send</span><span class="p">(</span><span class="nx">cb</span> <span class="o">+</span> <span class="s1">&#39;(&#39;</span> <span class="o">+</span> <span class="nx">str</span> <span class="o">+</span> <span class="s1">&#39;)&#39;</span><span class="p">);</span>
 <span class="p">}</span>
 </pre></div>
