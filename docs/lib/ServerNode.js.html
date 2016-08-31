@@ -1376,9 +1376,7 @@ is aborted.</p>
                 <span class="nx">that</span><span class="p">.</span><span class="nx">logger</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="s1">&#39;ServerNode.loadGames: cannot read &#39;</span> <span class="o">+</span> <span class="nx">dir</span><span class="p">);</span>
                 <span class="k">throw</span> <span class="nx">err</span><span class="p">;</span>
             <span class="p">}</span>
-            <span class="k">if</span> <span class="p">(</span><span class="nx">dir</span><span class="p">.</span><span class="nx">substr</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">!==</span> <span class="s1">&#39;/&#39;</span><span class="p">)</span> <span class="p">{</span>
-                <span class="nx">dir</span> <span class="o">+=</span> <span class="s1">&#39;/&#39;</span><span class="p">;</span>
-            <span class="p">}</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nx">dir</span><span class="p">.</span><span class="nx">substr</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">!==</span> <span class="s1">&#39;/&#39;</span><span class="p">)</span> <span class="nx">dir</span> <span class="o">+=</span> <span class="s1">&#39;/&#39;</span><span class="p">;</span>
 
 </pre></div>
         </td>
@@ -1421,12 +1419,11 @@ is aborted.</p>
         <td class="code highlight"><div class="highlight"><pre>
                 <span class="nx">fs</span><span class="p">.</span><span class="nx">stat</span><span class="p">(</span><span class="nx">gameDir</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">stats</span><span class="p">)</span> <span class="p">{</span>
                     <span class="k">if</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span>
-                        <span class="nx">that</span><span class="p">.</span><span class="nx">asyncQueue</span><span class="p">.</span><span class="nx">remove</span><span class="p">(</span><span class="nx">qKeyGame</span><span class="p">);</span>
                         <span class="nx">that</span><span class="p">.</span><span class="nx">logger</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="s1">&#39;ServerNode.loadGames: cannot read &#39;</span> <span class="o">+</span>
                                           <span class="nx">dir</span><span class="p">);</span>
+                        <span class="nx">that</span><span class="p">.</span><span class="nx">asyncQueue</span><span class="p">.</span><span class="nx">remove</span><span class="p">(</span><span class="nx">qKeyGame</span><span class="p">);</span>
                         <span class="k">return</span><span class="p">;</span>
                     <span class="p">}</span>
-
 
 </pre></div>
         </td>
@@ -1439,9 +1436,7 @@ is aborted.</p>
 <p>It is a folder, try to add it as a game.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-                    <span class="k">if</span> <span class="p">(</span><span class="nx">stats</span><span class="p">.</span><span class="nx">isDirectory</span><span class="p">())</span> <span class="p">{</span>
-                        <span class="nx">that</span><span class="p">.</span><span class="nx">addGameDir</span><span class="p">(</span><span class="nx">gameDir</span><span class="p">);</span>
-                    <span class="p">}</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="nx">stats</span><span class="p">.</span><span class="nx">isDirectory</span><span class="p">())</span> <span class="nx">that</span><span class="p">.</span><span class="nx">addGameDir</span><span class="p">(</span><span class="nx">gameDir</span><span class="p">);</span>
                     <span class="nx">that</span><span class="p">.</span><span class="nx">asyncQueue</span><span class="p">.</span><span class="nx">remove</span><span class="p">(</span><span class="nx">qKeyGame</span><span class="p">);</span>
                 <span class="p">});</span>
             <span class="p">});</span>

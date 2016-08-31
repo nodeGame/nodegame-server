@@ -862,7 +862,6 @@ to instantiate the page requested by <code>xx/xx/page*</code>.</p>
 <span class="kd">function</span> <span class="nx">login</span><span class="p">(</span><span class="nx">channel</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">user</span><span class="p">,</span> <span class="nx">pwd</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">req</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">authorized</span><span class="p">,</span> <span class="nx">token</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">search</span><span class="p">,</span> <span class="nx">redirectUri</span><span class="p">;</span>
-
     <span class="nx">authorized</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">registry</span><span class="p">.</span><span class="nx">authorize</span><span class="p">({</span> <span class="nx">id</span><span class="o">:</span> <span class="nx">user</span><span class="p">,</span> <span class="nx">pwd</span><span class="o">:</span> <span class="nx">pwd</span> <span class="p">});</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="nx">authorized</span><span class="p">)</span> <span class="p">{</span>

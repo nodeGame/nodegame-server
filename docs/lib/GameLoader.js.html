@@ -1962,7 +1962,7 @@ generation and clientObject decoration.</p>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">GameLoader</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">loadAuthDir</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">directory</span><span class="p">,</span> <span class="nx">channel</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">authDir</span><span class="p">,</span> <span class="nx">authFile</span><span class="p">,</span> <span class="nx">authSettingsFile</span><span class="p">,</span> <span class="nx">authCodesFile</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">settings</span><span class="p">,</span> <span class="nx">codes</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">settings</span><span class="p">,</span> <span class="nx">codes</span><span class="p">,</span> <span class="nx">asyncCodes</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">authObj</span><span class="p">,</span> <span class="nx">sandboxAuth</span><span class="p">,</span> <span class="nx">sandboxIdGen</span><span class="p">,</span> <span class="nx">sandboxDecorate</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">gameName</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">logger</span><span class="p">;</span>
@@ -2161,6 +2161,9 @@ generation and clientObject decoration.</p>
                                     <span class="s1">&#39;occurred: &#39;</span> <span class="o">+</span> <span class="nx">err</span><span class="p">);</span>
                 <span class="p">}</span>
                 <span class="nx">importAuthCodes</span><span class="p">(</span><span class="nx">channel</span><span class="p">,</span> <span class="nx">codes</span><span class="p">,</span> <span class="nx">settings</span><span class="p">);</span>
+                <span class="k">if</span> <span class="p">(</span><span class="nx">asyncCodes</span><span class="p">)</span> <span class="p">{</span>
+                    <span class="nx">channel</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">asyncQueue</span><span class="p">.</span><span class="nx">remove</span><span class="p">(</span><span class="nx">asyncCodes</span><span class="p">);</span>
+                <span class="p">}</span>
             <span class="p">});</span>
         <span class="p">}</span>
         <span class="k">catch</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
@@ -2168,7 +2171,13 @@ generation and clientObject decoration.</p>
                             <span class="s1">&#39;trying to import the codes:&#39;</span> <span class="o">+</span> <span class="s2">&quot;\n&quot;</span> <span class="o">+</span> <span class="nx">e</span><span class="p">.</span><span class="nx">stack</span><span class="p">);</span>
         <span class="p">}</span>
 
-        <span class="k">if</span> <span class="p">(</span><span class="nx">codes</span><span class="p">)</span> <span class="nx">importAuthCodes</span><span class="p">(</span><span class="nx">channel</span><span class="p">,</span> <span class="nx">codes</span><span class="p">,</span> <span class="nx">settings</span><span class="p">);</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">codes</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">importAuthCodes</span><span class="p">(</span><span class="nx">channel</span><span class="p">,</span> <span class="nx">codes</span><span class="p">,</span> <span class="nx">settings</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="k">else</span> <span class="p">{</span>
+            <span class="nx">asyncCodes</span> <span class="o">=</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;_codes&#39;</span><span class="p">;</span>
+            <span class="nx">channel</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">asyncQueue</span><span class="p">.</span><span class="nx">add</span><span class="p">(</span><span class="nx">asyncCodes</span><span class="p">);</span>
+        <span class="p">}</span>
     <span class="p">}</span>
 
 
