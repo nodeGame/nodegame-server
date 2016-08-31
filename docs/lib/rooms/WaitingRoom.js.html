@@ -1024,6 +1024,17 @@ pinging is skipped.</p>
         <span class="p">}</span>
         <span class="k">this</span><span class="p">.</span><span class="nx">PLAYER_GROUPING</span> <span class="o">=</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">PLAYER_GROUPING</span><span class="p">;</span>
     <span class="p">}</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">PING_BEFORE_DISPATCH</span><span class="p">)</span> <span class="p">{</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;boolean&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">PING_BEFORE_DISPATCH</span><span class="p">)</span> <span class="p">{</span>
+
+            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span> <span class="s1">&#39;PING_BEFORE_DISPATCH must &#39;</span> <span class="o">+</span>
+                                <span class="s1">&#39;be boolean or undefined. Found: &#39;</span> <span class="o">+</span>
+                                <span class="nx">settings</span><span class="p">.</span><span class="nx">PING_BEFORE_DISPATCH</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">PING_BEFORE_DISPATCH</span> <span class="o">=</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">PING_BEFORE_DISPATCH</span><span class="p">;</span>
+    <span class="p">}</span>
 <span class="p">};</span>
 
 
