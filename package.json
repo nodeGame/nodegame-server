@@ -30,7 +30,7 @@
   ,   "request": "2.11.1"
   ,   "jade": "0.25.0"
   ,   "JSON": "1.0.0"
-  ,   "winston": "0.8.0"
+  ,   "winston": "2.2.0"
   ,   "phantomjs": ">= 1.9.7"
   ,   "jsonwebtoken": "5.7.0"
     }
