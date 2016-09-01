@@ -7618,11 +7618,12 @@ if (!Array.prototype.indexOf) {
      * @see NDDB._hashIt
      */
     NDDB.prototype.rebuildIndexes = function() {
-        var h = !(J.isEmpty(this.__H)),
-        i = !(J.isEmpty(this.__I)),
+        var h, i, v, cb, idx;
+        
+        h = !(J.isEmpty(this.__H));
+        i = !(J.isEmpty(this.__I));
         v = !(J.isEmpty(this.__V));
 
-        var cb, idx;
         if (!h && !i && !v) return;
 
         if (h && !i && !v) {
@@ -10496,7 +10497,7 @@ if (!Array.prototype.indexOf) {
     node.support = JSUS.compatibility();
 
     // Auto-Generated.
-    node.version = '2.0.4';
+    node.version = '2.0.5';
 
 })(window);
 
@@ -12699,20 +12700,16 @@ if (!Array.prototype.indexOf) {
         return this.id.get(id) ? true : false;
     };
 
-    /**
-     * ### PlayerList.clear
-     *
-     * Clears the PlayerList and rebuilds the indexes
-     *
-     * @param {boolean} confirm Must be TRUE to actually clear the list
-     *
-     * @return {boolean} TRUE, if a player with the specified id is found
-     */
-    PlayerList.prototype.clear = function(confirm) {
-        NDDB.prototype.clear.call(this, confirm);
-        // TODO: check do we need this?
-        this.rebuildIndexes();
-    };
+     /**
+      * ### PlayerList.clear
+      *
+      * Clears the PlayerList and rebuilds the indexes
+      */
+     PlayerList.prototype.clear = function() {
+         NDDB.prototype.clear.call(this);
+         // We need this to recreate the (empty) indexes.
+         this.rebuildIndexes();
+     };
 
     /**
      * ### PlayerList.updatePlayer
@@ -18816,6 +18813,28 @@ if (!Array.prototype.indexOf) {
          */
         this.connecting = false;
 
+         /**
+         * ### Socket.connectingTimeout
+         *
+         * Timeout to cancel the connecting procedure
+         *
+         * @see Socket.connecting
+         * @see Socket.connect
+         */
+        this.connectingTimeout = null;
+
+         /**
+         * ### Socket.connectingTimeoutMs
+         *
+         * Number of milliseconds for the connecting timeout
+         *
+         * Default: 10000 (10 seconds)
+         *
+         * @see Socket.connecting
+         * @see Socket.connect
+         */
+        this.connectingTimeoutMs = 10000;
+
         /**
          * ### Socket.url
          *
@@ -18896,6 +18915,14 @@ if (!Array.prototype.indexOf) {
                                 'or undefined.');
         }
         options = J.clone(options);
+        if (options.connectingTimeout) {
+            if (!J.isInt(options.connectingTimeout, 0)) {
+
+                throw new TypeError('Socket.setup: options.connectingTimeout ' +
+                                    'a positive number or undefined.');
+            }
+            this.connectingTimeoutMs = options.connectingTimeout;
+        }
         if (options.type) {
             this.setSocketType(options.type, options);
             options.type = null;
@@ -18951,7 +18978,7 @@ if (!Array.prototype.indexOf) {
      * @param {object} options Optional. Configuration options for the socket.
      */
     Socket.prototype.connect = function(uri, options) {
-        var humanReadableUri;
+        var humanReadableUri, that;
 
         if (this.isConnected()) {
             throw new Error('Socket.connect: socket is already connected. ' +
@@ -18984,6 +19011,18 @@ if (!Array.prototype.indexOf) {
         this.url = uri;
         this.node.info('connecting to ' + humanReadableUri + '.');
         this.socket.connect(uri, this.userOptions);
+
+        // Socket Direct might be already connected.
+        if (this.connected) return;
+
+        that = this;
+        this.connectingTimeout = setTimeout(function() {
+            that.node.warn('connection attempt to ' + humanReadableUri +
+                           ' timed out. Disconnected.');
+            // False makes sure that SocketDirect will not call  onDisconnect.
+            that.socket.disconnect(false);
+            that.connecting = false;
+        }, this.connectingTimeoutMs);
     };
 
     /**
@@ -19006,15 +19045,21 @@ if (!Array.prototype.indexOf) {
      * ### Socket.disconnect
      *
      * Calls the disconnect method on the actual socket object
+     *
+     * @param {boolean} force Forces to call the underlying
+     *   `socket.disconnect` method even if socket appears not connected
+     *   nor connecting at the moment.
      */
     Socket.prototype.disconnect = function(force) {
-        if (!force && !this.connecting && !this.connected) {
-            node.warn('Socket.disconnect: socket is not connected.');
+        if (!force && (!this.connecting && !this.connected)) {
+            node.warn('Socket.disconnect: socket is not connected nor ' +
+                      'connecting. Try with force parameter.');
             return;
         }
         this.socket.disconnect();
+        this.connecting = false;
+        this.connected = false;
     };
-
 
     /**
      * ### Socket.onConnect
@@ -19026,6 +19071,7 @@ if (!Array.prototype.indexOf) {
     Socket.prototype.onConnect = function() {
         this.connected = true;
         this.connecting = false;
+        if (this.connectingTimeout) clearTimeout(this.connectingTimeout);
         this.node.emit('SOCKET_CONNECT');
 
         // The testing framework expects this, do not remove.
@@ -19045,12 +19091,13 @@ if (!Array.prototype.indexOf) {
         this.connected = false;
         this.connecting = false;
         this.node.emit('SOCKET_DISCONNECT');
+
         // Save the current stage of the game
         //this.node.session.store();
 
         // On re-connection will receive a new ones.
-        this.node.game.pl.clear(true);
-        this.node.game.ml.clear(true);
+        this.node.game.pl.clear();
+        this.node.game.ml.clear();
 
         // Restore original message handler.
         this.setMsgListener(this.onMessageHI);
@@ -19127,7 +19174,18 @@ if (!Array.prototype.indexOf) {
 
         // Parsing successful.
         if (msg.target === 'HI') {
-            // TODO: do we need to more checkings, besides is HI?
+
+            // Check if connection was authorized.
+            if (msg.to === parent.constants.UNAUTH_PLAYER) {
+                this.node.warn('connection was not authorized.');
+                if (msg.text === 'redirect') {
+                    window.location = msg.data;
+                }
+                else {
+                    this.disconnect();
+                }
+                return;
+            }
 
             // Replace itself: will change onMessage to onMessageFull.
             this.setMsgListener();
@@ -19275,14 +19333,22 @@ if (!Array.prototype.indexOf) {
      * If a game window reference is found, sets the `uriChannel` variable.
      *
      * @param {GameMsg} msg A game-msg
-     * @return {boolean} TRUE, if session was correctly initialized
+     * @param {boolean} force If TRUE, a new session will be created even
+     *    if an existing one is found.
      *
      * @see node.createPlayer
      * @see Socket.registerServer
      * @see GameWindow.setUriChannel
      */
-    Socket.prototype.startSession = function(msg) {
+    Socket.prototype.startSession = function(msg, force) {
+        if (this.session && !force) {
+            throw new Error('Socket.startSession: session already existing. ' +
+                            'Use force parameter to overwrite it.');
+        }
         this.session = msg.session;
+        // We need to first set the session, and then eventually to stop
+        // an ongoing game.
+        if (this.node.game.isStoppable()) this.node.game.stop();        
         this.node.createPlayer(msg.data);
         // msg.text can be undefined if channel is the "mainChannel."
         if (this.node.window && msg.text) {
@@ -19980,19 +20046,16 @@ if (!Array.prototype.indexOf) {
      * Does **not** clear _node.env_ variables and any node.player extra
      * property.
      *
-     * If additional properties (e.g. widgets) have been added to the game
-     * object by any of the previous game callbacks, they will not be removed.
-     * TODO: avoid pollution of the game object.
-     *
      * GameStage is set to 0.0.0 and server is notified.
      */
     Game.prototype.stop = function() {
         var node;
-
-        node = this.node;
         if (!this.isStoppable()) {
             throw new Error('Game.stop: game cannot be stopped.');
         }
+
+        node = this.node;
+
         // Destroy currently running timers.
         node.timer.destroyAllTimers(true);
 
@@ -20001,13 +20064,13 @@ if (!Array.prototype.indexOf) {
         node.events.ee.stage.clear();
         node.events.ee.step.clear();
 
+        node.socket.eraseBuffer();
+
         // Clear memory.
-        this.memory.clear(true);
+        this.memory.clear();
 
         // If a _GameWindow_ object is found, clears it.
-        if (node.window) {
-            node.window.reset();
-        }
+        if (node.window) node.window.reset();
 
         // Update state/stage levels and game stage.
         this.setStateLevel(constants.stateLevels.STARTING, 'S');
@@ -20015,7 +20078,7 @@ if (!Array.prototype.indexOf) {
         // This command is notifying the server.
         this.setCurrentGameStage(new GameStage());
 
-        // Temporary change:
+        // TODO: check if we need pl and ml again.
         node.game = null;
         node.game = new Game(node);
         node.game.pl = this.pl;
@@ -26217,6 +26280,10 @@ if (!Array.prototype.indexOf) {
          * @see Game.pl
          */
         node.events.ng.on( IN + say + 'PLAYER_UPDATE', function(msg) {
+            if (msg.from === 'ultimatum') {
+                console.log(msg);
+                debugger
+            }
             node.game.pl.updatePlayer(msg.from, msg.data);
             node.emit('UPDATED_PLIST');
             if (node.game.shouldStep()) {
