@@ -34,10 +34,16 @@
         <a href="#socket.sio">Socket.sio</a>
       </div>
       <div class="heading h3">
-        <a href="#socketio.channel">SocketIo.channel</a>
+        <a href="#socketio.siochannel">SocketIo.sioChannel</a>
       </div>
       <div class="heading h3">
         <a href="#socketio.sidprefix">SocketIo.sidPrefix</a>
+      </div>
+      <div class="heading h3">
+        <a href="#socketio.sidprefixstrip">SocketIo.sidPrefixStrip</a>
+      </div>
+      <div class="heading h3">
+        <a href="#socketio.sidprefixstriplen">SocketIo.sidPrefixStripLen</a>
       </div>
       <div class="heading h2">
         <a href="#socketio%20methods">SocketIo methods</a>
@@ -216,23 +222,20 @@ MIT Licensed</p>
       <tr>
         <td class="docs"><div class="dox">
   <div class="summary">
-<div class="pilwrap" id="socketio.channel">
+<div class="pilwrap" id="socketio.siochannel">
   <h3>
-    <a href="#socketio.channel" name="socketio.channel" class="pilcrow">&#182;</a>
-    SocketIo.channel
+    <a href="#socketio.siochannel" name="socketio.siochannel" class="pilcrow">&#182;</a>
+    SocketIo.sioChannel
   </h3>
 </div>
 
   </div>
   <div class="body"><p>The Socket.IO internal channel</p>
-
-<p>Notice: do not confound with ServerChannel
-TODO: rename.</p>
   </div>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">channel</span> <span class="o">=</span> <span class="kc">null</span><span class="p">;</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">sioChannel</span> <span class="o">=</span> <span class="kc">null</span><span class="p">;</span>
 
 
 </pre></div>
@@ -257,6 +260,74 @@ TODO: rename.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="k">this</span><span class="p">.</span><span class="nx">sidPrefix</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">gameServer</span><span class="p">.</span><span class="nx">ADMIN_SERVER</span> <span class="o">?</span> <span class="s1">&#39;SA&#39;</span> <span class="o">:</span> <span class="s1">&#39;SP&#39;</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="socketio.sidprefixstrip">
+  <h3>
+    <a href="#socketio.sidprefixstrip" name="socketio.sidprefixstrip" class="pilcrow">&#182;</a>
+    SocketIo.sidPrefixStrip
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>The prefix to be stripped from sid for internal operations</p>
+
+<p>Sids are represented as SA/channelName#sid, but in sockets.connected
+they are saved as /#sid</p>
+
+<p>Notice: this depends on how Socket.io represets sid internally.
+If they change the internal structure it needs to be adapted.</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">SocketIo.disconnect
+</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">this</span><span class="p">.</span><span class="nx">sidPrefixStrip</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">sidPrefix</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="k">this</span><span class="p">.</span><span class="nx">gameServer</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">name</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="socketio.sidprefixstriplen">
+  <h3>
+    <a href="#socketio.sidprefixstriplen" name="socketio.sidprefixstriplen" class="pilcrow">&#182;</a>
+    SocketIo.sidPrefixStripLen
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>The length of the prefix to be stripped from sid for internal operations</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">SocketIo.sidPrefixStrip</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">SocketIo.disconnect
+</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">this</span><span class="p">.</span><span class="nx">sidPrefixStripLen</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">sidPrefixStrip</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span>
 <span class="p">}</span>
 
 
@@ -297,8 +368,9 @@ TODO: rename.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">SocketIo</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">attachListeners</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
-    <span class="kd">var</span> <span class="nx">that</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
-    <span class="k">this</span><span class="p">.</span><span class="nx">channel</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">sio</span><span class="p">.</span><span class="nx">of</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">gameServer</span><span class="p">.</span><span class="nx">endpoint</span><span class="p">).</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;connection&#39;</span><span class="p">,</span>
+    <span class="kd">var</span> <span class="nx">that</span><span class="p">;</span>
+    <span class="nx">that</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">sioChannel</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">sio</span><span class="p">.</span><span class="nx">of</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">gameServer</span><span class="p">.</span><span class="nx">endpoint</span><span class="p">).</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;connection&#39;</span><span class="p">,</span>
         <span class="kd">function</span><span class="p">(</span><span class="nx">socket</span><span class="p">)</span> <span class="p">{</span>
             <span class="kd">var</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">prefixedSid</span><span class="p">;</span>
             <span class="kd">var</span> <span class="nx">startingRoom</span><span class="p">,</span> <span class="nx">clientType</span><span class="p">;</span>
@@ -310,7 +382,7 @@ TODO: rename.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-11" id="section-11">&#182;</a>
+  <a class="pilcrow" href="#section-13" id="section-13">&#182;</a>
 </div>
 
 <div class="highlight"><pre><code>       <span class="n">console</span><span class="o">.</span><span class="nb">log</span><span class="p">(</span><span class="s">&#39;hello!&#39;</span><span class="p">,</span> <span class="nb">socket</span><span class="o">.</span><span class="n">handshake</span><span class="o">.</span><span class="n">decoded_token</span><span class="o">.</span><span class="n">name</span><span class="p">);</span>
@@ -333,7 +405,7 @@ TODO: rename.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-12" id="section-12">&#182;</a>
+  <a class="pilcrow" href="#section-14" id="section-14">&#182;</a>
 </div>
 <p>Cleanup clientType (sometimes browsers add quotes).</p>
         </td>
@@ -355,7 +427,7 @@ TODO: rename.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-13" id="section-13">&#182;</a>
+  <a class="pilcrow" href="#section-15" id="section-15">&#182;</a>
 </div>
 <p>Add information about the IP in the headers.
 This might change in different versions of Socket.IO
@@ -411,18 +483,19 @@ socket.handshake.headers.address = socket.handshake.address;</p>
 <span class="nx">SocketIo</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">disconnect</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">sid</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">socket</span><span class="p">,</span> <span class="nx">strippedSid</span><span class="p">;</span>
 
+
 </pre></div>
         </td>
       </tr>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-15" id="section-15">&#182;</a>
+  <a class="pilcrow" href="#section-17" id="section-17">&#182;</a>
 </div>
-<p>Remove socket name from sid (exactly 2 characters, see constructor):</p>
+<p>Remove socket name from sid (2 chars + channel name).</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="nx">strippedSid</span> <span class="o">=</span> <span class="nx">sid</span><span class="p">.</span><span class="nx">slice</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>
+    <span class="nx">strippedSid</span> <span class="o">=</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">sid</span><span class="p">.</span><span class="nx">slice</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">sidPrefixStripLen</span><span class="p">);</span>
 
 
 </pre></div>
@@ -431,7 +504,7 @@ socket.handshake.headers.address = socket.handshake.address;</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-16" id="section-16">&#182;</a>
+  <a class="pilcrow" href="#section-18" id="section-18">&#182;</a>
 </div>
 <p>Ste: was.
 socket = this.sio.sockets.sockets[strippedSid];</p>
@@ -452,7 +525,7 @@ socket = this.sio.sockets.sockets[strippedSid];</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-17" id="section-17">&#182;</a>
+  <a class="pilcrow" href="#section-19" id="section-19">&#182;</a>
 </div>
 <p>This is already triggered by the method above.
 this.gameServer.onDisconnect(sid, socket);</p>
@@ -536,7 +609,7 @@ it is not used to locate the client.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-19" id="section-19">&#182;</a>
+  <a class="pilcrow" href="#section-21" id="section-21">&#182;</a>
 </div>
 <p>Cleanup msg, if necessary.</p>
         </td>
@@ -566,17 +639,17 @@ it is not used to locate the client.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-20" id="section-20">&#182;</a>
+  <a class="pilcrow" href="#section-22" id="section-22">&#182;</a>
 </div>
 <p>Send to ALL.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="k">if</span> <span class="p">(</span><span class="nx">sid</span> <span class="o">===</span> <span class="s1">&#39;ALL&#39;</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">if</span> <span class="p">(</span><span class="nx">rel</span><span class="p">)</span> <span class="p">{</span>
-            <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">json</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="nx">msg</span><span class="p">);</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">sioChannel</span><span class="p">.</span><span class="nx">json</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="nx">msg</span><span class="p">);</span>
         <span class="p">}</span>
         <span class="k">else</span> <span class="p">{</span>
-            <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="kr">volatile</span><span class="p">.</span><span class="nx">json</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="nx">msg</span><span class="p">);</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">sioChannel</span><span class="p">.</span><span class="kr">volatile</span><span class="p">.</span><span class="nx">json</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="nx">msg</span><span class="p">);</span>
         <span class="p">}</span>
         <span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Msg &#39;</span> <span class="o">+</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">toSMS</span><span class="p">()</span> <span class="o">+</span> <span class="s1">&#39; sent to ALL&#39;</span><span class="p">);</span>
         <span class="nx">msgLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">);</span>
@@ -589,7 +662,7 @@ it is not used to locate the client.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-21" id="section-21">&#182;</a>
+  <a class="pilcrow" href="#section-23" id="section-23">&#182;</a>
 </div>
 <p>Either send to a specific client(1), or to ALL but a specific client(2).</p>
         </td>
@@ -602,7 +675,7 @@ it is not used to locate the client.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-22" id="section-22">&#182;</a>
+  <a class="pilcrow" href="#section-24" id="section-24">&#182;</a>
 </div>
 <p>Remove socket name from sid (exactly 2 characters, see constructor):</p>
         </td>
@@ -616,7 +689,7 @@ it is not used to locate the client.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-23" id="section-23">&#182;</a>
+  <a class="pilcrow" href="#section-25" id="section-25">&#182;</a>
 </div>
 <p>(1)</p>
         </td>
@@ -630,10 +703,10 @@ it is not used to locate the client.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-24" id="section-24">&#182;</a>
+  <a class="pilcrow" href="#section-26" id="section-26">&#182;</a>
 </div>
 <p>Ste: Was:
-client = this.channel.sockets[strippedSid];</p>
+client = this.sioChannel.sockets[strippedSid];</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
 
@@ -644,12 +717,12 @@ client = this.channel.sockets[strippedSid];</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-25" id="section-25">&#182;</a>
+  <a class="pilcrow" href="#section-27" id="section-27">&#182;</a>
 </div>
 <p>Ste: Now:</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-            <span class="nx">client</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">connected</span><span class="p">[</span><span class="nx">strippedSid</span><span class="p">];</span>
+            <span class="nx">client</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">sioChannel</span><span class="p">.</span><span class="nx">connected</span><span class="p">[</span><span class="nx">strippedSid</span><span class="p">];</span>
 
 
             <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">client</span><span class="p">)</span> <span class="p">{</span>
@@ -676,17 +749,17 @@ client = this.channel.sockets[strippedSid];</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-26" id="section-26">&#182;</a>
+  <a class="pilcrow" href="#section-28" id="section-28">&#182;</a>
 </div>
 <p>(2)</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
         <span class="k">else</span> <span class="p">{</span>
 
-            <span class="k">for</span> <span class="p">(</span><span class="nx">clientSid</span> <span class="k">in</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">connected</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">for</span> <span class="p">(</span><span class="nx">clientSid</span> <span class="k">in</span> <span class="k">this</span><span class="p">.</span><span class="nx">sioChannel</span><span class="p">.</span><span class="nx">connected</span><span class="p">)</span> <span class="p">{</span>
                 <span class="k">if</span> <span class="p">(</span><span class="nx">strippedSid</span> <span class="o">===</span> <span class="nx">clientSid</span><span class="p">)</span> <span class="k">continue</span><span class="p">;</span>
 
-                <span class="nx">client</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">connected</span><span class="p">[</span><span class="nx">clientSid</span><span class="p">];</span>
+                <span class="nx">client</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">sioChannel</span><span class="p">.</span><span class="nx">connected</span><span class="p">[</span><span class="nx">clientSid</span><span class="p">];</span>
 
 
                 <span class="k">if</span> <span class="p">(</span><span class="nx">rel</span><span class="p">)</span> <span class="p">{</span>

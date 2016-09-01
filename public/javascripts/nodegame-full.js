@@ -19348,7 +19348,7 @@ if (!Array.prototype.indexOf) {
         this.session = msg.session;
         // We need to first set the session, and then eventually to stop
         // an ongoing game.
-        if (this.node.game.isStoppable()) this.node.game.stop();        
+        if (this.node.game.isStoppable()) this.node.game.stop();
         this.node.createPlayer(msg.data);
         // msg.text can be undefined if channel is the "mainChannel."
         if (this.node.window && msg.text) {
@@ -26280,10 +26280,6 @@ if (!Array.prototype.indexOf) {
          * @see Game.pl
          */
         node.events.ng.on( IN + say + 'PLAYER_UPDATE', function(msg) {
-            if (msg.from === 'ultimatum') {
-                console.log(msg);
-                debugger
-            }
             node.game.pl.updatePlayer(msg.from, msg.data);
             node.emit('UPDATED_PLIST');
             if (node.game.shouldStep()) {
@@ -32414,7 +32410,7 @@ if (!Array.prototype.indexOf) {
         this.htmlRenderer = new HTMLRenderer(options);
         this.htmlRenderer.addRenderer(function(el) {
             var tbl, key;
-            if ('object' === typeof el.content) {
+            if (el.content && 'object' === typeof el.content) {
                 tbl = new Table();
                 for (key in el.content) {
                     if (el.content.hasOwnProperty(key)) {
@@ -32650,7 +32646,7 @@ if (!Array.prototype.indexOf) {
         y = dim === 'y' ?
             this.getNextPointer('y', y) : this.getCurrPointer('y', y);
 
-        if ('object' === typeof content &&
+        if (content && 'object' === typeof content &&
             'undefined' !== typeof content.content) {
 
             if ('undefined' === typeof content.x) content.x = x;
