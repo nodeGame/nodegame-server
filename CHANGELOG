@@ -1,5 +1,11 @@
 # nodegame-server change log
 
+# 2.7.0
+ - Improved reconnection/disconnection handling.
+ - Upgraded dependencies: express, socket.io, winston
+ - Updated SocketIo socket for new version of socket.io
+ - Security fix: incoming socket connections must have signed cookies when authorization is on.
+
 # 2.6.2
  - WaitingRoom option to PING_BEFORE_DISPATCH.
 
