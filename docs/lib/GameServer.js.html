@@ -993,6 +993,13 @@ the clientId found in their cookies.</p>
         <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
     <span class="p">}</span>
 
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">session</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">server</span> <span class="o">+</span> <span class="s1">&#39;Server.secureParse: Received msg &#39;</span> <span class="o">+</span>
+                           <span class="s1">&#39;but msg.session is not string. Found: &#39;</span> <span class="o">+</span>
+                           <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">session</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
+        <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
+    <span class="p">}</span>
+
 
 </pre></div>
         </td>
@@ -1447,7 +1454,7 @@ They can trigger another disconnect event after first disconnect.</p>
 
     <span class="kd">var</span> <span class="nx">decoded</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">clientId</span><span class="p">,</span> <span class="nx">clientObj</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">cookies</span><span class="p">,</span> <span class="nx">disconnected</span><span class="p">,</span> <span class="nx">returningRoom</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">newConnection</span><span class="p">,</span> <span class="nx">invalidSessionCookie</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">newConnection</span><span class="p">,</span> <span class="nx">invalidSessionCookie</span><span class="p">,</span> <span class="nx">clearNode</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">tmpSid</span><span class="p">,</span> <span class="nx">tmpId</span><span class="p">,</span> <span class="nx">tmpType</span><span class="p">;</span>
 
     <span class="nx">newConnection</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
@@ -1540,9 +1547,11 @@ also for socket.io connections.</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-50" id="section-50">&#182;</a>
 </div>
-<p>TODO: clear page? stop game?</p>
+<p>It looks like it is a "not-clean" reconnection.
+Let's stop the game immediately after HI.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
+            <span class="nx">clearNode</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
         <span class="p">}</span>
     <span class="p">}</span>
 
@@ -1818,7 +1827,8 @@ is disposed, exactly as it was not authorized.</p>
         <td class="code highlight"><div class="highlight"><pre>
         <span class="k">if</span> <span class="p">(</span><span class="nx">clientObj</span><span class="p">.</span><span class="nx">connected</span> <span class="o">||</span> <span class="nx">clientObj</span><span class="p">.</span><span class="nx">disconnected</span><span class="p">)</span> <span class="p">{</span>
 
-            <span class="nx">res</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">handleReconnectingClient</span><span class="p">(</span><span class="nx">clientObj</span><span class="p">,</span> <span class="nx">socketObj</span><span class="p">,</span> <span class="nx">socketId</span><span class="p">);</span>
+            <span class="nx">res</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">handleReconnectingClient</span><span class="p">(</span><span class="nx">clientObj</span><span class="p">,</span> <span class="nx">socketObj</span><span class="p">,</span> <span class="nx">socketId</span><span class="p">,</span>
+                                                <span class="nx">clearNode</span><span class="p">);</span>
 
 
 </pre></div>
@@ -1877,7 +1887,8 @@ is disposed, exactly as it was not authorized.</p>
         <span class="nx">clientObj</span><span class="p">.</span><span class="nx">admin</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">ADMIN_SERVER</span> <span class="o">||</span> <span class="kc">false</span><span class="p">;</span>
         <span class="nx">clientObj</span><span class="p">.</span><span class="nx">clientType</span> <span class="o">=</span> <span class="nx">clientType</span><span class="p">;</span>
         <span class="nx">clientObj</span><span class="p">.</span><span class="nx">sid</span> <span class="o">=</span> <span class="nx">socketId</span><span class="p">;</span>
-        <span class="nx">res</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">handleConnectingClient</span><span class="p">(</span><span class="nx">clientObj</span><span class="p">,</span> <span class="nx">socketObj</span><span class="p">,</span> <span class="nx">startingRoom</span><span class="p">);</span>
+        <span class="nx">res</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">handleConnectingClient</span><span class="p">(</span><span class="nx">clientObj</span><span class="p">,</span> <span class="nx">socketObj</span><span class="p">,</span> <span class="nx">startingRoom</span><span class="p">,</span>
+                                          <span class="nx">clearNode</span><span class="p">);</span>
     <span class="p">}</span>
 
 
@@ -1928,9 +1939,6 @@ is disposed, exactly as it was not authorized.</p>
 
   </div>
   <div class="body"><p>Handles a client (supposedly) connecting for the first time to the channel</p>
-
-<p>If a custom client id generator function is defined, and if the id returned
-is already existing, then <code>handleReconnectingClient</code> is called.</p>
   </div>
   <div class="details">
     <div class="dox_tag_title">Params</div>
@@ -1948,7 +1956,13 @@ is already existing, then <code>handleReconnectingClient</code> is called.</p>
       <span class="dox_tag_name">startingRoom</span>
       <span class="dox_type">string</span>
       <span>Optional. The name of the room in which
-   the client is to be placed. Default: Waiting or Requirements room</span>
+  the client is to be placed. Default: Waiting or Requirements room</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">clearNode</span>
+      <span class="dox_type">boolean</span>
+      <span>If TRUE, sends a msg to STOP current game,
+  immediately after a connection is established. Default: FALSE</span>
     </div>
     <div class="dox_tag_title">Returns</div>
     <div class="dox_tag_detail">
@@ -1974,7 +1988,7 @@ is already existing, then <code>handleReconnectingClient</code> is called.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">GameServer</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">handleConnectingClient</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span>
-    <span class="nx">clientObj</span><span class="p">,</span> <span class="nx">socketObj</span><span class="p">,</span> <span class="nx">startingRoom</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">clientObj</span><span class="p">,</span> <span class="nx">socketObj</span><span class="p">,</span> <span class="nx">startingRoom</span><span class="p">,</span> <span class="nx">clearNode</span><span class="p">)</span> <span class="p">{</span>
 
     <span class="kd">var</span> <span class="nx">res</span><span class="p">;</span>
 
@@ -2030,7 +2044,7 @@ to the first level.</p>
 <p>Register the client in the socket, mark connected, place in room.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="nx">res</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">registerClient</span><span class="p">(</span><span class="nx">clientObj</span><span class="p">,</span> <span class="nx">socketObj</span><span class="p">,</span> <span class="nx">startingRoom</span><span class="p">);</span>
+    <span class="nx">res</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">registerClient</span><span class="p">(</span><span class="nx">clientObj</span><span class="p">,</span> <span class="nx">socketObj</span><span class="p">,</span> <span class="nx">startingRoom</span><span class="p">,</span> <span class="nx">clearNode</span><span class="p">);</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="nx">res</span> <span class="o">===</span> <span class="nx">GameServer</span><span class="p">.</span><span class="nx">codes</span><span class="p">.</span><span class="nx">OPERATION_OK</span><span class="p">)</span> <span class="p">{</span>
 
@@ -2084,6 +2098,17 @@ to the first level.</p>
       <span class="dox_type">Socket</span>
       <span>The socket object (Direct or SIO)</span>
     </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">socketId</span>
+      <span class="dox_type">string</span>
+      <span>The id of the socket connection</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">clearNode</span>
+      <span class="dox_type">boolean</span>
+      <span>If TRUE, sends a msg to STOP current game,
+  immediately after a connection is established. Default: FALSE</span>
+    </div>
     <div class="dox_tag_title">Returns</div>
     <div class="dox_tag_detail">
       <span class="dox_tag_name"></span>
@@ -2108,7 +2133,7 @@ to the first level.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">GameServer</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">handleReconnectingClient</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">clientObj</span><span class="p">,</span> <span class="nx">socketObj</span><span class="p">,</span>
-                                                         <span class="nx">socketId</span><span class="p">)</span> <span class="p">{</span>
+                                                         <span class="nx">socketId</span><span class="p">,</span> <span class="nx">clearNode</span><span class="p">)</span> <span class="p">{</span>
 
     <span class="kd">var</span> <span class="nx">sys</span><span class="p">,</span> <span class="nx">clientId</span><span class="p">,</span> <span class="nx">returningRoom</span><span class="p">,</span> <span class="nx">res</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">globalLookup</span><span class="p">,</span> <span class="nx">oldInfo</span><span class="p">;</span>
@@ -2241,7 +2266,7 @@ and a warning will be sent.</p>
         <span class="k">return</span> <span class="nx">GameServer</span><span class="p">.</span><span class="nx">codes</span><span class="p">.</span><span class="nx">ROOM_NOT_FOUND</span><span class="p">;</span>
     <span class="p">}</span>
 
-    <span class="nx">res</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">registerClient</span><span class="p">(</span><span class="nx">clientObj</span><span class="p">,</span> <span class="nx">socketObj</span><span class="p">,</span> <span class="nx">returningRoom</span><span class="p">);</span>
+    <span class="nx">res</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">registerClient</span><span class="p">(</span><span class="nx">clientObj</span><span class="p">,</span> <span class="nx">socketObj</span><span class="p">,</span> <span class="nx">returningRoom</span><span class="p">,</span> <span class="nx">clearNode</span><span class="p">);</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="nx">res</span> <span class="o">===</span> <span class="nx">GameServer</span><span class="p">.</span><span class="nx">codes</span><span class="p">.</span><span class="nx">OPERATION_OK</span><span class="p">)</span> <span class="p">{</span>
 
@@ -2303,6 +2328,12 @@ and a warning will be sent.</p>
       <span>Optional. The name of the room in which
    the client is to be placed.</span>
     </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">clearNode</span>
+      <span class="dox_type">boolean</span>
+      <span>If TRUE, sends a msg to STOP current game,
+  immediately after a connection is established. Default: FALSE</span>
+    </div>
     <div class="dox_tag_title">Returns</div>
     <div class="dox_tag_detail">
       <span class="dox_tag_name"></span>
@@ -2326,7 +2357,8 @@ and a warning will be sent.</p>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-<span class="nx">GameServer</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">registerClient</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">clientObj</span><span class="p">,</span> <span class="nx">socketObj</span><span class="p">,</span> <span class="nx">room</span><span class="p">)</span> <span class="p">{</span>
+<span class="nx">GameServer</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">registerClient</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">clientObj</span><span class="p">,</span> <span class="nx">socketObj</span><span class="p">,</span> <span class="nx">room</span><span class="p">,</span>
+                                               <span class="nx">clearNode</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">clientId</span><span class="p">,</span> <span class="nx">socketId</span><span class="p">;</span>
     <span class="nx">clientId</span> <span class="o">=</span> <span class="nx">clientObj</span><span class="p">.</span><span class="nx">id</span><span class="p">;</span>
     <span class="nx">socketId</span> <span class="o">=</span> <span class="nx">clientObj</span><span class="p">.</span><span class="nx">sid</span><span class="p">;</span>
@@ -2375,7 +2407,7 @@ and a warning will be sent.</p>
 <p>Notify the client of its ID.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">welcomeClient</span><span class="p">(</span><span class="nx">clientId</span><span class="p">,</span> <span class="nx">socketId</span><span class="p">);</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">welcomeClient</span><span class="p">(</span><span class="nx">clientId</span><span class="p">,</span> <span class="nx">socketId</span><span class="p">,</span> <span class="nx">clearNode</span><span class="p">);</span>
 
     <span class="k">return</span> <span class="nx">GameServer</span><span class="p">.</span><span class="nx">codes</span><span class="p">.</span><span class="nx">OPERATION_OK</span><span class="p">;</span>
 <span class="p">};</span>
@@ -2409,11 +2441,24 @@ and a warning will be sent.</p>
       <span class="dox_type">string</span>
       <span>The socket id of the connecting client</span>
     </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">clearNode</span>
+      <span class="dox_type">boolean</span>
+      <span>If TRUE, sends a msg to STOP current game,
+  immediately after a connection is established. Default: FALSE</span>
+    </div>
   </div>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-<span class="nx">GameServer</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">welcomeClient</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">clientId</span><span class="p">,</span> <span class="nx">socketId</span><span class="p">)</span> <span class="p">{</span>
+<span class="nx">GameServer</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">welcomeClient</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">clientId</span><span class="p">,</span> <span class="nx">socketId</span><span class="p">,</span> <span class="nx">clearNode</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">clearNode</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">msg</span><span class="p">.</span><span class="nx">create</span><span class="p">({</span>
+            <span class="nx">target</span><span class="o">:</span> <span class="nx">ngc</span><span class="p">.</span><span class="nx">constants</span><span class="p">.</span><span class="nx">target</span><span class="p">.</span><span class="nx">GAMECOMMAND</span><span class="p">,</span>
+            <span class="nx">to</span><span class="o">:</span> <span class="nx">clientId</span><span class="p">,</span>
+            <span class="nx">text</span><span class="o">:</span> <span class="s1">&#39;stop&#39;</span>
+        <span class="p">}));</span>
+    <span class="p">}</span>
     <span class="k">this</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">msg</span><span class="p">.</span><span class="nx">create</span><span class="p">({</span>
         <span class="nx">target</span><span class="o">:</span> <span class="s1">&#39;HI&#39;</span><span class="p">,</span>
         <span class="nx">to</span><span class="o">:</span> <span class="nx">clientId</span><span class="p">,</span>
@@ -2464,7 +2509,7 @@ and a warning will be sent.</p>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">GameServer</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">disposeUnauthorizedClient</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">socketId</span><span class="p">,</span> <span class="nx">socketObj</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">to</span><span class="p">,</span> <span class="nx">connStr</span><span class="p">;</span>
-    <span class="nx">to</span> <span class="o">=</span> <span class="s1">&#39;unauthorized_client&#39;</span><span class="p">;</span>
+    <span class="nx">to</span> <span class="o">=</span> <span class="nx">ngc</span><span class="p">.</span><span class="nx">constants</span><span class="p">.</span><span class="nx">UNAUTH_PLAYER</span><span class="p">;</span>
 
     <span class="nx">connStr</span> <span class="o">=</span> <span class="s2">&quot;Unauthorized client. Socket id: &lt;&quot;</span> <span class="o">+</span> <span class="nx">socketId</span> <span class="o">+</span> <span class="s2">&quot;&gt;&quot;</span><span class="p">;</span>
     <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">connStr</span><span class="p">,</span> <span class="s1">&#39;warn&#39;</span><span class="p">);</span>
@@ -2484,11 +2529,9 @@ the client will discard the messages.</p>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="nx">socketObj</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">msg</span><span class="p">.</span><span class="nx">create</span><span class="p">({</span>
         <span class="nx">target</span><span class="o">:</span> <span class="nx">ngc</span><span class="p">.</span><span class="nx">constants</span><span class="p">.</span><span class="nx">target</span><span class="p">.</span><span class="nx">HI</span><span class="p">,</span>
-        <span class="nx">to</span><span class="o">:</span> <span class="nx">ngc</span><span class="p">.</span><span class="nx">constants</span><span class="p">.</span><span class="nx">UNAUTH_PLAYER</span><span class="p">,</span>
-        <span class="nx">data</span><span class="o">:</span> <span class="p">{</span>
-            <span class="nx">id</span><span class="o">:</span> <span class="nx">to</span><span class="p">,</span>
-            <span class="nx">sid</span><span class="o">:</span> <span class="nx">socketId</span>
-        <span class="p">}</span>
+        <span class="nx">to</span><span class="o">:</span> <span class="nx">to</span><span class="p">,</span>
+        <span class="nx">data</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">getAccessDeniedUrl</span><span class="p">(),</span>
+        <span class="nx">text</span><span class="o">:</span> <span class="s1">&#39;redirect&#39;</span><span class="p">,</span>
     <span class="p">}),</span> <span class="nx">socketId</span><span class="p">);</span>
 
 
@@ -2500,15 +2543,20 @@ the client will discard the messages.</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-94" id="section-94">&#182;</a>
 </div>
-<p>Redirects the client.</p>
+
+<div class="highlight"><pre><code><span class="sr">//</span> <span class="n">Redirects</span> <span class="n">the</span> <span class="n">client</span><span class="o">.</span>
+<span class="n">socketObj</span><span class="o">.</span><span class="nb">send</span><span class="p">(</span><span class="n">this</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">create</span><span class="p">({</span>
+    <span class="n">target:</span> <span class="n">ngc</span><span class="o">.</span><span class="n">constants</span><span class="o">.</span><span class="n">target</span><span class="o">.</span><span class="n">REDIRECT</span><span class="p">,</span>
+    <span class="n">to:</span> <span class="n">to</span><span class="p">,</span>
+    <span class="n">data:</span> <span class="n">this</span><span class="o">.</span><span class="n">getAccessDeniedUrl</span><span class="p">()</span>
+<span class="p">}),</span> <span class="n">socketId</span><span class="p">);</span>
+</code></pre></div>
+
+
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="nx">socketObj</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">msg</span><span class="p">.</span><span class="nx">create</span><span class="p">({</span>
-        <span class="nx">target</span><span class="o">:</span> <span class="nx">ngc</span><span class="p">.</span><span class="nx">constants</span><span class="p">.</span><span class="nx">target</span><span class="p">.</span><span class="nx">REDIRECT</span><span class="p">,</span>
-        <span class="nx">to</span><span class="o">:</span> <span class="nx">to</span><span class="p">,</span>
-        <span class="nx">data</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">getAccessDeniedUrl</span><span class="p">()</span>
-    <span class="p">}),</span> <span class="nx">socketId</span><span class="p">);</span>
 <span class="p">};</span>
+
 
 
 </pre></div>
