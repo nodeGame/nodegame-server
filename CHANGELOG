@@ -1,7 +1,9 @@
 # nodegame-server change log
 
+# 2.8.1
+ - Hidden files are skipped from the results of the game (data/).
 # 2.8.0
- - AdminServer can serve results of game.
+ - AdminServer can serve results of game (data/)..
 
 # 2.7.0
  - Improved reconnection/disconnection handling.
