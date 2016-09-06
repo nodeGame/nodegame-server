@@ -1,7 +1,11 @@
 # nodegame-server change log
 
+# 2.8.2
+ - Fixing stripping sid (introduced inm 2.7.0).
+
 # 2.8.1
  - Hidden files are skipped from the results of the game (data/).
+
 # 2.8.0
  - AdminServer can serve results of game (data/)..
 
