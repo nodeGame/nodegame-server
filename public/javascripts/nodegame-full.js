@@ -18786,10 +18786,13 @@ if (!Array.prototype.indexOf) {
          */
         this.socket = null;
 
-         /**
+        /**
          * ### Socket.connected
          *
-         * Socket connection established.
+         * Socket connection established
+         *
+         * For realiably checking whether the connection is established
+         * use `Socket.isConnected()`.
          *
          * @see Socket.connecting
          * @see Socket.isConnected
@@ -18798,7 +18801,7 @@ if (!Array.prototype.indexOf) {
          */
         this.connected = false;
 
-         /**
+        /**
          * ### Socket.connecting
          *
          * Socket connection being established
@@ -18812,6 +18815,18 @@ if (!Array.prototype.indexOf) {
          * @see Socket.onDisconnect
          */
         this.connecting = false;
+
+
+         /**
+         * ### Socket.reconnecting
+         *
+         * Flags that a reconnection is in progress
+         *
+         * This is useful when `Socket.reconnect()` triggers a disconnection
+         *
+         * @see Socket.reconnect
+         */
+        this.reconnecting = false;
 
          /**
          * ### Socket.connectingTimeout
@@ -19006,11 +19021,11 @@ if (!Array.prototype.indexOf) {
             throw new Error('Socket.connet: cannot connet to ' +
                             humanReadableUri + ' . No socket defined.');
         }
-        this.node.emit('SOCKET_CONNECTING');
         this.connecting = true;
         this.url = uri;
         this.node.info('connecting to ' + humanReadableUri + '.');
-        this.socket.connect(uri, this.userOptions);
+        this.node.emit('SOCKET_CONNECTING');
+        this.socket.connect(this.url, this.userOptions);
 
         // Socket Direct might be already connected.
         if (this.connected) return;
@@ -19019,8 +19034,7 @@ if (!Array.prototype.indexOf) {
         this.connectingTimeout = setTimeout(function() {
             that.node.warn('connection attempt to ' + humanReadableUri +
                            ' timed out. Disconnected.');
-            // False makes sure that SocketDirect will not call  onDisconnect.
-            that.socket.disconnect(false);
+            that.socket.disconnect();
             that.connecting = false;
         }, this.connectingTimeoutMs);
     };
@@ -19030,15 +19044,26 @@ if (!Array.prototype.indexOf) {
      *
      * Calls the connect method with previous parameters
      *
+     * @param {boolean} force Optional. Forces the process to continue
+     *   even if a previous reconnection is in progress. Warning: can
+     *   cause an infinite loop. Default: FALSE
+     *
      * @see Socket.connect
      * @see Socket.disconnect
      */
-    Socket.prototype.reconnect = function() {
+    Socket.prototype.reconnect = function(force) {
         if (!this.url) {
             throw new Error('Socket.reconnect: cannot find previous uri.');
         }
-        if (this.isConnected()) this.disconnect();
+        if (this.reconnecting && !force) {
+            node.warn('Socket.reconnect: socket is already reconnecting. ' +
+                     'Try with force parameter.');
+            return;
+        }
+        this.reconnecting = true;
+        if (this.connecting || this.isConnected()) this.disconnect();        
         this.connect(this.url, this.userOptions);
+        this.reconnecting = false;
     };
 
     /**
@@ -19051,7 +19076,7 @@ if (!Array.prototype.indexOf) {
      *   nor connecting at the moment.
      */
     Socket.prototype.disconnect = function(force) {
-        if (!force && (!this.connecting && !this.connected)) {
+        if (!force && (!this.connecting && !this.isConnected())) {
             node.warn('Socket.disconnect: socket is not connected nor ' +
                       'connecting. Try with force parameter.');
             return;
@@ -19362,7 +19387,7 @@ if (!Array.prototype.indexOf) {
      * Returns TRUE if socket connection is ready.
      */
     Socket.prototype.isConnected = function() {
-        return this.connected && this.socket && this.socket.isConnected();
+        return this.socket && this.socket.isConnected();
     };
 
     /**
@@ -19433,19 +19458,18 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # SocketIo
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2016 Stefano Balietti
  * MIT Licensed
  *
- * Implementation of a remote socket communicating over HTTP
- * through Socket.IO
+ * Remote communication through Socket.IO
  *
  * This file requires that the socket.io library is already loaded before
  * nodeGame is loaded to work (see closure).
  */
 (function(exports, node, io) {
 
-    // TODO io will be undefined in Node.JS because
-    // module.parents.exports.io does not exists
+    // io is undefined in Node.JS because
+    // module.parents.exports.io does not exist.
 
     // ## Global scope
 
@@ -26669,7 +26693,7 @@ if (!Array.prototype.indexOf) {
          */
         this.events.ng.on(CMD + gcommands.start, function(options) {
             if (!node.game.isStartable()) {
-                node.err('"' + CMD + gcommands.start + '": game cannot ' +
+                node.warn('"' + CMD + gcommands.start + '": game cannot ' +
                          'be started now.');
                 return;
             }
@@ -26682,7 +26706,7 @@ if (!Array.prototype.indexOf) {
          */
         this.events.ng.on(CMD + gcommands.pause, function(options) {
             if (!node.game.isPausable()) {
-                node.err('"' + CMD + gcommands.pause + '": game cannot ' +
+                node.warn('"' + CMD + gcommands.pause + '": game cannot ' +
                          'be paused now.');
                 return;
             }
@@ -26695,8 +26719,8 @@ if (!Array.prototype.indexOf) {
          */
         this.events.ng.on(CMD + gcommands.resume, function(options) {
             if (!node.game.isResumable()) {
-                node.err('"' + CMD + gcommands.resume + '": game cannot ' +
-                         'be resumed now.');
+                node.warn('"' + CMD + gcommands.resume + '": game cannot ' +
+                          'be resumed now.');
                 return;
             }
             node.emit('BEFORE_GAMECOMMAND', gcommands.resume, options);
@@ -26708,8 +26732,8 @@ if (!Array.prototype.indexOf) {
          */
         this.events.ng.on(CMD + gcommands.step, function(options) {
             if (!node.game.isSteppable()) {
-                node.err('"' + CMD + gcommands.step + '": game cannot ' +
-                         'be stepped now.');
+                node.warn('"' + CMD + gcommands.step + '": game cannot ' +
+                          'be stepped now.');
                 return;
             }
             node.emit('BEFORE_GAMECOMMAND', gcommands.step, options);
@@ -26721,8 +26745,8 @@ if (!Array.prototype.indexOf) {
          */
         this.events.ng.on(CMD + gcommands.stop, function(options) {
             if (!node.game.isStoppable()) {
-                node.err('"' + CMD + gcommands.stop + '": game cannot ' +
-                         'be stopped now.');
+                node.warn('"' + CMD + gcommands.stop + '": game cannot ' +
+                          'be stopped now.');
                 return;
             }
             node.emit('BEFORE_GAMECOMMAND', gcommands.stop, options);
@@ -26735,8 +26759,8 @@ if (!Array.prototype.indexOf) {
         this.events.ng.on(CMD + gcommands.goto_step, function(options) {
             var step;
             if (!node.game.isSteppable()) {
-                node.err('"' + CMD + gcommands.goto_step + '": game cannot ' +
-                         'be stepped now.');
+                node.warn('"' + CMD + gcommands.goto_step + '": game cannot ' +
+                          'be stepped now.');
                 return;
             }
 
