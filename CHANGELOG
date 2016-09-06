@@ -1,5 +1,8 @@
 # nodegame-server change log
 
+# 2.8.3
+ - Fix terminatePhantom.
+
 # 2.8.2
  - Fixing stripping sid (introduced inm 2.7.0).
 
