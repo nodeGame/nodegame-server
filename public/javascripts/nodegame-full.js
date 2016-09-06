@@ -10497,7 +10497,7 @@ if (!Array.prototype.indexOf) {
     node.support = JSUS.compatibility();
 
     // Auto-Generated.
-    node.version = '2.1.0';
+    node.version = '2.2.0';
 
 })(window);
 
@@ -19061,7 +19061,7 @@ if (!Array.prototype.indexOf) {
             return;
         }
         this.reconnecting = true;
-        if (this.connecting || this.isConnected()) this.disconnect();        
+        if (this.connecting || this.isConnected()) this.disconnect();
         this.connect(this.url, this.userOptions);
         this.reconnecting = false;
     };

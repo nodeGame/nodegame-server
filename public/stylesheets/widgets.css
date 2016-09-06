@@ -83,7 +83,7 @@
 
 
 .visualstage {
-    float: right;
+    float: left;
     min-width: 200px;
     width: auto;
 }
@@ -91,7 +91,7 @@
 /* State Display */
 
 .statedisplay {
-    float: right;
+    float: left;
     width: 300px;
 }
 
@@ -124,8 +124,6 @@
     float: right;
     width: auto;
     min-width: 100px;
-    text-align: center;
-    background: blue;
 }
 
 .donebutton > .panel-body  {
@@ -213,4 +211,46 @@
 
 .waitingroom > .panel-body > div > span#span_dots {
     font-size: 40px;
+}
+
+/** ChoiceTable **/
+
+div.choicetable, div.choicetable div.panel-heading, div.choicetable div.panel-body {
+    border: 0;
+    padding: 0;
+}
+
+span.choicetable-maintext {
+    margin: 0;
+    margin-top: 20px !important;
+    padding: 0;
+    display: block;
+    text-align: left;
+}
+
+textarea.choicetable-freetext {
+    margin: 0;
+    margin-top: 20px !important;
+    padding: 5px;
+    text-align: left;
+}
+
+table.choicetable td {
+    word-wrap: break-word;
+    border: solid 1px;
+    text-align: center;
+    padding: 5px;
+    width: 40px;
+    background: white;
+}
+
+table.clickable td:hover {
+    background: #FFE;
+    cursor: pointer;
+    cursor: hand;
+}
+
+table.choicetable td.selected {
+    border: 3px solid #333 !important;
+    background: #FFE !important;
 }

@@ -111,11 +111,6 @@ input[type="range"] {
     text-decoration: line-through;
 }
 
-.hand {
-    cursor: pointer;
-    cursor: hand;
-}
-
 /*
    Stylesheet for nodeGame widgets
    Copyright(c) 2014 Stefano Balietti
@@ -199,8 +194,9 @@ input[type="range"] {
 
 /* Visual State */
 
+
 .visualstage {
-    float: right;
+    float: left;
     min-width: 200px;
     width: auto;
 }
@@ -208,7 +204,7 @@ input[type="range"] {
 /* State Display */
 
 .statedisplay {
-    float: right;
+    float: left;
     width: 300px;
 }
 
@@ -241,13 +237,13 @@ input[type="range"] {
     float: right;
     width: auto;
     min-width: 100px;
-    text-align: center;
 }
 
 .donebutton > .panel-body  {
     font-size: 20px;
     text-align: center;
 }
+
 
 /* Chat */
 
@@ -330,7 +326,6 @@ input[type="range"] {
     font-size: 40px;
 }
 
-
 /** ChoiceTable **/
 
 div.choicetable, div.choicetable div.panel-heading, div.choicetable div.panel-body {
@@ -351,12 +346,11 @@ textarea.choicetable-freetext {
     margin-top: 20px !important;
     padding: 5px;
     text-align: left;
-    float: left;
 }
 
 table.choicetable td {
     word-wrap: break-word;
-    border: 1px solid #333;
+    border: solid 1px;
     text-align: center;
     padding: 5px;
     width: 40px;
@@ -370,88 +364,6 @@ table.clickable td:hover {
 }
 
 table.choicetable td.selected {
-    background: #333 !important;
-    color: #FFF;
-    border: 1px solid #333 !important;
-}
-
-table.choicetable td.choicetable-left,
-table.choicetable td.choicetable-right {
-    border: 0;
-    background: inherit;
-    padding-right: 15px;
-    text-align: right;
-}
-
-table.choicetable td.choicetable-left:hover,
-table.choicetable td.choicetable-right:hover {
-    background: inherit;
-    cursor: default;
-}
-
-
-/* Mood */
-
-div.moodgauge {
-    margin: 0 auto;
-    text-align: center;
-}
-
-div.moodgauge span.choicetable-maintext, div#quiz div.moodgauge table.choicetable {
-    text-align: center;
-}
-
-div.moodgauge span.choicetable-maintext {
-    margin-bottom: 30px;
-    font-weight: bold;
-}
-
-div.moodgauge table.choicetable {
-    margin: 0 auto;
-    text-align: center;
-    border-spacing: 0 5px;
-    border-collapse: separate;
-}
-
-div.moodgauge table.choicetable td {
-    width: 80px !important;
-}
-
-div.moodgauge table.choicetable td.choicetable-left {
-    min-width: 260px !important;
-}
-
-div.moodgauge span.emotion {
-    font-weight: bold;
-    margin-right: 10px;
-}
-
-div.moodgauge table.choicetable td.choicetable-right {
-    width: 100px;
-}
-
-/* SVO */
-
-div.svogauge table.choicetable {
-    margin: 0 auto;
-    text-align: center;
-    border-spacing: 0 30px;
-    border-collapse: separate;
-}
-
-div.svogauge table td {
-    width: 60px !important;
-}
-
-div.svogauge span.choicetable-maintext {
-    margin-bottom: 10px;
-    font-size: 20px;
-}
-
-div.svogauge hr {
-    margin: 10px auto;
-}
-
-div.svogauge td.choicetable-left hr {
-    border-color: black;
+    border: 3px solid #333 !important;
+    background: #FFE !important;
 }
