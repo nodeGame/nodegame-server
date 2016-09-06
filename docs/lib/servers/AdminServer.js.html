@@ -123,7 +123,7 @@
       <div class="heading h1">
         <a href="#helper%20methods">Helper methods</a>
       </div>
-      <div class="heading h1">
+      <div class="heading h2">
         <a href="#traversedirectory">traverseDirectory</a>
       </div>
     </div>
@@ -1813,39 +1813,53 @@ the client-id of the recipient.</p>
         <td class="docs"><div class="dox">
   <div class="summary">
 <div class="pilwrap" id="traversedirectory">
-  <h1>
+  <h2>
     <a href="#traversedirectory" name="traversedirectory" class="pilcrow">&#182;</a>
     traverseDirectory
-  </h1>
+  </h2>
 </div>
 
   </div>
   <div class="body"><p>Applies callback to each file in directory recursively</p>
+
+<p>The first time is called without the depth parameter.</p>
+
+<p>Maximum depth of recursion is equal to 10.</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">directory</span>
+      <span class="dox_type">string</span>
+      <span>The directory to explore</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">The</span>
+      <span class="dox_type">function</span>
+      <span>callback to apply to each path</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">The</span>
+      <span class="dox_type">function</span>
+      <span>callback to apply when all files in all directories
+   have been scanned.</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">depth</span>
+      <span class="dox_type">number</span>
+      <span>Optional. The current level of depth</span>
+    </div>
   </div>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-<span class="kd">function</span> <span class="nx">traverseDirectory</span><span class="p">(</span><span class="nx">directory</span><span class="p">,</span> <span class="nx">callback</span><span class="p">,</span> <span class="nx">done</span><span class="p">,</span> <span class="nx">depth</span><span class="p">)</span> <span class="p">{</span>
+<span class="kd">function</span> <span class="nx">traverseDirectory</span><span class="p">(</span><span class="nx">directory</span><span class="p">,</span> <span class="nx">callback</span><span class="p">,</span> <span class="nx">done</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">attemptDone</span><span class="p">,</span> <span class="nx">pending</span><span class="p">;</span>
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">depth</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nx">depth</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-        <span class="nx">pending</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-        <span class="nx">attemptDone</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
-            <span class="nx">pending</span> <span class="o">-=</span> <span class="mi">1</span><span class="p">;</span>
-            <span class="k">if</span> <span class="p">(</span><span class="nx">pending</span> <span class="o">===</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
-                <span class="nx">done</span><span class="p">();</span>
-            <span class="p">}</span>
-        <span class="p">};</span>
-    <span class="p">}</span>
-    <span class="k">else</span> <span class="p">{</span>
-        <span class="nx">attemptDone</span> <span class="o">=</span> <span class="nx">done</span><span class="p">;</span>
-    <span class="p">}</span>
-    <span class="nx">fs</span><span class="p">.</span><span class="nx">readdir</span><span class="p">(</span><span class="nx">directory</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">files</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nx">files</span><span class="p">.</span><span class="nx">forEach</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">file</span><span class="p">)</span> <span class="p">{</span>
-            <span class="kd">var</span> <span class="nx">path</span><span class="p">;</span>
-            <span class="nx">path</span> <span class="o">=</span> <span class="nx">directory</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">file</span><span class="p">;</span>
-            <span class="nx">pending</span> <span class="o">+=</span> <span class="mi">1</span><span class="p">;</span>
-            <span class="nx">fs</span><span class="p">.</span><span class="nx">stat</span><span class="p">(</span><span class="nx">path</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">stat</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">depth</span><span class="p">,</span> <span class="nx">limit</span><span class="p">;</span>
+
+    <span class="nx">limit</span> <span class="o">=</span> <span class="mi">10</span><span class="p">;</span>
+    <span class="nx">depth</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+
 
 </pre></div>
         </td>
@@ -1855,20 +1869,82 @@ the client-id of the recipient.</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-65" id="section-65">&#182;</a>
 </div>
+<p>Start with one directory pending (data/).</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">pending</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+
+    <span class="nx">attemptDone</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">filePath</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">filePath</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">done</span><span class="p">();</span>
+        <span class="p">}</span>
+        <span class="k">else</span> <span class="p">{</span>
+            <span class="nx">callback</span><span class="p">(</span><span class="nx">filePath</span><span class="p">);</span>
+            <span class="k">if</span> <span class="p">(</span><span class="o">--</span><span class="nx">pending</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">)</span> <span class="nx">done</span><span class="p">();</span>
+        <span class="p">}</span>
+    <span class="p">};</span>
+
+    <span class="kd">function</span> <span class="nx">recurse</span><span class="p">(</span><span class="nx">directory</span><span class="p">,</span> <span class="nx">depth</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">depth</span> <span class="o">&gt;=</span> <span class="nx">limit</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">attemptDone</span><span class="p">();</span>
+            <span class="k">return</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="nx">fs</span><span class="p">.</span><span class="nx">readdir</span><span class="p">(</span><span class="nx">directory</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">files</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">files</span><span class="p">.</span><span class="nx">forEach</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">file</span><span class="p">)</span> <span class="p">{</span>
+                <span class="kd">var</span> <span class="nx">filePath</span><span class="p">;</span>
+                <span class="nx">filePath</span> <span class="o">=</span> <span class="nx">directory</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">file</span><span class="p">;</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-66" id="section-66">&#182;</a>
+</div>
+<p>Every file must be processed.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+                <span class="nx">pending</span><span class="o">++</span><span class="p">;</span>
+                <span class="nx">fs</span><span class="p">.</span><span class="nx">stat</span><span class="p">(</span><span class="nx">filePath</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">stat</span><span class="p">)</span> <span class="p">{</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-67" id="section-67">&#182;</a>
+</div>
 <p>Recurse.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-                <span class="k">if</span> <span class="p">(</span><span class="nx">stat</span> <span class="o">&amp;&amp;</span> <span class="nx">stat</span><span class="p">.</span><span class="nx">isDirectory</span><span class="p">())</span> <span class="p">{</span>
-                    <span class="nx">traverseDirectory</span><span class="p">(</span><span class="nx">path</span><span class="p">,</span> <span class="nx">callback</span><span class="p">,</span> <span class="nx">attemptDone</span><span class="p">,</span> <span class="nx">depth</span> <span class="o">+</span> <span class="mi">1</span><span class="p">);</span>
-                <span class="p">}</span>
-                <span class="k">else</span> <span class="p">{</span>
-                    <span class="nx">callback</span><span class="p">(</span><span class="nx">path</span><span class="p">);</span>
-                    <span class="nx">attemptDone</span><span class="p">();</span>
-                <span class="p">}</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="nx">stat</span> <span class="o">&amp;&amp;</span> <span class="nx">stat</span><span class="p">.</span><span class="nx">isDirectory</span><span class="p">())</span> <span class="p">{</span>
+                        <span class="nx">recurse</span><span class="p">(</span><span class="nx">filePath</span><span class="p">,</span> <span class="nx">depth</span> <span class="o">+</span> <span class="mi">1</span><span class="p">);</span>
+                    <span class="p">}</span>
+                    <span class="k">else</span> <span class="p">{</span>
+                        <span class="nx">attemptDone</span><span class="p">(</span><span class="nx">filePath</span><span class="p">);</span>
+                    <span class="p">}</span>
+                <span class="p">});</span>
             <span class="p">});</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-68" id="section-68">&#182;</a>
+</div>
+<p>Directory scanned (was a file in previous scan).</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+            <span class="nx">pending</span><span class="o">--</span><span class="p">;</span>
         <span class="p">});</span>
-    <span class="p">});</span>
-<span class="p">};</span>
+    <span class="p">}</span>
+
+    <span class="nx">recurse</span><span class="p">(</span><span class="nx">directory</span><span class="p">,</span> <span class="nx">depth</span><span class="p">);</span>
+<span class="p">}</span>
 </pre></div>
         </td>
       </tr>
