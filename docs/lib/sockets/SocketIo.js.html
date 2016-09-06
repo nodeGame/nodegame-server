@@ -279,7 +279,7 @@ MIT Licensed</p>
   <div class="body"><p>The prefix to be stripped from sid for internal operations</p>
 
 <p>Sids are represented as SA/endpoint#sid, but in sockets.connected
-they are saved as /#sid</p>
+they are saved as /#sid. Note: endpoints already start with a /.</p>
 
 <p>Notice: this depends on how Socket.io represets sid internally.
 If they change the internal structure it needs to be adapted.</p>
@@ -294,7 +294,7 @@ If they change the internal structure it needs to be adapted.</p>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">sidPrefixStrip</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">sidPrefix</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="k">this</span><span class="p">.</span><span class="nx">gameServer</span><span class="p">.</span><span class="nx">endpoint</span><span class="p">;</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">sidPrefixStrip</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">sidPrefix</span> <span class="o">+</span> <span class="k">this</span><span class="p">.</span><span class="nx">gameServer</span><span class="p">.</span><span class="nx">endpoint</span><span class="p">;</span>
 
 
 </pre></div>
