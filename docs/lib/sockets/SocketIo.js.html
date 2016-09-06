@@ -278,7 +278,7 @@ MIT Licensed</p>
   </div>
   <div class="body"><p>The prefix to be stripped from sid for internal operations</p>
 
-<p>Sids are represented as SA/channelName#sid, but in sockets.connected
+<p>Sids are represented as SA/endpoint#sid, but in sockets.connected
 they are saved as /#sid</p>
 
 <p>Notice: this depends on how Socket.io represets sid internally.
@@ -294,7 +294,7 @@ If they change the internal structure it needs to be adapted.</p>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">sidPrefixStrip</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">sidPrefix</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="k">this</span><span class="p">.</span><span class="nx">gameServer</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">name</span><span class="p">;</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">sidPrefixStrip</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">sidPrefix</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="k">this</span><span class="p">.</span><span class="nx">gameServer</span><span class="p">.</span><span class="nx">endpoint</span><span class="p">;</span>
 
 
 </pre></div>
@@ -514,7 +514,9 @@ socket = this.sio.sockets.sockets[strippedSid];</p>
 
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">socket</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;SocketIo.disconnect: &#39;</span> <span class="o">+</span>
-                        <span class="s1">&#39;socket not found for sid &quot;&#39;</span> <span class="o">+</span> <span class="nx">sid</span> <span class="o">+</span> <span class="s1">&#39;&quot;.&#39;</span><span class="p">);</span>
+                        <span class="s1">&#39;socket not found for sid &quot;&#39;</span> <span class="o">+</span> <span class="nx">sid</span> <span class="o">+</span> <span class="s1">&#39;&quot;. Stripped: &#39;</span> <span class="o">+</span>
+                        <span class="nx">strippedSid</span>
+                       <span class="p">);</span>
     <span class="p">}</span>
 
     <span class="nx">socket</span><span class="p">.</span><span class="nx">disconnect</span><span class="p">(</span><span class="kc">true</span><span class="p">);</span>
