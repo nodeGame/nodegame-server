@@ -1,5 +1,8 @@
 # nodegame-server change log
 
+# 2.8.0
+ - AdminServer can serve results of game.
+
 # 2.7.0
  - Improved reconnection/disconnection handling.
  - Upgraded dependencies: express, socket.io, winston
