@@ -115,7 +115,7 @@
         <a href="#adminserver.standardgetmsg">AdminServer.standardGetMsg</a>
       </div>
       <div class="heading h2">
-        <a href="#adminserver.notifyroomdisconnection">AdminServer.notifyRoomDisconnection</a>
+        <a href="#adminserver.notifyroomconnection">AdminServer.notifyRoomConnection</a>
       </div>
       <div class="heading h2">
         <a href="#adminserver.notifyroomdisconnection">AdminServer.notifyRoomDisconnection</a>
@@ -330,7 +330,7 @@ players, and admin connected), about the state of the GameServer</p>
         <span class="nx">sys</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Incoming monitor: &#39;</span> <span class="o">+</span> <span class="nx">clientId</span><span class="p">);</span>
         <span class="nx">room</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">[</span><span class="nx">roomName</span><span class="p">];</span>
 
-        <span class="nx">that</span><span class="p">.</span><span class="nx">notifyRoomConnection</span><span class="p">(</span><span class="nx">clientId</span><span class="p">,</span> <span class="nx">room</span><span class="p">);</span>
+        <span class="nx">that</span><span class="p">.</span><span class="nx">notifyRoomConnection</span><span class="p">(</span><span class="nx">clientObj</span><span class="p">,</span> <span class="nx">room</span><span class="p">);</span>
     <span class="p">});</span>
 
 
@@ -1211,7 +1211,7 @@ Important: the ID is not obfuscated.</p>
         <span class="nx">monitorName</span> <span class="o">=</span> <span class="nx">monitor</span><span class="p">.</span><span class="nx">id</span> <span class="o">+</span> <span class="s1">&#39; (sid: &#39;</span> <span class="o">+</span> <span class="nx">monitor</span><span class="p">.</span><span class="nx">sid</span> <span class="o">+</span> <span class="s1">&#39;)&#39;</span><span class="p">;</span>
         <span class="nx">sys</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">that</span><span class="p">.</span><span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39; client disconnected: &#39;</span> <span class="o">+</span> <span class="nx">monitorName</span><span class="p">);</span>
 
-        <span class="nx">that</span><span class="p">.</span><span class="nx">notifyRoomDisconnection</span><span class="p">(</span><span class="nx">monitor</span><span class="p">.</span><span class="nx">id</span><span class="p">,</span> <span class="nx">room</span><span class="p">);</span>
+        <span class="nx">that</span><span class="p">.</span><span class="nx">notifyRoomDisconnection</span><span class="p">(</span><span class="nx">monitor</span><span class="p">,</span> <span class="nx">room</span><span class="p">);</span>
     <span class="p">});</span>
 
 
@@ -1679,22 +1679,23 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs"><div class="dox">
   <div class="summary">
-<div class="pilwrap" id="adminserver.notifyroomdisconnection">
+<div class="pilwrap" id="adminserver.notifyroomconnection">
   <h2>
-    <a href="#adminserver.notifyroomdisconnection" name="adminserver.notifyroomdisconnection" class="pilcrow">&#182;</a>
-    AdminServer.notifyRoomDisconnection
+    <a href="#adminserver.notifyroomconnection" name="adminserver.notifyroomconnection" class="pilcrow">&#182;</a>
+    AdminServer.notifyRoomConnection
   </h2>
 </div>
 
   </div>
-  <div class="body"><p>Implements GameServer.notifyRoomDisconnection</p>
+  <div class="body"><p>Implements GameServer.notifyRoomConnection</p>
   </div>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-<span class="nx">AdminServer</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">notifyRoomConnection</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">clientId</span><span class="p">,</span> <span class="nx">roomObj</span><span class="p">)</span> <span class="p">{</span>
-    <span class="kd">var</span> <span class="nx">players</span><span class="p">,</span> <span class="nx">admins</span><span class="p">,</span> <span class="nx">oldAdmins</span><span class="p">;</span>
+<span class="nx">AdminServer</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">notifyRoomConnection</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">clientObj</span><span class="p">,</span> <span class="nx">roomObj</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">players</span><span class="p">,</span> <span class="nx">admins</span><span class="p">,</span> <span class="nx">oldAdmins</span><span class="p">,</span> <span class="nx">clientId</span><span class="p">;</span>
 
+    <span class="nx">clientId</span> <span class="o">=</span> <span class="nx">clientObj</span><span class="p">.</span><span class="nx">id</span><span class="p">;</span>
     <span class="nx">players</span> <span class="o">=</span> <span class="nx">roomObj</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">player</span><span class="p">;</span>
     <span class="nx">admins</span> <span class="o">=</span> <span class="nx">roomObj</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">admin</span><span class="p">;</span>
 
@@ -1780,11 +1781,11 @@ the client-id of the recipient.</p>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-<span class="nx">AdminServer</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">notifyRoomDisconnection</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">clientId</span><span class="p">,</span> <span class="nx">roomObj</span><span class="p">)</span> <span class="p">{</span>
+<span class="nx">AdminServer</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">notifyRoomDisconnection</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">clientObj</span><span class="p">,</span> <span class="nx">roomObj</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">msg</span><span class="p">;</span>
     <span class="nx">msg</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">msg</span><span class="p">.</span><span class="nx">create</span><span class="p">({</span>
         <span class="nx">target</span><span class="o">:</span> <span class="s1">&#39;MDISCONNECT&#39;</span><span class="p">,</span>
-        <span class="nx">data</span><span class="o">:</span> <span class="p">{</span> <span class="nx">id</span><span class="o">:</span> <span class="nx">clientId</span> <span class="p">}</span>
+        <span class="nx">data</span><span class="o">:</span> <span class="p">{</span> <span class="nx">id</span><span class="o">:</span> <span class="nx">clientObj</span><span class="p">.</span><span class="nx">id</span> <span class="p">}</span>
     <span class="p">});</span>
     <span class="k">this</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">send2roomAdmins</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">roomObj</span><span class="p">);</span>
 <span class="p">};</span>

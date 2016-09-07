@@ -1347,9 +1347,9 @@ because .stage and .stageLevel could be overwritten.</p>
   <div class="details">
     <div class="dox_tag_title">Params</div>
     <div class="dox_tag_detail">
-      <span class="dox_tag_name">clientId</span>
-      <span class="dox_type">string</span>
-      <span>The id of the client</span>
+      <span class="dox_tag_name">clientObj</span>
+      <span class="dox_type">object</span>
+      <span>The connecting client</span>
     </div>
     <div class="dox_tag_detail">
       <span class="dox_tag_name">room</span>
@@ -1360,7 +1360,7 @@ because .stage and .stageLevel could be overwritten.</p>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-<span class="nx">GameServer</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">notifyRoomConnection</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">clientId</span><span class="p">,</span> <span class="nx">room</span><span class="p">)</span> <span class="p">{};</span>
+<span class="nx">GameServer</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">notifyRoomConnection</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">clientObj</span><span class="p">,</span> <span class="nx">room</span><span class="p">)</span> <span class="p">{};</span>
 
 
 </pre></div>
@@ -1384,9 +1384,9 @@ because .stage and .stageLevel could be overwritten.</p>
   <div class="details">
     <div class="dox_tag_title">Params</div>
     <div class="dox_tag_detail">
-      <span class="dox_tag_name">clientId</span>
-      <span class="dox_type">string</span>
-      <span>The id of the client</span>
+      <span class="dox_tag_name">clientObj</span>
+      <span class="dox_type">object</span>
+      <span>The disconnecting client</span>
     </div>
     <div class="dox_tag_detail">
       <span class="dox_tag_name">room</span>
@@ -1397,7 +1397,7 @@ because .stage and .stageLevel could be overwritten.</p>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-<span class="nx">GameServer</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">notifyRoomDisconnection</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">clientId</span><span class="p">,</span> <span class="nx">room</span><span class="p">)</span> <span class="p">{};</span>
+<span class="nx">GameServer</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">notifyRoomDisconnection</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">clientObj</span><span class="p">,</span> <span class="nx">room</span><span class="p">)</span> <span class="p">{};</span>
 
 
 </pre></div>

@@ -353,10 +353,9 @@ back the result. Default: FALSE</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="k">this</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;connecting&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">clientObj</span><span class="p">,</span> <span class="nx">roomName</span><span class="p">)</span> <span class="p">{</span>
-        <span class="kd">var</span> <span class="nx">room</span><span class="p">,</span> <span class="nx">clientId</span><span class="p">;</span>
-        <span class="nx">clientId</span> <span class="o">=</span> <span class="nx">clientObj</span><span class="p">.</span><span class="nx">id</span><span class="p">;</span>
+        <span class="kd">var</span> <span class="nx">room</span><span class="p">;</span>
         <span class="nx">room</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">[</span><span class="nx">roomName</span><span class="p">];</span>
-        <span class="nx">that</span><span class="p">.</span><span class="nx">notifyRoomConnection</span><span class="p">(</span><span class="nx">clientId</span><span class="p">,</span> <span class="nx">room</span><span class="p">);</span>
+        <span class="nx">that</span><span class="p">.</span><span class="nx">notifyRoomConnection</span><span class="p">(</span><span class="nx">clientObj</span><span class="p">,</span> <span class="nx">room</span><span class="p">);</span>
     <span class="p">});</span>
 
 
@@ -745,7 +744,7 @@ It ignores ALL, CHANNEL, CHANNEL_X, ROOM_X recipients.</p>
         <span class="nx">playerName</span> <span class="o">=</span> <span class="nx">player</span><span class="p">.</span><span class="nx">id</span> <span class="o">+</span> <span class="s1">&#39; (sid: &#39;</span> <span class="o">+</span> <span class="nx">player</span><span class="p">.</span><span class="nx">sid</span> <span class="o">+</span> <span class="s1">&#39;)&#39;</span><span class="p">;</span>
         <span class="nx">sys</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">that</span><span class="p">.</span><span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39; client disconnected: &#39;</span> <span class="o">+</span> <span class="nx">playerName</span><span class="p">);</span>
 
-        <span class="nx">that</span><span class="p">.</span><span class="nx">notifyRoomDisconnection</span><span class="p">(</span><span class="nx">player</span><span class="p">.</span><span class="nx">id</span><span class="p">,</span> <span class="nx">room</span><span class="p">);</span>
+        <span class="nx">that</span><span class="p">.</span><span class="nx">notifyRoomDisconnection</span><span class="p">(</span><span class="nx">player</span><span class="p">,</span> <span class="nx">room</span><span class="p">);</span>
     <span class="p">});</span>
 
 
@@ -920,14 +919,15 @@ the client-id of the recipient.</p>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-<span class="nx">PlayerServer</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">notifyRoomConnection</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">clientId</span><span class="p">,</span> <span class="nx">roomObj</span><span class="p">)</span> <span class="p">{</span>
+<span class="nx">PlayerServer</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">notifyRoomConnection</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">clientObj</span><span class="p">,</span> <span class="nx">roomObj</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">players</span><span class="p">,</span> <span class="nx">admins</span><span class="p">,</span> <span class="nx">oldPlayers</span><span class="p">,</span> <span class="nx">filteredPlayers</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">pConnectMsg</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">pConnectMsg</span><span class="p">,</span> <span class="nx">clientId</span><span class="p">;</span>
+
+    <span class="nx">clientId</span> <span class="o">=</span> <span class="nx">clientObj</span><span class="p">.</span><span class="nx">id</span><span class="p">;</span>
 
     <span class="nx">pConnectMsg</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">msg</span><span class="p">.</span><span class="nx">create</span><span class="p">({</span>
         <span class="nx">target</span><span class="o">:</span> <span class="s1">&#39;PCONNECT&#39;</span><span class="p">,</span>
-        <span class="nx">from</span><span class="o">:</span>    <span class="nx">clientId</span><span class="p">,</span>
-        <span class="nx">data</span><span class="o">:</span>    <span class="p">{</span> <span class="nx">id</span><span class="o">:</span>  <span class="nx">clientId</span> <span class="p">}</span>
+        <span class="nx">from</span><span class="o">:</span>    <span class="nx">clientId</span>
     <span class="p">});</span>
 
     <span class="nx">players</span> <span class="o">=</span> <span class="nx">roomObj</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">player</span><span class="p">;</span>
@@ -947,6 +947,20 @@ the client-id of the recipient.</p>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="k">if</span> <span class="p">(</span><span class="nx">roomObj</span><span class="p">.</span><span class="nx">acm</span><span class="p">.</span><span class="nx">notify</span><span class="p">.</span><span class="nx">onConnect</span> <span class="o">&amp;&amp;</span> <span class="nx">players</span><span class="p">.</span><span class="nx">db</span><span class="p">.</span><span class="nx">length</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
 
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-35" id="section-35">&#182;</a>
+</div>
+<p>To players send only the id.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="nx">pConnectMsg</span><span class="p">.</span><span class="nx">data</span> <span class="o">=</span> <span class="p">{</span> <span class="nx">id</span><span class="o">:</span> <span class="nx">clientId</span> <span class="p">};</span>
+
         <span class="nx">oldPlayers</span> <span class="o">=</span> <span class="nx">players</span><span class="p">.</span><span class="nx">breed</span><span class="p">();</span>
         <span class="nx">oldPlayers</span><span class="p">.</span><span class="nx">id</span><span class="p">.</span><span class="nx">remove</span><span class="p">(</span><span class="nx">clientId</span><span class="p">);</span>
 
@@ -959,7 +973,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-35" id="section-35">&#182;</a>
+  <a class="pilcrow" href="#section-36" id="section-36">&#182;</a>
 </div>
 <p>Send the current player list to the new player.</p>
         </td>
@@ -973,13 +987,27 @@ the client-id of the recipient.</p>
         <span class="p">}));</span>
     <span class="p">}</span>
 
+
 </pre></div>
         </td>
       </tr>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-36" id="section-36">&#182;</a>
+  <a class="pilcrow" href="#section-37" id="section-37">&#182;</a>
+</div>
+<p>To admins send the full object.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">pConnectMsg</span><span class="p">.</span><span class="nx">data</span> <span class="o">=</span> <span class="nx">clientObj</span><span class="p">;</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-38" id="section-38">&#182;</a>
 </div>
 <p>Send notification to admin (always).</p>
         </td>
@@ -1007,9 +1035,9 @@ the client-id of the recipient.</p>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-<span class="nx">PlayerServer</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">notifyRoomDisconnection</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">clientId</span><span class="p">,</span> <span class="nx">roomObj</span><span class="p">)</span> <span class="p">{</span>
-    <span class="kd">var</span> <span class="nx">pDisconnectMsg</span><span class="p">;</span>
-
+<span class="nx">PlayerServer</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">notifyRoomDisconnection</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">clientObj</span><span class="p">,</span> <span class="nx">roomObj</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">pDisconnectMsg</span><span class="p">,</span> <span class="nx">clientId</span><span class="p">;</span>
+    <span class="nx">clientId</span> <span class="o">=</span> <span class="nx">clientObj</span><span class="p">.</span><span class="nx">id</span><span class="p">;</span>
     <span class="nx">pDisconnectMsg</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">msg</span><span class="p">.</span><span class="nx">create</span><span class="p">({</span>
         <span class="nx">target</span><span class="o">:</span> <span class="s1">&#39;PDISCONNECT&#39;</span><span class="p">,</span>
         <span class="nx">data</span><span class="o">:</span> <span class="p">{</span> <span class="nx">id</span><span class="o">:</span> <span class="nx">clientId</span> <span class="p">}</span>
@@ -1022,7 +1050,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-38" id="section-38">&#182;</a>
+  <a class="pilcrow" href="#section-40" id="section-40">&#182;</a>
 </div>
 <p>Notify players and admins of disconnection in old room.</p>
         </td>
@@ -1037,7 +1065,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-39" id="section-39">&#182;</a>
+  <a class="pilcrow" href="#section-41" id="section-41">&#182;</a>
 </div>
 <p>Notify only admins of disconnection in old room.</p>
         </td>

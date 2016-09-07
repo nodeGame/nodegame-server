@@ -2267,8 +2267,8 @@ been registered in the new room.</p>
         <td class="code highlight"><div class="highlight"><pre>
 
     <span class="nx">gameServer</span> <span class="o">=</span> <span class="nx">playerObj</span><span class="p">.</span><span class="nx">admin</span> <span class="o">?</span> <span class="k">this</span><span class="p">.</span><span class="nx">adminServer</span> <span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">playerServer</span><span class="p">;</span>
-    <span class="nx">gameServer</span><span class="p">.</span><span class="nx">notifyRoomDisconnection</span><span class="p">(</span><span class="nx">playerObj</span><span class="p">.</span><span class="nx">id</span><span class="p">,</span> <span class="nx">fromRoomObj</span><span class="p">);</span>
-    <span class="nx">gameServer</span><span class="p">.</span><span class="nx">notifyRoomConnection</span><span class="p">(</span><span class="nx">playerObj</span><span class="p">.</span><span class="nx">id</span><span class="p">,</span> <span class="nx">toRoomObj</span><span class="p">);</span>
+    <span class="nx">gameServer</span><span class="p">.</span><span class="nx">notifyRoomDisconnection</span><span class="p">(</span><span class="nx">playerObj</span><span class="p">,</span> <span class="nx">fromRoomObj</span><span class="p">);</span>
+    <span class="nx">gameServer</span><span class="p">.</span><span class="nx">notifyRoomConnection</span><span class="p">(</span><span class="nx">playerObj</span><span class="p">,</span> <span class="nx">toRoomObj</span><span class="p">);</span>
 
 
 </pre></div>

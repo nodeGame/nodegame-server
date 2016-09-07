@@ -10497,7 +10497,7 @@ if (!Array.prototype.indexOf) {
     node.support = JSUS.compatibility();
 
     // Auto-Generated.
-    node.version = '2.3.0';
+    node.version = '2.3.1';
 
 })(window);
 
@@ -26148,7 +26148,7 @@ if (!Array.prototype.indexOf) {
         this.info('node: adding incoming listeners.');
 
         /**
-         * ## in.say.PCONNECT
+         * ## in.say.BYE
          *
          * Adds a new player to the player list
          *
