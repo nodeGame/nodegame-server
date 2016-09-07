@@ -1,5 +1,8 @@
 # nodegame-server change log
 
+# 2.9.1
+ - Cleanup.
+
 # 2.9.0
  - Adapted to new GameStage.compare method in updated nodegame-client.
 
