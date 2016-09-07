@@ -757,6 +757,8 @@ Need to give step: false, we just init it.</p>
 
         <span class="nx">reconCb</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">plot</span><span class="p">.</span><span class="nx">getProperty</span><span class="p">(</span><span class="nx">curStage</span><span class="p">,</span> <span class="s1">&#39;reconnect&#39;</span><span class="p">);</span>
 
+        <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">reconOptions</span><span class="p">);</span>
+
         <span class="k">if</span> <span class="p">(</span><span class="nx">reconCb</span><span class="p">)</span> <span class="p">{</span>
 
 </pre></div>
@@ -813,6 +815,12 @@ and the step when the client disconnected.</p>
             <span class="k">if</span> <span class="p">(</span><span class="nx">compareSteps</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="nx">reconOptions</span><span class="p">.</span><span class="nx">targetStep</span> <span class="o">=</span> <span class="nx">code</span><span class="p">.</span><span class="nx">stage</span><span class="p">;</span>
             <span class="k">else</span> <span class="nx">reconOptions</span><span class="p">.</span><span class="nx">targetStep</span> <span class="o">=</span> <span class="nx">curStage</span><span class="p">;</span>
         <span class="p">}</span>
+
+        <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;************&#39;</span><span class="p">,</span> <span class="nx">reconOptions</span><span class="p">.</span><span class="nx">targetStep</span><span class="p">);</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="nx">reconOptions</span><span class="p">.</span><span class="nx">targetStep</span> <span class="o">===</span> <span class="nx">code</span><span class="p">.</span><span class="nx">stage</span> <span class="o">&amp;&amp;</span> <span class="nx">compareSteps</span> <span class="o">===</span> <span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+        <span class="p">}</span>
+
         <span class="nx">node</span><span class="p">.</span><span class="nx">remoteCommand</span><span class="p">(</span><span class="s1">&#39;goto_step&#39;</span><span class="p">,</span> <span class="nx">p</span><span class="p">.</span><span class="nx">id</span><span class="p">,</span> <span class="nx">reconOptions</span><span class="p">);</span>
 
 

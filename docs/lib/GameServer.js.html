@@ -2215,6 +2215,45 @@ and a warning will be sent.</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-83" id="section-83">&#182;</a>
 </div>
+
+<div class="highlight"><pre><code>    <span class="n">this</span><span class="o">.</span><span class="n">socketManager</span><span class="o">.</span><span class="nb">send</span><span class="p">(</span><span class="n">this</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">create</span><span class="p">({</span>
+        <span class="n">target:</span> <span class="n">ngc</span><span class="o">.</span><span class="n">constants</span><span class="o">.</span><span class="n">target</span><span class="o">.</span><span class="n">SETUP</span><span class="p">,</span>
+        <span class="n">to:</span> <span class="n">clientId</span><span class="p">,</span>
+        <span class="n">text:</span> <span class="s">&#39;page&#39;</span><span class="p">,</span>
+        <span class="n">data:</span> <span class="p">{</span>
+            <span class="n">clearBody:</span> <span class="n">true</span><span class="p">,</span>
+      <span class="n">title:</span> <span class="p">{</span> <span class="n">title:</span> <span class="s">&#39;Double connection detected&#39;</span><span class="p">,</span> <span class="n">addToBody:</span> <span class="n">true</span> <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">}));</span>
+</code></pre></div>
+
+
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-84" id="section-84">&#182;</a>
+</div>
+<p>TODO: redirect to double connection page.
+or store a cookie to avoid infinite reconnections.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-85" id="section-85">&#182;</a>
+</div>
 <p>Force disconnection of old socket.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
@@ -2228,7 +2267,7 @@ and a warning will be sent.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-84" id="section-84">&#182;</a>
+  <a class="pilcrow" href="#section-86" id="section-86">&#182;</a>
 </div>
 <p>Set the new socket id in clientObj.</p>
         </td>
@@ -2244,7 +2283,7 @@ and a warning will be sent.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-85" id="section-85">&#182;</a>
+  <a class="pilcrow" href="#section-87" id="section-87">&#182;</a>
 </div>
 <p>The old room must be still existing.</p>
         </td>
@@ -2265,7 +2304,7 @@ and a warning will be sent.</p>
 
         <span class="k">return</span> <span class="nx">GameServer</span><span class="p">.</span><span class="nx">codes</span><span class="p">.</span><span class="nx">ROOM_NOT_FOUND</span><span class="p">;</span>
     <span class="p">}</span>
-
+    <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;ppppppppppppppppppppppppp&#39;</span><span class="p">,</span> <span class="nx">clientObj</span><span class="p">);</span>
     <span class="nx">res</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">registerClient</span><span class="p">(</span><span class="nx">clientObj</span><span class="p">,</span> <span class="nx">socketObj</span><span class="p">,</span> <span class="nx">returningRoom</span><span class="p">,</span> <span class="nx">clearNode</span><span class="p">);</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="nx">res</span> <span class="o">===</span> <span class="nx">GameServer</span><span class="p">.</span><span class="nx">codes</span><span class="p">.</span><span class="nx">OPERATION_OK</span><span class="p">)</span> <span class="p">{</span>
@@ -2277,7 +2316,7 @@ and a warning will be sent.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-86" id="section-86">&#182;</a>
+  <a class="pilcrow" href="#section-88" id="section-88">&#182;</a>
 </div>
 <p>Let Admin and Player Server handle the new connection.</p>
         </td>
@@ -2370,7 +2409,7 @@ and a warning will be sent.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-88" id="section-88">&#182;</a>
+  <a class="pilcrow" href="#section-90" id="section-90">&#182;</a>
 </div>
 <p>Officially register the client in the socket manager.</p>
         </td>
@@ -2388,7 +2427,7 @@ and a warning will be sent.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-89" id="section-89">&#182;</a>
+  <a class="pilcrow" href="#section-91" id="section-91">&#182;</a>
 </div>
 <p>Mark client as connected in the registry.</p>
         </td>
@@ -2402,7 +2441,7 @@ and a warning will be sent.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-90" id="section-90">&#182;</a>
+  <a class="pilcrow" href="#section-92" id="section-92">&#182;</a>
 </div>
 <p>Notify the client of its ID.</p>
         </td>
@@ -2459,7 +2498,7 @@ and a warning will be sent.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-92" id="section-92">&#182;</a>
+  <a class="pilcrow" href="#section-94" id="section-94">&#182;</a>
 </div>
 <p>TODO: not used for now. see if we need it later.
     if (clearNode) {
@@ -2533,7 +2572,7 @@ and a warning will be sent.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-94" id="section-94">&#182;</a>
+  <a class="pilcrow" href="#section-96" id="section-96">&#182;</a>
 </div>
 <p>We need to send an HI message in any case because otherwise
 the client will discard the messages.</p>
@@ -2778,7 +2817,7 @@ field.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-100" id="section-100">&#182;</a>
+  <a class="pilcrow" href="#section-102" id="section-102">&#182;</a>
 </div>
 <p>TODO: avoid cascading and use else if instead.</p>
         </td>
@@ -2818,7 +2857,7 @@ field.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-101" id="section-101">&#182;</a>
+  <a class="pilcrow" href="#section-103" id="section-103">&#182;</a>
 </div>
 <p>Extract channel name from <em>to</em> field.</p>
         </td>
@@ -2831,7 +2870,7 @@ field.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-102" id="section-102">&#182;</a>
+  <a class="pilcrow" href="#section-104" id="section-104">&#182;</a>
 </div>
 <p>Fetch channel object.</p>
         </td>
@@ -2851,7 +2890,7 @@ field.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-103" id="section-103">&#182;</a>
+  <a class="pilcrow" href="#section-105" id="section-105">&#182;</a>
 </div>
 <p>Encapsulate validated channel data in the message.</p>
         </td>
@@ -2876,7 +2915,7 @@ field.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-104" id="section-104">&#182;</a>
+  <a class="pilcrow" href="#section-106" id="section-106">&#182;</a>
 </div>
 <p>Extract room id from <em>to</em> field.</p>
         </td>
@@ -2889,7 +2928,7 @@ field.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-105" id="section-105">&#182;</a>
+  <a class="pilcrow" href="#section-107" id="section-107">&#182;</a>
 </div>
 <p>Fetch channel object.</p>
         </td>
@@ -2910,7 +2949,7 @@ field.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-106" id="section-106">&#182;</a>
+  <a class="pilcrow" href="#section-108" id="section-108">&#182;</a>
 </div>
 <p>Encapsulate validated channel data in the message.</p>
         </td>
@@ -2926,7 +2965,7 @@ field.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-107" id="section-107">&#182;</a>
+  <a class="pilcrow" href="#section-109" id="section-109">&#182;</a>
 </div>
 <p>Otherwise it's either SERVER (always allowed) or a client ID, which
 will be checked at a later point.</p>
@@ -3133,7 +3172,7 @@ invoking this method, which evaluates only if the sender exists.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-112" id="section-112">&#182;</a>
+  <a class="pilcrow" href="#section-114" id="section-114">&#182;</a>
 </div>
 <p>Get the room of the player to infer the game.</p>
         </td>
