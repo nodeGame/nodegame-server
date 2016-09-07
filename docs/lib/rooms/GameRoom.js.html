@@ -606,12 +606,16 @@ min/max/exact handler accordingly.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="nx">node</span><span class="p">.</span><span class="nx">on</span><span class="p">.</span><span class="nx">preconnect</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">p</span><span class="p">)</span> <span class="p">{</span>
-        <span class="kd">var</span> <span class="nx">code</span><span class="p">,</span> <span class="nx">curStage</span><span class="p">,</span> <span class="nx">reconCb</span><span class="p">,</span> <span class="nx">res</span><span class="p">;</span>
+        <span class="kd">var</span> <span class="nx">code</span><span class="p">,</span> <span class="nx">discoStage</span><span class="p">,</span> <span class="nx">discoStageLevel</span><span class="p">,</span> <span class="nx">curStage</span><span class="p">,</span> <span class="nx">reconCb</span><span class="p">,</span> <span class="nx">res</span><span class="p">;</span>
         <span class="kd">var</span> <span class="nx">compareSteps</span><span class="p">,</span> <span class="nx">reconOptions</span><span class="p">;</span>
         <span class="kd">var</span> <span class="nx">milliseconds</span><span class="p">,</span> <span class="nx">resetTime</span><span class="p">;</span>
 
         <span class="nx">node</span><span class="p">.</span><span class="nx">warn</span><span class="p">(</span><span class="s1">&#39;Oh...somebody reconnected!&#39;</span><span class="p">,</span> <span class="nx">p</span><span class="p">);</span>
         <span class="nx">code</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">registry</span><span class="p">.</span><span class="nx">getClient</span><span class="p">(</span><span class="nx">p</span><span class="p">.</span><span class="nx">id</span><span class="p">);</span>
+
+        <span class="nx">discoStage</span> <span class="o">=</span> <span class="nx">code</span><span class="p">.</span><span class="nx">disconnectedStage</span><span class="p">;</span>
+        <span class="nx">curStage</span> <span class="o">=</span> <span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">getCurrentGameStage</span><span class="p">();</span>
+        <span class="nx">compareSteps</span> <span class="o">=</span> <span class="nx">GameStage</span><span class="p">.</span><span class="nx">compare</span><span class="p">(</span><span class="nx">discoStage</span><span class="p">,</span> <span class="nx">curStage</span><span class="p">);</span>
 
 
 </pre></div>
@@ -622,12 +626,9 @@ min/max/exact handler accordingly.</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-16" id="section-16">&#182;</a>
 </div>
-<p>Only within stage reconnections are allowed.</p>
+<p>Check if only within stage reconnections are allowed.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-        <span class="nx">curStage</span> <span class="o">=</span> <span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">getCurrentGameStage</span><span class="p">();</span>
-
-        <span class="nx">compareSteps</span> <span class="o">=</span> <span class="nx">GameStage</span><span class="p">.</span><span class="nx">compare</span><span class="p">(</span><span class="nx">code</span><span class="p">.</span><span class="nx">stage</span><span class="p">,</span> <span class="nx">curStage</span><span class="p">);</span>
         <span class="k">if</span> <span class="p">(</span><span class="nx">that</span><span class="p">.</span><span class="nx">sameStepReconnectionOnly</span> <span class="o">&amp;&amp;</span> <span class="nx">compareSteps</span><span class="p">)</span> <span class="p">{</span>
             <span class="nx">node</span><span class="p">.</span><span class="nx">err</span><span class="p">(</span><span class="s1">&#39;GameRoom: player reconnected from another step. &#39;</span> <span class="o">+</span>
                      <span class="s1">&#39;Not allowed. Player: &#39;</span> <span class="o">+</span> <span class="nx">p</span><span class="p">.</span><span class="nx">id</span><span class="p">);</span>
@@ -708,7 +709,8 @@ Need to give step: false, we just init it.</p>
 <p>Mark the state as DONE, if this is the case.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-        <span class="k">if</span> <span class="p">(</span><span class="nx">code</span><span class="p">.</span><span class="nx">stageLevel</span> <span class="o">===</span> <span class="nx">DONE</span><span class="p">)</span> <span class="nx">reconOptions</span><span class="p">.</span><span class="nx">willBeDone</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+        <span class="nx">discoStageLevel</span> <span class="o">=</span> <span class="nx">code</span><span class="p">.</span><span class="nx">disconnectedStageLevel</span><span class="p">;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">discoStageLevel</span> <span class="o">===</span> <span class="nx">DONE</span><span class="p">)</span> <span class="nx">reconOptions</span><span class="p">.</span><span class="nx">willBeDone</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
 
 
 </pre></div>
@@ -823,7 +825,7 @@ and the step when the client disconnected.</p>
 compareSteps = GameStage.compare(code.stage, curStage);</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-            <span class="k">if</span> <span class="p">(</span><span class="nx">compareSteps</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="nx">reconOptions</span><span class="p">.</span><span class="nx">targetStep</span> <span class="o">=</span> <span class="nx">code</span><span class="p">.</span><span class="nx">stage</span><span class="p">;</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nx">compareSteps</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="nx">reconOptions</span><span class="p">.</span><span class="nx">targetStep</span> <span class="o">=</span> <span class="nx">discoStage</span><span class="p">;</span>
             <span class="k">else</span> <span class="nx">reconOptions</span><span class="p">.</span><span class="nx">targetStep</span> <span class="o">=</span> <span class="nx">curStage</span><span class="p">;</span>
         <span class="p">}</span>
 

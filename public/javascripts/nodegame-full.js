@@ -10497,7 +10497,7 @@ if (!Array.prototype.indexOf) {
     node.support = JSUS.compatibility();
 
     // Auto-Generated.
-    node.version = '2.2.0';
+    node.version = '2.3.0';
 
 })(window);
 
@@ -12381,15 +12381,15 @@ if (!Array.prototype.indexOf) {
         var result;
         // null, undefined, 0.
         if (!gs1 && !gs2) return 0;
-        if (!gs2) return 1;
-        if (!gs1) return -1;
+        if (!gs2) return -1;
+        if (!gs1) return 1;
 
         gs1 = new GameStage(gs1);
         gs2 = new GameStage(gs2);
 
         if ('number' === typeof gs1.stage) {
             if ('number' === typeof gs2.stage) {
-                result = gs1.stage - gs2.stage;
+                result = gs2.stage - gs1.stage;
             }
             else {
                 result = -1;
@@ -12400,24 +12400,9 @@ if (!Array.prototype.indexOf) {
         }
 
         if (result === 0) {
-            if ('number' === typeof gs1.step) {
-                if ('number' === typeof gs2.step) {
-                    result = gs1.step - gs2.step;
-                }
-                else {
-                    result = -1;
-                }
-
-            }
-            else if ('number' === typeof gs2.step) {
-                result = 1;
-            }
-        }
-
-        if (result === 0) {
             if ('number' === typeof gs1.round) {
                 if ('number' === typeof gs2.round) {
-                    result = gs1.round - gs2.round;
+                    result = gs2.round - gs1.round;
                 }
                 else {
                     result = -1;
@@ -12425,6 +12410,21 @@ if (!Array.prototype.indexOf) {
 
             }
             else if ('number' === typeof gs2.round) {
+                result = 1;
+            }
+        }
+
+        if (result === 0) {
+            if ('number' === typeof gs1.step) {
+                if ('number' === typeof gs2.step) {
+                    result = gs2.step - gs1.step;
+                }
+                else {
+                    result = -1;
+                }
+
+            }
+            else if ('number' === typeof gs2.step) {
                 result = 1;
             }
         }
