@@ -21488,6 +21488,7 @@ if (!Array.prototype.indexOf) {
         if (options.willBeDone) {
             // Temporarily remove the done callback.
             game.plot.tmpCache('done', null);
+            game.plot.tmpCache('autoSet', null);
             // Call node.done() immediately after PLAYING is emitted.
             game.node.once('PLAYING', function() {
                 game.node.done();
@@ -26181,8 +26182,8 @@ if (!Array.prototype.indexOf) {
                 return;
             }
             if (msg.data instanceof Player) node.game.pl.add(msg.data);
-            else node.game.pl.add(new Player(msg.data));            
-            if (node.game.shouldStep()) node.game.step();            
+            else node.game.pl.add(new Player(msg.data));
+            if (node.game.shouldStep()) node.game.step();
             node.emit('UPDATED_PLIST');
         });
 
@@ -26318,7 +26319,6 @@ if (!Array.prototype.indexOf) {
          */
         node.events.ng.on( IN + say + 'PLAYER_UPDATE', function(msg) {
             node.game.pl.updatePlayer(msg.from, msg.data);
-            debugger
             node.emit('UPDATED_PLIST');
             if (node.game.shouldStep()) {
                 node.game.step();
@@ -26381,8 +26381,6 @@ if (!Array.prototype.indexOf) {
                          'payload of incoming remote setup message.');
                 return;
             }
-
-            if (feature === 'plist' || feature === 'PLIST') debugger;
 
             node.setup.apply(node, [feature].concat(payload));
         });

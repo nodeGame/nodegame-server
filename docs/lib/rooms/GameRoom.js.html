@@ -706,11 +706,19 @@ Need to give step: false, we just init it.</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-21" id="section-21">&#182;</a>
 </div>
-<p>Mark the state as DONE, if this is the case.</p>
+<p>Mark the state as DONE, if this is the case.
+Important!
+IF the client was DONE, and waiting for other players,
+and the STEP command is sent right before its disconnection,
+THEN the willBeDone option is applied to the next step, which
+is the wrong thing to do. So we add willBeDone only on same
+stage, or if the client is ahead.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
         <span class="nx">discoStageLevel</span> <span class="o">=</span> <span class="nx">code</span><span class="p">.</span><span class="nx">disconnectedStageLevel</span><span class="p">;</span>
-        <span class="k">if</span> <span class="p">(</span><span class="nx">discoStageLevel</span> <span class="o">===</span> <span class="nx">DONE</span><span class="p">)</span> <span class="nx">reconOptions</span><span class="p">.</span><span class="nx">willBeDone</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">compareSteps</span> <span class="o">&lt;=</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="nx">discoStageLevel</span> <span class="o">===</span> <span class="nx">DONE</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">reconOptions</span><span class="p">.</span><span class="nx">willBeDone</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+        <span class="p">}</span>
 
 
 </pre></div>
