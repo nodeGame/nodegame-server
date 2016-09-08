@@ -12582,11 +12582,12 @@ if (!Array.prototype.indexOf) {
     PlayerList.prototype.add = function(player) {
         if (!(player instanceof Player)) {
             if ('object' !== typeof player) {
-                throw new TypeError('PlayerList.add: player must be object.');
+                throw new TypeError('PlayerList.add: player must be object. ' +
+                                    'Found: ' + player);
             }
             if ('string' !== typeof player.id) {
-                throw new TypeError('PlayerList.add: ' +
-                                    'player.id must be string.');
+                throw new TypeError('PlayerList.add: player.id must be ' +
+                                    'string. Found: ' + player.id);
             }
             player = new Player(player);
         }
@@ -12673,7 +12674,8 @@ if (!Array.prototype.indexOf) {
     PlayerList.prototype.remove = function(id) {
         var player;
         if ('string' !== typeof id) {
-            throw new TypeError('PlayerList.remove: id must be string.');
+            throw new TypeError('PlayerList.remove: id must be string. ' +
+                                'Found: ' + id);
         }
         player = this.id.remove(id);
         if (!player) {
@@ -26174,11 +26176,13 @@ if (!Array.prototype.indexOf) {
          * @see Game.pl
          */
         node.events.ng.on( IN + say + 'PCONNECT', function(msg) {
-            if (!msg.data) return;
-            node.game.pl.add(new Player(msg.data));
-            if (node.game.shouldStep()) {
-                node.game.step();
+            if ('object' !== typeof msg.data) {
+                node.err('received PCONNECT, but invalid data: ' + msg.data);
+                return;
             }
+            if (msg.data instanceof Player) node.game.pl.add(msg.data);
+            else node.game.pl.add(new Player(msg.data));            
+            if (node.game.shouldStep()) node.game.step();            
             node.emit('UPDATED_PLIST');
         });
 
@@ -26191,7 +26195,10 @@ if (!Array.prototype.indexOf) {
          * @see Game.pl
          */
         node.events.ng.on( IN + say + 'PDISCONNECT', function(msg) {
-            if (!msg.data) return;
+            if ('object' !== typeof msg.data) {
+                node.err('received PDISCONNECT, but invalid data: ' + msg.data);
+                return;
+            }
             node.game.pl.remove(msg.data.id);
             if (node.game.shouldStep()) {
                 node.game.step();
@@ -26208,7 +26215,10 @@ if (!Array.prototype.indexOf) {
          * @see Game.ml
          */
         node.events.ng.on( IN + say + 'MCONNECT', function(msg) {
-            if (!msg.data) return;
+            if ('object' !== typeof msg.data) {
+                node.err('received MCONNECT, but invalid data: ' + msg.data);
+                return;
+            }
             node.game.ml.add(new Player(msg.data));
             node.emit('UPDATED_MLIST');
         });
@@ -26222,7 +26232,10 @@ if (!Array.prototype.indexOf) {
          * @see Game.ml
          */
         node.events.ng.on( IN + say + 'MDISCONNECT', function(msg) {
-            if (!msg.data) return;
+            if ('object' !== typeof msg.data) {
+                node.err('received MDISCONNECT, but invalid data: ' + msg.data);
+                return;
+            }
             node.game.ml.remove(msg.data.id);
             node.emit('UPDATED_MLIST');
         });
@@ -26305,6 +26318,7 @@ if (!Array.prototype.indexOf) {
          */
         node.events.ng.on( IN + say + 'PLAYER_UPDATE', function(msg) {
             node.game.pl.updatePlayer(msg.from, msg.data);
+            debugger
             node.emit('UPDATED_PLIST');
             if (node.game.shouldStep()) {
                 node.game.step();
@@ -26367,6 +26381,8 @@ if (!Array.prototype.indexOf) {
                          'payload of incoming remote setup message.');
                 return;
             }
+
+            if (feature === 'plist' || feature === 'PLIST') debugger;
 
             node.setup.apply(node, [feature].concat(payload));
         });
