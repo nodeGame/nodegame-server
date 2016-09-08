@@ -1,5 +1,9 @@
 # nodegame-server change log
 
+# 2.10.0
+ - Logics receive the full clients object (reference to the one in the registry).
+ - WillBeDone property on reconnect is set only if stage of reconnecting client is not behind current stage.
+
 # 2.9.1
  - Cleanup.
 
