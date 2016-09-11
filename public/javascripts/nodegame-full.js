@@ -10497,7 +10497,7 @@ if (!Array.prototype.indexOf) {
     node.support = JSUS.compatibility();
 
     // Auto-Generated.
-    node.version = '2.3.1';
+    node.version = '2.4.0';
 
 })(window);
 
