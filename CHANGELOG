@@ -1,5 +1,9 @@
 # nodegame-server change log
 
+# 2.11.0
+- WaitingRoom's dispatching optimized.
+- Added WaitingRoom ON_CLOSE and ON_OPEN callbacks.
+
 # 2.10.0
  - Logics receive the full clients object (reference to the one in the registry).
  - WillBeDone property on reconnect is set only if stage of reconnecting client is not behind current stage.
