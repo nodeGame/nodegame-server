@@ -1931,7 +1931,8 @@ TODO: should the main game have a ghost level?</p>
 <p>Force to exit loop.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-
+                    <span class="kr">debugger</span>
+                    <span class="k">break</span><span class="p">;</span>
 
 </pre></div>
         </td>
@@ -1944,7 +1945,6 @@ TODO: should the main game have a ghost level?</p>
 <p>TODO: with return no error, but it seems wrong...</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-                    <span class="k">return</span><span class="p">;</span>
                 <span class="p">}</span>
                 <span class="k">else</span> <span class="p">{</span>
                     <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;CHECK PASSED&#39;</span><span class="p">);</span>
@@ -2016,9 +2016,11 @@ TODO: should the main game have a ghost level?</p>
             <span class="k">this</span><span class="p">.</span><span class="nx">node</span><span class="p">.</span><span class="nx">say</span><span class="p">(</span><span class="s1">&#39;DISPATCH&#39;</span><span class="p">,</span> <span class="nx">pId</span><span class="p">,</span> <span class="p">{</span>
                 <span class="nx">action</span><span class="o">:</span> <span class="s1">&#39;NotSelected&#39;</span><span class="p">,</span>
                 <span class="nx">exit</span><span class="o">:</span> <span class="nx">code</span><span class="p">.</span><span class="nx">ExitCode</span><span class="p">,</span>
-                <span class="nx">shouldDispatchMoreGames</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">shouldDispatchMoreGames</span><span class="p">()</span>
+                <span class="nx">shouldDispatchMoreGames</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">shouldDispatchMoreGames</span><span class="p">()</span>                
             <span class="p">});</span>
         <span class="p">}</span>
+
+        <span class="k">return</span> <span class="kc">true</span><span class="p">;</span>
     <span class="p">};</span>
 
     <span class="k">return</span> <span class="kd">function</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">numberOfGames</span><span class="p">)</span> <span class="p">{</span>
