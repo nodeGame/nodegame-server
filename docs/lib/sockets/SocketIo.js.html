@@ -733,10 +733,9 @@ client = this.sioChannel.sockets[strippedSid];</p>
 
 
             <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">client</span><span class="p">)</span> <span class="p">{</span>
-                <span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;SocketIo.send: msg not sent. Unexisting &#39;</span> <span class="o">+</span>
-                              <span class="s1">&#39;recipient sid: &#39;</span> <span class="o">+</span> <span class="nx">strippedSid</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
-                <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">);</span>
-                <span class="kr">debugger</span>
+                <span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;SocketIo.send: msg &#39;</span> <span class="o">+</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">toSMS</span><span class="p">()</span>  <span class="o">+</span>
+                              <span class="s1">&#39; not sent. Unexisting recipient sid: &#39;</span> <span class="o">+</span>
+                              <span class="nx">strippedSid</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
                 <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
             <span class="p">}</span>
 
