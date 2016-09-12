@@ -1544,7 +1544,9 @@ pinging is skipped.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
         <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">numberOfGames</span><span class="p">)</span> <span class="p">{</span>
-            <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">MAX_WAIT_TIME</span> <span class="o">&amp;&amp;</span> <span class="k">this</span><span class="p">.</span><span class="nx">EXECUTION_MODE</span> <span class="o">===</span> <span class="s1">&#39;TIMEOUT&#39;</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">nPlayers</span> <span class="o">||</span>
+                <span class="k">this</span><span class="p">.</span><span class="nx">MAX_WAIT_TIME</span> <span class="o">&amp;&amp;</span> <span class="k">this</span><span class="p">.</span><span class="nx">EXECUTION_MODE</span> <span class="o">===</span> <span class="s1">&#39;TIMEOUT&#39;</span><span class="p">)</span> <span class="p">{</span>
+
                 <span class="nx">numberOfGames</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
             <span class="p">}</span>
             <span class="k">else</span> <span class="p">{</span>
@@ -1571,9 +1573,9 @@ the total number of players to dispatch might be too large.</p>
         <span class="nx">nPlayersToDispatch</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">GROUP_SIZE</span> <span class="o">*</span> <span class="nx">numberOfGames</span><span class="p">;</span>
 
         <span class="k">if</span> <span class="p">(</span><span class="nx">nPlayers</span> <span class="o">&lt;</span> <span class="nx">nPlayersToDispatch</span><span class="p">)</span> <span class="p">{</span>
-            <span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span> <span class="s1">&#39; cannot dispatch &#39;</span> <span class="o">+</span> <span class="nx">numberOfGames</span> <span class="o">+</span>
-                          <span class="s1">&#39; now, too few players are connected: &#39;</span> <span class="o">+</span> <span class="nx">nPlayers</span> <span class="o">+</span>
-                          <span class="s1">&#39;. Aborting dispatch.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
+            <span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span> <span class="s1">&#39;cannot dispatch &#39;</span> <span class="o">+</span> <span class="nx">numberOfGames</span> <span class="o">+</span>
+                          <span class="s1">&#39; game/s now, too few players are connected: &#39;</span> <span class="o">+</span>
+                          <span class="nx">nPlayers</span> <span class="o">+</span> <span class="s1">&#39;. Aborting dispatch.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
             <span class="k">return</span><span class="p">;</span>
         <span class="p">}</span>
 
@@ -1916,6 +1918,7 @@ TODO: should the main game have a ghost level?</p>
         <td class="code highlight"><div class="highlight"><pre>
                 <span class="o">++</span><span class="k">this</span><span class="p">.</span><span class="nx">numberOfDispatches</span><span class="p">;</span>
 
+
 </pre></div>
         </td>
       </tr>
@@ -1944,7 +1947,6 @@ TODO: should the main game have a ghost level?</p>
                     <span class="k">break</span><span class="p">;</span>
                 <span class="p">}</span>
                 <span class="k">else</span> <span class="p">{</span>
-                    <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;CHECK PASSED&#39;</span><span class="p">);</span>
 
 </pre></div>
         </td>
