@@ -186,7 +186,6 @@ MIT Licensed</p>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">module</span><span class="p">.</span><span class="nx">exports</span> <span class="o">=</span> <span class="nx">WaitingRoom</span><span class="p">;</span>
 
-<span class="kd">var</span> <span class="nx">ngc</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;nodegame-client&#39;</span><span class="p">);</span>
 <span class="kd">var</span> <span class="nx">J</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;JSUS&#39;</span><span class="p">).</span><span class="nx">JSUS</span><span class="p">;</span>
 <span class="kd">var</span> <span class="nx">path</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;path&#39;</span><span class="p">);</span>
 <span class="kd">var</span> <span class="nx">ngt</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;nodegame-game-template&#39;</span><span class="p">);</span>
@@ -1402,6 +1401,8 @@ pinging is skipped.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
         <span class="k">if</span> <span class="p">(</span><span class="nx">that</span><span class="p">.</span><span class="nx">suspendedPings</span><span class="p">.</span><span class="nx">length</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">that</span><span class="p">.</span><span class="nx">dispatch</span><span class="p">.</span><span class="nx">apply</span><span class="p">(</span><span class="nx">that</span><span class="p">,</span> <span class="nx">that</span><span class="p">.</span><span class="nx">suspendedPings</span><span class="p">.</span><span class="nx">pop</span><span class="p">());</span>
+
 
 </pre></div>
         </td>
@@ -1415,6 +1416,13 @@ pinging is skipped.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
             <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">that</span><span class="p">.</span><span class="nx">shouldDispatchMoreGames</span><span class="p">())</span> <span class="p">{</span>
+                <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Warning: room is closed. Aborting previously &#39;</span> <span class="o">+</span>
+                            <span class="s1">&#39;suspended pings.&#39;</span><span class="p">);</span>
+                <span class="nx">that</span><span class="p">.</span><span class="nx">suspendedPings</span> <span class="o">=</span> <span class="p">[];</span>
+            <span class="p">}</span>
+            <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">that</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">size</span><span class="p">()</span> <span class="o">&lt;</span> <span class="nx">that</span><span class="p">.</span><span class="nx">POOL_SIZE</span><span class="p">)</span> <span class="p">{</span>
+                <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Warning: not enough players any longer. &#39;</span> <span class="o">+</span>
+                            <span class="s1">&#39;Aborting previously suspended pings.&#39;</span><span class="p">);</span>
                 <span class="nx">that</span><span class="p">.</span><span class="nx">suspendedPings</span> <span class="o">=</span> <span class="p">[];</span>
             <span class="p">}</span>
             <span class="k">else</span> <span class="p">{</span>
@@ -1486,6 +1494,8 @@ pinging is skipped.</p>
 
   </div>
   <div class="body"><p>Initiates the start of the game</p>
+
+<p>It is assumed that it is called only after connected players > POOL_SIZE.</p>
 
 <p>May only be called once. Implemented using a self-calling function</p>
   </div>
@@ -2018,9 +2028,51 @@ TODO: should the main game have a ghost level?</p>
                 <span class="nx">exit</span><span class="o">:</span> <span class="nx">code</span><span class="p">.</span><span class="nx">ExitCode</span><span class="p">,</span>
                 <span class="nx">shouldDispatchMoreGames</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">shouldDispatchMoreGames</span><span class="p">()</span>                
             <span class="p">});</span>
-        <span class="p">}</span>
 
-        <span class="k">return</span> <span class="kc">true</span><span class="p">;</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-75" id="section-75">&#182;</a>
+</div>
+<p>Force disconnect. They will do it anyway from remote,
+and might cause timing issues with messages of newly
+connecting clients.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+            <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">shouldDispatchMoreGames</span><span class="p">())</span> <span class="p">{</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-76" id="section-76">&#182;</a>
+</div>
+
+<div class="highlight"><pre><code>            <span class="sr">//</span> <span class="n">Needs</span> <span class="n">a</span> <span class="n">game</span> <span class="n">msg</span><span class="o">.</span> <span class="n">TODO:</span> <span class="n">update</span><span class="o">.</span>
+            <span class="n">var</span> <span class="n">oldInfo</span> <span class="o">=</span> <span class="n">this</span><span class="o">.</span><span class="n">channel</span><span class="o">.</span><span class="n">playerServer</span><span class="o">.</span><span class="n">socketManager</span>
+                <span class="o">.</span><span class="n">resolveClientAndSocket</span><span class="p">({</span><span class="n">to:</span> <span class="n">pId</span><span class="p">},</span> <span class="n">false</span><span class="p">);</span>
+
+            <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">oldInfo</span><span class="o">.</span><span class="n">success</span><span class="p">)</span> <span class="p">{</span>
+                <span class="n">console</span><span class="o">.</span><span class="nb">log</span><span class="p">(</span><span class="s">&#39;not found!!!!!!&#39;</span><span class="p">,</span> <span class="n">pId</span><span class="p">);</span>
+            <span class="p">}</span>
+            <span class="n">debugger</span>
+            <span class="sr">//</span> <span class="n">Force</span> <span class="n">disconnection</span> <span class="n">of</span> <span class="n">old</span> <span class="nb">socket</span><span class="o">.</span>
+            <span class="n">oldInfo</span><span class="o">.</span><span class="nb">socket</span><span class="o">.</span><span class="n">disconnect</span><span class="p">(</span><span class="n">oldInfo</span><span class="o">.</span><span class="n">sid</span><span class="p">);</span>
+</code></pre></div>
+
+
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+                <span class="k">break</span>
+
+            <span class="p">}</span>
+        <span class="p">}</span>
     <span class="p">};</span>
 
     <span class="k">return</span> <span class="kd">function</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">numberOfGames</span><span class="p">)</span> <span class="p">{</span>
@@ -2032,7 +2084,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-75" id="section-75">&#182;</a>
+  <a class="pilcrow" href="#section-77" id="section-77">&#182;</a>
 </div>
 <p>Check if we are still allowed to dispatch games.</p>
         </td>
@@ -2044,6 +2096,7 @@ TODO: should the main game have a ghost level?</p>
                                        <span class="k">this</span><span class="p">.</span><span class="nx">N_GAMES</span> <span class="o">+</span>
                                        <span class="s1">&#39;. Aborting current dispatch.&#39;</span><span class="p">,</span>
                                        <span class="s1">&#39;warning&#39;</span><span class="p">);</span>
+            <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">suspendedPings</span><span class="p">.</span><span class="nx">length</span><span class="p">)</span> <span class="k">this</span><span class="p">.</span><span class="nx">suspendedPings</span> <span class="o">=</span> <span class="p">[];</span>
             <span class="k">return</span><span class="p">;</span>
         <span class="p">}</span>
 
@@ -2054,7 +2107,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-76" id="section-76">&#182;</a>
+  <a class="pilcrow" href="#section-78" id="section-78">&#182;</a>
 </div>
 <p>If we have pool of 1 and mode == WAIT_FOR_N_PLAYERS just go ahead!</p>
         </td>
@@ -2073,7 +2126,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-77" id="section-77">&#182;</a>
+  <a class="pilcrow" href="#section-79" id="section-79">&#182;</a>
 </div>
 <p>Blocks until all players have returned the ping or are kicked.</p>
         </td>
@@ -2150,7 +2203,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-79" id="section-79">&#182;</a>
+  <a class="pilcrow" href="#section-81" id="section-81">&#182;</a>
 </div>
 <p>TODO: do we need to check if we have enough players?</p>
         </td>
@@ -2171,7 +2224,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-80" id="section-80">&#182;</a>
+  <a class="pilcrow" href="#section-82" id="section-82">&#182;</a>
 </div>
 <p>If a timeout function for the server was specified,
 executes. If the return value is FALSE, do not continue
@@ -2190,7 +2243,7 @@ with checkout and informing the player about NotEnoughPlayers.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-81" id="section-81">&#182;</a>
+  <a class="pilcrow" href="#section-83" id="section-83">&#182;</a>
 </div>
 <p>If an access code is defined, checkout remotely.</p>
         </td>
@@ -2311,7 +2364,7 @@ with checkout and informing the player about NotEnoughPlayers.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-84" id="section-84">&#182;</a>
+  <a class="pilcrow" href="#section-86" id="section-86">&#182;</a>
 </div>
 <p>Return treatment (was a string already).</p>
         </td>
