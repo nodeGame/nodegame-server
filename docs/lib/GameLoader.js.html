@@ -1178,7 +1178,6 @@ mixed-in.</p>
             <span class="nx">game</span><span class="o">:</span> <span class="nx">gameName</span><span class="p">,</span>
             <span class="nx">level</span><span class="o">:</span> <span class="nx">level</span><span class="p">,</span>
             <span class="nx">found</span><span class="o">:</span> <span class="nx">directory</span><span class="p">,</span>
-            <span class="nx">log</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
             <span class="nx">throwIt</span><span class="o">:</span> <span class="kc">false</span>
         <span class="p">});</span>
         <span class="k">return</span><span class="p">;</span>
@@ -1801,7 +1800,6 @@ level of the specified directory.</p>
                    <span class="s1">&#39;waitroom.settings file&#39;</span><span class="p">,</span> <span class="p">{</span>
                        <span class="nx">game</span><span class="o">:</span> <span class="nx">gameName</span><span class="p">,</span>
                        <span class="nx">level</span><span class="o">:</span> <span class="nx">level</span><span class="p">,</span>
-                       <span class="nx">log</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
                        <span class="nx">err</span><span class="o">:</span> <span class="nx">e</span><span class="p">,</span>
                        <span class="nx">throwErr</span><span class="o">:</span> <span class="kc">true</span>
                   <span class="p">});</span>
@@ -2977,13 +2975,13 @@ GameLoader.prototype.createGameAlias = function(alias, gameName) {
         <span class="p">}</span>
         <span class="k">else</span> <span class="p">{</span>
             <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.doErr: invalid value for opts.log: &#39;</span> <span class="o">+</span>
-                            <span class="nx">opts</span><span class="p">.</span><span class="nx">log</span><span class="p">);</span>
+                            <span class="nx">opts</span><span class="p">.</span><span class="nx">log</span> <span class="o">+</span> <span class="s1">&#39;. Msg: &#39;</span> <span class="o">+</span> <span class="nx">msg</span><span class="p">);</span>
         <span class="p">}</span>
     <span class="p">}</span>
     <span class="k">if</span> <span class="p">(</span><span class="nx">opts</span><span class="p">.</span><span class="nx">throwErr</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">opts</span><span class="p">.</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span>
             <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.doErr: throwErr is true, but no &#39;</span> <span class="o">+</span>
-                            <span class="s1">&#39;error given.&#39;</span><span class="p">);</span>
+                            <span class="s1">&#39;error given. Msg: &#39;</span> <span class="o">+</span> <span class="nx">msg</span><span class="p">);</span>
         <span class="p">}</span>
         <span class="k">throw</span> <span class="nx">opts</span><span class="p">.</span><span class="nx">err</span><span class="p">;</span>
     <span class="p">}</span>
