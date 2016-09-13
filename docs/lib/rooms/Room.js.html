@@ -81,8 +81,11 @@
       <div class="heading h2">
         <a href="#room%20methods">Room methods</a>
       </div>
-      <div class="heading h2">
+      <div class="heading h3">
         <a href="#room.registerroom">Room.registerRoom</a>
+      </div>
+      <div class="heading h3">
+        <a href="#room.size">Room.size</a>
       </div>
     </div>
   </div>
@@ -665,10 +668,10 @@ Note: this.node.player will be added to admins.</p>
         <td class="docs"><div class="dox">
   <div class="summary">
 <div class="pilwrap" id="room.registerroom">
-  <h2>
+  <h3>
     <a href="#room.registerroom" name="room.registerroom" class="pilcrow">&#182;</a>
     Room.registerRoom
-  </h2>
+  </h3>
 </div>
 
   </div>
@@ -696,6 +699,48 @@ Note: this.node.player will be added to admins.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">rooms</span><span class="p">[</span><span class="k">this</span><span class="p">.</span><span class="nx">id</span><span class="p">]</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
+<span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="room.size">
+  <h3>
+    <a href="#room.size" name="room.size" class="pilcrow">&#182;</a>
+    Room.size
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Returns the number of players|admin in the room</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">mod</span>
+      <span class="dox_type">string</span>
+      <span>Optional. Modifies the return value. Available values:
+
+<ul>
+<li>'player-connected': (default) The number of players currently connected</li>
+</ul></span>
+    </div>
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">number</span>
+      <span>The number of clients connected</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">Room</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">size</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">mod</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">pl</span><span class="p">.</span><span class="nx">size</span><span class="p">();</span>
 <span class="p">};</span>
 </pre></div>
         </td>

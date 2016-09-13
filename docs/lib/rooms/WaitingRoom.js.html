@@ -88,6 +88,15 @@
         <a href="#waitingroom.on_close">WaitingRoom.ON_CLOSE</a>
       </div>
       <div class="heading h3">
+        <a href="#waitingroom.on_connect">WaitingRoom.ON_CONNECT</a>
+      </div>
+      <div class="heading h3">
+        <a href="#waitingroom.on_disconnect">WaitingRoom.ON_DISCONNECT</a>
+      </div>
+      <div class="heading h3">
+        <a href="#waitingroom.on_init">WaitingRoom.ON_INIT</a>
+      </div>
+      <div class="heading h3">
         <a href="#waitingroom.chosen_treatment">WaitingRoom.CHOSEN_TREATMENT</a>
       </div>
       <div class="heading h3">
@@ -140,6 +149,9 @@
       </div>
       <div class="heading h2">
         <a href="#checkpositiveinteger">checkPositiveInteger</a>
+      </div>
+      <div class="heading h2">
+        <a href="#assigniffunction">assignIfFunction</a>
       </div>
     </div>
   </div>
@@ -738,6 +750,72 @@ players to start the game.</p>
       <tr>
         <td class="docs"><div class="dox">
   <div class="summary">
+<div class="pilwrap" id="waitingroom.on_connect">
+  <h3>
+    <a href="#waitingroom.on_connect" name="waitingroom.on_connect" class="pilcrow">&#182;</a>
+    WaitingRoom.ON_CONNECT
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Callback to be executed when a player connects</p>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">this</span><span class="p">.</span><span class="nx">ON_CONNECT</span> <span class="o">=</span> <span class="kc">null</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="waitingroom.on_disconnect">
+  <h3>
+    <a href="#waitingroom.on_disconnect" name="waitingroom.on_disconnect" class="pilcrow">&#182;</a>
+    WaitingRoom.ON_DISCONNECT
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Callback to be executed when a player disconnects</p>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">this</span><span class="p">.</span><span class="nx">ON_DISCONNECT</span> <span class="o">=</span> <span class="kc">null</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="waitingroom.on_init">
+  <h3>
+    <a href="#waitingroom.on_init" name="waitingroom.on_init" class="pilcrow">&#182;</a>
+    WaitingRoom.ON_INIT
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Callback to be executed after the settings have been parsed</p>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">this</span><span class="p">.</span><span class="nx">ON_INIT</span> <span class="o">=</span> <span class="kc">null</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
 <div class="pilwrap" id="waitingroom.chosen_treatment">
   <h3>
     <a href="#waitingroom.chosen_treatment" name="waitingroom.chosen_treatment" class="pilcrow">&#182;</a>
@@ -847,6 +925,7 @@ pinging is skipped.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="k">this</span><span class="p">.</span><span class="nx">suspendedPings</span> <span class="o">=</span> <span class="p">[];</span>
+
 <span class="p">}</span>
 
 
@@ -999,41 +1078,20 @@ pinging is skipped.</p>
         <span class="p">}</span>
     <span class="p">}</span>
 
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">ON_TIMEOUT</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;function&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">ON_TIMEOUT</span><span class="p">)</span> <span class="p">{</span>
-            <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span>
-                          <span class="s1">&#39;ON_TIMEOUT must be function or undefined. Found: &#39;</span> <span class="o">+</span>
-                          <span class="nx">settings</span><span class="p">.</span><span class="nx">ON_TIMEOUT</span><span class="p">);</span>
-        <span class="p">}</span>
-        <span class="k">this</span><span class="p">.</span><span class="nx">ON_TIMEOUT</span> <span class="o">=</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">ON_TIMEOUT</span><span class="p">;</span>
-    <span class="p">}</span>
+    <span class="nx">assignIfFunction</span><span class="p">(</span><span class="s1">&#39;ON_TIMEOUT&#39;</span><span class="p">,</span> <span class="k">this</span><span class="p">,</span> <span class="nx">settings</span><span class="p">);</span>
 
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">ON_TIMEOUT_SERVER</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;function&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">ON_TIMEOUT_SERVER</span><span class="p">)</span> <span class="p">{</span>
-            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span> <span class="s1">&#39;ON_TIMEOUT_SERVER must be function &#39;</span> <span class="o">+</span>
-                                <span class="s1">&#39;or undefined. Found: &#39;</span> <span class="o">+</span>
-                                <span class="nx">settings</span><span class="p">.</span><span class="nx">ON_TIMEOUT_SERVER</span><span class="p">);</span>
-        <span class="p">}</span>
-        <span class="k">this</span><span class="p">.</span><span class="nx">ON_TIMEOUT_SERVER</span> <span class="o">=</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">ON_TIMEOUT_SERVER</span><span class="p">;</span>
-    <span class="p">}</span>
+    <span class="nx">assignIfFunction</span><span class="p">(</span><span class="s1">&#39;ON_TIMEOUT_SERVER&#39;</span><span class="p">,</span> <span class="k">this</span><span class="p">,</span> <span class="nx">settings</span><span class="p">);</span>
 
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">ON_CLOSE</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;function&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">ON_CLOSE</span><span class="p">)</span> <span class="p">{</span>
-            <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span>
-                          <span class="s1">&#39;ON_CLOSE must be function or undefined. Found: &#39;</span> <span class="o">+</span>
-                          <span class="nx">settings</span><span class="p">.</span><span class="nx">ON_CLOSE</span><span class="p">);</span>
-        <span class="p">}</span>
-        <span class="k">this</span><span class="p">.</span><span class="nx">ON_CLOSE</span> <span class="o">=</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">ON_CLOSE</span><span class="p">;</span>
-    <span class="p">}</span>
+    <span class="nx">assignIfFunction</span><span class="p">(</span><span class="s1">&#39;ON_OPEN&#39;</span><span class="p">,</span> <span class="k">this</span><span class="p">,</span> <span class="nx">settings</span><span class="p">);</span>
 
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">ON_OPEN</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;function&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">ON_OPEN</span><span class="p">)</span> <span class="p">{</span>
-            <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span>
-                          <span class="s1">&#39;ON_OPEN must be function or undefined. Found: &#39;</span> <span class="o">+</span>
-                          <span class="nx">settings</span><span class="p">.</span><span class="nx">ON_OPEN</span><span class="p">);</span>
-        <span class="p">}</span>
-        <span class="k">this</span><span class="p">.</span><span class="nx">ON_OPEN</span> <span class="o">=</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">ON_OPEN</span><span class="p">;</span>
-    <span class="p">}</span>
+    <span class="nx">assignIfFunction</span><span class="p">(</span><span class="s1">&#39;ON_CLOSE&#39;</span><span class="p">,</span> <span class="k">this</span><span class="p">,</span> <span class="nx">settings</span><span class="p">);</span>
+
+    <span class="nx">assignIfFunction</span><span class="p">(</span><span class="s1">&#39;ON_INIT&#39;</span><span class="p">,</span> <span class="k">this</span><span class="p">,</span> <span class="nx">settings</span><span class="p">);</span>
+
+    <span class="nx">assignIfFunction</span><span class="p">(</span><span class="s1">&#39;ON_CONNECT&#39;</span><span class="p">,</span> <span class="k">this</span><span class="p">,</span> <span class="nx">settings</span><span class="p">);</span>
+
+    <span class="nx">assignIfFunction</span><span class="p">(</span><span class="s1">&#39;ON_DISCONNECT&#39;</span><span class="p">,</span> <span class="k">this</span><span class="p">,</span> <span class="nx">settings</span><span class="p">);</span>
+
 
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">CHOSEN_TREATMENT</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">CHOSEN_TREATMENT</span><span class="p">)</span> <span class="p">{</span>
@@ -1047,7 +1105,7 @@ pinging is skipped.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-33" id="section-33">&#182;</a>
+  <a class="pilcrow" href="#section-36" id="section-36">&#182;</a>
 </div>
 <p>Treatments are not yet parsed.</p>
         </td>
@@ -1062,7 +1120,7 @@ pinging is skipped.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-34" id="section-34">&#182;</a>
+  <a class="pilcrow" href="#section-37" id="section-37">&#182;</a>
 </div>
 <p>Treatments are already parsed at this point.</p>
         </td>
@@ -1126,6 +1184,20 @@ pinging is skipped.</p>
         <span class="p">}</span>
         <span class="k">this</span><span class="p">.</span><span class="nx">PING_BEFORE_DISPATCH</span> <span class="o">=</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">PING_BEFORE_DISPATCH</span><span class="p">;</span>
     <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-38" id="section-38">&#182;</a>
+</div>
+<p>Executes ON_INIT, if found.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">ON_INIT</span><span class="p">)</span> <span class="k">this</span><span class="p">.</span><span class="nx">ON_INIT</span><span class="p">(</span><span class="k">this</span><span class="p">);</span>
 <span class="p">};</span>
 
 
@@ -1284,7 +1356,7 @@ pinging is skipped.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-40" id="section-40">&#182;</a>
+  <a class="pilcrow" href="#section-44" id="section-44">&#182;</a>
 </div>
 <p>TODO: Maybe check other conditions?</p>
         </td>
@@ -1359,7 +1431,7 @@ pinging is skipped.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-42" id="section-42">&#182;</a>
+  <a class="pilcrow" href="#section-46" id="section-46">&#182;</a>
 </div>
 <p>Lock this function.</p>
         </td>
@@ -1378,7 +1450,7 @@ pinging is skipped.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-43" id="section-43">&#182;</a>
+  <a class="pilcrow" href="#section-47" id="section-47">&#182;</a>
 </div>
 <p>When done, unlock function.</p>
         </td>
@@ -1395,7 +1467,7 @@ pinging is skipped.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-44" id="section-44">&#182;</a>
+  <a class="pilcrow" href="#section-48" id="section-48">&#182;</a>
 </div>
 <p>Execute suspended calls.</p>
         </td>
@@ -1410,7 +1482,7 @@ pinging is skipped.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-45" id="section-45">&#182;</a>
+  <a class="pilcrow" href="#section-49" id="section-49">&#182;</a>
 </div>
 <p>Cancel suspended pings if waiting room is closed.</p>
         </td>
@@ -1538,7 +1610,7 @@ pinging is skipped.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-47" id="section-47">&#182;</a>
+  <a class="pilcrow" href="#section-51" id="section-51">&#182;</a>
 </div>
 <p>If nothing is specified, try to dispatch maximal amount of games.</p>
         </td>
@@ -1564,7 +1636,7 @@ pinging is skipped.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-48" id="section-48">&#182;</a>
+  <a class="pilcrow" href="#section-52" id="section-52">&#182;</a>
 </div>
 <p>If numberOfGames is received as input parameter,
 the total number of players to dispatch might be too large.</p>
@@ -1586,7 +1658,7 @@ the total number of players to dispatch might be too large.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-49" id="section-49">&#182;</a>
+  <a class="pilcrow" href="#section-53" id="section-53">&#182;</a>
 </div>
 <p>Shuffle and sort players, if necessary.
 This means that at least two groups will be created.</p>
@@ -1614,7 +1686,7 @@ This means that at least two groups will be created.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-50" id="section-50">&#182;</a>
+  <a class="pilcrow" href="#section-54" id="section-54">&#182;</a>
 </div>
 <p>TODO: check if each subgroup has the right size.
 TODO: shall we allowed groups of different sizes?</p>
@@ -1641,7 +1713,7 @@ TODO: shall we allowed groups of different sizes?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-51" id="section-51">&#182;</a>
+  <a class="pilcrow" href="#section-55" id="section-55">&#182;</a>
 </div>
 <p>Shuffle player list anyway.</p>
         </td>
@@ -1654,7 +1726,7 @@ TODO: shall we allowed groups of different sizes?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-52" id="section-52">&#182;</a>
+  <a class="pilcrow" href="#section-56" id="section-56">&#182;</a>
 </div>
 <p>Sort according to priority.
 TODO: We could optimize it, if we knew in advance the
@@ -1679,7 +1751,7 @@ sorting criteria, i.e. there might be no need to sort here.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-53" id="section-53">&#182;</a>
+  <a class="pilcrow" href="#section-57" id="section-57">&#182;</a>
 </div>
 <p>If we have too many players log a warning.</p>
         </td>
@@ -1693,7 +1765,7 @@ sorting criteria, i.e. there might be no need to sort here.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-54" id="section-54">&#182;</a>
+  <a class="pilcrow" href="#section-58" id="section-58">&#182;</a>
 </div>
 <p>Warn if more participants than spots available.</p>
         </td>
@@ -1716,7 +1788,7 @@ sorting criteria, i.e. there might be no need to sort here.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-55" id="section-55">&#182;</a>
+  <a class="pilcrow" href="#section-59" id="section-59">&#182;</a>
 </div>
 <p>Player id.</p>
         </td>
@@ -1730,7 +1802,7 @@ sorting criteria, i.e. there might be no need to sort here.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-56" id="section-56">&#182;</a>
+  <a class="pilcrow" href="#section-60" id="section-60">&#182;</a>
 </div>
 <p>Inform players.</p>
         </td>
@@ -1746,7 +1818,7 @@ sorting criteria, i.e. there might be no need to sort here.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-57" id="section-57">&#182;</a>
+  <a class="pilcrow" href="#section-61" id="section-61">&#182;</a>
 </div>
 <p>Clear timeout for players.</p>
         </td>
@@ -1760,7 +1832,7 @@ sorting criteria, i.e. there might be no need to sort here.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-58" id="section-58">&#182;</a>
+  <a class="pilcrow" href="#section-62" id="section-62">&#182;</a>
 </div>
 <p>Add it to the group.</p>
         </td>
@@ -1778,7 +1850,7 @@ sorting criteria, i.e. there might be no need to sort here.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-59" id="section-59">&#182;</a>
+  <a class="pilcrow" href="#section-63" id="section-63">&#182;</a>
 </div>
 <p>If this is the first dispatch or we need to create a new room
 anyway, assign a treatment and then setup the game.</p>
@@ -1793,7 +1865,7 @@ anyway, assign a treatment and then setup the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-60" id="section-60">&#182;</a>
+  <a class="pilcrow" href="#section-64" id="section-64">&#182;</a>
 </div>
 <p>Decide treatment.</p>
         </td>
@@ -1808,7 +1880,7 @@ anyway, assign a treatment and then setup the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-61" id="section-61">&#182;</a>
+  <a class="pilcrow" href="#section-65" id="section-65">&#182;</a>
 </div>
 <p>Starts a game level or the main game.
 TODO: should the main game have a ghost level?</p>
@@ -1829,7 +1901,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-62" id="section-62">&#182;</a>
+  <a class="pilcrow" href="#section-66" id="section-66">&#182;</a>
 </div>
 <p>Create new game room.</p>
         </td>
@@ -1847,7 +1919,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-63" id="section-63">&#182;</a>
+  <a class="pilcrow" href="#section-67" id="section-67">&#182;</a>
 </div>
 <p>Setup and start game.</p>
         </td>
@@ -1862,7 +1934,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-64" id="section-64">&#182;</a>
+  <a class="pilcrow" href="#section-68" id="section-68">&#182;</a>
 </div>
 <p>Store reference.</p>
         </td>
@@ -1877,7 +1949,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-65" id="section-65">&#182;</a>
+  <a class="pilcrow" href="#section-69" id="section-69">&#182;</a>
 </div>
 <p>Move clients into existing room.</p>
         </td>
@@ -1895,7 +1967,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-66" id="section-66">&#182;</a>
+  <a class="pilcrow" href="#section-70" id="section-70">&#182;</a>
 </div>
 <p>Setup new group of players in the old room.</p>
         </td>
@@ -1911,7 +1983,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-67" id="section-67">&#182;</a>
+  <a class="pilcrow" href="#section-71" id="section-71">&#182;</a>
 </div>
 <p>One more dispatch done!</p>
         </td>
@@ -1925,7 +1997,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-68" id="section-68">&#182;</a>
+  <a class="pilcrow" href="#section-72" id="section-72">&#182;</a>
 </div>
 <p>Close waitingRoom if next game would not be dispatchable.</p>
         </td>
@@ -1939,7 +2011,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-69" id="section-69">&#182;</a>
+  <a class="pilcrow" href="#section-73" id="section-73">&#182;</a>
 </div>
 <p>Force to exit loop.</p>
         </td>
@@ -1954,7 +2026,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-70" id="section-70">&#182;</a>
+  <a class="pilcrow" href="#section-74" id="section-74">&#182;</a>
 </div>
 <p>Clear group.</p>
         </td>
@@ -1971,7 +2043,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-71" id="section-71">&#182;</a>
+  <a class="pilcrow" href="#section-75" id="section-75">&#182;</a>
 </div>
 <p>All dispatch attempts have been completed.</p>
         </td>
@@ -1984,7 +2056,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-72" id="section-72">&#182;</a>
+  <a class="pilcrow" href="#section-76" id="section-76">&#182;</a>
 </div>
 <p>Tell players still waiting, that they have not been selected.</p>
         </td>
@@ -2001,7 +2073,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-73" id="section-73">&#182;</a>
+  <a class="pilcrow" href="#section-77" id="section-77">&#182;</a>
 </div>
 <p>Increment timesNotSelected for player.</p>
         </td>
@@ -2025,7 +2097,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-74" id="section-74">&#182;</a>
+  <a class="pilcrow" href="#section-78" id="section-78">&#182;</a>
 </div>
 <p>Exit loop.</p>
         </td>
@@ -2043,7 +2115,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-75" id="section-75">&#182;</a>
+  <a class="pilcrow" href="#section-79" id="section-79">&#182;</a>
 </div>
 <p>Check if we are still allowed to dispatch games.</p>
         </td>
@@ -2066,7 +2138,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-76" id="section-76">&#182;</a>
+  <a class="pilcrow" href="#section-80" id="section-80">&#182;</a>
 </div>
 <p>If we have pool of 1 and mode == WAIT_FOR_N_PLAYERS just go ahead!</p>
         </td>
@@ -2085,7 +2157,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-77" id="section-77">&#182;</a>
+  <a class="pilcrow" href="#section-81" id="section-81">&#182;</a>
 </div>
 <p>Blocks until all players have returned the ping or are kicked.</p>
         </td>
@@ -2162,7 +2234,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-79" id="section-79">&#182;</a>
+  <a class="pilcrow" href="#section-83" id="section-83">&#182;</a>
 </div>
 <p>TODO: do we need to check if we have enough players?</p>
         </td>
@@ -2183,7 +2255,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-80" id="section-80">&#182;</a>
+  <a class="pilcrow" href="#section-84" id="section-84">&#182;</a>
 </div>
 <p>If a timeout function for the server was specified,
 executes. If the return value is FALSE, do not continue
@@ -2191,6 +2263,18 @@ with checkout and informing the player about NotEnoughPlayers.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
             <span class="k">if</span> <span class="p">(</span><span class="nx">that</span><span class="p">.</span><span class="nx">ON_TIMEOUT_SERVER</span><span class="p">)</span> <span class="p">{</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-85" id="section-85">&#182;</a>
+</div>
+<p>TODO: pass that as parameter.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
                 <span class="nx">res</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">ON_TIMEOUT_SERVER</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="nx">that</span><span class="p">,</span> <span class="nx">code</span><span class="p">);</span>
                 <span class="k">if</span> <span class="p">(</span><span class="nx">res</span> <span class="o">===</span> <span class="kc">false</span><span class="p">)</span> <span class="k">return</span><span class="p">;</span>
             <span class="p">}</span>
@@ -2202,7 +2286,7 @@ with checkout and informing the player about NotEnoughPlayers.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-81" id="section-81">&#182;</a>
+  <a class="pilcrow" href="#section-86" id="section-86">&#182;</a>
 </div>
 <p>If an access code is defined, checkout remotely.</p>
         </td>
@@ -2323,7 +2407,7 @@ with checkout and informing the player about NotEnoughPlayers.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-84" id="section-84">&#182;</a>
+  <a class="pilcrow" href="#section-89" id="section-89">&#182;</a>
 </div>
 <p>Return treatment (was a string already).</p>
         </td>
@@ -2397,6 +2481,64 @@ with checkout and informing the player about NotEnoughPlayers.</p>
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">J</span><span class="p">.</span><span class="nx">isInt</span><span class="p">(</span><span class="nx">N</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span> <span class="p">{</span>
         <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span> <span class="p">(</span><span class="nx">where</span> <span class="o">+</span> <span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39; must be an&#39;</span> <span class="o">+</span>
         <span class="s1">&#39; integer and larger than 0. Found: &#39;</span> <span class="o">+</span> <span class="nx">N</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="assigniffunction">
+  <h2>
+    <a href="#assigniffunction" name="assigniffunction" class="pilcrow">&#182;</a>
+    assignIfFunction
+  </h2>
+</div>
+
+  </div>
+  <div class="body"><p>Assigns a property to an object from another one if it is a function</p>
+
+<p>The property in the object must be undefined or function, otherwise
+an error will be raised.</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">name</span>
+      <span class="dox_type">string</span>
+      <span>The name of the property to verify and assign</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">toObj</span>
+      <span class="dox_type">object</span>
+      <span>The object to which the property will be assigned</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">fromObj</span>
+      <span class="dox_type">object</span>
+      <span>The object from which the property will be copied</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">where</span>
+      <span class="dox_type">string</span>
+      <span>A prefix for the error message. Default:
+  'WaitingRoom.parseSettings: '.</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="kd">function</span> <span class="nx">assignIfFunction</span><span class="p">(</span><span class="nx">name</span><span class="p">,</span> <span class="nx">toObj</span><span class="p">,</span> <span class="nx">fromObj</span><span class="p">,</span> <span class="nx">where</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">fromObj</span><span class="p">[</span><span class="nx">name</span><span class="p">])</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;function&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">fromObj</span><span class="p">[</span><span class="nx">name</span><span class="p">])</span> <span class="p">{</span>
+            <span class="k">new</span> <span class="nx">TypeError</span><span class="p">((</span><span class="nx">where</span> <span class="o">||</span> <span class="s1">&#39;WaitingRoom.parseSettings: &#39;</span><span class="p">)</span> <span class="o">+</span> <span class="nx">name</span> <span class="o">+</span>
+                          <span class="s1">&#39;must be function or undefined. Found: &#39;</span> <span class="o">+</span>
+                          <span class="nx">fromObj</span><span class="p">[</span><span class="nx">name</span><span class="p">]);</span>
+        <span class="p">}</span>
+        <span class="nx">toObj</span><span class="p">[</span><span class="nx">name</span><span class="p">]</span> <span class="o">=</span> <span class="nx">fromObj</span><span class="p">[</span><span class="nx">name</span><span class="p">];</span>
     <span class="p">}</span>
 <span class="p">}</span>
 </pre></div>
