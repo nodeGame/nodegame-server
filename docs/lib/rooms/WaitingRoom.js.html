@@ -1291,13 +1291,40 @@ pinging is skipped.</p>
   </div>
   <div class="body"><p>Changes state of <code>this</code> to closed</p>
   </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">mod</span>
+      <span class="dox_type">string</span>
+      <span>Optional. Modifies the behavior of closeRoom.
+  Available options:
+
+<ul>
+<li>'now': (default)</li>
+<li>'afterDispatch': true/false</li>
+</ul></span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">param</span>
+      <span class="dox_type">mixed</span>
+      <span>Optional. Parameter for modifier</span>
+    </div>
+  </div>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-<span class="nx">WaitingRoom</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">closeRoom</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+<span class="nx">WaitingRoom</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">closeRoom</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">mod</span><span class="p">,</span> <span class="nx">param</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">len</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">mod</span> <span class="o">&amp;&amp;</span> <span class="nx">mod</span> <span class="o">!==</span> <span class="s1">&#39;now&#39;</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">mod</span> <span class="o">===</span> <span class="s1">&#39;afterDispatch&#39;</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">closeAfterDispatch</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+            <span class="k">return</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="k">else</span> <span class="p">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;WaitingRoom.closeRoom: unknown modifier: &#39;</span> <span class="o">+</span> <span class="nx">mod</span><span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
     <span class="k">this</span><span class="p">.</span><span class="nx">roomOpen</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
-    <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;ROOM is going to be closed.&#39;</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">ON_CLOSE</span><span class="p">);</span>
     <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">ON_CLOSE</span><span class="p">)</span> <span class="k">this</span><span class="p">.</span><span class="nx">ON_CLOSE</span><span class="p">(</span><span class="k">this</span><span class="p">);</span>
 <span class="p">};</span>
 
@@ -1578,6 +1605,17 @@ pinging is skipped.</p>
       <span class="dox_type">object</span>
       <span>Data to send to all players</span>
     </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">opts</span>
+      <span class="dox_type">object</span>
+      <span>Optional. Configuration options for the method.
+  Available options:
+
+<ul>
+<li>numberOfGames: sets the number of games to dispatch</li>
+<li>closeAfterDispatch: closes the waiting room after this dispatch</li>
+</ul></span>
+    </div>
   </div>
 </div>
         </td>
@@ -1586,7 +1624,7 @@ pinging is skipped.</p>
     <span class="kd">var</span> <span class="nx">doDispatch</span><span class="p">,</span> <span class="nx">where</span><span class="p">;</span>
     <span class="nx">where</span> <span class="o">=</span> <span class="s1">&#39;WaitingRoom.dispatch: &#39;</span><span class="p">;</span>
 
-    <span class="nx">doDispatch</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">numberOfGames</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">doDispatch</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">opts</span><span class="p">)</span> <span class="p">{</span>
         <span class="kd">var</span> <span class="nx">treatmentName</span><span class="p">;</span>
         <span class="kd">var</span> <span class="nx">dispatchList</span><span class="p">;</span>
         <span class="kd">var</span> <span class="nx">pId</span><span class="p">,</span> <span class="nx">group</span><span class="p">,</span> <span class="nx">groupIdx</span><span class="p">,</span> <span class="nx">groupLimit</span><span class="p">;</span>
@@ -1594,6 +1632,7 @@ pinging is skipped.</p>
         <span class="kd">var</span> <span class="nx">gameRoom</span><span class="p">,</span> <span class="nx">code</span><span class="p">,</span> <span class="nx">gameNumber</span><span class="p">;</span>
         <span class="kd">var</span> <span class="nx">pList</span><span class="p">,</span> <span class="nx">nPlayers</span><span class="p">,</span> <span class="nx">playerIds</span><span class="p">,</span> <span class="nx">nPlayersToDispatch</span><span class="p">;</span>
         <span class="kd">var</span> <span class="nx">groups</span><span class="p">,</span> <span class="nx">nGroupsCreated</span><span class="p">;</span>
+        <span class="kd">var</span> <span class="nx">numberOfGames</span><span class="p">,</span> <span class="nx">closeAfterDispatch</span><span class="p">;</span>
 
         <span class="kd">var</span> <span class="nx">channel</span><span class="p">,</span> <span class="nx">sysLogger</span><span class="p">;</span>
 
@@ -1602,6 +1641,14 @@ pinging is skipped.</p>
 
         <span class="nx">pList</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">player</span><span class="p">;</span>
         <span class="nx">nPlayers</span> <span class="o">=</span> <span class="nx">pList</span><span class="p">.</span><span class="nx">size</span><span class="p">();</span>
+
+        <span class="nx">opts</span> <span class="o">=</span> <span class="nx">opts</span> <span class="o">||</span> <span class="p">{};</span>
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">opts</span><span class="p">.</span><span class="nx">closeAfterDispatch</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">closeAfterDispatch</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">closeAfterDispatch</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="k">else</span> <span class="p">{</span>
+            <span class="nx">closeAfterDispatch</span> <span class="o">=</span> <span class="nx">opts</span><span class="p">.</span><span class="nx">closeAfterDispatch</span><span class="p">;</span>
+        <span class="p">}</span>
 
 
 </pre></div>
@@ -1615,6 +1662,7 @@ pinging is skipped.</p>
 <p>If nothing is specified, try to dispatch maximal amount of games.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
+        <span class="nx">numberOfGames</span> <span class="o">=</span> <span class="nx">opts</span><span class="p">.</span><span class="nx">numberOfGames</span><span class="p">;</span>
         <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">numberOfGames</span><span class="p">)</span> <span class="p">{</span>
             <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">nPlayers</span> <span class="o">||</span>
                 <span class="k">this</span><span class="p">.</span><span class="nx">MAX_WAIT_TIME</span> <span class="o">&amp;&amp;</span> <span class="k">this</span><span class="p">.</span><span class="nx">EXECUTION_MODE</span> <span class="o">===</span> <span class="s1">&#39;TIMEOUT&#39;</span><span class="p">)</span> <span class="p">{</span>
@@ -2058,6 +2106,23 @@ TODO: should the main game have a ghost level?</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-76" id="section-76">&#182;</a>
 </div>
+<p>Close room, if requested.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">closeAfterDispatch</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">closeRoom</span><span class="p">();</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">closeAfterDispatch</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+        <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-77" id="section-77">&#182;</a>
+</div>
 <p>Tell players still waiting, that they have not been selected.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
@@ -2073,7 +2138,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-77" id="section-77">&#182;</a>
+  <a class="pilcrow" href="#section-78" id="section-78">&#182;</a>
 </div>
 <p>Increment timesNotSelected for player.</p>
         </td>
@@ -2097,12 +2162,13 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-78" id="section-78">&#182;</a>
+  <a class="pilcrow" href="#section-79" id="section-79">&#182;</a>
 </div>
-<p>Exit loop.</p>
+<p>Ste was: (but it does not make any sense).
+Exit loop.
+if (!this.shouldDispatchMoreGames()) break</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-            <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">shouldDispatchMoreGames</span><span class="p">())</span> <span class="k">break</span>
         <span class="p">}</span>
     <span class="p">};</span>
 
@@ -2115,7 +2181,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-79" id="section-79">&#182;</a>
+  <a class="pilcrow" href="#section-80" id="section-80">&#182;</a>
 </div>
 <p>Check if we are still allowed to dispatch games.</p>
         </td>
@@ -2138,7 +2204,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-80" id="section-80">&#182;</a>
+  <a class="pilcrow" href="#section-81" id="section-81">&#182;</a>
 </div>
 <p>If we have pool of 1 and mode == WAIT_FOR_N_PLAYERS just go ahead!</p>
         </td>
@@ -2157,7 +2223,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-81" id="section-81">&#182;</a>
+  <a class="pilcrow" href="#section-82" id="section-82">&#182;</a>
 </div>
 <p>Blocks until all players have returned the ping or are kicked.</p>
         </td>
@@ -2234,7 +2300,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-83" id="section-83">&#182;</a>
+  <a class="pilcrow" href="#section-84" id="section-84">&#182;</a>
 </div>
 <p>TODO: do we need to check if we have enough players?</p>
         </td>
@@ -2255,7 +2321,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-84" id="section-84">&#182;</a>
+  <a class="pilcrow" href="#section-85" id="section-85">&#182;</a>
 </div>
 <p>If a timeout function for the server was specified,
 executes. If the return value is FALSE, do not continue
@@ -2270,7 +2336,7 @@ with checkout and informing the player about NotEnoughPlayers.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-85" id="section-85">&#182;</a>
+  <a class="pilcrow" href="#section-86" id="section-86">&#182;</a>
 </div>
 <p>TODO: pass that as parameter.</p>
         </td>
@@ -2286,7 +2352,7 @@ with checkout and informing the player about NotEnoughPlayers.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-86" id="section-86">&#182;</a>
+  <a class="pilcrow" href="#section-87" id="section-87">&#182;</a>
 </div>
 <p>If an access code is defined, checkout remotely.</p>
         </td>
@@ -2407,7 +2473,7 @@ with checkout and informing the player about NotEnoughPlayers.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-89" id="section-89">&#182;</a>
+  <a class="pilcrow" href="#section-90" id="section-90">&#182;</a>
 </div>
 <p>Return treatment (was a string already).</p>
         </td>
