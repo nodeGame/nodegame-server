@@ -1484,7 +1484,7 @@ pinging is skipped.</p>
         <td class="code highlight"><div class="highlight"><pre>
         <span class="nx">that</span><span class="p">.</span><span class="nx">isPingInProgress</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
         <span class="k">if</span> <span class="p">(</span><span class="nx">callback</span><span class="p">)</span> <span class="p">{</span>
-            <span class="nx">callback</span><span class="p">.</span><span class="nx">apply</span><span class="p">(</span><span class="nx">that</span><span class="p">,</span> <span class="nx">options</span><span class="p">.</span><span class="nx">callbackArgs</span><span class="p">);</span>
+            <span class="nx">callback</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="nx">that</span><span class="p">,</span> <span class="nx">options</span><span class="p">.</span><span class="nx">callbackArgs</span><span class="p">);</span>
         <span class="p">}</span>
 
 
@@ -1595,16 +1595,9 @@ pinging is skipped.</p>
   <div class="body"><p>Initiates the start of the game</p>
 
 <p>It is assumed that it is called only after connected players > POOL_SIZE.</p>
-
-<p>May only be called once. Implemented using a self-calling function</p>
   </div>
   <div class="details">
     <div class="dox_tag_title">Params</div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name">msg</span>
-      <span class="dox_type">object</span>
-      <span>Data to send to all players</span>
-    </div>
     <div class="dox_tag_detail">
       <span class="dox_tag_name">opts</span>
       <span class="dox_type">object</span>
@@ -1614,6 +1607,8 @@ pinging is skipped.</p>
 <ul>
 <li>numberOfGames: sets the number of games to dispatch</li>
 <li>closeAfterDispatch: closes the waiting room after this dispatch</li>
+<li>msg: dispatch-message to send to all players. Default:
+   { action: 'AllPlayersConnected', exit: 0 }</li>
 </ul></span>
     </div>
   </div>
@@ -1624,7 +1619,7 @@ pinging is skipped.</p>
     <span class="kd">var</span> <span class="nx">doDispatch</span><span class="p">,</span> <span class="nx">where</span><span class="p">;</span>
     <span class="nx">where</span> <span class="o">=</span> <span class="s1">&#39;WaitingRoom.dispatch: &#39;</span><span class="p">;</span>
 
-    <span class="nx">doDispatch</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">opts</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">doDispatch</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">opts</span><span class="p">)</span> <span class="p">{</span>
         <span class="kd">var</span> <span class="nx">treatmentName</span><span class="p">;</span>
         <span class="kd">var</span> <span class="nx">dispatchList</span><span class="p">;</span>
         <span class="kd">var</span> <span class="nx">pId</span><span class="p">,</span> <span class="nx">group</span><span class="p">,</span> <span class="nx">groupIdx</span><span class="p">,</span> <span class="nx">groupLimit</span><span class="p">;</span>
@@ -1632,7 +1627,7 @@ pinging is skipped.</p>
         <span class="kd">var</span> <span class="nx">gameRoom</span><span class="p">,</span> <span class="nx">code</span><span class="p">,</span> <span class="nx">gameNumber</span><span class="p">;</span>
         <span class="kd">var</span> <span class="nx">pList</span><span class="p">,</span> <span class="nx">nPlayers</span><span class="p">,</span> <span class="nx">playerIds</span><span class="p">,</span> <span class="nx">nPlayersToDispatch</span><span class="p">;</span>
         <span class="kd">var</span> <span class="nx">groups</span><span class="p">,</span> <span class="nx">nGroupsCreated</span><span class="p">;</span>
-        <span class="kd">var</span> <span class="nx">numberOfGames</span><span class="p">,</span> <span class="nx">closeAfterDispatch</span><span class="p">;</span>
+        <span class="kd">var</span> <span class="nx">msg</span><span class="p">,</span> <span class="nx">numberOfGames</span><span class="p">,</span> <span class="nx">closeAfterDispatch</span><span class="p">;</span>
 
         <span class="kd">var</span> <span class="nx">channel</span><span class="p">,</span> <span class="nx">sysLogger</span><span class="p">;</span>
 
@@ -1642,7 +1637,20 @@ pinging is skipped.</p>
         <span class="nx">pList</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">player</span><span class="p">;</span>
         <span class="nx">nPlayers</span> <span class="o">=</span> <span class="nx">pList</span><span class="p">.</span><span class="nx">size</span><span class="p">();</span>
 
-        <span class="nx">opts</span> <span class="o">=</span> <span class="nx">opts</span> <span class="o">||</span> <span class="p">{};</span>
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">opts</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">opts</span> <span class="o">=</span> <span class="p">{};</span>
+        <span class="p">}</span>
+        <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">opts</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;WaitingRoom.dispatch: opts must be object &#39;</span> <span class="o">+</span>
+                                <span class="s1">&#39;or undefined. Found: &#39;</span> <span class="o">+</span> <span class="nx">opts</span><span class="p">);</span>
+        <span class="p">}</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="nx">opts</span><span class="p">.</span><span class="nx">msg</span> <span class="o">&amp;&amp;</span> <span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">opts</span><span class="p">.</span><span class="nx">msg</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;WaitingRoom.dispatch: opts.msg must be &#39;</span> <span class="o">+</span>
+                                <span class="s1">&#39;object or undefined. Found: &#39;</span> <span class="o">+</span> <span class="nx">opts</span><span class="p">.</span><span class="nx">msg</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="nx">msg</span> <span class="o">=</span> <span class="nx">opts</span><span class="p">.</span><span class="nx">msg</span> <span class="o">||</span> <span class="p">{</span> <span class="nx">action</span><span class="o">:</span> <span class="s1">&#39;AllPlayersConnected&#39;</span><span class="p">,</span> <span class="nx">exit</span><span class="o">:</span> <span class="mi">0</span> <span class="p">};</span>
+
         <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">opts</span><span class="p">.</span><span class="nx">closeAfterDispatch</span><span class="p">)</span> <span class="p">{</span>
             <span class="nx">closeAfterDispatch</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">closeAfterDispatch</span><span class="p">;</span>
         <span class="p">}</span>
@@ -2172,7 +2180,7 @@ if (!this.shouldDispatchMoreGames()) break</p>
         <span class="p">}</span>
     <span class="p">};</span>
 
-    <span class="k">return</span> <span class="kd">function</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">numberOfGames</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="kd">function</span><span class="p">(</span><span class="nx">opts</span><span class="p">)</span> <span class="p">{</span>
 
 
 </pre></div>
@@ -2213,7 +2221,7 @@ if (!this.shouldDispatchMoreGames()) break</p>
             <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">EXECUTION_MODE</span> <span class="o">===</span> <span class="s1">&#39;WAIT_FOR_N_PLAYERS&#39;</span> <span class="o">&amp;&amp;</span>
              <span class="k">this</span><span class="p">.</span><span class="nx">POOL_SIZE</span> <span class="o">===</span> <span class="mi">1</span><span class="p">))</span> <span class="p">{</span>
 
-            <span class="nx">doDispatch</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="nx">msg</span><span class="p">,</span> <span class="nx">numberOfGames</span><span class="p">);</span>
+            <span class="nx">doDispatch</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="nx">opts</span><span class="p">);</span>
         <span class="p">}</span>
         <span class="k">else</span> <span class="p">{</span>
 
@@ -2228,7 +2236,7 @@ if (!this.shouldDispatchMoreGames()) break</p>
 <p>Blocks until all players have returned the ping or are kicked.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-            <span class="k">this</span><span class="p">.</span><span class="nx">kickUnresponsivePlayers</span><span class="p">(</span><span class="nx">doDispatch</span><span class="p">,</span> <span class="p">[</span> <span class="nx">msg</span><span class="p">,</span> <span class="nx">numberOfGames</span> <span class="p">]);</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">kickUnresponsivePlayers</span><span class="p">(</span><span class="nx">doDispatch</span><span class="p">,</span> <span class="p">{</span> <span class="nx">callbackArgs</span><span class="o">:</span> <span class="nx">opts</span> <span class="p">});</span>
         <span class="p">}</span>
     <span class="p">};</span>
 <span class="p">})();</span>

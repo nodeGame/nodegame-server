@@ -1111,7 +1111,7 @@ TODO: Send only specific client data, not everything;
         <td class="code highlight"><div class="highlight"><pre>
         <span class="k">if</span> <span class="p">(</span><span class="nx">data</span><span class="p">.</span><span class="nx">command</span> <span class="o">===</span> <span class="s1">&#39;DISPATCH&#39;</span><span class="p">)</span> <span class="p">{</span>
             <span class="nx">room</span><span class="p">.</span><span class="nx">dispatch</span><span class="p">({</span>
-                <span class="nx">over</span><span class="o">:</span> <span class="s1">&#39;Monitor dispatched game.&#39;</span>
+                <span class="nx">msg</span><span class="o">:</span> <span class="p">{</span> <span class="nx">over</span><span class="o">:</span> <span class="s1">&#39;Monitor dispatched game.&#39;</span> <span class="p">}</span>
             <span class="p">});</span>
         <span class="p">}</span>
     <span class="p">});</span>
