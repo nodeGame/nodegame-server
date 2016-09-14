@@ -3014,7 +3014,7 @@ will be checked at a later point.</p>
         <span class="k">return</span> <span class="nx">jwt</span><span class="p">.</span><span class="nx">verify</span><span class="p">(</span><span class="nx">token</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">secret</span><span class="p">);</span>
     <span class="p">}</span>
     <span class="k">catch</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">admin</span> <span class="o">?</span> <span class="s1">&#39;Admin&#39;</span> <span class="o">:</span> <span class="s1">&#39;Player&#39;</span> <span class="o">+</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">ADMIN_SERVER</span> <span class="o">?</span> <span class="s1">&#39;Admin&#39;</span> <span class="o">:</span> <span class="s1">&#39;Player&#39;</span> <span class="o">+</span>
                            <span class="s1">&#39;Server: decoding jwt failed. Error: &#39;</span> <span class="o">+</span> <span class="nx">e</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
         <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
     <span class="p">}</span>
