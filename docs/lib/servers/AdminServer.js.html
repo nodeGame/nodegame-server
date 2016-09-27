@@ -1094,9 +1094,9 @@ TODO: Send only specific client data, not everything;
         </td>
         <td class="code highlight"><div class="highlight"><pre>
    <span class="k">this</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;SERVERCOMMAND_WAITROOMCOMMAND&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">data</span><span class="p">,</span> <span class="nx">from</span><span class="p">)</span> <span class="p">{</span>
-        <span class="kd">var</span> <span class="nx">room</span><span class="p">;</span>
+       <span class="kd">var</span> <span class="nx">room</span><span class="p">;</span>
 
-        <span class="nx">room</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">rooms</span><span class="p">[</span><span class="nx">data</span><span class="p">.</span><span class="nx">roomId</span><span class="p">]</span>
+       <span class="nx">room</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">rooms</span><span class="p">[</span><span class="nx">data</span><span class="p">.</span><span class="nx">roomId</span><span class="p">]</span>
 
 </pre></div>
         </td>
@@ -1109,12 +1109,12 @@ TODO: Send only specific client data, not everything;
 <p>open close wait room</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-        <span class="k">if</span> <span class="p">(</span><span class="nx">data</span><span class="p">.</span><span class="nx">command</span> <span class="o">===</span> <span class="s1">&#39;CLOSE&#39;</span><span class="p">)</span> <span class="p">{</span>
-            <span class="nx">room</span><span class="p">.</span><span class="nx">closeRoom</span><span class="p">();</span>
-        <span class="p">}</span>
-        <span class="k">if</span> <span class="p">(</span><span class="nx">data</span><span class="p">.</span><span class="nx">command</span> <span class="o">===</span> <span class="s1">&#39;OPEN&#39;</span><span class="p">)</span> <span class="p">{</span>
-            <span class="nx">room</span><span class="p">.</span><span class="nx">openRoom</span><span class="p">();</span>
-        <span class="p">}</span>
+       <span class="k">if</span> <span class="p">(</span><span class="nx">data</span><span class="p">.</span><span class="nx">type</span> <span class="o">===</span> <span class="s1">&#39;CLOSE&#39;</span><span class="p">)</span> <span class="p">{</span>
+           <span class="nx">room</span><span class="p">.</span><span class="nx">closeRoom</span><span class="p">();</span>
+       <span class="p">}</span>
+       <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">data</span><span class="p">.</span><span class="nx">type</span> <span class="o">===</span> <span class="s1">&#39;OPEN&#39;</span><span class="p">)</span> <span class="p">{</span>
+           <span class="nx">room</span><span class="p">.</span><span class="nx">openRoom</span><span class="p">();</span>
+       <span class="p">}</span>
 
 </pre></div>
         </td>
@@ -1127,11 +1127,16 @@ TODO: Send only specific client data, not everything;
 <p>dispatch a new game</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-        <span class="k">if</span> <span class="p">(</span><span class="nx">data</span><span class="p">.</span><span class="nx">command</span> <span class="o">===</span> <span class="s1">&#39;DISPATCH&#39;</span><span class="p">)</span> <span class="p">{</span>
-            <span class="nx">room</span><span class="p">.</span><span class="nx">dispatch</span><span class="p">({</span>
-                <span class="nx">msg</span><span class="o">:</span> <span class="p">{</span> <span class="nx">over</span><span class="o">:</span> <span class="s1">&#39;Monitor dispatched game.&#39;</span> <span class="p">}</span>
-            <span class="p">});</span>
-        <span class="p">}</span>
+       <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">data</span><span class="p">.</span><span class="nx">type</span> <span class="o">===</span> <span class="s1">&#39;DISPATCH&#39;</span><span class="p">)</span> <span class="p">{</span>
+           <span class="nx">room</span><span class="p">.</span><span class="nx">dispatch</span><span class="p">({</span>
+               <span class="nx">msg</span><span class="o">:</span> <span class="p">{</span> <span class="nx">over</span><span class="o">:</span> <span class="s1">&#39;Monitor dispatched game.&#39;</span> <span class="p">},</span>
+               <span class="nx">numberOfGames</span><span class="o">:</span> <span class="nx">data</span><span class="p">.</span><span class="nx">numberOfGames</span><span class="p">,</span>
+               <span class="nx">groupSize</span><span class="o">:</span> <span class="nx">data</span><span class="p">.</span><span class="nx">groupSize</span>
+           <span class="p">});</span>
+       <span class="p">}</span>
+       <span class="k">else</span> <span class="p">{</span>
+           <span class="nx">sys</span><span class="p">.</span><span class="nx">warn</span><span class="p">(</span><span class="nx">that</span><span class="p">.</span><span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39; unkwnon WAITROOMCOMMAND: &#39;</span> <span class="o">+</span> <span class="nx">data</span><span class="p">.</span><span class="nx">type</span><span class="p">);</span>
+       <span class="p">}</span>
     <span class="p">});</span>
 
 
