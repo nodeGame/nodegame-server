@@ -1,5 +1,8 @@
 # nodegame-server change log
 
+# 2.13.1
+- Fix bug to access monitor.
+
 # 2.13.0
 - Enabled caching of resources in public/ by default (in channel.settings.js option cacheMaxAge).
 
