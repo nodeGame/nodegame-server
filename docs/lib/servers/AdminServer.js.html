@@ -176,6 +176,8 @@ MIT Licensed</p>
 
 <span class="nx">module</span><span class="p">.</span><span class="nx">exports</span> <span class="o">=</span> <span class="nx">AdminServer</span><span class="p">;</span>
 
+<span class="kd">var</span> <span class="nx">path</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;path&#39;</span><span class="p">);</span>
+
 <span class="kd">var</span> <span class="nx">GameServer</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;./../GameServer&#39;</span><span class="p">),</span>
     <span class="nx">GameRoom</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;./../rooms/GameRoom&#39;</span><span class="p">);</span>
 <span class="kd">var</span> <span class="nx">Logger</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;./../Logger&#39;</span><span class="p">);</span>
@@ -1042,6 +1044,22 @@ TODO: Send only specific client data, not everything;
                 <span class="p">}));</span>
             <span class="p">});</span>
         <span class="p">}</span>
+        <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">data</span><span class="p">.</span><span class="nx">type</span> <span class="o">===</span> <span class="s1">&#39;LOGS&#39;</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">dataDir</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">logDir</span><span class="p">;</span>
+            <span class="nx">replyData</span> <span class="o">=</span> <span class="p">[];</span>
+            <span class="nx">traverseDirectory</span><span class="p">(</span><span class="nx">dataDir</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">filePath</span><span class="p">)</span> <span class="p">{</span>
+                <span class="k">if</span> <span class="p">(</span><span class="nx">path</span><span class="p">.</span><span class="nx">extname</span><span class="p">(</span><span class="nx">filePath</span><span class="p">)</span> <span class="o">===</span> <span class="s1">&#39;.log&#39;</span><span class="p">)</span> <span class="p">{</span>
+                    <span class="nx">replyData</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">path</span><span class="p">.</span><span class="nx">basename</span><span class="p">(</span><span class="nx">filePath</span><span class="p">));</span>
+                <span class="p">}</span>
+            <span class="p">},</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+                <span class="nx">that</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">send2client</span><span class="p">(</span><span class="nx">that</span><span class="p">.</span><span class="nx">msg</span><span class="p">.</span><span class="nx">create</span><span class="p">({</span>
+                    <span class="nx">text</span><span class="o">:</span> <span class="s1">&#39;INFO_LOGS&#39;</span><span class="p">,</span>
+                    <span class="nx">data</span><span class="o">:</span> <span class="nx">replyData</span><span class="p">,</span>
+                    <span class="nx">to</span><span class="o">:</span>   <span class="nx">from</span>
+                <span class="p">}));</span>
+            <span class="p">});</span>
+        <span class="p">}</span>
+
 
 </pre></div>
         </td>
