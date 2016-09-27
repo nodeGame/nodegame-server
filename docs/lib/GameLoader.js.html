@@ -1632,15 +1632,18 @@ automatically add a waiting room to the channel.</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-56" id="section-56">&#182;</a>
 </div>
-<p>Add the list of channels created by the game.</p>
+<p>Was:
+Add the list of channels created by the game.
+        sn.info.games[gameName].channel = {
+            player: channel.playerServer ?
+                channel.playerServer.endpoint : null,
+            admin: channel.adminServer ?
+                channel.adminServer.endpoint : null
+        };</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-        <span class="nx">sn</span><span class="p">.</span><span class="nx">info</span><span class="p">.</span><span class="nx">games</span><span class="p">[</span><span class="nx">gameName</span><span class="p">].</span><span class="nx">channel</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="nx">player</span><span class="o">:</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">playerServer</span> <span class="o">?</span>
-                <span class="nx">channel</span><span class="p">.</span><span class="nx">playerServer</span><span class="p">.</span><span class="nx">endpoint</span> <span class="o">:</span> <span class="kc">null</span><span class="p">,</span>
-            <span class="nx">admin</span><span class="o">:</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">adminServer</span> <span class="o">?</span>
-                <span class="nx">channel</span><span class="p">.</span><span class="nx">adminServer</span><span class="p">.</span><span class="nx">endpoint</span> <span class="o">:</span> <span class="kc">null</span>
-        <span class="p">};</span>
+
+        <span class="nx">sn</span><span class="p">.</span><span class="nx">info</span><span class="p">.</span><span class="nx">games</span><span class="p">[</span><span class="nx">gameName</span><span class="p">].</span><span class="nx">channel</span> <span class="o">=</span> <span class="nx">channelConf</span><span class="p">;</span>
 
 
 </pre></div>

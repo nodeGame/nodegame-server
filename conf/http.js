@@ -42,11 +42,14 @@ function configure(app, servernode) {
     app.set('view engine', 'jade');
     app.set('view options', {layout: false});
 
-    // app.use(express.static(publicDir));
 
     if (process.env.NODE_ENV === 'development') {
+        app.use(express.static(publicDir));
         app.use(errorHandler());
-    };
+    }
+    else {
+        app.use(express.static(publicDir, { maxAge: 3600000 }));
+    }
 
     app.enable("jsonp callback");
 
