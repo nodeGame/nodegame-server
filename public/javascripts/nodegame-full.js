@@ -4768,7 +4768,6 @@ if (!Array.prototype.indexOf) {
         return OBJ.hasOwnNestedProperty(keys.join('.'), obj[k]);
     };
 
-
     /**
      * ## OBJ.split
      *
@@ -7619,7 +7618,7 @@ if (!Array.prototype.indexOf) {
      */
     NDDB.prototype.rebuildIndexes = function() {
         var h, i, v, cb, idx;
-        
+
         h = !(J.isEmpty(this.__H));
         i = !(J.isEmpty(this.__I));
         v = !(J.isEmpty(this.__V));
