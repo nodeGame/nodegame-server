@@ -1,5 +1,9 @@
 # nodegame-server change log
 
+# current
+- Serving logs list.
+- Improved WaitingRoom dispatch.
+
 # 2.11.0
 - WaitingRoom's dispatching optimized.
 - Added WaitingRoom ON_CLOSE and ON_OPEN callbacks.
