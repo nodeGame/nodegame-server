@@ -1496,7 +1496,6 @@ pinging is skipped.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">WaitingRoom</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">closeRoom</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">mod</span><span class="p">,</span> <span class="nx">param</span><span class="p">)</span> <span class="p">{</span>
-    <span class="kd">var</span> <span class="nx">len</span><span class="p">;</span>
     <span class="k">if</span> <span class="p">(</span><span class="nx">mod</span> <span class="o">&amp;&amp;</span> <span class="nx">mod</span> <span class="o">!==</span> <span class="s1">&#39;now&#39;</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">if</span> <span class="p">(</span><span class="nx">mod</span> <span class="o">===</span> <span class="s1">&#39;afterDispatch&#39;</span><span class="p">)</span> <span class="p">{</span>
             <span class="k">this</span><span class="p">.</span><span class="nx">closeAfterDispatch</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
@@ -1949,7 +1948,7 @@ pinging is skipped.</p>
         <span class="kd">var</span> <span class="nx">pId</span><span class="p">,</span> <span class="nx">group</span><span class="p">,</span> <span class="nx">groupIdx</span><span class="p">,</span> <span class="nx">groupLimit</span><span class="p">;</span>
         <span class="kd">var</span> <span class="nx">i</span><span class="p">,</span> <span class="nx">j</span><span class="p">;</span>
         <span class="kd">var</span> <span class="nx">gameRoom</span><span class="p">,</span> <span class="nx">code</span><span class="p">,</span> <span class="nx">gameNumber</span><span class="p">;</span>
-        <span class="kd">var</span> <span class="nx">pList</span><span class="p">,</span> <span class="nx">nPlayers</span><span class="p">,</span> <span class="nx">playerIds</span><span class="p">,</span> <span class="nx">nPlayersToDispatch</span><span class="p">;</span>
+        <span class="kd">var</span> <span class="nx">pList</span><span class="p">,</span> <span class="nx">nPlayers</span><span class="p">,</span> <span class="nx">nPlayersToDispatch</span><span class="p">;</span>
         <span class="kd">var</span> <span class="nx">groups</span><span class="p">,</span> <span class="nx">nGroupsCreated</span><span class="p">;</span>
         <span class="kd">var</span> <span class="nx">msg</span><span class="p">,</span> <span class="nx">numberOfGames</span><span class="p">,</span> <span class="nx">groupSize</span><span class="p">,</span> <span class="nx">closeAfterDispatch</span><span class="p">;</span>
 
