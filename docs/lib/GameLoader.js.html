@@ -1893,7 +1893,7 @@ level of the specified directory.</p>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">GameLoader</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">loadWaitRoomDir</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">directory</span><span class="p">,</span> <span class="nx">channel</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">conf</span><span class="p">,</span> <span class="nx">waitRoom</span><span class="p">;</span>
-    <span class="nx">conf</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">buildWaitRoomConf</span><span class="p">(</span><span class="nx">directory</span><span class="p">,</span> <span class="nx">channel</span><span class="p">);</span>
+    <span class="nx">conf</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">buildWaitRoomConf</span><span class="p">(</span><span class="nx">directory</span><span class="p">,</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">gameName</span><span class="p">);</span>
 
 </pre></div>
         </td>
