@@ -1894,7 +1894,7 @@ pinging is skipped.</p>
     <span class="p">};</span>
 
     <span class="nx">parseGroupSizeOptions</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">opts</span><span class="p">)</span> <span class="p">{</span>
-        <span class="kd">var</span> <span class="nx">groupSize</span><span class="p">,</span> <span class="nx">numberOfGames</span><span class="p">;</span>
+        <span class="kd">var</span> <span class="nx">groupSize</span><span class="p">,</span> <span class="nx">numberOfGames</span><span class="p">,</span> <span class="nx">nPlayers</span><span class="p">;</span>
         <span class="nx">opts</span> <span class="o">=</span> <span class="nx">opts</span> <span class="o">||</span> <span class="p">{};</span>
 
         <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">opts</span><span class="p">.</span><span class="nx">groupSize</span><span class="p">)</span> <span class="p">{</span>
@@ -1923,6 +1923,7 @@ pinging is skipped.</p>
         <td class="code highlight"><div class="highlight"><pre>
         <span class="nx">numberOfGames</span> <span class="o">=</span> <span class="nx">opts</span><span class="p">.</span><span class="nx">numberOfGames</span><span class="p">;</span>
         <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">numberOfGames</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">nPlayers</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">size</span><span class="p">();</span>
             <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">nPlayers</span> <span class="o">||</span>
                 <span class="k">this</span><span class="p">.</span><span class="nx">MAX_WAIT_TIME</span> <span class="o">&amp;&amp;</span> <span class="k">this</span><span class="p">.</span><span class="nx">EXECUTION_MODE</span> <span class="o">===</span> <span class="s1">&#39;TIMEOUT&#39;</span><span class="p">)</span> <span class="p">{</span>
 
