@@ -1,5 +1,8 @@
 # nodegame-server change log
 
+# 2.14.0
+- Fix bug of multiple connections during pinging in WaitingRoom dispatch.
+
 # 2.13.1
 - Fix bug to access monitor.
 
