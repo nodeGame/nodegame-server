@@ -1,5 +1,8 @@
 # nodegame-server change log
 
+# 2.14.1
+- More WaitingRoom options (ON_DISPATCH, ON_DISPATCHED).
+
 # 2.14.0
 - Fix bug of multiple connections during pinging in WaitingRoom dispatch.
 
