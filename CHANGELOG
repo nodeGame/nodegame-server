@@ -1,5 +1,8 @@
 # nodegame-server change log
 
+# 3.0.0
+- 02/10/2016 NodeGame Version Upgrade.
+
 # 2.14.1
 - More WaitingRoom options (ON_DISPATCH, ON_DISPATCHED).
 
