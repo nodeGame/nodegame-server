@@ -10496,7 +10496,7 @@ if (!Array.prototype.indexOf) {
     node.support = JSUS.compatibility();
 
     // Auto-Generated.
-    node.version = '2.4.0';
+    node.version = '3.0.0';
 
 })(window);
 
@@ -45206,7 +45206,7 @@ if (!Array.prototype.indexOf) {
 
             reportExitCode = '<br>You have been disconnected. ' +
                 ('undefined' !== typeof data.exit ?
-                'Please report this exit code: ' + data.exit : '') +
+                 ('Please report this exit code: ' + data.exit) : '') +
                 '<br></h3>';
 
             if (data.action === 'AllPlayersConnected') {
