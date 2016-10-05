@@ -14988,8 +14988,7 @@ if (!Array.prototype.indexOf) {
                          function(value) {
                              checkIfPushWorked(node, p, checkPushWaitTime);
                          },
-                         p.id,
-                         {
+                         p.id, {
                              timeout: replyWaitTime,
                              executeOnce: true,
                              target: GAMECOMMAND,
@@ -26816,6 +26815,8 @@ if (!Array.prototype.indexOf) {
 
         /**
          * ## NODEGAME_GAMECOMMAND: push_step
+         *
+         * If listener is moved to another file, update doc page
          */
         node.events.ng.on(CMD + gcommands.push_step, function() {
             var res, stageLevel;
