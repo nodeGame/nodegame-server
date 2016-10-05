@@ -1,5 +1,8 @@
 # nodegame-server change log
 
+# 3.0.2
+- Fixing wrong nodegame-full built.
+
 # 3.0.1
 - More information served with RESULTS.
 - All results can be downloaded as zip file.
