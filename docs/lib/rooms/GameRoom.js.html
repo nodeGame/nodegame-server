@@ -551,7 +551,7 @@ if no othe is already defined.</p>
         <td class="code highlight"><div class="highlight"><pre>
         <span class="nx">clearTimeout</span><span class="p">(</span><span class="nx">that</span><span class="p">.</span><span class="nx">countdown</span><span class="p">);</span>
         <span class="nx">that</span><span class="p">.</span><span class="nx">countdown</span> <span class="o">=</span> <span class="kc">null</span><span class="p">;</span>
-        <span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">resume</span><span class="p">();</span>
+
 
 </pre></div>
         </td>
@@ -561,16 +561,33 @@ if no othe is already defined.</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-13" id="section-13">&#182;</a>
 </div>
+<p>Player can reconnect during the countdown or after.
+If after, then the game won't be paused.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">isPaused</span><span class="p">())</span> <span class="p">{</span>
+            <span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">resume</span><span class="p">();</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-14" id="section-14">&#182;</a>
+</div>
 <p>Resume other players.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-        <span class="nx">setTimeout</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
-            <span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">pl</span><span class="p">.</span><span class="nx">each</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">p</span><span class="p">)</span> <span class="p">{</span>
-                <span class="k">if</span> <span class="p">(</span><span class="nx">player</span><span class="p">.</span><span class="nx">id</span> <span class="o">!==</span> <span class="nx">p</span><span class="p">.</span><span class="nx">id</span><span class="p">)</span> <span class="p">{</span>
-                    <span class="nx">node</span><span class="p">.</span><span class="nx">remoteCommand</span><span class="p">(</span><span class="s1">&#39;resume&#39;</span><span class="p">,</span> <span class="nx">p</span><span class="p">.</span><span class="nx">id</span><span class="p">);</span>
-                <span class="p">}</span>
-            <span class="p">});</span>
-        <span class="p">},</span> <span class="mi">100</span><span class="p">);</span>
+            <span class="nx">setTimeout</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+                <span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">pl</span><span class="p">.</span><span class="nx">each</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">p</span><span class="p">)</span> <span class="p">{</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="nx">player</span><span class="p">.</span><span class="nx">id</span> <span class="o">!==</span> <span class="nx">p</span><span class="p">.</span><span class="nx">id</span><span class="p">)</span> <span class="p">{</span>
+                        <span class="nx">node</span><span class="p">.</span><span class="nx">remoteCommand</span><span class="p">(</span><span class="s1">&#39;resume&#39;</span><span class="p">,</span> <span class="nx">p</span><span class="p">.</span><span class="nx">id</span><span class="p">);</span>
+                    <span class="p">}</span>
+                <span class="p">});</span>
+            <span class="p">},</span> <span class="mi">100</span><span class="p">);</span>
+        <span class="p">}</span>
+
         <span class="k">if</span> <span class="p">(</span><span class="nx">customCb</span><span class="p">)</span> <span class="nx">customCb</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">,</span> <span class="nx">player</span><span class="p">);</span>
     <span class="p">};</span>
 
@@ -581,7 +598,7 @@ if no othe is already defined.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-14" id="section-14">&#182;</a>
+  <a class="pilcrow" href="#section-15" id="section-15">&#182;</a>
 </div>
 <p>Register player disconnection, and wait for him...</p>
         </td>
@@ -598,7 +615,7 @@ if no othe is already defined.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-15" id="section-15">&#182;</a>
+  <a class="pilcrow" href="#section-16" id="section-16">&#182;</a>
 </div>
 <p>Player reconnecting.
 This function is called first, and it invokes any
@@ -624,7 +641,7 @@ min/max/exact handler accordingly.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-16" id="section-16">&#182;</a>
+  <a class="pilcrow" href="#section-17" id="section-17">&#182;</a>
 </div>
 <p>Check if only within stage reconnections are allowed.</p>
         </td>
@@ -643,7 +660,7 @@ min/max/exact handler accordingly.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-17" id="section-17">&#182;</a>
+  <a class="pilcrow" href="#section-18" id="section-18">&#182;</a>
 </div>
 <p>Setup client.</p>
         </td>
@@ -658,7 +675,7 @@ min/max/exact handler accordingly.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-18" id="section-18">&#182;</a>
+  <a class="pilcrow" href="#section-19" id="section-19">&#182;</a>
 </div>
 <p>If lang is different from Eng, remote setup it.
 TRUE: sets also the URI prefix.</p>
@@ -675,7 +692,7 @@ TRUE: sets also the URI prefix.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-19" id="section-19">&#182;</a>
+  <a class="pilcrow" href="#section-20" id="section-20">&#182;</a>
 </div>
 <p>Start the game on the reconnecting client.
 Need to give step: false, we just init it.</p>
@@ -690,7 +707,7 @@ Need to give step: false, we just init it.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-20" id="section-20">&#182;</a>
+  <a class="pilcrow" href="#section-21" id="section-21">&#182;</a>
 </div>
 <p>Create the reconnection options object.</p>
         </td>
@@ -704,7 +721,7 @@ Need to give step: false, we just init it.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-21" id="section-21">&#182;</a>
+  <a class="pilcrow" href="#section-22" id="section-22">&#182;</a>
 </div>
 <p>Mark the state as DONE, if this is the case.
 Important!
@@ -727,7 +744,7 @@ stage, or if the client is ahead.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-22" id="section-22">&#182;</a>
+  <a class="pilcrow" href="#section-23" id="section-23">&#182;</a>
 </div>
 <p>Sets the timer on reconnecting client if milliseconds is found.</p>
         </td>
@@ -741,7 +758,7 @@ stage, or if the client is ahead.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-23" id="section-23">&#182;</a>
+  <a class="pilcrow" href="#section-24" id="section-24">&#182;</a>
 </div>
 <p>Time left to play in stage.</p>
         </td>
@@ -758,7 +775,7 @@ stage, or if the client is ahead.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-24" id="section-24">&#182;</a>
+  <a class="pilcrow" href="#section-25" id="section-25">&#182;</a>
 </div>
 <p>node.remoteSetup('plot', p.id, { timer: resetTime }, 'tmpCache');</p>
         </td>
@@ -775,7 +792,7 @@ stage, or if the client is ahead.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-25" id="section-25">&#182;</a>
+  <a class="pilcrow" href="#section-26" id="section-26">&#182;</a>
 </div>
 <p>Res contains the reconnect options for the step,
 or false to abort reconnection.</p>
@@ -796,7 +813,7 @@ or false to abort reconnection.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-26" id="section-26">&#182;</a>
+  <a class="pilcrow" href="#section-27" id="section-27">&#182;</a>
 </div>
 <p>Add player to player list.</p>
         </td>
@@ -810,7 +827,7 @@ or false to abort reconnection.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-27" id="section-27">&#182;</a>
+  <a class="pilcrow" href="#section-28" id="section-28">&#182;</a>
 </div>
 <p>Start the step on reconnecting client.
 Unless differently specified by the reconnect callback,
@@ -826,7 +843,7 @@ and the step when the client disconnected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-28" id="section-28">&#182;</a>
+  <a class="pilcrow" href="#section-29" id="section-29">&#182;</a>
 </div>
 <p>console.log(compareSteps, curStage, code.stage);
 -1 means first param is ahead in game stage.
@@ -846,7 +863,7 @@ compareSteps = GameStage.compare(code.stage, curStage);</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-29" id="section-29">&#182;</a>
+  <a class="pilcrow" href="#section-30" id="section-30">&#182;</a>
 </div>
 <p>See if we have enough players now.</p>
         </td>
@@ -860,7 +877,7 @@ compareSteps = GameStage.compare(code.stage, curStage);</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-30" id="section-30">&#182;</a>
+  <a class="pilcrow" href="#section-31" id="section-31">&#182;</a>
 </div>
 <p>If we are still missing more players pause reconnecting player.</p>
         </td>
@@ -1023,7 +1040,7 @@ compareSteps = GameStage.compare(code.stage, curStage);</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-35" id="section-35">&#182;</a>
+  <a class="pilcrow" href="#section-36" id="section-36">&#182;</a>
 </div>
 <p>TODO: Don't send to logic!</p>
         </td>
@@ -1111,7 +1128,7 @@ compareSteps = GameStage.compare(code.stage, curStage);</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-37" id="section-37">&#182;</a>
+  <a class="pilcrow" href="#section-38" id="section-38">&#182;</a>
 </div>
 <p>Check parameters.</p>
         </td>
@@ -1142,7 +1159,7 @@ compareSteps = GameStage.compare(code.stage, curStage);</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-38" id="section-38">&#182;</a>
+  <a class="pilcrow" href="#section-39" id="section-39">&#182;</a>
 </div>
 <p>Apply defaults.</p>
         </td>
@@ -1158,7 +1175,7 @@ compareSteps = GameStage.compare(code.stage, curStage);</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-39" id="section-39">&#182;</a>
+  <a class="pilcrow" href="#section-40" id="section-40">&#182;</a>
 </div>
 <p>Set up logic.</p>
         </td>
@@ -1172,7 +1189,7 @@ compareSteps = GameStage.compare(code.stage, curStage);</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-40" id="section-40">&#182;</a>
+  <a class="pilcrow" href="#section-41" id="section-41">&#182;</a>
 </div>
 <p>At this point clientList should be an array of client IDs.</p>
         </td>
@@ -1237,7 +1254,7 @@ compareSteps = GameStage.compare(code.stage, curStage);</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-42" id="section-42">&#182;</a>
+  <a class="pilcrow" href="#section-43" id="section-43">&#182;</a>
 </div>
 <p>Check parameters.</p>
         </td>
@@ -1252,7 +1269,7 @@ compareSteps = GameStage.compare(code.stage, curStage);</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-43" id="section-43">&#182;</a>
+  <a class="pilcrow" href="#section-44" id="section-44">&#182;</a>
 </div>
 <p>Apply defaults.</p>
         </td>
@@ -1268,7 +1285,7 @@ compareSteps = GameStage.compare(code.stage, curStage);</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-44" id="section-44">&#182;</a>
+  <a class="pilcrow" href="#section-45" id="section-45">&#182;</a>
 </div>
 <p>Check startability.</p>
         </td>
@@ -1286,7 +1303,7 @@ compareSteps = GameStage.compare(code.stage, curStage);</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-45" id="section-45">&#182;</a>
+  <a class="pilcrow" href="#section-46" id="section-46">&#182;</a>
 </div>
 <p>Start.</p>
         </td>
@@ -1353,7 +1370,7 @@ compareSteps = GameStage.compare(code.stage, curStage);</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-47" id="section-47">&#182;</a>
+  <a class="pilcrow" href="#section-48" id="section-48">&#182;</a>
 </div>
 <p>Check parameters.</p>
         </td>
@@ -1368,7 +1385,7 @@ compareSteps = GameStage.compare(code.stage, curStage);</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-48" id="section-48">&#182;</a>
+  <a class="pilcrow" href="#section-49" id="section-49">&#182;</a>
 </div>
 <p>Apply defaults.</p>
         </td>
@@ -1384,7 +1401,7 @@ compareSteps = GameStage.compare(code.stage, curStage);</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-49" id="section-49">&#182;</a>
+  <a class="pilcrow" href="#section-50" id="section-50">&#182;</a>
 </div>
 <p>Check pausability.</p>
         </td>
@@ -1402,7 +1419,7 @@ compareSteps = GameStage.compare(code.stage, curStage);</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-50" id="section-50">&#182;</a>
+  <a class="pilcrow" href="#section-51" id="section-51">&#182;</a>
 </div>
 <p>Pause.</p>
         </td>
@@ -1469,7 +1486,7 @@ compareSteps = GameStage.compare(code.stage, curStage);</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-52" id="section-52">&#182;</a>
+  <a class="pilcrow" href="#section-53" id="section-53">&#182;</a>
 </div>
 <p>Check parameters.</p>
         </td>
@@ -1484,7 +1501,7 @@ compareSteps = GameStage.compare(code.stage, curStage);</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-53" id="section-53">&#182;</a>
+  <a class="pilcrow" href="#section-54" id="section-54">&#182;</a>
 </div>
 <p>Apply defaults.</p>
         </td>
@@ -1500,7 +1517,7 @@ compareSteps = GameStage.compare(code.stage, curStage);</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-54" id="section-54">&#182;</a>
+  <a class="pilcrow" href="#section-55" id="section-55">&#182;</a>
 </div>
 <p>Check resumability.</p>
         </td>
@@ -1518,7 +1535,7 @@ compareSteps = GameStage.compare(code.stage, curStage);</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-55" id="section-55">&#182;</a>
+  <a class="pilcrow" href="#section-56" id="section-56">&#182;</a>
 </div>
 <p>Resume.</p>
         </td>
@@ -1585,7 +1602,7 @@ compareSteps = GameStage.compare(code.stage, curStage);</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-57" id="section-57">&#182;</a>
+  <a class="pilcrow" href="#section-58" id="section-58">&#182;</a>
 </div>
 <p>Check parameters.</p>
         </td>
@@ -1600,7 +1617,7 @@ compareSteps = GameStage.compare(code.stage, curStage);</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-58" id="section-58">&#182;</a>
+  <a class="pilcrow" href="#section-59" id="section-59">&#182;</a>
 </div>
 <p>Apply defaults.</p>
         </td>
@@ -1616,7 +1633,7 @@ compareSteps = GameStage.compare(code.stage, curStage);</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-59" id="section-59">&#182;</a>
+  <a class="pilcrow" href="#section-60" id="section-60">&#182;</a>
 </div>
 <p>Check stoppability.</p>
         </td>
@@ -1634,7 +1651,7 @@ compareSteps = GameStage.compare(code.stage, curStage);</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-60" id="section-60">&#182;</a>
+  <a class="pilcrow" href="#section-61" id="section-61">&#182;</a>
 </div>
 <p>Stop.</p>
         </td>
@@ -1706,7 +1723,7 @@ compareSteps = GameStage.compare(code.stage, curStage);</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-62" id="section-62">&#182;</a>
+  <a class="pilcrow" href="#section-63" id="section-63">&#182;</a>
 </div>
 <p>Get the right stager.</p>
         </td>
@@ -1726,7 +1743,7 @@ compareSteps = GameStage.compare(code.stage, curStage);</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-63" id="section-63">&#182;</a>
+  <a class="pilcrow" href="#section-64" id="section-64">&#182;</a>
 </div>
 <p>Start adding default properties by client type.</p>
         </td>
@@ -1742,7 +1759,7 @@ compareSteps = GameStage.compare(code.stage, curStage);</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-64" id="section-64">&#182;</a>
+  <a class="pilcrow" href="#section-65" id="section-65">&#182;</a>
 </div>
 <p>For both logic and other client types.</p>
         </td>
@@ -1760,7 +1777,7 @@ compareSteps = GameStage.compare(code.stage, curStage);</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-65" id="section-65">&#182;</a>
+  <a class="pilcrow" href="#section-66" id="section-66">&#182;</a>
 </div>
 <p>If it is a function must be executed.
 Other values will be parsed later.</p>
@@ -1788,7 +1805,7 @@ Other values will be parsed later.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-66" id="section-66">&#182;</a>
+  <a class="pilcrow" href="#section-67" id="section-67">&#182;</a>
 </div>
 <p>Set different defaults for logic and other client types.</p>
         </td>
@@ -1814,7 +1831,7 @@ Other values will be parsed later.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-67" id="section-67">&#182;</a>
+  <a class="pilcrow" href="#section-68" id="section-68">&#182;</a>
 </div>
 <p>If moved into another file update documentation page.</p>
         </td>
@@ -1863,7 +1880,7 @@ Other values will be parsed later.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-68" id="section-68">&#182;</a>
+  <a class="pilcrow" href="#section-69" id="section-69">&#182;</a>
 </div>
 <p>Add treatment settings.</p>
         </td>
@@ -1877,7 +1894,7 @@ Other values will be parsed later.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-69" id="section-69">&#182;</a>
+  <a class="pilcrow" href="#section-70" id="section-70">&#182;</a>
 </div>
 <p>Mixin-in nodeGame options.</p>
         </td>
@@ -1958,7 +1975,7 @@ a remote client.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-71" id="section-71">&#182;</a>
+  <a class="pilcrow" href="#section-72" id="section-72">&#182;</a>
 </div>
 <p>Fake cache.</p>
         </td>
@@ -1972,7 +1989,7 @@ a remote client.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-72" id="section-72">&#182;</a>
+  <a class="pilcrow" href="#section-73" id="section-73">&#182;</a>
 </div>
 <p>See if the client is local or remote.</p>
         </td>
@@ -1986,7 +2003,7 @@ a remote client.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-73" id="section-73">&#182;</a>
+  <a class="pilcrow" href="#section-74" id="section-74">&#182;</a>
 </div>
 <p>Client type.</p>
         </td>
@@ -2000,7 +2017,7 @@ a remote client.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-74" id="section-74">&#182;</a>
+  <a class="pilcrow" href="#section-75" id="section-75">&#182;</a>
 </div>
 <p>Get the client type, check cache (bots are never cached).</p>
         </td>
@@ -2021,7 +2038,7 @@ a remote client.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-75" id="section-75">&#182;</a>
+  <a class="pilcrow" href="#section-76" id="section-76">&#182;</a>
 </div>
 <p>Setup the client.</p>
         </td>
@@ -2034,7 +2051,7 @@ a remote client.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-76" id="section-76">&#182;</a>
+  <a class="pilcrow" href="#section-77" id="section-77">&#182;</a>
 </div>
 <p>Local client.</p>
         </td>
@@ -2047,7 +2064,7 @@ a remote client.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-77" id="section-77">&#182;</a>
+  <a class="pilcrow" href="#section-78" id="section-78">&#182;</a>
 </div>
 <p>Can't remoteSetup here because serializing the plot methods
 would make them lose their context (node etc.).</p>
@@ -2063,7 +2080,7 @@ would make them lose their context (node etc.).</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-78" id="section-78">&#182;</a>
+  <a class="pilcrow" href="#section-79" id="section-79">&#182;</a>
 </div>
 <p>Remote client.</p>
         </td>
@@ -2146,7 +2163,7 @@ would make them lose their context (node etc.).</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-81" id="section-81">&#182;</a>
+  <a class="pilcrow" href="#section-82" id="section-82">&#182;</a>
 </div>
 <p>Stop logic if necessary.</p>
         </td>
@@ -2160,7 +2177,7 @@ would make them lose their context (node etc.).</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-82" id="section-82">&#182;</a>
+  <a class="pilcrow" href="#section-83" id="section-83">&#182;</a>
 </div>
 <p>Setup must be called before connect.</p>
         </td>
@@ -2174,7 +2191,7 @@ would make them lose their context (node etc.).</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-83" id="section-83">&#182;</a>
+  <a class="pilcrow" href="#section-84" id="section-84">&#182;</a>
 </div>
 <p>Connect logic to server, if not already connected. E.g., after a stop
 command it is generally still connected. Or the node object can be
@@ -2251,7 +2268,7 @@ passed in the constructor and be already connected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-85" id="section-85">&#182;</a>
+  <a class="pilcrow" href="#section-86" id="section-86">&#182;</a>
 </div>
 <p>Resolve special values of clientList.</p>
         </td>
@@ -2279,7 +2296,7 @@ passed in the constructor and be already connected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-86" id="section-86">&#182;</a>
+  <a class="pilcrow" href="#section-87" id="section-87">&#182;</a>
 </div>
 <p>Setup all given clients.</p>
         </td>
@@ -2432,7 +2449,7 @@ otherwise the whole function is not optimized.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-90" id="section-90">&#182;</a>
+  <a class="pilcrow" href="#section-91" id="section-91">&#182;</a>
 </div>
 <p>Disconnect client.</p>
         </td>

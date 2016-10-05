@@ -1,5 +1,10 @@
 # nodegame-server change log
 
+# 3.0.1
+- More information served with RESULTS.
+- All results can be downloaded as zip file.
+- When the handler for the correct number of players is fired, it is checked that the game is paused before calling resume.
+
 # 3.0.0
 - 02/10/2016 NodeGame Version Upgrade.
 
