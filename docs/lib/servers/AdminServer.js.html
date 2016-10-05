@@ -1034,8 +1034,8 @@ TODO: Send only specific client data, not everything;
         <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">data</span><span class="p">.</span><span class="nx">type</span> <span class="o">===</span> <span class="s1">&#39;RESULTS&#39;</span><span class="p">)</span> <span class="p">{</span>
             <span class="nx">dataDir</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">getGameDir</span><span class="p">()</span> <span class="o">+</span> <span class="s1">&#39;data&#39;</span><span class="p">;</span>
             <span class="nx">replyData</span> <span class="o">=</span> <span class="p">[];</span>
-            <span class="nx">traverseDirectory</span><span class="p">(</span><span class="nx">dataDir</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">path</span><span class="p">)</span> <span class="p">{</span>
-                <span class="nx">replyData</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">path</span><span class="p">.</span><span class="nx">replace</span><span class="p">(</span><span class="nx">dataDir</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">));</span>
+            <span class="nx">traverseDirectory</span><span class="p">(</span><span class="nx">dataDir</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">filePath</span><span class="p">,</span> <span class="nx">stat</span><span class="p">)</span> <span class="p">{</span>
+                <span class="nx">replyData</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">filePath</span><span class="p">.</span><span class="nx">replace</span><span class="p">(</span><span class="nx">dataDir</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">));</span>
             <span class="p">},</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
                 <span class="nx">that</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">send2client</span><span class="p">(</span><span class="nx">that</span><span class="p">.</span><span class="nx">msg</span><span class="p">.</span><span class="nx">create</span><span class="p">({</span>
                     <span class="nx">text</span><span class="o">:</span> <span class="s1">&#39;INFO_RESULTS&#39;</span><span class="p">,</span>
@@ -1047,7 +1047,7 @@ TODO: Send only specific client data, not everything;
         <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">data</span><span class="p">.</span><span class="nx">type</span> <span class="o">===</span> <span class="s1">&#39;LOGS&#39;</span><span class="p">)</span> <span class="p">{</span>
             <span class="nx">dataDir</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">logDir</span><span class="p">;</span>
             <span class="nx">replyData</span> <span class="o">=</span> <span class="p">[];</span>
-            <span class="nx">traverseDirectory</span><span class="p">(</span><span class="nx">dataDir</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">filePath</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">traverseDirectory</span><span class="p">(</span><span class="nx">dataDir</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">filePath</span><span class="p">,</span> <span class="nx">stat</span><span class="p">)</span> <span class="p">{</span>
                 <span class="k">if</span> <span class="p">(</span><span class="nx">path</span><span class="p">.</span><span class="nx">extname</span><span class="p">(</span><span class="nx">filePath</span><span class="p">)</span> <span class="o">===</span> <span class="s1">&#39;.log&#39;</span><span class="p">)</span> <span class="p">{</span>
                     <span class="nx">replyData</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">path</span><span class="p">.</span><span class="nx">basename</span><span class="p">(</span><span class="nx">filePath</span><span class="p">));</span>
                 <span class="p">}</span>
@@ -1898,12 +1898,12 @@ the client-id of the recipient.</p>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="nx">pending</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
 
-    <span class="nx">attemptDone</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">filePath</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">attemptDone</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">filePath</span><span class="p">,</span> <span class="nx">stat</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">filePath</span><span class="p">)</span> <span class="p">{</span>
             <span class="nx">done</span><span class="p">();</span>
         <span class="p">}</span>
         <span class="k">else</span> <span class="p">{</span>
-            <span class="nx">callback</span><span class="p">(</span><span class="nx">filePath</span><span class="p">);</span>
+            <span class="nx">callback</span><span class="p">(</span><span class="nx">filePath</span><span class="p">,</span> <span class="nx">stat</span><span class="p">);</span>
             <span class="k">if</span> <span class="p">(</span><span class="o">--</span><span class="nx">pending</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">)</span> <span class="nx">done</span><span class="p">();</span>
         <span class="p">}</span>
     <span class="p">};</span>
@@ -1960,7 +1960,7 @@ the client-id of the recipient.</p>
                         <span class="nx">recurse</span><span class="p">(</span><span class="nx">filePath</span><span class="p">,</span> <span class="nx">depth</span> <span class="o">+</span> <span class="mi">1</span><span class="p">);</span>
                     <span class="p">}</span>
                     <span class="k">else</span> <span class="p">{</span>
-                        <span class="nx">attemptDone</span><span class="p">(</span><span class="nx">filePath</span><span class="p">);</span>
+                        <span class="nx">attemptDone</span><span class="p">(</span><span class="nx">filePath</span><span class="p">,</span> <span class="nx">stat</span><span class="p">);</span>
                     <span class="p">}</span>
                 <span class="p">});</span>
             <span class="p">});</span>
