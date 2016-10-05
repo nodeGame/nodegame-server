@@ -1033,10 +1033,45 @@ TODO: Send only specific client data, not everything;
         <span class="p">}</span>
         <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">data</span><span class="p">.</span><span class="nx">type</span> <span class="o">===</span> <span class="s1">&#39;RESULTS&#39;</span><span class="p">)</span> <span class="p">{</span>
             <span class="nx">dataDir</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">getGameDir</span><span class="p">()</span> <span class="o">+</span> <span class="s1">&#39;data&#39;</span><span class="p">;</span>
-            <span class="nx">replyData</span> <span class="o">=</span> <span class="p">[];</span>
+            <span class="nx">replyData</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="nx">lastModified</span><span class="o">:</span> <span class="kc">null</span><span class="p">,</span>
+                <span class="nx">files</span><span class="o">:</span> <span class="p">[]</span>
+            <span class="p">};</span>
             <span class="nx">traverseDirectory</span><span class="p">(</span><span class="nx">dataDir</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">filePath</span><span class="p">,</span> <span class="nx">stat</span><span class="p">)</span> <span class="p">{</span>
-                <span class="nx">replyData</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">filePath</span><span class="p">.</span><span class="nx">replace</span><span class="p">(</span><span class="nx">dataDir</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">));</span>
+                <span class="kd">var</span> <span class="nx">d</span><span class="p">;</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-36" id="section-36">&#182;</a>
+</div>
+<p>Save last modification date.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+                <span class="nx">d</span> <span class="o">=</span> <span class="nb">Date</span><span class="p">.</span><span class="nx">parse</span><span class="p">(</span><span class="nx">stat</span><span class="p">.</span><span class="nx">mtime</span><span class="p">);</span>
+                <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">replyData</span><span class="p">.</span><span class="nx">lastModified</span> <span class="o">||</span> <span class="nx">d</span> <span class="o">&gt;</span> <span class="nx">replyData</span><span class="p">.</span><span class="nx">lastModified</span><span class="p">)</span> <span class="p">{</span>
+                    <span class="nx">replyData</span><span class="p">.</span><span class="nx">lastModified</span> <span class="o">=</span> <span class="nx">d</span><span class="p">;</span>
+                <span class="p">}</span>
+                <span class="nx">replyData</span><span class="p">.</span><span class="nx">files</span><span class="p">.</span><span class="nx">push</span><span class="p">([</span>
+                    <span class="p">{</span> <span class="nx">file</span><span class="o">:</span> <span class="nx">filePath</span><span class="p">.</span><span class="nx">replace</span><span class="p">(</span><span class="nx">dataDir</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="p">},</span>
+                    <span class="p">{</span> <span class="nx">mtime</span><span class="o">:</span> <span class="nx">stat</span><span class="p">.</span><span class="nx">mtime</span> <span class="p">}</span>
+                <span class="p">]);</span>
             <span class="p">},</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-37" id="section-37">&#182;</a>
+</div>
+<p>Convert date and send.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
                 <span class="nx">that</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">send2client</span><span class="p">(</span><span class="nx">that</span><span class="p">.</span><span class="nx">msg</span><span class="p">.</span><span class="nx">create</span><span class="p">({</span>
                     <span class="nx">text</span><span class="o">:</span> <span class="s1">&#39;INFO_RESULTS&#39;</span><span class="p">,</span>
                     <span class="nx">data</span><span class="o">:</span> <span class="nx">replyData</span><span class="p">,</span>
@@ -1067,7 +1102,7 @@ TODO: Send only specific client data, not everything;
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-36" id="section-36">&#182;</a>
+  <a class="pilcrow" href="#section-38" id="section-38">&#182;</a>
 </div>
 <p>TODO: CLIENTS (admins or players),
       SERVERCONF,
@@ -1104,7 +1139,7 @@ TODO: Send only specific client data, not everything;
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-38" id="section-38">&#182;</a>
+  <a class="pilcrow" href="#section-40" id="section-40">&#182;</a>
 </div>
 <p>open close wait room</p>
         </td>
@@ -1122,7 +1157,7 @@ TODO: Send only specific client data, not everything;
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-39" id="section-39">&#182;</a>
+  <a class="pilcrow" href="#section-41" id="section-41">&#182;</a>
 </div>
 <p>dispatch a new game</p>
         </td>
@@ -1205,7 +1240,7 @@ Important: the ID is not obfuscated.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-43" id="section-43">&#182;</a>
+  <a class="pilcrow" href="#section-45" id="section-45">&#182;</a>
 </div>
 <p>Experimental</p>
         </td>
@@ -1263,7 +1298,7 @@ Important: the ID is not obfuscated.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-46" id="section-46">&#182;</a>
+  <a class="pilcrow" href="#section-48" id="section-48">&#182;</a>
 </div>
 <p>TODO save the state to disk.</p>
         </td>
@@ -1324,7 +1359,7 @@ Important: the ID is not obfuscated.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-48" id="section-48">&#182;</a>
+  <a class="pilcrow" href="#section-50" id="section-50">&#182;</a>
 </div>
 <p>// ### say.STAGE
    // Listens on say.STAGE messages
@@ -1409,7 +1444,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-50" id="section-50">&#182;</a>
+  <a class="pilcrow" href="#section-52" id="section-52">&#182;</a>
 </div>
 <p>TODO: Obfuscate just for players.</p>
         </td>
@@ -1442,7 +1477,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-51" id="section-51">&#182;</a>
+  <a class="pilcrow" href="#section-53" id="section-53">&#182;</a>
 </div>
 <p>Send to admins in the room:</p>
         </td>
@@ -1468,7 +1503,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-52" id="section-52">&#182;</a>
+  <a class="pilcrow" href="#section-54" id="section-54">&#182;</a>
 </div>
 <p>Send to single recipient.</p>
         </td>
@@ -1566,7 +1601,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-54" id="section-54">&#182;</a>
+  <a class="pilcrow" href="#section-56" id="section-56">&#182;</a>
 </div>
 <p>Send to single recipient (could be admin too).</p>
         </td>
@@ -1659,7 +1694,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-56" id="section-56">&#182;</a>
+  <a class="pilcrow" href="#section-58" id="section-58">&#182;</a>
 </div>
 <p>Send to admins in the room:</p>
         </td>
@@ -1685,7 +1720,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-57" id="section-57">&#182;</a>
+  <a class="pilcrow" href="#section-59" id="section-59">&#182;</a>
 </div>
 <p>Send to single recipient.</p>
         </td>
@@ -1734,7 +1769,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-59" id="section-59">&#182;</a>
+  <a class="pilcrow" href="#section-61" id="section-61">&#182;</a>
 </div>
 <p>Notifies other admins that a new one monitor connected.</p>
         </td>
@@ -1752,7 +1787,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-60" id="section-60">&#182;</a>
+  <a class="pilcrow" href="#section-62" id="section-62">&#182;</a>
 </div>
 <p>Send the list of connected admins to the new admin.</p>
         </td>
@@ -1771,7 +1806,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-61" id="section-61">&#182;</a>
+  <a class="pilcrow" href="#section-63" id="section-63">&#182;</a>
 </div>
 <p>Send the list of connected players to the new admin.</p>
         </td>
@@ -1891,7 +1926,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-65" id="section-65">&#182;</a>
+  <a class="pilcrow" href="#section-67" id="section-67">&#182;</a>
 </div>
 <p>Start with one directory pending (data/).</p>
         </td>
@@ -1923,7 +1958,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-66" id="section-66">&#182;</a>
+  <a class="pilcrow" href="#section-68" id="section-68">&#182;</a>
 </div>
 <p>Ignore hidden files/dirs.</p>
         </td>
@@ -1937,7 +1972,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-67" id="section-67">&#182;</a>
+  <a class="pilcrow" href="#section-69" id="section-69">&#182;</a>
 </div>
 <p>Every file must be processed.</p>
         </td>
@@ -1951,7 +1986,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-68" id="section-68">&#182;</a>
+  <a class="pilcrow" href="#section-70" id="section-70">&#182;</a>
 </div>
 <p>Recurse.</p>
         </td>
@@ -1971,7 +2006,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-69" id="section-69">&#182;</a>
+  <a class="pilcrow" href="#section-71" id="section-71">&#182;</a>
 </div>
 <p>Directory scanned (was a file in previous scan).</p>
         </td>
