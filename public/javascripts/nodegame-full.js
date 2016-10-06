@@ -19936,6 +19936,28 @@ if (!Array.prototype.indexOf) {
         this.willBeDone = false;
 
         /**
+         * ### Game.maxPlayerCbCalled
+         *
+         * TRUE, if the maxinum-player callback has already been called
+         *
+         * This is reset when the max-condition is satisfied again.
+         *
+         * @see Game.gotoStep
+         */
+        this.maxPlayerCbCalled = false;
+
+        /**
+         * ### Game.exactPlayerCbCalled
+         *
+         * TRUE, if the exact-player callback has already been called
+         *
+         * This is reset when the exact-condition is satisfied again.
+         *
+         * @see Game.gotoStep
+         */
+        this.exactPlayerCbCalled = false;
+
+        /**
          * ### Game.minPlayerCbCalled
          *
          * TRUE, if the mininum-player callback has already been called
@@ -20561,7 +20583,7 @@ if (!Array.prototype.indexOf) {
                             if (!that.minPlayerCbCalled) {
                                 that.minPlayerCbCalled = true;
                                 cb = that.getProperty('onWrongPlayerNum');
-
+                                console.log('AAAAAAAAAA', nPlayers, minThreshold);
                                 cb.call(that, 'min', minCallback, player);
                             }
                             res = false;
@@ -20625,9 +20647,12 @@ if (!Array.prototype.indexOf) {
 
                 // Set bounds-checking function:
                 this.checkPlistSize = function() {
-                    var nPlayers = node.game.pl.size();
+                    var nPlayers;
+                    nPlayers = node.game.pl.size();
+
                     // Players should count themselves too.
                     if (!node.player.admin) nPlayers++;
+
 
                     if (minCallback && nPlayers < minThreshold) {
                         return false;
@@ -26215,9 +26240,7 @@ if (!Array.prototype.indexOf) {
                 return;
             }
             node.game.pl.remove(msg.data.id);
-            if (node.game.shouldStep()) {
-                node.game.step();
-            }
+            if (node.game.shouldStep()) node.game.step();
             node.emit('UPDATED_PLIST');
         });
 
@@ -40928,7 +40951,7 @@ if (!Array.prototype.indexOf) {
  * Copyright(c) 2016 Stefano Balietti
  * MIT Licensed
  *
- * Displays a box for formatting currency
+ * Displays a box for formatting earnings ("money") in currency
  *
  * www.nodegame.org
  */
@@ -40940,7 +40963,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    MoneyTalks.version = '0.1.1';
+    MoneyTalks.version = '0.2.0';
     MoneyTalks.description = 'Displays the earnings of a player.';
 
     MoneyTalks.title = 'Earnings';
@@ -40955,7 +40978,7 @@ if (!Array.prototype.indexOf) {
     /**
      * ## MoneyTalks constructor
      *
-     * `MoneyTalks` displays the earnings of the player so far
+     * `MoneyTalks` displays the earnings ("money") of the player so far
      *
      * @param {object} options Optional. Configuration options
      * which is forwarded to MoneyTalks.init.
@@ -41049,21 +41072,24 @@ if (!Array.prototype.indexOf) {
     /**
      * ### MoneyTalks.update
      *
-     * Updates the contents of this.money and this.spanMoney according to amount
+     * Updates the display and the count of available "money"
      *
-     * @param {string|number} amount The amount to add. If string it will be
-     *   parsed.
+     * @param {string|number} amount Amount to add to current value of money
+     * @param {boolean} clear Optional. If TRUE, money will be set to 0
+     *    before adding the new amount
+     *
+     * @see MoneyTalks.money
+     * @see MonetyTalks.spanMoney
      */
-    MoneyTalks.prototype.update = function(amount) {
-        if ('number' !== typeof amount) {
-            // Try to parse strings.
-            amount = parseFloat(amount, 10);
-            if (isNaN(amount) || !isFinite(amount)) {
-                node.err('MoneyTalks.update: invalid amount received: amount');
-                return;
-            }
+    MoneyTalks.prototype.update = function(amount, clear) {
+        var parsedAmount;
+        parsedAmount = JSUS.isNumber(amount);
+        if (parsedAmount === false) {
+            node.err('MoneyTalks.update: invalid amount: ' + amount);
+            return;
         }
-        this.money += amount;
+        if (clear) this.money = 0;
+        this.money += parsedAmount;
         this.spanMoney.innerHTML = this.money.toFixed(this.precision);
     };
 })(node);

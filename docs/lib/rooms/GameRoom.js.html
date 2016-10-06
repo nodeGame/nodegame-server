@@ -435,6 +435,7 @@ min|max|exactPlayers property in current game step.</p>
             <span class="s1">&#39;do not reconnect within &lt;span id=&quot;ng_pause_timer&quot;&gt;&#39;</span> <span class="o">+</span>
             <span class="nx">waitTime</span> <span class="o">+</span> <span class="s1">&#39;&lt;/span&gt; seconds the game will be terminated.&#39;</span><span class="p">;</span>
 
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">isPaused</span><span class="p">())</span> <span class="p">{</span>
 
 </pre></div>
         </td>
@@ -447,14 +448,18 @@ min|max|exactPlayers property in current game step.</p>
 <p>Pause connected players.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-        <span class="nx">node</span><span class="p">.</span><span class="nx">remoteCommand</span><span class="p">(</span><span class="s1">&#39;pause&#39;</span><span class="p">,</span> <span class="s1">&#39;ROOM&#39;</span><span class="p">,</span> <span class="nx">disconnectStr</span><span class="p">);</span>
-        <span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">pause</span><span class="p">();</span>
+            <span class="nx">node</span><span class="p">.</span><span class="nx">remoteCommand</span><span class="p">(</span><span class="s1">&#39;pause&#39;</span><span class="p">,</span> <span class="s1">&#39;ROOM&#39;</span><span class="p">,</span> <span class="nx">disconnectStr</span><span class="p">);</span>
+            <span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">pause</span><span class="p">();</span>
+        <span class="p">}</span>
 
         <span class="nx">that</span><span class="p">.</span><span class="nx">countdown</span> <span class="o">=</span> <span class="nx">setTimeout</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
             <span class="nx">node</span><span class="p">.</span><span class="nx">warn</span><span class="p">(</span><span class="s1">&#39;Disconnection Countdown fired: &#39;</span> <span class="o">+</span> <span class="nx">node</span><span class="p">.</span><span class="nx">nodename</span><span class="p">);</span>
             <span class="nx">node</span><span class="p">.</span><span class="nx">remoteCommand</span><span class="p">(</span><span class="s1">&#39;resume&#39;</span><span class="p">,</span> <span class="s1">&#39;ROOM&#39;</span><span class="p">);</span>
             <span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">resume</span><span class="p">();</span>
             <span class="k">if</span> <span class="p">(</span><span class="nx">customCb</span><span class="p">)</span> <span class="nx">customCb</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">,</span> <span class="nx">player</span><span class="p">);</span>
+            <span class="nx">setTimeout</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+                <span class="k">if</span> <span class="p">(</span><span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">shouldStep</span><span class="p">())</span> <span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">step</span><span class="p">();</span>
+            <span class="p">},</span> <span class="mi">100</span><span class="p">);</span>
 
         <span class="p">},</span> <span class="nx">waitTime</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">);</span>
     <span class="p">};</span>
