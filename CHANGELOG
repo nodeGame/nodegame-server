@@ -1,5 +1,8 @@
 # nodegame-server change log
 
+# 3.0.3
+- Update to follow client's SizeManager.
+
 # 3.0.2
 - Fixing wrong nodegame-full built.
 
