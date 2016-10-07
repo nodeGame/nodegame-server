@@ -10496,7 +10496,7 @@ if (!Array.prototype.indexOf) {
     node.support = JSUS.compatibility();
 
     // Auto-Generated.
-    node.version = '3.0.1';
+    node.version = '3.1.0';
 
 })(window);
 
@@ -11112,7 +11112,6 @@ if (!Array.prototype.indexOf) {
         }
         if (label) {
             if ('string' === typeof label || 'number' === typeof label) {
-                label = '' + label;
                 if (this.labels[label]) {
                     throw new Error('EventEmitter.on: label is not unique: ' +
                                     label);
@@ -12645,6 +12644,7 @@ if (!Array.prototype.indexOf) {
      * Retrieves a player with the given id
      *
      * @param {number} id The id of the player to retrieve
+     *
      * @return {Player} The player with the speficied id
      */
     PlayerList.prototype.get = function(id) {
@@ -12668,6 +12668,7 @@ if (!Array.prototype.indexOf) {
      * Notice: this operation cannot be undone
      *
      * @param {number} id The id of the player to remove
+     *
      * @return {object} The removed player object
      */
     PlayerList.prototype.remove = function(id) {
@@ -12744,6 +12745,8 @@ if (!Array.prototype.indexOf) {
             throw new Error(
                 'PlayerList.updatePlayer: player not found: ' + id + '.');
         }
+
+        return player;
     };
 
     /**
@@ -14372,11 +14375,11 @@ if (!Array.prototype.indexOf) {
      * Looks up a property and updates it to the new value
      *
      * Look up follows the steps described in _GamePlot.getProperty_,
-     * excluding step 0. If a property is found and updated, its value
+     * excluding step 1. If a property is found and updated, its value
      * is stored in the cached.
      *
      * @param {GameStage|string} gameStage The GameStage object,
-     *  or its string representation
+     *   or its string representation
      * @param {string} property The name of the property
      * @param {mixed} value The new value for the property.
      *
@@ -15142,6 +15145,529 @@ if (!Array.prototype.indexOf) {
 })(
     'undefined' !== typeof node ? node : module.exports,
     'undefined' !== typeof node ? node : module.parent.exports
+);
+
+/**
+ * # SizeManager
+ * Copyright(c) 2016 Stefano Balietti
+ * MIT Licensed
+ *
+ * Handles changes in the number of connected players.
+ */
+(function(exports, parent) {
+
+    "use strict";
+
+    // ## Global scope
+
+    // Exposing SizeManager constructor
+    exports.SizeManager = SizeManager;
+
+    var J = parent.JSUS;
+
+    /**
+     * ## SizeManager constructor
+     *
+     * Creates a new instance of SizeManager
+     *
+     * @param {NodeGameClient} node A valid NodeGameClient object
+     */
+    function SizeManager(node) {
+
+        /**
+         * ### SizeManager.node
+         *
+         * Reference to a nodegame-client instance
+         */
+        this.node = node;
+
+        /**
+         * ### SizeManager.checkSize
+         *
+         * Checks if the current number of players is right
+         *
+         * This function is recreated each step based on the values
+         * of properties `min|max|exactPlayers` found in the Stager.
+         *
+         * It is used by `Game.shouldStep` to determine if we go to the
+         * next step.
+         *
+         * Unlike `SizeManager.changeHandler` this method does not
+         * accept parameters nor execute callbacks, just returns TRUE/FALSE.
+         *
+         * @return {boolean} TRUE if all checks are passed
+         *
+         * @see Game.shouldStep
+         * @see Game.shouldEmitPlaying
+         * @see SizeManager.init
+         * @see SizeManager.changeHandler
+         */
+        this.checkSize = function() { return true; };
+
+        /**
+         * ### SizeManager.changeHandler
+         *
+         * Handles changes in the number of players
+         *
+         * This function is recreated each step based on the values
+         * of properties `min|max|exactPlayers` found in the Stager.
+         *
+         * Unlike `SizeManager.checkSize` this method requires input
+         * parameters and executes the appropriate callback functions
+         * in case a threshold is hit.
+         *
+         * @param {string} op The name of the operation:
+         *   'pdisconnect', 'pconnect', 'pupdate', 'replace'
+         * @param {Player|PlayerList} obj The object causing the update
+         *
+         * @return {boolean} TRUE, if no player threshold is passed
+         *
+         * @see SizeManager.min|max|exactPlayers
+         * @see SizeManager.min|max|exactCbCalled
+         * @see SizeManager.init
+         * @see SizeManager.checkSize
+         */
+        this.changeHandler = function(op, obj) { return true; };
+
+        /**
+         * ### SizeManager.minThresold
+         *
+         * The min-players threshold currently set
+         */
+        this.minThresold = null;
+
+        /**
+         * ### SizeManager.minCb
+         *
+         * The callback to execute once the min threshold is hit
+         */
+        this.minCb = null;
+
+        /**
+         * ### SizeManager.minCb
+         *
+         * The callback to execute once the min threshold is restored
+         */
+        this.minRecoveryCb = null;
+
+        /**
+         * ### SizeManager.maxThreshold
+         *
+         * The max-players threshold currently set
+         */
+        this.maxThreshold = null;
+
+        /**
+         * ### SizeManager.minCbCalled
+         *
+         * TRUE, if the minimum-player callback has already been called
+         *
+         * This is reset when the max-condition is satisfied again.
+         *
+         * @see SizeManager.changeHandler
+         */
+        this.minCbCalled = false;
+
+        /**
+         * ### SizeManager.maxCb
+         *
+         * The callback to execute once the max threshold is hit
+         */
+        this.maxCb = null;
+
+        /**
+         * ### SizeManager.maxCb
+         *
+         * The callback to execute once the max threshold is restored
+         */
+        this.maxRecoveryCb = null;
+
+        /**
+         * ### SizeManager.maxCbCalled
+         *
+         * TRUE, if the maximum-player callback has already been called
+         *
+         * This is reset when the max-condition is satisfied again.
+         *
+         * @see SizeManager.changeHandler
+         */
+        this.maxCbCalled = false;
+
+        /**
+         * ### SizeManager.exactThreshold
+         *
+         * The exact-players threshold currently set
+         */
+        this.exactThreshold = null;
+
+        /**
+         * ### SizeManager.exactCb
+         *
+         * The callback to execute once the exact threshold is hit
+         */
+        this.exactCb = null;
+
+        /**
+         * ### SizeManager.exactCb
+         *
+         * The callback to execute once the exact threshold is restored
+         */
+        this.exactRecoveryCb = null;
+
+        /**
+         * ### SizeManager.exactCbCalled
+         *
+         * TRUE, if the exact-player callback has already been called
+         *
+         * This is reset when the exact-condition is satisfied again.
+         *
+         * @see SizeManager.changeHandler
+         */
+        this.exactCbCalled = false;
+    }
+
+    /**
+     * ### SizeManager.init
+     *
+     * Sets all internal references to null
+     *
+     * @see SizeManager.init
+     */
+    SizeManager.prototype.clear = function() {
+        this.minThreshold = null;
+        this.minCb = null;
+        this.minRecoveryCb = null;
+        this.minCbCalled = false;
+
+        this.maxThreshold = null;
+        this.maxCb = null;
+        this.maxRecoveryCb = null;
+        this.maxCbCalled = false;
+
+        this.exactThreshold = null;
+        this.exactCb = null;
+        this.exactRecoveryCb = null;
+        this.exactCbCalled = false;
+
+        this.changeHandler = function() { return true; };
+        this.checkSize = function() { return true; };
+    };
+
+    /**
+     * ### SizeManager.init
+     *
+     * Evaluates the requirements for the step and store references internally
+     *
+     * If required, it adds a listener to changes in the size of player list.
+     *
+     * At the beginning, calls `SizeManager.clear`
+     *
+     * @param {GameStage} step Optional. The step to evaluate.
+     *   Default: node.player.stage
+     *
+     * @return {boolean} TRUE if a full handler was added
+     *
+     * @see SizeManager.changeHandlerFull
+     * @see SizeManager.clear
+     */
+    SizeManager.prototype.init = function(step) {
+        var node, property, doPlChangeHandler;
+
+        this.clear();
+
+        node = this.node;
+        step = step || node.player.stage;
+        property = node.game.plot.getProperty(step, 'minPlayers');
+        if (property) {
+            property = checkMinMaxExactParams('min', property, node);
+            this.minThreshold = property[0];
+            this.minCb = property[1];
+            this.minRecoveryCb = property[2];
+
+            doPlChangeHandler = true;
+        }
+
+        property = node.game.plot.getProperty(step, 'maxPlayers');
+        if (property) {
+            property = checkMinMaxExactParams('max', property, node);
+            this.maxThreshold = property[0];
+            this.maxCb = property[1];
+            this.maxRecoveryCb = property[2];
+
+            if (this.minThreshold === '*') {
+                throw new Error('SizeManager.init: maxPlayers cannot be' +
+                                '"*" if minPlayers is "*"');
+            }
+
+            if (this.maxThreshold <= this.minThreshold) {
+                throw new Error('SizeManager.init: maxPlayers must be ' +
+                                'greater than minPlayers: ' +
+                                this.maxThreshold + '<=' + this.minThreshold);
+            }
+
+            doPlChangeHandler = true;
+        }
+
+        property = node.game.plot.getProperty(step, 'exactPlayers');
+        if (property) {
+            if (doPlChangeHandler) {
+                throw new Error('SizeManager.init: exactPlayers ' +
+                                'cannot be set if either minPlayers or ' +
+                                'maxPlayers is set.');
+            }
+            property = checkMinMaxExactParams('exact', property, node);
+            this.exactThreshold = property[0];
+            this.exactCb = property[1];
+            this.exactRecoveryCb = property[2];
+
+            doPlChangeHandler = true;
+        }
+
+        if (doPlChangeHandler) {
+
+            this.changeHandler = this.changeHandlerFull;
+            // Maybe this should be a parameter.
+            // this.changeHandler('init');
+            this.addListeners();
+
+            this.checkSize = this.checkSizeFull;
+        }
+        else {
+            // Set bounds-checking function.
+            this.checkSize = function() { return true; };
+            this.changeHandler = function() { return true; };
+        }
+
+        return doPlChangeHandler;
+    };
+
+    /**
+     * ### SizeManager.checkSizeFull
+     *
+     * Implements SizeManager.checkSize
+     *
+     * @see SizeManager.checkSize
+     */
+    SizeManager.prototype.checkSizeFull =  function() {
+        var nPlayers, limit;
+        nPlayers = this.node.game.pl.size();
+
+        // Players should count themselves too.
+        if (!this.node.player.admin) nPlayers++;
+
+        limit = this.minThreshold;
+        if (limit && limit !== '*' && nPlayers < limit) {
+            return false;
+        }
+
+        limit = this.maxThreshold;
+        if (limit && limit !== '*' && nPlayers > limit) {
+            return false;
+        }
+
+        limit = this.exacThreshold;
+        if (limit && limit !== '*' && nPlayers !== limit) {
+            return false;
+        }
+
+        return true;
+    };
+
+    /**
+     * ### SizeManager.changeHandlerFull
+     *
+     * Implements SizeManager.changeHandler
+     *
+     * @see SizeManager.changeHandler
+     */
+    SizeManager.prototype.changeHandlerFull = function(op, player) {
+        var threshold, cb, nPlayers;
+        var game, res;
+
+        res = true;
+        game = this.node.game;
+        nPlayers = game.pl.size();
+        // Players should count themselves too.
+        if (!this.node.player.admin) nPlayers++;
+
+        threshold = this.minThreshold;
+        if (threshold) {
+            if (op === 'pdisconnect') {
+                if (threshold === '*' || nPlayers < threshold) {
+
+                    if (!this.minCbCalled) {
+                        this.minCbCalled = true;
+                        cb = game.getProperty('onWrongPlayerNum');
+
+                        cb.call(game, 'min', this.minCb, player);
+                    }
+                    res = false;
+                }
+            }
+            else if (op === 'pconnect') {
+                if (this.minCbCalled) {
+                    cb = game.getProperty('onCorrectPlayerNum');
+                    cb.call(game, 'min', this.minRecoveryCb, player);
+                }
+                // Must stay outside if.
+                this.minCbCalled = false;
+            }
+        }
+
+        threshold = this.maxThreshold;
+        if (threshold) {
+            if (op === 'pconnect') {
+                if (threshold === '*' || nPlayers > threshold) {
+
+                    if (!this.maxCbCalled) {
+                        this.maxCbCalled = true;
+                        cb = game.getProperty('onWrongPlayerNum');
+                        cb.call(game, 'max', this.maxCb, player);
+                    }
+                    res = false;
+                }
+            }
+            else if (op === 'pdisconnect') {
+                if (this.maxCbCalled) {
+                    cb = game.getProperty('onCorrectPlayerNum');
+                    cb.call(game, 'max', this.maxRecoveryCb, player);
+                }
+                // Must stay outside if.
+                this.maxCbCalled = false;
+            }
+        }
+
+        threshold = this.exactThreshold;
+        if (threshold) {
+            if (nPlayers !== threshold) {
+                if (!this.exactCbCalled) {
+                    this.exactCbCalled = true;
+                    cb = game.getProperty('onWrongPlayerNum');
+                    cb.call(game, 'exact', this.exactCb, player);
+                }
+                res = false;
+            }
+            else {
+                if (this.exactCbCalled) {
+                    cb = game.getProperty('onCorrectPlayerNum');
+                    cb.call(game, 'exact', this.exactRecoveryCb, player);
+                }
+                // Must stay outside if.
+                this.exactCbCalled = false;
+            }
+        }
+
+        return res;
+    };
+
+    /**
+     * ### SizeManager.addListeners
+     *
+     * Adds listeners to disconnect and connect to the `step` event manager
+     *
+     * Notice: PRECONNECT is not added and must handled manually.
+     *
+     * @see SizeManager.removeListeners
+     */
+    SizeManager.prototype.addListeners = function() {
+        var that;
+        that = this;
+        this.node.events.step.on('in.say.PCONNECT', function(p) {
+            that.changehandler('pconnect', p);
+        }, 'plManagerCon');
+        this.node.events.step.on('in.say.PDISCONNECT', function(p) {
+            that.changeHandler('pdisconnect', p);
+        }, 'plManagerDis');
+    };
+
+    /**
+     * ### SizeManager.removeListeners
+     *
+     * Removes the listeners to disconnect and connect
+     *
+     * Notice: PRECONNECT is not added and must handled manually.
+     *
+     * @see SizeManager.addListeners
+     */
+    SizeManager.prototype.removeListeners = function() {
+        this.node.events.step.off('in.say.PCONNECT', 'plManagerCon');
+        this.node.events.step.off('in.say.PDISCONNECT', 'plManagerDis');
+    };
+
+    // ## Helper methods.
+
+   /**
+     * ### checkMinMaxExactParams
+     *
+     * Checks the parameters of min|max|exactPlayers property of a step
+     *
+     * @param {string} name The name of the parameter: min|max|exact
+     * @param {number|array} property The property to check
+     * @param {NodeGameClient} node Reference to the node instance
+     *
+     * @see SizeManager.init
+     */
+    function checkMinMaxExactParams(name, property, node) {
+        var num, cb, recoverCb, newArray;
+
+        if ('number' === typeof property) {
+            newArray = true;
+            property = [property];
+        }
+        else if (!J.isArray(property)) {
+            throw new TypeError('SizeManager.init: ' + name +
+                                'Players property must be number or ' +
+                                'non-empty array. Found: ' + property);
+        }
+
+        num = property[0];
+        cb = property[1] || null;
+        recoverCb = property[2] || null;
+
+        if (num === '@') {
+            num = node.game.pl.size() || 1;
+            // Recreate the array to avoid altering the reference.
+            if (!newArray) {
+                property = property.slice(0);
+                property[0] = num;
+            }
+        }
+        else if (num !== '*' &&
+                 ('number' !== typeof num || !isFinite(num) || num < 1)) {
+            throw new TypeError('SizeManager.init: ' + name +
+                                'Players must be a finite number greater ' +
+                                'than 1 or one of the wildcards: *,@. Found: ' +
+                                num);
+        }
+
+        if (!cb) {
+            property[1] = null;
+        }
+        else if ('function' !== typeof cb) {
+
+            throw new TypeError('SizeManager.init: ' + name +
+                                'Players cb must be ' +
+                                'function or undefined. Found: ' + cb);
+        }
+
+        if (!recoverCb) {
+            property[2] = null;
+        }
+        else if ('function' !== typeof cb) {
+
+            throw new TypeError('SizeManager.init: ' + name +
+                                'Players recoverCb must be ' +
+                                'function or undefined. Found: ' + recoverCb);
+        }
+
+        return property;
+    }
+
+
+    // ## Closure
+})(
+    'undefined' != typeof node ? node : module.exports,
+    'undefined' != typeof node ? node : module.parent.exports
 );
 
 /**
@@ -19739,6 +20265,7 @@ if (!Array.prototype.indexOf) {
     PlayerList = parent.PlayerList,
     Stager = parent.Stager,
     PushManager = parent.PushManager,
+    SizeManager = parent.SizeManager,
     J = parent.JSUS;
 
     var constants = parent.constants;
@@ -19872,31 +20399,7 @@ if (!Array.prototype.indexOf) {
             stagerSync: true
         });
 
-        /**
-         * ### Game.checkPlistSize
-         *
-         * Applies to the PlayerList the constraints defined in the Stager
-         *
-         * Reads the properties min/max/exactPlayers for the current step
-         * and checks them with the PlayerList object.
-         *
-         * @return {boolean} TRUE if all checks are passed
-         *
-         * @see Game.step
-         */
-        this.checkPlistSize = function() { return true; };
 
-        /**
-         * ### Game.plChangeHandler
-         *
-         * Handles changes in the number of players
-         *
-         * Reads the properties min/max/exactPlayers for the current step
-         * and calls the appropriate callback functions.
-         *
-         * @see Game.
-         */
-        this.plChangeHandler = function() { return true };
 
         // Setting to stage 0.0.0 and starting.
         this.setCurrentGameStage(new GameStage(), 'S');
@@ -19936,61 +20439,6 @@ if (!Array.prototype.indexOf) {
         this.willBeDone = false;
 
         /**
-         * ### Game.maxPlayerCbCalled
-         *
-         * TRUE, if the maxinum-player callback has already been called
-         *
-         * This is reset when the max-condition is satisfied again.
-         *
-         * @see Game.gotoStep
-         */
-        this.maxPlayerCbCalled = false;
-
-        /**
-         * ### Game.exactPlayerCbCalled
-         *
-         * TRUE, if the exact-player callback has already been called
-         *
-         * This is reset when the exact-condition is satisfied again.
-         *
-         * @see Game.gotoStep
-         */
-        this.exactPlayerCbCalled = false;
-
-        /**
-         * ### Game.minPlayerCbCalled
-         *
-         * TRUE, if the mininum-player callback has already been called
-         *
-         * This is reset when the min-condition is satisfied again.
-         *
-         * @see Game.gotoStep
-         */
-        this.minPlayerCbCalled = false;
-
-        /**
-         * ### Game.maxPlayerCbCalled
-         *
-         * TRUE, if the maxinum-player callback has already been called
-         *
-         * This is reset when the max-condition is satisfied again.
-         *
-         * @see Game.gotoStep
-         */
-        this.maxPlayerCbCalled = false;
-
-        /**
-         * ### Game.exactPlayerCbCalled
-         *
-         * TRUE, if the exact-player callback has already been called
-         *
-         * This is reset when the exact-condition is satisfied again.
-         *
-         * @see Game.gotoStep
-         */
-        this.exactPlayerCbCalled = false;
-
-        /**
          * ### Game.globals
          *
          * Object pointing to the current step _globals_ properties
@@ -20020,6 +20468,14 @@ if (!Array.prototype.indexOf) {
          * @see PushManager
          */
         this.pushManager = new PushManager(this.node);
+
+        /** ### Game.sizeManager
+         *
+         * Handles changes in the number of connected players
+         *
+         * @see SizeManager
+         */
+        this.sizeManager = new SizeManager(this.node);
     }
 
     // ## Game methods
@@ -20301,13 +20757,13 @@ if (!Array.prototype.indexOf) {
      * @return {boolean} TRUE, if stepping is allowed.
      *
      * @see Game.step
-     * @see Game.checkPlistSize
+     * @see SizeManager.checkSize
      * @see stepRules
      */
     Game.prototype.shouldStep = function(stageLevel) {
         var stepRule, curStep;
 
-        if (!this.checkPlistSize() || !this.isSteppable()) return false;
+        if (!this.sizeManager.checkSize() || !this.isSteppable()) return false;
 
         curStep = this.getCurrentGameStage();
         stepRule = this.plot.getStepRule(curStep);
@@ -20368,11 +20824,6 @@ if (!Array.prototype.indexOf) {
         var curStep, curStepObj, curStageObj, nextStepObj, nextStageObj;
         var stageInit;
         var ev, node;
-        var property, handler;
-        var doPlChangeHandler;
-        var minThreshold, maxThreshold, exactThreshold;
-        var minCallback = null, maxCallback = null, exactCallback = null;
-        var minRecoverCb = null, maxRecoverCb = null, exactRecoverCb = null;
 
         if (!this.isSteppable()) {
             throw new Error('Game.gotoStep: game cannot be stepped.');
@@ -20529,151 +20980,8 @@ if (!Array.prototype.indexOf) {
             // Updating the globals object.
             this.updateGlobals(nextStep);
 
-            // Min/Max/Exact Properties.
-
-            property = this.plot.getProperty(nextStep, 'minPlayers');
-            if (property) {
-                property = checkMinMaxExactParams('min', property);
-                minThreshold = property[0];
-                minCallback = property[1];
-                minRecoverCb = property[2];
-                doPlChangeHandler = true;
-            }
-
-            property = this.plot.getProperty(nextStep, 'maxPlayers');
-            if (property) {
-                property = checkMinMaxExactParams('max', property);
-                maxThreshold = property[0];
-                maxCallback = property[1];
-                maxRecoverCb = property[2];
-                if (maxThreshold <= minThreshold) {
-                    throw new Error('Game.gotoStep: maxPlayers is smaller ' +
-                                    'than minPlayers: ' + maxThreshold);
-                }
-                doPlChangeHandler = true;
-            }
-
-            property = this.plot.getProperty(nextStep, 'exactPlayers');
-            if (property) {
-                if (doPlChangeHandler) {
-                    throw new Error('Game.gotoStep: exactPlayers cannot be ' +
-                                    'set if minPlayers or maxPlayers are set.');
-                }
-                property = checkMinMaxExactParams('exact', property);
-                exactThreshold = property[0];
-                exactCallback = property[1];
-                exactRecoverCb = property[2];
-                doPlChangeHandler = true;
-            }
-
-            if (doPlChangeHandler) {
-
-                // Register event handler.
-                handler = function(player) {
-                    var cb, nPlayers, wrongNumCb, correctNumCb;
-                    var that, res;
-                    res = true;
-                    that = node.game;
-                    nPlayers = node.game.pl.size();
-                    // Players should count themselves too.
-                    if (!node.player.admin) nPlayers++;
-
-                    if ('number' === typeof minThreshold) {
-                        if (nPlayers < minThreshold) {
-                            if (!that.minPlayerCbCalled) {
-                                that.minPlayerCbCalled = true;
-                                cb = that.getProperty('onWrongPlayerNum');
-                                console.log('AAAAAAAAAA', nPlayers, minThreshold);
-                                cb.call(that, 'min', minCallback, player);
-                            }
-                            res = false;
-                        }
-                        else {
-                            if (that.minPlayerCbCalled) {
-                                cb = that.getProperty('onCorrectPlayerNum');
-                                cb.call(that, 'min', minRecoverCb, player);
-                            }
-                            that.minPlayerCbCalled = false;
-                        }
-                    }
-
-                    if ('number' === typeof maxThreshold) {
-                        if (nPlayers > maxThreshold) {
-                            if (!that.maxPlayerCbCalled) {
-                                that.maxPlayerCbCalled = true;
-                                cb = that.getProperty('onWrongPlayerNum');
-                                cb.call(that, 'max', maxCallback);
-                            }
-                            res = false;
-                        }
-                        else {
-                            if (that.maxPlayerCbCalled) {
-                                cb = that.getProperty('onCorrectPlayerNum');
-                                cb.call(that, 'max', maxRecoverCb);
-                            }
-                            that.maxPlayerCbCalled = false;
-                        }
-                    }
-
-                    if ('number' === typeof exactThreshold) {
-                        if (nPlayers !== exactThreshold) {
-                            if (!that.exactPlayerCbCalled) {
-                                that.exactPlayerCbCalled = true;
-                                cb = that.getProperty('onWrongPlayerNum');
-                                cb.call(that, 'exact', exactCallback);
-                            }
-                            res = false;
-                        }
-                        else {
-                            if (that.exactPlayerCbCalled) {
-                                cb = that.getProperty('onCorrectPlayerNum');
-                                cb.call(that, 'exact', exactRecoverCb);
-                            }
-                            that.exactPlayerCbCalled = false;
-                        }
-                    }
-
-                    return res;
-                };
-
-                node.events.ee.step.on('in.say.PCONNECT', handler);
-                node.events.ee.step.on('in.say.PDISCONNECT', handler);
-                // PRECONNECT needs to verify client is authorized,
-                // so we don't have to handle it here.
-
-                // Check conditions explicitly:
-                this.plChangeHandler = handler;
-                this.plChangeHandler();
-
-                // Set bounds-checking function:
-                this.checkPlistSize = function() {
-                    var nPlayers;
-                    nPlayers = node.game.pl.size();
-
-                    // Players should count themselves too.
-                    if (!node.player.admin) nPlayers++;
-
-
-                    if (minCallback && nPlayers < minThreshold) {
-                        return false;
-                    }
-
-                    if (maxCallback && nPlayers > maxThreshold) {
-                        return false;
-                    }
-
-                    if (exactCallback && nPlayers !== exactThreshold) {
-                        return false;
-                    }
-
-                    return true;
-                };
-            }
-            else {
-                // Set bounds-checking function:
-                this.checkPlistSize = function() { return true; };
-                this.plChangeHandler = function() { return true; };
-            }
+            // Reads Min/Max/Exact Players properties.
+            this.sizeManager.init(nextStep);
 
             // Emit buffered messages:
             if (node.socket.shouldClearBuffer()) {
@@ -21361,7 +21669,10 @@ if (!Array.prototype.indexOf) {
      *
      * @param {boolean} strict If TRUE, PLAYING can be emitted only coming
      *   from the LOADED stage level. Default: TRUE
+     *
      * @return {boolean} TRUE, if the PLAYING event should be emitted.
+     *
+     * @see SizeManager.checkSize
      */
     Game.prototype.shouldEmitPlaying = function(strict) {
         var curGameStage, curStageLevel, syncOnLoaded, node;
@@ -21373,7 +21684,7 @@ if (!Array.prototype.indexOf) {
         node = this.node;
         curGameStage = this.getCurrentGameStage();
         if (!this.isReady()) return false;
-        if (!this.checkPlistSize()) return false;
+        if (!this.sizeManager.checkSize()) return false;
 
         syncOnLoaded = this.plot.getProperty(curGameStage, 'syncOnLoaded');
         if (!syncOnLoaded) return true;
@@ -21554,59 +21865,6 @@ if (!Array.prototype.indexOf) {
                                     options.cb);
             }
         }
-    }
-
-    /**
-     * ### checkMinMaxExactParams
-     *
-     * Checks the parameters of min|max|exactPlayers property of a step
-     *
-     * Method is invoked by Game.gotoStep, and errors are thrown accordingly.
-     *
-     * @param {string} name The name of the parameter: min|max|exact
-     * @param {number|array} property The property to check
-     *
-     * @see Game.gotoStep
-     */
-    function checkMinMaxExactParams(name, property) {
-        var num, cb, recoverCb;
-
-        if ('number' === typeof property) property = [property];
-
-        if (J.isArray(property)) {
-            if (!property.length) {
-                throw new Error('Game.gotoStep: ' + name + 'Players field ' +
-                                'is empty array.');
-            }
-            num = property[0];
-            cb = property[1];
-            recoverCb = property[2];
-        }
-        else {
-            throw new TypeError('Game.gotoStep: ' + name + 'Players field ' +
-                                'must be number or non-empty array. Found: ' +
-                                property);
-        }
-
-        if ('number' !== typeof num || !isFinite(num) || num < 1) {
-            throw new TypeError('Game.gotoStep: ' + name +
-                                'Players must be a finite number ' +
-                                'greater than 1: ' + num);
-        }
-        if ('undefined' !== typeof cb && 'function' !== typeof cb) {
-
-            throw new TypeError('Game.gotoStep: ' + name +
-                                'Players cb must be ' +
-                                'function or undefined: ' + cb);
-        }
-        if ('undefined' !== typeof recoverCb && 'function' !== typeof cb) {
-
-            throw new TypeError('Game.gotoStep: ' + name +
-                                'Players recoverCb must be ' +
-                                'function or undefined: ' + recoverCb);
-        }
-
-        return property;
     }
 
     // ## Closure
@@ -26192,10 +26450,7 @@ if (!Array.prototype.indexOf) {
         /**
          * ## in.say.BYE
          *
-         * Adds a new player to the player list
-         *
-         * @emit UDATED_PLIST
-         * @see Game.pl
+         * Forces disconnection
          */
         node.events.ng.on( IN + say + 'BYE', function(msg) {
             var force;
@@ -26212,18 +26467,20 @@ if (!Array.prototype.indexOf) {
          *
          * Adds a new player to the player list
          *
-         * @emit UDATED_PLIST
+         * @emit UPDATED_PLIST
          * @see Game.pl
          */
         node.events.ng.on( IN + say + 'PCONNECT', function(msg) {
+            var p;
             if ('object' !== typeof msg.data) {
                 node.err('received PCONNECT, but invalid data: ' + msg.data);
                 return;
             }
-            if (msg.data instanceof Player) node.game.pl.add(msg.data);
-            else node.game.pl.add(new Player(msg.data));
+            p = (msg.data instanceof Player) ? node.game.pl.add(msg.data) :
+                node.game.pl.add(new Player(msg.data));
+
+            node.emit('UPDATED_PLIST', 'pconnect', p);
             if (node.game.shouldStep()) node.game.step();
-            node.emit('UPDATED_PLIST');
         });
 
         /**
@@ -26235,13 +26492,14 @@ if (!Array.prototype.indexOf) {
          * @see Game.pl
          */
         node.events.ng.on( IN + say + 'PDISCONNECT', function(msg) {
+            var p;
             if ('object' !== typeof msg.data) {
                 node.err('received PDISCONNECT, but invalid data: ' + msg.data);
                 return;
             }
-            node.game.pl.remove(msg.data.id);
+            p = node.game.pl.remove(msg.data.id);
+            node.emit('UPDATED_PLIST', 'pdisconnect', p);
             if (node.game.shouldStep()) node.game.step();
-            node.emit('UPDATED_PLIST');
         });
 
         /**
@@ -26289,7 +26547,7 @@ if (!Array.prototype.indexOf) {
         node.events.ng.on( IN + say + 'PLIST', function(msg) {
             if (!msg.data) return;
             node.game.pl = new PlayerList({}, msg.data);
-            node.emit('UPDATED_PLIST');
+            node.emit('UPDATED_PLIST', 'replace', node.game.pl);
         });
 
         /**
@@ -26355,14 +26613,11 @@ if (!Array.prototype.indexOf) {
          * @see Game.pl
          */
         node.events.ng.on( IN + say + 'PLAYER_UPDATE', function(msg) {
-            node.game.pl.updatePlayer(msg.from, msg.data);
-            node.emit('UPDATED_PLIST');
-            if (node.game.shouldStep()) {
-                node.game.step();
-            }
-            else if (node.game.shouldEmitPlaying()) {
-                node.emit('PLAYING');
-            }
+            var p;
+            p = node.game.pl.updatePlayer(msg.from, msg.data);
+            node.emit('UPDATED_PLIST', 'pupdate', p);
+            if (node.game.shouldStep()) node.game.step();
+            else if (node.game.shouldEmitPlaying()) node.emit('PLAYING');
         });
 
         /**
