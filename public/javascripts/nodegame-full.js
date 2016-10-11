@@ -10496,7 +10496,7 @@ if (!Array.prototype.indexOf) {
     node.support = JSUS.compatibility();
 
     // Auto-Generated.
-    node.version = '3.1.0';
+    node.version = '3.1.1';
 
 })(window);
 
@@ -12291,8 +12291,7 @@ if (!Array.prototype.indexOf) {
     /**
      * ### GameStage.toHash
      *
-     * Returns a simplified hash of the stage of the GameStage,
-     * according to the input string.
+     * Returns a simplified hash of the stage of the GameStage
      *
      * The following characters are valid to determine the hash string
      *
@@ -12313,7 +12312,8 @@ if (!Array.prototype.indexOf) {
      * ```
      *
      * @param {GameStage} gs The game stage to hash
-     * @param {string} str The hash code
+     * @param {string} str Optional. The hash code. Default: S.s.r
+     *
      * @return {string} hash The hashed game stages
      */
     GameStage.toHash = function(gs, str) {
@@ -12321,7 +12321,9 @@ if (!Array.prototype.indexOf) {
         if (!gs || 'object' !== typeof gs) {
             throw new TypeError('GameStage.toHash: gs must be object.');
         }
-        if (!str || !str.length) return gs.toString();
+        if (!str || !str.length) {
+            return gs.stage + '.' + gs.step + '.' + gs.round;
+        }
 
         hash = '',
         symbols = 'Ssr',
@@ -15379,20 +15381,13 @@ if (!Array.prototype.indexOf) {
         step = step || node.player.stage;
         property = node.game.plot.getProperty(step, 'minPlayers');
         if (property) {
-            property = checkMinMaxExactParams('min', property, node);
-            this.minThreshold = property[0];
-            this.minCb = property[1];
-            this.minRecoveryCb = property[2];
-
+            this.setHandler('min', property);
             doPlChangeHandler = true;
         }
 
         property = node.game.plot.getProperty(step, 'maxPlayers');
         if (property) {
-            property = checkMinMaxExactParams('max', property, node);
-            this.maxThreshold = property[0];
-            this.maxCb = property[1];
-            this.maxRecoveryCb = property[2];
+            this.setHandler('max', property);
 
             if (this.minThreshold === '*') {
                 throw new Error('SizeManager.init: maxPlayers cannot be' +
@@ -15415,11 +15410,7 @@ if (!Array.prototype.indexOf) {
                                 'cannot be set if either minPlayers or ' +
                                 'maxPlayers is set.');
             }
-            property = checkMinMaxExactParams('exact', property, node);
-            this.exactThreshold = property[0];
-            this.exactCb = property[1];
-            this.exactRecoveryCb = property[2];
-
+            this.setHandler('exact', property);
             doPlChangeHandler = true;
         }
 
@@ -15558,6 +15549,21 @@ if (!Array.prototype.indexOf) {
         }
 
         return res;
+    };
+
+    /**
+     * ### SizeManager.setHandler
+     *
+     * Sets the desired handler
+     *
+     * @param {string} type One of the available types: 'min', 'max', 'exact'
+     * @param {number|array} The value/s for the handler
+     */
+    SizeManager.prototype.setHandler = function(type, values) {
+        values = checkMinMaxExactParams('min', values, this.node);
+        this[type + 'Threshold'] = values[0];
+        this[type + 'Cb'] = values[1];
+        this[type + 'RecoveryCb'] = values[2];
     };
 
     /**
@@ -20919,11 +20925,6 @@ if (!Array.prototype.indexOf) {
             nextStepObj = this.plot.getStep(nextStep);
             if (!nextStepObj) return false;
 
-//             // TODO: was here. (options might be undefined now)
-//             // Check options.
-//             // TODO: this does not lock screen / stop timer.
-//             if (options.willBeDone) this.willBeDone = true;
-
             // If we enter a new stage we need to update a few things.
             if (!curStageObj || nextStageObj.id !== curStageObj.id) {
 
@@ -21834,8 +21835,8 @@ if (!Array.prototype.indexOf) {
     function processGotoStepOptions(game, options) {
         var prop;
 
-        // Set willBeDone. TODO: this does not lock screen / stop timer.
         if (options.willBeDone) {
+            // TODO: this is OK if this is a reconnection. But if it is not?
             // Temporarily remove the done callback.
             game.plot.tmpCache('done', null);
             game.plot.tmpCache('autoSet', null);
@@ -25923,7 +25924,7 @@ if (!Array.prototype.indexOf) {
         // A done callback can manipulate arguments, add new values to
         // send to server, or even halt the procedure if returning false.
         if (doneCb) {
-            switch(len){
+            switch(len) {
             case 0:
                 args = doneCb.call(game);
                 break;
