@@ -443,8 +443,11 @@ socket.handshake.headers.address = socket.handshake.address;</p>
                                             <span class="nx">startingRoom</span><span class="p">);</span>
 
             <span class="k">if</span> <span class="p">(</span><span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
-                <span class="nx">socket</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;message&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">msg</span><span class="p">)</span> <span class="p">{</span>
-                    <span class="nx">that</span><span class="p">.</span><span class="nx">gameServer</span><span class="p">.</span><span class="nx">onMessage</span><span class="p">(</span><span class="nx">msg</span><span class="p">);</span>
+                <span class="nx">socket</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;message&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">msgStr</span><span class="p">)</span> <span class="p">{</span>
+                    <span class="kd">var</span> <span class="nx">gameMsg</span><span class="p">;</span>
+                    <span class="nx">gameMsg</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">gameServer</span><span class="p">.</span><span class="nx">secureParse</span><span class="p">(</span><span class="nx">msgStr</span><span class="p">);</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">gameMsg</span><span class="p">)</span> <span class="k">return</span><span class="p">;</span>
+                    <span class="nx">that</span><span class="p">.</span><span class="nx">gameServer</span><span class="p">.</span><span class="nx">onMessage</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">msgStr</span><span class="p">);</span>
                 <span class="p">});</span>
                 <span class="nx">socket</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;disconnect&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
                     <span class="nx">that</span><span class="p">.</span><span class="nx">gameServer</span><span class="p">.</span><span class="nx">onDisconnect</span><span class="p">(</span><span class="nx">prefixedSid</span><span class="p">,</span> <span class="nx">socket</span><span class="p">);</span>

@@ -56,7 +56,7 @@
 </div>
 
 
-<p>Copyright(c) 2015 Stefano Balietti
+<p>Copyright(c) 2016 Stefano Balietti
 MIT Licensed</p>
   </div>
   <div class="body"><p>Handles the log stream to file and to stdout</p>
@@ -240,7 +240,9 @@ MIT Licensed</p>
     <div class="dox_tag_detail">
       <span class="dox_tag_name">text</span>
       <span class="dox_type">string</span>
-      <span>The string to log</span>
+      <span class="dox_type">miexed</span>
+      <span>The string to log. If not a string,
+  it will be strinfigied</span>
     </div>
     <div class="dox_tag_detail">
       <span class="dox_tag_name">level</span>
@@ -251,19 +253,20 @@ MIT Licensed</p>
     <div class="dox_tag_detail">
       <span class="dox_tag_name">meta</span>
       <span class="dox_type">object</span>
-      <span>Additional meta-data written to be written</span>
+      <span>Additional meta-data to be logged. <code>meta.name</code>
+  is automatically added, if the logger has a name.</span>
     </div>
   </div>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">Logger</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">log</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">text</span><span class="p">,</span> <span class="nx">level</span><span class="p">,</span> <span class="nx">meta</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">text</span><span class="p">)</span> <span class="nx">text</span> <span class="o">=</span> <span class="nx">JSON</span><span class="p">.</span><span class="nx">stringify</span><span class="p">(</span><span class="nx">text</span><span class="p">);</span>
+
     <span class="nx">level</span> <span class="o">=</span> <span class="nx">level</span> <span class="o">||</span> <span class="s1">&#39;info&#39;</span><span class="p">;</span>
     <span class="nx">meta</span> <span class="o">=</span> <span class="nx">meta</span> <span class="o">||</span> <span class="p">{};</span>
 
-    <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">name</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nx">meta</span><span class="p">.</span><span class="nx">name</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">name</span><span class="p">;</span>
-    <span class="p">}</span>
+    <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">name</span><span class="p">)</span> <span class="nx">meta</span><span class="p">.</span><span class="nx">name</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">name</span><span class="p">;</span>
 
     <span class="k">this</span><span class="p">.</span><span class="nx">logger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">level</span><span class="p">,</span> <span class="nx">text</span><span class="p">,</span> <span class="nx">meta</span><span class="p">);</span>
 <span class="p">};</span>
