@@ -958,10 +958,10 @@ the clientId found in their cookies.</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-29" id="section-29">&#182;</a>
 </div>
-<p>Loggin message.</p>
+<p>Logging message (JSON stringified).</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">msgLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">);</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">msgLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">msgString</span><span class="p">);</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="nx">gameMsg</span><span class="p">.</span><span class="nx">from</span><span class="p">.</span><span class="nx">trim</span><span class="p">()</span> <span class="o">===</span> <span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">server</span> <span class="o">+</span> <span class="s1">&#39;Server.secureParse: Received msg &#39;</span> <span class="o">+</span>
