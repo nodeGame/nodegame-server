@@ -924,15 +924,14 @@ the clientId found in their cookies.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">GameServer</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">secureParse</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">msgString</span><span class="p">)</span> <span class="p">{</span>
-    <span class="kd">var</span> <span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">server</span><span class="p">;</span>
-
-    <span class="nx">server</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">ADMIN_SERVER</span> <span class="o">?</span> <span class="s1">&#39;Admin&#39;</span> <span class="o">:</span> <span class="s1">&#39;Player&#39;</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">gameMsg</span><span class="p">;</span>
 
     <span class="k">try</span> <span class="p">{</span>
         <span class="nx">gameMsg</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">GameMsg</span><span class="p">(</span><span class="nx">JSON</span><span class="p">.</span><span class="nx">parse</span><span class="p">(</span><span class="nx">msgString</span><span class="p">));</span>
     <span class="p">}</span>
     <span class="k">catch</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">server</span> <span class="o">+</span> <span class="s1">&#39;Server.secureParse: malformed msg &#39;</span> <span class="o">+</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">((</span><span class="k">this</span><span class="p">.</span><span class="nx">ADMIN_SERVER</span> <span class="o">?</span> <span class="s1">&#39;Admin&#39;</span> <span class="o">:</span> <span class="s1">&#39;Player&#39;</span><span class="p">)</span> <span class="o">+</span>
+                           <span class="s1">&#39;Server.secureParse: malformed msg &#39;</span> <span class="o">+</span>
                            <span class="s1">&#39;received: &#39;</span> <span class="o">+</span> <span class="nx">e</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
         <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
     <span class="p">}</span>
@@ -997,6 +996,8 @@ the clientId found in their cookies.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">GameServer</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">validateGameMsg</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">server</span><span class="p">;</span>
+    <span class="nx">server</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">ADMIN_SERVER</span> <span class="o">?</span> <span class="s1">&#39;Admin&#39;</span> <span class="o">:</span> <span class="s1">&#39;Player&#39;</span><span class="p">;</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="nx">gameMsg</span><span class="p">.</span><span class="nx">from</span><span class="p">.</span><span class="nx">trim</span><span class="p">()</span> <span class="o">===</span> <span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">server</span> <span class="o">+</span> <span class="s1">&#39;Server.secureParse: Received msg &#39;</span> <span class="o">+</span>
@@ -1244,7 +1245,7 @@ it detects the client's disconnection.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">GameServer</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">onDisconnect</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">sid</span><span class="p">,</span> <span class="nx">socket</span><span class="p">)</span> <span class="p">{</span>
-    <span class="kd">var</span> <span class="nx">client</span><span class="p">,</span> <span class="nx">roomName</span><span class="p">,</span> <span class="nx">room</span><span class="p">,</span> <span class="nx">res</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">client</span><span class="p">,</span> <span class="nx">roomName</span><span class="p">,</span> <span class="nx">room</span><span class="p">;</span>
 
     <span class="nx">client</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">registry</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">sid</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="nx">sid</span><span class="p">);</span>
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">client</span><span class="p">)</span> <span class="p">{</span>
@@ -1525,7 +1526,7 @@ because .stage and .stageLevel could be overwritten.</p>
                                           <span class="nx">clientType</span><span class="p">,</span> <span class="nx">startingRoom</span><span class="p">)</span> <span class="p">{</span>
 
     <span class="kd">var</span> <span class="nx">decoded</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">clientId</span><span class="p">,</span> <span class="nx">clientObj</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">cookies</span><span class="p">,</span> <span class="nx">disconnected</span><span class="p">,</span> <span class="nx">returningRoom</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">cookies</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">newConnection</span><span class="p">,</span> <span class="nx">invalidSessionCookie</span><span class="p">,</span> <span class="nx">clearNode</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">tmpSid</span><span class="p">,</span> <span class="nx">tmpId</span><span class="p">,</span> <span class="nx">tmpType</span><span class="p">;</span>
 
@@ -1748,8 +1749,8 @@ is disposed, exactly as it was not authorized.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
         <span class="k">if</span> <span class="p">(</span><span class="nx">res</span> <span class="o">&amp;&amp;</span> <span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
-            <span class="nx">sys</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;GameServer.handleConnectingClient: generateClientId &#39;</span> <span class="o">+</span>
-                    <span class="s1">&#39;did not return a valid id for incoming &#39;</span> <span class="o">+</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;GameServer.handleConnectingClient: &#39;</span> <span class="o">+</span>
+                    <span class="s1">&#39;generateClientId did not return a valid id for incoming &#39;</span> <span class="o">+</span>
                     <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">ADMIN_SERVER</span> <span class="o">?</span> <span class="s1">&#39;admin&#39;</span> <span class="o">:</span> <span class="s1">&#39;player&#39;</span> <span class="p">),</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
 
             <span class="k">return</span> <span class="nx">GameServer</span><span class="p">.</span><span class="nx">codes</span><span class="p">.</span><span class="nx">INVALID_CLIENT_ID</span><span class="p">;</span>
@@ -2830,7 +2831,7 @@ field.</p>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">GameServer</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">validateRecipient</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">server</span><span class="p">,</span> <span class="nx">errStr</span><span class="p">,</span> <span class="nx">opts</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">_name</span><span class="p">,</span> <span class="nx">_to</span><span class="p">,</span> <span class="nx">_originalTo</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">_name</span><span class="p">,</span> <span class="nx">_to</span><span class="p">;</span>
 
     <span class="nx">errStr</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="p">;</span>
     <span class="nx">opts</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">options</span><span class="p">;</span>
