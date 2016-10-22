@@ -2080,6 +2080,11 @@ put the client in the requirements or waiting room.</p>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">startingRoom</span><span class="p">)</span> <span class="p">{</span>
 
+        <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">ADMIN_SERVER</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">startingRoom</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">garageRoom</span><span class="p">.</span><span class="nx">name</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="k">else</span> <span class="p">{</span>
+
 
 </pre></div>
         </td>
@@ -2095,13 +2100,14 @@ to the first level.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
 
-        <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">gameInfo</span><span class="p">.</span><span class="nx">requirements</span> <span class="o">&amp;&amp;</span>
-            <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">gameInfo</span><span class="p">.</span><span class="nx">requirements</span><span class="p">.</span><span class="nx">enabled</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">gameInfo</span><span class="p">.</span><span class="nx">requirements</span> <span class="o">&amp;&amp;</span>
+                <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">gameInfo</span><span class="p">.</span><span class="nx">requirements</span><span class="p">.</span><span class="nx">enabled</span><span class="p">)</span> <span class="p">{</span>
 
-            <span class="nx">startingRoom</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">requirementsRoom</span><span class="p">.</span><span class="nx">name</span>
-        <span class="p">}</span>
-        <span class="k">else</span> <span class="p">{</span>
-            <span class="nx">startingRoom</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">waitingRoom</span><span class="p">.</span><span class="nx">name</span><span class="p">;</span>
+                <span class="nx">startingRoom</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">requirementsRoom</span><span class="p">.</span><span class="nx">name</span>
+            <span class="p">}</span>
+            <span class="k">else</span> <span class="p">{</span>
+                <span class="nx">startingRoom</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">waitingRoom</span><span class="p">.</span><span class="nx">name</span><span class="p">;</span>
+            <span class="p">}</span>
         <span class="p">}</span>
     <span class="p">}</span>
 
