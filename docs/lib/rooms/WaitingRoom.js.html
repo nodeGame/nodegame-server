@@ -121,7 +121,10 @@
         <a href="#waitingroom.ping_before_dispatch">WaitingRoom.PING_BEFORE_DISPATCH</a>
       </div>
       <div class="heading h3">
-        <a href="#waitingroom.ping_wait_time">WaitingRoom.PING_WAIT_TIME</a>
+        <a href="#waitingroom.ping_max_reply_time">WaitingRoom.PING_MAX_REPLY_TIME</a>
+      </div>
+      <div class="heading h3">
+        <a href="#waitingroom.ping_dispatch_anyway">WaitingRoom.PING_DISPATCH_ANYWAY</a>
       </div>
       <div class="heading h3">
         <a href="#waitingroom.ispinginprogress">WaitingRoom.isPingInProgress</a>
@@ -1052,7 +1055,7 @@ pinging is skipped.</p>
   <div class="details">
     <div class="dox_tag_title">See</div>
     <div class="dox_tag_detail">
-      <span class="dox_type">PING_WAIT_TIME
+      <span class="dox_type">PING_MAX_REPLY_TIME
 </span>
     </div>
   </div>
@@ -1068,10 +1071,10 @@ pinging is skipped.</p>
       <tr>
         <td class="docs"><div class="dox">
   <div class="summary">
-<div class="pilwrap" id="waitingroom.ping_wait_time">
+<div class="pilwrap" id="waitingroom.ping_max_reply_time">
   <h3>
-    <a href="#waitingroom.ping_wait_time" name="waitingroom.ping_wait_time" class="pilcrow">&#182;</a>
-    WaitingRoom.PING_WAIT_TIME
+    <a href="#waitingroom.ping_max_reply_time" name="waitingroom.ping_max_reply_time" class="pilcrow">&#182;</a>
+    WaitingRoom.PING_MAX_REPLY_TIME
   </h3>
 </div>
 
@@ -1090,7 +1093,40 @@ pinging is skipped.</p>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">PING_WAIT_TIME</span> <span class="o">=</span> <span class="mi">3000</span><span class="p">;</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">PING_MAX_REPLY_TIME</span> <span class="o">=</span> <span class="mi">3000</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="waitingroom.ping_dispatch_anyway">
+  <h3>
+    <a href="#waitingroom.ping_dispatch_anyway" name="waitingroom.ping_dispatch_anyway" class="pilcrow">&#182;</a>
+    WaitingRoom.PING_DISPATCH_ANYWAY
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>If TRUE, dispatch continues even if disconnections occur during PING</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">PING_BEFORE_DISPATCH</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">PING_MAX_REPLY_TIME
+</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">this</span><span class="p">.</span><span class="nx">PING_DISPATCH_ANYWAY</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
 
 
 </pre></div>
@@ -1384,7 +1420,7 @@ pinging is skipped.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-44" id="section-44">&#182;</a>
+  <a class="pilcrow" href="#section-45" id="section-45">&#182;</a>
 </div>
 <p>Treatments are not yet parsed.</p>
         </td>
@@ -1399,7 +1435,7 @@ pinging is skipped.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-45" id="section-45">&#182;</a>
+  <a class="pilcrow" href="#section-46" id="section-46">&#182;</a>
 </div>
 <p>Treatments are already parsed at this point.</p>
         </td>
@@ -1464,16 +1500,27 @@ pinging is skipped.</p>
         <span class="k">this</span><span class="p">.</span><span class="nx">PING_BEFORE_DISPATCH</span> <span class="o">=</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">PING_BEFORE_DISPATCH</span><span class="p">;</span>
     <span class="p">}</span>
 
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">PING_WAIT_TIME</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;number&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">PING_WAIT_TIME</span><span class="p">)</span> <span class="p">{</span>
-            <span class="nx">checkPositiveInteger</span><span class="p">(</span><span class="nx">settings</span><span class="p">,</span> <span class="s1">&#39;PING_WAIT_TIME&#39;</span><span class="p">,</span> <span class="nx">where</span><span class="p">);</span>
-            <span class="k">this</span><span class="p">.</span><span class="nx">PING_WAIT_TIME</span> <span class="o">=</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">PING_WAIT_TIME</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">PING_MAX_REPLY_TIME</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;number&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">PING_MAX_REPLY_TIME</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">checkPositiveInteger</span><span class="p">(</span><span class="nx">settings</span><span class="p">,</span> <span class="s1">&#39;PING_MAX_REPLY_TIME&#39;</span><span class="p">,</span> <span class="nx">where</span><span class="p">);</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">PING_MAX_REPLY_TIME</span> <span class="o">=</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">PING_MAX_REPLY_TIME</span><span class="p">;</span>
         <span class="p">}</span>
         <span class="k">else</span> <span class="p">{</span>
-            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span> <span class="s1">&#39;PING_WAIT_TIME must be a positive &#39;</span> <span class="o">+</span>
-                                <span class="s1">&#39;number or undefined. Found: &#39;</span> <span class="o">+</span>
-                                <span class="nx">settings</span><span class="p">.</span><span class="nx">PING_WAIT_TIME</span><span class="p">);</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span> <span class="s1">&#39;PING_MAX_REPLY_TIME must be a &#39;</span> <span class="o">+</span>
+                                <span class="s1">&#39;positive number or undefined. Found: &#39;</span> <span class="o">+</span>
+                                <span class="nx">settings</span><span class="p">.</span><span class="nx">PING_MAX_REPLY_TIME</span><span class="p">);</span>
         <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">PING_DISPATCH_ANYWAY</span><span class="p">)</span> <span class="p">{</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;boolean&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">PING_DISPATCH_ANYWAY</span><span class="p">)</span> <span class="p">{</span>
+
+            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span> <span class="s1">&#39;PING_DISPATCH_ANYWAY must &#39;</span> <span class="o">+</span>
+                                <span class="s1">&#39;be boolean or undefined. Found: &#39;</span> <span class="o">+</span>
+                                <span class="nx">settings</span><span class="p">.</span><span class="nx">PING_DISPATCH_ANYWAY</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">PING_DISPATCH_ANYWAY</span> <span class="o">=</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">PING_DISPATCH_ANYWAY</span><span class="p">;</span>
     <span class="p">}</span>
 
 
@@ -1483,7 +1530,7 @@ pinging is skipped.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-46" id="section-46">&#182;</a>
+  <a class="pilcrow" href="#section-47" id="section-47">&#182;</a>
 </div>
 <p>Executes ON_INIT, if found.</p>
         </td>
@@ -1673,7 +1720,7 @@ pinging is skipped.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-52" id="section-52">&#182;</a>
+  <a class="pilcrow" href="#section-53" id="section-53">&#182;</a>
 </div>
 <p>TODO: Maybe check other conditions?</p>
         </td>
@@ -1716,9 +1763,10 @@ pinging is skipped.</p>
    Property pList is automatically added and contains the
    players that have responded to ping.</li>
 <li>timeToWaitForPing: Wait time before kicking in milliseconds.
-   Default: WaitingRoom.PING_WAIT_TIME || 3000</li>
+   Default: WaitingRoom.PING_MAX_REPLY_TIME || 3000</li>
 <li>doCallback: if TRUE, the callback is executed also if some
-   players are disconnected. Default: FALSE</li>
+   players are disconnected.
+   Default: WaitingRoom.PING_DISPATCH_ANYWAY || false</li>
 </ul></span>
     </div>
   </div>
@@ -1728,7 +1776,7 @@ pinging is skipped.</p>
 <span class="nx">WaitingRoom</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">kickUnresponsivePlayers</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">callback</span><span class="p">,</span> <span class="nx">options</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">cb</span><span class="p">,</span> <span class="nx">that</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">i</span><span class="p">,</span> <span class="nx">timeToWaitForPing</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">timeout</span><span class="p">,</span> <span class="nx">pingSuccessCb</span><span class="p">,</span> <span class="nx">doCallback</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">timeout</span><span class="p">,</span> <span class="nx">pingReturnedCb</span><span class="p">,</span> <span class="nx">doCallback</span><span class="p">,</span> <span class="nx">totPingReturned</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">players</span><span class="p">,</span> <span class="nx">p</span><span class="p">,</span> <span class="nx">pList</span><span class="p">,</span> <span class="nx">pLen</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">where</span><span class="p">;</span>
 
@@ -1749,7 +1797,7 @@ pinging is skipped.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-54" id="section-54">&#182;</a>
+  <a class="pilcrow" href="#section-55" id="section-55">&#182;</a>
 </div>
 <p>Check parameters.</p>
         </td>
@@ -1761,19 +1809,20 @@ pinging is skipped.</p>
     <span class="p">}</span>
 
     <span class="nx">options</span> <span class="o">=</span> <span class="nx">options</span> <span class="o">||</span> <span class="p">{};</span>
-    <span class="nx">timeToWaitForPing</span> <span class="o">=</span> <span class="nx">options</span><span class="p">.</span><span class="nx">timeToWaitForPing</span><span class="p">;</span>
-    <span class="k">if</span> <span class="p">(</span><span class="nx">timeToWaitForPing</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;number&#39;</span> <span class="o">!==</span> <span class="nx">timeToWaitForPing</span> <span class="o">||</span> <span class="nx">timeToWaitForPing</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
-            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span> <span class="s1">&#39;: timeToWaitForPing must be &#39;</span> <span class="o">+</span>
-                                <span class="s1">&#39;a positive number or undefined. Found: &#39;</span> <span class="o">+</span>
-                                <span class="nx">timeToWaitForPing</span><span class="p">);</span>
-        <span class="p">}</span>
-    <span class="p">}</span>
-    <span class="k">else</span> <span class="p">{</span>
-        <span class="nx">timeToWaitForPing</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">PING_WAIT_TIME</span><span class="p">;</span>
+
+    <span class="nx">timeToWaitForPing</span> <span class="o">=</span> <span class="nx">options</span><span class="p">.</span><span class="nx">timeToWaitForPing</span> <span class="o">||</span> <span class="k">this</span><span class="p">.</span><span class="nx">PING_MAX_REPLY_TIME</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;number&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">timeToWaitForPing</span> <span class="o">||</span> <span class="nx">timeToWaitForPing</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span> <span class="s1">&#39;: timeToWaitForPing must be &#39;</span> <span class="o">+</span>
+                            <span class="s1">&#39;a positive number or undefined. Found: &#39;</span> <span class="o">+</span>
+                            <span class="nx">timeToWaitForPing</span><span class="p">);</span>
     <span class="p">}</span>
 
-    <span class="nx">doCallback</span> <span class="o">=</span> <span class="o">!!</span><span class="nx">options</span><span class="p">.</span><span class="nx">doCallback</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">options</span><span class="p">.</span><span class="nx">doCallback</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">doCallback</span> <span class="o">=</span> <span class="o">!!</span><span class="nx">options</span><span class="p">.</span><span class="nx">doCallback</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="k">else</span> <span class="p">{</span>
+        <span class="nx">doCallback</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">PING_DISPATCH_ANYWAY</span><span class="p">;</span>
+    <span class="p">}</span>
 
 
 </pre></div>
@@ -1782,7 +1831,7 @@ pinging is skipped.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-55" id="section-55">&#182;</a>
+  <a class="pilcrow" href="#section-56" id="section-56">&#182;</a>
 </div>
 <p>Lock this function.</p>
         </td>
@@ -1796,7 +1845,7 @@ pinging is skipped.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-56" id="section-56">&#182;</a>
+  <a class="pilcrow" href="#section-57" id="section-57">&#182;</a>
 </div>
 <p>Setup variables for pinging all players.</p>
         </td>
@@ -1809,7 +1858,7 @@ pinging is skipped.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-57" id="section-57">&#182;</a>
+  <a class="pilcrow" href="#section-58" id="section-58">&#182;</a>
 </div>
 <p>Manual copy of player list.</p>
         </td>
@@ -1824,7 +1873,7 @@ pinging is skipped.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-58" id="section-58">&#182;</a>
+  <a class="pilcrow" href="#section-59" id="section-59">&#182;</a>
 </div>
 <p>Need to update pcounter because we use .insert below.</p>
         </td>
@@ -1838,26 +1887,13 @@ pinging is skipped.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-59" id="section-59">&#182;</a>
+  <a class="pilcrow" href="#section-60" id="section-60">&#182;</a>
 </div>
 <p>Create callback that will be executed if all players return from PING.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="nx">cb</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-60" id="section-60">&#182;</a>
-</div>
-<p>When done, unlock function.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-        <span class="nx">that</span><span class="p">.</span><span class="nx">isPingInProgress</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+        <span class="kd">var</span> <span class="nx">pSize</span><span class="p">;</span>
 
 
 </pre></div>
@@ -1868,10 +1904,12 @@ pinging is skipped.</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-61" id="section-61">&#182;</a>
 </div>
-<p>Call the callback, if told so, or if all players returned.</p>
+<p>When done, unlock function.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-        <span class="k">if</span> <span class="p">(</span><span class="nx">doCallback</span> <span class="o">||</span> <span class="nx">pList</span><span class="p">.</span><span class="nx">size</span><span class="p">()</span> <span class="o">===</span> <span class="nx">pLen</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">that</span><span class="p">.</span><span class="nx">isPingInProgress</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+
+        <span class="nx">pSize</span> <span class="o">=</span> <span class="nx">pList</span><span class="p">.</span><span class="nx">size</span><span class="p">();</span>
 
 </pre></div>
         </td>
@@ -1880,6 +1918,20 @@ pinging is skipped.</p>
         <td class="docs">
 <div class="pilwrap">
   <a class="pilcrow" href="#section-62" id="section-62">&#182;</a>
+</div>
+<p>Call the callback: if required so and at least one player
+is still connected, or if all players returned the PING.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="k">if</span> <span class="p">((</span><span class="nx">doCallback</span> <span class="o">&amp;&amp;</span> <span class="nx">pSize</span><span class="p">)</span> <span class="o">||</span> <span class="p">(</span><span class="nx">pSize</span> <span class="o">===</span> <span class="nx">pLen</span><span class="p">))</span> <span class="p">{</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-63" id="section-63">&#182;</a>
 </div>
 <p>Add list of pinged players to dispatch options.</p>
         </td>
@@ -1898,7 +1950,7 @@ pinging is skipped.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-63" id="section-63">&#182;</a>
+  <a class="pilcrow" href="#section-64" id="section-64">&#182;</a>
 </div>
 <p>Execute suspended calls.</p>
         </td>
@@ -1912,7 +1964,7 @@ pinging is skipped.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-64" id="section-64">&#182;</a>
+  <a class="pilcrow" href="#section-65" id="section-65">&#182;</a>
 </div>
 <p>Cancel suspended pings if waiting room is closed.</p>
         </td>
@@ -1941,12 +1993,31 @@ pinging is skipped.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-65" id="section-65">&#182;</a>
+  <a class="pilcrow" href="#section-66" id="section-66">&#182;</a>
 </div>
-<p>Callback to execute when a ping-back is received (do nothing).</p>
+<p>Count how many pings returned.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="nx">pingSuccessCb</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{};</span>
+    <span class="nx">totPingReturned</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-67" id="section-67">&#182;</a>
+</div>
+<p>Callback to execute when a ping-back is returned.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">pingReturnedCb</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+        <span class="nx">totPingReturned</span><span class="o">++</span><span class="p">;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">totPingReturned</span> <span class="o">===</span> <span class="nx">pLen</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">clearTimeout</span><span class="p">(</span><span class="nx">timeout</span><span class="p">);</span>
+            <span class="nx">cb</span><span class="p">();</span>
+        <span class="p">}</span>
+    <span class="p">};</span>
 
 
 </pre></div>
@@ -1955,7 +2026,7 @@ pinging is skipped.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-66" id="section-66">&#182;</a>
+  <a class="pilcrow" href="#section-68" id="section-68">&#182;</a>
 </div>
 <p>Start pinging.</p>
         </td>
@@ -1970,14 +2041,14 @@ pinging is skipped.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-67" id="section-67">&#182;</a>
+  <a class="pilcrow" href="#section-69" id="section-69">&#182;</a>
 </div>
 <p>Call .insert, not .add (saves some operations).</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
         <span class="nx">pList</span><span class="p">.</span><span class="nx">insert</span><span class="p">(</span><span class="nx">p</span><span class="p">);</span>
         <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Pinging player &#39;</span> <span class="o">+</span> <span class="nx">p</span><span class="p">.</span><span class="nx">id</span><span class="p">,</span> <span class="nx">timeToWaitForPing</span><span class="p">);</span>
-        <span class="nx">that</span><span class="p">.</span><span class="nx">node</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;PING&#39;</span><span class="p">,</span> <span class="nx">pingSuccessCb</span><span class="p">,</span> <span class="nx">p</span><span class="p">.</span><span class="nx">id</span><span class="p">,</span> <span class="p">{</span>
+        <span class="nx">that</span><span class="p">.</span><span class="nx">node</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;PING&#39;</span><span class="p">,</span> <span class="nx">pingReturnedCb</span><span class="p">,</span> <span class="nx">p</span><span class="p">.</span><span class="nx">id</span><span class="p">,</span> <span class="p">{</span>
             <span class="nx">timeout</span><span class="o">:</span> <span class="nx">timeToWaitForPing</span><span class="p">,</span>
             <span class="nx">executeOnce</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
 
@@ -1987,7 +2058,7 @@ pinging is skipped.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-68" id="section-68">&#182;</a>
+  <a class="pilcrow" href="#section-70" id="section-70">&#182;</a>
 </div>
 <p>The callback on failure.</p>
         </td>
@@ -2001,7 +2072,7 @@ pinging is skipped.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-69" id="section-69">&#182;</a>
+  <a class="pilcrow" href="#section-71" id="section-71">&#182;</a>
 </div>
 <p>This marks the PING failed.</p>
         </td>
@@ -2021,7 +2092,7 @@ pinging is skipped.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-70" id="section-70">&#182;</a>
+  <a class="pilcrow" href="#section-72" id="section-72">&#182;</a>
 </div>
 <p>At the end of this timeout, we will check how many players
 have responded. If all players have responded (or doCallback = TRUE)
@@ -2081,7 +2152,7 @@ the callback is executed. In any case, we set pingInProgress = FALSE.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-72" id="section-72">&#182;</a>
+  <a class="pilcrow" href="#section-74" id="section-74">&#182;</a>
 </div>
 <p>Check if we are still allowed to dispatch games.</p>
         </td>
@@ -2122,7 +2193,7 @@ the callback is executed. In any case, we set pingInProgress = FALSE.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-73" id="section-73">&#182;</a>
+  <a class="pilcrow" href="#section-75" id="section-75">&#182;</a>
 </div>
 <p>If nothing is specified, try to dispatch maximal amount of games.</p>
         </td>
@@ -2168,7 +2239,7 @@ the callback is executed. In any case, we set pingInProgress = FALSE.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-74" id="section-74">&#182;</a>
+  <a class="pilcrow" href="#section-76" id="section-76">&#182;</a>
 </div>
 <p>Have we dispatched 'em all?</p>
         </td>
@@ -2189,7 +2260,7 @@ the callback is executed. In any case, we set pingInProgress = FALSE.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-75" id="section-75">&#182;</a>
+  <a class="pilcrow" href="#section-77" id="section-77">&#182;</a>
 </div>
 <p>If coming from a "kick," there might be more players than
 when the original call to dispatch was performed. Additional
@@ -2219,7 +2290,7 @@ the list of tested players.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-76" id="section-76">&#182;</a>
+  <a class="pilcrow" href="#section-78" id="section-78">&#182;</a>
 </div>
 <p>If numberOfGames is received as input parameter,
 the total number of players to dispatch might be too large.</p>
@@ -2241,7 +2312,7 @@ the total number of players to dispatch might be too large.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-77" id="section-77">&#182;</a>
+  <a class="pilcrow" href="#section-79" id="section-79">&#182;</a>
 </div>
 <p>Shuffle and sort players, if necessary.
 This means that at least two groups will be created.</p>
@@ -2269,7 +2340,7 @@ This means that at least two groups will be created.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-78" id="section-78">&#182;</a>
+  <a class="pilcrow" href="#section-80" id="section-80">&#182;</a>
 </div>
 <p>TODO: check if each subgroup has the right size.
 TODO: shall we allowed groups of different sizes?</p>
@@ -2296,7 +2367,7 @@ TODO: shall we allowed groups of different sizes?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-79" id="section-79">&#182;</a>
+  <a class="pilcrow" href="#section-81" id="section-81">&#182;</a>
 </div>
 <p>Shuffle player list anyway.</p>
         </td>
@@ -2309,7 +2380,7 @@ TODO: shall we allowed groups of different sizes?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-80" id="section-80">&#182;</a>
+  <a class="pilcrow" href="#section-82" id="section-82">&#182;</a>
 </div>
 <p>Sort according to priority.
 TODO: We could optimize it, if we knew in advance the
@@ -2335,7 +2406,7 @@ sorting criteria, i.e. there might be no need to sort here.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-81" id="section-81">&#182;</a>
+  <a class="pilcrow" href="#section-83" id="section-83">&#182;</a>
 </div>
 <p>If we have too many players log a warning.</p>
         </td>
@@ -2349,7 +2420,7 @@ sorting criteria, i.e. there might be no need to sort here.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-82" id="section-82">&#182;</a>
+  <a class="pilcrow" href="#section-84" id="section-84">&#182;</a>
 </div>
 <p>Warn if more participants than spots available.</p>
         </td>
@@ -2372,7 +2443,7 @@ sorting criteria, i.e. there might be no need to sort here.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-83" id="section-83">&#182;</a>
+  <a class="pilcrow" href="#section-85" id="section-85">&#182;</a>
 </div>
 <p>Player id.</p>
         </td>
@@ -2386,7 +2457,7 @@ sorting criteria, i.e. there might be no need to sort here.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-84" id="section-84">&#182;</a>
+  <a class="pilcrow" href="#section-86" id="section-86">&#182;</a>
 </div>
 <p>Inform players.</p>
         </td>
@@ -2402,7 +2473,7 @@ sorting criteria, i.e. there might be no need to sort here.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-85" id="section-85">&#182;</a>
+  <a class="pilcrow" href="#section-87" id="section-87">&#182;</a>
 </div>
 <p>Clear timeout for players.</p>
         </td>
@@ -2416,7 +2487,7 @@ sorting criteria, i.e. there might be no need to sort here.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-86" id="section-86">&#182;</a>
+  <a class="pilcrow" href="#section-88" id="section-88">&#182;</a>
 </div>
 <p>Add it to the group.</p>
         </td>
@@ -2434,7 +2505,7 @@ sorting criteria, i.e. there might be no need to sort here.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-87" id="section-87">&#182;</a>
+  <a class="pilcrow" href="#section-89" id="section-89">&#182;</a>
 </div>
 <p>If this is the first dispatch or we need to create a new room
 anyway, assign a treatment and then setup the game.</p>
@@ -2449,7 +2520,7 @@ anyway, assign a treatment and then setup the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-88" id="section-88">&#182;</a>
+  <a class="pilcrow" href="#section-90" id="section-90">&#182;</a>
 </div>
 <p>Decide treatment.</p>
         </td>
@@ -2464,7 +2535,7 @@ anyway, assign a treatment and then setup the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-89" id="section-89">&#182;</a>
+  <a class="pilcrow" href="#section-91" id="section-91">&#182;</a>
 </div>
 <p>Starts a game level or the main game.
 TODO: should the main game have a ghost level?</p>
@@ -2485,7 +2556,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-90" id="section-90">&#182;</a>
+  <a class="pilcrow" href="#section-92" id="section-92">&#182;</a>
 </div>
 <p>Create new game room.</p>
         </td>
@@ -2503,7 +2574,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-91" id="section-91">&#182;</a>
+  <a class="pilcrow" href="#section-93" id="section-93">&#182;</a>
 </div>
 <p>Setup and start game.</p>
         </td>
@@ -2518,7 +2589,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-92" id="section-92">&#182;</a>
+  <a class="pilcrow" href="#section-94" id="section-94">&#182;</a>
 </div>
 <p>Store reference.</p>
         </td>
@@ -2533,7 +2604,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-93" id="section-93">&#182;</a>
+  <a class="pilcrow" href="#section-95" id="section-95">&#182;</a>
 </div>
 <p>Move clients into existing room.</p>
         </td>
@@ -2551,7 +2622,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-94" id="section-94">&#182;</a>
+  <a class="pilcrow" href="#section-96" id="section-96">&#182;</a>
 </div>
 <p>Setup new group of players in the old room.</p>
         </td>
@@ -2567,7 +2638,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-95" id="section-95">&#182;</a>
+  <a class="pilcrow" href="#section-97" id="section-97">&#182;</a>
 </div>
 <p>One more dispatch done!</p>
         </td>
@@ -2581,7 +2652,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-96" id="section-96">&#182;</a>
+  <a class="pilcrow" href="#section-98" id="section-98">&#182;</a>
 </div>
 <p>Close waitingRoom if next game would not be dispatchable.</p>
         </td>
@@ -2595,7 +2666,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-97" id="section-97">&#182;</a>
+  <a class="pilcrow" href="#section-99" id="section-99">&#182;</a>
 </div>
 <p>Force to exit loop.</p>
         </td>
@@ -2610,7 +2681,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-98" id="section-98">&#182;</a>
+  <a class="pilcrow" href="#section-100" id="section-100">&#182;</a>
 </div>
 <p>Clear group.</p>
         </td>
@@ -2627,7 +2698,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-99" id="section-99">&#182;</a>
+  <a class="pilcrow" href="#section-101" id="section-101">&#182;</a>
 </div>
 <p>All dispatch attempts have been completed.</p>
         </td>
@@ -2640,7 +2711,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-100" id="section-100">&#182;</a>
+  <a class="pilcrow" href="#section-102" id="section-102">&#182;</a>
 </div>
 <p>Close room, if requested.</p>
         </td>
@@ -2659,7 +2730,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-101" id="section-101">&#182;</a>
+  <a class="pilcrow" href="#section-103" id="section-103">&#182;</a>
 </div>
 <p>Tell players still waiting, that they have not been selected.</p>
         </td>
@@ -2676,7 +2747,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-102" id="section-102">&#182;</a>
+  <a class="pilcrow" href="#section-104" id="section-104">&#182;</a>
 </div>
 <p>Increment timesNotSelected for player.</p>
         </td>
@@ -2700,7 +2771,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-103" id="section-103">&#182;</a>
+  <a class="pilcrow" href="#section-105" id="section-105">&#182;</a>
 </div>
 <p>Ste was: (but it does not make any sense).
 Exit loop.
@@ -2734,7 +2805,7 @@ if (!this.shouldDispatchMoreGames()) break</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-104" id="section-104">&#182;</a>
+  <a class="pilcrow" href="#section-106" id="section-106">&#182;</a>
 </div>
 <p>Have we dispatched 'em all?</p>
         </td>
@@ -2748,7 +2819,7 @@ if (!this.shouldDispatchMoreGames()) break</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-105" id="section-105">&#182;</a>
+  <a class="pilcrow" href="#section-107" id="section-107">&#182;</a>
 </div>
 <p>Fix group size and number of groups.
 In case of kickUnresponsivePlayers, these can change in between.</p>
@@ -2763,7 +2834,7 @@ In case of kickUnresponsivePlayers, these can change in between.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-106" id="section-106">&#182;</a>
+  <a class="pilcrow" href="#section-108" id="section-108">&#182;</a>
 </div>
 <p>If we have pool of 1 and mode == WAIT_FOR_N_PLAYERS just go ahead!</p>
         </td>
@@ -2782,7 +2853,7 @@ In case of kickUnresponsivePlayers, these can change in between.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-107" id="section-107">&#182;</a>
+  <a class="pilcrow" href="#section-109" id="section-109">&#182;</a>
 </div>
 <p>Blocks until all players have returned the ping or are kicked.</p>
         </td>
@@ -2840,7 +2911,7 @@ In case of kickUnresponsivePlayers, these can change in between.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-109" id="section-109">&#182;</a>
+  <a class="pilcrow" href="#section-111" id="section-111">&#182;</a>
 </div>
 <p>Group together a few connect-notifications before sending them.</p>
         </td>
@@ -2853,7 +2924,7 @@ In case of kickUnresponsivePlayers, these can change in between.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-110" id="section-110">&#182;</a>
+  <a class="pilcrow" href="#section-112" id="section-112">&#182;</a>
 </div>
 <p>Delete timeout.</p>
         </td>
@@ -2866,7 +2937,7 @@ In case of kickUnresponsivePlayers, these can change in between.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-111" id="section-111">&#182;</a>
+  <a class="pilcrow" href="#section-113" id="section-113">&#182;</a>
 </div>
 <p>Notify all players of new connection/s.</p>
         </td>
@@ -2943,7 +3014,7 @@ In case of kickUnresponsivePlayers, these can change in between.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-113" id="section-113">&#182;</a>
+  <a class="pilcrow" href="#section-115" id="section-115">&#182;</a>
 </div>
 <p>TODO: do we need to check if we have enough players?</p>
         </td>
@@ -2964,7 +3035,7 @@ In case of kickUnresponsivePlayers, these can change in between.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-114" id="section-114">&#182;</a>
+  <a class="pilcrow" href="#section-116" id="section-116">&#182;</a>
 </div>
 <p>If a timeout function for the server was specified,
 executes. If the return value is FALSE, do not continue
@@ -2979,7 +3050,7 @@ with checkout and informing the player about NotEnoughPlayers.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-115" id="section-115">&#182;</a>
+  <a class="pilcrow" href="#section-117" id="section-117">&#182;</a>
 </div>
 <p>TODO: pass that as parameter.</p>
         </td>
@@ -2995,7 +3066,7 @@ with checkout and informing the player about NotEnoughPlayers.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-116" id="section-116">&#182;</a>
+  <a class="pilcrow" href="#section-118" id="section-118">&#182;</a>
 </div>
 <p>If an access code is defined, checkout remotely.</p>
         </td>
@@ -3116,7 +3187,7 @@ with checkout and informing the player about NotEnoughPlayers.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-119" id="section-119">&#182;</a>
+  <a class="pilcrow" href="#section-121" id="section-121">&#182;</a>
 </div>
 <p>Return treatment (was a string already).</p>
         </td>
