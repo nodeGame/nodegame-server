@@ -1,5 +1,11 @@
 # nodegame-server change log
 
+# 3.2.0
+- WaitingRoom dispatching algorithm improved. Settings for pinging times can be specified in conf file.
+- Added the GarageRoom to the channel. Now admins are connected to it by default. Monitors do not receive so much traffic now.
+- Logging makes sure to stringigy its content before saving it.
+- SocketDirect does not stringify/unstringify its messages any more. It just passes the plain object.
+
 # 3.1.0
 - Implemented policy sameStepReconnectionOnly.
 - Custom messages for pausing when min/max/exact handler is fired.
