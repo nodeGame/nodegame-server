@@ -1,6 +1,6 @@
 # nodegame-server change log
 
-# 3.2.0
+# 3.2.1
 - WaitingRoom dispatching algorithm improved. Settings for pinging times can be specified in conf file.
 - Added the GarageRoom to the channel. Now admins are connected to it by default. Monitors do not receive so much traffic now.
 - Logging makes sure to stringigy its content before saving it.
