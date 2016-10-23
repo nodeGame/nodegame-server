@@ -10496,7 +10496,7 @@ if (!Array.prototype.indexOf) {
     node.support = JSUS.compatibility();
 
     // Auto-Generated.
-    node.version = '3.1.1';
+    node.version = '3.2.0';
 
 })(window);
 
@@ -20393,7 +20393,7 @@ if (!Array.prototype.indexOf) {
 //        });
 
         /**
-         * ## Game.timer
+         * ### Game.timer
          *
          * Default game timer synced with stager 'timer' property
          *
@@ -21187,7 +21187,7 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
-     * ## Game.execCallback
+     * ### Game.execCallback
      *
      * Executes a game callback
      *
@@ -21801,7 +21801,7 @@ if (!Array.prototype.indexOf) {
      * @param {GameStage} gameStage Optional. The reference game stage.
      *   Default: Game.currentGameStage()
      *
-     * @return {miexed} The value of the requested step property
+     * @return {mixed} The value of the requested step property
      *
      * @see GamePlot.getProperty
      */
@@ -25828,7 +25828,6 @@ if (!Array.prototype.indexOf) {
             that = this;
             ee = this.getCurrentEventEmitter();
 
-
             // Listener function. If a timeout is not set, the listener
             // will be removed immediately after its execution.
             g = function(msg) {
@@ -25853,10 +25852,12 @@ if (!Array.prototype.indexOf) {
                 timer = this.timer.createTimer({
                     milliseconds: timeout,
                     timeup: function() {
-                        // `ee.once` already removes the listener on execution.
-                        if (!executeOnce) {
-                            ee.remove('in.say.DATA', g);
-                        }
+                        // 10.19.2016 Was:
+//                         // `ee.once` already removes it on execution.
+//                         if (!executeOnce) {
+//                             ee.remove('in.say.DATA', g);
+//                         }
+                        ee.remove('in.say.DATA', g);
                         if ('undefined' !== typeof timer) {
                             that.timer.destroyTimer(timer);
                         }
@@ -26182,7 +26183,8 @@ if (!Array.prototype.indexOf) {
     NGC.prototype.disconnectClient = function(p) {
         var msg;
         if ('object' !== typeof p) {
-            throw new TypeError('node.disconnectClient: p must be object.');
+            throw new TypeError('node.disconnectClient: p must be ' +
+                                'object. Found: ' + p);
         }
 
         this.info('node.disconnectClient: ' + p.id);
