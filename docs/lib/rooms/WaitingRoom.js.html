@@ -112,6 +112,9 @@
         <a href="#waitingroom.on_dispatched">WaitingRoom.ON_DISPATCHED</a>
       </div>
       <div class="heading h3">
+        <a href="#waitingroom.on_failed_dispatch">WaitingRoom.ON_FAILED_DISPATCH</a>
+      </div>
+      <div class="heading h3">
         <a href="#waitingroom.chosen_treatment">WaitingRoom.CHOSEN_TREATMENT</a>
       </div>
       <div class="heading h3">
@@ -140,6 +143,9 @@
       </div>
       <div class="heading h2">
         <a href="#waitingroom.parsesettings">WaitingRoom.parseSettings</a>
+      </div>
+      <div class="heading h3">
+        <a href="#waitingroom.validatetreatment">WaitingRoom.validateTreatment</a>
       </div>
       <div class="heading h2">
         <a href="#waitingroom.makewidgetconfig">WaitingRoom.makeWidgetConfig</a>
@@ -173,6 +179,9 @@
       </div>
       <div class="heading h2">
         <a href="#waitingroom.decidetreatment">WaitingRoom.decideTreatment</a>
+      </div>
+      <div class="heading h3">
+        <a href="#waitingroom.abortdispatch">WaitingRoom.abortDispatch</a>
       </div>
       <div class="heading h3">
         <a href="#waitingroom.setdispatchstate">WaitingRoom.setDispatchState</a>
@@ -991,6 +1000,28 @@ players to start the game.</p>
       <tr>
         <td class="docs"><div class="dox">
   <div class="summary">
+<div class="pilwrap" id="waitingroom.on_failed_dispatch">
+  <h3>
+    <a href="#waitingroom.on_failed_dispatch" name="waitingroom.on_failed_dispatch" class="pilcrow">&#182;</a>
+    WaitingRoom.ON_FAILED_DISPATCH
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Callback to be executed if a dispatch attempt failed</p>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">this</span><span class="p">.</span><span class="nx">ON_FAILED_DISPATCH</span> <span class="o">=</span> <span class="kc">null</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
 <div class="pilwrap" id="waitingroom.chosen_treatment">
   <h3>
     <a href="#waitingroom.chosen_treatment" name="waitingroom.chosen_treatment" class="pilcrow">&#182;</a>
@@ -1255,7 +1286,7 @@ pinging is skipped.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">WaitingRoom</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">parseSettings</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">settings</span><span class="p">)</span> <span class="p">{</span>
-    <span class="kd">var</span> <span class="nx">d</span><span class="p">,</span> <span class="nx">where</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">t</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">d</span><span class="p">,</span> <span class="nx">where</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">;</span>
     <span class="nx">gameName</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">gameInfo</span><span class="p">.</span><span class="nx">info</span><span class="p">.</span><span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39; &#39;</span><span class="p">;</span>
     <span class="nx">where</span> <span class="o">=</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;WaitingRoom.parseSettings: &#39;</span><span class="p">;</span>
 
@@ -1407,58 +1438,10 @@ pinging is skipped.</p>
 
     <span class="nx">assignIfFunction</span><span class="p">(</span><span class="s1">&#39;ON_DISPATCHED&#39;</span><span class="p">,</span> <span class="k">this</span><span class="p">,</span> <span class="nx">settings</span><span class="p">);</span>
 
+    <span class="nx">assignIfFunction</span><span class="p">(</span><span class="s1">&#39;ON_FAILED_DISPATCH&#39;</span><span class="p">,</span> <span class="k">this</span><span class="p">,</span> <span class="nx">settings</span><span class="p">);</span>
 
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">CHOSEN_TREATMENT</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">CHOSEN_TREATMENT</span><span class="p">)</span> <span class="p">{</span>
-            <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">WaitingRoom</span><span class="p">.</span><span class="nx">treatmentCallbacks</span><span class="p">[</span><span class="nx">settings</span><span class="p">.</span><span class="nx">CHOSEN_TREATMENT</span><span class="p">])</span> <span class="p">{</span>
-
-                <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">gameLevel</span><span class="p">)</span> <span class="p">{</span>
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-45" id="section-45">&#182;</a>
-</div>
-<p>Treatments are not yet parsed.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-                    <span class="nx">t</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">levels</span><span class="p">[</span><span class="k">this</span><span class="p">.</span><span class="nx">gameLevel</span><span class="p">].</span><span class="nx">settings</span><span class="p">.</span><span class="nx">treatments</span><span class="p">;</span>
-                <span class="p">}</span>
-                <span class="k">else</span> <span class="p">{</span>
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-46" id="section-46">&#182;</a>
-</div>
-<p>Treatments are already parsed at this point.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-                    <span class="nx">t</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">settings</span><span class="p">;</span>
-                <span class="p">}</span>
-
-                <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">t</span><span class="p">[</span><span class="nx">settings</span><span class="p">.</span><span class="nx">CHOSEN_TREATMENT</span><span class="p">])</span> <span class="p">{</span>
-
-                    <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span> <span class="s1">&#39;CHOSEN_TREATMENT algorithm &#39;</span> <span class="o">+</span>
-                                        <span class="s1">&#39;or treatment not found: &#39;</span> <span class="o">+</span>
-                                        <span class="nx">settings</span><span class="p">.</span><span class="nx">CHOSEN_TREATMENT</span><span class="p">);</span>
-                <span class="p">}</span>
-            <span class="p">}</span>
-        <span class="p">}</span>
-        <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;function&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">CHOSEN_TREATMENT</span><span class="p">)</span> <span class="p">{</span>
-
-            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span> <span class="s1">&#39;CHOSEN_TREATMENT must be string, &#39;</span> <span class="o">+</span>
-                                <span class="s1">&#39;function or undefined. Found: &#39;</span> <span class="o">+</span>
-                                <span class="nx">settings</span><span class="p">.</span><span class="nx">CHOSEN_TREATMENT</span><span class="p">);</span>
-        <span class="p">}</span>
-        <span class="k">this</span><span class="p">.</span><span class="nx">CHOSEN_TREATMENT</span> <span class="o">=</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">CHOSEN_TREATMENT</span><span class="p">;</span>
-    <span class="p">}</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">CHOSEN_TREATMENT</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">validateTreatment</span><span class="p">(</span><span class="nx">settings</span><span class="p">.</span><span class="nx">CHOSEN_TREATMENT</span><span class="p">,</span>
+                                                   <span class="nx">where</span> <span class="o">+</span> <span class="s1">&#39; CHOSEN_TREATMENT&#39;</span><span class="p">);</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">PLAYER_SORTING</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">settings</span><span class="p">.</span><span class="nx">PLAYER_SORTING</span> <span class="o">&amp;&amp;</span>
@@ -1530,12 +1513,124 @@ pinging is skipped.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-47" id="section-47">&#182;</a>
+  <a class="pilcrow" href="#section-46" id="section-46">&#182;</a>
 </div>
 <p>Executes ON_INIT, if found.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">ON_INIT</span><span class="p">)</span> <span class="k">this</span><span class="p">.</span><span class="nx">ON_INIT</span><span class="p">(</span><span class="k">this</span><span class="p">);</span>
+<span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="waitingroom.validatetreatment">
+  <h3>
+    <a href="#waitingroom.validatetreatment" name="waitingroom.validatetreatment" class="pilcrow">&#182;</a>
+    WaitingRoom.validateTreatment
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Validates if a treatment parameter is found amongst existing options</p>
+
+<p>The action taken in case of failing to validate and the return value
+depend on the second parameter <code>doThrow</code>.</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">Optional.</span>
+      <span class="dox_type">string</span>
+      <span class="dox_type">function</span>
+      <span>The name of the treatment
+  (undefined is a valid value).</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">doThrow</span>
+      <span class="dox_type">string</span>
+      <span class="dox_type">boolean</span>
+      <span>Optional. If truthy and the treatment
+  does not pass validation, an error will be thrown. If doThrow is a
+  string, it is used as the beginning of the sentence for
+  the error message. Default: 'WaitingRoom.validateTreatment: treatment'</span>
+    </div>
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">string</span>
+      <span class="dox_type">boolean</span>
+      <span>The validated treatment name|function.</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">WaitingRoom</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">validateTreatment</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">treatment</span><span class="p">,</span> <span class="nx">doThrow</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">t</span><span class="p">,</span> <span class="nx">err</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">treatment</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">doThrow</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;boolean&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">doThrow</span><span class="p">)</span> <span class="p">{</span>
+                <span class="nx">doThrow</span> <span class="o">=</span> <span class="s1">&#39;WaitingRoom.validateTreatment: treatment&#39;</span><span class="p">;</span>
+            <span class="p">}</span>
+            <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">doThrow</span><span class="p">)</span> <span class="p">{</span>
+                <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;WaitingRoom.validateTreatment: doThrow &#39;</span> <span class="o">+</span>
+                                    <span class="s1">&#39;must be boolean, string or undefined. &#39;</span> <span class="o">+</span>
+                                    <span class="s1">&#39;Found: &#39;</span> <span class="o">+</span> <span class="nx">doThrow</span><span class="p">);</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">treatment</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">WaitingRoom</span><span class="p">.</span><span class="nx">treatmentCallbacks</span><span class="p">[</span><span class="nx">treatment</span><span class="p">])</span> <span class="p">{</span>
+                <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">gameLevel</span><span class="p">)</span> <span class="p">{</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-48" id="section-48">&#182;</a>
+</div>
+<p>Treatments are not yet parsed.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+                    <span class="nx">t</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">levels</span><span class="p">[</span><span class="k">this</span><span class="p">.</span><span class="nx">gameLevel</span><span class="p">].</span><span class="nx">settings</span><span class="p">.</span><span class="nx">treatments</span><span class="p">;</span>
+                <span class="p">}</span>
+                <span class="k">else</span> <span class="p">{</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-49" id="section-49">&#182;</a>
+</div>
+<p>Treatments are already parsed at this point.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+                    <span class="nx">t</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">settings</span><span class="p">;</span>
+                <span class="p">}</span>
+
+                <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">t</span><span class="p">[</span><span class="nx">treatment</span><span class="p">])</span> <span class="nx">err</span> <span class="o">=</span> <span class="s1">&#39; not found: &#39;</span> <span class="o">+</span> <span class="nx">treatment</span><span class="p">;</span>
+
+            <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;function&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">treatment</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">err</span> <span class="o">=</span> <span class="s1">&#39;must be string, function or &#39;</span> <span class="o">+</span>
+                <span class="s1">&#39;undefined. Found: &#39;</span> <span class="o">+</span> <span class="nx">treatment</span><span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="nx">doThrow</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="nx">doThrow</span> <span class="o">+</span> <span class="nx">err</span><span class="p">);</span>
+        <span class="k">else</span> <span class="k">return</span> <span class="nx">treatment</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="o">!</span><span class="nx">err</span><span class="p">;</span>
 <span class="p">};</span>
 
 
@@ -1720,7 +1815,7 @@ pinging is skipped.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-53" id="section-53">&#182;</a>
+  <a class="pilcrow" href="#section-55" id="section-55">&#182;</a>
 </div>
 <p>TODO: Maybe check other conditions?</p>
         </td>
@@ -1797,7 +1892,7 @@ pinging is skipped.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-55" id="section-55">&#182;</a>
+  <a class="pilcrow" href="#section-57" id="section-57">&#182;</a>
 </div>
 <p>Check parameters.</p>
         </td>
@@ -1831,7 +1926,7 @@ pinging is skipped.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-56" id="section-56">&#182;</a>
+  <a class="pilcrow" href="#section-58" id="section-58">&#182;</a>
 </div>
 <p>Lock this function.</p>
         </td>
@@ -1845,7 +1940,7 @@ pinging is skipped.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-57" id="section-57">&#182;</a>
+  <a class="pilcrow" href="#section-59" id="section-59">&#182;</a>
 </div>
 <p>Setup variables for pinging all players.</p>
         </td>
@@ -1858,7 +1953,7 @@ pinging is skipped.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-58" id="section-58">&#182;</a>
+  <a class="pilcrow" href="#section-60" id="section-60">&#182;</a>
 </div>
 <p>Manual copy of player list.</p>
         </td>
@@ -1873,7 +1968,7 @@ pinging is skipped.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-59" id="section-59">&#182;</a>
+  <a class="pilcrow" href="#section-61" id="section-61">&#182;</a>
 </div>
 <p>Need to update pcounter because we use .insert below.</p>
         </td>
@@ -1887,7 +1982,7 @@ pinging is skipped.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-60" id="section-60">&#182;</a>
+  <a class="pilcrow" href="#section-62" id="section-62">&#182;</a>
 </div>
 <p>Create callback that will be executed if all players return from PING.</p>
         </td>
@@ -1902,7 +1997,7 @@ pinging is skipped.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-61" id="section-61">&#182;</a>
+  <a class="pilcrow" href="#section-63" id="section-63">&#182;</a>
 </div>
 <p>When done, unlock function.</p>
         </td>
@@ -1917,7 +2012,7 @@ pinging is skipped.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-62" id="section-62">&#182;</a>
+  <a class="pilcrow" href="#section-64" id="section-64">&#182;</a>
 </div>
 <p>Call the callback: if required so and at least one player
 is still connected, or if all players returned the PING.</p>
@@ -1931,7 +2026,7 @@ is still connected, or if all players returned the PING.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-63" id="section-63">&#182;</a>
+  <a class="pilcrow" href="#section-65" id="section-65">&#182;</a>
 </div>
 <p>Add list of pinged players to dispatch options.</p>
         </td>
@@ -1950,7 +2045,7 @@ is still connected, or if all players returned the PING.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-64" id="section-64">&#182;</a>
+  <a class="pilcrow" href="#section-66" id="section-66">&#182;</a>
 </div>
 <p>Execute suspended calls.</p>
         </td>
@@ -1964,7 +2059,7 @@ is still connected, or if all players returned the PING.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-65" id="section-65">&#182;</a>
+  <a class="pilcrow" href="#section-67" id="section-67">&#182;</a>
 </div>
 <p>Cancel suspended pings if waiting room is closed.</p>
         </td>
@@ -1993,7 +2088,7 @@ is still connected, or if all players returned the PING.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-66" id="section-66">&#182;</a>
+  <a class="pilcrow" href="#section-68" id="section-68">&#182;</a>
 </div>
 <p>Count how many pings returned.</p>
         </td>
@@ -2006,7 +2101,7 @@ is still connected, or if all players returned the PING.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-67" id="section-67">&#182;</a>
+  <a class="pilcrow" href="#section-69" id="section-69">&#182;</a>
 </div>
 <p>Callback to execute when a ping-back is returned.</p>
         </td>
@@ -2026,7 +2121,7 @@ is still connected, or if all players returned the PING.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-68" id="section-68">&#182;</a>
+  <a class="pilcrow" href="#section-70" id="section-70">&#182;</a>
 </div>
 <p>Start pinging.</p>
         </td>
@@ -2041,7 +2136,7 @@ is still connected, or if all players returned the PING.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-69" id="section-69">&#182;</a>
+  <a class="pilcrow" href="#section-71" id="section-71">&#182;</a>
 </div>
 <p>Call .insert, not .add (saves some operations).</p>
         </td>
@@ -2058,7 +2153,7 @@ is still connected, or if all players returned the PING.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-70" id="section-70">&#182;</a>
+  <a class="pilcrow" href="#section-72" id="section-72">&#182;</a>
 </div>
 <p>The callback on failure.</p>
         </td>
@@ -2072,7 +2167,7 @@ is still connected, or if all players returned the PING.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-71" id="section-71">&#182;</a>
+  <a class="pilcrow" href="#section-73" id="section-73">&#182;</a>
 </div>
 <p>This marks the PING failed.</p>
         </td>
@@ -2092,7 +2187,7 @@ is still connected, or if all players returned the PING.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-72" id="section-72">&#182;</a>
+  <a class="pilcrow" href="#section-74" id="section-74">&#182;</a>
 </div>
 <p>At the end of this timeout, we will check how many players
 have responded. If all players have responded (or doCallback = TRUE)
@@ -2152,7 +2247,7 @@ the callback is executed. In any case, we set pingInProgress = FALSE.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-74" id="section-74">&#182;</a>
+  <a class="pilcrow" href="#section-76" id="section-76">&#182;</a>
 </div>
 <p>Check if we are still allowed to dispatch games.</p>
         </td>
@@ -2193,7 +2288,7 @@ the callback is executed. In any case, we set pingInProgress = FALSE.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-75" id="section-75">&#182;</a>
+  <a class="pilcrow" href="#section-77" id="section-77">&#182;</a>
 </div>
 <p>If nothing is specified, try to dispatch maximal amount of games.</p>
         </td>
@@ -2227,7 +2322,7 @@ the callback is executed. In any case, we set pingInProgress = FALSE.</p>
         <span class="kd">var</span> <span class="nx">i</span><span class="p">,</span> <span class="nx">j</span><span class="p">;</span>
         <span class="kd">var</span> <span class="nx">gameRoom</span><span class="p">,</span> <span class="nx">code</span><span class="p">,</span> <span class="nx">gameNumber</span><span class="p">;</span>
         <span class="kd">var</span> <span class="nx">pList</span><span class="p">,</span> <span class="nx">nPlayers</span><span class="p">,</span> <span class="nx">nPlayersToDispatch</span><span class="p">;</span>
-        <span class="kd">var</span> <span class="nx">groups</span><span class="p">,</span> <span class="nx">nGroupsCreated</span><span class="p">;</span>
+        <span class="kd">var</span> <span class="nx">groups</span><span class="p">,</span> <span class="nx">nGroupsCreated</span><span class="p">,</span> <span class="nx">chosenTreatment</span><span class="p">;</span>
         <span class="kd">var</span> <span class="nx">msg</span><span class="p">,</span> <span class="nx">numberOfGames</span><span class="p">,</span> <span class="nx">groupSize</span><span class="p">,</span> <span class="nx">closeAfterDispatch</span><span class="p">;</span>
 
         <span class="kd">var</span> <span class="nx">channel</span><span class="p">,</span> <span class="nx">sysLogger</span><span class="p">;</span>
@@ -2239,7 +2334,7 @@ the callback is executed. In any case, we set pingInProgress = FALSE.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-76" id="section-76">&#182;</a>
+  <a class="pilcrow" href="#section-78" id="section-78">&#182;</a>
 </div>
 <p>Have we dispatched 'em all?</p>
         </td>
@@ -2252,6 +2347,20 @@ the callback is executed. In any case, we set pingInProgress = FALSE.</p>
         <span class="nx">sysLogger</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">;</span>
 
         <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">ON_DISPATCH</span><span class="p">)</span> <span class="k">this</span><span class="p">.</span><span class="nx">ON_DISPATCH</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="nx">opts</span><span class="p">);</span>
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">opts</span><span class="p">.</span><span class="nx">chosenTreatment</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">validateTreatment</span><span class="p">(</span><span class="nx">opts</span><span class="p">.</span><span class="nx">chosenTreatment</span><span class="p">))</span> <span class="p">{</span>
+                <span class="nx">chosenTreatment</span> <span class="o">=</span> <span class="nx">opts</span><span class="p">.</span><span class="nx">chosenTreatment</span><span class="p">;</span>
+            <span class="p">}</span>
+            <span class="k">else</span> <span class="p">{</span>
+                <span class="k">this</span><span class="p">.</span><span class="nx">abortDispatch</span><span class="p">(</span><span class="nx">opts</span><span class="p">,</span> <span class="s1">&#39;Invalid treatment specified: &#39;</span> <span class="o">+</span>
+                                   <span class="nx">opts</span><span class="p">.</span><span class="nx">chosenTreatment</span><span class="p">);</span>
+                <span class="k">return</span><span class="p">;</span>
+            <span class="p">}</span>
+
+        <span class="p">}</span>
+        <span class="k">else</span> <span class="p">{</span>
+            <span class="nx">chosenTreatment</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">CHOSEN_TREATMENT</span><span class="p">;</span>
+        <span class="p">}</span>
 
 
 </pre></div>
@@ -2260,7 +2369,7 @@ the callback is executed. In any case, we set pingInProgress = FALSE.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-77" id="section-77">&#182;</a>
+  <a class="pilcrow" href="#section-79" id="section-79">&#182;</a>
 </div>
 <p>If coming from a "kick," there might be more players than
 when the original call to dispatch was performed. Additional
@@ -2290,7 +2399,7 @@ the list of tested players.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-78" id="section-78">&#182;</a>
+  <a class="pilcrow" href="#section-80" id="section-80">&#182;</a>
 </div>
 <p>If numberOfGames is received as input parameter,
 the total number of players to dispatch might be too large.</p>
@@ -2299,9 +2408,10 @@ the total number of players to dispatch might be too large.</p>
         <span class="nx">nPlayersToDispatch</span> <span class="o">=</span> <span class="nx">groupSize</span> <span class="o">*</span> <span class="nx">numberOfGames</span><span class="p">;</span>
 
         <span class="k">if</span> <span class="p">(</span><span class="nx">nPlayers</span> <span class="o">&lt;</span> <span class="nx">nPlayersToDispatch</span><span class="p">)</span> <span class="p">{</span>
-            <span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span> <span class="s1">&#39;cannot dispatch &#39;</span> <span class="o">+</span> <span class="nx">numberOfGames</span> <span class="o">+</span>
-                          <span class="s1">&#39; game/s now, too few players are connected: &#39;</span> <span class="o">+</span>
-                          <span class="nx">nPlayers</span> <span class="o">+</span> <span class="s1">&#39;. Aborting dispatch.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">abortDispatch</span><span class="p">(</span><span class="nx">opts</span><span class="p">,</span>
+                               <span class="s1">&#39;Cannot dispatch &#39;</span> <span class="o">+</span> <span class="nx">numberOfGames</span> <span class="o">+</span>
+                               <span class="s1">&#39; game/s now, too few players are connected: &#39;</span> <span class="o">+</span>
+                               <span class="nx">nPlayers</span><span class="p">);</span>
             <span class="k">return</span><span class="p">;</span>
         <span class="p">}</span>
 
@@ -2312,7 +2422,7 @@ the total number of players to dispatch might be too large.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-79" id="section-79">&#182;</a>
+  <a class="pilcrow" href="#section-81" id="section-81">&#182;</a>
 </div>
 <p>Shuffle and sort players, if necessary.
 This means that at least two groups will be created.</p>
@@ -2325,11 +2435,11 @@ This means that at least two groups will be created.</p>
                 <span class="nx">nGroupsCreated</span> <span class="o">=</span> <span class="nx">groups</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span>
 
                 <span class="k">if</span> <span class="p">(</span><span class="nx">nGroupsCreated</span> <span class="o">!==</span> <span class="nx">numberOfGames</span><span class="p">)</span> <span class="p">{</span>
-                    <span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span> <span class="s1">&#39; PLAYER_GROUPING did not &#39;</span> <span class="o">+</span>
-                                  <span class="s1">&#39;return the expected number of groups: &#39;</span> <span class="o">+</span>
-                                  <span class="nx">groups</span><span class="p">.</span><span class="nx">length</span> <span class="o">+</span> <span class="s1">&#39; (found) vs &#39;</span> <span class="o">+</span>
-                                  <span class="nx">numberOfGames</span> <span class="o">+</span> <span class="s1">&#39; (expected)&#39;</span><span class="p">,</span>
-                                  <span class="s1">&#39;error&#39;</span><span class="p">);</span>
+                    <span class="k">this</span><span class="p">.</span><span class="nx">abortDispatch</span><span class="p">(</span><span class="nx">opts</span><span class="p">,</span>
+                                       <span class="s1">&#39;PLAYER_GROUPING did not return &#39;</span> <span class="o">+</span>
+                                       <span class="s1">&#39;the expected number of groups: &#39;</span> <span class="o">+</span>
+                                       <span class="nx">groups</span><span class="p">.</span><span class="nx">length</span> <span class="o">+</span> <span class="s1">&#39; (found) vs &#39;</span> <span class="o">+</span>
+                                       <span class="nx">numberOfGames</span> <span class="o">+</span> <span class="s1">&#39; (expected)&#39;</span><span class="p">);</span>
                     <span class="k">return</span><span class="p">;</span>
                 <span class="p">}</span>
 
@@ -2340,7 +2450,7 @@ This means that at least two groups will be created.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-80" id="section-80">&#182;</a>
+  <a class="pilcrow" href="#section-82" id="section-82">&#182;</a>
 </div>
 <p>TODO: check if each subgroup has the right size.
 TODO: shall we allowed groups of different sizes?</p>
@@ -2349,11 +2459,11 @@ TODO: shall we allowed groups of different sizes?</p>
                 <span class="nx">dispatchList</span> <span class="o">=</span> <span class="p">[].</span><span class="nx">concat</span><span class="p">.</span><span class="nx">apply</span><span class="p">([],</span> <span class="nx">groups</span><span class="p">);</span>
 
                 <span class="k">if</span> <span class="p">(</span><span class="nx">dispatchList</span><span class="p">.</span><span class="nx">length</span> <span class="o">!==</span> <span class="nx">nPlayersToDispatch</span><span class="p">)</span> <span class="p">{</span>
-                    <span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">where</span> <span class="o">+</span> <span class="s1">&#39; PLAYER_GROUPING did not &#39;</span> <span class="o">+</span>
-                                  <span class="s1">&#39;return the expected number of players: &#39;</span> <span class="o">+</span>
-                                  <span class="nx">dispatchList</span><span class="p">.</span><span class="nx">length</span> <span class="o">+</span> <span class="s1">&#39; (found) vs &#39;</span> <span class="o">+</span>
-                                  <span class="nx">nPlayersToDispatch</span> <span class="o">+</span> <span class="s1">&#39; (expected)&#39;</span><span class="p">,</span>
-                                  <span class="s1">&#39;error&#39;</span><span class="p">);</span>
+                    <span class="k">this</span><span class="p">.</span><span class="nx">abortDispatch</span><span class="p">(</span><span class="nx">opts</span><span class="p">,</span>
+                                       <span class="s1">&#39;PLAYER_GROUPING did not return &#39;</span> <span class="o">+</span>
+                                       <span class="s1">&#39;the expected number of players: &#39;</span> <span class="o">+</span>
+                                       <span class="nx">dispatchList</span><span class="p">.</span><span class="nx">length</span> <span class="o">+</span> <span class="s1">&#39; (found) vs &#39;</span> <span class="o">+</span>
+                                       <span class="nx">nPlayersToDispatch</span> <span class="o">+</span> <span class="s1">&#39; (expected)&#39;</span><span class="p">);</span>
                     <span class="k">return</span><span class="p">;</span>
                 <span class="p">}</span>
 
@@ -2367,7 +2477,7 @@ TODO: shall we allowed groups of different sizes?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-81" id="section-81">&#182;</a>
+  <a class="pilcrow" href="#section-83" id="section-83">&#182;</a>
 </div>
 <p>Shuffle player list anyway.</p>
         </td>
@@ -2380,7 +2490,7 @@ TODO: shall we allowed groups of different sizes?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-82" id="section-82">&#182;</a>
+  <a class="pilcrow" href="#section-84" id="section-84">&#182;</a>
 </div>
 <p>Sort according to priority.
 TODO: We could optimize it, if we knew in advance the
@@ -2397,7 +2507,10 @@ sorting criteria, i.e. there might be no need to sort here.</p>
         <span class="p">}</span>
 
         <span class="k">this</span><span class="p">.</span><span class="nx">setDispatchState</span><span class="p">(</span><span class="nx">WaitingRoom</span><span class="p">.</span><span class="nx">dispatchStates</span><span class="p">.</span><span class="nx">DISPATCHING</span><span class="p">);</span>
-        <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;DISPATCH: &#39;</span><span class="p">,</span> <span class="nx">nPlayersToDispatch</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">nPlayers</span><span class="p">);</span>
+        <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;DISPATCH: &#39;</span><span class="p">,</span>
+                    <span class="nx">nPlayersToDispatch</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">nPlayers</span><span class="p">,</span>
+                    <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">chosenTreatment</span> <span class="o">?</span>
+                     <span class="nx">chosenTreatment</span> <span class="o">:</span> <span class="s1">&#39;Function&#39;</span><span class="p">));</span>
 
 
 </pre></div>
@@ -2406,7 +2519,7 @@ sorting criteria, i.e. there might be no need to sort here.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-83" id="section-83">&#182;</a>
+  <a class="pilcrow" href="#section-85" id="section-85">&#182;</a>
 </div>
 <p>If we have too many players log a warning.</p>
         </td>
@@ -2420,7 +2533,7 @@ sorting criteria, i.e. there might be no need to sort here.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-84" id="section-84">&#182;</a>
+  <a class="pilcrow" href="#section-86" id="section-86">&#182;</a>
 </div>
 <p>Warn if more participants than spots available.</p>
         </td>
@@ -2443,7 +2556,7 @@ sorting criteria, i.e. there might be no need to sort here.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-85" id="section-85">&#182;</a>
+  <a class="pilcrow" href="#section-87" id="section-87">&#182;</a>
 </div>
 <p>Player id.</p>
         </td>
@@ -2457,7 +2570,7 @@ sorting criteria, i.e. there might be no need to sort here.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-86" id="section-86">&#182;</a>
+  <a class="pilcrow" href="#section-88" id="section-88">&#182;</a>
 </div>
 <p>Inform players.</p>
         </td>
@@ -2473,7 +2586,7 @@ sorting criteria, i.e. there might be no need to sort here.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-87" id="section-87">&#182;</a>
+  <a class="pilcrow" href="#section-89" id="section-89">&#182;</a>
 </div>
 <p>Clear timeout for players.</p>
         </td>
@@ -2487,7 +2600,7 @@ sorting criteria, i.e. there might be no need to sort here.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-88" id="section-88">&#182;</a>
+  <a class="pilcrow" href="#section-90" id="section-90">&#182;</a>
 </div>
 <p>Add it to the group.</p>
         </td>
@@ -2505,7 +2618,7 @@ sorting criteria, i.e. there might be no need to sort here.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-89" id="section-89">&#182;</a>
+  <a class="pilcrow" href="#section-91" id="section-91">&#182;</a>
 </div>
 <p>If this is the first dispatch or we need to create a new room
 anyway, assign a treatment and then setup the game.</p>
@@ -2520,12 +2633,12 @@ anyway, assign a treatment and then setup the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-90" id="section-90">&#182;</a>
+  <a class="pilcrow" href="#section-92" id="section-92">&#182;</a>
 </div>
 <p>Decide treatment.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-                    <span class="nx">treatmentName</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">decideTreatment</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">CHOSEN_TREATMENT</span><span class="p">,</span>
+                    <span class="nx">treatmentName</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">decideTreatment</span><span class="p">(</span><span class="nx">chosenTreatment</span><span class="p">,</span>
                                                         <span class="nx">gameNumber</span><span class="p">);</span>
 
 
@@ -2535,7 +2648,7 @@ anyway, assign a treatment and then setup the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-91" id="section-91">&#182;</a>
+  <a class="pilcrow" href="#section-93" id="section-93">&#182;</a>
 </div>
 <p>Starts a game level or the main game.
 TODO: should the main game have a ghost level?</p>
@@ -2556,7 +2669,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-92" id="section-92">&#182;</a>
+  <a class="pilcrow" href="#section-94" id="section-94">&#182;</a>
 </div>
 <p>Create new game room.</p>
         </td>
@@ -2574,7 +2687,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-93" id="section-93">&#182;</a>
+  <a class="pilcrow" href="#section-95" id="section-95">&#182;</a>
 </div>
 <p>Setup and start game.</p>
         </td>
@@ -2589,7 +2702,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-94" id="section-94">&#182;</a>
+  <a class="pilcrow" href="#section-96" id="section-96">&#182;</a>
 </div>
 <p>Store reference.</p>
         </td>
@@ -2604,7 +2717,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-95" id="section-95">&#182;</a>
+  <a class="pilcrow" href="#section-97" id="section-97">&#182;</a>
 </div>
 <p>Move clients into existing room.</p>
         </td>
@@ -2622,7 +2735,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-96" id="section-96">&#182;</a>
+  <a class="pilcrow" href="#section-98" id="section-98">&#182;</a>
 </div>
 <p>Setup new group of players in the old room.</p>
         </td>
@@ -2638,7 +2751,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-97" id="section-97">&#182;</a>
+  <a class="pilcrow" href="#section-99" id="section-99">&#182;</a>
 </div>
 <p>One more dispatch done!</p>
         </td>
@@ -2652,7 +2765,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-98" id="section-98">&#182;</a>
+  <a class="pilcrow" href="#section-100" id="section-100">&#182;</a>
 </div>
 <p>Close waitingRoom if next game would not be dispatchable.</p>
         </td>
@@ -2666,7 +2779,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-99" id="section-99">&#182;</a>
+  <a class="pilcrow" href="#section-101" id="section-101">&#182;</a>
 </div>
 <p>Force to exit loop.</p>
         </td>
@@ -2681,7 +2794,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-100" id="section-100">&#182;</a>
+  <a class="pilcrow" href="#section-102" id="section-102">&#182;</a>
 </div>
 <p>Clear group.</p>
         </td>
@@ -2698,7 +2811,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-101" id="section-101">&#182;</a>
+  <a class="pilcrow" href="#section-103" id="section-103">&#182;</a>
 </div>
 <p>All dispatch attempts have been completed.</p>
         </td>
@@ -2711,7 +2824,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-102" id="section-102">&#182;</a>
+  <a class="pilcrow" href="#section-104" id="section-104">&#182;</a>
 </div>
 <p>Close room, if requested.</p>
         </td>
@@ -2730,7 +2843,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-103" id="section-103">&#182;</a>
+  <a class="pilcrow" href="#section-105" id="section-105">&#182;</a>
 </div>
 <p>Tell players still waiting, that they have not been selected.</p>
         </td>
@@ -2747,7 +2860,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-104" id="section-104">&#182;</a>
+  <a class="pilcrow" href="#section-106" id="section-106">&#182;</a>
 </div>
 <p>Increment timesNotSelected for player.</p>
         </td>
@@ -2771,7 +2884,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-105" id="section-105">&#182;</a>
+  <a class="pilcrow" href="#section-107" id="section-107">&#182;</a>
 </div>
 <p>Ste was: (but it does not make any sense).
 Exit loop.
@@ -2781,7 +2894,7 @@ if (!this.shouldDispatchMoreGames()) break</p>
         <span class="p">}</span>
         <span class="k">this</span><span class="p">.</span><span class="nx">setDispatchState</span><span class="p">(</span><span class="nx">WaitingRoom</span><span class="p">.</span><span class="nx">dispatchStates</span><span class="p">.</span><span class="nx">NONE</span><span class="p">);</span>
 
-        <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">ON_DISPATCHED</span><span class="p">)</span> <span class="k">this</span><span class="p">.</span><span class="nx">ON_DISPATCHED</span><span class="p">(</span><span class="k">this</span><span class="p">);</span>
+        <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">ON_DISPATCHED</span><span class="p">)</span> <span class="k">this</span><span class="p">.</span><span class="nx">ON_DISPATCHED</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="nx">opts</span><span class="p">);</span>
     <span class="p">};</span>
 
     <span class="k">return</span> <span class="kd">function</span><span class="p">(</span><span class="nx">opts</span><span class="p">)</span> <span class="p">{</span>
@@ -2805,7 +2918,7 @@ if (!this.shouldDispatchMoreGames()) break</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-106" id="section-106">&#182;</a>
+  <a class="pilcrow" href="#section-108" id="section-108">&#182;</a>
 </div>
 <p>Have we dispatched 'em all?</p>
         </td>
@@ -2819,7 +2932,7 @@ if (!this.shouldDispatchMoreGames()) break</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-107" id="section-107">&#182;</a>
+  <a class="pilcrow" href="#section-109" id="section-109">&#182;</a>
 </div>
 <p>Fix group size and number of groups.
 In case of kickUnresponsivePlayers, these can change in between.</p>
@@ -2834,7 +2947,7 @@ In case of kickUnresponsivePlayers, these can change in between.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-108" id="section-108">&#182;</a>
+  <a class="pilcrow" href="#section-110" id="section-110">&#182;</a>
 </div>
 <p>If we have pool of 1 and mode == WAIT_FOR_N_PLAYERS just go ahead!</p>
         </td>
@@ -2853,7 +2966,7 @@ In case of kickUnresponsivePlayers, these can change in between.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-109" id="section-109">&#182;</a>
+  <a class="pilcrow" href="#section-111" id="section-111">&#182;</a>
 </div>
 <p>Blocks until all players have returned the ping or are kicked.</p>
         </td>
@@ -2911,7 +3024,7 @@ In case of kickUnresponsivePlayers, these can change in between.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-111" id="section-111">&#182;</a>
+  <a class="pilcrow" href="#section-113" id="section-113">&#182;</a>
 </div>
 <p>Group together a few connect-notifications before sending them.</p>
         </td>
@@ -2924,7 +3037,7 @@ In case of kickUnresponsivePlayers, these can change in between.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-112" id="section-112">&#182;</a>
+  <a class="pilcrow" href="#section-114" id="section-114">&#182;</a>
 </div>
 <p>Delete timeout.</p>
         </td>
@@ -2937,7 +3050,7 @@ In case of kickUnresponsivePlayers, these can change in between.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-113" id="section-113">&#182;</a>
+  <a class="pilcrow" href="#section-115" id="section-115">&#182;</a>
 </div>
 <p>Notify all players of new connection/s.</p>
         </td>
@@ -3014,7 +3127,7 @@ In case of kickUnresponsivePlayers, these can change in between.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-115" id="section-115">&#182;</a>
+  <a class="pilcrow" href="#section-117" id="section-117">&#182;</a>
 </div>
 <p>TODO: do we need to check if we have enough players?</p>
         </td>
@@ -3035,7 +3148,7 @@ In case of kickUnresponsivePlayers, these can change in between.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-116" id="section-116">&#182;</a>
+  <a class="pilcrow" href="#section-118" id="section-118">&#182;</a>
 </div>
 <p>If a timeout function for the server was specified,
 executes. If the return value is FALSE, do not continue
@@ -3050,7 +3163,7 @@ with checkout and informing the player about NotEnoughPlayers.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-117" id="section-117">&#182;</a>
+  <a class="pilcrow" href="#section-119" id="section-119">&#182;</a>
 </div>
 <p>TODO: pass that as parameter.</p>
         </td>
@@ -3066,7 +3179,7 @@ with checkout and informing the player about NotEnoughPlayers.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-118" id="section-118">&#182;</a>
+  <a class="pilcrow" href="#section-120" id="section-120">&#182;</a>
 </div>
 <p>If an access code is defined, checkout remotely.</p>
         </td>
@@ -3187,12 +3300,60 @@ with checkout and informing the player about NotEnoughPlayers.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-121" id="section-121">&#182;</a>
+  <a class="pilcrow" href="#section-123" id="section-123">&#182;</a>
 </div>
 <p>Return treatment (was a string already).</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="k">return</span> <span class="nx">t</span><span class="p">;</span>
+<span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="waitingroom.abortdispatch">
+  <h3>
+    <a href="#waitingroom.abortdispatch" name="waitingroom.abortdispatch" class="pilcrow">&#182;</a>
+    WaitingRoom.abortDispatch
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Aborts an an attempt to dispatch</p>
+
+<p>Logs an error message, cleans up state, and executes a callback, if defined.</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">opts</span>
+      <span class="dox_type">object</span>
+      <span>The dispatch options</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">msg</span>
+      <span class="dox_type">string</span>
+      <span>Optional. A message describing the reason for
+  aborting the dispatch</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">WaitingRoom.ON_FAILED_DISPATCH
+</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">WaitingRoom</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">abortDispatch</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">opts</span><span class="p">,</span> <span class="nx">msg</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;WaitingRoom.dispatch: aborted. &#39;</span> <span class="o">+</span> <span class="p">(</span><span class="nx">msg</span> <span class="o">||</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
+                               <span class="s1">&#39;error&#39;</span><span class="p">);</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">setDispatchState</span><span class="p">(</span><span class="nx">WaitingRoom</span><span class="p">.</span><span class="nx">dispatchStates</span><span class="p">.</span><span class="nx">NONE</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">ON_FAILED_DISPATCH</span><span class="p">)</span> <span class="k">this</span><span class="p">.</span><span class="nx">ON_FAILED_DISPATCH</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="nx">opts</span><span class="p">,</span> <span class="nx">msg</span><span class="p">);</span>
 <span class="p">};</span>
 
 

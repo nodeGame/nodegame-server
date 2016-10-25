@@ -3,54 +3,54 @@
  */
 
 body {
-	margin: 5px;
-	padding: 5px;
+    margin: 5px;
+    padding: 5px;
 }
 
 input, button, select, textarea {
-	padding: 5px;
-	margin: 2px;
-	border: 1px solid #CCC;
-	font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
+    padding: 5px;
+    margin: 2px;
+    border: 1px solid #CCC;
+    font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
 }
 
 fieldset {
-	float: left;
-	padding-top: 5px;
-	margin: 5px;
-	font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
+    float: left;
+    padding-top: 5px;
+    margin: 5px;
+    font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
 }
 
 page,body {
-	padding: 5px;
+    padding: 5px;
 }
 
 #status-bar {
-	width: 100%;
-	height: 50px;
-	margin-bottom: 10px;
-	border-bottom: 1px solid #CCC;
-	padding: 5px;
-	font-family: Verdana;
-	color: black;
-  overflow: auto;
+    width: 100%;
+    height: 50px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #CCC;
+    padding: 5px;
+    font-family: Verdana;
+    color: black;
+    overflow: auto;
 }
 
 
 #wall {
-  width: auto;
-  height: 200px;
-  /*margin-bottom: 10px;
-  border: 1px solid #CCC;*/
-  padding: 5px;
-  font-family: Verdana;
-	font-size: 11px;
-  color: black;
-  overflow: auto;
+    width: auto;
+    height: 200px;
+    /*margin-bottom: 10px;
+      border: 1px solid #CCC;*/
+    padding: 5px;
+    font-family: Verdana;
+    font-size: 11px;
+    color: black;
+    overflow: auto;
 }
 
 #sendButton {
- //float: left;
+    //float: left;
  height: 30px;
  border: 1px solid black;
  font-family: Arial;
@@ -59,7 +59,7 @@ page,body {
 }
 
 #inputMessage {
- //float: right;
+    //float: right;
  width: 300px ;
  height: 30px;
  border: 1px solid black;
@@ -69,50 +69,50 @@ page,body {
 
 
 div#gameboard {
-  width: 300px;
-  height: 130px;
-  border: 1px solid black;
-  padding: 5px;
-  margin: 5px;
+    width: 300px;
+    height: 130px;
+    border: 1px solid black;
+    padding: 5px;
+    margin: 5px;
 }
 
 fieldset#wall_fieldset, fieldset#gb_fieldset {
-  width: 500px;
-  height: 300px;
-  padding: 5px;
-  margin: 5px;
+    width: 500px;
+    height: 300px;
+    padding: 5px;
+    margin: 5px;
 }
 
 fieldset#chat_fieldset {
-	width: 500px;
-  height: 400px;
-  padding: 5px;
-  margin: 5px;
+    width: 500px;
+    height: 400px;
+    padding: 5px;
+    margin: 5px;
 }
 
 #chat_chat {
-	overflow-y: scroll;
-	height: 200px;
-	width: 450px;
-	border: 1px solid #CCC;
-	padding: 5px;
+    overflow-y: scroll;
+    height: 200px;
+    width: 450px;
+    border: 1px solid #CCC;
+    padding: 5px;
 }
 
 #chat_textarea {
-  height: 100px;
-  width: 400px;
+    height: 100px;
+    width: 400px;
 }
 
 .chat_me {
-  font-weight: bold;
+    font-weight: bold;
 }
 
 table#gametable {
-	border: 1px solid #CCC;
+    border: 1px solid #CCC;
 }
 
 table#gametable tr td {
-  border: 1px solid #CCC;
+    border: 1px solid #CCC;
 }
 
 
@@ -131,12 +131,14 @@ table#gametable tr td {
 
 table {
     border-collapse: separate;
-    border-spacing: 10px 0;
+    border-spacing: 10px 2px;
 }
 
+/* 
 th,td {
     text-align: center;
 }
+*/
 
 th:first-child,td:first-child {
     text-align: left;
@@ -147,16 +149,32 @@ div.panel.msgbar table tbody tr td:nth-child(3) {
 }
 
 div.panel.commandbuttons {
-  width: 500px;
-  float: left;
-  margin-right: 10px;
+    width: 500px;
+    float: left;
+    margin-right: 10px;
 }
 
 div.panel.msgbar {
-  width: 500px;
-  float: left;
+    width: 500px;
+    float: left;
 }
 
 ul.nav-tabs {
-  margin-bottom: 10px;
+    margin-bottom: 10px;
+}
+
+/* Game Details */
+
+.details {
+    max-width: 500px;
+}
+
+.details td {
+    padding: 10px;
+    vertical-align: text-top;
+}
+
+.details tr td:first-child {    
+    font-weight: bold;
+    text-align: right;
 }
