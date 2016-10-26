@@ -218,7 +218,6 @@ passed in the constructor and be already connected.</p>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">node</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">isConnected</span><span class="p">())</span> <span class="p">{</span>
 
-
 </pre></div>
         </td>
       </tr>
@@ -226,28 +225,6 @@ passed in the constructor and be already connected.</p>
         <td class="docs">
 <div class="pilwrap">
   <a class="pilcrow" href="#section-8" id="section-8">&#182;</a>
-</div>
-<p>Link some of the node properties to the registry.
-TODO: Alternatively, they can be updated via listener
-in AdminServer. See discussion there.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-        <span class="nx">node</span><span class="p">.</span><span class="nx">once</span><span class="p">(</span><span class="s1">&#39;PLAYER_CREATED&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">player</span><span class="p">)</span> <span class="p">{</span>
-            <span class="kd">var</span> <span class="nx">logicObj</span><span class="p">;</span>
-            <span class="nx">logicObj</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">registry</span><span class="p">.</span><span class="nx">getClient</span><span class="p">(</span><span class="nx">node</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">id</span><span class="p">);</span>
-            <span class="nx">logicObj</span><span class="p">.</span><span class="nx">stage</span> <span class="o">=</span> <span class="nx">player</span><span class="p">.</span><span class="nx">stage</span><span class="p">;</span>
-            <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA&#39;</span><span class="p">);</span>
-            <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">logicObj</span><span class="p">);</span>
-        <span class="p">});</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-9" id="section-9">&#182;</a>
 </div>
 <p>Mixin-in nodeGame options.</p>
         </td>
@@ -258,7 +235,7 @@ in AdminServer. See discussion there.</p>
         <span class="nx">node</span><span class="p">.</span><span class="nx">connect</span><span class="p">(</span><span class="kc">null</span><span class="p">,</span> <span class="p">{</span>
             <span class="nx">startingRoom</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">name</span><span class="p">,</span>
             <span class="nx">clientType</span><span class="o">:</span>   <span class="s1">&#39;logic&#39;</span>
-        <span class="p">});</span>        
+        <span class="p">});</span>
     <span class="p">}</span>
 <span class="p">};</span>
 
