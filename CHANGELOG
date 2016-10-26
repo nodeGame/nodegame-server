@@ -1,5 +1,8 @@
 # nodegame-server change log
 
+# 3.2.3
+- Improved communication with monitor.
+
 # 3.2.2
 - WaitingRoom can accept parameter to control which treatment to run.
 - AdminServer adds the stage of the logic to the reply to ROOMS_INFO.
