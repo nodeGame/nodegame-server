@@ -839,6 +839,11 @@ Admins decides what to do with it.</p>
                             <span class="nx">J</span><span class="p">.</span><span class="nx">size</span><span class="p">(</span><span class="nx">chanObj</span><span class="p">.</span><span class="nx">registry</span><span class="p">.</span><span class="nx">getDisconnectedAdmins</span><span class="p">());</span>
                         <span class="nx">replyData</span><span class="p">[</span><span class="nx">channel</span><span class="p">].</span><span class="nx">nDisconnPlayers</span> <span class="o">=</span>
                             <span class="nx">J</span><span class="p">.</span><span class="nx">size</span><span class="p">(</span><span class="nx">chanObj</span><span class="p">.</span><span class="nx">registry</span><span class="p">.</span><span class="nx">getDisconnectedPlayers</span><span class="p">());</span>
+<span class="kr">debugger</span>
+                        <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">that</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">name</span><span class="p">,</span> <span class="nx">chanObj</span><span class="p">.</span><span class="nx">name</span><span class="p">);</span>
+                        <span class="k">if</span> <span class="p">(</span><span class="nx">that</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">name</span> <span class="o">===</span> <span class="nx">chanObj</span><span class="p">.</span><span class="nx">name</span><span class="p">)</span> <span class="p">{</span>
+                            <span class="nx">replyData</span><span class="p">[</span><span class="nx">channel</span><span class="p">].</span><span class="nx">ownChannel</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+                        <span class="p">}</span>
                     <span class="p">}</span>
                 <span class="p">}</span>
             <span class="p">}</span>
@@ -851,8 +856,9 @@ Admins decides what to do with it.</p>
         <span class="p">}</span>
         <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">data</span><span class="p">.</span><span class="nx">type</span> <span class="o">===</span> <span class="s1">&#39;ROOMS&#39;</span><span class="p">)</span> <span class="p">{</span>
             <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">that</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">channels</span><span class="p">.</span><span class="nx">hasOwnProperty</span><span class="p">(</span><span class="nx">data</span><span class="p">.</span><span class="nx">channel</span><span class="p">))</span> <span class="p">{</span>
-                <span class="nx">sys</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;AdminServer.on.SERVERCOMMAND_INFO.ROOMS: data has &#39;</span> <span class="o">+</span>
-                        <span class="s1">&#39;invalid channel field.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
+                <span class="nx">sys</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;AdminServer.on.SERVERCOMMAND_INFO.ROOMS: &#39;</span> <span class="o">+</span>
+                        <span class="s1">&#39;data.channel is invalid. Found: &#39;</span> <span class="o">+</span>
+                        <span class="nx">data</span><span class="p">.</span><span class="nx">channel</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
                 <span class="k">return</span><span class="p">;</span>
             <span class="p">}</span>
 
@@ -919,8 +925,9 @@ Admins decides what to do with it.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
             <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">that</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">rooms</span><span class="p">.</span><span class="nx">hasOwnProperty</span><span class="p">(</span><span class="nx">data</span><span class="p">.</span><span class="nx">roomId</span><span class="p">))</span> <span class="p">{</span>
-                <span class="nx">sys</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;AdminServer.on.SERVERCOMMAND_INFO.CLIENTS: data has &#39;</span> <span class="o">+</span>
-                        <span class="s1">&#39;invalid roomId field.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
+                <span class="nx">sys</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;AdminServer.on.SERVERCOMMAND_INFO.CLIENTS: &#39;</span> <span class="o">+</span>
+                        <span class="s1">&#39;data.roomId is invalid. Found: &#39;</span> <span class="o">+</span>
+                        <span class="nx">data</span><span class="p">.</span><span class="nx">roomId</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
                 <span class="k">return</span><span class="p">;</span>
             <span class="p">}</span>
             <span class="nx">roomObj</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">rooms</span><span class="p">[</span><span class="nx">data</span><span class="p">.</span><span class="nx">roomId</span><span class="p">];</span>
@@ -1266,12 +1273,15 @@ Important: the ID is not obfuscated.</p>
     <span class="p">});</span>
 
 
-
 </pre></div>
         </td>
       </tr>
       <tr>
-        <td class="docs">
+        <td class="docs"><p>TODO: monitors and admins connected remotely are not updated.
+It could be set as an option, and should be considered also in
+HostRoom, where, currently, some properties (like stage) are linked.</p>
+
+
 <div class="pilwrap" id="say.player_update">
   <h3>
     <a href="#say.player_update" name="say.player_update" class="pilcrow">&#182;</a>
@@ -1280,37 +1290,21 @@ Important: the ID is not obfuscated.</p>
 </div>
 
 
-<p>Listens on say.PLAYER_UPDATE messages
-   this.on(say + 'PLAYER_UPDATE', function(msg) {
-       var newMsg;
-       if (msg.text === 'stage') {
-           newMsg = that.msg.create({
-               target: target.STAGE,
-               data: msg.data.stage,
-               to: msg.to
-           });
-           that.socketManager.broadcast(that.msg.obfuscate(newMsg),
-                                        msg.from);
-       }</p>
-
-
-<div class="highlight"><pre><code>   <span class="k">if</span> <span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">text</span> <span class="o">===</span> <span class="s">&#39;stageLevel&#39;</span><span class="p">)</span> <span class="p">{</span>
-       <span class="n">newMsg</span> <span class="o">=</span> <span class="n">that</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">create</span><span class="p">({</span>
-           <span class="n">target:</span> <span class="n">target</span><span class="o">.</span><span class="n">STAGE_LEVEL</span><span class="p">,</span>
-           <span class="n">data:</span> <span class="n">msg</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">stageLevel</span><span class="p">,</span>
-           <span class="n">from:</span> <span class="n">msg</span><span class="o">.</span><span class="n">from</span><span class="p">,</span>
-           <span class="n">to:</span> <span class="n">msg</span><span class="o">.</span><span class="n">to</span>
-       <span class="p">});</span>
-       <span class="n">that</span><span class="o">.</span><span class="n">socketManager</span><span class="o">.</span><span class="n">broadcast</span><span class="p">(</span><span class="n">that</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">obfuscate</span><span class="p">(</span><span class="n">newMsg</span><span class="p">),</span>
-                                    <span class="n">msg</span><span class="o">.</span><span class="n">from</span><span class="p">);</span>
-   <span class="p">}</span>
-</code></pre></div>
-
-
-
-<p>});</p>
+<p>Listens on say.PLAYER_UPDATE messages</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
+     <span class="k">this</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="nx">say</span> <span class="o">+</span> <span class="s1">&#39;PLAYER_UPDATE&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">msg</span><span class="p">)</span> <span class="p">{</span>
+         <span class="kd">var</span> <span class="nx">clientObj</span><span class="p">;</span>
+         <span class="nx">clientObj</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">registry</span><span class="p">.</span><span class="nx">getClient</span><span class="p">(</span><span class="nx">msg</span><span class="p">.</span><span class="nx">from</span><span class="p">);</span>
+         <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">clientObj</span><span class="p">)</span> <span class="p">{</span>
+             <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;AAAAAAA&#39;</span><span class="p">);</span>
+             <span class="k">return</span><span class="p">;</span>
+         <span class="p">}</span>
+         <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">msg</span><span class="p">.</span><span class="nx">from</span><span class="p">,</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">data</span><span class="p">,</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">text</span><span class="p">);</span>
+         <span class="kr">debugger</span>
+         <span class="nx">clientObj</span><span class="p">[</span><span class="nx">msg</span><span class="p">.</span><span class="nx">text</span><span class="p">]</span> <span class="o">=</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">data</span><span class="p">[</span><span class="nx">msg</span><span class="p">.</span><span class="nx">text</span><span class="p">];</span>
+
+     <span class="p">});</span>
 
 
 </pre></div>
