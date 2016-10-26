@@ -31,9 +31,6 @@
         <a href="#adminserver%20methods">AdminServer methods</a>
       </div>
       <div class="heading h3">
-        <a href="#adminserver.generateinfo">AdminServer.generateInfo</a>
-      </div>
-      <div class="heading h3">
         <a href="#adminserver.attachcustomlisteners">AdminServer.attachCustomListeners</a>
       </div>
       <div class="heading h3">
@@ -252,44 +249,6 @@ MIT Licensed</p>
       <tr>
         <td class="docs"><div class="dox">
   <div class="summary">
-<div class="pilwrap" id="adminserver.generateinfo">
-  <h3>
-    <a href="#adminserver.generateinfo" name="adminserver.generateinfo" class="pilcrow">&#182;</a>
-    AdminServer.generateInfo
-  </h3>
-</div>
-
-  </div>
-  <div class="body"><p>Creates an object containing general information (e.g. number of
-players, and admin connected), about the state of the GameServer</p>
-  </div>
-  <div class="details">
-    <div class="dox_tag_title">Returns</div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name"></span>
-      <span class="dox_type">object</span>
-      <span>info The info about the state of the GameServer</span>
-    </div>
-  </div>
-</div>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-<span class="nx">AdminServer</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">generateInfo</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
-    <span class="k">return</span> <span class="p">{</span>
-        <span class="nx">name</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">name</span><span class="p">,</span>
-        <span class="nx">status</span><span class="o">:</span> <span class="s1">&#39;OK&#39;</span><span class="p">,</span>
-        <span class="nx">nplayers</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">partner</span><span class="p">.</span><span class="nx">getPlayerList</span><span class="p">().</span><span class="nx">length</span><span class="p">,</span>
-        <span class="nx">nadmins</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">pl</span><span class="p">.</span><span class="nx">length</span>
-    <span class="p">};</span>
-<span class="p">};</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs"><div class="dox">
-  <div class="summary">
 <div class="pilwrap" id="adminserver.attachcustomlisteners">
   <h3>
     <a href="#adminserver.attachcustomlisteners" name="adminserver.attachcustomlisteners" class="pilcrow">&#182;</a>
@@ -319,7 +278,7 @@ players, and admin connected), about the state of the GameServer</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-7" id="section-7">&#182;</a>
+  <a class="pilcrow" href="#section-6" id="section-6">&#182;</a>
 </div>
 <p>LISTENERS</p>
         </td>
@@ -342,7 +301,7 @@ players, and admin connected), about the state of the GameServer</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-8" id="section-8">&#182;</a>
+  <a class="pilcrow" href="#section-7" id="section-7">&#182;</a>
 </div>
 <p>TODO: cleanup code, maybe merge with connecting.</p>
         </td>
@@ -368,7 +327,7 @@ players, and admin connected), about the state of the GameServer</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-9" id="section-9">&#182;</a>
+  <a class="pilcrow" href="#section-8" id="section-8">&#182;</a>
 </div>
 <p>Unlike connect msgs, reconnect msgs are sent always just to admins.
 Admins decides what to do with it.</p>
@@ -631,7 +590,7 @@ Admins decides what to do with it.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-22" id="section-22">&#182;</a>
+  <a class="pilcrow" href="#section-21" id="section-21">&#182;</a>
 </div>
 <p>Fetching the channel of the client to disconnect
 (default: this channel).</p>
@@ -647,7 +606,7 @@ Admins decides what to do with it.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-23" id="section-23">&#182;</a>
+  <a class="pilcrow" href="#section-22" id="section-22">&#182;</a>
 </div>
 <p>Player or Admin server (default 'player').</p>
         </td>
@@ -703,7 +662,7 @@ Admins decides what to do with it.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-25" id="section-25">&#182;</a>
+  <a class="pilcrow" href="#section-24" id="section-24">&#182;</a>
 </div>
 <p>Look up room</p>
         </td>
@@ -722,7 +681,7 @@ Admins decides what to do with it.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-26" id="section-26">&#182;</a>
+  <a class="pilcrow" href="#section-25" id="section-25">&#182;</a>
 </div>
 <p>Check data fields:</p>
         </td>
@@ -853,7 +812,7 @@ Admins decides what to do with it.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-30" id="section-30">&#182;</a>
+  <a class="pilcrow" href="#section-29" id="section-29">&#182;</a>
 </div>
 <p>Fill replyData with channel info:</p>
         </td>
@@ -904,7 +863,7 @@ Admins decides what to do with it.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-31" id="section-31">&#182;</a>
+  <a class="pilcrow" href="#section-30" id="section-30">&#182;</a>
 </div>
 <p>Fill replyData with room info:</p>
         </td>
@@ -932,7 +891,7 @@ Admins decides what to do with it.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-32" id="section-32">&#182;</a>
+  <a class="pilcrow" href="#section-31" id="section-31">&#182;</a>
 </div>
 <p>TODO: connected/disconnected etc.</p>
         </td>
@@ -954,7 +913,7 @@ Admins decides what to do with it.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-33" id="section-33">&#182;</a>
+  <a class="pilcrow" href="#section-32" id="section-32">&#182;</a>
 </div>
 <p>Get room object:</p>
         </td>
@@ -973,7 +932,7 @@ Admins decides what to do with it.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-34" id="section-34">&#182;</a>
+  <a class="pilcrow" href="#section-33" id="section-33">&#182;</a>
 </div>
 <p>Fill replyData with client info:
 TODO: Send only specific client data, not everything;
@@ -1002,7 +961,7 @@ TODO: Send only specific client data, not everything;
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-35" id="section-35">&#182;</a>
+  <a class="pilcrow" href="#section-34" id="section-34">&#182;</a>
 </div>
 <p>Substitute the clientType functions with their keys.</p>
         </td>
@@ -1046,7 +1005,7 @@ TODO: Send only specific client data, not everything;
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-36" id="section-36">&#182;</a>
+  <a class="pilcrow" href="#section-35" id="section-35">&#182;</a>
 </div>
 <p>Save last modification date.</p>
         </td>
@@ -1067,7 +1026,7 @@ TODO: Send only specific client data, not everything;
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-37" id="section-37">&#182;</a>
+  <a class="pilcrow" href="#section-36" id="section-36">&#182;</a>
 </div>
 <p>Convert date and send.</p>
         </td>
@@ -1102,7 +1061,7 @@ TODO: Send only specific client data, not everything;
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-38" id="section-38">&#182;</a>
+  <a class="pilcrow" href="#section-37" id="section-37">&#182;</a>
 </div>
 <p>TODO: CLIENTS (admins or players),
       SERVERCONF,
@@ -1139,7 +1098,7 @@ TODO: Send only specific client data, not everything;
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-40" id="section-40">&#182;</a>
+  <a class="pilcrow" href="#section-39" id="section-39">&#182;</a>
 </div>
 <p>open close wait room</p>
         </td>
@@ -1157,7 +1116,7 @@ TODO: Send only specific client data, not everything;
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-41" id="section-41">&#182;</a>
+  <a class="pilcrow" href="#section-40" id="section-40">&#182;</a>
 </div>
 <p>dispatch a new game</p>
         </td>
@@ -1241,7 +1200,7 @@ Important: the ID is not obfuscated.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-45" id="section-45">&#182;</a>
+  <a class="pilcrow" href="#section-44" id="section-44">&#182;</a>
 </div>
 <p>Experimental</p>
         </td>
@@ -1299,7 +1258,7 @@ Important: the ID is not obfuscated.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-48" id="section-48">&#182;</a>
+  <a class="pilcrow" href="#section-47" id="section-47">&#182;</a>
 </div>
 <p>TODO save the state to disk.</p>
         </td>
@@ -1360,7 +1319,7 @@ Important: the ID is not obfuscated.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-50" id="section-50">&#182;</a>
+  <a class="pilcrow" href="#section-49" id="section-49">&#182;</a>
 </div>
 <p>// ### say.STAGE
    // Listens on say.STAGE messages
@@ -1445,7 +1404,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-52" id="section-52">&#182;</a>
+  <a class="pilcrow" href="#section-51" id="section-51">&#182;</a>
 </div>
 <p>TODO: Obfuscate just for players.</p>
         </td>
@@ -1478,7 +1437,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-53" id="section-53">&#182;</a>
+  <a class="pilcrow" href="#section-52" id="section-52">&#182;</a>
 </div>
 <p>Send to admins in the room:</p>
         </td>
@@ -1504,7 +1463,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-54" id="section-54">&#182;</a>
+  <a class="pilcrow" href="#section-53" id="section-53">&#182;</a>
 </div>
 <p>Send to single recipient.</p>
         </td>
@@ -1602,7 +1561,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-56" id="section-56">&#182;</a>
+  <a class="pilcrow" href="#section-55" id="section-55">&#182;</a>
 </div>
 <p>Send to single recipient (could be admin too).</p>
         </td>
@@ -1695,7 +1654,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-58" id="section-58">&#182;</a>
+  <a class="pilcrow" href="#section-57" id="section-57">&#182;</a>
 </div>
 <p>Send to admins in the room:</p>
         </td>
@@ -1721,7 +1680,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-59" id="section-59">&#182;</a>
+  <a class="pilcrow" href="#section-58" id="section-58">&#182;</a>
 </div>
 <p>Send to single recipient.</p>
         </td>
@@ -1770,7 +1729,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-61" id="section-61">&#182;</a>
+  <a class="pilcrow" href="#section-60" id="section-60">&#182;</a>
 </div>
 <p>Notifies other admins that a new one monitor connected.</p>
         </td>
@@ -1788,7 +1747,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-62" id="section-62">&#182;</a>
+  <a class="pilcrow" href="#section-61" id="section-61">&#182;</a>
 </div>
 <p>Send the list of connected admins to the new admin.</p>
         </td>
@@ -1807,7 +1766,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-63" id="section-63">&#182;</a>
+  <a class="pilcrow" href="#section-62" id="section-62">&#182;</a>
 </div>
 <p>Send the list of connected players to the new admin.</p>
         </td>
@@ -1927,7 +1886,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-67" id="section-67">&#182;</a>
+  <a class="pilcrow" href="#section-66" id="section-66">&#182;</a>
 </div>
 <p>Start with one directory pending (data/).</p>
         </td>
@@ -1959,7 +1918,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-68" id="section-68">&#182;</a>
+  <a class="pilcrow" href="#section-67" id="section-67">&#182;</a>
 </div>
 <p>Ignore hidden files/dirs.</p>
         </td>
@@ -1973,7 +1932,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-69" id="section-69">&#182;</a>
+  <a class="pilcrow" href="#section-68" id="section-68">&#182;</a>
 </div>
 <p>Every file must be processed.</p>
         </td>
@@ -1987,7 +1946,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-70" id="section-70">&#182;</a>
+  <a class="pilcrow" href="#section-69" id="section-69">&#182;</a>
 </div>
 <p>Recurse.</p>
         </td>
@@ -2007,7 +1966,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-71" id="section-71">&#182;</a>
+  <a class="pilcrow" href="#section-70" id="section-70">&#182;</a>
 </div>
 <p>Directory scanned (was a file in previous scan).</p>
         </td>
