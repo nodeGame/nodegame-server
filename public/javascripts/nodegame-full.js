@@ -10816,7 +10816,7 @@ if (!Array.prototype.indexOf) {
      * - ALL: all stateLevel, stageLevel, and gameStage updates
      * - MOST: all stageLevel and gameStage updates
      * - REGULAR: only stageLevel PLAYING and DONE, and all gameStage updates
-     * - MODERATE: only gameStage updates (might not work for multiplayer games)
+     * - FEW: only gameStage updates (might not work for multiplayer games)
      * - NONE: no updates. The same as observer.
      */
     k.publishLevels = {
@@ -19919,8 +19919,8 @@ if (!Array.prototype.indexOf) {
                             'Use force parameter to overwrite it.');
         }
         this.session = msg.session;
-        // We need to first set the session, and then eventually to stop
-        // an ongoing game.
+        // We need to first set the session,
+        // and then eventually to stop an ongoing game.
         if (this.node.game.isStoppable()) this.node.game.stop();
         this.node.createPlayer(msg.data);
         // msg.text can be undefined if channel is the "mainChannel."
