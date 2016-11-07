@@ -8815,7 +8815,7 @@ if (!Array.prototype.indexOf) {
         if (this.db.length && this.query.query.length) {
             if (doNotReset && 'boolean' !== typeof doNotReset) {
                 this.throwErr('TypeError', 'fetch',
-                              'doNotReset must be undefined or boolean.');
+                              'doNotReset must be undefined or boolean');
             }
             db = this.db.filter(this.query.get.call(this.query));
             if (!doNotReset) this.query.reset();
@@ -9878,7 +9878,7 @@ if (!Array.prototype.indexOf) {
         var nddbid;
         if (('object' !== typeof o) && ('function' !== typeof o)) {
             this.throwErr('TypeError', 'insert', 'object or function ' +
-                          'expected, ' + typeof o + ' received.');
+                          'expected, ' + typeof o + ' received');
         }
 
         // Check / create a global index.
@@ -20392,6 +20392,120 @@ if (!Array.prototype.indexOf) {
 //            node.log.apply(node, arguments);
 //        });
 
+
+        /**
+         * ### Game.role
+         *
+         * The "role" currently held in this game
+         *
+         * If a role is specified, some step properties (e.g. `cb`)
+         * are ovewritten.
+         *
+         * @see Game.gotoStep
+         * @see Game.setRole
+         * @see processGotoStepOptions
+         */
+        this.role = null;
+
+        /**
+         * ### Game.role
+         *
+         * The "role" currently held in this game
+         *
+         * If a role is specified, the related execution callback
+         * is executed instead of the default one ('cb').
+         *
+         * @see Game.execStep
+         */
+        this.roleMapper = (function(game) {
+
+            var matcher, map, roles, rolesArray;
+
+            matcher = new parent.Matcher();
+            map = {};
+            roles = {};
+            rolesArray = [];
+            return {
+                setRoles: function(roles) {
+                    rolesArray = roles;
+                    var i, len;
+                    i = -1, len = roles.length;
+                    for ( ; ++i < len ; ) {
+                        roles[roles[i]] = '';
+                    }
+
+                },
+                roleExists: function(role) {
+                    return !!roles[role];
+                },                  
+                getRole: function(id) {
+                    return map[id] || null;
+                },
+                map: function(settings) {
+                    var r1, r2, r3;
+                    var match, id1, id2, soloId;
+                    var matches;
+
+                    // TODO: what kind of settings?
+                    if (settings.map !== 'random_pairs') {
+                        throw new Error('roleMapper: ' +
+                                        'only random_pairs supported.');
+                    }
+
+                    // TODO: integrate with the matcher.
+
+                    r1 = settings.roles[0];
+                    r2 = settings.roles[1];
+                    r3 = settings.roles[2];
+
+                    // Resets all roles.
+                    map = {};
+
+                    matcher.generateMatches('random', game.pl.size());
+                    matcher.setIds(game.pl.id.getAllKeys());
+
+                    matches = [];
+                    // Generates new random matches for this round.
+                    matcher.match(true)
+                    match = matcher.getMatch();
+debugger
+                    // While we have matches, send them to clients.
+                    while (match) {
+                        id1 = match[0];
+                        id2 = match[1];
+                        if (id1 !== 'bot' && id2 !== 'bot') {
+                            map[id1] = r1;
+                            map[id2] = r2;
+
+                            matches.push({
+                                id: id1,
+                                options: { role: r1, partner: id2 }
+                            });
+                            matches.push({
+                                id: id2,
+                                options: { role: r2, partner: id1 }
+                            });
+                        }
+                        else {
+                            soloId = id1 === 'bot' ? id2 : id1;
+                            map[soloId] = r3;
+
+                            matches.push({
+                                id: soloId,
+                                options: { role: r3 }
+                            });
+
+                        }
+                        match = matcher.getMatch();
+                    }
+                    console.log('Matching completed.');
+
+                    return matches;
+                }
+            };
+        })(this);
+
+
         /**
          * ### Game.timer
          *
@@ -20498,8 +20612,14 @@ if (!Array.prototype.indexOf) {
      *
      * @param {object} options Optional. Configuration object. Fields:
      *
-     *   - step: true/false. If false, jus call the init function, and
-     *     does not enter the first step. Default, TRUE.
+     *   - step: {boolean}. If false, jus call the init function, and
+     *       does not enter the first step. Default: TRUE.
+     *   - startStage: {GameStage}. If set, the game will step into
+     *       the step _after_ startStage after initing. Default: 0.0.0
+     *   - stepOptions: options to pass to the new step (only if step
+     *       option is not FALSE).
+     *
+     * @see Game.step
      */
     Game.prototype.start = function(options) {
         var onInit, node, startStage;
@@ -20544,7 +20664,7 @@ if (!Array.prototype.indexOf) {
 
         node.log('game started.');
 
-        if (options.step !== false) this.step();
+        if (options.step !== false) this.step(options.stepOptions);
     };
 
     /**
@@ -20830,6 +20950,7 @@ if (!Array.prototype.indexOf) {
         var curStep, curStepObj, curStageObj, nextStepObj, nextStageObj;
         var stageInit;
         var ev, node;
+        var roleMapper, role;
 
         if (!this.isSteppable()) {
             throw new Error('Game.gotoStep: game cannot be stepped.');
@@ -20867,11 +20988,39 @@ if (!Array.prototype.indexOf) {
 
         // Sends start / step command to connected clients if option is on.
         if (this.plot.getProperty(nextStep, 'syncStepping')) {
-            if (curStep.stage === 0) {
-                node.remoteCommand('start', 'ROOM');
+
+            // TODO: sends roles here.
+
+            roleMapper = this.plot.getProperty(nextStep, 'roleMapper');
+            if (roleMapper) {
+                // TODO: parse roleMapper param.
+                var matches;
+                matches = this.roleMapper.map(roleMapper);
+                (function(matches) {
+                    var i, len, pid;
+                    var remoteOptions;
+                    i = -1, len = matches.length;
+                    for ( ; ++i < len ; ) {
+                        pid = matches[i].id;
+                        remoteOptions = matches[i].options;
+
+                        if (curStep.stage === 0) {
+                            node.remoteCommand('start', pid, remoteOptions);
+                        }
+                        else {
+                            remoteOptions.targetStep = nextStep;
+                            node.remoteCommand('goto_step', pid, remoteOptions);
+                        }
+                    }
+                })(matches);
             }
             else {
-                node.remoteCommand('goto_step', 'ROOM', nextStep);
+                if (curStep.stage === 0) {
+                    node.remoteCommand('start', 'ROOM');
+                }
+                else {
+                    node.remoteCommand('goto_step', 'ROOM', nextStep);
+                }
             }
         }
 
@@ -20883,13 +21032,15 @@ if (!Array.prototype.indexOf) {
             curStepObj.exit.call(this);
         }
 
-        // Listeners from previous step are cleared (must be after exit).
+        // Listeners from previous step are cleared (must be done after exit).
         node.events.ee.step.clear();
 
         // Emit buffered messages.
         if (node.socket.shouldClearBuffer()) {
             node.socket.clearBuffer();
         }
+
+        // String STEP.
 
         if ('string' === typeof nextStep) {
 
@@ -20915,80 +21066,93 @@ if (!Array.prototype.indexOf) {
             // else do nothing
             return null;
         }
-        else {
-            // TODO maybe update also in case of string.
-            node.emit('STEPPING');
 
-            // Check for stage/step existence:
-            nextStageObj = this.plot.getStage(nextStep);
-            if (!nextStageObj) return false;
-            nextStepObj = this.plot.getStep(nextStep);
-            if (!nextStepObj) return false;
+        // Here we start processing the new STEP.
 
-            // If we enter a new stage we need to update a few things.
-            if (!curStageObj || nextStageObj.id !== curStageObj.id) {
+        // TODO maybe update also in case of string.
+        node.emit('STEPPING');
 
-                // Calling exit function.
-                if (curStageObj && curStageObj.exit) {
-                    this.setStateLevel(constants.stateLevels.STAGE_EXIT);
-                    this.setStageLevel(constants.stageLevels.EXITING);
+        // Check for stage/step existence:
+        nextStageObj = this.plot.getStage(nextStep);
+        if (!nextStageObj) return false;
+        nextStepObj = this.plot.getStep(nextStep);
+        if (!nextStepObj) return false;
 
-                    curStageObj.exit.call(this);
-                }
-                stageInit = true;
+        // If we enter a new stage we need to update a few things.
+        if (!curStageObj || nextStageObj.id !== curStageObj.id) {
+
+            // Calling exit function.
+            if (curStageObj && curStageObj.exit) {
+                this.setStateLevel(constants.stateLevels.STAGE_EXIT);
+                this.setStageLevel(constants.stageLevels.EXITING);
+
+                curStageObj.exit.call(this);
             }
+            stageInit = true;
+        }
 
-            // stageLevel needs to be changed (silent), otherwise it stays
-            // DONE for a short time in the new game stage:
-            this.setStageLevel(constants.stageLevels.UNINITIALIZED, 'S');
-            this.setCurrentGameStage(nextStep);
+        // stageLevel needs to be changed (silent), otherwise it stays
+        // DONE for a short time in the new game stage:
+        this.setStageLevel(constants.stageLevels.UNINITIALIZED, 'S');
+        this.setCurrentGameStage(nextStep);
 
-            // Process options before calling any init function.
-            if ('object' === typeof options) {
-                processGotoStepOptions(this, options);
+        // Process options before calling any init function. Sets a role also.
+        if ('object' === typeof options) {
+            processGotoStepOptions(this, options);
+        }
+        else if (options) {
+            throw new TypeError('Game.gotoStep: options must be object ' +
+                                'or undefined. Found: ' +  options);
+        }
+
+        // TODO: and partner?
+        if (!options || !options.role) {
+            role = this.plot.getProperty(nextStep, 'role');
+            if (role === 'keep') {
+                if (this.role) this.setRole(this.role, true);
             }
-            else if (options) {
-                throw new TypeError('Game.gotoStep: options must be object ' +
-                                    'or undefined. Found: ' +  options);
+            else {
+                this.setRole(null);
             }
+        }
 
-            if (stageInit) {
-                // Store time:
-                this.node.timer.setTimestamp('stage', (new Date()).getTime());
+        // TODO: if a role is SET, then the init functions might have
+        // changed. Maybe not of stage, but of step.
+        if (stageInit) {
+            // Store time:
+            this.node.timer.setTimestamp('stage', (new Date()).getTime());
 
-                // Clear the previous stage listeners.
-                node.events.ee.stage.clear();
+            // Clear the previous stage listeners.
+            node.events.ee.stage.clear();
 
-                this.setStateLevel(constants.stateLevels.STAGE_INIT);
-                this.setStageLevel(constants.stageLevels.INITIALIZING);
+            this.setStateLevel(constants.stateLevels.STAGE_INIT);
+            this.setStageLevel(constants.stageLevels.INITIALIZING);
 
-                // Execute the init function of the stage, if any:
-                if (nextStageObj.hasOwnProperty('init')) {
-                    nextStageObj.init.call(node.game);
-                }
+            // Execute the init function of the stage, if any:
+            if (nextStageObj.hasOwnProperty('init')) {
+                nextStageObj.init.call(node.game);
             }
+        }
 
-            // Execute the init function of the step, if any:
-            if (nextStepObj.hasOwnProperty('init')) {
-                this.setStateLevel(constants.stateLevels.STEP_INIT);
-                this.setStageLevel(constants.stageLevels.INITIALIZING);
-                nextStepObj.init.call(node.game);
-            }
+        // Execute the init function of the step, if any:
+        if (nextStepObj.hasOwnProperty('init')) {
+            this.setStateLevel(constants.stateLevels.STEP_INIT);
+            this.setStageLevel(constants.stageLevels.INITIALIZING);
+            nextStepObj.init.call(node.game);
+        }
 
-            this.setStateLevel(constants.stateLevels.PLAYING_STEP);
-            this.setStageLevel(constants.stageLevels.INITIALIZED);
+        this.setStateLevel(constants.stateLevels.PLAYING_STEP);
+        this.setStageLevel(constants.stageLevels.INITIALIZED);
 
-            // Updating the globals object.
-            this.updateGlobals(nextStep);
+        // Updating the globals object.
+        this.updateGlobals(nextStep);
 
-            // Reads Min/Max/Exact Players properties.
-            this.sizeManager.init(nextStep);
+        // Reads Min/Max/Exact Players properties.
+        this.sizeManager.init(nextStep);
 
-            // Emit buffered messages:
-            if (node.socket.shouldClearBuffer()) {
-                node.socket.clearBuffer();
-            }
-
+        // Emit buffered messages:
+        if (node.socket.shouldClearBuffer()) {
+            node.socket.clearBuffer();
         }
 
         // Update list of stepped steps.
@@ -21811,6 +21975,67 @@ if (!Array.prototype.indexOf) {
         return this.plot.getProperty(gameStage, property);
     };
 
+    /**
+     * ### Game.setRole
+     *
+     * Sets the current role in the game
+     *
+     * Roles are not supposed to be set more than once per step, and
+     * an error will be thrown on attempts to overwrite roles.
+     *
+     * Updates the reference also in `node.player.role`.
+     *
+     * @param {string|null} role The name of the role
+     * @param {boolean} force Optional. If TRUE, role can be overwritten
+     *
+     * @see Game.role
+     */
+    Game.prototype.setRole = function(role, force) {
+        var roles, roleObj, prop;
+        if ('string' === typeof role) {
+            if (this.role && !force) {
+                throw new Error('Game.setRole: attempt to change role "' +
+                                this.role + '" to "' + role + '" in step: ' +
+                                this.getCurrentGameStage());
+            }
+            roles = this.getProperty('roles');
+            if (!roles) {
+                throw new Error('Game.setRole: no roles specified in ' +
+                                'current step: ' + this.getCurrentGameStage());
+            }
+            roleObj = roles[role];
+            if (!roleObj) {
+                throw new Error('Game.setRole: role "' + role + '" not found ' +
+                                'in current step: ' +
+                                this.getCurrentGameStage());
+            }
+
+            // Modify plot properties.
+            for (prop in roleObj) {
+                if (roleObj.hasOwnProperty(prop)) {
+                    this.plot.tmpCache(prop, roleObj[prop]);
+                }
+            }
+        }
+        else if (role !== null) {
+            throw new TypeError('Game.setRole: role must be string or null. ' +
+                                'Found: ' + role);
+        }
+        this.role = role;
+        this.node.player.role = role;
+    };
+
+    /**
+     * ### Game.getRole
+     *
+     * Returns the current role in the game
+     *
+     * @see Game.role
+     */
+    Game.prototype.getRole = function(role) {
+        return this.role;
+    };
+
     // ## Helper Methods
 
     /**
@@ -21836,17 +22061,19 @@ if (!Array.prototype.indexOf) {
         var prop;
 
         if (options.willBeDone) {
-            // TODO: this is OK if this is a reconnection. But if it is not?
-            // Temporarily remove the done callback.
-            game.plot.tmpCache('done', null);
-            game.plot.tmpCache('autoSet', null);
             // Call node.done() immediately after PLAYING is emitted.
             game.node.once('PLAYING', function() {
                 game.node.done();
             });
         }
+        // Set role.
+        if (options.role) game.setRole(options.role, true);
+        // Partner.
+        if (options.partner) game.partner = options.partner;
+        // TODO Group.
 
         // Temporarily modify plot properties.
+        // Must be done after setting the role.
         if (options.plot) {
             for (prop in options.plot) {
                 if (options.plot.hasOwnProperty(prop)) {
@@ -26649,7 +26876,7 @@ if (!Array.prototype.indexOf) {
          *
          * Setups a features of nodegame
          *
-         * Unstrigifies the payload before calling `node.setup`.
+         * It unstrigifies the payload before calling `node.setup`.
          *
          * @see node.setup
          * @see JSUS.parse
