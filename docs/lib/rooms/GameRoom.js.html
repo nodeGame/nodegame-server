@@ -2099,7 +2099,7 @@ a remote client.</p>
 would make them lose their context (node etc.).</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-        <span class="nx">gameNode</span><span class="p">.</span><span class="nx">stop</span><span class="p">();</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">gameNode</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">isStoppable</span><span class="p">())</span> <span class="nx">gameNode</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">stop</span><span class="p">();</span>
         <span class="nx">gameNode</span><span class="p">.</span><span class="nx">setup</span><span class="p">(</span><span class="s1">&#39;nodegame&#39;</span><span class="p">,</span> <span class="nx">game</span><span class="p">);</span>
     <span class="p">}</span>
 

@@ -2765,20 +2765,14 @@ modules.</p>
       <span>Bot options with the following fields:
 
 <ul>
+<li>room (Room):
+Optional. The room (waiting, game, requirements, etc.)
+in which to put the bot. Default: channel.waitingRoom</li>
 <li>clientType (string):
 Optional. Client type of the bot. Default: 'bot'</li>
-<li>room (GameRoom):
-The game room in which to put the bot initially</li>
-<li>loadGame (boolean):
-Optional. Whether to load a game file. The remaining fields are only
-used if this is TRUE. Default: TRUE</li>
-<li>botPath (string):
-Optional. Relative path to the game file. Default: Value in the
-game settings for the given treatment and client type</li>
-<li>gameName (string):
-Optional. Name of the game. Default: room.gameName</li>
-<li>treatmentName (string):
-Optional. Name of the treatment. Default: room.treatmentName</li>
+<li>setup (object):
+Optional. Configuration object to be passed to
+<code>node.setup('nodegame', setup)</code>. Default: {}.</li>
 </ul></span>
     </div>
     <div class="dox_tag_detail">
@@ -2798,15 +2792,10 @@ Optional. Name of the treatment. Default: room.treatmentName</li>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-<span class="nx">ServerChannel</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">connectBot</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">options</span><span class="p">,</span> <span class="nx">mixinConf</span><span class="p">)</span> <span class="p">{</span>
+<span class="nx">ServerChannel</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">connectBot</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">options</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">that</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">bot</span><span class="p">,</span> <span class="nx">botPath</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">loadGame</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">clientType</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">settings</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">gameName</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">game</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">treatmentName</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">room</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">node</span><span class="p">;</span>
 
     <span class="nx">that</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
@@ -2824,48 +2813,58 @@ Optional. Name of the treatment. Default: room.treatmentName</li>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
 
+    <span class="nx">options</span> <span class="o">=</span> <span class="nx">options</span> <span class="o">||</span> <span class="p">{};</span>
+
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">options</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerChannel.connectBot: &#39;</span> <span class="o">+</span>
-                <span class="s1">&#39;options must be object.&#39;</span><span class="p">);</span>
+                <span class="s1">&#39;options must be object or undefined. Found: &#39;</span> <span class="o">+</span> <span class="nx">options</span><span class="p">);</span>
     <span class="p">}</span>
 
-    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">options</span><span class="p">.</span><span class="nx">room</span> <span class="k">instanceof</span> <span class="nx">GameRoom</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerChannel.connectBot: &#39;</span> <span class="o">+</span>
-                <span class="s1">&#39;options.room must be GameRoom.&#39;</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">options</span><span class="p">.</span><span class="nx">room</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">options</span><span class="p">.</span><span class="nx">room</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">room</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">[</span><span class="nx">options</span><span class="p">.</span><span class="nx">room</span><span class="p">];</span>
+            <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">room</span><span class="p">)</span> <span class="p">{</span>
+                <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;ServerChannel.connectBot: options.room does &#39;</span> <span class="o">+</span>
+                                <span class="s1">&#39;not appear to be a registered room. Id: &#39;</span> <span class="o">+</span>
+                                <span class="nx">options</span><span class="p">.</span><span class="nx">room</span><span class="p">);</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">options</span><span class="p">.</span><span class="nx">room</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">[</span><span class="nx">options</span><span class="p">.</span><span class="nx">room</span><span class="p">.</span><span class="nx">id</span><span class="p">])</span> <span class="p">{</span>
+                <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;ServerChannel.connectBot: options.room does &#39;</span> <span class="o">+</span>
+                                <span class="s1">&#39;not appear to be a registered room. Id: &#39;</span> <span class="o">+</span>
+                                <span class="nx">options</span><span class="p">.</span><span class="nx">room</span><span class="p">.</span><span class="nx">id</span><span class="p">);</span>
+            <span class="p">}</span>
+            <span class="nx">room</span> <span class="o">=</span> <span class="nx">options</span><span class="p">.</span><span class="nx">room</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="k">else</span> <span class="p">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerChannel.connectBot: options.room &#39;</span> <span class="o">+</span>
+                                <span class="s1">&#39;must be a Room object, a string with the &#39;</span> <span class="o">+</span>
+                                <span class="s1">&#39;id of a Room object, or undefined. Found: &#39;</span> <span class="o">+</span>
+                                <span class="nx">options</span><span class="p">.</span><span class="nx">room</span><span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+    <span class="k">else</span> <span class="p">{</span>
+        <span class="nx">room</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">waitingRoom</span><span class="p">;</span>
     <span class="p">}</span>
 
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">options</span><span class="p">.</span><span class="nx">clientType</span> <span class="o">&amp;&amp;</span>
-        <span class="s1">&#39;string&#39;</span>    <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">options</span><span class="p">.</span><span class="nx">clientType</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerChannel.connectBot: &#39;</span> <span class="o">+</span>
-                <span class="s1">&#39;options.clientType must be string or undefined.&#39;</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">options</span><span class="p">.</span><span class="nx">clientType</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">options</span><span class="p">.</span><span class="nx">clientType</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerChannel.connectBot: options.clientType&#39;</span> <span class="o">+</span>
+                                <span class="s1">&#39; must be string or undefined. Found: &#39;</span> <span class="o">+</span>
+                                <span class="nx">options</span><span class="p">.</span><span class="nx">clientType</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="k">else</span> <span class="p">{</span>
+            <span class="nx">clientType</span> <span class="o">=</span> <span class="nx">options</span><span class="p">.</span><span class="nx">clientType</span><span class="p">;</span>
+        <span class="p">}</span>
     <span class="p">}</span>
-    <span class="nx">clientType</span> <span class="o">=</span> <span class="nx">options</span><span class="p">.</span><span class="nx">clientType</span> <span class="o">||</span> <span class="s1">&#39;bot&#39;</span><span class="p">;</span>
-
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">options</span><span class="p">.</span><span class="nx">botPath</span> <span class="o">&amp;&amp;</span>
-        <span class="s1">&#39;string&#39;</span>    <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">options</span><span class="p">.</span><span class="nx">botPath</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerChannel.connectBot: &#39;</span> <span class="o">+</span>
-                <span class="s1">&#39;options.botPath must be string or undefined.&#39;</span><span class="p">);</span>
-    <span class="p">}</span>
-
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">options</span><span class="p">.</span><span class="nx">loadGame</span> <span class="o">&amp;&amp;</span>
-        <span class="s1">&#39;boolean&#39;</span>   <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">options</span><span class="p">.</span><span class="nx">loadGame</span><span class="p">)</span> <span class="p">{</span>
-
-        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerChannel.connectBot: &#39;</span> <span class="o">+</span>
-                <span class="s1">&#39;options.loadGame must be boolean or undefined.&#39;</span><span class="p">);</span>
-    <span class="p">}</span>
-    <span class="nx">loadGame</span> <span class="o">=</span> <span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">options</span><span class="p">.</span><span class="nx">loadGame</span> <span class="o">?</span>
-        <span class="kc">true</span> <span class="o">:</span> <span class="nx">options</span><span class="p">.</span><span class="nx">loadGame</span><span class="p">;</span>
-
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">options</span><span class="p">.</span><span class="nx">gameName</span> <span class="o">&amp;&amp;</span>
-        <span class="s1">&#39;string&#39;</span>    <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">options</span><span class="p">.</span><span class="nx">gameName</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerChannel.connectBot: &#39;</span> <span class="o">+</span>
-                <span class="s1">&#39;options.gameName must be string or undefined.&#39;</span><span class="p">);</span>
+    <span class="k">else</span> <span class="p">{</span>
+        <span class="nx">clientType</span> <span class="o">=</span> <span class="s1">&#39;bot&#39;</span><span class="p">;</span>
     <span class="p">}</span>
 
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">options</span><span class="p">.</span><span class="nx">treatmentName</span> <span class="o">&amp;&amp;</span>
-        <span class="s1">&#39;string&#39;</span>    <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">options</span><span class="p">.</span><span class="nx">treatmentName</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerChannel.connectBot: &#39;</span> <span class="o">+</span>
-                <span class="s1">&#39;options.treatmentName must be string or undefined.&#39;</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">gameInfo</span><span class="p">.</span><span class="nx">clientTypes</span><span class="p">[</span><span class="nx">clientType</span><span class="p">])</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;ServerChannel.connectBot: client type not found: &#39;</span> <span class="o">+</span>
+                        <span class="nx">clientType</span><span class="p">);</span>
     <span class="p">}</span>
 
 
@@ -2888,22 +2887,6 @@ Optional. Name of the treatment. Default: room.treatmentName</li>
         <span class="k">return</span> <span class="kd">function</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">lvl</span><span class="p">)</span> <span class="p">{</span> <span class="nx">logger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">lvl</span><span class="p">);</span> <span class="p">};</span>
     <span class="p">})();</span>
 
-    <span class="k">if</span> <span class="p">(</span><span class="nx">loadGame</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nx">gameName</span> <span class="o">=</span> <span class="nx">options</span><span class="p">.</span><span class="nx">gameName</span> <span class="o">||</span> <span class="nx">options</span><span class="p">.</span><span class="nx">room</span><span class="p">.</span><span class="nx">gameName</span><span class="p">;</span>
-        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">gameName</span><span class="p">)</span> <span class="p">{</span>
-            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerChannel.connectBot: &#39;</span> <span class="o">+</span>
-                    <span class="s1">&#39;options.gameName or options.room.gameName &#39;</span> <span class="o">+</span>
-                    <span class="s1">&#39;must exist if options.loadGame is true.&#39;</span><span class="p">);</span>
-        <span class="p">}</span>
-        <span class="nx">treatmentName</span> <span class="o">=</span> <span class="nx">options</span><span class="p">.</span><span class="nx">treatmentName</span> <span class="o">||</span> <span class="nx">options</span><span class="p">.</span><span class="nx">room</span><span class="p">.</span><span class="nx">treatmentName</span><span class="p">;</span>
-        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">treatmentName</span><span class="p">)</span> <span class="p">{</span>
-            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerChannel.connectBot: &#39;</span> <span class="o">+</span>
-                    <span class="s1">&#39;options.treatmentName or options.room.treatmentName &#39;</span> <span class="o">+</span>
-                    <span class="s1">&#39;must exist if options.loadGame is true.&#39;</span><span class="p">);</span>
-        <span class="p">}</span>
-
-        <span class="nx">game</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">getGamesInfo</span><span class="p">(</span><span class="nx">gameName</span><span class="p">);</span>
-
 
 </pre></div>
         </td>
@@ -2913,10 +2896,11 @@ Optional. Name of the treatment. Default: room.treatmentName</li>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-95" id="section-95">&#182;</a>
 </div>
-<p>If not given, look up the path of the given type.</p>
+<p>Setup must be called before connect.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-        <span class="k">if</span> <span class="p">(</span><span class="nx">options</span><span class="p">.</span><span class="nx">botPath</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">node</span><span class="p">.</span><span class="nx">setup</span><span class="p">(</span><span class="s1">&#39;nodegame&#39;</span><span class="p">,</span> <span class="nx">options</span><span class="p">.</span><span class="nx">setup</span> <span class="o">||</span> <span class="p">{});</span>
+
 
 </pre></div>
         </td>
@@ -2925,78 +2909,6 @@ Optional. Name of the treatment. Default: room.treatmentName</li>
         <td class="docs">
 <div class="pilwrap">
   <a class="pilcrow" href="#section-96" id="section-96">&#182;</a>
-</div>
-<p>Prepend the path to the game directory.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-            <span class="nx">botPath</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">resolveGameDir</span><span class="p">(</span><span class="nx">gameName</span><span class="p">)</span> <span class="o">+</span>
-                <span class="nx">options</span><span class="p">.</span><span class="nx">botPath</span><span class="p">;</span>
-        <span class="p">}</span>
-        <span class="k">else</span> <span class="p">{</span>
-            <span class="nx">botPath</span> <span class="o">=</span> <span class="nx">options</span><span class="p">.</span><span class="nx">botPath</span> <span class="o">||</span>
-                <span class="nx">game</span><span class="p">.</span><span class="nx">treatments</span><span class="p">[</span><span class="nx">treatmentName</span><span class="p">].</span><span class="nx">gamePaths</span><span class="p">[</span><span class="nx">clientType</span><span class="p">];</span>
-        <span class="p">}</span>
-
-        <span class="nx">settings</span> <span class="o">=</span> <span class="nx">game</span><span class="p">.</span><span class="nx">treatments</span><span class="p">[</span><span class="nx">treatmentName</span><span class="p">];</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-97" id="section-97">&#182;</a>
-</div>
-<p>Require bot.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-        <span class="nx">bot</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="nx">botPath</span><span class="p">)(</span><span class="nx">node</span><span class="p">,</span> <span class="nx">options</span><span class="p">.</span><span class="nx">room</span><span class="p">,</span> <span class="nx">treatmentName</span><span class="p">,</span> <span class="nx">settings</span><span class="p">);</span>
-
-        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">bot</span><span class="p">)</span> <span class="p">{</span>
-            <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;ServerChannel.connectBot: botPath &quot;&#39;</span> <span class="o">+</span>
-                    <span class="nx">botPath</span> <span class="o">+</span> <span class="s1">&#39;&quot; did not return a valid game object.&#39;</span><span class="p">);</span>
-        <span class="p">}</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-98" id="section-98">&#182;</a>
-</div>
-<p>Mixin-in nodeGame options.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-        <span class="k">if</span> <span class="p">(</span><span class="nx">mixinConf</span><span class="p">)</span> <span class="p">{</span>
-            <span class="nx">J</span><span class="p">.</span><span class="nx">mixin</span><span class="p">(</span><span class="nx">bot</span><span class="p">,</span> <span class="nx">mixinConf</span><span class="p">);</span>
-        <span class="p">}</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-99" id="section-99">&#182;</a>
-</div>
-<p>Setup must be called before connect.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-        <span class="nx">node</span><span class="p">.</span><span class="nx">setup</span><span class="p">(</span><span class="s1">&#39;nodegame&#39;</span><span class="p">,</span> <span class="nx">bot</span><span class="p">);</span>
-    <span class="p">}</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-100" id="section-100">&#182;</a>
 </div>
 <p>This code needs to run as soon as the clientId is generated to avoid
 calling GameRoom.setupGame before the node object is stored.</p>
@@ -3013,7 +2925,7 @@ calling GameRoom.setupGame before the node object is stored.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-101" id="section-101">&#182;</a>
+  <a class="pilcrow" href="#section-97" id="section-97">&#182;</a>
 </div>
 <p>Connect bot to server.</p>
         </td>
@@ -3023,12 +2935,115 @@ calling GameRoom.setupGame before the node object is stored.</p>
     <span class="p">});</span>
 
     <span class="nx">node</span><span class="p">.</span><span class="nx">connect</span><span class="p">(</span><span class="kc">null</span><span class="p">,</span> <span class="p">{</span>
-        <span class="nx">startingRoom</span><span class="o">:</span> <span class="nx">options</span><span class="p">.</span><span class="nx">room</span><span class="p">.</span><span class="nx">name</span><span class="p">,</span>
+        <span class="nx">startingRoom</span><span class="o">:</span> <span class="nx">room</span><span class="p">.</span><span class="nx">name</span><span class="p">,</span>
         <span class="nx">clientType</span><span class="o">:</span>   <span class="nx">clientType</span>
     <span class="p">});</span>
 
     <span class="k">return</span> <span class="nx">node</span><span class="p">;</span>
 <span class="p">};</span>
+
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-98" id="section-98">&#182;</a>
+</div>
+
+<div class="highlight"><pre><code><span class="k">if</span> <span class="p">(</span><span class="s">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="n">typeof</span> <span class="n">options</span><span class="o">.</span><span class="n">botPath</span> <span class="o">&amp;&amp;</span>
+    <span class="s">&#39;string&#39;</span>    <span class="o">!==</span> <span class="n">typeof</span> <span class="n">options</span><span class="o">.</span><span class="n">botPath</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">throw</span> <span class="k">new</span> <span class="n">TypeError</span><span class="p">(</span><span class="s">&#39;ServerChannel.connectBot: &#39;</span> <span class="o">+</span>
+            <span class="s">&#39;options.botPath must be string or undefined.&#39;</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="k">if</span> <span class="p">(</span><span class="s">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="n">typeof</span> <span class="n">options</span><span class="o">.</span><span class="n">loadGame</span> <span class="o">&amp;&amp;</span>
+    <span class="s">&#39;boolean&#39;</span>   <span class="o">!==</span> <span class="n">typeof</span> <span class="n">options</span><span class="o">.</span><span class="n">loadGame</span><span class="p">)</span> <span class="p">{</span>
+
+    <span class="n">throw</span> <span class="k">new</span> <span class="n">TypeError</span><span class="p">(</span><span class="s">&#39;ServerChannel.connectBot: &#39;</span> <span class="o">+</span>
+            <span class="s">&#39;options.loadGame must be boolean or undefined.&#39;</span><span class="p">);</span>
+<span class="p">}</span>
+<span class="n">loadGame</span> <span class="o">=</span> <span class="s">&#39;undefined&#39;</span> <span class="o">===</span> <span class="n">typeof</span> <span class="n">options</span><span class="o">.</span><span class="n">loadGame</span> <span class="p">?</span>
+    <span class="n">true</span> <span class="p">:</span> <span class="n">options</span><span class="o">.</span><span class="n">loadGame</span><span class="p">;</span>
+
+<span class="k">if</span> <span class="p">(</span><span class="s">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="n">typeof</span> <span class="n">options</span><span class="o">.</span><span class="n">gameName</span> <span class="o">&amp;&amp;</span>
+    <span class="s">&#39;string&#39;</span>    <span class="o">!==</span> <span class="n">typeof</span> <span class="n">options</span><span class="o">.</span><span class="n">gameName</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">throw</span> <span class="k">new</span> <span class="n">TypeError</span><span class="p">(</span><span class="s">&#39;ServerChannel.connectBot: &#39;</span> <span class="o">+</span>
+            <span class="s">&#39;options.gameName must be string or undefined.&#39;</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="k">if</span> <span class="p">(</span><span class="s">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="n">typeof</span> <span class="n">options</span><span class="o">.</span><span class="n">treatmentName</span> <span class="o">&amp;&amp;</span>
+    <span class="s">&#39;string&#39;</span>    <span class="o">!==</span> <span class="n">typeof</span> <span class="n">options</span><span class="o">.</span><span class="n">treatmentName</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">throw</span> <span class="k">new</span> <span class="n">TypeError</span><span class="p">(</span><span class="s">&#39;ServerChannel.connectBot: &#39;</span> <span class="o">+</span>
+            <span class="s">&#39;options.treatmentName must be string or undefined.&#39;</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-99" id="section-99">&#182;</a>
+</div>
+
+<div class="highlight"><pre><code><span class="k">if</span> <span class="p">(</span><span class="n">loadGame</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">gameName</span> <span class="o">=</span> <span class="n">options</span><span class="o">.</span><span class="n">gameName</span> <span class="o">||</span> <span class="n">options</span><span class="o">.</span><span class="n">room</span><span class="o">.</span><span class="n">gameName</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">gameName</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">throw</span> <span class="k">new</span> <span class="n">TypeError</span><span class="p">(</span><span class="s">&#39;ServerChannel.connectBot: &#39;</span> <span class="o">+</span>
+                <span class="s">&#39;options.gameName or options.room.gameName &#39;</span> <span class="o">+</span>
+                <span class="s">&#39;must exist if options.loadGame is true.&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="n">treatmentName</span> <span class="o">=</span> <span class="n">options</span><span class="o">.</span><span class="n">treatmentName</span> <span class="o">||</span> <span class="n">options</span><span class="o">.</span><span class="n">room</span><span class="o">.</span><span class="n">treatmentName</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">treatmentName</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">throw</span> <span class="k">new</span> <span class="n">TypeError</span><span class="p">(</span><span class="s">&#39;ServerChannel.connectBot: &#39;</span> <span class="o">+</span>
+                <span class="s">&#39;options.treatmentName or options.room.treatmentName &#39;</span> <span class="o">+</span>
+                <span class="s">&#39;must exist if options.loadGame is true.&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="n">game</span> <span class="o">=</span> <span class="n">this</span><span class="o">.</span><span class="n">servernode</span><span class="o">.</span><span class="n">getGamesInfo</span><span class="p">(</span><span class="n">gameName</span><span class="p">);</span>
+
+    <span class="sr">//</span> <span class="n">If</span> <span class="ow">not</span> <span class="n">given</span><span class="p">,</span> <span class="n">look</span> <span class="n">up</span> <span class="n">the</span> <span class="n">path</span> <span class="n">of</span> <span class="n">the</span> <span class="n">given</span> <span class="n">type</span><span class="o">.</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">options</span><span class="o">.</span><span class="n">botPath</span><span class="p">)</span> <span class="p">{</span>
+        <span class="sr">//</span> <span class="n">Prepend</span> <span class="n">the</span> <span class="n">path</span> <span class="n">to</span> <span class="n">the</span> <span class="n">game</span> <span class="n">directory</span><span class="o">.</span>
+        <span class="n">botPath</span> <span class="o">=</span> <span class="n">this</span><span class="o">.</span><span class="n">servernode</span><span class="o">.</span><span class="n">resolveGameDir</span><span class="p">(</span><span class="n">gameName</span><span class="p">)</span> <span class="o">+</span>
+            <span class="n">options</span><span class="o">.</span><span class="n">botPath</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="k">else</span> <span class="p">{</span>
+        <span class="n">botPath</span> <span class="o">=</span> <span class="n">options</span><span class="o">.</span><span class="n">botPath</span> <span class="o">||</span>
+            <span class="n">game</span><span class="o">.</span><span class="n">treatments</span><span class="p">[</span><span class="n">treatmentName</span><span class="p">]</span><span class="o">.</span><span class="n">gamePaths</span><span class="p">[</span><span class="n">clientType</span><span class="p">];</span>
+    <span class="p">}</span>
+
+    <span class="n">settings</span> <span class="o">=</span> <span class="n">game</span><span class="o">.</span><span class="n">treatments</span><span class="p">[</span><span class="n">treatmentName</span><span class="p">];</span>
+
+    <span class="sr">//</span> <span class="n">Require</span> <span class="n">bot</span><span class="o">.</span>
+    <span class="n">bot</span> <span class="o">=</span> <span class="nb">require</span><span class="p">(</span><span class="n">botPath</span><span class="p">)(</span><span class="n">node</span><span class="p">,</span> <span class="n">options</span><span class="o">.</span><span class="n">room</span><span class="p">,</span> <span class="n">treatmentName</span><span class="p">,</span> <span class="n">settings</span><span class="p">);</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="s">&#39;object&#39;</span> <span class="o">!==</span> <span class="n">typeof</span> <span class="n">bot</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">throw</span> <span class="k">new</span> <span class="n">Error</span><span class="p">(</span><span class="s">&#39;ServerChannel.connectBot: botPath &quot;&#39;</span> <span class="o">+</span>
+                <span class="n">botPath</span> <span class="o">+</span> <span class="s">&#39;&quot; did not return a valid game object.&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="sr">//</span> <span class="n">MIXIN</span> <span class="n">WAS</span> <span class="n">HERE</span><span class="o">.</span>
+
+<span class="sr">//</span> <span class="n">Mixin</span><span class="o">-</span><span class="n">in</span> <span class="n">nodeGame</span> <span class="n">options</span><span class="o">.</span>
+<span class="k">if</span> <span class="p">(</span><span class="n">mixinConf</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">J</span><span class="o">.</span><span class="n">mixin</span><span class="p">(</span><span class="n">bot</span><span class="p">,</span> <span class="n">mixinConf</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="p">}</span>
+</code></pre></div>
+
+
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
 
 
 </pre></div>
@@ -3100,7 +3115,7 @@ Optional. Array of strings to give PhantomJS as command line arguments</li>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-103" id="section-103">&#182;</a>
+  <a class="pilcrow" href="#section-101" id="section-101">&#182;</a>
 </div>
 <p>Check inputs.</p>
         </td>
@@ -3182,7 +3197,7 @@ Optional. Array of strings to give PhantomJS as command line arguments</li>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-104" id="section-104">&#182;</a>
+  <a class="pilcrow" href="#section-102" id="section-102">&#182;</a>
 </div>
 <p>TODO: for the moment we keep a while loop here,
 This should be a view on ChannelRegistry.</p>
@@ -3244,7 +3259,7 @@ This should be a view on ChannelRegistry.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-105" id="section-105">&#182;</a>
+  <a class="pilcrow" href="#section-103" id="section-103">&#182;</a>
 </div>
 <p>Launch a phantomjs process with a connection to the server.</p>
         </td>
@@ -3257,7 +3272,7 @@ This should be a view on ChannelRegistry.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-106" id="section-106">&#182;</a>
+  <a class="pilcrow" href="#section-104" id="section-104">&#182;</a>
 </div>
 <p>Set up the arguments to phantomjs.</p>
         </td>
@@ -3270,7 +3285,7 @@ This should be a view on ChannelRegistry.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-107" id="section-107">&#182;</a>
+  <a class="pilcrow" href="#section-105" id="section-105">&#182;</a>
 </div>
 <p>Url might or not contain gameName (e.g. not if it is default channel).</p>
         </td>
@@ -3290,7 +3305,7 @@ This should be a view on ChannelRegistry.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-108" id="section-108">&#182;</a>
+  <a class="pilcrow" href="#section-106" id="section-106">&#182;</a>
 </div>
 <p>Do not call /phantomjs/bin/phantomjs to avoid double spawn.</p>
         </td>
@@ -3305,7 +3320,7 @@ This should be a view on ChannelRegistry.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-109" id="section-109">&#182;</a>
+  <a class="pilcrow" href="#section-107" id="section-107">&#182;</a>
 </div>
 <p>Spawn.</p>
         </td>
@@ -3331,7 +3346,7 @@ This should be a view on ChannelRegistry.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-110" id="section-110">&#182;</a>
+  <a class="pilcrow" href="#section-108" id="section-108">&#182;</a>
 </div>
 <p>Wait few ms for error to be printed.</p>
         </td>
@@ -3363,7 +3378,7 @@ This should be a view on ChannelRegistry.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-111" id="section-111">&#182;</a>
+  <a class="pilcrow" href="#section-109" id="section-109">&#182;</a>
 </div>
 <p>Add to the global collection.</p>
         </td>
@@ -3379,7 +3394,7 @@ This should be a view on ChannelRegistry.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-112" id="section-112">&#182;</a>
+  <a class="pilcrow" href="#section-110" id="section-110">&#182;</a>
 </div>
 <p>Maybe we do not need this api.
 /**
@@ -3408,7 +3423,7 @@ ServerChannel.prototype.killAllPhantoms = function() {
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-113" id="section-113">&#182;</a>
+  <a class="pilcrow" href="#section-111" id="section-111">&#182;</a>
 </div>
 <p>TODO: finish this method. Should destroy all game rooms. clear all players?,
       keep the waiting room</p>
@@ -3428,7 +3443,7 @@ ServerChannel.prototype.killAllPhantoms = function() {
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-114" id="section-114">&#182;</a>
+  <a class="pilcrow" href="#section-112" id="section-112">&#182;</a>
 </div>
 <p>Remove clients from registry, game rooms and disconnect them.
    this.registry.clients.each(function(c) {
@@ -3465,7 +3480,7 @@ ServerChannel.prototype.killAllPhantoms = function() {
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-115" id="section-115">&#182;</a>
+  <a class="pilcrow" href="#section-113" id="section-113">&#182;</a>
 </div>
 <p>Remove clients from registry, game rooms and disconnect them.</p>
         </td>
@@ -3486,7 +3501,7 @@ ServerChannel.prototype.killAllPhantoms = function() {
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-116" id="section-116">&#182;</a>
+  <a class="pilcrow" href="#section-114" id="section-114">&#182;</a>
 </div>
 <p>Destroy empty game rooms.</p>
         </td>
@@ -3507,7 +3522,7 @@ ServerChannel.prototype.killAllPhantoms = function() {
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-117" id="section-117">&#182;</a>
+  <a class="pilcrow" href="#section-115" id="section-115">&#182;</a>
 </div>
 <p>Create a brand new Registry.
 this.registry = new ChannelRegistry({ name: this.name });</p>
