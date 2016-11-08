@@ -1887,7 +1887,7 @@ Other values will be parsed later.</p>
         <span class="p">}</span>
         <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">properties</span><span class="p">.</span><span class="nx">timeup</span><span class="p">)</span> <span class="p">{</span>
             <span class="nx">stager</span><span class="p">.</span><span class="nx">setDefaultProperty</span><span class="p">(</span><span class="s1">&#39;timeup&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
-                <span class="nx">node</span><span class="p">.</span><span class="nx">done</span><span class="p">();</span>
+                <span class="k">this</span><span class="p">.</span><span class="nx">node</span><span class="p">.</span><span class="nx">done</span><span class="p">();</span>
             <span class="p">});</span>
         <span class="p">}</span>
     <span class="p">}</span>

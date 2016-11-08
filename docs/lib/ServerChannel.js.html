@@ -2755,7 +2755,9 @@ modules.</p>
 </div>
 
   </div>
-  <div class="body"><p>Create a bot and put it in a room</p>
+  <div class="body"><p>Creates a bot and put it in a room</p>
+
+<p>A reference to the newly created bot is placed in <code>Channel.bots</code>.</p>
   </div>
   <div class="details">
     <div class="dox_tag_title">Params</div>
@@ -2775,17 +2777,10 @@ Optional. Configuration object to be passed to
 <code>node.setup('nodegame', setup)</code>. Default: {}.</li>
 </ul></span>
     </div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name">mixinConf</span>
-      <span class="dox_type">object</span>
-      <span>Optional. Additional options to pass to the node
-  instance of the room. Overrides the returned game configuration from the
-  require statement.</span>
-    </div>
     <div class="dox_tag_title">Returns</div>
     <div class="dox_tag_detail">
       <span class="dox_tag_name"></span>
-      <span class="dox_type">object</span>
+      <span class="dox_type">NodeGameClient</span>
       <span>The node instance of the new bot</span>
     </div>
   </div>
