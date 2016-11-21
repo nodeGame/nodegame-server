@@ -10312,9 +10312,16 @@ if (!Array.prototype.indexOf) {
      * @param {array} The reference to the original database
      */
     function NDDBIndex(idx, nddb) {
+        // The name of the index.
         this.idx = idx;
+        // Reference to the whole nddb database.
         this.nddb = nddb;
+        // Map indexed-item to a position in the original database.
         this.resolve = {};
+        // List of all keys in `resolve` object.
+        this.keys = [];
+        // Map indexed-item to a position in `keys` array (for fast deletion).
+        this.resolveKeys = {};
     }
 
     /**
@@ -10327,17 +10334,26 @@ if (!Array.prototype.indexOf) {
      */
     NDDBIndex.prototype._add = function(idx, dbidx) {
         this.resolve[idx] = dbidx;
+        // We add it to the keys array only if it a new index.
+        // If it is an already existing element, we don't care
+        // if it changing position in the original db.
+        if ('undefined' === typeof this.resolveKeys[idx]) {
+            this.resolveKeys[idx] = this.keys.length;
+            this.keys.push('' + idx);
+        }
     };
 
     /**
      * ### NDDBIndex._remove
      *
-     * Adds an item to the index
+     * Removes an item from index
      *
      * @param {mixed} idx The id to remove from the index
      */
     NDDBIndex.prototype._remove = function(idx) {
         delete this.resolve[idx];
+        this.keys.splice(this.resolveKeys[idx], 1);
+        delete this.resolveKeys[idx];
     };
 
     /**
@@ -10348,7 +10364,7 @@ if (!Array.prototype.indexOf) {
      * @return {number} The number of elements in the index
      */
     NDDBIndex.prototype.size = function() {
-        return J.size(this.resolve);
+        return this.keys.length;
     };
 
     /**
@@ -10389,7 +10405,7 @@ if (!Array.prototype.indexOf) {
         o = this.nddb.db[dbidx];
         if ('undefined' === typeof o) return;
         this.nddb.db.splice(dbidx, 1);
-        delete this.resolve[idx];
+        this._remove(idx);
         this.nddb.emit('remove', o);
         this.nddb._autoUpdate();
         return o;
@@ -10441,7 +10457,7 @@ if (!Array.prototype.indexOf) {
      * @see NDDBIndex.getAllKeyElements
      */
     NDDBIndex.prototype.getAllKeys = function() {
-        return J.keys(this.resolve);
+        return this.keys.slice(0);
     };
 
     /**
@@ -10454,11 +10470,12 @@ if (!Array.prototype.indexOf) {
      * @see NDDBIndex.getAllKeys
      */
     NDDBIndex.prototype.getAllKeyElements = function() {
-        var out = {}, idx;
-        for (idx in this.resolve) {
-            if (this.resolve.hasOwnProperty(idx)) {
-                out[idx] = this.nddb.db[this.resolve[idx]];
-            }
+        var out, idx, i, len;
+        out = {};
+        i = -1, len = this.keys.length;
+        for ( ; ++i < len ; ) {
+            idx = this.keys[i];
+            out[idx] = this.nddb.db[this.resolve[idx]];
         }
         return out;
     };
@@ -20144,6 +20161,152 @@ if (!Array.prototype.indexOf) {
 );
 
 /**
+ * # Roler
+ * Copyright(c) 2016 Stefano Balietti
+ * MIT Licensed
+ *
+ * Handles matching roles to players.
+ */
+(function(exports, parent) {
+
+    "use strict";
+
+    // ## Global scope
+    var J = parent.JSUS;
+
+    exports.Roler = Roler;
+
+    /**
+     * ## Roler constructor
+     *
+     * Creates a new instance of role mapper
+     */
+    function Roler() {
+
+        /**
+         * ### Roler.roles
+         *
+         * List of available roles
+         *
+         * @see Roler.setRoles
+         * @see Roler.clear
+         */
+        this.roles = {};
+
+        /**
+         * ### Roler.rolesArray
+         *
+         * The array of currently available roles
+         *
+         * @see Roler.setRoles
+         * @see Roler.clearRoles
+         */
+        this.rolesArray = [];
+
+        /**
+         * ### Roler.map
+         *
+         * The map roles-ids
+         */
+        this.map = {};
+    }
+
+    /**
+     * ### Roler.clear
+     *
+     * Clears the roles list
+     */
+    Roler.prototype.clear = function() {
+        this.rolesArray = [];
+        this.roles = {};
+        this.map = {};
+    };
+
+    /**
+     * ### Roler.setRoles
+     *
+     * Validates and sets the roles
+     *
+     * @param {array} roles Array of roles (string)
+     * @param {number} min At least _min_ roles must be specified. Default: 2
+     * @param {number} max At least _max_ roles must be specified. Default: inf
+     *
+     * @see Roler.setRoles
+     * @see Roler.clearRoles
+     */
+    Roler.prototype.setRoles = function(roles, min, max) {
+        var rolesObj, role;
+        var i, len;
+        var min, max, err;
+
+        if (min && 'number' !== typeof min || min < 2) {
+            throw new TypeError('Roler.setRoles: min must be a ' +
+                                'number > 2 or undefined. Found: ' + min);
+        }
+        min = min || 2;
+
+        if (max && 'number' !== typeof max || max < min) {
+            throw new TypeError('Roler.setRoles: max must ' +
+                                'be number or undefined. Found: ' + max);
+        }
+
+        // At least two roles must be defined
+        if (!J.isArray(roles)) {
+            throw new TypeError('Roler.setRoles: roles must ' +
+                                'be array. Found: ' + roles);
+        }
+
+        len = roles.length;
+        // At least two roles must be defined
+        if (len < min || len > max) {
+            err = 'Roler.setRoles: roles must contain at least ' +
+                min + ' roles';
+            if (max) err += ' and no more than ' + max;
+            err += '. Found: ' + len;
+            throw new Error(err);
+        }
+
+        rolesObj = {};
+        i = -1;
+        for ( ; ++i < len ; ) {
+            role = roles[i];
+            if ('string' !== typeof role || role.trim() === '') {
+                throw new TypeError('Roler.setRoles: each role ' +
+                                    'must be a non-empty string. Found: ' +
+                                    role);
+            }
+            rolesObj[role] = '';
+        }
+        // All data validated.
+        this.roles = rolesObj;
+        this.rolesArray = roles;
+    };
+
+    /**
+     * ### Roler.roleExists
+     *
+     * Returns TRUE if the requested role exists
+     *
+     * @param {string} role The role to check
+     *
+     * @see Roler.roles
+     */
+    Roler.prototype.roleExists = function(role) {
+        if ('string' !== typeof role || role.trim() === '') {
+            throw new TypeError('Roler.roleExists: role must be ' +
+                                'a non-empty string. Found: ' + role);
+        }
+        return !!this.roles[role];
+    };
+
+
+    // ## Closure
+})(
+    'undefined' != typeof node ? node : module.exports,
+    'undefined' != typeof node ? node : module.parent.exports
+);
+
+/**
  * # Matcher
  * Copyright(c) 2016 Stefano Balietti <s.balietti@neu.edu>
  * MIT Licensed
@@ -20239,7 +20402,7 @@ if (!Array.prototype.indexOf) {
          *
          * Nested array of matches (with position-numbers)
          *
-         * Nestes a new array for each round, and within each round
+         * Nests a new array for each round, and within each round
          * individual matches are also array. For example:
          *
          * ```javascript
@@ -20389,7 +20552,8 @@ if (!Array.prototype.indexOf) {
      *
      * Throws an error if the selected algorithm is not found.
      *
-     * @param {string} alg The chosen algorithm. Available: 'roundrobin'.
+     * @param {string} alg The chosen algorithm. Available: 'roundrobin',
+     *   'random'
      *
      * @return {array} The array of matches
      */
@@ -20400,14 +20564,15 @@ if (!Array.prototype.indexOf) {
         }
         alg = alg.toLowerCase();
         if (alg === 'roundrobin' || alg === 'random') {
-            if (alg === 'random' &&
-                arguments[2] && arguments[2].replace === true) {
-
-                matches = randomPairs(arguments[1], arguments[2]);
-            }
-            else {
+// TODO: check.
+//             if (alg === 'random' &&
+//                 arguments[2] && arguments[2].replace === true) {
+//
+//                 matches = randomPairs(arguments[1], arguments[2]);
+//             }
+//             else {
                 matches = pairMatcher(alg, arguments[1], arguments[2]);
-            }
+//             }
         }
         else {
             throw new Error('Matcher.generateMatches: unknown algorithm: ' +
@@ -20938,7 +21103,7 @@ if (!Array.prototype.indexOf) {
  * Copyright(c) 2016 Stefano Balietti
  * MIT Licensed
  *
- * Hadnles matching roles to players and players to players.
+ * Handles matching roles to players and players to players.
  */
 (function(exports, parent) {
 
@@ -20964,31 +21129,13 @@ if (!Array.prototype.indexOf) {
         this.node = node;
 
         /**
-         * ### MatcherManager.roles
+         * ### MatcherManager.roler
          *
-         * List of available roles
+         * The roler object
          *
-         * @see MatcherManager.setRoles
-         * @see MatcherManager.clearRoles
+         * @see Roler
          */
-        this.roles = {};
-
-        /**
-         * ### MatcherManager.rolesArray
-         *
-         * The array of currently available roles
-         *
-         * @see MatcherManager.setRoles
-         * @see MatcherManager.clearRoles
-         */
-        this.rolesArray = [];
-
-        /**
-         * ### MatcherManager.map
-         *
-         * The map roles-ids
-         */
-        this.rolesMap = {};
+        this.roler = new parent.Roler();
 
         /**
          * ### MatcherManager.matcher
@@ -20998,6 +21145,13 @@ if (!Array.prototype.indexOf) {
          * @see Matcher
          */
         this.matcher = new parent.Matcher();
+
+        /**
+         * ### MatcherManager.lastSettings
+         *
+         * Reference to the last settings parsed
+         */
+        this.lastSettings = null;
     }
 
     /**
@@ -21007,104 +21161,40 @@ if (!Array.prototype.indexOf) {
      *
      * @param {string} mod Optional. Modifies what must be cleared.
      *    Values: 'roles', 'matches', 'all'. Default: 'all'
-     *
-     * @see MatcherManager.setRoles
-     * @see MatcherManager.clearRoles
      */
     MatcherManager.prototype.clear = function(mod) {
         switch(mod) {
         case 'roles':
-            this.clearRoles();
+            this.roler.clear();
             break;
         case 'matches':
             this.matcher.clear();
             break;
         default:
-            this.clearRoles();
+            this.roler.clear();
             this.matcher.clear();
         }
     };
 
     /**
-     * ### MatcherManager.setRoles
-     *
-     * Validates and sets the roles
-     *
-     * @param {array} roles Array of roles (string)
-     * @param {number} min At least _min_ roles must be specified. Default: 2
-     * @param {number} max At least _max_ roles must be specified. Default: inf
-     *
-     * @see MatcherManager.setRoles
-     * @see MatcherManager.clearRoles
-     */
-    MatcherManager.prototype.setRoles = function(roles, min, max) {
-        var rolesObj, role;
-        var i, len;
-        var min, max, err;
-
-        if (min && 'number' !== typeof min || min < 2) {
-            throw new TypeError('MatcherManager.setRoles: min must be a ' +
-                                'number > 2 or undefined. Found: ' + min);
-        }
-        min = min || 2;
-
-        if (max && 'number' !== typeof max || max < min) {
-            throw new TypeError('MatcherManager.setRoles: max must ' +
-                                'be number or undefined. Found: ' + max);
-        }
-
-        // At least two roles must be defined
-        if (!J.isArray(roles)) {
-            throw new TypeError('MatcherManager.setRoles: roles must ' +
-                                'be array. Found: ' + roles);
-        }
-
-        len = roles.length;
-        // At least two roles must be defined
-        if (len < min || len > max) {
-            err = 'MatcherManager.setRoles: roles must contain at least ' +
-                min + ' roles';
-            if (max) err += ' and no more than ' + max;
-            err += '. Found: ' + len;
-            throw new Error(err);
-        }
-
-        rolesObj = {};
-        i = -1;
-        for ( ; ++i < len ; ) {
-            role = roles[i];
-            if ('string' !== typeof role || role.trim() === '') {
-                throw new TypeError('MatcherManager.setRoles: each role ' +
-                                    'must be a non-empty string. Found: ' +
-                                    role);
-            }
-            rolesObj[role] = '';
-        }
-        // All data validated.
-        this.roles = rolesObj;
-        this.rolesArray = roles;
-    };
-
-    MatcherManager.prototype.roleExists = function(role) {
-        if ('string' !== typeof role || role.trim() === '') {
-            throw new TypeError('MatcherManager.roleExists: role must be ' +
-                                'a non-empty string. Found: ' + role);
-        }
-        return !!this.roles[role];
-    };
-
-    MatcherManager.prototype.getRole = function(role) {
-        if ('string' !== typeof role || role.trim() === '') {
-            throw new TypeError('MatcherManager.getRole: role must be ' +
-                                'a non-empty string. Found: ' + role);
-        }
-        return this.rolesMap[role] || null;
-    };
-
-    /**
      * ### MatcherManager.match
      *
-     * Matches roles to ids
+     * Parses a conf object and returns the desired matches of roles and players
+     *
+     * Returned matches are in a format which is ready to be sent out as
+     * remote options. That is:
+     *
+     *     matches = [
+     *         {
+     *             id: 'playerId',
+     *             options: {
+     *                 role: "A", // optional.
+     *                 partner: "XXX", // or object.
+     *                 group: "yyy"
+     *             }
+     *         },
+     *         // More matches...
+     *     ];
      *
      * @param {object} settings The settings for the requested map
      *
@@ -21120,12 +21210,16 @@ if (!Array.prototype.indexOf) {
                                 'object or string. Found: ' + settings);
         }
 
-        if (settings.match !== 'random_pairs') {
-            throw new Error('MatcherManager.match: only "random_pairs" match ' +
-                            "supported. Found: " + settings.match);
+        if (settings.match === 'random_pairs') {
+            return randomPairs.call(this, settings);
         }
 
-        return randomPairs.call(this, settings);
+        if (settings.match === 'round_robin') {
+        }
+
+        throw new Error('MatcherManager.match: only "random_pairs" and ' +
+                        '"round_robin" algorithms supported. Found: ' +
+                        settings.match);
     };
 
 
@@ -21153,14 +21247,16 @@ if (!Array.prototype.indexOf) {
 
         doRoles = !!settings.roles;
         if (doRoles) {
-            this.setRoles(settings.roles, 2); // TODO: pass the alg name?
+
+            // Resets all roles.
+            // this.roler.rolesMap = {};
+            this.roler.clear();
+
+            this.roler.setRoles(settings.roles, 2); // TODO: pass the alg name?
 
             r1 = settings.roles[0];
             r2 = settings.roles[1];
             r3 = settings.roles[2];
-
-            // Resets all roles.
-            this.rolesMap = {};
         }
 
         // TODO: This part needs to change / be conditional, depending if
@@ -21186,8 +21282,8 @@ if (!Array.prototype.indexOf) {
 
                 if (doRoles) {
                     // Create role map.
-                    this.map[id1] = r1;
-                    this.map[id2] = r2;
+                    this.roler.map[id1] = r1;
+                    this.roler.map[id2] = r2;
 
                     if (!sayPartner) {
                         // Prepare options to send to players.
@@ -21215,7 +21311,7 @@ if (!Array.prototype.indexOf) {
                                     'but not found.');
                 }
                 soloId = id1 === 'bot' ? id2 : id1;
-                this.map[soloId] = r3;
+                this.roler.map[soloId] = r3;
 
                 matches.push({
                     id: soloId,
@@ -21227,7 +21323,7 @@ if (!Array.prototype.indexOf) {
         }
 
         // Store reference to last valid settings.
-        this.mapSettings = settings;
+        this.lastSettings = settings;
 
         return matches;
     }
@@ -25307,7 +25403,7 @@ if (!Array.prototype.indexOf) {
          *
          * Nested array of matches (with position-numbers)
          *
-         * Nestes a new array for each round, and within each round
+         * Nests a new array for each round, and within each round
          * individual matches are also array. For example:
          *
          * ```javascript
@@ -25457,7 +25553,8 @@ if (!Array.prototype.indexOf) {
      *
      * Throws an error if the selected algorithm is not found.
      *
-     * @param {string} alg The chosen algorithm. Available: 'roundrobin'.
+     * @param {string} alg The chosen algorithm. Available: 'roundrobin',
+     *   'random'
      *
      * @return {array} The array of matches
      */
@@ -25468,14 +25565,15 @@ if (!Array.prototype.indexOf) {
         }
         alg = alg.toLowerCase();
         if (alg === 'roundrobin' || alg === 'random') {
-            if (alg === 'random' &&
-                arguments[2] && arguments[2].replace === true) {
-
-                matches = randomPairs(arguments[1], arguments[2]);
-            }
-            else {
+// TODO: check.
+//             if (alg === 'random' &&
+//                 arguments[2] && arguments[2].replace === true) {
+//
+//                 matches = randomPairs(arguments[1], arguments[2]);
+//             }
+//             else {
                 matches = pairMatcher(alg, arguments[1], arguments[2]);
-            }
+//             }
         }
         else {
             throw new Error('Matcher.generateMatches: unknown algorithm: ' +
@@ -28896,6 +28994,8 @@ if (!Array.prototype.indexOf) {
          *
          * @see node.game.plot
          * @see Stager.setState
+         *
+         * TODO: check if all options work as described.
          */
         this.registerSetup('plot', function(stagerState, rule, gameStage) {
             var plot, prop;
@@ -30333,7 +30433,7 @@ if (!Array.prototype.indexOf) {
      *   will be appended. Default: _document.body_ or
      *   _document.lastElementChild_
      * @param {string} headerName Optional. The name (id) of the header.
-     *   Default: 'gn_header'
+     *   Default: 'ng_header'
      * @param {boolean} force Optional. Will create the header even if an
      *   existing one is found. Default: FALSE
      *
@@ -31608,6 +31708,11 @@ if (!Array.prototype.indexOf) {
                 this.window.generateFrame(root, frameName, force);
             }
 
+            // Uri prefix.
+            if ('undefined' !== typeof conf.uriPrefix) {
+                this.window.setUriPrefix(conf.uriPrefix);
+            }
+
             // Load.
             if (conf.load) {
                 if ('object' === typeof conf.load) {
@@ -31626,11 +31731,6 @@ if (!Array.prototype.indexOf) {
                 this.window.loadFrame(url, cb, options);
             }
 
-            // Uri prefix.
-            if ('undefined' !== typeof conf.uriPrefix) {
-                this.window.setUriPrefix(conf.uriPrefix);
-            }
-
             // Clear and destroy.
             if (conf.clear) this.window.clearFrame();
             if (conf.destroy) this.window.destroyFrame();
@@ -31646,7 +31746,7 @@ if (!Array.prototype.indexOf) {
          * @see node.setup
          */
         node.registerSetup('header', function(conf) {
-            var frameName, force, root, rootName;
+            var headerName, force, root, rootName;
             if (!conf) return;
 
             // Generate.
@@ -31660,7 +31760,7 @@ if (!Array.prototype.indexOf) {
                         }
                         rootName = conf.generate.root;
                         force = conf.generate.force;
-                        frameName = conf.generate.name;
+                        headerName = conf.generate.name;
                     }
                 }
                 else {
@@ -31672,12 +31772,12 @@ if (!Array.prototype.indexOf) {
                 root = this.window.getElementById(rootName);
                 if (!root) root = this.window.getScreen();
                 if (!root) {
-                    node.warn('node.setup.frame: could not find valid ' +
-                              'root element to generate new frame.');
+                    node.warn('node.setup.header: could not find valid ' +
+                              'root element to generate new header.');
                     return;
                 }
 
-                this.window.generateFrame(root, frameName, force);
+                this.window.generateHeader(root, headerName, force);
             }
 
             // Position.
@@ -32096,7 +32196,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    WaitScreen.version = '0.7.0';
+    WaitScreen.version = '0.8.0';
     WaitScreen.description = 'Show a standard waiting screen';
 
     // ## Helper functions
@@ -32394,12 +32494,8 @@ if (!Array.prototype.indexOf) {
         if ('string' !== typeof text) {
             throw new TypeError('WaitScreen.updateText: text must be string.');
         }
-        if (append) {
-            this.waitingDiv.appendChild(document.createTextNode(text));
-        }
-        else {
-            this.waitingDiv.innerHTML = text;
-        }
+        if (append) this.waitingDiv.innerHTML += text;
+        else this.waitingDiv.innerHTML = text;
     };
 
     /**

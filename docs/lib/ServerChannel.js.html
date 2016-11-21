@@ -2768,8 +2768,9 @@ modules.</p>
 
 <ul>
 <li>room (Room):
-Optional. The room (waiting, game, requirements, etc.)
-in which to put the bot. Default: channel.waitingRoom</li>
+Optional. {string|object} The room name ('waiting',
+'requirements', etc.) or the full room object
+in which to place the bot. Default: channel.waitingRoom</li>
 <li>clientType (string):
 Optional. Client type of the bot. Default: 'bot'</li>
 <li>setup (object):
@@ -2820,22 +2821,22 @@ Optional. Configuration object to be passed to
             <span class="nx">room</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">[</span><span class="nx">options</span><span class="p">.</span><span class="nx">room</span><span class="p">];</span>
             <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">room</span><span class="p">)</span> <span class="p">{</span>
                 <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;ServerChannel.connectBot: options.room does &#39;</span> <span class="o">+</span>
-                                <span class="s1">&#39;not appear to be a registered room. Id: &#39;</span> <span class="o">+</span>
+                                <span class="s1">&#39;not appear to be a registered room: &#39;</span> <span class="o">+</span>
                                 <span class="nx">options</span><span class="p">.</span><span class="nx">room</span><span class="p">);</span>
             <span class="p">}</span>
         <span class="p">}</span>
         <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">options</span><span class="p">.</span><span class="nx">room</span><span class="p">)</span> <span class="p">{</span>
-            <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">[</span><span class="nx">options</span><span class="p">.</span><span class="nx">room</span><span class="p">.</span><span class="nx">id</span><span class="p">])</span> <span class="p">{</span>
-                <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;ServerChannel.connectBot: options.room does &#39;</span> <span class="o">+</span>
-                                <span class="s1">&#39;not appear to be a registered room. Id: &#39;</span> <span class="o">+</span>
-                                <span class="nx">options</span><span class="p">.</span><span class="nx">room</span><span class="p">.</span><span class="nx">id</span><span class="p">);</span>
+            <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">[</span><span class="nx">options</span><span class="p">.</span><span class="nx">room</span><span class="p">.</span><span class="nx">name</span><span class="p">])</span> <span class="p">{</span>
+                <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;ServerChannel.connectBot: options.room.name &#39;</span> <span class="o">+</span>
+                                <span class="s1">&#39;does not appear to be a registered room: &#39;</span> <span class="o">+</span>
+                                <span class="nx">options</span><span class="p">.</span><span class="nx">room</span><span class="p">.</span><span class="nx">name</span><span class="p">);</span>
             <span class="p">}</span>
             <span class="nx">room</span> <span class="o">=</span> <span class="nx">options</span><span class="p">.</span><span class="nx">room</span><span class="p">;</span>
         <span class="p">}</span>
         <span class="k">else</span> <span class="p">{</span>
             <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerChannel.connectBot: options.room &#39;</span> <span class="o">+</span>
-                                <span class="s1">&#39;must be a Room object, a string with the &#39;</span> <span class="o">+</span>
-                                <span class="s1">&#39;id of a Room object, or undefined. Found: &#39;</span> <span class="o">+</span>
+                                <span class="s1">&#39;must be a Room object, a string containing &#39;</span> <span class="o">+</span>
+                                <span class="s1">&#39;the name of a room, or undefined. Found: &#39;</span> <span class="o">+</span>
                                 <span class="nx">options</span><span class="p">.</span><span class="nx">room</span><span class="p">);</span>
         <span class="p">}</span>
     <span class="p">}</span>
