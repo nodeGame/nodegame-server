@@ -1886,6 +1886,12 @@ is disposed, exactly as it was not authorized.</p>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">enableReconnections</span><span class="p">)</span> <span class="p">{</span>
 
+        <span class="k">if</span> <span class="p">(</span><span class="nx">clientObj</span><span class="p">.</span><span class="nx">allowReconnect</span> <span class="o">===</span> <span class="kc">false</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">disposeUnauthorizedClient</span><span class="p">(</span><span class="nx">socketId</span><span class="p">,</span> <span class="nx">socketObj</span><span class="p">);</span>
+            <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
+        <span class="p">}</span>
+
+
 </pre></div>
         </td>
       </tr>
@@ -2577,7 +2583,7 @@ and a warning will be sent.</p>
 </div>
 
   </div>
-  <div class="body"><p>Sends a sequence of HI, REDIRECT messages</p>
+  <div class="body"><p>Sends a REDIRECT message to the access denied page</p>
 
 <p>Cannot send ALERT because it gets destroyed by the REDIRECT.</p>
   </div>
@@ -2592,6 +2598,13 @@ and a warning will be sent.</p>
       <span class="dox_tag_name">socketObj</span>
       <span class="dox_type">string</span>
       <span>The socket (IO, Direct) object</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">GameServer.getAccessDeniedUrl
+
+TODO: add an error code in the query string. Need to adapt page as well
+</span>
     </div>
   </div>
 </div>
