@@ -51,6 +51,8 @@ function configure(app, servernode) {
         app.use(express.static(publicDir, { maxAge: 3600000 }));
     }
 
+    app.disable('x-powered-by');
+
     app.enable("jsonp callback");
 
     app.use(cookieParser());

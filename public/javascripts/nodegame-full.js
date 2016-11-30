@@ -13128,7 +13128,7 @@ if (!Array.prototype.indexOf) {
          * The partner of the player
          */
         this.partner = player.partner || null;
-        
+
         /**
          * ### Player.count
          *
@@ -14653,6 +14653,50 @@ if (!Array.prototype.indexOf) {
      */
     GamePlot.prototype.isFlexibleMode = function() {
         return this.stager.sequence.length === 0;
+    };
+
+    /**
+     * ### GamePlot.getRound
+     *
+     * Returns the current/remaining/past/total round number in a game stage
+     *
+     * @param {mixed} gs The game stage of reference
+     * @param {string} mod Optional. Modifies the return value.
+     *
+     *   - 'current': current round number (default)
+     *   - 'total': total number of rounds
+     *   - 'remaining': number of rounds remaining (excluding current round)
+     *   - 'past': number of rounds already past  (excluding current round)
+     *
+     * @return {number|null} The requested information, or null if
+     *   the number of rounds is not known (e.g. if the stage is a loop)
+     *
+     * @see GamePlot.getSequenceObject
+     */
+    GamePlot.prototype.getRound = function(gs, mod) {
+        var seqObj;
+        gs = new GameStage(gs);
+        if (gs.stage === 0) return null;
+
+        seqObj = this.getSequenceObject(gs);
+        if (!seqObj) return null;
+
+        if (!mod || mod === 'current') return gs.round;
+        if (mod === 'past') return gs.round - 1;
+
+        if (mod === 'total') {
+            if (seqObj.type === 'repeat') return seqObj.num;
+            else if (seqObj.type === 'plain') return 1;
+            else return null;
+        }
+        if (mod === 'remaining') {
+            if (seqObj.type === 'repeat') return seqObj.num - gs.round;
+            else if (seqObj.type === 'plain') return 1;
+            else return null;
+        }
+
+        throw new TypeError('GamePlot.getRound: mod must be a known string ' +
+                            'or undefined. Found: ' + mod);
     };
 
     // ## Helper Methods
@@ -20382,20 +20426,20 @@ if (!Array.prototype.indexOf) {
         /**
          * ### Matcher.x
          *
-         * The current round returned by Matcher.getMatch
+         * The row-index of the last returned match by Matcher.getMatch
          *
          * @see Matcher.getMatch
          */
-        this.x = 0;
+        this.x = null;
 
         /**
          * ### Matcher.y
          *
-         * The next match in current round returned by Matcher.getMatch
+         * The column-index of the last returned match by Matcher.getMatch
          *
          * @see Matcher.getMatch
          */
-        this.y = 0;
+        this.y = null;
 
         /**
          * ### Matcher.matches
@@ -20531,17 +20575,31 @@ if (!Array.prototype.indexOf) {
         if (options.ids) this.setIds(options.ids);
         if (options.bye) this.bye = options.bye;
         if (options.missingId) this.missingId = options.missingId;
-        if ('number' === typeof options.x) {
+
+        if (null === options.x) this.x = null;
+        else if ('number' === typeof options.x) {
             if (options.x < 0) {
-                throw new Error('Matcher.init: options.x cannot be negative.');
+                throw new Error('Matcher.init: options.x cannot be negative.' +
+                                'Found: ' + options.x);
             }
             this.x = options.x;
         }
-        if ('number' === typeof options.y) {
+        else if (options.x) {
+            throw new TypeError('Matcher.init: options.x must be number, ' +
+                                'null or undefined. Found: ' + options.x);
+        }
+
+        if (null === options.y) this.y = null;
+        else if ('number' === typeof options.y) {
             if (options.y < 0) {
-                throw new Error('Matcher.init: options.y cannot be negative.');
+                throw new Error('Matcher.init: options.y cannot be negative.' +
+                                'Found: ' + options.y);
             }
             this.y = options.y;
+        }
+        else if (options.y) {
+            throw new TypeError('Matcher.init: options.y must be number, ' +
+                                'null or undefined. Found: ' + options.y);
         }
     };
 
@@ -20564,15 +20622,7 @@ if (!Array.prototype.indexOf) {
         }
         alg = alg.toLowerCase();
         if (alg === 'roundrobin' || alg === 'random') {
-// TODO: check.
-//             if (alg === 'random' &&
-//                 arguments[2] && arguments[2].replace === true) {
-//
-//                 matches = randomPairs(arguments[1], arguments[2]);
-//             }
-//             else {
-                matches = pairMatcher(alg, arguments[1], arguments[2]);
-//             }
+            matches = pairMatcher(alg, arguments[1], arguments[2]);
         }
         else {
             throw new Error('Matcher.generateMatches: unknown algorithm: ' +
@@ -20734,8 +20784,28 @@ if (!Array.prototype.indexOf) {
         this.resolvedMatches = matched;
         this.resolvedMatchesById = matchedId;
         // Set getMatch indexes to 0.
-        this.x = 0;
-        this.y = 0;
+        this.x = null;
+        this.y = null;
+    };
+
+    /**
+     * ### Matcher.hasNext
+     *
+     * Returns TRUE if there is next match to be returned by getMatch
+     *
+     * @param {number} x Optional. The x-th round. Default: Matcher.x
+     * @param {number} y Optional. The y-th match within the x-th round
+     *    Default: Matcher.y
+     *
+     * @return {bolean} TRUE, if there exists a next match
+     *
+     * @see Matcher.x
+     * @see Matcher.y
+     * @see Matcher.resolvedMatches
+     * @see hasOrGetNext
+     */
+    Matcher.prototype.hasNext = function(x, y) {
+        return hasOrGetNext.call(this, 'hasNext', false, x, y);
     };
 
     /**
@@ -20743,69 +20813,19 @@ if (!Array.prototype.indexOf) {
      *
      * Returns the next match, or the specified match
      *
-     * @param {number} x Optional. The x-th round. Default: the round
+     * @param {number} x Optional. The x-th round. Default: Matcher.x
      * @param {number} y Optional. The y-th match within the x-th round
+     *    Default: Matcher.y
      *
      * @return {array} The next or requested match, or null if not found
      *
      * @see Matcher.x
      * @see Matcher.y
      * @see Matcher.resolvedMatches
+     * @see hasOrGetNext
      */
     Matcher.prototype.getMatch = function(x, y) {
-        var nRows, nCols;
-        // Check both x and y.
-        if ('undefined' === typeof x && 'undefined' !== typeof y) {
-            throw new Error('Matcher.getMatch: cannot specify y without x.');
-        }
-        // Check if there is any match yet.
-        if (!J.isArray(this.resolvedMatches) || !this.resolvedMatches.length) {
-            throw new Error('Matcher.getMatch: no resolved matches found.');
-        }
-
-        // Check x.
-        if ('undefined' === typeof x) {
-            x = this.x;
-        }
-        else if ('number' !== typeof x) {
-            throw new TypeError('Matcher.getMatch: x must be number ' +
-                                'or undefined.');
-        }
-        else if (x < 0) {
-            throw new Error('Matcher.getMatch: x cannot be negative');
-        }
-        else if ('undefined' === typeof y) {
-            // Return the whole row.
-            return this.resolvedMatches[x];
-        }
-
-        nRows = this.matches.length - 1;
-        if (x > nRows) return null;
-
-        nCols = this.matches[x].length - 1;
-
-        // Check y.
-        if ('undefined' === typeof y) {
-            y = this.y;
-            if (y < nCols) {
-                this.y++;
-            }
-            else {
-                this.x++;
-                this.y = 0;
-            }
-        }
-        else if ('number' !== typeof y) {
-            throw new TypeError('Matcher.getMatch: y must be number ' +
-                                'or undefined.');
-        }
-        else if (y < 0) {
-            throw new Error('Matcher.getMatch: y cannot be negative');
-        }
-        else if (y > nCols) {
-            return null;
-        }
-        return this.resolvedMatches[x][y];
+        return hasOrGetNext.call(this, 'getMatch', true, x, y);
     };
 
     /**
@@ -20830,6 +20850,11 @@ if (!Array.prototype.indexOf) {
 
         // Check x.
         if ('undefined' === typeof x) {
+
+            if (this.x === null) {
+                this.x = 0;
+                this.y = this.resolvedMatches[0].length - 1;
+            }
             x = this.x;
             this.x++;
         }
@@ -20839,6 +20864,11 @@ if (!Array.prototype.indexOf) {
         }
         else if (x < 0) {
             throw new Error('Matcher.getMatch: x cannot be negative');
+        }
+        else {
+            this.x = x;
+            this.y = this.resolvedMatches[x] ?
+                this.resolvedMatches[x].length - 1 : 0;
         }
 
         nRows = this.matches.length - 1;
@@ -20853,8 +20883,8 @@ if (!Array.prototype.indexOf) {
      * Clears the matcher as it would be a newly created object
      */
     Matcher.prototype.clear = function() {
-        this.x = 0;
-        this.y = 0;
+        this.x = null;
+        this.y = null;
         this.matches = null;
         this.resolvedMatches = null;
         this.resolvedMatchesById = null;
@@ -20927,7 +20957,6 @@ if (!Array.prototype.indexOf) {
      * Creates tournament schedules for different algorithms
      *
      * @param {string} alg The name of the algorithm
-     *
      * @param {number|array} n The number of participants (>1) or
      *   an array containing the ids of the participants
      * @param {object} options Optional. Configuration object
@@ -20940,157 +20969,267 @@ if (!Array.prototype.indexOf) {
      *
      * @return {array} matches The matches according to the algorithm
      */
-    function pairMatcher(alg, n, options) {
-        var ps, matches, bye;
-        var i, lenI, j, lenJ;
-        var skipBye;
+     function pairMatcher(alg, n, options) {
+         var ps, matches, bye;
+         var i, lenI, j, lenJ, jj;
+         var id1, id2;
+         var roundsLimit, cycle, cycleI, skipBye;
 
-        if ('number' === typeof n && n > 1) {
-            ps = J.seq(0, (n-1));
+         if ('number' === typeof n && n > 1) {
+             ps = J.seq(0, (n-1));
+         }
+         else if (J.isArray(n) && n.length > 1) {
+             ps = n.slice();
+             n = ps.length;
+         }
+         else {
+             throw new TypeError('pairMatcher.' + alg + ': n must be ' +
+                                 'number > 1 or array of length > 1.');
+         }
+         options = options || {};
+
+         bye = 'undefined' !== typeof options.bye ? options.bye : -1;
+         skipBye = options.skipBye || false;
+
+         // Make sure we have even numbers.
+         if ((n % 2) === 1) {
+             ps.push(bye);
+             n += 1;
+         }
+
+         // Limit rounds.
+         if ('number' === typeof options.rounds) {
+             if (options.rounds <= 0) {
+                 throw new Error('pairMatcher.' + alg + ': options.rounds ' +
+                                 'must be a positive number or undefined. ' +
+                                 'Found: ' + options.rounds);
+             }
+             if (options.rounds > (n-1)) {
+                 throw new Error('pairMatcher.' + alg + ': ' +
+                                 'options.rounds cannot be greater than ' +
+                                 (n-1) + '. Found: ' + options.rounds);
+             }
+             // Here roundsLimit does not depend on n (must be smaller).
+             roundsLimit = options.rounds;
+         }
+         else {
+             roundsLimit = n-1;
+         }
+
+         if ('undefined' !== typeof options.cycle) {
+             cycle = options.cycle;
+             if (cycle !== 'mirror_invert' && cycle !== 'mirror' &&
+                 cycle !== 'repeat_invert' && cycle !== 'repeat') {
+
+                 throw new Error('pairMatcher.' + alg + ': options.cycle ' +
+                                 'must be equal to "mirror"/"mirror_invert", ' +
+                                 '"repeat"/"repeat_invert" or undefined . ' +
+                                 'Found: ' + options.cycle);
+             }
+
+             matches = new Array(roundsLimit*2);
+         }
+         else {
+             matches = new Array(roundsLimit);
+         }
+
+         i = -1, lenI = roundsLimit;
+         for ( ; ++i < lenI ; ) {
+             // Shuffle list of ids for random.
+             if (alg === 'random') ps = J.shuffle(ps);
+             // Create a new array for round i.
+             lenJ = n / 2;
+             matches[i] = skipBye ? new Array(lenJ-1) : new Array(lenJ);
+             // Check if new need to cycle.
+             if (cycle) {
+                 if (cycle === 'mirror' || cycle === 'mirror_invert') {
+                     cycleI = (roundsLimit*2) -i -1;
+                 }
+                 else {
+                     cycleI = i+roundsLimit;
+                 }
+                 matches[cycleI] = skipBye ?
+                     new Array(lenJ-1) : new Array(lenJ);
+             }
+             // Counter jj is updated only if not skipBye,
+             // otherwise we create holes in the matches array.
+             jj = j = -1;
+             for ( ; ++j < lenJ ; ) {
+                 id1 = ps[j];
+                 id2 = ps[n - 1 - j];
+                 if (!skipBye || (id1 !== bye && id2 !== bye)) {
+                     jj++;
+                     // Insert match.
+                     matches[i][jj] = [ id1, id2 ];
+                     // Insert cycle match (if any).
+                     if (cycle === 'repeat') {
+                         matches[cycleI][jj] = [ id1, id2 ];
+                     }
+                     else if (cycle === 'repeat_invert') {
+                         matches[cycleI][jj] = [ id2, id1 ];
+                     }
+                     else if (cycle === 'mirror') {
+                         matches[cycleI][jj] = [ id1, id2 ];
+                     }
+                     else if (cycle === 'mirror_invert') {
+                         matches[cycleI][jj] = [ id2, id1 ];
+                     }
+                 }
+             }
+             // Permutate for next round.
+             ps.splice(1, 0, ps.pop());
+         }
+         return matches;
+     }
+
+
+    /**
+     * ### hasOrGetNext
+     *
+     * Returns TRUE or the match if there is next match
+     *
+     * If in `get` mode it also updates the x and y indexes.
+     *
+     * @param {string} m The name of the method invoking it
+     * @param {boolean} get TRUE, if the method should return the match
+     * @param {number} x Optional. The x-th round. Default: Matcher.x
+     * @param {number} y Optional. The y-th match within the x-th round
+     *    Default: Matcher.y
+     *
+     * @return {boolean|array|null} TRUE or the next match (if found),
+     *   FALSE or null (if not found)
+     *
+     * @see Matcher.x
+     * @see Matcher.y
+     * @see Matcher.resolvedMatches
+     */
+    function hasOrGetNext(m, get, x, y) {
+        var match, nRows, nCols;
+
+        // Check if there is any match yet.
+        if (!J.isArray(this.resolvedMatches) || !this.resolvedMatches.length) {
+            throw new Error('Matcher.' + m + ': no resolved matches found.');
         }
-        else if (J.isArray(n) && n.length > 1) {
-            ps = n.slice();
-            n = ps.length;
-        }
-        else {
-            throw new TypeError('pairMatcher.' + alg + ': n must be ' +
-                                'number > 1 or array of length > 1.');
-        }
-        options = options || {};
-        matches = new Array(n-1);
-        bye = 'undefined' !== typeof options.bye ? options.bye : -1;
-        skipBye = options.skipBye || false;
-        if (n % 2 === 1) {
-            // Make sure we have even numbers.
-            ps.push(bye);
-            n += 1;
-        }
-        i = -1, lenI = n-1;
-        for ( ; ++i < lenI ; ) {
-            // Shuffle list of ids for random.
-            if (alg === 'random') ps = J.shuffle(ps);
-            // Create a new array for round i.
-            matches[i] = [];
-            j = -1, lenJ = n / 2;
-            for ( ; ++j < lenJ ; ) {
-                if (!skipBye || (ps[j] !== bye && ps[n - 1 - j] !== bye)) {
-                    // Insert match.
-                    matches[i].push([ps[j], ps[n - 1 - j]]);
+
+        nRows = this.resolvedMatches.length - 1;
+
+        // No x, No y get the next match.
+        if ('undefined' === typeof x) {
+            // Check both x and y.
+            if ('undefined' !== typeof y) {
+                throw new Error('Matcher.' + m +
+                                ': cannot specify y without x.');
+            }
+
+            // No match was ever requested.
+            if (null === this.x) {
+                this.x = 0;
+                this.y = 0;
+                return get ? this.resolvedMatches[0][0] : true;
+            }
+
+            x = this.x;
+            y = this.y + 1;
+            if (x <= nRows) {
+                nCols = this.resolvedMatches[x].length - 1;
+                if (y <= nCols) {
+                    if (get) {
+                        this.x = x;
+                        this.y = y;
+                        return this.resolvedMatches[x][y];
+                    }
+                    else {
+                        return true;
+                    }
+                }
+                else {
+                    x = x + 1;
+                    y = 0;
+                    if (get) {
+                        this.x = x;
+                        this.y = y;
+                    }
+                    if (x <= nRows) {
+                        return get ? this.resolvedMatches[x][y] : true;
+                    }
+                    else {
+                        return get? null : false;
+                    }
                 }
             }
-            // Permutate for next round.
-            ps.splice(1, 0, ps.pop());
+            else {
+                return get ? null : false;
+            }
         }
-        return matches;
+
+        // Validate x.
+        if ('number' !== typeof x) {
+            throw new TypeError('Matcher.' + m + ': x must be number ' +
+                                'or undefined. Found: ' + x);
+        }
+        else if (x < 0) {
+            throw new Error('Matcher.' + m + ': x cannot be negative. Found: ' +
+                            x);
+        }
+
+        if (x > nRows) {
+            if (get) {
+                this.x = x;
+                this.y = 0
+                return null;
+            }
+            else {
+                return false;
+            }
+        }
+
+        // Default y (whole row).
+        if ('undefined' === typeof y) {
+            if (get) {
+                this.x = x;
+                this.y = this.resolvedMatches[nRows].length;
+                // Return the whole row.
+                return this.resolvedMatches[x];
+            }
+            else {
+                return true;
+            }
+        }
+
+        // Validate y.
+        if ('number' !== typeof y) {
+            throw new TypeError('Matcher.getMatch: y must be number ' +
+                                'or undefined.');
+        }
+        else if (y < 0) {
+            throw new Error('Matcher.getMatch: y cannot be negative');
+        }
+
+        nCols = this.resolvedMatches[x].length - 1;
+
+        // Valid x,y match.
+        if (y <= nCols) {
+            if (get) {
+                this.x = x;
+                this.y = y;
+                return this.resolvedMatches[x][y];
+            }
+            else {
+                return true;
+            }
+        }
+        // Out of bound.
+        else {
+            if (get) {
+                this.x = x;
+                this.y = y;
+                return null;
+            }
+            else {
+                return false;
+            }
+        }
     }
-
-// TODO: support limited number of rounds.
-
-//     function pairMatcher(alg, n, options) {
-//         var ps, matches, bye;
-//         var i, lenI, j, lenJ;
-//         var roundsLimit, odd;
-//         var skipBye;
-//
-//         if ('number' === typeof n && n > 1) {
-//             ps = J.seq(0, (n-1));
-//         }
-//         else if (J.isArray(n) && n.length > 1) {
-//             ps = n.slice();
-//             n = ps.length;
-//         }
-//         else {
-//             throw new TypeError('pairMatcher.' + alg + ': n must be ' +
-//                                 'number > 1 or array of length > 1.');
-//         }
-//
-//         odd = (n % 2) === 1;
-//         roundsLimit = n-1 ; // (odd && !skipBye) ? n+1 : n;
-//
-//         options = options || {};
-//         if ('number' === typeof options.rounds) {
-//             if (options.rounds <= 0) {
-//                 throw new Error('pairMatcher.' + alg + ': options.rounds ' +
-//                                 'must be a positive number or undefined. ' +
-//                                 'Found: ' + options.rounds);
-//             }
-//             if (options.rounds > roundsLimit) {
-//                 throw new Error('pairMatcher.' + alg + ': ' +
-//                                 'options.rounds cannot be > than ' +
-//                                 roundsLimit + '. Found: ' + options.rounds);
-//             }
-//             roundsLimit = options.rounds;
-//         }
-//
-//         matches = new Array(roundsLimit);
-//
-//         bye = 'undefined' !== typeof options.bye ? options.bye : -1;
-//         skipBye = options.skipBye || false;
-//         if (n % 2 === 1) {
-//             // Make sure we have even numbers.
-//             ps.push(bye);
-//             n += 1;
-//         }
-//         i = -1, lenI = roundsLimit;
-//         for ( ; ++i < lenI ; ) {
-//             // Shuffle list of ids for random.
-//             if (alg === 'random') ps = J.shuffle(ps);
-//             // Create a new array for round i.
-//             matches[i] = [];
-//             j = -1, lenJ = n / 2;
-//             for ( ; ++j < lenJ ; ) {
-//                 if (!skipBye || (ps[j] !== bye && ps[n - 1 - j] !== bye)) {
-//                     // Insert match.
-//                     matches[i].push([ps[j], ps[n - 1 - j]]);
-//                 }
-//             }
-//             // Permutate for next round.
-//             ps.splice(1, 0, ps.pop());
-//         }
-//         return matches;
-//     }
-
-
-// TODO: random with replacement.
-
-//     /**
-//      * ### pairMatcher
-//      *
-//      * Creates tournament schedules for different algorithms
-//      *
-//      * @param {string} alg The name of the algorithm
-//      *
-//      * @param {number|array} n The number of participants (>1) or
-//      *   an array containing the ids of the participants
-//      * @param {object} options Optional. Configuration object
-//      *   contains the following options:
-//      *
-//      *   - rounds: the number
-//      *
-//      * @return {array} matches The matches according to the algorithm
-//      */
-//     function pairMatcherWithReplacement(n, options) {
-//         var matches, i, len;
-//
-//         if ('number' === typeof n && n > 1) {
-//             n = J.seq(0, (n-1));
-//         }
-//         else if (J.isArray(n) && n.length > 1) {
-//             n = n.slice();
-//         }
-//         else {
-//             throw new TypeError('pairMatcherWithReplacement: n must be ' +
-//                                 'number > 1 or array of length > 1.');
-//         }
-//
-//         i = -1, len = n.length;
-//         matches = new Array(len-1);
-//         for ( ; ++i < len ; ) {
-//             m
-//         }
-//
-//         return matches;
-//     }
 
     // ## Closure
 })(
@@ -21152,6 +21291,14 @@ if (!Array.prototype.indexOf) {
          * Reference to the last settings parsed
          */
         this.lastSettings = null;
+
+        /**
+         * ### MatcherManager.lastMatches
+         *
+         * Reference to the last matches
+         */
+        this.lastMatches = null;
+
     }
 
     /**
@@ -21181,6 +21328,8 @@ if (!Array.prototype.indexOf) {
      *
      * Parses a conf object and returns the desired matches of roles and players
      *
+     * Stores a reference of last matches.
+     *
      * Returned matches are in a format which is ready to be sent out as
      * remote options. That is:
      *
@@ -21199,8 +21348,11 @@ if (!Array.prototype.indexOf) {
      * @param {object} settings The settings for the requested map
      *
      * @return {array} Array of matches ready to be sent out as remote options.
+     *
+     * @see MatcherManager.lastMatches
      */
     MatcherManager.prototype.match = function(settings) {
+        var matches;
 
         // String is turned into object. Might still fail.
         if ('string' === typeof settings) settings = { match: settings };
@@ -21210,16 +21362,25 @@ if (!Array.prototype.indexOf) {
                                 'object or string. Found: ' + settings);
         }
 
-        if (settings.match === 'random_pairs') {
-            return randomPairs.call(this, settings);
+        if (settings.match === 'random_pairs' ||
+            (settings.match === 'round_robin' ||
+             settings.match === 'roundrobin')) {
+
+            matches = randomPairs.call(this, settings);
+        }
+        else {
+            throw new Error('MatcherManager.match: only "random_pairs" and ' +
+                            '"round_robin" algorithms supported. Found: ' +
+                            settings.match);
         }
 
-        if (settings.match === 'round_robin') {
+        if (!matches || !matches.length) {
+            throw new Error('MatcheManager.match: "' + settings.match +
+                            '" did not return matches.');
         }
 
-        throw new Error('MatcherManager.match: only "random_pairs" and ' +
-                        '"round_robin" algorithms supported. Found: ' +
-                        settings.match);
+        this.lastMatches = matches;
+        return matches;
     };
 
 
@@ -21238,8 +21399,13 @@ if (!Array.prototype.indexOf) {
      */
     function randomPairs(settings) {
         var r1, r2, r3;
-        var match, id1, id2, soloId;
+
+        var ii, i, len;
+        var roundMatches, nMatchesIdx, match, id1, id2, soloId;
         var matches, opts1, opts2, sayPartner, doRoles;
+
+        var game, n;
+        var nRounds;
 
         sayPartner = 'undefined' === typeof settings.sayPartner ?
             true : !!settings.sayPartner;
@@ -21249,7 +21415,6 @@ if (!Array.prototype.indexOf) {
         if (doRoles) {
 
             // Resets all roles.
-            // this.roler.rolesMap = {};
             this.roler.clear();
 
             this.roler.setRoles(settings.roles, 2); // TODO: pass the alg name?
@@ -21259,23 +21424,68 @@ if (!Array.prototype.indexOf) {
             r3 = settings.roles[2];
         }
 
-        // TODO: This part needs to change / be conditional, depending if
-        // we do roundrobin, or not.
-        // Here we do a new random pair match each time.
-        //////////////////////////////////////////////////////////////////
-        this.matcher.generateMatches('random', this.node.game.pl.size());
-        this.matcher.setIds(this.node.game.pl.id.getAllKeys());
+        game = this.node.game;
+        n = game.pl.size();
 
-        // Generates new random matches for this round.
-        this.matcher.match(true);
-        match = this.matcher.getMatch();
-        /////////////////////////////////////////////////////////////////
+        // Settings the number of rounds.
+        if ('undefined' !== typeof settings.rounds) {
+            nRounds = settings.rounds;
+        }
+        else {
+            nRounds = game.plot.getRound(game.getNextStep(), 'total');
+            if (nRounds > n-1) nRounds = n-1;
+        }
 
-        // TODO: determine size of array beforehand.
-        matches = [];
+        // Algorithm: random.
+        if (settings.match === 'random') {
+            this.matcher.generateMatches('random', n, {
+                rounds: nRounds,
+                // cycle: settings.cycle,
+                skipBye: settings.skipBye,
+                bye: settings.bye
+            });
+            this.matcher.setIds(game.pl.id.getAllKeys());
+            // Generates new random matches for this round.
+            this.matcher.match(true);
+        }
+
+        // Algorithm: round robin (but only if not already initialized
+        // or if reInit = true).
+        else {
+            if (!this.matcher.matches || settings.reInit) {
+                // Make a manual copy of settings object, and generate matches.
+                this.matcher.generateMatches('roundrobin', n, {
+                    rounds: nRounds,
+                    cycle: settings.cycle,
+                    skipBye: settings.skipBye,
+                    bye: settings.bye
+                });
+                this.matcher.setIds(game.pl.id.getAllKeys());
+                // Generates matches;
+                this.matcher.match(true);
+            }
+            else if (!this.matcher.hasNext()) {
+                this.matcher.init( { x: null, y: null });
+            }
+        }
+
+        // Get all the matches for round x, and increments x.
+        nMatchesIdx = 'number' === typeof this.matcher.x ?
+            (this.matcher.x + 1) : 0;
+        roundMatches = this.matcher.getMatch(nMatchesIdx);
+
+        len = roundMatches.length;
+
+        // Contains one remoteOptions object per player.
+        matches = ((n % 2) === 0) ?
+            new Array((len*2)) :
+            (settings.skipBye ? new Array((len*2)-2) : new Array((len*2)-1));
 
         // While we have matches, send them to clients.
-        while (match) {
+        ii = i = -1;
+        for ( ; ++i < len ; ) {
+            ii++;
+            match = roundMatches[i];
             id1 = match[0];
             id2 = match[1];
             if (id1 !== 'bot' && id2 !== 'bot') {
@@ -21302,8 +21512,9 @@ if (!Array.prototype.indexOf) {
                 }
 
                 // Add options to array.
-                matches.push(opts1);
-                matches.push(opts2);
+                matches[ii] = opts1;
+                ii++;
+                matches[ii] = opts2;
             }
             else if (doRoles) {
                 if (!r3) {
@@ -21313,13 +21524,12 @@ if (!Array.prototype.indexOf) {
                 soloId = id1 === 'bot' ? id2 : id1;
                 this.roler.map[soloId] = r3;
 
-                matches.push({
+                matches[ii] = {
                     id: soloId,
                     options: { role: r3 }
-                });
+                };
 
             }
-            match = this.matcher.getMatch();
         }
 
         // Store reference to last valid settings.
@@ -23120,6 +23330,27 @@ if (!Array.prototype.indexOf) {
         gs = this.getCurrentGameStage();
         if (arguments.length < 2) return this.plot.getProperty(gs, property);
         return this.plot.getProperty(gs, property, notFound);
+    };
+
+    /**
+     * ### Game.getRound
+     *
+     * Returns the current/remaining/past/total round number in current stage
+     *
+     * @param {string} mod Optional. Modifies the return value.
+     *
+     *   - 'current': current round number (default)
+     *   - 'total': total number of rounds
+     *   - 'remaining': number of rounds remaining (excluding current round)
+     *   - 'past': number of rounds already past  (excluding current round)
+     *
+     * @return {number|null} The requested information, or null if
+     *   the number of rounds is not known (e.g. if the stage is a loop)
+     *
+     * @see GamePlot.getRound
+     */
+    Game.prototype.getRound = function(mod) {
+        return this.plot.getRound(this.getCurrentGameStage(), mod);
     };
 
     /**
@@ -25383,20 +25614,20 @@ if (!Array.prototype.indexOf) {
         /**
          * ### Matcher.x
          *
-         * The current round returned by Matcher.getMatch
+         * The row-index of the last returned match by Matcher.getMatch
          *
          * @see Matcher.getMatch
          */
-        this.x = 0;
+        this.x = null;
 
         /**
          * ### Matcher.y
          *
-         * The next match in current round returned by Matcher.getMatch
+         * The column-index of the last returned match by Matcher.getMatch
          *
          * @see Matcher.getMatch
          */
-        this.y = 0;
+        this.y = null;
 
         /**
          * ### Matcher.matches
@@ -25532,17 +25763,31 @@ if (!Array.prototype.indexOf) {
         if (options.ids) this.setIds(options.ids);
         if (options.bye) this.bye = options.bye;
         if (options.missingId) this.missingId = options.missingId;
-        if ('number' === typeof options.x) {
+
+        if (null === options.x) this.x = null;
+        else if ('number' === typeof options.x) {
             if (options.x < 0) {
-                throw new Error('Matcher.init: options.x cannot be negative.');
+                throw new Error('Matcher.init: options.x cannot be negative.' +
+                                'Found: ' + options.x);
             }
             this.x = options.x;
         }
-        if ('number' === typeof options.y) {
+        else if (options.x) {
+            throw new TypeError('Matcher.init: options.x must be number, ' +
+                                'null or undefined. Found: ' + options.x);
+        }
+
+        if (null === options.y) this.y = null;
+        else if ('number' === typeof options.y) {
             if (options.y < 0) {
-                throw new Error('Matcher.init: options.y cannot be negative.');
+                throw new Error('Matcher.init: options.y cannot be negative.' +
+                                'Found: ' + options.y);
             }
             this.y = options.y;
+        }
+        else if (options.y) {
+            throw new TypeError('Matcher.init: options.y must be number, ' +
+                                'null or undefined. Found: ' + options.y);
         }
     };
 
@@ -25565,15 +25810,7 @@ if (!Array.prototype.indexOf) {
         }
         alg = alg.toLowerCase();
         if (alg === 'roundrobin' || alg === 'random') {
-// TODO: check.
-//             if (alg === 'random' &&
-//                 arguments[2] && arguments[2].replace === true) {
-//
-//                 matches = randomPairs(arguments[1], arguments[2]);
-//             }
-//             else {
-                matches = pairMatcher(alg, arguments[1], arguments[2]);
-//             }
+            matches = pairMatcher(alg, arguments[1], arguments[2]);
         }
         else {
             throw new Error('Matcher.generateMatches: unknown algorithm: ' +
@@ -25735,8 +25972,28 @@ if (!Array.prototype.indexOf) {
         this.resolvedMatches = matched;
         this.resolvedMatchesById = matchedId;
         // Set getMatch indexes to 0.
-        this.x = 0;
-        this.y = 0;
+        this.x = null;
+        this.y = null;
+    };
+
+    /**
+     * ### Matcher.hasNext
+     *
+     * Returns TRUE if there is next match to be returned by getMatch
+     *
+     * @param {number} x Optional. The x-th round. Default: Matcher.x
+     * @param {number} y Optional. The y-th match within the x-th round
+     *    Default: Matcher.y
+     *
+     * @return {bolean} TRUE, if there exists a next match
+     *
+     * @see Matcher.x
+     * @see Matcher.y
+     * @see Matcher.resolvedMatches
+     * @see hasOrGetNext
+     */
+    Matcher.prototype.hasNext = function(x, y) {
+        return hasOrGetNext.call(this, 'hasNext', false, x, y);
     };
 
     /**
@@ -25744,69 +26001,19 @@ if (!Array.prototype.indexOf) {
      *
      * Returns the next match, or the specified match
      *
-     * @param {number} x Optional. The x-th round. Default: the round
+     * @param {number} x Optional. The x-th round. Default: Matcher.x
      * @param {number} y Optional. The y-th match within the x-th round
+     *    Default: Matcher.y
      *
      * @return {array} The next or requested match, or null if not found
      *
      * @see Matcher.x
      * @see Matcher.y
      * @see Matcher.resolvedMatches
+     * @see hasOrGetNext
      */
     Matcher.prototype.getMatch = function(x, y) {
-        var nRows, nCols;
-        // Check both x and y.
-        if ('undefined' === typeof x && 'undefined' !== typeof y) {
-            throw new Error('Matcher.getMatch: cannot specify y without x.');
-        }
-        // Check if there is any match yet.
-        if (!J.isArray(this.resolvedMatches) || !this.resolvedMatches.length) {
-            throw new Error('Matcher.getMatch: no resolved matches found.');
-        }
-
-        // Check x.
-        if ('undefined' === typeof x) {
-            x = this.x;
-        }
-        else if ('number' !== typeof x) {
-            throw new TypeError('Matcher.getMatch: x must be number ' +
-                                'or undefined.');
-        }
-        else if (x < 0) {
-            throw new Error('Matcher.getMatch: x cannot be negative');
-        }
-        else if ('undefined' === typeof y) {
-            // Return the whole row.
-            return this.resolvedMatches[x];
-        }
-
-        nRows = this.matches.length - 1;
-        if (x > nRows) return null;
-
-        nCols = this.matches[x].length - 1;
-
-        // Check y.
-        if ('undefined' === typeof y) {
-            y = this.y;
-            if (y < nCols) {
-                this.y++;
-            }
-            else {
-                this.x++;
-                this.y = 0;
-            }
-        }
-        else if ('number' !== typeof y) {
-            throw new TypeError('Matcher.getMatch: y must be number ' +
-                                'or undefined.');
-        }
-        else if (y < 0) {
-            throw new Error('Matcher.getMatch: y cannot be negative');
-        }
-        else if (y > nCols) {
-            return null;
-        }
-        return this.resolvedMatches[x][y];
+        return hasOrGetNext.call(this, 'getMatch', true, x, y);
     };
 
     /**
@@ -25831,6 +26038,11 @@ if (!Array.prototype.indexOf) {
 
         // Check x.
         if ('undefined' === typeof x) {
+
+            if (this.x === null) {
+                this.x = 0;
+                this.y = this.resolvedMatches[0].length - 1;
+            }
             x = this.x;
             this.x++;
         }
@@ -25840,6 +26052,11 @@ if (!Array.prototype.indexOf) {
         }
         else if (x < 0) {
             throw new Error('Matcher.getMatch: x cannot be negative');
+        }
+        else {
+            this.x = x;
+            this.y = this.resolvedMatches[x] ?
+                this.resolvedMatches[x].length - 1 : 0;
         }
 
         nRows = this.matches.length - 1;
@@ -25854,8 +26071,8 @@ if (!Array.prototype.indexOf) {
      * Clears the matcher as it would be a newly created object
      */
     Matcher.prototype.clear = function() {
-        this.x = 0;
-        this.y = 0;
+        this.x = null;
+        this.y = null;
         this.matches = null;
         this.resolvedMatches = null;
         this.resolvedMatchesById = null;
@@ -25928,7 +26145,6 @@ if (!Array.prototype.indexOf) {
      * Creates tournament schedules for different algorithms
      *
      * @param {string} alg The name of the algorithm
-     *
      * @param {number|array} n The number of participants (>1) or
      *   an array containing the ids of the participants
      * @param {object} options Optional. Configuration object
@@ -25941,157 +26157,267 @@ if (!Array.prototype.indexOf) {
      *
      * @return {array} matches The matches according to the algorithm
      */
-    function pairMatcher(alg, n, options) {
-        var ps, matches, bye;
-        var i, lenI, j, lenJ;
-        var skipBye;
+     function pairMatcher(alg, n, options) {
+         var ps, matches, bye;
+         var i, lenI, j, lenJ, jj;
+         var id1, id2;
+         var roundsLimit, cycle, cycleI, skipBye;
 
-        if ('number' === typeof n && n > 1) {
-            ps = J.seq(0, (n-1));
+         if ('number' === typeof n && n > 1) {
+             ps = J.seq(0, (n-1));
+         }
+         else if (J.isArray(n) && n.length > 1) {
+             ps = n.slice();
+             n = ps.length;
+         }
+         else {
+             throw new TypeError('pairMatcher.' + alg + ': n must be ' +
+                                 'number > 1 or array of length > 1.');
+         }
+         options = options || {};
+
+         bye = 'undefined' !== typeof options.bye ? options.bye : -1;
+         skipBye = options.skipBye || false;
+
+         // Make sure we have even numbers.
+         if ((n % 2) === 1) {
+             ps.push(bye);
+             n += 1;
+         }
+
+         // Limit rounds.
+         if ('number' === typeof options.rounds) {
+             if (options.rounds <= 0) {
+                 throw new Error('pairMatcher.' + alg + ': options.rounds ' +
+                                 'must be a positive number or undefined. ' +
+                                 'Found: ' + options.rounds);
+             }
+             if (options.rounds > (n-1)) {
+                 throw new Error('pairMatcher.' + alg + ': ' +
+                                 'options.rounds cannot be greater than ' +
+                                 (n-1) + '. Found: ' + options.rounds);
+             }
+             // Here roundsLimit does not depend on n (must be smaller).
+             roundsLimit = options.rounds;
+         }
+         else {
+             roundsLimit = n-1;
+         }
+
+         if ('undefined' !== typeof options.cycle) {
+             cycle = options.cycle;
+             if (cycle !== 'mirror_invert' && cycle !== 'mirror' &&
+                 cycle !== 'repeat_invert' && cycle !== 'repeat') {
+
+                 throw new Error('pairMatcher.' + alg + ': options.cycle ' +
+                                 'must be equal to "mirror"/"mirror_invert", ' +
+                                 '"repeat"/"repeat_invert" or undefined . ' +
+                                 'Found: ' + options.cycle);
+             }
+
+             matches = new Array(roundsLimit*2);
+         }
+         else {
+             matches = new Array(roundsLimit);
+         }
+
+         i = -1, lenI = roundsLimit;
+         for ( ; ++i < lenI ; ) {
+             // Shuffle list of ids for random.
+             if (alg === 'random') ps = J.shuffle(ps);
+             // Create a new array for round i.
+             lenJ = n / 2;
+             matches[i] = skipBye ? new Array(lenJ-1) : new Array(lenJ);
+             // Check if new need to cycle.
+             if (cycle) {
+                 if (cycle === 'mirror' || cycle === 'mirror_invert') {
+                     cycleI = (roundsLimit*2) -i -1;
+                 }
+                 else {
+                     cycleI = i+roundsLimit;
+                 }
+                 matches[cycleI] = skipBye ?
+                     new Array(lenJ-1) : new Array(lenJ);
+             }
+             // Counter jj is updated only if not skipBye,
+             // otherwise we create holes in the matches array.
+             jj = j = -1;
+             for ( ; ++j < lenJ ; ) {
+                 id1 = ps[j];
+                 id2 = ps[n - 1 - j];
+                 if (!skipBye || (id1 !== bye && id2 !== bye)) {
+                     jj++;
+                     // Insert match.
+                     matches[i][jj] = [ id1, id2 ];
+                     // Insert cycle match (if any).
+                     if (cycle === 'repeat') {
+                         matches[cycleI][jj] = [ id1, id2 ];
+                     }
+                     else if (cycle === 'repeat_invert') {
+                         matches[cycleI][jj] = [ id2, id1 ];
+                     }
+                     else if (cycle === 'mirror') {
+                         matches[cycleI][jj] = [ id1, id2 ];
+                     }
+                     else if (cycle === 'mirror_invert') {
+                         matches[cycleI][jj] = [ id2, id1 ];
+                     }
+                 }
+             }
+             // Permutate for next round.
+             ps.splice(1, 0, ps.pop());
+         }
+         return matches;
+     }
+
+
+    /**
+     * ### hasOrGetNext
+     *
+     * Returns TRUE or the match if there is next match
+     *
+     * If in `get` mode it also updates the x and y indexes.
+     *
+     * @param {string} m The name of the method invoking it
+     * @param {boolean} get TRUE, if the method should return the match
+     * @param {number} x Optional. The x-th round. Default: Matcher.x
+     * @param {number} y Optional. The y-th match within the x-th round
+     *    Default: Matcher.y
+     *
+     * @return {boolean|array|null} TRUE or the next match (if found),
+     *   FALSE or null (if not found)
+     *
+     * @see Matcher.x
+     * @see Matcher.y
+     * @see Matcher.resolvedMatches
+     */
+    function hasOrGetNext(m, get, x, y) {
+        var match, nRows, nCols;
+
+        // Check if there is any match yet.
+        if (!J.isArray(this.resolvedMatches) || !this.resolvedMatches.length) {
+            throw new Error('Matcher.' + m + ': no resolved matches found.');
         }
-        else if (J.isArray(n) && n.length > 1) {
-            ps = n.slice();
-            n = ps.length;
-        }
-        else {
-            throw new TypeError('pairMatcher.' + alg + ': n must be ' +
-                                'number > 1 or array of length > 1.');
-        }
-        options = options || {};
-        matches = new Array(n-1);
-        bye = 'undefined' !== typeof options.bye ? options.bye : -1;
-        skipBye = options.skipBye || false;
-        if (n % 2 === 1) {
-            // Make sure we have even numbers.
-            ps.push(bye);
-            n += 1;
-        }
-        i = -1, lenI = n-1;
-        for ( ; ++i < lenI ; ) {
-            // Shuffle list of ids for random.
-            if (alg === 'random') ps = J.shuffle(ps);
-            // Create a new array for round i.
-            matches[i] = [];
-            j = -1, lenJ = n / 2;
-            for ( ; ++j < lenJ ; ) {
-                if (!skipBye || (ps[j] !== bye && ps[n - 1 - j] !== bye)) {
-                    // Insert match.
-                    matches[i].push([ps[j], ps[n - 1 - j]]);
+
+        nRows = this.resolvedMatches.length - 1;
+
+        // No x, No y get the next match.
+        if ('undefined' === typeof x) {
+            // Check both x and y.
+            if ('undefined' !== typeof y) {
+                throw new Error('Matcher.' + m +
+                                ': cannot specify y without x.');
+            }
+
+            // No match was ever requested.
+            if (null === this.x) {
+                this.x = 0;
+                this.y = 0;
+                return get ? this.resolvedMatches[0][0] : true;
+            }
+
+            x = this.x;
+            y = this.y + 1;
+            if (x <= nRows) {
+                nCols = this.resolvedMatches[x].length - 1;
+                if (y <= nCols) {
+                    if (get) {
+                        this.x = x;
+                        this.y = y;
+                        return this.resolvedMatches[x][y];
+                    }
+                    else {
+                        return true;
+                    }
+                }
+                else {
+                    x = x + 1;
+                    y = 0;
+                    if (get) {
+                        this.x = x;
+                        this.y = y;
+                    }
+                    if (x <= nRows) {
+                        return get ? this.resolvedMatches[x][y] : true;
+                    }
+                    else {
+                        return get? null : false;
+                    }
                 }
             }
-            // Permutate for next round.
-            ps.splice(1, 0, ps.pop());
+            else {
+                return get ? null : false;
+            }
         }
-        return matches;
+
+        // Validate x.
+        if ('number' !== typeof x) {
+            throw new TypeError('Matcher.' + m + ': x must be number ' +
+                                'or undefined. Found: ' + x);
+        }
+        else if (x < 0) {
+            throw new Error('Matcher.' + m + ': x cannot be negative. Found: ' +
+                            x);
+        }
+
+        if (x > nRows) {
+            if (get) {
+                this.x = x;
+                this.y = 0
+                return null;
+            }
+            else {
+                return false;
+            }
+        }
+
+        // Default y (whole row).
+        if ('undefined' === typeof y) {
+            if (get) {
+                this.x = x;
+                this.y = this.resolvedMatches[nRows].length;
+                // Return the whole row.
+                return this.resolvedMatches[x];
+            }
+            else {
+                return true;
+            }
+        }
+
+        // Validate y.
+        if ('number' !== typeof y) {
+            throw new TypeError('Matcher.getMatch: y must be number ' +
+                                'or undefined.');
+        }
+        else if (y < 0) {
+            throw new Error('Matcher.getMatch: y cannot be negative');
+        }
+
+        nCols = this.resolvedMatches[x].length - 1;
+
+        // Valid x,y match.
+        if (y <= nCols) {
+            if (get) {
+                this.x = x;
+                this.y = y;
+                return this.resolvedMatches[x][y];
+            }
+            else {
+                return true;
+            }
+        }
+        // Out of bound.
+        else {
+            if (get) {
+                this.x = x;
+                this.y = y;
+                return null;
+            }
+            else {
+                return false;
+            }
+        }
     }
-
-// TODO: support limited number of rounds.
-
-//     function pairMatcher(alg, n, options) {
-//         var ps, matches, bye;
-//         var i, lenI, j, lenJ;
-//         var roundsLimit, odd;
-//         var skipBye;
-//
-//         if ('number' === typeof n && n > 1) {
-//             ps = J.seq(0, (n-1));
-//         }
-//         else if (J.isArray(n) && n.length > 1) {
-//             ps = n.slice();
-//             n = ps.length;
-//         }
-//         else {
-//             throw new TypeError('pairMatcher.' + alg + ': n must be ' +
-//                                 'number > 1 or array of length > 1.');
-//         }
-//
-//         odd = (n % 2) === 1;
-//         roundsLimit = n-1 ; // (odd && !skipBye) ? n+1 : n;
-//
-//         options = options || {};
-//         if ('number' === typeof options.rounds) {
-//             if (options.rounds <= 0) {
-//                 throw new Error('pairMatcher.' + alg + ': options.rounds ' +
-//                                 'must be a positive number or undefined. ' +
-//                                 'Found: ' + options.rounds);
-//             }
-//             if (options.rounds > roundsLimit) {
-//                 throw new Error('pairMatcher.' + alg + ': ' +
-//                                 'options.rounds cannot be > than ' +
-//                                 roundsLimit + '. Found: ' + options.rounds);
-//             }
-//             roundsLimit = options.rounds;
-//         }
-//
-//         matches = new Array(roundsLimit);
-//
-//         bye = 'undefined' !== typeof options.bye ? options.bye : -1;
-//         skipBye = options.skipBye || false;
-//         if (n % 2 === 1) {
-//             // Make sure we have even numbers.
-//             ps.push(bye);
-//             n += 1;
-//         }
-//         i = -1, lenI = roundsLimit;
-//         for ( ; ++i < lenI ; ) {
-//             // Shuffle list of ids for random.
-//             if (alg === 'random') ps = J.shuffle(ps);
-//             // Create a new array for round i.
-//             matches[i] = [];
-//             j = -1, lenJ = n / 2;
-//             for ( ; ++j < lenJ ; ) {
-//                 if (!skipBye || (ps[j] !== bye && ps[n - 1 - j] !== bye)) {
-//                     // Insert match.
-//                     matches[i].push([ps[j], ps[n - 1 - j]]);
-//                 }
-//             }
-//             // Permutate for next round.
-//             ps.splice(1, 0, ps.pop());
-//         }
-//         return matches;
-//     }
-
-
-// TODO: random with replacement.
-
-//     /**
-//      * ### pairMatcher
-//      *
-//      * Creates tournament schedules for different algorithms
-//      *
-//      * @param {string} alg The name of the algorithm
-//      *
-//      * @param {number|array} n The number of participants (>1) or
-//      *   an array containing the ids of the participants
-//      * @param {object} options Optional. Configuration object
-//      *   contains the following options:
-//      *
-//      *   - rounds: the number
-//      *
-//      * @return {array} matches The matches according to the algorithm
-//      */
-//     function pairMatcherWithReplacement(n, options) {
-//         var matches, i, len;
-//
-//         if ('number' === typeof n && n > 1) {
-//             n = J.seq(0, (n-1));
-//         }
-//         else if (J.isArray(n) && n.length > 1) {
-//             n = n.slice();
-//         }
-//         else {
-//             throw new TypeError('pairMatcherWithReplacement: n must be ' +
-//                                 'number > 1 or array of length > 1.');
-//         }
-//
-//         i = -1, len = n.length;
-//         matches = new Array(len-1);
-//         for ( ; ++i < len ; ) {
-//             m
-//         }
-//
-//         return matches;
-//     }
 
     // ## Closure
 })(
@@ -26367,6 +26693,18 @@ if (!Array.prototype.indexOf) {
          * @api private
          */
         this._setup = {};
+
+        /**
+         * ### node._env
+         *
+         * Object containing registered environmental variables
+         *
+         * @see NodeGameClient.setup.env
+         * @see NodeGameClient.env
+         *
+         * @api private
+         */
+        this._env = {};
 
         // ## Configuration.
 
@@ -27647,7 +27985,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Extra
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2016 Stefano Balietti
  * MIT Licensed
  *
  * `nodeGame` extra functions
@@ -27657,25 +27995,29 @@ if (!Array.prototype.indexOf) {
     "use strict";
 
     var NGC = parent.NodeGameClient;
+    var J = parent.JSUS;
 
     /**
      * ### node.env
      *
-     * Executes a block of code conditionally to nodeGame environment variables
+     * Fetches an environment variables, and optionally executes a callback
      *
      * Notice: the value of the requested variable is returned after
      * the execution of the callback, that could modify it.
      *
-     * @param {string} env The name of the environment
-     * @param {function} func Optional The callback to execute conditionally
+     * @param {string} env The name of the environmental variable
+     * @param {function} func Optional A callback to execute if the current
+     *   value of env is truthy.
      * @param {object} ctx Optional. The context of execution
      * @param {array} params Optional. An array of parameters for the callback
+     *
+     * @return {mixed} The current value of the requested variable
      *
      * @see node.setup.env
      * @see node.clearEnv
      */
     NGC.prototype.env = function(env, func, ctx, params) {
-        var envValue;
+        var envValue, args;
         if ('string' !== typeof env) {
             throw new TypeError('node.env: env must be string.');
         }
@@ -27686,18 +28028,21 @@ if (!Array.prototype.indexOf) {
         if (ctx && 'object' !== typeof ctx) {
             throw new TypeError('node.env: ctx must be object or undefined.');
         }
-        if (params && 'object' !== typeof params) {
-            throw new TypeError('node.env: params must be array-like ' +
-                                'or undefined.');
+
+        envValue = this._env[env];
+        args = [ envValue ];
+
+        if (params) {
+            if (!J.isArray(params)) {
+                throw new TypeError('node.env: params must be array ' +
+                                    'or undefined. Found: ' + params);
+            }
+            params = params.concat(args);
         }
 
-        envValue = this.env[env];
         // Executes the function conditionally to _envValue_.
-        if (func && envValue) {
-            ctx = ctx || this;
-            params = params || [];
-            func.apply(ctx, params);
-        }
+        if (func && envValue) func.apply((ctx || this), args);
+
         // Returns the value of the requested _env_ variable in any case.
         return envValue;
     };
@@ -27711,14 +28056,8 @@ if (!Array.prototype.indexOf) {
      * @see node.setup.env
      */
     NGC.prototype.clearEnv = function() {
-        for (var i in this.env) {
-            if (this.env.hasOwnProperty(i)) {
-                delete this.env[i];
-            }
-        }
+        this._env = {};
     };
-
-
 
 })(
     'undefined' != typeof node ? node : module.exports,
@@ -28589,7 +28928,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # setups
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2016 Stefano Balietti
  * MIT Licensed
  *
  * Listeners for incoming messages
@@ -28770,7 +29109,7 @@ if (!Array.prototype.indexOf) {
         /**
          * ### setup("env")
          *
-         * Defines global variables to be stored in `node.env[myvar]`
+         * Setups environmental variables to be accessible in `node.env`
          */
         this.registerSetup('env', function(conf) {
             var i;
@@ -28781,7 +29120,7 @@ if (!Array.prototype.indexOf) {
             }
             for (i in conf) {
                 if (conf.hasOwnProperty(i)) {
-                    this.env[i] = conf[i];
+                    this._env[i] = conf[i];
                 }
             }
             return conf;
@@ -36183,8 +36522,10 @@ if (!Array.prototype.indexOf) {
         // The HTMLElement canvas where the faces are created
         this.canvas = null;
 
-        // ### ChernoffFaces.effort
-        // Records all the changes (if options.trackChanges is TRUE).
+        // ### ChernoffFaces.changes
+        // History all the changes (if options.trackChanges is TRUE).
+        // Each time the `draw` method is called, the input parameters
+        // and a time measurement will be added here.
         this.changes = [];
 
         // ### ChernoffFaces.onChange
@@ -44919,7 +45260,7 @@ if (!Array.prototype.indexOf) {
      * @see VisualRound.updateDisplay
      */
     VisualRound.prototype.updateInformation = function() {
-        var stage;
+        var stage, len;
 
         // TODO CHECK: was:
         // stage = this.gamePlot.getStage(node.player.stage);
@@ -44957,7 +45298,11 @@ if (!Array.prototype.indexOf) {
             this.curRound = stage.round;
             this.totRound = this.stager.sequence[this.curStage -1].num || 1;
             this.curStage -= this.stageOffset;
-            this.totStage = this.stager.sequence.length - this.totStageOffset;
+            len = this.stager.sequence.length;
+            this.totStage = len - this.totStageOffset;
+            if (this.stager.sequence[(len-1)].type === 'gameover') {
+                this.totStage--;
+            }
         }
         // Update display.
         this.updateDisplay();
