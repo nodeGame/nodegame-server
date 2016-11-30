@@ -1,5 +1,8 @@
 # nodegame-server change log
 
+# current
+- Removed x-powered by tag.
+
 # 3.2.3
 - Improved communication with monitor.
 
