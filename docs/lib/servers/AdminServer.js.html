@@ -1622,14 +1622,14 @@ the client-id of the recipient.</p>
     <span class="kd">var</span> <span class="nx">admins</span><span class="p">,</span> <span class="nx">oldAdmins</span><span class="p">;</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="nx">J</span><span class="p">.</span><span class="nx">isEmpty</span><span class="p">(</span><span class="nx">msg</span><span class="p">.</span><span class="nx">text</span><span class="p">))</span> <span class="p">{</span>
-        <span class="nx">sys</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;AdminServer.on.get.DATA: discarded invalid msg without &#39;</span> <span class="o">+</span>
-                <span class="s1">&#39;label.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;AdminServer.on.get.DATA: discarded invalid &#39;</span> <span class="o">+</span>
+                           <span class="s1">&#39;msg without label.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
         <span class="k">return</span><span class="p">;</span>
     <span class="p">}</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="nx">msg</span><span class="p">.</span><span class="nx">text</span><span class="p">.</span><span class="nx">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nx">sys</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;AdminServer.on.get.DATA: discarded invalid msg with &quot;.&quot; &#39;</span> <span class="o">+</span>
-                <span class="s1">&#39;character in the label.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">..</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;AdminServer.on.get.DATA: discarded invalid &#39;</span> <span class="o">+</span>
+                            <span class="s1">&#39;msg with &quot;.&quot; character in the label.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
         <span class="k">return</span><span class="p">;</span>
     <span class="p">}</span>
 
