@@ -410,6 +410,21 @@ If they change the internal structure it needs to be adapted.</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-14" id="section-14">&#182;</a>
 </div>
+<p>TODO: check the implications of allowing setting ID here.
+var clientId;
+clientId = socket.handshake.query.id;</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-15" id="section-15">&#182;</a>
+</div>
 <p>Cleanup clientType (sometimes browsers add quotes).</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
@@ -430,7 +445,7 @@ If they change the internal structure it needs to be adapted.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-15" id="section-15">&#182;</a>
+  <a class="pilcrow" href="#section-16" id="section-16">&#182;</a>
 </div>
 <p>Add information about the IP in the headers.
 This might change in different versions of Socket.IO
@@ -496,7 +511,7 @@ socket.handshake.headers.address = socket.handshake.address;</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-17" id="section-17">&#182;</a>
+  <a class="pilcrow" href="#section-18" id="section-18">&#182;</a>
 </div>
 <p>Remove socket name from sid (2 chars + channel name).</p>
         </td>
@@ -510,7 +525,7 @@ socket.handshake.headers.address = socket.handshake.address;</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-18" id="section-18">&#182;</a>
+  <a class="pilcrow" href="#section-19" id="section-19">&#182;</a>
 </div>
 <p>Ste: was.
 socket = this.sio.sockets.sockets[strippedSid];
@@ -535,7 +550,7 @@ socket = this.sio.sockets.connected[strippedSid]; // full strip.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-19" id="section-19">&#182;</a>
+  <a class="pilcrow" href="#section-20" id="section-20">&#182;</a>
 </div>
 <p>This is already triggered by the method above.
 this.gameServer.onDisconnect(sid, socket);</p>
@@ -619,7 +634,7 @@ it is not used to locate the client.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-21" id="section-21">&#182;</a>
+  <a class="pilcrow" href="#section-22" id="section-22">&#182;</a>
 </div>
 <p>Cleanup msg, if necessary.</p>
         </td>
@@ -649,7 +664,7 @@ it is not used to locate the client.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-22" id="section-22">&#182;</a>
+  <a class="pilcrow" href="#section-23" id="section-23">&#182;</a>
 </div>
 <p>Send to ALL.</p>
         </td>
@@ -672,7 +687,7 @@ it is not used to locate the client.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-23" id="section-23">&#182;</a>
+  <a class="pilcrow" href="#section-24" id="section-24">&#182;</a>
 </div>
 <p>Either send to a specific client(1), or to ALL but a specific client(2).</p>
         </td>
@@ -685,7 +700,7 @@ it is not used to locate the client.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-24" id="section-24">&#182;</a>
+  <a class="pilcrow" href="#section-25" id="section-25">&#182;</a>
 </div>
 <p>Remove socket name from sid (exactly 2 characters, see parseSid).</p>
         </td>
@@ -699,7 +714,7 @@ it is not used to locate the client.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-25" id="section-25">&#182;</a>
+  <a class="pilcrow" href="#section-26" id="section-26">&#182;</a>
 </div>
 <p>(1)</p>
         </td>
@@ -713,7 +728,7 @@ it is not used to locate the client.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-26" id="section-26">&#182;</a>
+  <a class="pilcrow" href="#section-27" id="section-27">&#182;</a>
 </div>
 <p>Ste: Was:
 client = this.sioChannel.sockets[strippedSid];</p>
@@ -727,7 +742,7 @@ client = this.sioChannel.sockets[strippedSid];</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-27" id="section-27">&#182;</a>
+  <a class="pilcrow" href="#section-28" id="section-28">&#182;</a>
 </div>
 <p>Ste: Now:</p>
         </td>
@@ -760,7 +775,7 @@ client = this.sioChannel.sockets[strippedSid];</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-28" id="section-28">&#182;</a>
+  <a class="pilcrow" href="#section-29" id="section-29">&#182;</a>
 </div>
 <p>(2)</p>
         </td>

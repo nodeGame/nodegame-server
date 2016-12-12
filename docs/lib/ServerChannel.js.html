@@ -2792,6 +2792,7 @@ Optional. Configuration object to be passed to
     <span class="kd">var</span> <span class="nx">that</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">clientType</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">room</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">id</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">node</span><span class="p">;</span>
 
     <span class="nx">that</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
@@ -2863,6 +2864,17 @@ Optional. Configuration object to be passed to
                         <span class="nx">clientType</span><span class="p">);</span>
     <span class="p">}</span>
 
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">options</span><span class="p">.</span><span class="nx">id</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">options</span><span class="p">.</span><span class="nx">id</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerChannel.connectBot: options.id &#39;</span> <span class="o">+</span>
+                                <span class="s1">&#39;must be string or undefined. Found: &#39;</span> <span class="o">+</span>
+                                <span class="nx">options</span><span class="p">.</span><span class="nx">id</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="k">else</span> <span class="p">{</span>
+            <span class="nx">id</span> <span class="o">=</span> <span class="nx">options</span><span class="p">.</span><span class="nx">id</span><span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
 
 </pre></div>
         </td>
@@ -2932,7 +2944,8 @@ calling GameRoom.setupGame before the node object is stored.</p>
 
     <span class="nx">node</span><span class="p">.</span><span class="nx">connect</span><span class="p">(</span><span class="kc">null</span><span class="p">,</span> <span class="p">{</span>
         <span class="nx">startingRoom</span><span class="o">:</span> <span class="nx">room</span><span class="p">.</span><span class="nx">name</span><span class="p">,</span>
-        <span class="nx">clientType</span><span class="o">:</span>   <span class="nx">clientType</span>
+        <span class="nx">clientType</span><span class="o">:</span>   <span class="nx">clientType</span><span class="p">,</span>
+        <span class="nx">id</span><span class="o">:</span> <span class="nx">id</span>
     <span class="p">});</span>
 
     <span class="k">return</span> <span class="nx">node</span><span class="p">;</span>

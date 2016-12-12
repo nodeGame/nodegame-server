@@ -1522,7 +1522,7 @@ because .stage and .stageLevel could be overwritten.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">GameServer</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">onConnect</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">socketId</span><span class="p">,</span> <span class="nx">socketObj</span><span class="p">,</span> <span class="nx">handshake</span><span class="p">,</span>
-                                          <span class="nx">clientType</span><span class="p">,</span> <span class="nx">startingRoom</span><span class="p">)</span> <span class="p">{</span>
+                                          <span class="nx">clientType</span><span class="p">,</span> <span class="nx">startingRoom</span><span class="p">,</span> <span class="nx">clientId</span><span class="p">)</span> <span class="p">{</span>
 
     <span class="kd">var</span> <span class="nx">decoded</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">clientId</span><span class="p">,</span> <span class="nx">clientObj</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">cookies</span><span class="p">;</span>
@@ -1572,7 +1572,7 @@ because .stage and .stageLevel could be overwritten.</p>
     <span class="k">if</span> <span class="p">(</span><span class="nx">decoded</span><span class="p">.</span><span class="nx">session</span> <span class="o">!==</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">session</span><span class="p">)</span> <span class="p">{</span>
         <span class="nx">invalidSessionCookie</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
     <span class="p">}</span>
-    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">decoded</span><span class="p">.</span><span class="nx">clientId</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">clientType</span> <span class="o">&amp;&amp;</span> <span class="nx">decoded</span><span class="p">.</span><span class="nx">clientId</span><span class="p">)</span> <span class="p">{</span>
         <span class="nx">clientId</span> <span class="o">=</span> <span class="nx">decoded</span><span class="p">.</span><span class="nx">clientId</span><span class="p">;</span>
     <span class="p">}</span>
 
