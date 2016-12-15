@@ -22017,7 +22017,7 @@ if (!Array.prototype.indexOf) {
     /**
      * ### MatcherManager.getMatchFor
      *
-     * Returns the current match for the specified id
+     * Returns the match for the specified id
      *
      * @param {string} id The id to search a match for
      * @param {number} round Optional. Specifies a round other
@@ -22031,7 +22031,7 @@ if (!Array.prototype.indexOf) {
         if ('undefined' === typeof round) {
             round = this.getIterationRound();
         }
-        else if ('undefined' !== typeof round) {
+        else if ('number' === typeof round) {
             round = this.matcher.normalizeRound(round);
         }
         return this.matcher.getMatchFor(id, round);
@@ -22040,21 +22040,21 @@ if (!Array.prototype.indexOf) {
     /**
      * ### MatcherManager.getRoleFor
      *
-     * Returns the current role for the specified id
+     * Returns the role for the specified id
      *
      * @param {string} id The id to search a role for
      * @param {number} round Optional. Specifies a round other
      *   than current (will be normalized if there are more
      *   rounds than matches)
      *
-     * @return {string|null} The role currently hold by id, or null
-     *    if the id is not found
+     * @return {string|null} The role hold by id at the
+     *    specified round or null if not found
      */
     MatcherManager.prototype.getRoleFor = function(id, round) {
         if ('undefined' === typeof round) {
             round = this.getIterationRound();
         }
-        else if ('undefined' !== typeof round) {
+        else if ('number' === typeof round) {
             round = this.matcher.normalizeRound(round);
         }
         return this.roler.getRoleFor(id, round);
