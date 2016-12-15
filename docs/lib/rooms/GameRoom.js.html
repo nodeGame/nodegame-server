@@ -1829,6 +1829,29 @@ Other values will be parsed later.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
             <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;function&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">timer</span><span class="p">)</span> <span class="nx">timer</span> <span class="o">=</span> <span class="nx">timer</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="k">this</span><span class="p">);</span>
+            <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">timer</span> <span class="o">&amp;&amp;</span>
+                 <span class="s1">&#39;function&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">timer</span><span class="p">.</span><span class="nx">milliseconds</span><span class="p">)</span> <span class="p">{</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-69" id="section-69">&#182;</a>
+</div>
+<p>We must "clone" timer, access to JSUS is different
+in browser and node, so we do it manually.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+                <span class="nx">timer</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="nx">milliseconds</span><span class="o">:</span> <span class="nx">timer</span><span class="p">.</span><span class="nx">milliseconds</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">),</span>
+                    <span class="nx">update</span><span class="o">:</span> <span class="nx">timer</span><span class="p">.</span><span class="nx">update</span><span class="p">,</span>
+                    <span class="nx">timeup</span><span class="o">:</span> <span class="nx">timer</span><span class="p">.</span><span class="nx">timeup</span><span class="p">,</span>
+                    <span class="nx">hooks</span><span class="o">:</span> <span class="nx">timer</span><span class="p">.</span><span class="nx">hooks</span>
+                <span class="p">};</span>
+            <span class="p">}</span>
             <span class="k">return</span> <span class="nx">timer</span> <span class="o">||</span> <span class="kc">null</span><span class="p">;</span>
         <span class="p">});</span>
     <span class="p">}</span>
@@ -1850,7 +1873,7 @@ Other values will be parsed later.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-69" id="section-69">&#182;</a>
+  <a class="pilcrow" href="#section-70" id="section-70">&#182;</a>
 </div>
 <p>Set different defaults for logic and other client types.</p>
         </td>
@@ -1876,7 +1899,7 @@ Other values will be parsed later.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-70" id="section-70">&#182;</a>
+  <a class="pilcrow" href="#section-71" id="section-71">&#182;</a>
 </div>
 <p>If moved into another file update documentation page.</p>
         </td>
@@ -1925,7 +1948,7 @@ Other values will be parsed later.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-71" id="section-71">&#182;</a>
+  <a class="pilcrow" href="#section-72" id="section-72">&#182;</a>
 </div>
 <p>Add treatment settings.</p>
         </td>
@@ -1939,7 +1962,7 @@ Other values will be parsed later.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-72" id="section-72">&#182;</a>
+  <a class="pilcrow" href="#section-73" id="section-73">&#182;</a>
 </div>
 <p>Mixin-in nodeGame options.</p>
         </td>
@@ -2020,7 +2043,7 @@ a remote client.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-74" id="section-74">&#182;</a>
+  <a class="pilcrow" href="#section-75" id="section-75">&#182;</a>
 </div>
 <p>Fake cache.</p>
         </td>
@@ -2034,7 +2057,7 @@ a remote client.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-75" id="section-75">&#182;</a>
+  <a class="pilcrow" href="#section-76" id="section-76">&#182;</a>
 </div>
 <p>See if the client is local or remote.</p>
         </td>
@@ -2048,7 +2071,7 @@ a remote client.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-76" id="section-76">&#182;</a>
+  <a class="pilcrow" href="#section-77" id="section-77">&#182;</a>
 </div>
 <p>Client type.</p>
         </td>
@@ -2062,7 +2085,7 @@ a remote client.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-77" id="section-77">&#182;</a>
+  <a class="pilcrow" href="#section-78" id="section-78">&#182;</a>
 </div>
 <p>Get the client type, check cache (bots are never cached).</p>
         </td>
@@ -2083,7 +2106,7 @@ a remote client.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-78" id="section-78">&#182;</a>
+  <a class="pilcrow" href="#section-79" id="section-79">&#182;</a>
 </div>
 <p>Setup the client.</p>
         </td>
@@ -2096,7 +2119,7 @@ a remote client.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-79" id="section-79">&#182;</a>
+  <a class="pilcrow" href="#section-80" id="section-80">&#182;</a>
 </div>
 <p>Local client.</p>
         </td>
@@ -2109,7 +2132,7 @@ a remote client.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-80" id="section-80">&#182;</a>
+  <a class="pilcrow" href="#section-81" id="section-81">&#182;</a>
 </div>
 <p>Can't remoteSetup here because serializing the plot methods
 would make them lose their context (node etc.).</p>
@@ -2125,7 +2148,7 @@ would make them lose their context (node etc.).</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-81" id="section-81">&#182;</a>
+  <a class="pilcrow" href="#section-82" id="section-82">&#182;</a>
 </div>
 <p>Remote client.</p>
         </td>
@@ -2208,7 +2231,7 @@ would make them lose their context (node etc.).</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-84" id="section-84">&#182;</a>
+  <a class="pilcrow" href="#section-85" id="section-85">&#182;</a>
 </div>
 <p>Stop logic if necessary.</p>
         </td>
@@ -2222,7 +2245,7 @@ would make them lose their context (node etc.).</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-85" id="section-85">&#182;</a>
+  <a class="pilcrow" href="#section-86" id="section-86">&#182;</a>
 </div>
 <p>Setup must be called before connect.</p>
         </td>
@@ -2236,7 +2259,7 @@ would make them lose their context (node etc.).</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-86" id="section-86">&#182;</a>
+  <a class="pilcrow" href="#section-87" id="section-87">&#182;</a>
 </div>
 <p>Connect logic to server, if not already connected. E.g., after a stop
 command it is generally still connected. Or the node object can be
@@ -2313,7 +2336,7 @@ passed in the constructor and be already connected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-88" id="section-88">&#182;</a>
+  <a class="pilcrow" href="#section-89" id="section-89">&#182;</a>
 </div>
 <p>Resolve special values of clientList.</p>
         </td>
@@ -2341,7 +2364,7 @@ passed in the constructor and be already connected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-89" id="section-89">&#182;</a>
+  <a class="pilcrow" href="#section-90" id="section-90">&#182;</a>
 </div>
 <p>Setup all given clients.</p>
         </td>
@@ -2494,7 +2517,7 @@ otherwise the whole function is not optimized.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-93" id="section-93">&#182;</a>
+  <a class="pilcrow" href="#section-94" id="section-94">&#182;</a>
 </div>
 <p>Disconnect client.</p>
         </td>

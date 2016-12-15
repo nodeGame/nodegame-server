@@ -26155,11 +26155,9 @@ if (!Array.prototype.indexOf) {
         // If function, it can return a full object,
         // a function, or just the number of milliseconds.
         if ('function' === typeof timer) timer = timer.call(this.node.game);
-
         if (null === timer) return null
         if ('function' === typeof timer) timer = timer.call(this.node.game);
-        if ('number' === typeof timer) timer = { milliseconds: timer };
-
+        if ('number' === typeof timer) timer = { milliseconds: timer };        
 
         if ('object' !== typeof timer ||
             'number' !== typeof timer.milliseconds ||
