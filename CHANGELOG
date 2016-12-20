@@ -1,7 +1,9 @@
 # nodegame-server change log
 
-# current
+# 3.5
 - Removed x-powered by tag.
+- Improved methods to create bots.
+- Bots can have their ID pre-specified.
 
 # 3.2.3
 - Improved communication with monitor.
