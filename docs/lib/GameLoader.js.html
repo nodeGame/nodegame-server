@@ -961,7 +961,7 @@ game.settings are used. If not not omitted, the settings will be
 mixed-in.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">if</span> <span class="p">(</span><span class="nx">fs</span><span class="p">.</span><span class="nx">existsSync</span><span class="p">(</span><span class="nx">gameSettingsPath</span><span class="p">))</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">fs</span><span class="p">.</span><span class="nx">existsSync</span><span class="p">(</span><span class="nx">gameSetupPath</span><span class="p">))</span> <span class="p">{</span>
 
         <span class="k">try</span> <span class="p">{</span>
             <span class="nx">gameSetup</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="nx">gameSetupPath</span><span class="p">);</span>
@@ -996,7 +996,10 @@ mixed-in.</p>
         <span class="p">}</span>
     <span class="p">}</span>
     <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">level</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">this</span><span class="p">.</span><span class="nx">doErr</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadGameDir: game.setup file not found&#39;</span><span class="p">);</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">doErr</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadGameDir: game.setup file not found&#39;</span><span class="p">,</span> <span class="p">{</span>
+            <span class="nx">log</span><span class="o">:</span> <span class="s1">&#39;warn&#39;</span><span class="p">,</span>
+            <span class="nx">throwIt</span><span class="o">:</span> <span class="kc">false</span>
+        <span class="p">});</span>
     <span class="p">}</span>
 
 
