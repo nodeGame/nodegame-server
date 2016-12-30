@@ -2503,7 +2503,20 @@ sorting criteria, i.e. there might be no need to sort here.</p>
             <span class="p">}</span>
         <span class="p">}</span>
         <span class="k">else</span> <span class="p">{</span>
-            <span class="nx">dispatchList</span> <span class="o">=</span> <span class="nx">pList</span><span class="p">.</span><span class="nx">breed</span><span class="p">().</span><span class="nx">db</span><span class="p">;</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-85" id="section-85">&#182;</a>
+</div>
+<p>was:
+dispatchList = pList.breed().db;</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+            <span class="nx">dispatchList</span> <span class="o">=</span> <span class="nx">pList</span><span class="p">.</span><span class="nx">db</span><span class="p">.</span><span class="nx">slice</span><span class="p">();</span>
         <span class="p">}</span>
 
         <span class="k">this</span><span class="p">.</span><span class="nx">setDispatchState</span><span class="p">(</span><span class="nx">WaitingRoom</span><span class="p">.</span><span class="nx">dispatchStates</span><span class="p">.</span><span class="nx">DISPATCHING</span><span class="p">);</span>
@@ -2519,7 +2532,7 @@ sorting criteria, i.e. there might be no need to sort here.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-85" id="section-85">&#182;</a>
+  <a class="pilcrow" href="#section-86" id="section-86">&#182;</a>
 </div>
 <p>If we have too many players log a warning.</p>
         </td>
@@ -2533,7 +2546,7 @@ sorting criteria, i.e. there might be no need to sort here.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-86" id="section-86">&#182;</a>
+  <a class="pilcrow" href="#section-87" id="section-87">&#182;</a>
 </div>
 <p>Warn if more participants than spots available.</p>
         </td>
@@ -2556,7 +2569,7 @@ sorting criteria, i.e. there might be no need to sort here.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-87" id="section-87">&#182;</a>
+  <a class="pilcrow" href="#section-88" id="section-88">&#182;</a>
 </div>
 <p>Player id.</p>
         </td>
@@ -2570,7 +2583,7 @@ sorting criteria, i.e. there might be no need to sort here.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-88" id="section-88">&#182;</a>
+  <a class="pilcrow" href="#section-89" id="section-89">&#182;</a>
 </div>
 <p>Inform players.</p>
         </td>
@@ -2586,7 +2599,7 @@ sorting criteria, i.e. there might be no need to sort here.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-89" id="section-89">&#182;</a>
+  <a class="pilcrow" href="#section-90" id="section-90">&#182;</a>
 </div>
 <p>Clear timeout for players.</p>
         </td>
@@ -2600,7 +2613,7 @@ sorting criteria, i.e. there might be no need to sort here.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-90" id="section-90">&#182;</a>
+  <a class="pilcrow" href="#section-91" id="section-91">&#182;</a>
 </div>
 <p>Add it to the group.</p>
         </td>
@@ -2618,7 +2631,7 @@ sorting criteria, i.e. there might be no need to sort here.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-91" id="section-91">&#182;</a>
+  <a class="pilcrow" href="#section-92" id="section-92">&#182;</a>
 </div>
 <p>If this is the first dispatch or we need to create a new room
 anyway, assign a treatment and then setup the game.</p>
@@ -2633,7 +2646,7 @@ anyway, assign a treatment and then setup the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-92" id="section-92">&#182;</a>
+  <a class="pilcrow" href="#section-93" id="section-93">&#182;</a>
 </div>
 <p>Decide treatment.</p>
         </td>
@@ -2648,7 +2661,7 @@ anyway, assign a treatment and then setup the game.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-93" id="section-93">&#182;</a>
+  <a class="pilcrow" href="#section-94" id="section-94">&#182;</a>
 </div>
 <p>Starts a game level or the main game.
 TODO: should the main game have a ghost level?</p>
@@ -2669,7 +2682,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-94" id="section-94">&#182;</a>
+  <a class="pilcrow" href="#section-95" id="section-95">&#182;</a>
 </div>
 <p>Create new game room.</p>
         </td>
@@ -2687,7 +2700,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-95" id="section-95">&#182;</a>
+  <a class="pilcrow" href="#section-96" id="section-96">&#182;</a>
 </div>
 <p>Setup and start game.</p>
         </td>
@@ -2702,7 +2715,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-96" id="section-96">&#182;</a>
+  <a class="pilcrow" href="#section-97" id="section-97">&#182;</a>
 </div>
 <p>Store reference.</p>
         </td>
@@ -2717,7 +2730,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-97" id="section-97">&#182;</a>
+  <a class="pilcrow" href="#section-98" id="section-98">&#182;</a>
 </div>
 <p>Move clients into existing room.</p>
         </td>
@@ -2735,7 +2748,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-98" id="section-98">&#182;</a>
+  <a class="pilcrow" href="#section-99" id="section-99">&#182;</a>
 </div>
 <p>Setup new group of players in the old room.</p>
         </td>
@@ -2751,7 +2764,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-99" id="section-99">&#182;</a>
+  <a class="pilcrow" href="#section-100" id="section-100">&#182;</a>
 </div>
 <p>One more dispatch done!</p>
         </td>
@@ -2765,7 +2778,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-100" id="section-100">&#182;</a>
+  <a class="pilcrow" href="#section-101" id="section-101">&#182;</a>
 </div>
 <p>Close waitingRoom if next game would not be dispatchable.</p>
         </td>
@@ -2779,7 +2792,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-101" id="section-101">&#182;</a>
+  <a class="pilcrow" href="#section-102" id="section-102">&#182;</a>
 </div>
 <p>Force to exit loop.</p>
         </td>
@@ -2794,7 +2807,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-102" id="section-102">&#182;</a>
+  <a class="pilcrow" href="#section-103" id="section-103">&#182;</a>
 </div>
 <p>Clear group.</p>
         </td>
@@ -2811,7 +2824,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-103" id="section-103">&#182;</a>
+  <a class="pilcrow" href="#section-104" id="section-104">&#182;</a>
 </div>
 <p>All dispatch attempts have been completed.</p>
         </td>
@@ -2824,7 +2837,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-104" id="section-104">&#182;</a>
+  <a class="pilcrow" href="#section-105" id="section-105">&#182;</a>
 </div>
 <p>Close room, if requested.</p>
         </td>
@@ -2843,7 +2856,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-105" id="section-105">&#182;</a>
+  <a class="pilcrow" href="#section-106" id="section-106">&#182;</a>
 </div>
 <p>Tell players still waiting, that they have not been selected.</p>
         </td>
@@ -2860,7 +2873,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-106" id="section-106">&#182;</a>
+  <a class="pilcrow" href="#section-107" id="section-107">&#182;</a>
 </div>
 <p>Increment timesNotSelected for player.</p>
         </td>
@@ -2884,7 +2897,7 @@ TODO: should the main game have a ghost level?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-107" id="section-107">&#182;</a>
+  <a class="pilcrow" href="#section-108" id="section-108">&#182;</a>
 </div>
 <p>Ste was: (but it does not make any sense).
 Exit loop.
@@ -2918,7 +2931,7 @@ if (!this.shouldDispatchMoreGames()) break</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-108" id="section-108">&#182;</a>
+  <a class="pilcrow" href="#section-109" id="section-109">&#182;</a>
 </div>
 <p>Have we dispatched 'em all?</p>
         </td>
@@ -2932,7 +2945,7 @@ if (!this.shouldDispatchMoreGames()) break</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-109" id="section-109">&#182;</a>
+  <a class="pilcrow" href="#section-110" id="section-110">&#182;</a>
 </div>
 <p>Fix group size and number of groups.
 In case of kickUnresponsivePlayers, these can change in between.</p>
@@ -2947,7 +2960,7 @@ In case of kickUnresponsivePlayers, these can change in between.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-110" id="section-110">&#182;</a>
+  <a class="pilcrow" href="#section-111" id="section-111">&#182;</a>
 </div>
 <p>If we have pool of 1 and mode == WAIT_FOR_N_PLAYERS just go ahead!</p>
         </td>
@@ -2966,7 +2979,7 @@ In case of kickUnresponsivePlayers, these can change in between.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-111" id="section-111">&#182;</a>
+  <a class="pilcrow" href="#section-112" id="section-112">&#182;</a>
 </div>
 <p>Blocks until all players have returned the ping or are kicked.</p>
         </td>
@@ -3024,7 +3037,7 @@ In case of kickUnresponsivePlayers, these can change in between.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-113" id="section-113">&#182;</a>
+  <a class="pilcrow" href="#section-114" id="section-114">&#182;</a>
 </div>
 <p>Group together a few connect-notifications before sending them.</p>
         </td>
@@ -3037,7 +3050,7 @@ In case of kickUnresponsivePlayers, these can change in between.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-114" id="section-114">&#182;</a>
+  <a class="pilcrow" href="#section-115" id="section-115">&#182;</a>
 </div>
 <p>Delete timeout.</p>
         </td>
@@ -3050,7 +3063,7 @@ In case of kickUnresponsivePlayers, these can change in between.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-115" id="section-115">&#182;</a>
+  <a class="pilcrow" href="#section-116" id="section-116">&#182;</a>
 </div>
 <p>Notify all players of new connection/s.</p>
         </td>
@@ -3127,7 +3140,7 @@ In case of kickUnresponsivePlayers, these can change in between.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-117" id="section-117">&#182;</a>
+  <a class="pilcrow" href="#section-118" id="section-118">&#182;</a>
 </div>
 <p>TODO: do we need to check if we have enough players?</p>
         </td>
@@ -3148,7 +3161,7 @@ In case of kickUnresponsivePlayers, these can change in between.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-118" id="section-118">&#182;</a>
+  <a class="pilcrow" href="#section-119" id="section-119">&#182;</a>
 </div>
 <p>If a timeout function for the server was specified,
 executes. If the return value is FALSE, do not continue
@@ -3163,7 +3176,7 @@ with checkout and informing the player about NotEnoughPlayers.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-119" id="section-119">&#182;</a>
+  <a class="pilcrow" href="#section-120" id="section-120">&#182;</a>
 </div>
 <p>TODO: pass that as parameter.</p>
         </td>
@@ -3179,7 +3192,7 @@ with checkout and informing the player about NotEnoughPlayers.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-120" id="section-120">&#182;</a>
+  <a class="pilcrow" href="#section-121" id="section-121">&#182;</a>
 </div>
 <p>If an access code is defined, checkout remotely.</p>
         </td>
@@ -3300,7 +3313,7 @@ with checkout and informing the player about NotEnoughPlayers.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-123" id="section-123">&#182;</a>
+  <a class="pilcrow" href="#section-124" id="section-124">&#182;</a>
 </div>
 <p>Return treatment (was a string already).</p>
         </td>
