@@ -277,7 +277,7 @@ overwritten later on.</p>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">GameLoader</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">addGame</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">gameInfo</span><span class="p">,</span> <span class="nx">gameDir</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">reqFail</span><span class="p">,</span> <span class="nx">clientTypes</span><span class="p">,</span> <span class="nx">langObject</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">gameConf</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">channel</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">channel</span><span class="p">,</span> <span class="nx">dataDir</span><span class="p">;</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">gameInfo</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;GameLoader.addGame: gameInfo must be object.&#39;</span><span class="p">);</span>
@@ -564,9 +564,8 @@ this.loadViewsFile(gameDir, gameInfo);</p>
 <p>Create game data/ directory if not existing.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">fs</span><span class="p">.</span><span class="nx">existsSync</span><span class="p">(</span><span class="nx">gameDir</span> <span class="o">+</span> <span class="s1">&#39;/data&#39;</span><span class="p">))</span> <span class="p">{</span>
-        <span class="nx">fs</span><span class="p">.</span><span class="nx">mkdirSync</span><span class="p">(</span><span class="nx">gameDir</span> <span class="o">+</span> <span class="s1">&#39;/data&#39;</span><span class="p">);</span>
-    <span class="p">}</span>
+    <span class="nx">dataDir</span> <span class="o">=</span> <span class="nx">path</span><span class="p">.</span><span class="nx">resolve</span><span class="p">(</span><span class="nx">gameDir</span><span class="p">,</span> <span class="s1">&#39;data&#39;</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">fs</span><span class="p">.</span><span class="nx">existsSync</span><span class="p">(</span><span class="nx">dataDir</span><span class="p">))</span> <span class="nx">fs</span><span class="p">.</span><span class="nx">mkdirSync</span><span class="p">(</span><span class="nx">dataDir</span><span class="p">);</span>
 
 
 </pre></div>

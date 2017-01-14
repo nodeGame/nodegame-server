@@ -6292,7 +6292,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # NDDB: N-Dimensional Database
- * Copyright(c) 2016 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti
  * MIT Licensed
  *
  * NDDB is a powerful and versatile object database for node.js and the browser.
@@ -6464,6 +6464,10 @@ if (!Array.prototype.indexOf) {
         // ### __defaultFormat
         // Default format for saving and loading items.
         this.__defaultFormat = null;
+
+        // ### __wd
+        // Default working directory for saving and loading files.
+        this.__wd = null;
 
         // ### log
         // Std out for log messages
@@ -7051,6 +7055,15 @@ if (!Array.prototype.indexOf) {
                 }
             }
         }
+
+        if (options.defaultFormat) {
+            this.setDefaultFormat(options.defaultFormat);
+        }
+
+        if (options.wd && 'function' === typeof this.setWD) {
+            this.setWD(options.wd);
+        }
+
     };
 
     /**
@@ -7122,11 +7135,13 @@ if (!Array.prototype.indexOf) {
      * @param {array} db Array of items to import
      */
     NDDB.prototype.importDB = function(db) {
-        var i;
+        var i, len;
         if (!J.isArray(db)) {
-            this.throwErr('TypeError', 'importDB', 'db must be array');
+            this.throwErr('TypeError', 'importDB', 'db must be array. Found: ' +
+                         db);
         }
-        for (i = 0; i < db.length; i++) {
+        i = -1, len = db.length;
+        for ( ; ++i < len ; ) {
             nddb_insert.call(this, db[i], this.__update.indexes);
         }
         this._autoUpdate({indexes: false});
@@ -7147,11 +7162,19 @@ if (!Array.prototype.indexOf) {
      *  - null
      *
      * @param {object} o The item or array of items to insert
-     * @see NDDB._insert
+     *
+     * @return {object|boolean} o The inserted object (might have been
+     *   updated by on('insert') callbacks), or FALSE if the object could
+     *   not be inserted, e.g. if a on('insert') callback returned FALSE.
+     *
+     * @see nddb_insert
      */
     NDDB.prototype.insert = function(o) {
-        nddb_insert.call(this, o, this.__update.indexes);
+        var res;
+        res = nddb_insert.call(this, o, this.__update.indexes);
+        if (res === false) return false;
         this._autoUpdate({indexes: false});
+        return o;
     };
 
     /**
@@ -7234,6 +7257,8 @@ if (!Array.prototype.indexOf) {
         options.globalCompare = this.globalCompare;
         options.filters = this.__userDefinedFilters;
         options.formats = this.__formats;
+        options.defaultFormat = this.__defaultFormat;
+        options.wd = this.__wd;
 
         // Must be removed before cloning.
         if (options.log) {
@@ -7909,11 +7934,20 @@ if (!Array.prototype.indexOf) {
      *
      * Accepts any number of parameters, the first one is the name
      * of the event, and the remaining will be passed to the event listeners.
+     *
+     * If a registered event listener returns FALSE, subsequent event
+     * listeners are **not** executed, and the method returns FALSE.
+     *
+     * @param {string} The event type ('insert', 'delete', 'update')
+     *
+     * @return {boolean} TRUE under normal conditions, or FALSE if at least
+     *   one callback function returned FALSE.
      */
     NDDB.prototype.emit = function() {
         var event;
         var h, h2;
         var i, len, argLen, args;
+        var res;
         event = arguments[0];
         if ('string' !== typeof event) {
             this.throwErr('TypeError', 'emit', 'first argument must be string');
@@ -7922,64 +7956,72 @@ if (!Array.prototype.indexOf) {
             this.throwErr('TypeError', 'emit', 'unknown event: ' + event);
         }
         len = this.hooks[event].length;
-        if (!len) return;
+        if (!len) return true;
         argLen = arguments.length;
 
         switch(len) {
 
         case 1:
             h = this.hooks[event][0];
-            if (argLen === 1) h.call(this);
-            else if (argLen === 2) h.call(this, arguments[1]);
+            if (argLen === 1) res = h.call(this);
+            else if (argLen === 2) res = h.call(this, arguments[1]);
             else if (argLen === 3) {
-                h.call(this, arguments[1], arguments[2]);
+                res = h.call(this, arguments[1], arguments[2]);
             }
             else {
                 args = new Array(argLen-1);
                 for (i = 0; i < argLen; i++) {
                     args[i] = arguments[i+1];
                 }
-                h.apply(this, args);
+                res = h.apply(this, args);
             }
             break;
         case 2:
             h = this.hooks[event][0], h2 = this.hooks[event][1];
             if (argLen === 1) {
-                h.call(this);
-                h2.call(this);
+                res = h.call(this) !== false;
+                res = res && h2.call(this) !== false;
             }
             else if (argLen === 2) {
-                h.call(this, arguments[1]);
-                h2.call(this, arguments[1]);
+                res = h.call(this, arguments[1]) !== false;
+                res = res && h2.call(this, arguments[1]) !== false;
             }
             else if (argLen === 3) {
-                h.call(this, arguments[1], arguments[2]);
-                h2.call(this, arguments[1], arguments[2]);
+                res = h.call(this, arguments[1], arguments[2]) !== false;
+                res = res && h2.call(this, arguments[1], arguments[2])!== false;
             }
             else {
                 args = new Array(argLen-1);
                 for (i = 0; i < argLen; i++) {
                     args[i] = arguments[i+1];
                 }
-                h.apply(this, args);
-                h2.apply(this, args);
+                res = h.apply(this, args) !== false;
+                res = res && h2.apply(this, args) !== false;
             }
             break;
         default:
-
              if (argLen === 1) {
                  for (i = 0; i < len; i++) {
-                     this.hooks[event][i].call(this);
+                     res = this.hooks[event][i].call(this) !== false;
+                     if (res === false) break;
                  }
             }
             else if (argLen === 2) {
+                res = true;
                 for (i = 0; i < len; i++) {
-                    this.hooks[event][i].call(this, arguments[1]);
+                    res = this.hooks[event][i].call(this,
+                                                    arguments[1]) !== false;
+                    if (res === false) break;
+
                 }
             }
             else if (argLen === 3) {
+                res = true;
                 for (i = 0; i < len; i++) {
-                    this.hooks[event][i].call(this, arguments[1], arguments[2]);
+                    res = this.hooks[event][i].call(this,
+                                                    arguments[1],
+                                                    arguments[2]) !== false;
+                    if (res === false) break;
                 }
             }
             else {
@@ -7987,12 +8029,15 @@ if (!Array.prototype.indexOf) {
                 for (i = 0; i < argLen; i++) {
                     args[i] = arguments[i+1];
                 }
+                res = true;
                 for (i = 0; i < len; i++) {
-                    this.hooks[event][i].apply(this, args);
+                    res = this.hooks[event][i].apply(this, args) !== false;
+                    if (res === false) break;
                 }
 
             }
         }
+        return res;
     };
 
     // ## Sort and Select
@@ -8549,11 +8594,11 @@ if (!Array.prototype.indexOf) {
      *
      * Updates all selected entries
      *
-     * Mix ins the properties of the _update_ object in each
-     * selected item.
+     * Mixins the properties of the _update_ object in each of the
+     * selected items.
      *
-     * Properties from the _update_ object that are not found in
-     * the selected items will be created.
+     * Some selected items can be skipped from update if a callback
+     * on('update') returns FALSE.
      *
      * @param {object} update An object containing the properties
      *  that will be updated.
@@ -8561,23 +8606,26 @@ if (!Array.prototype.indexOf) {
      * @return {NDDB} A new instance of NDDB with updated entries
      *
      * @see JSUS.mixin
+     * @see NDDB.emit
      */
     NDDB.prototype.update = function(update) {
-        var i, len, db;
+        var i, len, db, res;
         if ('object' !== typeof update) {
             this.throwErr('TypeError', 'update', 'update must be object');
         }
 
         // Gets items and resets the current selection.
         db = this.fetch();
-        if (db.length) {
-            len = db.length;
+        len = db.length;
+        if (len) {
             for (i = 0; i < len; i++) {
-                this.emit('update', db[i], update);
-                J.mixin(db[i], update);
-                this._indexIt(db[i]);
-                this._hashIt(db[i]);
-                this._viewIt(db[i]);
+                res = this.emit('update', db[i], update);
+                if (res === true) {
+                    J.mixin(db[i], update);
+                    this._indexIt(db[i]);
+                    this._hashIt(db[i]);
+                    this._viewIt(db[i]);
+                }
             }
             this._autoUpdate({indexes: false});
         }
@@ -8592,10 +8640,10 @@ if (!Array.prototype.indexOf) {
      * Removes all entries from the database
      *
      * @return {NDDB} A new instance of NDDB with no entries
-     *
-     * TODO: do we still need this method?
      */
     NDDB.prototype.removeAllEntries = function() {
+        console.log('***NDDB.removeAllEntries is deprecated. Use ' +
+                    'NDDB.clear instead***');
         if (!this.db.length) return this;
         this.emit('remove', this.db);
         this.nddbid.resolve = {};
@@ -9898,13 +9946,16 @@ if (!Array.prototype.indexOf) {
      * @param {boolean} update Optional. If TRUE, updates indexes, hashes,
      *    and views. Default, FALSE
      *
+     * @return {boolean} TRUE, if item was inserted, FALSE otherwise, e.g.
+     *   if a callback on('insert') returned FALSE.
+     *
      * @see NDDB.nddbid
      * @see NDDB.emit
      *
      * @api private
      */
     function nddb_insert(o, update) {
-        var nddbid;
+        var nddbid, res;
         if (('object' !== typeof o) && ('function' !== typeof o)) {
             this.throwErr('TypeError', 'insert', 'object or function ' +
                           'expected, ' + typeof o + ' received');
@@ -9928,13 +9979,16 @@ if (!Array.prototype.indexOf) {
         // Add to index directly (bypass api).
         this.nddbid.resolve[o._nddbid] = this.db.length;
         // End create index.
+        res = this.emit('insert', o);
+        // Stop inserting elements if one callback returned FALSE.
+        if (res === false) return false;
         this.db.push(o);
-        this.emit('insert', o);
         if (update) {
             this._indexIt(o, (this.db.length-1));
             this._hashIt(o);
             this._viewIt(o);
         }
+        return true
     }
 
     /**
@@ -10421,21 +10475,25 @@ if (!Array.prototype.indexOf) {
      *
      * @param {mixed} idx The id of item to remove
      *
-     * @return {object|boolean} The removed item, or FALSE if index is invalid
+     * @return {object|boolean} The removed item, or FALSE if the
+     *   index is invalid or if the object could not be removed,
+     *   e.g. if a on('remove') callback returned FALSE.
      *
      * @see NDDB.index
+     * @see NDDB.emit
      * @see NDDBIndex.get
      * @see NDDBIndex.update
      */
     NDDBIndex.prototype.remove = function(idx) {
-        var o, dbidx;
+        var o, dbidx, res;
         dbidx = this.resolve[idx];
         if ('undefined' === typeof dbidx) return false;
         o = this.nddb.db[dbidx];
-        if ('undefined' === typeof o) return;
+        if ('undefined' === typeof o) return false;
+        res = this.nddb.emit('remove', o);
+        if (res === false) return false;
         this.nddb.db.splice(dbidx, 1);
         this._remove(idx);
-        this.nddb.emit('remove', o);
         this.nddb._autoUpdate();
         return o;
     };
@@ -10451,19 +10509,21 @@ if (!Array.prototype.indexOf) {
      *
      * @param {mixed} idx The id of item to update
      *
-     * @return {object|boolean} The updated item, or FALSE if index is invalid
+     * @return {object|boolean} The updated item, or FALSE if
+     *   index is invalid, or a callback on('update') returned FALSE.
      *
      * @see NDDB.index
      * @see NDDBIndex.get
      * @see NDDBIndex.remove
      */
     NDDBIndex.prototype.update = function(idx, update) {
-        var o, dbidx, nddb;
+        var o, dbidx, nddb, res;
         dbidx = this.resolve[idx];
         if ('undefined' === typeof dbidx) return false;
         nddb = this.nddb;
         o = nddb.db[dbidx];
-        nddb.emit('update', o, update);
+        res = nddb.emit('update', o, update);
+        if (res === false) return false;
         J.mixin(o, update);
         // We do indexes separately from the other components of _autoUpdate
         // to avoid looping through all the other elements that are unchanged.
@@ -10877,10 +10937,10 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Stepping Rules
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti
  * MIT Licensed
  *
- * Collections of rules to determine whether the game should step.
+ * Collections of rules to determine whether the game should step forward.
  */
 (function(exports, parent) {
 
@@ -10896,43 +10956,69 @@ if (!Array.prototype.indexOf) {
     // It is not defined on browsers then.
 
     // ## SOLO
-    // Player proceeds to the next step as soon as the current one
-    // is DONE, regardless to the situation of other players
+    //
+    // Always steps when current step is DONE
+    //
     exports.stepRules.SOLO = function(stage, myStageLevel, pl, game) {
         return myStageLevel === node.constants.stageLevels.DONE;
     };
 
+    // ## SOLO_STEP
+    //
+    // Steps when current step is DONE, but only if it is not last step in stage
+    //
+    // When the last step in current stage is done, then it waits
+    // for an explicit step command.
+    //
+    exports.stepRules.SOLO_STEP = function(stage, myStageLevel, pl, game) {
+        // If next step is going to be a new stage, then wait.
+        if (game.plot.stepsToNextStage(stage, true) === 1) return false;
+        else return myStageLevel === node.constants.stageLevels.DONE;
+    };
+
     // ## WAIT
-    // Player waits for explicit step command
+    //
+    // Always waits for explicit step command
+    //
     exports.stepRules.WAIT = function(stage, myStageLevel, pl, game) {
         return false;
     };
 
     // ## SYNC_STEP
-    // Player waits that all the clients have terminated the
-    // current step before going to the next
+    //
+    // Steps when current step is DONE for all clients (including itself)
+    //
+    // If no other clients are connected, then it behaves like SOLO.
+    //
     exports.stepRules.SYNC_STEP = function(stage, myStageLevel, pl, game) {
         return myStageLevel === node.constants.stageLevels.DONE &&
             pl.isStepDone(stage);
     };
 
     // ## SYNC_STAGE
-    // Player can advance freely within the steps of one stage,
-    // but has to wait before going to the next one
+    //
+    // Like SOLO, but in the last step of a stage behaves like SYNC_STEP
+    //
+    // If no other clients are connected, then it behaves like SOLO also
+    // in the last step.
+    //
+    // Important: it assumes that the number of steps in current
+    // stage is the same in all clients (including this one).
+    //
     exports.stepRules.SYNC_STAGE = function(stage, myStageLevel, pl, game) {
-        var iamdone = myStageLevel === node.constants.stageLevels.DONE;
-        if (game.plot.stepsToNextStage(stage) > 1) {
-            return iamdone;
-        }
-        else {
-            // If next step is going to be a new stage, wait for others.
-            return iamdone && pl.isStepDone(stage, 'STAGE_UPTO');
-        }
+        var iamdone;
+        iamdone = myStageLevel === node.constants.stageLevels.DONE;
+        // If next step is going to be a new stage, wait for others.
+        if (game.plot.stepsToNextStage(stage) > 1) return iamdone;
+        else return iamdone && pl.isStepDone(stage, 'STAGE_UPTO');
     };
 
     // ## OTHERS_SYNC_STEP
-    // All the players in the player list must be sync in the same
-    // step and DONE. My own stage does not matter.
+    //
+    // Like SYNC_STEP, but does not look at own stage level
+    //
+    // If no other clients are connected, then it behaves like WAIT.
+    //
     exports.stepRules.OTHERS_SYNC_STEP = function(stage, myStageLevel, pl) {
         if (!pl.size()) return false;
         stage = pl.first().stage;
@@ -10941,10 +11027,14 @@ if (!Array.prototype.indexOf) {
     };
 
     // ## OTHERS_SYNC_STAGE
-    // All the players in the player list must be sync in the _last_
-    // step of current stage and DONE. My own stage does not matter.
-    // Important: to work it assumes that number of steps in current
-    // stage is the same in all players (including this one).
+    //
+    // Like SYNC_STAGE, but does not look at own stage level
+    //
+    // If no other clients are connected, then it behaves like WAIT.
+    //
+    // Important: it assumes that the number of steps in current
+    // stage is the same in all clients (including this one).
+    //
     exports.stepRules.OTHERS_SYNC_STAGE = function(stage, myStageLevel, pl,
                                                    game) {
 
@@ -12905,12 +12995,7 @@ if (!Array.prototype.indexOf) {
         }
 
         checkOutliers = 'undefined' === typeof checkOutliers ?
-            true : checkOutliers;
-
-        if ('boolean' !== typeof checkOutliers) {
-            throw new TypeError('PlayerList.arePlayersSync: checkOutliers ' +
-                                'must be boolean or undefined.');
-        }
+            true : !!checkOutliers;
 
         if (!checkOutliers && type === 'EXACT') {
             throw new Error('PlayerList.arePlayersSync: incompatible options:' +
@@ -12939,16 +13024,14 @@ if (!Array.prototype.indexOf) {
              case 'STAGE_UPTO':
                 // Players in current stage up to the reference step.
                 cmp = GameStage.compare(gameStage, p.stage);
-
                 // Player in another stage or in later step.
                 if (gameStage.stage !== p.stage.stage || cmp < 0) {
                     outlier = true;
                     break;
                 }
                 // Player before given step.
-                if (cmp > 0) {
-                    return false;
-                }
+                if (cmp > 0) return false;
+
                 break;
             }
 
@@ -12958,6 +13041,7 @@ if (!Array.prototype.indexOf) {
             // If the stageLevel check is required let's do it!
             if ('undefined' !== typeof stageLevel &&
                 p.stageLevel !== stageLevel) {
+
                 return false;
             }
         }
@@ -13718,7 +13802,111 @@ if (!Array.prototype.indexOf) {
     /**
      * ### GamePlot.next
      *
-     * Returns the next stage in the sequence
+     * Returns the next step in the sequence
+     *
+     * If the step in `curStage` is an integer and out of bounds,
+     * that bound is assumed.
+     *
+     * // TODO: previousStage
+     *
+     * @param {GameStage} curStage The GameStage of reference
+     * @param {bolean} execLoops Optional. If true, loop and doLoop
+     *   conditional function will be executed to determine next stage.
+     *   If false, null will be returned if the next stage depends
+     *   on the execution of the loop/doLoop conditional function.
+     *   Default: true.
+     *
+     * @return {GameStage|string} The GameStage after _curStage_
+     *
+     * @see GameStage
+     */
+    GamePlot.prototype.nextStage = function(curStage, execLoops) {
+        var seqObj, stageObj;
+        var stageNo, stepNo, steps;
+        var normStage, nextStage;
+        var flexibleMode;
+
+        // GamePlot was not correctly initialized.
+        if (!this.stager) return GamePlot.NO_SEQ;
+
+        flexibleMode = this.isFlexibleMode();
+        if (flexibleMode) {
+            // TODO. What does next stage mean in flexible mode?
+            // Calling the next cb of the last step? A separate cb?
+            console.log('***GamePlot.nextStage: method not available in ' +
+                        'flexible mode.***');
+            return null;
+        }
+
+        // Standard Mode.
+        else {
+            // Get normalized GameStage:
+            // makes sures stage is with numbers and not strings.
+            normStage = this.normalizeGameStage(curStage);
+            if (normStage === null) {
+                this.node.warn('GamePlot.nextStage: invalid stage: ' +
+                               curStage);
+                return null;
+            }
+
+            stageNo = normStage.stage;
+
+            if (stageNo === 0) {
+                return new GameStage({
+                    stage: 1,
+                    step:  1,
+                    round: 1
+                });
+            }
+            seqObj = this.stager.sequence[stageNo - 1];
+
+            if (seqObj.type === 'gameover') return GamePlot.GAMEOVER;
+
+            execLoops = 'undefined' === typeof execLoops ? true : execLoops;
+
+            // Get stage object.
+            stageObj = this.stager.stages[seqObj.id];
+
+            // Go to next stage.
+            if (stageNo < this.stager.sequence.length) {
+                seqObj = this.stager.sequence[stageNo];
+
+                // Return null if a loop is found and can't be executed.
+                if (!execLoops && seqObj.type === 'loop') return null;
+
+                // Skip over loops if their callbacks return false:
+                while (seqObj.type === 'loop' &&
+                       !seqObj.cb.call(this.node.game)) {
+
+                    stageNo++;
+                    if (stageNo >= this.stager.sequence.length) {
+                        return GamePlot.END_SEQ;
+                    }
+                    // Update seq object.
+                    seqObj = this.stager.sequence[stageNo];
+                }
+
+                // Handle gameover:
+                if (this.stager.sequence[stageNo].type === 'gameover') {
+                    return GamePlot.GAMEOVER;
+                }
+
+                return new GameStage({
+                    stage: stageNo + 1,
+                    step:  1,
+                    round: 1
+                });
+            }
+
+            // No more stages remaining:
+            return GamePlot.END_SEQ;
+        }
+    };
+
+    /**
+     * ### GamePlot.next
+     *
+     * Returns the next step in the sequence
      *
      * If the step in `curStage` is an integer and out of bounds,
      * that bound is assumed.
@@ -13926,7 +14114,7 @@ if (!Array.prototype.indexOf) {
     /**
      * ### GamePlot.previous
      *
-     * Returns the previous stage in the stager
+     * Returns the previous step in the sequence
      *
      * Works only in simple mode.
      *
@@ -14104,31 +14292,46 @@ if (!Array.prototype.indexOf) {
     /**
      * ### GamePlot.stepsToNextStage
      *
-     * Returns the number of steps from next stage (normalized)
+     * Returns the number of steps to reach the next stage
      *
-     * The next stage can be a repetition of the current one, if inside a
-     * loop or a repeat stage.
+     * By default, each stage repetition is considered as a new stage.
      *
-     * @param {GameStage|string} gameStage The GameStage object,
-     *  or its string representation
+     * @param {GameStage|string} gameStage The reference step
+     * @param {boolean} countRepeat If TRUE stage repetitions are
+     *  considered as current stage, and included in the count. Default: FALSE.
      *
      * @return {number|null} The number of steps including current one,
      *   or NULL on error.
+     *
+     * @see GamePlot.normalizeGameStage
      */
-    GamePlot.prototype.stepsToNextStage = function(gameStage) {
-        var seqObj, stepNo;
+    GamePlot.prototype.stepsToNextStage = function(gameStage, countRepeat) {
+        var seqObj, totSteps, stepNo;
         if (!this.stager) return null;
 
+        // Checks stage and step ranges.
         gameStage = this.normalizeGameStage(gameStage);
         if (!gameStage) return null;
         if (gameStage.stage === 0) return 1;
         seqObj = this.getSequenceObject(gameStage);
         if (!seqObj) return null;
         stepNo = gameStage.step;
-        return 1 + seqObj.steps.length - stepNo;
+        totSteps = seqObj.steps.length;
+        if (countRepeat) {
+            if (seqObj.type === 'repeat') {
+                if (gameStage.round > 1) {
+                    stepNo = ((gameStage.round-1) * totSteps) + stepNo;
+                }
+                totSteps = totSteps * seqObj.num;
+            }
+            else if (seqObj.type === 'loop' || seqObj.type === 'doLoop') {
+                return null;
+            }
+        }
+        return 1 + totSteps - stepNo;
     };
 
-
+    // TODO: remove in next version.
     GamePlot.prototype.stepsToPreviousStage = function(gameStage) {
         console.log('GamePlot.stepsToPreviousStage is **deprecated**. Use' +
                     'GamePlot.stepsFromPreviousStage instead.');
@@ -14138,27 +14341,43 @@ if (!Array.prototype.indexOf) {
     /**
      * ### GamePlot.stepsFromPreviousStage
      *
-     * Returns the number of steps from previous stage (normalized)
+     * Returns the number of steps passed from the previous stage
      *
-     * The previous stage can be a repetition of the current one, if inside a
-     * loop or a repeat stage.
+     * By default, each stage repetition is considered as a new stage.
      *
-     * @param {GameStage|string} gameStage The GameStage object,
-     *  or its string representation
+     * @param {GameStage|string} gameStage The reference step
+     * @param {boolean} countRepeat If TRUE stage repetitions are
+     *  considered as current stage, and included in the count. Default: FALSE.
      *
      * @return {number|null} The number of steps including current one, or
      *   NULL on error.
+     *
+     * @see GamePlot.normalizeGameStage
      */
-    GamePlot.prototype.stepsFromPreviousStage = function(gameStage) {
+    GamePlot.prototype.stepsFromPreviousStage = function(gameStage,
+                                                         countRepeat) {
+
         var seqObj, stepNo;
         if (!this.stager) return null;
 
+        // Checks stage and step ranges.
         gameStage = this.normalizeGameStage(gameStage);
         if (!gameStage || gameStage.stage === 0) return null;
         seqObj = this.getSequenceObject(gameStage);
         if (!seqObj) return null;
         stepNo = gameStage.step;
-        return (stepNo < 1 || stepNo > seqObj.steps.length) ? null : stepNo;
+        if (countRepeat) {
+            if (seqObj.type === 'repeat') {
+                if (gameStage.round > 1) {
+                    stepNo = (seqObj.steps.length * (gameStage.round-1)) +
+                        stepNo;
+                }
+            }
+            else if (seqObj.type === 'loop' || seqObj.type === 'doLoop') {
+                return null;
+            }
+        }
+        return stepNo;
     };
 
     /**
@@ -14578,6 +14797,9 @@ if (!Array.prototype.indexOf) {
      * ### GamePlot.normalizeGameStage
      *
      * Converts the GameStage fields to numbers
+     *
+     * Checks if stage and step numbers are within the range
+     * of what found in the stager.
      *
      * Works only in simple mode.
      *
@@ -19908,14 +20130,14 @@ if (!Array.prototype.indexOf) {
     Socket.prototype.onMessage = Socket.prototype.onMessageHI;
 
     /**
-     * ### Socket.shouldClearBuffer
+     * ### Socket.setMsgListener
      *
-     * Clears buffer conditionally
+     * Sets the onMessage listener
      *
      * @param msgHandler {function} Optional. Callback function which is
      *  called for every message in the buffer instead of the messages
      *  being emitted.
-     *  Default: Emit every buffered message.
+     *  Default: Socket.onMessageFull
      *
      * @see this.node.emit
      * @see Socket.clearBuffer
@@ -22929,7 +23151,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Game
- * Copyright(c) 2016 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti
  * MIT Licensed
  *
  * Handles the flow of the game
@@ -23180,6 +23402,15 @@ if (!Array.prototype.indexOf) {
          * @see Game.step
          */
         this._steppedSteps = [new GameStage()];
+
+        /**
+         * ### Game._breakStage
+         *
+         * Flags to break current stage at next node.done call
+         *
+         * @see Game.breakStage
+         */
+        this._breakStage = false;
 
         /** ### Game.pushManager
          *
@@ -23495,11 +23726,36 @@ if (!Array.prototype.indexOf) {
         stepRule = this.plot.getStepRule(curStep);
 
         if ('function' !== typeof stepRule) {
-            throw new TypeError('Game.shouldStep: stepRule is not a function.');
+            throw new TypeError('Game.shouldStep: stepRule must be function. ' +
+                                'Found: ' + stepRule);
         }
 
         stageLevel = stageLevel || this.getStageLevel();
         return stepRule(curStep, stageLevel, this.pl, this);
+    };
+
+    /**
+     * ### Game.breakStage
+     *
+     * Sets/Removes a flag to break current stage
+     *
+     * If the flag is set, when node.done() is invoked, the game will
+     * step into the next stage instead of into the next step.
+     *
+     * @param {boolean} doBreak Optional. TRUE to set the flag, FALSE to
+     *   remove it, or undefined to just get returned the current value.
+     *
+     * @return {boolean} The value of the flag before it is overwritten
+     *   by current call.
+     *
+     * @see Game._breakStage
+     * @see Game.gotoStep
+     */
+    Game.prototype.breakStage = function(doBreak) {
+        var b;
+        b = this._breakStage;
+        if ('undefined' !== typeof doBreak) this._breakStage = !!doBreak;
+        return b;
     };
 
     /**
@@ -23515,11 +23771,14 @@ if (!Array.prototype.indexOf) {
      * @see Game.currentStage
      * @see Game.gotoStep
      * @see Game.execStep
+     * @see Game.breakStage
      */
     Game.prototype.step = function(options) {
         var curStep, nextStep;
         curStep = this.getCurrentGameStage();
-        nextStep = this.plot.next(curStep);
+        // Gets current value and sets breakStage flag in one call.
+        if (this.breakStage(false)) nextStep = this.plot.nextStage(curStep);
+        else nextStep = this.plot.next(curStep);
         return this.gotoStep(nextStep, options);
     };
 
@@ -26618,7 +26877,7 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
-     * ### VisualTimer.doTimeUp | doTimeup
+     * ### GameTimer.doTimeUp | doTimeup
      *
      * Stops the timer and calls the timeup
      *
@@ -48274,7 +48533,9 @@ if (!Array.prototype.indexOf) {
                     that.startTiming(options);
                 }
                 else {
-                    that.setToZero();
+                    // Set to zero if it was not started already.
+                    if (!that.gameTimer.isRunning()) that.setToZero();
+                    // that.setToZero();
                 }
             }
         });

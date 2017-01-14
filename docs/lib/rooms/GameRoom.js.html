@@ -144,6 +144,8 @@ MIT Licensed</p>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">module</span><span class="p">.</span><span class="nx">exports</span> <span class="o">=</span> <span class="nx">GameRoom</span><span class="p">;</span>
 
+<span class="kd">var</span> <span class="nx">path</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;path&#39;</span><span class="p">);</span>
+
 <span class="kd">var</span> <span class="nx">ngc</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;nodegame-client&#39;</span><span class="p">);</span>
 <span class="kd">var</span> <span class="nx">Stager</span> <span class="o">=</span> <span class="nx">ngc</span><span class="p">.</span><span class="nx">Stager</span><span class="p">;</span>
 <span class="kd">var</span> <span class="nx">GameStage</span> <span class="o">=</span> <span class="nx">ngc</span><span class="p">.</span><span class="nx">GameStage</span><span class="p">;</span>
@@ -2200,6 +2202,8 @@ would make them lose their context (node etc.).</p>
     <span class="nx">mixinGameMetadata</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="nx">game</span><span class="p">);</span>
 
     <span class="nx">node</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">node</span><span class="p">;</span>
+
+    <span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">memory</span><span class="p">.</span><span class="nx">setWD</span><span class="p">(</span><span class="nx">path</span><span class="p">.</span><span class="nx">resolve</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">getGameDir</span><span class="p">(),</span> <span class="s1">&#39;data&#39;</span><span class="p">));</span>
 
 
 </pre></div>
