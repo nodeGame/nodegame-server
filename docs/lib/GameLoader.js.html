@@ -97,6 +97,9 @@
         <a href="#parsegamesettings">parseGameSettings</a>
       </div>
       <div class="heading h3">
+        <a href="#loadsyncasync">loadSyncAsync</a>
+      </div>
+      <div class="heading h3">
         <a href="#importauthcodes">importAuthCodes</a>
       </div>
       <div class="heading h3">
@@ -1444,20 +1447,22 @@ mixed-in.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="nx">pwdFile</span> <span class="o">=</span> <span class="nx">directory</span> <span class="o">+</span> <span class="s1">&#39;channel/channel.credentials.js&#39;</span><span class="p">;</span>
-
     <span class="nx">loadSyncAsync</span><span class="p">(</span><span class="nx">pwdFile</span><span class="p">,</span> <span class="nx">settings</span><span class="p">,</span> <span class="s1">&#39;loadChannelDir&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">credentials</span><span class="p">)</span> <span class="p">{</span>
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-51" id="section-51">&#182;</a>
-</div>
-<p>TODO: checkings. Add method.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">credentials</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadChannelDir: credentials &#39;</span> <span class="o">+</span>
+                                <span class="s1">&#39;callback did no return an object. Found: &#39;</span> <span class="o">+</span>
+                                <span class="k">typeof</span> <span class="nx">credentials</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">credentials</span><span class="p">.</span><span class="nx">user</span> <span class="o">||</span>
+            <span class="nx">credentials</span><span class="p">.</span><span class="nx">user</span><span class="p">.</span><span class="nx">trim</span><span class="p">()</span> <span class="o">===</span> <span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadChannelDir: credentials &#39;</span> <span class="o">+</span>
+                                <span class="s1">&#39;callback did not return a valid user.&#39;</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">credentials</span><span class="p">.</span><span class="nx">pwd</span> <span class="o">||</span>
+            <span class="nx">credentials</span><span class="p">.</span><span class="nx">pwd</span><span class="p">.</span><span class="nx">trim</span><span class="p">()</span> <span class="o">===</span> <span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadChannelDir: credentials &#39;</span> <span class="o">+</span>
+                                <span class="s1">&#39;callback did not return a valid pwd.&#39;</span><span class="p">);</span>
+        <span class="p">}</span>
         <span class="nx">channel</span><span class="p">.</span><span class="nx">credentials</span> <span class="o">=</span> <span class="nx">credentials</span><span class="p">;</span>
     <span class="p">});</span>
 
@@ -1468,7 +1473,7 @@ mixed-in.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-52" id="section-52">&#182;</a>
+  <a class="pilcrow" href="#section-51" id="section-51">&#182;</a>
 </div>
 <ol>
 <li>JWT secret.</li>
@@ -1478,18 +1483,10 @@ mixed-in.</p>
     <span class="nx">jwtFile</span> <span class="o">=</span> <span class="nx">directory</span> <span class="o">+</span> <span class="s1">&#39;channel/channel.secret.js&#39;</span><span class="p">;</span>
 
     <span class="nx">loadSyncAsync</span><span class="p">(</span><span class="nx">jwtFile</span><span class="p">,</span> <span class="nx">settings</span><span class="p">,</span> <span class="s1">&#39;loadChannelDir&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">secret</span><span class="p">)</span> <span class="p">{</span>
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-53" id="section-53">&#182;</a>
-</div>
-<p>TODO: checkings. Add method.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">secret</span> <span class="o">||</span> <span class="nx">secret</span><span class="p">.</span><span class="nx">trim</span><span class="p">()</span> <span class="o">===</span> <span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadChannelDir: secret &#39;</span> <span class="o">+</span>
+                                <span class="s1">&#39;callback did not return a valid secret.&#39;</span><span class="p">);</span>
+        <span class="p">}</span>
         <span class="nx">channel</span><span class="p">.</span><span class="nx">secret</span> <span class="o">=</span> <span class="nx">secret</span><span class="p">;</span>
     <span class="p">});</span>
 
@@ -1582,7 +1579,7 @@ automatically add a waiting room to the channel.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-55" id="section-55">&#182;</a>
+  <a class="pilcrow" href="#section-53" id="section-53">&#182;</a>
 </div>
 <p>Validate</p>
         </td>
@@ -1603,7 +1600,7 @@ automatically add a waiting room to the channel.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-56" id="section-56">&#182;</a>
+  <a class="pilcrow" href="#section-54" id="section-54">&#182;</a>
 </div>
 <p>TODO: check waitingRoom conf removed.
    var waitRoomConf;
@@ -1652,7 +1649,7 @@ automatically add a waiting room to the channel.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-57" id="section-57">&#182;</a>
+  <a class="pilcrow" href="#section-55" id="section-55">&#182;</a>
 </div>
 <p>Was:
 Add the list of channels created by the game.
@@ -1674,7 +1671,7 @@ Add the list of channels created by the game.
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-58" id="section-58">&#182;</a>
+  <a class="pilcrow" href="#section-56" id="section-56">&#182;</a>
 </div>
 <p>TODO: check this was removed.</p>
         </td>
@@ -1687,7 +1684,7 @@ Add the list of channels created by the game.
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-59" id="section-59">&#182;</a>
+  <a class="pilcrow" href="#section-57" id="section-57">&#182;</a>
 </div>
 
 <div class="highlight"><pre><code>    <span class="k">if</span> <span class="p">(</span><span class="n">waitRoomConf</span><span class="p">)</span> <span class="p">{</span>
@@ -1721,7 +1718,7 @@ Add the list of channels created by the game.
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-60" id="section-60">&#182;</a>
+  <a class="pilcrow" href="#section-58" id="section-58">&#182;</a>
 </div>
 <p>Adding channel alias.</p>
         </td>
@@ -1736,7 +1733,7 @@ Add the list of channels created by the game.
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-61" id="section-61">&#182;</a>
+  <a class="pilcrow" href="#section-59" id="section-59">&#182;</a>
 </div>
 <p>Errors in channel creation are already logged.</p>
         </td>
@@ -1923,7 +1920,7 @@ level of the specified directory.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-64" id="section-64">&#182;</a>
+  <a class="pilcrow" href="#section-62" id="section-62">&#182;</a>
 </div>
 <p>Add waiting room information to global game object.</p>
         </td>
@@ -2005,7 +2002,7 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-66" id="section-66">&#182;</a>
+  <a class="pilcrow" href="#section-64" id="section-64">&#182;</a>
 </div>
 <p>Check if directory exists.</p>
         </td>
@@ -2021,7 +2018,7 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-67" id="section-67">&#182;</a>
+  <a class="pilcrow" href="#section-65" id="section-65">&#182;</a>
 </div>
 <p>Add information to global game object.</p>
         </td>
@@ -2039,7 +2036,7 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-68" id="section-68">&#182;</a>
+  <a class="pilcrow" href="#section-66" id="section-66">&#182;</a>
 </div>
 <p>Auth settings.</p>
         </td>
@@ -2078,7 +2075,7 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-69" id="section-69">&#182;</a>
+  <a class="pilcrow" href="#section-67" id="section-67">&#182;</a>
 </div>
 <p>Enable authorization by default.</p>
         </td>
@@ -2092,7 +2089,7 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-70" id="section-70">&#182;</a>
+  <a class="pilcrow" href="#section-68" id="section-68">&#182;</a>
 </div>
 <p>Add waiting room information to global game object.</p>
         </td>
@@ -2106,7 +2103,7 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-71" id="section-71">&#182;</a>
+  <a class="pilcrow" href="#section-69" id="section-69">&#182;</a>
 </div>
 <p>Exit here if auth is disabled.</p>
         </td>
@@ -2124,7 +2121,7 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-72" id="section-72">&#182;</a>
+  <a class="pilcrow" href="#section-70" id="section-70">&#182;</a>
 </div>
 <p>Auth codes. Can be synchronous or asynchronous.</p>
         </td>
@@ -2137,7 +2134,7 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-73" id="section-73">&#182;</a>
+  <a class="pilcrow" href="#section-71" id="section-71">&#182;</a>
 </div>
 <p>Transform relative to absolute paths.</p>
         </td>
@@ -2156,7 +2153,7 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-74" id="section-74">&#182;</a>
+  <a class="pilcrow" href="#section-72" id="section-72">&#182;</a>
 </div>
 <p>TODO: only with custom auth.codes.js.</p>
         </td>
@@ -2170,7 +2167,7 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-75" id="section-75">&#182;</a>
+  <a class="pilcrow" href="#section-73" id="section-73">&#182;</a>
 </div>
 <p>Inject authDir into settings (will be removed by importAuthCodes).</p>
         </td>
@@ -2210,7 +2207,7 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-76" id="section-76">&#182;</a>
+  <a class="pilcrow" href="#section-74" id="section-74">&#182;</a>
 </div>
 <p>Auth file.</p>
         </td>
@@ -2223,7 +2220,7 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-77" id="section-77">&#182;</a>
+  <a class="pilcrow" href="#section-75" id="section-75">&#182;</a>
 </div>
 <p>TODO: do we still need this sandbox? Do we need another file?</p>
         </td>
@@ -2332,7 +2329,7 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-79" id="section-79">&#182;</a>
+  <a class="pilcrow" href="#section-77" id="section-77">&#182;</a>
 </div>
 <p>Add information to global game object.</p>
         </td>
@@ -2347,7 +2344,7 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-80" id="section-80">&#182;</a>
+  <a class="pilcrow" href="#section-78" id="section-78">&#182;</a>
 </div>
 <p>Requirements settings.</p>
         </td>
@@ -2395,7 +2392,7 @@ generation and clientObject decoration.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-81" id="section-81">&#182;</a>
+  <a class="pilcrow" href="#section-79" id="section-79">&#182;</a>
 </div>
 <p>We prepend the baseDir parameter, if any.
 If logicPath is not string RequirementsRoom constructor throws an error.</p>
@@ -2413,7 +2410,7 @@ If logicPath is not string RequirementsRoom constructor throws an error.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-82" id="section-82">&#182;</a>
+  <a class="pilcrow" href="#section-80" id="section-80">&#182;</a>
 </div>
 <p>Enable requirements by default.</p>
         </td>
@@ -2427,7 +2424,7 @@ If logicPath is not string RequirementsRoom constructor throws an error.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-83" id="section-83">&#182;</a>
+  <a class="pilcrow" href="#section-81" id="section-81">&#182;</a>
 </div>
 <p>Exit here if requirements is disabled.</p>
         </td>
@@ -2451,7 +2448,7 @@ If logicPath is not string RequirementsRoom constructor throws an error.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-84" id="section-84">&#182;</a>
+  <a class="pilcrow" href="#section-82" id="section-82">&#182;</a>
 </div>
 <p>Requirements file.</p>
         </td>
@@ -2472,7 +2469,7 @@ If logicPath is not string RequirementsRoom constructor throws an error.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-85" id="section-85">&#182;</a>
+  <a class="pilcrow" href="#section-83" id="section-83">&#182;</a>
 </div>
 <p>TODO: move try-catch in self-exec function?</p>
         </td>
@@ -2497,7 +2494,7 @@ If logicPath is not string RequirementsRoom constructor throws an error.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-86" id="section-86">&#182;</a>
+  <a class="pilcrow" href="#section-84" id="section-84">&#182;</a>
 </div>
 <p>Return final settings.</p>
         </td>
@@ -2554,7 +2551,7 @@ If logicPath is not string RequirementsRoom constructor throws an error.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-88" id="section-88">&#182;</a>
+  <a class="pilcrow" href="#section-86" id="section-86">&#182;</a>
 </div>
 <p>Add waiting room information to global game object.</p>
         </td>
@@ -2576,7 +2573,7 @@ If logicPath is not string RequirementsRoom constructor throws an error.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-89" id="section-89">&#182;</a>
+  <a class="pilcrow" href="#section-87" id="section-87">&#182;</a>
 </div>
 <p>TODO: see if we want to add it to prototype.
 Else remove getChannelSandbox also (maybe).</p>
@@ -2718,7 +2715,7 @@ to. If only the callback is provided, then it is applied to both
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-91" id="section-91">&#182;</a>
+  <a class="pilcrow" href="#section-89" id="section-89">&#182;</a>
 </div>
 <p>Channels defined by a game with the channels.js file.
 Auth callback can modify the authorization only of those.</p>
@@ -2732,7 +2729,7 @@ Auth callback can modify the authorization only of those.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-92" id="section-92">&#182;</a>
+  <a class="pilcrow" href="#section-90" id="section-90">&#182;</a>
 </div>
 <p>1 Auth for both admin and player servers.</p>
         </td>
@@ -2749,7 +2746,7 @@ Auth callback can modify the authorization only of those.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-93" id="section-93">&#182;</a>
+  <a class="pilcrow" href="#section-91" id="section-91">&#182;</a>
 </div>
 <p>1 Auth for one server: admin or player.</p>
         </td>
@@ -2819,7 +2816,7 @@ Auth callback can modify the authorization only of those.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-95" id="section-95">&#182;</a>
+  <a class="pilcrow" href="#section-93" id="section-93">&#182;</a>
 </div>
 <p>3 or more.</p>
         </td>
@@ -2864,7 +2861,7 @@ Auth callback can modify the authorization only of those.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-96" id="section-96">&#182;</a>
+  <a class="pilcrow" href="#section-94" id="section-94">&#182;</a>
 </div>
 <p>/**
  * ### GameLoader.createGameAlias
@@ -3187,7 +3184,7 @@ so that GameStage.compare does not complain.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-102" id="section-102">&#182;</a>
+  <a class="pilcrow" href="#section-100" id="section-100">&#182;</a>
 </div>
 <ul>
 <li>skips the check.</li>
@@ -3203,7 +3200,7 @@ so that GameStage.compare does not complain.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-103" id="section-103">&#182;</a>
+  <a class="pilcrow" href="#section-101" id="section-101">&#182;</a>
 </div>
 <p>Trick: we compare version numbers using the GameStage class.</p>
         </td>
@@ -3303,6 +3300,58 @@ settings.</p>
     <span class="k">return</span> <span class="nx">out</span><span class="p">;</span>
 <span class="p">}</span>
 
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="loadsyncasync">
+  <h3>
+    <a href="#loadsyncasync" name="loadsyncasync" class="pilcrow">&#182;</a>
+    loadSyncAsync
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Requires a file and executes sync or async</p>
+
+<p>Required file must return a function that executed immediately.
+The function can return a value immediately, and in this case a callback
+is executed on the return value, or use the async callback.</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">filepath</span>
+      <span class="dox_type">string</span>
+      <span>The path to the file to require</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">settings</span>
+      <span class="dox_type">object</span>
+      <span>Object to pass the required callback</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">method</span>
+      <span class="dox_type">string</span>
+      <span>The name of the method calling loadSyncAsync</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">cb</span>
+      <span class="dox_type">function</span>
+      <span>The callback to execute sync or async</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">GameLoader.loadAuthDir
+</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
 <span class="kd">function</span> <span class="nx">loadSyncAsync</span><span class="p">(</span><span class="nx">filepath</span><span class="p">,</span> <span class="nx">settings</span><span class="p">,</span> <span class="nx">method</span><span class="p">,</span> <span class="nx">cb</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">result</span><span class="p">;</span>
 
@@ -3321,7 +3370,7 @@ settings.</p>
                             <span class="nx">filepath</span> <span class="o">+</span> <span class="s2">&quot;: \n&quot;</span> <span class="o">+</span> <span class="nx">e</span><span class="p">.</span><span class="nx">stack</span><span class="p">);</span>
         <span class="p">}</span>
 
-        <span class="k">if</span> <span class="p">(</span><span class="nx">result</span><span class="p">)</span> <span class="nx">cb</span><span class="p">(</span><span class="nx">result</span><span class="p">);</span>
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">result</span><span class="p">)</span> <span class="nx">cb</span><span class="p">(</span><span class="nx">result</span><span class="p">);</span>
     <span class="p">}</span>
 <span class="p">}</span>
 
@@ -3390,7 +3439,7 @@ settings.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-106" id="section-106">&#182;</a>
+  <a class="pilcrow" href="#section-105" id="section-105">&#182;</a>
 </div>
 <p>Async function. Throws errors.</p>
         </td>
@@ -3406,7 +3455,7 @@ settings.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-107" id="section-107">&#182;</a>
+  <a class="pilcrow" href="#section-106" id="section-106">&#182;</a>
 </div>
 <p>Not needed anymore.</p>
         </td>
@@ -3421,7 +3470,7 @@ settings.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-108" id="section-108">&#182;</a>
+  <a class="pilcrow" href="#section-107" id="section-107">&#182;</a>
 </div>
 <p>TODO: see if we need it in the future:</p>
         </td>
