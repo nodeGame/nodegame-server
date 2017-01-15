@@ -123,6 +123,9 @@
       <div class="heading h2">
         <a href="#traversedirectory">traverseDirectory</a>
       </div>
+      <div class="heading h2">
+        <a href="#trystringify">tryStringify</a>
+      </div>
     </div>
   </div>
   <div id="sidebar-toggle"></div>
@@ -992,6 +995,10 @@ TODO: Send only specific client data, not everything;
                                 <span class="nx">replyData</span><span class="p">[</span><span class="nx">gameName</span><span class="p">].</span><span class="nx">clientTypes</span> <span class="o">=</span>
                                     <span class="nb">Object</span><span class="p">.</span><span class="nx">keys</span><span class="p">(</span>
                                         <span class="nx">gamesInfo</span><span class="p">[</span><span class="nx">gameName</span><span class="p">].</span><span class="nx">clientTypes</span><span class="p">);</span>
+                            <span class="p">}</span>
+                            <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">p</span> <span class="o">===</span> <span class="s1">&#39;setup&#39;</span><span class="p">)</span> <span class="p">{</span>
+                                <span class="nx">replyData</span><span class="p">[</span><span class="nx">gameName</span><span class="p">][</span><span class="nx">p</span><span class="p">]</span> <span class="o">=</span>
+                                    <span class="nx">tryStringify</span><span class="p">(</span><span class="nx">gamesInfo</span><span class="p">[</span><span class="nx">gameName</span><span class="p">][</span><span class="nx">p</span><span class="p">]);</span>
                             <span class="p">}</span>
                             <span class="k">else</span> <span class="p">{</span>
                                 <span class="nx">replyData</span><span class="p">[</span><span class="nx">gameName</span><span class="p">][</span><span class="nx">p</span><span class="p">]</span> <span class="o">=</span> <span class="nx">gamesInfo</span><span class="p">[</span><span class="nx">gameName</span><span class="p">][</span><span class="nx">p</span><span class="p">];</span>
@@ -1992,6 +1999,52 @@ error will be thrown.</p>
     <span class="p">}</span>
 
     <span class="nx">recurse</span><span class="p">(</span><span class="nx">directory</span><span class="p">,</span> <span class="nx">depth</span><span class="p">);</span>
+<span class="p">}</span>
+
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="trystringify">
+  <h2>
+    <a href="#trystringify" name="trystringify" class="pilcrow">&#182;</a>
+    tryStringify
+  </h2>
+</div>
+
+  </div>
+  <div class="body"><p>Try to stringify an object (should not have cycles)</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">o</span>
+      <span class="dox_type">mixed</span>
+      <span>The item to stringify</span>
+    </div>
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">string</span>
+      <span>The stringified item, or a notice string, if
+  an error occurred.</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="kd">function</span> <span class="nx">tryStringify</span><span class="p">(</span><span class="nx">i</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">try</span> <span class="p">{</span>
+        <span class="nx">i</span> <span class="o">=</span> <span class="nx">JSON</span><span class="p">.</span><span class="nx">stringify</span><span class="p">(</span><span class="nx">i</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="k">catch</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">i</span> <span class="o">=</span> <span class="s1">&#39;setup contains cycles and cannot be sent.&#39;</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="nx">i</span><span class="p">;</span>
 <span class="p">}</span>
 </pre></div>
         </td>
