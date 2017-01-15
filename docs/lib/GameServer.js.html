@@ -1572,7 +1572,7 @@ because .stage and .stageLevel could be overwritten.</p>
     <span class="k">if</span> <span class="p">(</span><span class="nx">decoded</span><span class="p">.</span><span class="nx">session</span> <span class="o">!==</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">session</span><span class="p">)</span> <span class="p">{</span>
         <span class="nx">invalidSessionCookie</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
     <span class="p">}</span>
-    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">clientType</span> <span class="o">&amp;&amp;</span> <span class="nx">decoded</span><span class="p">.</span><span class="nx">clientId</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">decoded</span><span class="p">.</span><span class="nx">clientId</span><span class="p">)</span> <span class="p">{</span>
         <span class="nx">clientId</span> <span class="o">=</span> <span class="nx">decoded</span><span class="p">.</span><span class="nx">clientId</span><span class="p">;</span>
     <span class="p">}</span>
 
@@ -1593,7 +1593,6 @@ also for socket.io connections.</p>
     <span class="k">if</span> <span class="p">(</span><span class="nx">socketObj</span><span class="p">.</span><span class="nx">name</span> <span class="o">!==</span> <span class="s1">&#39;direct&#39;</span><span class="p">)</span> <span class="p">{</span>
         <span class="nx">res</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">gameInfo</span><span class="p">.</span><span class="nx">auth</span><span class="p">;</span>
         <span class="k">if</span> <span class="p">(</span><span class="nx">res</span> <span class="o">&amp;&amp;</span> <span class="nx">res</span><span class="p">.</span><span class="nx">enabled</span> <span class="o">&amp;&amp;</span> <span class="p">(</span><span class="o">!</span><span class="nx">clientId</span> <span class="o">||</span> <span class="nx">invalidSessionCookie</span><span class="p">))</span> <span class="p">{</span>
-
 
 </pre></div>
         </td>
