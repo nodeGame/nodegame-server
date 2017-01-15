@@ -1,5 +1,8 @@
 # nodegame-server change log
 
+# 3.5.2
+- Fixed bug introduced in 3.5 to access monitor interface.
+
 # 3.5.1
 - Game data/ dir is automatically created if not found.
 - The return value ofe game.setup is not cloned, and shared with all client types.
