@@ -1,5 +1,8 @@
 # nodegame-server change log
 
+# 3.5.3
+- Catching stringify errors (e.g. cycles) when sending game data to monitor.
+
 # 3.5.2
 - Fixed bug introduced in 3.5 to access monitor interface.
 
