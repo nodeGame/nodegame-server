@@ -554,7 +554,7 @@ optimize auth check for alias and not alias.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
             <span class="nx">outStr</span> <span class="o">=</span> <span class="nx">tryStringify</span><span class="p">(</span><span class="nx">out</span><span class="p">);</span>
-            <span class="k">if</span> <span class="p">(</span><span class="kc">true</span> <span class="o">||</span> <span class="nx">outStr</span> <span class="o">===</span> <span class="kc">false</span><span class="p">)</span> <span class="nx">asyncStringifyAndSend</span><span class="p">(</span><span class="nx">out</span><span class="p">,</span> <span class="nx">res</span><span class="p">);</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nx">outStr</span> <span class="o">===</span> <span class="kc">false</span><span class="p">)</span> <span class="nx">asyncStringifyAndSend</span><span class="p">(</span><span class="nx">out</span><span class="p">,</span> <span class="nx">res</span><span class="p">);</span>
             <span class="k">else</span> <span class="nx">res</span><span class="p">.</span><span class="nx">status</span><span class="p">(</span><span class="mi">200</span><span class="p">).</span><span class="nx">send</span><span class="p">(</span><span class="nx">outStr</span><span class="p">);</span>
         <span class="p">});</span>
 
