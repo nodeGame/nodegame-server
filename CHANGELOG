@@ -1,5 +1,8 @@
 # nodegame-server change log
 
+# 3.5.4
+- Server responds to updated Memory View of monitor interface.
+
 # 3.5.3
 - Catching stringify errors (e.g. cycles) when sending game data to monitor.
 
