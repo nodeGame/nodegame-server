@@ -27,10 +27,37 @@
       <div class="heading h2">
         <a href="#helper%20methods.">Helper Methods.</a>
       </div>
-      <div class="heading h2">
+      <div class="heading h3">
+        <a href="#loginsuper">loginSuper</a>
+      </div>
+      <div class="heading h3">
+        <a href="#login">login</a>
+      </div>
+      <div class="heading h3">
+        <a href="#createtoken">createToken</a>
+      </div>
+      <div class="heading h3">
+        <a href="#rendertemplate">renderTemplate</a>
+      </div>
+      <div class="heading h3">
+        <a href="#buildheaders">buildHeaders</a>
+      </div>
+      <div class="heading h3">
+        <a href="#replytoclaimid">replyToClaimId</a>
+      </div>
+      <div class="heading h3">
+        <a href="#getfilefromreq">getFileFromReq</a>
+      </div>
+      <div class="heading h3">
+        <a href="#savefileordie">saveFileOrDie</a>
+      </div>
+      <div class="heading h3">
+        <a href="#zipresults">zipResults</a>
+      </div>
+      <div class="heading h3">
         <a href="#trystringify">tryStringify</a>
       </div>
-      <div class="heading h2">
+      <div class="heading h3">
         <a href="#asyncstringifyandsend">asyncStringifyAndSend</a>
       </div>
     </div>
@@ -50,7 +77,7 @@
 </div>
 
 
-<p>Copyright(c) 2016 Stefano Balietti
+<p>Copyright(c) 2017 Stefano Balietti
 MIT Licensed</p>
   </div>
   <div class="body"><p>Adds game routes depending on game settings.</p>
@@ -970,6 +997,79 @@ to instantiate the page requested by <code>xx/xx/page*</code>.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
 
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="loginsuper">
+  <h3>
+    <a href="#loginsuper" name="loginsuper" class="pilcrow">&#182;</a>
+    loginSuper
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Checks if an incoming super-user connection is authorized, if so registers it</p>
+
+<p>A super-user is a client that is trying to connect to the monitor/ uri.</p>
+
+<p>Authorization is done against the data in channel/channel.credentials.js.</p>
+
+<p>An authorized connection receives a cookie with signed JSON web token
+and it is redirected to the actual monitor/ uri.</p>
+
+<p>A connection that is not authorized simply receives a warning message.</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">Reference</span>
+      <span class="dox_type">ServerChannel</span>
+      <span>to the channel.</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">gameName</span>
+      <span class="dox_type">string</span>
+      <span>The name of the game</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">user</span>
+      <span class="dox_type">string</span>
+      <span>The id of the user</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">pwd</span>
+      <span class="dox_type">string</span>
+      <span>The password for the user</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">req</span>
+      <span class="dox_type">object</span>
+      <span>The request object from Express</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">res</span>
+      <span class="dox_type">object</span>
+      <span>The respond object from Express</span>
+    </div>
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">boolean</span>
+      <span>TRUE if connection is authorized, FALSE otherwise</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">createToken
+</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
 <span class="kd">function</span> <span class="nx">loginSuper</span><span class="p">(</span><span class="nx">channel</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">user</span><span class="p">,</span> <span class="nx">pwd</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">req</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">authorized</span><span class="p">,</span> <span class="nx">token</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">search</span><span class="p">,</span> <span class="nx">redirectUri</span><span class="p">;</span>
@@ -993,6 +1093,75 @@ to instantiate the page requested by <code>xx/xx/page*</code>.</p>
     <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
 <span class="p">}</span>
 
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="login">
+  <h3>
+    <a href="#login" name="login" class="pilcrow">&#182;</a>
+    login
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Checks if an incoming connection is authorized, if so registers it</p>
+
+<p>An authorized connection receives a cookie with signed JSON web token
+and it is redirected to the actual game uri.</p>
+
+<p>A connection that is not authorized simply receives a warning message.</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">Reference</span>
+      <span class="dox_type">ServerChannel</span>
+      <span>to the channel.</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">gameName</span>
+      <span class="dox_type">string</span>
+      <span>The name of the game</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">user</span>
+      <span class="dox_type">string</span>
+      <span>The id of the user</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">pwd</span>
+      <span class="dox_type">string</span>
+      <span>The password for the user</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">req</span>
+      <span class="dox_type">object</span>
+      <span>The request object from Express</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">res</span>
+      <span class="dox_type">object</span>
+      <span>The respond object from Express</span>
+    </div>
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">boolean</span>
+      <span>TRUE if connection is authorized, FALSE otherwise</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">createToken
+</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
 <span class="kd">function</span> <span class="nx">login</span><span class="p">(</span><span class="nx">channel</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">user</span><span class="p">,</span> <span class="nx">pwd</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">req</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">authorized</span><span class="p">,</span> <span class="nx">token</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">search</span><span class="p">,</span> <span class="nx">redirectUri</span><span class="p">;</span>
@@ -1015,6 +1184,51 @@ to instantiate the page requested by <code>xx/xx/page*</code>.</p>
     <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
 <span class="p">}</span>
 
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="createtoken">
+  <h3>
+    <a href="#createtoken" name="createtoken" class="pilcrow">&#182;</a>
+    createToken
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Creates a signed JSON web token</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">userId</span>
+      <span class="dox_type">string</span>
+      <span>The id of the user</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">channel</span>
+      <span class="dox_type">object</span>
+      <span>An object containing the channel's secret
+  the channel's session id</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">tokenList</span>
+      <span class="dox_type">object</span>
+      <span>An object used to map the tokens to user profiles</span>
+    </div>
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">string</span>
+      <span>The signed JSON web token</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
 <span class="kd">function</span> <span class="nx">createToken</span><span class="p">(</span><span class="nx">userId</span><span class="p">,</span> <span class="nx">channel</span><span class="p">,</span> <span class="nx">tokenList</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">profile</span><span class="p">,</span> <span class="nx">secret</span><span class="p">,</span> <span class="nx">expire</span><span class="p">,</span> <span class="nx">token</span><span class="p">;</span>
     <span class="nx">profile</span> <span class="o">=</span> <span class="p">{</span>
@@ -1031,7 +1245,7 @@ to instantiate the page requested by <code>xx/xx/page*</code>.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-46" id="section-46">&#182;</a>
+  <a class="pilcrow" href="#section-49" id="section-49">&#182;</a>
 </div>
 <p>We are sending the profile in the token.</p>
         </td>
@@ -1045,7 +1259,7 @@ to instantiate the page requested by <code>xx/xx/page*</code>.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-47" id="section-47">&#182;</a>
+  <a class="pilcrow" href="#section-50" id="section-50">&#182;</a>
 </div>
 <p>Store the token somewhere.</p>
         </td>
@@ -1055,6 +1269,66 @@ to instantiate the page requested by <code>xx/xx/page*</code>.</p>
     <span class="k">return</span> <span class="nx">token</span><span class="p">;</span>
 <span class="p">}</span>
 
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="rendertemplate">
+  <h3>
+    <a href="#rendertemplate" name="rendertemplate" class="pilcrow">&#182;</a>
+    renderTemplate
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Renders a template and sents it to a client</p>
+
+<p>If an error occurs, or file is not found sends a 404 error.</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">resourceManager</span>
+      <span class="dox_type">ResourceManager</span>
+      <span>Reference to the resource manager</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">req</span>
+      <span class="dox_type">object</span>
+      <span>The request object from Express</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">res</span>
+      <span class="dox_type">object</span>
+      <span>The respond object from Express</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">gameName</span>
+      <span class="dox_type">string</span>
+      <span>The name of the game</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">templatePath</span>
+      <span class="dox_type">string</span>
+      <span>The path to the template file</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">contextPath</span>
+      <span class="dox_type">string</span>
+      <span>The path to the context file</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">gameSettings</span>
+      <span class="dox_type">object</span>
+      <span>The game settings as in channel</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
 <span class="kd">function</span> <span class="nx">renderTemplate</span><span class="p">(</span><span class="nx">resourceManager</span><span class="p">,</span> <span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">templatePath</span><span class="p">,</span>
                         <span class="nx">contextPath</span><span class="p">,</span> <span class="nx">gameSettings</span><span class="p">)</span> <span class="p">{</span>
 
@@ -1067,7 +1341,7 @@ to instantiate the page requested by <code>xx/xx/page*</code>.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-48" id="section-48">&#182;</a>
+  <a class="pilcrow" href="#section-52" id="section-52">&#182;</a>
 </div>
 <p>Context is retrieved from cache,
 and can be modified by user-defined callbacks.</p>
@@ -1101,7 +1375,7 @@ and can be modified by user-defined callbacks.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-49" id="section-49">&#182;</a>
+  <a class="pilcrow" href="#section-53" id="section-53">&#182;</a>
 </div>
 <p>TODO: Log error.
 TODO: Mark file as non-existing ?</p>
@@ -1120,7 +1394,7 @@ TODO: Mark file as non-existing ?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-50" id="section-50">&#182;</a>
+  <a class="pilcrow" href="#section-54" id="section-54">&#182;</a>
 </div>
 <p>Render anyway, with or without context.</p>
         </td>
@@ -1129,6 +1403,41 @@ TODO: Mark file as non-existing ?</p>
     <span class="p">});</span>
 <span class="p">}</span>
 
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="buildheaders">
+  <h3>
+    <a href="#buildheaders" name="buildheaders" class="pilcrow">&#182;</a>
+    buildHeaders
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Formats the response headers looking up the mime type of the file</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">file</span>
+      <span class="dox_type">string</span>
+      <span>The name of the file (containing extension) that
+  that will be sent to a client</span>
+    </div>
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">object</span>
+      <span>headers The headers with the added 'Content-Type' property</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
 <span class="kd">function</span> <span class="nx">buildHeaders</span><span class="p">(</span><span class="nx">file</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">mimeType</span><span class="p">,</span> <span class="nx">charset</span><span class="p">,</span> <span class="nx">headers</span><span class="p">;</span>
     <span class="nx">mimeType</span> <span class="o">=</span> <span class="nx">mime</span><span class="p">.</span><span class="nx">lookup</span><span class="p">(</span><span class="nx">file</span><span class="p">);</span>
@@ -1138,6 +1447,53 @@ TODO: Mark file as non-existing ?</p>
     <span class="k">return</span> <span class="nx">headers</span><span class="p">;</span>
 <span class="p">}</span>
 
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="replytoclaimid">
+  <h3>
+    <a href="#replytoclaimid" name="replytoclaimid" class="pilcrow">&#182;</a>
+    replyToClaimId
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Formats the response to a claim-id a request and sends it as a JSONP</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">res</span>
+      <span class="dox_type">object</span>
+      <span>The respond object from Express</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">cb</span>
+      <span class="dox_type">string</span>
+      <span>The name of of the callback function that will
+  be executed on the clients upon receiving the response</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">responseCode</span>
+      <span class="dox_type">number</span>
+      <span>The status of the response, 200 for
+  for success. It changes how the response objects sends the data
+  back to client</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">codeOrErr</span>
+      <span class="dox_type">string</span>
+      <span>The a valid code, or an error string that
+  will be sent to client</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
 <span class="kd">function</span> <span class="nx">replyToClaimId</span><span class="p">(</span><span class="nx">res</span><span class="p">,</span> <span class="nx">cb</span><span class="p">,</span> <span class="nx">responseCode</span><span class="p">,</span> <span class="nx">codeOrErr</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">str</span><span class="p">;</span>
     <span class="k">if</span> <span class="p">(</span><span class="nx">responseCode</span> <span class="o">===</span> <span class="mi">200</span><span class="p">)</span> <span class="p">{</span>
@@ -1150,12 +1506,60 @@ TODO: Mark file as non-existing ?</p>
     <span class="nx">res</span><span class="p">.</span><span class="nx">status</span><span class="p">(</span><span class="nx">responseCode</span><span class="p">).</span><span class="nx">send</span><span class="p">(</span><span class="nx">cb</span> <span class="o">+</span> <span class="s1">&#39;(&#39;</span> <span class="o">+</span> <span class="nx">str</span> <span class="o">+</span> <span class="s1">&#39;)&#39;</span><span class="p">);</span>
 <span class="p">}</span>
 
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="getfilefromreq">
+  <h3>
+    <a href="#getfilefromreq" name="getfilefromreq" class="pilcrow">&#182;</a>
+    getFileFromReq
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Extracts the file from an incoming request (params[0])</p>
+
+<p>If the request is malformed, it sends a 404 error and returns</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">req</span>
+      <span class="dox_type">object</span>
+      <span>The request object from Express</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">res</span>
+      <span class="dox_type">object</span>
+      <span>The respond object from Express</span>
+    </div>
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">string</span>
+      <span class="dox_type">boolean</span>
+      <span>file The requested file or false, if the
+  the request was malformed</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">getFileFromReq
+</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
 <span class="kd">function</span> <span class="nx">getFileFromReq</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">file</span><span class="p">;</span>
     <span class="nx">file</span> <span class="o">=</span> <span class="nx">req</span><span class="p">.</span><span class="nx">params</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;&#39;</span> <span class="o">===</span> <span class="nx">file</span> <span class="o">||</span> <span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">file</span><span class="p">)</span> <span class="p">{</span>
         <span class="nx">res</span><span class="p">.</span><span class="nx">status</span><span class="p">(</span><span class="mi">404</span><span class="p">).</span><span class="nx">send</span><span class="p">(</span><span class="s1">&#39;No file specified.&#39;</span><span class="p">);</span>
-        <span class="k">return</span><span class="p">;</span>
+        <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
     <span class="p">}</span>
     <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">file</span><span class="p">.</span><span class="nx">lastIndexOf</span><span class="p">(</span><span class="s1">&#39;\/&#39;</span><span class="p">)</span> <span class="o">===</span> <span class="p">(</span><span class="nx">file</span><span class="p">.</span><span class="nx">length</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span> <span class="p">{</span>
 
@@ -1165,7 +1569,7 @@ TODO: Mark file as non-existing ?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-51" id="section-51">&#182;</a>
+  <a class="pilcrow" href="#section-58" id="section-58">&#182;</a>
 </div>
 <p>Removing the trailing slash because it creates:
 Error: ENOTDIR in fetching the file.</p>
@@ -1176,6 +1580,55 @@ Error: ENOTDIR in fetching the file.</p>
     <span class="k">return</span> <span class="nx">file</span><span class="p">;</span>
 <span class="p">}</span>
 
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="savefileordie">
+  <h3>
+    <a href="#savefileordie" name="savefileordie" class="pilcrow">&#182;</a>
+    saveFileOrDie
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Analizes the request object and sends the requested file or a 404 error</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">req</span>
+      <span class="dox_type">object</span>
+      <span>The request object from Express</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">res</span>
+      <span class="dox_type">object</span>
+      <span>The respond object from Express</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">gameInfo</span>
+      <span class="dox_type">object</span>
+      <span>The game info as in channel</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">cb</span>
+      <span class="dox_type">function</span>
+      <span>A callback function that adjusts the path to
+   the requested file (files can be also outside of the game directory)</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">getFileFromReq
+</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
 <span class="kd">function</span> <span class="nx">serveFileOrDie</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">gameInfo</span><span class="p">,</span> <span class="nx">cb</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">filePath</span><span class="p">,</span> <span class="nx">file</span><span class="p">;</span>
 
@@ -1194,7 +1647,7 @@ Error: ENOTDIR in fetching the file.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-52" id="section-52">&#182;</a>
+  <a class="pilcrow" href="#section-60" id="section-60">&#182;</a>
 </div>
 <p>Build path to file.</p>
         </td>
@@ -1212,6 +1665,44 @@ Error: ENOTDIR in fetching the file.</p>
     <span class="p">});</span>
 <span class="p">}</span>
 
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="zipresults">
+  <h3>
+    <a href="#zipresults" name="zipresults" class="pilcrow">&#182;</a>
+    zipResults
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Zips all the files in the data/ directory and sends the archive</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">req</span>
+      <span class="dox_type">object</span>
+      <span>The request object from Express</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">res</span>
+      <span class="dox_type">object</span>
+      <span>The respond object from Express</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">gameInfo</span>
+      <span class="dox_type">object</span>
+      <span>The game info as in channel</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
 <span class="kd">function</span> <span class="nx">zipResults</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">gameInfo</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">archiver</span><span class="p">,</span> <span class="nx">archive</span><span class="p">;</span>
 
@@ -1237,10 +1728,10 @@ Error: ENOTDIR in fetching the file.</p>
         <td class="docs"><div class="dox">
   <div class="summary">
 <div class="pilwrap" id="trystringify">
-  <h2>
+  <h3>
     <a href="#trystringify" name="trystringify" class="pilcrow">&#182;</a>
     tryStringify
-  </h2>
+  </h3>
 </div>
 
   </div>
@@ -1282,10 +1773,10 @@ Error: ENOTDIR in fetching the file.</p>
         <td class="docs"><div class="dox">
   <div class="summary">
 <div class="pilwrap" id="asyncstringifyandsend">
-  <h2>
+  <h3>
     <a href="#asyncstringifyandsend" name="asyncstringifyandsend" class="pilcrow">&#182;</a>
     asyncStringifyAndSend
-  </h2>
+  </h3>
 </div>
 
   </div>
@@ -1309,7 +1800,6 @@ Error: ENOTDIR in fetching the file.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="kd">function</span> <span class="nx">asyncStringifyAndSend</span><span class="p">(</span><span class="nx">db</span><span class="p">,</span> <span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
-    <span class="kd">var</span> <span class="nx">NDDB</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;NDDB&#39;</span><span class="p">).</span><span class="nx">NDDB</span><span class="p">;</span>
     <span class="nx">setTimeout</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
         <span class="kd">var</span> <span class="nx">i</span><span class="p">,</span> <span class="nx">len</span><span class="p">,</span> <span class="nx">out</span><span class="p">;</span>
         <span class="nx">i</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="nx">len</span> <span class="o">=</span> <span class="nx">db</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span>
