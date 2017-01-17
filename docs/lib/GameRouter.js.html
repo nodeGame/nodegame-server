@@ -30,6 +30,9 @@
       <div class="heading h2">
         <a href="#trystringify">tryStringify</a>
       </div>
+      <div class="heading h2">
+        <a href="#asyncstringifyandsend">asyncStringifyAndSend</a>
+      </div>
     </div>
   </div>
   <div id="sidebar-toggle"></div>
@@ -527,10 +530,10 @@ optimize auth check for alias and not alias.</p>
         <td class="code highlight"><div class="highlight"><pre>
         <span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39;/monitor/memorydb/*&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">next</span><span class="p">)</span> <span class="p">{</span>
             <span class="kd">var</span> <span class="nx">i</span><span class="p">,</span> <span class="nx">len</span><span class="p">,</span> <span class="nx">roomName</span><span class="p">,</span> <span class="nx">room</span><span class="p">;</span>
-            <span class="kd">var</span> <span class="nx">out</span><span class="p">;</span>
+            <span class="kd">var</span> <span class="nx">out</span><span class="p">,</span> <span class="nx">outStr</span><span class="p">;</span>
 
             <span class="nx">out</span> <span class="o">=</span> <span class="p">[];</span>
-            <span class="k">for</span> <span class="p">(</span><span class="nx">roomName</span> <span class="k">in</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">gameRooms</span> <span class="p">)</span> <span class="p">{</span>
+            <span class="k">for</span> <span class="p">(</span><span class="nx">roomName</span> <span class="k">in</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">)</span> <span class="p">{</span>
                 <span class="k">if</span> <span class="p">(</span><span class="nx">channel</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">.</span><span class="nx">hasOwnProperty</span><span class="p">(</span><span class="nx">roomName</span><span class="p">))</span> <span class="p">{</span>
                     <span class="nx">room</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">[</span><span class="nx">roomName</span><span class="p">];</span>
                     <span class="k">if</span> <span class="p">(</span><span class="nx">room</span><span class="p">.</span><span class="nx">roomType</span> <span class="o">===</span> <span class="s1">&#39;Game&#39;</span><span class="p">)</span> <span class="p">{</span>
@@ -538,7 +541,6 @@ optimize auth check for alias and not alias.</p>
                     <span class="p">}</span>
                 <span class="p">}</span>
             <span class="p">}</span>
-
 
 </pre></div>
         </td>
@@ -548,10 +550,12 @@ optimize auth check for alias and not alias.</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-23" id="section-23">&#182;</a>
 </div>
-<p>TODO: decycle!</p>
+<p>Stringify fails if there are cycle (it shouldn't anyway).</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-            <span class="nx">res</span><span class="p">.</span><span class="nx">status</span><span class="p">(</span><span class="mi">200</span><span class="p">).</span><span class="nx">send</span><span class="p">(</span><span class="nx">JSON</span><span class="p">.</span><span class="nx">stringify</span><span class="p">(</span><span class="nx">out</span><span class="p">));</span>
+            <span class="nx">outStr</span> <span class="o">=</span> <span class="nx">tryStringify</span><span class="p">(</span><span class="nx">out</span><span class="p">);</span>
+            <span class="k">if</span> <span class="p">(</span><span class="kc">true</span> <span class="o">||</span> <span class="nx">outStr</span> <span class="o">===</span> <span class="kc">false</span><span class="p">)</span> <span class="nx">asyncStringifyAndSend</span><span class="p">(</span><span class="nx">out</span><span class="p">,</span> <span class="nx">res</span><span class="p">);</span>
+            <span class="k">else</span> <span class="nx">res</span><span class="p">.</span><span class="nx">status</span><span class="p">(</span><span class="mi">200</span><span class="p">).</span><span class="nx">send</span><span class="p">(</span><span class="nx">outStr</span><span class="p">);</span>
         <span class="p">});</span>
 
         <span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39;/monitor/*&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">next</span><span class="p">)</span> <span class="p">{</span>
@@ -1253,8 +1257,7 @@ Error: ENOTDIR in fetching the file.</p>
     <div class="dox_tag_detail">
       <span class="dox_tag_name"></span>
       <span class="dox_type">string</span>
-      <span>The stringified item, or a notice string, if
-  an error occurred.</span>
+      <span>The stringified item, or false if an error occurred</span>
     </div>
   </div>
 </div>
@@ -1265,9 +1268,57 @@ Error: ENOTDIR in fetching the file.</p>
         <span class="nx">i</span> <span class="o">=</span> <span class="nx">JSON</span><span class="p">.</span><span class="nx">stringify</span><span class="p">(</span><span class="nx">i</span><span class="p">);</span>
     <span class="p">}</span>
     <span class="k">catch</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nx">i</span> <span class="o">=</span> <span class="s1">&#39;setup contains cycles and cannot be sent.&#39;</span><span class="p">;</span>
+        <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
     <span class="p">}</span>
     <span class="k">return</span> <span class="nx">i</span><span class="p">;</span>
+<span class="p">}</span>
+
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="asyncstringifyandsend">
+  <h2>
+    <a href="#asyncstringifyandsend" name="asyncstringifyandsend" class="pilcrow">&#182;</a>
+    asyncStringifyAndSend
+  </h2>
+</div>
+
+  </div>
+  <div class="body"><p>Decycles and strinfies a collection of items, then sends it</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">db</span>
+      <span class="dox_type">array</span>
+      <span>The collection of items to stringify</span>
+    </div>
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">string</span>
+      <span>The stringified item, or false if an error occurred</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="kd">function</span> <span class="nx">asyncStringifyAndSend</span><span class="p">(</span><span class="nx">db</span><span class="p">,</span> <span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">NDDB</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;NDDB&#39;</span><span class="p">).</span><span class="nx">NDDB</span><span class="p">;</span>
+    <span class="nx">setTimeout</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+        <span class="kd">var</span> <span class="nx">i</span><span class="p">,</span> <span class="nx">len</span><span class="p">,</span> <span class="nx">out</span><span class="p">;</span>
+        <span class="nx">i</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="nx">len</span> <span class="o">=</span> <span class="nx">db</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span>
+        <span class="nx">out</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">Array</span><span class="p">(</span><span class="nx">len</span><span class="p">);</span>
+        <span class="k">for</span> <span class="p">(</span> <span class="p">;</span> <span class="o">++</span><span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">len</span> <span class="p">;</span> <span class="p">)</span> <span class="p">{</span>
+            <span class="nx">out</span><span class="p">[</span><span class="nx">i</span><span class="p">]</span> <span class="o">=</span> <span class="nx">JSON</span><span class="p">.</span><span class="nx">decycle</span><span class="p">(</span><span class="nx">db</span><span class="p">[</span><span class="nx">i</span><span class="p">]);</span>
+        <span class="p">}</span>
+        <span class="nx">res</span><span class="p">.</span><span class="nx">status</span><span class="p">(</span><span class="mi">200</span><span class="p">).</span><span class="nx">send</span><span class="p">(</span><span class="nx">out</span><span class="p">);</span>
+    <span class="p">});</span>
 <span class="p">}</span>
 </pre></div>
         </td>
