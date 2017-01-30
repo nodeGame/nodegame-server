@@ -253,7 +253,6 @@ input[type="range"] {
 
 .chat {
     overflow-y: scroll;
-    height: 200px;
     width: 450px;
     border: 1px solid #CCC;
     padding: 5px;

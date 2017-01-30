@@ -2177,8 +2177,8 @@ generation and clientObject decoration.</p>
         <span class="k">try</span> <span class="p">{</span>
             <span class="nx">codes</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="nx">settings</span><span class="p">.</span><span class="nx">codes</span><span class="p">)(</span><span class="nx">settings</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">codes</span><span class="p">)</span> <span class="p">{</span>
                 <span class="k">if</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span>
-                    <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadAuthDir: an error &#39;</span> <span class="o">+</span>
-                                    <span class="s1">&#39;occurred: &#39;</span> <span class="o">+</span> <span class="nx">err</span><span class="p">);</span>
+                    <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadAuthDir: channel &#39;</span> <span class="o">+</span>
+                                    <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39; an error occurred: &#39;</span> <span class="o">+</span> <span class="nx">err</span><span class="p">);</span>
                 <span class="p">}</span>
                 <span class="nx">importAuthCodes</span><span class="p">(</span><span class="nx">channel</span><span class="p">,</span> <span class="nx">codes</span><span class="p">,</span> <span class="nx">settings</span><span class="p">);</span>
                 <span class="k">if</span> <span class="p">(</span><span class="nx">asyncCodes</span><span class="p">)</span> <span class="p">{</span>
@@ -2187,8 +2187,9 @@ generation and clientObject decoration.</p>
             <span class="p">});</span>
         <span class="p">}</span>
         <span class="k">catch</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
-            <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadAuthDir: an error occurred &#39;</span> <span class="o">+</span>
-                            <span class="s1">&#39;trying to import the codes:&#39;</span> <span class="o">+</span> <span class="s2">&quot;\n&quot;</span> <span class="o">+</span> <span class="nx">e</span><span class="p">.</span><span class="nx">stack</span><span class="p">);</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadAuthDir: channel &#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span>
+                            <span class="s1">&#39; an error occurred trying to import the codes:&#39;</span> <span class="o">+</span>
+                            <span class="s2">&quot;\n&quot;</span> <span class="o">+</span> <span class="nx">e</span><span class="p">.</span><span class="nx">stack</span><span class="p">);</span>
         <span class="p">}</span>
 
         <span class="k">if</span> <span class="p">(</span><span class="nx">codes</span><span class="p">)</span> <span class="p">{</span>
@@ -2243,8 +2244,8 @@ generation and clientObject decoration.</p>
             <span class="nx">require</span><span class="p">(</span><span class="nx">authFile</span><span class="p">)(</span><span class="nx">authObj</span><span class="p">,</span> <span class="nx">settings</span><span class="p">);</span>
         <span class="p">}</span>
         <span class="k">catch</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
-            <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadAuthDir: cannot read &#39;</span> <span class="o">+</span>
-                            <span class="nx">authFile</span> <span class="o">+</span> <span class="s1">&#39;. &#39;</span> <span class="o">+</span> <span class="nx">e</span><span class="p">.</span><span class="nx">stack</span><span class="p">);</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadAuthDir: channel &#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span>
+                            <span class="s1">&#39; cannot read &#39;</span> <span class="o">+</span> <span class="nx">authFile</span> <span class="o">+</span> <span class="s1">&#39;. &#39;</span> <span class="o">+</span> <span class="nx">e</span><span class="p">.</span><span class="nx">stack</span><span class="p">);</span>
         <span class="p">}</span>
     <span class="p">}</span>
 <span class="p">};</span>
