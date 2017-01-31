@@ -49,7 +49,7 @@
         <a href="#getfilefromreq">getFileFromReq</a>
       </div>
       <div class="heading h3">
-        <a href="#savefileordie">saveFileOrDie</a>
+        <a href="#servefileordie">serveFileOrDie</a>
       </div>
       <div class="heading h3">
         <a href="#zipresults">zipResults</a>
@@ -585,6 +585,47 @@ optimize auth check for alias and not alias.</p>
             <span class="k">else</span> <span class="nx">res</span><span class="p">.</span><span class="nx">status</span><span class="p">(</span><span class="mi">200</span><span class="p">).</span><span class="nx">send</span><span class="p">(</span><span class="nx">outStr</span><span class="p">);</span>
         <span class="p">});</span>
 
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-24" id="section-24">&#182;</a>
+</div>
+<p>Serving results from data/ directory.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39;/monitor/authsettings/:setting/*&#39;</span><span class="p">,</span>
+                <span class="kd">function</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">next</span><span class="p">)</span> <span class="p">{</span>
+
+            <span class="kd">var</span> <span class="nx">setting</span><span class="p">,</span> <span class="nx">file</span><span class="p">;</span>
+            <span class="nx">setting</span> <span class="o">=</span> <span class="nx">req</span><span class="p">.</span><span class="nx">params</span><span class="p">.</span><span class="nx">setting</span><span class="p">;</span>
+            <span class="nx">file</span> <span class="o">=</span> <span class="nx">req</span><span class="p">.</span><span class="nx">params</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-25" id="section-25">&#182;</a>
+</div>
+<p>Security check.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+            <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">gameInfo</span><span class="p">.</span><span class="nx">auth</span><span class="p">,</span> <span class="nx">setting</span><span class="p">,</span> <span class="nx">file</span><span class="p">);</span>
+            <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">file</span> <span class="o">||</span> <span class="nx">gameInfo</span><span class="p">.</span><span class="nx">auth</span><span class="p">[</span><span class="nx">setting</span><span class="p">]</span> <span class="o">!==</span> <span class="nx">file</span><span class="p">)</span> <span class="p">{</span>
+                <span class="nx">res</span><span class="p">.</span><span class="nx">status</span><span class="p">(</span><span class="mi">500</span><span class="p">).</span><span class="nx">send</span><span class="p">(</span><span class="s1">&#39;Invalid request.&#39;</span><span class="p">);</span>
+                <span class="k">return</span><span class="p">;</span>
+            <span class="p">}</span>
+            <span class="nx">serveFileOrDie</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">gameInfo</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+                <span class="k">if</span> <span class="p">(</span><span class="nx">path</span><span class="p">.</span><span class="nx">isAbsolute</span><span class="p">(</span><span class="nx">file</span><span class="p">))</span> <span class="k">return</span> <span class="nx">file</span><span class="p">;</span>
+                <span class="k">return</span> <span class="nx">gameInfo</span><span class="p">.</span><span class="nx">dir</span> <span class="o">+</span> <span class="s1">&#39;auth/&#39;</span> <span class="o">+</span> <span class="nx">file</span><span class="p">;</span>
+            <span class="p">});</span>
+        <span class="p">});</span>
+
         <span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39;/monitor/*&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">next</span><span class="p">)</span> <span class="p">{</span>
             <span class="kd">var</span> <span class="nx">userId</span><span class="p">,</span> <span class="nx">pwd</span><span class="p">;</span>
             <span class="kd">var</span> <span class="nx">filePath</span><span class="p">,</span> <span class="nx">file</span><span class="p">,</span> <span class="nx">cachedFile</span><span class="p">;</span>
@@ -605,7 +646,7 @@ optimize auth check for alias and not alias.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-24" id="section-24">&#182;</a>
+  <a class="pilcrow" href="#section-26" id="section-26">&#182;</a>
 </div>
 <p>Removing the trailing slash because it creates:
 Error: ENOTDIR in fetching the file.</p>
@@ -621,7 +662,7 @@ Error: ENOTDIR in fetching the file.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-25" id="section-25">&#182;</a>
+  <a class="pilcrow" href="#section-27" id="section-27">&#182;</a>
 </div>
 <p>Build path to file.</p>
         </td>
@@ -643,7 +684,7 @@ Error: ENOTDIR in fetching the file.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-26" id="section-26">&#182;</a>
+  <a class="pilcrow" href="#section-28" id="section-28">&#182;</a>
 </div>
 <p>Game. (default index.htm).</p>
         </td>
@@ -665,7 +706,7 @@ Error: ENOTDIR in fetching the file.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-27" id="section-27">&#182;</a>
+  <a class="pilcrow" href="#section-29" id="section-29">&#182;</a>
 </div>
 <p>Build filePath to file in public directory.</p>
         </td>
@@ -679,7 +720,7 @@ Error: ENOTDIR in fetching the file.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-28" id="section-28">&#182;</a>
+  <a class="pilcrow" href="#section-30" id="section-30">&#182;</a>
 </div>
 <p>TODO: move after refactoring.
 Send JSON data as JSONP if there is a callback query parameter:</p>
@@ -693,7 +734,7 @@ Send JSON data as JSONP if there is a callback query parameter:</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-29" id="section-29">&#182;</a>
+  <a class="pilcrow" href="#section-31" id="section-31">&#182;</a>
 </div>
 <p>Load file contents:</p>
         </td>
@@ -713,7 +754,7 @@ Send JSON data as JSONP if there is a callback query parameter:</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-30" id="section-30">&#182;</a>
+  <a class="pilcrow" href="#section-32" id="section-32">&#182;</a>
 </div>
 <p>Send it:</p>
         </td>
@@ -733,7 +774,7 @@ Send JSON data as JSONP if there is a callback query parameter:</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-31" id="section-31">&#182;</a>
+  <a class="pilcrow" href="#section-33" id="section-33">&#182;</a>
 </div>
 <p>Build headers.</p>
         </td>
@@ -747,7 +788,7 @@ Send JSON data as JSONP if there is a callback query parameter:</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-32" id="section-32">&#182;</a>
+  <a class="pilcrow" href="#section-34" id="section-34">&#182;</a>
 </div>
 <p>If it is not text, it was not cached.</p>
         </td>
@@ -764,7 +805,7 @@ Send JSON data as JSONP if there is a callback query parameter:</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-33" id="section-33">&#182;</a>
+  <a class="pilcrow" href="#section-35" id="section-35">&#182;</a>
 </div>
 <p>Already found in <code>public/</code> and cached.</p>
         </td>
@@ -778,7 +819,7 @@ Send JSON data as JSONP if there is a callback query parameter:</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-34" id="section-34">&#182;</a>
+  <a class="pilcrow" href="#section-36" id="section-36">&#182;</a>
 </div>
 <p>File in public (cached or loaded).</p>
         </td>
@@ -796,7 +837,7 @@ Send JSON data as JSONP if there is a callback query parameter:</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-35" id="section-35">&#182;</a>
+  <a class="pilcrow" href="#section-37" id="section-37">&#182;</a>
 </div>
 <p>FIX HERE.</p>
         </td>
@@ -810,7 +851,7 @@ Send JSON data as JSONP if there is a callback query parameter:</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-36" id="section-36">&#182;</a>
+  <a class="pilcrow" href="#section-38" id="section-38">&#182;</a>
 </div>
 <p>console.log('NNNNNOT in public: ', file);</p>
         </td>
@@ -823,7 +864,7 @@ Send JSON data as JSONP if there is a callback query parameter:</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-37" id="section-37">&#182;</a>
+  <a class="pilcrow" href="#section-39" id="section-39">&#182;</a>
 </div>
 <p>Check if it a template.</p>
         </td>
@@ -837,7 +878,7 @@ Send JSON data as JSONP if there is a callback query parameter:</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-38" id="section-38">&#182;</a>
+  <a class="pilcrow" href="#section-40" id="section-40">&#182;</a>
 </div>
 <p>Instantiate templates, if available.
 <code>html/templates/page.jade</code> holds the template and
@@ -853,7 +894,7 @@ to instantiate the page requested by <code>xx/xx/page*</code>.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-39" id="section-39">&#182;</a>
+  <a class="pilcrow" href="#section-41" id="section-41">&#182;</a>
 </div>
 <p>Matches: xx/xx/xx/xx/xx/</p>
         </td>
@@ -877,7 +918,7 @@ to instantiate the page requested by <code>xx/xx/page*</code>.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-40" id="section-40">&#182;</a>
+  <a class="pilcrow" href="#section-42" id="section-42">&#182;</a>
 </div>
 <p>Info about previous requests to the template file.</p>
         </td>
@@ -891,7 +932,7 @@ to instantiate the page requested by <code>xx/xx/page*</code>.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-41" id="section-41">&#182;</a>
+  <a class="pilcrow" href="#section-43" id="section-43">&#182;</a>
 </div>
 <p>Template not existing.</p>
         </td>
@@ -906,7 +947,7 @@ to instantiate the page requested by <code>xx/xx/page*</code>.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-42" id="section-42">&#182;</a>
+  <a class="pilcrow" href="#section-44" id="section-44">&#182;</a>
 </div>
 <p>Template existing, render it.</p>
         </td>
@@ -922,7 +963,7 @@ to instantiate the page requested by <code>xx/xx/page*</code>.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-43" id="section-43">&#182;</a>
+  <a class="pilcrow" href="#section-45" id="section-45">&#182;</a>
 </div>
 <p>Do not know if exists or not, check and render it.</p>
         </td>
@@ -952,7 +993,7 @@ to instantiate the page requested by <code>xx/xx/page*</code>.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-44" id="section-44">&#182;</a>
+  <a class="pilcrow" href="#section-46" id="section-46">&#182;</a>
 </div>
 <p>Check if it is a view.
            resourceManager.getFromViews(gameName, file, function(view) {</p>
@@ -1245,7 +1286,7 @@ and it is redirected to the actual game uri.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-49" id="section-49">&#182;</a>
+  <a class="pilcrow" href="#section-51" id="section-51">&#182;</a>
 </div>
 <p>We are sending the profile in the token.</p>
         </td>
@@ -1259,7 +1300,7 @@ and it is redirected to the actual game uri.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-50" id="section-50">&#182;</a>
+  <a class="pilcrow" href="#section-52" id="section-52">&#182;</a>
 </div>
 <p>Store the token somewhere.</p>
         </td>
@@ -1341,7 +1382,7 @@ and it is redirected to the actual game uri.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-52" id="section-52">&#182;</a>
+  <a class="pilcrow" href="#section-54" id="section-54">&#182;</a>
 </div>
 <p>Context is retrieved from cache,
 and can be modified by user-defined callbacks.</p>
@@ -1375,7 +1416,7 @@ and can be modified by user-defined callbacks.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-53" id="section-53">&#182;</a>
+  <a class="pilcrow" href="#section-55" id="section-55">&#182;</a>
 </div>
 <p>TODO: Log error.
 TODO: Mark file as non-existing ?</p>
@@ -1394,7 +1435,7 @@ TODO: Mark file as non-existing ?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-54" id="section-54">&#182;</a>
+  <a class="pilcrow" href="#section-56" id="section-56">&#182;</a>
 </div>
 <p>Render anyway, with or without context.</p>
         </td>
@@ -1569,7 +1610,7 @@ TODO: Mark file as non-existing ?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-58" id="section-58">&#182;</a>
+  <a class="pilcrow" href="#section-60" id="section-60">&#182;</a>
 </div>
 <p>Removing the trailing slash because it creates:
 Error: ENOTDIR in fetching the file.</p>
@@ -1587,10 +1628,10 @@ Error: ENOTDIR in fetching the file.</p>
       <tr>
         <td class="docs"><div class="dox">
   <div class="summary">
-<div class="pilwrap" id="savefileordie">
+<div class="pilwrap" id="servefileordie">
   <h3>
-    <a href="#savefileordie" name="savefileordie" class="pilcrow">&#182;</a>
-    saveFileOrDie
+    <a href="#servefileordie" name="servefileordie" class="pilcrow">&#182;</a>
+    serveFileOrDie
   </h3>
 </div>
 
@@ -1647,7 +1688,7 @@ Error: ENOTDIR in fetching the file.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-60" id="section-60">&#182;</a>
+  <a class="pilcrow" href="#section-62" id="section-62">&#182;</a>
 </div>
 <p>Build path to file.</p>
         </td>

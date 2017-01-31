@@ -143,7 +143,7 @@
 </div>
 
 
-<p>Copyright(c) 2016 Stefano Balietti
+<p>Copyright(c) 2017 Stefano Balietti
 MIT Licensed</p>
   </div>
   <div class="body"><p>GameServer for the administrators endpoint</p>
@@ -1062,6 +1062,20 @@ TODO: Send only specific client data, not everything;
                     <span class="nx">to</span><span class="o">:</span>   <span class="nx">from</span>
                 <span class="p">}));</span>
             <span class="p">});</span>
+        <span class="p">}</span>
+        <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">data</span><span class="p">.</span><span class="nx">type</span> <span class="o">===</span> <span class="s1">&#39;AUTH&#39;</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">dataDir</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">getGameDir</span><span class="p">()</span> <span class="o">+</span> <span class="s1">&#39;data&#39;</span><span class="p">;</span>
+
+            <span class="nx">replyData</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="nx">settings</span><span class="o">:</span> <span class="nx">that</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">gameInfo</span><span class="p">.</span><span class="nx">auth</span><span class="p">,</span>
+            <span class="p">};</span>
+
+            <span class="nx">that</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">send2client</span><span class="p">(</span><span class="nx">that</span><span class="p">.</span><span class="nx">msg</span><span class="p">.</span><span class="nx">create</span><span class="p">({</span>
+                <span class="nx">text</span><span class="o">:</span> <span class="s1">&#39;INFO_AUTH&#39;</span><span class="p">,</span>
+                <span class="nx">data</span><span class="o">:</span> <span class="nx">replyData</span><span class="p">,</span>
+                <span class="nx">to</span><span class="o">:</span>   <span class="nx">from</span>
+            <span class="p">}));</span>
+
         <span class="p">}</span>
         <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">data</span><span class="p">.</span><span class="nx">type</span> <span class="o">===</span> <span class="s1">&#39;LOGS&#39;</span><span class="p">)</span> <span class="p">{</span>
             <span class="nx">dataDir</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">logDir</span><span class="p">;</span>
