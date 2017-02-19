@@ -308,6 +308,8 @@ MIT Licensed</p>
                 <span class="k">return</span> <span class="nx">p</span><span class="p">.</span><span class="nx">admin</span> <span class="o">?</span> <span class="nx">p</span><span class="p">.</span><span class="nx">id</span> <span class="o">:</span> <span class="kc">undefined</span><span class="p">;</span>
             <span class="p">},</span>
             <span class="nx">player</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">p</span><span class="p">)</span> <span class="p">{</span>
+                <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">p</span><span class="p">.</span><span class="nx">id</span><span class="p">,</span> <span class="nx">p</span><span class="p">.</span><span class="nx">sid</span><span class="p">,</span> <span class="nx">p</span><span class="p">.</span><span class="nx">id</span><span class="p">);</span>
+                <span class="kr">debugger</span>
                 <span class="k">return</span> <span class="o">!</span><span class="nx">p</span><span class="p">.</span><span class="nx">admin</span> <span class="o">?</span> <span class="nx">p</span><span class="p">.</span><span class="nx">id</span> <span class="o">:</span> <span class="kc">undefined</span><span class="p">;</span>
             <span class="p">},</span>
             <span class="nx">disconnected</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">p</span><span class="p">)</span> <span class="p">{</span>
@@ -2305,6 +2307,19 @@ this.clients.id.update(client.id, { tag: tag });</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-69" id="section-69">&#182;</a>
 </div>
+<p>TODO: if this changes, update also AdminServer reply to AUTH info.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-70" id="section-70">&#182;</a>
+</div>
 <p>Tag client.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
@@ -2318,7 +2333,7 @@ this.clients.id.update(client.id, { tag: tag });</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-70" id="section-70">&#182;</a>
+  <a class="pilcrow" href="#section-71" id="section-71">&#182;</a>
 </div>
 <p>Advance pointer.</p>
         </td>
@@ -2392,7 +2407,7 @@ this.clients.id.update(client.id, { tag: tag });</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-73" id="section-73">&#182;</a>
+  <a class="pilcrow" href="#section-74" id="section-74">&#182;</a>
 </div>
 <p>if ('undefined' === typeof client.history) client.history = [];</p>
         </td>
