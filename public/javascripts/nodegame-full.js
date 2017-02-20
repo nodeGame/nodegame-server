@@ -6382,7 +6382,7 @@ if (!Array.prototype.indexOf) {
         this.db = [];
 
         // ### lastSelection
-        // The subset of items that were selected during the last operations
+        // The subset of items that were selected during the last operation
         // Notice: some of the items might not exist any more in the database.
         // @see NDDB.fetch
         this.lastSelection = [];
@@ -7111,22 +7111,36 @@ if (!Array.prototype.indexOf) {
     /**
      * ### NDDB._autoUpdate
      *
-     * Performs a series of automatic checkings and updates the db
+     * Updates pointer, indexes, and sort items
      *
-     * Checkings are performed according to current configuration, or to
-     * local options.
+     * What is updated depends on configuration stored in `this.__update`.
      *
      * @param {object} options Optional. Configuration object
+     *
+     * @see NDDB.__update
      *
      * @api private
      */
     NDDB.prototype._autoUpdate = function(options) {
-        var update;
-        update = options ? J.merge(this.__update, options) : this.__update;
+        var u;
+        u = this.__update;
+        options = options || {};
 
-        if (update.pointer) this.nddb_pointer = this.db.length-1;
-        if (update.sort) this.sort();
-        if (update.indexes) this.rebuildIndexes();
+        if (options.pointer ||
+            ('undefined' === typeof options.pointer && u.pointer)) {
+
+            this.nddb_pointer = this.db.length-1;
+        }
+        if (options.sort ||
+            ('undefined' === typeof options.sort && u.sort)) {
+
+            this.sort();
+        }
+        if (options.indexes ||
+            ('undefined' === typeof options.indexes && u.indexes)) {
+
+            this.rebuildIndexes();
+        }
     };
 
     /**
@@ -7164,18 +7178,35 @@ if (!Array.prototype.indexOf) {
      *  - null
      *
      * @param {object} o The item or array of items to insert
+     * @param {object} updateRules Optional. Update rules to overwrite
+     *   system-wide settings stored in `this.__update`
      *
      * @return {object|boolean} o The inserted object (might have been
      *   updated by on('insert') callbacks), or FALSE if the object could
      *   not be inserted, e.g. if a on('insert') callback returned FALSE.
      *
+     * @see NDDB.__update
      * @see nddb_insert
      */
-    NDDB.prototype.insert = function(o) {
+    NDDB.prototype.insert = function(o, updateRules) {
         var res;
-        res = nddb_insert.call(this, o, this.__update.indexes);
+        if ('undefined' === typeof updateRules) {
+            updateRules = this.__update;
+        }
+        else if ('object' !== typeof updateRules) {
+            this.throwErr('TypeError', 'insert',
+                          'updateRules must be object or undefined. Found: ',
+                          updateRules);
+        }
+        res = nddb_insert.call(this, o, updateRules.indexes);
         if (res === false) return false;
-        this._autoUpdate({indexes: false});
+        // If updateRules.indexes is false, then we do not want to do it.
+        // If it was true, we did it already.
+        this._autoUpdate({
+            indexes: false,
+            pointer: updateRules.pointer,
+            sort: updateRules.sort
+        });
         return o;
     };
 
@@ -7187,7 +7218,7 @@ if (!Array.prototype.indexOf) {
      * It always returns the length of the full database, regardless of
      * current selection.
      *
-     * @return {number} The length of the database
+     * @return {number} The total number of elements in the database
      *
      * @see NDDB.count
      */
@@ -8604,18 +8635,28 @@ if (!Array.prototype.indexOf) {
      *
      * @param {object} update An object containing the properties
      *  that will be updated.
+     * @param {object} updateRules Optional. Update rules to overwrite
+     *   system-wide settings stored in `this.__update`
      *
      * @return {NDDB} A new instance of NDDB with updated entries
      *
      * @see JSUS.mixin
      * @see NDDB.emit
      */
-    NDDB.prototype.update = function(update) {
+    NDDB.prototype.update = function(update, updateRules) {
         var i, len, db, res;
         if ('object' !== typeof update) {
-            this.throwErr('TypeError', 'update', 'update must be object');
+            this.throwErr('TypeError', 'update',
+                          'update must be object. Found: ', update);
         }
-
+        if ('undefined' === typeof updateRules) {
+            updateRules = this.__update;
+        }
+        else if ('object' !== typeof updateRules) {
+            this.throwErr('TypeError', 'update',
+                          'updateRules must be object or undefined. Found: ',
+                          updateRules);
+        }
         // Gets items and resets the current selection.
         db = this.fetch();
         len = db.length;
@@ -8624,17 +8665,25 @@ if (!Array.prototype.indexOf) {
                 res = this.emit('update', db[i], update);
                 if (res === true) {
                     J.mixin(db[i], update);
-                    this._indexIt(db[i]);
-                    this._hashIt(db[i]);
-                    this._viewIt(db[i]);
+                    if (updateRules.indexes) {
+                        this._indexIt(db[i]);
+                        this._hashIt(db[i]);
+                        this._viewIt(db[i]);
+                    }
                 }
             }
-            this._autoUpdate({indexes: false});
+            // If updateRules.indexes is false, then we do not want to do it.
+            // If it was true, we did it already
+            this._autoUpdate({
+                indexes: false,
+                pointer: updateRules.pointer,
+                sort: updateRules.sort
+            });
         }
         return this;
     };
 
-    //## Deletion
+    // ## Deletion
 
     /**
      * ### NDDB.removeAllEntries
@@ -9932,7 +9981,6 @@ if (!Array.prototype.indexOf) {
 
     // ## Helper Methods
 
-
     /**
      * ### nddb_insert
      *
@@ -9945,7 +9993,7 @@ if (!Array.prototype.indexOf) {
      * accordingly.
      *
      * @param {object|function} o The item to add to database
-     * @param {boolean} update Optional. If TRUE, updates indexes, hashes,
+     * @param {boolean} doUpdate Optional. If TRUE, updates indexes, hashes,
      *    and views. Default, FALSE
      *
      * @return {boolean} TRUE, if item was inserted, FALSE otherwise, e.g.
@@ -9956,7 +10004,7 @@ if (!Array.prototype.indexOf) {
      *
      * @api private
      */
-    function nddb_insert(o, update) {
+    function nddb_insert(o, doUpdate) {
         var nddbid, res;
         if (('object' !== typeof o) && ('function' !== typeof o)) {
             this.throwErr('TypeError', 'insert', 'object or function ' +
@@ -9985,7 +10033,7 @@ if (!Array.prototype.indexOf) {
         // Stop inserting elements if one callback returned FALSE.
         if (res === false) return false;
         this.db.push(o);
-        if (update) {
+        if (doUpdate) {
             this._indexIt(o, (this.db.length-1));
             this._hashIt(o);
             this._viewIt(o);
@@ -10610,7 +10658,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Variables
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti
  * MIT Licensed
  *
  * `nodeGame` variables and constants module
@@ -10621,7 +10669,8 @@ if (!Array.prototype.indexOf) {
 
     // ## Constants
 
-    var k = node.constants = {};
+    var k;
+    k = node.constants = {};
 
     /**
      * ### node.constants.nodename
@@ -10917,7 +10966,7 @@ if (!Array.prototype.indexOf) {
 
 
      /**
-     * ### node.constants.verbosity_levels
+     * ### node.constants.publishLevels
      *
      * The level of updates that the server receives about the state of a game
      *
@@ -11063,7 +11112,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # ErrorManager
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti
  * MIT Licensed
  *
  * Handles runtime errors
@@ -11089,7 +11138,7 @@ if (!Array.prototype.indexOf) {
         /**
          * ### ErrorManager.lastError
          *
-         * Reference to the last error occurred.
+         * Reference to the last error occurred
          */
         this.lastError = null;
 
@@ -11119,15 +11168,6 @@ if (!Array.prototype.indexOf) {
                 return !node.debug;
             };
         }
-//         else {
-//             process.on('uncaughtException', function(err) {
-//                 that.lastError = err;
-//                 node.err('Caught exception: ' + err);
-//                 if (node.debug) {
-//                     throw err;
-//                 }
-//             });
-//         }
     };
 
 
@@ -12714,10 +12754,12 @@ if (!Array.prototype.indexOf) {
      * the internal `pcounter` variable is incremented.
      *
      * @param {Player} player The player object to add to the database
+     * @param {object} updateRules Optional. Update rules overwriting
+     *   `this.__update`
      *
      * @return {player} The inserted player
      */
-    PlayerList.prototype.add = function(player) {
+    PlayerList.prototype.add = function(player, updateRules) {
         if (!(player instanceof Player)) {
             if ('object' !== typeof player) {
                 throw new TypeError('PlayerList.add: player must be object. ' +
@@ -12734,7 +12776,7 @@ if (!Array.prototype.indexOf) {
             throw new Error('PlayerList.add: player already existing: ' +
                             player.id + '.');
         }
-        this.insert(player);
+        this.insert(player, updateRules);
         player.count = this.pcounter;
         this.pcounter++;
         return player;
@@ -12867,11 +12909,12 @@ if (!Array.prototype.indexOf) {
         var player;
         if ('string' !== typeof id) {
             throw new TypeError(
-                'PlayerList.updatePlayer: id must be string.');
+                'PlayerList.updatePlayer: id must be string. Found: ' + id);
         }
         if ('object' !== typeof update) {
             throw new TypeError(
-                'PlayerList.updatePlayer: update must be object.');
+                'PlayerList.updatePlayer: update must be object. Found: ' +
+                    update);
         }
 
         if ('undefined' !== typeof update.id) {
@@ -19590,7 +19633,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Socket
- * Copyright(c) 2016 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti
  * MIT Licensed
  *
  * Wrapper class for the actual socket to send messages
@@ -19726,12 +19769,27 @@ if (!Array.prototype.indexOf) {
         /**
          * ### Socket.url
          *
-         * The url to which the socket is connected
+         * The full url to which the socket is connected
+         *
+         * This is set when a new connection attempt is started.
          *
          * It might not be meaningful for all types of sockets. For example,
          * in case of SocketDirect, it is not an real url.
+         *
+         * @see Socket.connect
          */
         this.url = null;
+
+        /**
+         * ### Socket.channelName
+         *
+         * The name of the channel to which the socket is connected
+         *
+         * This is set upon a successful connection.
+         *
+         * @see Socket.startSession
+         */
+        this.channelName = null;
 
         /**
          * ### Socket.type
@@ -20243,14 +20301,19 @@ if (!Array.prototype.indexOf) {
             throw new Error('Socket.startSession: session already existing. ' +
                             'Use force parameter to overwrite it.');
         }
-        this.session = msg.session;
+
         // We need to first set the session,
-        // and then eventually to stop an ongoing game.
+        // and then eventually stop an ongoing game.
+        this.session = msg.session;
         if (this.node.game.isStoppable()) this.node.game.stop();
-        this.node.createPlayer(msg.data);
-        // msg.text can be undefined if channel is the "mainChannel."
-        if (this.node.window && msg.text) {
-            this.node.window.setUriChannel(msg.text);
+
+        // Channel name and create player.
+        this.channelName = msg.data.channel.name;
+        this.node.createPlayer(msg.data.player);
+
+        // Notify GameWindow (if existing, and if not default channel).
+        if (this.node.window && !msg.data.channel.isDefault) {
+            this.node.window.setUriChannel(this.channelName);
         }
     };
 
@@ -28672,6 +28735,12 @@ if (!Array.prototype.indexOf) {
             if (this.socket.isConnected() && !this.player.placeholder) {
                 if (!this.remoteLogMap[txt]) {
                     this.remoteLogMap[txt] = true;
+                    // There is a chance that the message is not sent,
+                    // depending on what the state of the connection is.
+                    // TODO: example, error on Init function, socket.io
+                    // transport stays in state of `upgrading` and does
+                    // not let send messages. If you manually force it
+                    // in a debug session, they are actually sent.
                     this.socket.send(this.msg.create({
                         target: LOG,
                         text: level,
@@ -29106,7 +29175,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Player
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti
  * MIT Licensed
  *
  * Player related functions
@@ -29125,6 +29194,7 @@ if (!Array.prototype.indexOf) {
      * Creates player object and places it in node.player
      *
      * @param {object} player A player object with a valid id property
+     *
      * @return {object} The player object
      *
      * @see node.setup.player
@@ -33539,13 +33609,25 @@ if (!Array.prototype.indexOf) {
      *
      * Sets the variable uriChannel
      *
+     * Trailing and preceding slashes are added if missing.
+     * 
+     * @param {string|null} uriChannel The current uri of the channel,
+     *   or NULL to delete it
+     *
      * @see GameWindow.uriChannel
      */
     GameWindow.prototype.setUriChannel = function(uriChannel) {
-        if (uriChannel !== null && 'string' !== typeof uriChannel) {
-            throw new TypeError('GameWindow.uriChannel: uriChannel must be ' +
-                                'string or null.');
+        if ('string' === typeof uriChannel) {
+            if (uriChannel.charAt(0) !== '/') uriChannel = '/' + uriChannel;
+            if (uriChannel.charAt(uriChannel.length-1) !== '/') {
+                uriChannel = uriChannel + '/';
+            }
         }
+        else if (uriChannel !== null) {
+            throw new TypeError('GameWindow.uriChannel: uriChannel must be ' +
+                                'string or null. Found: ' + uriChannel);
+        }
+        
         this.uriChannel = uriChannel;
     };
 
