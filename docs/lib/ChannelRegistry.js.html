@@ -308,8 +308,7 @@ MIT Licensed</p>
                 <span class="k">return</span> <span class="nx">p</span><span class="p">.</span><span class="nx">admin</span> <span class="o">?</span> <span class="nx">p</span><span class="p">.</span><span class="nx">id</span> <span class="o">:</span> <span class="kc">undefined</span><span class="p">;</span>
             <span class="p">},</span>
             <span class="nx">player</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">p</span><span class="p">)</span> <span class="p">{</span>
-                <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">p</span><span class="p">.</span><span class="nx">id</span><span class="p">,</span> <span class="nx">p</span><span class="p">.</span><span class="nx">sid</span><span class="p">,</span> <span class="nx">p</span><span class="p">.</span><span class="nx">id</span><span class="p">);</span>
-                <span class="kr">debugger</span>
+                <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">p</span><span class="p">.</span><span class="nx">admin</span><span class="p">,</span> <span class="nx">p</span><span class="p">.</span><span class="nx">sid</span><span class="p">,</span> <span class="nx">p</span><span class="p">.</span><span class="nx">id</span><span class="p">);</span>
                 <span class="k">return</span> <span class="o">!</span><span class="nx">p</span><span class="p">.</span><span class="nx">admin</span> <span class="o">?</span> <span class="nx">p</span><span class="p">.</span><span class="nx">id</span> <span class="o">:</span> <span class="kc">undefined</span><span class="p">;</span>
             <span class="p">},</span>
             <span class="nx">disconnected</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">p</span><span class="p">)</span> <span class="p">{</span>
@@ -512,20 +511,31 @@ Add another index, if required so.</p>
       <span>An object constituting a valid Player object
   except the <code>id</code> field</span>
     </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">doUpdate</span>
+      <span class="dox_type">boolean</span>
+      <span>Optional. If TRUE, registry indexes are updated.
+  Default: TRUE</span>
+    </div>
     <div class="dox_tag_title">Returns</div>
     <div class="dox_tag_detail">
       <span class="dox_tag_name"></span>
       <span class="dox_type">string</span>
-      <span>The registered client id.
+      <span>The registered client id.</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">PlayerList.add
 
 TODO: refactor API, one parameter might be enough, if object is passed.
-TODO: shall we check Access and Exit Codes as well?</span>
+TODO: shall we check Access and Exit Codes as well?
+</span>
     </div>
   </div>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-<span class="nx">ChannelRegistry</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">addClient</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">clientId</span><span class="p">,</span> <span class="nx">clientObj</span><span class="p">)</span> <span class="p">{</span>
+<span class="nx">ChannelRegistry</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">addClient</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">clientId</span><span class="p">,</span> <span class="nx">clientObj</span><span class="p">,</span> <span class="nx">doUpdate</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">res</span><span class="p">;</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">clientId</span><span class="p">)</span> <span class="p">{</span>
@@ -546,7 +556,36 @@ TODO: shall we check Access and Exit Codes as well?</span>
     <span class="nx">clientObj</span><span class="p">.</span><span class="nx">id</span> <span class="o">=</span> <span class="nx">clientId</span><span class="p">;</span>
     <span class="nx">clientObj</span> <span class="o">=</span> <span class="nx">generateClient</span><span class="p">(</span><span class="nx">clientObj</span><span class="p">);</span>
 
-    <span class="nx">res</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">add</span><span class="p">(</span><span class="nx">clientObj</span><span class="p">);</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-13" id="section-13">&#182;</a>
+</div>
+<p>Add client and update indexes.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">doUpdate</span> <span class="o">||</span> <span class="nx">doUpdate</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">res</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">add</span><span class="p">(</span><span class="nx">clientObj</span><span class="p">);</span>
+    <span class="p">}</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-14" id="section-14">&#182;</a>
+</div>
+<p>Add client without updating indexes.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">else</span> <span class="p">{</span>
+        <span class="nx">res</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">add</span><span class="p">(</span><span class="nx">clientObj</span><span class="p">,</span> <span class="p">{</span> <span class="nx">indexes</span><span class="o">:</span> <span class="kc">false</span>  <span class="p">});</span>
+    <span class="p">}</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;ChannelRegistry.addClient: error &#39;</span> <span class="o">+</span>
@@ -650,7 +689,7 @@ TODO: shall we check Access and Exit Codes as well?</span>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-15" id="section-15">&#182;</a>
+  <a class="pilcrow" href="#section-17" id="section-17">&#182;</a>
 </div>
 <p>Remove client from all the rooms to trigger removing
 room aliases to client ID:</p>
@@ -665,7 +704,7 @@ room aliases to client ID:</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-16" id="section-16">&#182;</a>
+  <a class="pilcrow" href="#section-18" id="section-18">&#182;</a>
 </div>
 <p>Remove game aliases to ID:</p>
         </td>
@@ -684,7 +723,7 @@ room aliases to client ID:</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-17" id="section-17">&#182;</a>
+  <a class="pilcrow" href="#section-19" id="section-19">&#182;</a>
 </div>
 <p>Remove room stack:</p>
         </td>
@@ -698,7 +737,7 @@ room aliases to client ID:</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-18" id="section-18">&#182;</a>
+  <a class="pilcrow" href="#section-20" id="section-20">&#182;</a>
 </div>
 <p>Remove client from PlayerList:</p>
         </td>
@@ -748,19 +787,18 @@ from the old room.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">ChannelRegistry</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">moveClient</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">client</span><span class="p">,</span> <span class="nx">newRoom</span><span class="p">)</span> <span class="p">{</span>
-    <span class="kd">var</span> <span class="nx">clientId</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">lookupClient</span><span class="p">(</span><span class="nx">client</span><span class="p">);</span>
-    <span class="kd">var</span> <span class="nx">roomStack</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">oldRoom</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">clientId</span><span class="p">,</span> <span class="nx">roomStack</span><span class="p">,</span> <span class="nx">oldRoom</span><span class="p">;</span>
 
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">newRoom</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ChannelRegistry.moveClient: newRoom must be &#39;</span> <span class="o">+</span>
-                            <span class="s1">&#39;a string.&#39;</span><span class="p">);</span>
-    <span class="p">}</span>
+    <span class="nx">clientId</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">lookupClient</span><span class="p">(</span><span class="nx">client</span><span class="p">);</span>
+
     <span class="k">if</span> <span class="p">(</span><span class="nx">clientId</span> <span class="o">===</span> <span class="kc">null</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;ChannelRegistry.moveClient: unknown client &quot;&#39;</span> <span class="o">+</span>
                         <span class="nx">client</span> <span class="o">+</span> <span class="s1">&#39;&quot;.&#39;</span><span class="p">);</span>
     <span class="p">}</span>
-
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">newRoom</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ChannelRegistry.moveClient: newRoom must be &#39;</span> <span class="o">+</span>
+                            <span class="s1">&#39;a string. Found: &#39;</span> <span class="o">+</span> <span class="nx">newRoom</span><span class="p">);</span>
+    <span class="p">}</span>
     <span class="nx">roomStack</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">roomStacks</span><span class="p">[</span><span class="nx">clientId</span><span class="p">];</span>
 
 
@@ -770,7 +808,7 @@ from the old room.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-20" id="section-20">&#182;</a>
+  <a class="pilcrow" href="#section-22" id="section-22">&#182;</a>
 </div>
 <p>Remove all room aliases to the client's ID:</p>
         </td>
@@ -839,7 +877,7 @@ from the old room.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-22" id="section-22">&#182;</a>
+  <a class="pilcrow" href="#section-24" id="section-24">&#182;</a>
 </div>
 <p>Remove all room aliases to the client's ID:</p>
         </td>
@@ -856,7 +894,7 @@ from the old room.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-23" id="section-23">&#182;</a>
+  <a class="pilcrow" href="#section-25" id="section-25">&#182;</a>
 </div>
 <p>Try to pop the client's stack:</p>
         </td>
@@ -1092,7 +1130,7 @@ from the old room.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-30" id="section-30">&#182;</a>
+  <a class="pilcrow" href="#section-32" id="section-32">&#182;</a>
 </div>
 <p>Update the PlayerList:</p>
         </td>
@@ -1861,7 +1899,7 @@ the alias will fail then.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-51" id="section-51">&#182;</a>
+  <a class="pilcrow" href="#section-53" id="section-53">&#182;</a>
 </div>
 <p>Delete that alias:</p>
         </td>
@@ -2019,7 +2057,7 @@ Returns NULL if not found or infinite loop detected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-55" id="section-55">&#182;</a>
+  <a class="pilcrow" href="#section-57" id="section-57">&#182;</a>
 </div>
 <p>Avoid alias loop.</p>
         </td>
@@ -2034,7 +2072,7 @@ Returns NULL if not found or infinite loop detected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-56" id="section-56">&#182;</a>
+  <a class="pilcrow" href="#section-58" id="section-58">&#182;</a>
 </div>
 <p>Check aliases in given room.</p>
         </td>
@@ -2054,7 +2092,7 @@ Returns NULL if not found or infinite loop detected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-57" id="section-57">&#182;</a>
+  <a class="pilcrow" href="#section-59" id="section-59">&#182;</a>
 </div>
 <p>Check if ID exists.</p>
         </td>
@@ -2070,7 +2108,7 @@ Returns NULL if not found or infinite loop detected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-58" id="section-58">&#182;</a>
+  <a class="pilcrow" href="#section-60" id="section-60">&#182;</a>
 </div>
 <p>Check game aliases.</p>
         </td>
@@ -2087,7 +2125,7 @@ Returns NULL if not found or infinite loop detected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-59" id="section-59">&#182;</a>
+  <a class="pilcrow" href="#section-61" id="section-61">&#182;</a>
 </div>
 <p>Client not found.</p>
         </td>
@@ -2150,7 +2188,7 @@ Returns NULL if not found or infinite loop detected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-61" id="section-61">&#182;</a>
+  <a class="pilcrow" href="#section-63" id="section-63">&#182;</a>
 </div>
 <p>Username.</p>
         </td>
@@ -2164,7 +2202,7 @@ Returns NULL if not found or infinite loop detected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-62" id="section-62">&#182;</a>
+  <a class="pilcrow" href="#section-64" id="section-64">&#182;</a>
 </div>
 <p>Pwd.</p>
         </td>
@@ -2177,7 +2215,7 @@ Returns NULL if not found or infinite loop detected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-63" id="section-63">&#182;</a>
+  <a class="pilcrow" href="#section-65" id="section-65">&#182;</a>
 </div>
 <p>CheckedOut.</p>
         </td>
@@ -2190,7 +2228,7 @@ Returns NULL if not found or infinite loop detected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-64" id="section-64">&#182;</a>
+  <a class="pilcrow" href="#section-66" id="section-66">&#182;</a>
 </div>
 <p>In Use.</p>
         </td>
@@ -2246,7 +2284,7 @@ Returns NULL if not found or infinite loop detected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-66" id="section-66">&#182;</a>
+  <a class="pilcrow" href="#section-68" id="section-68">&#182;</a>
 </div>
 <p>Return same client, if previously associated with a tag.</p>
         </td>
@@ -2261,7 +2299,7 @@ Returns NULL if not found or infinite loop detected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-67" id="section-67">&#182;</a>
+  <a class="pilcrow" href="#section-69" id="section-69">&#182;</a>
 </div>
 <p>TODO: some of the indexes in the main playerlist object should be views?
 For example, here we could do:
@@ -2283,7 +2321,7 @@ instead we do:</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-68" id="section-68">&#182;</a>
+  <a class="pilcrow" href="#section-70" id="section-70">&#182;</a>
 </div>
 <p>TODO: Ideally we should use NDDB.tag, but:
   - it needs some refactor
@@ -2305,7 +2343,7 @@ this.clients.id.update(client.id, { tag: tag });</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-69" id="section-69">&#182;</a>
+  <a class="pilcrow" href="#section-71" id="section-71">&#182;</a>
 </div>
 <p>TODO: if this changes, update also AdminServer reply to AUTH info.</p>
         </td>
@@ -2318,7 +2356,7 @@ this.clients.id.update(client.id, { tag: tag });</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-70" id="section-70">&#182;</a>
+  <a class="pilcrow" href="#section-72" id="section-72">&#182;</a>
 </div>
 <p>Tag client.</p>
         </td>
@@ -2333,7 +2371,7 @@ this.clients.id.update(client.id, { tag: tag });</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-71" id="section-71">&#182;</a>
+  <a class="pilcrow" href="#section-73" id="section-73">&#182;</a>
 </div>
 <p>Advance pointer.</p>
         </td>
@@ -2407,7 +2445,7 @@ this.clients.id.update(client.id, { tag: tag });</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-74" id="section-74">&#182;</a>
+  <a class="pilcrow" href="#section-76" id="section-76">&#182;</a>
 </div>
 <p>if ('undefined' === typeof client.history) client.history = [];</p>
         </td>

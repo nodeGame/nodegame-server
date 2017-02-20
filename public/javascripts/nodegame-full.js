@@ -7751,7 +7751,7 @@ if (!Array.prototype.indexOf) {
                 if (index !== oldIdx) {
                     if ('undefined' !== typeof oldIdx) {
                         if ('undefined' !== typeof this[key].resolve[oldIdx]) {
-                            delete this[key].resolve[oldIdx];
+                            this[key]._remove(oldIdx);
                         }
                     }
                 }
@@ -26993,18 +26993,19 @@ if (!Array.prototype.indexOf) {
         // a function, or just the number of milliseconds.
         if ('function' === typeof timer) {
             timer = timer.call(this.node.game);
-            if (null === timer) return null
+            if (null === timer) return null;
         }
-        else if ('object' === typeof timer &&
-                 'function' === typeof timer.milliseconds) {
-
-                // Manual clone.
-                timer = {
-                    milliseconds: timer.milliseconds.call(this.node.game),
-                    update: timer.update,
-                    timeup: timer.timeup,
-                    hooks: timer.hooks
-                };
+        else if ('object' === typeof timer) {
+            // Manual clone.
+            timer = {
+                milliseconds: timer.milliseconds,
+                update: timer.update,
+                timeup: timer.timeup,
+                hooks: timer.hooks
+            };
+            if ('function' === typeof timer.milliseconds) {
+                timer.milliseconds = timer.milliseconds.call(this.node.game);
+            }
         }
 
         if ('function' === typeof timer) timer = timer.call(this.node.game);
@@ -41746,7 +41747,10 @@ if (!Array.prototype.indexOf) {
      */
     ChoiceTable.prototype.isChoiceCurrent = function(choice) {
         var i, len;
-        if ('string' !== typeof choice && 'number' !== typeof choice) {
+        if ('number' === typeof choice) {
+            choice = '' + choice;
+        }
+        else if ('string' !== typeof choice) {
             throw new TypeError('ChoiceTable.isChoiceCurrent: choice ' +
                                 'must be string or number.');
         }
@@ -41867,7 +41871,7 @@ if (!Array.prototype.indexOf) {
      * @experimental
      */
     ChoiceTable.prototype.setValues = function(options) {
-        var choice, correctChoice;
+        var choice, correctChoice, cell;
         var i, len, j, lenJ;
 
         if (!this.choices || !this.choices.length) {
@@ -41920,7 +41924,10 @@ if (!Array.prototype.indexOf) {
         i = -1;
         for ( ; ++i < len ; ) {
             choice = J.randomInt(0, this.choicesCells.length)-1;
-            this.choicesCells[choice].click();
+            // Do not click it again if it is already selected.
+            if (!this.isChoiceCurrent(choice)) {
+                this.choicesCells[choice].click();
+            }
         }
 
         // Make a random comment.
@@ -42909,7 +42916,7 @@ if (!Array.prototype.indexOf) {
      */
     ChoiceTableGroup.prototype.unsetCurrentChoice = function(choice) {
         var i, len;
-        i = -1, len = this.items[i].length;
+        i = -1, len = this.items.length;
         for ( ; ++i < len ; ) {
             this.items[i].unsetCurrentChoice(choice);
         }
@@ -48389,11 +48396,12 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # VisualTimer
- * Copyright(c) 2016 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti
  * MIT Licensed
  *
- * Display a timer for the game. Timer can trigger events.
- * Only for countdown smaller than 1h.
+ * Display a configurable timer for the game
+ *
+ * Timer can trigger events, only for countdown smaller than 1h.
  *
  * www.nodegame.org
  */
@@ -48407,9 +48415,9 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    VisualTimer.version = '0.8.1';
-    VisualTimer.description = 'Display a timer for the game. Timer can ' +
-        'trigger events. Only for countdown smaller than 1h.';
+    VisualTimer.version = '0.9.0';
+    VisualTimer.description = 'Display a configurable timer for the game. ' +
+        'Can trigger events. Only for countdown smaller than 1h.';
 
     VisualTimer.title = 'Time left';
     VisualTimer.className = 'visualtimer';
@@ -48524,13 +48532,17 @@ if (!Array.prototype.indexOf) {
      * @see GameTimer
      */
     VisualTimer.prototype.init = function(options) {
-        var t;
-        options = options || {};
+        var t, gameTimerOptions;
 
+        options = options || {};
         if ('object' !== typeof options) {
             throw new TypeError('VisualTimer.init: options must be ' +
                                 'object or undefined');
         }
+
+        // Important! Do not modify directly options, because it might
+        // modify a step-property. Will manual clone later.
+        gameTimerOptions = {};
 
         // If gameTimer is not already set, check options, then
         // try to use node.game.timer, if defined, otherwise crete a new timer.
@@ -48563,41 +48575,46 @@ if (!Array.prototype.indexOf) {
                                 'external gameTimer.');
             }
             if (!J.isArray(options.hooks)) {
-                options.hooks = [options.hooks];
+                gameTimerOptions.hooks = [ options.hooks ];
             }
         }
         else {
-            options.hooks = [];
+            gameTimerOptions.hooks = [];
         }
 
         // Only push this hook once.
         if (!this.isInitialized) {
-            options.hooks.push({
+            gameTimerOptions.hooks.push({
                 name: 'VisualTimer_' + this.wid,
                 hook: this.updateDisplay,
                 ctx: this
             });
         }
 
-        // Important! Must be called after processing hooks and gameTimer.
-        J.mixout(options, this.options);
+        // Important! Manual clone must be done after hooks and gameTimer.
 
         // Parse milliseconds option.
         if ('undefined' !== typeof options.milliseconds) {
-            options.milliseconds = node.timer.parseInput('milliseconds',
-                                                         options.milliseconds);
+            gameTimerOptions.milliseconds =
+                node.timer.parseInput('milliseconds', options.milliseconds);
         }
 
         // Parse update option.
         if ('undefined' !== typeof options.update) {
-            options.update = node.timer.parseInput('update',
-                                                   options.update);
+            gameTimerOptions.update =
+                node.timer.parseInput('update', options.update);
         }
         else {
-            options.update = 1000;
+            gameTimerOptions.update = 1000;
         }
+
+        // Parse timeup option.
+        if ('undefined' !== typeof options.timeup) {
+            gameTimerOptions.timeup = options.timeup;
+        }
+
         // Init the gameTimer, regardless of the source (internal vs external).
-        this.gameTimer.init(options);
+        this.gameTimer.init(gameTimerOptions);
 
         t = this.gameTimer;
 
@@ -48619,7 +48636,7 @@ if (!Array.prototype.indexOf) {
 //             }
 //         });
 
-        this.options = options;
+        this.options = gameTimerOptions;
 
         if ('undefined' === typeof this.options.stopOnDone) {
             this.options.stopOnDone = true;
@@ -48798,16 +48815,15 @@ if (!Array.prototype.indexOf) {
       * @see VisualTimer.restart
       */
     VisualTimer.prototype.startWaiting = function(options) {
-        if ('undefined' === typeof options) {
-            options = {};
-        }
-        if (typeof options.milliseconds === 'undefined') {
+        if ('undefined' === typeof options) options = {};
+        
+        if ('undefined' === typeof options.milliseconds) {
             options.milliseconds = this.gameTimer.timeLeft;
         }
-        if (typeof options.mainBoxOptions === 'undefined') {
+        if ('undefined' === typeof options.mainBoxOptions) {
             options.mainBoxOptions = {};
         }
-        if (typeof options.waitBoxOptions === 'undefined') {
+        if ('undefined' === typeof options.waitBoxOptions) {
             options.waitBoxOptions = {};
         }
         options.mainBoxOptions.classNameBody = 'strike';
@@ -48906,9 +48922,12 @@ if (!Array.prototype.indexOf) {
             if (that.options.startOnPlaying) {
                 options = that.gameTimer.getStepOptions();
                 if (options) {
-                    // TODO: improve.
+                    // Visual update is here (1000 usually).
                     options.update = that.update;
+                    // Make sure timeup is not used (game.timer does it).
                     options.timeup = undefined;
+                    // Options other than `update`, `timeup`,
+                    // `milliseconds`, `hooks`, `gameTimer` are ignored.
                     that.startTiming(options);
                 }
                 else {
@@ -48921,6 +48940,8 @@ if (!Array.prototype.indexOf) {
         node.on('REALLY_DONE', function() {
             if (that.options.stopOnDone) {
                 if (!that.gameTimer.isStopped()) {
+                    // This was createing problems, so we just stop it.
+                    // It could be an option, though.
                     // that.startWaiting();
                     that.stop();
                 }
