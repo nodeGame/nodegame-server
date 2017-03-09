@@ -20487,7 +20487,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Roler
- * Copyright(c) 2017 Stefano Balietti
+ * Copyright(c) 2016 Stefano Balietti
  * MIT Licensed
  *
  * Handles assigning roles to matches.
@@ -21232,113 +21232,6 @@ if (!Array.prototype.indexOf) {
         return this.id2RoleRoundMap[x][id] === role;
     };
 
-    // ## Edit/Replace.
-    
-    /**
-     * ### Roler.replaceId
-     *
-     * Replaces an id with a new one in all roles
-     *
-     * @param {string} oldId The id to be replaced
-     * @param {string} newId The replacing id
-     *
-     * @return {boolean} TRUE, if the oldId was found and replaced
-     *
-     * @see MatcherManager.replaceId
-     * @see Matcher.replaceId
-     */
-    Roler.prototype.replaceId = function(oldId, newId) {
-        var m;
-        var i, len, j, lenJ, h, lenH;
-        var rowFound;
-        if ('string' !== typeof oldId) {
-            throw new TypeError('Roler.replaceId: oldId should be string. ' +
-                                'Found: ' + oldId);
-        }
-        if ('string' !== typeof newId && newId.trim() !== '') {
-            throw new TypeError('Roler.replaceId: newId should be a ' +
-                                'non-empty string. Found: ' + newId);
-        }
-
-        // TODO: continue here.
-        return;
-        m = this.assignedIds[oldId];
-        if ('undefined' === typeof m) return false;
-
-        // Ids.
-        this.ids[m] = newId;
-
-        // AssignedIds.x
-        this.assignedIds[newId] = m;
-        delete this.assignedIds[oldId];
-
-        // IdsMap.
-        this.idsMap[newId] = true;
-        delete this.idsMap[oldId];
-
-        // Update resolvedMatches.
-        m = this.resolvedMatches;
-        if (!m) return true;
-        
-        i = -1, len = m.length;
-        for ( ; ++i < len ; ) {
-            j = -1, lenJ = m[i].length;
-            rowFound = false;
-            for ( ; ++j < lenJ ; ) {
-                h = -1, lenH = m[i][j].length;
-                for ( ; ++j < lenJ ; ) {
-                    if (m[i][j][h] === oldId) {
-                        m[i][j][h] = newId;
-                        rowFound = true;
-                        break;
-                    }
-                }
-                if (rowFound) break;
-            }
-        }
-
-        // Update resolvedMatchesObj.
-        m = this.resolvedMatchesObj;
-
-        i = -1, len = m.length;
-        for ( ; ++i < len ; ) {
-            j = -1, lenJ = m[i].length;
-            for ( ; ++j < lenJ ; ) {                
-                if (m[i].hasOwnProperty(j)) {
-                    if (j === oldId) {
-                        // Do the swap.
-                        m[i][newId] = m[i][oldId];
-                        m[m[i][oldId]] = newId;
-                        delete m[i][oldId];
-                        break;
-                    }
-                }
-            }
-        }
-        
-        // Update resolvedMatchesById.
-        m = this.resolvedMatchesById;
-        for (i in m) {
-            if (m.hasOwnProperty(i)) {
-                if (i === oldId) {
-                    m[newId] = m[oldId];
-                    delete m[oldId];
-                }
-                else {
-                    j = -1, lenJ = m[i].length;
-                    for ( ; ++j < lenJ ; ) {
-                        if (m[i][j] === oldId) {
-                            m[i][j] = newId;
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-
-        return true;
-    };
-    
     // ## Helper methods.
 
     /**
@@ -21456,7 +21349,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Matcher
- * Copyright(c) 2017 Stefano Balietti
+ * Copyright(c) 2016 Stefano Balietti <s.balietti@neu.edu>
  * MIT Licensed
  *
  * Class handling the creation of tournament schedules.
@@ -22252,109 +22145,6 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
-     * ### Matcher.replaceId
-     *
-     * Replaces an id with a new one in all matches
-     *
-     * @param {string} oldId The id to be replaced
-     * @param {string} newId The replacing id
-     *
-     * @return {boolean} TRUE, if the oldId was found and replaced
-     *
-     * @see MatcherManager.replaceId
-     * @see Roler.replaceId
-     */
-    Matcher.prototype.replaceId = function(oldId, newId) {
-        var m;
-        var i, len, j, lenJ, h, lenH;
-        var rowFound;
-        if ('string' !== typeof oldId) {
-            throw new TypeError('Matcher.replaceId: oldId should be string. ' +
-                                'Found: ' + oldId);
-        }
-        if ('string' !== typeof newId && newId.trim() !== '') {
-            throw new TypeError('Matcher.replaceId: newId should be a ' +
-                                'non-empty string. Found: ' + newId);
-        }
-        
-        m = this.assignedIds[oldId];
-        if ('undefined' === typeof m) return false;
-
-        // Ids.
-        this.ids[m] = newId;
-
-        // AssignedIds.x
-        this.assignedIds[newId] = m;
-        delete this.assignedIds[oldId];
-
-        // IdsMap.
-        this.idsMap[newId] = true;
-        delete this.idsMap[oldId];
-
-        // Update resolvedMatches.
-        m = this.resolvedMatches;
-        if (!m) return true;
-        
-        i = -1, len = m.length;
-        for ( ; ++i < len ; ) {
-            j = -1, lenJ = m[i].length;
-            rowFound = false;
-            for ( ; ++j < lenJ ; ) {
-                h = -1, lenH = m[i][j].length;
-                for ( ; ++j < lenJ ; ) {
-                    if (m[i][j][h] === oldId) {
-                        m[i][j][h] = newId;
-                        rowFound = true;
-                        break;
-                    }
-                }
-                if (rowFound) break;
-            }
-        }
-
-        // Update resolvedMatchesObj.
-        m = this.resolvedMatchesObj;
-
-        i = -1, len = m.length;
-        for ( ; ++i < len ; ) {
-            j = -1, lenJ = m[i].length;
-            for ( ; ++j < lenJ ; ) {                
-                if (m[i].hasOwnProperty(j)) {
-                    if (j === oldId) {
-                        // Do the swap.
-                        m[i][newId] = m[i][oldId];
-                        m[m[i][oldId]] = newId;
-                        delete m[i][oldId];
-                        break;
-                    }
-                }
-            }
-        }
-        
-        // Update resolvedMatchesById.
-        m = this.resolvedMatchesById;
-        for (i in m) {
-            if (m.hasOwnProperty(i)) {
-                if (i === oldId) {
-                    m[newId] = m[oldId];
-                    delete m[oldId];
-                }
-                else {
-                    j = -1, lenJ = m[i].length;
-                    for ( ; ++j < lenJ ; ) {
-                        if (m[i][j] === oldId) {
-                            m[i][j] = newId;
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-
-        return true;
-    };
-    
-    /**
      * ### Matcher.clear
      *
      * Clears the matcher as it would be a newly created object
@@ -22770,7 +22560,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # MatcherManager
- * Copyright(c) 2017 Stefano Balietti
+ * Copyright(c) 2016 Stefano Balietti
  * MIT Licensed
  *
  * Handles matching roles to players and players to players.
@@ -23062,26 +22852,6 @@ if (!Array.prototype.indexOf) {
         return this.matcher.x || 0;
     };
 
-    /**
-     * ### MatcherManager.replaceId
-     *
-     * Replaces an id with a new one in all roles and matches
-     *
-     * @param {string} oldId The id to be replaced
-     * @param {string} newId The replacing id
-     *
-     * @return {boolean} TRUE, if the oldId was found and replaced
-     *
-     * @see Matcher.replaceId
-     * @see Roler.replaceId
-     */
-    MatcherManager.prototype.replaceId = function(oldId, newId) {
-        var res;
-        res = this.matcher.replaceId(oldId, newId);
-        res = this.roler.replaceId(oldId, newId);
-        return res;
-    };
-    
     // ## Helper Methods.
 
     /**
@@ -27378,7 +27148,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Matcher
- * Copyright(c) 2017 Stefano Balietti
+ * Copyright(c) 2016 Stefano Balietti <s.balietti@neu.edu>
  * MIT Licensed
  *
  * Class handling the creation of tournament schedules.
@@ -28173,109 +27943,6 @@ if (!Array.prototype.indexOf) {
         return (round-1) % this.matches.length;
     };
 
-    /**
-     * ### Matcher.replaceId
-     *
-     * Replaces an id with a new one in all matches
-     *
-     * @param {string} oldId The id to be replaced
-     * @param {string} newId The replacing id
-     *
-     * @return {boolean} TRUE, if the oldId was found and replaced
-     *
-     * @see MatcherManager.replaceId
-     * @see Roler.replaceId
-     */
-    Matcher.prototype.replaceId = function(oldId, newId) {
-        var m;
-        var i, len, j, lenJ, h, lenH;
-        var rowFound;
-        if ('string' !== typeof oldId) {
-            throw new TypeError('Matcher.replaceId: oldId should be string. ' +
-                                'Found: ' + oldId);
-        }
-        if ('string' !== typeof newId && newId.trim() !== '') {
-            throw new TypeError('Matcher.replaceId: newId should be a ' +
-                                'non-empty string. Found: ' + newId);
-        }
-        
-        m = this.assignedIds[oldId];
-        if ('undefined' === typeof m) return false;
-
-        // Ids.
-        this.ids[m] = newId;
-
-        // AssignedIds.x
-        this.assignedIds[newId] = m;
-        delete this.assignedIds[oldId];
-
-        // IdsMap.
-        this.idsMap[newId] = true;
-        delete this.idsMap[oldId];
-
-        // Update resolvedMatches.
-        m = this.resolvedMatches;
-        if (!m) return true;
-        
-        i = -1, len = m.length;
-        for ( ; ++i < len ; ) {
-            j = -1, lenJ = m[i].length;
-            rowFound = false;
-            for ( ; ++j < lenJ ; ) {
-                h = -1, lenH = m[i][j].length;
-                for ( ; ++j < lenJ ; ) {
-                    if (m[i][j][h] === oldId) {
-                        m[i][j][h] = newId;
-                        rowFound = true;
-                        break;
-                    }
-                }
-                if (rowFound) break;
-            }
-        }
-
-        // Update resolvedMatchesObj.
-        m = this.resolvedMatchesObj;
-
-        i = -1, len = m.length;
-        for ( ; ++i < len ; ) {
-            j = -1, lenJ = m[i].length;
-            for ( ; ++j < lenJ ; ) {                
-                if (m[i].hasOwnProperty(j)) {
-                    if (j === oldId) {
-                        // Do the swap.
-                        m[i][newId] = m[i][oldId];
-                        m[m[i][oldId]] = newId;
-                        delete m[i][oldId];
-                        break;
-                    }
-                }
-            }
-        }
-        
-        // Update resolvedMatchesById.
-        m = this.resolvedMatchesById;
-        for (i in m) {
-            if (m.hasOwnProperty(i)) {
-                if (i === oldId) {
-                    m[newId] = m[oldId];
-                    delete m[oldId];
-                }
-                else {
-                    j = -1, lenJ = m[i].length;
-                    for ( ; ++j < lenJ ; ) {
-                        if (m[i][j] === oldId) {
-                            m[i][j] = newId;
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-
-        return true;
-    };
-    
     /**
      * ### Matcher.clear
      *
