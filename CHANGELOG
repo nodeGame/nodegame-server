@@ -1,5 +1,14 @@
 # nodegame-server change log
 
+# 3.5.6
+
+    
+- Fix bug reconnect in GameRoom with stageLevel = DONE.
+- Fix log error in GameRouter.
+- Improved HI handshake client-server.
+- Garage room has no node instance.
+- Throwing an error if missing auth files.
+
 # 3.5.5
 - Server responds to Auth View of monitor interface.
 
