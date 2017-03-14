@@ -2159,8 +2159,8 @@ generation and clientObject decoration.</p>
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">channel</span><span class="p">.</span><span class="nx">secret</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">channel</span><span class="p">.</span><span class="nx">_loadingSecret</span><span class="p">)</span> <span class="p">{</span>
             <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadAuthDir: channel &quot;&#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span>
-                            <span class="s1">&#39;&quot;: auth is enabled, but no &quot;secret&quot; found. &#39;</span> <span class="o">+</span>
-                            <span class="s1">&#39;Check channel directory.&#39;</span><span class="p">);</span>
+                            <span class="s1">&#39;&quot;: auth is enabled, but file &quot;channel.secret.js&quot;&#39;</span> <span class="o">+</span>
+                            <span class="s1">&#39; not found. Check the channel/ directory.&#39;</span><span class="p">);</span>
         <span class="p">}</span>
         <span class="k">else</span> <span class="p">{</span>
             <span class="nx">logger</span><span class="p">.</span><span class="nx">warn</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadAuthDir: channel &#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span>
@@ -2170,8 +2170,9 @@ generation and clientObject decoration.</p>
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">channel</span><span class="p">.</span><span class="nx">credentials</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">channel</span><span class="p">.</span><span class="nx">_loadingCredentials</span><span class="p">)</span> <span class="p">{</span>
             <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadAuthDir: channel &quot;&#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span>
-                            <span class="s1">&#39;&quot;: auth is enabled, but no &quot;credentials&quot; found. &#39;</span> <span class="o">+</span>
-                            <span class="s1">&#39;Check channel directory.&#39;</span><span class="p">);</span>
+                            <span class="s1">&#39;&quot;: auth is enabled, but file &#39;</span> <span class="o">+</span>
+                            <span class="s1">&#39;&quot;channel.credentials.js&quot; not found. &#39;</span> <span class="o">+</span>
+                            <span class="s1">&#39;Check the channel/ directory.&#39;</span><span class="p">);</span>
         <span class="p">}</span>
         <span class="k">else</span> <span class="p">{</span>
             <span class="nx">logger</span><span class="p">.</span><span class="nx">warn</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadAuthDir: channel &#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span>
