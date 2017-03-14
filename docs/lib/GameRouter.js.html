@@ -1405,9 +1405,11 @@ and can be modified by user-defined callbacks.</p>
                 <span class="p">}</span>
             <span class="p">}</span>
             <span class="k">catch</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
-                <span class="nx">servernode</span><span class="p">.</span><span class="nx">logger</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="s1">&#39;renderTemplate: error loading &#39;</span> <span class="o">+</span>
-                                        <span class="s1">&#39;context file: &#39;</span> <span class="o">+</span> <span class="nx">contextPath</span> <span class="o">+</span>
-                                        <span class="s1">&#39; &#39;</span> <span class="o">+</span> <span class="nx">e</span><span class="p">.</span><span class="nx">stack</span><span class="p">);</span>
+                <span class="nx">resourceManager</span>
+                    <span class="p">.</span><span class="nx">servernode</span>
+                    <span class="p">.</span><span class="nx">logger</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="s1">&#39;renderTemplate: error loading &#39;</span> <span class="o">+</span>
+                                  <span class="s1">&#39;context file: &#39;</span> <span class="o">+</span> <span class="nx">contextPath</span> <span class="o">+</span>
+                                  <span class="s1">&#39; &#39;</span> <span class="o">+</span> <span class="nx">e</span><span class="p">.</span><span class="nx">stack</span><span class="p">);</span>
 
 </pre></div>
         </td>
