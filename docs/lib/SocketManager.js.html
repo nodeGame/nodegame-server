@@ -99,6 +99,9 @@
       <div class="heading h3">
         <a href="#socketmanager.lookuproom">SocketManager.lookupRoom</a>
       </div>
+      <div class="heading h2">
+        <a href="#helper%20functions.">Helper functions.</a>
+      </div>
     </div>
   </div>
   <div id="sidebar-toggle"></div>
@@ -116,7 +119,7 @@
 </div>
 
 
-<p>Copyright(c) 2014 Stefano Balietti
+<p>Copyright(c) 2017 Stefano Balietti
 MIT Licensed</p>
   </div>
   <div class="body"><p>A register of all open sockets</p>
@@ -426,7 +429,6 @@ found in the <em>from</em> field.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">SocketManager</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">send</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">)</span> <span class="p">{</span>
-    <span class="kd">var</span> <span class="nx">toObj</span><span class="p">;</span>
 
     <span class="k">switch</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">.</span><span class="nx">to</span><span class="p">)</span> <span class="p">{</span>
 
@@ -846,9 +848,7 @@ can be specified as a second parameter.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">SocketManager</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">send2ownRoom</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">from</span><span class="p">)</span> <span class="p">{</span>
-    <span class="kd">var</span> <span class="nx">registry</span><span class="p">,</span> <span class="nx">fromRoomName</span><span class="p">,</span> <span class="nx">fromRoom</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">ownChannel</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">channels</span><span class="p">,</span> <span class="nx">channelName</span><span class="p">,</span> <span class="nx">channel</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">fromRoom</span><span class="p">;</span>
 
     <span class="nx">from</span> <span class="o">=</span> <span class="nx">from</span> <span class="o">||</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">from</span><span class="p">;</span>
 
@@ -1211,8 +1211,6 @@ can be specified as a second parameter.</p>
     <span class="kd">var</span> <span class="nx">originalTo</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">resolvedInfo</span><span class="p">,</span> <span class="nx">socket</span><span class="p">,</span> <span class="nx">receiverSid</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">errMsg</span><span class="p">;</span>
-
-    <span class="kd">var</span> <span class="nx">channels</span><span class="p">,</span> <span class="nx">channelName</span><span class="p">,</span> <span class="nx">ownChannelName</span><span class="p">,</span> <span class="nx">socketManager</span><span class="p">;</span>
 
     <span class="nx">originalTo</span> <span class="o">=</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">to</span><span class="p">;</span>
     <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">to</span> <span class="o">=</span> <span class="nx">to</span> <span class="o">||</span> <span class="nx">originalTo</span><span class="p">;</span>
@@ -1804,9 +1802,7 @@ or it can be specified as a second parameter.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">SocketManager</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">broadcast2ownRoom</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">from</span><span class="p">)</span> <span class="p">{</span>
-    <span class="kd">var</span> <span class="nx">registry</span><span class="p">,</span> <span class="nx">fromRoomName</span><span class="p">,</span> <span class="nx">fromRoom</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">ownChannel</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">channels</span><span class="p">,</span> <span class="nx">channelName</span><span class="p">,</span> <span class="nx">channel</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">fromRoom</span><span class="p">;</span>
 
     <span class="nx">from</span> <span class="o">=</span> <span class="nx">from</span> <span class="o">||</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">from</span><span class="p">;</span>
 
@@ -2398,6 +2394,22 @@ recipient information in all channels.</p>
     <span class="k">return</span> <span class="nx">room</span> <span class="o">||</span> <span class="kc">null</span><span class="p">;</span>
 <span class="p">};</span>
 
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap" id="helper%20functions.">
+  <h2>
+    <a href="#helper%20functions." name="helper%20functions." class="pilcrow">&#182;</a>
+    Helper functions.
+  </h2>
+</div>
+
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
 <span class="kd">function</span> <span class="nx">send2AllClientsInGameServer</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">server</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">i</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">sockets</span><span class="p">,</span> <span class="nx">smoothExec</span><span class="p">;</span>
     <span class="nx">smoothExec</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
@@ -2407,9 +2419,9 @@ recipient information in all channels.</p>
             <span class="nx">res</span> <span class="o">=</span> <span class="nx">sockets</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">send</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="s1">&#39;ALL&#39;</span><span class="p">);</span>
             <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
                 <span class="nx">server</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;SocketManager.send2channel: An error &#39;</span> <span class="o">+</span>
-                                     <span class="s1">&#39;occurred in channel &#39;</span> <span class="o">+</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">name</span> <span class="o">+</span>
-                                     <span class="s1">&#39;, &#39;</span> <span class="o">+</span> <span class="nx">server</span><span class="p">.</span><span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39; server, and &#39;</span> <span class="o">+</span>
-                                     <span class="s1">&#39;socket: &#39;</span> <span class="o">+</span> <span class="nx">i</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
+                                     <span class="s1">&#39;occurred in channel &#39;</span> <span class="o">+</span>
+                                     <span class="nx">server</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39;, &#39;</span> <span class="o">+</span> <span class="nx">server</span><span class="p">.</span><span class="nx">name</span> <span class="o">+</span>
+                                     <span class="s1">&#39; server, and socket: &#39;</span> <span class="o">+</span> <span class="nx">i</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
                 <span class="nx">smoothExec</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
             <span class="p">}</span>
         <span class="p">}</span>
@@ -2426,9 +2438,9 @@ recipient information in all channels.</p>
             <span class="nx">res</span> <span class="o">=</span> <span class="nx">sockets</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">send</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="nx">sid</span><span class="p">,</span> <span class="kc">true</span><span class="p">);</span>
             <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
                 <span class="nx">server</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;SocketManager.send2channel: An error &#39;</span> <span class="o">+</span>
-                                     <span class="s1">&#39;occurred in channel &#39;</span> <span class="o">+</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">name</span> <span class="o">+</span>
-                                     <span class="s1">&#39;, &#39;</span> <span class="o">+</span> <span class="nx">server</span><span class="p">.</span><span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39; server, and &#39;</span> <span class="o">+</span>
-                                     <span class="s1">&#39;socket: &#39;</span> <span class="o">+</span> <span class="nx">i</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
+                                     <span class="s1">&#39;occurred in channel &#39;</span> <span class="o">+</span>
+                                     <span class="nx">server</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39;, &#39;</span> <span class="o">+</span> <span class="nx">server</span><span class="p">.</span><span class="nx">name</span> <span class="o">+</span>
+                                     <span class="s1">&#39; server, and socket: &#39;</span> <span class="o">+</span> <span class="nx">i</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
                 <span class="nx">smoothExec</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
             <span class="p">}</span>
         <span class="p">}</span>
