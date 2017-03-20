@@ -50,17 +50,32 @@ function configure(loggers, logDir) {
     msgLogger = loggers.add('messages');
     msgLogger.remove(winston.transports.Console);
     msgLogger.add(winston.transports.File, {
-        level: 'foobar',
         timestamp: true,
         maxsize: 1000000,
         filename: logDir + 'messages.log'
     });
+
+    // Do not change, or logging might be affected.
+    // Logger.js hardcodes the values for speed.
     msgLogger.setLevels({
-        error: 0,
-        bar: 1,
-        baz: 2,
-        foobar: 3
+        // Log none.
+        none: 0,
+        // All DATA msgs.
+        data: 1,
+        // All SET and DATA msgs.
+        set: 3,
+        // All SET, GET and DATA msgs.
+        get: 5,
+        // All SETUP, SET, GET and DATA msgs.
+        setup: 7,
+        // All messages, but **not** PLAYER_UPDATE, SERVERCOMMAND and ALERT.
+        game: 9,
+        // All messages.
+        all: 11
     });
+
+    // Set default logging level for messages.
+    msgLogger.level = 'all';
 
     // Clients.
     loggers.add('clients', {
