@@ -67,12 +67,6 @@
         <a href="#say.player_update">say.PLAYER_UPDATE</a>
       </div>
       <div class="heading h4">
-        <a href="#say.stage">say.STAGE</a>
-      </div>
-      <div class="heading h4">
-        <a href="#say.stage_level">say.STAGE_LEVEL</a>
-      </div>
-      <div class="heading h4">
         <a href="#get.data">get.DATA</a>
       </div>
       <div class="heading h4">
@@ -89,6 +83,15 @@
       </div>
       <div class="heading h2">
         <a href="#playerserver.notifyroomdisconnection">PlayerServer.notifyRoomDisconnection</a>
+      </div>
+      <div class="heading h2">
+        <a href="#old%20code.">Old code.</a>
+      </div>
+      <div class="heading h4">
+        <a href="#say.stage">say.STAGE</a>
+      </div>
+      <div class="heading h4">
+        <a href="#say.stage_level">say.STAGE_LEVEL</a>
       </div>
     </div>
   </div>
@@ -107,7 +110,7 @@
 </div>
 
 
-<p>Copyright(c) 2016 Stefano Balietti
+<p>Copyright(c) 2017 Stefano Balietti
 MIT Licensed</p>
   </div>
   <div class="body"><p>GameServer for the players endpoint</p>
@@ -548,104 +551,6 @@ Admins decides what to do with it.</p>
       </tr>
       <tr>
         <td class="docs">
-<div class="pilwrap" id="say.stage">
-  <h4>
-    <a href="#say.stage" name="say.stage" class="pilcrow">&#182;</a>
-    say.STAGE
-  </h4>
-</div>
-
-
-<p>Listens on say.STAGE messages</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="nx">say</span> <span class="o">+</span> <span class="s1">&#39;STAGE&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">msg</span><span class="p">)</span> <span class="p">{</span>
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-21" id="section-21">&#182;</a>
-</div>
-<p>TODO: should registry's Player object get updated?</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-        <span class="kd">var</span> <span class="nx">room</span><span class="p">,</span> <span class="nx">roomName</span><span class="p">;</span>
-
-        <span class="nx">roomName</span> <span class="o">=</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">_roomName</span> <span class="o">||</span> <span class="nx">that</span><span class="p">.</span><span class="nx">registry</span><span class="p">.</span><span class="nx">getClientRoom</span><span class="p">(</span><span class="nx">msg</span><span class="p">.</span><span class="nx">from</span><span class="p">);</span>
-        <span class="nx">room</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">[</span><span class="nx">roomName</span><span class="p">];</span>
-
-        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">room</span><span class="p">)</span> <span class="p">{</span>
-            <span class="nx">sys</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;PlayerServer.on.say.STAGE: Could not &#39;</span> <span class="o">+</span>
-                    <span class="s1">&#39;determine room of sender: &#39;</span> <span class="o">+</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">from</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
-            <span class="k">return</span><span class="p">;</span>
-        <span class="p">}</span>
-
-        <span class="k">if</span> <span class="p">(</span><span class="nx">room</span><span class="p">.</span><span class="nx">acm</span><span class="p">.</span><span class="nx">notify</span><span class="p">.</span><span class="nx">onStageUpdate</span><span class="p">)</span> <span class="p">{</span>
-            <span class="nx">that</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">broadcast2room</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">room</span><span class="p">,</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">from</span><span class="p">);</span>
-        <span class="p">}</span>
-        <span class="k">else</span> <span class="p">{</span>
-            <span class="nx">that</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">send2roomAdmins</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">room</span><span class="p">);</span>
-        <span class="p">}</span>
-    <span class="p">});</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap" id="say.stage_level">
-  <h4>
-    <a href="#say.stage_level" name="say.stage_level" class="pilcrow">&#182;</a>
-    say.STAGE_LEVEL
-  </h4>
-</div>
-
-
-<p>Listens on say.STAGE_LEVEL messages</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="nx">say</span> <span class="o">+</span> <span class="s1">&#39;STAGE_LEVEL&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">msg</span><span class="p">)</span> <span class="p">{</span>
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-23" id="section-23">&#182;</a>
-</div>
-<p>TODO: should registry's Player object get updated?</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-        <span class="kd">var</span> <span class="nx">room</span><span class="p">,</span> <span class="nx">roomName</span><span class="p">;</span>
-
-        <span class="nx">roomName</span> <span class="o">=</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">_roomName</span> <span class="o">||</span> <span class="nx">that</span><span class="p">.</span><span class="nx">registry</span><span class="p">.</span><span class="nx">getClientRoom</span><span class="p">(</span><span class="nx">msg</span><span class="p">.</span><span class="nx">from</span><span class="p">);</span>
-        <span class="nx">room</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">[</span><span class="nx">roomName</span><span class="p">];</span>
-
-        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">room</span><span class="p">)</span> <span class="p">{</span>
-            <span class="nx">sys</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;PlayerServer.on.say.STAGE_LEVEL: Could not &#39;</span> <span class="o">+</span>
-                    <span class="s1">&#39;determine room of sender: &#39;</span> <span class="o">+</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">from</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
-            <span class="k">return</span><span class="p">;</span>
-        <span class="p">}</span>
-
-        <span class="k">if</span> <span class="p">(</span><span class="nx">room</span><span class="p">.</span><span class="nx">acm</span><span class="p">.</span><span class="nx">notify</span><span class="p">.</span><span class="nx">onStageUpdate</span><span class="p">)</span> <span class="p">{</span>
-            <span class="nx">that</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">broadcast2room</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">room</span><span class="p">,</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">from</span><span class="p">);</span>
-        <span class="p">}</span>
-        <span class="k">else</span> <span class="p">{</span>
-            <span class="nx">that</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">send2roomAdmins</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">room</span><span class="p">);</span>
-        <span class="p">}</span>
-    <span class="p">});</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
 <div class="pilwrap" id="get.data">
   <h4>
     <a href="#get.data" name="get.data" class="pilcrow">&#182;</a>
@@ -712,7 +617,7 @@ It ignores ALL, CHANNEL, CHANNEL_X, ROOM_X recipients.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-25" id="section-25">&#182;</a>
+  <a class="pilcrow" href="#section-21" id="section-21">&#182;</a>
 </div>
 <p>Msg to a specific client (might be in another room).</p>
         </td>
@@ -773,7 +678,7 @@ It ignores ALL, CHANNEL, CHANNEL_X, ROOM_X recipients.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-28" id="section-28">&#182;</a>
+  <a class="pilcrow" href="#section-24" id="section-24">&#182;</a>
 </div>
 <p>TODO save the state to disk.</p>
         </td>
@@ -855,7 +760,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-30" id="section-30">&#182;</a>
+  <a class="pilcrow" href="#section-26" id="section-26">&#182;</a>
 </div>
 <p>TODO: improve. Too many ifs.</p>
         </td>
@@ -869,7 +774,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-31" id="section-31">&#182;</a>
+  <a class="pilcrow" href="#section-27" id="section-27">&#182;</a>
 </div>
 <p>Send to admins in sender's room.</p>
         </td>
@@ -885,7 +790,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-32" id="section-32">&#182;</a>
+  <a class="pilcrow" href="#section-28" id="section-28">&#182;</a>
 </div>
 <p>Send to receiving player (do not send twice to admin.)</p>
         </td>
@@ -940,7 +845,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-34" id="section-34">&#182;</a>
+  <a class="pilcrow" href="#section-30" id="section-30">&#182;</a>
 </div>
 <p>Send notification to other players (if allowed).</p>
         </td>
@@ -954,7 +859,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-35" id="section-35">&#182;</a>
+  <a class="pilcrow" href="#section-31" id="section-31">&#182;</a>
 </div>
 <p>To players send only the id.</p>
         </td>
@@ -973,7 +878,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-36" id="section-36">&#182;</a>
+  <a class="pilcrow" href="#section-32" id="section-32">&#182;</a>
 </div>
 <p>Send the current player list to the new player.</p>
         </td>
@@ -994,7 +899,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-37" id="section-37">&#182;</a>
+  <a class="pilcrow" href="#section-33" id="section-33">&#182;</a>
 </div>
 <p>To admins send the full object.</p>
         </td>
@@ -1007,7 +912,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-38" id="section-38">&#182;</a>
+  <a class="pilcrow" href="#section-34" id="section-34">&#182;</a>
 </div>
 <p>Send notification to admin (always).</p>
         </td>
@@ -1050,7 +955,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-40" id="section-40">&#182;</a>
+  <a class="pilcrow" href="#section-36" id="section-36">&#182;</a>
 </div>
 <p>Notify players and admins of disconnection in old room.</p>
         </td>
@@ -1065,7 +970,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-41" id="section-41">&#182;</a>
+  <a class="pilcrow" href="#section-37" id="section-37">&#182;</a>
 </div>
 <p>Notify only admins of disconnection in old room.</p>
         </td>
@@ -1074,6 +979,108 @@ the client-id of the recipient.</p>
         <span class="k">this</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">send2roomAdmins</span><span class="p">(</span><span class="nx">pDisconnectMsg</span><span class="p">,</span> <span class="nx">roomObj</span><span class="p">);</span>
     <span class="p">}</span>
 <span class="p">};</span>
+
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap" id="old%20code.">
+  <h2>
+    <a href="#old%20code." name="old%20code." class="pilcrow">&#182;</a>
+    Old code.
+  </h2>
+</div>
+
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap" id="say.stage">
+  <h4>
+    <a href="#say.stage" name="say.stage" class="pilcrow">&#182;</a>
+    say.STAGE
+  </h4>
+</div>
+
+
+<p>Listens on say.STAGE messages
+    this.on(say + 'STAGE', function(msg) {
+        // TODO: should registry's Player object get updated?
+        var room, roomName;</p>
+
+
+<div class="highlight"><pre><code>    <span class="n">roomName</span> <span class="o">=</span> <span class="n">msg</span><span class="o">.</span><span class="n">_roomName</span> <span class="o">||</span> <span class="n">that</span><span class="o">.</span><span class="n">registry</span><span class="o">.</span><span class="n">getClientRoom</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">from</span><span class="p">);</span>
+    <span class="n">room</span> <span class="o">=</span> <span class="n">that</span><span class="o">.</span><span class="n">channel</span><span class="o">.</span><span class="n">gameRooms</span><span class="p">[</span><span class="n">roomName</span><span class="p">];</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">room</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">sys</span><span class="o">.</span><span class="nb">log</span><span class="p">(</span><span class="s">&#39;PlayerServer.on.say.STAGE: Could not &#39;</span> <span class="o">+</span>
+                <span class="s">&#39;determine room of sender: &#39;</span> <span class="o">+</span> <span class="n">msg</span><span class="o">.</span><span class="n">from</span><span class="p">,</span> <span class="s">&#39;error&#39;</span><span class="p">);</span>
+        <span class="k">return</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">room</span><span class="o">.</span><span class="n">acm</span><span class="o">.</span><span class="n">notify</span><span class="o">.</span><span class="n">onStageUpdate</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">that</span><span class="o">.</span><span class="n">socketManager</span><span class="o">.</span><span class="n">broadcast2room</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="n">room</span><span class="p">,</span> <span class="n">msg</span><span class="o">.</span><span class="n">from</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="k">else</span> <span class="p">{</span>
+        <span class="n">that</span><span class="o">.</span><span class="n">socketManager</span><span class="o">.</span><span class="n">send2roomAdmins</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="n">room</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">});</span>
+</code></pre></div>
+
+
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap" id="say.stage_level">
+  <h4>
+    <a href="#say.stage_level" name="say.stage_level" class="pilcrow">&#182;</a>
+    say.STAGE_LEVEL
+  </h4>
+</div>
+
+
+<p>Listens on say.STAGE_LEVEL messages
+    this.on(say + 'STAGE_LEVEL', function(msg) {
+        // TODO: should registry's Player object get updated?
+        var room, roomName;</p>
+
+
+<div class="highlight"><pre><code>    <span class="n">roomName</span> <span class="o">=</span> <span class="n">msg</span><span class="o">.</span><span class="n">_roomName</span> <span class="o">||</span> <span class="n">that</span><span class="o">.</span><span class="n">registry</span><span class="o">.</span><span class="n">getClientRoom</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">from</span><span class="p">);</span>
+    <span class="n">room</span> <span class="o">=</span> <span class="n">that</span><span class="o">.</span><span class="n">channel</span><span class="o">.</span><span class="n">gameRooms</span><span class="p">[</span><span class="n">roomName</span><span class="p">];</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">room</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">sys</span><span class="o">.</span><span class="nb">log</span><span class="p">(</span><span class="s">&#39;PlayerServer.on.say.STAGE_LEVEL: Could not &#39;</span> <span class="o">+</span>
+                <span class="s">&#39;determine room of sender: &#39;</span> <span class="o">+</span> <span class="n">msg</span><span class="o">.</span><span class="n">from</span><span class="p">,</span> <span class="s">&#39;error&#39;</span><span class="p">);</span>
+        <span class="k">return</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">room</span><span class="o">.</span><span class="n">acm</span><span class="o">.</span><span class="n">notify</span><span class="o">.</span><span class="n">onStageUpdate</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">that</span><span class="o">.</span><span class="n">socketManager</span><span class="o">.</span><span class="n">broadcast2room</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="n">room</span><span class="p">,</span> <span class="n">msg</span><span class="o">.</span><span class="n">from</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="k">else</span> <span class="p">{</span>
+        <span class="n">that</span><span class="o">.</span><span class="n">socketManager</span><span class="o">.</span><span class="n">send2roomAdmins</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="n">room</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">});</span>
+</code></pre></div>
+
+
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
 </pre></div>
         </td>
       </tr>
