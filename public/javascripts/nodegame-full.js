@@ -10774,14 +10774,6 @@ if (!Array.prototype.indexOf) {
     // A client updates his Player object
     k.target.PLAYER_UPDATE = 'PLAYER_UPDATE';
 
-    // #### target.STAGE
-    // A client notifies his own stage
-    k.target.STAGE = 'STAGE';
-
-    // #### target.STAGE_LEVEL
-    // A client notifies his own stage level
-    k.target.STAGE_LEVEL = 'STAGE_LEVEL';
-
     // #### target.REDIRECT
     // Redirects a client to a new uri
     k.target.REDIRECT = 'REDIRECT';
@@ -10808,7 +10800,7 @@ if (!Array.prototype.indexOf) {
 
     // #### target.LOG
     // A generic log message used to send info to the server
-    // @see node.constants.remoteVerbosity
+    // @see NodeGameClient.remoteVerbosity
     k.target.LOG = 'LOG';
 
     // #### target.BYE
@@ -10826,6 +10818,16 @@ if (!Array.prototype.indexOf) {
 
     k.target.WARN = 'WARN';   // To do.
     k.target.ERR  = 'ERR';    // To do.
+
+    // Old targets.
+
+    // #### target.STAGE
+    // A client notifies his own stage
+    // k.target.STAGE = 'STAGE';
+
+    // #### target.STAGE_LEVEL
+    // A client notifies his own stage level
+    // k.target.STAGE_LEVEL = 'STAGE_LEVEL';
 
 
     // ### node.constants.gamecommands
@@ -24460,7 +24462,7 @@ if (!Array.prototype.indexOf) {
                     opts = { highlight: true, markAttempt: true };
                 }
                 else {
-                    opts = { highlight: false, markAttemps: false };
+                    opts = { highlight: false, markAttempt: false };
                 }
 
                 values = this[widget.ref].getValues(opts);
@@ -29071,10 +29073,10 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Log
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti
  * MIT Licensed
  *
- * `nodeGame` logging module
+ * nodeGame logging module
  */
 (function(exports, parent) {
 
@@ -29099,8 +29101,8 @@ if (!Array.prototype.indexOf) {
      * smaller than `this.remoteVerbosity`.
      *
      * @param {string} txt The text to output
-     * @param {string|number} level Optional. The verbosity level of this log.
-     *   Default: 'warn'
+     * @param {string} level Optional. The verbosity level of this log.
+     *   Default: 'info'
      * @param {string} prefix Optional. A text to display at the beginning of
      *   the log entry. Default: 'ng> '
      */
@@ -29618,26 +29620,39 @@ if (!Array.prototype.indexOf) {
      *
      * Sets the language for a playerList
      *
-     * @param {object} language Object describing language.
-     *   Needs shortName property.
+     * @param {object|string} lang Language information. If string, it must
+     *   be the full name, and the the first 2 letters lower-cased are used
+     *   as shortName. If object it must have the following format:
+     *   ``{
+     *      name: 'English',
+     *      shortName: 'en',
+     *      nativeName: 'English',
+     *      path: 'en/' // Optional, default equal to shortName + '/'.
+     *   }``
+     *
      * @param {boolean} prefix Optional. If TRUE, the window uri prefix is
      *   set to the value of lang.path. node.window must be defined,
      *   otherwise a warning is shown. Default, FALSE.
      *
-     * @return {object} The language object
+     * @return {object|string} The language object or string
      *
      * @see node.setup.lang
      * @see GameWindow.setUriPrefix
      *
      * @emit LANGUAGE_SET
      */
-    NGC.prototype.setLanguage = function(language, prefix) {
-        if ('object' !== typeof language) {
-            throw new TypeError('node.setLanguage: language must be object.');
+    NGC.prototype.setLanguage = function(lang, prefix) {
+        var language;
+        language = 'string' === typeof lang ? makeLanguageObj(lang) : lang;
+
+        if (!language || 'object' !== typeof language) {
+            throw new TypeError('node.setLanguage: language must be object ' +
+                               'or string. Found: ' + lang);
         }
         if ('string' !== typeof language.shortName) {
             throw new TypeError(
-                'node.setLanguage: language.shortName must be string.');
+                'node.setLanguage: language.shortName must be string. Found: ' +
+                    language.shortName);
         }
         this.player.lang = language;
         if (!this.player.lang.path) {
@@ -29658,6 +29673,19 @@ if (!Array.prototype.indexOf) {
 
         return this.player.lang;
     };
+
+    // ## Helper functions.
+
+    function makeLanguageObj(langStr) {
+        var shortName;
+        shortName = langStr.toLowerCase().substr(0,2);
+        return {
+            name: langStr,
+            shortName: shortName,
+            nativeName: langStr,
+            path: shortName + '/'
+        };
+    }
 
 })(
     'undefined' != typeof node ? node : module.exports,
@@ -31285,7 +31313,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # setups
- * Copyright(c) 2016 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti
  * MIT Licensed
  *
  * Listeners for incoming messages
@@ -31582,12 +31610,12 @@ if (!Array.prototype.indexOf) {
                 if (J.isArray(lang)) {
                     this.setLanguage(lang[0], lang[1]);
                 }
-                else if ('string' === typeof lang) {
+                else if ('string' === typeof lang || 'object' === typeof lang) {
                     this.setLanguage(lang);
                 }
                 else {
-                    throw new TypeError('setup("lang"): lang must be ' +
-                                        'string, array, or undefined. Found: ' +
+                    throw new TypeError('setup("lang"): lang must be string, ' +
+                                        'array, object or undefined. Found: ' +
                                         lang);
                 }
             }
