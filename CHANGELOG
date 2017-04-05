@@ -1,5 +1,10 @@
 # nodegame-server change log
 
+# 3.5.7
+- Internal cleanup.
+- Better error messages for duplicated aliases.
+- Preparing for v4 (replyClaimId).
+
 # 3.5.6
 - Fix bug reconnect in GameRoom with stageLevel = DONE.
 - Fix log error in GameRouter.
