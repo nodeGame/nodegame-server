@@ -1905,8 +1905,8 @@ level of the specified directory.</p>
   </div>
   <div class="body"><p>Loads the waiting room configuration and creates the object in channel</p>
 
-<p>Synchronously looks for a file called <em>waitroom/room.settings.js</em> at the top
-level of the specified directory.</p>
+<p>Synchronously looks for a file called <em>waitroom/room.settings.js</em>
+at the top level of the specified directory.</p>
   </div>
   <div class="details">
     <div class="dox_tag_title">Params</div>
@@ -1958,7 +1958,7 @@ level of the specified directory.</p>
     <span class="nx">waitRoom</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">createWaitingRoom</span><span class="p">(</span><span class="nx">conf</span><span class="p">,</span> <span class="kc">true</span><span class="p">);</span>
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">waitRoom</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadWaitRoomDir: could not create &#39;</span> <span class="o">+</span>
-                        <span class="s1">&#39;waiting room. Game: &#39;</span> <span class="o">+</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
+                        <span class="s1">&#39;waiting room. Game: &#39;</span> <span class="o">+</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">gameName</span><span class="p">);</span>
     <span class="p">}</span>
     <span class="k">return</span> <span class="nx">waitRoom</span><span class="p">;</span>
 <span class="p">};</span>
@@ -2629,8 +2629,7 @@ If logicPath is not string RequirementsRoom constructor throws an error.</p>
     <span class="nx">reqRoom</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">createRequirementsRoom</span><span class="p">(</span><span class="nx">conf</span><span class="p">,</span> <span class="kc">true</span><span class="p">);</span>
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">reqRoom</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadRequirementsRoomDir: could not &#39;</span> <span class="o">+</span>
-                        <span class="s1">&#39;create requirements room. Game: &#39;</span> <span class="o">+</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">gameName</span> <span class="o">+</span>
-                        <span class="s1">&#39;.&#39;</span><span class="p">);</span>
+                        <span class="s1">&#39;create requirements room. Game: &#39;</span> <span class="o">+</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">gameName</span><span class="p">);</span>
     <span class="p">}</span>
     <span class="k">return</span> <span class="nx">reqRoom</span><span class="p">;</span>
 <span class="p">};</span>

@@ -58,9 +58,9 @@
         <a href="#resourcemanager.getsandbox">ResourceManager.getSandBox</a>
       </div>
       <div class="heading h2">
-        <a href="#helper%20methods">Helper methods</a>
+        <a href="#helper%20methods.">Helper methods.</a>
       </div>
-      <div class="heading h2">
+      <div class="heading h3">
         <a href="#loadcontextcallback">loadContextCallback</a>
       </div>
     </div>
@@ -80,7 +80,7 @@
 </div>
 
 
-<p>Copyright(c) 2015 Stefano Balietti
+<p>Copyright(c) 2017 Stefano Balietti
 MIT Licensed</p>
   </div>
   <div class="body"><p>Handles loading, caching of static resources and templates from file system</p>
@@ -223,26 +223,39 @@ MIT Licensed</p>
 <span class="nx">ResourceManager</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">addGame</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">gameName</span><span class="p">,</span> <span class="nx">rootDir</span><span class="p">)</span> <span class="p">{</span>
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">gameName</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ResourceManager.addGame: &#39;</span> <span class="o">+</span>
-                            <span class="s1">&#39;gameName must be string.&#39;</span><span class="p">);</span>
+                            <span class="s1">&#39;gameName must be string. Found: &#39;</span> <span class="o">+</span> <span class="nx">gameName</span><span class="p">);</span>
     <span class="p">}</span>
     <span class="k">if</span> <span class="p">(</span><span class="nx">rootDir</span> <span class="o">&amp;&amp;</span> <span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">rootDir</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;ResourceManager.addGame: &#39;</span> <span class="o">+</span>
-                        <span class="s1">&#39;rootDir must be string or undefined.&#39;</span><span class="p">);</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;ResourceManager.addGame: rootDir must &#39;</span> <span class="o">+</span>
+                        <span class="s1">&#39;be string or undefined. Found: &#39;</span> <span class="o">+</span> <span class="nx">rootDir</span><span class="p">);</span>
     <span class="p">}</span>
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">rootDir</span><span class="p">)</span> <span class="p">{</span>
         <span class="nx">rootDir</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">resolveGameDir</span><span class="p">(</span><span class="nx">gameName</span><span class="p">);</span>
         <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">rootDir</span><span class="p">)</span> <span class="p">{</span>
-            <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;ResourceManager.addGame: could not find &#39;</span> <span class="o">+</span>
-                            <span class="s1">&#39;rootDir of game: &#39;</span> <span class="o">+</span> <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;ResourceManager.addGame: rootDir not specified &#39;</span> <span class="o">+</span>
+                            <span class="s1">&#39;and could resolve it. Game: &#39;</span> <span class="o">+</span> <span class="nx">gameName</span><span class="p">);</span>
         <span class="p">}</span>
     <span class="p">}</span>
 
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-8" id="section-8">&#182;</a>
+</div>
+<p>Game name is duplicated so that alias have access to the original one.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
     <span class="nx">games</span><span class="p">[</span><span class="nx">gameName</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
         <span class="nx">rootDir</span><span class="o">:</span> <span class="nx">rootDir</span><span class="p">,</span>
         <span class="nx">cachePublic</span><span class="o">:</span> <span class="p">{},</span>
         <span class="nx">cacheTemplate</span><span class="o">:</span> <span class="p">{},</span>
         <span class="nx">cacheContext</span><span class="o">:</span> <span class="p">{},</span>
-        <span class="nx">contextCallbacks</span><span class="o">:</span> <span class="p">{}</span>
+        <span class="nx">contextCallbacks</span><span class="o">:</span> <span class="p">{},</span>
+        <span class="nx">name</span><span class="o">:</span> <span class="nx">gameName</span>
     <span class="p">};</span>
 <span class="p">};</span>
 
@@ -288,11 +301,11 @@ MIT Licensed</p>
 <span class="nx">ResourceManager</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">createAlias</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">alias</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">force</span><span class="p">)</span> <span class="p">{</span>
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">alias</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ResourceManager.createAlias: alias &#39;</span> <span class="o">+</span>
-                            <span class="s1">&#39;must be string.&#39;</span><span class="p">);</span>
+                            <span class="s1">&#39;must be string. Found: &#39;</span> <span class="o">+</span> <span class="nx">alias</span><span class="p">);</span>
     <span class="p">}</span>
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">gameName</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ResourceManager.createAlias: &#39;</span> <span class="o">+</span>
-                            <span class="s1">&#39;gameName must be string.&#39;</span><span class="p">);</span>
+                            <span class="s1">&#39;gameName must be string. Found: &#39;</span> <span class="o">+</span> <span class="nx">gameName</span><span class="p">);</span>
     <span class="p">}</span>
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">games</span><span class="p">[</span><span class="nx">gameName</span><span class="p">])</span> <span class="p">{</span>
         <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;ResourceManager.createAlias: &#39;</span> <span class="o">+</span>
@@ -300,7 +313,8 @@ MIT Licensed</p>
     <span class="p">}</span>
     <span class="k">if</span> <span class="p">(</span><span class="nx">games</span><span class="p">[</span><span class="nx">alias</span><span class="p">]</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="nx">force</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;ResourceManager.createAlias: &#39;</span> <span class="o">+</span>
-                        <span class="s1">&#39;alias already existing: &#39;</span> <span class="o">+</span> <span class="nx">alias</span><span class="p">);</span>
+                        <span class="s1">&#39;alias already existing: &#39;</span> <span class="o">+</span> <span class="nx">alias</span> <span class="o">+</span> <span class="s1">&#39;. Games: &#39;</span> <span class="o">+</span>
+                        <span class="nx">gameName</span> <span class="o">+</span> <span class="s1">&#39; &amp; &#39;</span> <span class="o">+</span> <span class="nx">games</span><span class="p">[</span><span class="nx">alias</span><span class="p">].</span><span class="nx">name</span><span class="p">);</span>
     <span class="p">}</span>
     <span class="nx">games</span><span class="p">[</span><span class="nx">alias</span><span class="p">]</span> <span class="o">=</span> <span class="nx">games</span><span class="p">[</span><span class="nx">gameName</span><span class="p">];</span>
 <span class="p">};</span>
@@ -362,7 +376,7 @@ if the caching option is enabled.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-10" id="section-10">&#182;</a>
+  <a class="pilcrow" href="#section-11" id="section-11">&#182;</a>
 </div>
 <p>Removing the trailing slash because it creates:
 Error: ENOTDIR in fetching the file.</p>
@@ -380,7 +394,7 @@ Error: ENOTDIR in fetching the file.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-11" id="section-11">&#182;</a>
+  <a class="pilcrow" href="#section-12" id="section-12">&#182;</a>
 </div>
 <p>File was previously found and cached.</p>
         </td>
@@ -396,7 +410,7 @@ Error: ENOTDIR in fetching the file.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-12" id="section-12">&#182;</a>
+  <a class="pilcrow" href="#section-13" id="section-13">&#182;</a>
 </div>
 <p>File was previously looked up and not found.</p>
         </td>
@@ -413,7 +427,7 @@ Error: ENOTDIR in fetching the file.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-13" id="section-13">&#182;</a>
+  <a class="pilcrow" href="#section-14" id="section-14">&#182;</a>
 </div>
 <p>Build filePath to file in public directory.</p>
         </td>
@@ -428,7 +442,7 @@ Error: ENOTDIR in fetching the file.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-14" id="section-14">&#182;</a>
+  <a class="pilcrow" href="#section-15" id="section-15">&#182;</a>
 </div>
 <p>Checks if exists in 'public/' or as view.</p>
         </td>
@@ -442,7 +456,7 @@ Error: ENOTDIR in fetching the file.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-15" id="section-15">&#182;</a>
+  <a class="pilcrow" href="#section-16" id="section-16">&#182;</a>
 </div>
 <p>Exists in public, cache it, serve it.</p>
         </td>
@@ -456,7 +470,7 @@ Error: ENOTDIR in fetching the file.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-16" id="section-16">&#182;</a>
+  <a class="pilcrow" href="#section-17" id="section-17">&#182;</a>
 </div>
 <p>Cache it.</p>
         </td>
@@ -520,7 +534,7 @@ if the caching option is enabled.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-18" id="section-18">&#182;</a>
+  <a class="pilcrow" href="#section-19" id="section-19">&#182;</a>
 </div>
 <p>TODO: Fix.</p>
         </td>
@@ -542,7 +556,7 @@ if the caching option is enabled.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-19" id="section-19">&#182;</a>
+  <a class="pilcrow" href="#section-20" id="section-20">&#182;</a>
 </div>
 <p>Removing the trailing slash because it creates:
 Error: ENOTDIR in fetching the file.</p>
@@ -558,7 +572,7 @@ Error: ENOTDIR in fetching the file.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-20" id="section-20">&#182;</a>
+  <a class="pilcrow" href="#section-21" id="section-21">&#182;</a>
 </div>
 <p>Check if it a template.</p>
         </td>
@@ -573,7 +587,7 @@ Error: ENOTDIR in fetching the file.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-21" id="section-21">&#182;</a>
+  <a class="pilcrow" href="#section-22" id="section-22">&#182;</a>
 </div>
 <p>Instantiate templates, if available.
 <code>html/templates/page.jade</code> holds the template and
@@ -589,7 +603,7 @@ to instantiate the page requested by <code>xx/xx/page*</code>.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-22" id="section-22">&#182;</a>
+  <a class="pilcrow" href="#section-23" id="section-23">&#182;</a>
 </div>
 <p>Matches: xx/xx/xx/xx/xx/</p>
         </td>
@@ -611,7 +625,7 @@ to instantiate the page requested by <code>xx/xx/page*</code>.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-23" id="section-23">&#182;</a>
+  <a class="pilcrow" href="#section-24" id="section-24">&#182;</a>
 </div>
 <p>Info about previous requests to the template file.
 templateFound = pager.inTemplates(gameName, templatePath);</p>
@@ -625,7 +639,7 @@ templateFound = pager.inTemplates(gameName, templatePath);</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-24" id="section-24">&#182;</a>
+  <a class="pilcrow" href="#section-25" id="section-25">&#182;</a>
 </div>
 <p>Get from cache.</p>
         </td>
@@ -640,7 +654,7 @@ templateFound = pager.inTemplates(gameName, templatePath);</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-25" id="section-25">&#182;</a>
+  <a class="pilcrow" href="#section-26" id="section-26">&#182;</a>
 </div>
 <p>Template not existing.</p>
         </td>
@@ -657,7 +671,7 @@ templateFound = pager.inTemplates(gameName, templatePath);</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-26" id="section-26">&#182;</a>
+  <a class="pilcrow" href="#section-27" id="section-27">&#182;</a>
 </div>
 <p>cachedTemplate and cachedContextCb are loaded together
 so we can check either to know whether they have been loaded once.</p>
@@ -671,7 +685,7 @@ so we can check either to know whether they have been loaded once.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-27" id="section-27">&#182;</a>
+  <a class="pilcrow" href="#section-28" id="section-28">&#182;</a>
 </div>
 <p>Template existing (cached), and context callback existing or not.</p>
         </td>
@@ -701,7 +715,7 @@ so we can check either to know whether they have been loaded once.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-28" id="section-28">&#182;</a>
+  <a class="pilcrow" href="#section-29" id="section-29">&#182;</a>
 </div>
 <p>Cache it.</p>
         </td>
@@ -727,7 +741,7 @@ so we can check either to know whether they have been loaded once.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-29" id="section-29">&#182;</a>
+  <a class="pilcrow" href="#section-30" id="section-30">&#182;</a>
 </div>
 <p>Function or FALSE (on error).
 Errors caught by the function.</p>
@@ -754,7 +768,7 @@ Errors caught by the function.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-30" id="section-30">&#182;</a>
+  <a class="pilcrow" href="#section-31" id="section-31">&#182;</a>
 </div>
 <p>TODO: If there is no callback we could cache the
 output of the rendered template.</p>
@@ -770,7 +784,7 @@ output of the rendered template.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-31" id="section-31">&#182;</a>
+  <a class="pilcrow" href="#section-32" id="section-32">&#182;</a>
 </div>
 <p>Context callback might be existing or not.</p>
         </td>
@@ -1127,10 +1141,10 @@ and you need to maintain game separation.</p>
       </tr>
       <tr>
         <td class="docs">
-<div class="pilwrap" id="helper%20methods">
+<div class="pilwrap" id="helper%20methods.">
   <h2>
-    <a href="#helper%20methods" name="helper%20methods" class="pilcrow">&#182;</a>
-    Helper methods
+    <a href="#helper%20methods." name="helper%20methods." class="pilcrow">&#182;</a>
+    Helper methods.
   </h2>
 </div>
 
@@ -1145,10 +1159,10 @@ and you need to maintain game separation.</p>
         <td class="docs"><div class="dox">
   <div class="summary">
 <div class="pilwrap" id="loadcontextcallback">
-  <h2>
+  <h3>
     <a href="#loadcontextcallback" name="loadcontextcallback" class="pilcrow">&#182;</a>
     loadContextCallback
-  </h2>
+  </h3>
 </div>
 
   </div>
@@ -1183,7 +1197,8 @@ and you need to maintain game separation.</p>
         <span class="nx">cb</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="nx">contextPath</span><span class="p">);</span>
         <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;function&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">cb</span><span class="p">)</span> <span class="p">{</span>
             <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;loadContextCallback: context callback &#39;</span> <span class="o">+</span>
-                                <span class="s1">&#39;must be function.&#39;</span><span class="p">);</span>
+                                <span class="s1">&#39;must be function. Found: &#39;</span> <span class="o">+</span> <span class="nx">cb</span> <span class="o">+</span> <span class="s1">&#39;. Path: &#39;</span> <span class="o">+</span>
+                                <span class="nx">contextPath</span><span class="p">);</span>
         <span class="p">}</span>
     <span class="p">}</span>
     <span class="k">catch</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>

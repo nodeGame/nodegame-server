@@ -2494,12 +2494,12 @@ are loaded from the nodegame-server/ssl/ directory.</span>
         <span class="nx">key</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">rootDir</span> <span class="o">+</span> <span class="s1">&#39;/ssl/private.key&#39;</span><span class="p">;</span>
         <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">fs</span><span class="p">.</span><span class="nx">existsSync</span><span class="p">(</span><span class="nx">key</span><span class="p">))</span> <span class="p">{</span>
             <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;Servernode.createServer: ssl option equal to &#39;</span> <span class="o">+</span>
-                            <span class="s1">&#39;true, but no ssl/private.key not found.&#39;</span><span class="p">);</span>
+                            <span class="s1">&#39;true, but ssl/private.key not found.&#39;</span><span class="p">);</span>
         <span class="p">}</span>
         <span class="nx">cert</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">rootDir</span> <span class="o">+</span> <span class="s1">&#39;/ssl/certificate.pem&#39;</span><span class="p">;</span>
         <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">fs</span><span class="p">.</span><span class="nx">existsSync</span><span class="p">(</span><span class="nx">cert</span><span class="p">))</span> <span class="p">{</span>
             <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;Servernode.createServer: ssl option equal to &#39;</span> <span class="o">+</span>
-                            <span class="s1">&#39;true, but no ssl/certificate.pem not found.&#39;</span><span class="p">);</span>
+                            <span class="s1">&#39;true, but ssl/certificate.pem not found.&#39;</span><span class="p">);</span>
         <span class="p">}</span>
 
         <span class="nx">opts</span><span class="p">.</span><span class="nx">ssl</span><span class="p">.</span><span class="nx">key</span> <span class="o">=</span> <span class="nx">fs</span><span class="p">.</span><span class="nx">readFileSync</span><span class="p">(</span><span class="nx">key</span><span class="p">,</span> <span class="s1">&#39;utf8&#39;</span><span class="p">);</span>

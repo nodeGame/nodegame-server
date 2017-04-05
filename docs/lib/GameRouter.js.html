@@ -322,11 +322,13 @@ We add alias first so they are available also if this is default channel.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
                 <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">auth</span><span class="p">.</span><span class="nx">claimId</span><span class="p">)</span> <span class="p">{</span>
-                    <span class="k">return</span> <span class="nx">replyToClaimId</span><span class="p">(</span><span class="nx">res</span><span class="p">,</span> <span class="nx">cb</span><span class="p">,</span> <span class="mi">400</span><span class="p">,</span> <span class="s1">&#39;operation disabled&#39;</span><span class="p">);</span>
+                    <span class="k">return</span> <span class="nx">replyToClaimId</span><span class="p">(</span><span class="nx">res</span><span class="p">,</span> <span class="nx">cb</span><span class="p">,</span> <span class="mi">400</span><span class="p">,</span> <span class="s1">&#39;operation disabled&#39;</span><span class="p">,</span>
+                                          <span class="nx">auth</span><span class="p">.</span><span class="nx">claimIdModifyReply</span><span class="p">);</span>
                 <span class="p">}</span>
 
                 <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">userId</span> <span class="o">||</span> <span class="nx">userId</span><span class="p">.</span><span class="nx">trim</span><span class="p">()</span> <span class="o">===</span> <span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="p">{</span>
-                    <span class="k">return</span> <span class="nx">replyToClaimId</span><span class="p">(</span><span class="nx">res</span><span class="p">,</span> <span class="nx">cb</span><span class="p">,</span> <span class="mi">400</span><span class="p">,</span> <span class="s1">&#39;no code provided&#39;</span><span class="p">);</span>
+                    <span class="k">return</span> <span class="nx">replyToClaimId</span><span class="p">(</span><span class="nx">res</span><span class="p">,</span> <span class="nx">cb</span><span class="p">,</span> <span class="mi">400</span><span class="p">,</span> <span class="s1">&#39;no code provided&#39;</span><span class="p">,</span>
+                                          <span class="nx">auth</span><span class="p">.</span><span class="nx">claimIdModifyReply</span><span class="p">);</span>
                 <span class="p">}</span>
 
                 <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;function&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">auth</span><span class="p">.</span><span class="nx">claimIdValidateRequest</span><span class="p">)</span> <span class="p">{</span>
@@ -356,10 +358,12 @@ We add alias first so they are available also if this is default channel.</p>
                         <span class="nx">auth</span><span class="p">.</span><span class="nx">claimIdPostProcess</span><span class="p">(</span><span class="nx">code</span><span class="p">,</span> <span class="nx">req</span><span class="p">.</span><span class="nx">query</span><span class="p">,</span>
                                                 <span class="nx">req</span><span class="p">.</span><span class="nx">headers</span><span class="p">);</span>
                     <span class="p">}</span>
-                    <span class="k">return</span> <span class="nx">replyToClaimId</span><span class="p">(</span><span class="nx">res</span><span class="p">,</span> <span class="nx">cb</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="nx">code</span><span class="p">.</span><span class="nx">id</span><span class="p">);</span>
+                    <span class="k">return</span> <span class="nx">replyToClaimId</span><span class="p">(</span><span class="nx">res</span><span class="p">,</span> <span class="nx">cb</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="nx">code</span><span class="p">.</span><span class="nx">id</span><span class="p">,</span>
+                                          <span class="nx">auth</span><span class="p">.</span><span class="nx">claimIdModifyReply</span><span class="p">);</span>
                 <span class="p">}</span>
                 <span class="k">else</span> <span class="p">{</span>
-                    <span class="k">return</span> <span class="nx">replyToClaimId</span><span class="p">(</span><span class="nx">res</span><span class="p">,</span> <span class="nx">cb</span><span class="p">,</span> <span class="mi">400</span><span class="p">,</span> <span class="s1">&#39;no more codes&#39;</span><span class="p">);</span>
+                    <span class="k">return</span> <span class="nx">replyToClaimId</span><span class="p">(</span><span class="nx">res</span><span class="p">,</span> <span class="nx">cb</span><span class="p">,</span> <span class="mi">400</span><span class="p">,</span> <span class="s1">&#39;no more codes&#39;</span><span class="p">,</span>
+                                          <span class="nx">auth</span><span class="p">.</span><span class="nx">claimIdModifyReply</span><span class="p">);</span>
                 <span class="p">}</span>
 
             <span class="p">});</span>
@@ -1514,7 +1518,7 @@ TODO: Mark file as non-existing ?</p>
       <span>The respond object from Express</span>
     </div>
     <div class="dox_tag_detail">
-      <span class="dox_tag_name">cb</span>
+      <span class="dox_tag_name">cbName</span>
       <span class="dox_type">string</span>
       <span>The name of of the callback function that will
   be executed on the clients upon receiving the response</span>
@@ -1532,20 +1536,22 @@ TODO: Mark file as non-existing ?</p>
       <span>The a valid code, or an error string that
   will be sent to client</span>
     </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">modReplyCb</span>
+      <span class="dox_type">function</span>
+      <span>Optional. A callback that modifies the
+  reply object before sending it</span>
+    </div>
   </div>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-<span class="kd">function</span> <span class="nx">replyToClaimId</span><span class="p">(</span><span class="nx">res</span><span class="p">,</span> <span class="nx">cb</span><span class="p">,</span> <span class="nx">responseCode</span><span class="p">,</span> <span class="nx">codeOrErr</span><span class="p">)</span> <span class="p">{</span>
-    <span class="kd">var</span> <span class="nx">str</span><span class="p">;</span>
-    <span class="k">if</span> <span class="p">(</span><span class="nx">responseCode</span> <span class="o">===</span> <span class="mi">200</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nx">str</span> <span class="o">=</span> <span class="nx">JSON</span><span class="p">.</span><span class="nx">stringify</span><span class="p">({</span> <span class="nx">code</span><span class="o">:</span> <span class="nx">codeOrErr</span> <span class="p">});</span>
-    <span class="p">}</span>
-    <span class="k">else</span> <span class="p">{</span>
-        <span class="nx">str</span> <span class="o">=</span> <span class="nx">JSON</span><span class="p">.</span><span class="nx">stringify</span><span class="p">({</span> <span class="nx">err</span><span class="o">:</span> <span class="nx">codeOrErr</span> <span class="p">});</span>
-    <span class="p">}</span>
+<span class="kd">function</span> <span class="nx">replyToClaimId</span><span class="p">(</span><span class="nx">res</span><span class="p">,</span> <span class="nx">cbName</span><span class="p">,</span> <span class="nx">responseCode</span><span class="p">,</span> <span class="nx">codeOrErr</span><span class="p">,</span> <span class="nx">modReplyCb</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">code</span><span class="p">;</span>
+    <span class="nx">code</span> <span class="o">=</span> <span class="nx">responseCode</span> <span class="o">===</span> <span class="mi">200</span> <span class="o">?</span> <span class="p">{</span> <span class="nx">code</span><span class="o">:</span> <span class="nx">codeOrErr</span> <span class="p">}</span> <span class="o">:</span> <span class="p">{</span> <span class="nx">err</span><span class="o">:</span> <span class="nx">codeOrErr</span> <span class="p">};</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">modReplyCb</span><span class="p">)</span> <span class="nx">modReplyCb</span><span class="p">(</span><span class="nx">code</span><span class="p">);</span>
     <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;claim id: &#39;</span> <span class="o">+</span> <span class="nx">codeOrErr</span><span class="p">);</span>
-    <span class="nx">res</span><span class="p">.</span><span class="nx">status</span><span class="p">(</span><span class="nx">responseCode</span><span class="p">).</span><span class="nx">send</span><span class="p">(</span><span class="nx">cb</span> <span class="o">+</span> <span class="s1">&#39;(&#39;</span> <span class="o">+</span> <span class="nx">str</span> <span class="o">+</span> <span class="s1">&#39;)&#39;</span><span class="p">);</span>
+    <span class="nx">res</span><span class="p">.</span><span class="nx">status</span><span class="p">(</span><span class="nx">responseCode</span><span class="p">).</span><span class="nx">send</span><span class="p">(</span><span class="nx">cbName</span> <span class="o">+</span> <span class="s1">&#39;(&#39;</span> <span class="o">+</span> <span class="nx">JSON</span><span class="p">.</span><span class="nx">stringify</span><span class="p">(</span><span class="nx">code</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;)&#39;</span><span class="p">);</span>
 <span class="p">}</span>
 
 
