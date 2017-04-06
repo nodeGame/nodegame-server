@@ -359,7 +359,7 @@ We add alias first so they are available also if this is default channel.</p>
                                                 <span class="nx">req</span><span class="p">.</span><span class="nx">headers</span><span class="p">);</span>
                     <span class="p">}</span>
                     <span class="k">return</span> <span class="nx">replyToClaimId</span><span class="p">(</span><span class="nx">res</span><span class="p">,</span> <span class="nx">cb</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="nx">code</span><span class="p">.</span><span class="nx">id</span><span class="p">,</span>
-                                          <span class="nx">auth</span><span class="p">.</span><span class="nx">claimIdModifyReply</span><span class="p">);</span>
+                                          <span class="nx">auth</span><span class="p">.</span><span class="nx">claimIdModifyReply</span><span class="p">,</span> <span class="nx">code</span><span class="p">);</span>
                 <span class="p">}</span>
                 <span class="k">else</span> <span class="p">{</span>
                     <span class="k">return</span> <span class="nx">replyToClaimId</span><span class="p">(</span><span class="nx">res</span><span class="p">,</span> <span class="nx">cb</span><span class="p">,</span> <span class="mi">400</span><span class="p">,</span> <span class="s1">&#39;no more codes&#39;</span><span class="p">,</span>
