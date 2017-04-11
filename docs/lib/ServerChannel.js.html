@@ -185,7 +185,7 @@
 </div>
 
 
-<p>Copyright(c) 2017 Stefano Balietti <a href="&#x6D;&#97;&#105;&#x6C;&#x74;&#111;:&#115;&#116;&#101;&#x40;&#110;&#x6F;&#x64;&#101;&#103;&#97;&#109;e&#46;&#111;&#114;&#x67;">&#115;&#116;&#101;&#x40;&#110;&#x6F;&#x64;&#101;&#103;&#97;&#109;e&#46;&#111;&#114;&#x67;</a>
+<p>Copyright(c) 2017 Stefano Balietti <a href="&#109;a&#105;lt&#x6F;:&#x73;&#116;&#101;&#64;&#x6E;&#x6F;&#x64;&#101;&#x67;&#x61;&#x6D;&#x65;&#46;&#x6F;&#114;&#103;">&#x73;&#116;&#101;&#64;&#x6E;&#x6F;&#x64;&#101;&#x67;&#x61;&#x6D;&#x65;&#46;&#x6F;&#114;&#103;</a>
 MIT Licensed</p>
   </div>
   <div class="body"><p>Creates the Player, and Admin Server</p>
@@ -2964,6 +2964,12 @@ Optional. Configuration object to be passed to
         <span class="p">}</span>
     <span class="p">}</span>
 
+    <span class="k">if</span> <span class="p">(</span><span class="nx">options</span><span class="p">.</span><span class="nx">ready</span> <span class="o">&amp;&amp;</span> <span class="s1">&#39;function&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">options</span><span class="p">.</span><span class="nx">ready</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;ServerChannel.connectBot: options.ready must be &#39;</span> <span class="o">+</span>
+                        <span class="s1">&#39;function or undefined. Found: &#39;</span> <span class="o">+</span> <span class="nx">options</span><span class="p">.</span><span class="nx">ready</span> <span class="o">+</span>
+                        <span class="s1">&#39;. (channel: &#39;</span> <span class="o">+</span> <span class="k">this</span><span class="p">.</span><span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39;)&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+
     <span class="k">if</span> <span class="p">(</span><span class="nx">options</span><span class="p">.</span><span class="nx">start</span> <span class="o">&amp;&amp;</span> <span class="nx">options</span><span class="p">.</span><span class="nx">gotoStep</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;ServerChannel.connectBot: options.start &#39;</span> <span class="o">+</span>
                         <span class="s1">&#39;and options.gotoStep cannot be both true. (channel: &#39;</span> <span class="o">+</span>
@@ -3054,12 +3060,8 @@ calling GameRoom.setupGame before the node object is stored.</p>
 <p>Create remote options object.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-            <span class="nx">gotoStepOptions</span> <span class="o">=</span> <span class="p">{</span> <span class="nx">plot</span><span class="o">:</span> <span class="nx">matcherOpts</span> <span class="p">};</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nx">matcherOpts</span><span class="p">)</span> <span class="nx">gotoStepOptions</span> <span class="o">=</span> <span class="p">{</span> <span class="nx">plot</span><span class="o">:</span> <span class="nx">matcherOpts</span> <span class="p">};</span>
             <span class="k">if</span> <span class="p">(</span><span class="nx">replacedClient</span><span class="p">.</span><span class="nx">stageLevel</span> <span class="o">===</span> <span class="nx">DONE</span><span class="p">)</span> <span class="p">{</span>
-                <span class="nx">gotoStepOptions</span><span class="p">.</span><span class="nx">willBeDone</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
-            <span class="p">}</span>
-        <span class="p">}</span>
-
 
 </pre></div>
         </td>
@@ -3068,6 +3070,37 @@ calling GameRoom.setupGame before the node object is stored.</p>
         <td class="docs">
 <div class="pilwrap">
   <a class="pilcrow" href="#section-102" id="section-102">&#182;</a>
+</div>
+<p>gotoStepOptions exists if matcherOpts is defined.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+                <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">gotoStepOptions</span><span class="p">)</span> <span class="nx">gotoStepOptions</span> <span class="o">=</span> <span class="p">{};</span>
+                <span class="nx">gotoStepOptions</span><span class="p">.</span><span class="nx">willBeDone</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+            <span class="p">}</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-103" id="section-103">&#182;</a>
+</div>
+<p>TODO: we need the timer also. See the reconnect handler.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="p">}</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="nx">options</span><span class="p">.</span><span class="nx">ready</span><span class="p">)</span> <span class="nx">options</span><span class="p">.</span><span class="nx">ready</span><span class="p">(</span><span class="nx">bot</span><span class="p">);</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-104" id="section-104">&#182;</a>
 </div>
 <p>If bot connected to a game room, setup it
 (unless options say otherwise).</p>
@@ -3085,7 +3118,7 @@ calling GameRoom.setupGame before the node object is stored.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-103" id="section-103">&#182;</a>
+  <a class="pilcrow" href="#section-105" id="section-105">&#182;</a>
 </div>
 <p>This calls the init method of the game (but does not step).</p>
         </td>
@@ -3107,7 +3140,7 @@ calling GameRoom.setupGame before the node object is stored.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-104" id="section-104">&#182;</a>
+  <a class="pilcrow" href="#section-106" id="section-106">&#182;</a>
 </div>
 <p>TODO: it is possible that extra options were passed to
 the step as a parameter of the gotoStep method. Those
@@ -3130,7 +3163,7 @@ replaceId is set.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-105" id="section-105">&#182;</a>
+  <a class="pilcrow" href="#section-107" id="section-107">&#182;</a>
 </div>
 <p>Connect bot to server.</p>
         </td>
@@ -3218,7 +3251,7 @@ Optional. Array of strings to give PhantomJS as command line arguments</li>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-107" id="section-107">&#182;</a>
+  <a class="pilcrow" href="#section-109" id="section-109">&#182;</a>
 </div>
 <p>Check inputs.</p>
         </td>
@@ -3300,7 +3333,7 @@ Optional. Array of strings to give PhantomJS as command line arguments</li>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-108" id="section-108">&#182;</a>
+  <a class="pilcrow" href="#section-110" id="section-110">&#182;</a>
 </div>
 <p>TODO: for the moment we keep a while loop here,
 This should be a view on ChannelRegistry.</p>
@@ -3362,7 +3395,7 @@ This should be a view on ChannelRegistry.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-109" id="section-109">&#182;</a>
+  <a class="pilcrow" href="#section-111" id="section-111">&#182;</a>
 </div>
 <p>Launch a phantomjs process with a connection to the server.</p>
         </td>
@@ -3375,7 +3408,7 @@ This should be a view on ChannelRegistry.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-110" id="section-110">&#182;</a>
+  <a class="pilcrow" href="#section-112" id="section-112">&#182;</a>
 </div>
 <p>Set up the arguments to phantomjs.</p>
         </td>
@@ -3388,7 +3421,7 @@ This should be a view on ChannelRegistry.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-111" id="section-111">&#182;</a>
+  <a class="pilcrow" href="#section-113" id="section-113">&#182;</a>
 </div>
 <p>Url might or not contain gameName (e.g. not if it is default channel).</p>
         </td>
@@ -3408,7 +3441,7 @@ This should be a view on ChannelRegistry.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-112" id="section-112">&#182;</a>
+  <a class="pilcrow" href="#section-114" id="section-114">&#182;</a>
 </div>
 <p>Do not call /phantomjs/bin/phantomjs to avoid double spawn.</p>
         </td>
@@ -3423,7 +3456,7 @@ This should be a view on ChannelRegistry.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-113" id="section-113">&#182;</a>
+  <a class="pilcrow" href="#section-115" id="section-115">&#182;</a>
 </div>
 <p>Spawn.</p>
         </td>
@@ -3449,7 +3482,7 @@ This should be a view on ChannelRegistry.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-114" id="section-114">&#182;</a>
+  <a class="pilcrow" href="#section-116" id="section-116">&#182;</a>
 </div>
 <p>Wait few ms for error to be printed.</p>
         </td>
@@ -3481,7 +3514,7 @@ This should be a view on ChannelRegistry.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-115" id="section-115">&#182;</a>
+  <a class="pilcrow" href="#section-117" id="section-117">&#182;</a>
 </div>
 <p>Add to the global collection.</p>
         </td>
@@ -3497,7 +3530,7 @@ This should be a view on ChannelRegistry.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-116" id="section-116">&#182;</a>
+  <a class="pilcrow" href="#section-118" id="section-118">&#182;</a>
 </div>
 <p>Maybe we do not need this api.</p>
         </td>
@@ -3510,7 +3543,7 @@ This should be a view on ChannelRegistry.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-117" id="section-117">&#182;</a>
+  <a class="pilcrow" href="#section-119" id="section-119">&#182;</a>
 </div>
 <p>/**
  * ### ServerChannel.killPhantom
@@ -3538,7 +3571,7 @@ ServerChannel.prototype.killAllPhantoms = function() {
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-118" id="section-118">&#182;</a>
+  <a class="pilcrow" href="#section-120" id="section-120">&#182;</a>
 </div>
 <p>TODO: finish this method. Should destroy all game rooms. clear all players?,
       keep the waiting room</p>
@@ -3552,7 +3585,7 @@ ServerChannel.prototype.killAllPhantoms = function() {
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-119" id="section-119">&#182;</a>
+  <a class="pilcrow" href="#section-121" id="section-121">&#182;</a>
 </div>
 <p>ServerChannel.prototype.reboot = function(level) {
     var that, roomName, waitingLogicId;
