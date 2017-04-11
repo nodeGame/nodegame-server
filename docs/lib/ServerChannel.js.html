@@ -185,7 +185,7 @@
 </div>
 
 
-<p>Copyright(c) 2017 Stefano Balietti <a href="m&#97;i&#108;&#x74;&#x6F;:&#115;&#116;&#x65;&#64;&#110;&#x6F;&#x64;e&#x67;a&#x6D;&#101;&#46;o&#114;&#103;">&#115;&#116;&#x65;&#64;&#110;&#x6F;&#x64;e&#x67;a&#x6D;&#101;&#46;o&#114;&#103;</a>
+<p>Copyright(c) 2017 Stefano Balietti <a href="&#x6D;&#97;&#105;&#x6C;&#x74;&#111;:&#115;&#116;&#101;&#x40;&#110;&#x6F;&#x64;&#101;&#103;&#97;&#109;e&#46;&#111;&#114;&#x67;">&#115;&#116;&#101;&#x40;&#110;&#x6F;&#x64;&#101;&#103;&#97;&#109;e&#46;&#111;&#114;&#x67;</a>
 MIT Licensed</p>
   </div>
   <div class="body"><p>Creates the Player, and Admin Server</p>
@@ -236,6 +236,7 @@ and to move players around them.</p>
 
 <span class="kd">var</span> <span class="nx">ngc</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;nodegame-client&#39;</span><span class="p">);</span>
 <span class="kd">var</span> <span class="nx">PlayerList</span> <span class="o">=</span> <span class="nx">ngc</span><span class="p">.</span><span class="nx">PlayerList</span><span class="p">;</span>
+<span class="kd">var</span> <span class="nx">DONE</span> <span class="o">=</span> <span class="nx">ngc</span><span class="p">.</span><span class="nx">constants</span><span class="p">.</span><span class="nx">stageLevels</span><span class="p">.</span><span class="nx">DONE</span><span class="p">;</span>
 
 <span class="kd">var</span> <span class="nx">GameRoom</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;./rooms/GameRoom&#39;</span><span class="p">);</span>
 <span class="kd">var</span> <span class="nx">GarageRoom</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;./rooms/GarageRoom&#39;</span><span class="p">);</span>
@@ -3019,6 +3020,7 @@ calling GameRoom.setupGame before the node object is stored.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="nx">bot</span><span class="p">.</span><span class="nx">once</span><span class="p">(</span><span class="s1">&#39;PLAYER_CREATED&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+        <span class="kd">var</span> <span class="nx">replacedClient</span><span class="p">;</span>
         <span class="kd">var</span> <span class="nx">gotoStepOptions</span><span class="p">,</span> <span class="nx">matcherOpts</span><span class="p">;</span>
 
         <span class="nx">that</span><span class="p">.</span><span class="nx">bots</span><span class="p">[</span><span class="nx">bot</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">id</span><span class="p">]</span> <span class="o">=</span> <span class="nx">bot</span><span class="p">;</span>
@@ -3037,9 +3039,8 @@ calling GameRoom.setupGame before the node object is stored.</p>
         <td class="code highlight"><div class="highlight"><pre>
         <span class="k">if</span> <span class="p">(</span><span class="nx">replaceId</span><span class="p">)</span> <span class="p">{</span>
             <span class="nx">matcherOpts</span> <span class="o">=</span> <span class="nx">room</span><span class="p">.</span><span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">matcher</span><span class="p">.</span><span class="nx">getSetupFor</span><span class="p">(</span><span class="nx">replaceId</span><span class="p">);</span>
-            <span class="nx">gotoStepOptions</span> <span class="o">=</span> <span class="p">{</span> <span class="nx">plot</span><span class="o">:</span> <span class="nx">matcherOpts</span> <span class="p">};</span>
             <span class="nx">room</span><span class="p">.</span><span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">matcher</span><span class="p">.</span><span class="nx">replaceId</span><span class="p">(</span><span class="nx">replaceId</span><span class="p">,</span> <span class="nx">bot</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">id</span><span class="p">);</span>
-        <span class="p">}</span>
+            <span class="nx">replacedClient</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">registry</span><span class="p">.</span><span class="nx">getClient</span><span class="p">(</span><span class="nx">replaceId</span><span class="p">);</span>
 
 
 </pre></div>
@@ -3050,11 +3051,14 @@ calling GameRoom.setupGame before the node object is stored.</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-101" id="section-101">&#182;</a>
 </div>
-<p>If bot connected to a game room, setup it
-(unless options say otherwise).</p>
+<p>Create remote options object.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-        <span class="k">if</span> <span class="p">(</span><span class="nx">init</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">gotoStepOptions</span> <span class="o">=</span> <span class="p">{</span> <span class="nx">plot</span><span class="o">:</span> <span class="nx">matcherOpts</span> <span class="p">};</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nx">replacedClient</span><span class="p">.</span><span class="nx">stageLevel</span> <span class="o">===</span> <span class="nx">DONE</span><span class="p">)</span> <span class="p">{</span>
+                <span class="nx">gotoStepOptions</span><span class="p">.</span><span class="nx">willBeDone</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
 
 
 </pre></div>
@@ -3065,9 +3069,11 @@ calling GameRoom.setupGame before the node object is stored.</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-102" id="section-102">&#182;</a>
 </div>
-<p>TODO: CONTINUE HERE.</p>
+<p>If bot connected to a game room, setup it
+(unless options say otherwise).</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">init</span><span class="p">)</span> <span class="p">{</span>
 
             <span class="nx">room</span><span class="p">.</span><span class="nx">setupClient</span><span class="p">(</span><span class="nx">bot</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">id</span><span class="p">);</span>
 
