@@ -143,7 +143,7 @@
 </div>
 
 
-<p>Copyright(c) 2017 Stefano Balietti
+<p>Copyright(c) 2017 Stefano Balietti <a href="&#109;&#x61;i&#108;&#116;&#111;:&#115;&#x74;&#x65;&#64;&#110;&#x6F;&#100;&#101;&#103;&#x61;&#109;&#x65;&#46;&#111;&#x72;&#103;">&#115;&#x74;&#x65;&#64;&#110;&#x6F;&#100;&#101;&#103;&#x61;&#109;&#x65;&#46;&#111;&#x72;&#103;</a>
 MIT Licensed</p>
   </div>
   <div class="body"><p>GameServer for the administrators endpoint</p>
@@ -1151,7 +1151,7 @@ TODO: Send only specific client data, not everything;
                     <span class="nx">data</span><span class="o">:</span> <span class="nx">replyData</span><span class="p">,</span>
                     <span class="nx">to</span><span class="o">:</span>   <span class="nx">from</span>
                 <span class="p">}));</span>
-            <span class="p">});</span>
+            <span class="p">},</span> <span class="mi">1</span><span class="p">);</span>
         <span class="p">}</span>
 
 
@@ -1938,30 +1938,31 @@ the client-id of the recipient.</p>
       <span>The directory to explore</span>
     </div>
     <div class="dox_tag_detail">
-      <span class="dox_tag_name">The</span>
+      <span class="dox_tag_name">callback</span>
       <span class="dox_type">function</span>
-      <span>callback to apply to each path</span>
+      <span>The callback to apply to each path</span>
     </div>
     <div class="dox_tag_detail">
-      <span class="dox_tag_name">The</span>
+      <span class="dox_tag_name">done</span>
       <span class="dox_type">function</span>
-      <span>callback to apply when all files in all directories
-   have been scanned.</span>
+      <span>The callback to apply when all files in
+   all directories have been scanned.</span>
     </div>
     <div class="dox_tag_detail">
-      <span class="dox_tag_name">depth</span>
+      <span class="dox_tag_name">limit</span>
       <span class="dox_type">number</span>
-      <span>Optional. The current level of depth</span>
+      <span>Optional. How many nested directory to scan.
+   Default: 10</span>
     </div>
   </div>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-<span class="kd">function</span> <span class="nx">traverseDirectory</span><span class="p">(</span><span class="nx">directory</span><span class="p">,</span> <span class="nx">callback</span><span class="p">,</span> <span class="nx">done</span><span class="p">)</span> <span class="p">{</span>
+<span class="kd">function</span> <span class="nx">traverseDirectory</span><span class="p">(</span><span class="nx">directory</span><span class="p">,</span> <span class="nx">callback</span><span class="p">,</span> <span class="nx">done</span><span class="p">,</span> <span class="nx">limit</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">attemptDone</span><span class="p">,</span> <span class="nx">pending</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">depth</span><span class="p">,</span> <span class="nx">limit</span><span class="p">;</span>
 
-    <span class="nx">limit</span> <span class="o">=</span> <span class="mi">10</span><span class="p">;</span>
+    <span class="nx">limit</span> <span class="o">=</span> <span class="nx">limit</span> <span class="o">||</span> <span class="mi">10</span><span class="p">;</span>
     <span class="nx">depth</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
 
 
@@ -1973,7 +1974,7 @@ the client-id of the recipient.</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-70" id="section-70">&#182;</a>
 </div>
-<p>Start with one directory pending (data/).</p>
+<p>Start with one directory pending (e.g. data/).</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="nx">pending</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
