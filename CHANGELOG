@@ -1,5 +1,9 @@
 # nodegame-server change log
 
+# current
+- Improved internal method traverseDirectory to serve info about files to monitor.
+- Nested directory in log/ folder are ignored.
+
 # 3.5.7
 - Internal cleanup.
 - Better error messages for duplicated aliases.
