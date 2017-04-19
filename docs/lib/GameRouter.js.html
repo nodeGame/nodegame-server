@@ -22,10 +22,16 @@
         <a href="#gamerouter">GameRouter</a>
       </div>
       <div class="heading h3">
+        <a href="#gamerouter.channel">GameRouter.channel</a>
+      </div>
+      <div class="heading h3">
         <a href="#gamerouter.servernode">GameRouter.servernode</a>
       </div>
       <div class="heading h3">
-        <a href="#gamerouter.channel">GameRouter.channel</a>
+        <a href="#gamerouter.tokens">GameRouter.tokens</a>
+      </div>
+      <div class="heading h3">
+        <a href="#gamerouter.supertokens">GameRouter.superTokens</a>
       </div>
       <div class="heading h3">
         <a href="#gameloader.addroutes">GameLoader.addRoutes</a>
@@ -86,7 +92,7 @@
 </div>
 
 
-<p>Copyright(c) 2017 Stefano Balietti
+<p>Copyright(c) 2017 Stefano Balietti <a href="&#109;&#97;&#x69;&#x6C;&#116;&#111;:st&#101;&#64;&#x6E;&#x6F;&#x64;&#x65;&#103;&#97;&#109;&#101;&#46;&#x6F;&#x72;&#x67;">st&#101;&#64;&#x6E;&#x6F;&#x64;&#x65;&#103;&#97;&#109;&#101;&#46;&#x6F;&#x72;&#x67;</a>
 MIT Licensed</p>
   </div>
   <div class="body"><p>Adds game routes depending on game settings.</p>
@@ -138,32 +144,9 @@ MIT Licensed</p>
 <p>TODO: see if we should move them in constructor.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-<span class="kd">var</span> <span class="nx">tokens</span> <span class="o">=</span> <span class="p">{};</span>
-<span class="kd">var</span> <span class="nx">superTokens</span> <span class="o">=</span> <span class="p">{};</span>
+
 
 <span class="kd">function</span> <span class="nx">GameRouter</span><span class="p">(</span><span class="nx">channel</span><span class="p">)</span> <span class="p">{</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs"><div class="dox">
-  <div class="summary">
-<div class="pilwrap" id="gamerouter.servernode">
-  <h3>
-    <a href="#gamerouter.servernode" name="gamerouter.servernode" class="pilcrow">&#182;</a>
-    GameRouter.servernode
-  </h3>
-</div>
-
-  </div>
-  <div class="body"><p>Reference to the ServerNode</p>
-  </div>
-</div>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">servernode</span><span class="p">;</span>
 
 
 </pre></div>
@@ -192,13 +175,81 @@ MIT Licensed</p>
         </td>
       </tr>
       <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="gamerouter.servernode">
+  <h3>
+    <a href="#gamerouter.servernode" name="gamerouter.servernode" class="pilcrow">&#182;</a>
+    GameRouter.servernode
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Reference to the ServerNode</p>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">servernode</span><span class="p">;</span>
+
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
         <td class="docs">
 <div class="pilwrap">
   <a class="pilcrow" href="#section-6" id="section-6">&#182;</a>
 </div>
-<p>gameDir, gameName, gameInfo,</p>
+<p>TODO: check if we really needs tokens and superTokens
+TODO: check if need tokens and superTokens with channel.noAuthCookie</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="gamerouter.tokens">
+  <h3>
+    <a href="#gamerouter.tokens" name="gamerouter.tokens" class="pilcrow">&#182;</a>
+    GameRouter.tokens
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Maps of signed tokens to client objects</p>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">this</span><span class="p">.</span><span class="nx">tokens</span> <span class="o">=</span> <span class="p">{};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="gamerouter.supertokens">
+  <h3>
+    <a href="#gamerouter.supertokens" name="gamerouter.supertokens" class="pilcrow">&#182;</a>
+    GameRouter.superTokens
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Maps of signed tokens to client objects of admins</p>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">this</span><span class="p">.</span><span class="nx">superTokens</span> <span class="o">=</span> <span class="p">{};</span>
 <span class="p">}</span>
 
 
@@ -240,14 +291,20 @@ MIT Licensed</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">GameRouter</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">addRoutes</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">alias</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">that</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">servernode</span><span class="p">,</span> <span class="nx">app</span><span class="p">,</span> <span class="nx">resourceManager</span><span class="p">,</span> <span class="nx">channel</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">basepath</span><span class="p">,</span> <span class="nx">rootDir</span><span class="p">,</span> <span class="nx">publicDir</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">auth</span><span class="p">,</span> <span class="nx">monitorUri</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">i</span><span class="p">,</span> <span class="nx">len</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">tokens</span><span class="p">,</span> <span class="nx">superTokens</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">gameDir</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">gameInfo</span><span class="p">,</span> <span class="nx">name</span><span class="p">;</span>
 
+    <span class="nx">that</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
     <span class="nx">gameInfo</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">gameInfo</span><span class="p">;</span>
     <span class="nx">gameName</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">gameName</span><span class="p">;</span>
+
+    <span class="nx">tokens</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">tokens</span><span class="p">;</span>
+    <span class="nx">superTokens</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">superTokens</span><span class="p">;</span>
 
 
 </pre></div>
@@ -256,7 +313,7 @@ MIT Licensed</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-8" id="section-8">&#182;</a>
+  <a class="pilcrow" href="#section-10" id="section-10">&#182;</a>
 </div>
 <p>Add alias routes (if any and if it is not an alias already).
 We add alias first so they are available also if this is default channel.</p>
@@ -294,7 +351,7 @@ We add alias first so they are available also if this is default channel.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-9" id="section-9">&#182;</a>
+  <a class="pilcrow" href="#section-11" id="section-11">&#182;</a>
 </div>
 <p>Adding the public directory of the game to the static directories
 <a href='http://stackoverflow.com/questions/5973432/'>http://stackoverflow.com/questions/5973432/</a>
@@ -316,7 +373,7 @@ We add alias first so they are available also if this is default channel.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-10" id="section-10">&#182;</a>
+  <a class="pilcrow" href="#section-12" id="section-12">&#182;</a>
 </div>
 <p>app.use(express.static(gameDir + 'public'));</p>
         </td>
@@ -329,7 +386,7 @@ We add alias first so they are available also if this is default channel.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-11" id="section-11">&#182;</a>
+  <a class="pilcrow" href="#section-13" id="section-13">&#182;</a>
 </div>
 <p>Auth.</p>
         </td>
@@ -345,7 +402,7 @@ We add alias first so they are available also if this is default channel.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-12" id="section-12">&#182;</a>
+  <a class="pilcrow" href="#section-14" id="section-14">&#182;</a>
 </div>
 <p>claimId</p>
         </td>
@@ -365,7 +422,7 @@ We add alias first so they are available also if this is default channel.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-13" id="section-13">&#182;</a>
+  <a class="pilcrow" href="#section-15" id="section-15">&#182;</a>
 </div>
 <p>Send it.</p>
         </td>
@@ -380,7 +437,7 @@ We add alias first so they are available also if this is default channel.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-14" id="section-14">&#182;</a>
+  <a class="pilcrow" href="#section-16" id="section-16">&#182;</a>
 </div>
 <p>Claim Id can be disabled while the game runs, check again!</p>
         </td>
@@ -410,7 +467,7 @@ We add alias first so they are available also if this is default channel.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-15" id="section-15">&#182;</a>
+  <a class="pilcrow" href="#section-17" id="section-17">&#182;</a>
 </div>
 <p>Ask the channel for next available code.</p>
         </td>
@@ -440,7 +497,7 @@ We add alias first so they are available also if this is default channel.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-16" id="section-16">&#182;</a>
+  <a class="pilcrow" href="#section-18" id="section-18">&#182;</a>
 </div>
 <p>TODO: Monitor route was before auth, now moved in alias-if.</p>
         </td>
@@ -451,7 +508,7 @@ We add alias first so they are available also if this is default channel.</p>
             <span class="nx">tmp</span> <span class="o">=</span> <span class="nx">req</span><span class="p">.</span><span class="nx">params</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="nx">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">);</span>
             <span class="nx">userId</span> <span class="o">=</span> <span class="nx">tmp</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
             <span class="nx">pwd</span> <span class="o">=</span> <span class="nx">tmp</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>
-            <span class="nx">login</span><span class="p">(</span><span class="nx">channel</span><span class="p">,</span> <span class="nx">name</span><span class="p">,</span> <span class="nx">userId</span><span class="p">,</span> <span class="nx">pwd</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">req</span><span class="p">);</span>
+            <span class="nx">login</span><span class="p">(</span><span class="nx">that</span><span class="p">,</span> <span class="nx">name</span><span class="p">,</span> <span class="nx">userId</span><span class="p">,</span> <span class="nx">pwd</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">req</span><span class="p">);</span>
         <span class="p">});</span>
 
 
@@ -461,7 +518,7 @@ We add alias first so they are available also if this is default channel.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-17" id="section-17">&#182;</a>
+  <a class="pilcrow" href="#section-19" id="section-19">&#182;</a>
 </div>
 <p>If not alias, add monitor route and
 optimize auth check for alias and not alias.</p>
@@ -474,7 +531,7 @@ optimize auth check for alias and not alias.</p>
                 <span class="nx">tmp</span> <span class="o">=</span> <span class="nx">req</span><span class="p">.</span><span class="nx">params</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="nx">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">);</span>
                 <span class="nx">userId</span> <span class="o">=</span> <span class="nx">tmp</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
                 <span class="nx">pwd</span> <span class="o">=</span> <span class="nx">tmp</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>
-                <span class="nx">loginSuper</span><span class="p">(</span><span class="nx">channel</span><span class="p">,</span> <span class="nx">name</span><span class="p">,</span> <span class="nx">userId</span><span class="p">,</span> <span class="nx">pwd</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">req</span><span class="p">);</span>
+                <span class="nx">loginSuper</span><span class="p">(</span><span class="nx">that</span><span class="p">,</span> <span class="nx">name</span><span class="p">,</span> <span class="nx">userId</span><span class="p">,</span> <span class="nx">pwd</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">req</span><span class="p">);</span>
             <span class="p">});</span>
 
             <span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39;/*&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">next</span><span class="p">)</span> <span class="p">{</span>
@@ -495,7 +552,7 @@ optimize auth check for alias and not alias.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-18" id="section-18">&#182;</a>
+  <a class="pilcrow" href="#section-20" id="section-20">&#182;</a>
 </div>
 <p>Check if a cookie is set correctly.</p>
         </td>
@@ -511,7 +568,7 @@ optimize auth check for alias and not alias.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-19" id="section-19">&#182;</a>
+  <a class="pilcrow" href="#section-21" id="section-21">&#182;</a>
 </div>
 <p>Auth OK.</p>
         </td>
@@ -532,7 +589,7 @@ optimize auth check for alias and not alias.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-20" id="section-20">&#182;</a>
+  <a class="pilcrow" href="#section-22" id="section-22">&#182;</a>
 </div>
 <p>Auth OK.</p>
         </td>
@@ -550,7 +607,7 @@ optimize auth check for alias and not alias.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-21" id="section-21">&#182;</a>
+  <a class="pilcrow" href="#section-23" id="section-23">&#182;</a>
 </div>
 <p>Monitor (no monitor in aliases).</p>
         </td>
@@ -567,7 +624,7 @@ optimize auth check for alias and not alias.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-22" id="section-22">&#182;</a>
+  <a class="pilcrow" href="#section-24" id="section-24">&#182;</a>
 </div>
 <p>If channel can read servernode properties.</p>
         </td>
@@ -581,7 +638,7 @@ optimize auth check for alias and not alias.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-23" id="section-23">&#182;</a>
+  <a class="pilcrow" href="#section-25" id="section-25">&#182;</a>
 </div>
 <p>Serving server logs.</p>
         </td>
@@ -600,7 +657,7 @@ optimize auth check for alias and not alias.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-24" id="section-24">&#182;</a>
+  <a class="pilcrow" href="#section-26" id="section-26">&#182;</a>
 </div>
 <p>Serving results from data/ directory.</p>
         </td>
@@ -618,7 +675,7 @@ optimize auth check for alias and not alias.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-25" id="section-25">&#182;</a>
+  <a class="pilcrow" href="#section-27" id="section-27">&#182;</a>
 </div>
 <p>Serving results from data/ directory.</p>
         </td>
@@ -643,7 +700,7 @@ optimize auth check for alias and not alias.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-26" id="section-26">&#182;</a>
+  <a class="pilcrow" href="#section-28" id="section-28">&#182;</a>
 </div>
 <p>Stringify fails if there are cycle (it shouldn't anyway).</p>
         </td>
@@ -660,7 +717,7 @@ optimize auth check for alias and not alias.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-27" id="section-27">&#182;</a>
+  <a class="pilcrow" href="#section-29" id="section-29">&#182;</a>
 </div>
 <p>Serving results from data/ directory.</p>
         </td>
@@ -678,7 +735,7 @@ optimize auth check for alias and not alias.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-28" id="section-28">&#182;</a>
+  <a class="pilcrow" href="#section-30" id="section-30">&#182;</a>
 </div>
 <p>Security check.</p>
         </td>
@@ -711,7 +768,7 @@ optimize auth check for alias and not alias.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-29" id="section-29">&#182;</a>
+  <a class="pilcrow" href="#section-31" id="section-31">&#182;</a>
 </div>
 <p>Removing the trailing slash because it creates:
 Error: ENOTDIR in fetching the file.</p>
@@ -727,7 +784,7 @@ Error: ENOTDIR in fetching the file.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-30" id="section-30">&#182;</a>
+  <a class="pilcrow" href="#section-32" id="section-32">&#182;</a>
 </div>
 <p>Build path to file.</p>
         </td>
@@ -749,17 +806,46 @@ Error: ENOTDIR in fetching the file.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-31" id="section-31">&#182;</a>
+  <a class="pilcrow" href="#section-33" id="section-33">&#182;</a>
 </div>
 <p>Game. (default index.htm).</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39;/*&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
         <span class="kd">var</span> <span class="nx">filePath</span><span class="p">,</span> <span class="nx">file</span><span class="p">,</span> <span class="nx">headers</span><span class="p">;</span>
+        <span class="kd">var</span> <span class="nx">decoded</span><span class="p">,</span> <span class="nx">clientId</span><span class="p">,</span> <span class="nx">token</span><span class="p">;</span>
 
         <span class="nx">file</span> <span class="o">=</span> <span class="nx">req</span><span class="p">.</span><span class="nx">params</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
-        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;&#39;</span> <span class="o">===</span> <span class="nx">file</span> <span class="o">||</span> <span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">file</span><span class="p">)</span> <span class="p">{</span>
-            <span class="nx">file</span> <span class="o">=</span> <span class="s1">&#39;index.htm&#39;</span><span class="p">;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;&#39;</span> <span class="o">===</span> <span class="nx">file</span> <span class="o">||</span> <span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">file</span><span class="p">)</span> <span class="nx">file</span> <span class="o">=</span> <span class="s1">&#39;index.htm&#39;</span><span class="p">;</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="nx">gameInfo</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">noAuthCookie</span><span class="p">)</span> <span class="p">{</span>
+
+            <span class="k">if</span> <span class="p">(</span><span class="nx">req</span><span class="p">.</span><span class="nx">cookies</span> <span class="o">&amp;&amp;</span> <span class="nx">req</span><span class="p">.</span><span class="nx">cookies</span><span class="p">.</span><span class="nx">nodegame_token</span><span class="p">)</span> <span class="p">{</span>
+                <span class="nx">decoded</span> <span class="o">=</span> <span class="nx">verifyToken</span><span class="p">(</span><span class="nx">req</span><span class="p">.</span><span class="nx">cookies</span><span class="p">.</span><span class="nx">nodegame_token</span><span class="p">,</span>
+                                      <span class="nx">channel</span><span class="p">.</span><span class="nx">secret</span><span class="p">);</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-34" id="section-34">&#182;</a>
+</div>
+<p>If no cookie is found, or if the channel session is
+not correct, generates a new ID and sets the cookie.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+                <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">decoded</span> <span class="o">||</span> <span class="p">(</span><span class="nx">decoded</span><span class="p">.</span><span class="nx">session</span> <span class="o">!==</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">session</span><span class="p">))</span> <span class="p">{</span>
+                    <span class="nx">clientId</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">registry</span><span class="p">.</span><span class="nx">generateClientId</span><span class="p">();</span>
+                    <span class="nx">token</span> <span class="o">=</span> <span class="nx">createToken</span><span class="p">(</span><span class="nx">clientId</span><span class="p">,</span> <span class="nx">channel</span><span class="p">,</span> <span class="nx">tokens</span><span class="p">);</span>
+                    <span class="nx">res</span><span class="p">.</span><span class="nx">cookie</span><span class="p">(</span><span class="s1">&#39;nodegame_token&#39;</span><span class="p">,</span> <span class="nx">token</span><span class="p">,</span> <span class="p">{</span>
+                        <span class="nx">path</span><span class="o">:</span> <span class="s1">&#39;/&#39;</span><span class="p">,</span>
+                        <span class="nx">httpOnly</span><span class="o">:</span> <span class="kc">true</span>
+                    <span class="p">});</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
         <span class="p">}</span>
 
 
@@ -769,7 +855,7 @@ Error: ENOTDIR in fetching the file.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-32" id="section-32">&#182;</a>
+  <a class="pilcrow" href="#section-35" id="section-35">&#182;</a>
 </div>
 <p>Build filePath to file in public directory.</p>
         </td>
@@ -783,7 +869,7 @@ Error: ENOTDIR in fetching the file.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-33" id="section-33">&#182;</a>
+  <a class="pilcrow" href="#section-36" id="section-36">&#182;</a>
 </div>
 <p>TODO: move after refactoring.
 Send JSON data as JSONP if there is a callback query parameter:</p>
@@ -797,7 +883,7 @@ Send JSON data as JSONP if there is a callback query parameter:</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-34" id="section-34">&#182;</a>
+  <a class="pilcrow" href="#section-37" id="section-37">&#182;</a>
 </div>
 <p>Load file contents:</p>
         </td>
@@ -814,7 +900,7 @@ Send JSON data as JSONP if there is a callback query parameter:</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-35" id="section-35">&#182;</a>
+  <a class="pilcrow" href="#section-38" id="section-38">&#182;</a>
 </div>
 <p>Send it.</p>
         </td>
@@ -834,7 +920,7 @@ Send JSON data as JSONP if there is a callback query parameter:</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-36" id="section-36">&#182;</a>
+  <a class="pilcrow" href="#section-39" id="section-39">&#182;</a>
 </div>
 <p>Build headers.</p>
         </td>
@@ -848,7 +934,7 @@ Send JSON data as JSONP if there is a callback query parameter:</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-37" id="section-37">&#182;</a>
+  <a class="pilcrow" href="#section-40" id="section-40">&#182;</a>
 </div>
 <p>If it is not text, it was not cached.</p>
         </td>
@@ -865,7 +951,7 @@ Send JSON data as JSONP if there is a callback query parameter:</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-38" id="section-38">&#182;</a>
+  <a class="pilcrow" href="#section-41" id="section-41">&#182;</a>
 </div>
 <p>Already found in <code>public/</code> and cached.</p>
         </td>
@@ -881,7 +967,7 @@ Send JSON data as JSONP if there is a callback query parameter:</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-39" id="section-39">&#182;</a>
+  <a class="pilcrow" href="#section-42" id="section-42">&#182;</a>
 </div>
 <p>File in public (cached or loaded).</p>
         </td>
@@ -899,7 +985,7 @@ Send JSON data as JSONP if there is a callback query parameter:</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-40" id="section-40">&#182;</a>
+  <a class="pilcrow" href="#section-43" id="section-43">&#182;</a>
 </div>
 <p>FIX HERE.
 console.log('NNNNNOT in public: ', file);</p>
@@ -913,7 +999,7 @@ console.log('NNNNNOT in public: ', file);</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-41" id="section-41">&#182;</a>
+  <a class="pilcrow" href="#section-44" id="section-44">&#182;</a>
 </div>
 <p>Check if it a template.</p>
         </td>
@@ -927,7 +1013,7 @@ console.log('NNNNNOT in public: ', file);</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-42" id="section-42">&#182;</a>
+  <a class="pilcrow" href="#section-45" id="section-45">&#182;</a>
 </div>
 <p>Instantiate templates, if available.
 <code>html/templates/page.jade</code> holds the template and
@@ -943,7 +1029,7 @@ to instantiate the page requested by <code>xx/xx/page*</code>.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-43" id="section-43">&#182;</a>
+  <a class="pilcrow" href="#section-46" id="section-46">&#182;</a>
 </div>
 <p>Matches: xx/xx/xx/xx/xx/</p>
         </td>
@@ -966,7 +1052,7 @@ to instantiate the page requested by <code>xx/xx/page*</code>.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-44" id="section-44">&#182;</a>
+  <a class="pilcrow" href="#section-47" id="section-47">&#182;</a>
 </div>
 <p>Info about previous requests to the template file.</p>
         </td>
@@ -980,7 +1066,7 @@ to instantiate the page requested by <code>xx/xx/page*</code>.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-45" id="section-45">&#182;</a>
+  <a class="pilcrow" href="#section-48" id="section-48">&#182;</a>
 </div>
 <p>Template not existing.</p>
         </td>
@@ -995,7 +1081,7 @@ to instantiate the page requested by <code>xx/xx/page*</code>.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-46" id="section-46">&#182;</a>
+  <a class="pilcrow" href="#section-49" id="section-49">&#182;</a>
 </div>
 <p>Template existing, render it.</p>
         </td>
@@ -1011,7 +1097,7 @@ to instantiate the page requested by <code>xx/xx/page*</code>.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-47" id="section-47">&#182;</a>
+  <a class="pilcrow" href="#section-50" id="section-50">&#182;</a>
 </div>
 <p>Do not know if exists or not, check and render it.</p>
         </td>
@@ -1040,7 +1126,7 @@ to instantiate the page requested by <code>xx/xx/page*</code>.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-48" id="section-48">&#182;</a>
+  <a class="pilcrow" href="#section-51" id="section-51">&#182;</a>
 </div>
 <p>Check if it is a view.
            resourceManager.getFromViews(gameName, file, function(view) {</p>
@@ -1115,13 +1201,13 @@ and it is redirected to the actual monitor/ uri.</p>
     <div class="dox_tag_title">Params</div>
     <div class="dox_tag_detail">
       <span class="dox_tag_name">Reference</span>
-      <span class="dox_type">ServerChannel</span>
-      <span>to the channel.</span>
+      <span class="dox_type">GameRouter</span>
+      <span>to this GameRouter instance</span>
     </div>
     <div class="dox_tag_detail">
       <span class="dox_tag_name">gameName</span>
       <span class="dox_type">string</span>
-      <span>The name of the game</span>
+      <span>The name of the game (with basedir, if any)</span>
     </div>
     <div class="dox_tag_detail">
       <span class="dox_tag_name">user</span>
@@ -1158,14 +1244,16 @@ and it is redirected to the actual monitor/ uri.</p>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-<span class="kd">function</span> <span class="nx">loginSuper</span><span class="p">(</span><span class="nx">channel</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">user</span><span class="p">,</span> <span class="nx">pwd</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">req</span><span class="p">)</span> <span class="p">{</span>
+<span class="kd">function</span> <span class="nx">loginSuper</span><span class="p">(</span><span class="nx">that</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">user</span><span class="p">,</span> <span class="nx">pwd</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">req</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">authorized</span><span class="p">,</span> <span class="nx">token</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">search</span><span class="p">,</span> <span class="nx">redirectUri</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">channel</span><span class="p">;</span>
 
+    <span class="nx">channel</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">channel</span><span class="p">;</span>
     <span class="nx">authorized</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">authorizeSuperUser</span><span class="p">(</span><span class="nx">user</span><span class="p">,</span> <span class="nx">pwd</span><span class="p">);</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="nx">authorized</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nx">token</span> <span class="o">=</span> <span class="nx">createToken</span><span class="p">(</span><span class="nx">user</span><span class="p">,</span> <span class="nx">channel</span><span class="p">,</span> <span class="nx">superTokens</span><span class="p">);</span>
+        <span class="nx">token</span> <span class="o">=</span> <span class="nx">createToken</span><span class="p">(</span><span class="nx">user</span><span class="p">,</span> <span class="nx">channel</span><span class="p">,</span> <span class="nx">that</span><span class="p">.</span><span class="nx">superTokens</span><span class="p">);</span>
         <span class="nx">res</span><span class="p">.</span><span class="nx">cookie</span><span class="p">(</span><span class="s1">&#39;nodegame_token&#39;</span><span class="p">,</span> <span class="nx">token</span><span class="p">,</span> <span class="p">{</span>
             <span class="nx">path</span><span class="o">:</span> <span class="s1">&#39;/&#39;</span><span class="p">,</span>
             <span class="nx">httpOnly</span><span class="o">:</span> <span class="kc">true</span>
@@ -1207,13 +1295,13 @@ and it is redirected to the actual game uri.</p>
     <div class="dox_tag_title">Params</div>
     <div class="dox_tag_detail">
       <span class="dox_tag_name">Reference</span>
-      <span class="dox_type">ServerChannel</span>
-      <span>to the channel.</span>
+      <span class="dox_type">GameRouter</span>
+      <span>to this GameRouter instance</span>
     </div>
     <div class="dox_tag_detail">
       <span class="dox_tag_name">gameName</span>
       <span class="dox_type">string</span>
-      <span>The name of the game</span>
+      <span>The name of the game (with basedir, if any)</span>
     </div>
     <div class="dox_tag_detail">
       <span class="dox_tag_name">user</span>
@@ -1250,13 +1338,16 @@ and it is redirected to the actual game uri.</p>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-<span class="kd">function</span> <span class="nx">login</span><span class="p">(</span><span class="nx">channel</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">user</span><span class="p">,</span> <span class="nx">pwd</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">req</span><span class="p">)</span> <span class="p">{</span>
+<span class="kd">function</span> <span class="nx">login</span><span class="p">(</span><span class="nx">that</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">user</span><span class="p">,</span> <span class="nx">pwd</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">req</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">authorized</span><span class="p">,</span> <span class="nx">token</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">search</span><span class="p">,</span> <span class="nx">redirectUri</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">channel</span><span class="p">;</span>
+
+    <span class="nx">channel</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">channel</span><span class="p">;</span>
     <span class="nx">authorized</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">registry</span><span class="p">.</span><span class="nx">authorize</span><span class="p">({</span> <span class="nx">id</span><span class="o">:</span> <span class="nx">user</span><span class="p">,</span> <span class="nx">pwd</span><span class="o">:</span> <span class="nx">pwd</span> <span class="p">});</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="nx">authorized</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nx">token</span> <span class="o">=</span> <span class="nx">createToken</span><span class="p">(</span><span class="nx">user</span><span class="p">,</span> <span class="nx">channel</span><span class="p">,</span> <span class="nx">tokens</span><span class="p">);</span>
+        <span class="nx">token</span> <span class="o">=</span> <span class="nx">createToken</span><span class="p">(</span><span class="nx">user</span><span class="p">,</span> <span class="nx">channel</span><span class="p">,</span> <span class="nx">that</span><span class="p">.</span><span class="nx">tokens</span><span class="p">);</span>
         <span class="nx">res</span><span class="p">.</span><span class="nx">cookie</span><span class="p">(</span><span class="s1">&#39;nodegame_token&#39;</span><span class="p">,</span> <span class="nx">token</span><span class="p">,</span> <span class="p">{</span>
             <span class="nx">path</span><span class="o">:</span> <span class="s1">&#39;/&#39;</span><span class="p">,</span>
             <span class="nx">httpOnly</span><span class="o">:</span> <span class="kc">true</span>
@@ -1333,7 +1424,7 @@ and it is redirected to the actual game uri.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-53" id="section-53">&#182;</a>
+  <a class="pilcrow" href="#section-56" id="section-56">&#182;</a>
 </div>
 <p>We are sending the profile in the token.</p>
         </td>
@@ -1347,7 +1438,7 @@ and it is redirected to the actual game uri.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-54" id="section-54">&#182;</a>
+  <a class="pilcrow" href="#section-57" id="section-57">&#182;</a>
 </div>
 <p>Store the token somewhere.</p>
         </td>
@@ -1423,7 +1514,7 @@ and it is redirected to the actual game uri.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-56" id="section-56">&#182;</a>
+  <a class="pilcrow" href="#section-59" id="section-59">&#182;</a>
 </div>
 <p>Build the right settings object to pass to the context callback.
 By default, it is the 'standard' treatment. If we
@@ -1455,7 +1546,7 @@ that particular treatment.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-57" id="section-57">&#182;</a>
+  <a class="pilcrow" href="#section-60" id="section-60">&#182;</a>
 </div>
 <p>Context is retrieved from cache,
 and can be modified by user-defined callbacks.</p>
@@ -1492,7 +1583,7 @@ and can be modified by user-defined callbacks.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-58" id="section-58">&#182;</a>
+  <a class="pilcrow" href="#section-61" id="section-61">&#182;</a>
 </div>
 <p>TODO: Log error.
 TODO: Mark file as non-existing ?</p>
@@ -1511,7 +1602,7 @@ TODO: Mark file as non-existing ?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-59" id="section-59">&#182;</a>
+  <a class="pilcrow" href="#section-62" id="section-62">&#182;</a>
 </div>
 <p>Render anyway, with or without context.</p>
         </td>
@@ -1688,7 +1779,7 @@ TODO: Mark file as non-existing ?</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-63" id="section-63">&#182;</a>
+  <a class="pilcrow" href="#section-66" id="section-66">&#182;</a>
 </div>
 <p>Removing the trailing slash because it creates:
 Error: ENOTDIR in fetching the file.</p>
@@ -1766,7 +1857,7 @@ Error: ENOTDIR in fetching the file.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-65" id="section-65">&#182;</a>
+  <a class="pilcrow" href="#section-68" id="section-68">&#182;</a>
 </div>
 <p>Build path to file.</p>
         </td>
@@ -1962,10 +2053,9 @@ Error: ENOTDIR in fetching the file.</p>
     <div class="dox_tag_title">Returns</div>
     <div class="dox_tag_detail">
       <span class="dox_tag_name"></span>
-      <span class="dox_type">string</span>
+      <span class="dox_type">object</span>
       <span class="dox_type">boolean</span>
-      <span>The signed JSON web token, or
-  FALSE if an error occurred</span>
+      <span>The decoded token, or FALSE if an error occurred</span>
     </div>
   </div>
 </div>
@@ -1973,7 +2063,7 @@ Error: ENOTDIR in fetching the file.</p>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="kd">function</span> <span class="nx">verifyToken</span><span class="p">(</span><span class="nx">token</span><span class="p">,</span> <span class="nx">secret</span><span class="p">)</span> <span class="p">{</span>
     <span class="k">try</span> <span class="p">{</span>
-        <span class="k">return</span> <span class="nx">jwt</span><span class="p">.</span><span class="nx">verify</span><span class="p">(</span><span class="nx">token</span><span class="p">,</span> <span class="nx">secret</span><span class="p">).</span><span class="nx">clientId</span><span class="p">;</span>
+        <span class="k">return</span> <span class="nx">jwt</span><span class="p">.</span><span class="nx">verify</span><span class="p">(</span><span class="nx">token</span><span class="p">,</span> <span class="nx">secret</span><span class="p">);</span>
     <span class="p">}</span>
     <span class="k">catch</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
