@@ -1419,7 +1419,7 @@ and it is redirected to the actual game uri.</p>
 
     <span class="kd">var</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">gameSettings</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">context</span><span class="p">,</span> <span class="nx">cb</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">clientId</span><span class="p">,</span> <span class="nx">room</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">clientId</span><span class="p">,</span> <span class="nx">room</span><span class="p">,</span> <span class="nx">treatmentName</span><span class="p">;</span>
 
     <span class="nx">gameName</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">gameName</span><span class="p">;</span>
 
@@ -1433,13 +1433,13 @@ and it is redirected to the actual game uri.</p>
   <a class="pilcrow" href="#section-56" id="section-56">&#182;</a>
 </div>
 <p>Build the right settings object to pass to the context callback.
-By default, it is whole object (including treatments). If we
+By default, it is the 'standard' treatment. If we
 can locate the client id (via signed cookie), and if the client id
 is found in a room with a treatment, then use just the settings for
 that particular treatment.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="nx">gameSettings</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">gameInfo</span><span class="p">.</span><span class="nx">settings</span><span class="p">;</span>
+    <span class="nx">treatmentName</span> <span class="o">=</span> <span class="s1">&#39;standard&#39;</span><span class="p">;</span>
     <span class="k">if</span> <span class="p">(</span><span class="nx">req</span><span class="p">.</span><span class="nx">cookies</span> <span class="o">&amp;&amp;</span> <span class="nx">req</span><span class="p">.</span><span class="nx">cookies</span><span class="p">.</span><span class="nx">nodegame_token</span><span class="p">)</span> <span class="p">{</span>
         <span class="nx">clientId</span> <span class="o">=</span> <span class="nx">verifyToken</span><span class="p">(</span><span class="nx">req</span><span class="p">.</span><span class="nx">cookies</span><span class="p">.</span><span class="nx">nodegame_token</span><span class="p">,</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">secret</span><span class="p">);</span>
         <span class="k">if</span> <span class="p">(</span><span class="nx">clientId</span> <span class="o">===</span> <span class="kc">false</span><span class="p">)</span> <span class="p">{</span>
@@ -1450,11 +1450,10 @@ that particular treatment.</p>
         <span class="k">else</span> <span class="p">{</span>
             <span class="nx">room</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">registry</span><span class="p">.</span><span class="nx">getClientRoom</span><span class="p">(</span><span class="nx">clientId</span><span class="p">);</span>
             <span class="nx">room</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">[</span><span class="nx">room</span><span class="p">];</span>
-            <span class="k">if</span> <span class="p">(</span><span class="nx">room</span> <span class="o">&amp;&amp;</span> <span class="nx">room</span><span class="p">.</span><span class="nx">treatmentName</span><span class="p">)</span> <span class="p">{</span>
-                <span class="nx">gameSettings</span> <span class="o">=</span> <span class="nx">gameSettings</span><span class="p">[</span><span class="nx">room</span><span class="p">.</span><span class="nx">treatmentName</span><span class="p">];</span>
-            <span class="p">}</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nx">room</span><span class="p">)</span> <span class="nx">treatmentName</span> <span class="o">=</span> <span class="nx">room</span><span class="p">.</span><span class="nx">treatmentName</span><span class="p">;</span>
         <span class="p">}</span>
     <span class="p">}</span>
+    <span class="nx">gameSettings</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">gameInfo</span><span class="p">.</span><span class="nx">settings</span><span class="p">[</span><span class="nx">treatmentName</span><span class="p">];</span>
 
 
 </pre></div>
