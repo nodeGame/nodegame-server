@@ -191,7 +191,7 @@
 </div>
 
 
-<p>Copyright(c) 2017 Stefano Balietti <a href="&#109;&#x61;&#105;&#x6C;&#x74;&#111;:&#115;&#116;&#x65;&#64;&#x6E;&#111;&#100;&#101;&#103;&#x61;&#x6D;e&#46;&#x6F;&#114;&#103;">&#115;&#116;&#x65;&#64;&#x6E;&#111;&#100;&#101;&#103;&#x61;&#x6D;e&#46;&#x6F;&#114;&#103;</a>
+<p>Copyright(c) 2017 Stefano Balietti <a href="&#x6D;&#x61;&#x69;&#108;to:&#x73;&#x74;&#x65;&#x40;&#110;o&#100;&#101;&#103;&#97;&#x6D;&#x65;&#46;&#111;&#114;&#x67;">&#x73;&#x74;&#x65;&#x40;&#110;o&#100;&#101;&#103;&#97;&#x6D;&#x65;&#46;&#111;&#114;&#x67;</a>
 MIT Licensed</p>
   </div>
   <div class="body"><p>Creates the Player, and Admin Server</p>
@@ -1921,11 +1921,12 @@ as a direct reference in the channel object, instead of to the
 </div>
 
   </div>
-  <div class="body"><p>Destroys a game|requirements|waiting room</p>
+  <div class="body"><p>Destroys a room and handles eventual clients still in it</p>
 
-<p>The child-rooms of the destroyed room are reparented to the destroyed room's
-parent.
-The room is only destroyed if it's empty or if a valid substitute room is
+<p>Children rooms of the destroyed room are reparented to the destroyed room's
+parent.</p>
+
+<p>The room is only destroyed if it's empty or if a valid substitute room is
 given to move the players to.</p>
   </div>
   <div class="details">
@@ -1969,7 +1970,7 @@ given to move the players to.</p>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-<span class="nx">ServerChannel</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">destroyGameRoom</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">room</span><span class="p">,</span> <span class="nx">options</span><span class="p">)</span> <span class="p">{</span>
+<span class="nx">ServerChannel</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">destroyRoom</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">room</span><span class="p">,</span> <span class="nx">options</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">i</span><span class="p">,</span> <span class="nx">len</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">roomObj</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">clientObjs</span><span class="p">;</span>
@@ -1982,7 +1983,7 @@ given to move the players to.</p>
         <span class="nx">roomObj</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">[</span><span class="nx">room</span><span class="p">];</span>
         <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">roomObj</span><span class="p">)</span> <span class="p">{</span>
             <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerChannel.destroyGameRoom: room not &#39;</span> <span class="o">+</span>
-                                <span class="s1">&#39;found: &#39;</span> <span class="o">+</span> <span class="nx">room</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
+                                <span class="s1">&#39;found: &#39;</span> <span class="o">+</span> <span class="nx">room</span><span class="p">);</span>
         <span class="p">}</span>
     <span class="p">}</span>
     <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">room</span><span class="p">)</span> <span class="p">{</span>
@@ -1990,7 +1991,7 @@ given to move the players to.</p>
     <span class="p">}</span>
     <span class="k">else</span> <span class="p">{</span>
         <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerChannel.destroyGameRoom: room must be &#39;</span> <span class="o">+</span>
-                            <span class="s1">&#39;string or object.&#39;</span><span class="p">);</span>
+                            <span class="s1">&#39;string or object. Found: &#39;</span> <span class="o">+</span> <span class="nx">room</span><span class="p">);</span>
     <span class="p">}</span>
 
 
@@ -2136,7 +2137,7 @@ given to move the players to.</p>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="nx">parentRoom</span> <span class="o">=</span> <span class="nx">roomObj</span><span class="p">.</span><span class="nx">parentRoom</span><span class="p">;</span>
     <span class="k">if</span> <span class="p">(</span><span class="nx">parentRoom</span> <span class="o">&amp;&amp;</span> <span class="k">this</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">[</span><span class="nx">parentRoom</span><span class="p">])</span> <span class="p">{</span>
-        <span class="k">delete</span> <span class="k">this</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">[</span><span class="nx">parentRoom</span><span class="p">].</span><span class="nx">children</span><span class="p">[</span><span class="nx">roomName</span><span class="p">];</span>
+        <span class="k">delete</span> <span class="k">this</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">[</span><span class="nx">parentRoom</span><span class="p">].</span><span class="nx">children</span><span class="p">[</span><span class="nx">roomObj</span><span class="p">.</span><span class="nx">name</span><span class="p">];</span>
     <span class="p">}</span>
     <span class="k">else</span> <span class="p">{</span>
         <span class="nx">parentRoom</span> <span class="o">=</span> <span class="kc">null</span><span class="p">;</span>
@@ -2207,6 +2208,12 @@ given to move the players to.</p>
 
     <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;room destroyed: &#39;</span> <span class="o">+</span> <span class="nx">roomObj</span><span class="p">.</span><span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
     <span class="k">return</span> <span class="kc">true</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="nx">ServerChannel</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">destroyGameRoom</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">room</span><span class="p">,</span> <span class="nx">options</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;*** ServerChannel.destroyGameRoom is deprecated. Use &#39;</span> <span class="o">+</span>
+                <span class="s1">&#39;ServerChannel.destroyRoom instead. ***&#39;</span><span class="p">);</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">destroyRoom</span><span class="p">(</span><span class="nx">room</span><span class="p">,</span> <span class="nx">options</span><span class="p">);</span>
 <span class="p">};</span>
 
 
