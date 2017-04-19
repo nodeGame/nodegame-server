@@ -199,7 +199,7 @@ MIT Licensed</p>
 <p>gameDir, gameName, gameInfo,</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-<span class="p">};</span>
+<span class="p">}</span>
 
 
 </pre></div>
@@ -353,7 +353,7 @@ We add alias first so they are available also if this is default channel.</p>
         <span class="k">if</span> <span class="p">(</span><span class="nx">auth</span><span class="p">.</span><span class="nx">claimId</span><span class="p">)</span> <span class="p">{</span>
 
             <span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39;/claimid/*&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">next</span><span class="p">)</span> <span class="p">{</span>
-                <span class="kd">var</span> <span class="nx">userId</span><span class="p">,</span> <span class="nx">valid</span><span class="p">,</span> <span class="nx">code</span><span class="p">,</span> <span class="nx">tmp</span><span class="p">;</span>
+                <span class="kd">var</span> <span class="nx">userId</span><span class="p">,</span> <span class="nx">valid</span><span class="p">,</span> <span class="nx">code</span><span class="p">;</span>
                 <span class="kd">var</span> <span class="nx">cb</span><span class="p">;</span>
                 <span class="nx">cb</span> <span class="o">=</span> <span class="nx">req</span><span class="p">.</span><span class="nx">query</span><span class="p">.</span><span class="nx">callback</span> <span class="o">||</span> <span class="s1">&#39;callback&#39;</span><span class="p">;</span>
                 <span class="nx">userId</span> <span class="o">=</span> <span class="nx">req</span><span class="p">.</span><span class="nx">query</span><span class="p">.</span><span class="nx">id</span><span class="p">;</span>
@@ -624,7 +624,7 @@ optimize auth check for alias and not alias.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
         <span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39;/monitor/memorydb/*&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">next</span><span class="p">)</span> <span class="p">{</span>
-            <span class="kd">var</span> <span class="nx">i</span><span class="p">,</span> <span class="nx">len</span><span class="p">,</span> <span class="nx">roomName</span><span class="p">,</span> <span class="nx">room</span><span class="p">;</span>
+            <span class="kd">var</span> <span class="nx">roomName</span><span class="p">,</span> <span class="nx">room</span><span class="p">;</span>
             <span class="kd">var</span> <span class="nx">out</span><span class="p">,</span> <span class="nx">outStr</span><span class="p">;</span>
 
             <span class="nx">out</span> <span class="o">=</span> <span class="p">[];</span>
@@ -694,13 +694,11 @@ optimize auth check for alias and not alias.</p>
         <span class="p">});</span>
 
         <span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39;/monitor/*&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">next</span><span class="p">)</span> <span class="p">{</span>
-            <span class="kd">var</span> <span class="nx">userId</span><span class="p">,</span> <span class="nx">pwd</span><span class="p">;</span>
-            <span class="kd">var</span> <span class="nx">filePath</span><span class="p">,</span> <span class="nx">file</span><span class="p">,</span> <span class="nx">cachedFile</span><span class="p">;</span>
-            <span class="kd">var</span> <span class="nx">search</span><span class="p">;</span>
+            <span class="kd">var</span> <span class="nx">filePath</span><span class="p">,</span> <span class="nx">file</span><span class="p">,</span> <span class="nx">search</span><span class="p">;</span>
             <span class="nx">file</span> <span class="o">=</span> <span class="nx">req</span><span class="p">.</span><span class="nx">params</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
             <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;&#39;</span> <span class="o">===</span> <span class="nx">file</span> <span class="o">||</span> <span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">file</span><span class="p">)</span> <span class="p">{</span>
                 <span class="nx">search</span> <span class="o">=</span> <span class="nx">url</span><span class="p">.</span><span class="nx">parse</span><span class="p">(</span><span class="nx">req</span><span class="p">.</span><span class="nx">url</span><span class="p">,</span> <span class="kc">true</span><span class="p">).</span><span class="nx">search</span><span class="p">;</span>
-                <span class="k">if</span> <span class="p">(</span><span class="nx">search</span><span class="p">)</span> <span class="nx">res</span><span class="p">.</span><span class="nx">redirect</span><span class="p">(</span><span class="nx">monitorUri</span> <span class="o">+</span> <span class="s1">&#39;&amp;&#39;</span> <span class="o">+</span> <span class="nx">search</span><span class="p">.</span><span class="nx">substring</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+                <span class="k">if</span> <span class="p">(</span><span class="nx">search</span><span class="p">)</span> <span class="nx">res</span><span class="p">.</span><span class="nx">redirect</span><span class="p">(</span><span class="nx">monitorUri</span> <span class="o">+</span> <span class="s1">&#39;&amp;&#39;</span> <span class="o">+</span><span class="nx">search</span><span class="p">.</span><span class="nx">substring</span><span class="p">(</span><span class="mi">1</span><span class="p">));</span>
                 <span class="k">else</span> <span class="nx">res</span><span class="p">.</span><span class="nx">redirect</span><span class="p">(</span><span class="nx">monitorUri</span><span class="p">);</span>
                 <span class="k">return</span><span class="p">;</span>
             <span class="p">}</span>
@@ -757,9 +755,7 @@ Error: ENOTDIR in fetching the file.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39;/*&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
-        <span class="kd">var</span> <span class="nx">filePath</span><span class="p">,</span> <span class="nx">file</span><span class="p">,</span> <span class="nx">cachedFile</span><span class="p">;</span>
-        <span class="kd">var</span> <span class="nx">jadeTemplate</span><span class="p">,</span> <span class="nx">jsonContext</span><span class="p">,</span> <span class="nx">contextPath</span><span class="p">,</span> <span class="nx">langPath</span><span class="p">,</span> <span class="nx">pageName</span><span class="p">;</span>
-        <span class="kd">var</span> <span class="nx">cachedFile</span><span class="p">,</span> <span class="nx">cachedView</span><span class="p">,</span> <span class="nx">headers</span><span class="p">;</span>
+        <span class="kd">var</span> <span class="nx">filePath</span><span class="p">,</span> <span class="nx">file</span><span class="p">,</span> <span class="nx">headers</span><span class="p">;</span>
 
         <span class="nx">file</span> <span class="o">=</span> <span class="nx">req</span><span class="p">.</span><span class="nx">params</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
         <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;&#39;</span> <span class="o">===</span> <span class="nx">file</span> <span class="o">||</span> <span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">file</span><span class="p">)</span> <span class="p">{</span>
@@ -807,13 +803,10 @@ Send JSON data as JSONP if there is a callback query parameter:</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
             <span class="nx">fs</span><span class="p">.</span><span class="nx">readFile</span><span class="p">(</span><span class="nx">filePath</span><span class="p">,</span> <span class="s1">&#39;utf8&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">data</span><span class="p">)</span> <span class="p">{</span>
-                <span class="kd">var</span> <span class="nx">callback</span><span class="p">;</span>
-
                 <span class="k">if</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span>
                     <span class="nx">res</span><span class="p">.</span><span class="nx">status</span><span class="p">(</span><span class="mi">404</span><span class="p">).</span><span class="nx">json</span><span class="p">({</span><span class="nx">error</span><span class="o">:</span> <span class="s1">&#39;file not found&#39;</span><span class="p">});</span>
                     <span class="k">return</span><span class="p">;</span>
                 <span class="p">}</span>
-
 
 </pre></div>
         </td>
@@ -823,7 +816,7 @@ Send JSON data as JSONP if there is a callback query parameter:</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-35" id="section-35">&#182;</a>
 </div>
-<p>Send it:</p>
+<p>Send it.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
                 <span class="nx">res</span><span class="p">.</span><span class="nx">set</span><span class="p">(</span><span class="s1">&#39;Content-Type&#39;</span><span class="p">,</span> <span class="s1">&#39;application/javascript&#39;</span><span class="p">);</span>
@@ -879,7 +872,7 @@ Send JSON data as JSONP if there is a callback query parameter:</p>
         <td class="code highlight"><div class="highlight"><pre>
         <span class="nx">resourceManager</span><span class="p">.</span><span class="nx">getFromPublic</span><span class="p">(</span><span class="nx">gameName</span><span class="p">,</span> <span class="nx">file</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">cachedFile</span><span class="p">)</span> <span class="p">{</span>
 
-            <span class="kd">var</span> <span class="nx">basename</span><span class="p">,</span> <span class="nx">templatePath</span><span class="p">,</span> <span class="nx">templateFound</span><span class="p">,</span> <span class="nx">contextPath</span><span class="p">,</span> <span class="nx">context</span><span class="p">;</span>
+            <span class="kd">var</span> <span class="nx">basename</span><span class="p">,</span> <span class="nx">templatePath</span><span class="p">,</span> <span class="nx">templateFound</span><span class="p">,</span> <span class="nx">contextPath</span><span class="p">;</span>
 
 
 </pre></div>
