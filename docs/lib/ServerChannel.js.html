@@ -191,7 +191,7 @@
 </div>
 
 
-<p>Copyright(c) 2017 Stefano Balietti <a href="&#x6D;&#x61;&#x69;&#108;to:&#x73;&#x74;&#x65;&#x40;&#110;o&#100;&#101;&#103;&#97;&#x6D;&#x65;&#46;&#111;&#114;&#x67;">&#x73;&#x74;&#x65;&#x40;&#110;o&#100;&#101;&#103;&#97;&#x6D;&#x65;&#46;&#111;&#114;&#x67;</a>
+<p>Copyright(c) 2017 Stefano Balietti <a href="&#109;&#x61;i&#x6C;to:&#115;&#x74;&#101;&#x40;&#110;&#111;&#100;&#101;&#x67;&#x61;&#x6D;&#x65;&#46;&#111;&#114;&#x67;">&#115;&#x74;&#101;&#x40;&#110;&#111;&#100;&#101;&#x67;&#x61;&#x6D;&#x65;&#46;&#111;&#114;&#x67;</a>
 MIT Licensed</p>
   </div>
   <div class="body"><p>Creates the Player, and Admin Server</p>
@@ -1982,7 +1982,7 @@ given to move the players to.</p>
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">room</span><span class="p">)</span> <span class="p">{</span>
         <span class="nx">roomObj</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">[</span><span class="nx">room</span><span class="p">];</span>
         <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">roomObj</span><span class="p">)</span> <span class="p">{</span>
-            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerChannel.destroyGameRoom: room not &#39;</span> <span class="o">+</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerChannel.destroyRoom: room not &#39;</span> <span class="o">+</span>
                                 <span class="s1">&#39;found: &#39;</span> <span class="o">+</span> <span class="nx">room</span><span class="p">);</span>
         <span class="p">}</span>
     <span class="p">}</span>
@@ -1990,7 +1990,7 @@ given to move the players to.</p>
         <span class="nx">roomObj</span> <span class="o">=</span> <span class="nx">room</span><span class="p">;</span>
     <span class="p">}</span>
     <span class="k">else</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerChannel.destroyGameRoom: room must be &#39;</span> <span class="o">+</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerChannel.destroyRoom: room must be &#39;</span> <span class="o">+</span>
                             <span class="s1">&#39;string or object. Found: &#39;</span> <span class="o">+</span> <span class="nx">room</span><span class="p">);</span>
     <span class="p">}</span>
 
@@ -2012,7 +2012,7 @@ given to move the players to.</p>
     <span class="nx">disconnectPlayers</span> <span class="o">=</span> <span class="o">!!</span><span class="nx">options</span><span class="p">.</span><span class="nx">disconnectPlayers</span><span class="p">;</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="nx">substituteRoomName</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">[</span><span class="nx">substituteRoomName</span><span class="p">]))</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;ServerChannel.destroyGameRoom: &#39;</span> <span class="o">+</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;ServerChannel.destroyRoom: &#39;</span> <span class="o">+</span>
                         <span class="s1">&#39;options.substituteRoomName is not a valid room: &#39;</span> <span class="o">+</span>
                         <span class="nx">substituteRoomName</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
     <span class="p">}</span>
@@ -2037,7 +2037,7 @@ given to move the players to.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">ignoreRunningGame</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="nx">roomObj</span><span class="p">.</span><span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">isGameover</span><span class="p">())</span> <span class="p">{</span>
-        <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;ServerChannel.destroyGameRoom: game still &#39;</span> <span class="o">+</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;ServerChannel.destroyRoom: game still &#39;</span> <span class="o">+</span>
                            <span class="s1">&#39;running in room &#39;</span> <span class="o">+</span> <span class="nx">roomObj</span><span class="p">.</span><span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39;. Use &#39;</span> <span class="o">+</span>
                            <span class="s1">&#39;ignoreRunningGame flag to proceed anyway. &#39;</span> <span class="o">+</span>
                            <span class="s1">&#39;Aborting.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
@@ -2046,7 +2046,7 @@ given to move the players to.</p>
 
     <span class="k">if</span> <span class="p">(</span><span class="nx">roomObj</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">size</span><span class="p">()</span> <span class="o">&amp;&amp;</span>
         <span class="p">(</span><span class="o">!</span><span class="nx">substituteRoomName</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="nx">disconnectPlayers</span><span class="p">))</span> <span class="p">{</span>
-        <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;ServerChannel.destroyGameRoom: room &#39;</span> <span class="o">+</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;ServerChannel.destroyRoom: room &#39;</span> <span class="o">+</span>
                            <span class="nx">roomObj</span><span class="p">.</span><span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39;still contains players. Use &#39;</span> <span class="o">+</span>
                            <span class="s1">&#39;substituteRoomName or disconnectPlayers flags &#39;</span> <span class="o">+</span>
                            <span class="s1">&#39;to proceed anyway.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
@@ -2206,7 +2206,7 @@ given to move the players to.</p>
     <span class="k">delete</span> <span class="k">this</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">[</span><span class="nx">roomObj</span><span class="p">.</span><span class="nx">name</span><span class="p">];</span>
     <span class="k">delete</span> <span class="k">this</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">rooms</span><span class="p">[</span><span class="nx">roomObj</span><span class="p">.</span><span class="nx">id</span><span class="p">];</span>
 
-    <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;room destroyed: &#39;</span> <span class="o">+</span> <span class="nx">roomObj</span><span class="p">.</span><span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">);</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;room destroyed: &#39;</span> <span class="o">+</span> <span class="nx">roomObj</span><span class="p">.</span><span class="nx">name</span><span class="p">);</span>
     <span class="k">return</span> <span class="kc">true</span><span class="p">;</span>
 <span class="p">};</span>
 
