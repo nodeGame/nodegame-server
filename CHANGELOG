@@ -1,5 +1,8 @@
 # nodegame-server change log
 
+# 4.0.0 (current)
+- Settings object is correctly associated with the current treatment and sent to the view's context callback. If a treatment cannot be found, it defaults to "standard" treatment (if found).
+
 # 3.5.7
 - Internal cleanup.
 - Better error messages for duplicated aliases.
