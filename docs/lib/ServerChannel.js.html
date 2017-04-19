@@ -191,7 +191,7 @@
 </div>
 
 
-<p>Copyright(c) 2017 Stefano Balietti <a href="&#109;&#x61;&#105;&#x6C;&#116;&#111;:&#115;&#116;&#x65;&#64;&#110;&#x6F;&#x64;&#101;&#x67;&#x61;&#x6D;&#101;&#x2E;&#x6F;&#114;&#x67;">&#115;&#116;&#x65;&#64;&#110;&#x6F;&#x64;&#101;&#x67;&#x61;&#x6D;&#101;&#x2E;&#x6F;&#114;&#x67;</a>
+<p>Copyright(c) 2017 Stefano Balietti <a href="&#109;&#x61;&#105;&#x6C;&#x74;&#111;:&#115;&#116;&#x65;&#64;&#x6E;&#111;&#100;&#101;&#103;&#x61;&#x6D;e&#46;&#x6F;&#114;&#103;">&#115;&#116;&#x65;&#64;&#x6E;&#111;&#100;&#101;&#103;&#x61;&#x6D;e&#46;&#x6F;&#114;&#103;</a>
 MIT Licensed</p>
   </div>
   <div class="body"><p>Creates the Player, and Admin Server</p>
@@ -736,7 +736,7 @@ file system. The final object is of the type:</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="k">this</span><span class="p">.</span><span class="nx">gameRouter</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">GameRouter</span><span class="p">(</span><span class="k">this</span><span class="p">);</span>
-    
+
 
 </pre></div>
         </td>
@@ -1226,7 +1226,7 @@ game rooms with a default name.</p>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-<span class="nx">ServerChannel</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">addRoutes</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>    
+<span class="nx">ServerChannel</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">addRoutes</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
     <span class="k">this</span><span class="p">.</span><span class="nx">gameRouter</span><span class="p">.</span><span class="nx">addRoutes</span><span class="p">();</span>
 <span class="p">};</span>
 
@@ -1277,7 +1277,6 @@ the conf parameter.</p>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">ServerChannel</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">createGameRoom</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">conf</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">maxRoomsErr</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">autoRoomNo</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">clients</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">i</span><span class="p">,</span> <span class="nx">len</span><span class="p">,</span> <span class="nx">playerIds</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">newRoom</span><span class="p">,</span> <span class="nx">roomGroup</span><span class="p">;</span>
@@ -3142,10 +3141,9 @@ Optional. Array of strings to give PhantomJS as command line arguments</li>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">ServerChannel</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">connectPhantom</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">options</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">port</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">,</span> <span class="nx">filePath</span><span class="p">,</span> <span class="nx">queryString</span><span class="p">,</span> <span class="nx">phantomjsArgs</span><span class="p">,</span> <span class="nx">omitGameName</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">serverdir</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">url</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">phantomjs</span><span class="p">,</span> <span class="nx">phPath</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">auth</span><span class="p">,</span> <span class="nx">clientId</span><span class="p">,</span> <span class="nx">clientPwd</span><span class="p">,</span> <span class="nx">clientObj</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">clientId</span><span class="p">,</span> <span class="nx">clientPwd</span><span class="p">,</span> <span class="nx">clientObj</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">logger</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">i</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">that</span><span class="p">;</span>
