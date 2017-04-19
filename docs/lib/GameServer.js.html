@@ -1533,13 +1533,9 @@ because .stage and .stageLevel could be overwritten.</p>
 
     <span class="nx">newConnection</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
     <span class="nx">invalidSessionCookie</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
-
-    <span class="k">if</span> <span class="p">(</span><span class="nx">handshake</span><span class="p">.</span><span class="nx">headers</span> <span class="o">&amp;&amp;</span> <span class="nx">handshake</span><span class="p">.</span><span class="nx">headers</span><span class="p">.</span><span class="nx">cookie</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nx">cookies</span> <span class="o">=</span> <span class="nx">parseCookies</span><span class="p">(</span><span class="nx">handshake</span><span class="p">.</span><span class="nx">headers</span><span class="p">.</span><span class="nx">cookie</span><span class="p">);</span>
-    <span class="p">}</span>
-    <span class="k">else</span> <span class="p">{</span>
-        <span class="nx">cookies</span> <span class="o">=</span> <span class="p">{};</span>
-    <span class="p">}</span>
+    
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">handshake</span><span class="p">.</span><span class="nx">headers</span> <span class="o">||</span> <span class="o">!</span><span class="nx">handshake</span><span class="p">.</span><span class="nx">headers</span><span class="p">.</span><span class="nx">cookie</span><span class="p">)</span> <span class="nx">cookies</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">else</span> <span class="nx">cookies</span> <span class="o">=</span> <span class="nx">parseCookies</span><span class="p">(</span><span class="nx">handshake</span><span class="p">.</span><span class="nx">headers</span><span class="p">.</span><span class="nx">cookie</span><span class="p">);</span>
 
     <span class="nx">decoded</span> <span class="o">=</span> <span class="p">{};</span>
     <span class="k">if</span> <span class="p">(</span><span class="nx">cookies</span> <span class="o">&amp;&amp;</span> <span class="nx">cookies</span><span class="p">.</span><span class="nx">nodegame_token</span><span class="p">)</span> <span class="p">{</span>

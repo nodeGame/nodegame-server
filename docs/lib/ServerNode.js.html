@@ -112,9 +112,6 @@
         <a href="#servernode.creategamealias">ServerNode.createGameAlias</a>
       </div>
       <div class="heading h3">
-        <a href="#servernode.loadchannelsfile">ServerNode.loadChannelsFile</a>
-      </div>
-      <div class="heading h3">
         <a href="#servernode.configurehttp">ServerNode.configureHTTP</a>
       </div>
       <div class="heading h3">
@@ -1125,11 +1122,12 @@ is aborted.</p>
     <span class="kd">var</span> <span class="nx">channelName</span><span class="p">,</span> <span class="nx">channelOptions</span><span class="p">,</span> <span class="nx">channel</span><span class="p">,</span> <span class="nx">ok</span><span class="p">,</span> <span class="nx">defaultChannel</span><span class="p">;</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">options</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerNode.addChannel: options must be object.&#39;</span><span class="p">);</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerNode.addChannel: options must be &#39;</span> <span class="o">+</span>
+                            <span class="s1">&#39;object. Found: &#39;</span> <span class="o">+</span> <span class="nx">options</span><span class="p">);</span>
     <span class="p">}</span>
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">options</span><span class="p">.</span><span class="nx">name</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">options</span><span class="p">.</span><span class="nx">name</span> <span class="o">||</span> <span class="nx">options</span><span class="p">.</span><span class="nx">name</span><span class="p">.</span><span class="nx">trim</span><span class="p">()</span> <span class="o">===</span> <span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerNode.addChannel: options.name must &#39;</span> <span class="o">+</span>
-                            <span class="s1">&#39;be string.&#39;</span><span class="p">);</span>
+                            <span class="s1">&#39;be a non-empty string. Found: &#39;</span> <span class="o">+</span> <span class="nx">options</span><span class="p">.</span><span class="nx">name</span><span class="p">);</span>
     <span class="p">}</span>
 
 
@@ -1148,8 +1146,8 @@ is aborted.</p>
     <span class="nx">checkServerOptions</span><span class="p">(</span><span class="s1">&#39;adminServer&#39;</span><span class="p">,</span> <span class="nx">options</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">channels</span><span class="p">);</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">maxChannels</span> <span class="o">&amp;&amp;</span> <span class="nx">J</span><span class="p">.</span><span class="nx">size</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">channels</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="k">this</span><span class="p">.</span><span class="nx">maxChannels</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">this</span><span class="p">.</span><span class="nx">logger</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="s1">&#39;ServerNode.addChannel: Maximum number of channels &#39;</span> <span class="o">+</span>
-                          <span class="s1">&#39;already reached: &#39;</span> <span class="o">+</span> <span class="k">this</span><span class="p">.</span><span class="nx">maxChannels</span><span class="p">);</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">logger</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="s1">&#39;ServerNode.addChannel: maximum number of channels &#39;</span> <span class="o">+</span>
+                          <span class="s1">&#39;reached: &#39;</span> <span class="o">+</span> <span class="k">this</span><span class="p">.</span><span class="nx">maxChannels</span><span class="p">);</span>
         <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
     <span class="p">}</span>
 
@@ -1481,7 +1479,8 @@ is aborted.</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-60" id="section-60">&#182;</a>
 </div>
-<p>It is a folder, try to add it as a game.</p>
+<p>It is a folder, try to add it as a game.
+If successful, it creates a new channel.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
                     <span class="k">if</span> <span class="p">(</span><span class="nx">stats</span><span class="p">.</span><span class="nx">isDirectory</span><span class="p">())</span> <span class="nx">that</span><span class="p">.</span><span class="nx">addGameDir</span><span class="p">(</span><span class="nx">gameDir</span><span class="p">);</span>
@@ -1542,7 +1541,8 @@ is aborted.</p>
     <span class="kd">var</span> <span class="nx">gameInfo</span><span class="p">,</span> <span class="nx">gameSettings</span><span class="p">,</span> <span class="nx">gamePath</span><span class="p">,</span> <span class="nx">gameSettingsPath</span><span class="p">,</span> <span class="nx">gameSettingsObj</span><span class="p">;</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">gameDir</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerNode.addGameDir: gameDir must be string.&#39;</span><span class="p">);</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerNode.addGameDir: gameDir must be string. &#39;</span> <span class="o">+</span>
+                            <span class="s1">&#39;Found: &#39;</span> <span class="o">+</span> <span class="nx">gameDir</span><span class="p">);</span>
     <span class="p">}</span>
 
     <span class="nx">gameDir</span> <span class="o">=</span> <span class="nx">path</span><span class="p">.</span><span class="nx">resolve</span><span class="p">(</span><span class="nx">gameDir</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span><span class="p">;</span>
@@ -1639,11 +1639,11 @@ is aborted.</p>
     <span class="p">}</span>
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">J</span><span class="p">.</span><span class="nx">isArray</span><span class="p">(</span><span class="nx">alias</span><span class="p">))</span> <span class="p">{</span>
         <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerNode.createGameAlias: alias&#39;</span> <span class="o">+</span>
-                            <span class="s1">&#39;must be either string or array.&#39;</span><span class="p">);</span>
+                            <span class="s1">&#39;must be either string or array. Found: &#39;</span> <span class="o">+</span> <span class="nx">alias</span><span class="p">);</span>
     <span class="p">}</span>
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">gameName</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerNode.createGameAlias: gameName must be &#39;</span> <span class="o">+</span>
-                            <span class="s1">&#39;string.&#39;</span><span class="p">);</span>
+                            <span class="s1">&#39;string. Found: &#39;</span> <span class="o">+</span> <span class="nx">gameName</span><span class="p">);</span>
     <span class="p">}</span>
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">info</span><span class="p">.</span><span class="nx">games</span><span class="p">[</span><span class="nx">gameName</span><span class="p">])</span> <span class="p">{</span>
         <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;ServerNode.createGameAlias: game not found:&#39;</span> <span class="o">+</span>
@@ -1701,153 +1701,108 @@ and push into the alias array.</p>
         </td>
       </tr>
       <tr>
-        <td class="docs"><div class="dox">
-  <div class="summary">
-<div class="pilwrap" id="servernode.loadchannelsfile">
-  <h3>
-    <a href="#servernode.loadchannelsfile" name="servernode.loadchannelsfile" class="pilcrow">&#182;</a>
-    ServerNode.loadChannelsFile
-  </h3>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-69" id="section-69">&#182;</a>
 </div>
+<p>/**
+ * ### ServerNode.loadChannelsFile
+ *
+ * Loads <em>channels.js</em> from file system and adds channels accordingly
+ *
+ * Synchronously looks for a file called <em>channels.js</em> at the top
+ * level of the specified directory.
+ *
+ * The file <em>channels.js</em> must export an array containing channels object
+ * in the format specified by the <em>ServerChannel</em> constructor. Every channel
+ * configuration object can optionally have a <em>waitingRoom</em> object to
+ * automatically add a waiting room to the channel.
+ *
+ * @param {string} directory The path in which <em>channels.js</em> will be searched
+ *
+ * @see ServerNode.addChannel
+ * @see ServerChannel
+ * @see ServerChannel.createWaitingRoom
+ *
+ * @TODO: Do we still need this method?
+ */
+ServerNode.prototype.loadChannelsFile = function(directory, gameName) {
+    var channelsFile;
+    var conf, channel, waitRoom;
+    var i, len;
+    var channelConf, waitRoomConf;</p>
 
-  </div>
-  <div class="body"><p>Loads <em>channels.js</em> from file system and adds channels accordingly</p>
 
-<p>Synchronously looks for a file called <em>channels.js</em> at the top
-level of the specified directory.</p>
+<div class="highlight"><pre><code><span class="k">if</span> <span class="p">(</span><span class="s">&#39;string&#39;</span> <span class="o">!==</span> <span class="n">typeof</span> <span class="n">directory</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">throw</span> <span class="k">new</span> <span class="n">TypeError</span><span class="p">(</span><span class="s">&#39;ServerNode.loadChannelsFile: directory &#39;</span> <span class="o">+</span>
+                        <span class="s">&#39;must be string.&#39;</span><span class="p">);</span>
+<span class="p">}</span>
 
-<p>The file <em>channels.js</em> must export an array containing channels object
-in the format specified by the <em>ServerChannel</em> constructor. Every channel
-configuration object can optionally have a <em>waitingRoom</em> object to
-automatically add a waiting room to the channel.</p>
-  </div>
-  <div class="details">
-    <div class="dox_tag_title">Params</div>
-    <div class="dox_tag_detail">
-      <span class="dox_tag_name">directory</span>
-      <span class="dox_type">string</span>
-      <span>The path in which <em>channels.js</em> will be looked for</span>
-    </div>
-    <div class="dox_tag_title">See</div>
-    <div class="dox_tag_detail">
-      <span class="dox_type">ServerNode.addChannel</span>
-    </div>
-    <div class="dox_tag_title">See</div>
-    <div class="dox_tag_detail">
-      <span class="dox_type">ServerChannel</span>
-    </div>
-    <div class="dox_tag_title">See</div>
-    <div class="dox_tag_detail">
-      <span class="dox_type">ServerChannel.createWaitingRoom
-</span>
-    </div>
-  </div>
-</div>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-<span class="nx">ServerNode</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">loadChannelsFile</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">directory</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">)</span> <span class="p">{</span>
-    <span class="kd">var</span> <span class="nx">channelsFile</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">conf</span><span class="p">,</span> <span class="nx">channel</span><span class="p">,</span> <span class="nx">waitRoom</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">i</span><span class="p">,</span> <span class="nx">len</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">channelConf</span><span class="p">,</span> <span class="nx">waitRoomConf</span><span class="p">;</span>
+<span class="n">channelsFile</span> <span class="o">=</span> <span class="n">directory</span> <span class="o">+</span> <span class="s">&#39;channels.js&#39;</span><span class="p">;</span>
 
-    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">directory</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerNode.loadChannelsFile: directory myst be &#39;</span> <span class="o">+</span>
-                            <span class="s1">&#39;string.&#39;</span><span class="p">);</span>
+<span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">fs</span><span class="o">.</span><span class="n">existsSync</span><span class="p">(</span><span class="n">channelsFile</span><span class="p">))</span> <span class="k">return</span><span class="p">;</span>
+
+<span class="n">conf</span> <span class="o">=</span> <span class="nb">require</span><span class="p">(</span><span class="n">channelsFile</span><span class="p">);</span>
+
+<span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">J</span><span class="o">.</span><span class="n">isArray</span><span class="p">(</span><span class="n">conf</span><span class="p">))</span> <span class="p">{</span>
+    <span class="n">throw</span> <span class="k">new</span> <span class="n">TypeError</span><span class="p">(</span><span class="s">&#39;ServerNode.loadChannelsFile: channels file &#39;</span> <span class="o">+</span>
+                        <span class="s">&#39;must return an array of channels.&#39;</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="sr">//</span> <span class="n">Validate</span><span class="p">,</span>
+<span class="n">i</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+<span class="n">len</span> <span class="o">=</span> <span class="n">conf</span><span class="o">.</span><span class="nb">length</span><span class="p">;</span>
+<span class="k">for</span> <span class="p">(</span> <span class="p">;</span> <span class="o">++</span><span class="n">i</span> <span class="o">&lt;</span> <span class="n">len</span> <span class="p">;</span> <span class="p">)</span> <span class="p">{</span>
+
+    <span class="n">channelConf</span> <span class="o">=</span> <span class="n">conf</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="s">&#39;object&#39;</span> <span class="o">!==</span> <span class="n">typeof</span> <span class="n">channelConf</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">throw</span> <span class="k">new</span> <span class="n">TypeError</span><span class="p">(</span><span class="s">&#39;ServerNode.loadChannelsFile:&#39;</span> <span class="o">+</span>
+                            <span class="s">&#39;channels must be object. Directory: &#39;</span> <span class="o">+</span>
+                            <span class="n">directory</span><span class="p">);</span>
     <span class="p">}</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">channelConf</span><span class="o">.</span><span class="n">waitingRoom</span> <span class="o">&amp;&amp;</span>
+        <span class="s">&#39;object&#39;</span> <span class="o">!==</span> <span class="n">typeof</span> <span class="n">channelConf</span><span class="o">.</span><span class="n">waitingRoom</span><span class="p">)</span> <span class="p">{</span>
 
-    <span class="nx">channelsFile</span> <span class="o">=</span> <span class="nx">directory</span> <span class="o">+</span> <span class="s1">&#39;channels.js&#39;</span><span class="p">;</span>
-
-    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">fs</span><span class="p">.</span><span class="nx">existsSync</span><span class="p">(</span><span class="nx">channelsFile</span><span class="p">))</span> <span class="k">return</span><span class="p">;</span>
-
-    <span class="nx">conf</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="nx">channelsFile</span><span class="p">);</span>
-
-    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">J</span><span class="p">.</span><span class="nx">isArray</span><span class="p">(</span><span class="nx">conf</span><span class="p">))</span> <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerNode.loadChannelsFile: channels file &#39;</span> <span class="o">+</span>
-                            <span class="s1">&#39;must return an array of channels.&#39;</span><span class="p">);</span>
+        <span class="n">throw</span> <span class="k">new</span> <span class="n">TypeError</span><span class="p">(</span><span class="s">&#39;ServerNode.loadChannelsFile: waitingRoom &#39;</span> <span class="o">+</span>
+                            <span class="s">&#39;in channel configuration must be object. &#39;</span> <span class="o">+</span>
+                            <span class="s">&#39;Directory: &#39;</span> <span class="o">+</span> <span class="n">directory</span><span class="p">);</span>
     <span class="p">}</span>
+    <span class="n">waitRoomConf</span> <span class="o">=</span> <span class="n">channelConf</span><span class="o">.</span><span class="n">waitingRoom</span><span class="p">;</span>
+    <span class="nb">delete</span> <span class="n">channelConf</span><span class="o">.</span><span class="n">waitingRoom</span><span class="p">;</span>
 
+    <span class="n">channel</span> <span class="o">=</span> <span class="n">this</span><span class="o">.</span><span class="n">addChannel</span><span class="p">(</span><span class="n">channelConf</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">channel</span><span class="p">)</span> <span class="p">{</span>
+        <span class="sr">//</span> <span class="n">Add</span> <span class="n">the</span> <span class="n">list</span> <span class="n">of</span> <span class="n">channels</span> <span class="n">created</span> <span class="n">by</span> <span class="n">the</span> <span class="n">game</span><span class="o">.</span>
+        <span class="n">this</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">games</span><span class="p">[</span><span class="n">gameName</span><span class="p">]</span><span class="o">.</span><span class="n">channels</span><span class="p">[</span><span class="n">channel</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">true</span><span class="p">;</span>
 
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-70" id="section-70">&#182;</a>
-</div>
-<p>Validate,</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-    <span class="nx">i</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
-    <span class="nx">len</span> <span class="o">=</span> <span class="nx">conf</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span>
-    <span class="k">for</span> <span class="p">(</span> <span class="p">;</span> <span class="o">++</span><span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">len</span> <span class="p">;</span> <span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">waitRoomConf</span><span class="p">)</span> <span class="p">{</span>
 
-        <span class="nx">channelConf</span> <span class="o">=</span> <span class="nx">conf</span><span class="p">[</span><span class="nx">i</span><span class="p">];</span>
+            <span class="sr">//</span> <span class="n">We</span> <span class="n">prepend</span> <span class="n">the</span> <span class="n">baseDir</span> <span class="n">parameter</span><span class="p">,</span> <span class="k">if</span> <span class="n">any</span><span class="o">.</span>
+            <span class="sr">//</span> <span class="n">If</span> <span class="n">logicPath</span> <span class="n">is</span> <span class="ow">not</span> <span class="n">string</span> <span class="n">we</span> <span class="n">let</span> <span class="n">the</span> <span class="n">WaitingRoom</span>
+            <span class="sr">//</span> <span class="n">constructor</span> <span class="n">throw</span> <span class="n">an</span> <span class="n">error</span><span class="o">.</span>
+            <span class="k">if</span> <span class="p">(</span><span class="s">&#39;string&#39;</span> <span class="o">===</span> <span class="n">typeof</span> <span class="n">waitRoomConf</span><span class="o">.</span><span class="n">logicPath</span><span class="p">)</span> <span class="p">{</span>
+                <span class="n">waitRoomConf</span><span class="o">.</span><span class="n">logicPath</span> <span class="o">=</span>
+                    <span class="n">directory</span> <span class="o">+</span> <span class="s">&#39;server/&#39;</span> <span class="o">+</span> <span class="n">waitRoomConf</span><span class="o">.</span><span class="n">logicPath</span><span class="p">;</span>
+            <span class="p">}</span>
 
-        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">channelConf</span><span class="p">)</span> <span class="p">{</span>
-            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerNode.loadChannelsFile:&#39;</span> <span class="o">+</span>
-                                <span class="s1">&#39;channels must be object. Directory: &#39;</span> <span class="o">+</span>
-                                <span class="nx">directory</span><span class="p">);</span>
-        <span class="p">}</span>
-        <span class="k">if</span> <span class="p">(</span><span class="nx">channelConf</span><span class="p">.</span><span class="nx">waitingRoom</span> <span class="o">&amp;&amp;</span>
-            <span class="s1">&#39;object&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">channelConf</span><span class="p">.</span><span class="nx">waitingRoom</span><span class="p">)</span> <span class="p">{</span>
+            <span class="n">waitRoom</span> <span class="o">=</span> <span class="n">channel</span><span class="o">.</span><span class="n">createWaitingRoom</span><span class="p">(</span><span class="n">waitRoomConf</span><span class="p">);</span>
 
-            <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerNode.loadChannelsFile: waitingRoom &#39;</span> <span class="o">+</span>
-                                <span class="s1">&#39;in channel configuration must be object. &#39;</span> <span class="o">+</span>
-                                <span class="s1">&#39;Directory: &#39;</span> <span class="o">+</span> <span class="nx">directory</span><span class="p">);</span>
-        <span class="p">}</span>
-        <span class="nx">waitRoomConf</span> <span class="o">=</span> <span class="nx">channelConf</span><span class="p">.</span><span class="nx">waitingRoom</span><span class="p">;</span>
-        <span class="k">delete</span> <span class="nx">channelConf</span><span class="p">.</span><span class="nx">waitingRoom</span><span class="p">;</span>
-
-        <span class="nx">channel</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">addChannel</span><span class="p">(</span><span class="nx">channelConf</span><span class="p">);</span>
-        <span class="k">if</span> <span class="p">(</span><span class="nx">channel</span><span class="p">)</span> <span class="p">{</span>
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-71" id="section-71">&#182;</a>
-</div>
-<p>Add the list of channels created by the game.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-            <span class="k">this</span><span class="p">.</span><span class="nx">info</span><span class="p">.</span><span class="nx">games</span><span class="p">[</span><span class="nx">gameName</span><span class="p">].</span><span class="nx">channels</span><span class="p">[</span><span class="nx">channel</span><span class="p">.</span><span class="nx">name</span><span class="p">]</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
-
-            <span class="k">if</span> <span class="p">(</span><span class="nx">waitRoomConf</span><span class="p">)</span> <span class="p">{</span>
-
-
-</pre></div>
-        </td>
-      </tr>
-      <tr>
-        <td class="docs">
-<div class="pilwrap">
-  <a class="pilcrow" href="#section-72" id="section-72">&#182;</a>
-</div>
-<p>We prepend the baseDir parameter, if any.
-If logicPath is not string we let the WaitingRoom
-constructor throw an error.</p>
-        </td>
-        <td class="code highlight"><div class="highlight"><pre>
-                <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">waitRoomConf</span><span class="p">.</span><span class="nx">logicPath</span><span class="p">)</span> <span class="p">{</span>
-                    <span class="nx">waitRoomConf</span><span class="p">.</span><span class="nx">logicPath</span> <span class="o">=</span>
-                        <span class="nx">directory</span> <span class="o">+</span> <span class="s1">&#39;server/&#39;</span> <span class="o">+</span> <span class="nx">waitRoomConf</span><span class="p">.</span><span class="nx">logicPath</span><span class="p">;</span>
-                <span class="p">}</span>
-
-                <span class="nx">waitRoom</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">createWaitingRoom</span><span class="p">(</span><span class="nx">waitRoomConf</span><span class="p">);</span>
-
-                <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">waitRoom</span><span class="p">)</span> <span class="p">{</span>
-                    <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;ServerNode.loadChannelsFile: could &#39;</span> <span class="o">+</span>
-                                    <span class="s1">&#39;not add waiting room to channel &#39;</span> <span class="o">+</span>
-                                    <span class="nx">channel</span><span class="p">.</span><span class="nx">name</span><span class="p">);</span>
-                <span class="p">}</span>
+            <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">waitRoom</span><span class="p">)</span> <span class="p">{</span>
+                <span class="n">throw</span> <span class="k">new</span> <span class="n">Error</span><span class="p">(</span><span class="s">&#39;ServerNode.loadChannelsFile: could &#39;</span> <span class="o">+</span>
+                                <span class="s">&#39;not add waiting room to channel &#39;</span> <span class="o">+</span>
+                                <span class="n">channel</span><span class="o">.</span><span class="n">name</span><span class="p">);</span>
             <span class="p">}</span>
         <span class="p">}</span>
     <span class="p">}</span>
-<span class="p">};</span>
+<span class="p">}</span>
+</code></pre></div>
+
+
+
+<p>};</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
 
 
 </pre></div>
@@ -2231,7 +2186,7 @@ that passes the correct objects to the configurator function.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-79" id="section-79">&#182;</a>
+  <a class="pilcrow" href="#section-76" id="section-76">&#182;</a>
 </div>
 <p>Requiring configuration function (can throw errors).</p>
         </td>
@@ -2250,7 +2205,7 @@ that passes the correct objects to the configurator function.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-80" id="section-80">&#182;</a>
+  <a class="pilcrow" href="#section-77" id="section-77">&#182;</a>
 </div>
 <p>The configuration function is called internally by <em>cb</em> that takes
 care of passing the right parameters to it.</p>
@@ -2483,7 +2438,7 @@ are loaded from the nodegame-server/ssl/ directory.</span>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-85" id="section-85">&#182;</a>
+  <a class="pilcrow" href="#section-82" id="section-82">&#182;</a>
 </div>
 <p>Load default key and certificate if requested.</p>
         </td>
@@ -2513,7 +2468,7 @@ are loaded from the nodegame-server/ssl/ directory.</span>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-86" id="section-86">&#182;</a>
+  <a class="pilcrow" href="#section-83" id="section-83">&#182;</a>
 </div>
 <p>Create http or ssl server.</p>
         </td>
@@ -2696,7 +2651,7 @@ checks that endpoints are not already in use.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-91" id="section-91">&#182;</a>
+  <a class="pilcrow" href="#section-88" id="section-88">&#182;</a>
 </div>
 <p>Validate options object, and set default endpoint if undefined.</p>
         </td>
@@ -2728,7 +2683,7 @@ checks that endpoints are not already in use.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-92" id="section-92">&#182;</a>
+  <a class="pilcrow" href="#section-89" id="section-89">&#182;</a>
 </div>
 <p>See if admin and player server have the same endpoint.</p>
         </td>
@@ -2763,7 +2718,7 @@ checks that endpoints are not already in use.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-93" id="section-93">&#182;</a>
+  <a class="pilcrow" href="#section-90" id="section-90">&#182;</a>
 </div>
 <p>See if an endpoint with the same name is already in use.</p>
         </td>
