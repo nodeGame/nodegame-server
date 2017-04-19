@@ -191,7 +191,7 @@
 </div>
 
 
-<p>Copyright(c) 2017 Stefano Balietti <a href="&#109;&#x61;i&#x6C;to:&#115;&#x74;&#101;&#x40;&#110;&#111;&#100;&#101;&#x67;&#x61;&#x6D;&#x65;&#46;&#111;&#114;&#x67;">&#115;&#x74;&#101;&#x40;&#110;&#111;&#100;&#101;&#x67;&#x61;&#x6D;&#x65;&#46;&#111;&#114;&#x67;</a>
+<p>Copyright(c) 2017 Stefano Balietti <a href="&#x6D;&#97;&#105;&#x6C;&#x74;&#111;:&#x73;t&#x65;&#x40;&#110;&#x6F;&#100;&#101;&#103;&#97;&#109;&#101;&#x2E;&#x6F;&#114;g">&#x73;t&#x65;&#x40;&#110;&#x6F;&#100;&#101;&#103;&#97;&#109;&#101;&#x2E;&#x6F;&#114;g</a>
 MIT Licensed</p>
   </div>
   <div class="body"><p>Creates the Player, and Admin Server</p>
@@ -450,7 +450,7 @@ and that are not found in <em>admin</em> or <em>player</em> will be added to the
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">name</span> <span class="o">=</span> <span class="nx">options</span><span class="p">.</span><span class="nx">name</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">name</span> <span class="o">=</span> <span class="nx">options</span><span class="p">.</span><span class="nx">name</span><span class="p">;</span>
 
 
 </pre></div>
@@ -3191,7 +3191,7 @@ Optional. Array of strings to give PhantomJS as command line arguments</li>
     <span class="p">}</span>
     <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">gameName</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">omitGameName</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">defaultChannel</span><span class="p">)</span> <span class="p">{</span>
-            <span class="nx">gameName</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">gameName</span>
+            <span class="nx">gameName</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">gameName</span><span class="p">;</span>
         <span class="p">}</span>
     <span class="p">}</span>
     <span class="k">else</span> <span class="p">{</span>
@@ -3269,7 +3269,7 @@ This should be a view on ChannelRegistry.</p>
             <span class="nx">clientId</span> <span class="o">=</span> <span class="nx">clientObj</span><span class="p">.</span><span class="nx">id</span><span class="p">;</span>
         <span class="p">}</span>
         <span class="k">else</span> <span class="p">{</span>
-            <span class="nx">clientId</span> <span class="o">=</span> <span class="nx">options</span><span class="p">.</span><span class="nx">auth</span>
+            <span class="nx">clientId</span> <span class="o">=</span> <span class="nx">options</span><span class="p">.</span><span class="nx">auth</span><span class="p">;</span>
         <span class="p">}</span>
     <span class="p">}</span>
     <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;number&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">options</span><span class="p">.</span><span class="nx">auth</span><span class="p">)</span> <span class="p">{</span>
@@ -3407,7 +3407,7 @@ This should be a view on ChannelRegistry.</p>
                           <span class="s1">&#39;, Signal: &#39;</span> <span class="o">+</span> <span class="nx">signal</span><span class="p">;</span>
                 <span class="nx">logger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">,</span> <span class="p">{</span> <span class="nx">code</span><span class="o">:</span> <span class="nx">code</span><span class="p">,</span> <span class="nx">signal</span><span class="o">:</span> <span class="nx">signal</span> <span class="p">});</span>
                 <span class="k">if</span> <span class="p">(</span><span class="nx">that</span><span class="p">.</span><span class="nx">servernode</span><span class="p">.</span><span class="nx">debug</span><span class="p">)</span> <span class="p">{</span>
-                    <span class="k">throw</span> <span class="nb">Error</span><span class="p">(</span><span class="nx">msg</span><span class="p">);</span>
+                    <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="nx">msg</span><span class="p">);</span>
                 <span class="p">}</span>
             <span class="p">}</span>
 

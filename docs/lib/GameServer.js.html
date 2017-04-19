@@ -1504,6 +1504,11 @@ because .stage and .stageLevel could be overwritten.</p>
       <span>Optional. The name of the room in which
   the client is to be placed. Default: Waiting or Requirements room</span>
     </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">clientId</span>
+      <span class="dox_type">string</span>
+      <span>Optional. Specifies the client id</span>
+    </div>
     <div class="dox_tag_title">Returns</div>
     <div class="dox_tag_detail">
       <span class="dox_tag_name"></span>
@@ -1526,15 +1531,15 @@ because .stage and .stageLevel could be overwritten.</p>
 <span class="nx">GameServer</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">onConnect</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">socketId</span><span class="p">,</span> <span class="nx">socketObj</span><span class="p">,</span> <span class="nx">handshake</span><span class="p">,</span>
                                           <span class="nx">clientType</span><span class="p">,</span> <span class="nx">startingRoom</span><span class="p">,</span> <span class="nx">clientId</span><span class="p">)</span> <span class="p">{</span>
 
-    <span class="kd">var</span> <span class="nx">decoded</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">clientId</span><span class="p">,</span> <span class="nx">clientObj</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">decoded</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">clientObj</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">cookies</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">newConnection</span><span class="p">,</span> <span class="nx">invalidSessionCookie</span><span class="p">,</span> <span class="nx">clearNode</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">tmpSid</span><span class="p">,</span> <span class="nx">tmpId</span><span class="p">,</span> <span class="nx">tmpType</span><span class="p">;</span>
 
     <span class="nx">newConnection</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
     <span class="nx">invalidSessionCookie</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
-    
-    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">handshake</span><span class="p">.</span><span class="nx">headers</span> <span class="o">||</span> <span class="o">!</span><span class="nx">handshake</span><span class="p">.</span><span class="nx">headers</span><span class="p">.</span><span class="nx">cookie</span><span class="p">)</span> <span class="nx">cookies</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">handshake</span><span class="p">.</span><span class="nx">headers</span> <span class="o">||</span> <span class="o">!</span><span class="nx">handshake</span><span class="p">.</span><span class="nx">headers</span><span class="p">.</span><span class="nx">cookie</span><span class="p">)</span> <span class="nx">cookies</span> <span class="o">=</span> <span class="p">{};</span>
     <span class="k">else</span> <span class="nx">cookies</span> <span class="o">=</span> <span class="nx">parseCookies</span><span class="p">(</span><span class="nx">handshake</span><span class="p">.</span><span class="nx">headers</span><span class="p">.</span><span class="nx">cookie</span><span class="p">);</span>
 
     <span class="nx">decoded</span> <span class="o">=</span> <span class="p">{};</span>
@@ -1674,7 +1679,7 @@ Let's stop the game immediately after HI.</p>
             <span class="nx">room</span><span class="o">:</span> <span class="nx">startingRoom</span><span class="p">,</span>
             <span class="nx">clientId</span><span class="o">:</span> <span class="nx">clientId</span><span class="p">,</span>
             <span class="nx">clientType</span><span class="o">:</span> <span class="nx">clientType</span><span class="p">,</span>
-            <span class="nx">validSessionCookie</span><span class="o">:</span> <span class="o">!</span><span class="nx">invalidSessionCookie</span><span class="p">,</span>
+            <span class="nx">validSessionCookie</span><span class="o">:</span> <span class="o">!</span><span class="nx">invalidSessionCookie</span>
         <span class="p">});</span>
         <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
 
@@ -1727,7 +1732,7 @@ Let's stop the game immediately after HI.</p>
             <span class="nx">room</span><span class="o">:</span> <span class="nx">startingRoom</span><span class="p">,</span>
             <span class="nx">clientId</span><span class="o">:</span> <span class="nx">clientId</span><span class="p">,</span>
             <span class="nx">validSessionCookie</span><span class="o">:</span> <span class="o">!</span><span class="nx">invalidSessionCookie</span><span class="p">,</span>
-            <span class="nx">socketId</span><span class="o">:</span> <span class="nx">socketId</span><span class="p">,</span>
+            <span class="nx">socketId</span><span class="o">:</span> <span class="nx">socketId</span>
         <span class="p">});</span>
 
 
@@ -1861,7 +1866,7 @@ is disposed, exactly as it was not authorized.</p>
             <span class="nx">room</span><span class="o">:</span> <span class="nx">startingRoom</span><span class="p">,</span>
             <span class="nx">clientId</span><span class="o">:</span> <span class="nx">clientId</span><span class="p">,</span>
             <span class="nx">validSessionCookie</span><span class="o">:</span> <span class="o">!</span><span class="nx">invalidSessionCookie</span><span class="p">,</span>
-            <span class="nx">socketId</span><span class="o">:</span> <span class="nx">socketId</span><span class="p">,</span>
+            <span class="nx">socketId</span><span class="o">:</span> <span class="nx">socketId</span>
         <span class="p">});</span>
 
 </pre></div>
@@ -2122,7 +2127,7 @@ to the first level.</p>
             <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">gameInfo</span><span class="p">.</span><span class="nx">requirements</span> <span class="o">&amp;&amp;</span>
                 <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">gameInfo</span><span class="p">.</span><span class="nx">requirements</span><span class="p">.</span><span class="nx">enabled</span><span class="p">)</span> <span class="p">{</span>
 
-                <span class="nx">startingRoom</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">requirementsRoom</span><span class="p">.</span><span class="nx">name</span>
+                <span class="nx">startingRoom</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">requirementsRoom</span><span class="p">.</span><span class="nx">name</span><span class="p">;</span>
             <span class="p">}</span>
             <span class="k">else</span> <span class="p">{</span>
                 <span class="nx">startingRoom</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">waitingRoom</span><span class="p">.</span><span class="nx">name</span><span class="p">;</span>
@@ -2629,7 +2634,7 @@ TODO: add an error code in the query string. Need to adapt page as well
         </td>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">GameServer</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">disposeUnauthorizedClient</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">socketId</span><span class="p">,</span> <span class="nx">socketObj</span><span class="p">)</span> <span class="p">{</span>
-    <span class="kd">var</span> <span class="nx">to</span><span class="p">,</span> <span class="nx">connStr</span><span class="p">,</span> <span class="nx">r</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">to</span><span class="p">,</span> <span class="nx">connStr</span><span class="p">;</span>
     <span class="nx">to</span> <span class="o">=</span> <span class="nx">ngc</span><span class="p">.</span><span class="nx">constants</span><span class="p">.</span><span class="nx">UNAUTH_PLAYER</span><span class="p">;</span>
 
     <span class="nx">connStr</span> <span class="o">=</span> <span class="s2">&quot;Unauthorized client. Socket id: &lt;&quot;</span> <span class="o">+</span> <span class="nx">socketId</span> <span class="o">+</span> <span class="s2">&quot;&gt;&quot;</span><span class="p">;</span>
@@ -2672,7 +2677,7 @@ the client will discard the messages.</p>
         <span class="nx">target</span><span class="o">:</span> <span class="nx">ngc</span><span class="p">.</span><span class="nx">constants</span><span class="p">.</span><span class="nx">target</span><span class="p">.</span><span class="nx">HI</span><span class="p">,</span>
         <span class="nx">to</span><span class="o">:</span> <span class="nx">to</span><span class="p">,</span>
         <span class="nx">data</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">getAccessDeniedUrl</span><span class="p">(),</span>
-        <span class="nx">text</span><span class="o">:</span> <span class="s1">&#39;redirect&#39;</span><span class="p">,</span>
+        <span class="nx">text</span><span class="o">:</span> <span class="s1">&#39;redirect&#39;</span>
     <span class="p">}),</span> <span class="nx">socketId</span><span class="p">);</span>
 <span class="p">};</span>
 
@@ -3228,8 +3233,19 @@ invoking this method, which evaluates only if the sender exists.</p>
     <span class="kd">var</span> <span class="nx">that</span> <span class="o">=</span> <span class="k">this</span><span class="p">,</span>
     <span class="nx">sys</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">,</span>
     <span class="nx">action</span> <span class="o">=</span> <span class="nx">ngc</span><span class="p">.</span><span class="nx">constants</span><span class="p">.</span><span class="nx">action</span><span class="p">,</span>
-    <span class="nx">say</span> <span class="o">=</span> <span class="nx">action</span><span class="p">.</span><span class="nx">SAY</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">,</span>
-    <span class="nx">set</span> <span class="o">=</span> <span class="nx">action</span><span class="p">.</span><span class="nx">SET</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">,</span>
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-115" id="section-115">&#182;</a>
+</div>
+<p>say = action.SAY + '.',
+set = action.SET + '.',</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
     <span class="nx">get</span> <span class="o">=</span> <span class="nx">action</span><span class="p">.</span><span class="nx">GET</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">;</span>
 
 
@@ -3262,7 +3278,7 @@ invoking this method, which evaluates only if the sender exists.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-116" id="section-116">&#182;</a>
+  <a class="pilcrow" href="#section-117" id="section-117">&#182;</a>
 </div>
 <p>Get the room of the player to infer the game.</p>
         </td>
