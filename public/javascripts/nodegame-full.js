@@ -10652,7 +10652,7 @@ if (!Array.prototype.indexOf) {
     node.support = JSUS.compatibility();
 
     // Auto-Generated.
-    node.version = '3.5.3';
+    node.version = '3.5.4';
 
 })(window);
 
@@ -10774,14 +10774,6 @@ if (!Array.prototype.indexOf) {
     // A client updates his Player object
     k.target.PLAYER_UPDATE = 'PLAYER_UPDATE';
 
-    // #### target.STAGE
-    // A client notifies his own stage
-    k.target.STAGE = 'STAGE';
-
-    // #### target.STAGE_LEVEL
-    // A client notifies his own stage level
-    k.target.STAGE_LEVEL = 'STAGE_LEVEL';
-
     // #### target.REDIRECT
     // Redirects a client to a new uri
     k.target.REDIRECT = 'REDIRECT';
@@ -10808,7 +10800,7 @@ if (!Array.prototype.indexOf) {
 
     // #### target.LOG
     // A generic log message used to send info to the server
-    // @see node.constants.remoteVerbosity
+    // @see NodeGameClient.remoteVerbosity
     k.target.LOG = 'LOG';
 
     // #### target.BYE
@@ -10826,6 +10818,16 @@ if (!Array.prototype.indexOf) {
 
     k.target.WARN = 'WARN';   // To do.
     k.target.ERR  = 'ERR';    // To do.
+
+    // Old targets.
+
+    // #### target.STAGE
+    // A client notifies his own stage
+    // k.target.STAGE = 'STAGE';
+
+    // #### target.STAGE_LEVEL
+    // A client notifies his own stage level
+    // k.target.STAGE_LEVEL = 'STAGE_LEVEL';
 
 
     // ### node.constants.gamecommands
@@ -20524,7 +20526,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Roler
- * Copyright(c) 2017 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Handles assigning roles to matches.
@@ -21280,6 +21282,9 @@ if (!Array.prototype.indexOf) {
             throw new TypeError('Roler.replaceId: newId should be a ' +
                                 'non-empty string. Found: ' + newId);
         }
+
+        // No id was assigned yet.
+        if (!this.id2RoleMatches) return false;
 
         // Update id2RoleMatches and role2IdMatches at the same time.
         m = this.id2RoleMatches;
@@ -22308,10 +22313,13 @@ if (!Array.prototype.indexOf) {
             throw new TypeError('Matcher.replaceId: oldId should be string. ' +
                                 'Found: ' + oldId);
         }
-        if ('string' !== typeof newId && newId.trim() !== '') {
+        if ('string' !== typeof newId || newId.trim() === '') {
             throw new TypeError('Matcher.replaceId: newId should be a ' +
                                 'non-empty string. Found: ' + newId);
         }
+
+        // No id was assigned yet.
+        if (!this.resolvedMatches) return false;
 
         // IdsMap.
         m = this.idsMap[oldId];
@@ -22377,7 +22385,6 @@ if (!Array.prototype.indexOf) {
 
         // Update resolvedMatchesById.
         m = this.resolvedMatchesById;
-
         for (i in m) {
             if (m.hasOwnProperty(i)) {
                 if (i === oldId) {
@@ -22386,22 +22393,24 @@ if (!Array.prototype.indexOf) {
                 }
                 else {
                     lenJ = m[i].length;
-                    if (lenJ == 1) {
-                        m[i][0] = newId;
-                    }
-                    else if (lenJ === 2) {
-                        if (m[i][0] === oldId) m[i][0] = newId;
-                        else m[i][1] = newId;
-                    }
-                    else {
+// THIS OPTIMIZATION DOES NOT SEEM TO WORK.
+// In fact, there might be more matches with the same
+// partner in sequence. And also if === 1, it should be checked.
+//                     if (lenJ == 1) {
+//                         m[i][0] = newId;
+//                     }
+//                     else if (lenJ === 2) {
+//                         if (m[i][0] === oldId) m[i][0] = newId;
+//                         else m[i][1] = newId;
+//                     }
+//                     else {
                         j = -1;
                         for ( ; ++j < lenJ ; ) {
                             if (m[i][j] === oldId) {
                                 m[i][j] = newId;
-                                break;
                             }
                         }
-                    }
+//                    }
                 }
             }
         }
@@ -22825,10 +22834,13 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # MatcherManager
- * Copyright(c) 2017 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Handles matching roles to players and players to players.
+ *
+ * ---
+ * nodegame.org
  */
 (function(exports, parent) {
 
@@ -22885,6 +22897,12 @@ if (!Array.prototype.indexOf) {
          */
         this.lastMatches = null;
 
+        /**
+         * ### MatcherManager.lastMatchesById
+         *
+         * Reference to the last matches organized by id of client
+         */
+        this.lastMatchesById = {};
     }
 
     /**
@@ -22914,7 +22932,7 @@ if (!Array.prototype.indexOf) {
      *
      * Parses a conf object and returns the desired matches of roles and players
      *
-     * Stores a reference of last matches under `MatcherManager.lastMatches`.
+     * Stores references of last settings and matches.
      *
      * Returned matches are in a format which is ready to be sent out as
      * remote options. That is:
@@ -22936,7 +22954,10 @@ if (!Array.prototype.indexOf) {
      *
      * @return {array} Array of matches ready to be sent out as remote options.
      *
+     * @see randomPairs
      * @see MatcherManager.lastMatches
+     * @see MatcherManager.lastMatchesById
+     * @see MatcherManager.lastSettings
      * @see Matcher.match
      * @see Game.gotoStep
      */
@@ -22968,7 +22989,6 @@ if (!Array.prototype.indexOf) {
                             '" did not return matches.');
         }
 
-        this.lastMatches = matches;
         return matches;
     };
 
@@ -23133,12 +23153,42 @@ if (!Array.prototype.indexOf) {
      *
      * @see Matcher.replaceId
      * @see Roler.replaceId
+     *
+     * @experimental
+     *
+     * TODO: this does not scale up. Maybe have another registry of
+     * substituted ids.
+     *
+     * TODO: maybe return info about the replaced id, e.g. current
+     * options, instead of boolean.
      */
     MatcherManager.prototype.replaceId = function(oldId, newId) {
         var res;
         res = this.matcher.replaceId(oldId, newId);
         res = res && this.roler.replaceId(oldId, newId);
         return res;
+    };
+
+    /**
+     * ### MatcherManager.getSetupFor
+     *
+     * Returns the setup object (partner and role options) for a specific id
+     *
+     * @param {string} id The id to get the setup object for
+     *
+     * @return {object} The requested setup object
+     *
+     * @see Matcher.match
+     * @see round2index
+     */
+    MatcherManager.prototype.getSetupFor = function(id) {
+        var out;
+        if ('string' !== typeof id) {
+            throw new TypeError('MatcherManager.getSetupFor: id must be ' +
+                                'string. Found: ' + id);
+        }
+        out = this.lastMatchesById[id];
+        return out || null;
     };
 
     // ## Helper Methods.
@@ -23189,11 +23239,19 @@ if (!Array.prototype.indexOf) {
         var r1, r2;
         var ii, i, len;
         var roundMatches, nMatchesIdx, match, id1, id2, missId;
-        var matches,  sayPartner, doRoles;
+        var matches, matchesById, sayPartner, doRoles;
         var opts, roles, matchedRoles;
 
         var game, n;
         var nRounds;
+
+        // Delete previous results.
+        this.lastMatches = null;
+        this.lastMatchesById = null;
+
+        // Init local variables.
+
+        matchesById = {};
 
         sayPartner = 'undefined' === typeof settings.sayPartner ?
             true : !!settings.sayPartner;
@@ -23309,6 +23367,9 @@ if (!Array.prototype.indexOf) {
                     }
                     // Add options to array.
                     matches[ii] = opts;
+
+                    // Keep reference.
+                    matchesById[id1] = opts.options;
                 }
 
                 // Prepare options to send to player 2, if role2 is defined.
@@ -23327,22 +23388,29 @@ if (!Array.prototype.indexOf) {
                     }
                     // Add options to array.
                     matches[ii] = opts;
+
+                    // Keep reference.
+                    matchesById[id2] = opts.options;
                 }
             }
             else if (sayPartner) {
                 if (id1 !== missId) {
                     opts = { id: id1, options: { partner: id2 } };
                     matches[ii] = opts;
+                    matchesById[id1] = opts.options;
                 }
                 if (id2 !== missId) {
                     if (id1 !== missId) ii++;
                     opts = { id: id2, options: { partner: id1 } };
                     matches[ii] = opts;
+                    matchesById[id2] = opts.options;
                 }
             }
         }
 
-        // Store reference to last valid settings.
+        // Store references.
+        this.lastMatches = matches;
+        this.lastMatchesById = matchesById;
         this.lastSettings = settings;
 
         return matches;
@@ -23470,7 +23538,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Game
- * Copyright(c) 2017 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Handles the flow of the game
@@ -23691,11 +23759,10 @@ if (!Array.prototype.indexOf) {
          *
          * TRUE, if DONE was emitted and evaluated successfully
          *
-         * If TRUE, when PLAYING is emitted the game will try to step
-         * immediately.
+         * If TRUE, when PLAYING is emitted `node.done` is called
+         * immediately, and the game tries to step forward.
          *
          * @see NodeGameClient.done
-         * @see Game.doneCalled
          */
         this.willBeDone = false;
 
@@ -23720,7 +23787,7 @@ if (!Array.prototype.indexOf) {
          *
          * @see Game.step
          */
-        this._steppedSteps = [new GameStage()];
+        this._steppedSteps = [ new GameStage() ];
 
         /**
          * ### Game._breakStage
@@ -24216,7 +24283,6 @@ if (!Array.prototype.indexOf) {
                         node.remoteCommand('goto_step', pid, remoteOptions);
                     }
                 }
-
             }
             else {
                 if (curStep.stage === 0) {
@@ -24374,7 +24440,11 @@ if (!Array.prototype.indexOf) {
         // Update list of stepped steps.
         this._steppedSteps.push(nextStep);
 
-        this.execStep(this.getCurrentGameStage());
+        // If we should be done now, we emit PLAYING without executing the step.
+        // node.game.willBeDone is already set, and will trigger node.done().
+        if (this.beDone) node.emit('PLAYING');        
+        else this.execStep(this.getCurrentGameStage());        
+
         return true;
     };
 
@@ -24460,7 +24530,7 @@ if (!Array.prototype.indexOf) {
                     opts = { highlight: true, markAttempt: true };
                 }
                 else {
-                    opts = { highlight: false, markAttemps: false };
+                    opts = { highlight: false, markAttempt: false };
                 }
 
                 values = this[widget.ref].getValues(opts);
@@ -25357,10 +25427,13 @@ if (!Array.prototype.indexOf) {
      *
      * Valid options:
      *
-     *   - willBeDone: sets game.willBeDone to TRUE,
+     *   - willBeDone: game will be done after loading the frame and executing
+     *       the step callback function,
+     *   - beDone: game is done without loading the frame or 
+     *       executing the step callback function,
      *   - plot: add entries to the tmpCache of the plot,
      *   - cb: a callback executed with the game context, and with options
-     *         object itself as parameter
+     *       object itself as parameter
      *
      * @param {Game} game The game instance
      * @param {object} options The options to process
@@ -25368,11 +25441,18 @@ if (!Array.prototype.indexOf) {
      * @see Game.gotoStep
      * @see GamePlot.tmpCache
      * @see Game.willBeDone
+     * @see Game.beDone
      */
     function processGotoStepOptions(game, options) {
         var prop;
 
-        if (options.willBeDone) {
+        // Be done.. now! Skips Game.execStep.
+        if (options.beDone) {
+            game.willBeDone = true;
+            game.beDone = true;
+        }
+        else if (options.willBeDone) {
+            // TODO: why not setting willBeDone? It was not working, check!
             // Call node.done() immediately after PLAYING is emitted.
             game.node.once('PLAYING', function() {
                 game.node.done();
@@ -28254,10 +28334,13 @@ if (!Array.prototype.indexOf) {
             throw new TypeError('Matcher.replaceId: oldId should be string. ' +
                                 'Found: ' + oldId);
         }
-        if ('string' !== typeof newId && newId.trim() !== '') {
+        if ('string' !== typeof newId || newId.trim() === '') {
             throw new TypeError('Matcher.replaceId: newId should be a ' +
                                 'non-empty string. Found: ' + newId);
         }
+
+        // No id was assigned yet.
+        if (!this.resolvedMatches) return false;
 
         // IdsMap.
         m = this.idsMap[oldId];
@@ -28323,7 +28406,6 @@ if (!Array.prototype.indexOf) {
 
         // Update resolvedMatchesById.
         m = this.resolvedMatchesById;
-
         for (i in m) {
             if (m.hasOwnProperty(i)) {
                 if (i === oldId) {
@@ -28332,22 +28414,24 @@ if (!Array.prototype.indexOf) {
                 }
                 else {
                     lenJ = m[i].length;
-                    if (lenJ == 1) {
-                        m[i][0] = newId;
-                    }
-                    else if (lenJ === 2) {
-                        if (m[i][0] === oldId) m[i][0] = newId;
-                        else m[i][1] = newId;
-                    }
-                    else {
+// THIS OPTIMIZATION DOES NOT SEEM TO WORK.
+// In fact, there might be more matches with the same
+// partner in sequence. And also if === 1, it should be checked.
+//                     if (lenJ == 1) {
+//                         m[i][0] = newId;
+//                     }
+//                     else if (lenJ === 2) {
+//                         if (m[i][0] === oldId) m[i][0] = newId;
+//                         else m[i][1] = newId;
+//                     }
+//                     else {
                         j = -1;
                         for ( ; ++j < lenJ ; ) {
                             if (m[i][j] === oldId) {
                                 m[i][j] = newId;
-                                break;
                             }
                         }
-                    }
+//                    }
                 }
             }
         }
@@ -29071,10 +29155,10 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Log
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti
  * MIT Licensed
  *
- * `nodeGame` logging module
+ * nodeGame logging module
  */
 (function(exports, parent) {
 
@@ -29099,8 +29183,8 @@ if (!Array.prototype.indexOf) {
      * smaller than `this.remoteVerbosity`.
      *
      * @param {string} txt The text to output
-     * @param {string|number} level Optional. The verbosity level of this log.
-     *   Default: 'warn'
+     * @param {string} level Optional. The verbosity level of this log.
+     *   Default: 'info'
      * @param {string} prefix Optional. A text to display at the beginning of
      *   the log entry. Default: 'ng> '
      */
@@ -29618,26 +29702,39 @@ if (!Array.prototype.indexOf) {
      *
      * Sets the language for a playerList
      *
-     * @param {object} language Object describing language.
-     *   Needs shortName property.
+     * @param {object|string} lang Language information. If string, it must
+     *   be the full name, and the the first 2 letters lower-cased are used
+     *   as shortName. If object it must have the following format:
+     *   ``{
+     *      name: 'English',
+     *      shortName: 'en',
+     *      nativeName: 'English',
+     *      path: 'en/' // Optional, default equal to shortName + '/'.
+     *   }``
+     *
      * @param {boolean} prefix Optional. If TRUE, the window uri prefix is
      *   set to the value of lang.path. node.window must be defined,
      *   otherwise a warning is shown. Default, FALSE.
      *
-     * @return {object} The language object
+     * @return {object|string} The language object or string
      *
      * @see node.setup.lang
      * @see GameWindow.setUriPrefix
      *
      * @emit LANGUAGE_SET
      */
-    NGC.prototype.setLanguage = function(language, prefix) {
-        if ('object' !== typeof language) {
-            throw new TypeError('node.setLanguage: language must be object.');
+    NGC.prototype.setLanguage = function(lang, prefix) {
+        var language;
+        language = 'string' === typeof lang ? makeLanguageObj(lang) : lang;
+
+        if (!language || 'object' !== typeof language) {
+            throw new TypeError('node.setLanguage: language must be object ' +
+                               'or string. Found: ' + lang);
         }
         if ('string' !== typeof language.shortName) {
             throw new TypeError(
-                'node.setLanguage: language.shortName must be string.');
+                'node.setLanguage: language.shortName must be string. Found: ' +
+                    language.shortName);
         }
         this.player.lang = language;
         if (!this.player.lang.path) {
@@ -29658,6 +29755,19 @@ if (!Array.prototype.indexOf) {
 
         return this.player.lang;
     };
+
+    // ## Helper functions.
+
+    function makeLanguageObj(langStr) {
+        var shortName;
+        shortName = langStr.toLowerCase().substr(0,2);
+        return {
+            name: langStr,
+            shortName: shortName,
+            nativeName: langStr,
+            path: shortName + '/'
+        };
+    }
 
 })(
     'undefined' != typeof node ? node : module.exports,
@@ -31285,7 +31395,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # setups
- * Copyright(c) 2016 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti
  * MIT Licensed
  *
  * Listeners for incoming messages
@@ -31582,12 +31692,12 @@ if (!Array.prototype.indexOf) {
                 if (J.isArray(lang)) {
                     this.setLanguage(lang[0], lang[1]);
                 }
-                else if ('string' === typeof lang) {
+                else if ('string' === typeof lang || 'object' === typeof lang) {
                     this.setLanguage(lang);
                 }
                 else {
-                    throw new TypeError('setup("lang"): lang must be ' +
-                                        'string, array, or undefined. Found: ' +
+                    throw new TypeError('setup("lang"): lang must be string, ' +
+                                        'array, object or undefined. Found: ' +
                                         lang);
                 }
             }
