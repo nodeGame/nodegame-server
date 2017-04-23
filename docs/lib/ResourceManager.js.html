@@ -775,8 +775,6 @@ output of the rendered template.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
                     <span class="nx">view</span> <span class="o">=</span> <span class="nx">jade</span><span class="p">.</span><span class="nx">render</span><span class="p">(</span><span class="nx">data</span><span class="p">,</span> <span class="nx">context</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">a</span><span class="p">)</span> <span class="p">{</span>
-                        <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">a</span><span class="p">)</span>
-
 
 </pre></div>
         </td>
@@ -785,6 +783,19 @@ output of the rendered template.</p>
         <td class="docs">
 <div class="pilwrap">
   <a class="pilcrow" href="#section-32" id="section-32">&#182;</a>
+</div>
+<p>console.log(a)</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-33" id="section-33">&#182;</a>
 </div>
 <p>Context callback might be existing or not.</p>
         </td>
@@ -1063,7 +1074,7 @@ Else returns the value, TRUE if previously found, FALSE, otherwise.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">ResourceManager</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">getContext</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">gameName</span><span class="p">,</span> <span class="nx">contextPath</span><span class="p">,</span>
-                                            <span class="nx">gameSettings</span><span class="p">,</span> <span class="nx">headers</span><span class="p">)</span> <span class="p">{</span>
+                                                <span class="nx">gameSettings</span><span class="p">,</span> <span class="nx">headers</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">context</span><span class="p">,</span> <span class="nx">cb</span><span class="p">;</span>
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">games</span><span class="p">[</span><span class="nx">gameName</span><span class="p">])</span> <span class="k">return</span> <span class="kc">null</span><span class="p">;</span>
     <span class="nx">cb</span> <span class="o">=</span> <span class="nx">games</span><span class="p">[</span><span class="nx">gameName</span><span class="p">].</span><span class="nx">contextCallbacks</span><span class="p">[</span><span class="nx">contextPath</span><span class="p">];</span>
