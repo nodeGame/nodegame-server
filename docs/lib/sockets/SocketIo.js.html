@@ -77,7 +77,7 @@
 </div>
 
 
-<p>Copyright(c) 2016 Stefano Balietti
+<p>Copyright(c) 2017 Stefano Balietti
 MIT Licensed</p>
   </div>
   <div class="body"><p>Handles network connections through Socket.IO</p>
@@ -677,7 +677,7 @@ it is not used to locate the client.</p>
             <span class="k">this</span><span class="p">.</span><span class="nx">sioChannel</span><span class="p">.</span><span class="kr">volatile</span><span class="p">.</span><span class="nx">json</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="nx">msg</span><span class="p">);</span>
         <span class="p">}</span>
         <span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Msg &#39;</span> <span class="o">+</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">toSMS</span><span class="p">()</span> <span class="o">+</span> <span class="s1">&#39; sent to ALL&#39;</span><span class="p">);</span>
-        <span class="nx">msgLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">);</span>
+        <span class="nx">msgLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="s1">&#39;out-ALL&#39;</span><span class="p">);</span>
     <span class="p">}</span>
 
 
@@ -765,7 +765,7 @@ client = this.sioChannel.sockets[strippedSid];</p>
             <span class="p">}</span>
             <span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Msg &#39;</span> <span class="o">+</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">toSMS</span><span class="p">()</span> <span class="o">+</span> <span class="s1">&#39; sent to sid &#39;</span> <span class="o">+</span>
                           <span class="nx">strippedSid</span><span class="p">);</span>
-            <span class="nx">msgLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">);</span>
+            <span class="nx">msgLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="s1">&#39;out-ID&#39;</span><span class="p">);</span>
 
         <span class="p">}</span>
 
@@ -796,7 +796,7 @@ client = this.sioChannel.sockets[strippedSid];</p>
                 <span class="p">}</span>
                 <span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Msg &#39;</span> <span class="o">+</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">toSMS</span><span class="p">()</span> <span class="o">+</span> <span class="s1">&#39; sent to sid &#39;</span> <span class="o">+</span>
                               <span class="nx">clientSid</span><span class="p">);</span>
-                <span class="nx">msgLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">);</span>
+                <span class="nx">msgLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">,</span> <span class="s1">&#39;out-BROADCAST&#39;</span><span class="p">);</span>
             <span class="p">}</span>
         <span class="p">}</span>
     <span class="p">}</span>

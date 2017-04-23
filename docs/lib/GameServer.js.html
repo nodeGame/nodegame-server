@@ -528,7 +528,7 @@ by two inheriting classes:</p>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span> <span class="o">=</span> <span class="nx">Logger</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;channel&#39;</span><span class="p">,</span> <span class="p">{</span><span class="nx">name</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">name</span><span class="p">});</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span> <span class="o">=</span> <span class="nx">Logger</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;channel&#39;</span><span class="p">,</span> <span class="p">{</span> <span class="nx">name</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">name</span> <span class="p">});</span>
 
 
 </pre></div>
@@ -550,7 +550,7 @@ by two inheriting classes:</p>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">msgLogger</span> <span class="o">=</span> <span class="nx">Logger</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;messages&#39;</span><span class="p">,</span> <span class="p">{</span><span class="nx">name</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">name</span><span class="p">});</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">msgLogger</span> <span class="o">=</span> <span class="nx">Logger</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;messages&#39;</span><span class="p">,</span> <span class="p">{</span> <span class="nx">name</span><span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">name</span> <span class="p">});</span>
 
 
 </pre></div>
@@ -1002,37 +1002,37 @@ the clientId found in their cookies.</p>
     <span class="nx">server</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">ADMIN_SERVER</span> <span class="o">?</span> <span class="s1">&#39;Admin&#39;</span> <span class="o">:</span> <span class="s1">&#39;Player&#39;</span><span class="p">;</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="nx">gameMsg</span><span class="p">.</span><span class="nx">from</span><span class="p">.</span><span class="nx">trim</span><span class="p">()</span> <span class="o">===</span> <span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">server</span> <span class="o">+</span> <span class="s1">&#39;Server.secureParse: Received msg &#39;</span> <span class="o">+</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">server</span> <span class="o">+</span> <span class="s1">&#39;Server.validateGameMsg: Received msg &#39;</span> <span class="o">+</span>
                            <span class="s1">&#39;but msg.from is empty.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
         <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
     <span class="p">}</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">target</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">server</span> <span class="o">+</span> <span class="s1">&#39;Server.secureParse: Received msg &#39;</span> <span class="o">+</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">server</span> <span class="o">+</span> <span class="s1">&#39;Server.validateGameMsg: Received msg &#39;</span> <span class="o">+</span>
                            <span class="s1">&#39;but msg.target is not string.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
         <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
     <span class="p">}</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="nx">gameMsg</span><span class="p">.</span><span class="nx">target</span><span class="p">.</span><span class="nx">trim</span><span class="p">()</span> <span class="o">===</span> <span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">server</span> <span class="o">+</span> <span class="s1">&#39;Server.secureParse: Received msg &#39;</span> <span class="o">+</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">server</span> <span class="o">+</span> <span class="s1">&#39;Server.validateGameMsg: Received msg &#39;</span> <span class="o">+</span>
                            <span class="s1">&#39;but msg.target is empty.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
         <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
     <span class="p">}</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">action</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">server</span> <span class="o">+</span> <span class="s1">&#39;Server.secureParse: Received msg &#39;</span> <span class="o">+</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">server</span> <span class="o">+</span> <span class="s1">&#39;Server.validateGameMsg: Received msg &#39;</span> <span class="o">+</span>
                            <span class="s1">&#39;but msg.action is not string.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
         <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
     <span class="p">}</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="nx">gameMsg</span><span class="p">.</span><span class="nx">action</span><span class="p">.</span><span class="nx">trim</span><span class="p">()</span> <span class="o">===</span> <span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">server</span> <span class="o">+</span> <span class="s1">&#39;Server.secureParse: Received msg &#39;</span> <span class="o">+</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">server</span> <span class="o">+</span> <span class="s1">&#39;Server.validateGameMsg: Received msg &#39;</span> <span class="o">+</span>
                            <span class="s1">&#39;but msg.action is empty.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
         <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
     <span class="p">}</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">session</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">server</span> <span class="o">+</span> <span class="s1">&#39;Server.secureParse: Received msg &#39;</span> <span class="o">+</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">server</span> <span class="o">+</span> <span class="s1">&#39;Server.validateGameMsg: Received msg &#39;</span> <span class="o">+</span>
                            <span class="s1">&#39;but msg.session is not string. Found: &#39;</span> <span class="o">+</span>
                            <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">session</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
         <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
@@ -1051,8 +1051,8 @@ the clientId found in their cookies.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">registry</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">exist</span><span class="p">(</span><span class="nx">gameMsg</span><span class="p">.</span><span class="nx">from</span><span class="p">))</span> <span class="p">{</span>
-        <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">server</span> <span class="o">+</span> <span class="s1">&#39;Server.secureParse: Received msg from &#39;</span> <span class="o">+</span>
-                           <span class="s1">&#39;unknown client: &#39;</span> <span class="o">+</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">from</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">server</span> <span class="o">+</span> <span class="s1">&#39;Server.validateGameMsg: Received msg &#39;</span> <span class="o">+</span>
+                           <span class="s1">&#39;from unknown client: &#39;</span> <span class="o">+</span> <span class="nx">gameMsg</span><span class="p">.</span><span class="nx">from</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
         <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
     <span class="p">}</span>
 
@@ -1121,7 +1121,7 @@ the clientId found in their cookies.</p>
 <p>Logs the msg (if different from string, it will be stringified).</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">this</span><span class="p">.</span><span class="nx">msgLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">msgToLog</span> <span class="o">||</span> <span class="nx">msg</span><span class="p">);</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">msgLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="s1">&#39;in&#39;</span><span class="p">,</span> <span class="nx">msgToLog</span><span class="p">);</span>
 
     <span class="nx">msg</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">validateGameMsg</span><span class="p">(</span><span class="nx">msg</span><span class="p">);</span>
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">msg</span><span class="p">)</span> <span class="k">return</span><span class="p">;</span>

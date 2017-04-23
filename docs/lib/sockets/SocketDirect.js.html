@@ -577,7 +577,7 @@ rel = msg.reliable;</p>
         <span class="p">}</span>
 
         <span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Msg &#39;</span> <span class="o">+</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">toSMS</span><span class="p">()</span> <span class="o">+</span> <span class="s1">&#39; sent to &#39;</span> <span class="o">+</span> <span class="nx">sid</span><span class="p">);</span>
-        <span class="nx">msgLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">msg</span><span class="p">);</span>
+        <span class="nx">msgLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="s1">&#39;out-ALL&#39;</span><span class="p">);</span>
     <span class="p">}</span>
 
 
@@ -612,7 +612,7 @@ rel = msg.reliable;</p>
             <span class="k">if</span> <span class="p">(</span><span class="nx">client</span><span class="p">)</span> <span class="p">{</span>
                 <span class="nx">client</span><span class="p">.</span><span class="nx">message</span><span class="p">(</span><span class="nx">msg</span><span class="p">);</span>
                 <span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Msg &#39;</span> <span class="o">+</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">toSMS</span><span class="p">()</span> <span class="o">+</span> <span class="s1">&#39; sent to &#39;</span> <span class="o">+</span> <span class="nx">sid</span><span class="p">);</span>
-                <span class="nx">msgLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">msg</span><span class="p">);</span>
+                <span class="nx">msgLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="s1">&#39;out-ID&#39;</span><span class="p">);</span>
             <span class="p">}</span>
             <span class="k">else</span> <span class="p">{</span>
                 <span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;SocketDirect.send: msg not sent. Unexisting &#39;</span> <span class="o">+</span>
@@ -651,7 +651,7 @@ rel = msg.reliable;</p>
                     <span class="k">if</span> <span class="p">(</span><span class="nx">client</span> <span class="o">!==</span> <span class="nx">sid</span><span class="p">)</span> <span class="p">{</span>
                         <span class="k">this</span><span class="p">.</span><span class="nx">clients</span><span class="p">[</span><span class="nx">client</span><span class="p">].</span><span class="nx">message</span><span class="p">(</span><span class="nx">msg</span><span class="p">);</span>
                         <span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Msg &#39;</span> <span class="o">+</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">toSMS</span><span class="p">()</span> <span class="o">+</span> <span class="s1">&#39; sent to &#39;</span> <span class="o">+</span> <span class="nx">sid</span><span class="p">);</span>
-                        <span class="nx">msgLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">msg</span><span class="p">);</span>
+                        <span class="nx">msgLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="s1">&#39;out-BROADCAST&#39;</span><span class="p">);</span>
                     <span class="p">}</span>
                 <span class="p">}</span>
             <span class="p">}</span>
