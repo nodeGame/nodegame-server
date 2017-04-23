@@ -185,7 +185,7 @@
 </div>
 
 
-<p>Copyright(c) 2017 Stefano Balietti <a href="&#x6D;&#97;i&#108;&#x74;&#x6F;:&#115;&#x74;&#x65;&#64;&#110;&#x6F;&#100;&#x65;&#103;&#x61;&#109;&#101;&#x2E;&#x6F;&#114;&#103;">&#115;&#x74;&#x65;&#64;&#110;&#x6F;&#100;&#x65;&#103;&#x61;&#109;&#101;&#x2E;&#x6F;&#114;&#103;</a>
+<p>Copyright(c) 2017 Stefano Balietti <a href="&#x6D;&#97;&#x69;&#x6C;&#x74;&#111;:&#115;&#116;&#101;&#x40;&#x6E;&#111;&#x64;&#101;&#103;&#97;&#109;&#x65;&#x2E;&#111;&#x72;g">&#115;&#116;&#101;&#x40;&#x6E;&#111;&#x64;&#101;&#103;&#97;&#109;&#x65;&#x2E;&#111;&#x72;g</a>
 MIT Licensed</p>
   </div>
   <div class="body"><p>Creates the Player, and Admin Server</p>
@@ -2847,12 +2847,25 @@ Id of the bot:</li>
   option.replaceId is also set.</li>
 <li>replaceId (string): Optional. The id of a previously disconneceted
   client to be replaced by the bot. Cannot be set, if
-  option.id is also set. The bot will automatically
-  receive the role and the partner of the replaced client, and its id
-  will be inserted in all future matches (if any). Important: the
-  partner is not notified about the replaced id.
+  option.id is also set. The bot will automatically:</li>
+</ul>
 
-Additional configuration options for the bot:</li>
+
+<div class="highlight"><pre><code>    <span class="o">-</span> <span class="n">receive</span> <span class="n">the</span> <span class="n">role</span> <span class="ow">and</span> <span class="n">the</span> <span class="n">partner</span> <span class="n">of</span> <span class="n">the</span> <span class="n">replaced</span> <span class="n">client</span> <span class="p">(</span><span class="n">the</span>
+        <span class="n">partner</span> <span class="n">is</span> <span class="ow">not</span> <span class="n">notified</span> <span class="n">about</span> <span class="n">the</span> <span class="n">replaced</span> <span class="n">id</span><span class="p">),</span> <span class="n">its</span> <span class="n">id</span>
+        <span class="n">will</span> <span class="n">be</span> <span class="n">inserted</span> <span class="n">in</span> <span class="n">all</span> <span class="n">remaining</span> <span class="n">matches</span><span class="p">,</span>
+    <span class="o">-</span> <span class="n">be</span> <span class="n">set</span> <span class="n">to</span> <span class="n">DONE</span><span class="p">,</span> <span class="k">if</span> <span class="n">the</span> <span class="n">disconnected</span> <span class="n">client</span> <span class="n">was</span> <span class="n">DONE</span><span class="p">,</span>
+    <span class="o">-</span> <span class="n">update</span> <span class="n">the</span> <span class="n">step</span> <span class="n">timer</span><span class="p">,</span> <span class="n">with</span> <span class="n">remaining</span> <span class="nb">time</span> <span class="n">left</span> <span class="n">in</span> <span class="n">the</span> <span class="n">step</span>
+
+ <span class="n">These</span> <span class="n">default</span> <span class="n">options</span> <span class="n">can</span> <span class="n">be</span> <span class="n">overridden</span> <span class="n">with</span> <span class="n">the</span> <span class="sb">`gotoStepOptions`</span>
+ <span class="n">option</span><span class="o">.</span>
+</code></pre></div>
+
+
+
+Additional configuration options for the bot:
+
+<ul>
 <li>logger (function): Optional. A logging function for the bot. Default:
   all logs are saved through the 'clients' logger of the channel.</li>
 <li>setup (object): Optional. Configuration object to be passed to
