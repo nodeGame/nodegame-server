@@ -185,7 +185,7 @@
 </div>
 
 
-<p>Copyright(c) 2017 Stefano Balietti <a href="&#109;&#x61;&#105;&#108;&#116;&#x6F;:&#x73;&#116;&#101;&#64;&#x6E;&#111;&#100;&#x65;&#103;&#x61;&#x6D;&#101;&#46;&#x6F;&#114;&#x67;">&#x73;&#116;&#101;&#64;&#x6E;&#111;&#100;&#x65;&#103;&#x61;&#x6D;&#101;&#46;&#x6F;&#114;&#x67;</a>
+<p>Copyright(c) 2017 Stefano Balietti <a href="&#x6D;&#97;i&#108;&#x74;&#x6F;:&#115;&#x74;&#x65;&#64;&#110;&#x6F;&#100;&#x65;&#103;&#x61;&#109;&#101;&#x2E;&#x6F;&#114;&#103;">&#115;&#x74;&#x65;&#64;&#110;&#x6F;&#100;&#x65;&#103;&#x61;&#109;&#101;&#x2E;&#x6F;&#114;&#103;</a>
 MIT Licensed</p>
   </div>
   <div class="body"><p>Creates the Player, and Admin Server</p>
@@ -2824,26 +2824,54 @@ modules.</p>
   </div>
   <div class="body"><p>Creates a bot and put it in a room</p>
 
-<p>A reference to the newly created bot is placed in <code>Channel.bots</code>.</p>
+<p>A reference to the newly created bot is placed under <code>Channel.bots</code>.</p>
   </div>
   <div class="details">
     <div class="dox_tag_title">Params</div>
     <div class="dox_tag_detail">
       <span class="dox_tag_name">options</span>
       <span class="dox_type">object</span>
-      <span>Optional. Bot options with the following fields:
+      <span>Optional. Available options are:
+
+Room and client type:
 
 <ul>
-<li>room (Room):
-Optional. {string|object} The room name ('waiting',
-'requirements', etc.) or the full room object
-in which to place the bot. Default: channel.waitingRoom</li>
-<li>clientType (string):
-Optional. Client type of the bot. Default: 'bot'</li>
-<li>setup (object):
-Optional. Configuration object to be passed to
-<code>node.setup('nodegame', setup)</code>. Default: {}.</li>
-<li>TODO: add missing options</li>
+<li>room (string|object): Optional. The room name ('waiting',
+  'requirements', etc.) or the full room object in which to
+  place the bot. Default: channel.waitingRoom</li>
+<li>clientType (string): Optional. Client type of the bot. Default: 'bot'
+
+Id of the bot:</li>
+<li>id (string): Optional. The id of the bot, must be unique and never
+  used by another client in registry. Cannot be set, if
+  option.replaceId is also set.</li>
+<li>replaceId (string): Optional. The id of a previously disconneceted
+  client to be replaced by the bot. Cannot be set, if
+  option.id is also set. The bot will automatically
+  receive the role and the partner of the replaced client, and its id
+  will be inserted in all future matches (if any). Important: the
+  partner is not notified about the replaced id.
+
+Additional configuration options for the bot:</li>
+<li>logger (function): Optional. A logging function for the bot. Default:
+  all logs are saved through the 'clients' logger of the channel.</li>
+<li>setup (object): Optional. Configuration object to be passed to
+  <code>node.setup('nodegame', setup)</code>.
+
+Init/start of the game:</li>
+<li>init (boolean): Optional. If false, the client will not be inited,
+  and will not start the game / go to step. Default: TRUE.</li>
+<li>gotoStep (GameStage): Optional. If set, after inited, the game will
+  start from this step. Cannot be set if options.start is also set.</li>
+<li>gotoStepOptions (object): Optional. If set, it will be mixed-in with
+  default options</li>
+<li>start: (boolean): Optional. If false, the game will not start after
+  being inited. Cannot be set if options.gotoStep is also set.
+
+Events:</li>
+<li>ready (function): Optional. A callback function to be executed
+  as soon as the bot has connected and received an ID, but before
+  the init function has been called.</li>
 </ul></span>
     </div>
     <div class="dox_tag_title">Returns</div>
@@ -2851,6 +2879,11 @@ Optional. Configuration object to be passed to
       <span class="dox_tag_name"></span>
       <span class="dox_type">NodeGameClient</span>
       <span>The node instance of the new bot</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">ServerChannel.bots
+</span>
     </div>
   </div>
 </div>
@@ -2942,8 +2975,6 @@ Optional. Configuration object to be passed to
                         <span class="nx">clientType</span> <span class="o">+</span> <span class="s1">&#39; (channel: &#39;</span> <span class="o">+</span> <span class="k">this</span><span class="p">.</span><span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39;)&#39;</span><span class="p">);</span>
     <span class="p">}</span>
 
-
-
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">options</span><span class="p">.</span><span class="nx">id</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">options</span><span class="p">.</span><span class="nx">id</span><span class="p">)</span> <span class="p">{</span>
             <span class="k">throw</span> <span class="k">new</span> <span class="nx">TypeError</span><span class="p">(</span><span class="s1">&#39;ServerChannel.connectBot: options.id &#39;</span> <span class="o">+</span>
@@ -2997,9 +3028,9 @@ Optional. Configuration object to be passed to
                         <span class="s1">&#39;. (channel: &#39;</span> <span class="o">+</span> <span class="k">this</span><span class="p">.</span><span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39;)&#39;</span><span class="p">);</span>
     <span class="p">}</span>
 
-    <span class="k">if</span> <span class="p">(</span><span class="nx">options</span><span class="p">.</span><span class="nx">start</span> <span class="o">&amp;&amp;</span> <span class="nx">options</span><span class="p">.</span><span class="nx">gotoStep</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">options</span><span class="p">.</span><span class="nx">start</span> <span class="o">&amp;&amp;</span> <span class="nx">options</span><span class="p">.</span><span class="nx">gotoStep</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;ServerChannel.connectBot: options.start &#39;</span> <span class="o">+</span>
-                        <span class="s1">&#39;and options.gotoStep cannot be both true. (channel: &#39;</span> <span class="o">+</span>
+                        <span class="s1">&#39;and options.gotoStep cannot be both set. (channel: &#39;</span> <span class="o">+</span>
                         <span class="k">this</span><span class="p">.</span><span class="nx">name</span> <span class="o">+</span> <span class="s1">&#39;)&#39;</span><span class="p">);</span>
     <span class="p">}</span>
 
