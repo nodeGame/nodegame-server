@@ -170,7 +170,7 @@
 </div>
 
 
-<p>Copyright(c) 2017 Stefano Balietti <a href="&#x6D;&#97;&#105;&#x6C;&#x74;&#x6F;:&#x73;t&#x65;&#x40;&#x6E;&#x6F;&#x64;&#101;&#x67;&#97;&#109;&#x65;&#46;&#x6F;&#x72;&#103;">&#x73;t&#x65;&#x40;&#x6E;&#x6F;&#x64;&#101;&#x67;&#97;&#109;&#x65;&#46;&#x6F;&#x72;&#103;</a>
+<p>Copyright(c) 2017 Stefano Balietti <a href="&#x6D;&#97;&#105;&#108;&#116;&#x6F;:&#x73;t&#x65;&#64;&#110;&#111;&#100;&#101;&#x67;&#x61;&#x6D;&#101;&#x2E;&#111;&#x72;&#103;">&#x73;t&#x65;&#64;&#110;&#111;&#100;&#101;&#x67;&#x61;&#x6D;&#101;&#x2E;&#111;&#x72;&#103;</a>
 MIT Licensed</p>
   </div>
   <div class="body"><p>Creates the server node for nodeGame</p>
@@ -1466,7 +1466,7 @@ is aborted.</p>
                 <span class="nx">fs</span><span class="p">.</span><span class="nx">stat</span><span class="p">(</span><span class="nx">gameDir</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">stats</span><span class="p">)</span> <span class="p">{</span>
                     <span class="k">if</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span>
                         <span class="nx">that</span><span class="p">.</span><span class="nx">logger</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="s1">&#39;ServerNode.loadGames: cannot read &#39;</span> <span class="o">+</span>
-                                          <span class="nx">dir</span><span class="p">);</span>
+                                          <span class="nx">gameDir</span><span class="p">);</span>
                         <span class="nx">that</span><span class="p">.</span><span class="nx">asyncQueue</span><span class="p">.</span><span class="nx">remove</span><span class="p">(</span><span class="nx">qKeyGame</span><span class="p">);</span>
                         <span class="k">return</span><span class="p">;</span>
                     <span class="p">}</span>

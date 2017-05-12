@@ -6294,7 +6294,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # NDDB: N-Dimensional Database
- * Copyright(c) 2017 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * NDDB is a powerful and versatile object database for node.js and the browser.
@@ -8662,7 +8662,7 @@ if (!Array.prototype.indexOf) {
         len = db.length;
         if (len) {
             for (i = 0; i < len; i++) {
-                res = this.emit('update', db[i], update);
+                res = this.emit('update', db[i], update, i);
                 if (res === true) {
                     J.mixin(db[i], update);
                     if (updateRules.indexes) {
@@ -10029,7 +10029,7 @@ if (!Array.prototype.indexOf) {
         // Add to index directly (bypass api).
         this.nddbid.resolve[o._nddbid] = this.db.length;
         // End create index.
-        res = this.emit('insert', o);
+        res = this.emit('insert', o, this.db.length);
         // Stop inserting elements if one callback returned FALSE.
         if (res === false) return false;
         this.db.push(o);
@@ -10540,7 +10540,7 @@ if (!Array.prototype.indexOf) {
         if ('undefined' === typeof dbidx) return false;
         o = this.nddb.db[dbidx];
         if ('undefined' === typeof o) return false;
-        res = this.nddb.emit('remove', o);
+        res = this.nddb.emit('remove', o, dbidx);
         if (res === false) return false;
         this.nddb.db.splice(dbidx, 1);
         this._remove(idx);
@@ -10572,7 +10572,7 @@ if (!Array.prototype.indexOf) {
         if ('undefined' === typeof dbidx) return false;
         nddb = this.nddb;
         o = nddb.db[dbidx];
-        res = nddb.emit('update', o, update);
+        res = nddb.emit('update', o, update, dbidx);
         if (res === false) return false;
         J.mixin(o, update);
         // We do indexes separately from the other components of _autoUpdate
@@ -10652,7 +10652,7 @@ if (!Array.prototype.indexOf) {
     node.support = JSUS.compatibility();
 
     // Auto-Generated.
-    node.version = '3.5.4';
+    node.version = '4.0.0';
 
 })(window);
 
@@ -24442,8 +24442,8 @@ if (!Array.prototype.indexOf) {
 
         // If we should be done now, we emit PLAYING without executing the step.
         // node.game.willBeDone is already set, and will trigger node.done().
-        if (this.beDone) node.emit('PLAYING');        
-        else this.execStep(this.getCurrentGameStage());        
+        if (this.beDone) node.emit('PLAYING');
+        else this.execStep(this.getCurrentGameStage());
 
         return true;
     };
@@ -25429,7 +25429,7 @@ if (!Array.prototype.indexOf) {
      *
      *   - willBeDone: game will be done after loading the frame and executing
      *       the step callback function,
-     *   - beDone: game is done without loading the frame or 
+     *   - beDone: game is done without loading the frame or
      *       executing the step callback function,
      *   - plot: add entries to the tmpCache of the plot,
      *   - cb: a callback executed with the game context, and with options
@@ -26284,24 +26284,26 @@ if (!Array.prototype.indexOf) {
 
         // Check input:
         if ('string' !== typeof nameFrom) {
-            throw new TypeError('Timer.getTimeDiff: nameFrom must be string.');
+            throw new TypeError('Timer.getTimeDiff: nameFrom must be string.' +
+                               'Found: ' + nameFrom);
         }
         if ('string' !== typeof nameTo) {
-            throw new TypeError('Timer.getTimeDiff: nameTo must be string.');
+            throw new TypeError('Timer.getTimeDiff: nameTo must be string. ' +
+                                'Found: ' + nameTo);
         }
 
         timeFrom = this.timestamps[nameFrom];
 
         if ('undefined' === typeof timeFrom || timeFrom === null) {
             throw new Error('Timer.getTimeDiff: nameFrom does not resolve to ' +
-                            'a valid timestamp.');
+                            'a valid timestamp: ' + nameFrom);
         }
 
         timeTo = this.timestamps[nameTo];
 
         if ('undefined' === typeof timeTo || timeTo === null) {
             throw new Error('Timer.getTimeDiff: nameTo does not resolve to ' +
-                            'a valid timestamp.');
+                            'a valid timestamp: ' + nameTo);
         }
 
         if (effective) {
@@ -31164,6 +31166,7 @@ if (!Array.prototype.indexOf) {
             // other clients could change in between.
             node.game.setStageLevel(stageLevels.GETTING_DONE);
             node.game.willBeDone = false;
+            node.game.beDone = false;
             node.emit('REALLY_DONE');
             res = node.game.shouldStep(stageLevels.DONE);
             node.game.setStageLevel(stageLevels.DONE);
