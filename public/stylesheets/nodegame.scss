@@ -1,16 +1,22 @@
+$base-font: 'Source Sans Pro', -apple-system, BlinkMacSystemFont, Roboto, "Segoe UI", 'Helvetica Neue', Helvetica, Arial, sans-serif;
+$header-bg-color: white;
+$container-width: 800px;
+
 body {
   margin: 0;
   font-size: 18px;
-  font-family: "Source Sans Pro", -apple-system, BlinkMacSystemFont, Roboto, "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif; }
+  font-family: $base-font;
+}
 
 #ng_mainframe {
-  max-width: 800px;
+  max-width: $container-width;
   width: 100%;
-  min-height: 600px;
-  font-family: "Source Sans Pro", -apple-system, BlinkMacSystemFont, Roboto, "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  min-height: 600px; // change to use the js resize code
+  font-family: $base-font;
   padding: 20px;
   display: block;
-  margin: 0 auto; }
+  margin: 0 auto;
+}
 
 .h1,
 .h2,
@@ -24,58 +30,79 @@ h3,
 h4,
 h5,
 h6 {
-  font-family: "Source Sans Pro", -apple-system, BlinkMacSystemFont, Roboto, "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif; }
+  font-family: $base-font;
+}
 
 p {
-  font-family: "Source Sans Pro", -apple-system, BlinkMacSystemFont, Roboto, "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif; }
+  font-family: $base-font;
+}
 
 #ng_header {
   width: 100%;
   padding: 10px 15px;
-  background-color: white;
+  background-color: $header-bg-color;
   box-shadow: 0 0 15px lightgrey;
-  max-width: 800px;
+  max-width: $container-width;
   margin: 0 auto;
-  border-radius: 0 0 5px 5px; }
-  #ng_header::after {
+  border-radius: 0 0 5px 5px;
+
+  &::after {
     content: " ";
     display: block;
-    clear: both; }
-  #ng_header .ng_widget {
+    clear: both;
+  }
+
+  .ng_widget {
     float: left;
     margin-right: 20px;
     margin-bottom: 0;
     border: none;
     box-shadow: none;
-    padding: 10px; }
-    #ng_header .ng_widget .panel-heading {
+    padding: 10px;
+
+    .panel-heading {
       border: none;
-      background-color: white;
+      background-color: $header-bg-color;
       padding: 0;
-      font-weight: bold; }
-    #ng_header .ng_widget .panel-body {
-      padding: 0; }
-    #ng_header .ng_widget:last-child {
-      margin-right: 0; }
-  #ng_header .donebutton {
-    float: right; }
-    #ng_header .donebutton .panel-heading {
-      display: none; }
-  #ng_header .moneytalks .panel-heading,
-  #ng_header .visualround .panel-heading,
-  #ng_header .visualtimer .panel-heading {
-    float: left;
-    margin-right: 10px; }
-  #ng_header .moneytalks .panel-body,
-  #ng_header .visualround .panel-body,
-  #ng_header .visualtimer .panel-body {
-    float: left; }
+      font-weight: bold;
+    }
+
+    .panel-body {
+      padding: 0;
+    }
+
+    &:last-child {
+      margin-right: 0;
+    }
+  }
+
+  .donebutton {
+    float: right;
+
+    .panel-heading {
+      display: none;
+    }
+  }
+
+  .moneytalks,
+  .visualround,
+  .visualtimer {
+    .panel-heading {
+      float: left;
+      margin-right: 10px;
+    }
+
+    .panel-body {
+      float: left;
+    }
+  }
+}
 
 #ng_waitScreen {
   z-index: 10000;
   filter: alpha(opacity=50);
   /*older IE*/
-  filter: progid:DXImageTransform.Microsoft.Alpha(opacity=50);
+  filter:progid:DXImageTransform.Microsoft.Alpha(opacity=50);
   /* IE */
   -moz-opacity: 0.50;
   /*older Mozilla*/
@@ -94,34 +121,40 @@ p {
   vertical-align: middle;
   font-weight: bold;
   font-size: 30px;
-  padding: 20px; }
+  padding: 20px;
+}
 
 vas {
-  border: 1px #CCC solid; }
+  border: 1px #CCC solid;
+}
 
 label {
   display: block;
   float: left;
-  min-width: 200px; }
+  min-width: 200px;
+}
 
 input[type="range"] {
   margin-bottom: 5px;
-  margin-left: 5px; }
-
+  margin-left: 5px;
+}
 /* General nodeGame */
 .strong {
-  font-weight: bold; }
+  font-weight: bold;
+}
 
 .underline {
-  text-decoration: underline; }
+  text-decoration: underline;
+}
 
 .strike {
-  text-decoration: line-through; }
+  text-decoration: line-through;
+}
 
 .hand {
   cursor: pointer;
-  cursor: hand; }
-
+  cursor: hand;
+}
 /*
    Stylesheet for nodeGame widgets
    Copyright(c) 2014 Stefano Balietti
@@ -134,96 +167,111 @@ input[type="range"] {
 /* Language Selector */
 .languageselector {
   float: center;
-  width: 160px; }
+  width: 160px;
+}
 
 .languageselector > .panel-body > form > label {
   font-size: 20px;
-  font-weight: normal; }
+  font-weight: normal;
+}
 
 .languageselector > .panel-body > form > label.selectedButtonLabel {
-  font-weight: bold; }
+  font-weight: bold;
+}
 
 /* Chat */
 .chat {
   overflow-y: scroll;
   width: 450px;
   border: 1px solid #CCC;
-  padding: 5px; }
+  padding: 5px;
+}
 
 .chat > .panel-body > textarea {
   height: 100px;
-  width: 400px; }
+  width: 400px;
+}
 
 .chat_me {
-  font-weight: bold; }
-
+  font-weight: bold;
+}
 /* Feedback */
 .feedback > .panel-body > textarea {
   padding: 5px;
   font-size: 16px;
   width: 98%;
   height: 300px;
-  border: 1px solid #CCC; }
-
+  border: 1px solid #CCC;
+}
 /* Requirements */
 .requirements {
-  font-size: 1.2em; }
+  font-size: 1.2em;
+}
 
 .requirements-success {
   font-weight: bold;
   color: green;
   padding-top: 15px;
-  padding-bottom: 15px; }
+  padding-bottom: 15px;
+}
 
 .requirements-fail {
   font-weight: bold;
   color: red;
   padding-top: 15px;
-  padding-bottom: 15px; }
-
+  padding-bottom: 15px;
+}
 /* Waiting Room */
 .waitingroom {
-  font-size: 1.2em; }
+  font-size: 1.2em;
+}
 
 .waitingroom > .panel-body {
-  text-align: center; }
+  text-align: center;
+}
 
 .waitingroom > .panel-body > div#timer-div {
-  margin-top: 30px; }
+  margin-top: 30px;
+}
 
 .waitingroom > .panel-body > div#player-count-div > p#player-count {
   font-size: 40px;
   clear: both;
-  margin-top: 30px; }
+  margin-top: 30px;
+}
 
 .waitingroom > .panel-body > div > .visualtimer {
   float: none;
   display: inline;
   font-size: 40px;
-  margin: 0; }
+  margin: 0;
+}
 
 .waitingroom > .panel-body > div > span#span_dots {
-  font-size: 40px; }
-
+  font-size: 40px;
+}
 /** ChoiceTable **/
 div.choicetable,
 div.choicetable div.panel-body,
 div.choicetable div.panel-heading {
   border: 0;
-  padding: 0; }
+  padding: 0;
+}
 
 span.choicetable-maintext {
   margin: 20px 0 0 !important;
   padding: 0;
   display: block;
-  text-align: left; }
+  text-align: left;
+}
 
 textarea.choicemanager-freetext,
 textarea.choicetable-freetext {
   margin: 20px 0 0 !important;
   padding: 5px;
   text-align: left;
-  float: left; }
+  float: left;
+}
 
 table.choicetable td {
   word-wrap: break-word;
@@ -231,78 +279,94 @@ table.choicetable td {
   text-align: center;
   padding: 5px;
   width: 40px;
-  background: white; }
+  background: white;
+}
 
 table.clickable td:hover {
   background: #FFE;
   cursor: pointer;
-  cursor: hand; }
+  cursor: hand;
+}
 
 table.choicetable td.selected {
   background: #333 !important;
   color: #FFF;
-  border: 1px solid #333 !important; }
+  border: 1px solid #333 !important;
+}
 
 table.choicetable td.choicetable-left,
 table.choicetable td.choicetable-right {
   border: 0;
   background: inherit;
   padding-right: 15px;
-  text-align: right; }
+  text-align: right;
+}
 
 table.choicetable td.choicetable-left:hover,
 table.choicetable td.choicetable-right:hover {
   background: inherit;
-  cursor: default; }
-
+  cursor: default;
+}
 /* Mood */
 div.moodgauge {
   margin: 0 auto;
-  text-align: center; }
+  text-align: center;
+}
 
 div#quiz div.moodgauge table.choicetable,
 div.moodgauge span.choicetable-maintext {
-  text-align: center; }
+  text-align: center;
+}
 
 div.moodgauge span.choicetable-maintext {
   margin-bottom: 30px;
-  font-weight: bold; }
+  font-weight: bold;
+}
 
 div.moodgauge table.choicetable {
   margin: 0 auto;
   text-align: center;
   border-spacing: 0 5px;
-  border-collapse: separate; }
+  border-collapse: separate;
+}
 
 div.moodgauge table.choicetable td {
-  width: 80px !important; }
+  width: 80px !important;
+}
 
 div.moodgauge table.choicetable td.choicetable-left {
-  min-width: 260px !important; }
+  min-width: 260px !important;
+}
 
 div.moodgauge span.emotion {
   font-weight: bold;
-  margin-right: 10px; }
+  margin-right: 10px;
+}
 
 div.moodgauge table.choicetable td.choicetable-right {
-  width: 100px; }
-
+  width: 100px;
+}
 /* SVO */
 div.svogauge table.choicetable {
   margin: 0 auto;
   text-align: center;
   border-spacing: 0 30px;
-  border-collapse: separate; }
+  border-collapse: separate;
+}
 
 div.svogauge table td {
-  width: 60px !important; }
+  width: 60px !important;
+}
 
 div.svogauge span.choicetable-maintext {
   margin-bottom: 10px;
-  font-size: 20px; }
+  font-size: 20px;
+}
 
 div.svogauge hr {
-  margin: 10px auto; }
+  margin: 10px auto;
+}
 
 div.svogauge td.choicetable-left hr {
-  border-color: black; }
+  border-color: black;
+}

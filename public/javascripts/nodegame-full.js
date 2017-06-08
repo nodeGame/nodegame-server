@@ -478,23 +478,28 @@ if (!Array.prototype.indexOf) {
  * GPL licenses.
  *
  * Persistent Client-Side Storage
- *
  * ---
  */
-(function(exports){
+(function(exports) {
 
-    var version = '0.5';
+    var version = '5.1';
+    var store, mainStorageType;
 
-    var store = exports.store = function(key, value, options, type) {
-	options = options || {};
-	type = (options.type && options.type in store.types) ? options.type : store.type;
-	if (!type || !store.types[type]) {
-	    store.log("Cannot save/load value. Invalid storage type selected: " + type, 'ERR');
-	    return;
-	}
-	store.log('Accessing ' + type + ' storage');
+    mainStorageType = "volatile";
 
-	return store.types[type](key, value, options);
+    store = exports.store = function(key, value, options, type) {
+        options = options || {};
+        type = (options.type && options.type in store.types) ?
+            options.type : store.type;
+
+        if (!type || !store.types[type]) {
+            store.log('Cannot save/load value. Invalid storage type ' +
+                      'selected: ' + type, 'ERR');
+            return;
+        }
+        store.log('Accessing ' + type + ' storage');
+
+        return store.types[type](key, value, options);
     };
 
     // Adding functions and properties to store
@@ -505,164 +510,171 @@ if (!Array.prototype.indexOf) {
     store.types = {};
 
 
-    var mainStorageType = "volatile";
+
 
     //if Object.defineProperty works...
     try {
 
-	Object.defineProperty(store, 'type', {
-	    set: function(type){
-		if ('undefined' === typeof store.types[type]) {
-		    store.log('Cannot set store.type to an invalid type: ' + type);
-		    return false;
-		}
-		mainStorageType = type;
-		return type;
-	    },
-	    get: function(){
-		return mainStorageType;
-	    },
-	    configurable: false,
-	    enumerable: true
-	});
+        Object.defineProperty(store, 'type', {
+            set: function(type) {
+                if ('undefined' === typeof store.types[type]) {
+                    store.log('Cannot set store.type to an invalid type: ' +
+                              type);
+                    return false;
+                }
+                mainStorageType = type;
+                return type;
+            },
+            get: function(){
+                return mainStorageType;
+            },
+            configurable: false,
+            enumerable: true
+        });
     }
     catch(e) {
-	store.type = mainStorageType; // default: memory
+        store.type = mainStorageType; // default: memory
     }
 
     store.addType = function(type, storage) {
-	store.types[type] = storage;
-	store[type] = function(key, value, options) {
-	    options = options || {};
-	    options.type = type;
-	    return store(key, value, options);
-	};
+        store.types[type] = storage;
+        store[type] = function(key, value, options) {
+            options = options || {};
+            options.type = type;
+            return store(key, value, options);
+        };
 
-	if (!store.type || store.type === "volatile") {
-	    store.type = type;
-	}
+        if (!store.type || store.type === "volatile") {
+            store.type = type;
+        }
     };
 
     // TODO: create unit test
     store.onquotaerror = undefined;
     store.error = function() {
-	console.log("shelf quota exceeded");
-	if ('function' === typeof store.onquotaerror) {
-	    store.onquotaerror(null);
-	}
+        console.log("shelf quota exceeded");
+        if ('function' === typeof store.onquotaerror) {
+            store.onquotaerror(null);
+        }
     };
 
     store.log = function(text) {
-	if (store.verbosity > 0) {
-	    console.log('Shelf v.' + version + ': ' + text);
-	}
+        if (store.verbosity > 0) {
+            console.log('Shelf v.' + version + ': ' + text);
+        }
 
     };
 
     store.isPersistent = function() {
-	if (!store.types) return false;
-	if (store.type === "volatile") return false;
-	return true;
+        if (!store.types) return false;
+        if (store.type === "volatile") return false;
+        return true;
     };
 
     //if Object.defineProperty works...
     try {
-	Object.defineProperty(store, 'persistent', {
-	    set: function(){},
-	    get: store.isPersistent,
-	    configurable: false
-	});
+        Object.defineProperty(store, 'persistent', {
+            set: function(){},
+            get: store.isPersistent,
+            configurable: false
+        });
     }
     catch(e) {
-	// safe case
-	store.persistent = false;
+        // safe case
+        store.persistent = false;
     }
 
     store.decycle = function(o) {
-	if (JSON && JSON.decycle && 'function' === typeof JSON.decycle) {
-	    o = JSON.decycle(o);
-	}
-	return o;
+        if (JSON && JSON.decycle && 'function' === typeof JSON.decycle) {
+            o = JSON.decycle(o);
+        }
+        return o;
     };
 
     store.retrocycle = function(o) {
-	if (JSON && JSON.retrocycle && 'function' === typeof JSON.retrocycle) {
-	    o = JSON.retrocycle(o);
-	}
-	return o;
+        if (JSON && JSON.retrocycle && 'function' === typeof JSON.retrocycle) {
+            o = JSON.retrocycle(o);
+        }
+        return o;
     };
 
     store.stringify = function(o) {
-	if (!JSON || !JSON.stringify || 'function' !== typeof JSON.stringify) {
-	    throw new Error('JSON.stringify not found. Received non-string value and could not serialize.');
-	}
+        if (!JSON || !JSON.stringify || 'function' !== typeof JSON.stringify) {
+            throw new Error('JSON.stringify not found. Received non-string' +
+                            'value and could not serialize.');
+        }
 
-	o = store.decycle(o);
-	return JSON.stringify(o);
+        o = store.decycle(o);
+        return JSON.stringify(o);
     };
 
     store.parse = function(o) {
-	if ('undefined' === typeof o) return undefined;
-	if (JSON && JSON.parse && 'function' === typeof JSON.parse) {
-	    try {
-		o = JSON.parse(o);
-	    }
-	    catch (e) {
-		store.log('Error while parsing a value: ' + e, 'ERR');
-		store.log(o);
-	    }
-	}
+        if ('undefined' === typeof o) return undefined;
+        if (JSON && JSON.parse && 'function' === typeof JSON.parse) {
+            try {
+                o = JSON.parse(o);
+            }
+            catch (e) {
+                store.log('Error while parsing a value: ' + e, 'ERR');
+                store.log(o);
+            }
+        }
 
-	o = store.retrocycle(o);
-	return o;
+        o = store.retrocycle(o);
+        return o;
     };
 
     // ## In-memory storage
-    // ### fallback for all browsers to enable the API even if we can't persist data
+    // ### fallback to enable the API even if we can't persist data
     (function() {
 
-	var memory = {},
-	timeout = {};
+        var memory = {},
+        timeout = {};
 
-	function copy(obj) {
-	    return store.parse(store.stringify(obj));
-	}
+        function copy(obj) {
+            return store.parse(store.stringify(obj));
+        }
 
-	store.addType("volatile", function(key, value, options) {
+        store.addType("volatile", function(key, value, options) {
 
-	    if (!key) {
-		return copy(memory);
-	    }
+            if (!key) {
+                return copy(memory);
+            }
 
-	    if (value === undefined) {
-		return copy(memory[key]);
-	    }
+            if (value === undefined) {
+                return copy(memory[key]);
+            }
 
-	    if (timeout[key]) {
-		clearTimeout(timeout[key]);
-		delete timeout[key];
-	    }
+            if (timeout[key]) {
+                clearTimeout(timeout[key]);
+                delete timeout[key];
+            }
 
-	    if (value === null) {
-		delete memory[key];
-		return null;
-	    }
+            if (value === null) {
+                delete memory[key];
+                return null;
+            }
 
-	    memory[key] = value;
-	    if (options.expires) {
-		timeout[key] = setTimeout(function() {
-		    delete memory[key];
-		    delete timeout[key];
-		}, options.expires);
-	    }
+            memory[key] = value;
+            if (options.expires) {
+                timeout[key] = setTimeout(function() {
+                    delete memory[key];
+                    delete timeout[key];
+                }, options.expires);
+            }
 
-	    return value;
-	});
+            return value;
+        });
     }());
 
-}('undefined' !== typeof module && 'undefined' !== typeof module.exports ? module.exports: this));
+}(
+    'undefined' !== typeof module && 'undefined' !== typeof module.exports ?
+        module.exports : this
+));
+
 /**
  * ## Amplify storage for Shelf.js
+ * Copyright 2014 Stefano Balietti
  *
  * v. 1.1.0 22.05.2013 a275f32ee7603fbae6607c4e4f37c4d6ada6c3d5
  *
@@ -672,7 +684,7 @@ if (!Array.prototype.indexOf) {
  * - JSON.parse -> store.parse (cyclic objects)
  * - store.name -> store.prefix (check)
  * - rprefix -> regex
- * -  "__amplify__" -> store.prefix
+ * - "__amplify__" -> store.prefix
  *
  * ---
  */
@@ -908,9 +920,10 @@ if (!Array.prototype.indexOf) {
     }());
 
 }(this));
+
 /**
  * ## Cookie storage for Shelf.js
- * Copyright 2015 Stefano Balietti
+ * Copyright 2014 Stefano Balietti
  *
  * Original library from:
  * See http://code.google.com/p/cookies/
@@ -2491,8 +2504,7 @@ if (!Array.prototype.indexOf) {
         var i, len, idOrder, children, child;
         var id, forceId, missId;
         if (!JSUS.isNode(parent)) {
-            throw new TypeError('DOM.shuffleElements: parent must be a node. ' +
-                               'Found: ' + parent);
+            throw new TypeError('DOM.shuffleElements: parent must node.');
         }
         if (!parent.children || !parent.children.length) {
             JSUS.log('DOM.shuffleElements: parent has no children.', 'ERR');
@@ -2500,8 +2512,7 @@ if (!Array.prototype.indexOf) {
         }
         if (order) {
             if (!JSUS.isArray(order)) {
-                throw new TypeError('DOM.shuffleElements: order must array.' +
-                                   'Found: ' + order);
+                throw new TypeError('DOM.shuffleElements: order must array.');
             }
             if (order.length !== parent.children.length) {
                 throw new Error('DOM.shuffleElements: order length must ' +
@@ -6382,7 +6393,7 @@ if (!Array.prototype.indexOf) {
         this.db = [];
 
         // ### lastSelection
-        // The subset of items that were selected during the last operation
+        // The subset of items that were selected during the last operations
         // Notice: some of the items might not exist any more in the database.
         // @see NDDB.fetch
         this.lastSelection = [];
@@ -7111,36 +7122,22 @@ if (!Array.prototype.indexOf) {
     /**
      * ### NDDB._autoUpdate
      *
-     * Updates pointer, indexes, and sort items
+     * Performs a series of automatic checkings and updates the db
      *
-     * What is updated depends on configuration stored in `this.__update`.
+     * Checkings are performed according to current configuration, or to
+     * local options.
      *
      * @param {object} options Optional. Configuration object
-     *
-     * @see NDDB.__update
      *
      * @api private
      */
     NDDB.prototype._autoUpdate = function(options) {
-        var u;
-        u = this.__update;
-        options = options || {};
+        var update;
+        update = options ? J.merge(this.__update, options) : this.__update;
 
-        if (options.pointer ||
-            ('undefined' === typeof options.pointer && u.pointer)) {
-
-            this.nddb_pointer = this.db.length-1;
-        }
-        if (options.sort ||
-            ('undefined' === typeof options.sort && u.sort)) {
-
-            this.sort();
-        }
-        if (options.indexes ||
-            ('undefined' === typeof options.indexes && u.indexes)) {
-
-            this.rebuildIndexes();
-        }
+        if (update.pointer) this.nddb_pointer = this.db.length-1;
+        if (update.sort) this.sort();
+        if (update.indexes) this.rebuildIndexes();
     };
 
     /**
@@ -7178,35 +7175,18 @@ if (!Array.prototype.indexOf) {
      *  - null
      *
      * @param {object} o The item or array of items to insert
-     * @param {object} updateRules Optional. Update rules to overwrite
-     *   system-wide settings stored in `this.__update`
      *
      * @return {object|boolean} o The inserted object (might have been
      *   updated by on('insert') callbacks), or FALSE if the object could
      *   not be inserted, e.g. if a on('insert') callback returned FALSE.
      *
-     * @see NDDB.__update
      * @see nddb_insert
      */
-    NDDB.prototype.insert = function(o, updateRules) {
+    NDDB.prototype.insert = function(o) {
         var res;
-        if ('undefined' === typeof updateRules) {
-            updateRules = this.__update;
-        }
-        else if ('object' !== typeof updateRules) {
-            this.throwErr('TypeError', 'insert',
-                          'updateRules must be object or undefined. Found: ',
-                          updateRules);
-        }
-        res = nddb_insert.call(this, o, updateRules.indexes);
+        res = nddb_insert.call(this, o, this.__update.indexes);
         if (res === false) return false;
-        // If updateRules.indexes is false, then we do not want to do it.
-        // If it was true, we did it already.
-        this._autoUpdate({
-            indexes: false,
-            pointer: updateRules.pointer,
-            sort: updateRules.sort
-        });
+        this._autoUpdate({indexes: false});
         return o;
     };
 
@@ -7218,7 +7198,7 @@ if (!Array.prototype.indexOf) {
      * It always returns the length of the full database, regardless of
      * current selection.
      *
-     * @return {number} The total number of elements in the database
+     * @return {number} The length of the database
      *
      * @see NDDB.count
      */
@@ -8635,28 +8615,18 @@ if (!Array.prototype.indexOf) {
      *
      * @param {object} update An object containing the properties
      *  that will be updated.
-     * @param {object} updateRules Optional. Update rules to overwrite
-     *   system-wide settings stored in `this.__update`
      *
      * @return {NDDB} A new instance of NDDB with updated entries
      *
      * @see JSUS.mixin
      * @see NDDB.emit
      */
-    NDDB.prototype.update = function(update, updateRules) {
+    NDDB.prototype.update = function(update) {
         var i, len, db, res;
         if ('object' !== typeof update) {
-            this.throwErr('TypeError', 'update',
-                          'update must be object. Found: ', update);
+            this.throwErr('TypeError', 'update', 'update must be object');
         }
-        if ('undefined' === typeof updateRules) {
-            updateRules = this.__update;
-        }
-        else if ('object' !== typeof updateRules) {
-            this.throwErr('TypeError', 'update',
-                          'updateRules must be object or undefined. Found: ',
-                          updateRules);
-        }
+
         // Gets items and resets the current selection.
         db = this.fetch();
         len = db.length;
@@ -8665,25 +8635,17 @@ if (!Array.prototype.indexOf) {
                 res = this.emit('update', db[i], update);
                 if (res === true) {
                     J.mixin(db[i], update);
-                    if (updateRules.indexes) {
-                        this._indexIt(db[i]);
-                        this._hashIt(db[i]);
-                        this._viewIt(db[i]);
-                    }
+                    this._indexIt(db[i]);
+                    this._hashIt(db[i]);
+                    this._viewIt(db[i]);
                 }
             }
-            // If updateRules.indexes is false, then we do not want to do it.
-            // If it was true, we did it already
-            this._autoUpdate({
-                indexes: false,
-                pointer: updateRules.pointer,
-                sort: updateRules.sort
-            });
+            this._autoUpdate({indexes: false});
         }
         return this;
     };
 
-    // ## Deletion
+    //## Deletion
 
     /**
      * ### NDDB.removeAllEntries
@@ -9981,6 +9943,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Helper Methods
 
+
     /**
      * ### nddb_insert
      *
@@ -9993,7 +9956,7 @@ if (!Array.prototype.indexOf) {
      * accordingly.
      *
      * @param {object|function} o The item to add to database
-     * @param {boolean} doUpdate Optional. If TRUE, updates indexes, hashes,
+     * @param {boolean} update Optional. If TRUE, updates indexes, hashes,
      *    and views. Default, FALSE
      *
      * @return {boolean} TRUE, if item was inserted, FALSE otherwise, e.g.
@@ -10004,7 +9967,7 @@ if (!Array.prototype.indexOf) {
      *
      * @api private
      */
-    function nddb_insert(o, doUpdate) {
+    function nddb_insert(o, update) {
         var nddbid, res;
         if (('object' !== typeof o) && ('function' !== typeof o)) {
             this.throwErr('TypeError', 'insert', 'object or function ' +
@@ -10033,7 +9996,7 @@ if (!Array.prototype.indexOf) {
         // Stop inserting elements if one callback returned FALSE.
         if (res === false) return false;
         this.db.push(o);
-        if (doUpdate) {
+        if (update) {
             this._indexIt(o, (this.db.length-1));
             this._hashIt(o);
             this._viewIt(o);
@@ -10652,7 +10615,7 @@ if (!Array.prototype.indexOf) {
     node.support = JSUS.compatibility();
 
     // Auto-Generated.
-    node.version = '3.5.3';
+    node.version = '3.5.4';
 
 })(window);
 
@@ -10774,14 +10737,6 @@ if (!Array.prototype.indexOf) {
     // A client updates his Player object
     k.target.PLAYER_UPDATE = 'PLAYER_UPDATE';
 
-    // #### target.STAGE
-    // A client notifies his own stage
-    k.target.STAGE = 'STAGE';
-
-    // #### target.STAGE_LEVEL
-    // A client notifies his own stage level
-    k.target.STAGE_LEVEL = 'STAGE_LEVEL';
-
     // #### target.REDIRECT
     // Redirects a client to a new uri
     k.target.REDIRECT = 'REDIRECT';
@@ -10808,7 +10763,7 @@ if (!Array.prototype.indexOf) {
 
     // #### target.LOG
     // A generic log message used to send info to the server
-    // @see node.constants.remoteVerbosity
+    // @see NodeGameClient.remoteVerbosity
     k.target.LOG = 'LOG';
 
     // #### target.BYE
@@ -10826,6 +10781,16 @@ if (!Array.prototype.indexOf) {
 
     k.target.WARN = 'WARN';   // To do.
     k.target.ERR  = 'ERR';    // To do.
+
+    // Old targets.
+
+    // #### target.STAGE
+    // A client notifies his own stage
+    // k.target.STAGE = 'STAGE';
+
+    // #### target.STAGE_LEVEL
+    // A client notifies his own stage level
+    // k.target.STAGE_LEVEL = 'STAGE_LEVEL';
 
 
     // ### node.constants.gamecommands
@@ -22308,7 +22273,7 @@ if (!Array.prototype.indexOf) {
             throw new TypeError('Matcher.replaceId: oldId should be string. ' +
                                 'Found: ' + oldId);
         }
-        if ('string' !== typeof newId && newId.trim() !== '') {
+        if ('string' !== typeof newId || newId.trim() === '') {
             throw new TypeError('Matcher.replaceId: newId should be a ' +
                                 'non-empty string. Found: ' + newId);
         }
@@ -22377,7 +22342,6 @@ if (!Array.prototype.indexOf) {
 
         // Update resolvedMatchesById.
         m = this.resolvedMatchesById;
-
         for (i in m) {
             if (m.hasOwnProperty(i)) {
                 if (i === oldId) {
@@ -22386,22 +22350,24 @@ if (!Array.prototype.indexOf) {
                 }
                 else {
                     lenJ = m[i].length;
-                    if (lenJ == 1) {
-                        m[i][0] = newId;
-                    }
-                    else if (lenJ === 2) {
-                        if (m[i][0] === oldId) m[i][0] = newId;
-                        else m[i][1] = newId;
-                    }
-                    else {
+// THIS OPTIMIZATION DOES NOT SEEM TO WORK.
+// In fact, there might be more matches with the same
+// partner in sequence. And also if === 1, it should be checked.
+//                     if (lenJ == 1) {
+//                         m[i][0] = newId;
+//                     }
+//                     else if (lenJ === 2) {
+//                         if (m[i][0] === oldId) m[i][0] = newId;
+//                         else m[i][1] = newId;
+//                     }
+//                     else {
                         j = -1;
                         for ( ; ++j < lenJ ; ) {
                             if (m[i][j] === oldId) {
                                 m[i][j] = newId;
-                                break;
                             }
                         }
-                    }
+//                    }
                 }
             }
         }
@@ -22825,10 +22791,13 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # MatcherManager
- * Copyright(c) 2017 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Handles matching roles to players and players to players.
+ *
+ * ---
+ * nodegame.org
  */
 (function(exports, parent) {
 
@@ -22885,6 +22854,12 @@ if (!Array.prototype.indexOf) {
          */
         this.lastMatches = null;
 
+        /**
+         * ### MatcherManager.lastMatchesById
+         *
+         * Reference to the last matches organized by id of client
+         */
+        this.lastMatchesById = {};
     }
 
     /**
@@ -22914,7 +22889,7 @@ if (!Array.prototype.indexOf) {
      *
      * Parses a conf object and returns the desired matches of roles and players
      *
-     * Stores a reference of last matches under `MatcherManager.lastMatches`.
+     * Stores references of last settings and matches.
      *
      * Returned matches are in a format which is ready to be sent out as
      * remote options. That is:
@@ -22936,7 +22911,10 @@ if (!Array.prototype.indexOf) {
      *
      * @return {array} Array of matches ready to be sent out as remote options.
      *
+     * @see randomPairs
      * @see MatcherManager.lastMatches
+     * @see MatcherManager.lastMatchesById
+     * @see MatcherManager.lastSettings
      * @see Matcher.match
      * @see Game.gotoStep
      */
@@ -22968,7 +22946,6 @@ if (!Array.prototype.indexOf) {
                             '" did not return matches.');
         }
 
-        this.lastMatches = matches;
         return matches;
     };
 
@@ -23133,12 +23110,42 @@ if (!Array.prototype.indexOf) {
      *
      * @see Matcher.replaceId
      * @see Roler.replaceId
+     *
+     * @experimental
+     *
+     * TODO: this does not scale up. Maybe have another registry of
+     * substituted ids.
+     *
+     * TODO: maybe return info about the replaced id, e.g. current
+     * options, instead of boolean.
      */
     MatcherManager.prototype.replaceId = function(oldId, newId) {
         var res;
         res = this.matcher.replaceId(oldId, newId);
         res = res && this.roler.replaceId(oldId, newId);
         return res;
+    };
+
+    /**
+     * ### MatcherManager.getSetupFor
+     *
+     * Returns the setup object (partner and role options) for a specific id
+     *
+     * @param {string} id The id to get the setup object for
+     *
+     * @return {object} The requested setup object
+     *
+     * @see Matcher.match
+     * @see round2index
+     */
+    MatcherManager.prototype.getSetupFor = function(id) {
+        var out;
+        if ('string' !== typeof id) {
+            throw new TypeError('MatcherManager.getSetupFor: id must be ' +
+                                'string. Found: ' + id);
+        }
+        out = this.lastMatchesById[id];
+        return out || null;
     };
 
     // ## Helper Methods.
@@ -23189,11 +23196,19 @@ if (!Array.prototype.indexOf) {
         var r1, r2;
         var ii, i, len;
         var roundMatches, nMatchesIdx, match, id1, id2, missId;
-        var matches,  sayPartner, doRoles;
+        var matches, matchesById, sayPartner, doRoles;
         var opts, roles, matchedRoles;
 
         var game, n;
         var nRounds;
+
+        // Delete previous results.
+        this.lastMatches = null;
+        this.lastMatchesById = null;
+
+        // Init local variables.
+
+        matchesById = {};
 
         sayPartner = 'undefined' === typeof settings.sayPartner ?
             true : !!settings.sayPartner;
@@ -23309,6 +23324,9 @@ if (!Array.prototype.indexOf) {
                     }
                     // Add options to array.
                     matches[ii] = opts;
+
+                    // Keep reference.
+                    matchesById[id1] = opts.options;
                 }
 
                 // Prepare options to send to player 2, if role2 is defined.
@@ -23327,22 +23345,29 @@ if (!Array.prototype.indexOf) {
                     }
                     // Add options to array.
                     matches[ii] = opts;
+
+                    // Keep reference.
+                    matchesById[id2] = opts.options;
                 }
             }
             else if (sayPartner) {
                 if (id1 !== missId) {
                     opts = { id: id1, options: { partner: id2 } };
                     matches[ii] = opts;
+                    matchesById[id1] = opts.options;
                 }
                 if (id2 !== missId) {
                     if (id1 !== missId) ii++;
                     opts = { id: id2, options: { partner: id1 } };
                     matches[ii] = opts;
+                    matchesById[id2] = opts.options;
                 }
             }
         }
 
-        // Store reference to last valid settings.
+        // Store references.
+        this.lastMatches = matches;
+        this.lastMatchesById = matchesById;
         this.lastSettings = settings;
 
         return matches;
@@ -23470,7 +23495,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Game
- * Copyright(c) 2017 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Handles the flow of the game
@@ -24460,7 +24485,7 @@ if (!Array.prototype.indexOf) {
                     opts = { highlight: true, markAttempt: true };
                 }
                 else {
-                    opts = { highlight: false, markAttemps: false };
+                    opts = { highlight: false, markAttempt: false };
                 }
 
                 values = this[widget.ref].getValues(opts);
@@ -28254,7 +28279,7 @@ if (!Array.prototype.indexOf) {
             throw new TypeError('Matcher.replaceId: oldId should be string. ' +
                                 'Found: ' + oldId);
         }
-        if ('string' !== typeof newId && newId.trim() !== '') {
+        if ('string' !== typeof newId || newId.trim() === '') {
             throw new TypeError('Matcher.replaceId: newId should be a ' +
                                 'non-empty string. Found: ' + newId);
         }
@@ -28323,7 +28348,6 @@ if (!Array.prototype.indexOf) {
 
         // Update resolvedMatchesById.
         m = this.resolvedMatchesById;
-
         for (i in m) {
             if (m.hasOwnProperty(i)) {
                 if (i === oldId) {
@@ -28332,22 +28356,24 @@ if (!Array.prototype.indexOf) {
                 }
                 else {
                     lenJ = m[i].length;
-                    if (lenJ == 1) {
-                        m[i][0] = newId;
-                    }
-                    else if (lenJ === 2) {
-                        if (m[i][0] === oldId) m[i][0] = newId;
-                        else m[i][1] = newId;
-                    }
-                    else {
+// THIS OPTIMIZATION DOES NOT SEEM TO WORK.
+// In fact, there might be more matches with the same
+// partner in sequence. And also if === 1, it should be checked.
+//                     if (lenJ == 1) {
+//                         m[i][0] = newId;
+//                     }
+//                     else if (lenJ === 2) {
+//                         if (m[i][0] === oldId) m[i][0] = newId;
+//                         else m[i][1] = newId;
+//                     }
+//                     else {
                         j = -1;
                         for ( ; ++j < lenJ ; ) {
                             if (m[i][j] === oldId) {
                                 m[i][j] = newId;
-                                break;
                             }
                         }
-                    }
+//                    }
                 }
             }
         }
@@ -29071,10 +29097,10 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Log
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti
  * MIT Licensed
  *
- * `nodeGame` logging module
+ * nodeGame logging module
  */
 (function(exports, parent) {
 
@@ -29099,8 +29125,8 @@ if (!Array.prototype.indexOf) {
      * smaller than `this.remoteVerbosity`.
      *
      * @param {string} txt The text to output
-     * @param {string|number} level Optional. The verbosity level of this log.
-     *   Default: 'warn'
+     * @param {string} level Optional. The verbosity level of this log.
+     *   Default: 'info'
      * @param {string} prefix Optional. A text to display at the beginning of
      *   the log entry. Default: 'ng> '
      */
@@ -29618,26 +29644,39 @@ if (!Array.prototype.indexOf) {
      *
      * Sets the language for a playerList
      *
-     * @param {object} language Object describing language.
-     *   Needs shortName property.
+     * @param {object|string} lang Language information. If string, it must
+     *   be the full name, and the the first 2 letters lower-cased are used
+     *   as shortName. If object it must have the following format:
+     *   ``{
+     *      name: 'English',
+     *      shortName: 'en',
+     *      nativeName: 'English',
+     *      path: 'en/' // Optional, default equal to shortName + '/'.
+     *   }``
+     *
      * @param {boolean} prefix Optional. If TRUE, the window uri prefix is
      *   set to the value of lang.path. node.window must be defined,
      *   otherwise a warning is shown. Default, FALSE.
      *
-     * @return {object} The language object
+     * @return {object|string} The language object or string
      *
      * @see node.setup.lang
      * @see GameWindow.setUriPrefix
      *
      * @emit LANGUAGE_SET
      */
-    NGC.prototype.setLanguage = function(language, prefix) {
-        if ('object' !== typeof language) {
-            throw new TypeError('node.setLanguage: language must be object.');
+    NGC.prototype.setLanguage = function(lang, prefix) {
+        var language;
+        language = 'string' === typeof lang ? makeLanguageObj(lang) : lang;
+
+        if (!language || 'object' !== typeof language) {
+            throw new TypeError('node.setLanguage: language must be object ' +
+                               'or string. Found: ' + lang);
         }
         if ('string' !== typeof language.shortName) {
             throw new TypeError(
-                'node.setLanguage: language.shortName must be string.');
+                'node.setLanguage: language.shortName must be string. Found: ' +
+                    language.shortName);
         }
         this.player.lang = language;
         if (!this.player.lang.path) {
@@ -29658,6 +29697,19 @@ if (!Array.prototype.indexOf) {
 
         return this.player.lang;
     };
+
+    // ## Helper functions.
+
+    function makeLanguageObj(langStr) {
+        var shortName;
+        shortName = langStr.toLowerCase().substr(0,2);
+        return {
+            name: langStr,
+            shortName: shortName,
+            nativeName: langStr,
+            path: shortName + '/'
+        };
+    }
 
 })(
     'undefined' != typeof node ? node : module.exports,
@@ -31285,7 +31337,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # setups
- * Copyright(c) 2016 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti
  * MIT Licensed
  *
  * Listeners for incoming messages
@@ -31582,12 +31634,12 @@ if (!Array.prototype.indexOf) {
                 if (J.isArray(lang)) {
                     this.setLanguage(lang[0], lang[1]);
                 }
-                else if ('string' === typeof lang) {
+                else if ('string' === typeof lang || 'object' === typeof lang) {
                     this.setLanguage(lang);
                 }
                 else {
-                    throw new TypeError('setup("lang"): lang must be ' +
-                                        'string, array, or undefined. Found: ' +
+                    throw new TypeError('setup("lang"): lang must be string, ' +
+                                        'array, object or undefined. Found: ' +
                                         lang);
                 }
             }
@@ -32281,6 +32333,7 @@ if (!Array.prototype.indexOf) {
         storeCacheNow:   false,
         storeCacheLater: false
     };
+    GameWindow.defaults.infoPanel = undefined;
 
     function onLoadStd(iframe, cb) {
         var iframeWin;
@@ -33039,6 +33092,35 @@ if (!Array.prototype.indexOf) {
         node.events.ng.emit('FRAME_GENERATED', iframe);
 
         return iframe;
+    };
+
+    // generate info panel
+    // and return the object
+    GameWindow.prototype.generateInfoPanel = function() {
+        // return info panel also add it to the html
+        // create a reference inside game window
+        // infoPanel (this)
+
+        var infoPanelDiv;
+
+        this.infoPanel = new node.InfoPanel({});
+        infoPanelDiv = this.infoPanel.infoPanelDiv;
+
+        if (this.frameElement) {
+            document.body.insertBefore(infoPanelDiv, this.frameElement);
+        }
+        else if (this.headerElement) {
+            insertAfter(this.headerElement, infoPanelDiv);
+        }
+        else {
+            document.body.appendChild(infoPanelDiv);
+        }
+
+        function insertAfter(referenceNode, newNode) {
+            referenceNode.parentNode.insertBefore(newNode, referenceNode.nextElementSibling);
+        }
+
+        return this.infoPanel;
     };
 
     /**
@@ -34000,7 +34082,7 @@ if (!Array.prototype.indexOf) {
      * Sets the variable uriChannel
      *
      * Trailing and preceding slashes are added if missing.
-     * 
+     *
      * @param {string|null} uriChannel The current uri of the channel,
      *   or NULL to delete it
      *
@@ -34017,7 +34099,7 @@ if (!Array.prototype.indexOf) {
             throw new TypeError('GameWindow.uriChannel: uriChannel must be ' +
                                 'string or null. Found: ' + uriChannel);
         }
-        
+
         this.uriChannel = uriChannel;
     };
 
@@ -35257,6 +35339,158 @@ if (!Array.prototype.indexOf) {
     ('undefined' !== typeof window) ? window : module.parent.exports.window
 );
 
+(function(exports, window) {
+
+    "use strict";
+
+    exports.InfoPanel = InfoPanel;
+
+    function InfoPanel(options) {
+        this.init(options || {});
+    }
+
+    InfoPanel.prototype.init = function(options) {
+        this.infoPanelDiv = document.createElement('div');
+        this.infoPanelDiv.id = 'ng_info-panel';
+
+        /**
+         * ### InfoPanel.className
+         *
+         * Class name of info panel
+         *
+         * Default: ''
+         */
+        if ('undefined' === typeof options.className) {
+            this.infoPanelDiv.className = '';
+        }
+        else if ('string' === typeof options.className) {
+            this.infoPanelDiv.className = options.className;
+        }
+        else {
+            throw new TypeError('InfoPanel constructor: options.className ' +
+                                'must be a string or undefined. ' +
+                                'Found: ' + options.className);
+        }
+
+        /**
+         * ### InfoPanel.isVisible
+         *
+         * Boolean indicating visibility of info panel div
+         *
+         * Default: false
+         */
+        if ('undefined' === typeof options.isVisible) {
+            this.isVisible = false;
+        }
+        else if ('boolean' === typeof options.isVisible) {
+            this.isVisible = options.isVisible;
+        }
+        else {
+            throw new TypeError('InfoPanel constructor: options.isVisible ' +
+                                'must be a boolean or undefined. ' +
+                                'Found: ' + options.isVisible);
+        }
+
+        if (!this.isVisible) {
+            this.infoPanelDiv.style.display = 'none';
+        }
+        else {
+            this.infoPanelDiv.style.display = 'block';
+        }
+
+        /**
+         * ### InfoPanel.clearPattern
+         *
+         * String indicating when Info Panel should automatically clear:
+         * either: 'STEP', 'STAGE', 'NONE'
+         * (after each step, after each stage, or entirely manually)
+         *
+         * Default: 'NONE'
+         */
+        if ('undefined' === typeof options.clearPattern) {
+            this.clearPattern = 'NONE';
+        }
+        else if ('string' === typeof options.clearPattern &&
+                ['STEP', 'STAGE', 'NONE'].reduce(function(acc, value) {
+                  return options.clearPattern === value;
+                }, false)) {
+            this.clearPattern = options.clearPattern;
+        }
+        else {
+            throw new TypeError('InfoPanel constructor: options.clearPattern ' +
+                                'must be string "STEP", "STAGE", "NONE", ' +
+                                'or undefined. ' +
+                                'Found: ' + options.clearPattern);
+        }
+
+    };
+
+    InfoPanel.prototype.clear = function() {
+        return this.infoPanelDiv.innerHTML = '';
+    };
+
+    InfoPanel.prototype.getPanel = function() {
+        return this.infoPanelDiv;
+    };
+
+    InfoPanel.prototype.destroy = function() {
+        if (this.infoPanelDiv.parentNode) {
+            this.infoPanelDiv.parentNode.removeChild(this.infoPanelDiv);
+        }
+
+        this.infoPanelDiv = null;
+    };
+
+    InfoPanel.prototype.bindListener = function() {
+        // first thing in body of page ? or below header ? or above main frame ?
+        // STEPPING -- currently moving step
+        // node.game.getRound('remaining')  === 0 or 1 that means its the last step of a stage
+    };
+
+    InfoPanel.prototype.toggle = function() {
+      this.isVisible = !this.isVisible;
+
+      if (this.isVisible) {
+        this.open();
+      }
+      else {
+        this.close();
+      }
+    };
+
+    InfoPanel.prototype.open = function() {
+      this.infoPanelDiv.style.display = 'block';
+      this.isVisible = true;
+    };
+
+    InfoPanel.prototype.close = function() {
+      this.infoPanelDiv.style.display = 'none';
+      this.isVisible = false;
+    };
+
+    InfoPanel.prototype.createToggleButton = function(buttonLabel) {
+        // return a button that toggles info panel
+        var button;
+        var that;
+
+        that = this;
+
+        button = document.createElement('button');
+        button.className = 'btn btn-lg btn-warning';
+        button.innerHTML = buttonLabel;
+
+        button.onclick = function() {
+          that.toggle();
+        };
+
+        return button;
+    };
+
+})(
+    ('undefined' !== typeof node) ? node : module.parent.exports.node,
+    ('undefined' !== typeof window) ? window : module.parent.exports.window
+);;
+
 /**
  * # selector
  * Copyright(c) 2015 Stefano Balietti
@@ -35501,8 +35735,9 @@ if (!Array.prototype.indexOf) {
     /**
      * ### GameWindow.getScreen
      *
-     * Returns the screen of the game, i.e. the innermost element
-     * inside which to display content
+     * Returns the "screen" of the game
+     *
+     * i.e. the innermost element inside which to display content
      *
      * In the following order the screen can be:
      *
@@ -40712,8 +40947,12 @@ if (!Array.prototype.indexOf) {
      *       to the list
      *   - freeText: if TRUE, a textarea will be added under the list,
      *       if 'string', the text will be added inside the the textarea
+     *   - forms: the forms to displayed, formatted as explained in
+     *       `ChoiceManager.setForms`
      *
      * @param {object} options Configuration options
+     *
+     * @see ChoiceManager.setForms
      */
     ChoiceManager.prototype.init = function(options) {
         var tmp, that;
@@ -41195,12 +41434,9 @@ if (!Array.prototype.indexOf) {
         this.trs = [];
 
         /**
-         * ## ChoiceTable.listener
+         * ### ChoiceTable.listener
          *
          * The listener function
-         *
-         * @see GameChoice.enable
-         * @see GameChoice.disable
          */
         this.listener = function(e) {
             var name, value, td, oldSelected;
@@ -45049,40 +45285,253 @@ if (!Array.prototype.indexOf) {
     // The options object is always existing even if no
     //
     function EndScreen(options) {
-        this.options = options;
-        this.init(true, true);
+        /**
+         * ### EndScreen.headerMessage
+         *
+         * The header message displayed at the top of the screen
+         *
+         * Default: 'Thank you for participating!'
+         */
+        if ('undefined' === typeof options.headerMessage) {
+            this.headerMessage = 'Thank you for participating!';
+        }
+        else if ('string' === typeof options.headerMessage) {
+            this.headerMessage = options.headerMessage;
+        }
+        else {
+            throw new TypeError('EndScreen constructor: ' +
+                                'options.headerMessage ' +
+                                'must be string or undefined. ' +
+                                'Found: ' + options.headerMessage);
+        }
+
+        /**
+         * ### EndScreen.message
+         *
+         * The informational message displayed in the body of the screen
+         *
+         * Default: 'You have now completed this task and your data
+         *           has been saved. Please go back to the Amazon Mechanical
+         *           Turk web site and submit the HIT.'
+         */
+        if ('undefined' === typeof options.message) {
+            this.message =  'You have now completed this task ' +
+                            'and your data has been saved. ' +
+                            'Please go back to the Amazon Mechanical Turk ' +
+                            'web site and ' +
+                            'submit the HIT.';
+        }
+        else if ('string' === typeof options.message) {
+            this.message = options.message;
+        }
+        else {
+            throw new TypeError('EndScreen constructor: options.message ' +
+                                'must be string or undefined. ' +
+                                'Found: ' + options.message);
+        }
+
+        /**
+         * ### EndScreen.showEmailForm
+         *
+         * If true, the email form is shown
+         *
+         * Default: true
+         */
+        if ('undefined' === typeof options.showEmailForm) {
+            this.showEmailForm = true;
+        }
+        else if ('boolean' === typeof options.showEmailForm) {
+            this.showEmailForm = options.showEmailForm;
+        }
+        else {
+            throw new TypeError('EndScreen constructor: ' +
+                                'options.showEmailForm ' +
+                                'must be boolean or undefined. ' +
+                                'Found: ' + options.showEmailForm);
+        }
+
+        /**
+         * ### EndScreen.showFeedbackForm
+         *
+         * If true, the feedback form is shown
+         *
+         * Default: true
+         */
+        if ('undefined' === typeof options.showFeedbackForm) {
+            this.showFeedbackForm = true;
+        }
+        else if ('boolean' === typeof options.showFeedbackForm) {
+            this.showFeedbackForm = options.showFeedbackForm;
+        }
+        else {
+            throw new TypeError('EndScreen constructor: ' +
+                                'options.showFeedbackForm ' +
+                                'must be boolean or undefined. ' +
+                                'Found: ' + options.showFeedbackForm);
+        }
+
+        /**
+         * ### EndScreen.showTotalWin
+         *
+         * If true, the total win is shown
+         *
+         * Default: true
+         */
+        if ('undefined' === typeof options.showTotalWin) {
+            this.showTotalWin = true;
+        }
+        else if ('boolean' === typeof options.showTotalWin) {
+            this.showTotalWin = options.showTotalWin;
+        }
+        else {
+            throw new TypeError('EndScreen constructor: ' +
+                                'options.showTotalWin ' +
+                                'must be boolean or undefined. ' +
+                                'Found: ' + options.showTotalWin);
+        }
+
+        /**
+         * ### EndScreen.showExitCode
+         *
+         * If true, the exit code is shown
+         *
+         * Default: true
+         */
+        if ('undefined' === typeof options.showExitCode) {
+            this.showExitCode = true;
+        }
+        else if ('boolean' === typeof options.showExitCode) {
+            this.showExitCode = options.showExitCode;
+        }
+        else {
+            throw new TypeError('EndScreen constructor: ' +
+                                'options.showExitCode ' +
+                                'must be boolean or undefined. ' +
+                                'Found: ' + options.showExitCode);
+        }
+
+        /**
+         * ### EndScreen.feedback
+         *
+         * Feedback widget element
+         *
+         * Default: new Feedback(option)
+         */
+        this.feedback = node.widgets.get('Feedback', options);
+
+        /**
+         * ### EndScreen.endScreenElement
+         *
+         * Endscreen HTML element
+         *
+         * Default: an HTML element,
+         * null initially, element added on append()
+         */
+        this.endScreenHTML = null;
+
+        this.init();
     }
 
     // Implements the Widget.append method.
     EndScreen.prototype.append = function() {
-        this.bodyDiv.appendChild(this.endScreen);
+        this.endScreenHTML = this.makeEndScreen();
+        this.bodyDiv.append(this.endScreenHTML);
+    };
 
-        var that;
+    // makes the end screen
+    EndScreen.prototype.makeEndScreen = function() {
+        var endScreenElement;
+        var headerElement, messageElement;
+        var totalWinElement, totalWinParaElement, totalWinInputElement;
+        var exitCodeElement, exitCodeParaElement, exitCodeInputElement;
+        var emailElement, emailFormElement, emailLabelElement,
+            emailInputElement, emailButtonElement;
         var emailErrorString;
-        var emailButton, emailInput, emailForm;
-        var feedbackButton, feedbackForm, feedbackInput;
-        var charCounter;
 
-        that = this;
-
-        emailButton = W.getElementById('endscreen-submit-email');
-        emailForm = W.getElementById('endscreen-email-form');
-        emailInput = W.getElementById('endscreen-email');
         emailErrorString = 'Not a valid email address, ' +
                            'please correct it and submit again.';
 
-        feedbackForm = W.getElementById('endscreen-feedback-form');
-        feedbackInput = W.getElementById('endscreen-feedback');
-        feedbackButton = W.getElementById('endscreen-submit-feedback');
+        endScreenElement = document.createElement('div');
+        endScreenElement.className = 'endscreen';
 
-        charCounter = W.getElementById('endscreen-char-count');
+        headerElement = document.createElement('h1');
+        headerElement.innerHTML = this.headerMessage;
+        endScreenElement.appendChild(headerElement);
+
+        messageElement = document.createElement('p');
+        messageElement.innerHTML = this.message;
+        endScreenElement.appendChild(messageElement);
+
+        if (this.showTotalWin) {
+            totalWinElement = document.createElement('div');
+
+            totalWinParaElement = document.createElement('p');
+            totalWinParaElement.innerHTML = 'Your total win: ';
+
+            totalWinInputElement = document.createElement('input');
+            totalWinInputElement.className = 'endscreen-total form-control';
+            totalWinInputElement.setAttribute('disabled', 'true');
+
+            totalWinParaElement.appendChild(totalWinInputElement);
+            totalWinElement.appendChild(totalWinParaElement);
+
+            endScreenElement.appendChild(totalWinElement);
+            this.totalWinInputElement = totalWinInputElement;
+        }
+
+        if (this.showExitCode) {
+            exitCodeElement = document.createElement('div');
+
+            exitCodeParaElement = document.createElement('p');
+            exitCodeParaElement.innerHTML = 'Your exit code: ';
+
+            exitCodeInputElement = document.createElement('input');
+            exitCodeInputElement.className = 'endscreen-exit-code ' +
+                                             'form-control';
+            exitCodeInputElement.setAttribute('disabled', 'true');
+
+            exitCodeParaElement.appendChild(exitCodeInputElement);
+            exitCodeElement.appendChild(exitCodeParaElement);
+
+            endScreenElement.appendChild(exitCodeElement);
+            this.exitCodeInputElement = exitCodeInputElement;
+        }
 
         if (this.showEmailForm) {
-            emailForm.addEventListener('submit', function(event) {
-                event.preventDefault();
+            emailElement = document.createElement('div');
+            emailFormElement = document.createElement('form');
+            emailFormElement.className = 'endscreen-email-form';
 
+            emailLabelElement = document.createElement('label');
+            emailLabelElement.innerHTML = 'Would you like to be contacted ' +
+                                          'again for future experiments? ' +
+                                          'If so, leave your email here ' +
+                                          'and press submit: ';
+
+            emailInputElement = document.createElement('input');
+            emailInputElement.setAttribute('type', 'text');
+            emailInputElement.setAttribute('placeholder', 'Email');
+            emailInputElement.className = 'endscreen-email-input form-control';
+
+            emailButtonElement = document.createElement('input');
+            emailButtonElement.setAttribute('type', 'submit');
+            emailButtonElement.setAttribute('value', 'Submit email');
+            emailButtonElement.className = 'btn btn-lg btn-primary ' +
+                                           'endscreen-email-submit';
+
+            emailFormElement.appendChild(emailLabelElement);
+            emailFormElement.appendChild(emailInputElement);
+            emailFormElement.appendChild(emailButtonElement);
+
+            emailElement.appendChild(emailFormElement);
+            endScreenElement.appendChild(emailElement);
+
+            emailFormElement.addEventListener('submit', function(event) {
                 var email, indexAt, indexDot;
-                email = emailInput.value;
+
+                event.preventDefault();
+                email = emailInputElement.value;
+
                 if (email.trim().length > 5) {
                     indexAt = email.indexOf('@');
                     if (indexAt !== -1 &&
@@ -45096,134 +45545,30 @@ if (!Array.prototype.indexOf) {
 
                             node.say('email', 'SERVER', email);
 
-                            emailButton.disabled = true;
-                            emailInput.disabled = true;
-                            emailButton.value = 'Sent!';
+                            emailButtonElement.disabled = true;
+                            emailInputElement.disabled = true;
+                            emailButtonElement.value = 'Sent!';
                         }
                     }
                 }
-                emailButton.value = emailErrorString;
+
+                emailButtonElement.value = emailErrorString;
             }, true);
         }
 
         if (this.showFeedbackForm) {
-            feedbackForm.addEventListener('submit', function(event) {
-                var feedback;
-
-                event.preventDefault();
-                feedback = feedbackInput.value.trim();
-
-                if (feedback.length < that.maxFeedbackLength) {
-                    node.say('feedback', 'SERVER', feedback);
-
-                    feedbackButton.disabled = true;
-                    feedbackButton.value = 'Sent!';
-                }
-                else {
-                    feedbackButton.value = 'Please shorten your response ' +
-                                           'and submit again.';
-                }
-            });
-
-            feedbackForm.addEventListener('input', function(event) {
-                var charLeft;
-
-                charLeft = that.maxFeedbackLength - feedbackInput.value.length;
-                charCounter.innerHTML = Math.abs(charLeft);
-
-                if (charLeft < 0) {
-                    charCounter.innerHTML += ' characters over.';
-                }
-                else {
-                    charCounter.innerHTML += ' characters remaining.';
-                }
-            });
+            node.widgets.append(this.feedback, endScreenElement);
         }
+
+        return endScreenElement;
     };
-
-    EndScreen.prototype.init = function() {
-        var exitCode; // exit code
-        var topHTML, messageHTML, totalWinHTML, exitCodeHTML, emailHTML,
-            endHTML, endScreenHTML;
-        var endScreen;
-
-        this.headerMessage = this.options.headerMessage ||
-        'Thank You for Participating!';
-        this.message = this.options.message ||
-        'You have now completed this task and your data has been saved. ' +
-        'Please go back to the Amazon Mechanical Turk web site and ' +
-        'submit the HIT.';
-        this.showEmailForm = 'showEmailForm' in this.options ?
-                            this.options.showEmailForm : true;
-        this.showFeedbackForm = 'showFeedbackForm' in this.options ?
-                            this.options.showFeedbackForm : true;
-        this.showTotalWin = 'showTotalWin' in this.options ?
-                            this.options.showTotalWin : true;
-        this.showExitCode = 'showExitCode' in this.options ?
-                            this.options.showExitCode : true;
-        this.maxFeedbackLength = this.options.maxFeedbackLength || 800;
-
-        messageHTML = '<h1>' + this.headerMessage +'</h1>' + '<p>' +
-                      this.message + '</p>';
-        endScreenHTML = messageHTML;
-
-        if (this.showTotalWin) {
-            // totalWinHTML = '<p>Your total win: ' + totalWin + '</p>';
-            totalWinHTML = '<p>Your total win: ' +
-                           '<input id="endscreen-total" ' +
-                           'class="form-control" ' +
-                           'disabled></input>' +
-                           '</p>';
-            endScreenHTML += totalWinHTML;
-        }
-        if (this.showExitCode) {
-            // exitCodeHTML = '<p>Your Exit code: ' + exitCode + '</p>';
-            exitCodeHTML = '<p>Your exit code: ' +
-                           '<input id="endscreen-exit-code" ' +
-                           'class="form-control" disabled></input>' +
-                           '</p>';
-            endScreenHTML += exitCodeHTML;
-        }
-        if (this.showEmailForm) {
-            emailHTML = '<form id="endscreen-email-form">' +
-            '<label for="endscreen-email">' +
-            'Would you like to be contacted again ' +
-            'for future experiments? ' +
-            'If so, leave your email here and press submit:' +
-            '</label>' +
-            '<input id="endscreen-email" type="text" placeholder="Email" ' +
-            'class="form-control"/>' +
-            '<input class="btn btn-lg btn-primary" ' +
-            'id="endscreen-submit-email" ' +
-            'type="submit" value="Submit email"></input>' +
-            '</form>';
-            endScreenHTML += emailHTML;
-        }
-        if (this.showFeedbackForm) {
-            feedbackFormHTML = '<form id="endscreen-feedback-form">' +
-            '<label for="endscreen-feedback">' +
-            'Any feedback about the experiment? Let us know here:' +
-            '</label>' +
-            '<textarea id="endscreen-feedback" type="text" rows="3"' +
-            'class="form-control"></textarea>' +
-            '<span id="endscreen-char-count" class="badge">' +
-            this.maxFeedbackLength +
-            ' characters left</span>' +
-            '<input class="btn btn-lg btn-primary" ' +
-            'id="endscreen-submit-feedback" ' +
-            'type="submit" value="Submit feedback"></input>' +
-            '</form>';
-            endScreenHTML += feedbackFormHTML;
-        }
-
-        this.endScreen = document.createElement('div');
-        this.endScreen.class = this.className;
-        this.endScreen.id = 'endscreen';
-        this.endScreen.innerHTML = endScreenHTML;
-    }
 
     // Implements the Widget.listeners method.
     EndScreen.prototype.listeners = function() {
+        var that;
+
+        that = this;
+
         // Listeners added here are automatically removed
         // when the widget is destroyed.
         node.on.data('WIN', function(message) {
@@ -45237,14 +45582,24 @@ if (!Array.prototype.indexOf) {
             totalWin = data.total;
             exitCode = data.exit;
 
-            totalHTML = W.getElementById('endscreen-total');
-            exitCodeHTML = W.getElementById('endscreen-exit-code');
+            if (JSUS.isNumber(totalWin, 0) === false) {
+                node.err('EndScreen error, invalid exit code: ' + totalWin);
+                totalWin = 'Error: invalid total win.';
+            }
 
-            if (totalHTML) {
+            if ((typeof exitCode !== 'string')) {
+                node.err('EndScreen error, invalid exit code: ' + exitCode);
+                exitCode = 'Error: invalid exit code.';
+            }
+
+            totalHTML = that.totalWinInputElement;
+            exitCodeHTML = that.exitCodeInputElement;
+
+            if (totalHTML && that.showTotalWin) {
                 totalHTML.value = totalWin;
             }
 
-            if (exitCodeHTML) {
+            if (exitCodeHTML && that.showExitCode) {
                 exitCodeHTML.value = exitCode;
             }
         });
@@ -45268,15 +45623,13 @@ if (!Array.prototype.indexOf) {
 
     node.widgets.register('Feedback', Feedback);
 
-
     // ## Meta-data
 
-    Feedback.version = '0.2';
+    Feedback.version = '0.3';
     Feedback.description = 'Displays a simple feedback form.';
 
     Feedback.title = 'Feedback';
     Feedback.className = 'feedback';
-
 
     // ## Dependencies
 
@@ -45288,24 +45641,137 @@ if (!Array.prototype.indexOf) {
      * ## Feedback constructor
      *
      * `Feedback` sends a feedback message to the server
+     *
+     * @param {object} options configuration option
      */
-    function Feedback() {
+    function Feedback(options) {
         /**
-         * ### Feedback.textarea
+         * ### Feedback.label
          *
-         * The TEXTAREA wherein clients can enter feedback
+         * The label for the feedback element
+         *
+         * Default: 'Any feedback about the experiment? Let us know here: '
          */
-        this.textarea = null;
+        if ('undefined' === typeof options.label) {
+            this.label = 'Any feedback about the experiment? Let us know here:';
+        }
+        else if ('string' === typeof options.label) {
+            this.label = options.label;
+        }
+        else {
+            throw new TypeError('Feedback constructor: options.label ' +
+                                'must be string or undefined. ' +
+                                'Found: ' + options.label);
+        }
 
         /**
-         * ### Feedback.submit
+         * ### Feedback.maxFeedbackLength
          *
-         * Button to submit the feedback form
+         * The maximum character length for feedback to be submitted
+         *
+         * Default: 800
          */
-        this.submit = null;
+        if ('undefined' === typeof options.maxLength) {
+            this.maxFeedbackLength = 800;
+        }
+        else if (JSUS.isNumber(options.maxLength, 0) !== false) {
+            this.maxFeedbackLength = options.maxLength;
+        }
+        else {
+            throw new TypeError('Feedback constructor: options.maxLength ' +
+                                'must be a number >= 0 or undefined. ' +
+                                'Found: ' + options.maxLength);
+        }
+
+        /**
+         * ### Feedback.minFeedbackLength
+         *
+         * The minimum character length for feedback to be submitted
+         *
+         * If minFeedbackLength = 0, then there is no minimum length checked.
+         * Default: 0
+         */
+        if ('undefined' === typeof options.minLength) {
+            this.minFeedbackLength = 0;
+        }
+        else if (JSUS.isNumber(options.minLength, 0) !== false) {
+            this.minFeedbackLength = options.minLength;
+        }
+        else {
+            throw new TypeError('Feedback constructor: options.minLength ' +
+                                'must be a number >= 0 or undefined. ' +
+                                'Found: ' + options.minLength);
+        }
+
+        /**
+         * ### Feedback.feedbackHTML
+         *
+         * The HTML element containing the form elements
+         */
+        this.feedbackHTML = null;
     }
 
     // ## Feedback methods
+
+    Feedback.prototype.createForm = function(showCount, minLength, maxLength, labelText) {
+        var feedbackHTML;
+        var feedbackForm;
+        var feedbackLabel;
+        var feedbackTextarea;
+        var submit;
+        var charCounter;
+
+        feedbackHTML = document.createElement('div');
+        feedbackHTML.className = 'feedback';
+
+        feedbackForm = document.createElement('form');
+        feedbackForm.className = 'feedback-form';
+        feedbackHTML.appendChild(feedbackForm);
+
+        feedbackLabel = document.createElement('label');
+        feedbackLabel.setAttribute('for', 'feedback-input');
+        feedbackLabel.innerHTML = labelText;
+        feedbackForm.appendChild(feedbackLabel);
+
+        feedbackTextarea = document.createElement('textarea');
+        feedbackTextarea.className = 'feedback-textarea form-control';
+        feedbackTextarea.setAttribute('type', 'text');
+        feedbackTextarea.setAttribute('rows', '3');
+        feedbackForm.appendChild(feedbackTextarea);
+
+        submit = document.createElement('input');
+        submit.className = 'btn btn-lg btn-primary';
+        submit.setAttribute('type', 'submit');
+        submit.setAttribute('value', 'Submit feedback');
+        feedbackForm.appendChild(submit);
+
+        charCounter = document.createElement('span');
+        charCounter.className = 'feedback-char-count badge';
+        charCounter.innerHTML = maxLength;
+        feedbackForm.appendChild(charCounter);
+
+        feedbackForm.addEventListener('submit', function(event) {
+            var feedback;
+
+            event.preventDefault();
+
+            feedback = feedbackTextarea.value.trim();
+            node.say('feedback', 'SERVER', feedback);
+
+            submit.disabled = true;
+            feedbackTextarea.disabled = true;
+
+            submit.setAttribute('value', 'Sent!');
+        });
+
+        feedbackForm.addEventListener('input', function(event) {
+            checkFeedbackLength(feedbackTextarea, charCounter, submit, minLength, maxLength);
+        });
+
+        checkFeedbackLength(feedbackTextarea, charCounter, submit, minLength, maxLength);
+
+        return feedbackHTML;
+    };
 
     /**
      * ### Feedback.append
@@ -45313,40 +45779,41 @@ if (!Array.prototype.indexOf) {
      * Appends widget to this.bodyDiv
      */
     Feedback.prototype.append = function() {
-        var that = this;
-
-        this.textarea = document.createElement('textarea');
-        this.submit = document.createElement('button');
-        this.submit.appendChild(document.createTextNode('Submit'));
-        this.submit.onclick = function() {
-            var feedback, sent;
-            feedback = that.textarea.value;
-            if (!feedback.length) {
-                J.highlight(that.textarea, 'ERR');
-                alert('Feedback is empty, not sent.');
-                return false;
-            }
-            sent = node.say('FEEDBACK', 'SERVER', {
-                feedback: feedback,
-                userAgent: navigator.userAgent
-            });
-
-            if (sent) {
-                J.highlight(that.textarea, 'OK');
-                alert('Feedback sent. Thank you.');
-                that.textarea.disabled = true;
-                that.submit.disabled = true;
-            }
-            else {
-                J.highlight(that.textarea, 'ERR');
-                alert('An error has occurred, feedback not sent.');
-            }
-        };
-        this.bodyDiv.appendChild(this.textarea);
-        this.bodyDiv.appendChild(this.submit);
+        this.feedbackHTML = this.createForm(this.showCharCount,
+                                            this.minFeedbackLength,
+                                            this.maxFeedbackLength,
+                                            this.label);
+        this.bodyDiv.appendChild(this.feedbackHTML);
     };
 
     Feedback.prototype.listeners = function() {};
+
+    // check the feedback length
+    function checkFeedbackLength(feedbackTextarea, charCounter,
+                                 submit, minLength, maxLength) {
+        var length;
+
+        length = feedbackTextarea.value.trim().length;
+
+        if (length < minLength) {
+          submit.disabled = true;
+
+          charCounter.innerHTML = (minLength - length) + ' characters needed.';
+          charCounter.style.backgroundColor = '#f2dede';
+        }
+        else if (length > maxLength) {
+          submit.disabled = true;
+
+          charCounter.innerHTML = (length - maxLength) + ' characters over.';
+          charCounter.style.backgroundColor = '#f2dede';
+        }
+        else {
+          submit.disabled = false;
+
+          charCounter.innerHTML = (maxLength - length) + ' characters remaining.';
+          charCounter.style.backgroundColor = '#dff0d8';
+        }
+    }
 
 })(node);
 
