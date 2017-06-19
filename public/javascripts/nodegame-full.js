@@ -8485,6 +8485,50 @@ if (!Array.prototype.indexOf) {
         return this.breed(shuffled);
     };
 
+    /**
+     * ### NDDB.random
+     *
+     * Breeds a new database with N randomly selected items
+     *
+     * @param {number} N How many random items to include
+     *
+     * @return {NDDB} A new instance of NDDB with the shuffled entries
+     */
+    NDDB.prototype.random = function(N, strict) {
+        var i, len, used, out, idx;
+        if ('number' !== typeof N) {
+            this.throwErr('TypeError', 'random',
+                          'N must be number Found: ' + N);
+        }
+        if (N < 1) {
+            this.throwErr('Error', 'random', 'N must be > 0. Found: ' + N);
+        }
+        len = this.db.length;
+        if (N > len && strict !== false) {
+            this.throwErr('Error', 'random', 'not enough items in db. Found: ' +
+                          len + '. Requested: ' + N);
+        }
+        // Heuristic.
+        if (N < (len/3)) {
+            i = 0;
+            out = new Array(N);
+            used = {};
+            while (i < N) {
+                idx = J.randomInt(0, len)-1;
+                if ('undefined' === typeof used[idx]) {
+                    used[idx] = true;
+                    out[i] = this.db[idx];
+                    i++;
+                }
+            }
+        }
+        else {
+            out = J.shuffle(this.db);
+            out = out.slice(0, N);
+        }
+        return this.breed(out);
+    };
+
     // ## Custom callbacks
 
     /**
@@ -32394,6 +32438,7 @@ if (!Array.prototype.indexOf) {
         storeCacheNow:   false,
         storeCacheLater: false
     };
+    GameWindow.defaults.infoPanel = undefined;
 
     function onLoadStd(iframe, cb) {
         var iframeWin;
@@ -33152,6 +33197,35 @@ if (!Array.prototype.indexOf) {
         node.events.ng.emit('FRAME_GENERATED', iframe);
 
         return iframe;
+    };
+
+    // generate info panel
+    // and return the object
+    GameWindow.prototype.generateInfoPanel = function() {
+        // return info panel also add it to the html
+        // create a reference inside game window
+        // infoPanel (this)
+
+        var infoPanelDiv;
+
+        this.infoPanel = new node.InfoPanel({});
+        infoPanelDiv = this.infoPanel.infoPanelDiv;
+
+        if (this.frameElement) {
+            document.body.insertBefore(infoPanelDiv, this.frameElement);
+        }
+        else if (this.headerElement) {
+            insertAfter(this.headerElement, infoPanelDiv);
+        }
+        else {
+            document.body.appendChild(infoPanelDiv);
+        }
+
+        function insertAfter(referenceNode, newNode) {
+            referenceNode.parentNode.insertBefore(newNode, referenceNode.nextElementSibling);
+        }
+
+        return this.infoPanel;
     };
 
     /**
@@ -34113,7 +34187,7 @@ if (!Array.prototype.indexOf) {
      * Sets the variable uriChannel
      *
      * Trailing and preceding slashes are added if missing.
-     * 
+     *
      * @param {string|null} uriChannel The current uri of the channel,
      *   or NULL to delete it
      *
@@ -34130,7 +34204,7 @@ if (!Array.prototype.indexOf) {
             throw new TypeError('GameWindow.uriChannel: uriChannel must be ' +
                                 'string or null. Found: ' + uriChannel);
         }
-        
+
         this.uriChannel = uriChannel;
     };
 
@@ -35370,6 +35444,158 @@ if (!Array.prototype.indexOf) {
     ('undefined' !== typeof window) ? window : module.parent.exports.window
 );
 
+(function(exports, window) {
+
+    "use strict";
+
+    exports.InfoPanel = InfoPanel;
+
+    function InfoPanel(options) {
+        this.init(options || {});
+    }
+
+    InfoPanel.prototype.init = function(options) {
+        this.infoPanelDiv = document.createElement('div');
+        this.infoPanelDiv.id = 'ng_info-panel';
+
+        /**
+         * ### InfoPanel.className
+         *
+         * Class name of info panel
+         *
+         * Default: ''
+         */
+        if ('undefined' === typeof options.className) {
+            this.infoPanelDiv.className = '';
+        }
+        else if ('string' === typeof options.className) {
+            this.infoPanelDiv.className = options.className;
+        }
+        else {
+            throw new TypeError('InfoPanel constructor: options.className ' +
+                                'must be a string or undefined. ' +
+                                'Found: ' + options.className);
+        }
+
+        /**
+         * ### InfoPanel.isVisible
+         *
+         * Boolean indicating visibility of info panel div
+         *
+         * Default: false
+         */
+        if ('undefined' === typeof options.isVisible) {
+            this.isVisible = false;
+        }
+        else if ('boolean' === typeof options.isVisible) {
+            this.isVisible = options.isVisible;
+        }
+        else {
+            throw new TypeError('InfoPanel constructor: options.isVisible ' +
+                                'must be a boolean or undefined. ' +
+                                'Found: ' + options.isVisible);
+        }
+
+        if (!this.isVisible) {
+            this.infoPanelDiv.style.display = 'none';
+        }
+        else {
+            this.infoPanelDiv.style.display = 'block';
+        }
+
+        /**
+         * ### InfoPanel.clearPattern
+         *
+         * String indicating when Info Panel should automatically clear:
+         * either: 'STEP', 'STAGE', 'NONE'
+         * (after each step, after each stage, or entirely manually)
+         *
+         * Default: 'NONE'
+         */
+        if ('undefined' === typeof options.clearPattern) {
+            this.clearPattern = 'NONE';
+        }
+        else if ('string' === typeof options.clearPattern &&
+                ['STEP', 'STAGE', 'NONE'].reduce(function(acc, value) {
+                  return options.clearPattern === value;
+                }, false)) {
+            this.clearPattern = options.clearPattern;
+        }
+        else {
+            throw new TypeError('InfoPanel constructor: options.clearPattern ' +
+                                'must be string "STEP", "STAGE", "NONE", ' +
+                                'or undefined. ' +
+                                'Found: ' + options.clearPattern);
+        }
+
+    };
+
+    InfoPanel.prototype.clear = function() {
+        return this.infoPanelDiv.innerHTML = '';
+    };
+
+    InfoPanel.prototype.getPanel = function() {
+        return this.infoPanelDiv;
+    };
+
+    InfoPanel.prototype.destroy = function() {
+        if (this.infoPanelDiv.parentNode) {
+            this.infoPanelDiv.parentNode.removeChild(this.infoPanelDiv);
+        }
+
+        this.infoPanelDiv = null;
+    };
+
+    InfoPanel.prototype.bindListener = function() {
+        // first thing in body of page ? or below header ? or above main frame ?
+        // STEPPING -- currently moving step
+        // node.game.getRound('remaining')  === 0 or 1 that means its the last step of a stage
+    };
+
+    InfoPanel.prototype.toggle = function() {
+      this.isVisible = !this.isVisible;
+
+      if (this.isVisible) {
+        this.open();
+      }
+      else {
+        this.close();
+      }
+    };
+
+    InfoPanel.prototype.open = function() {
+      this.infoPanelDiv.style.display = 'block';
+      this.isVisible = true;
+    };
+
+    InfoPanel.prototype.close = function() {
+      this.infoPanelDiv.style.display = 'none';
+      this.isVisible = false;
+    };
+
+    InfoPanel.prototype.createToggleButton = function(buttonLabel) {
+        // return a button that toggles info panel
+        var button;
+        var that;
+
+        that = this;
+
+        button = document.createElement('button');
+        button.className = 'btn btn-lg btn-warning';
+        button.innerHTML = buttonLabel;
+
+        button.onclick = function() {
+          that.toggle();
+        };
+
+        return button;
+    };
+
+})(
+    ('undefined' !== typeof node) ? node : module.parent.exports.node,
+    ('undefined' !== typeof window) ? window : module.parent.exports.window
+);;
+
 /**
  * # selector
  * Copyright(c) 2015 Stefano Balietti
@@ -35614,8 +35840,9 @@ if (!Array.prototype.indexOf) {
     /**
      * ### GameWindow.getScreen
      *
-     * Returns the screen of the game, i.e. the innermost element
-     * inside which to display content
+     * Returns the "screen" of the game
+     *
+     * i.e. the innermost element inside which to display content
      *
      * In the following order the screen can be:
      *
@@ -40825,8 +41052,12 @@ if (!Array.prototype.indexOf) {
      *       to the list
      *   - freeText: if TRUE, a textarea will be added under the list,
      *       if 'string', the text will be added inside the the textarea
+     *   - forms: the forms to displayed, formatted as explained in
+     *       `ChoiceManager.setForms`
      *
      * @param {object} options Configuration options
+     *
+     * @see ChoiceManager.setForms
      */
     ChoiceManager.prototype.init = function(options) {
         var tmp, that;
@@ -41308,12 +41539,9 @@ if (!Array.prototype.indexOf) {
         this.trs = [];
 
         /**
-         * ## ChoiceTable.listener
+         * ### ChoiceTable.listener
          *
          * The listener function
-         *
-         * @see GameChoice.enable
-         * @see GameChoice.disable
          */
         this.listener = function(e) {
             var name, value, td, oldSelected;
@@ -45162,40 +45390,253 @@ if (!Array.prototype.indexOf) {
     // The options object is always existing even if no
     //
     function EndScreen(options) {
-        this.options = options;
-        this.init(true, true);
+        /**
+         * ### EndScreen.headerMessage
+         *
+         * The header message displayed at the top of the screen
+         *
+         * Default: 'Thank you for participating!'
+         */
+        if ('undefined' === typeof options.headerMessage) {
+            this.headerMessage = 'Thank you for participating!';
+        }
+        else if ('string' === typeof options.headerMessage) {
+            this.headerMessage = options.headerMessage;
+        }
+        else {
+            throw new TypeError('EndScreen constructor: ' +
+                                'options.headerMessage ' +
+                                'must be string or undefined. ' +
+                                'Found: ' + options.headerMessage);
+        }
+
+        /**
+         * ### EndScreen.message
+         *
+         * The informational message displayed in the body of the screen
+         *
+         * Default: 'You have now completed this task and your data
+         *           has been saved. Please go back to the Amazon Mechanical
+         *           Turk web site and submit the HIT.'
+         */
+        if ('undefined' === typeof options.message) {
+            this.message =  'You have now completed this task ' +
+                            'and your data has been saved. ' +
+                            'Please go back to the Amazon Mechanical Turk ' +
+                            'web site and ' +
+                            'submit the HIT.';
+        }
+        else if ('string' === typeof options.message) {
+            this.message = options.message;
+        }
+        else {
+            throw new TypeError('EndScreen constructor: options.message ' +
+                                'must be string or undefined. ' +
+                                'Found: ' + options.message);
+        }
+
+        /**
+         * ### EndScreen.showEmailForm
+         *
+         * If true, the email form is shown
+         *
+         * Default: true
+         */
+        if ('undefined' === typeof options.showEmailForm) {
+            this.showEmailForm = true;
+        }
+        else if ('boolean' === typeof options.showEmailForm) {
+            this.showEmailForm = options.showEmailForm;
+        }
+        else {
+            throw new TypeError('EndScreen constructor: ' +
+                                'options.showEmailForm ' +
+                                'must be boolean or undefined. ' +
+                                'Found: ' + options.showEmailForm);
+        }
+
+        /**
+         * ### EndScreen.showFeedbackForm
+         *
+         * If true, the feedback form is shown
+         *
+         * Default: true
+         */
+        if ('undefined' === typeof options.showFeedbackForm) {
+            this.showFeedbackForm = true;
+        }
+        else if ('boolean' === typeof options.showFeedbackForm) {
+            this.showFeedbackForm = options.showFeedbackForm;
+        }
+        else {
+            throw new TypeError('EndScreen constructor: ' +
+                                'options.showFeedbackForm ' +
+                                'must be boolean or undefined. ' +
+                                'Found: ' + options.showFeedbackForm);
+        }
+
+        /**
+         * ### EndScreen.showTotalWin
+         *
+         * If true, the total win is shown
+         *
+         * Default: true
+         */
+        if ('undefined' === typeof options.showTotalWin) {
+            this.showTotalWin = true;
+        }
+        else if ('boolean' === typeof options.showTotalWin) {
+            this.showTotalWin = options.showTotalWin;
+        }
+        else {
+            throw new TypeError('EndScreen constructor: ' +
+                                'options.showTotalWin ' +
+                                'must be boolean or undefined. ' +
+                                'Found: ' + options.showTotalWin);
+        }
+
+        /**
+         * ### EndScreen.showExitCode
+         *
+         * If true, the exit code is shown
+         *
+         * Default: true
+         */
+        if ('undefined' === typeof options.showExitCode) {
+            this.showExitCode = true;
+        }
+        else if ('boolean' === typeof options.showExitCode) {
+            this.showExitCode = options.showExitCode;
+        }
+        else {
+            throw new TypeError('EndScreen constructor: ' +
+                                'options.showExitCode ' +
+                                'must be boolean or undefined. ' +
+                                'Found: ' + options.showExitCode);
+        }
+
+        /**
+         * ### EndScreen.feedback
+         *
+         * Feedback widget element
+         *
+         * Default: new Feedback(option)
+         */
+        this.feedback = node.widgets.get('Feedback', options);
+
+        /**
+         * ### EndScreen.endScreenElement
+         *
+         * Endscreen HTML element
+         *
+         * Default: an HTML element,
+         * null initially, element added on append()
+         */
+        this.endScreenHTML = null;
+
+        this.init();
     }
 
     // Implements the Widget.append method.
     EndScreen.prototype.append = function() {
-        this.bodyDiv.appendChild(this.endScreen);
+        this.endScreenHTML = this.makeEndScreen();
+        this.bodyDiv.append(this.endScreenHTML);
+    };
 
-        var that;
+    // makes the end screen
+    EndScreen.prototype.makeEndScreen = function() {
+        var endScreenElement;
+        var headerElement, messageElement;
+        var totalWinElement, totalWinParaElement, totalWinInputElement;
+        var exitCodeElement, exitCodeParaElement, exitCodeInputElement;
+        var emailElement, emailFormElement, emailLabelElement,
+            emailInputElement, emailButtonElement;
         var emailErrorString;
-        var emailButton, emailInput, emailForm;
-        var feedbackButton, feedbackForm, feedbackInput;
-        var charCounter;
 
-        that = this;
-
-        emailButton = W.getElementById('endscreen-submit-email');
-        emailForm = W.getElementById('endscreen-email-form');
-        emailInput = W.getElementById('endscreen-email');
         emailErrorString = 'Not a valid email address, ' +
                            'please correct it and submit again.';
 
-        feedbackForm = W.getElementById('endscreen-feedback-form');
-        feedbackInput = W.getElementById('endscreen-feedback');
-        feedbackButton = W.getElementById('endscreen-submit-feedback');
+        endScreenElement = document.createElement('div');
+        endScreenElement.className = 'endscreen';
 
-        charCounter = W.getElementById('endscreen-char-count');
+        headerElement = document.createElement('h1');
+        headerElement.innerHTML = this.headerMessage;
+        endScreenElement.appendChild(headerElement);
+
+        messageElement = document.createElement('p');
+        messageElement.innerHTML = this.message;
+        endScreenElement.appendChild(messageElement);
+
+        if (this.showTotalWin) {
+            totalWinElement = document.createElement('div');
+
+            totalWinParaElement = document.createElement('p');
+            totalWinParaElement.innerHTML = 'Your total win: ';
+
+            totalWinInputElement = document.createElement('input');
+            totalWinInputElement.className = 'endscreen-total form-control';
+            totalWinInputElement.setAttribute('disabled', 'true');
+
+            totalWinParaElement.appendChild(totalWinInputElement);
+            totalWinElement.appendChild(totalWinParaElement);
+
+            endScreenElement.appendChild(totalWinElement);
+            this.totalWinInputElement = totalWinInputElement;
+        }
+
+        if (this.showExitCode) {
+            exitCodeElement = document.createElement('div');
+
+            exitCodeParaElement = document.createElement('p');
+            exitCodeParaElement.innerHTML = 'Your exit code: ';
+
+            exitCodeInputElement = document.createElement('input');
+            exitCodeInputElement.className = 'endscreen-exit-code ' +
+                                             'form-control';
+            exitCodeInputElement.setAttribute('disabled', 'true');
+
+            exitCodeParaElement.appendChild(exitCodeInputElement);
+            exitCodeElement.appendChild(exitCodeParaElement);
+
+            endScreenElement.appendChild(exitCodeElement);
+            this.exitCodeInputElement = exitCodeInputElement;
+        }
 
         if (this.showEmailForm) {
-            emailForm.addEventListener('submit', function(event) {
-                event.preventDefault();
+            emailElement = document.createElement('div');
+            emailFormElement = document.createElement('form');
+            emailFormElement.className = 'endscreen-email-form';
 
+            emailLabelElement = document.createElement('label');
+            emailLabelElement.innerHTML = 'Would you like to be contacted ' +
+                                          'again for future experiments? ' +
+                                          'If so, leave your email here ' +
+                                          'and press submit: ';
+
+            emailInputElement = document.createElement('input');
+            emailInputElement.setAttribute('type', 'text');
+            emailInputElement.setAttribute('placeholder', 'Email');
+            emailInputElement.className = 'endscreen-email-input form-control';
+
+            emailButtonElement = document.createElement('input');
+            emailButtonElement.setAttribute('type', 'submit');
+            emailButtonElement.setAttribute('value', 'Submit email');
+            emailButtonElement.className = 'btn btn-lg btn-primary ' +
+                                           'endscreen-email-submit';
+
+            emailFormElement.appendChild(emailLabelElement);
+            emailFormElement.appendChild(emailInputElement);
+            emailFormElement.appendChild(emailButtonElement);
+
+            emailElement.appendChild(emailFormElement);
+            endScreenElement.appendChild(emailElement);
+
+            emailFormElement.addEventListener('submit', function(event) {
                 var email, indexAt, indexDot;
-                email = emailInput.value;
+
+                event.preventDefault();
+                email = emailInputElement.value;
+
                 if (email.trim().length > 5) {
                     indexAt = email.indexOf('@');
                     if (indexAt !== -1 &&
@@ -45209,134 +45650,30 @@ if (!Array.prototype.indexOf) {
 
                             node.say('email', 'SERVER', email);
 
-                            emailButton.disabled = true;
-                            emailInput.disabled = true;
-                            emailButton.value = 'Sent!';
+                            emailButtonElement.disabled = true;
+                            emailInputElement.disabled = true;
+                            emailButtonElement.value = 'Sent!';
                         }
                     }
                 }
-                emailButton.value = emailErrorString;
+
+                emailButtonElement.value = emailErrorString;
             }, true);
         }
 
         if (this.showFeedbackForm) {
-            feedbackForm.addEventListener('submit', function(event) {
-                var feedback;
-
-                event.preventDefault();
-                feedback = feedbackInput.value.trim();
-
-                if (feedback.length < that.maxFeedbackLength) {
-                    node.say('feedback', 'SERVER', feedback);
-
-                    feedbackButton.disabled = true;
-                    feedbackButton.value = 'Sent!';
-                }
-                else {
-                    feedbackButton.value = 'Please shorten your response ' +
-                                           'and submit again.';
-                }
-            });
-
-            feedbackForm.addEventListener('input', function(event) {
-                var charLeft;
-
-                charLeft = that.maxFeedbackLength - feedbackInput.value.length;
-                charCounter.innerHTML = Math.abs(charLeft);
-
-                if (charLeft < 0) {
-                    charCounter.innerHTML += ' characters over.';
-                }
-                else {
-                    charCounter.innerHTML += ' characters remaining.';
-                }
-            });
+            node.widgets.append(this.feedback, endScreenElement);
         }
+
+        return endScreenElement;
     };
-
-    EndScreen.prototype.init = function() {
-        var exitCode; // exit code
-        var topHTML, messageHTML, totalWinHTML, exitCodeHTML, emailHTML,
-            endHTML, endScreenHTML;
-        var endScreen;
-
-        this.headerMessage = this.options.headerMessage ||
-        'Thank You for Participating!';
-        this.message = this.options.message ||
-        'You have now completed this task and your data has been saved. ' +
-        'Please go back to the Amazon Mechanical Turk web site and ' +
-        'submit the HIT.';
-        this.showEmailForm = 'showEmailForm' in this.options ?
-                            this.options.showEmailForm : true;
-        this.showFeedbackForm = 'showFeedbackForm' in this.options ?
-                            this.options.showFeedbackForm : true;
-        this.showTotalWin = 'showTotalWin' in this.options ?
-                            this.options.showTotalWin : true;
-        this.showExitCode = 'showExitCode' in this.options ?
-                            this.options.showExitCode : true;
-        this.maxFeedbackLength = this.options.maxFeedbackLength || 800;
-
-        messageHTML = '<h1>' + this.headerMessage +'</h1>' + '<p>' +
-                      this.message + '</p>';
-        endScreenHTML = messageHTML;
-
-        if (this.showTotalWin) {
-            // totalWinHTML = '<p>Your total win: ' + totalWin + '</p>';
-            totalWinHTML = '<p>Your total win: ' +
-                           '<input id="endscreen-total" ' +
-                           'class="form-control" ' +
-                           'disabled></input>' +
-                           '</p>';
-            endScreenHTML += totalWinHTML;
-        }
-        if (this.showExitCode) {
-            // exitCodeHTML = '<p>Your Exit code: ' + exitCode + '</p>';
-            exitCodeHTML = '<p>Your exit code: ' +
-                           '<input id="endscreen-exit-code" ' +
-                           'class="form-control" disabled></input>' +
-                           '</p>';
-            endScreenHTML += exitCodeHTML;
-        }
-        if (this.showEmailForm) {
-            emailHTML = '<form id="endscreen-email-form">' +
-            '<label for="endscreen-email">' +
-            'Would you like to be contacted again ' +
-            'for future experiments? ' +
-            'If so, leave your email here and press submit:' +
-            '</label>' +
-            '<input id="endscreen-email" type="text" placeholder="Email" ' +
-            'class="form-control"/>' +
-            '<input class="btn btn-lg btn-primary" ' +
-            'id="endscreen-submit-email" ' +
-            'type="submit" value="Submit email"></input>' +
-            '</form>';
-            endScreenHTML += emailHTML;
-        }
-        if (this.showFeedbackForm) {
-            feedbackFormHTML = '<form id="endscreen-feedback-form">' +
-            '<label for="endscreen-feedback">' +
-            'Any feedback about the experiment? Let us know here:' +
-            '</label>' +
-            '<textarea id="endscreen-feedback" type="text" rows="3"' +
-            'class="form-control"></textarea>' +
-            '<span id="endscreen-char-count" class="badge">' +
-            this.maxFeedbackLength +
-            ' characters left</span>' +
-            '<input class="btn btn-lg btn-primary" ' +
-            'id="endscreen-submit-feedback" ' +
-            'type="submit" value="Submit feedback"></input>' +
-            '</form>';
-            endScreenHTML += feedbackFormHTML;
-        }
-
-        this.endScreen = document.createElement('div');
-        this.endScreen.class = this.className;
-        this.endScreen.id = 'endscreen';
-        this.endScreen.innerHTML = endScreenHTML;
-    }
 
     // Implements the Widget.listeners method.
     EndScreen.prototype.listeners = function() {
+        var that;
+
+        that = this;
+
         // Listeners added here are automatically removed
         // when the widget is destroyed.
         node.on.data('WIN', function(message) {
@@ -45350,14 +45687,24 @@ if (!Array.prototype.indexOf) {
             totalWin = data.total;
             exitCode = data.exit;
 
-            totalHTML = W.getElementById('endscreen-total');
-            exitCodeHTML = W.getElementById('endscreen-exit-code');
+            if (JSUS.isNumber(totalWin, 0) === false) {
+                node.err('EndScreen error, invalid exit code: ' + totalWin);
+                totalWin = 'Error: invalid total win.';
+            }
 
-            if (totalHTML) {
+            if ((typeof exitCode !== 'string')) {
+                node.err('EndScreen error, invalid exit code: ' + exitCode);
+                exitCode = 'Error: invalid exit code.';
+            }
+
+            totalHTML = that.totalWinInputElement;
+            exitCodeHTML = that.exitCodeInputElement;
+
+            if (totalHTML && that.showTotalWin) {
                 totalHTML.value = totalWin;
             }
 
-            if (exitCodeHTML) {
+            if (exitCodeHTML && that.showExitCode) {
                 exitCodeHTML.value = exitCode;
             }
         });
@@ -45381,15 +45728,13 @@ if (!Array.prototype.indexOf) {
 
     node.widgets.register('Feedback', Feedback);
 
-
     // ## Meta-data
 
-    Feedback.version = '0.2';
+    Feedback.version = '0.3';
     Feedback.description = 'Displays a simple feedback form.';
 
     Feedback.title = 'Feedback';
     Feedback.className = 'feedback';
-
 
     // ## Dependencies
 
@@ -45401,24 +45746,137 @@ if (!Array.prototype.indexOf) {
      * ## Feedback constructor
      *
      * `Feedback` sends a feedback message to the server
+     *
+     * @param {object} options configuration option
      */
-    function Feedback() {
+    function Feedback(options) {
         /**
-         * ### Feedback.textarea
+         * ### Feedback.label
          *
-         * The TEXTAREA wherein clients can enter feedback
+         * The label for the feedback element
+         *
+         * Default: 'Any feedback about the experiment? Let us know here: '
          */
-        this.textarea = null;
+        if ('undefined' === typeof options.label) {
+            this.label = 'Any feedback about the experiment? Let us know here:';
+        }
+        else if ('string' === typeof options.label) {
+            this.label = options.label;
+        }
+        else {
+            throw new TypeError('Feedback constructor: options.label ' +
+                                'must be string or undefined. ' +
+                                'Found: ' + options.label);
+        }
 
         /**
-         * ### Feedback.submit
+         * ### Feedback.maxFeedbackLength
          *
-         * Button to submit the feedback form
+         * The maximum character length for feedback to be submitted
+         *
+         * Default: 800
          */
-        this.submit = null;
+        if ('undefined' === typeof options.maxLength) {
+            this.maxFeedbackLength = 800;
+        }
+        else if (JSUS.isNumber(options.maxLength, 0) !== false) {
+            this.maxFeedbackLength = options.maxLength;
+        }
+        else {
+            throw new TypeError('Feedback constructor: options.maxLength ' +
+                                'must be a number >= 0 or undefined. ' +
+                                'Found: ' + options.maxLength);
+        }
+
+        /**
+         * ### Feedback.minFeedbackLength
+         *
+         * The minimum character length for feedback to be submitted
+         *
+         * If minFeedbackLength = 0, then there is no minimum length checked.
+         * Default: 0
+         */
+        if ('undefined' === typeof options.minLength) {
+            this.minFeedbackLength = 0;
+        }
+        else if (JSUS.isNumber(options.minLength, 0) !== false) {
+            this.minFeedbackLength = options.minLength;
+        }
+        else {
+            throw new TypeError('Feedback constructor: options.minLength ' +
+                                'must be a number >= 0 or undefined. ' +
+                                'Found: ' + options.minLength);
+        }
+
+        /**
+         * ### Feedback.feedbackHTML
+         *
+         * The HTML element containing the form elements
+         */
+        this.feedbackHTML = null;
     }
 
     // ## Feedback methods
+
+    Feedback.prototype.createForm = function(showCount, minLength, maxLength, labelText) {
+        var feedbackHTML;
+        var feedbackForm;
+        var feedbackLabel;
+        var feedbackTextarea;
+        var submit;
+        var charCounter;
+
+        feedbackHTML = document.createElement('div');
+        feedbackHTML.className = 'feedback';
+
+        feedbackForm = document.createElement('form');
+        feedbackForm.className = 'feedback-form';
+        feedbackHTML.appendChild(feedbackForm);
+
+        feedbackLabel = document.createElement('label');
+        feedbackLabel.setAttribute('for', 'feedback-input');
+        feedbackLabel.innerHTML = labelText;
+        feedbackForm.appendChild(feedbackLabel);
+
+        feedbackTextarea = document.createElement('textarea');
+        feedbackTextarea.className = 'feedback-textarea form-control';
+        feedbackTextarea.setAttribute('type', 'text');
+        feedbackTextarea.setAttribute('rows', '3');
+        feedbackForm.appendChild(feedbackTextarea);
+
+        submit = document.createElement('input');
+        submit.className = 'btn btn-lg btn-primary';
+        submit.setAttribute('type', 'submit');
+        submit.setAttribute('value', 'Submit feedback');
+        feedbackForm.appendChild(submit);
+
+        charCounter = document.createElement('span');
+        charCounter.className = 'feedback-char-count badge';
+        charCounter.innerHTML = maxLength;
+        feedbackForm.appendChild(charCounter);
+
+        feedbackForm.addEventListener('submit', function(event) {
+            var feedback;
+
+            event.preventDefault();
+
+            feedback = feedbackTextarea.value.trim();
+            node.say('feedback', 'SERVER', feedback);
+
+            submit.disabled = true;
+            feedbackTextarea.disabled = true;
+
+            submit.setAttribute('value', 'Sent!');
+        });
+
+        feedbackForm.addEventListener('input', function(event) {
+            checkFeedbackLength(feedbackTextarea, charCounter, submit, minLength, maxLength);
+        });
+
+        checkFeedbackLength(feedbackTextarea, charCounter, submit, minLength, maxLength);
+
+        return feedbackHTML;
+    };
 
     /**
      * ### Feedback.append
@@ -45426,40 +45884,41 @@ if (!Array.prototype.indexOf) {
      * Appends widget to this.bodyDiv
      */
     Feedback.prototype.append = function() {
-        var that = this;
-
-        this.textarea = document.createElement('textarea');
-        this.submit = document.createElement('button');
-        this.submit.appendChild(document.createTextNode('Submit'));
-        this.submit.onclick = function() {
-            var feedback, sent;
-            feedback = that.textarea.value;
-            if (!feedback.length) {
-                J.highlight(that.textarea, 'ERR');
-                alert('Feedback is empty, not sent.');
-                return false;
-            }
-            sent = node.say('FEEDBACK', 'SERVER', {
-                feedback: feedback,
-                userAgent: navigator.userAgent
-            });
-
-            if (sent) {
-                J.highlight(that.textarea, 'OK');
-                alert('Feedback sent. Thank you.');
-                that.textarea.disabled = true;
-                that.submit.disabled = true;
-            }
-            else {
-                J.highlight(that.textarea, 'ERR');
-                alert('An error has occurred, feedback not sent.');
-            }
-        };
-        this.bodyDiv.appendChild(this.textarea);
-        this.bodyDiv.appendChild(this.submit);
+        this.feedbackHTML = this.createForm(this.showCharCount,
+                                            this.minFeedbackLength,
+                                            this.maxFeedbackLength,
+                                            this.label);
+        this.bodyDiv.appendChild(this.feedbackHTML);
     };
 
     Feedback.prototype.listeners = function() {};
+
+    // check the feedback length
+    function checkFeedbackLength(feedbackTextarea, charCounter,
+                                 submit, minLength, maxLength) {
+        var length;
+
+        length = feedbackTextarea.value.trim().length;
+
+        if (length < minLength) {
+          submit.disabled = true;
+
+          charCounter.innerHTML = (minLength - length) + ' characters needed.';
+          charCounter.style.backgroundColor = '#f2dede';
+        }
+        else if (length > maxLength) {
+          submit.disabled = true;
+
+          charCounter.innerHTML = (length - maxLength) + ' characters over.';
+          charCounter.style.backgroundColor = '#f2dede';
+        }
+        else {
+          submit.disabled = false;
+
+          charCounter.innerHTML = (maxLength - length) + ' characters remaining.';
+          charCounter.style.backgroundColor = '#dff0d8';
+        }
+    }
 
 })(node);
 
@@ -50043,10 +50502,13 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # WaitingRoom
- * Copyright(c) 2016 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti
  * MIT Licensed
  *
  * Display the number of connected / required players to start a game
+ *
+ * TODO: accepts functions for `texts` variables, so that they can
+ * integrate current values
  *
  * www.nodegame.org
  */
@@ -50055,7 +50517,6 @@ if (!Array.prototype.indexOf) {
     "use strict";
 
     node.widgets.register('WaitingRoom', WaitingRoom);
-
     // ## Meta-data
 
     WaitingRoom.version = '1.1.0';
@@ -50069,6 +50530,46 @@ if (!Array.prototype.indexOf) {
     WaitingRoom.dependencies = {
         JSUS: {},
         VisualTimer: {}
+    };
+
+    // ## Prototype Properties.
+    
+    /** ### WaitingRoom.sounds
+     *
+     * Default sounds to play on particular events
+     */
+    WaitingRoom.sounds = {
+        
+        // #### dispatch
+        dispatch: '/sounds/doorbell.ogg'
+    };
+
+    /** ### WaitingRoom.texts
+     *
+     * Default texts to display
+     */
+    WaitingRoom.texts = {
+
+        // #### disconnect
+        disconnect: '<span style="color: red">You have been ' +
+            '<strong>disconnected</strong>. Please try again later.' +
+            '</span><br><br>',
+
+        // #### waitedTooLong
+        waitedTooLong: 'Waiting for too long. Please look ' +
+            'for a HIT called <strong>Trouble Ticket</strong> and file' +
+            ' a new trouble ticket reporting your experience.',
+
+        // #### notEnoughPlayers
+        notEnoughPlayers: '<h3 align="center" style="color: red">' +
+            'Thank you for your patience.<br>' +
+            'Unfortunately, there are not enough participants in ' +
+            'your group to start the experiment.<br>',
+        
+        // #### roomClosed
+        roomClosed: '<span style="color: red"> The ' +
+            'waiting room is <strong>CLOSED</strong>. You have been ' +
+            'disconnected. Please try again later.</span><br><br>'
     };
 
     /**
@@ -50191,21 +50692,36 @@ if (!Array.prototype.indexOf) {
          */
         this.onTimeout = null;
 
-
-        /**
-         * ### WaitingRoom.disconnectMessage
-         *
-         * String to be put into `this.bodyDiv.innerHTML` when player
-         * is disconnected.
-         */
-        this.disconnectMessage = null;
-
         /**
          * ### WaitingRoom.disconnectIfNotSelected
          *
          * Flag that indicates whether to disconnect an not selected player
          */
         this.disconnectIfNotSelected = null;
+        
+        /**
+         * ### WaitingRoom.disconnectText
+         *
+         * Content of `this.bodyDiv.innerHTML` when player is disconnected
+         */
+        this.disconnectText = null;
+        
+        /**
+         * ### WaitingRoom.roomClosedText
+         *
+         * Content of `this.bodyDiv.innerHTML` when player room is closed
+         */
+        this.roomClosedText = null;
+        
+        /**
+         * ### WaitingRoom.dispatchSound
+         *
+         * Flag that indicates that a sound should be played before dispatching
+         *
+         * @see WaitingRoom.sounds.dispatch
+         * @see WaitingRoom.alertPlayer
+         */
+        this.dispatchSound = null;
     }
 
     // ## WaitingRoom methods
@@ -50221,26 +50737,31 @@ if (!Array.prototype.indexOf) {
      *   - onTimeout: function executed when timer runs out
      *   - onSuccess: function executed when all tests succeed
      *   - waitTime: max waiting time to execute all tests (in milliseconds)
+     *   - startDate: max waiting time to execute all tests (in milliseconds)
      *
      * @param {object} conf Configuration object.
      */
     WaitingRoom.prototype.init = function(conf) {
         if ('object' !== typeof conf) {
-            throw new TypeError('WaitingRoom.init: conf must be object.');
+            throw new TypeError('WaitingRoom.init: conf must be object. ' +
+                                'Found: ' + conf);
         }
         if (conf.onTimeout) {
             if ('function' !== typeof conf.onTimeout) {
                 throw new TypeError('WaitingRoom.init: conf.onTimeout must ' +
-                                    'be function, null or undefined.');
+                                    'be function, null or undefined. Found: ' +
+                                    conf.onTimeout);
             }
             this.onTimeout = conf.onTimeout;
         }
+
         if (conf.waitTime) {
             if (null !== conf.waitTime &&
                 'number' !== typeof conf.waitTime) {
 
-                throw new TypeError('WaitingRoom.init: conf.onMaxExecTime ' +
-                                    'must be number, null or undefined.');
+                throw new TypeError('WaitingRoom.init: conf.waitTime ' +
+                                    'must be number, null or undefined. ' +
+                                    'Found: ' + conf.waitTime);
             }
             this.waitTime = conf.waitTime;
             this.startTimer();
@@ -50253,7 +50774,8 @@ if (!Array.prototype.indexOf) {
         if (conf.poolSize) {
             if (conf.poolSize && 'number' !== typeof conf.poolSize) {
                 throw new TypeError('WaitingRoom.init: conf.poolSize ' +
-                                    'must be number or undefined.');
+                                    'must be number or undefined. Found: ' +
+                                    conf.poolSize);
             }
             this.poolSize = conf.poolSize;
         }
@@ -50261,14 +50783,16 @@ if (!Array.prototype.indexOf) {
         if (conf.groupSize) {
             if (conf.groupSize && 'number' !== typeof conf.groupSize) {
                 throw new TypeError('WaitingRoom.init: conf.groupSize ' +
-                                    'must be number or undefined.');
+                                    'must be number or undefined. Found: ' +
+                                    conf.groupSize);
             }
             this.groupSize = conf.groupSize;
         }
         if (conf.nGames) {
             if (conf.nGames && 'number' !== typeof conf.nGames) {
                 throw new TypeError('WaitingRoom.init: conf.nGames ' +
-                                    'must be number or undefined.');
+                                    'must be number or undefined. Found: ' +
+                                    conf.nGames);
             }
             this.nGames = conf.nGames;
         }
@@ -50276,29 +50800,30 @@ if (!Array.prototype.indexOf) {
         if (conf.connected) {
             if (conf.connected && 'number' !== typeof conf.connected) {
                 throw new TypeError('WaitingRoom.init: conf.connected ' +
-                                    'must be number or undefined.');
+                                    'must be number or undefined. Found: ' +
+                                    conf.connected);
             }
             this.connected = conf.connected;
         }
 
-        if (conf.disconnectMessage) {
-            if ('string' !== typeof conf.disconnectMessage) {
-                throw new TypeError('WaitingRoom.init: ' +
-                        'conf.disconnectMessage must be string or undefined.');
+        if (conf.disconnectText) {
+            if ('string' !== typeof conf.disconnectText) {
+                throw new TypeError('WaitingRoom.init: conf.' +
+                                    'disconnectText must be string or ' +
+                                    'undefined. Found: ' +
+                                    conf.disconnectText);
             }
-            this.disconnectMessage = conf.disconnectMessage;
+            this.disconnectText = conf.disconnectText;
         }
         else {
-            this.disconnectMessage = '<span style="color: red">You have been ' +
-                '<strong>disconnected</strong>. Please try again later.' +
-                '</span><br><br>';
+            this.disconnectText = WaitingRoom.texts.disconnectText;
         }
 
         if (conf.disconnectIfNotSelected) {
             if ('boolean' !== typeof conf.disconnectIfNotSelected) {
                 throw new TypeError('WaitingRoom.init: ' +
                     'conf.disconnectIfNotSelected must be boolean or ' +
-                    'undefined.');
+                    'undefined. Found: ' + conf.disconnectIfNotSelected);
             }
             this.disconnectIfNotSelected = conf.disconnectIfNotSelected;
         }
@@ -50306,13 +50831,70 @@ if (!Array.prototype.indexOf) {
             this.disconnectIfNotSelected = false;
         }
 
+        if (conf.dispatchSound) {
+            if ('boolean' !== typeof conf.dispatchSound &&
+                'string' !== typeof conf.dispatchSound) {
+                
+                throw new TypeError('WaitingRoom.init: ' +
+                                    'conf.dispatchSound must be boolean, ' +
+                                    'string or undefined. Found: ' +
+                                    conf.dispatchSound);
+            }
+            this.dispatchSound = (true === conf.dispatchSound) ?
+                WaitingRoom.sounds.dispatch : conf.dispatchSound;
+        }
+
+        // Texts.
+        
+        if (conf.notEnoughPlayersText) {
+            if ('string' !== typeof conf.notEnoughPlayersText) {
+                
+                throw new TypeError('WaitingRoom.init: ' +
+                                    'conf.notEnoughPlayersText must be ' +
+                                    'string or undefined. Found: ' +
+                                    conf.notEnoughPlayersText);
+            }
+            this.notEnoughPlayersText = conf.notEnoughPlayersText;
+        }
+
+        if (conf.disconnectText) {
+            if ('string' !== typeof conf.disconnectText) {
+                
+                throw new TypeError('WaitingRoom.init: ' +
+                                    'conf.disconnectText must be string ' +
+                                    'or undefined. Found: ' +
+                                    conf.disconnectText);
+            }
+            this.disconnectText = conf.disconnectText;
+        }
+        
+        if (conf.waitedTooLongText) {
+            if ('string' !== typeof conf.waitedTooLongText) {
+                
+                throw new TypeError('WaitingRoom.init: ' +
+                                    'conf.waitedTooLongText must be string ' +
+                                    'or undefined. Found: ' +
+                                    conf.waitedTooLongText);
+            }
+            this.waitedTooLongText = conf.waitedTooLongText;
+        }
+        
+        if (conf.roomClosedText) {
+            if ('string' !== typeof conf.roomClosedText) {
+                
+                throw new TypeError('WaitingRoom.init: ' +
+                                    'conf.roomClosedText must be string ' +
+                                    'or undefined. Found: ' +
+                                    conf.roomClosedText);
+            }
+            this.roomClosedText = conf.roomClosedText;
+        }
     };
 
     /**
-     * ### WaitingRoom.addTimeout
+     * ### WaitingRoom.startTimer
      *
      * Starts a timeout for the max waiting time
-     *
      */
     WaitingRoom.prototype.startTimer = function() {
         var that = this;
@@ -50328,10 +50910,7 @@ if (!Array.prototype.indexOf) {
         this.timer = node.widgets.append('VisualTimer', this.timerDiv, {
             milliseconds: this.waitTime,
             timeup: function() {
-                that.bodyDiv.innerHTML =
-                    'Waiting for too long. Please look for a HIT called ' +
-                    '<strong>ETH Descil Trouble Ticket</strong> and file' +
-                    ' a new trouble ticket reporting your experience.';
+                that.bodyDiv.innerHTML = that.waitedTooLongText;
             },
             update: 1000
         });
@@ -50397,6 +50976,7 @@ if (!Array.prototype.indexOf) {
             this.playerCount.innerHTML = '<span style="color:red">' +
                 this.connected + '</span>' + ' / ' + this.poolSize;
             this.playerCountTooHigh.style.display = '';
+            // TODO: make it parametric like other strings.
             this.playerCountTooHigh.innerHTML = 'There are more players in ' +
                 'this waiting room than there are playslots in the game. ' +
                 'Only ' + numberOfGameSlots + ' players will be selected to ' +
@@ -50483,11 +51063,7 @@ if (!Array.prototype.indexOf) {
 
             else if (data.action === 'NotEnoughPlayers') {
 
-                that.bodyDiv.innerHTML =
-                    '<h3 align="center" style="color: red">' +
-                    'Thank you for your patience.<br>' +
-                    'Unfortunately, there are not enough participants in ' +
-                    'your group to start the experiment.<br>';
+                that.bodyDiv.innerHTML = that.notEnoughPlayersText;
 
                 if (that.onTimeout) that.onTimeout(msg.data);
 
@@ -50495,7 +51071,8 @@ if (!Array.prototype.indexOf) {
             }
 
             else if (data.action === 'NotSelected') {
-
+                
+                // TODO: make all strings parameteric.
                 notSelected = '<h3 align="center">' +
                     '<span style="color: red">Unfortunately, you were ' +
                     '<strong>not selected</strong> to join the game this time';
@@ -50545,7 +51122,7 @@ if (!Array.prototype.indexOf) {
             that.stopTimer();
 
             // Write about disconnection in page.
-            that.bodyDiv.innerHTML = that.disconnectMessage;
+            that.bodyDiv.innerHTML = that.disconnectText;
 
 //             // Enough to not display it in case of page refresh.
 //             setTimeout(function() {
@@ -50554,10 +51131,7 @@ if (!Array.prototype.indexOf) {
         });
 
         node.on.data('ROOM_CLOSED', function() {
-            that.disconnect('<span style="color: red"> The waiting ' +
-                'room is <strong>CLOSED</strong>. You have been disconnected.' +
-                ' Please try again later.' +
-                '</span><br><br>');
+            that.disconnect(that.roomClosedText);
         });
     };
 
@@ -50575,7 +51149,7 @@ if (!Array.prototype.indexOf) {
     };
 
     WaitingRoom.prototype.disconnect = function(msg) {
-        if (msg) this.disconnectMessage = msg;
+        if (msg) this.disconnectText = msg;
         node.socket.disconnect();
         this.stopTimer();
     };
@@ -50583,7 +51157,9 @@ if (!Array.prototype.indexOf) {
     WaitingRoom.prototype.alertPlayer = function() {
         var clearBlink, onFrame;
 
-        JSUS.playSound('/sounds/doorbell.ogg');
+        // Play sound, if requested.
+        if (this.dispatchSound) JSUS.playSound(this.dispatchSound);
+        
         // If document.hasFocus() returns TRUE, then just one repeat is enough.
         if (document.hasFocus && document.hasFocus()) {
             JSUS.blinkTitle('GAME STARTS!', { repeatFor: 1 });
