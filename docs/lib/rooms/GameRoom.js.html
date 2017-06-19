@@ -85,6 +85,9 @@
         <a href="#gameroom.getmemorydb">GameRoom.getMemoryDb</a>
       </div>
       <div class="heading h2">
+        <a href="#gameroom.computebonus">GameRoom.computeBonus</a>
+      </div>
+      <div class="heading h2">
         <a href="#helper%20methods.">Helper Methods.</a>
       </div>
       <div class="heading h2">
@@ -2201,6 +2204,107 @@ would make them lose their context (node etc.).</p>
         </td>
       </tr>
       <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="gameroom.computebonus">
+  <h2>
+    <a href="#gameroom.computebonus" name="gameroom.computebonus" class="pilcrow">&#182;</a>
+    GameRoom.computeBonus
+  </h2>
+</div>
+
+  </div>
+  <div class="body"><p>Computes the total bonus of each player</p>
+
+<p>Optionally, sends a message with current bonus to each player.
+Optionally, saves the results in a bonus file in csv format.</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">array</span>
+      <span>The database of the logic</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">GameRoom.node
+</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="nx">GameRoom</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">computeBonus</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">node</span><span class="p">,</span> <span class="nx">channel</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">out</span><span class="p">,</span> <span class="nx">property</span><span class="p">;</span>
+
+    <span class="nx">node</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">node</span><span class="p">;</span>
+    <span class="nx">channel</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-85" id="section-85">&#182;</a>
+</div>
+<p>Set options.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="nx">property</span> <span class="o">=</span> <span class="s1">&#39;win&#39;</span><span class="p">;</span>
+    <span class="nx">exchangeRate</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+
+    <span class="nx">out</span> <span class="o">=</span> <span class="nx">clients</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">map</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">p</span><span class="p">)</span> <span class="p">{</span>
+        <span class="kd">var</span> <span class="nx">client</span><span class="p">,</span> <span class="nx">accesscode</span><span class="p">,</span> <span class="nx">exitcode</span><span class="p">;</span>
+        <span class="nx">client</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">registry</span><span class="p">.</span><span class="nx">getClient</span><span class="p">(</span><span class="nx">p</span><span class="p">.</span><span class="nx">id</span><span class="p">);</span>
+
+        <span class="nx">accesscode</span> <span class="o">=</span> <span class="nx">code</span><span class="p">.</span><span class="nx">AccessCode</span><span class="p">;</span>
+        <span class="nx">exitcode</span> <span class="o">=</span> <span class="nx">code</span><span class="p">.</span><span class="nx">ExitCode</span><span class="p">;</span>
+        <span class="nx">code</span><span class="p">.</span><span class="nx">win</span> <span class="o">=</span> <span class="nb">Number</span><span class="p">((</span><span class="nx">code</span><span class="p">[</span><span class="nx">property</span><span class="p">]</span> <span class="o">||</span> <span class="mi">0</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="nx">exchangeRate</span><span class="p">)).</span><span class="nx">toFixed</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>
+        <span class="nx">code</span><span class="p">.</span><span class="nx">win</span> <span class="o">=</span> <span class="nb">parseFloat</span><span class="p">(</span><span class="nx">code</span><span class="p">.</span><span class="nx">win</span><span class="p">,</span> <span class="mi">10</span><span class="p">);</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="nx">options</span><span class="p">.</span><span class="nx">say</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">node</span><span class="p">.</span><span class="nx">say</span><span class="p">(</span><span class="s1">&#39;WIN&#39;</span><span class="p">,</span> <span class="nx">p</span><span class="p">.</span><span class="nx">id</span><span class="p">,</span> <span class="p">{</span>
+                <span class="nx">win</span><span class="o">:</span> <span class="nx">code</span><span class="p">.</span><span class="nx">win</span><span class="p">,</span>
+                <span class="nx">exitcode</span><span class="o">:</span> <span class="nx">code</span><span class="p">.</span><span class="nx">ExitCode</span>
+            <span class="p">});</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">options</span><span class="p">.</span><span class="nx">print</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">p</span><span class="p">.</span><span class="nx">id</span><span class="p">,</span> <span class="s1">&#39;: &#39;</span><span class="p">,</span>  <span class="nx">code</span><span class="p">.</span><span class="nx">win</span><span class="p">,</span> <span class="nx">code</span><span class="p">.</span><span class="nx">ExitCode</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="nx">out</span> <span class="o">=</span> <span class="p">[</span><span class="nx">p</span><span class="p">.</span><span class="nx">id</span><span class="p">,</span> <span class="nx">code</span><span class="p">.</span><span class="nx">ExitCode</span> <span class="o">||</span> <span class="s1">&#39;na&#39;</span><span class="p">,</span> <span class="nx">code</span><span class="p">.</span><span class="nx">win</span><span class="p">,</span>
+               <span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">gameTerminated</span><span class="p">]</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">options</span><span class="p">.</span><span class="nx">cb</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">options</span><span class="p">.</span><span class="nx">cb</span><span class="p">(</span><span class="nx">out</span><span class="p">,</span> <span class="nx">p</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="nx">out</span><span class="p">;</span>
+    <span class="p">});</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="nx">options</span><span class="p">.</span><span class="nx">dump</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">filename</span> <span class="o">=</span> <span class="nx">DUMP_DIR</span> <span class="o">+</span> <span class="s1">&#39;bonus.csv&#39;</span><span class="p">;</span>
+        <span class="nx">bonusFile</span> <span class="o">=</span> <span class="nx">fs</span><span class="p">.</span><span class="nx">createWriteStream</span><span class="p">(</span><span class="nx">filename</span><span class="p">);</span>
+        <span class="nx">bonusFile</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;error&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Error while saving bonus file: &#39;</span><span class="p">,</span> <span class="nx">err</span><span class="p">);</span>
+        <span class="p">});</span>
+        <span class="nx">bonusFile</span><span class="p">.</span><span class="nx">write</span><span class="p">([</span><span class="s2">&quot;access&quot;</span><span class="p">,</span> <span class="s2">&quot;exit&quot;</span><span class="p">,</span> <span class="s2">&quot;bonus&quot;</span><span class="p">,</span> <span class="s2">&quot;terminated&quot;</span><span class="p">].</span><span class="nx">join</span><span class="p">(</span><span class="s1">&#39;, &#39;</span><span class="p">)</span> <span class="o">+</span>
+                        <span class="s1">&#39;\n&#39;</span><span class="p">);</span>
+        <span class="nx">bonus</span><span class="p">.</span><span class="nx">forEach</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">v</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">bonusFile</span><span class="p">.</span><span class="nx">write</span><span class="p">(</span><span class="nx">v</span><span class="p">.</span><span class="nx">join</span><span class="p">(</span><span class="s1">&#39;, &#39;</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;\n&#39;</span><span class="p">);</span>
+        <span class="p">});</span>
+        <span class="nx">bonusFile</span><span class="p">.</span><span class="nx">end</span><span class="p">();</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="nx">out</span><span class="p">;</span>
+<span class="p">};</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
         <td class="docs">
 <div class="pilwrap" id="helper%20methods.">
   <h2>
@@ -2268,7 +2372,7 @@ would make them lose their context (node etc.).</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-86" id="section-86">&#182;</a>
+  <a class="pilcrow" href="#section-88" id="section-88">&#182;</a>
 </div>
 <p>Stop logic if necessary.</p>
         </td>
@@ -2282,7 +2386,7 @@ would make them lose their context (node etc.).</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-87" id="section-87">&#182;</a>
+  <a class="pilcrow" href="#section-89" id="section-89">&#182;</a>
 </div>
 <p>Setup must be called before connect.</p>
         </td>
@@ -2296,7 +2400,7 @@ would make them lose their context (node etc.).</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-88" id="section-88">&#182;</a>
+  <a class="pilcrow" href="#section-90" id="section-90">&#182;</a>
 </div>
 <p>Connect logic to server, if not already connected. E.g., after a stop
 command it is generally still connected. Or the node object can be
@@ -2373,7 +2477,7 @@ passed in the constructor and be already connected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-90" id="section-90">&#182;</a>
+  <a class="pilcrow" href="#section-92" id="section-92">&#182;</a>
 </div>
 <p>Resolve special values of clientList.</p>
         </td>
@@ -2401,7 +2505,7 @@ passed in the constructor and be already connected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-91" id="section-91">&#182;</a>
+  <a class="pilcrow" href="#section-93" id="section-93">&#182;</a>
 </div>
 <p>Setup all given clients.</p>
         </td>
@@ -2554,7 +2658,7 @@ otherwise the whole function is not optimized.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-95" id="section-95">&#182;</a>
+  <a class="pilcrow" href="#section-97" id="section-97">&#182;</a>
 </div>
 <p>Disconnect client.</p>
         </td>
