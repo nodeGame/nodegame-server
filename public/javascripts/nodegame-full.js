@@ -15764,7 +15764,7 @@ if (!Array.prototype.indexOf) {
         this.exactRecoveryCb = null;
         this.exactCbCalled = false;
 
-        this.changeHandler = function() { return true; };
+        this.changeHandler = function(op, obj) { return true; };
         this.checkSize = function() { return true; };
     };
 
@@ -15992,7 +15992,7 @@ if (!Array.prototype.indexOf) {
         var that;
         that = this;
         this.node.events.step.on('in.say.PCONNECT', function(p) {
-            that.changehandler('pconnect', p);
+            that.changeHandler('pconnect', p);
         }, 'plManagerCon');
         this.node.events.step.on('in.say.PDISCONNECT', function(p) {
             that.changeHandler('pdisconnect', p);
@@ -23468,19 +23468,20 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # GameDB
- * Copyright(c) 2016 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti
  * MIT Licensed
  *
  * Provides a simple, lightweight NO-SQL database for nodeGame
  *
  * Entries are stored as GameBit messages.
  *
- * It automatically creates indexes.
+ * It automatically indexes inserted items by:
  *
- * 1. by player,
- * 2. by stage
+ *  - player,
+ *  - stage.
  *
  * @see GameStage.compare
+ * @see NDDB
  */
 (function(exports, parent) {
 
@@ -45367,29 +45368,47 @@ if (!Array.prototype.indexOf) {
 
 })(node);
 
-(function() {  // self-executing function for encapsulation
+/**
+ * # EndScreen
+ * Copyright(c) 2017 Stefano Balietti
+ * MIT Licensed
+ *
+ * Creates an interface to display final earnings, exit code, etc.
+ *
+ * www.nodegame.org
+ */
+(function(node) {
+
+    "use strict";
 
     // Register the widget in the widgets collection.
     node.widgets.register('EndScreen', EndScreen);
 
-    // Add Meta-data
-    EndScreen.version = '0.1.0';
+    // ## Add Meta-data
+
+    EndScreen.version = '0.2.0';
     EndScreen.description = 'Game end screen. With end game message, ' +
     'email form, and exit code.';
 
-    // Title is displayed in the header.
-    // is this necessary?
     EndScreen.title = 'End Screen';
-    // Classname is added to the widgets.
     EndScreen.className = 'end-screen';
 
-    // Dependencies are checked when the widget is created.
+    // ## Dependencies
+
+    // Checked when the widget is created.
     EndScreen.dependencies = { JSUS: {} };
 
-    // Constructor taking a configuration parameter.
-    // The options object is always existing even if no
-    //
+    /**
+     * ## EndScreen constructor
+     *
+     * Creates a new instance of EndScreen
+     *
+     * @param {object} options Configuration options
+     *
+     * @see EndScreen.init
+     */
     function EndScreen(options) {
+
         /**
          * ### EndScreen.headerMessage
          *
@@ -45540,7 +45559,7 @@ if (!Array.prototype.indexOf) {
     // Implements the Widget.append method.
     EndScreen.prototype.append = function() {
         this.endScreenHTML = this.makeEndScreen();
-        this.bodyDiv.append(this.endScreenHTML);
+        this.bodyDiv.appendChild(this.endScreenHTML);
     };
 
     // makes the end screen
@@ -45713,7 +45732,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Feedback
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti
  * MIT Licensed
  *
  * Sends a feedback message to the server
@@ -45730,7 +45749,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    Feedback.version = '0.3';
+    Feedback.version = '0.4';
     Feedback.description = 'Displays a simple feedback form.';
 
     Feedback.title = 'Feedback';
@@ -45818,7 +45837,9 @@ if (!Array.prototype.indexOf) {
 
     // ## Feedback methods
 
-    Feedback.prototype.createForm = function(showCount, minLength, maxLength, labelText) {
+    Feedback.prototype.createForm = function(showCount, minLength,
+                                             maxLength, labelText) {
+
         var feedbackHTML;
         var feedbackForm;
         var feedbackLabel;
@@ -45870,10 +45891,12 @@ if (!Array.prototype.indexOf) {
         });
 
         feedbackForm.addEventListener('input', function(event) {
-            checkFeedbackLength(feedbackTextarea, charCounter, submit, minLength, maxLength);
+            checkFeedbackLength(feedbackTextarea, charCounter, submit,
+                                minLength, maxLength);
         });
 
-        checkFeedbackLength(feedbackTextarea, charCounter, submit, minLength, maxLength);
+        checkFeedbackLength(feedbackTextarea, charCounter, submit,
+                            minLength, maxLength);
 
         return feedbackHTML;
     };
@@ -45915,7 +45938,8 @@ if (!Array.prototype.indexOf) {
         else {
           submit.disabled = false;
 
-          charCounter.innerHTML = (maxLength - length) + ' characters remaining.';
+          charCounter.innerHTML = (maxLength - length) +
+                ' characters remaining.';
           charCounter.style.backgroundColor = '#dff0d8';
         }
     }
