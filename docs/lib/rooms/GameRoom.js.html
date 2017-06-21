@@ -2354,7 +2354,7 @@ Optionally, saves the results in a bonus file in csv format.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="nx">out</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">map</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">p</span><span class="p">)</span> <span class="p">{</span>
-        <span class="kd">var</span> <span class="nx">client</span><span class="p">,</span> <span class="nx">accessCode</span><span class="p">,</span> <span class="nx">exitCode</span><span class="p">,</span> <span class="nx">obj</span><span class="p">,</span> <span class="nx">len</span><span class="p">;</span>
+        <span class="kd">var</span> <span class="nx">client</span><span class="p">,</span> <span class="nx">accessCode</span><span class="p">,</span> <span class="nx">exitCode</span><span class="p">,</span> <span class="nx">obj</span><span class="p">;</span>
         <span class="nx">client</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">registry</span><span class="p">.</span><span class="nx">getClient</span><span class="p">(</span><span class="nx">p</span><span class="p">.</span><span class="nx">id</span><span class="p">);</span>
 
         <span class="nx">accessCode</span> <span class="o">=</span> <span class="nx">client</span><span class="p">.</span><span class="nx">AccessCode</span> <span class="o">||</span> <span class="nx">client</span><span class="p">.</span><span class="nx">accessCode</span><span class="p">;</span>
