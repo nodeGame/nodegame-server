@@ -45381,14 +45381,17 @@ if (!Array.prototype.indexOf) {
 
     "use strict";
 
+    var J;
+    J = JSUS;
+
     // Register the widget in the widgets collection.
     node.widgets.register('EndScreen', EndScreen);
 
     // ## Add Meta-data
 
-    EndScreen.version = '0.2.0';
+    EndScreen.version = '0.3.0';
     EndScreen.description = 'Game end screen. With end game message, ' +
-    'email form, and exit code.';
+        'email form, and exit code.';
 
     EndScreen.title = 'End Screen';
     EndScreen.className = 'end-screen';
@@ -45535,6 +45538,28 @@ if (!Array.prototype.indexOf) {
         }
 
         /**
+         * ### EndScreen.totalWinCurrency
+         *
+         * The currency displayed after totalWin
+         *
+         * Default: 'USD'
+         */
+        if ('undefined' === typeof options.totalWinCurrency) {
+            this.totalWinCurrency = 'USD';
+        }
+        else if ('string' === typeof options.totalWinCurrency &&
+                 options.totalWinCurrency.trim() !== '') {
+
+            this.totalWinCurrency = options.totalWinCurrency;
+        }
+        else {
+            throw new TypeError('EndScreen constructor: ' +
+                                'options.totalWinCurrency must be undefined ' +
+                                'or a non-empty string. Found: ' +
+                                options.totalWinCurrency);
+        }
+
+        /**
          * ### EndScreen.feedback
          *
          * Feedback widget element
@@ -45568,8 +45593,8 @@ if (!Array.prototype.indexOf) {
         var headerElement, messageElement;
         var totalWinElement, totalWinParaElement, totalWinInputElement;
         var exitCodeElement, exitCodeParaElement, exitCodeInputElement;
-        var emailElement, emailFormElement, emailLabelElement,
-            emailInputElement, emailButtonElement;
+        var emailElement, emailFormElement, emailLabelElement;
+        var emailInputElement, emailButtonElement;
         var emailErrorString;
 
         emailErrorString = 'Not a valid email address, ' +
@@ -45696,22 +45721,37 @@ if (!Array.prototype.indexOf) {
         // Listeners added here are automatically removed
         // when the widget is destroyed.
         node.on.data('WIN', function(message) {
-            var totalWin;
-            var exitCode;
             var data;
-
+            var preWin, totalWin, exitCode;
             var totalHTML, exitCodeHTML;
 
             data = message.data;
-            totalWin = data.total;
             exitCode = data.exit;
 
-            if (JSUS.isNumber(totalWin, 0) === false) {
-                node.err('EndScreen error, invalid exit code: ' + totalWin);
+            totalWin = J.isNumber(data.total, 0);
+            if (totalWin === false) {
+                node.err('EndScreen error, invalid total win: ' + data.total);
                 totalWin = 'Error: invalid total win.';
             }
+            else if (data.partials) {
+                if (!J.isArray(data.partials)) {
+                    node.err('EndScreen error, invalid partials win: ' +
+                             data.partials);
+                }
+                else {
+                    preWin = data.partials.join(' + ');
 
-            if ((typeof exitCode !== 'string')) {
+                    if ('undefined' !== typeof data.totalRaw) {
+                        preWin += ' = ' + data.totalRaw;
+                        if ('undefined' !== typeof data.exchangeRate) {
+                            preWin += '*' + data.exchangeRate;
+                        }
+                        totalWin = preWin + ' = ' + totalWin;
+                    }
+                }
+            }
+
+            if ('string' !== typeof exitCode) {
                 node.err('EndScreen error, invalid exit code: ' + exitCode);
                 exitCode = 'Error: invalid exit code.';
             }
@@ -45720,7 +45760,7 @@ if (!Array.prototype.indexOf) {
             exitCodeHTML = that.exitCodeInputElement;
 
             if (totalHTML && that.showTotalWin) {
-                totalHTML.value = totalWin;
+                totalHTML.value = totalWin + ' ' + that.totalWinCurrency;
             }
 
             if (exitCodeHTML && that.showExitCode) {

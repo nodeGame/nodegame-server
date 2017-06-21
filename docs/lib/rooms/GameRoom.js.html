@@ -39,9 +39,6 @@
       <div class="heading h3">
         <a href="#gameroom.gametreatment">GameRoom.gameTreatment</a>
       </div>
-      <div class="heading h3">
-        <a href="#gameroom.countdown">GameRoom.countdown</a>
-      </div>
       <div class="heading h2">
         <a href="#gameroom.wrongnumofplayers">GameRoom.wrongNumOfPlayers</a>
       </div>
@@ -333,23 +330,14 @@ MIT Licensed</p>
         </td>
       </tr>
       <tr>
-        <td class="docs"><div class="dox">
-  <div class="summary">
-<div class="pilwrap" id="gameroom.countdown">
-  <h3>
-    <a href="#gameroom.countdown" name="gameroom.countdown" class="pilcrow">&#182;</a>
-    GameRoom.countdown
-  </h3>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-8" id="section-8">&#182;</a>
 </div>
-
-  </div>
-  <div class="body"><p>Timeout handled by</p>
-  </div>
-</div>
-
 <p>Configure disconnect/reconnect policy.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
+
     <span class="nx">that</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
     <span class="nx">node</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">node</span><span class="p">;</span>
 
@@ -2240,7 +2228,8 @@ Optionally, saves the results in a bonus file in csv format.</p>
     <span class="kd">var</span> <span class="nx">node</span><span class="p">,</span> <span class="nx">channel</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">out</span><span class="p">,</span> <span class="nx">outStr</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">filename</span><span class="p">,</span> <span class="nx">bonusFile</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">winProperty</span><span class="p">,</span> <span class="nx">winDecimals</span><span class="p">,</span> <span class="nx">exchangeRate</span><span class="p">,</span> <span class="nx">missing</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">winProperty</span><span class="p">,</span> <span class="nx">winDecimals</span><span class="p">,</span> <span class="nx">exchangeRate</span><span class="p">,</span> <span class="nx">missing</span><span class="p">,</span> <span class="nx">header</span><span class="p">,</span> <span class="nx">headerLen</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">i</span><span class="p">;</span>
 
     <span class="nx">node</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">node</span><span class="p">;</span>
     <span class="nx">channel</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">;</span>
@@ -2324,6 +2313,20 @@ Optionally, saves the results in a bonus file in csv format.</p>
         <span class="nx">missing</span> <span class="o">=</span> <span class="s1">&#39;NA&#39;</span><span class="p">;</span>
     <span class="p">}</span>
 
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">options</span><span class="p">.</span><span class="nx">header</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">J</span><span class="p">.</span><span class="nx">isArray</span><span class="p">(</span><span class="nx">options</span><span class="p">.</span><span class="nx">header</span><span class="p">)</span> <span class="o">||</span> <span class="o">!</span><span class="nx">options</span><span class="p">.</span><span class="nx">header</span><span class="p">.</span><span class="nx">length</span><span class="p">)</span> <span class="p">{</span>
+
+            <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;GameRoom.computeBonus: options.header &#39;</span> <span class="o">+</span>
+                            <span class="s1">&#39;must be undefined or a non-empty array. Found: &#39;</span> <span class="o">+</span>
+                            <span class="nx">options</span><span class="p">.</span><span class="nx">header</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="nx">header</span> <span class="o">=</span> <span class="nx">options</span><span class="p">.</span><span class="nx">header</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="k">else</span> <span class="p">{</span>
+        <span class="nx">header</span> <span class="o">=</span> <span class="p">[</span> <span class="s1">&#39;id&#39;</span><span class="p">,</span> <span class="s1">&#39;access&#39;</span><span class="p">,</span> <span class="s1">&#39;exit&#39;</span><span class="p">,</span> <span class="s1">&#39;total&#39;</span> <span class="p">];</span>
+    <span class="p">}</span>
+    <span class="nx">headerLen</span> <span class="o">=</span> <span class="nx">header</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span>
+
 
 </pre></div>
         </td>
@@ -2351,31 +2354,32 @@ Optionally, saves the results in a bonus file in csv format.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="nx">out</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">clients</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">map</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">p</span><span class="p">)</span> <span class="p">{</span>
-        <span class="kd">var</span> <span class="nx">client</span><span class="p">,</span> <span class="nx">accesscode</span><span class="p">,</span> <span class="nx">exitcode</span><span class="p">;</span>
+        <span class="kd">var</span> <span class="nx">client</span><span class="p">,</span> <span class="nx">accessCode</span><span class="p">,</span> <span class="nx">exitCode</span><span class="p">,</span> <span class="nx">obj</span><span class="p">,</span> <span class="nx">len</span><span class="p">;</span>
         <span class="nx">client</span> <span class="o">=</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">registry</span><span class="p">.</span><span class="nx">getClient</span><span class="p">(</span><span class="nx">p</span><span class="p">.</span><span class="nx">id</span><span class="p">);</span>
 
-        <span class="nx">accesscode</span> <span class="o">=</span> <span class="nx">client</span><span class="p">.</span><span class="nx">AccessCode</span><span class="p">;</span>
-        <span class="nx">exitcode</span> <span class="o">=</span> <span class="nx">client</span><span class="p">.</span><span class="nx">ExitCode</span><span class="p">;</span>
+        <span class="nx">accessCode</span> <span class="o">=</span> <span class="nx">client</span><span class="p">.</span><span class="nx">AccessCode</span> <span class="o">||</span> <span class="nx">client</span><span class="p">.</span><span class="nx">accessCode</span><span class="p">;</span>
+        <span class="nx">exitCode</span> <span class="o">=</span> <span class="nx">client</span><span class="p">.</span><span class="nx">ExitCode</span> <span class="o">||</span> <span class="nx">client</span><span class="p">.</span><span class="nx">exitCode</span><span class="p">;</span>
+
         <span class="nx">client</span><span class="p">[</span><span class="nx">winProperty</span><span class="p">]</span> <span class="o">=</span> <span class="nb">Number</span><span class="p">(</span><span class="nx">client</span><span class="p">[</span><span class="nx">winProperty</span><span class="p">]</span> <span class="o">||</span> <span class="mi">0</span><span class="p">);</span>
 
-        <span class="k">if</span> <span class="p">(</span><span class="nx">exchangeRate</span> <span class="o">!==</span> <span class="mi">1</span><span class="p">)</span> <span class="nx">client</span><span class="p">[</span><span class="nx">winProperty</span><span class="p">]</span> <span class="o">*=</span> <span class="p">(</span><span class="nx">exchangeRate</span><span class="p">);</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">exchangeRate</span> <span class="o">!==</span> <span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">client</span><span class="p">[</span><span class="nx">winProperty</span> <span class="o">+</span> <span class="s1">&#39;Raw&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nx">client</span><span class="p">[</span><span class="nx">winProperty</span><span class="p">];</span>
+            <span class="nx">client</span><span class="p">[</span><span class="nx">winProperty</span><span class="p">]</span> <span class="o">*=</span> <span class="p">(</span><span class="nx">exchangeRate</span><span class="p">);</span>
+        <span class="p">}</span>
 
         <span class="k">if</span> <span class="p">(</span><span class="nx">winDecimals</span> <span class="o">!==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
             <span class="nx">client</span><span class="p">[</span><span class="nx">winProperty</span><span class="p">].</span><span class="nx">toFixed</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>
             <span class="nx">client</span><span class="p">[</span><span class="nx">winProperty</span><span class="p">]</span> <span class="o">=</span> <span class="nb">parseFloat</span><span class="p">(</span><span class="nx">client</span><span class="p">[</span><span class="nx">winProperty</span><span class="p">],</span> <span class="mi">10</span><span class="p">);</span>
         <span class="p">}</span>
 
-        <span class="k">if</span> <span class="p">(</span><span class="nx">options</span><span class="p">.</span><span class="nx">say</span><span class="p">)</span> <span class="p">{</span>
-            <span class="nx">node</span><span class="p">.</span><span class="nx">say</span><span class="p">(</span><span class="s1">&#39;WIN&#39;</span><span class="p">,</span> <span class="nx">p</span><span class="p">.</span><span class="nx">id</span><span class="p">,</span> <span class="p">{</span>
-                <span class="nx">win</span><span class="o">:</span> <span class="nx">client</span><span class="p">[</span><span class="nx">winProperty</span><span class="p">],</span>
-                <span class="nx">exitclient</span><span class="o">:</span> <span class="nx">client</span><span class="p">.</span><span class="nx">ExitCode</span>
-            <span class="p">});</span>
+        <span class="nx">obj</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="nx">total</span><span class="o">:</span> <span class="nx">client</span><span class="p">[</span><span class="nx">winProperty</span><span class="p">],</span>
+            <span class="nx">exit</span><span class="o">:</span> <span class="nx">exitCode</span>
+        <span class="p">};</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">exchangeRate</span> <span class="o">!==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">obj</span><span class="p">.</span><span class="nx">totalRaw</span> <span class="o">=</span> <span class="nx">client</span><span class="p">[</span><span class="nx">winProperty</span> <span class="o">+</span> <span class="s1">&#39;Raw&#39;</span><span class="p">];</span>
+            <span class="nx">obj</span><span class="p">.</span><span class="nx">exchangeRate</span> <span class="o">=</span> <span class="nx">exchangeRate</span><span class="p">;</span>
         <span class="p">}</span>
-
-        <span class="k">if</span> <span class="p">(</span><span class="nx">options</span><span class="p">.</span><span class="nx">print</span><span class="p">)</span> <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">p</span><span class="p">.</span><span class="nx">id</span><span class="p">,</span> <span class="s1">&#39;:&#39;</span><span class="p">,</span>
-                                       <span class="nx">client</span><span class="p">[</span><span class="nx">winProperty</span><span class="p">],</span> <span class="nx">client</span><span class="p">.</span><span class="nx">ExitCode</span><span class="p">);</span>
-
-        <span class="nx">out</span> <span class="o">=</span> <span class="p">[</span><span class="nx">p</span><span class="p">.</span><span class="nx">id</span><span class="p">,</span> <span class="nx">client</span><span class="p">.</span><span class="nx">ExitCode</span> <span class="o">||</span> <span class="nx">missing</span><span class="p">,</span> <span class="nx">client</span><span class="p">[</span><span class="nx">winProperty</span><span class="p">]</span> <span class="p">]</span>
 
 
 </pre></div>
@@ -2389,11 +2393,89 @@ Optionally, saves the results in a bonus file in csv format.</p>
 <p>Execute callback on row.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-        <span class="k">if</span> <span class="p">(</span><span class="nx">options</span><span class="p">.</span><span class="nx">cb</span><span class="p">)</span> <span class="nx">options</span><span class="p">.</span><span class="nx">cb</span><span class="p">(</span><span class="nx">out</span><span class="p">,</span> <span class="nx">p</span><span class="p">);</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">options</span><span class="p">.</span><span class="nx">cb</span><span class="p">)</span> <span class="nx">options</span><span class="p">.</span><span class="nx">cb</span><span class="p">(</span><span class="nx">obj</span><span class="p">,</span> <span class="nx">p</span><span class="p">);</span>
 
-        <span class="k">if</span> <span class="p">(</span><span class="nx">options</span><span class="p">.</span><span class="nx">dump</span><span class="p">)</span> <span class="nx">outStr</span> <span class="o">+=</span> <span class="nx">out</span><span class="p">.</span><span class="nx">join</span><span class="p">(</span><span class="s1">&#39;, &#39;</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;\n&#39;</span><span class="p">;</span>
 
-        <span class="k">return</span> <span class="nx">out</span><span class="p">;</span>
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-90" id="section-90">&#182;</a>
+</div>
+<p>Send msg.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">options</span><span class="p">.</span><span class="nx">say</span><span class="p">)</span> <span class="nx">node</span><span class="p">.</span><span class="nx">say</span><span class="p">(</span><span class="s1">&#39;WIN&#39;</span><span class="p">,</span> <span class="nx">p</span><span class="p">.</span><span class="nx">id</span><span class="p">,</span> <span class="nx">obj</span><span class="p">);</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-91" id="section-91">&#182;</a>
+</div>
+<p>Add id (no need to send it in say, so we do it afterwards.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="nx">obj</span><span class="p">.</span><span class="nx">id</span> <span class="o">=</span> <span class="nx">p</span><span class="p">.</span><span class="nx">id</span><span class="p">;</span>
+        <span class="nx">obj</span><span class="p">.</span><span class="nx">exit</span> <span class="o">=</span> <span class="nx">obj</span><span class="p">.</span><span class="nx">exit</span> <span class="o">||</span> <span class="nx">missing</span><span class="p">;</span>
+        <span class="nx">obj</span><span class="p">.</span><span class="nx">access</span> <span class="o">=</span> <span class="nx">accessCode</span> <span class="o">||</span> <span class="nx">missing</span><span class="p">;</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-92" id="section-92">&#182;</a>
+</div>
+<p>Print output.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">options</span><span class="p">.</span><span class="nx">print</span><span class="p">)</span> <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">obj</span><span class="p">);</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-93" id="section-93">&#182;</a>
+</div>
+<p>Create dump string.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">options</span><span class="p">.</span><span class="nx">dump</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">outStr</span> <span class="o">+=</span> <span class="nx">p</span><span class="p">.</span><span class="nx">id</span><span class="p">;</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nx">headerLen</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+                <span class="nx">outStr</span> <span class="o">+=</span> <span class="s1">&#39;,&#39;</span> <span class="o">+</span> <span class="nx">obj</span><span class="p">[</span><span class="nx">header</span><span class="p">[</span><span class="mi">0</span><span class="p">]];</span>
+            <span class="p">}</span>
+            <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">headerLen</span> <span class="o">==</span> <span class="mi">2</span><span class="p">)</span> <span class="p">{</span>
+                <span class="nx">outStr</span> <span class="o">+=</span> <span class="s1">&#39;,&#39;</span> <span class="o">+</span> <span class="nx">obj</span><span class="p">[</span><span class="nx">header</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">+</span> <span class="s1">&#39;,&#39;</span> <span class="o">+</span> <span class="nx">obj</span><span class="p">[</span><span class="nx">header</span><span class="p">[</span><span class="mi">1</span><span class="p">]];</span>
+            <span class="p">}</span>
+            <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">headerLen</span> <span class="o">==</span> <span class="mi">3</span><span class="p">)</span> <span class="p">{</span>
+                <span class="nx">outStr</span> <span class="o">+=</span> <span class="s1">&#39;,&#39;</span> <span class="o">+</span> <span class="nx">obj</span><span class="p">[</span><span class="nx">header</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">+</span> <span class="s1">&#39;,&#39;</span> <span class="o">+</span> <span class="nx">obj</span><span class="p">[</span><span class="nx">header</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">+</span>
+                    <span class="s1">&#39;,&#39;</span> <span class="o">+</span> <span class="nx">obj</span><span class="p">[</span><span class="nx">header</span><span class="p">[</span><span class="mi">2</span><span class="p">]];</span>
+            <span class="p">}</span>
+            <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">headerLen</span> <span class="o">==</span> <span class="mi">4</span><span class="p">)</span> <span class="p">{</span>
+                <span class="nx">outStr</span> <span class="o">+=</span> <span class="s1">&#39;,&#39;</span> <span class="o">+</span> <span class="nx">obj</span><span class="p">[</span><span class="nx">header</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">+</span> <span class="s1">&#39;,&#39;</span> <span class="o">+</span> <span class="nx">obj</span><span class="p">[</span><span class="nx">header</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">+</span>
+                    <span class="s1">&#39;,&#39;</span> <span class="o">+</span> <span class="nx">obj</span><span class="p">[</span><span class="nx">header</span><span class="p">[</span><span class="mi">2</span><span class="p">]]</span> <span class="o">+</span> <span class="s1">&#39;,&#39;</span> <span class="o">+</span> <span class="nx">obj</span><span class="p">[</span><span class="nx">header</span><span class="p">[</span><span class="mi">3</span><span class="p">]];</span>
+            <span class="p">}</span>
+            <span class="k">else</span> <span class="p">{</span>
+                <span class="nx">i</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+                <span class="k">for</span> <span class="p">(</span> <span class="p">;</span> <span class="o">++</span><span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">headerLen</span> <span class="p">;</span> <span class="p">)</span> <span class="p">{</span>
+                    <span class="nx">outStr</span> <span class="o">+=</span> <span class="s1">&#39;,&#39;</span> <span class="o">+</span> <span class="nx">obj</span><span class="p">[</span><span class="nx">header</span><span class="p">[</span><span class="nx">i</span><span class="p">]];</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+            <span class="nx">outStr</span> <span class="o">+=</span> <span class="s1">&#39;\n&#39;</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="nx">obj</span><span class="p">;</span>
     <span class="p">});</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="nx">options</span><span class="p">.</span><span class="nx">dump</span><span class="p">)</span> <span class="p">{</span>
@@ -2402,7 +2484,7 @@ Optionally, saves the results in a bonus file in csv format.</p>
         <span class="nx">bonusFile</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;error&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span>
             <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Error while saving bonus file: &#39;</span><span class="p">,</span> <span class="nx">err</span><span class="p">);</span>
         <span class="p">});</span>
-        <span class="nx">bonusFile</span><span class="p">.</span><span class="nx">write</span><span class="p">([</span><span class="s2">&quot;access&quot;</span><span class="p">,</span> <span class="s2">&quot;exit&quot;</span><span class="p">,</span> <span class="s2">&quot;bonus&quot;</span><span class="p">].</span><span class="nx">join</span><span class="p">(</span><span class="s1">&#39;, &#39;</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;\n&#39;</span><span class="p">);</span>
+        <span class="nx">bonusFile</span><span class="p">.</span><span class="nx">write</span><span class="p">(</span><span class="nx">header</span><span class="p">.</span><span class="nx">join</span><span class="p">(</span><span class="s1">&#39;, &#39;</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;\n&#39;</span><span class="p">);</span>
         <span class="nx">bonusFile</span><span class="p">.</span><span class="nx">write</span><span class="p">(</span><span class="nx">outStr</span><span class="p">);</span>
         <span class="nx">bonusFile</span><span class="p">.</span><span class="nx">end</span><span class="p">();</span>
     <span class="p">}</span>
@@ -2482,7 +2564,7 @@ Optionally, saves the results in a bonus file in csv format.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-92" id="section-92">&#182;</a>
+  <a class="pilcrow" href="#section-96" id="section-96">&#182;</a>
 </div>
 <p>Stop logic if necessary.</p>
         </td>
@@ -2496,7 +2578,7 @@ Optionally, saves the results in a bonus file in csv format.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-93" id="section-93">&#182;</a>
+  <a class="pilcrow" href="#section-97" id="section-97">&#182;</a>
 </div>
 <p>Setup must be called before connect.</p>
         </td>
@@ -2510,7 +2592,7 @@ Optionally, saves the results in a bonus file in csv format.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-94" id="section-94">&#182;</a>
+  <a class="pilcrow" href="#section-98" id="section-98">&#182;</a>
 </div>
 <p>Connect logic to server, if not already connected. E.g., after a stop
 command it is generally still connected. Or the node object can be
@@ -2587,7 +2669,7 @@ passed in the constructor and be already connected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-96" id="section-96">&#182;</a>
+  <a class="pilcrow" href="#section-100" id="section-100">&#182;</a>
 </div>
 <p>Resolve special values of clientList.</p>
         </td>
@@ -2615,7 +2697,7 @@ passed in the constructor and be already connected.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-97" id="section-97">&#182;</a>
+  <a class="pilcrow" href="#section-101" id="section-101">&#182;</a>
 </div>
 <p>Setup all given clients.</p>
         </td>
@@ -2768,7 +2850,7 @@ otherwise the whole function is not optimized.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-101" id="section-101">&#182;</a>
+  <a class="pilcrow" href="#section-105" id="section-105">&#182;</a>
 </div>
 <p>Disconnect client.</p>
         </td>
