@@ -102,6 +102,9 @@
       <div class="heading h3">
         <a href="#disposeclient">disposeClient</a>
       </div>
+      <div class="heading h3">
+        <a href="#writebonusfile">writeBonusFile</a>
+      </div>
     </div>
   </div>
   <div id="sidebar-toggle"></div>
@@ -2227,7 +2230,7 @@ Optionally, saves the results in a bonus file in csv format.</p>
 <span class="nx">GameRoom</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">computeBonus</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">options</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">node</span><span class="p">,</span> <span class="nx">channel</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">out</span><span class="p">,</span> <span class="nx">outStr</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">filename</span><span class="p">,</span> <span class="nx">bonusFile</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">filename</span><span class="p">,</span> <span class="nx">filenameBak</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">winProperty</span><span class="p">,</span> <span class="nx">winDecimals</span><span class="p">,</span> <span class="nx">exchangeRate</span><span class="p">,</span> <span class="nx">missing</span><span class="p">,</span> <span class="nx">header</span><span class="p">,</span> <span class="nx">headerLen</span><span class="p">;</span>
     <span class="kd">var</span> <span class="nx">i</span><span class="p">;</span>
 
@@ -2480,13 +2483,31 @@ Optionally, saves the results in a bonus file in csv format.</p>
 
     <span class="k">if</span> <span class="p">(</span><span class="nx">options</span><span class="p">.</span><span class="nx">dump</span><span class="p">)</span> <span class="p">{</span>
         <span class="nx">filename</span> <span class="o">=</span> <span class="nx">node</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">memory</span><span class="p">.</span><span class="nx">getWD</span><span class="p">()</span> <span class="o">+</span> <span class="s1">&#39;bonus.csv&#39;</span><span class="p">;</span>
-        <span class="nx">bonusFile</span> <span class="o">=</span> <span class="nx">fs</span><span class="p">.</span><span class="nx">createWriteStream</span><span class="p">(</span><span class="nx">filename</span><span class="p">);</span>
-        <span class="nx">bonusFile</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;error&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span>
-            <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Error while saving bonus file: &#39;</span><span class="p">,</span> <span class="nx">err</span><span class="p">);</span>
-        <span class="p">});</span>
-        <span class="nx">bonusFile</span><span class="p">.</span><span class="nx">write</span><span class="p">(</span><span class="nx">header</span><span class="p">.</span><span class="nx">join</span><span class="p">(</span><span class="s1">&#39;, &#39;</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;\n&#39;</span><span class="p">);</span>
-        <span class="nx">bonusFile</span><span class="p">.</span><span class="nx">write</span><span class="p">(</span><span class="nx">outStr</span><span class="p">);</span>
-        <span class="nx">bonusFile</span><span class="p">.</span><span class="nx">end</span><span class="p">();</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="nx">options</span><span class="p">.</span><span class="nx">backup</span> <span class="o">===</span> <span class="kc">false</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">writeBonusFile</span><span class="p">(</span><span class="nx">filename</span><span class="p">,</span> <span class="nx">header</span><span class="p">,</span> <span class="nx">outStr</span><span class="p">,</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="k">else</span> <span class="p">{</span>
+            <span class="nx">fs</span><span class="p">.</span><span class="nx">exists</span><span class="p">(</span><span class="nx">filename</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">exists</span><span class="p">)</span> <span class="p">{</span>
+                <span class="k">if</span> <span class="p">(</span><span class="nx">exists</span><span class="p">)</span> <span class="p">{</span>
+                    <span class="nx">filenameBak</span> <span class="o">=</span> <span class="nx">filename</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span> <span class="o">+</span> <span class="nx">J</span><span class="p">.</span><span class="nx">now</span><span class="p">()</span> <span class="o">+</span> <span class="s1">&#39;.bak&#39;</span><span class="p">;</span>
+                    <span class="nx">fs</span><span class="p">.</span><span class="nx">copy</span><span class="p">(</span><span class="nx">filename</span><span class="p">,</span> <span class="nx">filenameBak</span><span class="p">)</span>
+                        <span class="p">.</span><span class="nx">then</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+                            <span class="nx">writeBonusFile</span><span class="p">(</span><span class="nx">filename</span><span class="p">,</span> <span class="nx">header</span><span class="p">,</span> <span class="nx">outStr</span><span class="p">,</span>
+                                           <span class="nx">channel</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">);</span>
+                        <span class="p">})</span>
+                        <span class="p">.</span><span class="k">catch</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span>
+                            <span class="nx">channel</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;An error occurred while &#39;</span> <span class="o">+</span>
+                                                  <span class="s1">&#39;creating backup of bonus &#39;</span> <span class="o">+</span>
+                                                  <span class="s1">&#39;file: &#39;</span> <span class="o">+</span> <span class="nx">filename</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
+                            <span class="nx">channel</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
+                        <span class="p">});</span>
+                <span class="p">}</span>
+                <span class="k">else</span> <span class="p">{</span>
+                    <span class="nx">writeBonusFile</span><span class="p">(</span><span class="nx">filename</span><span class="p">,</span> <span class="nx">header</span><span class="p">,</span> <span class="nx">outStr</span><span class="p">,</span> <span class="nx">channel</span><span class="p">.</span><span class="nx">sysLogger</span><span class="p">);</span>
+                <span class="p">}</span>
+            <span class="p">});</span>
+        <span class="p">}</span>
     <span class="p">}</span>
 
     <span class="k">return</span> <span class="nx">out</span><span class="p">;</span>
@@ -2856,6 +2877,69 @@ otherwise the whole function is not optimized.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
     <span class="nx">setTimeout</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span> <span class="nx">node</span><span class="p">.</span><span class="nx">disconnectClient</span><span class="p">(</span><span class="nx">p</span><span class="p">);</span> <span class="p">});</span>
+<span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="writebonusfile">
+  <h3>
+    <a href="#writebonusfile" name="writebonusfile" class="pilcrow">&#182;</a>
+    writeBonusFile
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Writes a bonus file (csv format)</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">filename</span>
+      <span class="dox_type">string</span>
+      <span>The name of the file (full path)</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">header</span>
+      <span class="dox_type">array</span>
+      <span>The header of the csv file</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">content</span>
+      <span class="dox_type">string</span>
+      <span>The main content of the file</span>
+    </div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">sysLogger</span>
+      <span class="dox_type">Logger</span>
+      <span>Reference to the channel logger</span>
+    </div>
+    <div class="dox_tag_title">See</div>
+    <div class="dox_tag_detail">
+      <span class="dox_type">GameRoom.computeBonus
+</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="kd">function</span> <span class="nx">writeBonusFile</span><span class="p">(</span><span class="nx">filename</span><span class="p">,</span> <span class="nx">header</span><span class="p">,</span> <span class="nx">content</span><span class="p">,</span> <span class="nx">sysLogger</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">bonusFile</span><span class="p">;</span>
+    <span class="nx">bonusFile</span> <span class="o">=</span> <span class="nx">fs</span><span class="p">.</span><span class="nx">createWriteStream</span><span class="p">(</span><span class="nx">filename</span><span class="p">);</span>
+    <span class="nx">bonusFile</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;error&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Error while saving bonus file: &#39;</span> <span class="o">+</span> <span class="nx">filename</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
+        <span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
+    <span class="p">});</span>
+    <span class="nx">bonusFile</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;close&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+        <span class="nx">sysLogger</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Bonus file saved: &#39;</span> <span class="o">+</span> <span class="nx">filename</span><span class="p">);</span>
+    <span class="p">});</span>
+    <span class="nx">bonusFile</span><span class="p">.</span><span class="nx">write</span><span class="p">(</span><span class="nx">header</span><span class="p">.</span><span class="nx">join</span><span class="p">(</span><span class="s1">&#39;, &#39;</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;\n&#39;</span><span class="p">);</span>
+    <span class="nx">bonusFile</span><span class="p">.</span><span class="nx">write</span><span class="p">(</span><span class="nx">content</span><span class="p">);</span>
+    <span class="nx">bonusFile</span><span class="p">.</span><span class="nx">end</span><span class="p">();</span>
 <span class="p">}</span>
 </pre></div>
         </td>

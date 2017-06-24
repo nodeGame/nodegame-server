@@ -3840,7 +3840,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # OBJ
- * Copyright(c) 2016 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti
  * MIT Licensed
  *
  * Collection of static functions to manipulate JavaScript objects
@@ -4480,6 +4480,8 @@ if (!Array.prototype.indexOf) {
      *
      * @param {object} obj1 The object to which the new properties will be added
      * @param {object} obj2 The mixin-in object
+     *
+     * @return {object} obj1
      */
     OBJ.mixin = function(obj1, obj2) {
         var i;
@@ -4489,6 +4491,7 @@ if (!Array.prototype.indexOf) {
         for (i in obj2) {
             obj1[i] = obj2[i];
         }
+        return obj1;
     };
 
     /**
@@ -4501,6 +4504,8 @@ if (!Array.prototype.indexOf) {
      *
      * @param {object} obj1 The object to which the new properties will be added
      * @param {object} obj2 The mixin-in object
+     *
+     * @return {object} obj1
      */
     OBJ.mixout = function(obj1, obj2) {
         var i;
@@ -4510,6 +4515,7 @@ if (!Array.prototype.indexOf) {
         for (i in obj2) {
             if ('undefined' === typeof obj1[i]) obj1[i] = obj2[i];
         }
+        return obj1;
     };
 
     /**
@@ -4522,6 +4528,8 @@ if (!Array.prototype.indexOf) {
      *
      * @param {object} obj1 The object to which the new properties will be added
      * @param {object} obj2 The mixin-in object
+     *
+     * @return {object} obj1
      */
     OBJ.mixcommon = function(obj1, obj2) {
         var i;
@@ -4531,6 +4539,7 @@ if (!Array.prototype.indexOf) {
         for (i in obj2) {
             if ('undefined' !== typeof obj1[i]) obj1[i] = obj2[i];
         }
+        return obj1;
     };
 
     /**
@@ -5517,6 +5526,20 @@ if (!Array.prototype.indexOf) {
         return result;
     };
 
+    /**
+     * ### RANDOM.randomEmail
+     *
+     * Creates a random email address
+     *
+     * @TODO: add options.
+     *
+     * @return {string} result The random email
+     */
+    RANDOM.randomEmail = function() {
+        return RANDOM.randomString(RANDOM.randomInt(5,15), '!Aa0') + '@' +
+            RANDOM.randomString(RANDOM.randomInt(3,10))  + '.' +
+            RANDOM.randomString(RANDOM.randomInt(2,3));
+    };
 
     JSUS.extend(RANDOM);
 
@@ -5644,6 +5667,17 @@ if (!Array.prototype.indexOf) {
         result[1] = Math.floor(days);
         return result;
     };
+
+
+    /**
+     * ## TIME.now
+     *
+     * Shortcut to Date.now (when existing), or its polyfill
+     *
+     * @return {number} The timestamp now
+     */
+    TIME.now = 'function' === typeof Date.now ?
+        Date.now : function() { return new Date().getTime(); }
 
     JSUS.extend(TIME);
 
@@ -5966,6 +6000,28 @@ if (!Array.prototype.indexOf) {
         if ('number' === typeof lower && n < lower) return false;
         if ('number' === typeof upper && n > upper) return false;
         return n;
+    };
+
+    /**
+     * ## PARSE.isEmail
+     *
+     * Returns TRUE if the email's format is valid
+     *
+     * @param {string} The email to check
+     *
+     * @return {boolean} TRUE, if the email format is valid
+     */
+    PARSE.isEmail = function(email) {
+        var idx;
+        if ('string' !== typeof email) return false;
+        if (email.trim().length < 5) return false;
+        idx = email.indexOf('@');
+        if (idx === -1 || idx === 0 || idx === (email.length-1)) return false;
+        idx = email.lastIndexOf('.');
+        if (idx === -1 || idx === (email.length-1) || idx > (idx+1)) {
+            return false;
+        }
+        return true;
     };
 
     /**
@@ -38588,7 +38644,7 @@ if (!Array.prototype.indexOf) {
             throw new TypeError('Widgets.get: options must be object or ' +
                                 'undefined. Found: ' + options);
         }
-        
+
         that = this;
 
         WidgetPrototype = J.getNestedValue(widgetName, this.widgets);
@@ -42733,7 +42789,7 @@ if (!Array.prototype.indexOf) {
      * Highlights the choice table
      *
      * @param {string} The style for the table's border.
-     *   Default '1px solid red'
+     *   Default '3px solid red'
      *
      * @see ChoiceTable.highlighted
      */
@@ -45421,6 +45477,413 @@ if (!Array.prototype.indexOf) {
 })(node);
 
 /**
+ * # EmailForm
+ * Copyright(c) 2017 Stefano Balietti
+ * MIT Licensed
+ *
+ * Displays a form to input email
+ *
+ * www.nodegame.org
+ */
+(function(node) {
+
+    "use strict";
+
+    var J = node.JSUS;
+
+    node.widgets.register('EmailForm', EmailForm);
+
+    // ## Meta-data
+
+    EmailForm.version = '0.9.0';
+    EmailForm.description = 'Displays a configurable email form.';
+
+    EmailForm.title = 'Email';
+    EmailForm.className = 'emailform';
+
+    // ## Dependencies
+
+    EmailForm.dependencies = { JSUS: {} };
+
+    /**
+     * ## EmailForm constructor
+     *
+     * `EmailForm` sends a feedback message to the server
+     *
+     * @param {object} options configuration option
+     */
+    function EmailForm(options) {
+
+        /**
+         * ### EmailForm.label
+         *
+         * The label for the email element
+         */
+        if ('undefined' === typeof options.label) {
+            this.label = 'Enter your email:';
+        }
+        else if ('string' === typeof options.label) {
+            this.label = options.label;
+        }
+        else {
+            throw new TypeError('EmailForm constructor: options.label ' +
+                                'must be string or undefined. ' +
+                                'Found: ' + options.label);
+        }
+
+        /**
+         * ### EmailForm.errString
+         *
+         * The error message in case of invalid email format
+         *
+         * Notice! It is displayed only if the submit button is displayed.
+         */
+        if ('undefined' === typeof options.errString) {
+            this.errString = 'Not a valid email address, ' +
+                'please correct it and submit again.';
+        }
+        else if ('string' === typeof options.errString) {
+            this.errString = options.errString;
+        }
+        else {
+            throw new TypeError('EmailForm constructor: options.errString ' +
+                                'must be string or undefined. ' +
+                                'Found: ' + options.errString);
+        }
+
+        /**
+         * ### EmailForm.onsubmit
+         *
+         * Options passed to `getValues` when the submit button is pressed
+         *
+         * @see Feedback.getValues
+         */
+        if (!options.onsubmit) {
+            this.onsubmit = { emailOnly: true, say: true, updateUI: true };
+        }
+        else if ('object' === typeof options.onsubmit) {
+            this.onsubmit = options.onsubmit;
+        }
+        else {
+            throw new TypeError('EmailForm constructor: options.onsubmit ' +
+                                'must be string or object. Found: ' +
+                                options.onsubmit);
+        }
+
+        /**
+         * ### EmailForm._email
+         *
+         * Internal storage of the value of the email
+         *
+         * This value is used when the form has not been created yet
+         *
+         * @see EmailForm.createForm
+         */
+        this._email = options.email || null;
+
+        /**
+         * ### EmailForm.attempts
+         *
+         * Invalid emails tried
+         */
+        this.attempts = [];
+
+        /**
+         * ### EmailForm.timeInput
+         *
+         * Time when the email was inserted (first character, last attempt)
+         */
+        this.timeInput = null;
+
+        /**
+         * ### EmailForm.formElement
+         *
+         * The email's HTML form
+         */
+        this.formElement = null;
+
+        /**
+         * ### EmailForm.inputElement
+         *
+         * The email's HTML input form
+         */
+        this.inputElement = null;
+
+        /**
+         * ### EmailForm.buttonElement
+         *
+         * The email's HTML submit button
+         */
+        this.buttonElement = null;
+    }
+
+    // ## EmailForm methods
+
+    EmailForm.prototype.createForm = function() {
+        var that;
+        var formElement, labelElement, inputElement, buttonElement;
+
+        that = this;
+
+        formElement = document.createElement('form');
+        formElement.className = 'emailform-form';
+
+        labelElement = document.createElement('label');
+        labelElement.innerHTML = this.label;
+
+        inputElement = document.createElement('input');
+        inputElement.setAttribute('type', 'text');
+        inputElement.setAttribute('placeholder', 'Email');
+        inputElement.className = 'emailform-input form-control';
+
+        buttonElement = document.createElement('input');
+        buttonElement.setAttribute('type', 'submit');
+        buttonElement.setAttribute('value', 'Submit email');
+        buttonElement.className = 'btn btn-lg btn-primary ' +
+            'emailform-submit';
+
+        formElement.appendChild(labelElement);
+        formElement.appendChild(inputElement);
+        formElement.appendChild(buttonElement);
+
+        // Add listeners on input form.
+        J.addEvent(formElement, 'submit', function(event) {
+            event.preventDefault();
+            that.getValues(that.onsubmit);
+        }, true);
+        J.addEvent(formElement, 'input', function(event) {
+            if (!that.timeInput) that.timeInput = J.now();
+            if (that.isHighlighted()) that.unhighlight();
+        }, true);
+
+
+        // Store references.
+        this.formElement = formElement;
+        this.inputElement = inputElement;
+        this.buttonElement = buttonElement;
+
+        // If a value was previously set, insert it in the form.
+        if (this._email) this.formElement.value = this._email;
+        this._email = null;
+
+        return formElement;
+    };
+
+    /**
+     * ### EmailForm.verifyInput
+     *
+     * Verify current email, updates interface, and optionally marks attempt
+     *
+     * @param {boolean} markAttempt Optional. If TRUE, the current email
+     *    is added to the attempts array. Default: TRUE
+     * @param {boolean} updateUI Optional. If TRUE, the interface is updated.
+     *    Default: FALSE
+     *
+     * @return {boolean} TRUE, if the email is valid
+     *
+     * @see EmailForm.getValues
+     * @see getEmail
+     */
+    EmailForm.prototype.verifyInput = function(markAttempt, updateUI) {
+        var email, res;
+        email = getEmail.call(this);
+        res = J.isEmail(email);
+        if (res && updateUI) {
+            if (this.inputElement) this.inputElement.disabled = true;
+            if (this.buttonElement) {
+                this.buttonElement.disabled = true;
+                this.buttonElement.value = 'Sent!';
+            }
+        }
+        else {
+            if (updateUI && this.buttonElement) {
+                this.buttonElement.value = this.errString;
+            }
+            if ('undefined' === typeof markAttempt || markAttempt) {
+                this.attempts.push(email);
+            }
+        }
+        return res;
+    };
+
+    /**
+     * ### EmailForm.append
+     *
+     * Appends widget to this.bodyDiv
+     */
+    EmailForm.prototype.append = function() {
+        this.createForm();
+        this.bodyDiv.appendChild(this.formElement);
+    };
+
+    /**
+     * ### EmailForm.setValues
+     *
+     * Set the value of the email input form
+     */
+    EmailForm.prototype.setValues = function(options) {
+        var email;
+        options = options || {};
+        if (!options.email) email = J.randomEmail();
+        else email = options.email;
+
+        if (!this.inputElement) this._email = email;
+        else this.inputElement.value = email;
+
+        this.timeInput = J.now();
+    };
+
+    /**
+     * ### EmailForm.getValues
+     *
+     * Returns the email and paradata
+     *
+     * @param {object} opts Optional. Configures the return value.
+     *   Available optionts:
+     *
+     *   - emailOnly:   If TRUE, returns just the email (default: FALSE),
+     *   - verify:      If TRUE, check if the email is valid (default: TRUE),
+     *   - reset:       If TRUTHY and the email is valid, then it resets
+     *       the email value before returning (default: FALSE),
+     *   - markAttempt: If TRUE, getting the value counts as an attempt
+     *       (default: TRUE),
+     *   - updateUI:    If TRUE, the UI (form, input, button) is updated.
+     *                  Default: FALSE.
+     *   - highlight:   If TRUE, if email is not the valid, widget is
+     *                  is highlighted. Default: (updateUI || FALSE).
+     *   - say:         If TRUE, and the email is valid, then it sends
+     *                  a data msg. Default: FALSE.
+     *   - sayAnyway:   If TRUE, it sends a data msg regardless of the
+     *                  validity of the email. Default: FALSE.
+     *
+     * @return {string|object} The email, and optional paradata
+     *
+     * @see EmailForm.sendValues
+     * @see EmailForm.verifyInput
+     * @see getEmail
+     */
+    EmailForm.prototype.getValues = function(opts) {
+        var email, res;
+        opts = opts || {};
+
+        email = getEmail.call(this);
+
+        if (opts.verify !== false) res = this.verifyInput(opts.markAttempt,
+                                                          opts.updateUI);
+
+        // Only value.
+        if (!opts.emailOnly) {
+            email = {
+                time: this.timeInput,
+                email: email,
+                attempts: this.attempts,
+                valid: res
+            };
+        }
+
+        if (res === false) {
+            if (opts.updateUI || opts.highlight) this.highlight();
+            this.timeInput = null;
+        }
+
+        // Send the message.
+        if ((opts.say && res) || opts.sayAnyway) {
+            this.sendValues({ values: email });
+        }
+
+        if (opts.reset) this.reset();
+
+        return email;
+    };
+
+    /**
+     * ### EmailForm.sendValues
+     *
+     * Sends a DATA message with label 'email' with current email and paradata
+     *
+     * @param {object} opts Optional. Options to pass to the `getValues`
+     *    method. Additional options:
+     *
+     *    - values: actual values to send, instead of the return
+     *        value of `getValues`
+     *    - to: recipient of the message. Default: 'SERVER'
+     *
+     * @return {string|object} The email, and optional paradata
+     *
+     * @see EmailForm.getValues
+     */
+    EmailForm.prototype.sendValues = function(opts) {
+        var values;
+        opts = opts || { emailOnly: true };
+        values = opts.values || this.getValues(opts);
+        node.say('email', opts.to || 'SERVER', values);
+        return values;
+    };
+
+    /**
+     * ### EmailForm.highlight
+     *
+     * Highlights the email form
+     *
+     * @param {string} The style for the form border. Default: '1px solid red'
+     *
+     * @see EmailForm.highlighted
+     */
+    EmailForm.prototype.highlight = function(border) {
+        if (!this.inputElement) return;
+        if (border && 'string' !== typeof border) {
+            throw new TypeError('EmailForm.highlight: border must be ' +
+                                'string or undefined. Found: ' + border);
+        }
+        this.inputElement.style.border = border || '3px solid red';
+        this.highlighted = true;
+    };
+
+    /**
+     * ### EmailForm.unhighlight
+     *
+     * Removes highlight from the form
+     *
+     * @see EmailForm.highlighted
+     */
+    EmailForm.prototype.unhighlight = function() {
+        if (!this.inputElement) return;
+        this.inputElement.style.border = '';
+        this.highlighted = false;
+    };
+
+    /**
+     * ### EmailForm.reset
+     *
+     * Resets email and collected paradata
+     */
+    EmailForm.prototype.reset = function() {
+        this.attempts = [];
+        this.timeInput = null;
+        this._email = null;
+
+        if (this.inputElement) this.inputElement.value = '';
+        if (this.isHighlighted()) this.unhighlight();
+    };
+
+    // ## Helper methods.
+
+    /**
+     * ### getEmail
+     *
+     * Returns the value of the email in form or in `_email`
+     *
+     * Must be invoked with right context
+     *
+     * @return {string|null} The value of the email, if any
+     */
+    function getEmail() {
+        return this.inputElement ? this.inputElement.value : this._email;
+    }
+
+})(node);
+
+/**
  * # EndScreen
  * Copyright(c) 2017 Stefano Balietti
  * MIT Licensed
@@ -45451,7 +45914,11 @@ if (!Array.prototype.indexOf) {
     // ## Dependencies
 
     // Checked when the widget is created.
-    EndScreen.dependencies = { JSUS: {} };
+    EndScreen.dependencies = {
+        JSUS: {},
+        Feedback: {},
+        EmailForm: {}
+    };
 
     /**
      * ## EndScreen constructor
@@ -45612,14 +46079,30 @@ if (!Array.prototype.indexOf) {
         }
 
         /**
+         * ### EndScreen.emailForm
+         *
+         * EmailForm widget element
+         *
+         * @see EmailForm
+         */
+        if (this.showEmailForm) {
+            this.emailForm = node.widgets.get('EmailForm', J.mixin({
+                label: 'Would you like to be contacted again for future ' +
+                    'experiments? If so, leave your email here and ' +
+                    'press submit: ',
+                onsubmit: { say: true, emailOnly: true, updateUI: true }
+            }, options.email));
+        }
+
+        /**
          * ### EndScreen.feedback
          *
          * Feedback widget element
          *
-         * Default: new Feedback(option)
+         * @see Feedback
          */
         if (this.showFeedbackForm) {
-            this.feedback = node.widgets.get('Feedback');
+            this.feedback = node.widgets.get('Feedback', options.feedback);
         }
 
         /**
@@ -45647,12 +46130,6 @@ if (!Array.prototype.indexOf) {
         var headerElement, messageElement;
         var totalWinElement, totalWinParaElement, totalWinInputElement;
         var exitCodeElement, exitCodeParaElement, exitCodeInputElement;
-        var emailElement, emailFormElement, emailLabelElement;
-        var emailInputElement, emailButtonElement;
-        var emailErrorString;
-
-        emailErrorString = 'Not a valid email address, ' +
-                           'please correct it and submit again.';
 
         endScreenElement = document.createElement('div');
         endScreenElement.className = 'endscreen';
@@ -45701,62 +46178,10 @@ if (!Array.prototype.indexOf) {
         }
 
         if (this.showEmailForm) {
-            emailElement = document.createElement('div');
-            emailFormElement = document.createElement('form');
-            emailFormElement.className = 'endscreen-email-form';
-
-            emailLabelElement = document.createElement('label');
-            emailLabelElement.innerHTML = 'Would you like to be contacted ' +
-                                          'again for future experiments? ' +
-                                          'If so, leave your email here ' +
-                                          'and press submit: ';
-
-            emailInputElement = document.createElement('input');
-            emailInputElement.setAttribute('type', 'text');
-            emailInputElement.setAttribute('placeholder', 'Email');
-            emailInputElement.className = 'endscreen-email-input form-control';
-
-            emailButtonElement = document.createElement('input');
-            emailButtonElement.setAttribute('type', 'submit');
-            emailButtonElement.setAttribute('value', 'Submit email');
-            emailButtonElement.className = 'btn btn-lg btn-primary ' +
-                                           'endscreen-email-submit';
-
-            emailFormElement.appendChild(emailLabelElement);
-            emailFormElement.appendChild(emailInputElement);
-            emailFormElement.appendChild(emailButtonElement);
-
-            emailElement.appendChild(emailFormElement);
-            endScreenElement.appendChild(emailElement);
-
-            emailFormElement.addEventListener('submit', function(event) {
-                var email, indexAt, indexDot;
-
-                event.preventDefault();
-                email = emailInputElement.value;
-
-                if (email.trim().length > 5) {
-                    indexAt = email.indexOf('@');
-                    if (indexAt !== -1 &&
-                        indexAt !== 0 &&
-                        indexAt !== (email.length-1)) {
-
-                        indexDot = email.lastIndexOf('.');
-                        if (indexDot !== -1 &&
-                            indexDot !== (email.length-1) &&
-                            indexDot > (indexAt+1)) {
-
-                            node.say('email', 'SERVER', email);
-
-                            emailButtonElement.disabled = true;
-                            emailInputElement.disabled = true;
-                            emailButtonElement.value = 'Sent!';
-                        }
-                    }
-                }
-
-                emailButtonElement.value = emailErrorString;
-            }, true);
+            node.widgets.append(this.emailForm, endScreenElement, {
+                title: false,
+                frame: false
+            });
         }
 
         if (this.showFeedbackForm) {
@@ -45846,8 +46271,8 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    Feedback.version = '0.4';
-    Feedback.description = 'Displays a simple feedback form.';
+    Feedback.version = '0.9.0';
+    Feedback.description = 'Displays a configurable feedback form.';
 
     Feedback.title = 'Feedback';
     Feedback.className = 'feedback';
@@ -45863,9 +46288,16 @@ if (!Array.prototype.indexOf) {
      *
      * `Feedback` sends a feedback message to the server
      *
-     * @param {object} options configuration option
+     * @param {object} options Optional. Configuration option.
+     *   Available options:
+     *
+     *    - showCount: If TRUE, the character count is displayed
+     *    - minLength: The minimum number of characters in textarea
+     *    - maxLength: The max number of characters in textarea
+     *    - label: The text to display above the textarea
      */
     function Feedback(options) {
+
         /**
          * ### Feedback.label
          *
@@ -45886,17 +46318,17 @@ if (!Array.prototype.indexOf) {
         }
 
         /**
-         * ### Feedback.maxFeedbackLength
+         * ### Feedback.maxLength
          *
          * The maximum character length for feedback to be submitted
          *
          * Default: 800
          */
         if ('undefined' === typeof options.maxLength) {
-            this.maxFeedbackLength = 800;
+            this.maxLength = 800;
         }
-        else if (JSUS.isNumber(options.maxLength, 0) !== false) {
-            this.maxFeedbackLength = options.maxLength;
+        else if (J.isNumber(options.maxLength, 0) !== false) {
+            this.maxLength = options.maxLength;
         }
         else {
             throw new TypeError('Feedback constructor: options.maxLength ' +
@@ -45905,18 +46337,18 @@ if (!Array.prototype.indexOf) {
         }
 
         /**
-         * ### Feedback.minFeedbackLength
+         * ### Feedback.minLength
          *
          * The minimum character length for feedback to be submitted
          *
-         * If minFeedbackLength = 0, then there is no minimum length checked.
+         * If minLength = 0, then there is no minimum length checked.
          * Default: 0
          */
         if ('undefined' === typeof options.minLength) {
-            this.minFeedbackLength = 0;
+            this.minLength = 0;
         }
-        else if (JSUS.isNumber(options.minLength, 0) !== false) {
-            this.minFeedbackLength = options.minLength;
+        else if (J.isNumber(options.minLength, 0) !== false) {
+            this.minLength = options.minLength;
         }
         else {
             throw new TypeError('Feedback constructor: options.minLength ' +
@@ -45925,24 +46357,134 @@ if (!Array.prototype.indexOf) {
         }
 
         /**
+         * ### Feedback.maxAttemptLength
+         *
+         * The maximum character length for an attempt to submit feedback
+         *
+         * Attempts are stored in the attempts array. This allows to store
+         * longer texts than accepts feedbacks
+         *
+         * Default: Max(2000, maxLength)
+         */
+        if ('undefined' === typeof options.maxAttemptLength) {
+            this.maxAttemptLength = 2000;
+        }
+        else if (J.isNumber(options.maxAttemptLength, 0) !== false) {
+            this.maxAttemptLength = Math.max(this.maxLength,
+                                                     options.maxAttemptLength);
+        }
+        else {
+            throw new TypeError('Feedback constructor: options.maxLength ' +
+                                'must be a number >= 0 or undefined. ' +
+                                'Found: ' + options.maxAttemptLength);
+        }
+
+        /**
+         * ### Feedback.showCharCount
+         *
+         * If TRUE, the character count is shown
+         *
+         * @see Feedback.charCounter
+         */
+        if ('undefined' === typeof options.showCount) {
+            this.showCharCount = true;
+        }
+        else {
+            this.showCharCount = !!options.showCount;
+        }
+
+        /**
+         * ### Feedback.onsubmit
+         *
+         * Options passed to `getValues` when the submit button is pressed
+         *
+         * @see Feedback.getValues
+         */
+        if (!options.onsubmit) {
+            this.onsubmit = { feedbackOnly: true, say: true, updateUI: true };
+        }
+        else if ('object' === typeof options.onsubmit) {
+            this.onsubmit = options.onsubmit;
+        }
+        else {
+            throw new TypeError('Feedback constructor: options.onsubmit ' +
+                                'must be string or object. Found: ' +
+                                options.onsubmit);
+        }
+
+        /**
+         * ### Feedback._feedback
+         *
+         * Internal storage of the value of the feedback
+         *
+         * This value is used when the form has not been created yet
+         *
+         * @see Feedback.createForm
+         */
+        this._feedback = options.feedback || null;
+
+        /**
+         * ### Feedback.attempts
+         *
+         * Invalid feedbacks tried
+         */
+        this.attempts = [];
+
+        /**
+         * ### Feedback.timeBegin
+         *
+         * Time when feedback was inserted (first character, last attempt)
+         */
+        this.timeBegin = null;
+
+        /**
          * ### Feedback.feedbackHTML
          *
          * The HTML element containing the form elements
          */
         this.feedbackHTML = null;
+
+        /**
+         * ### Feedback.textareaElement
+         *
+         * The HTML textarea element containing the feedback
+         */
+        this.textareaElement = null;
+
+        /**
+         * ### Feedback.charCounter
+         *
+         * The HTML span element containing the characters count
+         */
+        this.charCounter = null;
+
+        /**
+         * ### Feedback.submitButton
+         *
+         * The HTML submit button
+         */
+        this.submitButton = null;
+
     }
 
     // ## Feedback methods
 
-    Feedback.prototype.createForm = function(showCount, minLength,
-                                             maxLength, labelText) {
+    /**
+     * ### Feedback.createForm
+     *
+     * Builds the HTML forms
+     */
+    Feedback.prototype.createForm = function() {
 
+        var that;
         var feedbackHTML;
         var feedbackForm;
         var feedbackLabel;
         var feedbackTextarea;
         var submit;
         var charCounter;
+
+        that = this;
 
         feedbackHTML = document.createElement('div');
         feedbackHTML.className = 'feedback';
@@ -45953,7 +46495,7 @@ if (!Array.prototype.indexOf) {
 
         feedbackLabel = document.createElement('label');
         feedbackLabel.setAttribute('for', 'feedback-input');
-        feedbackLabel.innerHTML = labelText;
+        feedbackLabel.innerHTML = this.label;
         feedbackForm.appendChild(feedbackLabel);
 
         feedbackTextarea = document.createElement('textarea');
@@ -45968,34 +46510,113 @@ if (!Array.prototype.indexOf) {
         submit.setAttribute('value', 'Submit feedback');
         feedbackForm.appendChild(submit);
 
-        charCounter = document.createElement('span');
-        charCounter.className = 'feedback-char-count badge';
-        charCounter.innerHTML = maxLength;
-        feedbackForm.appendChild(charCounter);
+        if (this.showCharCount) {
+            charCounter = document.createElement('span');
+            charCounter.className = 'feedback-char-count badge';
+            charCounter.innerHTML = this.maxLength;
+            feedbackForm.appendChild(charCounter);
+        }
 
-        feedbackForm.addEventListener('submit', function(event) {
-            var feedback;
-
+        // Add listeners.
+        J.addEvent(feedbackForm, 'submit', function(event) {
             event.preventDefault();
-
-            feedback = feedbackTextarea.value.trim();
-            node.say('feedback', 'SERVER', feedback);
-
-            submit.disabled = true;
-            feedbackTextarea.disabled = true;
-
-            submit.setAttribute('value', 'Sent!');
+            that.getValues(that.onsubmit);
         });
 
-        feedbackForm.addEventListener('input', function(event) {
-            checkFeedbackLength(feedbackTextarea, charCounter, submit,
-                                minLength, maxLength);
+        J.addEvent(feedbackForm, 'input', function(event) {
+            that.verifyFeedback(false, true);
         });
 
-        checkFeedbackLength(feedbackTextarea, charCounter, submit,
-                            minLength, maxLength);
+        // Store references.
+        this.submitButton = submit;
+        this.feedbackHTML = feedbackHTML;
+        this.textareaElement = feedbackTextarea;
+        this.charCounter = charCounter || null;
+
+        // Check it once at the beginning to initialize counter.
+        this.verifyFeedback(false, true);
 
         return feedbackHTML;
+    };
+
+    /**
+     * ### Feedback.verifyFeedback
+     *
+     * Verify feedback and optionally marks attempt and updates interface
+     *
+     * @param {boolean} markAttempt Optional. If TRUE, the current feedback
+     *    is added to the attempts array (if too long, may be truncateed).
+     *    Default: TRUE
+     * @param {boolean} updateUI Optional. If TRUE, the interface is updated.
+     *    Default: FALSE
+     *
+     * @return {boolean} TRUE, if the feedback is valid
+     *
+     * @see Feedback.getValues
+     * @see getFeedback
+     */
+    Feedback.prototype.verifyFeedback = function(markAttempt, updateUI) {
+        var feedback, length, updateCount, updateColor, res;
+        var submitButton, charCounter;
+
+        feedback = getFeedback.call(this);
+        length = feedback ? feedback.length : 0;
+
+        submitButton = this.submitButton;
+        charCounter = this.charCounter;
+
+
+        if (length < this.minLength) {
+            res = false;
+            updateCount = (this.minLength - length) + ' characters needed.';
+            updateColor = '#a32020'; // #f2dede';
+        }
+        else if (length > this.maxLength) {
+            res = false;
+            updateCount = (length - this.maxLength) + ' characters over.';
+            updateColor = '#a32020'; // #f2dede';
+        }
+        else {
+            res = true;
+            updateCount = (this.maxLength - length) + ' characters remaining.';
+            updateColor = '#78b360'; // '#dff0d8';
+        }
+
+        if (updateUI) {
+            submitButton.disabled = !res;
+            if (charCounter) {
+                charCounter.style.backgroundColor = updateColor;
+                charCounter.innerHTML = updateCount;
+            }
+        }
+
+        if (!res && ('undefined' === typeof markAttempt || markAttempt)) {
+            if (length > this.maxAttemptLength) {
+                feedback = feedback.substr(0, this.maxAttemptLength);
+            }
+            this.attempts.push(feedback);
+        }
+
+//         res = true; // TODO: check if valid.
+//         if (res && updateUI) {
+//             if (this.inputElement) this.inputElement.disabled = true;
+//             if (this.submitButton) {
+//                 this.submitButton.disabled = true;
+//                 this.submitButton.value = 'Sent!';
+//             }
+//         }
+//         else {
+//             if (updateUI && this.submitButton) {
+//                 this.submitButton.value = this.errString;
+//             }
+//             if ('undefined' === typeof markAttempt || markAttempt) {
+//                 if (feedback.length > this.maxAttemptLength) {
+//                     feedback = feedback.substr(0, this.maxAttemptLength);
+//                 }
+//                 this.attempts.push(feedback);
+//             }
+//         }
+        return res;
     };
 
     /**
@@ -46004,41 +46625,225 @@ if (!Array.prototype.indexOf) {
      * Appends widget to this.bodyDiv
      */
     Feedback.prototype.append = function() {
-        this.feedbackHTML = this.createForm(this.showCharCount,
-                                            this.minFeedbackLength,
-                                            this.maxFeedbackLength,
-                                            this.label);
+        this.createForm();
         this.bodyDiv.appendChild(this.feedbackHTML);
     };
 
-    Feedback.prototype.listeners = function() {};
-
-    // check the feedback length
-    function checkFeedbackLength(feedbackTextarea, charCounter,
-                                 submit, minLength, maxLength) {
-        var length;
-
-        length = feedbackTextarea.value.trim().length;
-
-        if (length < minLength) {
-          submit.disabled = true;
-
-          charCounter.innerHTML = (minLength - length) + ' characters needed.';
-          charCounter.style.backgroundColor = '#f2dede';
-        }
-        else if (length > maxLength) {
-          submit.disabled = true;
-
-          charCounter.innerHTML = (length - maxLength) + ' characters over.';
-          charCounter.style.backgroundColor = '#f2dede';
+    /**
+     * ### Feedback.setValues
+     *
+     * Set the value of the feedback
+     */
+    Feedback.prototype.setValues = function(options) {
+        var feedback;
+        options = options || {};
+        if (!options.feedback) {
+            feedback = J.randomString(J.randomInt(0, this.maxLength),
+                                      'aA_1');
         }
         else {
-          submit.disabled = false;
-
-          charCounter.innerHTML = (maxLength - length) +
-                ' characters remaining.';
-          charCounter.style.backgroundColor = '#dff0d8';
+            feedback = options.feedback;
         }
+
+        if (!this.feedbackHTML) this._feedback = feedback;
+        else this.feedbackHTML.value = feedback;
+
+        this.timeInputBegin = J.now();
+    };
+
+    /**
+     * ### Feedback.getValues
+     *
+     * Returns the feedback and paradata
+     *
+     * @param {object} opts Optional. Configures the return value.
+     *   Available optionts:
+     *
+     *   - feedbackOnly:If TRUE, returns just the feedback (default: FALSE),
+     *   - verify:      If TRUE, check if the feedback is valid (default: TRUE),
+     *   - reset:       If TRUTHY and the feedback is valid, then it resets
+     *       the feedback value before returning (default: FALSE),
+     *   - markAttempt: If TRUE, getting the value counts as an attempt
+     *       (default: TRUE),
+     *   - updateUI:    If TRUE, the UI (form, input, button) is updated.
+     *                  Default: FALSE.
+     *   - highlight:   If TRUE, if feedback is not the valid, widget is
+     *                  is highlighted. Default: (updateUI || FALSE).
+     *   - say:         If TRUE, and the feedback is valid, then it sends
+     *                  a data msg. Default: FALSE.
+     *   - sayAnyway:   If TRUE, it sends a data msg regardless of the
+     *                  validity of the feedback. Default: FALSE.
+     *
+     * @return {string|object} The feedback, and optional paradata
+     *
+     * @see Feedback.sendValues
+     * @see Feedback.verifyFeedback
+     * @see getFeedback
+     */
+    Feedback.prototype.getValues = function(opts) {
+        var feedback, res;
+
+        opts = opts || {};
+
+        feedback = getFeedback.call(this);
+
+        if (opts.verify !== false) res = this.verifyFeedback(opts.markAttempt,
+                                                             opts.updateUI);
+
+        if (res === false && opts.updateUI || opts.highlight) this.highlight();
+
+        // Only value.
+        if (!opts.feedbackOnly) {
+            feedback = {
+                timeBegin: this.timeInputBegin,
+                feedback: feedback,
+                attempts: this.attempts,
+                valid: res
+            };
+        }
+
+        // Send the message.
+        if ((opts.say && res) || opts.sayAnyway) {
+            this.sendValues({ values: feedback });
+            if (opts.updateUI) {
+                this.submitButton.setAttribute('value', 'Sent!');
+                this.submitButton.disabled = true;
+                this.textareaElement.disabled = true;
+            }
+        }
+
+        if (opts.reset) this.reset();
+
+        return feedback;
+    };
+
+    /**
+     * ### Feedback.sendValues
+     *
+     * Sends a DATA message with label 'feedback' with feedback and paradata
+     *
+     * @param {object} opts Optional. Options to pass to the `getValues`
+     *    method. Additional options:
+     *
+     *    - values: actual values to send, instead of the return
+     *        value of `getValues`
+     *    - to: recipient of the message. Default: 'SERVER'
+     *
+     * @return {string|object} The feedback, and optional paradata
+     *
+     * @see Feedback.getValues
+     */
+    Feedback.prototype.sendValues = function(opts) {
+        var values;
+        opts = opts || { feedbackOnly: true };
+        values = opts.values || this.getValues(opts);
+        node.say('feedback', opts.to || 'SERVER', values);
+        return values;
+    };
+
+    /**
+     * ### Feedback.highlight
+     *
+     * Highlights the feedback form
+     *
+     * @param {string} The style for the form border. Default: '1px solid red'
+     *
+     * @see Feedback.highlighted
+     */
+    Feedback.prototype.highlight = function(border) {
+        if (!this.feedbackHTML) return;
+        if (border && 'string' !== typeof border) {
+            throw new TypeError('Feedback.highlight: border must be ' +
+                                'string or undefined. Found: ' + border);
+        }
+        this.feedbackHTML.style.border = border || '3px solid red';
+        this.highlighted = true;
+    };
+
+    /**
+     * ### Feedback.unhighlight
+     *
+     * Removes highlight from the form
+     *
+     * @see Feedback.highlighted
+     */
+    Feedback.prototype.unhighlight = function() {
+        if (!this.feedbackHTML) return;
+        this.feedbackHTML.style.border = '';
+        this.highlighted = false;
+    };
+
+    /**
+     * ### Feedback.reset
+     *
+     * Resets feedback and collected paradata
+     */
+    Feedback.prototype.reset = function() {
+        this.attempts = [];
+        this.timeInputBegin = null;
+        this._feedback = null;
+
+        if (this.feedbackHTML) this.feedbackHTML.value = '';
+        if (this.isHighlighted()) this.unhighlight();
+    };
+
+    // ## Helper functions.
+
+//     /**
+//      * ### checkLength
+//      *
+//      * Checks the feedback length
+//      *
+//      * @param {HTMLElement} feedbackTextarea The textarea with feedback
+//      * @param {HTMLElement} charCounter The span counting the characthers
+//      * @param {HTMLElement} submit The submit button
+//      * @param {number} minLength The minimum length of feedback
+//      * @param {number} maxLength The max length of feedback
+//      */
+//     function checkLength(feedbackTextarea, charCounter,
+//                                  submit, minLength, maxLength) {
+//         var length, res;
+//
+//         length = feedbackTextarea.value.trim().length;
+//
+//         if (length < minLength) {
+//             res = false;
+//             submit.disabled = true;
+//             charCounter.innerHTML = (minLength - length) +
+//                 ' characters needed.';
+//             charCounter.style.backgroundColor = '#f2dede';
+//         }
+//         else if (length > maxLength) {
+//             res = false;
+//             submit.disabled = true;
+//             charCounter.innerHTML = (length - maxLength) +
+//                 ' characters over.';
+//             charCounter.style.backgroundColor = '#f2dede';
+//         }
+//         else {
+//             res = true;
+//             submit.disabled = false;
+//             charCounter.innerHTML = (maxLength - length) +
+//                 ' characters remaining.';
+//             charCounter.style.backgroundColor = '#dff0d8';
+//         }
+//
+//         return true;
+//     }
+
+    /**
+     * ### getFeedback
+     *
+     * Returns the value of the feedback textarea or in `_feedback`
+     *
+     * Must be invoked with right context
+     *
+     * @return {string|null} The value of the feedback, if any
+     */
+    function getFeedback() {
+        var out;
+        out = this.feedbackHTML ? this.textareaElement.value : this._feedback;
+        return out ? out.trim() : out;
     }
 
 })(node);
@@ -50640,7 +51445,7 @@ if (!Array.prototype.indexOf) {
     node.widgets.register('WaitingRoom', WaitingRoom);
     // ## Meta-data
 
-    WaitingRoom.version = '1.1.0';
+    WaitingRoom.version = '1.1.1';
     WaitingRoom.description = 'Displays a waiting room for clients.';
 
     WaitingRoom.title = 'Waiting Room';
@@ -50654,13 +51459,13 @@ if (!Array.prototype.indexOf) {
     };
 
     // ## Prototype Properties.
-    
+
     /** ### WaitingRoom.sounds
      *
      * Default sounds to play on particular events
      */
     WaitingRoom.sounds = {
-        
+
         // #### dispatch
         dispatch: '/sounds/doorbell.ogg'
     };
@@ -50686,7 +51491,7 @@ if (!Array.prototype.indexOf) {
             'Thank you for your patience.<br>' +
             'Unfortunately, there are not enough participants in ' +
             'your group to start the experiment.<br>',
-        
+
         // #### roomClosed
         roomClosed: '<span style="color: red"> The ' +
             'waiting room is <strong>CLOSED</strong>. You have been ' +
@@ -50819,21 +51624,21 @@ if (!Array.prototype.indexOf) {
          * Flag that indicates whether to disconnect an not selected player
          */
         this.disconnectIfNotSelected = null;
-        
+
         /**
          * ### WaitingRoom.disconnectText
          *
          * Content of `this.bodyDiv.innerHTML` when player is disconnected
          */
         this.disconnectText = null;
-        
+
         /**
          * ### WaitingRoom.roomClosedText
          *
          * Content of `this.bodyDiv.innerHTML` when player room is closed
          */
         this.roomClosedText = null;
-        
+
         /**
          * ### WaitingRoom.dispatchSound
          *
@@ -50937,7 +51742,7 @@ if (!Array.prototype.indexOf) {
             this.disconnectText = conf.disconnectText;
         }
         else {
-            this.disconnectText = WaitingRoom.texts.disconnectText;
+            this.disconnectText = WaitingRoom.texts.disconnect;
         }
 
         if (conf.disconnectIfNotSelected) {
@@ -50955,7 +51760,7 @@ if (!Array.prototype.indexOf) {
         if (conf.dispatchSound) {
             if ('boolean' !== typeof conf.dispatchSound &&
                 'string' !== typeof conf.dispatchSound) {
-                
+
                 throw new TypeError('WaitingRoom.init: ' +
                                     'conf.dispatchSound must be boolean, ' +
                                     'string or undefined. Found: ' +
@@ -50966,10 +51771,10 @@ if (!Array.prototype.indexOf) {
         }
 
         // Texts.
-        
+
         if (conf.notEnoughPlayersText) {
             if ('string' !== typeof conf.notEnoughPlayersText) {
-                
+
                 throw new TypeError('WaitingRoom.init: ' +
                                     'conf.notEnoughPlayersText must be ' +
                                     'string or undefined. Found: ' +
@@ -50980,7 +51785,7 @@ if (!Array.prototype.indexOf) {
 
         if (conf.disconnectText) {
             if ('string' !== typeof conf.disconnectText) {
-                
+
                 throw new TypeError('WaitingRoom.init: ' +
                                     'conf.disconnectText must be string ' +
                                     'or undefined. Found: ' +
@@ -50988,10 +51793,10 @@ if (!Array.prototype.indexOf) {
             }
             this.disconnectText = conf.disconnectText;
         }
-        
+
         if (conf.waitedTooLongText) {
             if ('string' !== typeof conf.waitedTooLongText) {
-                
+
                 throw new TypeError('WaitingRoom.init: ' +
                                     'conf.waitedTooLongText must be string ' +
                                     'or undefined. Found: ' +
@@ -50999,10 +51804,10 @@ if (!Array.prototype.indexOf) {
             }
             this.waitedTooLongText = conf.waitedTooLongText;
         }
-        
+
         if (conf.roomClosedText) {
             if ('string' !== typeof conf.roomClosedText) {
-                
+
                 throw new TypeError('WaitingRoom.init: ' +
                                     'conf.roomClosedText must be string ' +
                                     'or undefined. Found: ' +
@@ -51192,7 +51997,7 @@ if (!Array.prototype.indexOf) {
             }
 
             else if (data.action === 'NotSelected') {
-                
+
                 // TODO: make all strings parameteric.
                 notSelected = '<h3 align="center">' +
                     '<span style="color: red">Unfortunately, you were ' +
@@ -51280,7 +52085,7 @@ if (!Array.prototype.indexOf) {
 
         // Play sound, if requested.
         if (this.dispatchSound) JSUS.playSound(this.dispatchSound);
-        
+
         // If document.hasFocus() returns TRUE, then just one repeat is enough.
         if (document.hasFocus && document.hasFocus()) {
             JSUS.blinkTitle('GAME STARTS!', { repeatFor: 1 });
