@@ -331,7 +331,6 @@ MIT Licensed</p>
     <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">runtimeConf</span><span class="p">)</span> <span class="nx">J</span><span class="p">.</span><span class="nx">mixin</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">gameTreatment</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">runtimeConf</span><span class="p">);</span>
 
 
-
 </pre></div>
         </td>
       </tr>
@@ -358,9 +357,10 @@ MIT Licensed</p>
 </div>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
-    <span class="k">if</span> <span class="p">(</span><span class="kc">true</span> <span class="o">||</span> <span class="nx">config</span><span class="p">.</span><span class="nx">ownDataDir</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">config</span><span class="p">.</span><span class="nx">ownDataDir</span> <span class="o">||</span> <span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">roomOwnDataDir</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">this</span><span class="p">.</span><span class="nx">dataDir</span> <span class="o">=</span> <span class="nx">path</span><span class="p">.</span><span class="nx">resolve</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">getGameDir</span><span class="p">(),</span>
                                     <span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">name</span><span class="p">);</span>
+
 
 
 </pre></div>
@@ -371,7 +371,7 @@ MIT Licensed</p>
 <div class="pilwrap">
   <a class="pilcrow" href="#section-9" id="section-9">&#182;</a>
 </div>
-<p>TODO: warning if exists.</p>
+<p>TODO: warning if it already exists.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
         <span class="nx">fs</span><span class="p">.</span><span class="nx">ensureDir</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">dataDir</span><span class="p">);</span>

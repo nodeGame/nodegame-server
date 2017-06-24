@@ -106,6 +106,9 @@
         <a href="#importauthcodes">importAuthCodes</a>
       </div>
       <div class="heading h3">
+        <a href="#loadroomno">loadRoomNo</a>
+      </div>
+      <div class="heading h3">
         <a href="#gameloader.loadviewsfile">GameLoader.loadViewsFile</a>
       </div>
     </div>
@@ -919,7 +922,6 @@ mixed-in.</p>
         <span class="k">else</span> <span class="p">{</span>
             <span class="nx">gameSettings</span><span class="p">.</span><span class="nx">TIMER</span> <span class="o">=</span> <span class="p">{};</span>
         <span class="p">}</span>
-
     <span class="p">}</span>
     <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">level</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">this</span><span class="p">.</span><span class="nx">doErr</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadGameDir: game.settings file not found&#39;</span><span class="p">);</span>
@@ -1605,10 +1607,8 @@ automatically add a waiting room to the channel.</p>
         </td>
         <td class="code highlight"><div class="highlight"><pre>
 <span class="nx">GameLoader</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">loadChannelFile</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">directory</span><span class="p">,</span> <span class="nx">gameName</span><span class="p">)</span> <span class="p">{</span>
-    <span class="kd">var</span> <span class="nx">channelsFile</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">channel</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">channelConf</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">sn</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">channelsFile</span><span class="p">,</span> <span class="nx">channel</span><span class="p">,</span> <span class="nx">channelConf</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">sn</span><span class="p">,</span> <span class="nx">roomNo</span><span class="p">;</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">directory</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">this</span><span class="p">.</span><span class="nx">doErr</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadChannelFile: directory must be string.&#39;</span><span class="p">,</span> <span class="p">{</span>
@@ -1678,9 +1678,11 @@ automatically add a waiting room to the channel.</p>
         <td class="code highlight"><div class="highlight"><pre>
 
     <span class="k">if</span> <span class="p">(</span><span class="nx">channelConf</span><span class="p">.</span><span class="nx">name</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">channelConf</span><span class="p">.</span><span class="nx">name</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">channelConf</span><span class="p">.</span><span class="nx">name</span> <span class="o">||</span>
+            <span class="nx">channelConf</span><span class="p">.</span><span class="nx">name</span><span class="p">.</span><span class="nx">trim</span><span class="p">()</span> <span class="o">===</span> <span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="p">{</span>
+
             <span class="k">this</span><span class="p">.</span><span class="nx">doErr</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadChannelFile: name must be &#39;</span> <span class="o">+</span>
-                       <span class="s1">&#39;string or undefined&#39;</span><span class="p">,</span> <span class="p">{</span>
+                       <span class="s1">&#39;a non-empty string or undefined&#39;</span><span class="p">,</span> <span class="p">{</span>
                            <span class="nx">game</span><span class="o">:</span> <span class="nx">gameName</span><span class="p">,</span>
                            <span class="nx">found</span><span class="o">:</span> <span class="nx">channelConf</span><span class="p">.</span><span class="nx">name</span><span class="p">,</span>
                            <span class="nx">type</span><span class="o">:</span> <span class="s1">&#39;type&#39;</span>
@@ -1689,6 +1691,32 @@ automatically add a waiting room to the channel.</p>
     <span class="p">}</span>
     <span class="k">else</span> <span class="p">{</span>
         <span class="nx">channelConf</span><span class="p">.</span><span class="nx">name</span> <span class="o">=</span> <span class="nx">gameName</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;undefined&#39;</span> <span class="o">===</span> <span class="k">typeof</span> <span class="nx">channelConf</span><span class="p">.</span><span class="nx">roomCounter</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">channelConf</span><span class="p">.</span><span class="nx">roomCounter</span> <span class="o">=</span> <span class="nx">loadRoomNo</span><span class="p">(</span><span class="nx">directory</span> <span class="o">+</span> <span class="s1">&#39;/data/&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;number&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">channelConf</span><span class="p">.</span><span class="nx">roomCounter</span> <span class="o">||</span>
+             <span class="nx">channelConf</span><span class="p">.</span><span class="nx">roomCounter</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+
+        <span class="k">this</span><span class="p">.</span><span class="nx">doErr</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadChannelFile: roomCounter must be &#39;</span> <span class="o">+</span>
+                   <span class="s1">&#39;a number &gt; 0 or undefined&#39;</span><span class="p">,</span> <span class="p">{</span>
+                       <span class="nx">game</span><span class="o">:</span> <span class="nx">gameName</span><span class="p">,</span>
+                       <span class="nx">found</span><span class="o">:</span> <span class="nx">channelConf</span><span class="p">.</span><span class="nx">roomCounter</span><span class="p">,</span>
+                       <span class="nx">type</span><span class="o">:</span> <span class="s1">&#39;type&#39;</span>
+                   <span class="p">});</span>
+    <span class="p">}</span>
+    <span class="k">else</span> <span class="p">{</span>
+        <span class="nx">roomNo</span> <span class="o">=</span> <span class="nx">loadRoomNo</span><span class="p">(</span><span class="nx">directory</span> <span class="o">+</span> <span class="s1">&#39;/data/&#39;</span><span class="p">);</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">roomNo</span> <span class="o">&gt;=</span> <span class="nx">channelConf</span><span class="p">.</span><span class="nx">roomCounter</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">doErr</span><span class="p">(</span><span class="s1">&#39;GameLoader.loadChannelFile: roomCounter must be &#39;</span> <span class="o">+</span>
+                       <span class="s1">&#39;greater than last room number found in &quot;data/&quot; dir &#39;</span> <span class="o">+</span>
+                       <span class="s1">&#39;(&#39;</span> <span class="o">+</span> <span class="nx">roomNo</span> <span class="o">+</span> <span class="s1">&#39;)&#39;</span><span class="p">,</span> <span class="p">{</span>
+                           <span class="nx">game</span><span class="o">:</span> <span class="nx">gameName</span><span class="p">,</span>
+                           <span class="nx">found</span><span class="o">:</span> <span class="nx">channelConf</span><span class="p">.</span><span class="nx">roomCounter</span><span class="p">,</span>
+                           <span class="nx">type</span><span class="o">:</span> <span class="s1">&#39;type&#39;</span>
+                       <span class="p">});</span>
+        <span class="p">}</span>
     <span class="p">}</span>
 
     <span class="nx">channelConf</span><span class="p">.</span><span class="nx">gameName</span> <span class="o">=</span> <span class="nx">gameName</span><span class="p">;</span>
@@ -3580,9 +3608,64 @@ is executed on the return value, or use the async callback.</p>
         </td>
       </tr>
       <tr>
+        <td class="docs"><div class="dox">
+  <div class="summary">
+<div class="pilwrap" id="loadroomno">
+  <h3>
+    <a href="#loadroomno" name="loadroomno" class="pilcrow">&#182;</a>
+    loadRoomNo
+  </h3>
+</div>
+
+  </div>
+  <div class="body"><p>Checks a data/ folder for subfolders and extract the max room number</p>
+
+<p>Subfolders are of type 'roomX', where X is a number</p>
+  </div>
+  <div class="details">
+    <div class="dox_tag_title">Params</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name">dataDir</span>
+      <span class="dox_type">string</span>
+      <span>The data directory to check</span>
+    </div>
+    <div class="dox_tag_title">Returns</div>
+    <div class="dox_tag_detail">
+      <span class="dox_tag_name"></span>
+      <span class="dox_type">number</span>
+      <span>The max room number</span>
+    </div>
+  </div>
+</div>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+<span class="kd">function</span> <span class="nx">loadRoomNo</span><span class="p">(</span><span class="nx">dataDir</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">files</span><span class="p">,</span> <span class="nx">file</span><span class="p">,</span> <span class="nx">tokens</span><span class="p">,</span> <span class="nx">roomNum</span><span class="p">,</span> <span class="nx">maxRoomNum</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">i</span><span class="p">,</span> <span class="nx">len</span><span class="p">;</span>
+
+    <span class="nx">maxRoomNum</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="nx">files</span> <span class="o">=</span> <span class="nx">fs</span><span class="p">.</span><span class="nx">readdirSync</span><span class="p">(</span><span class="nx">dataDir</span><span class="p">);</span>
+
+    <span class="nx">i</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="nx">len</span> <span class="o">=</span> <span class="nx">files</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span>
+    <span class="k">for</span> <span class="p">(</span> <span class="p">;</span> <span class="o">++</span><span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">len</span> <span class="p">;</span> <span class="p">)</span> <span class="p">{</span>
+        <span class="nx">file</span> <span class="o">=</span> <span class="nx">path</span><span class="p">.</span><span class="nx">join</span><span class="p">(</span><span class="nx">dataDir</span><span class="p">,</span> <span class="nx">files</span><span class="p">[</span><span class="nx">i</span><span class="p">]);</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">fs</span><span class="p">.</span><span class="nx">lstatSync</span><span class="p">(</span><span class="nx">file</span><span class="p">).</span><span class="nx">isDirectory</span><span class="p">())</span> <span class="p">{</span>
+            <span class="nx">tokens</span> <span class="o">=</span> <span class="nx">file</span><span class="p">.</span><span class="nx">split</span><span class="p">(</span><span class="s1">&#39;room&#39;</span><span class="p">);</span>
+            <span class="nx">roomNum</span> <span class="o">=</span> <span class="nb">parseInt</span><span class="p">(</span><span class="nx">tokens</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">10</span><span class="p">);</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nx">roomNum</span> <span class="o">&gt;</span> <span class="nx">maxRoomNum</span><span class="p">)</span> <span class="nx">maxRoomNum</span> <span class="o">=</span> <span class="nx">roomNum</span><span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="nx">maxRoomNum</span><span class="p">;</span>
+<span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-111" id="section-111">&#182;</a>
+  <a class="pilcrow" href="#section-112" id="section-112">&#182;</a>
 </div>
 <p>TODO: see if we need it in the future:</p>
         </td>
