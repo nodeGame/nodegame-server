@@ -29827,7 +29827,7 @@ if (!Array.prototype.indexOf) {
      *   prefix isset to the value of lang.path. node.window must be defined,
      *   otherwise a warning is shown. Default, FALSE.
      * @param {boolean} sayIt Optional. If TRUE, a LANG message is sent to
-     *   the server to notify the change. Default: TRUE
+     *   the server to notify the selection. Default: FALSE.
      *
      * @return {object} The language object
      *
@@ -29861,12 +29861,12 @@ if (!Array.prototype.indexOf) {
             }
             else {
                 node.warn('node.setLanguage: updateUriPrefix is true, ' +
-                          'window not found. Are you in a browser?');
+                          'but window not found. Are you in a browser?');
             }
         }
 
         // Send a message to notify server.
-        if ('undefined' === typeof sayIt || sayIt) {
+        if (sayIt) {
             node.socket.send(node.msg.create({
                 target: 'LANG',
                 data: this.player.lang
@@ -29880,6 +29880,15 @@ if (!Array.prototype.indexOf) {
 
     // ## Helper functions.
 
+    /**
+     * ### makeLanguageObj
+     *
+     * From a language string returns a fully formatted obj
+     *
+     * @param {string} langStr The language string.
+     *
+     * @return {object} The language object
+     */
     function makeLanguageObj(langStr) {
         var shortName;
         shortName = langStr.toLowerCase().substr(0,2);
@@ -47210,7 +47219,7 @@ if (!Array.prototype.indexOf) {
     node.widgets.register('LanguageSelector', LanguageSelector);
 
     // ## Meta-data
-    
+
     LanguageSelector.version = '0.5.0';
     LanguageSelector.description = 'Display information about the current ' +
         'language and allows to change language.';
@@ -47333,13 +47342,13 @@ if (!Array.prototype.indexOf) {
         this.setUriPrefix = true;
 
         /**
-         * ## LanguageSelector.notifyUpdate
+         * ## LanguageSelector.notifyServer
          *
          * If TRUE, a message is sent to the server when the language is set
          *
          * Default: TRUE.
          */
-        this.notifyUpdate = true;
+        this.notifyServer = true;
 
         /**
          * ### LanguageSelector.onLangCallback
@@ -47371,7 +47380,7 @@ if (!Array.prototype.indexOf) {
                 // Creates labeled buttons.
                 for (language in msg.data) {
                     if (msg.data.hasOwnProperty(language)) {
-                        that.optionsLabel[language] = 
+                        that.optionsLabel[language] =
                             W.getElement('label',
                                          language + 'Label', {
                                              'for': language + 'RadioButton'
@@ -47450,8 +47459,6 @@ if (!Array.prototype.indexOf) {
          * @see LanguageSelector.onLangCallback
          */
         this.onLangCallbackExtension = null;
-
-        this.init(this.options);
     }
 
     // ## LanguageSelector methods
@@ -47473,8 +47480,8 @@ if (!Array.prototype.indexOf) {
             this.usingButtons = !!this.options.usingButtons;
         }
 
-        if ('undefined' !== typeof this.options.notifyUpdate) {
-            this.notifyUpdate = !!this.options.notifyUpdate;
+        if ('undefined' !== typeof this.options.notifyServer) {
+            this.notifyServer = !!this.options.notifyServer;
         }
 
         if ('undefined' !== typeof this.options.setUriPrefix) {
@@ -47537,7 +47544,7 @@ if (!Array.prototype.indexOf) {
 
         // Update node.player.
         node.setLanguage(this.availableLanguages[this.currentLanguage],
-                         this.setUriPrefix, this.notifyUpdate);
+                         this.setUriPrefix, this.notifyServer);
     };
 
     /**
@@ -47568,15 +47575,8 @@ if (!Array.prototype.indexOf) {
      * @see LanguageSelector.updateAvalaibleLanguages
      */
     LanguageSelector.prototype.loadLanguages = function(options) {
-        if(!this.languagesLoaded) {
-            this.updateAvalaibleLanguages(options);
-        }
-        else {
-            if (options && options.callback) {
-                options.callback();
-            }
-
-        }
+        if (!this.languagesLoaded) this.updateAvalaibleLanguages(options);
+        else if (options && options.callback) options.callback();
     };
 
 })(node);
