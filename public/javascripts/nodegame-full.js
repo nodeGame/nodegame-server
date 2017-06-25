@@ -5547,7 +5547,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # TIME
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti
  * MIT Licensed
  *
  * Collection of static functions related to the generation,
@@ -10758,7 +10758,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Variables
- * Copyright(c) 2017 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * `nodeGame` variables and constants module
@@ -13330,16 +13330,19 @@ if (!Array.prototype.indexOf) {
      *
      * Creates an instance of Player
      *
-     * @param {object} pl The object literal representing the player
+     * @param {object} player The object literal representing the player.
+     *   Must contain at very least the `id` property
      */
     function Player(player) {
         var key;
 
         if ('object' !== typeof player) {
-            throw new TypeError('Player constructor: player must be object.');
+            throw new TypeError('Player constructor: player must be object. ' +
+                               'Found: ' + player);
         }
         if ('string' !== typeof player.id) {
-            throw new TypeError('Player constructor: id must be string.');
+            throw new TypeError('Player constructor: id must be string. ' +
+                                'Found: ' + player.id);
         }
 
         // ## Default properties
@@ -25262,6 +25265,11 @@ if (!Array.prototype.indexOf) {
         if (!this.isReady()) return false;
         if (!this.sizeManager.checkSize()) return false;
 
+        // `syncOnLoaded` forces clients to wait for all the others to be
+        // fully loaded before releasing the control of the screen to the
+        // players. This introduces a little overhead in
+        // communications and delay in the execution of a stage. It is 
+        // not necessary in local networks, and it is FALSE by default.
         syncOnLoaded = this.plot.getProperty(curGameStage, 'syncOnLoaded');
         if (!syncOnLoaded) return true;
         return node.game.pl.isStepLoaded(curGameStage);
@@ -29803,7 +29811,7 @@ if (!Array.prototype.indexOf) {
     /**
      * ### NodeGameClient.setLanguage
      *
-     * Sets the language for a playerList
+     * Sets the language for the client
      *
      * @param {object|string} lang Language information. If string, it must
      *   be the full name, and the the first 2 letters lower-cased are used
@@ -29818,15 +29826,17 @@ if (!Array.prototype.indexOf) {
      * @param {boolean} prefix Optional. If TRUE, the window uri prefix is
      *   set to the value of lang.path. node.window must be defined,
      *   otherwise a warning is shown. Default, FALSE.
+     * @param {boolean} sayIt Optional. If TRUE, a LANG message is sent to
+     *   the server to notify the change. Default: TRUE
      *
-     * @return {object|string} The language object or string
+     * @return {object} The language object
      *
      * @see node.setup.lang
      * @see GameWindow.setUriPrefix
      *
      * @emit LANGUAGE_SET
      */
-    NGC.prototype.setLanguage = function(lang, prefix) {
+    NGC.prototype.setLanguage = function(lang, prefix, sayIt) {
         var language;
         language = 'string' === typeof lang ? makeLanguageObj(lang) : lang;
 
@@ -29844,6 +29854,7 @@ if (!Array.prototype.indexOf) {
             this.player.lang.path = language.shortName + '/';
         }
 
+        // Updates the 
         if (prefix) {
             if ('undefined' !== typeof this.window) {
                 this.window.setUriPrefix(this.player.lang.path);
@@ -29852,6 +29863,14 @@ if (!Array.prototype.indexOf) {
                 node.warn('node.setLanguage: prefix is true, but no window ' +
                           'found.');
             }
+        }
+
+        // Send a message to notify server.
+        if ('undefined' === typeof sayIt || sayIt) {
+            node.socket.send(node.msg.create({
+                target: 'LANG',
+                data: this.player.lang
+            }));
         }
 
         this.emit('LANGUAGE_SET');
@@ -47301,6 +47320,26 @@ if (!Array.prototype.indexOf) {
         this.usingButtons = null;
 
         /**
+         * ## LanguageSelector.setUriPrefix
+         *
+         * If TRUE, the Window URI prefix is updated when the language is set
+         *
+         * Default: TRUE.
+         *
+         * @see GameWindow.setUriPrefix
+         */
+        this.setUriPrefix = true;
+
+        /**
+         * ## LanguageSelector.notifyUpdate
+         *
+         * If TRUE, a message is sent to the server when the language is set
+         *
+         * Default: TRUE.
+         */
+        this.notifyUpdate = true;
+
+        /**
          * ### LanguageSelector.onLangCallback
          *
          * Function to be called when languages have been loaded
@@ -47426,10 +47465,21 @@ if (!Array.prototype.indexOf) {
         J.mixout(options, this.options);
         this.options = options;
 
-        this.usingButtons = this.options.usingButtons || true;
+        if ('undefined' !== typeof this.options.usingButtons) {
+            this.usingButtons = !!this.options.usingButtons;
+        }
+
+        if ('undefined' !== typeof this.options.notifyUpdate) {
+            this.notifyUpdate = !!this.options.notifyUpdate;
+        }
+
+        if ('undefined' !== typeof this.options.setUriPrefix) {
+            this.setUriPrefix = !!this.options.setUriPrefix;
+        }
 
         // Register listener.
         // TODO: should it be moved into the listeners method?
+        // TODO: calling init twice will add it twice.
         node.on.lang(this.onLangCallback);
 
         // Display initialization.
@@ -47483,7 +47533,8 @@ if (!Array.prototype.indexOf) {
         }
 
         // Update node.player.
-        node.setLanguage(this.availableLanguages[this.currentLanguage]);
+        node.setLanguage(this.availableLanguages[this.currentLanguage],
+                         this.setUriPrefix, this.notifyUpdate);
     };
 
     /**

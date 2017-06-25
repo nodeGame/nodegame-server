@@ -61,6 +61,9 @@
         <a href="#say.data">say.DATA</a>
       </div>
       <div class="heading h4">
+        <a href="#say.lang">say.LANG</a>
+      </div>
+      <div class="heading h4">
         <a href="#set.data">set.DATA</a>
       </div>
       <div class="heading h4">
@@ -460,6 +463,59 @@ Admins decides what to do with it.</p>
     <span class="k">this</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="nx">say</span> <span class="o">+</span> <span class="s1">&#39;DATA&#39;</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">standardPlayerMsg</span><span class="p">);</span>
 
 
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap" id="say.lang">
+  <h4>
+    <a href="#say.lang" name="say.lang" class="pilcrow">&#182;</a>
+    say.LANG
+  </h4>
+</div>
+
+
+<p>Listens on set.DATA messages</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+    <span class="k">this</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="nx">say</span> <span class="o">+</span> <span class="s1">&#39;LANG&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">msg</span><span class="p">)</span> <span class="p">{</span>
+        <span class="kd">var</span> <span class="nx">room</span><span class="p">,</span> <span class="nx">roomName</span><span class="p">;</span>
+
+        <span class="nx">roomName</span> <span class="o">=</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">_roomName</span> <span class="o">||</span> <span class="nx">that</span><span class="p">.</span><span class="nx">registry</span><span class="p">.</span><span class="nx">getClientRoom</span><span class="p">(</span><span class="nx">msg</span><span class="p">.</span><span class="nx">from</span><span class="p">);</span>
+        <span class="nx">room</span> <span class="o">=</span> <span class="nx">that</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">gameRooms</span><span class="p">[</span><span class="nx">roomName</span><span class="p">];</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">room</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">sys</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;PlayerServer.on.say.LANG: Could not determine room of &#39;</span> <span class="o">+</span>
+                    <span class="s1">&#39;sender: &#39;</span> <span class="o">+</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">from</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
+            <span class="k">return</span><span class="p">;</span>
+        <span class="p">}</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">msg</span><span class="p">.</span><span class="nx">data</span> <span class="o">||</span> <span class="s1">&#39;string&#39;</span> <span class="o">!==</span> <span class="k">typeof</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">data</span><span class="p">.</span><span class="nx">name</span> <span class="o">||</span>
+            <span class="nx">msg</span><span class="p">.</span><span class="nx">data</span><span class="p">.</span><span class="nx">name</span><span class="p">.</span><span class="nx">trim</span><span class="p">()</span> <span class="o">===</span> <span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="p">{</span>
+
+            <span class="nx">sys</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;PlayerServer.on.say.LANG: Wrong/Missing languange &#39;</span> <span class="o">+</span>
+                    <span class="s1">&#39;information. Found: &#39;</span> <span class="o">+</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">data</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">);</span>
+            <span class="k">return</span><span class="p">;</span>
+        <span class="p">}</span>
+
+
+</pre></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="docs">
+<div class="pilwrap">
+  <a class="pilcrow" href="#section-18" id="section-18">&#182;</a>
+</div>
+<p>Update info in registry.</p>
+        </td>
+        <td class="code highlight"><div class="highlight"><pre>
+        <span class="nx">that</span><span class="p">.</span><span class="nx">channel</span><span class="p">.</span><span class="nx">registry</span><span class="p">.</span><span class="nx">updateClient</span><span class="p">(</span><span class="nx">msg</span><span class="p">.</span><span class="nx">from</span><span class="p">,</span> <span class="p">{</span> <span class="nx">lang</span><span class="o">:</span> <span class="nx">msg</span><span class="p">.</span><span class="nx">data</span> <span class="p">});</span>
+
+        <span class="nx">that</span><span class="p">.</span><span class="nx">socketManager</span><span class="p">.</span><span class="nx">send2roomAdmins</span><span class="p">(</span><span class="nx">msg</span><span class="p">,</span> <span class="nx">room</span><span class="p">);</span>
+    <span class="p">});</span>
+
 
 </pre></div>
         </td>
@@ -527,7 +583,7 @@ Admins decides what to do with it.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-19" id="section-19">&#182;</a>
+  <a class="pilcrow" href="#section-21" id="section-21">&#182;</a>
 </div>
 <p>StateLevel is never passed to other players.</p>
         </td>
@@ -617,7 +673,7 @@ It ignores ALL, CHANNEL, CHANNEL_X, ROOM_X recipients.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-21" id="section-21">&#182;</a>
+  <a class="pilcrow" href="#section-23" id="section-23">&#182;</a>
 </div>
 <p>Msg to a specific client (might be in another room).</p>
         </td>
@@ -678,7 +734,7 @@ It ignores ALL, CHANNEL, CHANNEL_X, ROOM_X recipients.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-24" id="section-24">&#182;</a>
+  <a class="pilcrow" href="#section-26" id="section-26">&#182;</a>
 </div>
 <p>TODO save the state to disk.</p>
         </td>
@@ -760,7 +816,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-26" id="section-26">&#182;</a>
+  <a class="pilcrow" href="#section-28" id="section-28">&#182;</a>
 </div>
 <p>TODO: improve. Too many ifs.</p>
         </td>
@@ -774,7 +830,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-27" id="section-27">&#182;</a>
+  <a class="pilcrow" href="#section-29" id="section-29">&#182;</a>
 </div>
 <p>Send to admins in sender's room.</p>
         </td>
@@ -790,7 +846,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-28" id="section-28">&#182;</a>
+  <a class="pilcrow" href="#section-30" id="section-30">&#182;</a>
 </div>
 <p>Send to receiving player (do not send twice to admin.)</p>
         </td>
@@ -845,7 +901,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-30" id="section-30">&#182;</a>
+  <a class="pilcrow" href="#section-32" id="section-32">&#182;</a>
 </div>
 <p>Send notification to other players (if allowed).</p>
         </td>
@@ -859,7 +915,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-31" id="section-31">&#182;</a>
+  <a class="pilcrow" href="#section-33" id="section-33">&#182;</a>
 </div>
 <p>To players send only the id.</p>
         </td>
@@ -878,7 +934,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-32" id="section-32">&#182;</a>
+  <a class="pilcrow" href="#section-34" id="section-34">&#182;</a>
 </div>
 <p>Send the current player list to the new player.</p>
         </td>
@@ -899,7 +955,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-33" id="section-33">&#182;</a>
+  <a class="pilcrow" href="#section-35" id="section-35">&#182;</a>
 </div>
 <p>To admins send the full object.</p>
         </td>
@@ -912,7 +968,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-34" id="section-34">&#182;</a>
+  <a class="pilcrow" href="#section-36" id="section-36">&#182;</a>
 </div>
 <p>Send notification to admin (always).</p>
         </td>
@@ -955,7 +1011,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-36" id="section-36">&#182;</a>
+  <a class="pilcrow" href="#section-38" id="section-38">&#182;</a>
 </div>
 <p>Notify players and admins of disconnection in old room.</p>
         </td>
@@ -970,7 +1026,7 @@ the client-id of the recipient.</p>
       <tr>
         <td class="docs">
 <div class="pilwrap">
-  <a class="pilcrow" href="#section-37" id="section-37">&#182;</a>
+  <a class="pilcrow" href="#section-39" id="section-39">&#182;</a>
 </div>
 <p>Notify only admins of disconnection in old room.</p>
         </td>
