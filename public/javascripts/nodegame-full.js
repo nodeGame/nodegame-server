@@ -25268,7 +25268,7 @@ if (!Array.prototype.indexOf) {
         // `syncOnLoaded` forces clients to wait for all the others to be
         // fully loaded before releasing the control of the screen to the
         // players. This introduces a little overhead in
-        // communications and delay in the execution of a stage. It is 
+        // communications and delay in the execution of a stage. It is
         // not necessary in local networks, and it is FALSE by default.
         syncOnLoaded = this.plot.getProperty(curGameStage, 'syncOnLoaded');
         if (!syncOnLoaded) return true;
@@ -29823,8 +29823,8 @@ if (!Array.prototype.indexOf) {
      *      path: 'en/' // Optional, default equal to shortName + '/'.
      *   }``
      *
-     * @param {boolean} prefix Optional. If TRUE, the window uri prefix is
-     *   set to the value of lang.path. node.window must be defined,
+     * @param {boolean} updateUriPrefix Optional. If TRUE, the window uri
+     *   prefix isset to the value of lang.path. node.window must be defined,
      *   otherwise a warning is shown. Default, FALSE.
      * @param {boolean} sayIt Optional. If TRUE, a LANG message is sent to
      *   the server to notify the change. Default: TRUE
@@ -29836,7 +29836,7 @@ if (!Array.prototype.indexOf) {
      *
      * @emit LANGUAGE_SET
      */
-    NGC.prototype.setLanguage = function(lang, prefix, sayIt) {
+    NGC.prototype.setLanguage = function(lang, updateUriPrefix, sayIt) {
         var language;
         language = 'string' === typeof lang ? makeLanguageObj(lang) : lang;
 
@@ -29854,14 +29854,14 @@ if (!Array.prototype.indexOf) {
             this.player.lang.path = language.shortName + '/';
         }
 
-        // Updates the 
-        if (prefix) {
+        // Updates the URI prefix.
+        if (updateUriPrefix) {
             if ('undefined' !== typeof this.window) {
                 this.window.setUriPrefix(this.player.lang.path);
             }
             else {
-                node.warn('node.setLanguage: prefix is true, but no window ' +
-                          'found.');
+                node.warn('node.setLanguage: updateUriPrefix is true, ' +
+                          'window not found. Are you in a browser?');
             }
         }
 
@@ -47194,14 +47194,14 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # LanguageSelector
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Manages and displays information about languages available and selected
  *
  * www.nodegame.org
  */
- (function(node) {
+(function(node) {
 
     "use strict";
 
@@ -47210,8 +47210,8 @@ if (!Array.prototype.indexOf) {
     node.widgets.register('LanguageSelector', LanguageSelector);
 
     // ## Meta-data
-
-    LanguageSelector.version = '0.3.1';
+    
+    LanguageSelector.version = '0.5.0';
     LanguageSelector.description = 'Display information about the current ' +
         'language and allows to change language.';
     LanguageSelector.title = 'Language';
@@ -47316,8 +47316,10 @@ if (!Array.prototype.indexOf) {
          * ## LanguageSelector.usingButtons
          *
          * Flag indicating if the interface should have buttons
+         *
+         * Default: TRUE.
          */
-        this.usingButtons = null;
+        this.usingButtons = true;
 
         /**
          * ## LanguageSelector.setUriPrefix
@@ -47369,18 +47371,20 @@ if (!Array.prototype.indexOf) {
                 // Creates labeled buttons.
                 for (language in msg.data) {
                     if (msg.data.hasOwnProperty(language)) {
-                        that.optionsLabel[language] = W.getElement('label',
-                            language + 'Label', {
-                                'for': language + 'RadioButton'
-                            });
+                        that.optionsLabel[language] = 
+                            W.getElement('label',
+                                         language + 'Label', {
+                                             'for': language + 'RadioButton'
+                                         });
 
-                        that.optionsDisplay[language] = W.getElement('input',
-                            language + 'RadioButton', {
-                                type: 'radio',
-                                name: 'languageButton',
-                                value: msg.data[language].name
-                            }
-                        );
+                        that.optionsDisplay[language] =
+                            W.getElement('input',
+                                         language + 'RadioButton', {
+                                             type: 'radio',
+                                             name: 'languageButton',
+                                             value: msg.data[language].name
+                                         }
+                                        );
 
                         that.optionsDisplay[language].onclick =
                             makeSetLanguageOnClick(language);
@@ -47394,14 +47398,14 @@ if (!Array.prototype.indexOf) {
                         that.optionsLabel[language].className =
                             'unselectedButtonLabel';
                         that.displayForm.appendChild(
-                                that.optionsLabel[language]);
+                            that.optionsLabel[language]);
                     }
                 }
             }
             else {
 
-                that.displaySelection = node.window.getElement('select',
-                    'selectLanguage');
+                that.displaySelection = W.getElement('select',
+                                                     'selectLanguage');
                 for (language in msg.data) {
                     that.optionsLabel[language] =
                         document.createTextNode(msg.data[language].nativeName);
@@ -47522,7 +47526,6 @@ if (!Array.prototype.indexOf) {
         this.currentLanguage = langName;
 
         if (this.usingButtons) {
-
             // Check language button and change className of label.
             this.optionsDisplay[this.currentLanguage].checked = 'checked';
             this.optionsLabel[this.currentLanguage].className =
