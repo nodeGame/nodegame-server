@@ -23067,7 +23067,7 @@ if (!Array.prototype.indexOf) {
             mod = 'ARRAY';
         }
 
-        if ('undefined' !== typeof round && 'number' === typeof round) {
+        if ('undefined' !== typeof round && 'number' !== typeof round) {
             throw new TypeError('MatcherManager.getMatches: round ' +
                                 'must be undefined or number. Found: ' + round);
         }
@@ -52017,16 +52017,7 @@ if (!Array.prototype.indexOf) {
         }
 
         // Texts.
-debugger
-        this.setText('disconnect', conf.disconnectText);
-        this.setText('waitedTooLong', conf.waitedTooLongText);
-        this.setText('notEnoughPlayers', conf.notEnoughPlayersText);
-        this.setText('roomClosed', conf.roomClosedText);
-        this.setText('tooManyPlayers', conf.tooManyPlayersText);
-        this.setText('notSelectedClosed', conf.notSelectedClosedText);
-        this.setText('notSelectedOpen', conf.notSelectedOpenText);
-        this.setText('exitCode', conf.exitCodeText);
-
+        this.setTexts(conf.texts);
     };
 
     /**
@@ -52328,33 +52319,6 @@ debugger
     };
 
     /**
-     * ### WaitingRoom.getText
-     *
-     * Returns the requested text
-     *
-     * @param {string} name The name of the text variable.
-     * @param {mixed} param Optional. Additional to pass to the callback, if any
-     *
-     * @return {string} The requested text
-     *
-     * @see WaitingRoom.setText
-     */
-    WaitingRoom.prototype.getText = function(name, param) {
-        var txt;
-        txt = this.texts[name];
-        if ('string' === typeof txt) return txt;
-        if ('function' === typeof txt) {
-            txt = txt(this, param);
-            if ('string' !== typeof txt) {
-                throw new TypeError('WaitingRoom.getText: cb "' + name +
-                                    'did not return a string. Found: ' + txt);
-            }
-            return txt;
-        }
-        throw new Error('WaitingRoom.getText: unknown text requested: ' + name);
-    };
-
-    /**
      * ### WaitingRoom.setText
      *
      * Checks and assigns the value of a text to display to user
@@ -52367,30 +52331,131 @@ debugger
      * @param {boolean} noDefault Optional. If true, no default value is
      *    assigned in case value is undefined. Default: false
      *
-     * @return {string|function} The validated property's value
-     *
      * @see WaitingRoom.init
      * @see WaitingRoom.texts
      * @see WaitingRoom.getText
      */
     WaitingRoom.prototype.setText = function(name, value, noDefault) {
-        if ('undefined' === typeof value) {
-            if (!noDefault) this.texts[name] = WaitingRoom.texts[name];
-        }
-        else if ('string' === typeof value || 'function' === typeof value) {
-            this.texts[name] = value;
-        }
-        else {
-            throw new TypeError('WaitingRoom.setText: text "' + name +
-                                '" must be string, function or undefined. ' +
-                                'Found: ' + value);
-        }
-        return this.texts[name];
+        strSetter(this, name, value, noDefault, 'texts', 'setSetext');
+    };
+
+    /**
+     * ### WaitingRoom.setTexts
+     *
+     * Assigns all texts
+     *
+     * @param {object} texts Optional. Object containing texts
+     *
+     * @see WaitingRoom.texts
+     * @see WaitingRoom.setText
+     * @see WaitingRoom.getTexts
+     */
+    WaitingRoom.prototype.setTexts = function(texts, noDefault) {
+        strSetterMulti(this, texts, noDefault, 'texts', 'setText', 'setTexts');
+    };
+    
+    /**
+     * ### WaitingRoom.getText
+     *
+     * Returns the requested text
+     *
+     * @param {string} name The name of the text variable.
+     * @param {mixed} param Optional. Additional to pass to the callback, if any
+     *
+     * @return {string} The requested text
+     *
+     * @see WaitingRoom.setText
+     */
+    WaitingRoom.prototype.getText = function(name, param) {
+        return strGetter(this, name, param, 'texts', 'getTexts');       
+    };
+    
+    /**
+     * ### WaitingRoom.getTexts
+     *
+     * Returns an object with all current texts
+     *
+     * @param {object} param Optional. Object containing parameters to pass
+     *   to the texts functions (if any)
+     *
+     * @return {object} out All current texts
+     *
+     * @see WaitingRoom.texts
+     * @see WaitingRoom.setTexts
+     * @see WaitingRoom.getText
+     */
+    WaitingRoom.prototype.getTexts = function(param) {       
+        return strGetterMulti(this, param, 'texts', 'getText', 'getTexts');
     };
 
     // ## Helper functions.
 
+    // TODO: document.
+    
+    function strGetter(that, name, param, collection, method) {
+        var res;
+        res = that[collection][name];
+        if ('string' === typeof res) return res;
+        if ('function' === typeof res) {
+            res = res(that, param);
+            if ('string' !== typeof res) {
+                throw new TypeError('WaitingRoom.' + method + ': cb "' + name +
+                                    'did not return a string. Found: ' + res);
+            }
+            return res;
+        }
+        throw new Error('WaitingRoom.' + method + ': unknown item requested: ' +
+                        name);
+    }
+    
+    function strGetterMulti(that, param, collection, getMethod, method) {
+        var t, out;
+        out = {};
+        for (t in that[collection]) {
+            if (that[collection].hasOwnProperty(t)) {
+                out[t] = that[getMethod](t, param);
+            }
+        }
+        return out;
+    }
 
+    function strSetterMulti(that, obj, noDefault,
+                            collection, setMethod, method) {
+
+        var i, out;
+        out = out || {};
+        if ('object' !== typeof obj && 'undefined' !== typeof obj) {
+            throw new TypeError('WaitingRoom.' + method + ': ' +  collection +
+                                ' must be object or undefined. Found: ' + obj);
+        }
+        for (i in obj) {
+            if (obj.hasOwnProperty(i)) {
+                that[setMethod](i);
+            }
+        }
+    }
+    
+    
+    function strSetter(that, name, value, noDefault, collection, method) {
+        if ('undefined' === typeof that[collection][name]) {
+            throw new TypeError('WaitingRoom.' + method + ': unrecognized ' +
+                                'name: ' + name);
+        }
+        if ('undefined' === typeof value) {
+            if (!noDefault) {
+                that[collection][name] = WaitingRoom[collection][name];
+            }
+        }
+        else if ('string' === typeof value || 'function' === typeof value) {
+            that[collection][name] = value;
+        }
+        else {
+            throw new TypeError('WaitingRoom.' + method + ': value for item "' +
+                                name + '" must be string, function or ' +
+                                'undefined. Found: ' + value);
+        }
+    }
+    
 })(node);
 
 /**
