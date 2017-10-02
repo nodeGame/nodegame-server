@@ -478,23 +478,28 @@ if (!Array.prototype.indexOf) {
  * GPL licenses.
  *
  * Persistent Client-Side Storage
- *
  * ---
  */
-(function(exports){
+(function(exports) {
 
-    var version = '0.5';
+    var version = '5.1';
+    var store, mainStorageType;
 
-    var store = exports.store = function(key, value, options, type) {
-	options = options || {};
-	type = (options.type && options.type in store.types) ? options.type : store.type;
-	if (!type || !store.types[type]) {
-	    store.log("Cannot save/load value. Invalid storage type selected: " + type, 'ERR');
-	    return;
-	}
-	store.log('Accessing ' + type + ' storage');
+    mainStorageType = "volatile";
 
-	return store.types[type](key, value, options);
+    store = exports.store = function(key, value, options, type) {
+        options = options || {};
+        type = (options.type && options.type in store.types) ?
+            options.type : store.type;
+
+        if (!type || !store.types[type]) {
+            store.log('Cannot save/load value. Invalid storage type ' +
+                      'selected: ' + type, 'ERR');
+            return;
+        }
+        store.log('Accessing ' + type + ' storage');
+
+        return store.types[type](key, value, options);
     };
 
     // Adding functions and properties to store
@@ -505,164 +510,171 @@ if (!Array.prototype.indexOf) {
     store.types = {};
 
 
-    var mainStorageType = "volatile";
+
 
     //if Object.defineProperty works...
     try {
 
-	Object.defineProperty(store, 'type', {
-	    set: function(type){
-		if ('undefined' === typeof store.types[type]) {
-		    store.log('Cannot set store.type to an invalid type: ' + type);
-		    return false;
-		}
-		mainStorageType = type;
-		return type;
-	    },
-	    get: function(){
-		return mainStorageType;
-	    },
-	    configurable: false,
-	    enumerable: true
-	});
+        Object.defineProperty(store, 'type', {
+            set: function(type) {
+                if ('undefined' === typeof store.types[type]) {
+                    store.log('Cannot set store.type to an invalid type: ' +
+                              type);
+                    return false;
+                }
+                mainStorageType = type;
+                return type;
+            },
+            get: function(){
+                return mainStorageType;
+            },
+            configurable: false,
+            enumerable: true
+        });
     }
     catch(e) {
-	store.type = mainStorageType; // default: memory
+        store.type = mainStorageType; // default: memory
     }
 
     store.addType = function(type, storage) {
-	store.types[type] = storage;
-	store[type] = function(key, value, options) {
-	    options = options || {};
-	    options.type = type;
-	    return store(key, value, options);
-	};
+        store.types[type] = storage;
+        store[type] = function(key, value, options) {
+            options = options || {};
+            options.type = type;
+            return store(key, value, options);
+        };
 
-	if (!store.type || store.type === "volatile") {
-	    store.type = type;
-	}
+        if (!store.type || store.type === "volatile") {
+            store.type = type;
+        }
     };
 
     // TODO: create unit test
     store.onquotaerror = undefined;
     store.error = function() {
-	console.log("shelf quota exceeded");
-	if ('function' === typeof store.onquotaerror) {
-	    store.onquotaerror(null);
-	}
+        console.log("shelf quota exceeded");
+        if ('function' === typeof store.onquotaerror) {
+            store.onquotaerror(null);
+        }
     };
 
     store.log = function(text) {
-	if (store.verbosity > 0) {
-	    console.log('Shelf v.' + version + ': ' + text);
-	}
+        if (store.verbosity > 0) {
+            console.log('Shelf v.' + version + ': ' + text);
+        }
 
     };
 
     store.isPersistent = function() {
-	if (!store.types) return false;
-	if (store.type === "volatile") return false;
-	return true;
+        if (!store.types) return false;
+        if (store.type === "volatile") return false;
+        return true;
     };
 
     //if Object.defineProperty works...
     try {
-	Object.defineProperty(store, 'persistent', {
-	    set: function(){},
-	    get: store.isPersistent,
-	    configurable: false
-	});
+        Object.defineProperty(store, 'persistent', {
+            set: function(){},
+            get: store.isPersistent,
+            configurable: false
+        });
     }
     catch(e) {
-	// safe case
-	store.persistent = false;
+        // safe case
+        store.persistent = false;
     }
 
     store.decycle = function(o) {
-	if (JSON && JSON.decycle && 'function' === typeof JSON.decycle) {
-	    o = JSON.decycle(o);
-	}
-	return o;
+        if (JSON && JSON.decycle && 'function' === typeof JSON.decycle) {
+            o = JSON.decycle(o);
+        }
+        return o;
     };
 
     store.retrocycle = function(o) {
-	if (JSON && JSON.retrocycle && 'function' === typeof JSON.retrocycle) {
-	    o = JSON.retrocycle(o);
-	}
-	return o;
+        if (JSON && JSON.retrocycle && 'function' === typeof JSON.retrocycle) {
+            o = JSON.retrocycle(o);
+        }
+        return o;
     };
 
     store.stringify = function(o) {
-	if (!JSON || !JSON.stringify || 'function' !== typeof JSON.stringify) {
-	    throw new Error('JSON.stringify not found. Received non-string value and could not serialize.');
-	}
+        if (!JSON || !JSON.stringify || 'function' !== typeof JSON.stringify) {
+            throw new Error('JSON.stringify not found. Received non-string' +
+                            'value and could not serialize.');
+        }
 
-	o = store.decycle(o);
-	return JSON.stringify(o);
+        o = store.decycle(o);
+        return JSON.stringify(o);
     };
 
     store.parse = function(o) {
-	if ('undefined' === typeof o) return undefined;
-	if (JSON && JSON.parse && 'function' === typeof JSON.parse) {
-	    try {
-		o = JSON.parse(o);
-	    }
-	    catch (e) {
-		store.log('Error while parsing a value: ' + e, 'ERR');
-		store.log(o);
-	    }
-	}
+        if ('undefined' === typeof o) return undefined;
+        if (JSON && JSON.parse && 'function' === typeof JSON.parse) {
+            try {
+                o = JSON.parse(o);
+            }
+            catch (e) {
+                store.log('Error while parsing a value: ' + e, 'ERR');
+                store.log(o);
+            }
+        }
 
-	o = store.retrocycle(o);
-	return o;
+        o = store.retrocycle(o);
+        return o;
     };
 
     // ## In-memory storage
-    // ### fallback for all browsers to enable the API even if we can't persist data
+    // ### fallback to enable the API even if we can't persist data
     (function() {
 
-	var memory = {},
-	timeout = {};
+        var memory = {},
+        timeout = {};
 
-	function copy(obj) {
-	    return store.parse(store.stringify(obj));
-	}
+        function copy(obj) {
+            return store.parse(store.stringify(obj));
+        }
 
-	store.addType("volatile", function(key, value, options) {
+        store.addType("volatile", function(key, value, options) {
 
-	    if (!key) {
-		return copy(memory);
-	    }
+            if (!key) {
+                return copy(memory);
+            }
 
-	    if (value === undefined) {
-		return copy(memory[key]);
-	    }
+            if (value === undefined) {
+                return copy(memory[key]);
+            }
 
-	    if (timeout[key]) {
-		clearTimeout(timeout[key]);
-		delete timeout[key];
-	    }
+            if (timeout[key]) {
+                clearTimeout(timeout[key]);
+                delete timeout[key];
+            }
 
-	    if (value === null) {
-		delete memory[key];
-		return null;
-	    }
+            if (value === null) {
+                delete memory[key];
+                return null;
+            }
 
-	    memory[key] = value;
-	    if (options.expires) {
-		timeout[key] = setTimeout(function() {
-		    delete memory[key];
-		    delete timeout[key];
-		}, options.expires);
-	    }
+            memory[key] = value;
+            if (options.expires) {
+                timeout[key] = setTimeout(function() {
+                    delete memory[key];
+                    delete timeout[key];
+                }, options.expires);
+            }
 
-	    return value;
-	});
+            return value;
+        });
     }());
 
-}('undefined' !== typeof module && 'undefined' !== typeof module.exports ? module.exports: this));
+}(
+    'undefined' !== typeof module && 'undefined' !== typeof module.exports ?
+        module.exports : this
+));
+
 /**
  * ## Amplify storage for Shelf.js
+ * Copyright 2014 Stefano Balietti
  *
  * v. 1.1.0 22.05.2013 a275f32ee7603fbae6607c4e4f37c4d6ada6c3d5
  *
@@ -672,7 +684,7 @@ if (!Array.prototype.indexOf) {
  * - JSON.parse -> store.parse (cyclic objects)
  * - store.name -> store.prefix (check)
  * - rprefix -> regex
- * -  "__amplify__" -> store.prefix
+ * - "__amplify__" -> store.prefix
  *
  * ---
  */
@@ -908,9 +920,10 @@ if (!Array.prototype.indexOf) {
     }());
 
 }(this));
+
 /**
  * ## Cookie storage for Shelf.js
- * Copyright 2015 Stefano Balietti
+ * Copyright 2014 Stefano Balietti
  *
  * Original library from:
  * See http://code.google.com/p/cookies/
@@ -1228,7 +1241,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # JSUS: JavaScript UtilS.
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Collection of general purpose javascript functions. JSUS helps!
@@ -1379,6 +1392,10 @@ if (!Array.prototype.indexOf) {
         require('./lib/parse');
         require('./lib/queue');
         require('./lib/fs');
+    }
+    else {
+        // Also exports J in the browser.
+        exports.J = exports.JSUS;
     }
     // end node
 
@@ -6350,7 +6367,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # NDDB: N-Dimensional Database
- * Copyright(c) 2017 Stefano Balietti <ste@nodegame.org>
+ * Copyright(c) 2017 Stefano Balietti
  * MIT Licensed
  *
  * NDDB is a powerful and versatile object database for node.js and the browser.
@@ -6438,7 +6455,7 @@ if (!Array.prototype.indexOf) {
         this.db = [];
 
         // ### lastSelection
-        // The subset of items that were selected during the last operation
+        // The subset of items that were selected during the last operations
         // Notice: some of the items might not exist any more in the database.
         // @see NDDB.fetch
         this.lastSelection = [];
@@ -7167,36 +7184,22 @@ if (!Array.prototype.indexOf) {
     /**
      * ### NDDB._autoUpdate
      *
-     * Updates pointer, indexes, and sort items
+     * Performs a series of automatic checkings and updates the db
      *
-     * What is updated depends on configuration stored in `this.__update`.
+     * Checkings are performed according to current configuration, or to
+     * local options.
      *
      * @param {object} options Optional. Configuration object
-     *
-     * @see NDDB.__update
      *
      * @api private
      */
     NDDB.prototype._autoUpdate = function(options) {
-        var u;
-        u = this.__update;
-        options = options || {};
+        var update;
+        update = options ? J.merge(this.__update, options) : this.__update;
 
-        if (options.pointer ||
-            ('undefined' === typeof options.pointer && u.pointer)) {
-
-            this.nddb_pointer = this.db.length-1;
-        }
-        if (options.sort ||
-            ('undefined' === typeof options.sort && u.sort)) {
-
-            this.sort();
-        }
-        if (options.indexes ||
-            ('undefined' === typeof options.indexes && u.indexes)) {
-
-            this.rebuildIndexes();
-        }
+        if (update.pointer) this.nddb_pointer = this.db.length-1;
+        if (update.sort) this.sort();
+        if (update.indexes) this.rebuildIndexes();
     };
 
     /**
@@ -7234,35 +7237,18 @@ if (!Array.prototype.indexOf) {
      *  - null
      *
      * @param {object} o The item or array of items to insert
-     * @param {object} updateRules Optional. Update rules to overwrite
-     *   system-wide settings stored in `this.__update`
      *
      * @return {object|boolean} o The inserted object (might have been
      *   updated by on('insert') callbacks), or FALSE if the object could
      *   not be inserted, e.g. if a on('insert') callback returned FALSE.
      *
-     * @see NDDB.__update
      * @see nddb_insert
      */
-    NDDB.prototype.insert = function(o, updateRules) {
+    NDDB.prototype.insert = function(o) {
         var res;
-        if ('undefined' === typeof updateRules) {
-            updateRules = this.__update;
-        }
-        else if ('object' !== typeof updateRules) {
-            this.throwErr('TypeError', 'insert',
-                          'updateRules must be object or undefined. Found: ',
-                          updateRules);
-        }
-        res = nddb_insert.call(this, o, updateRules.indexes);
+        res = nddb_insert.call(this, o, this.__update.indexes);
         if (res === false) return false;
-        // If updateRules.indexes is false, then we do not want to do it.
-        // If it was true, we did it already.
-        this._autoUpdate({
-            indexes: false,
-            pointer: updateRules.pointer,
-            sort: updateRules.sort
-        });
+        this._autoUpdate({indexes: false});
         return o;
     };
 
@@ -7274,7 +7260,7 @@ if (!Array.prototype.indexOf) {
      * It always returns the length of the full database, regardless of
      * current selection.
      *
-     * @return {number} The total number of elements in the database
+     * @return {number} The length of the database
      *
      * @see NDDB.count
      */
@@ -8541,50 +8527,6 @@ if (!Array.prototype.indexOf) {
         return this.breed(shuffled);
     };
 
-    /**
-     * ### NDDB.random
-     *
-     * Breeds a new database with N randomly selected items
-     *
-     * @param {number} N How many random items to include
-     *
-     * @return {NDDB} A new instance of NDDB with the shuffled entries
-     */
-    NDDB.prototype.random = function(N, strict) {
-        var i, len, used, out, idx;
-        if ('number' !== typeof N) {
-            this.throwErr('TypeError', 'random',
-                          'N must be number Found: ' + N);
-        }
-        if (N < 1) {
-            this.throwErr('Error', 'random', 'N must be > 0. Found: ' + N);
-        }
-        len = this.db.length;
-        if (N > len && strict !== false) {
-            this.throwErr('Error', 'random', 'not enough items in db. Found: ' +
-                          len + '. Requested: ' + N);
-        }
-        // Heuristic.
-        if (N < (len/3)) {
-            i = 0;
-            out = new Array(N);
-            used = {};
-            while (i < N) {
-                idx = J.randomInt(0, len)-1;
-                if ('undefined' === typeof used[idx]) {
-                    used[idx] = true;
-                    out[i] = this.db[idx];
-                    i++;
-                }
-            }
-        }
-        else {
-            out = J.shuffle(this.db);
-            out = out.slice(0, N);
-        }
-        return this.breed(out);
-    };
-
     // ## Custom callbacks
 
     /**
@@ -8735,55 +8677,37 @@ if (!Array.prototype.indexOf) {
      *
      * @param {object} update An object containing the properties
      *  that will be updated.
-     * @param {object} updateRules Optional. Update rules to overwrite
-     *   system-wide settings stored in `this.__update`
      *
      * @return {NDDB} A new instance of NDDB with updated entries
      *
      * @see JSUS.mixin
      * @see NDDB.emit
      */
-    NDDB.prototype.update = function(update, updateRules) {
+    NDDB.prototype.update = function(update) {
         var i, len, db, res;
         if ('object' !== typeof update) {
-            this.throwErr('TypeError', 'update',
-                          'update must be object. Found: ', update);
+            this.throwErr('TypeError', 'update', 'update must be object');
         }
-        if ('undefined' === typeof updateRules) {
-            updateRules = this.__update;
-        }
-        else if ('object' !== typeof updateRules) {
-            this.throwErr('TypeError', 'update',
-                          'updateRules must be object or undefined. Found: ',
-                          updateRules);
-        }
+
         // Gets items and resets the current selection.
         db = this.fetch();
         len = db.length;
         if (len) {
             for (i = 0; i < len; i++) {
-                res = this.emit('update', db[i], update, i);
+                res = this.emit('update', db[i], update);
                 if (res === true) {
                     J.mixin(db[i], update);
-                    if (updateRules.indexes) {
-                        this._indexIt(db[i]);
-                        this._hashIt(db[i]);
-                        this._viewIt(db[i]);
-                    }
+                    this._indexIt(db[i]);
+                    this._hashIt(db[i]);
+                    this._viewIt(db[i]);
                 }
             }
-            // If updateRules.indexes is false, then we do not want to do it.
-            // If it was true, we did it already
-            this._autoUpdate({
-                indexes: false,
-                pointer: updateRules.pointer,
-                sort: updateRules.sort
-            });
+            this._autoUpdate({indexes: false});
         }
         return this;
     };
 
-    // ## Deletion
+    //## Deletion
 
     /**
      * ### NDDB.removeAllEntries
@@ -10081,6 +10005,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Helper Methods
 
+
     /**
      * ### nddb_insert
      *
@@ -10093,7 +10018,7 @@ if (!Array.prototype.indexOf) {
      * accordingly.
      *
      * @param {object|function} o The item to add to database
-     * @param {boolean} doUpdate Optional. If TRUE, updates indexes, hashes,
+     * @param {boolean} update Optional. If TRUE, updates indexes, hashes,
      *    and views. Default, FALSE
      *
      * @return {boolean} TRUE, if item was inserted, FALSE otherwise, e.g.
@@ -10104,7 +10029,7 @@ if (!Array.prototype.indexOf) {
      *
      * @api private
      */
-    function nddb_insert(o, doUpdate) {
+    function nddb_insert(o, update) {
         var nddbid, res;
         if (('object' !== typeof o) && ('function' !== typeof o)) {
             this.throwErr('TypeError', 'insert', 'object or function ' +
@@ -10129,11 +10054,11 @@ if (!Array.prototype.indexOf) {
         // Add to index directly (bypass api).
         this.nddbid.resolve[o._nddbid] = this.db.length;
         // End create index.
-        res = this.emit('insert', o, this.db.length);
+        res = this.emit('insert', o);
         // Stop inserting elements if one callback returned FALSE.
         if (res === false) return false;
         this.db.push(o);
-        if (doUpdate) {
+        if (update) {
             this._indexIt(o, (this.db.length-1));
             this._hashIt(o);
             this._viewIt(o);
@@ -10640,7 +10565,7 @@ if (!Array.prototype.indexOf) {
         if ('undefined' === typeof dbidx) return false;
         o = this.nddb.db[dbidx];
         if ('undefined' === typeof o) return false;
-        res = this.nddb.emit('remove', o, dbidx);
+        res = this.nddb.emit('remove', o);
         if (res === false) return false;
         this.nddb.db.splice(dbidx, 1);
         this._remove(idx);
@@ -10672,7 +10597,7 @@ if (!Array.prototype.indexOf) {
         if ('undefined' === typeof dbidx) return false;
         nddb = this.nddb;
         o = nddb.db[dbidx];
-        res = nddb.emit('update', o, update, dbidx);
+        res = nddb.emit('update', o, update);
         if (res === false) return false;
         J.mixin(o, update);
         // We do indexes separately from the other components of _autoUpdate
@@ -23146,7 +23071,7 @@ if (!Array.prototype.indexOf) {
             mod = 'ARRAY';
         }
 
-        if ('undefined' !== typeof round && 'number' === typeof round) {
+        if ('undefined' !== typeof round && 'number' !== typeof round) {
             throw new TypeError('MatcherManager.getMatches: round ' +
                                 'must be undefined or number. Found: ' + round);
         }
@@ -24444,7 +24369,7 @@ if (!Array.prototype.indexOf) {
         // Here we start processing the new STEP.
 
         // TODO maybe update also in case of string.
-        node.emit('STEPPING');
+        node.emit('STEPPING', curStep, nextStep);
 
         // Check for stage/step existence:
         nextStageObj = this.plot.getStage(nextStep);
@@ -25954,7 +25879,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Timer
- * Copyright(c) 2016 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti
  * MIT Licensed
  *
  * Timing-related utility functions
@@ -26057,7 +25982,7 @@ if (!Array.prototype.indexOf) {
             var i, time, pt, cpt, pausedTime;
             pt = that._pausedTimestamps;
             cpt = that._cumulPausedTimestamps;
-            time = (new Date()).getTime();
+            time = J.now();
             for (i in pt) {
                 if (pt[i] && pt.hasOwnProperty(i)) {
                     pausedTime = time - pt[i];
@@ -26102,7 +26027,8 @@ if (!Array.prototype.indexOf) {
             ('object' !== typeof options && 'number' !== typeof options)) {
 
             throw new TypeError('Timer.createTimer: options must be ' +
-                                'undefined, object or number.');
+                                'undefined, object or number. Found: ' +
+                                options);
         }
 
         if ('number' === typeof options) options = { milliseconds: options };
@@ -26112,8 +26038,8 @@ if (!Array.prototype.indexOf) {
             J.uniqueKey(this.timers, 'timer_' + J.randomInt(0, 10000000));
 
         if (this.timers[options.name]) {
-            throw new Error('Timer.createTimer: timer ' + options.name +
-                            ' already existing.');
+            throw new Error('Timer.createTimer: timer name already in use: ' +
+                            options.name);
         }
 
         // If game is paused add options startPaused, unless user
@@ -26174,13 +26100,13 @@ if (!Array.prototype.indexOf) {
         if ('string' === typeof gameTimer) {
             if (!this.timers[gameTimer]) {
                 throw new Error('node.timer.destroyTimer: gameTimer not ' +
-                                'found: ' + gameTimer + '.');
+                                'found: ' + gameTimer);
             }
             gameTimer = this.timers[gameTimer];
         }
         if ('object' !== typeof gameTimer) {
             throw new Error('node.timer.destroyTimer: gameTimer must be ' +
-                            'string or object.');
+                            'string or object. Found: ' + gameTimer);
         }
 
         // Stop timer.
@@ -26248,7 +26174,8 @@ if (!Array.prototype.indexOf) {
      */
     Timer.prototype.getTimer = function(name) {
         if ('string' !== typeof name) {
-            throw new TypeError('Timer.getTimer: name must be string.');
+            throw new TypeError('Timer.getTimer: name must be string. Found: ' +
+                                name);
         }
         return this.timers[name] || null;
     };
@@ -26261,19 +26188,24 @@ if (!Array.prototype.indexOf) {
      * @param {string} name The name of the timestamp
      * @param {number|undefined} time Optional. The time in ms as returned by
      *   Date.getTime(). Default: Current time.
+     *
+     * @return {number} time The value of the timestamp set
+     *
+     * @see Timer.getTimestamp
      */
     Timer.prototype.setTimestamp = function(name, time) {
         var i;
         // Default time: Current time
-        if ('undefined' === typeof time) time = (new Date()).getTime();
+        if ('undefined' === typeof time) time = J.now();
 
         // Check inputs:
         if ('string' !== typeof name) {
-            throw new Error('Timer.setTimestamp: name must be a string');
+            throw new Error('Timer.setTimestamp: name must be a string. ' +
+                            'Found: ' + name);
         }
         if ('number' !== typeof time) {
             throw new Error('Timer.setTimestamp: time must be a number or ' +
-                            'undefined');
+                            'undefined. Found: ' + time);
         }
 
         // We had at least one pause.
@@ -26297,6 +26229,7 @@ if (!Array.prototype.indexOf) {
             }
         }
         this.timestamps[name] = time;
+        return time;
     };
 
     /**
@@ -26312,14 +26245,11 @@ if (!Array.prototype.indexOf) {
     Timer.prototype.getTimestamp = function(name) {
         // Check input:
         if ('string' !== typeof name) {
-            throw new Error('Timer.getTimestamp: name must be a string');
+            throw new Error('Timer.getTimestamp: name must be a string. ' +
+                            'Found: ' + name);
         }
-        if (this.timestamps.hasOwnProperty(name)) {
-            return this.timestamps[name];
-        }
-        else {
-            return null;
-        }
+        if (this.timestamps.hasOwnProperty(name)) return this.timestamps[name];
+        else return null;
     };
 
     /**
@@ -26353,11 +26283,12 @@ if (!Array.prototype.indexOf) {
         var currentTime;
 
         // Get current time:
-        currentTime = (new Date()).getTime();
+        currentTime = J.now();
 
         // Check input:
         if ('string' !== typeof name) {
-            throw new TypeError('Timer.getTimeSince: name must be string.');
+            throw new TypeError('Timer.getTimeSince: name must be string. ' +
+                                'Found: ' + name);
         }
 
         if (this.timestamps.hasOwnProperty(name)) {
@@ -26446,7 +26377,8 @@ if (!Array.prototype.indexOf) {
     Timer.prototype.randomEmit = function(event, maxWait) {
         var args, i, len;
         if ('string' !== typeof event) {
-            throw new TypeError('Timer.randomEmit: event must be string.');
+            throw new TypeError('Timer.randomEmit: event must be string. ' +
+                                'Found: ' + event);
         }
         len = arguments.length;
         if (len == 3) {
@@ -26485,14 +26417,15 @@ if (!Array.prototype.indexOf) {
     Timer.prototype.randomExec = function(func, maxWait, ctx) {
         var args, i, len;
         if ('function' !== typeof func) {
-            throw new TypeError('Timer.randomExec: func must be function.');
+            throw new TypeError('Timer.randomExec: func must be function. ' +
+                               'Found: ' + func);
         }
         if ('undefined' === typeof ctx) {
             ctx = this.node.game;
         }
         else if ('object' !== typeof ctx && 'function' !== typeof ctx) {
             throw new TypeError('Timer.randomExec: ctx must be object, ' +
-                                'function or undefined.');
+                                'function or undefined. Found: ' + ctx);
         }
         len = arguments.length;
         if (len == 4) {
@@ -26630,7 +26563,7 @@ if (!Array.prototype.indexOf) {
         }
         else if ('number' !== typeof maxWait) {
             throw new TypeError('Timer.' + method + ': maxWait must ' +
-                                    'be number or undefined.');
+                                'be number or undefined. Found: ' + maxWait);
         }
 
         waitTime = Math.random() * maxWait;
@@ -27015,7 +26948,7 @@ if (!Array.prototype.indexOf) {
         }
         else {
             throw new TypeError('GameTimer.fire: h must be function, string ' +
-                                'or object.');
+                                'or object. Found: ' + h);
         }
     };
 
@@ -27056,7 +26989,7 @@ if (!Array.prototype.indexOf) {
         }
 
         // Remember time of start (used by this.pause to compute remaining time)
-        this.updateStart = (new Date()).getTime();
+        this.updateStart = J.now();
 
         // Fires the event immediately if time is zero.
         // Double check necessary in strict mode.
@@ -27167,7 +27100,7 @@ if (!Array.prototype.indexOf) {
             }
             else {
                 // Save the difference of time left.
-                timestamp = (new Date()).getTime();
+                timestamp = J.now();
                 this.updateRemaining =
                     this.update - (timestamp - this.updateStart);
             }
@@ -27212,7 +27145,7 @@ if (!Array.prototype.indexOf) {
 
         this.startPaused = false;
 
-        this.updateStart = (new Date()).getTime();
+        this.updateStart = J.now();
 
         that = this;
         // Run rest of this "update" interval:
@@ -27376,12 +27309,13 @@ if (!Array.prototype.indexOf) {
         if ('undefined' === typeof sync) return this.stagerSync;
         if ('boolean' !== typeof sync) {
             throw new TypeError('GameTimer.syncWithStager: sync must be ' +
-                                'boolean or undefined.');
+                                'boolean or undefined. Found: ' + sync);
         }
         if (property) {
             if ('string' !== typeof property) {
                 throw new TypeError('GameTimer.syncWithStager: property ' +
-                                    'must be string or undefined.');
+                                    'must be string or undefined. Found: ' +
+                                    property);
             }
             this.setStagerProperty(property);
         }
@@ -27450,7 +27384,7 @@ if (!Array.prototype.indexOf) {
         checkDestroyed(this, 'setStagerProperty');
         if ('string' === typeof property) {
             throw new TypeError('GameTimer.setStageProperty: property must ' +
-                                'be string.');
+                                'be string. Found: ' + property);
         }
         this.stagerProperty = property;
     };
@@ -27570,7 +27504,7 @@ if (!Array.prototype.indexOf) {
         that.status = GameTimer.RUNNING;
         that.timePassed += that.update;
         that.timeLeft -= that.update;
-        that.updateStart = (new Date()).getTime();
+        that.updateStart = J.now();
         // Fire custom hooks from the latest to the first if any.
         for (i = that.hooks.length; i > 0; i--) {
             that.fire(that.hooks[(i-1)]);
@@ -31316,16 +31250,11 @@ if (!Array.prototype.indexOf) {
         this.events.ng.on('DONE', function() {
             // Execute done handler before updating stage.
             var stageLevel;
-
             stageLevel = node.game.getStageLevel();
 
             // TODO check >=.
-            if (stageLevel >= stageLevels.PLAYING) {
-                done();
-            }
-            else {
-                node.game.willBeDone = true;
-            }
+            if (stageLevel >= stageLevels.PLAYING) done();
+            else node.game.willBeDone = true;
         });
 
         /**
@@ -32461,7 +32390,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # GameWindow
- * Copyright(c) 2017 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * API to interface nodeGame with the browser window
@@ -32486,14 +32415,9 @@ if (!Array.prototype.indexOf) {
     var CB_EXECUTED, WIN_LOADING, lockedUpdate;
 
     J = node.JSUS;
-    if (!J) {
-        throw new Error('GameWindow: JSUS object not found. Aborting.');
-    }
-
+    if (!J) throw new Error('GameWindow: JSUS not found. Aborting.');
     DOM = J.get('DOM');
-    if (!DOM) {
-        throw new Error('GameWindow: JSUS DOM object not found. Aborting.');
-    }
+    if (!DOM) throw new Error('GameWindow: JSUS=>DOM not found. Aborting.');
 
     constants = node.constants;
     windowLevels = constants.windowLevels;
@@ -32712,9 +32636,9 @@ if (!Array.prototype.indexOf) {
         /**
          * ### GameWindow.defaultHeaderPosition
          *
-         * The default header position. 'left'.
+         * The default header position. 'top'.
          */
-        this.defaultHeaderPosition = 'left';
+        this.defaultHeaderPosition = 'top';
 
         /**
          * ### GameWindow.conf
@@ -33036,14 +32960,13 @@ if (!Array.prototype.indexOf) {
      */
     GameWindow.prototype.setStateLevel = function(level) {
         if ('string' !== typeof level) {
-            throw new TypeError('GameWindow.setStateLevel: ' +
-                                'level must be string.');
+            throw new TypeError('GameWindow.setStateLevel: level must ' +
+                                'be string. Found: ' + level);
         }
         if ('undefined' === typeof windowLevels[level]) {
             throw new Error('GameWindow.setStateLevel: unrecognized level: ' +
-                            level + '.');
+                            level);
         }
-
         this.stateLevel = windowLevels[level];
     };
 
@@ -33085,12 +33008,12 @@ if (!Array.prototype.indexOf) {
      */
     GameWindow.prototype.setScreenLevel = function(level) {
         if ('string' !== typeof level) {
-            throw new TypeError('GameWindow.setScreenLevel: ' +
-                                'level must be string.');
+            throw new TypeError('GameWindow.setScreenLevel: level must ' +
+                                'be string. Found: ' + level);
         }
         if ('undefined' === typeof screenLevels[level]) {
             throw new Error('GameWindow.setScreenLevel: unrecognized level: ' +
-                            level + '.');
+                            level);
         }
 
         this.screenState = screenLevels[level];
@@ -33242,27 +33165,32 @@ if (!Array.prototype.indexOf) {
      */
     GameWindow.prototype.generateFrame = function(root, frameName, force) {
         var iframe;
-        if (!force && this.frameElement) {
-            throw new Error('GameWindow.generateFrame: a frame element is ' +
-                            'already existing. It cannot be duplicated.');
+        if (this.frameElement) {
+            if (!force) {
+                throw new Error('GameWindow.generateFrame: frame is ' +
+                                'already existing. Use force to regenerate.');
+            }
+            this.destroyFrame();
         }
 
         root = root || this.frameRoot || document.body;
 
         if (!J.isElement(root)) {
-            throw new Error('GameWindow.generateFrame: invalid root element.');
+            throw new Error('GameWindow.generateFrame: root must be ' +
+                            'undefined or HTMLElement. Found: ' + root);
         }
 
         frameName = frameName || 'ng_mainframe';
 
-        if ('string' !== typeof frameName) {
+        if ('string' !== typeof frameName || frameName.trim() === '') {
             throw new Error('GameWindow.generateFrame: frameName must be ' +
-                            'string.');
+                            'undefined or a non-empty string. Found: ' +
+                            frameName);
         }
 
         if (document.getElementById(frameName)) {
-            throw new Error('GameWindow.generateFrame: frameName must be ' +
-                            'unique.');
+            throw new Error('GameWindow.generateFrame: frameName is not ' +
+                            'unique in DOM: ' + frameName);
         }
 
         iframe = W.addIFrame(root, frameName);
@@ -33274,9 +33202,7 @@ if (!Array.prototype.indexOf) {
 
         this.setFrame(iframe, frameName, root);
 
-        if (this.frameElement) {
-            adaptFrame2HeaderPosition(this);
-        }
+        if (this.frameElement) adaptFrame2HeaderPosition(this);
 
         // Emit event.
         node.events.ng.emit('FRAME_GENERATED', iframe);
@@ -33284,31 +33210,67 @@ if (!Array.prototype.indexOf) {
         return iframe;
     };
 
-    // generate info panel
-    // and return the object
-    GameWindow.prototype.generateInfoPanel = function() {
-        // return info panel also add it to the html
-        // create a reference inside game window
-        // infoPanel (this)
-
+    /**
+     * ### GameWindow.generateInfoPanel
+     *
+     * Appends a configurable div element at to "top" of the page
+     *
+     * @param {Element} root Optional. The HTML element to which the info
+     *   panel will be appended. Default:
+     *
+     *   - above the main frame, or
+     *   - below the header, or
+     *   - inside _documents.body_.
+     *
+     * @param {string} frameName Optional. The name of the iframe. Default:
+     *   'ng_mainframe'
+     * @param {boolean} force Optional. Will create the frame even if an
+     *   existing one is found. Default: FALSE
+     *
+     * @return {InfoPanel} A reference to the InfoPanel object
+     *
+     * @see GameWindow.infoPanel
+     *
+     * @emit INFOPANEL_GENERATED
+     */
+    GameWindow.prototype.generateInfoPanel = function(root, options, force) {
         var infoPanelDiv;
 
-        this.infoPanel = new node.InfoPanel({});
+        if (this.infoPanel) {
+            if (!force) {
+                throw new Error('GameWindow.generateInfoPanel: info panel is ' +
+                                'already existing. Use force to regenerate.');
+            }
+            else {
+                this.infoPanel.destroy();
+                this.infoPanel = null;
+            }
+        }
+        options = options || {};
+
+        this.infoPanel = new node.InfoPanel(options);
         infoPanelDiv = this.infoPanel.infoPanelDiv;
 
-        if (this.frameElement) {
+        root = options.root;
+        if (root) {
+            if (!J.isElement(root)) {
+                throw new Error('GameWindow.generateInfoPanel: root must be ' +
+                                'undefined or HTMLElement. Found: ' + root);
+            }
+            root.appendChild(infoPanelDiv);
+        }
+        else if (this.frameElement) {
             document.body.insertBefore(infoPanelDiv, this.frameElement);
         }
         else if (this.headerElement) {
-            insertAfter(this.headerElement, infoPanelDiv);
+           J.insertAfter(this.headerElement, infoPanelDiv);
         }
         else {
             document.body.appendChild(infoPanelDiv);
         }
 
-        function insertAfter(referenceNode, newNode) {
-            referenceNode.parentNode.insertBefore(newNode, referenceNode.nextElementSibling);
-        }
+        // Emit event.
+        node.events.ng.emit('INFOPANEL_GENERATED', this.infoPanel);
 
         return this.infoPanel;
     };
@@ -33328,13 +33290,16 @@ if (!Array.prototype.indexOf) {
      */
     GameWindow.prototype.setFrame = function(iframe, iframeName, root) {
         if (!J.isElement(iframe)) {
-            throw new Error('GameWindow.setFrame: iframe must be HTMLElement.');
+            throw new TypeError('GameWindow.setFrame: iframe must be ' +
+                                'HTMLElement. Found: ' + iframe);
         }
         if ('string' !== typeof iframeName) {
-            throw new Error('GameWindow.setFrame: iframeName must be string.');
+            throw new TypeError('GameWindow.setFrame: iframeName must be ' +
+                                'string. Found: ' + iframeName);
         }
         if (!J.isElement(root)) {
-            throw new Error('GameWindow.setFrame: invalid root element.');
+            throw new TypeError('GameWindow.setFrame: root must be ' +
+                                'HTMLElement. Found: ' + root);
         }
 
         this.frameRoot = root;
@@ -33419,35 +33384,39 @@ if (!Array.prototype.indexOf) {
      *   _document.lastElementChild_
      * @param {string} headerName Optional. The name (id) of the header.
      *   Default: 'ng_header'
-     * @param {boolean} force Optional. Will create the header even if an
-     *   existing one is found. Default: FALSE
+     * @param {boolean} force Optional. Destroys the existing header,
+     *   if found. Default: FALSE
      *
      * @return {Element} The header element
      */
     GameWindow.prototype.generateHeader = function(root, headerName, force) {
         var header;
 
-        if (!force && this.headerElement) {
-            throw new Error('GameWindow.generateHeader: a header element is ' +
-                            'already existing. It cannot be duplicated.');
+        if (this.headerElement) {
+            if (!force) {
+                throw new Error('GameWindow.generateHeader: header is ' +
+                                'already existing. Use force to regenerate.');
+            }
+            this.destroyHeader();
         }
 
         root = root || document.body || document.lastElementChild;
 
         if (!J.isElement(root)) {
-            throw new Error('GameWindow.generateHeader: invalid root element.');
+            throw new Error('GameWindow.generateHeader: root must be ' +
+                            'undefined or HTMLElement. Found: ' + root);
         }
 
         headerName = headerName || 'ng_header';
 
         if ('string' !== typeof headerName) {
             throw new Error('GameWindow.generateHeader: headerName must be ' +
-                            'string.');
+                            'string. Found: ' + headerName);
         }
 
         if (document.getElementById(headerName)) {
-            throw new Error('GameWindow.generateHeader: headerName must be ' +
-                            'unique.');
+            throw new Error('GameWindow.generateHeader: headerName is not ' +
+                            'unique in DOM: ' + headerName);
         }
 
         header = this.addElement('div', root, headerName);
@@ -33485,7 +33454,7 @@ if (!Array.prototype.indexOf) {
         var validPositions, pos, oldPos;
         if ('string' !== typeof position) {
             throw new TypeError('GameWindow.setHeaderPosition: position ' +
-                                'must be string.');
+                                'must be string. Found: ' + position);
         }
         pos = position.toLowerCase();
 
@@ -33494,15 +33463,15 @@ if (!Array.prototype.indexOf) {
 
         // Map: position - css class.
         validPositions = {
-            'top': 'ng_header_position-horizontal-t',
-            'bottom': 'ng_header_position-horizontal-b',
-            'right': 'ng_header_position-vertical-r',
-            'left': 'ng_header_position-vertical-l'
+            top: 'ng_header_position-horizontal-t',
+            bottom: 'ng_header_position-horizontal-b',
+            right: 'ng_header_position-vertical-r',
+            left: 'ng_header_position-vertical-l'
         };
 
         if ('undefined' === typeof validPositions[pos]) {
             node.err('GameWindow.setHeaderPosition: invalid header ' +
-                     'position: ' + pos  + '.');
+                     'position: ' + pos);
             return;
         }
         if (!this.headerElement) {
@@ -33529,30 +33498,32 @@ if (!Array.prototype.indexOf) {
      *
      * Sets the new header element and update related references
      *
-     * @param {Element} header The new header
+     * @param {HTMLElement} header The new header
      * @param {string} headerName The name of the header
-     * @param {Element} root The HTML element to which the header is appended
+     * @param {HTMLElement} root The element to which the header is appended
      *
-     * @return {Element} The new header
+     * @return {HTMLElement} The header
      *
      * @see GameWindow.generateHeader
      */
     GameWindow.prototype.setHeader = function(header, headerName, root) {
         if (!J.isElement(header)) {
             throw new Error(
-                'GameWindow.setHeader: header must be HTMLElement.');
+                'GameWindow.setHeader: header must be HTMLElement. Found: ' +
+                    header);
         }
         if ('string' !== typeof headerName) {
-            throw new Error('GameWindow.setHeader: headerName must be string.');
+            throw new Error('GameWindow.setHeader: headerName must be ' +
+                            'string. Found: ' + headerName);
         }
         if (!J.isElement(root)) {
-            throw new Error('GameWindow.setHeader: invalid root element.');
+            throw new Error('GameWindow.setHeader: root must be ' +
+                            'HTMLElement. Found: ' + root);
         }
 
         this.headerElement = header;
         this.headerName = headerName;
         this.headerRoot = root;
-
 
         // Emit event.
         node.events.ng.emit('HEADER_GENERATED', header);
@@ -33657,11 +33628,11 @@ if (!Array.prototype.indexOf) {
     GameWindow.prototype.initLibs = function(globalLibs, frameLibs) {
         if (globalLibs && !J.isArray(globalLibs)) {
             throw new TypeError('GameWindow.initLibs: globalLibs must be ' +
-                                'array or undefined.');
+                                'array or undefined. Found: ' + globalLibs);
         }
         if (frameLibs && 'object' !== typeof frameLibs) {
             throw new TypeError('GameWindow.initLibs: frameLibs must be ' +
-                                'object or undefined.');
+                                'object or undefined. Found: ' + frameLibs);
         }
         if (!globalLibs && !frameLibs) {
             throw new Error('GameWindow.initLibs: frameLibs and frameLibs ' +
@@ -33689,8 +33660,8 @@ if (!Array.prototype.indexOf) {
         var iframe, iframeName;
         uri = uri || '/pages/testpage.htm';
         if ('string' !== typeof uri) {
-            throw new TypeError('GameWindow.precacheTest: uri must string or ' +
-                                'undefined.');
+            throw new TypeError('GameWindow.precacheTest: uri must string ' +
+                                'or undefined. Found: ' + uri);
         }
         iframe = document.createElement('iframe');
         iframe.style.display = 'none';
@@ -33750,11 +33721,11 @@ if (!Array.prototype.indexOf) {
 
         if (!J.isArray(uris)) {
             throw new TypeError('GameWindow.preCache: uris must be string ' +
-                                'or array.');
+                                'or array. Found: ' + uris);
         }
         if (callback && 'function' !== typeof callback) {
             throw new TypeError('GameWindow.preCache: callback must be ' +
-                                'function or undefined.');
+                                'function or undefined. Found: ' + callback);
         }
 
         // Don't preload if an empty array is passed.
@@ -33945,15 +33916,16 @@ if (!Array.prototype.indexOf) {
         var lastURI;
 
         if ('string' !== typeof uri) {
-            throw new TypeError('GameWindow.loadFrame: uri must be string.');
+            throw new TypeError('GameWindow.loadFrame: uri must be ' +
+                                'string. Found: ' + uri);
         }
         if (func && 'function' !== typeof func) {
             throw new TypeError('GameWindow.loadFrame: func must be function ' +
-                                'or undefined.');
+                                'or undefined. Found: ' + func);
         }
         if (opts && 'object' !== typeof opts) {
             throw new TypeError('GameWindow.loadFrame: opts must be object ' +
-                                'or undefined.');
+                                'or undefined. Found: ' + opts);
         }
         opts = opts || {};
 
@@ -33998,7 +33970,7 @@ if (!Array.prototype.indexOf) {
                 }
                 else {
                     throw new Error('GameWindow.loadFrame: unkown cache ' +
-                                    'load mode: ' + opts.cache.loadMode + '.');
+                                    'load mode: ' + opts.cache.loadMode);
                 }
             }
             if (opts.cache.storeMode) {
@@ -34016,8 +33988,7 @@ if (!Array.prototype.indexOf) {
                 }
                 else {
                     throw new Error('GameWindow.loadFrame: unkown cache ' +
-                                    'store mode: ' + opts.cache.storeMode +
-                                    '.');
+                                    'store mode: ' + opts.cache.storeMode);
                 }
             }
         }
@@ -34025,13 +33996,15 @@ if (!Array.prototype.indexOf) {
         if ('undefined' !== typeof opts.autoParse) {
             if ('object' !== typeof opts.autoParse) {
                 throw new TypeError('GameWindow.loadFrame: opts.autoParse ' +
-                                    'must be object or undefined.');
+                                    'must be object or undefined. Found: ' +
+                                    opts.autoParse);
             }
             if ('undefined' !== typeof opts.autoParsePrefix) {
                 if ('string' !== typeof opts.autoParsePrefix) {
                     throw new TypeError('GameWindow.loadFrame: opts.' +
                                         'autoParsePrefix must be string ' +
-                                        'or undefined.');
+                                        'or undefined. Found: ' +
+                                        opts.autoParsePrefix);
                 }
                 autoParsePrefix = opts.autoParsePrefix;
             }
@@ -34039,7 +34012,8 @@ if (!Array.prototype.indexOf) {
                 if ('string' !== typeof opts.autoParseMod) {
                     throw new TypeError('GameWindow.loadFrame: opts.' +
                                         'autoParseMod must be string ' +
-                                        'or undefined.');
+                                        'or undefined. Found: ' +
+                                        opts.autoParseMod);
                 }
                 autoParseMod = opts.autoParseMod;
             }
@@ -34261,7 +34235,7 @@ if (!Array.prototype.indexOf) {
     GameWindow.prototype.setUriPrefix = function(uriPrefix) {
         if (uriPrefix !== null && 'string' !== typeof uriPrefix) {
             throw new TypeError('GameWindow.setUriPrefix: uriPrefix must be ' +
-                                'string or null.');
+                                'string or null. Found: ' + uriPrefix);
         }
         this.conf.uriPrefix = this.uriPrefix = uriPrefix;
     };
@@ -35109,36 +35083,36 @@ if (!Array.prototype.indexOf) {
             W.init(node.conf.window);
         });
 
-        node.on('HIDE', function(idOrObj) {
-            var el;
-            console.log('***GameWindow.on.HIDE is deprecated. Use ' +
-                        'GameWindow.hide() instead.***');
-            el = getElement(idOrObj, 'GameWindow.on.HIDE');
-            if (el) el.style.display = 'none';
-        });
-
-        node.on('SHOW', function(idOrObj) {
-            var el;
-            console.log('***GameWindow.on.SHOW is deprecated. Use ' +
-                        'GameWindow.show() instead.***');
-            el = getElement(idOrObj, 'GameWindow.on.SHOW');
-            if (el) el.style.display = '';
-        });
-
-        node.on('TOGGLE', function(idOrObj) {
-            var el;
-            console.log('***GameWindow.on.TOGGLE is deprecated. Use ' +
-                        'GameWindow.toggle() instead.***');
-            el = getElement(idOrObj, 'GameWindow.on.TOGGLE');
-            if (el) {
-                if (el.style.display === 'none') {
-                    el.style.display = '';
-                }
-                else {
-                    el.style.display = 'none';
-                }
-            }
-        });
+//         node.on('HIDE', function(idOrObj) {
+//             var el;
+//             console.log('***GameWindow.on.HIDE is deprecated. Use ' +
+//                         'GameWindow.hide() instead.***');
+//             el = getElement(idOrObj, 'GameWindow.on.HIDE');
+//             if (el) el.style.display = 'none';
+//         });
+//
+//         node.on('SHOW', function(idOrObj) {
+//             var el;
+//             console.log('***GameWindow.on.SHOW is deprecated. Use ' +
+//                         'GameWindow.show() instead.***');
+//             el = getElement(idOrObj, 'GameWindow.on.SHOW');
+//             if (el) el.style.display = '';
+//         });
+//
+//         node.on('TOGGLE', function(idOrObj) {
+//             var el;
+//             console.log('***GameWindow.on.TOGGLE is deprecated. Use ' +
+//                         'GameWindow.toggle() instead.***');
+//             el = getElement(idOrObj, 'GameWindow.on.TOGGLE');
+//             if (el) {
+//                 if (el.style.display === 'none') {
+//                     el.style.display = '';
+//                 }
+//                 else {
+//                     el.style.display = 'none';
+//                 }
+//             }
+//         });
 
         // Disable all the input forms found within a given id element.
         node.on('INPUT_DISABLE', function(id) {
@@ -35260,20 +35234,15 @@ if (!Array.prototype.indexOf) {
         }
     }
 
-    function event_STEPPING(text) {
-        text = text || W.waitScreen.defaultTexts.stepping;
-        if (W.isScreenLocked()) {
-            W.waitScreen.updateText(text);
-        }
-        else {
-            W.lockScreen(text);
-        }
+    function event_STEPPING() {
+        var text;
+        text = W.waitScreen.defaultTexts.stepping;
+        if (W.isScreenLocked()) W.waitScreen.updateText(text);
+        else W.lockScreen(text);
     }
 
     function event_PLAYING() {
-        if (W.isScreenLocked()) {
-            W.unlockScreen();
-        }
+        if (W.isScreenLocked()) W.unlockScreen();
     }
 
     function event_PAUSED(text) {
@@ -35529,9 +35498,23 @@ if (!Array.prototype.indexOf) {
     ('undefined' !== typeof window) ? window : module.parent.exports.window
 );
 
+/**
+ * # InfoPanel
+ * Copyright(c) 2017 Stefano Balietti <ste@nodegame.org>
+ * MIT Licensed
+ *
+ * Adds a configurable extra panel at the top of the screen
+ *
+ * InfoPanel is normally placed between header and main frame.
+ *
+ * www.nodegame.org
+ */
 (function(exports, window) {
 
     "use strict";
+
+    var J;
+    J = exports.JSUS;
 
     exports.InfoPanel = InfoPanel;
 
@@ -35539,9 +35522,47 @@ if (!Array.prototype.indexOf) {
         this.init(options || {});
     }
 
+    /**
+     * ### InfoPanel.init
+     *
+     * Inits the Info panel
+     *
+     * @param {object} options Optional. Configuration options.
+     *   Available options (defaults):
+     *
+     *    - 'className': a class name for the info panel div (''),
+     *    - 'isVisible': if TRUE, the info panel is open immediately (false),
+     *    - 'onStep:' an action to perform every new step (null),
+     *    - 'onStage:' an action to perform every new stage (null).
+     */
     InfoPanel.prototype.init = function(options) {
+        var that;
+        options = options || {};
+
         this.infoPanelDiv = document.createElement('div');
         this.infoPanelDiv.id = 'ng_info-panel';
+
+        /**
+         * ### InfoPanel.actionsLog
+         *
+         * Array containing the list of open/close events and a timestamp
+         *
+         * Entries in the actions log are objects: with keys 'create',
+         * 'open', 'close', 'clear', 'destroy' and a timestamp.
+         *
+         * @see InfoPanel.open
+         * @see InfoPanel.close
+         */
+        this.actionsLog = [];
+
+        /**
+         * ### InfoPanel._buttons
+         *
+         * Collection of buttons created via `createToggleButton` method
+         *
+         * @see InfoPanel.createToggleButton
+         */
+        this._buttons = [];
 
         /**
          * ### InfoPanel.className
@@ -35567,7 +35588,7 @@ if (!Array.prototype.indexOf) {
          *
          * Boolean indicating visibility of info panel div
          *
-         * Default: false
+         * Default: FALSE
          */
         if ('undefined' === typeof options.isVisible) {
             this.isVisible = false;
@@ -35581,97 +35602,205 @@ if (!Array.prototype.indexOf) {
                                 'Found: ' + options.isVisible);
         }
 
-        if (!this.isVisible) {
-            this.infoPanelDiv.style.display = 'none';
+        this.infoPanelDiv.style.display = this.isVisible ? 'block' : 'none';
+        this.actionsLog.push({ created: J.now() });
+
+        /**
+         * ### InfoPanel.onStep
+         *
+         * Performs an action ('clear', 'open', 'close') at every new step
+         *
+         * Default: null
+         */
+        if ('undefined' !== typeof options.onStep) {
+            if ('open' === options.onStep ||
+                'close' === options.onStep ||
+                'clear' ===  options.onStep) {
+
+                this.onStep = options.onStep;
+            }
+            else {
+                throw new TypeError('InfoPanel constructor: options.onStep ' +
+                                    'must be string "open", "close", "clear" ' +
+                                    'or undefined. Found: ' + options.onStep);
+            }
         }
         else {
-            this.infoPanelDiv.style.display = 'block';
+            options.onStep = null;
         }
 
         /**
-         * ### InfoPanel.clearPattern
+         * ### InfoPanel.onStage
          *
-         * String indicating when Info Panel should automatically clear:
-         * either: 'STEP', 'STAGE', 'NONE'
-         * (after each step, after each stage, or entirely manually)
+         * Performs an action ('clear', 'open', 'close') at every new stage
          *
-         * Default: 'NONE'
+         * Default: null
          */
-        if ('undefined' === typeof options.clearPattern) {
-            this.clearPattern = 'NONE';
-        }
-        else if ('string' === typeof options.clearPattern &&
-                ['STEP', 'STAGE', 'NONE'].reduce(function(acc, value) {
-                  return options.clearPattern === value;
-                }, false)) {
-            this.clearPattern = options.clearPattern;
+        if ('undefined' !== typeof options.onStage) {
+            if ('open' === options.onStage ||
+                'close' === options.onStage ||
+                'clear' ===  options.onStage) {
+
+                this.onStage = options.onStage;
+            }
+            else {
+                throw new TypeError('InfoPanel constructor: options.onStage ' +
+                                    'must be string "open", "close", "clear" ' +
+                                    'or undefined. Found: ' + options.onStage);
+            }
         }
         else {
-            throw new TypeError('InfoPanel constructor: options.clearPattern ' +
-                                'must be string "STEP", "STAGE", "NONE", ' +
-                                'or undefined. ' +
-                                'Found: ' + options.clearPattern);
+            options.onStage = null;
         }
 
+        if (this.onStep || this.onStage) {
+            that = this;
+            node.events.game.on('STEPPING', function(curStep, newStep) {
+                var newStage;
+                newStage = curStep.stage !== newStep.stage;
+
+                if ((that.onStep === 'close' && that.isVisible) ||
+                    (newStage && that.onStage === 'close')) {
+
+                    that.close();
+                }
+                else if (that.onStep === 'open' ||
+                         (newStage && that.onStage === 'open')) {
+
+                    that.open();
+                }
+                else if (that.onStep === 'clear' ||
+                         (newStage && that.onStage === 'clear')) {
+
+                    that.clear();
+                }
+            });
+        }
     };
 
+    /**
+     * ### InfoPanel.clear
+     *
+     * Clears the content of the Info Panel
+     */
     InfoPanel.prototype.clear = function() {
-        return this.infoPanelDiv.innerHTML = '';
+        this.infoPanelDiv.innerHTML = '';
+        this.actionsLog.push({ clear: J.now() });
     };
 
+    /**
+     * ### InfoPanel.getPanel
+     *
+     * Returns the HTML element of the panel (div)
+     *
+     * @return {HTMLElement} The Info Panel
+     *
+     * @see InfoPanel.infoPanelDiv
+     */
     InfoPanel.prototype.getPanel = function() {
         return this.infoPanelDiv;
     };
 
+    /**
+     * ### InfoPanel.destroy
+     *
+     * Removes the Info Panel from the DOM and the internal references to it
+     *
+     * @see InfoPanel.infoPanelDiv
+     * @see InfoPanel._buttons
+     */
     InfoPanel.prototype.destroy = function() {
+        var i, len;
         if (this.infoPanelDiv.parentNode) {
             this.infoPanelDiv.parentNode.removeChild(this.infoPanelDiv);
         }
-
+        this.actionsLog.push({ destroy: J.now() });
         this.infoPanelDiv = null;
+        i = -1, len = this._buttons.length;
+        for ( ; ++i < len ; ) {
+            if (this._buttons[i].parentNode) {
+                this._buttons[i].parentNode.removeChild(this._buttons[i]);
+            }
+        }
     };
 
-    InfoPanel.prototype.bindListener = function() {
-        // first thing in body of page ? or below header ? or above main frame ?
-        // STEPPING -- currently moving step
-        // node.game.getRound('remaining')  === 0 or 1 that means its the last step of a stage
-    };
-
+    /**
+     * ### InfoPanel.toggle
+     *
+     * Toggles the visibility of the Info Panel
+     *
+     * @see InfoPanel.open
+     * @see InfoPanel.close
+     */
     InfoPanel.prototype.toggle = function() {
-      this.isVisible = !this.isVisible;
-
-      if (this.isVisible) {
-        this.open();
-      }
-      else {
-        this.close();
-      }
+        if (this.isVisible) this.close();
+        else this.open();
     };
 
+    /**
+     * ### InfoPanel.open
+     *
+     * Opens the Info Panel (if not already open)
+     *
+     * @see InfoPanel.toggle
+     * @see InfoPanel.close
+     * @see InfoPanel.isVisible
+     */
     InfoPanel.prototype.open = function() {
-      this.infoPanelDiv.style.display = 'block';
-      this.isVisible = true;
+        if (this.isVisible) return;
+        this.actionsLog.push({ open: J.now() });
+        this.infoPanelDiv.style.display = 'block';
+        this.isVisible = true;
     };
 
+    /**
+     * ### InfoPanel.close
+     *
+     * Closes the Info Panel (if not already closed)
+     *
+     * @see InfoPanel.toggle
+     * @see InfoPanel.open
+     * @see InfoPanel.isVisible
+     */
     InfoPanel.prototype.close = function() {
-      this.infoPanelDiv.style.display = 'none';
-      this.isVisible = false;
+        if (!this.isVisible) return;
+        this.actionsLog.push({ close: J.now() });
+        this.infoPanelDiv.style.display = 'none';
+        this.isVisible = false;
     };
 
+    /**
+     * ### InfoPanel.createToggleButton
+     *
+     * Creates an HTML button with a listener to toggle the InfoPanel
+     *
+     * Adds the button to the internal collection `_buttons`. All buttons
+     * are destroyed if the Info Panel is destroyed.
+     *
+     * @return {HTMLElement} button A button that toggles info panel
+     *
+     * @see InfoPanel._buttons
+     * @see InfoPanel.toggle
+     */
     InfoPanel.prototype.createToggleButton = function(buttonLabel) {
-        // return a button that toggles info panel
-        var button;
-        var that;
+        var that, button;
 
-        that = this;
-
+        buttonLabel = buttonLabel || 'Toggle Info Panel';
+        if ('string' !== typeof buttonLabel || buttonLabel.trim() === '') {
+            throw new Error('InfoPanel.createToggleButton: buttonLabel ' +
+                            'must be undefined or a non-empty string. Found: ' +
+                            buttonLabel);
+        }
         button = document.createElement('button');
         button.className = 'btn btn-lg btn-warning';
-        button.innerHTML = buttonLabel;
+        button.innerHTML = buttonLabel ;
 
+        that = this;
         button.onclick = function() {
-          that.toggle();
+            that.toggle();
         };
+
+        this._buttons.push(button);
 
         return button;
     };
@@ -40393,7 +40522,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # ChernoffFacesSimple
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Displays multidimensional data in the shape of a Chernoff Face.
@@ -40453,8 +40582,6 @@ if (!Array.prototype.indexOf) {
 
         this.features = null;
         this.controls = null;
-
-        this.init(this.options);
     }
 
     ChernoffFaces.prototype.init = function(options) {
@@ -44251,7 +44378,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Controls
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Creates and manipulates a set of forms
@@ -44325,8 +44452,6 @@ if (!Array.prototype.indexOf) {
          * Flag to indicate whether the list has changed
          */
         this.hasChanged = false;
-
-        this.init(options);
     }
 
     Controls.prototype.add = function(root, id, attributes) {
@@ -45147,7 +45272,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # DoneButton
- * Copyright(c) 2016 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Creates a button that if pressed emits node.done()
@@ -45217,8 +45342,6 @@ if (!Array.prototype.indexOf) {
             res = node.done();
             if (res) that.disable();
         };
-
-        this.init(options);
     }
 
     // ## DoneButton methods
@@ -45506,7 +45629,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # EmailForm
- * Copyright(c) 2017 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Displays a form to input email
@@ -45516,8 +45639,6 @@ if (!Array.prototype.indexOf) {
 (function(node) {
 
     "use strict";
-
-    var J = node.JSUS;
 
     node.widgets.register('EmailForm', EmailForm);
 
@@ -45913,7 +46034,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # EndScreen
- * Copyright(c) 2017 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Creates an interface to display final earnings, exit code, etc.
@@ -46142,8 +46263,6 @@ if (!Array.prototype.indexOf) {
          * null initially, element added on append()
          */
         this.endScreenHTML = null;
-
-        this.init();
     }
 
     // Implements the Widget.append method.
@@ -47046,6 +47165,8 @@ if (!Array.prototype.indexOf) {
  *
  * Creates a table that renders in each cell data captured by fired events
  *
+ * TODO: needs refactoring
+ *
  * www.nodegame.org
  */
 (function(node) {
@@ -47076,7 +47197,7 @@ if (!Array.prototype.indexOf) {
         JSUS: {}
     };
 
-    function GameTable (options) {
+    function GameTable(options) {
         this.options = options;
         this.id = options.id;
         this.name = options.name || GameTable.name;
@@ -47084,8 +47205,6 @@ if (!Array.prototype.indexOf) {
         this.root = null;
         this.gtbl = null;
         this.plist = null;
-
-        this.init(this.options);
     }
 
     GameTable.prototype.init = function(options) {
@@ -47208,6 +47327,8 @@ if (!Array.prototype.indexOf) {
  *
  * Manages and displays information about languages available and selected
  *
+ * @TODO: bubble event in case of buttons (now there are many listeners).
+ *
  * www.nodegame.org
  */
 (function(node) {
@@ -47220,7 +47341,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    LanguageSelector.version = '0.5.0';
+    LanguageSelector.version = '0.6.0';
     LanguageSelector.description = 'Display information about the current ' +
         'language and allows to change language.';
     LanguageSelector.title = 'Language';
@@ -47331,9 +47452,25 @@ if (!Array.prototype.indexOf) {
         this.usingButtons = true;
 
         /**
+         * ## LanguageSelector.updatePlayer
+         *
+         * Specifies when updating the player
+         *
+         * Available options:
+         *
+         *   - false: alias for 'never',
+         *   - 'never': never notifies,
+         *   - 'onselect': each time a selection is made,
+         *   - 'ondone': when current step is done.
+         *
+         * Default: 'ondone'
+         */
+        this.updatePlayer = 'ondone';
+
+        /**
          * ## LanguageSelector.setUriPrefix
          *
-         * If TRUE, the Window URI prefix is updated when the language is set
+         * If TRUE, the Window URI prefix is updated when the player is updated
          *
          * Default: TRUE.
          *
@@ -47344,7 +47481,7 @@ if (!Array.prototype.indexOf) {
         /**
          * ## LanguageSelector.notifyServer
          *
-         * If TRUE, a message is sent to the server when the language is set
+         * If TRUE, a message is sent to the server when the player is updated
          *
          * Default: TRUE.
          */
@@ -47428,15 +47565,17 @@ if (!Array.prototype.indexOf) {
                 }
                 that.displayForm.appendChild(that.displaySelection);
                 that.displayForm.onchange = function() {
-                    that.setLanguage(that.displaySelection.value);
+                    that.setLanguage(that.displaySelection.value,
+                                     that.updatePlayer === 'onselect');
                 };
             }
 
             that.loadingDiv.style.display = 'none';
             that.languagesLoaded = true;
 
-            // Initialize to English.
-            that.setLanguage('en');
+            // Initialize with current value inside player object,
+            // or default to English. Does not update the player object yet.
+            that.setLanguage(node.player.lang.shortName || 'en', false);
 
             // Extension point.
             if (that.onLangCallbackExtension) {
@@ -47444,9 +47583,9 @@ if (!Array.prototype.indexOf) {
                 that.onLangCallbackExtension = null;
             }
 
-            function makeSetLanguageOnClick(langName) {
+            function makeSetLanguageOnClick(langStr) {
                 return function() {
-                    that.setLanguage(langName);
+                    that.setLanguage(langStr, that.updatePlayer === 'onselect');
                 };
             }
         };
@@ -47481,7 +47620,28 @@ if (!Array.prototype.indexOf) {
         }
 
         if ('undefined' !== typeof this.options.notifyServer) {
-            this.notifyServer = !!this.options.notifyServer;
+            if (false === this.options.notifyServer) {
+                this.options.notifyServer = 'never';
+            }
+            else if ('string' === typeof this.options.notifyServer) {
+                if ('never' === this.options.notifyServer ||
+                    'onselect' === this.options.notifyServer ||
+                    'ondone' === this.options.notifyServer) {
+
+                    this.notifyServer = this.options.notifyServer;
+                }
+                else {
+                    throw new Error('LanguageSelector.init: invalid value ' +
+                                    'for notifyServer: "' +
+                                    this.options.notifyServer + '". Valid ' +
+                                    'values: "never","onselect", "ondone".');
+                }
+            }
+            else {
+                throw new Error('LanguageSelector.init: options.notifyServer ' +
+                                'must be ' +
+                                this.options.notifyServer);
+            }
         }
 
         if ('undefined' !== typeof this.options.setUriPrefix) {
@@ -47508,13 +47668,16 @@ if (!Array.prototype.indexOf) {
     /**
      * ### LanguageSelector.setLanguage
      *
-     * Sets language and updates view
+     * Sets language within the widget and globally and updates the display
      *
      * @param {string} langName shortName of language to be set
+     * @param {boolean} updatePlayer If FALSE, the language is set only
+     *   inside the widget, and no changes are made to the player object.
+     *   Default: TRUE
      *
      * @see NodeGameClient.setLanguage
      */
-    LanguageSelector.prototype.setLanguage = function(langName) {
+    LanguageSelector.prototype.setLanguage = function(langName, updatePlayer) {
 
         if (this.usingButtons) {
 
@@ -47543,8 +47706,10 @@ if (!Array.prototype.indexOf) {
         }
 
         // Update node.player.
-        node.setLanguage(this.availableLanguages[this.currentLanguage],
-                         this.setUriPrefix, this.notifyServer);
+        if (updatePlayer !== false) {
+            node.setLanguage(this.availableLanguages[this.currentLanguage],
+                             this.setUriPrefix, this.notifyServer);
+        }
     };
 
     /**
@@ -47577,6 +47742,22 @@ if (!Array.prototype.indexOf) {
     LanguageSelector.prototype.loadLanguages = function(options) {
         if (!this.languagesLoaded) this.updateAvalaibleLanguages(options);
         else if (options && options.callback) options.callback();
+    };
+
+    /**
+     * ### LanguageSelector.listeners
+     *
+     * Implements Widget.listeners
+     */
+    LanguageSelector.prototype.listeners = function() {
+        var that;
+        that = this;
+        node.events.step.on('REALLY_DONE', function() {
+            if (that.updatePlayer === 'ondone') {
+                node.setLanguage(that.availableLanguages[that.currentLanguage],
+                                 that.setUriPrefix, that.notifyServer);
+            }
+        });
     };
 
 })(node);
@@ -47655,8 +47836,6 @@ if (!Array.prototype.indexOf) {
          * Precision of floating point number to display
          */
         this.precision = 2;
-
-        this.init(options);
     }
 
     // ## MoneyTalks methods
@@ -48497,7 +48676,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Requirements
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Checks a list of requirements and displays the results
@@ -50879,7 +51058,7 @@ if (!Array.prototype.indexOf) {
         options = options || {};
         if ('object' !== typeof options) {
             throw new TypeError('VisualTimer.init: options must be ' +
-                                'object or undefined');
+                                'object or undefined. Found: ' + options);
         }
 
         // Important! Do not modify directly options, because it might
@@ -51482,7 +51661,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # WaitingRoom
- * Copyright(c) 2017 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Display the number of connected / required players to start a game
@@ -51499,7 +51678,7 @@ if (!Array.prototype.indexOf) {
     node.widgets.register('WaitingRoom', WaitingRoom);
     // ## Meta-data
 
-    WaitingRoom.version = '1.1.1';
+    WaitingRoom.version = '1.2.0';
     WaitingRoom.description = 'Displays a waiting room for clients.';
 
     WaitingRoom.title = 'Waiting Room';
@@ -51549,7 +51728,37 @@ if (!Array.prototype.indexOf) {
         // #### roomClosed
         roomClosed: '<span style="color: red"> The ' +
             'waiting room is <strong>CLOSED</strong>. You have been ' +
-            'disconnected. Please try again later.</span><br><br>'
+            'disconnected. Please try again later.</span><br><br>',
+
+        // #### tooManyPlayers
+        tooManyPlayers: function(widget, numberOfGameSlots) {
+            return 'There are more players in this waiting room ' +
+                'than there are playslots in the game. Only ' +
+                 numberOfGameSlots + ' players will be selected ' +
+                'to play the game.';
+        },
+
+        // #### notSelectedClosed
+        notSelectedClosed: '<h3 align="center">' +
+            '<span style="color: red">Unfortunately, you were ' +
+            '<strong>not selected</strong> to join the game this time. ' +
+            'Thank you for your participation.</span></h3><br><br>',
+
+        // #### notSelectedOpen
+        notSelectedOpen: '<h3 align="center">' +
+            '<span style="color: red">Unfortunately, you were ' +
+            '<strong>not selected</strong> to join the game this time, ' +
+            'but you may join the next one.</span><a class="hand" ' +
+            'onclick=javascript:this.parentElement.innerHTML="">' +
+            'Ok, I got it.</a></h3><br><br>' +
+            'Thank you for your participation.</span></h3><br><br>',
+
+        exitCode: function(widget, data) {
+            return '<br>You have been disconnected. ' +
+                ('undefined' !== typeof data.exit ?
+                 ('Please report this exit code: ' + data.exit) : '') +
+                '<br></h3>';
+        }
     };
 
     /**
@@ -51680,28 +51889,28 @@ if (!Array.prototype.indexOf) {
         this.disconnectIfNotSelected = null;
 
         /**
-         * ### WaitingRoom.disconnectText
+         * ### WaitingRoom.texts
          *
-         * Content of `this.bodyDiv.innerHTML` when player is disconnected
+         * Contains all the texts displayed to the players
+         *
+         * @see WaitingRoom.setText
+         * @see WaitingRoom.getText
+         * @see WaitingRoom.setTexts
+         * @see WaitingRoom.getTexts
          */
-        this.disconnectText = null;
+        this.texts = {};
 
         /**
-         * ### WaitingRoom.roomClosedText
+         * ### WaitingRoom.sounds
          *
-         * Content of `this.bodyDiv.innerHTML` when player room is closed
+         * List of custom sounds to play to the players
+         *
+         * @see WaitingRoom.setSound
+         * @see WaitingRoom.getSound
+         * @see WaitingRoom.setSounds
+         * @see WaitingRoom.getSounds
          */
-        this.roomClosedText = null;
-
-        /**
-         * ### WaitingRoom.dispatchSound
-         *
-         * Flag that indicates that a sound should be played before dispatching
-         *
-         * @see WaitingRoom.sounds.dispatch
-         * @see WaitingRoom.alertPlayer
-         */
-        this.dispatchSound = null;
+        this.sounds = {};
     }
 
     // ## WaitingRoom methods
@@ -51722,6 +51931,9 @@ if (!Array.prototype.indexOf) {
      * @param {object} conf Configuration object.
      */
     WaitingRoom.prototype.init = function(conf) {
+
+        console.log('INIT', conf);
+        
         if ('object' !== typeof conf) {
             throw new TypeError('WaitingRoom.init: conf must be object. ' +
                                 'Found: ' + conf);
@@ -51786,19 +51998,6 @@ if (!Array.prototype.indexOf) {
             this.connected = conf.connected;
         }
 
-        if (conf.disconnectText) {
-            if ('string' !== typeof conf.disconnectText) {
-                throw new TypeError('WaitingRoom.init: conf.' +
-                                    'disconnectText must be string or ' +
-                                    'undefined. Found: ' +
-                                    conf.disconnectText);
-            }
-            this.disconnectText = conf.disconnectText;
-        }
-        else {
-            this.disconnectText = WaitingRoom.texts.disconnect;
-        }
-
         if (conf.disconnectIfNotSelected) {
             if ('boolean' !== typeof conf.disconnectIfNotSelected) {
                 throw new TypeError('WaitingRoom.init: ' +
@@ -51811,64 +52010,11 @@ if (!Array.prototype.indexOf) {
             this.disconnectIfNotSelected = false;
         }
 
-        if (conf.dispatchSound) {
-            if ('boolean' !== typeof conf.dispatchSound &&
-                'string' !== typeof conf.dispatchSound) {
-
-                throw new TypeError('WaitingRoom.init: ' +
-                                    'conf.dispatchSound must be boolean, ' +
-                                    'string or undefined. Found: ' +
-                                    conf.dispatchSound);
-            }
-            this.dispatchSound = (true === conf.dispatchSound) ?
-                WaitingRoom.sounds.dispatch : conf.dispatchSound;
-        }
+        // Sounds.
+        this.setSounds(conf.sounds);
 
         // Texts.
-
-        if (conf.notEnoughPlayersText) {
-            if ('string' !== typeof conf.notEnoughPlayersText) {
-
-                throw new TypeError('WaitingRoom.init: ' +
-                                    'conf.notEnoughPlayersText must be ' +
-                                    'string or undefined. Found: ' +
-                                    conf.notEnoughPlayersText);
-            }
-            this.notEnoughPlayersText = conf.notEnoughPlayersText;
-        }
-
-        if (conf.disconnectText) {
-            if ('string' !== typeof conf.disconnectText) {
-
-                throw new TypeError('WaitingRoom.init: ' +
-                                    'conf.disconnectText must be string ' +
-                                    'or undefined. Found: ' +
-                                    conf.disconnectText);
-            }
-            this.disconnectText = conf.disconnectText;
-        }
-
-        if (conf.waitedTooLongText) {
-            if ('string' !== typeof conf.waitedTooLongText) {
-
-                throw new TypeError('WaitingRoom.init: ' +
-                                    'conf.waitedTooLongText must be string ' +
-                                    'or undefined. Found: ' +
-                                    conf.waitedTooLongText);
-            }
-            this.waitedTooLongText = conf.waitedTooLongText;
-        }
-
-        if (conf.roomClosedText) {
-            if ('string' !== typeof conf.roomClosedText) {
-
-                throw new TypeError('WaitingRoom.init: ' +
-                                    'conf.roomClosedText must be string ' +
-                                    'or undefined. Found: ' +
-                                    conf.roomClosedText);
-            }
-            this.roomClosedText = conf.roomClosedText;
-        }
+        this.setTexts(conf.texts);
     };
 
     /**
@@ -51890,7 +52036,7 @@ if (!Array.prototype.indexOf) {
         this.timer = node.widgets.append('VisualTimer', this.timerDiv, {
             milliseconds: this.waitTime,
             timeup: function() {
-                that.bodyDiv.innerHTML = that.waitedTooLongText;
+                that.bodyDiv.innerHTML = that.getText('waitedTooLong');
             },
             update: 1000
         });
@@ -51956,11 +52102,12 @@ if (!Array.prototype.indexOf) {
             this.playerCount.innerHTML = '<span style="color:red">' +
                 this.connected + '</span>' + ' / ' + this.poolSize;
             this.playerCountTooHigh.style.display = '';
-            // TODO: make it parametric like other strings.
-            this.playerCountTooHigh.innerHTML = 'There are more players in ' +
-                'this waiting room than there are playslots in the game. ' +
-                'Only ' + numberOfGameSlots + ' players will be selected to ' +
-                'play the game.';
+
+            // TODO: check here (was a debugger).
+
+            // Update text.
+            this.playerCountTooHigh.innerHTML =
+                this.getText('tooManyPlayers', numberOfGameSlots);
         }
         else {
             this.playerCount.innerHTML = this.connected + ' / ' + this.poolSize;
@@ -52028,54 +52175,40 @@ if (!Array.prototype.indexOf) {
         });
 
         node.on.data('DISPATCH', function(msg) {
-            var data, notSelected, reportExitCode;
+            var data, reportExitCode;
             msg = msg || {};
             data = msg.data || {};
 
-            reportExitCode = '<br>You have been disconnected. ' +
-                ('undefined' !== typeof data.exit ?
-                 ('Please report this exit code: ' + data.exit) : '') +
-                '<br></h3>';
-
+            // Alert player he/she is about to play.
             if (data.action === 'AllPlayersConnected') {
                 that.alertPlayer();
             }
+            // Not selected/no game/etc.
+            else {
+                reportExitCode = that.getText('exitCode', msg.data);
 
-            else if (data.action === 'NotEnoughPlayers') {
-
-                that.bodyDiv.innerHTML = that.notEnoughPlayersText;
-
-                if (that.onTimeout) that.onTimeout(msg.data);
-
-                that.disconnect(that.bodyDiv.innerHTML + reportExitCode);
-            }
-
-            else if (data.action === 'NotSelected') {
-
-                // TODO: make all strings parameteric.
-                notSelected = '<h3 align="center">' +
-                    '<span style="color: red">Unfortunately, you were ' +
-                    '<strong>not selected</strong> to join the game this time';
-
-                if (false === data.shouldDispatchMoreGames ||
-                    that.disconnectIfNotSelected) {
-
-                    that.bodyDiv.innerHTML = notSelected + '. Thank you ' +
-                        'for your participation.</span></h3><br><br>';
-
+                if (data.action === 'NotEnoughPlayers') {
+                    that.bodyDiv.innerHTML = that.getText('notEnoughPlayers');
+                    if (that.onTimeout) that.onTimeout(msg.data);
                     that.disconnect(that.bodyDiv.innerHTML + reportExitCode);
                 }
-                else {
-                    that.msgDiv.innerHTML = notSelected + ', but you ' +
-                        'may join the next one.</span> ' +
-                        '<a class="hand" onclick=' +
-                        'javascript:this.parentElement.innerHTML="">' +
-                        'Ok, I got it.</a></h3><br><br>';
-                }
-            }
+                else if (data.action === 'NotSelected') {
 
-            else if (data.action === 'Disconnect') {
-                that.disconnect(that.bodyDiv.innerHTML + reportExitCode);
+                    if (false === data.shouldDispatchMoreGames ||
+                        that.disconnectIfNotSelected) {
+
+                        that.bodyDiv.innerHTML =
+                            that.getText('notSelectedClosed');
+
+                        that.disconnect(that.bodyDiv.innerHTML + reportExitCode);
+                    }
+                    else {
+                        that.msgDiv.innerHTML = that.getText('notSelectedOpen');
+                    }
+                }
+                else if (data.action === 'Disconnect') {
+                    that.disconnect(that.bodyDiv.innerHTML + reportExitCode);
+                }
             }
         });
 
@@ -52102,7 +52235,7 @@ if (!Array.prototype.indexOf) {
             that.stopTimer();
 
             // Write about disconnection in page.
-            that.bodyDiv.innerHTML = that.disconnectText;
+            that.bodyDiv.innerHTML = that.getText('disconnect');
 
 //             // Enough to not display it in case of page refresh.
 //             setTimeout(function() {
@@ -52111,7 +52244,7 @@ if (!Array.prototype.indexOf) {
         });
 
         node.on.data('ROOM_CLOSED', function() {
-            that.disconnect(that.roomClosedText);
+            that.disconnect(that.getText('roomClosed'));
         });
     };
 
@@ -52128,28 +52261,41 @@ if (!Array.prototype.indexOf) {
         }
     };
 
+    /**
+     * ### WaitingRoom.disconnect
+     *
+     * Disconnects the playr, stops the timer, and displays a msg
+     *
+     * @param {string|function} msg. Optional. A disconnect message. If set,
+     *    replaces the current value for future calls.
+     *
+     * @see WaitingRoom.setText
+     */
     WaitingRoom.prototype.disconnect = function(msg) {
-        if (msg) this.disconnectText = msg;
+        if (msg) this.setText('disconnect', msg);
         node.socket.disconnect();
         this.stopTimer();
     };
 
     WaitingRoom.prototype.alertPlayer = function() {
         var clearBlink, onFrame;
-
+        var sound;
+        
+        sound = this.getSound('dispatch');
+        
         // Play sound, if requested.
-        if (this.dispatchSound) JSUS.playSound(this.dispatchSound);
+        if (sound) J.playSound(sound);
 
         // If document.hasFocus() returns TRUE, then just one repeat is enough.
         if (document.hasFocus && document.hasFocus()) {
-            JSUS.blinkTitle('GAME STARTS!', { repeatFor: 1 });
+            J.blinkTitle('GAME STARTS!', { repeatFor: 1 });
         }
         // Otherwise we repeat blinking until an event that shows that the
         // user is active on the page happens, e.g. focus and click. However,
         // the iframe is not created yet, and even later. if the user clicks it
         // it won't be detected in the main window, so we need to handle it.
         else {
-            clearBlink = JSUS.blinkTitle('GAME STARTS!', {
+            clearBlink = J.blinkTitle('GAME STARTS!', {
                 stopOnFocus: true,
                 stopOnClick: window
             });
@@ -52171,6 +52317,345 @@ if (!Array.prototype.indexOf) {
         if (this.dots) this.dots.stop();
         node.deregisterSetup('waitroom');
     };
+
+    /**
+     * ### WaitingRoom.setSound
+     *
+     * Checks and assigns the value of a sound to play to user
+     *
+     * Throws an error if value is invalid
+     *
+     * @param {string} name The name of the sound to check
+     * @param {mixed} path Optional. The path to the audio file. If undefined
+     *    the default value from WaitingRoom.sounds is used
+     *
+     * @see WaitingRoom.sounds
+     * @see WaitingRoom.getSound
+     * @see WaitingRoom.setSounds
+     * @see WaitingRoom.getSounds
+     */
+    WaitingRoom.prototype.setSound = function(name, value) {
+        strSetter(this, name, value, 'sounds', 'WaitingRoom.setSound');
+    };
+
+    /**
+     * ### WaitingRoom.setSounds
+     *
+     * Assigns multiple sounds at the same time
+     *
+     * @param {object} sounds Optional. Object containing sound paths
+     *
+     * @see WaitingRoom.sounds
+     * @see WaitingRoom.setSound
+     * @see WaitingRoom.getSound
+     * @see WaitingRoom.getSounds
+     */
+    WaitingRoom.prototype.setSounds = function(sounds) {
+        strSetterMulti(this, sounds, 'sounds', 'setSound',
+                       'WaitingRoom.setSounds');
+    };
+
+    /**
+     * ### WaitingRoom.getSound
+     *
+     * Returns the requested sound path
+     *
+     * @param {string} name The name of the sound variable.
+     * @param {mixed} param Optional. Additional info to pass to the
+     *   callback, if any
+     *
+     * @return {string} The requested sound
+     *
+     * @see WaitingRoom.sounds
+     * @see WaitingRoom.setSound
+     * @see WaitingRoom.getSound
+     * @see WaitingRoom.getSounds
+     */
+    WaitingRoom.prototype.getSound = function(name, param) {
+        return strGetter(this, name, 'sounds', 'WaitingRoom.getSound', param);
+    };
+
+    /**
+     * ### WaitingRoom.getSounds
+     *
+     * Returns an object with selected sounds (paths)
+     *
+     * @param {object|array} keys Optional. An object whose keys, or an array
+     *   whose values, are used of  to select the properties to return.
+     *   Default: all properties in the collection object.
+     * @param {object} param Optional. Object containing parameters to pass
+     *   to the sounds functions (if any)
+     *
+     * @return {object} out Selected sounds (paths)
+     *
+     * @see WaitingRoom.sounds
+     * @see WaitingRoom.setSound
+     * @see WaitingRoom.getSound
+     * @see WaitingRoom.setSounds
+     */
+    WaitingRoom.prototype.getSounds = function(keys, param) {
+        return strGetterMulti(this, 'sounds', 'getSound',
+                              'WaitingRoom.getSounds', keys, param);
+    };
+
+    /**
+     * ### WaitingRoom.getAllSounds
+     *
+     * Returns an object with all current sounds
+     *
+     * @param {object} param Optional. Object containing parameters to pass
+     *   to the sounds functions (if any)
+     *
+     * @return {object} out All current sounds
+     *
+     * @see WaitingRoom.getSound
+     */
+    WaitingRoom.prototype.getAllSounds = function(param) {
+        return strGetterMulti(this, 'sounds', 'getSound',
+                              'WaitingRoom.getAllSounds', undefined, param);
+    };
+
+    /**
+     * ### WaitingRoom.setText
+     *
+     * Checks and assigns the value of a text to display to user
+     *
+     * Throws an error if value is invalid
+     *
+     * @param {string} name The name of the property to check
+     * @param {mixed} value Optional. The value for the text. If undefined
+     *    the default value from WaitingRoom.texts is used
+     *
+     * @see WaitingRoom.texts
+     * @see WaitingRoom.getText
+     * @see WaitingRoom.setTexts
+     * @see WaitingRoom.getTexts
+     */
+    WaitingRoom.prototype.setText = function(name, value) {
+        strSetter(this, name, value, 'texts', 'WaitingRoom.setText');
+    };
+
+    /**
+     * ### WaitingRoom.setTexts
+     *
+     * Assigns all texts
+     *
+     * @param {object} texts Optional. Object containing texts
+     *
+     * @see WaitingRoom.texts
+     * @see WaitingRoom.setText
+     * @see WaitingRoom.getText
+     * @see WaitingRoom.getTexts
+     */
+    WaitingRoom.prototype.setTexts = function(texts) {
+        strSetterMulti(this, texts, 'texts', 'setText', 'WaitingRoom.setTexts');
+    };
+
+    /**
+     * ### WaitingRoom.getText
+     *
+     * Returns the requested text
+     *
+     * @param {string} name The name of the text variable.
+     * @param {mixed} param Optional. Additional to pass to the callback, if any
+     *
+     * @return {string} The requested text
+     *
+     * @see WaitingRoom.texts
+     * @see WaitingRoom.setText
+     * @see WaitingRoom.setTexts
+     * @see WaitingRoom.getTexts
+     */
+    WaitingRoom.prototype.getText = function(name, param) {
+        return strGetter(this, name, 'texts',
+                         'WaitingRoom.getText', undefined, param);
+    };
+
+    /**
+     * ### WaitingRoom.getTexts
+     *
+     * Returns an object with selected texts
+     *
+     * @param {object|array} keys Optional. An object whose keys, or an array
+     *   whose values, are used of  to select the properties to return.
+     *   Default: all properties in the collection object.
+     * @param {object} param Optional. Object containing parameters to pass
+     *   to the sounds functions (if any)
+     *
+     * @return {object} out Selected texts
+     *
+     * @see WaitingRoom.texts
+     * @see WaitingRoom.setText
+     * @see WaitingRoom.getText
+     * @see WaitingRoom.setTexts
+     * @see WaitingRoom.getAllTexts
+     */
+    WaitingRoom.prototype.getTexts = function(keys, param) {
+        return strGetterMulti(this, 'texts', 'getText',
+                              'WaitingRoom.getTexts', keys, param);
+    };
+
+    /**
+     * ### WaitingRoom.getAllTexts
+     *
+     * Returns an object with all current texts
+     *
+     * @param {object|array} param Optional. Object containing parameters
+     *   to pass to the texts functions (if any)
+     *
+     * @return {object} out All current texts
+     *
+     * @see WaitingRoom.texts
+     * @see WaitingRoom.setText
+     * @see WaitingRoom.setTexts
+     * @see WaitingRoom.getText
+     */
+    WaitingRoom.prototype.getAllTexts = function(param) {
+        return strGetterMulti(this, 'texts', 'getText',
+                              'WaitingRoom.getAllTexts', undefined, param);
+    };
+
+    // ## Helper methods.
+
+    /**
+     * ### strGetter
+     *
+     * Returns the value a property from a collection in instance/constructor
+     *
+     * If the string is not found in the live instance, the default value
+     * from the same collection inside the contructor is returned instead.
+     *
+     * If the property is not found in the corresponding static
+     * collection in the constructor of the instance, an error is thrown.
+     *
+     * @param {object} that The main instance
+     * @param {string} name The name of the property inside the collection
+     * @param {string} collection The name of the collection inside the instance
+     * @param {string} method The name of the invoking method (for error string)
+     * @param {mixed} param Optional. If the value of the requested property
+     *   is a function, this parameter is passed to it to get a return value.
+     *
+     * @return {string} res The value of requested property as found
+     *   in the instance, or its default value as found in the constructor
+     */
+    function strGetter(that, name, collection, method, param) {
+        var res;
+        if (!that.constructor[collection].hasOwnProperty(name)) {
+            throw new Error(method + ': name not found: ' + name);
+        }
+        res = that[collection][name];
+        if ('function' === typeof res) {
+            res = res(that, param);
+            if ('string' !== typeof res) {
+                throw new TypeError(method + ': cb "' + name +
+                                    'did not return a string. Found: ' + res);
+            }
+        }
+        else if ('undefined' === typeof res) {
+            res = that.constructor[collection][name];
+        }
+        return res;
+    }
+
+    /**
+     * ### strGetterMulti
+     *
+     * Same as strGetter, but returns multiple values at once
+     *
+     * @param {object} that The main instance
+     * @param {string} collection The name of the collection inside the instance
+     * @param {string} getMethod The name of the method to get each value
+     * @param {string} method The name of the invoking method (for error string)
+     * @param {object|array} keys Optional. An object whose keys, or an array
+     *   whose values, are used of this object are to select the properties
+     *   to return. Default: all properties in the collection object.
+     * @param {mixed} param Optional. If the value of the requested property
+     *    is a function, this parameter is passed to it, when invoked to get
+     *    a return value. Default: undefined
+     *
+     * @return {string} res The requested value.
+     *
+     * @see strGetter
+     */
+    function strGetterMulti(that, collection, getMethod, method, keys, param) {
+        var out, k, len;
+        if (!keys) keys = that.constructor[collection];
+
+        out = {};
+        if (J.isArray(keys)) {
+            k = -1, len = keys.length;
+            for ( ; ++k < len; ) {
+                out[keys[k]] = that[getMethod](keys[k], param);
+            }
+        }
+        else {
+            for (k in keys) {
+                if (keys.hasOwnProperty(k)) {
+                    out[k] = that[getMethod](k, param);
+                }
+            }
+        }
+        return out;
+    }
+
+    /**
+     * ### strSetterMulti
+     *
+     * Same as strSetter, but sets multiple values at once
+     *
+     * @param {object} that The main instance
+     * @param {object} obj List of properties to set and their values
+     * @param {string} collection The name of the collection inside the instance
+     * @param {string} setMethod The name of the method to set each value
+     * @param {string} method The name of the invoking method (for error string)
+     *
+     * @see strSetter
+     */
+    function strSetterMulti(that, obj, collection, setMethod, method) {
+        var i, out;
+        out = out || {};
+        if ('object' !== typeof obj && 'undefined' !== typeof obj) {
+            throw new TypeError(method + ': ' +  collection +
+                                ' must be object or undefined. Found: ' + obj);
+        }
+        for (i in obj) {
+            if (obj.hasOwnProperty(i)) {
+                that[setMethod](i, obj[i]);
+            }
+        }
+    }
+
+
+    /**
+     * ### strSetter
+     *
+     * Sets the value of a property in a collection if string, function or false
+     *
+     * @param {object} that The main instance
+     * @param {string} name The name of the property to set
+     * @param {string|function|false} value The value for the property
+     * @param {string} collection The name of the collection inside the instance
+     * @param {string} method The name of the invoking method (for error string)
+     *
+     * @see strSetter
+     */
+    function strSetter(that, name, value, collection, method) {
+        console.log(arguments);
+        if ('undefined' === typeof that.constructor[collection][name]) {
+            throw new TypeError(method + ': name not found: ' + name);
+        }
+        if ('string' === typeof value ||
+            'function' === typeof value ||
+            false === value) {
+           
+            that[collection][name] = value;
+        }
+        else {
+            throw new TypeError(method + ': value for item "' + name +
+                                '" must be string, function or false. ' +
+                                'Found: ' + value);
+        }
+    }
 
 })(node);
 
