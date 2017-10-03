@@ -1,3 +1,5 @@
+/* nodeGame css */
+
 $base-font: 'Source Sans Pro', -apple-system, BlinkMacSystemFont, Roboto, "Segoe UI", 'Helvetica Neue', Helvetica, Arial, sans-serif;
 $header-bg-color: white;
 $container-width: 800px;
@@ -60,7 +62,8 @@ p {
     box-shadow: none;
     padding: 10px;
 
-    .panel-heading {
+    .panel-heading,
+    .no-panel-heading {
       border: none;
       background-color: $header-bg-color;
       padding: 0;
@@ -78,8 +81,11 @@ p {
 
   .donebutton {
     float: right;
+    padding: 0;
+    margin: 0;
 
-    .panel-heading {
+    .panel-heading,
+    .no-panel-heading {
       display: none;
     }
   }
@@ -87,12 +93,15 @@ p {
   .moneytalks,
   .visualround,
   .visualtimer {
-    .panel-heading {
+      
+    .panel-heading,
+    .no-panel-heading {
       float: left;
       margin-right: 10px;
     }
 
-    .panel-body {
+    .panel-body,
+    .no-panel-body {
       float: left;
     }
   }
@@ -138,6 +147,7 @@ input[type="range"] {
   margin-bottom: 5px;
   margin-left: 5px;
 }
+
 /* General nodeGame */
 .strong {
   font-weight: bold;
@@ -155,15 +165,17 @@ input[type="range"] {
   cursor: pointer;
   cursor: hand;
 }
+
 /*
    Stylesheet for nodeGame widgets
-   Copyright(c) 2014 Stefano Balietti
+   Copyright(c) 2017 Stefano Balietti
    MIT Licensed
 
    www.nodegame.org
    ---
 */
-/* .ng_widget {} */
+
+
 /* Language Selector */
 .languageselector {
   float: center;

@@ -1,3 +1,4 @@
+/* nodeGame css */
 body {
   margin: 0;
   font-size: 18px;
@@ -48,7 +49,8 @@ p {
     border: none;
     box-shadow: none;
     padding: 10px; }
-    #ng_header .ng_widget .panel-heading {
+    #ng_header .ng_widget .panel-heading,
+    #ng_header .ng_widget .no-panel-heading {
       border: none;
       background-color: white;
       padding: 0;
@@ -58,17 +60,26 @@ p {
     #ng_header .ng_widget:last-child {
       margin-right: 0; }
   #ng_header .donebutton {
-    float: right; }
-    #ng_header .donebutton .panel-heading {
+    float: right;
+    padding: 0;
+    margin: 0; }
+    #ng_header .donebutton .panel-heading,
+    #ng_header .donebutton .no-panel-heading {
       display: none; }
   #ng_header .moneytalks .panel-heading,
+  #ng_header .moneytalks .no-panel-heading,
   #ng_header .visualround .panel-heading,
-  #ng_header .visualtimer .panel-heading {
+  #ng_header .visualround .no-panel-heading,
+  #ng_header .visualtimer .panel-heading,
+  #ng_header .visualtimer .no-panel-heading {
     float: left;
     margin-right: 10px; }
   #ng_header .moneytalks .panel-body,
+  #ng_header .moneytalks .no-panel-body,
   #ng_header .visualround .panel-body,
-  #ng_header .visualtimer .panel-body {
+  #ng_header .visualround .no-panel-body,
+  #ng_header .visualtimer .panel-body,
+  #ng_header .visualtimer .no-panel-body {
     float: left; }
 
 #ng_waitScreen {
@@ -124,13 +135,12 @@ input[type="range"] {
 
 /*
    Stylesheet for nodeGame widgets
-   Copyright(c) 2014 Stefano Balietti
+   Copyright(c) 2017 Stefano Balietti
    MIT Licensed
 
    www.nodegame.org
    ---
 */
-/* .ng_widget {} */
 /* Language Selector */
 .languageselector {
   float: center;
@@ -306,3 +316,5 @@ div.svogauge hr {
 
 div.svogauge td.choicetable-left hr {
   border-color: black; }
+
+/*# sourceMappingURL=nodegame.css.map */
