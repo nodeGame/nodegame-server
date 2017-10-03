@@ -175,7 +175,6 @@ input[type="range"] {
    ---
 */
 
-
 /* Language Selector */
 .languageselector {
   float: center;
@@ -358,6 +357,7 @@ div.moodgauge span.emotion {
 div.moodgauge table.choicetable td.choicetable-right {
   width: 100px;
 }
+
 /* SVO */
 div.svogauge table.choicetable {
   margin: 0 auto;
@@ -381,4 +381,32 @@ div.svogauge hr {
 
 div.svogauge td.choicetable-left hr {
   border-color: black;
+}
+
+/* EmailForm and FeedbackForm */
+.emailform-input,
+.feedback-textarea {
+    margin-bottom: 5px;
+}
+
+.feedback {
+    .btn {
+        margin-right: 5px;
+    }
+}
+
+/* EndScreen */
+
+.endscreen {
+
+    .emailform,
+    .feedback {
+        margin-top: 30px;
+    }
+    
+}
+.endscreen {
+    .no-panel-body {
+        margin: 5px;
+    }
 }

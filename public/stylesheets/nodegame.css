@@ -317,4 +317,20 @@ div.svogauge hr {
 div.svogauge td.choicetable-left hr {
   border-color: black; }
 
+/* EmailForm and FeedbackForm */
+.emailform-input,
+.feedback-textarea {
+  margin-bottom: 5px; }
+
+.feedback .btn {
+  margin-right: 5px; }
+
+/* EndScreen */
+.endscreen .emailform,
+.endscreen .feedback {
+  margin-top: 25px; }
+
+.endscreen .no-panel-body {
+  margin: 5px; }
+
 /*# sourceMappingURL=nodegame.css.map */
