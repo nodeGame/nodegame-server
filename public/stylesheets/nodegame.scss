@@ -8,12 +8,18 @@ body {
   margin: 0;
   font-size: 18px;
   font-family: $base-font;
+
+   &::after {
+    content: "";
+    clear: both;   
+    display: table;
+  }
 }
 
 #ng_mainframe {
   max-width: $container-width;
   width: 100%;
-  min-height: 600px; // change to use the js resize code
+  min-height: 600px; /* change to use the js resize code */
   font-family: $base-font;
   padding: 20px;
   display: block;
@@ -49,9 +55,9 @@ p {
   border-radius: 0 0 5px 5px;
 
   &::after {
-    content: " ";
-    display: block;
-    clear: both;
+    content: "";
+    clear: both;   
+    display: table;
   }
 
   .ng_widget {
@@ -174,6 +180,14 @@ input[type="range"] {
    www.nodegame.org
    ---
 */
+
+/* Visual Round */
+
+.visualround {
+  .title {
+    font-weight: bold;
+  }
+}
 
 /* Language Selector */
 .languageselector {

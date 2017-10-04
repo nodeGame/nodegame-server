@@ -3,11 +3,16 @@ body {
   margin: 0;
   font-size: 18px;
   font-family: "Source Sans Pro", -apple-system, BlinkMacSystemFont, Roboto, "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif; }
+  body::after {
+    content: "";
+    clear: both;
+    display: table; }
 
 #ng_mainframe {
   max-width: 800px;
   width: 100%;
   min-height: 600px;
+  /* change to use the js resize code */
   font-family: "Source Sans Pro", -apple-system, BlinkMacSystemFont, Roboto, "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
   padding: 20px;
   display: block;
@@ -39,9 +44,9 @@ p {
   margin: 0 auto;
   border-radius: 0 0 5px 5px; }
   #ng_header::after {
-    content: " ";
-    display: block;
-    clear: both; }
+    content: "";
+    clear: both;
+    display: table; }
   #ng_header .ng_widget {
     float: left;
     margin-right: 20px;
@@ -141,6 +146,10 @@ input[type="range"] {
    www.nodegame.org
    ---
 */
+/* Visual Round */
+.visualround .title {
+  font-weight: bold; }
+
 /* Language Selector */
 .languageselector {
   float: center;
@@ -328,7 +337,7 @@ div.svogauge td.choicetable-left hr {
 /* EndScreen */
 .endscreen .emailform,
 .endscreen .feedback {
-  margin-top: 25px; }
+  margin-top: 30px; }
 
 .endscreen .no-panel-body {
   margin: 5px; }
