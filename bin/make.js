@@ -330,7 +330,14 @@ program
     .action(function(){
         console.log('Building documentation for nodegame-server v.' + version);
         // http://nodejs.org/api.html#_child_processes
-        var dockerDir = J.resolveModuleDir('docker', rootDir);
+        try {
+            var dockerDir = J.resolveModuleDir('docker', rootDir);
+        }
+        catch(e) {
+            console.log('module Docker not found. Cannot build doc.');
+            console.log('Do \'npm install docker\' to install it.');
+            return false;
+        }
         var command = dockerDir + 'docker -i ' + rootDir +
             ' index.js lib/ -o ' + rootDir + '/docs/ -u';
         var child = exec(command, function (error, stdout, stderr) {
