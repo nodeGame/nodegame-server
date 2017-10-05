@@ -24524,7 +24524,7 @@ if (!Array.prototype.indexOf) {
                     widgetRoot =  W.getElementById(widgetRoot);
                     widgetObj = this.node.widgets.append(widget.name,
                                                          widgetRoot,
-                                                         widget.options);
+                                                         widget.options);                   
                 }
                 this[widget.ref] = widgetObj;
             };
@@ -33185,10 +33185,13 @@ if (!Array.prototype.indexOf) {
         iframe = W.add('iframe', root, frameName);
         // Method .replace does not add the uri to the history.
         iframe.contentWindow.location.replace('about:blank');
-
+        
         // For IE8.
         iframe.frameBorder = 0;
 
+        // Avoid scrolling.
+        iframe.scrolling = "no";
+        
         this.setFrame(iframe, frameName, root);
 
         if (this.frameElement) adaptFrame2HeaderPosition(this);
@@ -33198,7 +33201,7 @@ if (!Array.prototype.indexOf) {
 
         return iframe;
     };
-
+    
     /**
      * ### GameWindow.generateInfoPanel
      *
@@ -33795,7 +33798,7 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
-     * ### GameWindow.getElementById
+     * ### GameWindow.getElementById | gid
      *
      * Returns the element with the given id
      *
@@ -33807,7 +33810,9 @@ if (!Array.prototype.indexOf) {
      *
      * @see GameWindow.getElementsByTagName
      */
-    GameWindow.prototype.getElementById = function(id) {
+    GameWindow.prototype.getElementById =
+        GameWindow.prototype.gid = function(id) {
+            
         var el, frameDocument;
 
         frameDocument = this.getFrameDocument();
@@ -34322,8 +34327,15 @@ if (!Array.prototype.indexOf) {
                 // Store frame in cache:
                 that.cache[uri].contents = iframeDocumentElement.innerHTML;
             }
-
+            
             func();
+
+            setTimeout(function() {
+                // Adjust min-height based on content.
+                iframe.style['min-height'] =
+                    iframe.contentWindow.document.body.offsetHeight + 50 + 'px';
+            });
+            
         };
 
         if (loadCache) {
@@ -34491,8 +34503,10 @@ if (!Array.prototype.indexOf) {
      * @api private
      */
     function adaptFrame2HeaderPosition(W, oldHeaderPos) {
-        var position;
-        if (!W.frameElement) {
+        var position, frame, header;
+        
+        frame = W.getFrame();        
+        if (!frame) {
             throw new Error('adaptFrame2HeaderPosition: frame not found.');
         }
 
@@ -34500,33 +34514,42 @@ if (!Array.prototype.indexOf) {
         // fit the whole screen.
         position = W.headerPosition || 'top';
 
+        header = W.getHeader();
+        
         // When we move from bottom to any other configuration, we need
         // to move the header before the frame.
         if (oldHeaderPos === 'bottom' && position !== 'bottom') {
-            W.getFrameRoot().insertBefore(W.headerElement, W.frameElement);
+            W.getFrameRoot().insertBefore(W.headerElement, frame);
         }
 
-        W.removeClass(W.frameElement, 'ng_mainframe-header-[a-z-]*');
+        W.removeClass(frame, 'ng_mainframe-header-[a-z-]*');
         switch(position) {
         case 'right':
-            W.addClass(W.frameElement, 'ng_mainframe-header-vertical-r');
+            W.addClass(frame, 'ng_mainframe-header-vertical-r');
+            if (header) {
+                frame.style['padding-right'] = header.offsetWidth + 10 + 'px';
+            }
             break;
         case 'left':
-            W.addClass(W.frameElement, 'ng_mainframe-header-vertical-l');
+            W.addClass(frame, 'ng_mainframe-header-vertical-l');
+            if (header) {
+                frame.style['padding-left'] = header.offsetWidth + 10 + 'px';
+            }
             break;
         case 'top':
-            W.addClass(W.frameElement, 'ng_mainframe-header-horizontal');
+            W.addClass(frame, 'ng_mainframe-header-horizontal-t');
             // There might be no header yet.
-            if (W.headerElement) {
-                W.getFrameRoot().insertBefore(W.headerElement, W.frameElement);
+            if (header) {
+                W.getFrameRoot().insertBefore(header, frame);
+                frame.style['padding-top'] = header.offsetHeight + 10 + 'px';
             }
             break;
         case 'bottom':
-            W.addClass(W.frameElement, 'ng_mainframe-header-horizontal');
+            W.addClass(frame, 'ng_mainframe-header-horizontal-b');
             // There might be no header yet.
-            if (W.headerElement) {
-                W.getFrameRoot().insertBefore(W.headerElement,
-                                              W.frameElement.nextSibling);
+            if (header) {
+                W.getFrameRoot().insertBefore(header, frame.nextSibling);
+                frame.style['padding-bottom'] = header.offsetHeight + 10 + 'px';
             }
             break;
         }
@@ -49624,7 +49647,6 @@ if (!Array.prototype.indexOf) {
          */
         this.separator = ' / ';
 
-
         /**
          * ### VisualRound.layout
          *
@@ -50244,7 +50266,7 @@ if (!Array.prototype.indexOf) {
 
         this.roundsLeft = W.add('div', this.displayDiv);
         this.roundsLeft.className = 'number';
-        
+
         this.updateDisplay();
     };
 
@@ -50373,7 +50395,7 @@ if (!Array.prototype.indexOf) {
         for (; ++i < len; ) {
             d = this.displayModes[i];
             if (d.activate) this.displayModes[i].activate();
-            setLayout(d, this.visualRound.layout, i === (len-1));            
+            setLayout(d, this.visualRound.layout, i === (len-1));
         }
     };
 
@@ -50382,7 +50404,7 @@ if (!Array.prototype.indexOf) {
         i = -1, len = this.displayModes.length;
         for (; ++i < len; ) {
             d = this.displayModes[i];
-            if (d.deactivate) d.deactivate();            
+            if (d.deactivate) d.deactivate();
         }
     };
 
@@ -50392,13 +50414,13 @@ if (!Array.prototype.indexOf) {
         for (; ++i < len; ) {
             d = this.displayModes[i];
             setLayout(d, layout, i === (len-1));
-        }    
+        }
     };
 
     // ## Helper Methods.
 
 
-    function setLayout(displayMode, layout, lastDisplay) {
+    function setLayout(d, layout, lastDisplay) {
         if (layout === 'vertical' || layout === 'multimode_vertical' ||
             layout === 'all_vertical') {
 
@@ -50435,10 +50457,10 @@ if (!Array.prototype.indexOf) {
             }
             return true;
         }
-        return false;               
+        return false;
     }
 
-        
+
     /**
      * ### generalConstructor
      *
@@ -50664,7 +50686,7 @@ if (!Array.prototype.indexOf) {
     VisualTimer.description = 'Display a configurable timer for the game. ' +
         'Can trigger events. Only for countdown smaller than 1h.';
 
-    VisualTimer.title = 'Time left';
+    VisualTimer.title = 'Time Left';
     VisualTimer.className = 'visualtimer';
 
     // ## Dependencies
@@ -51902,7 +51924,7 @@ if (!Array.prototype.indexOf) {
             }
             // Not selected/no game/etc.
             else {
-                reportExitCode = that.getText('exitCode', msg.data);
+                reportExitCode = that.getText('exitCode', data);
 
                 if (data.action === 'NotEnoughPlayers') {
                     that.bodyDiv.innerHTML = that.getText('notEnoughPlayers');
@@ -52184,8 +52206,7 @@ if (!Array.prototype.indexOf) {
      * @see WaitingRoom.getTexts
      */
     WaitingRoom.prototype.getText = function(name, param) {
-        return strGetter(this, name, 'texts',
-                         'WaitingRoom.getText', undefined, param);
+        return strGetter(this, name, 'texts', 'WaitingRoom.getText', param);
     };
 
     /**
@@ -52260,16 +52281,13 @@ if (!Array.prototype.indexOf) {
         if (!that.constructor[collection].hasOwnProperty(name)) {
             throw new Error(method + ': name not found: ' + name);
         }
-        res = that[collection][name];
+        res = that[collection][name] || that.constructor[collection][name];
         if ('function' === typeof res) {
             res = res(that, param);
             if ('string' !== typeof res) {
                 throw new TypeError(method + ': cb "' + name +
                                     'did not return a string. Found: ' + res);
             }
-        }
-        else if ('undefined' === typeof res) {
-            res = that.constructor[collection][name];
         }
         return res;
     }
