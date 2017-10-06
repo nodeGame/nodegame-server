@@ -33185,13 +33185,13 @@ if (!Array.prototype.indexOf) {
         iframe = W.add('iframe', root, frameName);
         // Method .replace does not add the uri to the history.
         iframe.contentWindow.location.replace('about:blank');
-        
+
         // For IE8.
         iframe.frameBorder = 0;
 
         // Avoid scrolling.
         iframe.scrolling = "no";
-        
+
         this.setFrame(iframe, frameName, root);
 
         if (this.frameElement) adaptFrame2HeaderPosition(this);
@@ -33201,7 +33201,7 @@ if (!Array.prototype.indexOf) {
 
         return iframe;
     };
-    
+
     /**
      * ### GameWindow.generateInfoPanel
      *
@@ -33812,7 +33812,7 @@ if (!Array.prototype.indexOf) {
      */
     GameWindow.prototype.getElementById =
         GameWindow.prototype.gid = function(id) {
-            
+
         var el, frameDocument;
 
         frameDocument = this.getFrameDocument();
@@ -34327,15 +34327,15 @@ if (!Array.prototype.indexOf) {
                 // Store frame in cache:
                 that.cache[uri].contents = iframeDocumentElement.innerHTML;
             }
-            
+
             func();
 
             setTimeout(function() {
                 // Adjust min-height based on content.
                 iframe.style['min-height'] =
-                    iframe.contentWindow.document.body.offsetHeight + 50 + 'px';
+                    iframe.contentWindow.document.body.offsetHeight + 100 + 'px';
             });
-            
+
         };
 
         if (loadCache) {
@@ -34504,8 +34504,8 @@ if (!Array.prototype.indexOf) {
      */
     function adaptFrame2HeaderPosition(W, oldHeaderPos) {
         var position, frame, header;
-        
-        frame = W.getFrame();        
+
+        frame = W.getFrame();
         if (!frame) {
             throw new Error('adaptFrame2HeaderPosition: frame not found.');
         }
@@ -34515,7 +34515,7 @@ if (!Array.prototype.indexOf) {
         position = W.headerPosition || 'top';
 
         header = W.getHeader();
-        
+
         // When we move from bottom to any other configuration, we need
         // to move the header before the frame.
         if (oldHeaderPos === 'bottom' && position !== 'bottom') {

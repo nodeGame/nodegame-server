@@ -1,29 +1,80 @@
 /* nodeGame css */
-/* General */
-noscript {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  margin-top: -9em;
-  /*set to a negative number 1/2 of your height*/
-  margin-left: -15em;
-  /*set to a negative number 1/2 of your width*/
-  font-family: Arial, Helvetica, sans-serif;
-  font-size: 16px;
-  color: #FF0000;
-  border: 1px dotted #A60000;
-  text-align: center;
-  background: white;
-  padding: 20px 30px; }
-
 body {
   margin: 0;
   font-size: 18px;
   font-family: "Source Sans Pro", -apple-system, BlinkMacSystemFont, Roboto, "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif; }
-  body::after {
-    content: "";
-    clear: both;
-    display: table; }
+
+
+#ng_mainframe {
+  /*overflow:hidden; */
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  padding: 0;
+  /*max-width: 800px;
+  width: 100%;
+  min-height: 600px;
+  change to use the js resize code */
+  font-family: "Source Sans Pro", -apple-system, BlinkMacSystemFont, Roboto, "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  /* padding: 20px; */
+  display: block;
+  margin: 0 auto; }
+
+
+.ng_mainframe-header-vertical-r {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.ng_mainframe-header-vertical-l {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.ng_mainframe-header-horizontal-t {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.ng_mainframe-header-horizontal-b {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  padding-top: 0 !important;
+}
+
+.ng_header_position-horizontal-t {
+  width: 100% !important;
+  height: auto !important;
+  margin: 0 auto !important;
+  top: 0 !important;
+  bottom: auto !important;
+}
+
+.ng_header_position-horizontal-b {
+  width: 100% !important;
+  height: auto !important;
+  margin: 0 auto !important;
+  top: auto !important;
+  bottom: 0 !important;
+}
+
+.ng_header_position-vertical-r {
+  width: 125px !important;
+  height: 100% !important;
+  margin: 0 !important;
+  right: 0 !important;
+  left: auto !important;
+}
+
+.ng_header_position-vertical-l {
+  width: 125px !important;
+  height: 100% !important;
+  margin: 0 !important;
+  right: auto !important;
+  left: 0 !important;
+}
+
 
 .h1,
 .h2,
@@ -42,81 +93,71 @@ h6 {
 p {
   font-family: "Source Sans Pro", -apple-system, BlinkMacSystemFont, Roboto, "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif; }
 
-/* Mainframe */
-#ng_mainframe {
-  position: absolute;
-  width: 100%;
-  /* min-height: 600px; will be changed by js resize code */
-  font-family: "Source Sans Pro", -apple-system, BlinkMacSystemFont, Roboto, "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
-  padding: 0;
-  display: block;
-  margin: 0 auto; }
-
-/* Mainframe relative to the header */
-.ng_mainframe-header-vertical-r {
-  padding-top: 0 !important;
-  padding-bottom: 0 !important; }
-
-.ng_mainframe-header-vertical-l {
-  padding-top: 0 !important;
-  padding-bottom: 0 !important; }
-
-.ng_mainframe-header-horizontal-t {
-  padding-left: 0 !important;
-  padding-right: 0 !important;
-  padding-bottom: 0 !important;
-  /* padding-top added via script */ }
-
-.ng_mainframe-header-horizontal-b {
-  padding-left: 0 !important;
-  padding-right: 0 !important;
-  padding-top: 0 !important;
-  /* padding-bottom added via script */ }
-
-/* Header */
 #ng_header {
   position: fixed !important;
   height: auto;
   z-index: 1000;
-  margin: 0 auto;
-  /* Will not center vertically and won't work in IE6/7. */
+  margin: 0 auto; /* Will not center vertically and won't work in IE6/7. */
   left: 0;
   right: 0;
   width: 100%;
   padding: 10px 15px;
   background-color: white;
   box-shadow: 0 0 15px lightgrey;
+  /* max-width: 800px; */
   margin: 0 auto;
   border-radius: 0 0 5px 5px; }
-  #ng_header::after {
-    content: "";
-    clear: both;
-    display: table; }
 
-/* Header positions */
-.ng_header_position-horizontal-t, .ng_header_position-horizontal-b {
-  width: 100% !important;
-  height: auto !important;
-  margin: 0 auto !important;
-  top: 0 !important;
-  bottom: auto !important; }
+#ng_header::after {
+  content: "";
+  clear: both;
+  display: table; }
 
-.ng_header_position-horizontal-b {
-  top: auto !important;
-  bottom: 0 !important; }
+#ng_header .ng_widget {
+  float: left;
+  margin-right: 20px;
+  margin-bottom: 0;
+  border: none;
+  box-shadow: none;
+  padding: 10px; }
+#ng_header .ng_widget .panel-heading,
+#ng_header .ng_widget .no-panel-heading {
+  border: none;
+  background-color: white;
+  padding: 0;
+  font-weight: bold; }
+#ng_header .ng_widget .panel-body {
+  padding: 0; }
+#ng_header .ng_widget:last-child {
+  margin-right: 0; }
+#ng_header .donebutton {
+  float: right;
+  padding: 0;
+  margin: 0; }
+#ng_header .donebutton .panel-heading,
+#ng_header .donebutton .no-panel-heading {
+  display: none; }
+#ng_header .moneytalks .panel-heading,
+#ng_header .moneytalks .no-panel-heading,
+#ng_header .visualround .panel-heading,
+#ng_header .visualround .no-panel-heading,
+#ng_header .visualtimer .panel-heading,
+#ng_header .visualtimer .no-panel-heading {
+  float: left;
+  margin-right: 10px; }
+#ng_header .moneytalks .panel-body,
+#ng_header .moneytalks .no-panel-body,
+#ng_header .visualround .panel-body,
+#ng_header .visualround .no-panel-body,
+#ng_header .visualtimer .panel-body,
+#ng_header .visualtimer .no-panel-body {
+  float: left; }
 
-.ng_header_position-vertical-r, .ng_header_position-vertical-l {
-  width: 125px !important;
-  height: 100% !important;
-  margin: 0 !important;
-  right: 0 !important;
-  left: auto !important; }
-
-.ng_header_position-vertical-l {
-  right: auto !important;
-  left: 0 !important; }
-
-/* Wait Screen */
+#ng_header-top {
+  
+}
+  
+  
 #ng_waitScreen {
   z-index: 10000;
   filter: alpha(opacity=50);
@@ -142,25 +183,18 @@ p {
   font-size: 30px;
   padding: 20px; }
 
-/* Other general */
-/* 
 vas {
-  border: 1px #CCC solid;
-}
-
+  border: 1px #CCC solid; }
 
 label {
   display: block;
   float: left;
-  min-width: 200px;
-}
+  min-width: 200px; }
 
 input[type="range"] {
   margin-bottom: 5px;
-  margin-left: 5px;
-}
+  margin-left: 5px; }
 
-*/
 /* General nodeGame */
 .strong {
   font-weight: bold; }
@@ -183,50 +217,6 @@ input[type="range"] {
    www.nodegame.org
    ---
 */
-/* Widgets inside the header */
-#ng_header {
-  /*
-  .moneytalks,
-  .visualround,
-  .visualtimer {
-      
-    .panel-heading,
-    .no-panel-heading {
-      float: left;
-      margin-right: 10px;
-    }
-
-    .panel-body,
-    .no-panel-body {
-      float: left;
-    }
-  }
-*/ }
-  #ng_header .ng_widget {
-    float: left;
-    margin-right: 20px;
-    margin-bottom: 0;
-    border: none;
-    box-shadow: none;
-    padding: 10px; }
-    #ng_header .ng_widget .panel-heading,
-    #ng_header .ng_widget .no-panel-heading {
-      border: none;
-      background-color: white;
-      padding: 0;
-      font-weight: bold; }
-    #ng_header .ng_widget .panel-body {
-      padding: 0; }
-    #ng_header .ng_widget:last-child {
-      margin-right: 0; }
-  #ng_header .donebutton {
-    float: right;
-    padding: 0;
-    margin: 0; }
-    #ng_header .donebutton .panel-heading,
-    #ng_header .donebutton .no-panel-heading {
-      display: none; }
-
 /* Visual Round */
 .visualround .title {
   font-weight: bold; }
@@ -249,15 +239,16 @@ input[type="range"] {
   width: 450px;
   border: 1px solid #CCC;
   padding: 5px; }
-  .chat .panel-body textarea {
-    height: 100px;
-    width: 400px; }
+
+.chat > .panel-body > textarea {
+  height: 100px;
+  width: 400px; }
 
 .chat_me {
   font-weight: bold; }
 
 /* Feedback */
-.feedback .panel-body textarea {
+.feedback > .panel-body > textarea {
   padding: 5px;
   font-size: 16px;
   width: 98%;
@@ -283,21 +274,26 @@ input[type="range"] {
 /* Waiting Room */
 .waitingroom {
   font-size: 1.2em; }
-  .waitingroom .panel-body {
-    text-align: center; }
-    .waitingroom .panel-body div#timer-div {
-      margin-top: 30px; }
-    .waitingroom .panel-body div#player-count-div > p#player-count {
-      font-size: 40px;
-      clear: both;
-      margin-top: 30px; }
-    .waitingroom .panel-body .div > .visualtimer {
-      float: none;
-      display: inline;
-      font-size: 40px;
-      margin: 0; }
-    .waitingroom .panel-body div > span#span_dots {
-      font-size: 40px; }
+
+.waitingroom > .panel-body {
+  text-align: center; }
+
+.waitingroom > .panel-body > div#timer-div {
+  margin-top: 30px; }
+
+.waitingroom > .panel-body > div#player-count-div > p#player-count {
+  font-size: 40px;
+  clear: both;
+  margin-top: 30px; }
+
+.waitingroom > .panel-body > div > .visualtimer {
+  float: none;
+  display: inline;
+  font-size: 40px;
+  margin: 0; }
+
+.waitingroom > .panel-body > div > span#span_dots {
+  font-size: 40px; }
 
 /** ChoiceTable **/
 div.choicetable,
@@ -326,50 +322,60 @@ table.choicetable td {
   padding: 5px;
   width: 40px;
   background: white; }
-table.choicetable td.selected {
-  background: #333 !important;
-  color: #FFF;
-  border: 1px solid #333 !important; }
-table.choicetable td.choicetable-left,
-table.choicetable td.choicetable-right {
-  border: 0;
-  background: inherit;
-  padding-right: 15px;
-  text-align: right; }
-table.choicetable td.choicetable-left:hover,
-table.choicetable td.choicetable-right:hover {
-  background: inherit;
-  cursor: default; }
 
 table.clickable td:hover {
   background: #FFE;
   cursor: pointer;
   cursor: hand; }
 
+table.choicetable td.selected {
+  background: #333 !important;
+  color: #FFF;
+  border: 1px solid #333 !important; }
+
+table.choicetable td.choicetable-left,
+table.choicetable td.choicetable-right {
+  border: 0;
+  background: inherit;
+  padding-right: 15px;
+  text-align: right; }
+
+table.choicetable td.choicetable-left:hover,
+table.choicetable td.choicetable-right:hover {
+  background: inherit;
+  cursor: default; }
+
 /* Mood */
 div.moodgauge {
   margin: 0 auto;
   text-align: center; }
-  div.moodgauge table.choicetable,
-  div.moodgauge span.choicetable-maintext {
-    text-align: center; }
-  div.moodgauge span.choicetable-maintext {
-    margin-bottom: 30px;
-    font-weight: bold; }
-  div.moodgauge table.choicetable {
-    margin: 0 auto;
-    text-align: center;
-    border-spacing: 0 5px;
-    border-collapse: separate; }
-    div.moodgauge table.choicetable td {
-      width: 80px !important; }
-    div.moodgauge table.choicetable td.choicetable-left {
-      min-width: 260px !important; }
-    div.moodgauge table.choicetable span.emotion {
-      font-weight: bold;
-      margin-right: 10px; }
-    div.moodgauge table.choicetable td.choicetable-right {
-      width: 100px; }
+
+div#quiz div.moodgauge table.choicetable,
+div.moodgauge span.choicetable-maintext {
+  text-align: center; }
+
+div.moodgauge span.choicetable-maintext {
+  margin-bottom: 30px;
+  font-weight: bold; }
+
+div.moodgauge table.choicetable {
+  margin: 0 auto;
+  text-align: center;
+  border-spacing: 0 5px;
+  border-collapse: separate; }
+
+div.moodgauge table.choicetable td {
+  width: 80px !important; }
+
+div.moodgauge table.choicetable td.choicetable-left {
+  min-width: 260px !important; }
+
+div.moodgauge span.emotion {
+  font-weight: bold;
+  margin-right: 10px; }
+
+div.moodgauge table.choicetable td.choicetable-right {
+  width: 100px; }
 
 /* SVO */
 div.svogauge table.choicetable {
@@ -377,13 +383,17 @@ div.svogauge table.choicetable {
   text-align: center;
   border-spacing: 0 30px;
   border-collapse: separate; }
+
 div.svogauge table td {
   width: 60px !important; }
-div.svogauge choicetable-maintext {
+
+div.svogauge span.choicetable-maintext {
   margin-bottom: 10px;
   font-size: 20px; }
+
 div.svogauge hr {
   margin: 10px auto; }
+
 div.svogauge td.choicetable-left hr {
   border-color: black; }
 
