@@ -331,6 +331,9 @@ p {
 /* Requirements */
 .requirements {
   font-size: 1.2em;
+  max-width: 42em;
+  width: 90%;
+  margin: 0 auto;
 }
 
 .requirements-success {
@@ -350,8 +353,8 @@ p {
 /* Waiting Room */
 
 .waitingroom {
-  font-size: 1.2em;
-
+  @extend .requirements;
+  
   .panel-body {
     text-align: center;
 
