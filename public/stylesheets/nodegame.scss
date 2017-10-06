@@ -5,7 +5,7 @@ $header-bg-color: white;
 $container-width: 800px;
 $vertical-header-width: 125px;
 
-/* General */
+/* Main Elements */
 
 noscript {
     position: fixed;
@@ -20,6 +20,11 @@ noscript {
     text-align: center;
     background: white;
     padding: 20px 30px;
+}
+
+html {
+  margin: 0;
+  padding: 0;
 }
 
 body {
@@ -174,28 +179,9 @@ p {
   padding: 20px;
 }
 
-/* Other general */
 
-/* 
-vas {
-  border: 1px #CCC solid;
-}
+/* Handy classes */
 
-
-label {
-  display: block;
-  float: left;
-  min-width: 200px;
-}
-
-input[type="range"] {
-  margin-bottom: 5px;
-  margin-left: 5px;
-}
-
-*/
-
-/* General nodeGame */
 .strong {
   font-weight: bold;
 }
@@ -368,13 +354,10 @@ input[type="range"] {
 
   .panel-body {
     text-align: center;
-  
-
 
     div#timer-div {
       margin-top: 30px;
     }
-
 
     div#player-count-div > p#player-count {
       font-size: 40px;

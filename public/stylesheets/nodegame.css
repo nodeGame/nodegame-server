@@ -1,5 +1,5 @@
 /* nodeGame css */
-/* General */
+/* Main Elements */
 noscript {
   position: fixed;
   top: 50%;
@@ -15,6 +15,10 @@ noscript {
   text-align: center;
   background: white;
   padding: 20px 30px; }
+
+html {
+  margin: 0;
+  padding: 0; }
 
 body {
   margin: 0;
@@ -142,26 +146,7 @@ p {
   font-size: 30px;
   padding: 20px; }
 
-/* Other general */
-/* 
-vas {
-  border: 1px #CCC solid;
-}
-
-
-label {
-  display: block;
-  float: left;
-  min-width: 200px;
-}
-
-input[type="range"] {
-  margin-bottom: 5px;
-  margin-left: 5px;
-}
-
-*/
-/* General nodeGame */
+/* Handy classes */
 .strong {
   font-weight: bold; }
 
