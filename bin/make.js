@@ -50,27 +50,6 @@ var buildDir_shelf = shelfDir + 'build/';
 var buildDir_ngWindow = ngwindowDir + 'build/';
 var buildDir_ngWidgets = ngwidgetsDir + 'build/';
 
-// var ngcDir = J.resolveModuleDir('nodegame-client', __dirname);
-// var JSUSDir = J.resolveModuleDir('JSUS', __dirname);
-// var NDDBDir = J.resolveModuleDir('NDDB', __dirname);
-// var shelfDir = J.resolveModuleDir('shelf.js', __dirname);
-// var ngwindowDir = J.resolveModuleDir('nodegame-window', __dirname);
-// var ngwidgetsDir = J.resolveModuleDir('nodegame-widgets', __dirname);
-//
-// var build_client = require(ngcDir + 'bin/build.js').build;
-// var build_client_support = require(ngcDir + 'bin/build.js').build_support;
-// var build_JSUS = require(JSUSDir + 'bin/build.js').build;
-// var build_NDDB = require(NDDBDir + 'bin/build.js').build;
-// var build_shelf = require(shelfDir + 'bin/build.js').build;
-// var build_ngwindow = require(ngwindowDir + 'bin/build.js').build;
-// var build_ngwidgets = require(ngwidgetsDir + 'bin/build.js').build;
-
-// var rootDir = path.resolve(__dirname, '..');
-// var buildDir = rootDir + '/public/javascripts/';
-// var cssDir = rootDir + '/public/stylesheets/';
-// var libDir = rootDir + '/lib/';
-// var confDir = rootDir + '/conf/';
-
 program
     .version(version);
 
