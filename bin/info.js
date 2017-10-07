@@ -1,6 +1,4 @@
-/**
- * Exports data about nodegame modules.
- */
+// # Exports data about nodegame modules.
 
 var J = require('JSUS').JSUS;
 var path = require('path');
@@ -19,15 +17,15 @@ var build_NDDB = require(NDDBDir + 'bin/build.js').build;
 var build_shelf = require(shelfDir + 'bin/build.js').build;
 var build_ngwindow = require(ngwindowDir + 'bin/build.js').build;
 var build_ngwidgets = require(ngwidgetsDir + 'bin/build.js').build;
+var buildCSS = require('./buildCSS');
 
 var rootDir = path.resolve(__dirname, '..');
-var buildDir = rootDir + '/public/javascripts/';
-var cssDir = rootDir + '/public/stylesheets/';
-var libDir = rootDir + '/lib/';
-var confDir = rootDir + '/conf/';
+var buildDir = path.resolve(rootDir, 'public', 'javascripts');
+var cssDir = path.resolve(rootDir, 'public', 'stylesheets');
+var libDir = path.resolve(rootDir, 'lib');
+var confDir = path.resolve(rootDir, 'conf');
 
-var pkg = require('../package.json'),
-version = pkg.version;
+var { version } = require(path.resolve(rootDir, 'package.json'));
 
 module.exports = {
     version: version,
@@ -38,7 +36,8 @@ module.exports = {
         NDDB: build_NDDB,
         shelf: build_shelf,
         window: build_ngwindow,
-        widgets: build_ngwidgets
+        widgets: build_ngwidgets,
+        css: buildCSS
     },
     serverDir: {
         root: rootDir,
