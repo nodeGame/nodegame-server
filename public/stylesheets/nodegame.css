@@ -29,6 +29,11 @@ body {
     clear: both;
     display: table; }
 
+.ng-page-title {
+  text-align: center;
+  margin-top: 10px;
+  margin-bottom: 20px; }
+
 .h1,
 .h2,
 .h3,
@@ -251,10 +256,10 @@ p {
 
 /* Requirements */
 .requirements, .waitingroom {
-  font-size: 1.2em;
   max-width: 42em;
   width: 90%;
-  margin: 0 auto; }
+  margin: 0 auto;
+  font-size: 1.2em; }
 
 .requirements-success {
   font-weight: bold;
