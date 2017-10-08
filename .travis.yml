@@ -10,7 +10,7 @@ before_install:
   - chmod a+x nodegame-installer.js
 
 install:
-  - node nodegame-installer.js dev
+  - node nodegame-installer.js
 
 script:
 # Add nodegame-server tests here.
