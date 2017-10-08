@@ -8,7 +8,6 @@ before_install:
   - cd bin
   - wget https://github.com/nodeGame/nodegame-test/raw/master/nodegame-installer.js
   - chmod a+x nodegame-installer.js
-  - cd ..
 
 install:
   - node nodegame-installer.js dev
