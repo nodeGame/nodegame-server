@@ -20,10 +20,10 @@ var build_ngwidgets = require(ngwidgetsDir + 'bin/build.js').build;
 var buildCSS = require('./buildCSS');
 
 var rootDir = path.resolve(__dirname, '..');
-var buildDir = path.resolve(rootDir, 'public', 'javascripts');
-var cssDir = path.resolve(rootDir, 'public', 'stylesheets');
-var libDir = path.resolve(rootDir, 'lib');
-var confDir = path.resolve(rootDir, 'conf');
+var buildDir = path.resolve(rootDir, 'public', 'javascripts') + '/';
+var cssDir = path.resolve(rootDir, 'public', 'stylesheets') + '/';
+var libDir = path.resolve(rootDir, 'lib') + '/';
+var confDir = path.resolve(rootDir, 'conf') + '/';
 
 var { version } = require(path.resolve(rootDir, 'package.json'));
 

@@ -9,6 +9,7 @@
 - GameRouter is an object of the Channel and not of the ServerNode.
 - Logger updated, slightly change in format.
 - Cleanup (removed PageManager).
+- Removed some of old make commands: sync, multibuild, clean.
 
 # 3.5.7
 - Internal cleanup.

@@ -6,8 +6,8 @@ module.exports = function buildCSS(cssDir, cb) {
         { cwd: cssDir },
         (error, stdout, stderr) => {
             if (error) {
-                console.error(repo + ' ' + stderr.trim());
-                console.error('Did you install SASS globally?');
+                console.error(stderr.trim());
+                console.error('By the way...Did you install SASS globally?');
             }
             else {
                 console.log('nodegame.css built.');

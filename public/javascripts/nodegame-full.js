@@ -23757,7 +23757,7 @@ if (!Array.prototype.indexOf) {
                     widgetRoot =  W.getElementById(widgetRoot);
                     widgetObj = this.node.widgets.append(widget.name,
                                                          widgetRoot,
-                                                         widget.options);                   
+                                                         widget.options);
                 }
                 this[widget.ref] = widgetObj;
             };
@@ -29912,7 +29912,7 @@ if (!Array.prototype.indexOf) {
             }
         });
 
-// TODO: not used for now.        
+// TODO: not used for now.
 //         /**
 //          * ## in.get.SESSION
 //          *
@@ -31673,6 +31673,15 @@ if (!Array.prototype.indexOf) {
          */
         this.isIE = !!document.createElement('span').attachEvent;
 
+        /**
+         * ### GameWindow.willResizeFrame
+         *
+         * Boolean flag saying whether a call to resize the frame is in progress
+         *
+         * @see W.adjustFrameHeight
+         */
+        this.willResizeFrame = false;
+
         // Add setup functions.
         this.addDefaultSetups();
 
@@ -32077,6 +32086,13 @@ if (!Array.prototype.indexOf) {
 
         // Emit event.
         node.events.ng.emit('FRAME_GENERATED', iframe);
+
+        // Add listener on resizing the page.
+        document.body.onresize = function() {
+            W.adjustFrameHeight(0, 120);
+        };
+
+
 
         return iframe;
     };
@@ -33140,6 +33156,71 @@ if (!Array.prototype.indexOf) {
         this.uriChannel = uriChannel;
     };
 
+    /**
+     * ### GameWindow.adjustFrameHeight
+     *
+     * Resets the min-height style of the iframe to fit its content properly
+     *
+     * Takes into the available height of the page, and the actual
+     * content of the iframe, which is stretched to either:
+     *
+     *  - (almost) till the end of the page,
+     *  - or to fit its content, if larger than page height (with scrollbar).
+     *
+     * @param {number} userMinHeight Optional. If set minHeight cannot be
+     *   less than this value. Default: 0
+     * @param {number} delay. If set, a timeout is created before the
+     *   the frame is actually adjusted. Multiple calls will be
+     *   evaluated only once at the end of a new timeout. Default: undefined
+     *
+     * @see W.willResizeFrame
+     */
+    GameWindow.prototype.adjustFrameHeight = (function() {
+        var nextTimeout, adjustIt;
+
+        adjustIt = function (userMinHeight) {
+            var iframe, minHeight, contentHeight;
+            iframe = W.getFrame();
+            // Iframe might have been destroyed already, e.g. in a test.
+            if (!iframe || !iframe.contentWindow) return;
+
+            // Try to find out how tall the frame should be.
+            minHeight = window.innerHeight || window.clientHeight;
+
+            contentHeight =
+                iframe.contentWindow.document.body.offsetHeight + 100;
+
+            if (minHeight < contentHeight) minHeight = contentHeight;
+            if (minHeight < (userMinHeight || 0)) minHeight = userMinHeight;
+
+            // Adjust min-height based on content.
+            iframe.style['min-height'] = minHeight + 'px';
+        };
+
+        return function(userMinHeight, delay) {
+            if ('undefined' === typeof delay) {
+                adjustIt(userMinHeight);
+                return;
+            }
+            if (W.willResizeFrame) {
+                nextTimeout = true
+                return;
+            }
+            W.willResizeFrame = setTimeout(function() {
+                W.willResizeFrame = null;
+                // If another timeout call was requested, do nothing now.
+                if (nextTimeout) {
+                    nextTimeout = false;
+                    W.adjustFrameHeight(userMinHeight, delay);
+                }
+                else {
+                    adjustIt(userMinHeight);
+                }
+            }, delay);
+        };
+
+    })();
+
     // ## Helper functions
 
     /**
@@ -33209,23 +33290,13 @@ if (!Array.prototype.indexOf) {
 
             func();
 
-            setTimeout(function() {
-                // Iframe might have been destroyed already, e.g. in a test.
-                if (!iframe || !iframe.contentWindow) return;
-                // Adjust min-height based on content.
-                iframe.style['min-height'] =
-                    (iframe.contentWindow.document.body.offsetHeight + 100) +
-                    'px';
-            });
-
+            // Important. We need a timeout (120), because some changes might
+            // take time to be reflected in the DOM.
+            W.adjustFrameHeight(0, 120);
         };
 
-        if (loadCache) {
-            reloadScripts(iframe, afterScripts);
-        }
-        else {
-            afterScripts();
-        }
+        if (loadCache) reloadScripts(iframe, afterScripts);
+        else afterScripts();
     }
 
     /**
@@ -33409,13 +33480,13 @@ if (!Array.prototype.indexOf) {
         case 'right':
             W.addClass(frame, 'ng_mainframe-header-vertical-r');
             if (header) {
-                frame.style['padding-right'] = header.offsetWidth + 10 + 'px';
+                frame.style['padding-right'] = header.offsetWidth + 50 + 'px';
             }
             break;
         case 'left':
             W.addClass(frame, 'ng_mainframe-header-vertical-l');
             if (header) {
-                frame.style['padding-left'] = header.offsetWidth + 10 + 'px';
+                frame.style['padding-left'] = header.offsetWidth + 50 + 'px';
             }
             break;
         case 'top':
@@ -33423,7 +33494,7 @@ if (!Array.prototype.indexOf) {
             // There might be no header yet.
             if (header) {
                 W.getFrameRoot().insertBefore(header, frame);
-                frame.style['padding-top'] = header.offsetHeight + 10 + 'px';
+                frame.style['padding-top'] = header.offsetHeight + 50 + 'px';
             }
             break;
         case 'bottom':
@@ -33431,7 +33502,7 @@ if (!Array.prototype.indexOf) {
             // There might be no header yet.
             if (header) {
                 W.getFrameRoot().insertBefore(header, frame.nextSibling);
-                frame.style['padding-bottom'] = header.offsetHeight + 10 + 'px';
+                frame.style['padding-bottom'] = header.offsetHeight + 50 + 'px';
             }
             break;
         }
@@ -35097,25 +35168,6 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
-     * ### GameWindow.getScreenInfo
-     *
-     * Returns information about the screen in which nodeGame is running
-     *
-     * @return {object} A object containing the scren info
-     */
-    GameWindow.prototype.getScreenInfo = function() {
-        var screen = window.screen;
-        return {
-            height: screen.height,
-            widht: screen.width,
-            availHeight: screen.availHeight,
-            availWidth: screen.availWidht,
-            colorDepth: screen.colorDepth,
-            pixelDepth: screen.pixedDepth
-        };
-    };
-
-    /**
      * ### GameWindow.getLoadingDots
      *
      * Creates and returns a span element with incrementing dots inside
@@ -35197,24 +35249,28 @@ if (!Array.prototype.indexOf) {
      * Creates an HTML button element that will emit an event when clicked
      *
      * @param {string} event The event to emit when clicked
-     * @param {string} text Optional. The text on the button
-     * @param {string} id The id of the button
-     * @param {object} attributes Optional. The attributes of the button
+     * @param {string|object} attributes Optional. The attributes of the
+     *   button, or if string the text to display inside the button.
      *
      * @return {Element} The newly created button
+     *
+     * @see GameWindow.get
      */
-    GameWindow.prototype.getEventButton =
-    function(event, text, id, attributes) {
-
+    GameWindow.prototype.getEventButton = function(event, attributes) {
         var b;
         if ('string' !== typeof event) {
             throw new TypeError('GameWindow.getEventButton: event must ' +
-                                'be string.');
+                                'be string. Found: ' + event);
         }
-        b = this.getButton(id, text, attributes);
-        b.onclick = function() {
-            node.emit(event);
-        };
+        if ('string' === typeof attributes) {
+            attributes = { innerHTML: attributes };
+        }
+        else if (!attributes) {
+            attributes = {};
+        }
+        if (!attributes.innerHTML) attributes.innerHTML = event;
+        b = this.get('button', attributes);
+        b.onclick = function() { node.emit(event); };
         return b;
     };
 
@@ -35223,30 +35279,21 @@ if (!Array.prototype.indexOf) {
      *
      * Adds an EventButton to the specified root element
      *
-     * If no valid root element is provided, it is append as last element
-     * in the current screen.
-     *
      * @param {string} event The event to emit when clicked
-     * @param {string} text Optional. The text on the button
-     * @param {Element} root Optional. The root element
-     * @param {string} id The id of the button
-     * @param {object} attributes Optional. The attributes of the button
+     * @param {Element} root Optional. The root element. Default: last element
+     * on the page
+     * @param {string|object} attributes Optional. The attributes of the
+     *   button, or if string the text to display inside the button.
      *
      * @return {Element} The newly created button
      *
+     * @see GameWindow.get
      * @see GameWindow.getEventButton
      */
-    GameWindow.prototype.addEventButton =
-    function(event, text, root, id, attributes) {
+    GameWindow.prototype.addEventButton = function(event, root, attributes) {
         var eb;
-
-        if (!event) return;
-        if (!root) {
-            root = this.getScreen();
-        }
-
-        eb = this.getEventButton(event, text, id, attributes);
-
+        eb = this.getEventButton(event, attributes);
+        if (!root) root = this.getScreen();
         return root.appendChild(eb);
     };
 
@@ -37876,7 +37923,8 @@ if (!Array.prototype.indexOf) {
         }
 
         // Init default values.
-
+        options = options || {};
+        
         // If no root is defined, use the body element of the main frame,
         // if none is found, use the document.body.
         if (!root) {
@@ -37884,8 +37932,12 @@ if (!Array.prototype.indexOf) {
             if (root) root = root.body;
             if (!root) root = document.body;
         }
-        options = options || {};
-
+        else if (root === W.getHeader() &&
+                 'undefined' === typeof options.panel) {
+            
+            options.panel = false;
+        }
+        
         // Check if it is a object (new widget).
         // If it is a string is the name of an existing widget.
         // In this case a dependencies check is done.
@@ -48536,7 +48588,7 @@ if (!Array.prototype.indexOf) {
          *
          * @see VisualRound.setLayout
          */
-        this.layout = 'vertical';
+        this.layout = null;
 
     }
 
@@ -48828,6 +48880,17 @@ if (!Array.prototype.indexOf) {
         this.updateDisplay();
     };
 
+    /**
+     * ### VisualRound.setLayout
+     *
+     * Arranges the relative position of the various elements of VisualRound
+     *
+     * @param {string} layout. Admitted values: 
+     *   - 'vertical' (alias: 'multimode_vertical')
+     *   - 'horizontal'
+     *   - 'multimode_horizontal'
+     *   - 'all_horizontal'
+     */
     VisualRound.prototype.setLayout = function(layout) {
         if ('string' !== typeof layout || layout.trim() === '') {
             throw new TypeError('VisualRound.setLayout: layout must be ' +
@@ -49272,12 +49335,13 @@ if (!Array.prototype.indexOf) {
     };
 
     CompoundDisplayMode.prototype.activate = function() {
-        var i, len, d;
+        var i, len, d, layout;
+        layout = this.visualRound.layout;
         i = -1, len = this.displayModes.length;
         for (; ++i < len; ) {
             d = this.displayModes[i];
             if (d.activate) this.displayModes[i].activate();
-            setLayout(d, this.visualRound.layout, i === (len-1));
+            if (layout) setLayout(d, layout, i === (len-1));
         }
     };
 

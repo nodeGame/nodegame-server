@@ -253,26 +253,49 @@ p {
       display: none;
     }
   }
+}
 
-  /*
-  .moneytalks,
-  .visualround,
-  .visualtimer {
-      
-    .panel-heading,
-    .no-panel-heading {
+.ng_header_position-horizontal-t,
+.ng_header_position-horizontal-b {
+  
+  .visualround {
+
+    margin-right: 10px;
+    
+    .rounddiv,
+    .stagediv {
+
       float: left;
-      margin-right: 10px;
+      
+      .title {
+        float: left;
+        margin-right: 6px;
+      }
+
+      .content {
+        float: right;
+      }
     }
 
-    .panel-body,
-    .no-panel-body {
-      float: left;
+    .rounddiv {
+      margin-right: 8px;
     }
   }
-*/
 
+  .moneytalks,
+  .visualtimer {
+
+    .no-panel-heading {
+      float: left;
+      margin-right: 8px;    
+    }
+
+    .no-panel-body {
+      float: right;
+    }  
+  }
 }
+
 
 /* Visual Round */
 

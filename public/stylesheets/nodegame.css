@@ -174,48 +174,69 @@ p {
    ---
 */
 /* Widgets inside the header */
-#ng_header {
-  /*
-  .moneytalks,
-  .visualround,
-  .visualtimer {
-      
-    .panel-heading,
-    .no-panel-heading {
-      float: left;
-      margin-right: 10px;
-    }
-
-    .panel-body,
-    .no-panel-body {
-      float: left;
-    }
-  }
-*/ }
-  #ng_header .ng_widget {
-    float: left;
-    margin-right: 20px;
-    margin-bottom: 0;
+#ng_header .ng_widget {
+  float: left;
+  margin-right: 20px;
+  margin-bottom: 0;
+  border: none;
+  box-shadow: none;
+  padding: 10px; }
+  #ng_header .ng_widget .panel-heading,
+  #ng_header .ng_widget .no-panel-heading {
     border: none;
-    box-shadow: none;
-    padding: 10px; }
-    #ng_header .ng_widget .panel-heading,
-    #ng_header .ng_widget .no-panel-heading {
-      border: none;
-      background-color: white;
-      padding: 0;
-      font-weight: bold; }
-    #ng_header .ng_widget .panel-body {
-      padding: 0; }
-    #ng_header .ng_widget:last-child {
-      margin-right: 0; }
-  #ng_header .donebutton {
-    float: right;
+    background-color: white;
     padding: 0;
-    margin: 0; }
-    #ng_header .donebutton .panel-heading,
-    #ng_header .donebutton .no-panel-heading {
-      display: none; }
+    font-weight: bold; }
+  #ng_header .ng_widget .panel-body {
+    padding: 0; }
+  #ng_header .ng_widget:last-child {
+    margin-right: 0; }
+#ng_header .donebutton {
+  float: right;
+  padding: 0;
+  margin: 0; }
+  #ng_header .donebutton .panel-heading,
+  #ng_header .donebutton .no-panel-heading {
+    display: none; }
+
+.ng_header_position-horizontal-t .visualround, .ng_header_position-horizontal-b .visualround,
+.ng_header_position-horizontal-b .visualround {
+  margin-right: 10px; }
+  .ng_header_position-horizontal-t .visualround .rounddiv, .ng_header_position-horizontal-b .visualround .rounddiv,
+  .ng_header_position-horizontal-t .visualround .stagediv,
+  .ng_header_position-horizontal-b .visualround .stagediv,
+  .ng_header_position-horizontal-b .visualround .rounddiv,
+  .ng_header_position-horizontal-b .visualround .stagediv {
+    float: left; }
+    .ng_header_position-horizontal-t .visualround .rounddiv .title, .ng_header_position-horizontal-b .visualround .rounddiv .title,
+    .ng_header_position-horizontal-t .visualround .stagediv .title,
+    .ng_header_position-horizontal-b .visualround .stagediv .title,
+    .ng_header_position-horizontal-b .visualround .rounddiv .title,
+    .ng_header_position-horizontal-b .visualround .stagediv .title {
+      float: left;
+      margin-right: 6px; }
+    .ng_header_position-horizontal-t .visualround .rounddiv .content, .ng_header_position-horizontal-b .visualround .rounddiv .content,
+    .ng_header_position-horizontal-t .visualround .stagediv .content,
+    .ng_header_position-horizontal-b .visualround .stagediv .content,
+    .ng_header_position-horizontal-b .visualround .rounddiv .content,
+    .ng_header_position-horizontal-b .visualround .stagediv .content {
+      float: right; }
+  .ng_header_position-horizontal-t .visualround .rounddiv, .ng_header_position-horizontal-b .visualround .rounddiv,
+  .ng_header_position-horizontal-b .visualround .rounddiv {
+    margin-right: 8px; }
+.ng_header_position-horizontal-t .moneytalks .no-panel-heading, .ng_header_position-horizontal-b .moneytalks .no-panel-heading,
+.ng_header_position-horizontal-t .visualtimer .no-panel-heading,
+.ng_header_position-horizontal-b .visualtimer .no-panel-heading,
+.ng_header_position-horizontal-b .moneytalks .no-panel-heading,
+.ng_header_position-horizontal-b .visualtimer .no-panel-heading {
+  float: left;
+  margin-right: 8px; }
+.ng_header_position-horizontal-t .moneytalks .no-panel-body, .ng_header_position-horizontal-b .moneytalks .no-panel-body,
+.ng_header_position-horizontal-t .visualtimer .no-panel-body,
+.ng_header_position-horizontal-b .visualtimer .no-panel-body,
+.ng_header_position-horizontal-b .moneytalks .no-panel-body,
+.ng_header_position-horizontal-b .visualtimer .no-panel-body {
+  float: right; }
 
 /* Visual Round */
 .visualround .title {
