@@ -9,7 +9,7 @@ before_install:
   - chmod a+x nodegame-installer.js
 
 install:
-  - node nodegame-installer.js --install-dir nodegame --no-spinner
+  - node nodegame-installer.js @dev --install-dir nodegame --no-spinner
 
 script:
 # Add nodegame-server tests here.
