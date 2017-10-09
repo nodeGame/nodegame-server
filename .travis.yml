@@ -15,5 +15,5 @@ script:
 # Add nodegame-server tests here.
 
 # Test Ultimatum game.
-  - cd nodegame/games/ultimatum-game/
+  - cd nodegame/games/ultimatum/
   - ./bin/run-standalone-test-v4.sh
