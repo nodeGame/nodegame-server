@@ -16,6 +16,7 @@ script:
 
 # Test Ultimatum game.
   - ls nodegame/ -la
-  - ls nodegame/games/ -la
-  - cd nodegame/games/ultimatum/
+  - ls nodegame/games/ultimatum-game/ -la
+  - ls nodegame/games/ultimatum-game/bin/ -la 
+  - cd nodegame/games/ultimatum-game/
   - ./bin/run-standalone-test-v4.sh
