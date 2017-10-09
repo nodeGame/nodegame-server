@@ -16,4 +16,4 @@ script:
 
 # Test Ultimatum game.
   - cd nodegame/games/ultimatum-game/
-  - ./bin/run-standalone-test.sh
+  - ./bin/run-standalone-test-v4.sh
