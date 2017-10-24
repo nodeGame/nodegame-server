@@ -11,11 +11,13 @@ before_install:
   - chmod a+x nodegame-installer.js
 
 install:
-  - node nodegame-installer.js @dev --install-dir nodegame --branch v4
+  - node nodegame-installer.js @dev --install-dir node_modules --no-spinner --branch v4
 
 script:
 # Add nodegame-server tests here.
 
 # Test Ultimatum game.
-  - ls nodegame/node_modules/ -la
+
+  - ls node_modules/ -la
+  - cd node_modules/nodegame-test/games/ultimatum
   - ./bin/run-standalone-test-v4.sh
