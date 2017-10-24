@@ -18,6 +18,6 @@ script:
 
 # Test Ultimatum game.
 
-  - ls node_modules/ -la
   - cd node_modules/nodegame-test/games/ultimatum-game
+  - ls bin/ -la  
   - ./bin/run-standalone-test-v4.sh
