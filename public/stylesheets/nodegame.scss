@@ -278,6 +278,7 @@ p {
     }
 
     .rounddiv {
+      margin-left: 8px;
       margin-right: 8px;
     }
   }
@@ -309,6 +310,10 @@ p {
 .languageselector {
   float: center;
   width: 160px;
+
+  .panel-heading {
+    font-size: 18px;
+  }
 }
 
 .languageselector > .panel-body > form > label {

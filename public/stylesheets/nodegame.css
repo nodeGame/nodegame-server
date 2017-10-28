@@ -223,6 +223,7 @@ p {
       float: right; }
   .ng_header_position-horizontal-t .visualround .rounddiv, .ng_header_position-horizontal-b .visualround .rounddiv,
   .ng_header_position-horizontal-b .visualround .rounddiv {
+    margin-left: 8px;
     margin-right: 8px; }
 .ng_header_position-horizontal-t .moneytalks .no-panel-heading, .ng_header_position-horizontal-b .moneytalks .no-panel-heading,
 .ng_header_position-horizontal-t .visualtimer .no-panel-heading,
@@ -246,6 +247,8 @@ p {
 .languageselector {
   float: center;
   width: 160px; }
+  .languageselector .panel-heading {
+    font-size: 18px; }
 
 .languageselector > .panel-body > form > label {
   font-size: 20px;
