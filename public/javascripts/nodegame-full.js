@@ -23877,6 +23877,7 @@ if (!Array.prototype.indexOf) {
                                 step + ', but nodegame-window is not loaded.');
             }
             frameOptions = {};
+            if ('function' === typeof frame) frame = frame.call(node.game);
             if ('string' === typeof frame) {
                 uri = frame;
             }
@@ -23972,7 +23973,7 @@ if (!Array.prototype.indexOf) {
     Game.prototype.getCurrentStepObj = function() {
         return this.plot.getStep(this.getCurrentGameStage());
     };
-
+    
      /**
      * ### Game.getCurrentStep
      *
@@ -23981,6 +23982,23 @@ if (!Array.prototype.indexOf) {
      * @deprecated
      */
     Game.prototype.getCurrentStep = Game.prototype.getCurrentStepObj;
+
+    /**
+     * ### Game.getCurrentStageObj
+     *
+     * Returns the object representing the current game stage.
+     *
+     * The returning object includes all the properties, such as:
+     * _id_, _init_, etc.
+     *
+     * @return {object} The game-stage as defined in the stager.
+     *
+     * @see Stager
+     * @see GamePlot
+     */
+    Game.prototype.getCurrentStageObj = function() {
+        return this.plot.getStage(this.getCurrentGameStage());
+    };
 
     /**
      * ### Game.getCurrentStepProperty
@@ -45439,7 +45457,10 @@ if (!Array.prototype.indexOf) {
          *
          * Default: true
          */
-        if ('undefined' === typeof options.showEmailForm) {
+        if (options.email === false) {
+            options.showEmailForm = false;
+        }
+        else if ('undefined' === typeof options.showEmailForm) {
             this.showEmailForm = true;
         }
         else if ('boolean' === typeof options.showEmailForm) {
@@ -45459,7 +45480,10 @@ if (!Array.prototype.indexOf) {
          *
          * Default: true
          */
-        if ('undefined' === typeof options.showFeedbackForm) {
+        if (options.feedback === false) {
+            options.showFeedbackForm = false;
+        }
+        else if ('undefined' === typeof options.showFeedbackForm) {
             this.showFeedbackForm = true;
         }
         else if ('boolean' === typeof options.showFeedbackForm) {
@@ -45479,7 +45503,10 @@ if (!Array.prototype.indexOf) {
          *
          * Default: true
          */
-        if ('undefined' === typeof options.showTotalWin) {
+        if (options.totalWin === false) {
+            options.showTotalWin = false;
+        }
+        else if ('undefined' === typeof options.showTotalWin) {
             this.showTotalWin = true;
         }
         else if ('boolean' === typeof options.showTotalWin) {
@@ -45499,7 +45526,10 @@ if (!Array.prototype.indexOf) {
          *
          * Default: true
          */
-        if ('undefined' === typeof options.showExitCode) {
+        if (options.exitCode === false) {
+            options.showExitCode !== false
+        }
+        else if ('undefined' === typeof options.showExitCode) {
             this.showExitCode = true;
         }
         else if ('boolean' === typeof options.showExitCode) {
