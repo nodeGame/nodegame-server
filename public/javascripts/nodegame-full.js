@@ -23973,7 +23973,7 @@ if (!Array.prototype.indexOf) {
     Game.prototype.getCurrentStepObj = function() {
         return this.plot.getStep(this.getCurrentGameStage());
     };
-    
+
      /**
      * ### Game.getCurrentStep
      *
@@ -23982,23 +23982,6 @@ if (!Array.prototype.indexOf) {
      * @deprecated
      */
     Game.prototype.getCurrentStep = Game.prototype.getCurrentStepObj;
-
-    /**
-     * ### Game.getCurrentStageObj
-     *
-     * Returns the object representing the current game stage.
-     *
-     * The returning object includes all the properties, such as:
-     * _id_, _init_, etc.
-     *
-     * @return {object} The game-stage as defined in the stager.
-     *
-     * @see Stager
-     * @see GamePlot
-     */
-    Game.prototype.getCurrentStageObj = function() {
-        return this.plot.getStage(this.getCurrentGameStage());
-    };
 
     /**
      * ### Game.getCurrentStepProperty
@@ -38184,7 +38167,7 @@ if (!Array.prototype.indexOf) {
         widget.sounds = 'undefined' === typeof options.sounds ?
             WidgetPrototype.sounds : options.sounds;
         widget.texts = 'undefined' === typeof options.texts ?
-            WidgetPrototype.texts : option.texts;
+            WidgetPrototype.texts : options.texts;
         widget.widgetName = widgetName;
         // Fixed properties.
 
