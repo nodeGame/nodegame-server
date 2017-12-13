@@ -14,25 +14,25 @@
       , "url": "https://github.com/nodeGame/nodegame-server.git"
     }
   , "dependencies": {
-      "express": "4.14.0"
+      "express": "4.16.2"
   ,   "body-parser": "*"
   ,   "cookie-parser": "*"
   ,   "cookie-session": "*"
   ,   "errorhandler": "*"
   ,   "archiver": "*"
-  ,   "socket.io": "1.4.5"
+  ,   "socket.io": "2.0.4"
   ,   "nodegame-monitor": "*"
   ,   "nodegame-game-template": "*"
   ,   "JSUS": ">= 0.16.0"
   ,   "NDDB": ">= 1.8.0"
   ,   "shelf.js": ">= 0.3.7"
   ,   "commander": ">= 2.8.1"
-  ,   "request": "2.11.1"
-  ,   "jade": "0.25.0"
+  ,   "request": "2.83.0"
+  ,   "jade": "1.11.0"
   ,   "JSON": "1.0.0"
-  ,   "winston": "2.2.0"
+  ,   "winston": "2.4.0"
   ,   "phantomjs": ">= 1.9.7"
-  ,   "jsonwebtoken": "5.7.0"
+  ,   "jsonwebtoken": "8.1.0"
     }
   , "devDependencies": {
       "mocha": ">= 0.3.0",
