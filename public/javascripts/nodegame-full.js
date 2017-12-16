@@ -3318,38 +3318,168 @@ if (!Array.prototype.indexOf) {
     /**
      * ## OBJ.keys
      *
-     * Scans an object an returns all the keys of the properties,
-     * into an array.
+     * Returns all the keys of an object until desired level of nestedness
      *
-     * The second paramter controls the level of nested objects
-     * to be evaluated. Defaults 0 (nested properties are skipped).
+     * The second parameter can be omitted, and the level can be specified
+     * inside the options object passed as second parameter.
      *
      * @param {object} obj The object from which extract the keys
-     * @param {number} level Optional. The level of recursion. Defaults 0
+     * @param {number} level Optional. How many nested levels to scan.
+     *   Default: 0, meaning 0 recursion, i.e., only first level keys.
+     * @param {object} options Optional. Configuration options:
+     *
+     *   - type: 'all':   all keys (default),
+     *           'level': keys of the specified level,
+     *           'leaf':  keys that are leaves, i.e., keys that are at the
+     *                    the desired level or that do not point to an object
+     *   - concat: true/false: If TRUE, keys are prefixed by parent keys
+     *   - separator: a character to inter between parent and children keys;
+     *                 (default: '.')
+     *   - distinct: if TRUE, only unique keys are returned  (default: false)
+     *   - parent: the name of initial parent key (default: '')
+     *   - array: an array to which the keys will be appended (default: [])
+     *   - skip: an object containing keys to skip
+     *   - cb: a callback to be applied to every key before adding to results.
+     *         The return value of the callback is interpreted as follows:
+     *         - string|number: inserted as it is
+     *         - array: concatenated
+     *         - undefined: the original key is inserted
+     *         - null: nothing is inserted
      *
      * @return {array} The array containing the extracted keys
      *
      * @see Object.keys
      */
-    OBJ.keys = OBJ.objGetAllKeys = function(obj, level, curLevel) {
-        var result, key;
-        if (!obj) return [];
-        level = 'number' === typeof level && level >= 0 ? level : 0;
-        curLevel = 'number' === typeof curLevel && curLevel >= 0 ? curLevel : 0;
-        result = [];
-        for (key in obj) {
-            if (obj.hasOwnProperty(key)) {
-                result.push(key);
-                if (curLevel < level) {
-                    if ('object' === typeof obj[key]) {
-                        result = result.concat(OBJ.objGetAllKeys(obj[key],
-                                                                 (curLevel+1)));
+    OBJ.keys = (function() {
+        return function(obj, level, options) {
+            var keys, type, allKeys, leafKeys, levelKeys;
+            var separator, myLevel, curParent;
+
+            if (arguments.length === 2 && 'object' === typeof level) {
+                options = level;
+                level = options.level;
+            }
+
+            options = options || {};
+
+            type = options.type ? options.type.toLowerCase() : 'all';
+            if (type === 'all') allKeys = true;
+            else if (type === 'leaf') leafKeys = true;
+            else if (type === 'level') levelKeys = true;
+            else throw new Error('keys: unknown type option: ' + type);
+
+            if (options.cb && 'function' !== typeof options.cb) {
+                throw new TypeError('JSUS.keys: options.cb must be function ' +
+                                    'or undefined. Found: ' + options.cb);
+            }
+
+            if ('undefined' === typeof level) myLevel = 0;
+            else if ('number' === typeof level) myLevel = level;
+            else if ('string' === typeof level) myLevel = parseInt(level, 10);
+            if ('number' !== typeof myLevel || isNaN(myLevel)) {
+                throw new Error('JSUS.keys: level must be number, undefined ' +
+                                'or a parsable string. Found: ' + level);
+            }
+            // No keys at level -1;
+            if (level < 0) return [];
+
+            if (options.concat) {
+                if ('undefined' === typeof options.separator) separator = '.';
+                else separator = options.separator;
+            }
+
+            if (options.parent) curParent = options.parent + separator;
+            else curParent = '';
+
+            if (!options.concat && options.distinct) keys = {};
+
+            return _keys(obj, myLevel, 0, curParent, options.concat,
+                         allKeys, leafKeys, levelKeys, separator,
+                         options.array || [], keys, options.skip, options.cb);
+        }
+
+        function _keys(obj, level, curLevel, curParent,
+                       concatKeys, allKeys, leafKeys, levelKeys,
+                       separator, res, uniqueKeys, skipKeys, cb) {
+
+            var key, isLevel, isObj, tmp;
+            isLevel = curLevel === level;
+            for (key in obj) {
+                if (obj.hasOwnProperty(key)) {
+
+                    isObj = 'object' === typeof obj[key];
+                    if (allKeys ||
+                        (leafKeys && (isLevel || !isObj)) ||
+                        (levelKeys && isLevel)) {
+
+                        if (!skipKeys || !skipKeys[key]) {
+                            if (concatKeys) {
+                                tmp = curParent + key;
+                                if (cb) _doCb(tmp, res, cb);
+                                else res.push(tmp);
+
+                            }
+                            else {
+                                if (uniqueKeys){
+                                    if (!uniqueKeys[key]) {
+                                        if (cb) _doCb(key, res, cb);
+                                        else res.push(key);
+                                        uniqueKeys[key] = true;
+                                    }
+                                }
+                                else {
+                                    if (cb) _doCb(key, res, cb);
+                                    else res.push(key);
+                                }
+                            }
+                        }
+
+                    }
+                    if (isObj && (curLevel < level)) {
+                        _keys(obj[key], level, (curLevel+1),
+                              concatKeys ? curParent + key + separator : key,
+                              concatKeys, allKeys, leafKeys, levelKeys,
+                              separator, res, uniqueKeys, skipKeys, cb);
                     }
                 }
             }
+            return res;
         }
-        return result;
-    };
+
+        function _doCb(key, res, cb) {
+            var tmp;
+            tmp = cb(key);
+            // If string, substitute it.
+            if ('string' === typeof tmp || 'number' === typeof tmp) {
+                res.push(tmp);
+            }
+            // If array, expand it.
+            else if (JSUS.isArray(tmp) && tmp.length) {
+                if (tmp.length < 4) {
+                    res.push(tmp[0]);
+                    if (tmp.length > 1) {
+                        res.push(tmp[1]);
+                        if (tmp.length > 2) {
+                            res.push(tmp[2]);
+                        }
+                    }
+                }
+                else {
+                    (function() {
+                        var i = -1, len = tmp.length;
+                        for ( ; ++i < len ; ) {
+                            res.push(tmp[i]);
+                        }
+                    })(tmp, res);
+                }
+            }
+            else if ('undefined' === typeof tmp) {
+                res.push(key);
+            }
+            // Else, e.g. null, ignore it.
+        }
+    })();
+
 
     /**
      * ## OBJ.implode
@@ -16766,19 +16896,21 @@ if (!Array.prototype.indexOf) {
     Stager.prototype.cloneStep = function(stepId, newStepId) {
         var step;
         if ('string' !== typeof stepId) {
-            throw new TypeError('Stager.cloneStep: stepId must be string.');
+            throw new TypeError('Stager.cloneStep: stepId must be string. ' +
+                               'Found: ' + stepId);
         }
         if ('string' !== typeof newStepId) {
-            throw new TypeError('Stager.cloneStep: newStepId must be string.');
+            throw new TypeError('Stager.cloneStep: newStepId must be ' +
+                                'string. Found: ' + newStepId);
         }
         if (this.steps[newStepId]) {
             throw new Error('Stager.cloneStep: newStepId already taken: ' +
-                            newStepId + '.');
+                            newStepId);
         }
         step = this.steps[stepId];
         if (!step) {
             throw new Error('Stager.cloneStep: step not found: ' +
-                            stepId + '.');
+                            stepId);
         }
         step = J.clone(step);
         step.id = newStepId;
@@ -23982,6 +24114,23 @@ if (!Array.prototype.indexOf) {
      * @deprecated
      */
     Game.prototype.getCurrentStep = Game.prototype.getCurrentStepObj;
+
+    /**
+     * ### Game.getCurrentStageObj
+     *
+     * Returns the object representing the current game stage.
+     *
+     * The returning object includes all the properties, such as:
+     * _id_, _init_, etc.
+     *
+     * @return {object} The game-stage as defined in the stager.
+     *
+     * @see Stager
+     * @see GamePlot
+     */
+    Game.prototype.getCurrentStageObj = function() {
+        return this.plot.getStage(this.getCurrentGameStage());
+    };
 
     /**
      * ### Game.getCurrentStepProperty
@@ -33202,7 +33351,7 @@ if (!Array.prototype.indexOf) {
             minHeight = window.innerHeight || window.clientHeight;
 
             contentHeight =
-                iframe.contentWindow.document.body.offsetHeight + 100;
+                iframe.contentWindow.document.body.offsetHeight + 120;
 
             if (minHeight < contentHeight) minHeight = contentHeight;
             if (minHeight < (userMinHeight || 0)) minHeight = userMinHeight;
@@ -38167,7 +38316,7 @@ if (!Array.prototype.indexOf) {
         widget.sounds = 'undefined' === typeof options.sounds ?
             WidgetPrototype.sounds : options.sounds;
         widget.texts = 'undefined' === typeof options.texts ?
-            WidgetPrototype.texts : options.texts;
+            WidgetPrototype.texts : option.texts;
         widget.widgetName = widgetName;
         // Fixed properties.
 
@@ -48861,7 +49010,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    VisualRound.version = '0.7.2';
+    VisualRound.version = '0.8.0';
     VisualRound.description = 'Display number of current round and/or stage.' +
         'Can also display countdown and total number of rounds and/or stages.';
 
@@ -49026,8 +49175,10 @@ if (!Array.prototype.indexOf) {
      *   - `oldStageId`:
      *     When (re)starting in `flexibleMode`, sets the id of the current
      *     stage
-     *   - `displayModeNames`:
+     *   - `displayMode`:
      *     Array of strings which determines the display style of the widget
+     *   - `displayModeNames`: alias of displayMode, deprecated
+     *     
      *
      * @see VisualRound.setDisplayMode
      * @see GameStager
@@ -49059,14 +49210,20 @@ if (!Array.prototype.indexOf) {
 
         this.updateInformation();
 
-        if (!this.options.displayModeNames) {
+        if (!this.options.displayMode && this.options.displayModeNames) {
+            console.log('***VisualTimer.init: options.displayModeNames is ' +
+                        'deprecated. Use options.displayMode instead.***');
+            this.options.displayMode = this.options.displayModeNames;
+        }
+
+        if (!this.options.displayMode) {
             this.setDisplayMode([
-                'COUNT_UP_ROUNDS_TO_TOTAL',
+                'COUNT_UP_ROUNDS_TO_TOTAL_IFNOT1',
                 'COUNT_UP_STAGES_TO_TOTAL'
             ]);
         }
         else {
-            this.setDisplayMode(this.options.displayModeNames);
+            this.setDisplayMode(this.options.displayMode);
         }
 
         if ('undefined' !== typeof options.separator) {
@@ -49114,47 +49271,39 @@ if (!Array.prototype.indexOf) {
      * - `COUNT_DOWN_STAGES`: Display number of stages left to play.
      * - `COUNT_DOWN_ROUNDS`: Display number of rounds left in this stage.
      *
-     * @param {array} displayModeNames Array of strings representing the names
+     * @param {array|string} displayMode Array of strings representing the names
      *
      * @see VisualRound.displayMode
      * @see CompoundDisplayMode
      * @see VisualRound.init
      */
-    VisualRound.prototype.setDisplayMode = function(displayModeNames) {
-        var i, len, compoundDisplayModeName, displayModes;
+    VisualRound.prototype.setDisplayMode = function(displayMode) {
+        var i, len, displayModes;
 
-        // Validation of input parameter.
-        if (!J.isArray(displayModeNames)) {
-            throw new TypeError('VisualRound.setDisplayMode: ' +
-                                'displayModeNames must be an array. Found: ' +
-                                displayModeNames);
+        if ('string' === typeof displayMode) {
+            displayMode = [ displayMode ];
         }
-        len = displayModeNames.length;
+        else if (!J.isArray(displayMode)) {
+            throw new TypeError('VisualRound.setDisplayMode: ' +
+                                'displayMode must be array or string. ' +
+                                'Found: ' + displayMode);
+        }
+        len = displayMode.length;
         if (len === 0) {
-            throw new Error('VisualRound.setDisplayMode: ' +
-                            'displayModeNames is empty.');
+            throw new Error('VisualRound.setDisplayMode: displayMode is empty');
         }
 
         if (this.displayMode) {
-            // Build compound name.
-            compoundDisplayModeName = displayModeNames.join('&');
             // Nothing to do if mode is already active.
-            if (compoundDisplayModeName === this.displayMode.name) return;
+            if (displayMode.join('&') === this.displayMode.name) return;
             this.deactivate(this.displayMode);
         }
-
-        i = -1;
-        for (; ++i < len; ) {
-            compoundDisplayModeName += displayModeNames[i];
-            if (i !== (len-1)) compoundDisplayModeName += '&';
-        }
-
 
         // Build `CompoundDisplayMode`.
         displayModes = [];
         i = -1;
         for (; ++i < len; ) {
-            switch (displayModeNames[i]) {
+            switch (displayMode[i]) {
             case 'COUNT_UP_STAGES_TO_TOTAL':
                 displayModes.push(new CountUpStages(this, { toTotal: true }));
                 break;
@@ -49170,11 +49319,22 @@ if (!Array.prototype.indexOf) {
             case 'COUNT_UP_ROUNDS':
                 displayModes.push(new CountUpRounds(this));
                 break;
+            case 'COUNT_UP_ROUNDS_TO_TOTAL_IFNOT1':
+                displayModes.push(new CountUpRounds(this, {
+                    toTotal: true,
+                    ifNotOne: true
+                }));
+                break;
+            case 'COUNT_UP_ROUNDS_IFNOT1':
+                displayModes.push(new CountUpRounds(this, { ifNotOne: true }));
+                break;
             case 'COUNT_DOWN_ROUNDS':
                 displayModes.push(new CountDownRounds(this));
                 break;
+            default:
+                throw new Error('VisualRound.setDisplayMode: unknown mode: ' +
+                                displayMode[i]);
             }
-
         }
         this.displayMode = new CompoundDisplayMode(this, displayModes);
         this.activate(this.displayMode);
@@ -49560,9 +49720,16 @@ if (!Array.prototype.indexOf) {
      * @see VisualRound.updateDisplay
      */
     CountUpRounds.prototype.updateDisplay = function() {
-        this.curRoundNumber.innerHTML = this.visualRound.curRound;
-        if (this.options.toTotal) {
-            this.totRoundNumber.innerHTML = this.visualRound.totRound || '?';
+        if (this.options.ifNotOne && this.visualRound.totRound === 1) {
+            this.displayDiv.style.display = 'none';
+        }
+        else {
+            this.curRoundNumber.innerHTML = this.visualRound.curRound;
+            if (this.options.toTotal) {
+                this.totRoundNumber.innerHTML =
+                    this.visualRound.totRound || '?';
+            }
+            this.displayDiv.style.display = '';
         }
     };
 
