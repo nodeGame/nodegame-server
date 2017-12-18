@@ -30196,7 +30196,15 @@ if (!Array.prototype.indexOf) {
         }
 
         // Parse msg.data.
-        if ('string' === typeof msg.data) msg.data = J.parse(msg.data);
+        if ('string' === typeof msg.data) {
+            try {
+                msg.data = J.parse(msg.data);
+            }
+            catch(e) {
+                console.log(e);
+                debugger;
+            }
+        }
 
         return true;
     }
@@ -38316,7 +38324,11 @@ if (!Array.prototype.indexOf) {
         widget.sounds = 'undefined' === typeof options.sounds ?
             WidgetPrototype.sounds : options.sounds;
         widget.texts = 'undefined' === typeof options.texts ?
+<<<<<<< HEAD
             WidgetPrototype.texts : option.texts;
+=======
+            WidgetPrototype.texts : options.texts;
+>>>>>>> waitRoomBot
         widget.widgetName = widgetName;
         // Fixed properties.
 
@@ -45544,7 +45556,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Add Meta-data
 
-    EndScreen.version = '0.4.0';
+    EndScreen.version = '0.5.0';
     EndScreen.description = 'Game end screen. With end game message, ' +
                             'email form, and exit code.';
 
@@ -45556,11 +45568,21 @@ if (!Array.prototype.indexOf) {
                                'and your data has been saved. ' +
                                'Please go back to the Amazon Mechanical Turk ' +
                                'web site and submit the HIT.';
+<<<<<<< HEAD
     EndScreen.texts.contact_question = 'Would you like to be contacted again' +
                                        'for future experiments? If so, leave' +
                                        'your email here and press submit: ';
     EndScreen.texts.total_win = 'Your total win:';
     EndScreen.texts.exit_code = 'Your exit code:';
+=======
+    EndScreen.texts.contactQuestion = 'Would you like to be contacted again' +
+                                       'for future experiments? If so, leave' +
+                                       'your email here and press submit: ';
+    EndScreen.texts.totalWin = 'Your total win:';
+    EndScreen.texts.exitCode = 'Your exit code:';
+    EndScreen.texts.errTotalWin = 'Error: invalid total win.';
+    EndScreen.texts.errExitCode = 'Error: invalid exit code.';
+>>>>>>> waitRoomBot
 
     // ## Dependencies
 
@@ -45748,7 +45770,11 @@ if (!Array.prototype.indexOf) {
     EndScreen.prototype.init = function(options) {
         if (this.showEmailForm && !this.emailForm) {
             this.emailForm = node.widgets.get('EmailForm', J.mixin({
+<<<<<<< HEAD
                 label: this.getText('contact_question'),
+=======
+                label: this.getText('contactQuestion'),
+>>>>>>> waitRoomBot
                 onsubmit: { say: true, emailOnly: true, updateUI: true }
             }, options.email));
         }
@@ -45791,7 +45817,11 @@ if (!Array.prototype.indexOf) {
 
             totalWinParaElement = document.createElement('p');
             totalWinParaElement.innerHTML = '<strong>' +
+<<<<<<< HEAD
                 this.getText('total_win') +
+=======
+                this.getText('totalWin') +
+>>>>>>> waitRoomBot
                 '</strong>';
 
             totalWinInputElement = document.createElement('input');
@@ -45810,7 +45840,11 @@ if (!Array.prototype.indexOf) {
 
             exitCodeParaElement = document.createElement('p');
             exitCodeParaElement.innerHTML = '<strong>' +
+<<<<<<< HEAD
                                             this.getText('exit_code') +
+=======
+                                            this.getText('exitCode') +
+>>>>>>> waitRoomBot
                                             '</strong>';
 
             exitCodeInputElement = document.createElement('input');
@@ -45861,43 +45895,74 @@ if (!Array.prototype.indexOf) {
      *    - exit: An exit code.
      */
     EndScreen.prototype.updateDisplay = function(data) {
-        var preWin, totalWin, exitCode;
-        var totalHTML, exitCodeHTML;
+        var preWin, totalWin, totalRaw, exitCode;
+        var totalHTML, exitCodeHTML, ex, err;
 
         if (this.totalWinCb) {
             totalWin = this.totalWinCb(data, this);
         }
         else {
-            totalWin = J.isNumber(data.total, 0);
-            if (totalWin === false) {
-                node.err('EndScreen error, invalid total win: ' +
-                         data.total);
-                totalWin = 'Error: invalid total win.';
+            if ('undefined' === typeof data.total &&
+                'undefined' === typeof data.totalRaw) {
+
+                throw new Error('EndScreen.updateDisplay: data.total and ' +
+                                'data.totalRaw cannot be both undefined.');
             }
-            else if (data.partials) {
+
+            if ('undefined' !== typeof data.total) {
+                totalWin = J.isNumber(data.total, 0);
+                if (totalWin === false) {
+                    node.err('EndScreen.updateDisplay: invalid data.total: ' +
+                             data.total);
+                    totalWin = this.getText('errTotalWin');
+                    err = true;
+                }
+            }
+
+            if (data.partials) {
                 if (!J.isArray(data.partials)) {
                     node.err('EndScreen error, invalid partials win: ' +
                         data.partials);
                 }
                 else {
                     preWin = data.partials.join(' + ');
-
-                    if ('undefined' !== typeof data.totalRaw) {
-                        preWin += ' = ' + data.totalRaw;
-                        if ('undefined' !== typeof data.exchangeRate) {
-                            preWin += '*' + data.exchangeRate;
-                        }
-                        totalWin = preWin + ' = ' + totalWin;
-                    }
                 }
             }
-            totalWin += ' ' + this.totalWinCurrency;
+
+            if ('undefined' !== typeof data.totalRaw) {
+                if (preWin) preWin += ' = ';
+                else preWin = '';
+                preWin += data.totalRaw;
+
+                // Get Exchange Rate.
+                ex = 'undefined' !== typeof data.exchangeRate ?
+                    data.exchangeRate : node.game.settings.EXCHANGE_RATE;
+
+                // If we have an exchange rate, check if we have a totalRaw.
+                if ('undefined' !== typeof ex) preWin += '*' + ex;
+
+                // Need to compute total manually.
+                if ('undefined' === typeof totalWin) {
+                    totalRaw = J.isNumber(data.totalRaw, 0);
+                    totalWin = parseFloat(ex*data.totalRaw).toFixed(2);
+                    totalWin = J.isNumber(totalWin, 0);
+                    if (totalWin === false) {
+                        node.err('EndScreen.updateDisplay: invalid : ' +
+                                 'totalWin calculation from totalRaw.');
+                        totalWin = this.getText('errTotalWin');
+                        err = true;
+                    }
+                }
+                if (!err) totalWin = preWin + ' = ' + totalWin;
+            }
+
+            if (!err) totalWin += ' ' + this.totalWinCurrency;
         }
 
         exitCode = data.exit;
         if ('string' !== typeof exitCode) {
             node.err('EndScreen error, invalid exit code: ' + exitCode);
-            exitCode = 'Error: invalid exit code.';
+            exitCode = this.getText('errExitCode');
         }
 
         totalHTML = this.totalWinInputElement;
@@ -47101,7 +47166,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    MoneyTalks.version = '0.3.0';
+    MoneyTalks.version = '0.4.0';
     MoneyTalks.description = 'Displays the earnings of a player.';
 
     MoneyTalks.title = 'Earnings';
@@ -47124,19 +47189,20 @@ if (!Array.prototype.indexOf) {
      * @see MoneyTalks.init
      */
     function MoneyTalks(options) {
+
         /**
          * ### MoneyTalks.spanCurrency
          *
          * The SPAN which holds information on the currency
          */
-        this.spanCurrency = document.createElement('span');
+        this.spanCurrency = null;
 
         /**
          * ### MoneyTalks.spanMoney
          *
          * The SPAN which holds information about the money earned so far
          */
-        this.spanMoney = document.createElement('span');
+        this.spanMoney = null;
 
         /**
          * ### MoneyTalks.currency
@@ -47158,6 +47224,27 @@ if (!Array.prototype.indexOf) {
          * Precision of floating point number to display
          */
         this.precision = 2;
+
+        /**
+         * ### MoneyTalks.showCurrency
+         *
+         * If TRUE, the currency is displayed after the money
+         */
+        this.showCurrency = true;
+
+        /**
+         * ### MoneyTalks.currencyClassname
+         *
+         * Class name to be attached to the currency span
+         */
+        this.classnameCurrency = 'moneytalkscurrency';
+
+        /**
+         * ### MoneyTalks.currencyClassname
+         *
+         * Class name to be attached to the money span
+         */
+        this.classnameMoney = 'moneytalksmoney';
     }
 
     // ## MoneyTalks methods
@@ -47170,30 +47257,50 @@ if (!Array.prototype.indexOf) {
      * @param {object} options Optional. Configuration options.
      *
      * The  options object can have the following attributes:
-     *   - `currency`: String describing currency to use.
-     *   - `money`: Current amount of money earned.
-     *   - `precision`: Precision of floating point output to use.
+     *
+     *   - `currency`: The name of currency.
+     *   - `money`: Initial amount of money earned.
+     *   - `precision`: How mamy floating point digits to use.
      *   - `currencyClassName`: Class name to be set for this.spanCurrency.
-     *   - `moneyClassName`: Class name to be set for this.spanMoney;
+     *   - `moneyClassName`: Class name to be set for this.spanMoney.
+     *   - `showCurrency`: Flag whether the name of currency is to be displayed.
      */
     MoneyTalks.prototype.init = function(options) {
-        this.currency = 'string' === typeof options.currency ?
-            options.currency : this.currency;
-        this.money = 'number' === typeof options.money ?
-            options.money : this.money;
-        this.precision = 'number' === typeof options.precision ?
-            options.precision : this.precision;
-
-        this.spanCurrency.className = options.currencyClassName ||
-            this.spanCurrency.className || 'moneytalkscurrency';
-        this.spanMoney.className = options.moneyClassName ||
-            this.spanMoney.className || 'moneytalksmoney';
-
-        this.spanCurrency.innerHTML = this.currency;
-        this.spanMoney.innerHTML = this.money;
+        if ('string' === typeof options.currency) {
+            this.currency = options.currency;
+        }
+        if ('undefined' !== typeof options.showCurrency) {
+            this.showCurrency = !!options.showCurrency;
+        }
+        if ('number' === typeof options.money) {
+            this.money = options.money;
+        }
+        if ('number' === typeof options.precision) {
+            this.precision = options.precision;
+        }
+        if ('string' === typeof options.MoneyClassName) {
+            this.classnameMoney = options.MoneyClassName;
+        }
+        if ('string' === typeof options.currencyClassName) {
+            this.classnameCurrency = options.currencyClassName;
+        }
     };
 
     MoneyTalks.prototype.append = function() {
+        if (!this.spanMoney) {
+            this.spanMoney = document.createElement('span');
+        }
+        if (!this.spanCurrency) {
+            this.spanCurrency = document.createElement('span');
+        }
+        if (!this.showCurrency) this.spanCurrency.style.display = 'none';
+
+        this.spanMoney.className = this.classnameMoney;
+        this.spanCurrency.className = this.classnameCurrency;
+
+        this.spanCurrency.innerHTML = this.currency;
+        this.spanMoney.innerHTML = this.money;
+
         this.bodyDiv.appendChild(this.spanMoney);
         this.bodyDiv.appendChild(this.spanCurrency);
     };
@@ -49178,7 +49285,11 @@ if (!Array.prototype.indexOf) {
      *   - `displayMode`:
      *     Array of strings which determines the display style of the widget
      *   - `displayModeNames`: alias of displayMode, deprecated
+<<<<<<< HEAD
      *     
+=======
+     *
+>>>>>>> waitRoomBot
      *
      * @see VisualRound.setDisplayMode
      * @see GameStager
@@ -50938,7 +51049,7 @@ if (!Array.prototype.indexOf) {
     node.widgets.register('WaitingRoom', WaitingRoom);
     // ## Meta-data
 
-    WaitingRoom.version = '1.2.0';
+    WaitingRoom.version = '1.2.1';
     WaitingRoom.description = 'Displays a waiting room for clients.';
 
     WaitingRoom.title = 'Waiting Room';
@@ -51022,7 +51133,13 @@ if (!Array.prototype.indexOf) {
                 ('undefined' !== typeof data.exit ?
                  ('Please report this exit code: ' + data.exit) : '') +
                 '<br></h3>';
-        }
+        },
+
+        // #### playBot
+        playBot: 'Play With Bot/s',
+
+        // #### connectingBots
+        connectingBots: 'Connecting Bot/s, Please Wait...'
     };
 
     /**
@@ -51152,6 +51269,16 @@ if (!Array.prototype.indexOf) {
          */
         this.disconnectIfNotSelected = null;
 
+<<<<<<< HEAD
+=======
+        /**
+         * ### WaitingRoom.playWithBotOption
+         *
+         * Flag that indicates whether to display button that lets player begin
+         * the game with bots
+         */
+        this.playWithBotOption = null;
+>>>>>>> waitRoomBot
     }
 
     // ## WaitingRoom methods
@@ -51168,10 +51295,12 @@ if (!Array.prototype.indexOf) {
      *   - onSuccess: function executed when all tests succeed
      *   - waitTime: max waiting time to execute all tests (in milliseconds)
      *   - startDate: max waiting time to execute all tests (in milliseconds)
+     *   - playWithBotOption: display button to dispatch players with bots
      *
      * @param {object} conf Configuration object.
      */
     WaitingRoom.prototype.init = function(conf) {
+        var that = this;
 
         if ('object' !== typeof conf) {
             throw new TypeError('WaitingRoom.init: conf must be object. ' +
@@ -51249,11 +51378,26 @@ if (!Array.prototype.indexOf) {
             this.disconnectIfNotSelected = false;
         }
 
-        // Sounds.
-        this.setSounds(conf.sounds);
+        if (conf.playWithBotOption) {
+            this.playWithBotOption = true;
+        }
+        else {
+            this.playWithBotOption = false;
+        }
 
-        // Texts.
-        this.setTexts(conf.texts);
+        if (this.playWithBotOption) {
+            this.playBotBtn = document.createElement('input');
+            this.playBotBtn.className = 'btn btn-secondary btn-lg';
+            this.playBotBtn.value = this.getText('playBot');
+            this.playBotBtn.type = 'button';
+            this.playBotBtn.onclick = function () {
+                that.playBotBtn.value = that.getText('connectingBots');
+                that.playBotBtn.setAttribute('disabled', true);
+                node.say('PLAYWITHBOT');
+            };
+            this.bodyDiv.appendChild(document.createElement('br'));
+            this.bodyDiv.appendChild(this.playBotBtn);
+        }
     };
 
     /**
@@ -51385,7 +51529,6 @@ if (!Array.prototype.indexOf) {
         if (this.waitTime) {
             this.startTimer();
         }
-
     };
 
     WaitingRoom.prototype.listeners = function() {
@@ -51398,6 +51541,13 @@ if (!Array.prototype.indexOf) {
                 node.warn('waiting room widget: invalid setup object: ' + conf);
                 return;
             }
+
+            // Sounds.
+            that.setSounds(conf.sounds);
+
+            // Texts.
+            that.setTexts(conf.texts);
+
             // Configure all requirements.
             that.init(conf);
 
@@ -51475,10 +51625,10 @@ if (!Array.prototype.indexOf) {
             // Write about disconnection in page.
             that.bodyDiv.innerHTML = that.getText('disconnect');
 
-//             // Enough to not display it in case of page refresh.
-//             setTimeout(function() {
-//                 alert('Disconnection from server detected!');
-//             }, 200);
+            // Enough to not display it in case of page refresh.
+            // setTimeout(function() {
+            //              alert('Disconnection from server detected!');
+            //             }, 200);
         });
 
         node.on.data('ROOM_CLOSED', function() {
