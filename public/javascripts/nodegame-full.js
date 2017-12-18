@@ -839,8 +839,6 @@ if (!Array.prototype.indexOf) {
      * @param {Function} cb The callback for each element in the array
      * @param {object} context Optional. The context of execution of the
      *   callback. Defaults ARRAY.each
-     *
-     * @return {boolean} TRUE, if execution was successful
      */
     ARRAY.each = function(array, cb, context) {
         var i, len;
@@ -856,9 +854,8 @@ if (!Array.prototype.indexOf) {
         context = context || this;
         len = array.length;
         for (i = 0 ; i < len; i++) {
-            cb.call(context, array[i]);
+            cb.call(context, array[i], i);
         }
-        return true;
     };
 
     /**
@@ -1866,11 +1863,18 @@ if (!Array.prototype.indexOf) {
      *
      * @param {Node} parent The parent node
      * @param {array} order Optional. A pre-specified order. Defaults, random
+     * @param {function} cb Optional. A callback to execute one each shuffled
+     *   element (after re-positioning). This is always the last parameter, 
+     *   so if order is omitted, it goes second. The callback takes as input:
+     *     - the element
+     *     - the new order
+     *     - the old order
+     *
      *
      * @return {array} The order used to shuffle the nodes
      */
-    DOM.shuffleElements = function(parent, order) {
-        var i, len, idOrder, children, child;
+    DOM.shuffleElements = function(parent, order, cb) {
+        var i, len, numOrder, idOrder, children, child;
         var id;
         if (!JSUS.isNode(parent)) {
             throw new TypeError('DOM.shuffleElements: parent must be a node. ' +
@@ -1881,16 +1885,25 @@ if (!Array.prototype.indexOf) {
             return false;
         }
         if (order) {
-            if (!JSUS.isArray(order)) {
-                throw new TypeError('DOM.shuffleElements: order must array.' +
-                                   'Found: ' + order);
+            if ('undefined' === typeof cb && 'function' === typeof order) {
+                cb = order;
             }
-            if (order.length !== parent.children.length) {
-                throw new Error('DOM.shuffleElements: order length must ' +
-                                'match the number of children nodes.');
+            else {
+                if (!JSUS.isArray(order)) {
+                    throw new TypeError('DOM.shuffleElements: order must be ' +
+                                        'array. Found: ' + order);
+                }
+                if (order.length !== parent.children.length) {
+                    throw new Error('DOM.shuffleElements: order length must ' +
+                                    'match the number of children nodes.');
+                }
             }
         }
-
+        if (cb && 'function' !== typeof cb) {
+            throw new TypeError('DOM.shuffleElements: order must be ' +
+                                'array. Found: ' + order);
+        }
+        
         // DOM4 compliant browsers.
         children = parent.children;
 
@@ -1904,16 +1917,19 @@ if (!Array.prototype.indexOf) {
             }
         }
 
+        // Get all ids.
         len = children.length;
         idOrder = new Array(len);
+        if (cb) numOrder = new Array(len);
         if (!order) order = JSUS.sample(0, (len-1));
         for (i = 0 ; i < len; i++) {
             id = children[order[i]].id;
             if ('string' !== typeof id || id === "") {
                 throw new Error('DOM.shuffleElements: no id found on ' +
-                                'child n. ' + order[i] + '.');
+                                'child n. ' + order[i]);
             }
             idOrder[i] = id;
+            if (cb) numOrder[i] = order[i];
         }
 
         // Two fors are necessary to follow the real sequence (Live List).
@@ -1921,6 +1937,7 @@ if (!Array.prototype.indexOf) {
         // could be unreliable.
         for (i = 0 ; i < len; i++) {
             parent.appendChild(children[idOrder[i]]);
+            if (cb) cb(children[idOrder[i]], i, numOrder[i]);
         }
         return idOrder;
     };
@@ -3301,38 +3318,168 @@ if (!Array.prototype.indexOf) {
     /**
      * ## OBJ.keys
      *
-     * Scans an object an returns all the keys of the properties,
-     * into an array.
+     * Returns all the keys of an object until desired level of nestedness
      *
-     * The second paramter controls the level of nested objects
-     * to be evaluated. Defaults 0 (nested properties are skipped).
+     * The second parameter can be omitted, and the level can be specified
+     * inside the options object passed as second parameter.
      *
      * @param {object} obj The object from which extract the keys
-     * @param {number} level Optional. The level of recursion. Defaults 0
+     * @param {number} level Optional. How many nested levels to scan.
+     *   Default: 0, meaning 0 recursion, i.e., only first level keys.
+     * @param {object} options Optional. Configuration options:
+     *
+     *   - type: 'all':   all keys (default),
+     *           'level': keys of the specified level,
+     *           'leaf':  keys that are leaves, i.e., keys that are at the
+     *                    the desired level or that do not point to an object
+     *   - concat: true/false: If TRUE, keys are prefixed by parent keys
+     *   - separator: a character to inter between parent and children keys;
+     *                 (default: '.')
+     *   - distinct: if TRUE, only unique keys are returned  (default: false)
+     *   - parent: the name of initial parent key (default: '')
+     *   - array: an array to which the keys will be appended (default: [])
+     *   - skip: an object containing keys to skip
+     *   - cb: a callback to be applied to every key before adding to results.
+     *         The return value of the callback is interpreted as follows:
+     *         - string|number: inserted as it is
+     *         - array: concatenated
+     *         - undefined: the original key is inserted
+     *         - null: nothing is inserted
      *
      * @return {array} The array containing the extracted keys
      *
      * @see Object.keys
      */
-    OBJ.keys = OBJ.objGetAllKeys = function(obj, level, curLevel) {
-        var result, key;
-        if (!obj) return [];
-        level = 'number' === typeof level && level >= 0 ? level : 0;
-        curLevel = 'number' === typeof curLevel && curLevel >= 0 ? curLevel : 0;
-        result = [];
-        for (key in obj) {
-            if (obj.hasOwnProperty(key)) {
-                result.push(key);
-                if (curLevel < level) {
-                    if ('object' === typeof obj[key]) {
-                        result = result.concat(OBJ.objGetAllKeys(obj[key],
-                                                                 (curLevel+1)));
+    OBJ.keys = (function() {
+        return function(obj, level, options) {
+            var keys, type, allKeys, leafKeys, levelKeys;
+            var separator, myLevel, curParent;
+
+            if (arguments.length === 2 && 'object' === typeof level) {
+                options = level;
+                level = options.level;
+            }
+
+            options = options || {};
+
+            type = options.type ? options.type.toLowerCase() : 'all';
+            if (type === 'all') allKeys = true;
+            else if (type === 'leaf') leafKeys = true;
+            else if (type === 'level') levelKeys = true;
+            else throw new Error('keys: unknown type option: ' + type);
+
+            if (options.cb && 'function' !== typeof options.cb) {
+                throw new TypeError('JSUS.keys: options.cb must be function ' +
+                                    'or undefined. Found: ' + options.cb);
+            }
+
+            if ('undefined' === typeof level) myLevel = 0;
+            else if ('number' === typeof level) myLevel = level;
+            else if ('string' === typeof level) myLevel = parseInt(level, 10);
+            if ('number' !== typeof myLevel || isNaN(myLevel)) {
+                throw new Error('JSUS.keys: level must be number, undefined ' +
+                                'or a parsable string. Found: ' + level);
+            }
+            // No keys at level -1;
+            if (level < 0) return [];
+
+            if (options.concat) {
+                if ('undefined' === typeof options.separator) separator = '.';
+                else separator = options.separator;
+            }
+
+            if (options.parent) curParent = options.parent + separator;
+            else curParent = '';
+
+            if (!options.concat && options.distinct) keys = {};
+
+            return _keys(obj, myLevel, 0, curParent, options.concat,
+                         allKeys, leafKeys, levelKeys, separator,
+                         options.array || [], keys, options.skip, options.cb);
+        }
+
+        function _keys(obj, level, curLevel, curParent,
+                       concatKeys, allKeys, leafKeys, levelKeys,
+                       separator, res, uniqueKeys, skipKeys, cb) {
+
+            var key, isLevel, isObj, tmp;
+            isLevel = curLevel === level;
+            for (key in obj) {
+                if (obj.hasOwnProperty(key)) {
+
+                    isObj = 'object' === typeof obj[key];
+                    if (allKeys ||
+                        (leafKeys && (isLevel || !isObj)) ||
+                        (levelKeys && isLevel)) {
+
+                        if (!skipKeys || !skipKeys[key]) {
+                            if (concatKeys) {
+                                tmp = curParent + key;
+                                if (cb) _doCb(tmp, res, cb);
+                                else res.push(tmp);
+
+                            }
+                            else {
+                                if (uniqueKeys){
+                                    if (!uniqueKeys[key]) {
+                                        if (cb) _doCb(key, res, cb);
+                                        else res.push(key);
+                                        uniqueKeys[key] = true;
+                                    }
+                                }
+                                else {
+                                    if (cb) _doCb(key, res, cb);
+                                    else res.push(key);
+                                }
+                            }
+                        }
+
+                    }
+                    if (isObj && (curLevel < level)) {
+                        _keys(obj[key], level, (curLevel+1),
+                              concatKeys ? curParent + key + separator : key,
+                              concatKeys, allKeys, leafKeys, levelKeys,
+                              separator, res, uniqueKeys, skipKeys, cb);
                     }
                 }
             }
+            return res;
         }
-        return result;
-    };
+
+        function _doCb(key, res, cb) {
+            var tmp;
+            tmp = cb(key);
+            // If string, substitute it.
+            if ('string' === typeof tmp || 'number' === typeof tmp) {
+                res.push(tmp);
+            }
+            // If array, expand it.
+            else if (JSUS.isArray(tmp) && tmp.length) {
+                if (tmp.length < 4) {
+                    res.push(tmp[0]);
+                    if (tmp.length > 1) {
+                        res.push(tmp[1]);
+                        if (tmp.length > 2) {
+                            res.push(tmp[2]);
+                        }
+                    }
+                }
+                else {
+                    (function() {
+                        var i = -1, len = tmp.length;
+                        for ( ; ++i < len ; ) {
+                            res.push(tmp[i]);
+                        }
+                    })(tmp, res);
+                }
+            }
+            else if ('undefined' === typeof tmp) {
+                res.push(key);
+            }
+            // Else, e.g. null, ignore it.
+        }
+    })();
+
 
     /**
      * ## OBJ.implode
@@ -3706,7 +3853,7 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
-     * ## OBJ.subobj
+     * ## OBJ.subobj | subObj
      *
      * Creates a copy of an object containing only the properties
      * passed as second parameter
@@ -3724,7 +3871,7 @@ if (!Array.prototype.indexOf) {
      *
      * @see OBJ.getNestedValue
      */
-    OBJ.subobj = function(o, select) {
+    OBJ.subobj = OBJ.subObj = function(o, select) {
         var out, i, key;
         if (!o) return false;
         out = {};
@@ -5503,7 +5650,7 @@ if (!Array.prototype.indexOf) {
  * NDDB is a powerful and versatile object database for node.js and the browser.
  * ---
  */
-(function(exports, J, store) {
+(function(exports, J) {
 
     "use strict";
 
@@ -7810,12 +7957,11 @@ if (!Array.prototype.indexOf) {
     /**
      * ### NDDB.map
      *
-     * Applies a callback function to each element in the db, store
-     * the results in an array and returns it.
+     * Maps a callback to each element of the db and returns an array
      *
      * It accepts a variable number of input arguments, but the first one
-     * must be a valid callback, and all the following are passed as parameters
-     * to the callback
+     * must be a valid callback, and all the following are passed as
+     * parameters to the callback.
      *
      * @return {array} out The result of the mapping
      *
@@ -9870,10 +10016,7 @@ if (!Array.prototype.indexOf) {
     ('undefined' !== typeof module && 'undefined' !== typeof module.exports) ?
         module.exports : window ,
     ('undefined' !== typeof module && 'undefined' !== typeof module.exports) ?
-        module.parent.exports.JSUS || require('JSUS').JSUS : JSUS,
-    ('object' === typeof module && 'function' === typeof require) ?
-        module.parent.exports.store ||
-        require('shelf.js/build/shelf-fs.js').store : this.store
+        module.parent.exports.JSUS || require('JSUS').JSUS : JSUS
 );
 
 /**
@@ -16753,19 +16896,21 @@ if (!Array.prototype.indexOf) {
     Stager.prototype.cloneStep = function(stepId, newStepId) {
         var step;
         if ('string' !== typeof stepId) {
-            throw new TypeError('Stager.cloneStep: stepId must be string.');
+            throw new TypeError('Stager.cloneStep: stepId must be string. ' +
+                               'Found: ' + stepId);
         }
         if ('string' !== typeof newStepId) {
-            throw new TypeError('Stager.cloneStep: newStepId must be string.');
+            throw new TypeError('Stager.cloneStep: newStepId must be ' +
+                                'string. Found: ' + newStepId);
         }
         if (this.steps[newStepId]) {
             throw new Error('Stager.cloneStep: newStepId already taken: ' +
-                            newStepId + '.');
+                            newStepId);
         }
         step = this.steps[stepId];
         if (!step) {
             throw new Error('Stager.cloneStep: step not found: ' +
-                            stepId + '.');
+                            stepId);
         }
         step = J.clone(step);
         step.id = newStepId;
@@ -23864,6 +24009,7 @@ if (!Array.prototype.indexOf) {
                                 step + ', but nodegame-window is not loaded.');
             }
             frameOptions = {};
+            if ('function' === typeof frame) frame = frame.call(node.game);
             if ('string' === typeof frame) {
                 uri = frame;
             }
@@ -23968,6 +24114,23 @@ if (!Array.prototype.indexOf) {
      * @deprecated
      */
     Game.prototype.getCurrentStep = Game.prototype.getCurrentStepObj;
+
+    /**
+     * ### Game.getCurrentStageObj
+     *
+     * Returns the object representing the current game stage.
+     *
+     * The returning object includes all the properties, such as:
+     * _id_, _init_, etc.
+     *
+     * @return {object} The game-stage as defined in the stager.
+     *
+     * @see Stager
+     * @see GamePlot
+     */
+    Game.prototype.getCurrentStageObj = function() {
+        return this.plot.getStage(this.getCurrentGameStage());
+    };
 
     /**
      * ### Game.getCurrentStepProperty
@@ -30033,7 +30196,15 @@ if (!Array.prototype.indexOf) {
         }
 
         // Parse msg.data.
-        if ('string' === typeof msg.data) msg.data = J.parse(msg.data);
+        if ('string' === typeof msg.data) {
+            try {
+                msg.data = J.parse(msg.data);
+            }
+            catch(e) {
+                console.log(e);
+                debugger;
+            }
+        }
 
         return true;
     }
@@ -33188,7 +33359,7 @@ if (!Array.prototype.indexOf) {
             minHeight = window.innerHeight || window.clientHeight;
 
             contentHeight =
-                iframe.contentWindow.document.body.offsetHeight + 100;
+                iframe.contentWindow.document.body.offsetHeight + 120;
 
             if (minHeight < contentHeight) minHeight = contentHeight;
             if (minHeight < (userMinHeight || 0)) minHeight = userMinHeight;
@@ -38153,7 +38324,7 @@ if (!Array.prototype.indexOf) {
         widget.sounds = 'undefined' === typeof options.sounds ?
             WidgetPrototype.sounds : options.sounds;
         widget.texts = 'undefined' === typeof options.texts ?
-            WidgetPrototype.texts : option.texts;
+            WidgetPrototype.texts : options.texts;
         widget.widgetName = widgetName;
         // Fixed properties.
 
@@ -45381,7 +45552,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Add Meta-data
 
-    EndScreen.version = '0.4.0';
+    EndScreen.version = '0.5.0';
     EndScreen.description = 'Game end screen. With end game message, ' +
                             'email form, and exit code.';
 
@@ -45393,11 +45564,13 @@ if (!Array.prototype.indexOf) {
                                'and your data has been saved. ' +
                                'Please go back to the Amazon Mechanical Turk ' +
                                'web site and submit the HIT.';
-    EndScreen.texts.contact_question = 'Would you like to be contacted again' +
+    EndScreen.texts.contactQuestion = 'Would you like to be contacted again' +
                                        'for future experiments? If so, leave' +
                                        'your email here and press submit: ';
-    EndScreen.texts.total_win = 'Your total win:';
-    EndScreen.texts.exit_code = 'Your exit code:';
+    EndScreen.texts.totalWin = 'Your total win:';
+    EndScreen.texts.exitCode = 'Your exit code:';
+    EndScreen.texts.errTotalWin = 'Error: invalid total win.';
+    EndScreen.texts.errExitCode = 'Error: invalid exit code.';
 
     // ## Dependencies
 
@@ -45426,7 +45599,10 @@ if (!Array.prototype.indexOf) {
          *
          * Default: true
          */
-        if ('undefined' === typeof options.showEmailForm) {
+        if (options.email === false) {
+            options.showEmailForm = false;
+        }
+        else if ('undefined' === typeof options.showEmailForm) {
             this.showEmailForm = true;
         }
         else if ('boolean' === typeof options.showEmailForm) {
@@ -45446,7 +45622,10 @@ if (!Array.prototype.indexOf) {
          *
          * Default: true
          */
-        if ('undefined' === typeof options.showFeedbackForm) {
+        if (options.feedback === false) {
+            options.showFeedbackForm = false;
+        }
+        else if ('undefined' === typeof options.showFeedbackForm) {
             this.showFeedbackForm = true;
         }
         else if ('boolean' === typeof options.showFeedbackForm) {
@@ -45466,7 +45645,10 @@ if (!Array.prototype.indexOf) {
          *
          * Default: true
          */
-        if ('undefined' === typeof options.showTotalWin) {
+        if (options.totalWin === false) {
+            options.showTotalWin = false;
+        }
+        else if ('undefined' === typeof options.showTotalWin) {
             this.showTotalWin = true;
         }
         else if ('boolean' === typeof options.showTotalWin) {
@@ -45486,7 +45668,10 @@ if (!Array.prototype.indexOf) {
          *
          * Default: true
          */
-        if ('undefined' === typeof options.showExitCode) {
+        if (options.exitCode === false) {
+            options.showExitCode !== false
+        }
+        else if ('undefined' === typeof options.showExitCode) {
             this.showExitCode = true;
         }
         else if ('boolean' === typeof options.showExitCode) {
@@ -45573,7 +45758,7 @@ if (!Array.prototype.indexOf) {
     EndScreen.prototype.init = function(options) {
         if (this.showEmailForm && !this.emailForm) {
             this.emailForm = node.widgets.get('EmailForm', J.mixin({
-                label: this.getText('contact_question'),
+                label: this.getText('contactQuestion'),
                 onsubmit: { say: true, emailOnly: true, updateUI: true }
             }, options.email));
         }
@@ -45616,7 +45801,7 @@ if (!Array.prototype.indexOf) {
 
             totalWinParaElement = document.createElement('p');
             totalWinParaElement.innerHTML = '<strong>' +
-                this.getText('total_win') +
+                this.getText('totalWin') +
                 '</strong>';
 
             totalWinInputElement = document.createElement('input');
@@ -45635,7 +45820,7 @@ if (!Array.prototype.indexOf) {
 
             exitCodeParaElement = document.createElement('p');
             exitCodeParaElement.innerHTML = '<strong>' +
-                                            this.getText('exit_code') +
+                                            this.getText('exitCode') +
                                             '</strong>';
 
             exitCodeInputElement = document.createElement('input');
@@ -45686,43 +45871,74 @@ if (!Array.prototype.indexOf) {
      *    - exit: An exit code.
      */
     EndScreen.prototype.updateDisplay = function(data) {
-        var preWin, totalWin, exitCode;
-        var totalHTML, exitCodeHTML;
+        var preWin, totalWin, totalRaw, exitCode;
+        var totalHTML, exitCodeHTML, ex, err;
 
         if (this.totalWinCb) {
             totalWin = this.totalWinCb(data, this);
         }
         else {
-            totalWin = J.isNumber(data.total, 0);
-            if (totalWin === false) {
-                node.err('EndScreen error, invalid total win: ' +
-                         data.total);
-                totalWin = 'Error: invalid total win.';
+            if ('undefined' === typeof data.total &&
+                'undefined' === typeof data.totalRaw) {
+
+                throw new Error('EndScreen.updateDisplay: data.total and ' +
+                                'data.totalRaw cannot be both undefined.');
             }
-            else if (data.partials) {
+
+            if ('undefined' !== typeof data.total) {
+                totalWin = J.isNumber(data.total, 0);
+                if (totalWin === false) {
+                    node.err('EndScreen.updateDisplay: invalid data.total: ' +
+                             data.total);
+                    totalWin = this.getText('errTotalWin');
+                    err = true;
+                }
+            }
+
+            if (data.partials) {
                 if (!J.isArray(data.partials)) {
                     node.err('EndScreen error, invalid partials win: ' +
-                        data.partials);
+                             data.partials);
                 }
                 else {
                     preWin = data.partials.join(' + ');
-
-                    if ('undefined' !== typeof data.totalRaw) {
-                        preWin += ' = ' + data.totalRaw;
-                        if ('undefined' !== typeof data.exchangeRate) {
-                            preWin += '*' + data.exchangeRate;
-                        }
-                        totalWin = preWin + ' = ' + totalWin;
-                    }
                 }
             }
-            totalWin += ' ' + this.totalWinCurrency;
+
+            if ('undefined' !== typeof data.totalRaw) {
+                if (preWin) preWin += ' = ';
+                else preWin = '';
+                preWin += data.totalRaw;
+
+                // Get Exchange Rate.
+                ex = 'undefined' !== typeof data.exchangeRate ?
+                    data.exchangeRate : node.game.settings.EXCHANGE_RATE;
+
+                // If we have an exchange rate, check if we have a totalRaw.
+                if ('undefined' !== typeof ex) preWin += '*' + ex;
+
+                // Need to compute total manually.
+                if ('undefined' === typeof totalWin) {
+                    totalRaw = J.isNumber(data.totalRaw, 0);
+                    totalWin = parseFloat(ex*data.totalRaw).toFixed(2);
+                    totalWin = J.isNumber(totalWin, 0);
+                    if (totalWin === false) {
+                        node.err('EndScreen.updateDisplay: invalid : ' +
+                                 'totalWin calculation from totalRaw.');
+                        totalWin = this.getText('errTotalWin');
+                        err = true;
+                    }
+                }
+                if (!err) totalWin = preWin + ' = ' + totalWin;
+            }
+
+            if (!err) totalWin += ' ' + this.totalWinCurrency;
         }
 
         exitCode = data.exit;
         if ('string' !== typeof exitCode) {
             node.err('EndScreen error, invalid exit code: ' + exitCode);
-            exitCode = 'Error: invalid exit code.';
+            exitCode = this.getText('errExitCode');
         }
 
         totalHTML = this.totalWinInputElement;
@@ -46926,7 +47142,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    MoneyTalks.version = '0.3.0';
+    MoneyTalks.version = '0.4.0';
     MoneyTalks.description = 'Displays the earnings of a player.';
 
     MoneyTalks.title = 'Earnings';
@@ -46949,19 +47165,20 @@ if (!Array.prototype.indexOf) {
      * @see MoneyTalks.init
      */
     function MoneyTalks(options) {
+
         /**
          * ### MoneyTalks.spanCurrency
          *
          * The SPAN which holds information on the currency
          */
-        this.spanCurrency = document.createElement('span');
+        this.spanCurrency = null;
 
         /**
          * ### MoneyTalks.spanMoney
          *
          * The SPAN which holds information about the money earned so far
          */
-        this.spanMoney = document.createElement('span');
+        this.spanMoney = null;
 
         /**
          * ### MoneyTalks.currency
@@ -46983,6 +47200,27 @@ if (!Array.prototype.indexOf) {
          * Precision of floating point number to display
          */
         this.precision = 2;
+
+        /**
+         * ### MoneyTalks.showCurrency
+         *
+         * If TRUE, the currency is displayed after the money
+         */
+        this.showCurrency = true;
+
+        /**
+         * ### MoneyTalks.currencyClassname
+         *
+         * Class name to be attached to the currency span
+         */
+        this.classnameCurrency = 'moneytalkscurrency';
+
+        /**
+         * ### MoneyTalks.currencyClassname
+         *
+         * Class name to be attached to the money span
+         */
+        this.classnameMoney = 'moneytalksmoney';
     }
 
     // ## MoneyTalks methods
@@ -46995,30 +47233,50 @@ if (!Array.prototype.indexOf) {
      * @param {object} options Optional. Configuration options.
      *
      * The  options object can have the following attributes:
-     *   - `currency`: String describing currency to use.
-     *   - `money`: Current amount of money earned.
-     *   - `precision`: Precision of floating point output to use.
+     *
+     *   - `currency`: The name of currency.
+     *   - `money`: Initial amount of money earned.
+     *   - `precision`: How mamy floating point digits to use.
      *   - `currencyClassName`: Class name to be set for this.spanCurrency.
-     *   - `moneyClassName`: Class name to be set for this.spanMoney;
+     *   - `moneyClassName`: Class name to be set for this.spanMoney.
+     *   - `showCurrency`: Flag whether the name of currency is to be displayed.
      */
     MoneyTalks.prototype.init = function(options) {
-        this.currency = 'string' === typeof options.currency ?
-            options.currency : this.currency;
-        this.money = 'number' === typeof options.money ?
-            options.money : this.money;
-        this.precision = 'number' === typeof options.precision ?
-            options.precision : this.precision;
-
-        this.spanCurrency.className = options.currencyClassName ||
-            this.spanCurrency.className || 'moneytalkscurrency';
-        this.spanMoney.className = options.moneyClassName ||
-            this.spanMoney.className || 'moneytalksmoney';
-
-        this.spanCurrency.innerHTML = this.currency;
-        this.spanMoney.innerHTML = this.money;
+        if ('string' === typeof options.currency) {
+            this.currency = options.currency;
+        }
+        if ('undefined' !== typeof options.showCurrency) {
+            this.showCurrency = !!options.showCurrency;
+        }
+        if ('number' === typeof options.money) {
+            this.money = options.money;
+        }
+        if ('number' === typeof options.precision) {
+            this.precision = options.precision;
+        }
+        if ('string' === typeof options.MoneyClassName) {
+            this.classnameMoney = options.MoneyClassName;
+        }
+        if ('string' === typeof options.currencyClassName) {
+            this.classnameCurrency = options.currencyClassName;
+        }
     };
 
     MoneyTalks.prototype.append = function() {
+        if (!this.spanMoney) {
+            this.spanMoney = document.createElement('span');
+        }
+        if (!this.spanCurrency) {
+            this.spanCurrency = document.createElement('span');
+        }
+        if (!this.showCurrency) this.spanCurrency.style.display = 'none';
+
+        this.spanMoney.className = this.classnameMoney;
+        this.spanCurrency.className = this.classnameCurrency;
+
+        this.spanCurrency.innerHTML = this.currency;
+        this.spanMoney.innerHTML = this.money;
+
         this.bodyDiv.appendChild(this.spanMoney);
         this.bodyDiv.appendChild(this.spanCurrency);
     };
@@ -48835,7 +49093,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    VisualRound.version = '0.7.2';
+    VisualRound.version = '0.8.0';
     VisualRound.description = 'Display number of current round and/or stage.' +
         'Can also display countdown and total number of rounds and/or stages.';
 
@@ -49000,8 +49258,10 @@ if (!Array.prototype.indexOf) {
      *   - `oldStageId`:
      *     When (re)starting in `flexibleMode`, sets the id of the current
      *     stage
-     *   - `displayModeNames`:
+     *   - `displayMode`:
      *     Array of strings which determines the display style of the widget
+     *   - `displayModeNames`: alias of displayMode, deprecated
+     *
      *
      * @see VisualRound.setDisplayMode
      * @see GameStager
@@ -49033,14 +49293,20 @@ if (!Array.prototype.indexOf) {
 
         this.updateInformation();
 
-        if (!this.options.displayModeNames) {
+        if (!this.options.displayMode && this.options.displayModeNames) {
+            console.log('***VisualTimer.init: options.displayModeNames is ' +
+                        'deprecated. Use options.displayMode instead.***');
+            this.options.displayMode = this.options.displayModeNames;
+        }
+
+        if (!this.options.displayMode) {
             this.setDisplayMode([
-                'COUNT_UP_ROUNDS_TO_TOTAL',
+                'COUNT_UP_ROUNDS_TO_TOTAL_IFNOT1',
                 'COUNT_UP_STAGES_TO_TOTAL'
             ]);
         }
         else {
-            this.setDisplayMode(this.options.displayModeNames);
+            this.setDisplayMode(this.options.displayMode);
         }
 
         if ('undefined' !== typeof options.separator) {
@@ -49088,47 +49354,39 @@ if (!Array.prototype.indexOf) {
      * - `COUNT_DOWN_STAGES`: Display number of stages left to play.
      * - `COUNT_DOWN_ROUNDS`: Display number of rounds left in this stage.
      *
-     * @param {array} displayModeNames Array of strings representing the names
+     * @param {array|string} displayMode Array of strings representing the names
      *
      * @see VisualRound.displayMode
      * @see CompoundDisplayMode
      * @see VisualRound.init
      */
-    VisualRound.prototype.setDisplayMode = function(displayModeNames) {
-        var i, len, compoundDisplayModeName, displayModes;
+    VisualRound.prototype.setDisplayMode = function(displayMode) {
+        var i, len, displayModes;
 
-        // Validation of input parameter.
-        if (!J.isArray(displayModeNames)) {
-            throw new TypeError('VisualRound.setDisplayMode: ' +
-                                'displayModeNames must be an array. Found: ' +
-                                displayModeNames);
+        if ('string' === typeof displayMode) {
+            displayMode = [ displayMode ];
         }
-        len = displayModeNames.length;
+        else if (!J.isArray(displayMode)) {
+            throw new TypeError('VisualRound.setDisplayMode: ' +
+                                'displayMode must be array or string. ' +
+                                'Found: ' + displayMode);
+        }
+        len = displayMode.length;
         if (len === 0) {
-            throw new Error('VisualRound.setDisplayMode: ' +
-                            'displayModeNames is empty.');
+            throw new Error('VisualRound.setDisplayMode: displayMode is empty');
         }
 
         if (this.displayMode) {
-            // Build compound name.
-            compoundDisplayModeName = displayModeNames.join('&');
             // Nothing to do if mode is already active.
-            if (compoundDisplayModeName === this.displayMode.name) return;
+            if (displayMode.join('&') === this.displayMode.name) return;
             this.deactivate(this.displayMode);
         }
-
-        i = -1;
-        for (; ++i < len; ) {
-            compoundDisplayModeName += displayModeNames[i];
-            if (i !== (len-1)) compoundDisplayModeName += '&';
-        }
-
 
         // Build `CompoundDisplayMode`.
         displayModes = [];
         i = -1;
         for (; ++i < len; ) {
-            switch (displayModeNames[i]) {
+            switch (displayMode[i]) {
             case 'COUNT_UP_STAGES_TO_TOTAL':
                 displayModes.push(new CountUpStages(this, { toTotal: true }));
                 break;
@@ -49144,11 +49402,22 @@ if (!Array.prototype.indexOf) {
             case 'COUNT_UP_ROUNDS':
                 displayModes.push(new CountUpRounds(this));
                 break;
+            case 'COUNT_UP_ROUNDS_TO_TOTAL_IFNOT1':
+                displayModes.push(new CountUpRounds(this, {
+                    toTotal: true,
+                    ifNotOne: true
+                }));
+                break;
+            case 'COUNT_UP_ROUNDS_IFNOT1':
+                displayModes.push(new CountUpRounds(this, { ifNotOne: true }));
+                break;
             case 'COUNT_DOWN_ROUNDS':
                 displayModes.push(new CountDownRounds(this));
                 break;
+            default:
+                throw new Error('VisualRound.setDisplayMode: unknown mode: ' +
+                                displayMode[i]);
             }
-
         }
         this.displayMode = new CompoundDisplayMode(this, displayModes);
         this.activate(this.displayMode);
@@ -49534,9 +49803,16 @@ if (!Array.prototype.indexOf) {
      * @see VisualRound.updateDisplay
      */
     CountUpRounds.prototype.updateDisplay = function() {
-        this.curRoundNumber.innerHTML = this.visualRound.curRound;
-        if (this.options.toTotal) {
-            this.totRoundNumber.innerHTML = this.visualRound.totRound || '?';
+        if (this.options.ifNotOne && this.visualRound.totRound === 1) {
+            this.displayDiv.style.display = 'none';
+        }
+        else {
+            this.curRoundNumber.innerHTML = this.visualRound.curRound;
+            if (this.options.toTotal) {
+                this.totRoundNumber.innerHTML =
+                    this.visualRound.totRound || '?';
+            }
+            this.displayDiv.style.display = '';
         }
     };
 
@@ -50745,7 +51021,7 @@ if (!Array.prototype.indexOf) {
     node.widgets.register('WaitingRoom', WaitingRoom);
     // ## Meta-data
 
-    WaitingRoom.version = '1.2.0';
+    WaitingRoom.version = '1.2.1';
     WaitingRoom.description = 'Displays a waiting room for clients.';
 
     WaitingRoom.title = 'Waiting Room';
@@ -50832,7 +51108,10 @@ if (!Array.prototype.indexOf) {
         },
 
         // #### playBot
-        playBot: 'Play With Bot'
+        playBot: 'Play With Bot/s',
+
+        // #### connectingBots
+        connectingBots: 'Connecting Bot/s, Please Wait...'
     };
 
     /**
@@ -51081,6 +51360,7 @@ if (!Array.prototype.indexOf) {
             this.playBotBtn.value = this.getText('playBot');
             this.playBotBtn.type = 'button';
             this.playBotBtn.onclick = function () {
+                that.playBotBtn.value = that.getText('connectingBots');
                 that.playBotBtn.setAttribute('disabled', true);
                 node.say('PLAYWITHBOT');
             };
