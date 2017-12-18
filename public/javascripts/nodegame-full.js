@@ -38324,11 +38324,7 @@ if (!Array.prototype.indexOf) {
         widget.sounds = 'undefined' === typeof options.sounds ?
             WidgetPrototype.sounds : options.sounds;
         widget.texts = 'undefined' === typeof options.texts ?
-<<<<<<< HEAD
-            WidgetPrototype.texts : option.texts;
-=======
             WidgetPrototype.texts : options.texts;
->>>>>>> waitRoomBot
         widget.widgetName = widgetName;
         // Fixed properties.
 
@@ -45568,13 +45564,6 @@ if (!Array.prototype.indexOf) {
                                'and your data has been saved. ' +
                                'Please go back to the Amazon Mechanical Turk ' +
                                'web site and submit the HIT.';
-<<<<<<< HEAD
-    EndScreen.texts.contact_question = 'Would you like to be contacted again' +
-                                       'for future experiments? If so, leave' +
-                                       'your email here and press submit: ';
-    EndScreen.texts.total_win = 'Your total win:';
-    EndScreen.texts.exit_code = 'Your exit code:';
-=======
     EndScreen.texts.contactQuestion = 'Would you like to be contacted again' +
                                        'for future experiments? If so, leave' +
                                        'your email here and press submit: ';
@@ -45582,7 +45571,6 @@ if (!Array.prototype.indexOf) {
     EndScreen.texts.exitCode = 'Your exit code:';
     EndScreen.texts.errTotalWin = 'Error: invalid total win.';
     EndScreen.texts.errExitCode = 'Error: invalid exit code.';
->>>>>>> waitRoomBot
 
     // ## Dependencies
 
@@ -45770,11 +45758,7 @@ if (!Array.prototype.indexOf) {
     EndScreen.prototype.init = function(options) {
         if (this.showEmailForm && !this.emailForm) {
             this.emailForm = node.widgets.get('EmailForm', J.mixin({
-<<<<<<< HEAD
-                label: this.getText('contact_question'),
-=======
                 label: this.getText('contactQuestion'),
->>>>>>> waitRoomBot
                 onsubmit: { say: true, emailOnly: true, updateUI: true }
             }, options.email));
         }
@@ -45817,11 +45801,7 @@ if (!Array.prototype.indexOf) {
 
             totalWinParaElement = document.createElement('p');
             totalWinParaElement.innerHTML = '<strong>' +
-<<<<<<< HEAD
-                this.getText('total_win') +
-=======
                 this.getText('totalWin') +
->>>>>>> waitRoomBot
                 '</strong>';
 
             totalWinInputElement = document.createElement('input');
@@ -45840,11 +45820,7 @@ if (!Array.prototype.indexOf) {
 
             exitCodeParaElement = document.createElement('p');
             exitCodeParaElement.innerHTML = '<strong>' +
-<<<<<<< HEAD
-                                            this.getText('exit_code') +
-=======
                                             this.getText('exitCode') +
->>>>>>> waitRoomBot
                                             '</strong>';
 
             exitCodeInputElement = document.createElement('input');
@@ -45922,7 +45898,7 @@ if (!Array.prototype.indexOf) {
             if (data.partials) {
                 if (!J.isArray(data.partials)) {
                     node.err('EndScreen error, invalid partials win: ' +
-                        data.partials);
+                             data.partials);
                 }
                 else {
                     preWin = data.partials.join(' + ');
@@ -49285,11 +49261,7 @@ if (!Array.prototype.indexOf) {
      *   - `displayMode`:
      *     Array of strings which determines the display style of the widget
      *   - `displayModeNames`: alias of displayMode, deprecated
-<<<<<<< HEAD
-     *     
-=======
      *
->>>>>>> waitRoomBot
      *
      * @see VisualRound.setDisplayMode
      * @see GameStager
@@ -51269,8 +51241,6 @@ if (!Array.prototype.indexOf) {
          */
         this.disconnectIfNotSelected = null;
 
-<<<<<<< HEAD
-=======
         /**
          * ### WaitingRoom.playWithBotOption
          *
@@ -51278,7 +51248,6 @@ if (!Array.prototype.indexOf) {
          * the game with bots
          */
         this.playWithBotOption = null;
->>>>>>> waitRoomBot
     }
 
     // ## WaitingRoom methods
