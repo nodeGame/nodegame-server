@@ -3,6 +3,8 @@
 $base-font: 'Source Sans Pro', -apple-system, BlinkMacSystemFont, Roboto, "Segoe UI", 'Helvetica Neue', Helvetica, Arial, sans-serif;
 $header-bg-color: white;
 $container-width: 800px;
+$max-width-header: 42em;
+$font-size-max-width: 20px;
 $vertical-header-width: 125px;
 
 /* Main Elements */
@@ -29,7 +31,7 @@ html {
 
 body {
   margin: 0;
-  font-size: 18px;
+  font-size: $font-size-max-width; /* 18px; */
   font-family: $base-font;
 
    &::after {
@@ -71,6 +73,7 @@ p {
   width: 100%;
   /* min-height: 600px; will be changed by js resize code */
   font-family: $base-font;
+  font-size: $font-size-max-width;
   padding: 0;
   display: block;
   margin: 0 auto;
@@ -117,6 +120,8 @@ p {
   box-shadow: 0 0 15px lightgrey;
   margin: 0 auto;
   border-radius: 0 0 5px 5px;
+  font-size: $font-size-max-width;
+  max-width: $max-width-header;
   
   &::after {
     content: "";

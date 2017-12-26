@@ -21680,6 +21680,9 @@ if (!Array.prototype.indexOf) {
      * @see Matcher.matches
      */
     Matcher.prototype.normalizeRound = function(round) {
+        if (!this.matches) {
+            throw new TypeError('Matcher.normalizeRound: no matches found.');
+        }
         if ('number' !== typeof round || isNaN(round) || round < 1) {
             throw new TypeError('Matcher.normalizeRound: round must be a ' +
                                 'number > 0. Found: ' + round);
@@ -21788,24 +21791,25 @@ if (!Array.prototype.indexOf) {
                 }
                 else {
                     lenJ = m[i].length;
-// THIS OPTIMIZATION DOES NOT SEEM TO WORK.
-// In fact, there might be more matches with the same
-// partner in sequence. And also if === 1, it should be checked.
-//                     if (lenJ == 1) {
-//                         m[i][0] = newId;
-//                     }
-//                     else if (lenJ === 2) {
-//                         if (m[i][0] === oldId) m[i][0] = newId;
-//                         else m[i][1] = newId;
-//                     }
-//                     else {
-                        j = -1;
-                        for ( ; ++j < lenJ ; ) {
-                            if (m[i][j] === oldId) {
-                                m[i][j] = newId;
-                            }
+                    // THIS OPTIMIZATION DOES NOT SEEM TO WORK.
+                    // In fact, there might be more matches with the same
+                    // partner in sequence.
+                    // And also if === 1, it should be checked.
+                    // if (lenJ == 1) {
+                    //     m[i][0] = newId;
+                    // }
+                    // else if (lenJ === 2) {
+                    //     if (m[i][0] === oldId) m[i][0] = newId;
+                    //     else m[i][1] = newId;
+                    // }
+                    // else {
+                    j = -1;
+                    for ( ; ++j < lenJ ; ) {
+                        if (m[i][j] === oldId) {
+                            m[i][j] = newId;
                         }
-//                    }
+                    }
+                    // }
                 }
             }
         }
@@ -21882,7 +21886,7 @@ if (!Array.prototype.indexOf) {
     }
 
     /**
-     * ### pairMatcher
+     * ### pairMatcherOld
      *
      * Creates tournament schedules for different algorithms
      *
@@ -21909,118 +21913,247 @@ if (!Array.prototype.indexOf) {
      *
      * @return {array} matches The matches according to the algorithm
      */
-     function pairMatcher(alg, n, options) {
-         var ps, matches, bye;
-         var i, lenI, j, lenJ, jj;
-         var id1, id2;
-         var roundsLimit, cycle, cycleI, skipBye;
+    function pairMatcherOld(alg, n, options) {
+        var ps, matches, bye;
+        var i, lenI, j, lenJ, jj;
+        var id1, id2;
+        var roundsLimit, cycle, cycleI, skipBye;
 
-         if ('number' === typeof n && n > 1) {
-             ps = J.seq(0, (n-1));
-         }
-         else if (J.isArray(n) && n.length > 1) {
-             ps = n.slice();
-             n = ps.length;
-         }
-         else {
-             throw new TypeError('pairMatcher.' + alg + ': n must be ' +
-                                 'number > 1 or array of length > 1.');
-         }
-         options = options || {};
+        if ('number' === typeof n && n > 1) {
+            ps = J.seq(0, (n-1));
+        }
+        else if (J.isArray(n) && n.length > 1) {
+            ps = n.slice();
+            n = ps.length;
+        }
+        else {
+            throw new TypeError('pairMatcher.' + alg + ': n must be ' +
+                                'number > 1 or array of length > 1.');
+        }
+        options = options || {};
 
-         bye = 'undefined' !== typeof options.bye ? options.bye : -1;
-         skipBye = options.skipBye || false;
+        bye = 'undefined' !== typeof options.bye ? options.bye : -1;
+        skipBye = options.skipBye || false;
 
-         // Make sure we have even numbers.
-         if ((n % 2) === 1) {
-             ps.push(bye);
-             n += 1;
-         }
+        // Make sure we have even numbers.
+        if ((n % 2) === 1) {
+            ps.push(bye);
+            n += 1;
+        }
 
-         // Limit rounds.
-         if ('number' === typeof options.rounds) {
-             if (options.rounds <= 0) {
-                 throw new Error('pairMatcher.' + alg + ': options.rounds ' +
-                                 'must be a positive number or undefined. ' +
-                                 'Found: ' + options.rounds);
-             }
-             if (options.rounds > (n-1)) {
-                 throw new Error('pairMatcher.' + alg + ': ' +
-                                 'options.rounds cannot be greater than ' +
-                                 (n-1) + '. Found: ' + options.rounds);
-             }
-             // Here roundsLimit does not depend on n (must be smaller).
-             roundsLimit = options.rounds;
-         }
-         else {
-             roundsLimit = n-1;
-         }
+        // Limit rounds.
+        if ('number' === typeof options.rounds) {
+            if (options.rounds <= 0) {
+                throw new Error('pairMatcher.' + alg + ': options.rounds ' +
+                                'must be a positive number or undefined. ' +
+                                'Found: ' + options.rounds);
+            }
+            if (options.rounds > (n-1)) {
+                throw new Error('pairMatcher.' + alg + ': ' +
+                                'options.rounds cannot be greater than ' +
+                                (n-1) + '. Found: ' + options.rounds);
+            }
+            // Here roundsLimit does not depend on n (must be smaller).
+            roundsLimit = options.rounds;
+        }
+        else {
+            roundsLimit = n-1;
+        }
 
-         if ('undefined' !== typeof options.cycle) {
-             cycle = options.cycle;
-             if (cycle !== 'mirror_invert' && cycle !== 'mirror' &&
-                 cycle !== 'repeat_invert' && cycle !== 'repeat') {
+        if ('undefined' !== typeof options.cycle) {
+            cycle = options.cycle;
+            if (cycle !== 'mirror_invert' && cycle !== 'mirror' &&
+                cycle !== 'repeat_invert' && cycle !== 'repeat') {
 
-                 throw new Error('pairMatcher.' + alg + ': options.cycle ' +
-                                 'must be equal to "mirror"/"mirror_invert", ' +
-                                 '"repeat"/"repeat_invert" or undefined . ' +
-                                 'Found: ' + options.cycle);
-             }
+                throw new Error('pairMatcher.' + alg + ': options.cycle ' +
+                                'must be equal to "mirror"/"mirror_invert", ' +
+                                '"repeat"/"repeat_invert" or undefined . ' +
+                                'Found: ' + options.cycle);
+            }
 
-             matches = new Array(roundsLimit*2);
-         }
-         else {
-             matches = new Array(roundsLimit);
-         }
+            matches = new Array(roundsLimit*2);
+        }
+        else {
+            matches = new Array(roundsLimit);
+        }
 
-         i = -1, lenI = roundsLimit;
-         for ( ; ++i < lenI ; ) {
-             // Shuffle list of ids for random.
-             if (alg === 'random') ps = J.shuffle(ps);
-             // Create a new array for round i.
-             lenJ = n / 2;
-             matches[i] = skipBye ? new Array(lenJ-1) : new Array(lenJ);
-             // Check if new need to cycle.
-             if (cycle) {
-                 if (cycle === 'mirror' || cycle === 'mirror_invert') {
-                     cycleI = (roundsLimit*2) -i -1;
-                 }
-                 else {
-                     cycleI = i+roundsLimit;
-                 }
-                 matches[cycleI] = skipBye ?
-                     new Array(lenJ-1) : new Array(lenJ);
-             }
-             // Counter jj is updated only if not skipBye,
-             // otherwise we create holes in the matches array.
-             jj = j = -1;
-             for ( ; ++j < lenJ ; ) {
-                 id1 = ps[j];
-                 id2 = ps[n - 1 - j];
-                 if (!skipBye || (id1 !== bye && id2 !== bye)) {
-                     jj++;
-                     // Insert match.
-                     matches[i][jj] = [ id1, id2 ];
-                     // Insert cycle match (if any).
-                     if (cycle === 'repeat') {
-                         matches[cycleI][jj] = [ id1, id2 ];
-                     }
-                     else if (cycle === 'repeat_invert') {
-                         matches[cycleI][jj] = [ id2, id1 ];
-                     }
-                     else if (cycle === 'mirror') {
-                         matches[cycleI][jj] = [ id1, id2 ];
-                     }
-                     else if (cycle === 'mirror_invert') {
-                         matches[cycleI][jj] = [ id2, id1 ];
-                     }
-                 }
-             }
-             // Permutate for next round.
-             ps.splice(1, 0, ps.pop());
-         }
-         return matches;
-     }
+        i = -1, lenI = roundsLimit;
+        for ( ; ++i < lenI ; ) {
+            // Shuffle list of ids for random.
+            if (alg === 'random') ps = J.shuffle(ps);
+            // Create a new array for round i.
+            lenJ = n / 2;
+            matches[i] = skipBye ? new Array(lenJ-1) : new Array(lenJ);
+            // Check if new need to cycle.
+            if (cycle) {
+                if (cycle === 'mirror' || cycle === 'mirror_invert') {
+                    cycleI = (roundsLimit*2) -i -1;
+                }
+                else {
+                    cycleI = i+roundsLimit;
+                }
+                matches[cycleI] = skipBye ?
+                    new Array(lenJ-1) : new Array(lenJ);
+            }
+            // Counter jj is updated only if not skipBye,
+            // otherwise we create holes in the matches array.
+            jj = j = -1;
+            for ( ; ++j < lenJ ; ) {
+                id1 = ps[j];
+                id2 = ps[n - 1 - j];
+                if (!skipBye || (id1 !== bye && id2 !== bye)) {
+                    jj++;
+                    // Insert match.
+                    matches[i][jj] = [ id1, id2 ];
+                    // Insert cycle match (if any).
+                    if (cycle === 'repeat') {
+                        matches[cycleI][jj] = [ id1, id2 ];
+                    }
+                    else if (cycle === 'repeat_invert') {
+                        matches[cycleI][jj] = [ id2, id1 ];
+                    }
+                    else if (cycle === 'mirror') {
+                        matches[cycleI][jj] = [ id1, id2 ];
+                    }
+                    else if (cycle === 'mirror_invert') {
+                        matches[cycleI][jj] = [ id2, id1 ];
+                    }
+                }
+            }
+            // Permutate for next round.
+            ps.splice(1, 0, ps.pop());
+        }
+        return matches;
+    }
+
+
+    function pairMatcher(alg, n, options) {
+        var ps, matches, bye;
+        var i, lenI, j, lenJ, jj;
+        var id1, id2;
+        var roundsLimit, cycle, cycleI, skipBye;
+        var fixedRolesNoSameMatch;
+
+        if ('number' === typeof n && n > 1) {
+            ps = J.seq(0, (n-1));
+        }
+        else if (J.isArray(n) && n.length > 1) {
+            ps = n.slice();
+            n = ps.length;
+        }
+        else {
+            throw new TypeError('pairMatcher.' + alg + ': n must be ' +
+                                'number > 1 or array of length > 1.');
+        }
+        options = options || {};
+
+        bye = 'undefined' !== typeof options.bye ? options.bye : -1;
+        skipBye = options.skipBye || false;
+
+        // Make sure we have even numbers.
+        if ((n % 2) === 1) {
+            ps.push(bye);
+            n += 1;
+        }
+
+        // Does not work.
+        if (options.fixedRoles && (options.canMatchSameRole === false)) {
+            fixedRolesNoSameMatch = true;
+        }
+
+        // Limit rounds.
+        if ('number' === typeof options.rounds) {
+            if (options.rounds <= 0) {
+                throw new Error('pairMatcher.' + alg + ': options.rounds ' +
+                                'must be a positive number or undefined. ' +
+                                'Found: ' + options.rounds);
+            }
+            if (options.rounds > (n-1)) {
+                throw new Error('pairMatcher.' + alg + ': ' +
+                                'options.rounds cannot be greater than ' +
+                                (n-1) + '. Found: ' + options.rounds);
+            }
+            // Here roundsLimit does not depend on n (must be smaller).
+            roundsLimit = options.rounds;
+        }
+        else if (fixedRolesNoSameMatch) {
+            roundsLimit = Math.floor(n/2);
+        }
+        else {
+            roundsLimit = n-1;
+        }
+
+        if ('undefined' !== typeof options.cycle) {
+            cycle = options.cycle;
+            if (cycle !== 'mirror_invert' && cycle !== 'mirror' &&
+                cycle !== 'repeat_invert' && cycle !== 'repeat') {
+
+                throw new Error('pairMatcher.' + alg + ': options.cycle ' +
+                                'must be equal to "mirror"/"mirror_invert", ' +
+                                '"repeat"/"repeat_invert" or undefined . ' +
+                                'Found: ' + options.cycle);
+            }
+
+            matches = new Array(roundsLimit*2);
+        }
+        else {
+            matches = new Array(roundsLimit);
+        }
+
+        i = -1, lenI = roundsLimit;
+        for ( ; ++i < lenI ; ) {
+            // Shuffle list of ids for random.
+            if (alg === 'random') ps = J.shuffle(ps);
+            // Create a new array for round i.
+            lenJ = n / 2;
+            matches[i] = skipBye ? new Array(lenJ-1) : new Array(lenJ);
+            // Check if new need to cycle.
+            if (cycle) {
+                if (cycle === 'mirror' || cycle === 'mirror_invert') {
+                    cycleI = (roundsLimit*2) -i -1;
+                }
+                else {
+                    cycleI = i+roundsLimit;
+                }
+                matches[cycleI] = skipBye ?
+                    new Array(lenJ-1) : new Array(lenJ);
+            }
+            // Counter jj is updated only if not skipBye,
+            // otherwise we create holes in the matches array.
+            jj = j = -1;
+            for ( ; ++j < lenJ ; ) {
+                if (fixedRolesNoSameMatch) {
+                    id1 = ps[j*2];
+                    id2 = ps[((i*2)+(j*2)+1) % n];
+                }
+                else {
+                    id1 = ps[j];
+                    id2 = ps[n - 1 - j];
+                }
+                if (!skipBye || (id1 !== bye && id2 !== bye)) {
+                    jj++;
+                    // Insert match.
+                    matches[i][jj] = [ id1, id2 ];
+                    // Insert cycle match (if any).
+                    if (cycle === 'repeat') {
+                        matches[cycleI][jj] = [ id1, id2 ];
+                    }
+                    else if (cycle === 'repeat_invert') {
+                        matches[cycleI][jj] = [ id2, id1 ];
+                    }
+                    else if (cycle === 'mirror') {
+                        matches[cycleI][jj] = [ id1, id2 ];
+                    }
+                    else if (cycle === 'mirror_invert') {
+                        matches[cycleI][jj] = [ id2, id1 ];
+                    }
+                }
+            }
+            // Permutate for next round.
+            if (!fixedRolesNoSameMatch) ps.splice(1, 0, ps.pop());
+        }
+        return matches;
+    }
 
     /**
      * ## fetchMatch
@@ -22676,7 +22809,9 @@ if (!Array.prototype.indexOf) {
                 rounds: nRounds,
                 // cycle: settings.cycle,
                 skipBye: settings.skipBye,
-                bye: settings.bye
+                bye: settings.bye,
+                fixedRoles: settings.fixedRoles,
+                canMatchSameRole: settings.canMatchSameRole
             });
             this.matcher.setIds(game.pl.id.getAllKeys());
             // Generates new random matches for this round.
@@ -22697,7 +22832,9 @@ if (!Array.prototype.indexOf) {
                     rounds: nRounds,
                     cycle: settings.cycle,
                     skipBye: settings.skipBye,
-                    bye: settings.bye
+                    bye: settings.bye,
+                    fixedRoles: settings.fixedRoles,
+                    canMatchSameRole: settings.canMatchSameRole
                 });
                 this.matcher.setIds(game.pl.id.getAllKeys());
                 // Generates matches.
@@ -23648,6 +23785,7 @@ if (!Array.prototype.indexOf) {
         if (this.plot.getProperty(nextStep, 'syncStepping')) {
 
             matcherOptions = this.plot.getProperty(nextStep, 'matcher');
+
             if (matcherOptions) {
 
                 // matches = [
@@ -27383,6 +27521,9 @@ if (!Array.prototype.indexOf) {
      * @see Matcher.matches
      */
     Matcher.prototype.normalizeRound = function(round) {
+        if (!this.matches) {
+            throw new TypeError('Matcher.normalizeRound: no matches found.');
+        }
         if ('number' !== typeof round || isNaN(round) || round < 1) {
             throw new TypeError('Matcher.normalizeRound: round must be a ' +
                                 'number > 0. Found: ' + round);
@@ -27491,24 +27632,25 @@ if (!Array.prototype.indexOf) {
                 }
                 else {
                     lenJ = m[i].length;
-// THIS OPTIMIZATION DOES NOT SEEM TO WORK.
-// In fact, there might be more matches with the same
-// partner in sequence. And also if === 1, it should be checked.
-//                     if (lenJ == 1) {
-//                         m[i][0] = newId;
-//                     }
-//                     else if (lenJ === 2) {
-//                         if (m[i][0] === oldId) m[i][0] = newId;
-//                         else m[i][1] = newId;
-//                     }
-//                     else {
-                        j = -1;
-                        for ( ; ++j < lenJ ; ) {
-                            if (m[i][j] === oldId) {
-                                m[i][j] = newId;
-                            }
+                    // THIS OPTIMIZATION DOES NOT SEEM TO WORK.
+                    // In fact, there might be more matches with the same
+                    // partner in sequence.
+                    // And also if === 1, it should be checked.
+                    // if (lenJ == 1) {
+                    //     m[i][0] = newId;
+                    // }
+                    // else if (lenJ === 2) {
+                    //     if (m[i][0] === oldId) m[i][0] = newId;
+                    //     else m[i][1] = newId;
+                    // }
+                    // else {
+                    j = -1;
+                    for ( ; ++j < lenJ ; ) {
+                        if (m[i][j] === oldId) {
+                            m[i][j] = newId;
                         }
-//                    }
+                    }
+                    // }
                 }
             }
         }
@@ -27585,7 +27727,7 @@ if (!Array.prototype.indexOf) {
     }
 
     /**
-     * ### pairMatcher
+     * ### pairMatcherOld
      *
      * Creates tournament schedules for different algorithms
      *
@@ -27612,118 +27754,247 @@ if (!Array.prototype.indexOf) {
      *
      * @return {array} matches The matches according to the algorithm
      */
-     function pairMatcher(alg, n, options) {
-         var ps, matches, bye;
-         var i, lenI, j, lenJ, jj;
-         var id1, id2;
-         var roundsLimit, cycle, cycleI, skipBye;
+    function pairMatcherOld(alg, n, options) {
+        var ps, matches, bye;
+        var i, lenI, j, lenJ, jj;
+        var id1, id2;
+        var roundsLimit, cycle, cycleI, skipBye;
 
-         if ('number' === typeof n && n > 1) {
-             ps = J.seq(0, (n-1));
-         }
-         else if (J.isArray(n) && n.length > 1) {
-             ps = n.slice();
-             n = ps.length;
-         }
-         else {
-             throw new TypeError('pairMatcher.' + alg + ': n must be ' +
-                                 'number > 1 or array of length > 1.');
-         }
-         options = options || {};
+        if ('number' === typeof n && n > 1) {
+            ps = J.seq(0, (n-1));
+        }
+        else if (J.isArray(n) && n.length > 1) {
+            ps = n.slice();
+            n = ps.length;
+        }
+        else {
+            throw new TypeError('pairMatcher.' + alg + ': n must be ' +
+                                'number > 1 or array of length > 1.');
+        }
+        options = options || {};
 
-         bye = 'undefined' !== typeof options.bye ? options.bye : -1;
-         skipBye = options.skipBye || false;
+        bye = 'undefined' !== typeof options.bye ? options.bye : -1;
+        skipBye = options.skipBye || false;
 
-         // Make sure we have even numbers.
-         if ((n % 2) === 1) {
-             ps.push(bye);
-             n += 1;
-         }
+        // Make sure we have even numbers.
+        if ((n % 2) === 1) {
+            ps.push(bye);
+            n += 1;
+        }
 
-         // Limit rounds.
-         if ('number' === typeof options.rounds) {
-             if (options.rounds <= 0) {
-                 throw new Error('pairMatcher.' + alg + ': options.rounds ' +
-                                 'must be a positive number or undefined. ' +
-                                 'Found: ' + options.rounds);
-             }
-             if (options.rounds > (n-1)) {
-                 throw new Error('pairMatcher.' + alg + ': ' +
-                                 'options.rounds cannot be greater than ' +
-                                 (n-1) + '. Found: ' + options.rounds);
-             }
-             // Here roundsLimit does not depend on n (must be smaller).
-             roundsLimit = options.rounds;
-         }
-         else {
-             roundsLimit = n-1;
-         }
+        // Limit rounds.
+        if ('number' === typeof options.rounds) {
+            if (options.rounds <= 0) {
+                throw new Error('pairMatcher.' + alg + ': options.rounds ' +
+                                'must be a positive number or undefined. ' +
+                                'Found: ' + options.rounds);
+            }
+            if (options.rounds > (n-1)) {
+                throw new Error('pairMatcher.' + alg + ': ' +
+                                'options.rounds cannot be greater than ' +
+                                (n-1) + '. Found: ' + options.rounds);
+            }
+            // Here roundsLimit does not depend on n (must be smaller).
+            roundsLimit = options.rounds;
+        }
+        else {
+            roundsLimit = n-1;
+        }
 
-         if ('undefined' !== typeof options.cycle) {
-             cycle = options.cycle;
-             if (cycle !== 'mirror_invert' && cycle !== 'mirror' &&
-                 cycle !== 'repeat_invert' && cycle !== 'repeat') {
+        if ('undefined' !== typeof options.cycle) {
+            cycle = options.cycle;
+            if (cycle !== 'mirror_invert' && cycle !== 'mirror' &&
+                cycle !== 'repeat_invert' && cycle !== 'repeat') {
 
-                 throw new Error('pairMatcher.' + alg + ': options.cycle ' +
-                                 'must be equal to "mirror"/"mirror_invert", ' +
-                                 '"repeat"/"repeat_invert" or undefined . ' +
-                                 'Found: ' + options.cycle);
-             }
+                throw new Error('pairMatcher.' + alg + ': options.cycle ' +
+                                'must be equal to "mirror"/"mirror_invert", ' +
+                                '"repeat"/"repeat_invert" or undefined . ' +
+                                'Found: ' + options.cycle);
+            }
 
-             matches = new Array(roundsLimit*2);
-         }
-         else {
-             matches = new Array(roundsLimit);
-         }
+            matches = new Array(roundsLimit*2);
+        }
+        else {
+            matches = new Array(roundsLimit);
+        }
 
-         i = -1, lenI = roundsLimit;
-         for ( ; ++i < lenI ; ) {
-             // Shuffle list of ids for random.
-             if (alg === 'random') ps = J.shuffle(ps);
-             // Create a new array for round i.
-             lenJ = n / 2;
-             matches[i] = skipBye ? new Array(lenJ-1) : new Array(lenJ);
-             // Check if new need to cycle.
-             if (cycle) {
-                 if (cycle === 'mirror' || cycle === 'mirror_invert') {
-                     cycleI = (roundsLimit*2) -i -1;
-                 }
-                 else {
-                     cycleI = i+roundsLimit;
-                 }
-                 matches[cycleI] = skipBye ?
-                     new Array(lenJ-1) : new Array(lenJ);
-             }
-             // Counter jj is updated only if not skipBye,
-             // otherwise we create holes in the matches array.
-             jj = j = -1;
-             for ( ; ++j < lenJ ; ) {
-                 id1 = ps[j];
-                 id2 = ps[n - 1 - j];
-                 if (!skipBye || (id1 !== bye && id2 !== bye)) {
-                     jj++;
-                     // Insert match.
-                     matches[i][jj] = [ id1, id2 ];
-                     // Insert cycle match (if any).
-                     if (cycle === 'repeat') {
-                         matches[cycleI][jj] = [ id1, id2 ];
-                     }
-                     else if (cycle === 'repeat_invert') {
-                         matches[cycleI][jj] = [ id2, id1 ];
-                     }
-                     else if (cycle === 'mirror') {
-                         matches[cycleI][jj] = [ id1, id2 ];
-                     }
-                     else if (cycle === 'mirror_invert') {
-                         matches[cycleI][jj] = [ id2, id1 ];
-                     }
-                 }
-             }
-             // Permutate for next round.
-             ps.splice(1, 0, ps.pop());
-         }
-         return matches;
-     }
+        i = -1, lenI = roundsLimit;
+        for ( ; ++i < lenI ; ) {
+            // Shuffle list of ids for random.
+            if (alg === 'random') ps = J.shuffle(ps);
+            // Create a new array for round i.
+            lenJ = n / 2;
+            matches[i] = skipBye ? new Array(lenJ-1) : new Array(lenJ);
+            // Check if new need to cycle.
+            if (cycle) {
+                if (cycle === 'mirror' || cycle === 'mirror_invert') {
+                    cycleI = (roundsLimit*2) -i -1;
+                }
+                else {
+                    cycleI = i+roundsLimit;
+                }
+                matches[cycleI] = skipBye ?
+                    new Array(lenJ-1) : new Array(lenJ);
+            }
+            // Counter jj is updated only if not skipBye,
+            // otherwise we create holes in the matches array.
+            jj = j = -1;
+            for ( ; ++j < lenJ ; ) {
+                id1 = ps[j];
+                id2 = ps[n - 1 - j];
+                if (!skipBye || (id1 !== bye && id2 !== bye)) {
+                    jj++;
+                    // Insert match.
+                    matches[i][jj] = [ id1, id2 ];
+                    // Insert cycle match (if any).
+                    if (cycle === 'repeat') {
+                        matches[cycleI][jj] = [ id1, id2 ];
+                    }
+                    else if (cycle === 'repeat_invert') {
+                        matches[cycleI][jj] = [ id2, id1 ];
+                    }
+                    else if (cycle === 'mirror') {
+                        matches[cycleI][jj] = [ id1, id2 ];
+                    }
+                    else if (cycle === 'mirror_invert') {
+                        matches[cycleI][jj] = [ id2, id1 ];
+                    }
+                }
+            }
+            // Permutate for next round.
+            ps.splice(1, 0, ps.pop());
+        }
+        return matches;
+    }
+
+
+    function pairMatcher(alg, n, options) {
+        var ps, matches, bye;
+        var i, lenI, j, lenJ, jj;
+        var id1, id2;
+        var roundsLimit, cycle, cycleI, skipBye;
+        var fixedRolesNoSameMatch;
+
+        if ('number' === typeof n && n > 1) {
+            ps = J.seq(0, (n-1));
+        }
+        else if (J.isArray(n) && n.length > 1) {
+            ps = n.slice();
+            n = ps.length;
+        }
+        else {
+            throw new TypeError('pairMatcher.' + alg + ': n must be ' +
+                                'number > 1 or array of length > 1.');
+        }
+        options = options || {};
+
+        bye = 'undefined' !== typeof options.bye ? options.bye : -1;
+        skipBye = options.skipBye || false;
+
+        // Make sure we have even numbers.
+        if ((n % 2) === 1) {
+            ps.push(bye);
+            n += 1;
+        }
+
+        // Does not work.
+        if (options.fixedRoles && (options.canMatchSameRole === false)) {
+            fixedRolesNoSameMatch = true;
+        }
+
+        // Limit rounds.
+        if ('number' === typeof options.rounds) {
+            if (options.rounds <= 0) {
+                throw new Error('pairMatcher.' + alg + ': options.rounds ' +
+                                'must be a positive number or undefined. ' +
+                                'Found: ' + options.rounds);
+            }
+            if (options.rounds > (n-1)) {
+                throw new Error('pairMatcher.' + alg + ': ' +
+                                'options.rounds cannot be greater than ' +
+                                (n-1) + '. Found: ' + options.rounds);
+            }
+            // Here roundsLimit does not depend on n (must be smaller).
+            roundsLimit = options.rounds;
+        }
+        else if (fixedRolesNoSameMatch) {
+            roundsLimit = Math.floor(n/2);
+        }
+        else {
+            roundsLimit = n-1;
+        }
+
+        if ('undefined' !== typeof options.cycle) {
+            cycle = options.cycle;
+            if (cycle !== 'mirror_invert' && cycle !== 'mirror' &&
+                cycle !== 'repeat_invert' && cycle !== 'repeat') {
+
+                throw new Error('pairMatcher.' + alg + ': options.cycle ' +
+                                'must be equal to "mirror"/"mirror_invert", ' +
+                                '"repeat"/"repeat_invert" or undefined . ' +
+                                'Found: ' + options.cycle);
+            }
+
+            matches = new Array(roundsLimit*2);
+        }
+        else {
+            matches = new Array(roundsLimit);
+        }
+
+        i = -1, lenI = roundsLimit;
+        for ( ; ++i < lenI ; ) {
+            // Shuffle list of ids for random.
+            if (alg === 'random') ps = J.shuffle(ps);
+            // Create a new array for round i.
+            lenJ = n / 2;
+            matches[i] = skipBye ? new Array(lenJ-1) : new Array(lenJ);
+            // Check if new need to cycle.
+            if (cycle) {
+                if (cycle === 'mirror' || cycle === 'mirror_invert') {
+                    cycleI = (roundsLimit*2) -i -1;
+                }
+                else {
+                    cycleI = i+roundsLimit;
+                }
+                matches[cycleI] = skipBye ?
+                    new Array(lenJ-1) : new Array(lenJ);
+            }
+            // Counter jj is updated only if not skipBye,
+            // otherwise we create holes in the matches array.
+            jj = j = -1;
+            for ( ; ++j < lenJ ; ) {
+                if (fixedRolesNoSameMatch) {
+                    id1 = ps[j*2];
+                    id2 = ps[((i*2)+(j*2)+1) % n];
+                }
+                else {
+                    id1 = ps[j];
+                    id2 = ps[n - 1 - j];
+                }
+                if (!skipBye || (id1 !== bye && id2 !== bye)) {
+                    jj++;
+                    // Insert match.
+                    matches[i][jj] = [ id1, id2 ];
+                    // Insert cycle match (if any).
+                    if (cycle === 'repeat') {
+                        matches[cycleI][jj] = [ id1, id2 ];
+                    }
+                    else if (cycle === 'repeat_invert') {
+                        matches[cycleI][jj] = [ id2, id1 ];
+                    }
+                    else if (cycle === 'mirror') {
+                        matches[cycleI][jj] = [ id1, id2 ];
+                    }
+                    else if (cycle === 'mirror_invert') {
+                        matches[cycleI][jj] = [ id2, id1 ];
+                    }
+                }
+            }
+            // Permutate for next round.
+            if (!fixedRolesNoSameMatch) ps.splice(1, 0, ps.pop());
+        }
+        return matches;
+    }
 
     /**
      * ## fetchMatch
@@ -29392,7 +29663,10 @@ if (!Array.prototype.indexOf) {
  * Copyright(c) 2016 Stefano Balietti
  * MIT Licensed
  *
- * `nodeGame` commands
+ * `nodeGame` commands for admins
+ *
+ * Command messages sent by players will be filtered out by the server.
+ *
  */
 (function(exports, node) {
 
@@ -29404,20 +29678,19 @@ if (!Array.prototype.indexOf) {
     /**
      * ### NodeGameClient.redirect
      *
-     * Redirects a player to the specified url
+     * Redirects a client to the specified url
      *
-     * Works only if it is a monitor client to send
-     * the message, i.e. players cannot redirect each
-     * other.
+     * Examples:
      *
-     * Examples
+     * ```javascript
      *
-     *  // Redirect to http://mydomain/mygame/missing_auth
-     *  node.redirect('missing_auth', 'xxx');
+     * // Redirect to http://mydomain/mygame/missing_auth
+     * node.redirect('missing_auth', 'xxx');
      *
-     *  // Redirect to external urls
-     *  node.redirect('http://www.google.com');
-     *
+     * // Redirect to external urls
+     * node.redirect('http://www.google.com');
+     * ```
+
      * @param {string} url the url of the redirection
      * @param {string} who A player id or any other valid _to_ field
      */
@@ -29441,9 +29714,6 @@ if (!Array.prototype.indexOf) {
      * ### NodeGameClient.remoteCommand
      *
      * Executes a game command on a client
-     *
-     * By default, only admins can send use this method, as messages
-     * sent by players will be filtered out by the server.
      *
      * @param {string} command The command to execute
      * @param {string|array} to The id or the array of ids of client/s
@@ -29782,11 +30052,11 @@ if (!Array.prototype.indexOf) {
 
         if (node.conf.incomingAdded && !force) {
             node.err('node.addDefaultIncomingListeners: listeners already ' +
-                     'added once. Use the force flag to re-add.');
+                     'added. Use "force" to add again');
             return false;
         }
 
-        this.info('node: adding incoming listeners.');
+        this.info('node: adding incoming listeners');
 
         /**
          * ## in.say.BYE
@@ -30027,8 +30297,7 @@ if (!Array.prototype.indexOf) {
          * Executes a game command (pause, resume, etc.)
          */
         node.events.ng.on( IN + say + 'GAMECOMMAND', function(msg) {
-            if (!checkGameCommandMsg(msg)) return;
-            node.emit('NODEGAME_GAMECOMMAND_' + msg.text, msg.data);
+            emitGameCommandMsg(node, msg);
         });
 
         /**
@@ -30038,8 +30307,7 @@ if (!Array.prototype.indexOf) {
          */
         node.events.ng.on( IN + get + 'GAMECOMMAND', function(msg) {
             var res;
-            if (!checkGameCommandMsg(msg)) return;
-            res = node.emit('NODEGAME_GAMECOMMAND_' + msg.text, msg.data);
+            res = emitGameCommandMsg(node, msg);
             if (!J.isEmpty(res)) {
                 // New key must contain msg.id.
                 node.say(msg.text + '_' + msg.id, msg.from, res);
@@ -30172,21 +30440,22 @@ if (!Array.prototype.indexOf) {
     // ## Helper functions.
 
     /**
-     * ### checkGameCommandMsg
+     * ### emitGameCommandMsg
      *
-     * Checks that the incoming message contains a valid command and options
-     *
-     * Msg.data contains the options for the command. If string, it will be
-     * parsed with JSUS.parse
+     * Checks that the incoming message is valid, parses its data, and emits it
      *
      * @param {GameMsg} msg The incoming message
      *
+     * @return {mixed} The return value of the emit call
+     *
      * @see JSUS.parse
+     * @see node.emit
      */
-    function checkGameCommandMsg(msg) {
-        if ('string' !== typeof msg.text || msg.text.trim() === '') {
+    function emitGameCommandMsg(node, msg) {
+        var opts;
+        if ('string' !== typeof msg.text) {
             node.err('"in.' + msg.action + '.GAMECOMMAND": msg.text must be ' +
-                     'a non-empty string: ' + msg.text);
+                     'string. Found: ' + msg.text);
             return false;
         }
         if (!parent.constants.gamecommands[msg.text]) {
@@ -30195,18 +30464,8 @@ if (!Array.prototype.indexOf) {
             return false;
         }
 
-        // Parse msg.data.
-        if ('string' === typeof msg.data) {
-            try {
-                msg.data = J.parse(msg.data);
-            }
-            catch(e) {
-                console.log(e);
-                debugger;
-            }
-        }
-
-        return true;
+        opts = 'string' === typeof msg.data ? J.parse(msg.data) : msg.data;
+        return node.emit('NODEGAME_GAMECOMMAND_' + msg.text, opts);
     }
 
 })(
@@ -31845,6 +32104,17 @@ if (!Array.prototype.indexOf) {
         this.isIE = !!document.createElement('span').attachEvent;
 
         /**
+         * ### GameWindow.headerOffset
+         *
+         * Contains the current offset (widht or height) for the header
+         *
+         * Content below/above/next to it needs to be slided accordingly.
+         *
+         * @see W.adjustHeaderOffset
+         */
+        this.headerOffset = 0;
+
+        /**
          * ### GameWindow.willResizeFrame
          *
          * Boolean flag saying whether a call to resize the frame is in progress
@@ -32253,7 +32523,7 @@ if (!Array.prototype.indexOf) {
 
         this.setFrame(iframe, frameName, root);
 
-        if (this.frameElement) adaptFrame2HeaderPosition(this);
+        if (this.getHeader()) adaptFrame2HeaderPosition();
 
         // Emit event.
         node.events.ng.emit('FRAME_GENERATED', iframe);
@@ -32262,8 +32532,6 @@ if (!Array.prototype.indexOf) {
         document.body.onresize = function() {
             W.adjustFrameHeight(0, 120);
         };
-
-
 
         return iframe;
     };
@@ -32508,17 +32776,8 @@ if (!Array.prototype.indexOf) {
      * @see GameWindow.defaultHeaderPosition
      * @see adaptFrame2HeaderPosition
      */
-    GameWindow.prototype.setHeaderPosition = function(position) {
-        var validPositions, pos, oldPos;
-        if ('string' !== typeof position) {
-            throw new TypeError('GameWindow.setHeaderPosition: position ' +
-                                'must be string. Found: ' + position);
-        }
-        pos = position.toLowerCase();
-
-        // Do something only if there is a change in the position.
-        if (this.headerPosition === pos) return;
-
+    GameWindow.prototype.setHeaderPosition = (function() {
+        var validPositions;
         // Map: position - css class.
         validPositions = {
             top: 'ng_header_position-horizontal-t',
@@ -32527,29 +32786,39 @@ if (!Array.prototype.indexOf) {
             left: 'ng_header_position-vertical-l'
         };
 
-        if ('undefined' === typeof validPositions[pos]) {
-            node.err('GameWindow.setHeaderPosition: invalid header ' +
-                     'position: ' + pos);
-            return;
-        }
-        if (!this.headerElement) {
-            throw new Error('GameWindow.setHeaderPosition: headerElement ' +
-                            'not found.');
-        }
+        return function(position) {
+            var pos, oldPos;
+            if ('string' !== typeof position) {
+                throw new TypeError('GameWindow.setHeaderPosition: position ' +
+                                    'must be string. Found: ' + position);
+            }
+            pos = position.toLowerCase();
 
-        W.removeClass(this.headerElement, 'ng_header_position-[a-z-]*');
-        W.addClass(this.headerElement, validPositions[pos]);
+            // Do something only if there is a change in the position.
+            if (this.headerPosition === pos) return;
 
-        oldPos = this.headerPosition;
+            if ('undefined' === typeof validPositions[pos]) {
+                node.err('GameWindow.setHeaderPosition: invalid header ' +
+                         'position: ' + pos);
+                return;
+            }
+            if (!this.headerElement) {
+                throw new Error('GameWindow.setHeaderPosition: headerElement ' +
+                                'not found.');
+            }
 
-        // Store the new position in a reference variable
-        // **before** adaptFrame2HeaderPosition is called
-        this.headerPosition = pos;
+            W.removeClass(this.headerElement, 'ng_header_position-[a-z-]*');
+            W.addClass(this.headerElement, validPositions[pos]);
 
-        if (this.frameElement) {
-            adaptFrame2HeaderPosition(this, oldPos);
-        }
-    };
+            oldPos = this.headerPosition;
+
+            // Store the new position in a reference variable
+            // **before** adaptFrame2HeaderPosition is called
+            this.headerPosition = pos;
+
+            if (this.frameElement) adaptFrame2HeaderPosition(oldPos);
+        };
+    })();
 
     /**
      * ### GameWindow.setHeader
@@ -32650,6 +32919,8 @@ if (!Array.prototype.indexOf) {
         this.headerName = null;
         this.headerRoot = null;
         this.headerPosition = null;
+        this.headerOffset = 0;
+        this.adjustHeaderOffset(true);
     };
 
     /**
@@ -33345,12 +33616,16 @@ if (!Array.prototype.indexOf) {
      *   evaluated only once at the end of a new timeout. Default: undefined
      *
      * @see W.willResizeFrame
+     * @see W.adjustHeaderOffset
      */
     GameWindow.prototype.adjustFrameHeight = (function() {
         var nextTimeout, adjustIt;
 
-        adjustIt = function (userMinHeight) {
+        adjustIt = function(userMinHeight) {
             var iframe, minHeight, contentHeight;
+
+            W.adjustHeaderOffset();
+
             iframe = W.getFrame();
             // Iframe might have been destroyed already, e.g. in a test.
             if (!iframe || !iframe.contentWindow) return;
@@ -33358,8 +33633,11 @@ if (!Array.prototype.indexOf) {
             // Try to find out how tall the frame should be.
             minHeight = window.innerHeight || window.clientHeight;
 
-            contentHeight =
-                iframe.contentWindow.document.body.offsetHeight + 120;
+            contentHeight = iframe.contentWindow.document.body.offsetHeight;
+            // Rule of thumb.
+            contentHeight += 60;
+
+            if (W.headerPosition === "top") contentHeight += W.headerOffset;
 
             if (minHeight < contentHeight) minHeight = contentHeight;
             if (minHeight < (userMinHeight || 0)) minHeight = userMinHeight;
@@ -33374,7 +33652,7 @@ if (!Array.prototype.indexOf) {
                 return;
             }
             if (W.willResizeFrame) {
-                nextTimeout = true
+                nextTimeout = true;
                 return;
             }
             W.willResizeFrame = setTimeout(function() {
@@ -33390,6 +33668,91 @@ if (!Array.prototype.indexOf) {
             }, delay);
         };
 
+    })();
+
+    /**
+     * ### GameWindow.adjustHeaderOffset
+     *
+     * Slides frame and/or infoPanel so that the header does not overlap
+     *
+     * Adjusts the CSS padding of the elements depending of the header
+     * position, but only if the size of of the header has changed from
+     * last time.
+     *
+     * @param {boolean} force Optional. If TRUE, padding is adjusted
+     *   regardless of whether the size of the header has changed
+     *   from last time
+     *
+     * @see W.headerOffset
+     */
+    GameWindow.prototype.adjustHeaderOffset = (function() {
+        var extraPad;
+        extraPad = 0;
+
+        return function(force) {
+            var position, frame, header, infoPanel, offset, offsetPx;
+
+            header = W.getHeader();
+            position = W.headerPosition;
+
+            // Do not apply padding if nothing has changed.
+            if (!force &&
+                (!header && W.headerOffset ||
+                (position === "top" &&
+                 header.offsetHeight === W.headerOffset))) {
+
+                return;
+            }
+
+            frame = W.getFrame();
+            infoPanel = W.infoPanel;
+            // No frame nor infoPanel, nothing to do.
+            if (!frame && !infoPanel) return;
+
+            switch(position) {
+            case 'right':
+                offset = header.offsetWidth;
+                offsetPx = (offset + extraPad) + 'px';
+                if (frame) frame.style['padding-right'] = offsetPx;
+                if (infoPanel && infoPanel.isVisible) {
+                    infoPanel.infoPanelDiv.style['padding-right'] = offsetPx;
+                }
+                break;
+            case 'left':
+                offset = header.offsetWidth;
+                offsetPx = (offset + extraPad) + 'px';
+                if (frame) frame.style['padding-left'] = offsetPx;
+                if (infoPanel && infoPanel.isVisible) {
+                    infoPanel.infoPanelDiv.style['padding-left'] = offsetPx;
+                }
+                break;
+            case 'top':
+                offset = header.offsetHeight;
+                offsetPx = (offset + extraPad) + 'px';
+                if (infoPanel && infoPanel.isVisible) {
+                    infoPanel.infoPanelDiv.style['padding-top'] = offsetPx;
+                    frame.style['padding-top'] = 0;
+                }
+                else {
+                    if (infoPanel) {
+                        infoPanel.infoPanelDiv.style['padding-top'] = 0;
+                    }
+                    frame.style['padding-top'] = offsetPx;
+                }
+                break;
+            case 'bottom':
+                offset = header.offsetHeight;
+                offsetPx = (offset + extraPad) + 'px';
+                frame.style['padding-bottom'] = offsetPx;
+                if (infoPanel) {
+                    infoPanel.infoPanelDiv.style['padding-top'] = 0;
+                }
+                break;
+            }
+
+            // Store the value of current offset.
+            W.headerOffset = offset;
+        };
     })();
 
     // ## Helper functions
@@ -33620,28 +33983,25 @@ if (!Array.prototype.indexOf) {
      *
      * The frame element must exists or an error will be thrown.
      *
-     * @param {GameWindow} W The current GameWindow object
      * @param {string} oldHeaderPos Optional. The previous position of the
      *   header
      *
      * @api private
      */
-    function adaptFrame2HeaderPosition(W, oldHeaderPos) {
+    function adaptFrame2HeaderPosition(oldHeaderPos) {
         var position, frame, header;
 
         frame = W.getFrame();
-        if (!frame) {
-            throw new Error('adaptFrame2HeaderPosition: frame not found.');
-        }
-
-        // If no header is found, simulate the 'top' position to better
-        // fit the whole screen.
-        position = W.headerPosition || 'top';
+        if (!frame) return;
 
         header = W.getHeader();
 
-        // When we move from bottom to any other configuration, we need
-        // to move the header before the frame.
+        // If no header is found, simulate the 'top' position
+        // to better fit the whole screen.
+        position = W.headerPosition || 'top';
+
+        // When we move from bottom to any other configuration,
+        // we need to move the header before the frame.
         if (oldHeaderPos === 'bottom' && position !== 'bottom') {
             W.getFrameRoot().insertBefore(W.headerElement, frame);
         }
@@ -33650,30 +34010,18 @@ if (!Array.prototype.indexOf) {
         switch(position) {
         case 'right':
             W.addClass(frame, 'ng_mainframe-header-vertical-r');
-            if (header) {
-                frame.style['padding-right'] = header.offsetWidth + 50 + 'px';
-            }
             break;
         case 'left':
             W.addClass(frame, 'ng_mainframe-header-vertical-l');
-            if (header) {
-                frame.style['padding-left'] = header.offsetWidth + 50 + 'px';
-            }
             break;
         case 'top':
             W.addClass(frame, 'ng_mainframe-header-horizontal-t');
-            // There might be no header yet.
-            if (header) {
-                W.getFrameRoot().insertBefore(header, frame);
-                frame.style['padding-top'] = header.offsetHeight + 50 + 'px';
-            }
+            if (header) W.getFrameRoot().insertBefore(header, frame);
             break;
         case 'bottom':
             W.addClass(frame, 'ng_mainframe-header-horizontal-b');
-            // There might be no header yet.
             if (header) {
                 W.getFrameRoot().insertBefore(header, frame.nextSibling);
-                frame.style['padding-bottom'] = header.offsetHeight + 50 + 'px';
             }
             break;
         }
@@ -34818,6 +35166,7 @@ if (!Array.prototype.indexOf) {
     InfoPanel.prototype.clear = function() {
         this.infoPanelDiv.innerHTML = '';
         this.actionsLog.push({ clear: J.now() });
+        W.adjustHeaderOffset(true);
     };
 
     /**
@@ -34854,6 +35203,7 @@ if (!Array.prototype.indexOf) {
                 this._buttons[i].parentNode.removeChild(this._buttons[i]);
             }
         }
+        W.adjustHeaderOffset(true);
     };
 
     /**
@@ -34883,6 +35233,8 @@ if (!Array.prototype.indexOf) {
         this.actionsLog.push({ open: J.now() });
         this.infoPanelDiv.style.display = 'block';
         this.isVisible = true;
+        // Must be at the end.
+        W.adjustHeaderOffset(true);
     };
 
     /**
@@ -34899,6 +35251,8 @@ if (!Array.prototype.indexOf) {
         this.actionsLog.push({ close: J.now() });
         this.infoPanelDiv.style.display = 'none';
         this.isVisible = false;
+        // Must be at the end.
+        W.adjustHeaderOffset(true);
     };
 
     /**
@@ -45972,14 +46326,16 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    Feedback.version = '0.9.1';
-    Feedback.description = 'Displays a configurable feedback form.';
+    Feedback.version = '1.0.0';
+    Feedback.description = 'Displays a configurable feedback form';
 
     Feedback.title = 'Feedback';
     Feedback.className = 'feedback';
 
-    Feedback.texts.label = 'Any feedback about the experiment? Let us know' +
-                           ' here:';
+    Feedback.texts = {
+        label: 'Any feedback about the experiment? Let us know here:',
+        sent: 'Sent!'
+    };
 
     // ## Dependencies
 
@@ -46027,10 +46383,10 @@ if (!Array.prototype.indexOf) {
          * The minimum character length for feedback to be submitted
          *
          * If minLength = 0, then there is no minimum length checked.
-         * Default: 0
+         * Default: 1
          */
         if ('undefined' === typeof options.minLength) {
-            this.minLength = 0;
+            this.minLength = 1;
         }
         else if (J.isNumber(options.minLength, 0) !== false) {
             this.minLength = options.minLength;
@@ -46059,9 +46415,10 @@ if (!Array.prototype.indexOf) {
                                                      options.maxAttemptLength);
         }
         else {
-            throw new TypeError('Feedback constructor: options.maxLength ' +
-                                'must be a number >= 0 or undefined. ' +
-                                'Found: ' + options.maxAttemptLength);
+            throw new TypeError('Feedback constructor: ' +
+                                'options.maxAttemptLength must be a number ' +
+                                '>= 0 or undefined. Found: ' +
+                                options.maxAttemptLength);
         }
 
         /**
@@ -46242,7 +46599,7 @@ if (!Array.prototype.indexOf) {
      */
     Feedback.prototype.verifyFeedback = function(markAttempt, updateUI) {
         var feedback, length, updateCount, updateColor, res;
-        var submitButton, charCounter;
+        var submitButton, charCounter, tmp;
 
         feedback = getFeedback.call(this);
         length = feedback ? feedback.length : 0;
@@ -46250,20 +46607,28 @@ if (!Array.prototype.indexOf) {
         submitButton = this.submitButton;
         charCounter = this.charCounter;
 
-
         if (length < this.minLength) {
             res = false;
-            updateCount = (this.minLength - length) + ' characters needed.';
+            tmp = this.minLength - length;
+            updateCount = tmp + ' character';
+            if (tmp > 1) updateCount += 's';
+            updateCount += ' needed.';
             updateColor = '#a32020'; // #f2dede';
         }
         else if (length > this.maxLength) {
             res = false;
-            updateCount = (length - this.maxLength) + ' characters over.';
+            tmp = length - this.maxLength;
+            updateCount = tmp + ' character';
+            if (tmp > 1) updateCount += 's';
+            updateCount += ' over.';
             updateColor = '#a32020'; // #f2dede';
         }
         else {
             res = true;
-            updateCount = (this.maxLength - length) + ' characters remaining.';
+            tmp = this.maxLength - length;
+            updateCount = tmp + ' character';
+            if (tmp > 1) updateCount += 's';
+            updateCount += ' remaining.';
             updateColor = '#78b360'; // '#dff0d8';
         }
 
@@ -46281,26 +46646,6 @@ if (!Array.prototype.indexOf) {
             }
             this.attempts.push(feedback);
         }
-
-//         res = true; // TODO: check if valid.
-//         if (res && updateUI) {
-//             if (this.inputElement) this.inputElement.disabled = true;
-//             if (this.submitButton) {
-//                 this.submitButton.disabled = true;
-//                 this.submitButton.value = 'Sent!';
-//             }
-//         }
-//         else {
-//             if (updateUI && this.submitButton) {
-//                 this.submitButton.value = this.errString;
-//             }
-//             if ('undefined' === typeof markAttempt || markAttempt) {
-//                 if (feedback.length > this.maxAttemptLength) {
-//                     feedback = feedback.substr(0, this.maxAttemptLength);
-//                 }
-//                 this.attempts.push(feedback);
-//             }
-//         }
         return res;
     };
 
@@ -46391,7 +46736,7 @@ if (!Array.prototype.indexOf) {
         if ((opts.say && res) || opts.sayAnyway) {
             this.sendValues({ values: feedback });
             if (opts.updateUI) {
-                this.submitButton.setAttribute('value', 'Sent!');
+                this.submitButton.setAttribute('value', this.getText('sent'));
                 this.submitButton.disabled = true;
                 this.textareaElement.disabled = true;
             }
@@ -46473,48 +46818,6 @@ if (!Array.prototype.indexOf) {
     };
 
     // ## Helper functions.
-
-//     /**
-//      * ### checkLength
-//      *
-//      * Checks the feedback length
-//      *
-//      * @param {HTMLElement} feedbackTextarea The textarea with feedback
-//      * @param {HTMLElement} charCounter The span counting the characthers
-//      * @param {HTMLElement} submit The submit button
-//      * @param {number} minLength The minimum length of feedback
-//      * @param {number} maxLength The max length of feedback
-//      */
-//     function checkLength(feedbackTextarea, charCounter,
-//                                  submit, minLength, maxLength) {
-//         var length, res;
-//
-//         length = feedbackTextarea.value.trim().length;
-//
-//         if (length < minLength) {
-//             res = false;
-//             submit.disabled = true;
-//             charCounter.innerHTML = (minLength - length) +
-//                 ' characters needed.';
-//             charCounter.style.backgroundColor = '#f2dede';
-//         }
-//         else if (length > maxLength) {
-//             res = false;
-//             submit.disabled = true;
-//             charCounter.innerHTML = (length - maxLength) +
-//                 ' characters over.';
-//             charCounter.style.backgroundColor = '#f2dede';
-//         }
-//         else {
-//             res = true;
-//             submit.disabled = false;
-//             charCounter.innerHTML = (maxLength - length) +
-//                 ' characters remaining.';
-//             charCounter.style.backgroundColor = '#dff0d8';
-//         }
-//
-//         return true;
-//     }
 
     /**
      * ### getFeedback
@@ -51534,6 +51837,8 @@ if (!Array.prototype.indexOf) {
             var data, reportExitCode;
             msg = msg || {};
             data = msg.data || {};
+
+            if (that.dots) that.dots.stop();
 
             // Alert player he/she is about to play.
             if (data.action === 'allPlayersConnected') {

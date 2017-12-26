@@ -22,7 +22,8 @@ html {
 
 body {
   margin: 0;
-  font-size: 18px;
+  font-size: 20px;
+  /* 18px; */
   font-family: "Source Sans Pro", -apple-system, BlinkMacSystemFont, Roboto, "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif; }
   body::after {
     content: "";
@@ -57,6 +58,7 @@ p {
   width: 100%;
   /* min-height: 600px; will be changed by js resize code */
   font-family: "Source Sans Pro", -apple-system, BlinkMacSystemFont, Roboto, "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 20px;
   padding: 0;
   display: block;
   margin: 0 auto; }
@@ -96,7 +98,9 @@ p {
   background-color: white;
   box-shadow: 0 0 15px lightgrey;
   margin: 0 auto;
-  border-radius: 0 0 5px 5px; }
+  border-radius: 0 0 5px 5px;
+  font-size: 20px;
+  max-width: 42em; }
   #ng_header::after {
     content: "";
     clear: both;
