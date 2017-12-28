@@ -28859,17 +28859,20 @@ if (!Array.prototype.indexOf) {
     NGC.prototype.alias = function(alias, events, modifier) {
         var that;
         if ('string' !== typeof alias) {
-            throw new TypeError('node.alias: alias must be string.');
+            throw new TypeError('node.alias: alias must be string. Found: ' +
+                                alias);
         }
         if ('string' === typeof events) {
             events = [events];
         }
         if (!J.isArray(events)) {
-            throw new TypeError('node.alias: events must be array or string.');
+            throw new TypeError('node.alias: events must be array or string. ' +
+                                'Found: ' + events);
         }
         if (modifier && 'function' !== typeof modifier) {
             throw new TypeError(
-                'node.alias: modifier must be function or undefined.');
+                'node.alias: modifier must be function or undefined. Found: ' +
+                    modifier);
         }
 
         that = this;
@@ -31287,6 +31290,7 @@ if (!Array.prototype.indexOf) {
      * Adds a battery of setup functions
      *
      * @param {boolean} force Whether to force re-adding the aliases
+     *
      * @return {boolean} TRUE on success
      */
     NGC.prototype.addDefaultAliases = function(force) {
@@ -31313,7 +31317,14 @@ if (!Array.prototype.indexOf) {
         });
 
         // ### node.on.stage
-        this.alias('stage', 'in.set.STAGE');
+        this.alias('stage', 'STEPPING', function(cb) {
+            return function(curStep, newStep) {
+                if (curStep.stage !== newStep.stage) cb(curStep, newStep);
+            };
+        });
+
+        // ### node.on.stage
+        this.alias('step', 'STEPPING');
 
         // ### node.on.plist
         this.alias('plist', ['in.set.PLIST', 'in.say.PLIST']);
@@ -31357,16 +31368,6 @@ if (!Array.prototype.indexOf) {
         this.alias('mdisconnect', 'in.say.MDISCONNECT', function(cb) {
             return function(msg) {
                 cb.call(that.game, msg.data);
-            };
-        });
-
-        // ### node.on.stepdone
-        // Uses the step rule to determine when a step is DONE.
-        this.alias('stepdone', 'UPDATED_PLIST', function(cb) {
-            return function() {
-                if (that.game.shouldStep()) {
-                    cb.call(that.game, that.game.pl);
-                }
             };
         });
 
@@ -33685,75 +33686,71 @@ if (!Array.prototype.indexOf) {
      *
      * @see W.headerOffset
      */
-    GameWindow.prototype.adjustHeaderOffset = (function() {
-        var extraPad;
-        extraPad = 0;
+    GameWindow.prototype.adjustHeaderOffset = function(force) {
+        var position, frame, header, infoPanel, offset, offsetPx;
 
-        return function(force) {
-            var position, frame, header, infoPanel, offset, offsetPx;
+        header = W.getHeader();
+        position = W.headerPosition;
 
-            header = W.getHeader();
-            position = W.headerPosition;
+        // Do not apply padding if nothing has changed.
+        if (!force &&
+            (!header && W.headerOffset ||
+             (position === "top" &&
+              header.offsetHeight === W.headerOffset))) {
 
-            // Do not apply padding if nothing has changed.
-            if (!force &&
-                (!header && W.headerOffset ||
-                (position === "top" &&
-                 header.offsetHeight === W.headerOffset))) {
+            return;
+        }
 
-                return;
+        frame = W.getFrame();
+        infoPanel = W.infoPanel;
+        // No frame nor infoPanel, nothing to do.
+        if (!frame && !infoPanel) return;
+
+        switch(position) {
+        case 'top':
+            offset = header ? header.offsetHeight : 0;
+            offsetPx = offset + 'px';
+            if (infoPanel && infoPanel.isVisible) {
+                infoPanel.infoPanelDiv.style['padding-top'] = offsetPx;
+                frame.style['padding-top'] = 0;
             }
-
-            frame = W.getFrame();
-            infoPanel = W.infoPanel;
-            // No frame nor infoPanel, nothing to do.
-            if (!frame && !infoPanel) return;
-
-            switch(position) {
-            case 'right':
-                offset = header.offsetWidth;
-                offsetPx = (offset + extraPad) + 'px';
-                if (frame) frame.style['padding-right'] = offsetPx;
-                if (infoPanel && infoPanel.isVisible) {
-                    infoPanel.infoPanelDiv.style['padding-right'] = offsetPx;
-                }
-                break;
-            case 'left':
-                offset = header.offsetWidth;
-                offsetPx = (offset + extraPad) + 'px';
-                if (frame) frame.style['padding-left'] = offsetPx;
-                if (infoPanel && infoPanel.isVisible) {
-                    infoPanel.infoPanelDiv.style['padding-left'] = offsetPx;
-                }
-                break;
-            case 'top':
-                offset = header.offsetHeight;
-                offsetPx = (offset + extraPad) + 'px';
-                if (infoPanel && infoPanel.isVisible) {
-                    infoPanel.infoPanelDiv.style['padding-top'] = offsetPx;
-                    frame.style['padding-top'] = 0;
-                }
-                else {
-                    if (infoPanel) {
-                        infoPanel.infoPanelDiv.style['padding-top'] = 0;
-                    }
-                    frame.style['padding-top'] = offsetPx;
-                }
-                break;
-            case 'bottom':
-                offset = header.offsetHeight;
-                offsetPx = (offset + extraPad) + 'px';
-                frame.style['padding-bottom'] = offsetPx;
-                if (infoPanel) {
+            else {
+                if (infoPanel && infoPanel.infoPanelDiv) {
                     infoPanel.infoPanelDiv.style['padding-top'] = 0;
                 }
-                break;
+                frame.style['padding-top'] = offsetPx;
             }
+            break;
+        case 'bottom':
+            offset = header ? header.offsetHeight : 0;
+            offsetPx = offset + 'px';
+            frame.style['padding-bottom'] = offsetPx;
+            if (infoPanel && infoPanel.infoPanelDiv) {
+                infoPanel.infoPanelDiv.style['padding-top'] = 0;
+            }
+            break;
+        case 'right':
+            offset = header ? header.offsetWidth : 0;
+            offsetPx = offset + 'px';
+            if (frame) frame.style['padding-right'] = offsetPx;
+            if (infoPanel && infoPanel.isVisible) {
+                infoPanel.infoPanelDiv.style['padding-right'] = offsetPx;
+            }
+            break;
+        case 'left':
+            offset = header ? header.offsetWidth : 0;
+            offsetPx = offset + 'px';
+            if (frame) frame.style['padding-left'] = offsetPx;
+            if (infoPanel && infoPanel.isVisible) {
+                infoPanel.infoPanelDiv.style['padding-left'] = offsetPx;
+            }
+            break;
+        }
 
-            // Store the value of current offset.
-            W.headerOffset = offset;
-        };
-    })();
+        // Store the value of current offset.
+        W.headerOffset = offset;
+    };
+
 
     // ## Helper functions
 
@@ -35187,15 +35184,21 @@ if (!Array.prototype.indexOf) {
      *
      * Removes the Info Panel from the DOM and the internal references to it
      *
+     * @param {actionsLog} If TRUE, also the actions log is deleted, otherwise
+     *   the destroy action is added. Default: false.
+     *
      * @see InfoPanel.infoPanelDiv
      * @see InfoPanel._buttons
      */
-    InfoPanel.prototype.destroy = function() {
+    InfoPanel.prototype.destroy = function(actionsLog) {
         var i, len;
+        if (actionsLog) this.actionsLog = [];
+        else this.actionsLog.push({ destroy: J.now() });
+
         if (this.infoPanelDiv.parentNode) {
             this.infoPanelDiv.parentNode.removeChild(this.infoPanelDiv);
         }
-        this.actionsLog.push({ destroy: J.now() });
+        this.isVisible = false;
         this.infoPanelDiv = null;
         i = -1, len = this._buttons.length;
         for ( ; ++i < len ; ) {
@@ -35712,7 +35715,8 @@ if (!Array.prototype.indexOf) {
     GameWindow.prototype.getLoadingDots = function(len, id) {
         var spanDots, i, limit, intervalId;
         if (len & len < 0) {
-            throw new Error('GameWindow.getLoadingDots: len < 0.');
+            throw new Error('GameWindow.getLoadingDots: len cannot be < 0. ' +
+                            'Found: ' + len);
         }
         len = len || 5;
         spanDots = document.createElement('span');
