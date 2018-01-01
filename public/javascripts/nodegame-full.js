@@ -19062,11 +19062,22 @@ if (!Array.prototype.indexOf) {
         /**
          * ### Socket.buffer
          *
-         * Buffer of queued messages
+         * Buffer of queued incoming messages
          *
          * @api private
          */
         this.buffer = [];
+
+        /**
+         * ### Socket.outBuffer
+         *
+         * Buffer of queued outgoing messages
+         *
+         * TODO: implement!
+         *
+         * @api private
+         */
+        // this.outBuffer = [];
 
         /**
          * ### Socket.session
@@ -19742,16 +19753,26 @@ if (!Array.prototype.indexOf) {
     Socket.prototype.send = function(msg) {
         var outEvent;
 
-        if (!this.isConnected()) {
-            this.node.err('Socket.send: cannot send message. No open socket.');
+        if (!msg.from || msg.from === this.node.UNDEFINED_PLAYER) {
+            this.node.err('Socket.send: cannot send message. ' +
+                          'Player undefined. Message discarded.');
             return false;
         }
 
-        if (!msg.from || msg.from === this.node.UNDEFINED_PLAYER) {
+        if (!this.isConnected()) {
             this.node.err('Socket.send: cannot send message. ' +
-                          'Player undefined.');
+                          'No open socket. Message discarded.');
+
+            // TODO: test this
+            // this.outBuffer.push(msg);
             return false;
         }
+
+        // TODO: test this
+        // if (!this.node.game.isReady()) {
+        //     this.outBuffer.push(msg);
+        //     return false;
+        // }
 
         // Emit out event, if required.
         if (this.emitOutMsg) {
@@ -24470,21 +24491,18 @@ if (!Array.prototype.indexOf) {
      * @see Game.shouldPublishUpdate
      */
     Game.prototype.publishUpdate = function(type, update) {
-        var node;
         if ('string' !== typeof type) {
-            throw new TypeError('Game.publishUpdate: type must be string.');
+            throw new TypeError('Game.publishUpdate: type must be string. ' +
+                               'Found: ' + type);
         }
         if (type !== 'stage' &&
             type !== 'stageLevel' &&
             type !== 'stateLevel') {
 
-            throw new Error(
-                'Game.publishUpdate: unknown update type (' + type + ')');
+            throw new Error('Game.publishUpdate: unknown update type: ' + type);
         }
-        node = this.node;
-
         if (this.shouldPublishUpdate(type, update)) {
-            node.socket.send(node.msg.create({
+            this.node.socket.send(this.node.msg.create({
                 target: constants.target.PLAYER_UPDATE,
                 data: update,
                 text: type,
@@ -29522,7 +29540,8 @@ if (!Array.prototype.indexOf) {
 
         game = this.game;
         if (game.willBeDone || game.getStageLevel() >= GETTING_DONE) {
-            this.err('node.done: done already called in this step.');
+            this.err('node.done: done already called in step: ' +
+                     game.getCurrentGameStage());
             return false;
         }
 
@@ -29591,6 +29610,9 @@ if (!Array.prototype.indexOf) {
         // Keep track that the game will be done (done is asynchronous)
         // to avoid calling `node.done` multiple times in the same stage.
         game.willBeDone = true;
+
+        // TODO: it is possible that DONE messages (in.set.DATA) are sent
+        // to server before PLAYING is set. Is this OK?
 
         // Args can be the original arguments array, or
         // the one returned by the done callback.
@@ -30523,12 +30545,8 @@ if (!Array.prototype.indexOf) {
 
         this.info('node: adding internal listeners.');
 
-        function done() {
+        function done(what) {
             var res;
-            // No incoming messages should be emitted before
-            // evaluating the step rule and definitely setting
-            // the stageLevel to DONE, otherwise the stage of
-            // other clients could change in between.
             node.game.setStageLevel(stageLevels.GETTING_DONE);
             node.game.willBeDone = false;
             node.game.beDone = false;
@@ -30551,11 +30569,13 @@ if (!Array.prototype.indexOf) {
          */
         this.events.ng.on('DONE', function() {
             // Execute done handler before updating stage.
-            var stageLevel;
-            stageLevel = node.game.getStageLevel();
+
+            // If willBeDone is not set, then PLAYING called DONE earlier.
+            // Can happen if node.done() is called before PLAYING.
+            if (!node.game.willBeDone) return;
 
             // TODO check >=.
-            if (stageLevel >= stageLevels.PLAYING) done();
+            if (node.game.getStageLevel() >= stageLevels.PLAYING) done();
             else node.game.willBeDone = true;
         });
 
@@ -30602,7 +30622,7 @@ if (!Array.prototype.indexOf) {
             node.timer.setTimestamp('step', currentTime);
 
             // DONE was previously emitted, we just execute done handler.
-            if (node.game.willBeDone) done();
+            if (node.game.willBeDone) done('PLAYING');
         });
 
         /**
@@ -33758,7 +33778,9 @@ if (!Array.prototype.indexOf) {
             }
             // Remove all padding.
             if (frame) frame.style.padding = 0;
-            if (infoPanel && infoPanelDiv) infoPanel.infoPanelDiv.padding = 0;
+            if (infoPanel && infoPanel.infoPanelDiv) {
+                infoPanel.infoPanelDiv.padding = 0;
+            }
         }
 
         // Store the value of current offset.
