@@ -23935,17 +23935,24 @@ if (!Array.prototype.indexOf) {
         // inserted in the plot, or be already in the plot.
         role = this.plot.getProperty(nextStep, 'role');
 
-        if (!role) role = null;
-        else if (role === true) role = this.role;
-        else if ('function' === typeof role) role = role.call(this);
-
-        if (role === null && this.getProperty('roles') !== null) {
-            throw new Error('Game.gotoStep: "role" is null, but "roles" ' +
-                            'are found in step ' + nextStep);
+        if (role === true) {
+            if (!this.role) {
+                throw new Error('Game.gotoStep: "role" is true, but no ' +
+                                'previous role is found in step ' + nextStep);
+            }
         }
+        else {
+            if (!role) role = null;
+            else if ('function' === typeof role) role = role.call(this);
+        
+            if (role === null && this.getProperty('roles') !== null) {
+                throw new Error('Game.gotoStep: "role" is null, but "roles" ' +
+                                'are found in step ' + nextStep);
+            }
 
-        // Overwrites step properties if a role is set.
-        this.setRole(role, true);
+            // Overwrites step properties if a role is set.
+            this.setRole(role, true);
+        }
 
         partner = this.plot.getProperty(nextStep, 'partner');
         if (!partner) partner = null;
@@ -24911,15 +24918,17 @@ if (!Array.prototype.indexOf) {
                                 this.getCurrentGameStage());
             }
             roles = this.getProperty('roles');
+            // If FALSE, does not check the roles object, but let set the role.
             if (!roles) {
-                throw new Error('Game.setRole: trying to set role "' + role +
-                                '", but \'roles\' not found in current step: ' +
+                throw new Error('Game.setRole: trying to set role "' +
+                                role + '", but \'roles\' not found in ' +
+                                'current step: ' +
                                 this.getCurrentGameStage());
             }
             roleObj = roles[role];
             if (!roleObj) {
-                throw new Error('Game.setRole: role "' + role + '" not found ' +
-                                'in current step: ' +
+                throw new Error('Game.setRole: role "' + role +
+                                '" not found in current step: ' +
                                 this.getCurrentGameStage());
             }
 
@@ -24929,6 +24938,7 @@ if (!Array.prototype.indexOf) {
                     this.plot.tmpCache(prop, roleObj[prop]);
                 }
             }
+            
         }
         else if (role !== null) {
             throw new TypeError('Game.setRole: role must be string or null. ' +
@@ -30545,7 +30555,7 @@ if (!Array.prototype.indexOf) {
 
         this.info('node: adding internal listeners.');
 
-        function done(what) {
+        function done() {
             var res;
             node.game.setStageLevel(stageLevels.GETTING_DONE);
             node.game.willBeDone = false;
@@ -30622,7 +30632,7 @@ if (!Array.prototype.indexOf) {
             node.timer.setTimestamp('step', currentTime);
 
             // DONE was previously emitted, we just execute done handler.
-            if (node.game.willBeDone) done('PLAYING');
+            if (node.game.willBeDone) done();
         });
 
         /**
